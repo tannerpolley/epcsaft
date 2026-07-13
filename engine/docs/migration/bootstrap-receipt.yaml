@@ -1,0 +1,25 @@
+schema: epcsaft.curated-repository-bootstrap-receipt
+schema_version: 1
+date: 2026-07-13
+stage: 11
+repository_role: provider
+local_path: ~/Workspaces/Engineering/ePC-SAFT-project/ePC-SAFT
+intended_github_home: ePC-SAFT/ePC-SAFT
+github_home_state: existing_transition_remote_identity
+deferred_remote_strategy: retain_rename_or_repurpose_without_force_push_or_history_replacement
+distribution_name: epcsaft
+import_name: epcsaft
+program_amendment_commit: cad6eb9fc2d83c6f9167cb6ef45f5b9fe74da19b
+initial_branch: main
+initial_commit_policy: clean_history_single_bootstrap_commit
+depends_on: []
+forbidden_dependencies:
+  - epcsaft-equilibrium
+  - epcsaft-regression
+  - Ipopt
+  - Ceres
+production_owners_transferred: []
+scientific_capabilities_claimed: []
+remote_created: false
+push_performed: false
+source_of_truth: false
