@@ -1,7 +1,13 @@
 # Organization Policy Repository Context
 
-This is a governance-only skeleton, not live organization policy.
+`GOVERNANCE.md` revision 1 is the canonical local ecosystem doctrine.
 
-The transition source remains `~/Workspaces/Engineering/ePC-SAFT` at program amendment `cad6eb9fc2d83c6f9167cb6ef45f5b9fe74da19b`.
+`governance_source_of_truth: true`
 
-`source_of_truth: false`
+`published_to_github: false`
+
+`runtime_source_of_truth: false`
+
+The transition source remains
+`~/Workspaces/Engineering/ePC-SAFT` at `64fdf314` until
+slice-specific promotion receipts say otherwise.

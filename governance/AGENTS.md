@@ -1,9 +1,12 @@
 # Organization Policy Repository Agent Contract
 
-Bootstrap state: governance-only skeleton.
+Read `GOVERNANCE.md` before planning, reviewing, or changing any ePC-SAFT
+repository. Doctrine revision 1 is the canonical ecosystem policy.
 
-This future home is limited to organization profile and shared policy after a
-separately approved external-write gate. Package-local behavior stays with its
-package repository.
+This repository owns organization profile, shared community files, reusable
+workflow policy, and Project conventions. Package-local behavior, tests,
+builds, releases, and capabilities stay with their package repository.
 
-Do not add live organization policy, workflows, templates, releases, or package capability claims without a separately approved external-write plan.
+The doctrine is canonical locally but is not yet published. Do not create a
+remote, push, mutate organization settings, or add live workflows or templates
+without a separately approved external-write plan.
