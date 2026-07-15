@@ -2,7 +2,7 @@
 
 Status: canonical
 
-Doctrine revision: 1
+Doctrine revision: 2
 
 Approved: 2026-07-14
 
@@ -55,17 +55,21 @@ doctrine does not transfer any scientific implementation or capability.
 
 ## 3. Repository ownership
 
-| Home | Sole production role | Must not own |
+| Home | Sole ecosystem role | Must not own |
 |---|---|---|
 | `ePC-SAFT/.github` | Organization doctrine, profile, shared community files, workflow policy, and Project conventions | Package source, package tests, scientific capabilities, or releases |
 | `ePC-SAFT/ePC-SAFT` | `epcsaft` provider: resolved inputs, parameters, EOS/state/property evaluation, density closure, CppAD substrate, and the provider SDK | Ipopt equilibrium, Ceres regression, or cross-package validation campaigns |
 | `ePC-SAFT/ePC-SAFT-equilibrium` | `epcsaft-equilibrium`: equilibrium formulations, phase discovery, local NLPs, Ipopt, certification, and equilibrium results | Provider implementation, Ceres, or regression targets |
 | `ePC-SAFT/ePC-SAFT-regression` | `epcsaft-regression`: target contracts, parameter fitting, Ceres, fit diagnostics, and regression results | Provider implementation, Ipopt, or equilibrium dispatch |
 | `ePC-SAFT/ePC-SAFT-validation` | Installed-artifact, cross-package, and literature acceptance evidence | Production algorithms, private package imports, or a paper archive |
-| `tannerpolley/ePC-SAFT-lab` | Experiments, full provenance, papers, rejected alternatives, migration evidence, and not-yet-promoted work | Production authority, releases of production distributions, or dependencies consumed by production repositories |
+| `tannerpolley/ePC-SAFT-lab` | Transitional runtime source of record for not-yet-promoted slices; experiments, full provenance, papers, rejected alternatives, and migration evidence | Production distributions or releases, dependencies consumed by production or validation repositories, or authority for a promoted slice |
 
-One concept has one production owner. A lab copy may remain for provenance or
-experimentation but MUST be marked non-authoritative after promotion.
+One concept has one runtime owner. Before an accepted promotion receipt, the
+lab is the sole transitional runtime authority for that slice. Transitional
+authority does not make the lab a clean production package: it MUST NOT publish
+the slice as a production distribution or be consumed by production or
+validation repositories. After promotion, the destination is the sole
+production owner and the lab copy is non-authoritative provenance or research.
 
 ## 4. Dependency direction
 
@@ -89,6 +93,11 @@ of scope unless a real external C++ consumer is admitted. The native transport
 mechanism requires its own accepted architecture decision before an extension
 runtime is transferred; this doctrine does not preselect a capsule, C ABI,
 shared-library ABI, or header-instantiation design.
+
+Any earlier contract that preselects source/CMake transport, recompilation of
+provider implementation sources, or another native mechanism is experimental
+evidence only. It is not a transfer contract and cannot admit a native
+consumer slice.
 
 ## 5. Package shape
 
@@ -178,12 +187,33 @@ imply an exact objective Hessian or generic regression support.
 Independent numerical or high-precision derivative checks are encouraged as
 validation oracles. They MUST NOT be selectable production backends.
 
+Every result contract distinguishes three statuses:
+
+1. solver convergence: accepted termination with finite, scaled residual and
+   feasibility diagnostics;
+2. numerical convergence: stability to the relevant tolerances, precision,
+   scaling, initialization, continuation, or search resolution; and
+3. physical validity: source, units, domain, branch or topology, stability,
+   and formulation-specific evidence support the claimed interpretation.
+
+No status implies a later one. A capability record MUST identify its exact
+input domain, parameter and source fingerprints, topology, derivative orders,
+local or global scope, stability or discovery status, certificate, tolerance
+set, accepted artifact, and explicit failure boundaries.
+
 ## 7. Evidence ownership
 
 Package repositories own compact tests for public contracts, native seams,
 equation contributions, derivative payloads, solver diagnostics, and a small
 set of source-backed scientific anchors. Tests protect behavior, not old file
 paths, source wording, private call graphs, or migration-era structure.
+
+Package tests MAY own test-only independent numerical or high-precision
+oracles for white-box tensors. The validation repository owns test-only
+physical and cross-package certificate oracles over installed immutable
+artifacts. Neither oracle is runtime API or production input. Shared equations,
+source, generated material, or copied kernels between an implementation and
+its oracle MUST be declared and MUST NOT count as independent evidence.
 
 The validation repository owns black-box physical and cross-package behavior.
 It installs wheels or other declared artifacts built from immutable commits;
@@ -218,10 +248,21 @@ Every promoted slice requires a machine-validated receipt containing at least:
 - displaced-owner and forbidden-dependency checks; and
 - the approved effective authority revision.
 
-A receipt cannot accept itself. Its validator MUST pass, and the user MUST
-approve the authority change. Before that moment the existing owner remains
-authoritative. After it, the destination is the sole production owner and the
-lab copy is non-authoritative.
+All operation, state, promotion, and validation receipts use one versioned
+envelope. The envelope records its schema version and hash; monotonic sequence;
+validator repository, commit, path, and hash; exact command and environment;
+artifact hashes; producer and independent reviewer; retained failed outcomes;
+supersession or revocation; and user approval bound to the exact receipt
+subject hash. Receipts MUST be replayable from repository identity, commit,
+tree, and immutable artifacts without requiring the original workstation path.
+Validation MUST prove that the artifact under test did not import the source
+checkout being validated.
+
+A receipt cannot accept itself. Its validator MUST pass, the producer and
+reviewer MUST differ for acceptance, and the user MUST approve the authority
+change. Before that moment the lab remains the sole transitional runtime
+authority. After it, the destination is the sole production owner and the lab
+copy is non-authoritative.
 
 The first runtime promotion is the smallest complete provider thermodynamic
 path. Later slices MUST reuse its public and native contracts rather than add
@@ -268,6 +309,15 @@ Remote creation, repository rename or transfer, issue transfer, Project
 mutation, publication, and release remain explicit external-write gates. This
 doctrine authorizes none of them by itself.
 
+Before any repository rename, transfer, or old-name reuse, the migration owner
+MUST capture an immutable machine-readable export, inventory Actions and
+reusable-workflow references, rehearse the intended sequence on sacrificial
+repositories, and record redirect behavior, namespace-reuse eligibility,
+metadata restoration, and every accepted loss. Each mutation requires an
+operation receipt stating preconditions, exact request, expected
+postconditions, retry and stop behavior, reversibility, irreversible effects,
+and recovery owner, followed by a state receipt proving the result.
+
 ## 11. Enforcement and amendment
 
 Every repository `AGENTS.md` and `CONTEXT.md` MUST name the doctrine revision it
@@ -287,7 +337,7 @@ authority changes only through accepted promotion receipts.
 | D-002 Policy authority | Canonical-policy review | Make organization `GOVERNANCE.md` the permanent policy authority | Prevents package or lab policy from controlling siblings | No | Organization policy |
 | D-003 Package shape | Repository comparison and user objective | Use clean, package-first hybrid repositories with no speculative skeleton content | Minimizes maintained surface | No | Each package owner |
 | D-004 Dependency direction | Ownership audit | Allow only one-way installed-artifact dependencies; forbid sibling-source and lab dependencies | Prevents duplicate owners and hidden coupling | No | Each package owner |
-| D-005 Provider SDK | Provider SDK audit | Require a narrow provider SDK and decide exact native transport separately | Blocks native extension transfer until resolved | Yes | Provider owner |
+| D-005 Provider SDK | Provider SDK audit | Require a narrow provider SDK and decide exact native transport separately; prior source/CMake preselection is experimental only | Blocks native extension transfer until resolved | Yes | Provider owner |
 | D-006 Derivative authority | User-approved derivative doctrine | Make CppAD the sole nonlinear production derivative authority | Removes derivative modes and duplicate kernels | No | Provider owner |
 | D-007 Implicit derivative order | Equilibrium Hessian sanity audit | Require every implicit and higher derivative order consumed by the solver | Prevents false exact-Hessian claims | No | Provider and solver owner |
 | D-008 Evidence boundary | Evidence-boundary audit | Combine package white-box receipts with validation black-box artifact campaigns | Separates implementation proof from physical acceptance | No | Package and validation owners |
@@ -295,4 +345,5 @@ authority changes only through accepted promotion receipts.
 | D-010 Architecture baseline | User optimization objective | Baseline after the first complete slice and reject code-golf gaming | Keeps the architecture ratchet meaningful | No | Each package owner |
 | D-011 Tracker ownership | Tracker design review | Use package-local issues and one organization Project | Aligns work with code ownership | No | Organization policy |
 | D-012 Release timing | Release review | Keep repositories public while deciding release timing and versions separately | Avoids premature release machinery | Yes | Release owner |
-| D-013 Lab role | User lab-role decision | Keep the lab active and preserved but non-authoritative for promoted slices | Preserves experimentation without dual production ownership | No | Lab and migration owners |
+| D-013 Lab role | User lab-role decision, clarified by independent review | Keep the lab as sole transitional runtime authority before promotion and non-authoritative provenance after promotion | Removes the transitional contradiction without creating dual production ownership | No | Lab and migration owners |
+| D-014 Pre-execution review remediation | Independent principal review and user-approved adjudication | Require whole-tree cutover inventory, portable hash-bound receipts, independent test-only oracle ownership, and rehearsed external operations | Repairs false-positive purge and unsafe cutover gates before execution | No | Organization and migration owners |

@@ -1,6 +1,6 @@
 # Organization Policy Ownership Boundary
 
-Current owner: canonical ecosystem doctrine revision 1.
+Current owner: canonical ecosystem doctrine revision 2.
 
 Allowed owners: organization profile, shared issue/PR templates, reusable
 workflow policy, and roadmap conventions.

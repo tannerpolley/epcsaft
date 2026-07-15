@@ -1,6 +1,6 @@
 # Organization Policy Repository Context
 
-`GOVERNANCE.md` revision 1 is the canonical local ecosystem doctrine.
+`GOVERNANCE.md` revision 2 is the canonical local ecosystem doctrine.
 
 `governance_source_of_truth: true`
 
@@ -8,6 +8,7 @@
 
 `runtime_source_of_truth: false`
 
-The transition source remains
-`~/Workspaces/Engineering/ePC-SAFT` at `64fdf314` until
-slice-specific promotion receipts say otherwise.
+The transition source remains the sole transitional runtime authority until
+slice-specific promotion receipts say otherwise. Exact local and remote commit
+identities are captured at each execution gate rather than frozen in this
+long-lived context file.

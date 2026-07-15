@@ -1,7 +1,7 @@
 # Organization Policy Repository Agent Contract
 
 Read `GOVERNANCE.md` before planning, reviewing, or changing any ePC-SAFT
-repository. Doctrine revision 1 is the canonical ecosystem policy.
+repository. Doctrine revision 2 is the canonical ecosystem policy.
 
 This repository owns organization profile, shared community files, reusable
 workflow policy, and Project conventions. Package-local behavior, tests,
