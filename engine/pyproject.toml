@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling>=1.26"]
-build-backend = "hatchling.build"
+requires = ["scikit-build-core>=0.12", "pybind11>=3.0"]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "epcsaft"
@@ -11,5 +11,10 @@ requires-python = ">=3.11"
 license = { file = "LICENSE" }
 dependencies = ["Pint>=0.25.3"]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/epcsaft"]
+[tool.scikit-build]
+minimum-version = "0.12"
+wheel.packages = ["src/epcsaft"]
+wheel.exclude = ["epcsaft/_native/**"]
+cmake.source-dir = "."
+cmake.version = ">=3.20"
+ninja.version = ">=1.11"
