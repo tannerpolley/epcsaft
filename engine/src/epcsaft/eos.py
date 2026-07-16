@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import combinations
+import math
 from typing import Final
+
+import pint
 
 from ._core import NativeModel as _NativeModel
 from .parameters import ParameterSet
 from .records import PairParameterRecord, SingleParameterRecord
-from .units import _error
+from .units import _error, _quantity, unit_registry
 
 
 _REQUIRED_SINGLE: Final = {
@@ -111,5 +114,53 @@ class EPCSAFT:
     def parameter_fingerprint(self) -> str:
         return self._parameter_fingerprint
 
+    def evaluate(
+        self,
+        *,
+        temperature: object,
+        molar_density: object,
+        mole_fractions: object,
+    ) -> EosResult:
+        temperature_k = _state_magnitude(temperature, "kelvin", "temperature")
+        density_molar = _state_magnitude(
+            molar_density, "mole / meter ** 3", "molar_density"
+        )
+        try:
+            fractions = tuple(float(value) for value in mole_fractions)  # type: ignore[union-attr]
+        except (TypeError, ValueError) as exc:
+            raise ValueError("invalid mole_fractions") from exc
+        if (
+            len(fractions) != len(self._component_ids)
+            or any(not math.isfinite(value) or value < 0.0 for value in fractions)
+            or abs(math.fsum(fractions) - 1.0) > 1.0e-12
+        ):
+            raise ValueError("invalid mole_fractions")
 
-__all__ = ("EPCSAFT",)
+        native = self._native.evaluate(temperature_k, density_molar, fractions)
+        return EosResult(
+            hard_chain=native.hard_chain,
+            dispersion=native.dispersion,
+            residual_helmholtz=native.residual_helmholtz,
+            compressibility_factor=native.compressibility_factor,
+            pressure=native.pressure * unit_registry.pascal,
+        )
+
+
+def _state_magnitude(value: object, unit: str, field: str) -> float:
+    quantity = _quantity(value, unit, field=field)
+    magnitude = float(quantity.magnitude)
+    if not math.isfinite(magnitude) or magnitude <= 0.0:
+        raise ValueError(f"{field} must be positive and finite")
+    return magnitude
+
+
+@dataclass(frozen=True, slots=True)
+class EosResult:
+    hard_chain: float
+    dispersion: float
+    residual_helmholtz: float
+    compressibility_factor: float
+    pressure: pint.Quantity
+
+
+__all__ = ("EPCSAFT", "EosResult")

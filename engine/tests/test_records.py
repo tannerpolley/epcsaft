@@ -34,6 +34,8 @@ def test_records_are_immutable_and_identifiers_are_exact() -> None:
         "ParameterSet",
         "ParameterError",
         "unit_registry",
+        "EPCSAFT",
+        "EosResult",
     )
 
     source = SourceRecord(

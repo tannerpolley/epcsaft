@@ -355,6 +355,8 @@ def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
         "ParameterSet",
         "ParameterError",
         "unit_registry",
+        "EPCSAFT",
+        "EosResult",
     )
     foreign = UnitRegistry()
     bundle = _from_records()
