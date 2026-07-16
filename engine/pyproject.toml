@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "epcsaft"
+version = "0.1.0.dev0"
+description = "Source-traceable parameter input records for ePC-SAFT"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+dependencies = ["Pint>=0.25.3"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/epcsaft"]
