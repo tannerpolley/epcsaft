@@ -29,9 +29,12 @@ PROVENANCE = {
 
 
 def test_records_are_immutable_and_identifiers_are_exact() -> None:
-    assert epcsaft.__all__ == ("ParameterError", "unit_registry")
-    assert not hasattr(epcsaft, "ParameterBundle")
-    assert not hasattr(epcsaft, "ParameterSet")
+    assert epcsaft.__all__ == (
+        "ParameterBundle",
+        "ParameterSet",
+        "ParameterError",
+        "unit_registry",
+    )
 
     source = SourceRecord(
         source_id="gross-sadowski-2001",
