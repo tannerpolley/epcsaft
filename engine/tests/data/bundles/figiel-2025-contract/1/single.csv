@@ -1,0 +1,4 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+potassium-charge-number,potassium-cation,charge_number,+1,,figiel-yu-held-2025,"Table 3, K+ row ion label",figiel-unknown
+potassium-born-diameter,potassium-cation,born_diameter,4.150,angstrom,figiel-yu-held-2025,"Table 3, K+ row, d_i^Born column",figiel-unknown
+potassium-solvation-factor,potassium-cation,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph, parenthetical statement that the solvation parameter is set to 1 for all ions",figiel-unknown

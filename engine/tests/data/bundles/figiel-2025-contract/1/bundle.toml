@@ -1,0 +1,42 @@
+schema_version = 1
+bundle_id = "figiel-2025-contract"
+bundle_version = 1
+purpose = "package-test-fixture"
+files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "correlations.toml"]
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, X.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term in ePC-SAFT. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "compact attributed factual package-test evidence"
+
+[[sources]]
+source_id = "ascani-held-2021"
+citation = "Ascani, M.; Held, C. Prediction of Salting-Out in Liquid-Liquid Two-Phase Systems with ePC-SAFT. Zeitschrift fuer anorganische und allgemeine Chemie 2021, 647, 1305-1314."
+doi = "10.1002/zaac.202100032"
+use_basis = "compact attributed factual package-test evidence"
+
+[[domains]]
+domain_id = "figiel-298-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+
+[[domains]]
+domain_id = "figiel-298-k"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+
+[[domains]]
+domain_id = "figiel-unknown"
+kind = "unknown"
+
+[[domains]]
+domain_id = "ascani-unknown"
+kind = "unknown"

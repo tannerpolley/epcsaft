@@ -577,3 +577,182 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
         "missing-record",
         "invalid-selection",
     }
+
+
+def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
+    gross = ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
+    assert gross.purpose == "installed-catalog"
+    assert gross.fingerprint == (
+        "sha256:3755d6d907178e8d8ce3fa6a25c7b7c0d670c9643bcb56ea16ad6555acb98c03"
+    )
+    assert {source.source_id: source.doi for source in gross.sources} == {
+        "gross-sadowski-2001": "10.1021/ie0003887"
+    }
+    assert tuple(component.component_id for component in gross.components) == (
+        "ethane",
+        "methane",
+    )
+    singles = {
+        (record.component_id, record.family): record
+        for record in gross.records
+        if isinstance(record, SingleParameterRecord)
+    }
+    expected = {
+        ("methane", "molar_mass"): (Decimal("0.016043"), "kilogram / mole"),
+        ("methane", "segment_count"): (Decimal("1.0000"), "dimensionless"),
+        ("methane", "segment_diameter"): (Decimal("3.7039"), "angstrom"),
+        ("methane", "dispersion_energy_over_k"): (Decimal("150.03"), "kelvin"),
+        ("ethane", "molar_mass"): (Decimal("0.03007"), "kilogram / mole"),
+        ("ethane", "segment_count"): (Decimal("1.6069"), "dimensionless"),
+        ("ethane", "segment_diameter"): (Decimal("3.5206"), "angstrom"),
+        ("ethane", "dispersion_energy_over_k"): (Decimal("191.42"), "kelvin"),
+    }
+    assert set(singles) == set(expected)
+    for key, (magnitude, unit) in expected.items():
+        value = singles[key].value
+        if unit == "dimensionless":
+            assert value == magnitude
+        else:
+            assert value.magnitude == magnitude
+            assert str(value.units) == unit
+        assert singles[key].source_id == "gross-sadowski-2001"
+        assert singles[key].locator.startswith("Table 2")
+
+    methane_domain = next(domain for domain in gross.domains if domain.domain_id == "methane-fit-range")
+    ethane_domain = next(domain for domain in gross.domains if domain.domain_id == "ethane-fit-range")
+    assert (methane_domain.temperature_min.magnitude, methane_domain.temperature_max.magnitude) == (
+        Decimal("97"),
+        Decimal("300"),
+    )
+    assert (ethane_domain.temperature_min.magnitude, ethane_domain.temperature_max.magnitude) == (
+        Decimal("90"),
+        Decimal("305"),
+    )
+    pair = next(record for record in gross.records if isinstance(record, PairParameterRecord))
+    assert (pair.component_id_a, pair.component_id_b, pair.family, pair.value) == (
+        "ethane",
+        "methane",
+        "k_ij",
+        Decimal("0"),
+    )
+    assert pair.locator == (
+        'p. 1254, paragraph beginning "Results for a ternary system of CO2-methane-ethane", '
+        'statement "one can safely assume a kij equal to 0"'
+    )
+    assert all(record.value != Decimal("0.0003") for record in gross.records if hasattr(record, "value"))
+    selected = gross.select(("ethane", "methane"))
+    assert selected.component_ids == ("ethane", "methane")
+    assert selected.fingerprint == (
+        "sha256:cb0c63530f96d51d5a24f48a2d02ae6567d163abdc373099ce096f7ff0a896f5"
+    )
+
+    fixture_path = Path(__file__).parent / "data" / "bundles" / "figiel-2025-contract" / "1"
+    fixture = ParameterBundle.from_path(fixture_path)
+    assert fixture.purpose == "package-test-fixture"
+    assert fixture.fingerprint == (
+        "sha256:202ad0ca74959db80e834ad8c22a11fdb1526df622e14cbacee4cdb0a7b9d02c"
+    )
+    assert {source.source_id: source.doi for source in fixture.sources} == {
+        "ascani-held-2021": "10.1002/zaac.202100032",
+        "figiel-yu-held-2025": "10.1021/acs.iecr.5c00475",
+    }
+    fixture_records = {record.record_id: record for record in fixture.records}
+    assert fixture_records["potassium-charge-number"].value == 1
+    assert fixture_records["potassium-born-diameter"].value.magnitude == Decimal("4.150")
+    assert fixture_records["potassium-solvation-factor"].value == Decimal("1")
+    assert fixture_records["potassium-iodide-kij"].value == Decimal("0")
+    assert not any(
+        isinstance(record, PairParameterRecord)
+        and {record.component_id_a, record.component_id_b}
+        == {"hydrogen-cation", "iodide-anion"}
+        and record.family == "k_ij"
+        for record in fixture.records
+    )
+    assert fixture_records["water-one-butanol-lij"].value == Decimal("-0.0044")
+    assert fixture_records["water-one-butanol-khb-ij"].value == Decimal("0.026")
+    assert fixture_records["water-relative-permittivity"].constant == Decimal("78.09")
+    diameter = fixture_records["water-segment-diameter-correlation"]
+    assert diameter.constant.magnitude == Decimal("2.7927")
+    assert tuple(
+        (term.amplitude.magnitude, term.exponent_coefficient.magnitude)
+        for term in diameter.terms
+    ) == (
+        (Decimal("10.11"), Decimal("-0.01775")),
+        (Decimal("-1.417"), Decimal("-0.01146")),
+    )
+    assert fixture_records["water-association-energy"].value.magnitude == Decimal("2425.7")
+    assert fixture_records["water-association-volume"].value == Decimal("0.04509")
+    assert {
+        (record.site_id, record.site_class, record.multiplicity)
+        for record in fixture.records
+        if isinstance(record, SiteRecord)
+    } == {("a", "a", 1), ("b", "b", 1)}
+    assert {
+        record_id: (
+            fixture_records[record_id].source_id,
+            fixture_records[record_id].locator,
+        )
+        for record_id in (
+            "potassium-born-diameter",
+            "potassium-iodide-kij",
+            "potassium-solvation-factor",
+            "water-association-energy",
+            "water-association-volume",
+            "water-one-butanol-khb-ij",
+            "water-one-butanol-lij",
+            "water-relative-permittivity",
+            "water-segment-diameter-correlation",
+        )
+    } == {
+        "potassium-born-diameter": (
+            "figiel-yu-held-2025",
+            "Table 3, K+ row, d_i^Born column",
+        ),
+        "potassium-iodide-kij": (
+            "figiel-yu-held-2025",
+            "Table 4, I- row, K+ column",
+        ),
+        "potassium-solvation-factor": (
+            "figiel-yu-held-2025",
+            "p. 9411, Model Parameters paragraph, parenthetical statement that the solvation parameter is set to 1 for all ions",
+        ),
+        "water-association-energy": (
+            "figiel-yu-held-2025",
+            "Table 2, water column, epsilon^AiBi/k_B row",
+        ),
+        "water-association-volume": (
+            "figiel-yu-held-2025",
+            "Table 2, water column, kappa^AiBi row",
+        ),
+        "water-one-butanol-khb-ij": (
+            "ascani-held-2021",
+            "Table 4, k_hb_ij row, 1-Butanol column",
+        ),
+        "water-one-butanol-lij": (
+            "ascani-held-2021",
+            "Table 4, l_ij row, 1-Butanol column",
+        ),
+        "water-relative-permittivity": (
+            "figiel-yu-held-2025",
+            "Table 1, water row, dielectric constant column",
+        ),
+        "water-segment-diameter-correlation": (
+            "figiel-yu-held-2025",
+            "Table 2 footnote b, water segment-diameter correlation",
+        ),
+    }
+
+    assert _error_code(
+        lambda: ParameterBundle.from_catalog("figiel-2025-contract", version=1)
+    ) == "missing-record"
+    catalog = Path(epcsaft.__file__).parent / "data" / "bundles"
+    assert sorted(
+        path.relative_to(catalog).as_posix()
+        for path in catalog.rglob("*")
+        if path.is_file()
+    ) == [
+        "gross-2001-methane-ethane/1/bundle.toml",
+        "gross-2001-methane-ethane/1/components.csv",
+        "gross-2001-methane-ethane/1/pair.csv",
+        "gross-2001-methane-ethane/1/single.csv",
+    ]
