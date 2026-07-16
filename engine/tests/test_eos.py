@@ -1,7 +1,9 @@
 from dataclasses import FrozenInstanceError
+import math
 from pathlib import Path
 
 import pytest
+from pint import UnitRegistry
 
 import epcsaft
 from epcsaft import ParameterBundle, ParameterError
@@ -43,11 +45,20 @@ GOLDENS = (
     ),
 )
 
+AVOGADRO = 6.02214076e23
+GAS_CONSTANT = 8.31446261815324
+
+
+def _model(component_ids: tuple[str, ...] = ("methane", "ethane")) -> EPCSAFT:
+    return EPCSAFT(
+        ParameterBundle.from_catalog(
+            "gross-2001-methane-ethane", version=1
+        ).select(component_ids)
+    )
+
 
 def test_native_model_boundary_is_ordered_strict_and_immutable() -> None:
-    bundle = ParameterBundle.from_catalog(
-        "gross-2001-methane-ethane", version=1
-    )
+    bundle = ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
     parameters = bundle.select(("methane", "ethane"))
     model = EPCSAFT(parameters)
 
@@ -95,12 +106,11 @@ def test_gross_hard_chain_dispersion_and_pressure_goldens(
     z: float,
     pressure: float,
 ) -> None:
-    parameters = ParameterBundle.from_catalog(
-        "gross-2001-methane-ethane", version=1
-    ).select(("methane", "ethane"))
-    result = EPCSAFT(parameters).evaluate(
-        temperature=temperature * unit_registry.kelvin,
-        molar_density=density * unit_registry.mole / unit_registry.meter**3,
+    model = _model()
+    foreign = UnitRegistry()
+    result = model.evaluate(
+        temperature=temperature * 1.8 * foreign.degree_Rankine,
+        molar_density=density / 1000 * foreign.kilomole / foreign.meter**3,
         mole_fractions=fractions,
     )
 
@@ -117,3 +127,113 @@ def test_gross_hard_chain_dispersion_and_pressure_goldens(
     assert result.pressure.to("pascal").magnitude == pytest.approx(
         pressure, rel=5e-12, abs=1e-6
     )
+
+    step = density * 1.0e-3
+
+    def residual_at(value: float) -> float:
+        return model.evaluate(
+            temperature=temperature * unit_registry.kelvin,
+            molar_density=value * unit_registry.mole / unit_registry.meter**3,
+            mole_fractions=fractions,
+        ).residual_helmholtz
+
+    derivative = (
+        -residual_at(density + 2 * step)
+        + 8 * residual_at(density + step)
+        - 8 * residual_at(density - step)
+        + residual_at(density - 2 * step)
+    ) / (12 * step)
+    reconstructed = (
+        (1 + density * derivative) * density * GAS_CONSTANT * temperature
+    )
+    assert result.pressure.to("pascal").magnitude == pytest.approx(
+        reconstructed, rel=2e-7
+    )
+
+
+def test_evaluate_is_permutation_invariant() -> None:
+    state = {
+        "temperature": 250 * unit_registry.kelvin,
+        "molar_density": 8000 * unit_registry.mole / unit_registry.meter**3,
+    }
+    forward = _model().evaluate(**state, mole_fractions=(0.4, 0.6))
+    reverse = _model(("ethane", "methane")).evaluate(
+        **state, mole_fractions=(0.6, 0.4)
+    )
+
+    for field in (
+        "hard_chain",
+        "dispersion",
+        "residual_helmholtz",
+        "compressibility_factor",
+    ):
+        assert getattr(reverse, field) == pytest.approx(getattr(forward, field))
+    assert reverse.pressure.to("pascal").magnitude == pytest.approx(
+        forward.pressure.to("pascal").magnitude
+    )
+
+
+def test_evaluate_rejects_invalid_states_and_has_physical_limits() -> None:
+    model = _model()
+    valid = {
+        "temperature": 250 * unit_registry.kelvin,
+        "molar_density": 8000 * unit_registry.mole / unit_registry.meter**3,
+        "mole_fractions": (0.4, 0.6),
+    }
+    invalid_states = (
+        {"temperature": 250.0},
+        {"molar_density": 8000.0},
+        {"temperature": 250 * unit_registry.meter},
+        {"molar_density": 8000 * unit_registry.kelvin},
+        {"temperature": 0 * unit_registry.kelvin},
+        {"temperature": -1 * unit_registry.kelvin},
+        {"temperature": math.nan * unit_registry.kelvin},
+        {"temperature": math.inf * unit_registry.kelvin},
+        {"molar_density": 0 * unit_registry.mole / unit_registry.meter**3},
+        {"molar_density": -1 * unit_registry.mole / unit_registry.meter**3},
+        {
+            "molar_density": math.nan
+            * unit_registry.mole
+            / unit_registry.meter**3
+        },
+        {
+            "molar_density": math.inf
+            * unit_registry.mole
+            / unit_registry.meter**3
+        },
+        {"mole_fractions": (1.0,)},
+        {"mole_fractions": (-0.1, 1.1)},
+        {"mole_fractions": (math.nan, math.nan)},
+        {"mole_fractions": (0.4, 0.600000000002)},
+    )
+    for override in invalid_states:
+        state = {**valid, **override}
+        with pytest.raises(ValueError):
+            model.evaluate(**state)
+
+    low_density = 1.0e-6
+    low = model.evaluate(
+        temperature=250 * unit_registry.kelvin,
+        molar_density=low_density * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=(0.4, 0.6),
+    )
+    assert abs(low.residual_helmholtz) < 1.0e-8
+    assert abs(low.compressibility_factor - 1.0) < 1.0e-8
+    assert low.pressure.to("pascal").magnitude == pytest.approx(
+        low_density * GAS_CONSTANT * 250, rel=1.0e-8
+    )
+
+    temperature = 250.0
+    diameter = 3.7039 * (1 - 0.12 * math.exp(-3 * 150.03 / temperature))
+    close_packing = math.pi / (3 * math.sqrt(2))
+    close_density = close_packing * 6 / (
+        math.pi * (AVOGADRO / 1.0e30) * diameter**3
+    )
+    with pytest.raises(ValueError):
+        model.evaluate(
+            temperature=temperature * unit_registry.kelvin,
+            molar_density=(close_density * (1 + 1.0e-12))
+            * unit_registry.mole
+            / unit_registry.meter**3,
+            mole_fractions=(1.0, 0.0),
+        )

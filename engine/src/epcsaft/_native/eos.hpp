@@ -5,6 +5,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <stdexcept>
 #include <type_traits>
 #include <vector>
 
@@ -124,6 +125,14 @@ HelmholtzResult<Scalar> residual_helmholtz(
                 std::pow(diameter[i], static_cast<int>(order));
         }
         zeta[order] = (PI / 6.0) * number_density * moment;
+    }
+    if constexpr (std::is_same_v<Scalar, double>) {
+        const double close_packing = PI / (3.0 * std::sqrt(2.0));
+        if (zeta[3] >= close_packing) {
+            throw std::invalid_argument(
+                "packing fraction is at or above close packing"
+            );
+        }
     }
 
     const Scalar one_minus_eta = Scalar(1.0) - zeta[3];
