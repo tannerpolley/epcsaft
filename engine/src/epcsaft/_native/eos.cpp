@@ -6,6 +6,7 @@
 #include "derivatives.hpp"
 #include "electrolyte.hpp"
 #include "helmholtz.hpp"
+#include "phase_block.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -111,6 +112,18 @@ NativeModel::NativeModel(NativeParameters parameters)
             }
         }
     }
+}
+
+bool NativeModel::supports_native_sdk_v1() const {
+    return detail::supports_pure_phase_block(parameters_);
+}
+
+NativePurePhaseBlock NativeModel::evaluate_pure_phase(
+    double temperature,
+    double amount,
+    double volume
+) const {
+    return detail::pure_phase_block(temperature, amount, volume, parameters_);
 }
 
 NativeResult NativeModel::evaluate(

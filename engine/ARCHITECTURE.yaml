@@ -1,5 +1,5 @@
 version: 2
-status: accepted
+status: accepted-with-local-candidate
 
 authority:
   effective_receipt: promotion-0012-provider-full-candidate
@@ -7,6 +7,14 @@ authority:
     Neutral, associating, and bounded Figiel electrolyte EOS at explicit molar
     density or specified pressure, plus bounded electrolyte reference states.
   candidate_promotion_status: promoted
+
+local_candidate:
+  name: native-sdk-v1-pure-phase-block
+  status: provider-evidence-passed-consumer-gate-pending
+  scope: >-
+    Model-bound fixed-temperature pure nonassociating phase Helmholtz value,
+    gradient, Hessian, third tensor, pressure, and chemical-potential diagnostic.
+  exclusions: mixture, association, electrolyte, density solve, phase identity, Ipopt, and equilibrium
 
 accepted_scope: >-
   Source-backed neutral, associating, and bounded ionic SSM+DS residual EOS at
@@ -25,6 +33,9 @@ owners:
   electrolyte: src/epcsaft/_native/electrolyte.hpp
   born_ssm_ds: src/epcsaft/_native/born.hpp
   nonlinear_derivatives: src/epcsaft/_native/derivatives.hpp
+  native_phase_block: src/epcsaft/_native/phase_block.hpp
+  native_consumer_transport: src/epcsaft/_native/native_sdk.cpp
+  native_consumer_declaration: src/epcsaft/include/epcsaft/native_sdk_v1.h
   density_closure: src/epcsaft/_native/density.hpp
   electrolyte_reference: src/epcsaft/reference.py
   installed_parameter_data: src/epcsaft/data/bundles
@@ -39,6 +50,7 @@ public_surface:
     - EosResult
     - DensityDiagnostics
     - EosError
+    - native_sdk
   runtime_dependencies:
     - Pint
   direct_build_dependencies:
@@ -50,18 +62,24 @@ public_surface:
   native_modules:
     - epcsaft._core
   native_targets: 1
-  native_sdk_entries: []
+  native_sdk_entries:
+    - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_pure_phase
+      coordinate_order: [amount_mol, volume_m3]
+      derivative_order: 3
+      status: provider-evidence-passed-consumer-gate-pending
 
 manifest:
-  tracked_files: 64
+  tracked_files: 69
   production_python_files: 9
-  native_source_files: 10
+  native_source_files: 13
+  public_native_headers: 1
   installed_data_files: 15
-  package_test_files: 10
-  physical_production_lines: 4205
-  physical_package_test_lines: 2854
-  physical_documentation_lines: 1221
-  measurement: wc -l over tracked provider Python, C++, package tests, and governing documentation
+  package_test_files: 11
+  physical_production_lines: 4664
+  physical_package_test_lines: 3108
+  physical_documentation_lines: 1338
+  measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
   oversized_files:
@@ -72,7 +90,7 @@ manifest:
     - path: src/epcsaft/_bundle_io.py
       physical_lines: 417
     - path: tests/test_parameters.py
-      physical_lines: 1008
+      physical_lines: 1009
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 
 excluded:
@@ -81,7 +99,7 @@ excluded:
   - regression and parameter fitting
   - ideal-gas and total caloric properties
   - multi-salt and alternate-convention reference-state workflows
-  - native consumer SDK
+  - mixture, associating, electrolyte, and reactive native phase blocks
   - alternate derivative backends
   - compatibility interfaces
   - release and workflow machinery

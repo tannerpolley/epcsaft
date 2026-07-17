@@ -40,6 +40,8 @@ struct NativeResult final {
     std::optional<NativeDensityDiagnostics> density_diagnostics;
 };
 
+struct NativePurePhaseBlock;
+
 class NativeModel final {
 public:
     explicit NativeModel(NativeParameters parameters);
@@ -53,6 +55,12 @@ public:
         double pressure,
         const std::vector<double>& mole_fractions,
         const std::string& phase
+    ) const;
+    bool supports_native_sdk_v1() const;
+    NativePurePhaseBlock evaluate_pure_phase(
+        double temperature,
+        double amount,
+        double volume
     ) const;
 
 private:

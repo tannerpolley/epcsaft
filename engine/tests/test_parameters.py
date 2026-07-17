@@ -434,6 +434,7 @@ def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
         "EosResult",
         "DensityDiagnostics",
         "EosError",
+        "native_sdk",
     )
     foreign = UnitRegistry()
     bundle = _from_records()

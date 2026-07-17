@@ -367,7 +367,40 @@ route admits only mechanically stable roots. Explicit-density evaluation does
 not reject a finite state solely because the slope is negative; it reports the
 mathematical EOS result and does not certify that state as stable.
 
-## 9. Electrolyte reference states
+## 9. Native pure-phase Helmholtz block
+
+The version-1 native consumer contract evaluates one fixed-temperature pure,
+nonassociating phase at positive amount `n [mol]` and volume `V [m^3]`. Define
+
+```text
+rho_m   = n/V
+n_ref   = 1 mol
+rho_ref = 1 mol m^-3
+n_hat   = n/n_ref
+
+Phi = A/(R T n_ref)
+    = n_hat * [ln(rho_m/rho_ref) - 1 + a^r(T,rho_m)].
+```
+
+The logarithmic term supplies the complete ideal density dependence needed by
+nonreactive phase equilibrium. Its reference contributes only a conserved
+species-linear constant; it is not a reactive standard-state or ideal-gas
+caloric model. CppAD records this single `Phi(n,V)` owner and returns the value,
+gradient, Hessian, and symmetric third tensor in row-major `(n_mol,V_m3)`
+order. Pressure and chemical potential diagnostics are derived from that same
+gradient:
+
+```text
+P [Pa]  = -R T n_ref Phi_V
+mu/(RT) = Phi_n.
+```
+
+The phase block rejects mixture, association, charge, invalid source domain,
+packing failure, and nonfinite states. It does not select liquid or vapor,
+solve density, or certify equilibrium. One model-bound capsule is evaluated
+independently at every candidate phase state.
+
+## 10. Electrolyte reference states
 
 `EPCSAFT.reference_state` holds a salt-free solvent mole composition fixed and
 dilutes one cation/anion formula unit along an exactly electroneutral path. It
@@ -406,7 +439,7 @@ water, methanol, ethanol, or a selected mixture of those solvents at
 Multi-salt reference paths, non-electroneutral dilution, automatic species
 generation, and alternative concentration conventions remain closed.
 
-## 10. Density closure
+## 11. Density closure
 
 Specified-pressure evaluation solves
 
@@ -430,7 +463,7 @@ lost rather than relabelling the remaining root. Failed closure reports through
 `EosError`; this local root calculation is not a global phase-stability or
 critical-point certificate.
 
-## 11. Domain and rejection rules
+## 12. Domain and rejection rules
 
 Finite temperature bounds attached to the selected source records are
 intersected by the resolver and enforced for every topology. A record whose
@@ -463,13 +496,13 @@ Construction or evaluation fails on:
   instability of a specified-pressure root; and
 - a requested derivative or property whose defining Jacobian is singular.
 
-## 12. Deliberate exclusions
+## 13. Deliberate exclusions
 
 This specification does not admit Bjerrum pairing, ion-pair equilibrium,
 reaction equilibrium, alternate dielectric rules, direct/SSM-only Born modes,
 analytic derivative modes, ideal-gas caloric data, phase equilibrium,
-regression, multi-salt reference paths, alternate single-ion conventions, or a
-runtime derivative/SDK contract. ADR 0001 selects the future native transport,
-but it adds no public symbol or capability until its separate implementation
-and evidence gate passes. Adding any other exclusion requires a new source-
-backed capability design rather than a flag in this model.
+regression, multi-salt reference paths, alternate single-ion conventions,
+mixture/associating/electrolyte native phase blocks, or reactive standard-state
+chemical potentials. ADR 0001 admits only the fixed-temperature pure
+nonassociating local SDK candidate. Adding any other exclusion requires a new
+source-backed capability design rather than a flag in this model.

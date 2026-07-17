@@ -1,4 +1,5 @@
 #include "eos.hpp"
+#include "native_sdk.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -121,4 +122,6 @@ PYBIND11_MODULE(_core, module) {
         }))
         .def("evaluate", &epcsaft::NativeModel::evaluate)
         .def("evaluate_pressure", &epcsaft::NativeModel::evaluate_pressure);
+
+    module.def("native_sdk_v1", &epcsaft::make_native_sdk_v1);
 }

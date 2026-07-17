@@ -89,6 +89,7 @@ def test_native_model_boundary_is_ordered_strict_and_immutable() -> None:
         "EosResult",
         "DensityDiagnostics",
         "EosError",
+        "native_sdk",
     )
 
 

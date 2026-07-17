@@ -39,6 +39,7 @@ def test_records_are_immutable_and_identifiers_are_exact() -> None:
         "EosResult",
         "DensityDiagnostics",
         "EosError",
+        "native_sdk",
     )
 
     source = SourceRecord(

@@ -7,10 +7,16 @@ Before work, read doctrine revision 2 at
 `https://github.com/ePC-SAFT/.github/blob/main/GOVERNANCE.md`. Local policy may
 narrow that doctrine but must not contradict it.
 
-This repository owns one provider lifecycle:
+This repository owns one state/property lifecycle:
 
 ```text
 ParameterBundle -> ParameterSet -> EPCSAFT.evaluate -> EosResult
+```
+
+It also owns one narrow native consumer boundary:
+
+```text
+EPCSAFT -> native_sdk(model) -> one stateless pure phase block
 ```
 
 The accepted provider evaluates neutral, associating, and bounded ionic SSM+DS
@@ -26,8 +32,9 @@ package release or broaden any capability beyond the receipt.
 The provider owns parameters, EOS/state/property evaluation, density closure,
 CppAD, and any admitted native consumer transport. It does not own phase
 equilibrium or discovery, Ipopt, regression, Ceres, cross-package validation,
-or reaction/species equilibrium. ADR 0001 selects the future native transport
-but adds no SDK runtime until its separate evidence gate passes. Do not add
+or reaction/species equilibrium. The local ADR 0001 capsule candidate evaluates
+only fixed-temperature pure nonassociating phase states; it is not promoted for
+equilibrium consumption until its separate cross-wheel gate passes. Do not add
 compatibility APIs, mutable scientific dictionaries,
 backend selectors, hidden physical defaults, duplicate equation owners, or
 runtime dependencies on the lab, migration repository, or sibling sources.

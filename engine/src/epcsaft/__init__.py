@@ -1,4 +1,4 @@
-from .eos import DensityDiagnostics, EPCSAFT, EosError, EosResult
+from .eos import DensityDiagnostics, EPCSAFT, EosError, EosResult, native_sdk
 from .parameters import ParameterBundle, ParameterSet
 from .units import ParameterError, unit_registry
 
@@ -11,4 +11,5 @@ __all__ = (
     "EosResult",
     "DensityDiagnostics",
     "EosError",
+    "native_sdk",
 )

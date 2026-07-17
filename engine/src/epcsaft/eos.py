@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Iterable
 import pint
 
 from ._core import NativeModel as _NativeModel
+from ._core import native_sdk_v1 as _native_sdk_v1
 from ._resolve import _ResolvedModel, _resolve_model
 from .parameters import ParameterSet
 from .records import (
@@ -18,6 +19,15 @@ from .units import ParameterError, _error, _quantity, unit_registry
 
 if TYPE_CHECKING:
     from .reference import ElectrolyteReference
+
+
+_NATIVE_SDK_V1_PARAMETER_FINGERPRINTS = frozenset(
+    {
+        "sha256:5f836aa84935df70be2e5cffae51b178a7b797c2cee036e9ff47d8097ca94bbf",
+        "sha256:288fbcaa1304881c16f64c3a784eeed19b75c58cca4558f92a21268e5e91258a",
+        "sha256:9bfbc8d7789e51609945e61dbdf7a020decc8f9e31b408b0977724c7cb3e1551",
+    }
+)
 
 
 def _magnitude(
@@ -309,6 +319,29 @@ class EPCSAFT:
         )
 
 
+def native_sdk(model: EPCSAFT) -> object:
+    """Return the model-bound version-1 native provider capsule."""
+    if type(model) is not EPCSAFT:
+        raise _eos_error("unsupported-native-sdk", reason="expected-exact-EPCSAFT-model")
+    fingerprint = model._parameter_fingerprint
+    if fingerprint not in _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS:
+        raise _eos_error(
+            "unsupported-native-sdk",
+            reason="unadmitted-parameter-fingerprint",
+        )
+    minimum = math.nan if model._model.temperature_min_k is None else model._model.temperature_min_k
+    maximum = math.nan if model._model.temperature_max_k is None else model._model.temperature_max_k
+    try:
+        return _native_sdk_v1(
+            model._native,
+            fingerprint,
+            minimum,
+            maximum,
+        )
+    except (RuntimeError, ValueError) as exc:
+        raise _eos_error("unsupported-native-sdk", reason=str(exc)) from exc
+
+
 def _state_magnitude(value: object, unit: str, field: str) -> float:
     try:
         quantity = _quantity(value, unit, field=field)
@@ -352,4 +385,4 @@ class DensityDiagnostics:
     branch: str
 
 
-__all__ = ("EPCSAFT", "EosError", "EosResult", "DensityDiagnostics")
+__all__ = ("EPCSAFT", "EosError", "EosResult", "DensityDiagnostics", "native_sdk")

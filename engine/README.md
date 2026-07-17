@@ -45,6 +45,19 @@ gamma_pm = reference.at_molality(
 ).mean_ionic_activity_coefficient_molality
 ```
 
+For a native equilibrium consumer, `native_sdk(model)` returns the model-bound
+capsule `epcsaft.native_sdk.v1`. Version 1 accepts only a pure nonassociating
+methane, ethane, or propane model and evaluates one fixed-temperature phase at
+explicit amount and volume. It returns the complete isothermal phase Helmholtz
+value on the documented reference basis plus its gradient, Hessian, and third
+tensor. The declaration-only C header is installed at
+`epcsaft/include/epcsaft/native_sdk_v1.h`.
+
+The capsule evaluates one phase state at a time. A consumer uses the same
+immutable model for every candidate phase; the provider does not construct
+liquid/vapor objects or own phase identity, Ipopt, equilibrium constraints, or
+certification. See `docs/adr/0001-native-consumer-transport.md`.
+
 `EosResult` contains contribution and total residual Helmholtz energies,
 compressibility, pressure, molar density, component residual chemical
 potentials, fugacity coefficients when defined, and residual entropy, internal
@@ -77,4 +90,4 @@ convergence is not a claim of global phase stability or literature validation.
 Accepted promotion receipt `promotion-0012-provider-full-candidate` makes this
 repository the sole production owner of the stated provider scope. The receipt
 does not claim a release, equilibrium/global-stability capability, generic
-electrolyte coverage, or a native consumer SDK runtime.
+electrolyte coverage, or promotion of the later local native-SDK candidate.

@@ -85,8 +85,10 @@ pybind11_add_module(
     NO_EXTRAS
     src/epcsaft/_native/eos.cpp
     src/epcsaft/_native/module.cpp
+    src/epcsaft/_native/native_sdk.cpp
 )
 target_include_directories(_core PRIVATE src/epcsaft/_native)
+target_include_directories(_core PRIVATE src/epcsaft/include)
 target_include_directories(_core SYSTEM PRIVATE "${EPCSAFT_CPPAD_INCLUDE_DIR}")
 if(EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR)
     target_include_directories(

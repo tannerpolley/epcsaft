@@ -32,9 +32,11 @@ release or a claim beyond the recorded capability boundaries.
 
 Phase equilibrium, phase discovery/global stability, reaction and species
 equilibrium, multi-salt reference paths, regression, and ideal-gas caloric data
-remain outside this repository's current capability. ADR 0001 selects a narrow
-capsule transport for the first pure-saturation consumer; the transport is not
-implemented or admitted yet.
+remain outside this repository's current capability. The local ADR 0001
+provider candidate adds one model-bound capsule for fixed-temperature pure,
+nonassociating phase Helmholtz values and CppAD derivatives through third order.
+It has no phase identity, density root, Ipopt, or equilibrium result and remains
+unpromoted until the separate installed consumer gate passes.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.
