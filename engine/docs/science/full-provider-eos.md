@@ -400,6 +400,31 @@ packing failure, and nonfinite states. It does not select liquid or vapor,
 solve density, or certify equilibrium. One model-bound capsule is evaluated
 independently at every candidate phase state.
 
+For the first pure-methane regression slice, the same defining function accepts
+the active coordinate order
+`(n_mol,V_m3,m,sigma_angstrom,epsilon_over_k_kelvin)` and returns its gradient
+and Hessian. The pressure and chemical-potential parameter Jacobians are exact
+rows of that Hessian:
+
+```text
+dP/dq_j       = -R T Phi_(V,q_j)
+d(mu/RT)/dq_j = Phi_(n,q_j).
+```
+
+The regression package may lift each observed state's two phase volumes and
+assemble its own pressure, potential, and density residuals without copying an
+EOS equation or differentiating a density solver. The provider does not own
+target data, residual scaling, parameter bounds, Ceres, identifiability, or fit
+acceptance. Mixture, association, electrolyte, and binary-interaction active
+parameters remain outside this version-1 parameterized block.
+
+The first regression formulation fixes each phase amount at `1 mol`, uses
+volume as the only row-local phase coordinate, and must reject coalesced or
+mechanically unstable candidate phases. Its immutable receipt retains the
+actual parameter tuple, units, transforms/scales, bounds, and source
+fingerprint; the provider's returned fingerprint continues to identify the
+source model rather than the mutable trial point.
+
 ## 10. Electrolyte reference states
 
 `EPCSAFT.reference_state` holds a salt-free solvent mole composition fixed and

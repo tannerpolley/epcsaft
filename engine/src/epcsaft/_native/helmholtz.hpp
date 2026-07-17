@@ -68,6 +68,14 @@ Scalar scalar_exp(const Scalar& value) {
 }
 
 template <typename Scalar>
+Scalar scalar_sqrt(const Scalar& value) {
+    if constexpr (std::is_same_v<Scalar, double>) {
+        return std::sqrt(value);
+    }
+    return CppAD::sqrt(value);
+}
+
+template <typename Scalar>
 Scalar polynomial(const std::array<Scalar, 7>& coefficients, const Scalar& eta) {
     Scalar value = coefficients.back();
     for (std::size_t index = coefficients.size() - 1; index > 0; --index) {
@@ -76,10 +84,10 @@ Scalar polynomial(const std::array<Scalar, 7>& coefficients, const Scalar& eta) 
     return value;
 }
 
-template <typename Scalar>
+template <typename Scalar, typename Parameters>
 std::vector<Scalar> segment_sigma(
     const Scalar& temperature,
-    const NativeParameters& parameters
+    const Parameters& parameters
 ) {
     std::vector<Scalar> sigma(
         parameters.sigma_constant.begin(), parameters.sigma_constant.end()
@@ -93,10 +101,10 @@ std::vector<Scalar> segment_sigma(
     return sigma;
 }
 
-template <typename Scalar>
+template <typename Scalar, typename Parameters>
 std::vector<Scalar> segment_diameter(
     const Scalar& temperature,
-    const NativeParameters& parameters,
+    const Parameters& parameters,
     const std::vector<Scalar>& sigma
 ) {
     std::vector<Scalar> diameter(sigma.size());
@@ -112,12 +120,12 @@ std::vector<Scalar> segment_diameter(
     return diameter;
 }
 
-template <typename Scalar>
+template <typename Scalar, typename Parameters>
 HelmholtzResult<Scalar> residual_helmholtz(
     const Scalar& temperature,
     const Scalar& molar_density,
     const std::vector<Scalar>& mole_fractions,
-    const NativeParameters& parameters,
+    const Parameters& parameters,
     const std::vector<Scalar>& sigma,
     const std::vector<Scalar>& diameter,
     const std::vector<Scalar>& site_fraction,
@@ -203,10 +211,10 @@ HelmholtzResult<Scalar> residual_helmholtz(
     for (std::size_t i = 0; i < size; ++i) {
         for (std::size_t j = 0; j < size; ++j) {
             const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j]);
-            const double epsilon_ij =
+            const Scalar epsilon_ij =
                 parameters.charge_number[i] * parameters.charge_number[j] > 0
-                ? 0.0
-                : std::sqrt(
+                ? Scalar(0.0)
+                : scalar_sqrt(
                     parameters.dispersion_energy_over_k[i] *
                     parameters.dispersion_energy_over_k[j]
                 ) * (1.0 - parameters.k_ij[i * size + j]);

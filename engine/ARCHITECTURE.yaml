@@ -13,8 +13,9 @@ local_candidate:
   status: provider-evidence-passed-consumer-gate-pending
   scope: >-
     Model-bound fixed-temperature pure nonassociating phase Helmholtz value,
-    gradient, Hessian, third tensor, pressure, and chemical-potential diagnostic.
-  exclusions: mixture, association, electrolyte, density solve, phase identity, Ipopt, and equilibrium
+    state gradient/Hessian/third tensor, active pure-parameter gradient/Hessian,
+    pressure, and chemical-potential diagnostic.
+  exclusions: mixture, association, electrolyte, binary fitted parameters, density solve, phase identity, Ipopt, Ceres, equilibrium, and regression targets
 
 accepted_scope: >-
   Source-backed neutral, associating, and bounded ionic SSM+DS residual EOS at
@@ -68,6 +69,11 @@ public_surface:
       coordinate_order: [amount_mol, volume_m3]
       derivative_order: 3
       status: provider-evidence-passed-consumer-gate-pending
+    - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_pure_phase_parameters
+      coordinate_order: [amount_mol, volume_m3, segment_count, segment_diameter_angstrom, dispersion_energy_over_k]
+      derivative_order: 2
+      status: provider-evidence-passed-consumer-gate-pending
 
 manifest:
   tracked_files: 69
@@ -76,9 +82,9 @@ manifest:
   public_native_headers: 1
   installed_data_files: 15
   package_test_files: 11
-  physical_production_lines: 4664
-  physical_package_test_lines: 3108
-  physical_documentation_lines: 1338
+  physical_production_lines: 4956
+  physical_package_test_lines: 3247
+  physical_documentation_lines: 1419
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.

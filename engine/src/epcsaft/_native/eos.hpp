@@ -41,6 +41,7 @@ struct NativeResult final {
 };
 
 struct NativePurePhaseBlock;
+struct NativeParameterizedPurePhaseBlock;
 
 class NativeModel final {
 public:
@@ -61,6 +62,14 @@ public:
         double temperature,
         double amount,
         double volume
+    ) const;
+    NativeParameterizedPurePhaseBlock evaluate_pure_phase_parameters(
+        double temperature,
+        double amount,
+        double volume,
+        double segment_count,
+        double segment_diameter_angstrom,
+        double dispersion_energy_over_k
     ) const;
 
 private:

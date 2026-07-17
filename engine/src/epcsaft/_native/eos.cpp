@@ -126,6 +126,25 @@ NativePurePhaseBlock NativeModel::evaluate_pure_phase(
     return detail::pure_phase_block(temperature, amount, volume, parameters_);
 }
 
+NativeParameterizedPurePhaseBlock NativeModel::evaluate_pure_phase_parameters(
+    double temperature,
+    double amount,
+    double volume,
+    double segment_count,
+    double segment_diameter_angstrom,
+    double dispersion_energy_over_k
+) const {
+    return detail::parameterized_pure_phase_block(
+        temperature,
+        amount,
+        volume,
+        segment_count,
+        segment_diameter_angstrom,
+        dispersion_energy_over_k,
+        parameters_
+    );
+}
+
 NativeResult NativeModel::evaluate(
     double temperature,
     double molar_density,

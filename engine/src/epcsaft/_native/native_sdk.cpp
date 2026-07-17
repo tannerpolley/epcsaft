@@ -39,6 +39,8 @@ struct NativeSdkEndpoint final {
               sizeof(epcsaft_phase_block_result_v1),
               this,
               &NativeSdkEndpoint::evaluate,
+              sizeof(epcsaft_parameterized_phase_block_result_v1),
+              &NativeSdkEndpoint::evaluate_parameters,
           } {}
 
     static int evaluate(
@@ -95,9 +97,93 @@ struct NativeSdkEndpoint final {
             );
             result->helmholtz_over_rt_reference_amount =
                 block.helmholtz_over_rt_reference_amount;
+            std::copy(
+                block.gradient.begin(), block.gradient.end(), result->gradient
+            );
+            std::copy(
+                block.hessian.begin(), block.hessian.end(), result->hessian
+            );
+            std::copy(block.third.begin(), block.third.end(), result->third);
+            result->pressure_pa = block.pressure_pa;
+            result->chemical_potential_over_rt = block.chemical_potential_over_rt;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown provider evaluation failure"
+            );
+        }
+    }
+
+    static int evaluate_parameters(
+        const void* context,
+        double temperature_k,
+        double amount_mol,
+        double volume_m3,
+        double segment_count,
+        double segment_diameter_angstrom,
+        double dispersion_energy_over_k,
+        epcsaft_parameterized_phase_block_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_parameterized_phase_block_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const uint32_t result_size = result->struct_size;
+        std::memset(result, 0, sizeof(*result));
+        result->struct_size = result_size;
+
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "model context is null"
+            );
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if ((std::isfinite(endpoint.temperature_min_k)
+             && temperature_k < endpoint.temperature_min_k)
+            || (std::isfinite(endpoint.temperature_max_k)
+                && temperature_k > endpoint.temperature_max_k)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "temperature is outside the parameter source domain"
+            );
+        }
+
+        try {
+            const auto block = endpoint.model.evaluate_pure_phase_parameters(
+                temperature_k,
+                amount_mol,
+                volume_m3,
+                segment_count,
+                segment_diameter_angstrom,
+                dispersion_energy_over_k
+            );
+            result->helmholtz_over_rt_reference_amount =
+                block.helmholtz_over_rt_reference_amount;
             std::copy(block.gradient.begin(), block.gradient.end(), result->gradient);
             std::copy(block.hessian.begin(), block.hessian.end(), result->hessian);
-            std::copy(block.third.begin(), block.third.end(), result->third);
             result->pressure_pa = block.pressure_pa;
             result->chemical_potential_over_rt = block.chemical_potential_over_rt;
             std::snprintf(

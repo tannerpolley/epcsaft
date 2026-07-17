@@ -25,6 +25,18 @@ is the natural ensemble. Those routes normally consume only the phase Hessian.
 The project does not force one formulation onto every equilibrium family merely
 to standardize derivative order.
 
+The first regression consumer fits the three pure methane segment parameters
+against observed saturation states. It needs exact parameter derivatives but
+does not need a second EOS kernel or density-root sensitivity path. The
+regression formulation therefore lifts the liquid-like and vapor-like volumes
+as row-local variables and obtains their pressure and chemical-potential
+residual Jacobians from one parameterized phase Hessian.
+Each row fixes `n = 1 mol`; otherwise simultaneous scaling of `n` and `V`
+creates an unnecessary gauge while leaving density unchanged. The consumer
+must reject coalesced phases and require finite, distinct volumes with positive
+mechanical-stability slopes before treating the two local states as liquid-like
+and vapor-like.
+
 ## Thermodynamic contract
 
 The provider evaluates one phase at a time. It receives positive finite
@@ -63,6 +75,23 @@ nonlinear tensor comes from that function. The public result fixes coordinate
 order, row-major tensor layout, units, reference basis, parameter fingerprint,
 and explicit status/error codes.
 
+The additive parameterized entry uses coordinates
+`(n_mol, V_m3, m, sigma_angstrom, epsilon_over_k_kelvin)` and returns `Phi`, its
+five-coordinate gradient, and its symmetric row-major Hessian. In particular,
+
+```text
+partial(P)/partial(q_j)       = -R T n_ref Phi_(V,q_j)
+partial(mu/RT)/partial(q_j)   = Phi_(n,q_j).
+```
+
+These identities provide exact Jacobian columns for a regression-owned
+residual without assigning target definitions, weights, bounds, nuisance
+variables, Ceres, or fit acceptance to the provider.
+The regression problem and receipt must retain the exact trial parameter tuple,
+units, transforms/scales, bounds, and immutable source fingerprint; the source
+fingerprint returned by the provider never identifies a fitted candidate as a
+new source-backed parameter record.
+
 ## Native boundary
 
 The public Python function `epcsaft.native_sdk(model)` returns a model-bound
@@ -71,7 +100,9 @@ size-tagged pure-C function table containing:
 
 - ABI version, table size, and result-structure size;
 - one opaque immutable provider model context; and
-- one pure-phase evaluation function.
+- one fixed-parameter pure-phase evaluation function; and
+- one additive pure-phase evaluation function with active `m`, `sigma`, and
+  `epsilon/k` coordinates.
 
 The capsule owns the model context. A consumer keeps a Python reference to the
 capsule for as long as it calls the table; ordinary `Py_INCREF`/`Py_DECREF`
@@ -90,6 +121,10 @@ certification, and results.
 
 Version 1 rejects associating, ionic, mixture, out-of-source-domain,
 out-of-EOS-domain, and nonfinite inputs before returning a nominal result.
+The parameterized entry additionally rejects nonpositive active parameters.
+Its returned fingerprint identifies the immutable source model from which the
+fit problem descends; candidate values remain explicit coordinates and never
+masquerade as a new source record.
 
 ## Compatibility
 
@@ -97,7 +132,9 @@ Consumers import the capsule through the public Python function and compile
 only against the installed declaration header. They do not import
 `epcsaft._core`, private headers, provider source paths, or native object
 layouts. A consumer accepts only the exact capsule major name and verifies the
-advertised table and result sizes before calling an entry.
+advertised result size before calling an entry. It checks `table_size` against
+the minimum prefix needed for that entry before reading appended fields; it
+does not require equality with the newest whole-table size.
 
 Backward-compatible entries may be appended within version 1. A changed field
 meaning, unit, coordinate order, tensor layout, reference basis, or ownership
@@ -115,21 +152,27 @@ The provider-side evidence requires:
 - thermodynamic agreement of `P` and `mu/(RT)` with the public provider state;
 - directional gradient, Hessian-vector, and third-tensor contraction checks
   against an independent numerical oracle;
+- fixed/parameterized value agreement at the source methane parameters and
+  independent five-coordinate gradient and Hessian-vector checks;
 - methane, ethane, and propane in-domain coverage; and
 - absence of provider implementation sources from the provider wheel.
 
 Those provider tests pass in the local candidate and `ARCHITECTURE.yaml`
-records only that bounded fact. The still-pending consumer gate must build an
-equilibrium wheel against the installed provider wheel, verify capsule/header
+records only that bounded fact. Each still-pending consumer gate must build its
+wheel against the installed provider wheel, verify capsule/header
 compatibility, and prove that no provider source or duplicate EOS symbol enters
-the consumer artifact. Equilibrium implementation, cross-wheel evidence, and
-promotion remain a separate bounded slice and receipt.
+the consumer artifact. Equilibrium implementation, regression target/Ceres
+implementation, cross-wheel evidence, and promotion remain separate bounded
+slices and receipts.
 
 ## Deferred extensions
 
 - Nonassociating mixtures require an extensive phase function in ordered
   `(n_1,...,n_C,V)` coordinates, including ideal mixing and only the derivative
   orders consumed by their approved formulation.
+- Binary `k_ij`, association, electrolyte, and other fitted-parameter families
+  require separate parameterized phase contracts and evidence. They are not
+  implied by the pure three-parameter entry.
 - Eliminated association requires every mixed implicit sensitivity through the
   highest consumed order; alternatively a route may lift the true site state
   and its defining constraints.

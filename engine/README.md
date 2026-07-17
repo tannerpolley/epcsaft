@@ -53,6 +53,13 @@ value on the documented reference basis plus its gradient, Hessian, and third
 tensor. The declaration-only C header is installed at
 `epcsaft/include/epcsaft/native_sdk_v1.h`.
 
+The same table has an additive pure-parameter entry for the first methane
+regression slice. It returns the phase value, gradient, and Hessian in
+`(n,V,m,sigma,epsilon/k)` coordinates so a regression consumer can assemble
+exact residual Jacobians without copying EOS equations. Regression targets,
+Ceres, bounds, diagnostics, and fitted records remain outside this package;
+binary and associating parameter fits are not admitted by this entry.
+
 The capsule evaluates one phase state at a time. A consumer uses the same
 immutable model for every candidate phase; the provider does not construct
 liquid/vapor objects or own phase identity, Ipopt, equilibrium constraints, or

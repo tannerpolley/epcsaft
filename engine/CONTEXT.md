@@ -35,8 +35,11 @@ equilibrium, multi-salt reference paths, regression, and ideal-gas caloric data
 remain outside this repository's current capability. The local ADR 0001
 provider candidate adds one model-bound capsule for fixed-temperature pure,
 nonassociating phase Helmholtz values and CppAD derivatives through third order.
-It has no phase identity, density root, Ipopt, or equilibrium result and remains
-unpromoted until the separate installed consumer gate passes.
+An additive entry returns the same pure function's gradient and Hessian when
+`m`, `sigma`, and `epsilon/k` are active coordinates for the first methane
+regression slice. It has no phase identity, density root, target residual,
+Ipopt, Ceres, equilibrium result, or fit result and remains unpromoted until
+the applicable installed consumer gate passes.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.

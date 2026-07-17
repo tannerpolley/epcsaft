@@ -34,7 +34,10 @@ CppAD, and any admitted native consumer transport. It does not own phase
 equilibrium or discovery, Ipopt, regression, Ceres, cross-package validation,
 or reaction/species equilibrium. The local ADR 0001 capsule candidate evaluates
 only fixed-temperature pure nonassociating phase states; it is not promoted for
-equilibrium consumption until its separate cross-wheel gate passes. Do not add
+equilibrium or regression consumption until each separate cross-wheel gate
+passes. Its additive parameterized entry owns only exact pure-phase derivatives
+with respect to `m`, `sigma`, and `epsilon/k`; target residuals, Ceres, and fit
+acceptance remain regression-owned. Do not add
 compatibility APIs, mutable scientific dictionaries,
 backend selectors, hidden physical defaults, duplicate equation owners, or
 runtime dependencies on the lab, migration repository, or sibling sources.

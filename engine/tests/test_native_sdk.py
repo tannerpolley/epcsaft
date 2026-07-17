@@ -28,6 +28,20 @@ class PhaseBlockResult(ctypes.Structure):
     )
 
 
+class ParameterizedPhaseBlockResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("helmholtz_over_rt_reference_amount", ctypes.c_double),
+        ("gradient", ctypes.c_double * 5),
+        ("hessian", ctypes.c_double * 25),
+        ("pressure_pa", ctypes.c_double),
+        ("chemical_potential_over_rt", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
 class NativeSdkTable(ctypes.Structure):
     _fields_ = (
         ("abi_version", ctypes.c_uint32),
@@ -35,7 +49,13 @@ class NativeSdkTable(ctypes.Structure):
         ("result_size", ctypes.c_size_t),
         ("model_context", ctypes.c_void_p),
         ("evaluate_pure_phase", ctypes.c_void_p),
+        ("parameterized_result_size", ctypes.c_size_t),
+        ("evaluate_pure_phase_parameters", ctypes.c_void_p),
     )
+
+
+class NativeSdkPrefix(ctypes.Structure):
+    _fields_ = NativeSdkTable._fields_[:5]
 
 
 EvaluatePurePhase = ctypes.CFUNCTYPE(
@@ -45,6 +65,18 @@ EvaluatePurePhase = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(PhaseBlockResult),
+)
+
+EvaluatePurePhaseParameters = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ParameterizedPhaseBlockResult),
 )
 
 
@@ -85,6 +117,32 @@ def _evaluate(
     return result
 
 
+def _evaluate_parameters(
+    table: NativeSdkTable,
+    temperature_k: float,
+    amount_mol: float,
+    volume_m3: float,
+    segment_count: float,
+    segment_diameter_angstrom: float,
+    dispersion_energy_over_k: float,
+) -> ParameterizedPhaseBlockResult:
+    assert table.table_size >= ctypes.sizeof(NativeSdkTable)
+    assert table.evaluate_pure_phase_parameters
+    result = ParameterizedPhaseBlockResult(struct_size=ctypes.sizeof(ParameterizedPhaseBlockResult))
+    status = EvaluatePurePhaseParameters(table.evaluate_pure_phase_parameters)(
+        table.model_context,
+        temperature_k,
+        amount_mol,
+        volume_m3,
+        segment_count,
+        segment_diameter_angstrom,
+        dispersion_energy_over_k,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
+
+
 @pytest.mark.parametrize(
     "catalog,component,temperature_k,density_mol_m3",
     (
@@ -105,8 +163,10 @@ def test_native_sdk_phase_block_matches_public_thermodynamics(
     assert table.abi_version == ABI_VERSION
     assert table.table_size == ctypes.sizeof(NativeSdkTable)
     assert table.result_size == ctypes.sizeof(PhaseBlockResult)
+    assert table.parameterized_result_size == ctypes.sizeof(ParameterizedPhaseBlockResult)
     assert table.model_context
     assert table.evaluate_pure_phase
+    assert table.evaluate_pure_phase_parameters
 
     amount_mol = 1.0
     volume_m3 = amount_mol / density_mol_m3
@@ -190,6 +250,67 @@ def test_native_sdk_derivative_tensors_match_directional_oracles() -> None:
     assert third_contraction == pytest.approx(hessian_difference, rel=2.0e-6)
 
 
+def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
+    capsule = native_sdk(_model("gross-2001-methane-ethane", "methane"))
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    prefix = ctypes.cast(address, ctypes.POINTER(NativeSdkPrefix)).contents
+    assert prefix.abi_version == ABI_VERSION
+    assert prefix.table_size >= ctypes.sizeof(NativeSdkPrefix)
+    assert prefix.result_size == ctypes.sizeof(PhaseBlockResult)
+    assert prefix.model_context
+    assert prefix.evaluate_pure_phase
+
+
+def test_native_sdk_parameterized_phase_block_has_exact_parameter_derivatives() -> None:
+    model = _model("gross-2001-methane-ethane", "methane")
+    _, table = _table(model)
+    temperature_k = 150.0
+    point = (1.0, 2.0e-3, 1.0, 3.7039, 150.03)
+    direction = (0.01, -2.0e-5, 0.02, -0.03, 0.5)
+
+    def shifted(scale: float) -> ParameterizedPhaseBlockResult:
+        values = tuple(value + scale * delta for value, delta in zip(point, direction))
+        result = _evaluate_parameters(table, temperature_k, *values)
+        assert result.status == STATUS_OK
+        return result
+
+    center = shifted(0.0)
+    fixed = _evaluate(table, temperature_k, point[0], point[1])
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        fixed.helmholtz_over_rt_reference_amount, rel=2.0e-13, abs=2.0e-13
+    )
+    assert center.pressure_pa == pytest.approx(fixed.pressure_pa, rel=2.0e-13)
+    assert center.chemical_potential_over_rt == pytest.approx(
+        fixed.chemical_potential_over_rt, rel=2.0e-13
+    )
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    step = 2.0e-5
+    lower = shifted(-step)
+    upper = shifted(step)
+    value_direction = sum(center.gradient[index] * direction[index] for index in range(5))
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert value_direction == pytest.approx(value_difference, rel=3.0e-8)
+
+    for row in range(5):
+        hessian_direction = sum(
+            center.hessian[row * 5 + column] * direction[column] for column in range(5)
+        )
+        gradient_difference = (upper.gradient[row] - lower.gradient[row]) / (2.0 * step)
+        assert hessian_direction == pytest.approx(gradient_difference, rel=3.0e-7)
+
+    gas_constant = 8.31446261815324
+    assert center.pressure_pa == pytest.approx(
+        -gas_constant * temperature_k * center.gradient[1], rel=2.0e-13
+    )
+    assert center.chemical_potential_over_rt == pytest.approx(center.gradient[0], rel=2.0e-13)
+
+
 def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
     binary = EPCSAFT(
         ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
@@ -237,6 +358,24 @@ def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
         (math.nan, 1.0, 1.0e-3),
     ):
         result = _evaluate(table, temperature, amount, volume)
+        assert result.status != STATUS_OK
+        assert result.error
+
+    for segment_count, segment_diameter, dispersion_energy in (
+        (0.0, 3.7039, 150.03),
+        (1.0, 0.0, 150.03),
+        (1.0, 3.7039, 0.0),
+        (1.0, 3.7039, math.nan),
+    ):
+        result = _evaluate_parameters(
+            table,
+            150.0,
+            1.0,
+            2.0e-3,
+            segment_count,
+            segment_diameter,
+            dispersion_energy,
+        )
         assert result.status != STATUS_OK
         assert result.error
 

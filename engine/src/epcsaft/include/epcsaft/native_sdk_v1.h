@@ -35,6 +35,30 @@ typedef struct epcsaft_phase_block_result_v1 {
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
 } epcsaft_phase_block_result_v1;
 
+enum epcsaft_parameterized_phase_coordinate_v1 {
+    EPCSAFT_PHASE_AMOUNT_MOL_V1 = 0,
+    EPCSAFT_PHASE_VOLUME_M3_V1 = 1,
+    EPCSAFT_PHASE_SEGMENT_COUNT_V1 = 2,
+    EPCSAFT_PHASE_SEGMENT_DIAMETER_ANGSTROM_V1 = 3,
+    EPCSAFT_PHASE_DISPERSION_ENERGY_OVER_K_V1 = 4,
+    EPCSAFT_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1 = 5
+};
+
+typedef struct epcsaft_parameterized_phase_block_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double helmholtz_over_rt_reference_amount;
+    double gradient[EPCSAFT_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1];
+    double hessian[
+        EPCSAFT_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1 *
+        EPCSAFT_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1
+    ];
+    double pressure_pa;
+    double chemical_potential_over_rt;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_parameterized_phase_block_result_v1;
+
 typedef int (*epcsaft_evaluate_pure_phase_v1)(
     const void* model_context,
     double temperature_k,
@@ -43,12 +67,25 @@ typedef int (*epcsaft_evaluate_pure_phase_v1)(
     epcsaft_phase_block_result_v1* result
 );
 
+typedef int (*epcsaft_evaluate_pure_phase_parameters_v1)(
+    const void* model_context,
+    double temperature_k,
+    double amount_mol,
+    double volume_m3,
+    double segment_count,
+    double segment_diameter_angstrom,
+    double dispersion_energy_over_k,
+    epcsaft_parameterized_phase_block_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
     size_t result_size;
     const void* model_context;
     epcsaft_evaluate_pure_phase_v1 evaluate_pure_phase;
+    size_t parameterized_result_size;
+    epcsaft_evaluate_pure_phase_parameters_v1 evaluate_pure_phase_parameters;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

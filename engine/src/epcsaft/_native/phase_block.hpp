@@ -22,6 +22,14 @@ struct NativePurePhaseBlock final {
     double chemical_potential_over_rt;
 };
 
+struct NativeParameterizedPurePhaseBlock final {
+    double helmholtz_over_rt_reference_amount;
+    std::array<double, 5> gradient;
+    std::array<double, 25> hessian;
+    double pressure_pa;
+    double chemical_potential_over_rt;
+};
+
 namespace detail {
 
 inline bool supports_pure_phase_block(const NativeParameters& parameters) {
@@ -32,11 +40,45 @@ inline bool supports_pure_phase_block(const NativeParameters& parameters) {
 }
 
 template <typename Scalar>
+struct PurePhaseParameters final {
+    std::vector<Scalar> segment_count;
+    std::vector<Scalar> sigma_constant;
+    std::vector<int> sigma_term_component;
+    std::vector<Scalar> sigma_term_amplitude;
+    std::vector<Scalar> sigma_term_exponent;
+    std::vector<Scalar> dispersion_energy_over_k;
+    std::vector<Scalar> k_ij;
+    std::vector<int> site_component;
+    std::vector<int> site_multiplicity;
+    std::vector<int> charge_number;
+};
+
+template <typename Scalar>
+PurePhaseParameters<Scalar> pure_phase_parameters(
+    const Scalar& segment_count,
+    const Scalar& segment_diameter_angstrom,
+    const Scalar& dispersion_energy_over_k
+) {
+    return {
+        {segment_count},
+        {segment_diameter_angstrom},
+        {},
+        {},
+        {},
+        {dispersion_energy_over_k},
+        {Scalar(0.0)},
+        {},
+        {},
+        {0},
+    };
+}
+
+template <typename Scalar, typename Parameters>
 Scalar pure_phase_helmholtz_over_rt_reference_amount(
     double temperature,
     const Scalar& amount,
     const Scalar& volume,
-    const NativeParameters& parameters
+    const Parameters& parameters
 ) {
     const Scalar density = amount / volume;
     const std::vector<Scalar> composition = {Scalar(1.0)};
@@ -150,6 +192,97 @@ inline NativePurePhaseBlock pure_phase_block(
         gradient,
         hessian,
         third,
+        -GAS_CONSTANT * temperature * gradient[1],
+        gradient[0],
+    };
+}
+
+inline NativeParameterizedPurePhaseBlock parameterized_pure_phase_block(
+    double temperature,
+    double amount,
+    double volume,
+    double segment_count,
+    double segment_diameter_angstrom,
+    double dispersion_energy_over_k,
+    const NativeParameters& base_parameters
+) {
+    if (!supports_pure_phase_block(base_parameters)) {
+        throw std::logic_error(
+            "parameterized phase block requires one pure nonassociating neutral model"
+        );
+    }
+    const std::array<double, 6> inputs = {
+        temperature,
+        amount,
+        volume,
+        segment_count,
+        segment_diameter_angstrom,
+        dispersion_energy_over_k,
+    };
+    if (!std::all_of(inputs.begin(), inputs.end(), [](double item) {
+            return std::isfinite(item) && item > 0.0;
+        })) {
+        throw std::invalid_argument(
+            "parameterized phase inputs must be positive and finite"
+        );
+    }
+
+    const auto value_parameters = pure_phase_parameters(
+        segment_count, segment_diameter_angstrom, dispersion_energy_over_k
+    );
+    pure_phase_helmholtz_over_rt_reference_amount(
+        temperature, amount, volume, value_parameters
+    );
+
+    using ADScalar = CppAD::AD<double>;
+    std::vector<ADScalar> independent = {
+        amount,
+        volume,
+        segment_count,
+        segment_diameter_angstrom,
+        dispersion_energy_over_k,
+    };
+    CppAD::Independent(independent);
+    const auto active_parameters = pure_phase_parameters(
+        independent[2], independent[3], independent[4]
+    );
+    const ADScalar phase = pure_phase_helmholtz_over_rt_reference_amount(
+        temperature, independent[0], independent[1], active_parameters
+    );
+    CppAD::ADFun<double> function(independent, {phase});
+
+    const std::array<double, 5> point = {
+        amount,
+        volume,
+        segment_count,
+        segment_diameter_angstrom,
+        dispersion_energy_over_k,
+    };
+    const std::vector<double> point_vector(point.begin(), point.end());
+    const auto jacobian = function.Jacobian(point_vector);
+    const auto hessian_vector = function.Hessian(point_vector, 0);
+    std::array<double, 5> gradient{};
+    std::array<double, 25> hessian{};
+    std::copy(jacobian.begin(), jacobian.end(), gradient.begin());
+    std::copy(hessian_vector.begin(), hessian_vector.end(), hessian.begin());
+
+    const double value = function.Forward(0, point_vector)[0];
+    if (!std::isfinite(value)
+        || !std::all_of(gradient.begin(), gradient.end(), [](double item) {
+            return std::isfinite(item);
+        })
+        || !std::all_of(hessian.begin(), hessian.end(), [](double item) {
+            return std::isfinite(item);
+        })) {
+        throw std::runtime_error(
+            "parameterized phase block contains nonfinite values"
+        );
+    }
+
+    return {
+        value,
+        gradient,
+        hessian,
         -GAS_CONSTANT * temperature * gradient[1],
         gradient[0],
     };
