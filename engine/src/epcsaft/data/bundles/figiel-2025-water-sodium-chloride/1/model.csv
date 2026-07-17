@@ -1,3 +1,3 @@
 record_id,family,value,unit,source_id,locator,domain_id
-figiel-ionic-region-permittivity,ionic_region_relative_permittivity,8,,figiel-yu-held-2025,"p. 9408, Born Term section and Table 1 ion rows",figiel-water-nacl-298-k-1-bar
-figiel-dielectric-suppression,dielectric_ion_suppression_coefficient,7.01,,figiel-yu-held-2025,"Eq. 11 denominator coefficient",figiel-water-nacl-298-k-1-bar
+figiel-ionic-region-permittivity,ionic_region_relative_permittivity,8,,figiel-yu-held-2025,"Table 1, salts (ions) row, dielectric constant column and following prose",figiel-298-k-1-bar
+figiel-dielectric-suppression,dielectric_ion_suppression_coefficient,7.01,,figiel-yu-held-2025,"Eq. 11, denominator coefficient multiplying x_ion",figiel-298-k-1-bar

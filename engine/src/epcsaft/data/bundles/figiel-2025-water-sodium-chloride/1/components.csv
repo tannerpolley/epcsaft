@@ -1,4 +1,4 @@
 component_id,name,cas,formula,aliases
-water,water,7732-18-5,H2O,"[""H2O""]"
-sodium-cation,sodium cation,,Na+,"[""Na+""]"
-chloride-anion,chloride anion,,Cl-,"[""Cl-""]"
+water,water,7732-18-5,H2O,
+sodium-cation,sodium cation,,Na+,
+chloride-anion,chloride anion,,Cl-,

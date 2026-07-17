@@ -8,15 +8,15 @@ files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.c
 source_id = "figiel-yu-held-2025"
 citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
 doi = "10.1021/acs.iecr.5c00475"
-use_basis = "source-backed water, sodium, and chloride electrolyte parameters"
+use_basis = "primary equations and parameters for the bounded water-sodium-chloride SSM+DS model"
 
 [[sources]]
-source_id = "nist-water"
-citation = "NIST Chemistry WebBook, SRD 69. Water, CAS 7732-18-5."
-use_basis = "water molar mass used by the salt-free mass-fraction dielectric rule"
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5."
+use_basis = "water identity and molecular weight"
 
 [[domains]]
-domain_id = "figiel-water-nacl-298-k-1-bar"
+domain_id = "figiel-298-k-1-bar"
 kind = "reported-conditions"
 temperature_min = 298.15
 temperature_max = 298.15

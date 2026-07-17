@@ -908,7 +908,7 @@ def test_figiel_water_sodium_chloride_catalog_is_exact_and_sparse() -> None:
         "water",
     )
     assert bundle.fingerprint == (
-        "sha256:fec3c12cc059357a4be1350c44ee9dbed1af3bedc1c300f52811e00961899316"
+        "sha256:e3d0aea2b48e26150a282be1e485d3c91be9d2942cf25bc7959d37ec22216df4"
     )
 
     values = {

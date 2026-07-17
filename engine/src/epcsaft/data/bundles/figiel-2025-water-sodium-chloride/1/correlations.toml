@@ -1,15 +1,4 @@
 [[correlations]]
-record_id = "water-relative-permittivity"
-component_id = "water"
-family = "relative_permittivity"
-form = "constant"
-constant = 78.09
-output_unit = "dimensionless"
-source_id = "figiel-yu-held-2025"
-locator = "Table 1, water row, dielectric constant column"
-domain_id = "figiel-water-nacl-298-k-1-bar"
-
-[[correlations]]
 record_id = "water-segment-diameter-correlation"
 component_id = "water"
 family = "segment_diameter"
@@ -22,5 +11,16 @@ coefficients = [
   { amplitude = -1.417, exponent_coefficient = -0.01146 },
 ]
 source_id = "figiel-yu-held-2025"
-locator = "Table 2 footnote b, water segment-diameter correlation"
-domain_id = "figiel-water-nacl-298-k-1-bar"
+locator = "Table 2 footnote b, water sigma(T) correlation"
+domain_id = "figiel-298-k-1-bar"
+
+[[correlations]]
+record_id = "water-relative-permittivity"
+component_id = "water"
+family = "relative_permittivity"
+form = "constant"
+constant = 78.09
+output_unit = "dimensionless"
+source_id = "figiel-yu-held-2025"
+locator = "Table 1, water row, dielectric constant column"
+domain_id = "figiel-298-k-1-bar"
