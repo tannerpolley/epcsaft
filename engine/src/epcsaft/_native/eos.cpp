@@ -202,7 +202,7 @@ NativeResult NativeModel::evaluate(
         - temperature * temperature * derivatives.temperature_temperature;
     std::optional<double> residual_cp;
     if (std::isfinite(pressure_slope_factor)
-        && std::abs(pressure_slope_factor) > 1.0e-12) {
+        && pressure_slope_factor > 1.0e-10) {
         const double cp_over_r = cv_over_r
             + (compressibility + temperature * z_temperature)
                 * (compressibility + temperature * z_temperature)

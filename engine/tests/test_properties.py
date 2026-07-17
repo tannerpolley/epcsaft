@@ -130,6 +130,12 @@ def test_residual_caloric_properties_follow_helmholtz_identities() -> None:
         assert actual.to(unit).magnitude == pytest.approx(magnitude, rel=3.0e-5, abs=3.0e-5)
 
 
+def test_isobaric_heat_capacity_is_undefined_on_an_unstable_density_branch() -> None:
+    result = _evaluate(_model(), 150.0, 4000.0, (1.0, 0.0))
+
+    assert result.residual_isobaric_heat_capacity is None
+
+
 def test_electrolyte_formula_unit_chemical_potential_is_electroneutral() -> None:
     model = EPCSAFT(
         ParameterBundle.from_catalog("figiel-2025-water-sodium-chloride", version=1).select(

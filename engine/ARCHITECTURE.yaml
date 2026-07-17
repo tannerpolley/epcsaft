@@ -56,7 +56,7 @@ manifest:
   installed_data_files: 12
   package_test_files: 9
   physical_production_lines: 3879
-  physical_package_test_lines: 2524
+  physical_package_test_lines: 2530
   physical_documentation_lines: 1464
   measurement: wc -l over tracked provider Python, C++, package tests, and governing documentation
   tracked_generated_files: 0
