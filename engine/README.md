@@ -97,4 +97,7 @@ convergence is not a claim of global phase stability or literature validation.
 Accepted promotion receipt `promotion-0012-provider-full-candidate` makes this
 repository the sole production owner of the stated provider scope. The receipt
 does not claim a release, equilibrium/global-stability capability, generic
-electrolyte coverage, or promotion of the later local native-SDK candidate.
+electrolyte coverage, or native-SDK authority. The separate authority state for
+the fixed SDK v1 prefix and its append-only pure-parameter tail is recorded only
+by migration receipt `promotion-0015-provider-native-sdk-v1`; this
+documentation does not transfer it, and consumer promotions remain separate.

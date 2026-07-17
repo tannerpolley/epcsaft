@@ -1,5 +1,5 @@
 version: 2
-status: accepted-with-local-candidate
+status: accepted-provider-with-receipt-controlled-native-sdk
 
 authority:
   effective_receipt: promotion-0012-provider-full-candidate
@@ -7,10 +7,12 @@ authority:
     Neutral, associating, and bounded Figiel electrolyte EOS at explicit molar
     density or specified pressure, plus bounded electrolyte reference states.
   candidate_promotion_status: promoted
+  native_sdk_receipt: promotion-0015-provider-native-sdk-v1
+  native_sdk_authority: determined-by-receipt
 
-local_candidate:
+native_sdk_v1:
   name: native-sdk-v1-pure-phase-block
-  status: provider-evidence-passed-consumer-gate-pending
+  status: authority-determined-by-promotion-receipt
   scope: >-
     Model-bound fixed-temperature pure nonassociating phase Helmholtz value,
     state gradient/Hessian/third tensor, active pure-parameter gradient/Hessian,
@@ -68,12 +70,12 @@ public_surface:
       entry: evaluate_pure_phase
       coordinate_order: [amount_mol, volume_m3]
       derivative_order: 3
-      status: provider-evidence-passed-consumer-gate-pending
+      status: authority-determined-by-promotion-receipt
     - capsule: epcsaft.native_sdk.v1
       entry: evaluate_pure_phase_parameters
       coordinate_order: [amount_mol, volume_m3, segment_count, segment_diameter_angstrom, dispersion_energy_over_k]
       derivative_order: 2
-      status: provider-evidence-passed-consumer-gate-pending
+      status: authority-determined-by-promotion-receipt
 
 manifest:
   tracked_files: 69

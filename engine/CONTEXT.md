@@ -32,14 +32,16 @@ release or a claim beyond the recorded capability boundaries.
 
 Phase equilibrium, phase discovery/global stability, reaction and species
 equilibrium, multi-salt reference paths, regression, and ideal-gas caloric data
-remain outside this repository's current capability. The local ADR 0001
-provider candidate adds one model-bound capsule for fixed-temperature pure,
-nonassociating phase Helmholtz values and CppAD derivatives through third order.
-An additive entry returns the same pure function's gradient and Hessian when
-`m`, `sigma`, and `epsilon/k` are active coordinates for the first methane
-regression slice. It has no phase identity, density root, target residual,
-Ipopt, Ceres, equilibrium result, or fit result and remains unpromoted until
-the applicable installed consumer gate passes.
+remain outside this repository's current capability. Migration receipt
+`promotion-0015-provider-native-sdk-v1` alone determines authority for the ADR
+0001 model-bound capsule; this documentation does not transfer it. The fixed
+prefix evaluates pure, nonassociating phase Helmholtz values and CppAD
+derivatives through third order in amount and volume. Its append-only entry
+returns the same pure function's gradient and Hessian when `m`, `sigma`, and
+`epsilon/k` are active coordinates for the first methane regression slice. It
+has no phase identity, density root, target residual, Ipopt, Ceres, equilibrium
+result, or fit result. Each consumer remains subject to its own installed-wheel
+gate and promotion receipt.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.

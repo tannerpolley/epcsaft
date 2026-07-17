@@ -32,12 +32,14 @@ package release or broaden any capability beyond the receipt.
 The provider owns parameters, EOS/state/property evaluation, density closure,
 CppAD, and any admitted native consumer transport. It does not own phase
 equilibrium or discovery, Ipopt, regression, Ceres, cross-package validation,
-or reaction/species equilibrium. The local ADR 0001 capsule candidate evaluates
-only fixed-temperature pure nonassociating phase states; it is not promoted for
-equilibrium or regression consumption until each separate cross-wheel gate
-passes. Its additive parameterized entry owns only exact pure-phase derivatives
-with respect to `m`, `sigma`, and `epsilon/k`; target residuals, Ceres, and fit
-acceptance remain regression-owned. Do not add
+or reaction/species equilibrium. Migration receipt
+`promotion-0015-provider-native-sdk-v1` is the sole authority record for the
+ADR 0001 capsule; this documentation does not transfer that authority. Its
+fixed prefix owns only pure nonassociating phase values and derivatives in
+amount and volume. Its append-only parameterized entry owns only exact
+pure-phase derivatives with respect to `m`, `sigma`, and `epsilon/k`; target
+residuals, Ceres, and fit acceptance remain regression-owned. Each consumer
+still requires its own cross-wheel gate. Do not add
 compatibility APIs, mutable scientific dictionaries,
 backend selectors, hidden physical defaults, duplicate equation owners, or
 runtime dependencies on the lab, migration repository, or sibling sources.

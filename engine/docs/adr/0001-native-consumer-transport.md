@@ -1,6 +1,7 @@
 # ADR 0001: Versioned model-bound capsule for native consumers
 
-Status: implemented provider candidate; consumer gate pending
+Status: implemented; authority determined by migration promotion receipt 0015;
+consumer gates separate
 
 Date: 2026-07-17
 
@@ -157,9 +158,10 @@ The provider-side evidence requires:
 - methane, ethane, and propane in-domain coverage; and
 - absence of provider implementation sources from the provider wheel.
 
-Those provider tests pass in the local candidate and `ARCHITECTURE.yaml`
-records only that bounded fact. Each still-pending consumer gate must build its
-wheel against the installed provider wheel, verify capsule/header
+Those provider tests pass for the fixed prefix and append-only parameterized
+tail. Migration receipt `promotion-0015-provider-native-sdk-v1` is the sole
+authority record; this ADR does not transfer authority. Each consumer gate must
+build its wheel against the installed provider wheel, verify capsule/header
 compatibility, and prove that no provider source or duplicate EOS symbol enters
 the consumer artifact. Equilibrium implementation, regression target/Ceres
 implementation, cross-wheel evidence, and promotion remain separate bounded

@@ -1,8 +1,8 @@
 # Full Provider EOS Scientific Specification
 
-Status: scientific equation authority for the local full-provider candidate;
-not a promoted capability claim until independent validation and an accepted
-receipt exist
+Status: scientific equation authority for the accepted full-provider scope;
+native-SDK authority is determined separately by migration promotion receipt
+0015
 
 Design: `../designs/2026-07-16-full-provider-eos-design.md`
 
@@ -528,6 +528,9 @@ reaction equilibrium, alternate dielectric rules, direct/SSM-only Born modes,
 analytic derivative modes, ideal-gas caloric data, phase equilibrium,
 regression, multi-salt reference paths, alternate single-ion conventions,
 mixture/associating/electrolyte native phase blocks, or reactive standard-state
-chemical potentials. ADR 0001 admits only the fixed-temperature pure
-nonassociating local SDK candidate. Adding any other exclusion requires a new
-source-backed capability design rather than a flag in this model.
+chemical potentials. ADR 0001 defines only the fixed-temperature pure
+nonassociating SDK v1 prefix and its append-only pure-parameter tail. Migration
+receipt `promotion-0015-provider-native-sdk-v1` alone determines their
+authority; this specification does not admit a consumer or fitted model.
+Adding any other exclusion requires a new source-backed capability design
+rather than a flag in this model.
