@@ -10,6 +10,7 @@ from .records import (
     ComponentRecord,
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
+    ModelParameterRecord,
     PairParameterRecord,
     SingleParameterRecord,
     SiteRecord,
@@ -94,7 +95,13 @@ def _provenance(record: object) -> dict[str, object]:
 
 def _record(record: object) -> dict[str, object]:
     result = _provenance(record)
-    if isinstance(record, SingleParameterRecord):
+    if isinstance(record, ModelParameterRecord):
+        result.update(
+            type="model",
+            family=record.family,
+            value=_value(record.family, record.value),
+        )
+    elif isinstance(record, SingleParameterRecord):
         result.update(
             type="single",
             component_id=record.component_id,

@@ -13,6 +13,7 @@ from .records import (
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
     CorrelationRecord,
+    ModelParameterRecord,
     PairParameterRecord,
     SingleParameterRecord,
     SiteRecord,
@@ -83,7 +84,9 @@ def _validate_records(
             raise _error("invalid-source", record_id=record.record_id, source_id=record.source_id)
         if record.domain_id not in domain_ids:
             raise _error("invalid-domain", record_id=record.record_id, domain_id=record.domain_id)
-        if isinstance(
+        if isinstance(record, ModelParameterRecord):
+            referenced_components = ()
+        elif isinstance(
             record,
             (SingleParameterRecord, SiteRecord, ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation),
         ):
@@ -97,7 +100,9 @@ def _validate_records(
         if missing is not None:
             raise _error("missing-record", field="component_id", value=missing)
 
-        if isinstance(record, SingleParameterRecord):
+        if isinstance(record, ModelParameterRecord):
+            key = ("model", record.family)
+        elif isinstance(record, SingleParameterRecord):
             key = ("single", record.component_id, record.family)
         elif isinstance(record, PairParameterRecord):
             key = ("pair", record.component_id_a, record.component_id_b, record.family)
@@ -120,6 +125,8 @@ def _validate_records(
 
 
 def _record_components(record: object) -> tuple[str, ...]:
+    if isinstance(record, ModelParameterRecord):
+        return ()
     if isinstance(
         record,
         (SingleParameterRecord, SiteRecord, ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation),
@@ -186,6 +193,7 @@ class ParameterBundle:
         sites: Iterable[SiteRecord] = (),
         associations: Iterable[AssociationParameterRecord] = (),
         correlations: Iterable[CorrelationRecord] = (),
+        models: Iterable[ModelParameterRecord] = (),
     ) -> ParameterBundle:
         bundle_id = _identifier(bundle_id, field="bundle_id")
         bundle_version = _version(bundle_version)
@@ -203,6 +211,7 @@ class ParameterBundle:
                 (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation),
                 "correlations",
             ),
+            _typed(models, ModelParameterRecord, "models"),
         )
         records = tuple(record for group in grouped_records for record in group)
         _validate_records(source_records, domain_records, component_records, records)

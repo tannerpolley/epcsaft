@@ -12,6 +12,7 @@ from epcsaft.records import (
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
     ExponentialTerm,
+    ModelParameterRecord,
     PairParameterRecord,
     SingleParameterRecord,
     SiteRecord,
@@ -217,3 +218,33 @@ def test_sparse_closed_records_correlations_and_error_contract() -> None:
     assert error.code == "invalid-value"
     assert error.context == (("field", "family"), ("value", "electrolyte_model"))
     assert str(error) == "invalid-value (field=family, value=electrolyte_model)"
+
+
+def test_model_parameter_records_are_closed_finite_and_source_backed() -> None:
+    ionic_permittivity = ModelParameterRecord(
+        record_id="figiel-ionic-region-permittivity",
+        family="ionic_region_relative_permittivity",
+        value=8,
+        **PROVENANCE,
+    )
+    suppression = ModelParameterRecord(
+        record_id="figiel-dielectric-suppression",
+        family="dielectric_ion_suppression_coefficient",
+        value=Decimal("7.01"),
+        **PROVENANCE,
+    )
+
+    assert ionic_permittivity.value == Decimal("8")
+    assert suppression.value == Decimal("7.01")
+
+    for family, value in (
+        ("electrolyte_model", 1),
+        ("ionic_region_relative_permittivity", Decimal("NaN")),
+    ):
+        with pytest.raises(ParameterError, match="invalid-value"):
+            ModelParameterRecord(
+                record_id="invalid-model-parameter",
+                family=family,
+                value=value,
+                **PROVENANCE,
+            )

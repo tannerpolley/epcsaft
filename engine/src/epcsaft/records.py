@@ -32,6 +32,12 @@ _PAIR_FAMILIES = frozenset({"k_ij", "l_ij", "k_hb_ij"})
 _ASSOCIATION_FAMILIES = frozenset(
     {"association_energy_over_k", "association_volume"}
 )
+_MODEL_FAMILIES = frozenset(
+    {
+        "dielectric_ion_suppression_coefficient",
+        "ionic_region_relative_permittivity",
+    }
+)
 _CORRELATION_FAMILIES = frozenset(
     {"segment_diameter", "relative_permittivity", "solvation_factor"}
 )
@@ -51,6 +57,8 @@ _DIMENSIONLESS_FAMILIES = frozenset(
         "k_ij",
         "l_ij",
         "k_hb_ij",
+        "dielectric_ion_suppression_coefficient",
+        "ionic_region_relative_permittivity",
     }
 )
 
@@ -202,6 +210,28 @@ class SingleParameterRecord:
             self, "component_id", _identifier(self.component_id, field="component_id")
         )
         family = _family(self.family, allowed=_SINGLE_FAMILIES)
+        object.__setattr__(self, "family", family)
+        object.__setattr__(self, "value", _parameter_value(family, self.value))
+        source_id, locator, domain_id = _provenance(
+            self.source_id, self.locator, self.domain_id
+        )
+        object.__setattr__(self, "source_id", source_id)
+        object.__setattr__(self, "locator", locator)
+        object.__setattr__(self, "domain_id", domain_id)
+
+
+@dataclass(frozen=True, slots=True)
+class ModelParameterRecord:
+    record_id: str
+    family: str
+    value: object
+    source_id: str
+    locator: str
+    domain_id: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
+        family = _family(self.family, allowed=_MODEL_FAMILIES)
         object.__setattr__(self, "family", family)
         object.__setattr__(self, "value", _parameter_value(family, self.value))
         source_id, locator, domain_id = _provenance(
@@ -418,6 +448,7 @@ __all__ = (
     "ConstantPlusSumOfExponentialsCorrelation",
     "CorrelationRecord",
     "ExponentialTerm",
+    "ModelParameterRecord",
     "PairParameterRecord",
     "SingleParameterRecord",
     "SiteRecord",

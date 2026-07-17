@@ -13,6 +13,7 @@ from .records import (
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
     ExponentialTerm,
+    ModelParameterRecord,
     PairParameterRecord,
     SingleParameterRecord,
     SiteRecord,
@@ -24,7 +25,14 @@ from .units import ParameterError, _error, unit_registry
 
 
 _OPTIONAL_FILES = frozenset(
-    {"single.csv", "pair.csv", "sites.csv", "association.csv", "correlations.toml"}
+    {
+        "single.csv",
+        "pair.csv",
+        "sites.csv",
+        "association.csv",
+        "model.csv",
+        "correlations.toml",
+    }
 )
 _COLUMNS = {
     "components.csv": ("component_id", "name", "cas", "formula", "aliases"),
@@ -65,6 +73,15 @@ _COLUMNS = {
         "site_id_a",
         "component_id_b",
         "site_id_b",
+        "family",
+        "value",
+        "unit",
+        "source_id",
+        "locator",
+        "domain_id",
+    ),
+    "model.csv": (
+        "record_id",
         "family",
         "value",
         "unit",
@@ -352,6 +369,7 @@ def _load_path(path: str | PathLike[str]) -> dict[str, object]:
         "sites": (),
         "associations": (),
         "correlations": (),
+        "models": (),
     }
     if "single.csv" in files:
         result["singles"] = _parameters(root / "single.csv", "single.csv", SingleParameterRecord)
@@ -362,6 +380,10 @@ def _load_path(path: str | PathLike[str]) -> dict[str, object]:
     if "association.csv" in files:
         result["associations"] = _parameters(
             root / "association.csv", "association.csv", AssociationParameterRecord
+        )
+    if "model.csv" in files:
+        result["models"] = _parameters(
+            root / "model.csv", "model.csv", ModelParameterRecord
         )
     if "correlations.toml" in files:
         result["correlations"] = _correlations(root / "correlations.toml")

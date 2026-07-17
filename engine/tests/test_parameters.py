@@ -16,6 +16,7 @@ from epcsaft.records import (
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
     ExponentialTerm,
+    ModelParameterRecord,
     PairParameterRecord,
     SingleParameterRecord,
     SiteRecord,
@@ -30,6 +31,15 @@ PROVENANCE = {
     "domain_id": "domain-a",
 }
 COMPONENT_COLUMNS = ("component_id", "name", "cas", "formula", "aliases")
+MODEL_COLUMNS = (
+    "record_id",
+    "family",
+    "value",
+    "unit",
+    "source_id",
+    "locator",
+    "domain_id",
+)
 
 
 def _bundle_records(registry: UnitRegistry = unit_registry, *, reverse: bool = False):
@@ -69,10 +79,31 @@ def _bundle_records(registry: UnitRegistry = unit_registry, *, reverse: bool = F
     return source, domain, components, singles, pair
 
 
-def _from_records(registry: UnitRegistry = unit_registry, *, reverse: bool = False):
+def _from_records(
+    registry: UnitRegistry = unit_registry,
+    *,
+    reverse: bool = False,
+    ionic_permittivity: object = Decimal("8"),
+):
     source, domain, components, singles, pair = _bundle_records(
         registry, reverse=reverse
     )
+    models = [
+        ModelParameterRecord(
+            "figiel-ionic-region-permittivity",
+            "ionic_region_relative_permittivity",
+            ionic_permittivity,
+            **PROVENANCE,
+        ),
+        ModelParameterRecord(
+            "figiel-dielectric-suppression",
+            "dielectric_ion_suppression_coefficient",
+            Decimal("7.01"),
+            **PROVENANCE,
+        ),
+    ]
+    if reverse:
+        models.reverse()
     return ParameterBundle.from_records(
         bundle_id="test-bundle",
         bundle_version=1,
@@ -82,6 +113,7 @@ def _from_records(registry: UnitRegistry = unit_registry, *, reverse: bool = Fal
         components=components,
         singles=singles,
         pairs=(pair,),
+        models=models,
     )
 
 
@@ -135,6 +167,20 @@ def _parsed_records_bundle():
         sites=sites,
         associations=(association,),
         correlations=correlations,
+        models=(
+            ModelParameterRecord(
+                "figiel-dielectric-suppression",
+                "dielectric_ion_suppression_coefficient",
+                Decimal("7.01"),
+                **PROVENANCE,
+            ),
+            ModelParameterRecord(
+                "figiel-ionic-region-permittivity",
+                "ionic_region_relative_permittivity",
+                Decimal("8"),
+                **PROVENANCE,
+            ),
+        ),
     )
 
 
@@ -142,6 +188,7 @@ def _write_bundle(
     path: Path,
     *,
     component_columns: tuple[str, ...] = COMPONENT_COLUMNS,
+    model_columns: tuple[str, ...] = MODEL_COLUMNS,
     duplicate_pair: bool = False,
     extra_file: bool = False,
     bad_correlation: bool = False,
@@ -152,7 +199,7 @@ def _write_bundle(
 bundle_id = "test-bundle"
 bundle_version = 1
 purpose = "package-test-fixture"
-files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "correlations.toml"]
+files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "model.csv", "correlations.toml"]
 
 [[sources]]
 source_id = "source-a"
@@ -311,6 +358,31 @@ kind = "unknown"
                 "domain-a",
             )
         )
+    with (path / "model.csv").open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(model_columns)
+        writer.writerow(
+            (
+                "figiel-dielectric-suppression",
+                "dielectric_ion_suppression_coefficient",
+                "7.01",
+                "",
+                "source-a",
+                "Table 1, test cell",
+                "domain-a",
+            )
+        )
+        writer.writerow(
+            (
+                "figiel-ionic-region-permittivity",
+                "ionic_region_relative_permittivity",
+                "8",
+                "",
+                "source-a",
+                "Table 1, test cell",
+                "domain-a",
+            )
+        )
     correlation_form = "expression" if bad_correlation else "constant"
     (path / "correlations.toml").write_text(
         f'''[[correlations]]
@@ -361,6 +433,7 @@ def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
     foreign = UnitRegistry()
     bundle = _from_records()
     equivalent = _from_records(foreign, reverse=True)
+    changed_model = _from_records(ionic_permittivity=Decimal("9"))
 
     assert isinstance(bundle, ParameterBundle)
     assert tuple(component.component_id for component in bundle.components) == (
@@ -369,6 +442,8 @@ def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
     )
     assert tuple(record.record_id for record in bundle.records) == (
         "ethane-segment-count",
+        "figiel-dielectric-suppression",
+        "figiel-ionic-region-permittivity",
         "methane-ethane-kij",
         "methane-molar-mass",
     )
@@ -377,6 +452,7 @@ def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
         for value in (bundle.sources, bundle.domains, bundle.components, bundle.records)
     )
     assert bundle.fingerprint == equivalent.fingerprint
+    assert bundle.fingerprint != changed_model.fingerprint
     assert bundle.fingerprint.startswith("sha256:")
     assert len(bundle.fingerprint) == 71
 
@@ -433,11 +509,19 @@ def test_one_strict_path_parser_preserves_sparse_zero_and_matches_records(
         AssociationParameterRecord,
         ConstantCorrelation,
         ConstantPlusSumOfExponentialsCorrelation,
+        ModelParameterRecord,
     }
+
+    selected = parsed.select(("methane",))
+    assert any(isinstance(record, ModelParameterRecord) for record in selected.records)
 
     bad_columns = tmp_path / "bad-columns"
     _write_bundle(bad_columns, component_columns=COMPONENT_COLUMNS + ("extra",))
     assert _error_code(lambda: ParameterBundle.from_path(bad_columns)) == "invalid-schema"
+
+    bad_model_columns = tmp_path / "bad-model-columns"
+    _write_bundle(bad_model_columns, model_columns=MODEL_COLUMNS + ("extra",))
+    assert _error_code(lambda: ParameterBundle.from_path(bad_model_columns)) == "invalid-schema"
 
     bad_inventory = tmp_path / "bad-inventory"
     _write_bundle(bad_inventory, extra_file=True)
@@ -502,7 +586,51 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
         locator="Table 1, test cell",
         domain_id="missing-domain",
     )
+    missing_model_source = ModelParameterRecord(
+        "missing-model-source",
+        "ionic_region_relative_permittivity",
+        8,
+        source_id="missing-source",
+        locator="Figure 1",
+        domain_id="domain-a",
+    )
+    missing_model_domain = ModelParameterRecord(
+        "missing-model-domain",
+        "dielectric_ion_suppression_coefficient",
+        Decimal("7.01"),
+        source_id="source-a",
+        locator="Eq. 11",
+        domain_id="missing-domain",
+    )
     assert _error_code(lambda: bundle.select((["not-a-string"],))) == "invalid-selection"
+    assert (
+        _error_code(
+            lambda: ParameterBundle.from_records(
+                bundle_id="test-bundle",
+                bundle_version=1,
+                purpose="package-test-fixture",
+                sources=(source,),
+                domains=(domain,),
+                components=components,
+                models=(missing_model_source,),
+            )
+        )
+        == "invalid-source"
+    )
+    assert (
+        _error_code(
+            lambda: ParameterBundle.from_records(
+                bundle_id="test-bundle",
+                bundle_version=1,
+                purpose="package-test-fixture",
+                sources=(source,),
+                domains=(domain,),
+                components=components,
+                models=(missing_model_domain,),
+            )
+        )
+        == "invalid-domain"
+    )
 
     codes = {
         _error_code(lambda: ParameterBundle.from_path(bad_schema)),
