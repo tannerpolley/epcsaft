@@ -1,6 +1,8 @@
 # Full Provider EOS Scientific Specification
 
-Status: implementation authority for the approved full-provider program
+Status: planned implementation authority for the approved full-provider
+program; not an executable capability claim until implementation and an
+accepted validation receipt exist
 
 Design: `../designs/2026-07-16-full-provider-eos-design.md`
 
@@ -18,6 +20,7 @@ not override this bounded specification.
 | Bulow2019 | Bülow et al., *Fluid Phase Equilibria* 2019, 492, 26-33, DOI `10.1016/j.fluid.2019.03.010` | Debye-Huckel contribution with composition-dependent dielectric treatment |
 | Figiel2025 | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2025, 64, 9406-9418, DOI `10.1021/acs.iecr.5c00475` | Fitted Born diameter, SSM+DS Born term, solvation factor, dielectric rule, fugacity and reference-state relations |
 | Figiel2025SI | Official ACS supporting information, DOI `10.1021/acs.iecr.5c00475.s001`, Figshare article `28888514`, file `54030209`, MD5 `4c3d3964d6e61b908c3ce3b17bb4e6b0` | Comparison of direct, SSM, and SSM+DS formulations and retained validation evidence |
+| Figiel2026Correction | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2026, DOI `10.1021/acs.iecr.6c01415` | Authoritative corrected text of Figiel2025 Eq. (7): restores the missing bracket and replaces the second `epsilon_r,bulk` with `epsilon_r,ion` |
 
 Each equation below has one status:
 
@@ -70,7 +73,7 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Association | mass-action site fractions and `sum_i x_i sum_A [ln X_iA - X_iA/2 + 1/2]` | source equation | Chapman1990 Eqs. (19), (21) | `_native/association.hpp` |
 | Debye-Huckel | finite-size DH residual Helmholtz term | adapted source equation | Bulow2019 Eq. (2), with diameter and screening definitions below | `_native/electrolyte.hpp` |
 | Bulk dielectric | salt-free solvent mass mixing followed by ion suppression | bounded empirical relation | Figiel2025 Eqs. (11), (12) | `_native/electrolyte.hpp` |
-| Born SSM+DS | piecewise-dielectric shell work | exact source reconciliation | Figiel2025 p. 9408, Eq. (7), Figure 1, surrounding prose; discrepancy recorded below | `_native/born.hpp` |
+| Born SSM+DS | piecewise-dielectric shell work | corrected source equation | Figiel2026Correction Eq. (7) | `_native/born.hpp` |
 | Total Helmholtz | `a^r = a^hc + a^disp + a^assoc + a^DH + a^Born` | source equation | Figiel2025 Eq. (1) | `_native/helmholtz.hpp` |
 | Pressure | `Z = 1 + rho_m (partial a^r/partial rho_m)_(T,x)` and `P = rho_m R T Z` | source equation | Gross2001 Eq. (A.24) | `_native/derivatives.hpp` |
 | Chemical potential | composition derivative of the common `a^r` owner | source equation | Gross2001 Eq. (A.33); Figiel2025 Eq. (13) | `_native/derivatives.hpp` |
@@ -123,9 +126,10 @@ Delta_iA,jB = g_ij^hs [exp(epsilon_iA,jB/(k_B T)) - 1]
 These are source equations from Chapman1990 Eqs. (19) and (18), with explicit
 mixture/site indexing as an implementation convention. `g_ij^hs` is the
 Gross2001 hard-sphere contact function. Site-pair energy and volume come from
-explicit `AssociationParameterRecord` values or from an admitted source
-combining equation with all operands present. String schemes and inferred
-donor/acceptor pairs are forbidden.
+explicit `AssociationParameterRecord` values. This first capability admits no
+cross-association combining equation. Every allowed site pair therefore has
+both an energy and volume record; an omitted unlike-site pair is inactive,
+not inferred. String schemes and inferred donor/acceptor pairs are forbidden.
 
 The association Helmholtz contribution is
 
@@ -140,9 +144,16 @@ CppAD supplies the partial Jacobians of `H(X,q)` and the code solves
 dX/dq = -(partial H/partial X)^-1 (partial H/partial q).
 ```
 
-Higher derivatives are added only when a listed provider property consumes
-them. The provider rejects `X` outside `(0,1]`, a nonfinite residual, failed
-convergence, or an ill-conditioned association Jacobian.
+For `q,r` drawn from `T`, `rho_m`, and independent composition coordinates,
+the second sensitivity consumed by `a_TT`, `a_T,rho`, and `a_rho,rho` is
+
+```text
+X_qr = -H_X^-1 [H_qr + H_qX X_r + H_Xr X_q + H_XX[X_q,X_r]].
+```
+
+CppAD supplies every displayed partial of the defining `H`; the code performs
+the linear solves. The provider rejects `X` outside `(0,1]`, a nonfinite
+residual, failed convergence, or an ill-conditioned association Jacobian.
 
 ## 6. Bulk dielectric and Debye-Huckel
 
@@ -176,7 +187,16 @@ kappa = sqrt[rho_N e^2/(epsilon_0 epsilon_r,bulk k_B T)
              sum_i x_i z_i^2].
 ```
 
-For each component, with the finite-size ion diameter `d_i` in meters,
+Only charged components enter the following sum. Their finite-size DH
+diameter is Figiel2025 Eq. (4), derived from Eq. (3) using the admitted ionic
+dispersion convention `u_ii = 0`:
+
+```text
+d_i^DH(T) = 0.88 sigma_i.
+```
+
+Here `sigma_i` and `d_i^DH` use the same length basis and `d_i^DH` is converted
+to metres in the SI DH equation. For each charged component,
 
 ```text
 chi_i = 3/(kappa d_i)^3
@@ -188,15 +208,14 @@ The residual contribution is
 
 ```text
 a^DH = -kappa e^2/(12 pi epsilon_0 epsilon_r,bulk k_B T)
-       sum_i x_i z_i^2 chi_i.
+       sum_(i in ions) x_i z_i^2 chi_i.
 ```
 
-The clean Figiel formulation uses the source-defined ion diameter relation for
-the DH term and the fitted Born diameter only in the Born term. The scientific
-implementation plan must bind the exact Figiel diameter relation and source
-domain before Task 6 code is admitted. CppAD differentiates the three defining
-relations above; the lab `dkappa/dx_i` catalogue entry is not a production
-owner.
+When `sum_i x_i z_i^2 = 0`, the provider defines `kappa = 0` and `a^DH = 0`
+without evaluating `chi_i`; this is the exact neutral limit. The fitted Born
+diameter is used only in the Born term. CppAD differentiates the defining
+relations above on the positive-ionic-strength branch; the lab
+`dkappa/dx_i` catalogue entry is not a production owner.
 
 ## 7. Born SSM+DS reconciliation
 
@@ -211,7 +230,7 @@ D_i = d_i^Born + Delta d_i.
 For the admitted systems the sum contains only solvents and ions and therefore
 `sum_k x_k = 1`. Ion values `f_i = 1` are source records, not defaults.
 
-### Published Eq. (7) discrepancy
+### Corrected Eq. (7)
 
 The literal rendered Eq. (7) on article p. 9408 places
 `(1 - 1/epsilon_r,bulk)` in both radial terms. That form simplifies to the
@@ -226,9 +245,10 @@ contradicts all of the following evidence in the same source:
 - Figiel2025SI compares SSM+DS with direct and SSM models as distinct
   calculations and selects `s-SSM+DS-f`.
 
-The clean provider classifies the printed second `epsilon_r,bulk` as a likely
-typesetting error. It implements the exact piecewise-dielectric work implied by
-Figure 1 and the prose:
+Figiel2026Correction confirms that the original Eq. (7) omitted one bracket
+and incorrectly named the second dielectric constant `epsilon_r,bulk` instead
+of `epsilon_r,ion`. The clean provider implements the corrected primary-source
+equation:
 
 ```text
 a^(Born,SSM+DS) = -e^2/(4 pi epsilon_0 k_B T) sum_(i in ions) x_i z_i^2
@@ -236,9 +256,10 @@ a^(Born,SSM+DS) = -e^2/(4 pi epsilon_0 k_B T) sum_(i in ions) x_i z_i^2
     + (1 - 1/epsilon_r,ion) [1/d_i^Born - 1/D_i] }.
 ```
 
-This equation is an **exact source reconciliation**, not a literal
-transcription of printed Eq. (7). It matches the radial two-region model,
-retains both limiting diameters, and matches the archived candidate kernel.
+Every `d_i^Born` and `D_i` in this equation is converted from angstrom to metre
+before use with the SI factor `e^2/(4 pi epsilon_0 k_B T)`. This equation is a
+**corrected source equation**. It matches the radial two-region model, retains
+both limiting diameters, and matches the archived candidate kernel.
 `epsilon_r,ion = 8` enters through a Figiel/Buelow source-bearing model record.
 The native source must not embed 8 or 7.01.
 
@@ -298,9 +319,11 @@ If it reports the departure entropy relative to an ideal gas at the same
 `T,P`, the result is named separately and equals `s_V^r/R + ln Z`. No result
 named only `residual_entropy` may switch reference convention by state route.
 
-`c_p^r` requires finite `Z + rho_m Z_rho` on a mechanically stable branch.
-The provider rejects singular or ill-conditioned states instead of returning a
-finite-looking property.
+`c_p^r` requires finite, sufficiently conditioned `Z + rho_m Z_rho`. A
+specified-pressure state additionally requires a positive value because that
+route admits only mechanically stable roots. Explicit-density evaluation does
+not reject a finite state solely because the slope is negative; it reports the
+mathematical EOS result and does not certify that state as stable.
 
 ## 9. Density closure
 
@@ -325,7 +348,9 @@ roots.
 
 ## 10. Reference-state electrolyte quantities
 
-Figiel2025 Eqs. (17), (19), and (20) define the admitted x-process quantities:
+Figiel2025 Eqs. (17), (19), (20), and (21) define the admitted x-process
+quantities. The x-process uses the same temperature in gas and liquid and the
+standard pressure `p^0 = 1 bar` used in the source:
 
 ```text
 Delta_solv G_i^infinity = R T ln(phi_i^infinity)
@@ -341,18 +366,36 @@ ln gamma_pm^* = [nu_c ln gamma_c^* + nu_a ln gamma_a^*]
                 /(nu_c + nu_a).
 ```
 
-The provider approaches infinite dilution along an explicit electroneutral
-stoichiometric path. It does not evaluate a lone non-electroneutral bulk ion.
-Each API names the x, molality, or other concentration scale; scale conversion
-is not implicit.
+For the first water/NaCl capability, infinite dilution uses
+
+```text
+x_water(lambda) = 1 - 2 lambda,
+x_Na+(lambda) = lambda,
+x_Cl-(lambda) = lambda,
+lambda -> 0+.
+```
+
+For a later mixed-solvent capability, the salt-free solvent mole-fraction
+ratios remain fixed while the electrolyte follows its explicit stoichiometric
+electroneutral path. Solvation holds `T = 298.15 K` and `p = p^0` and takes
+`phi_i^infinity` along that path. Transfer compares two such limits at the
+same `T` and `p^0`, with each endpoint's named salt-free solvent composition.
+The provider does not evaluate a lone non-electroneutral bulk ion. Each API
+names the x, molality, or other concentration scale; scale conversion is not
+implicit.
 
 ## 11. Domain and rejection rules
 
-The first electrolyte capability is bounded to the complete source-backed
-water/sodium/chloride bundle and its retained conditions. The Figiel dielectric
-suppression relation is not evidence for arbitrary solvents, temperatures, or
-ion fractions above its reported range. A mathematically converged state
-outside the source domain is not physically accepted.
+The first electrolyte capability is bounded to exactly water, sodium cation,
+and chloride anion at `T = 298.15 K`, `p = 1 bar` for pressure-specified and
+reference-state calculations, and `0 <= x_ion <= 0.38`. The ordinary-state
+composition is electroneutral and contains no other neutral component. The
+explicit-density equation can be evaluated only when the corresponding
+pressure remains within this same reported-condition capability. The Figiel
+dielectric suppression relation is not evidence for another solvent,
+temperature, pressure, component topology, or larger ion fraction. A
+mathematically converged state outside this source domain is not physically
+accepted.
 
 Construction or evaluation fails on:
 
@@ -361,7 +404,7 @@ Construction or evaluation fails on:
 - nonpositive dielectric values or Born/shell diameters;
 - association nonconvergence or an ill-conditioned association Jacobian;
 - packing-limit violation, density branch ambiguity, or mechanical
-  instability; and
+  instability of a specified-pressure root; and
 - a requested derivative or property whose defining Jacobian is singular.
 
 ## 12. Deliberate exclusions
