@@ -109,12 +109,26 @@ def _native_arguments(
             for record in model.relative_permittivity
         ]
         dielectric_suppression = model.dielectric_ion_suppression_coefficient
+        born_diameter = [
+            0.0 if value is None else value for value in model.born_diameter_angstrom
+        ]
+        solvation_factor = [
+            _magnitude(record, "dimensionless")
+            for record in model.solvation_factor
+            if record is not None
+        ]
+        ionic_permittivity = model.ionic_region_relative_permittivity
         assert dielectric_suppression is not None
+        assert ionic_permittivity is not None
+        assert len(solvation_factor) == components
     else:
         molar_mass = [0.0] * components
         charge_number = [0] * components
         relative_permittivity = [0.0] * components
         dielectric_suppression = 0.0
+        born_diameter = [0.0] * components
+        solvation_factor = [0.0] * components
+        ionic_permittivity = 0.0
 
     return (
         list(model.segment_count),
@@ -133,6 +147,9 @@ def _native_arguments(
         charge_number,
         relative_permittivity,
         dielectric_suppression,
+        born_diameter,
+        solvation_factor,
+        ionic_permittivity,
     )
 
 
@@ -220,6 +237,7 @@ class EPCSAFT:
             dispersion=native.dispersion,
             association=native.association,
             debye_huckel=native.debye_huckel,
+            born_ssm_ds=native.born_ssm_ds,
             residual_helmholtz=native.residual_helmholtz,
             compressibility_factor=native.compressibility_factor,
             pressure=native.pressure * unit_registry.pascal,
@@ -243,6 +261,7 @@ class EosResult:
     dispersion: float
     association: float
     debye_huckel: float
+    born_ssm_ds: float
     residual_helmholtz: float
     compressibility_factor: float
     pressure: pint.Quantity

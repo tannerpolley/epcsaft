@@ -11,6 +11,7 @@ struct NativeResult final {
     double dispersion;
     double association;
     double debye_huckel;
+    double born_ssm_ds;
     double residual_helmholtz;
     double compressibility_factor;
     double pressure;

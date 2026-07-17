@@ -21,6 +21,9 @@ struct NativeParameters final {
     std::vector<int> charge_number;
     std::vector<double> relative_permittivity;
     double dielectric_ion_suppression_coefficient;
+    std::vector<double> born_diameter_angstrom;
+    std::vector<double> solvation_factor;
+    double ionic_region_relative_permittivity;
 };
 
 }  // namespace epcsaft

@@ -14,6 +14,7 @@ PYBIND11_MODULE(_core, module) {
         .def_readonly("dispersion", &epcsaft::NativeResult::dispersion)
         .def_readonly("association", &epcsaft::NativeResult::association)
         .def_readonly("debye_huckel", &epcsaft::NativeResult::debye_huckel)
+        .def_readonly("born_ssm_ds", &epcsaft::NativeResult::born_ssm_ds)
         .def_readonly(
             "residual_helmholtz", &epcsaft::NativeResult::residual_helmholtz
         )
@@ -40,7 +41,10 @@ PYBIND11_MODULE(_core, module) {
             std::vector<double> molar_mass_kg_per_mol,
             std::vector<int> charge_number,
             std::vector<double> relative_permittivity,
-            double dielectric_ion_suppression_coefficient
+            double dielectric_ion_suppression_coefficient,
+            std::vector<double> born_diameter_angstrom,
+            std::vector<double> solvation_factor,
+            double ionic_region_relative_permittivity
         ) {
             return epcsaft::NativeModel(epcsaft::NativeParameters{
                 std::move(segment_count),
@@ -59,6 +63,9 @@ PYBIND11_MODULE(_core, module) {
                 std::move(charge_number),
                 std::move(relative_permittivity),
                 dielectric_ion_suppression_coefficient,
+                std::move(born_diameter_angstrom),
+                std::move(solvation_factor),
+                ionic_region_relative_permittivity,
             });
         }))
         .def("evaluate", &epcsaft::NativeModel::evaluate);
