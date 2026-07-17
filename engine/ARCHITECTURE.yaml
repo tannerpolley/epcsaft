@@ -1,0 +1,56 @@
+version: 1
+status: candidate
+effective_gate: accepted provider-slice-1 promotion receipt
+scope: neutral nonassociating nonionic PC-SAFT at explicit molar density
+
+owners:
+  parameter_input:
+    - ParameterBundle
+    - ParameterSet
+  state_input: EPCSAFT.evaluate
+  result: EosResult
+  nonlinear_equations: src/epcsaft/_native/eos.hpp
+  density_derivative: CppAD over the shared scalar EOS kernel
+  installed_parameter_data: src/epcsaft/data/bundles/gross-2001-methane-ethane/1
+
+public_surface:
+  exports:
+    - ParameterBundle
+    - ParameterSet
+    - ParameterError
+    - unit_registry
+    - EPCSAFT
+    - EosResult
+  runtime_dependencies:
+    - Pint
+  native_modules:
+    - epcsaft._core
+  native_targets: 1
+
+manifest:
+  production_python_files: 7
+  native_source_files: 3
+  installed_data_files: 4
+  package_test_files: 3
+  physical_production_lines: 1912
+  physical_package_test_lines: 1218
+  measurement: wc -l over the admitted Python and C++ source files at the Slice 1 candidate commit
+
+excluded:
+  - specified-pressure density closure and phase labels
+  - association and ions
+  - fugacity and caloric properties
+  - equilibrium and regression
+  - native consumer SDK
+  - alternate derivative backends
+  - compatibility interfaces
+  - release and workflow machinery
+
+ratchet:
+  rule: Every increase must serve one named admitted capability and remove any displaced owner in the same checkpoint.
+  reject:
+    - parallel input or result representations
+    - duplicate equation or derivative owners
+    - sibling-source, lab, or migration dependencies
+    - source files, tests, or dependencies unreachable from an admitted capability or its proof
+  note: Line count is a cost ledger, not a code-golf target; moving semantics into opaque configuration does not reduce cost.

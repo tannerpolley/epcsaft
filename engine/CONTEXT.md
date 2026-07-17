@@ -18,3 +18,6 @@ The lab remains the transitional runtime authority until an accepted promotion
 receipt; this functional implementation does not itself transfer authority.
 
 `runtime_source_of_truth: false`
+
+The candidate maintenance ratchet is recorded in `ARCHITECTURE.yaml`. It
+becomes effective only with the accepted Slice 1 promotion receipt.
