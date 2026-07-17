@@ -37,7 +37,7 @@ class _ResolvedAssociationPair:
 class _ResolvedModel:
     topology: Literal["neutral", "associating", "ionic-ssm-ds"]
     component_ids: tuple[str, ...]
-    molar_mass_kg_per_mol: tuple[float, ...]
+    molar_mass_kg_per_mol: tuple[float | None, ...]
     segment_count: tuple[float, ...]
     segment_diameter: tuple[_TemperatureRecord, ...]
     dispersion_energy_over_k: tuple[float, ...]
@@ -224,10 +224,9 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
 
     component_ids = parameters.component_ids
     molar_mass = tuple(
-        _magnitude(
-            _component_record(component_id, "molar_mass", singles, correlations, allow_correlation=False),
-            "kilogram / mole",
-        )
+        None
+        if (record := singles.get((component_id, "molar_mass"))) is None
+        else _magnitude(record, "kilogram / mole")
         for component_id in component_ids
     )
     segment_count = tuple(
@@ -304,8 +303,12 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
     relative_permittivity: list[_TemperatureRecord | None] = []
     born_diameter: list[float | None] = []
     solvation_factor: list[_TemperatureRecord | None] = []
-    for component_id, charge in zip(component_ids, charges, strict=True):
+    for index, (component_id, charge) in enumerate(
+        zip(component_ids, charges, strict=True)
+    ):
         if charge == 0:
+            if molar_mass[index] is None:
+                raise _missing(component_id=component_id, family="molar_mass")
             relative_permittivity.append(
                 _component_record(
                     component_id,

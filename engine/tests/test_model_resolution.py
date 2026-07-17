@@ -182,6 +182,27 @@ def test_neutral_associating_and_ionic_topologies_resolve_immutably() -> None:
     assert ionic_model.charge_number == (0, 1, -1)
     assert ionic_model.ionic_region_relative_permittivity == 8.0
     assert ionic_model.dielectric_ion_suppression_coefficient == 7.01
+
+    without_unused_ion_masses = tuple(
+        record
+        for record in singles
+        if not (
+            record.family == "molar_mass"
+            and record.component_id in {"sodium", "chloride"}
+        )
+    )
+    lean_model = _resolve_model(
+        _bundle(
+            components,
+            singles=without_unused_ion_masses,
+            pairs=pairs,
+            sites=sites,
+            associations=association,
+            correlations=correlations,
+            models=models,
+        )
+    )
+    assert lean_model.molar_mass_kg_per_mol == (0.018, None, None)
     with pytest.raises(FrozenInstanceError):
         ionic_model.topology = "neutral"
 
@@ -274,3 +295,19 @@ def test_partial_ionic_topologies_are_rejected(removed_family: str) -> None:
                 models=tuple(models),
             )
         )
+
+
+def test_source_backed_figiel_catalog_resolves_without_unpublished_defaults() -> None:
+    parameters = ParameterBundle.from_catalog(
+        "figiel-2025-water-sodium-chloride", version=1
+    ).select(("water", "sodium-cation", "chloride-anion"))
+    model = _resolve_model(parameters)
+
+    assert model.topology == "ionic-ssm-ds"
+    assert model.charge_number == (0, 1, -1)
+    assert model.molar_mass_kg_per_mol == (0.0180153, None, None)
+    assert model.k_ij == (0.0, -0.3, -0.3, -0.3, 0.0, 0.8, -0.3, 0.8, 0.0)
+    assert model.l_ij == (None,) * 9
+    assert model.k_hb_ij == (None,) * 9
+    assert model.ionic_region_relative_permittivity == 8.0
+    assert model.dielectric_ion_suppression_coefficient == 7.01

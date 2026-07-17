@@ -882,8 +882,62 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
         for path in catalog.rglob("*")
         if path.is_file()
     ) == [
+        "figiel-2025-water-sodium-chloride/1/association.csv",
+        "figiel-2025-water-sodium-chloride/1/bundle.toml",
+        "figiel-2025-water-sodium-chloride/1/components.csv",
+        "figiel-2025-water-sodium-chloride/1/correlations.toml",
+        "figiel-2025-water-sodium-chloride/1/model.csv",
+        "figiel-2025-water-sodium-chloride/1/pair.csv",
+        "figiel-2025-water-sodium-chloride/1/single.csv",
+        "figiel-2025-water-sodium-chloride/1/sites.csv",
         "gross-2001-methane-ethane/1/bundle.toml",
         "gross-2001-methane-ethane/1/components.csv",
         "gross-2001-methane-ethane/1/pair.csv",
         "gross-2001-methane-ethane/1/single.csv",
     ]
+
+
+def test_figiel_water_sodium_chloride_catalog_is_exact_and_sparse() -> None:
+    bundle = ParameterBundle.from_catalog(
+        "figiel-2025-water-sodium-chloride", version=1
+    )
+    assert bundle.purpose == "installed-catalog"
+    assert tuple(component.component_id for component in bundle.components) == (
+        "chloride-anion",
+        "sodium-cation",
+        "water",
+    )
+    assert bundle.fingerprint == (
+        "sha256:fec3c12cc059357a4be1350c44ee9dbed1af3bedc1c300f52811e00961899316"
+    )
+
+    values = {
+        (record.component_id, record.family): record.value
+        for record in bundle.records
+        if isinstance(record, SingleParameterRecord)
+    }
+    assert values[("water", "molar_mass")].to("gram / mole").magnitude == Decimal("18.0153")
+    assert values[("water", "segment_count")] == Decimal("1.2047")
+    assert values[("water", "dispersion_energy_over_k")].magnitude == Decimal("353.95")
+    assert values[("water", "charge_number")] == 0
+    assert values[("water", "solvation_factor")] == Decimal("1.5")
+    assert values[("sodium-cation", "segment_diameter")].magnitude == Decimal("2.8232")
+    assert values[("sodium-cation", "born_diameter")].magnitude == Decimal("3.445")
+    assert values[("chloride-anion", "segment_diameter")].magnitude == Decimal("2.7560")
+    assert values[("chloride-anion", "born_diameter")].magnitude == Decimal("4.100")
+
+    pairs = {
+        (record.component_id_a, record.component_id_b): record.value
+        for record in bundle.records
+        if isinstance(record, PairParameterRecord) and record.family == "k_ij"
+    }
+    assert pairs == {
+        ("sodium-cation", "water"): Decimal("-0.3"),
+        ("chloride-anion", "water"): Decimal("-0.3"),
+        ("chloride-anion", "sodium-cation"): Decimal("0.8"),
+    }
+    assert not any(
+        isinstance(record, PairParameterRecord)
+        and record.family in {"l_ij", "k_hb_ij"}
+        for record in bundle.records
+    )

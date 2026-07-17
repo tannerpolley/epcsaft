@@ -79,7 +79,7 @@ def test_native_model_boundary_is_ordered_strict_and_immutable() -> None:
     assert exc_info.value.code == "missing-record"
     assert dict(exc_info.value.context) == {
         "component_id": "water",
-        "family": "molar_mass",
+        "family": "segment_count",
     }
 
     assert epcsaft.__all__ == (
