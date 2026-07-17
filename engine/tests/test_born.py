@@ -12,7 +12,7 @@ BOLTZMANN = 1.380649e-23
 
 def _model() -> EPCSAFT:
     return EPCSAFT(
-        ParameterBundle.from_catalog("figiel-2025-water-sodium-chloride", version=1).select(
+        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
             ("water", "sodium-cation", "chloride-anion")
         )
     )

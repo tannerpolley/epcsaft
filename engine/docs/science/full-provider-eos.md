@@ -18,7 +18,7 @@ not override this bounded specification.
 | Gross2002 | Gross and Sadowski, *Ind. Eng. Chem. Res.* 2002, 41, 5510-5515, DOI `10.1021/ie010954d` | Association mixing for associating systems |
 | Chapman1990 | Chapman et al., *Ind. Eng. Chem. Res.* 1990, 29, 1709-1721, DOI `10.1021/ie00104a021` | Wertheim association energy and site-fraction equations |
 | Bulow2019 | Bülow et al., *Fluid Phase Equilibria* 2019, 492, 26-33, DOI `10.1016/j.fluid.2019.03.010` | Debye-Huckel contribution with composition-dependent dielectric treatment |
-| Figiel2025 | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2025, 64, 9406-9418, DOI `10.1021/acs.iecr.5c00475` | Fitted Born diameter, SSM+DS Born term, solvation factor, dielectric rule, and fugacity relations |
+| Figiel2025 | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2025, 64, 9406-9418, DOI `10.1021/acs.iecr.5c00475` | Fitted Born diameter, SSM+DS Born term, solvation factor, dielectric rule, fugacity relations, and electrolyte reference-state equations |
 | Figiel2025SI | Official ACS supporting information, DOI `10.1021/acs.iecr.5c00475.s001`, Figshare article `28888514`, file `54030209`, MD5 `4c3d3964d6e61b908c3ce3b17bb4e6b0` | Comparison of direct, SSM, and SSM+DS formulations and retained validation evidence |
 | Figiel2026Correction | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2026, DOI `10.1021/acs.iecr.6c01415` | Authoritative corrected text of Figiel2025 Eq. (7): restores the missing bracket and replaces the second `epsilon_r,bulk` with `epsilon_r,ion` |
 
@@ -101,6 +101,9 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Pressure | `Z = 1 + rho_m (partial a^r/partial rho_m)_(T,x)` and `P = rho_m R T Z` | source equation | Gross2001 Eq. (A.24) | `_native/derivatives.hpp` |
 | Chemical potential | composition derivative of the common `a^r` owner | source equation | Gross2001 Eq. (A.33); Figiel2025 Eq. (13) | `_native/derivatives.hpp` |
 | Fugacity | `ln phi_i = mu_i^r/(RT) - ln Z` | source equation | Gross2001 Eq. (A.32) | `_native/derivatives.hpp` |
+| Infinite-dilution solvation | `Delta_solv,x G_i^infinity = RT ln(phi_i^infinity)` | source equation | Figiel2025 Eq. (17) | `reference.py` |
+| Infinite-dilution transfer | `Delta_tr G_i = RT ln(phi_i^infinity,S2/phi_i^infinity,S1)` | source equation | Figiel2025 Eq. (19) | `reference.py` |
+| Ionic activity and MIAC | fugacity ratio, stoichiometric mean, and mole-fraction-to-molality conversion | source equations | Figiel2025 Eqs. (20)--(22) | `reference.py` |
 | Residual caloric properties | temperature and density derivatives of the common `a^r` owner | source equation and exact derivation | Gross2001 Eqs. (A.46)-(A.50) plus identities below | `_native/derivatives.hpp` |
 | Density closure | `rho_m R T Z(T,rho_m,x) - P_spec = 0` | exact derivation | pressure identity | `_native/density.hpp` |
 
@@ -348,7 +351,45 @@ route admits only mechanically stable roots. Explicit-density evaluation does
 not reject a finite state solely because the slope is negative; it reports the
 mathematical EOS result and does not certify that state as stable.
 
-## 9. Density closure
+## 9. Electrolyte reference states
+
+`EPCSAFT.reference_state` holds a salt-free solvent mole composition fixed and
+dilutes one cation/anion formula unit along an exactly electroneutral path. It
+evaluates the complete EOS at formula-unit molalities `10^-6`, `10^-8`,
+`10^-10`, and `10^-12 mol kg^-1`. The limiting ion log fugacities are accepted
+only when the maximum change between the final two states is at most `5e-5`;
+the accepted molality and observed change are returned as diagnostics.
+
+For ion `i` in solvent state `S`, the x-process quantities are
+
+```text
+Delta_solv,x G_i^infinity = RT ln(phi_i^infinity,S)
+Delta_tr G_i^(infinity,S1->S2)
+    = RT [ln(phi_i^infinity,S2) - ln(phi_i^infinity,S1)]
+gamma_i^* = phi_i^S / phi_i^infinity,S.
+```
+
+For one formula unit with stoichiometric coefficients `nu_i`,
+
+```text
+ln(gamma_pm^*,x) = sum_i nu_i ln(gamma_i^*) / sum_i nu_i
+gamma_pm^*,m = gamma_pm^*,x /
+    [1 + M_solvent m_solute sum_i nu_i].
+```
+
+These are Figiel2025 Eqs. (17), (19), and (20)--(22). `M_solvent`
+is calculated from the explicitly supplied salt-free solvent mole fractions
+and source-backed solvent molar masses. The reference module calls
+`EPCSAFT.evaluate`; it owns no Helmholtz or derivative equation. Single-ion
+values are path-defined model quantities. The stoichiometric MIAC is the
+literature comparison quantity.
+
+The first admitted reference scope contains exactly one cation, one anion,
+water or methanol, `T = 298.15 K`, and the selected Figiel parameter domain.
+Multi-salt reference paths, non-electroneutral dilution, automatic species
+generation, and alternative concentration conventions remain closed.
+
+## 10. Density closure
 
 Specified-pressure evaluation solves
 
@@ -371,15 +412,16 @@ rather than relabelled from a phase hint. Failed closure reports through
 `EosError`; this local root calculation is not a global phase-stability or
 critical-point certificate.
 
-## 10. Domain and rejection rules
+## 11. Domain and rejection rules
 
 Finite temperature bounds attached to the selected source records are
 intersected by the resolver and enforced for every topology. A record whose
 source domain is explicitly unknown contributes no invented numerical bound.
 
-The first electrolyte model is bounded to exactly water, sodium cation, and
-chloride anion at `T = 298.15 K` and `0 <= x_ion <= 0.38`. The ordinary-state
-composition is electroneutral and contains no other neutral component. The
+The first electrolyte model is bounded to the Figiel source records for water,
+methanol, `Li+`, `Na+`, `K+`, `Cl-`, and `Br-` at `T = 298.15 K` and
+`0 <= x_ion <= 0.38`. Each admitted MIAC calculation selects one solvent,
+one cation, and one anion. The ordinary-state composition is electroneutral. The
 retained Figiel records report `p = 1 bar`; evaluation at another pressure is
 a mathematical EOS result, not source-backed physical validation at that
 pressure. The dielectric suppression relation is not evidence for another
@@ -396,11 +438,11 @@ Construction or evaluation fails on:
   instability of a specified-pressure root; and
 - a requested derivative or property whose defining Jacobian is singular.
 
-## 11. Deliberate exclusions
+## 12. Deliberate exclusions
 
 This specification does not admit Bjerrum pairing, ion-pair equilibrium,
 reaction equilibrium, alternate dielectric rules, direct/SSM-only Born modes,
 analytic derivative modes, ideal-gas caloric data, phase equilibrium,
-regression, generic single-ion reference-state workflows, or a public
-derivative/SDK contract. Adding one requires a new source-backed capability
-design rather than a flag in this model.
+regression, multi-salt reference paths, alternate single-ion conventions, or a
+public derivative/SDK contract. Adding one requires a new source-backed
+capability design rather than a flag in this model.

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 import pint
 
@@ -15,6 +15,9 @@ from .records import (
     SingleParameterRecord,
 )
 from .units import ParameterError, _error, _quantity, unit_registry
+
+if TYPE_CHECKING:
+    from .reference import ElectrolyteReference
 
 
 def _magnitude(
@@ -285,6 +288,24 @@ class EPCSAFT:
                 stable=diagnostics.stable,
                 branch=diagnostics.branch,
             ),
+        )
+
+    def reference_state(
+        self,
+        *,
+        temperature: object,
+        pressure: object,
+        solvent_mole_fractions: object,
+        phase: str,
+    ) -> ElectrolyteReference:
+        from .reference import build_reference_state
+
+        return build_reference_state(
+            self,
+            temperature=temperature,
+            pressure=pressure,
+            solvent_mole_fractions=solvent_mole_fractions,
+            phase=phase,
         )
 
 

@@ -111,7 +111,7 @@ def test_density_and_pressure_inputs_are_mutually_exclusive() -> None:
 
 def test_pressure_closure_runs_the_complete_electrolyte_eos() -> None:
     model = EPCSAFT(
-        ParameterBundle.from_catalog("figiel-2025-water-sodium-chloride", version=1).select(
+        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
             ("water", "sodium-cation", "chloride-anion")
         )
     )

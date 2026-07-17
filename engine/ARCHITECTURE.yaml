@@ -9,7 +9,7 @@ authority:
 candidate_scope: >-
   Source-backed neutral, associating, and bounded ionic SSM+DS residual EOS at
   explicit molar density or specified pressure, with residual chemical,
-  fugacity, caloric, and density-root results.
+  fugacity, caloric, density-root, and bounded electrolyte reference results.
 
 owners:
   parameter_input:
@@ -24,6 +24,7 @@ owners:
   born_ssm_ds: src/epcsaft/_native/born.hpp
   nonlinear_derivatives: src/epcsaft/_native/derivatives.hpp
   density_closure: src/epcsaft/_native/density.hpp
+  electrolyte_reference: src/epcsaft/reference.py
   installed_parameter_data: src/epcsaft/data/bundles
 
 public_surface:
@@ -50,14 +51,14 @@ public_surface:
   native_sdk_entries: []
 
 manifest:
-  tracked_files: 58
-  production_python_files: 8
+  tracked_files: 62
+  production_python_files: 9
   native_source_files: 10
   installed_data_files: 12
-  package_test_files: 9
-  physical_production_lines: 3879
-  physical_package_test_lines: 2530
-  physical_documentation_lines: 1464
+  package_test_files: 10
+  physical_production_lines: 4198
+  physical_package_test_lines: 2680
+  physical_documentation_lines: 1657
   measurement: wc -l over tracked provider Python, C++, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
@@ -69,7 +70,7 @@ manifest:
     - path: src/epcsaft/_bundle_io.py
       physical_lines: 417
     - path: tests/test_parameters.py
-      physical_lines: 939
+      physical_lines: 957
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 
 excluded:
@@ -77,7 +78,7 @@ excluded:
   - reaction, dissociation, ion-pair, and species equilibrium
   - regression and parameter fitting
   - ideal-gas and total caloric properties
-  - generic single-ion reference-state workflows
+  - multi-salt and alternate-convention reference-state workflows
   - native consumer SDK
   - alternate derivative backends
   - compatibility interfaces

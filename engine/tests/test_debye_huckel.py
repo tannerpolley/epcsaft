@@ -14,7 +14,7 @@ GAS_CONSTANT = 8.31446261815324
 
 def _electrolyte_model() -> EPCSAFT:
     return EPCSAFT(
-        ParameterBundle.from_catalog("figiel-2025-water-sodium-chloride", version=1).select(
+        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
             ("water", "sodium-cation", "chloride-anion")
         )
     )

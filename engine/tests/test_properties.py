@@ -138,7 +138,7 @@ def test_isobaric_heat_capacity_is_undefined_on_an_unstable_density_branch() -> 
 
 def test_electrolyte_formula_unit_chemical_potential_is_electroneutral() -> None:
     model = EPCSAFT(
-        ParameterBundle.from_catalog("figiel-2025-water-sodium-chloride", version=1).select(
+        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
             ("water", "sodium-cation", "chloride-anion")
         )
     )

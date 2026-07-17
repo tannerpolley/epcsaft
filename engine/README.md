@@ -25,6 +25,26 @@ pressure_specified = model.evaluate(
 )
 ```
 
+For a bounded Figiel electrolyte, construct one explicit reference state and
+reuse it across concentrations:
+
+```python
+electrolyte = EPCSAFT(
+    ParameterBundle.from_catalog(
+        "figiel-2025-reference-electrolytes", version=1
+    ).select(("water", "sodium-cation", "chloride-anion"))
+)
+reference = electrolyte.reference_state(
+    temperature=298.15 * u.kelvin,
+    pressure=1 * u.bar,
+    solvent_mole_fractions=(1.0, 0.0, 0.0),
+    phase="liquid",
+)
+gamma_pm = reference.at_molality(
+    1 * u.mole / u.kilogram
+).mean_ionic_activity_coefficient_molality
+```
+
 `EosResult` contains contribution and total residual Helmholtz energies,
 compressibility, pressure, molar density, component residual chemical
 potentials, fugacity coefficients when defined, and residual entropy, internal
@@ -42,12 +62,12 @@ inventing a phase identity.
 The installed catalogs are:
 
 - Gross and Sadowski (2001) methane/ethane neutral PC-SAFT parameters; and
-- the bounded Figiel, Yu, and Held (2025) water/sodium/chloride electrolyte
-  record set, including explicit model constants and corrected SSM+DS inputs.
+- the bounded Figiel, Yu, and Held (2025) water/methanol alkali-halide records
+  needed for six aqueous MIAC systems and explicit transfer reference states.
 
 This repository does not perform phase equilibrium or phase discovery,
 reaction/species equilibrium, regression, parameter fitting, ideal-gas
-caloric calculations, or generic single-ion reference-state workflows. Solver
+caloric calculations, or multi-salt reference paths. Solver
 convergence is not a claim of global phase stability or literature validation.
 
 The full provider implementation is currently a local candidate. The accepted

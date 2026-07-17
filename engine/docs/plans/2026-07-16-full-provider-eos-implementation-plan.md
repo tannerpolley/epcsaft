@@ -179,7 +179,7 @@ git commit -m "feat: resolve full provider model input"
 
 **Files**
 
-- Create: `src/epcsaft/data/bundles/figiel-2025-water-sodium-chloride/1/*`
+- Create: `src/epcsaft/data/bundles/figiel-2025-reference-electrolytes/1/*`
 - Modify: `tests/test_parameters.py`
 - Modify: `tests/test_model_resolution.py`
 

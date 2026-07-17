@@ -323,7 +323,7 @@ def test_partial_ionic_topologies_are_rejected(removed_family: str) -> None:
 
 def test_source_backed_figiel_catalog_resolves_without_unpublished_defaults() -> None:
     parameters = ParameterBundle.from_catalog(
-        "figiel-2025-water-sodium-chloride", version=1
+        "figiel-2025-reference-electrolytes", version=1
     ).select(("water", "sodium-cation", "chloride-anion"))
     model = _resolve_model(parameters)
 
