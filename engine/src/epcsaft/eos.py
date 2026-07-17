@@ -180,13 +180,20 @@ class EPCSAFT:
         self,
         *,
         temperature: object,
-        molar_density: object,
+        molar_density: object | None = None,
+        pressure: object | None = None,
         mole_fractions: object,
+        phase: str | None = None,
     ) -> EosResult:
+        if (molar_density is None) == (pressure is None):
+            raise _eos_error(
+                "invalid-state", reason="specify-exactly-one-of-density-or-pressure"
+            )
+        if phase not in (None, "vapor", "liquid"):
+            raise _eos_error("invalid-state", field="phase")
+        if molar_density is not None and phase is not None:
+            raise _eos_error("invalid-state", field="phase")
         temperature_k = _state_magnitude(temperature, "kelvin", "temperature")
-        density_molar = _state_magnitude(
-            molar_density, "mole / meter ** 3", "molar_density"
-        )
         try:
             fractions = tuple(float(value) for value in mole_fractions)  # type: ignore[union-attr]
         except (TypeError, ValueError) as exc:
@@ -229,9 +236,21 @@ class EPCSAFT:
                 raise _eos_error("invalid-state", field="electroneutrality")
 
         try:
-            native = self._native.evaluate(temperature_k, density_molar, fractions)
+            if molar_density is not None:
+                density_molar = _state_magnitude(
+                    molar_density, "mole / meter ** 3", "molar_density"
+                )
+                native = self._native.evaluate(
+                    temperature_k, density_molar, fractions
+                )
+            else:
+                pressure_pa = _state_magnitude(pressure, "pascal", "pressure")
+                native = self._native.evaluate_pressure(
+                    temperature_k, pressure_pa, fractions, phase or ""
+                )
         except (RuntimeError, ValueError) as exc:
             raise _eos_error("evaluation-failed", reason=str(exc)) from exc
+        diagnostics = native.density_diagnostics
         return EosResult(
             hard_chain=native.hard_chain,
             dispersion=native.dispersion,
@@ -260,6 +279,26 @@ class EPCSAFT:
             if native.residual_isobaric_heat_capacity is None
             else native.residual_isobaric_heat_capacity
             * unit_registry.joule / unit_registry.mole / unit_registry.kelvin,
+            molar_density=native.molar_density
+            * unit_registry.mole / unit_registry.meter**3,
+            density_diagnostics=None
+            if diagnostics is None
+            else DensityDiagnostics(
+                bracket_lower=diagnostics.bracket_lower
+                * unit_registry.mole / unit_registry.meter**3,
+                bracket_upper=diagnostics.bracket_upper
+                * unit_registry.mole / unit_registry.meter**3,
+                pressure_residual=diagnostics.pressure_residual
+                * unit_registry.pascal,
+                pressure_density_derivative=
+                diagnostics.pressure_density_derivative
+                * unit_registry.pascal * unit_registry.meter**3
+                / unit_registry.mole,
+                iterations=diagnostics.iterations,
+                stable=diagnostics.stable,
+                branch=diagnostics.branch,
+                rejection_reason=None,
+            ),
         )
 
 
@@ -291,6 +330,20 @@ class EosResult:
     residual_enthalpy: pint.Quantity
     residual_isochoric_heat_capacity: pint.Quantity
     residual_isobaric_heat_capacity: pint.Quantity | None
+    molar_density: pint.Quantity
+    density_diagnostics: DensityDiagnostics | None
 
 
-__all__ = ("EPCSAFT", "EosError", "EosResult")
+@dataclass(frozen=True, slots=True)
+class DensityDiagnostics:
+    bracket_lower: pint.Quantity
+    bracket_upper: pint.Quantity
+    pressure_residual: pint.Quantity
+    pressure_density_derivative: pint.Quantity
+    iterations: int
+    stable: bool
+    branch: str
+    rejection_reason: str | None
+
+
+__all__ = ("EPCSAFT", "EosError", "EosResult", "DensityDiagnostics")

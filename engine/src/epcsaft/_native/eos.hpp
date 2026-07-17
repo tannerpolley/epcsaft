@@ -2,10 +2,22 @@
 
 #include "model.hpp"
 
+#include <cstddef>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace epcsaft {
+
+struct NativeDensityDiagnostics final {
+    double bracket_lower;
+    double bracket_upper;
+    double pressure_residual;
+    double pressure_density_derivative;
+    std::size_t iterations;
+    bool stable;
+    std::string branch;
+};
 
 struct NativeResult final {
     double hard_chain;
@@ -23,6 +35,9 @@ struct NativeResult final {
     double residual_enthalpy;
     double residual_isochoric_heat_capacity;
     std::optional<double> residual_isobaric_heat_capacity;
+    double molar_density;
+    double pressure_density_derivative;
+    std::optional<NativeDensityDiagnostics> density_diagnostics;
 };
 
 class NativeModel final {
@@ -32,6 +47,12 @@ public:
         double temperature,
         double molar_density,
         const std::vector<double>& mole_fractions
+    ) const;
+    NativeResult evaluate_pressure(
+        double temperature,
+        double pressure,
+        const std::vector<double>& mole_fractions,
+        const std::string& phase
     ) const;
 
 private:

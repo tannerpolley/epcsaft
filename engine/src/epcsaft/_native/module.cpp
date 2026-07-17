@@ -9,6 +9,27 @@
 namespace py = pybind11;
 
 PYBIND11_MODULE(_core, module) {
+    py::class_<epcsaft::NativeDensityDiagnostics>(module, "NativeDensityDiagnostics")
+        .def_readonly(
+            "bracket_lower", &epcsaft::NativeDensityDiagnostics::bracket_lower
+        )
+        .def_readonly(
+            "bracket_upper", &epcsaft::NativeDensityDiagnostics::bracket_upper
+        )
+        .def_readonly(
+            "pressure_residual",
+            &epcsaft::NativeDensityDiagnostics::pressure_residual
+        )
+        .def_readonly(
+            "pressure_density_derivative",
+            &epcsaft::NativeDensityDiagnostics::pressure_density_derivative
+        )
+        .def_readonly(
+            "iterations", &epcsaft::NativeDensityDiagnostics::iterations
+        )
+        .def_readonly("stable", &epcsaft::NativeDensityDiagnostics::stable)
+        .def_readonly("branch", &epcsaft::NativeDensityDiagnostics::branch);
+
     py::class_<epcsaft::NativeResult>(module, "NativeResult")
         .def_readonly("hard_chain", &epcsaft::NativeResult::hard_chain)
         .def_readonly("dispersion", &epcsaft::NativeResult::dispersion)
@@ -48,6 +69,14 @@ PYBIND11_MODULE(_core, module) {
         .def_readonly(
             "residual_isobaric_heat_capacity",
             &epcsaft::NativeResult::residual_isobaric_heat_capacity
+        )
+        .def_readonly("molar_density", &epcsaft::NativeResult::molar_density)
+        .def_readonly(
+            "pressure_density_derivative",
+            &epcsaft::NativeResult::pressure_density_derivative
+        )
+        .def_readonly(
+            "density_diagnostics", &epcsaft::NativeResult::density_diagnostics
         );
 
     py::class_<epcsaft::NativeModel>(module, "NativeModel")
@@ -94,5 +123,6 @@ PYBIND11_MODULE(_core, module) {
                 ionic_region_relative_permittivity,
             });
         }))
-        .def("evaluate", &epcsaft::NativeModel::evaluate);
+        .def("evaluate", &epcsaft::NativeModel::evaluate)
+        .def("evaluate_pressure", &epcsaft::NativeModel::evaluate_pressure);
 }

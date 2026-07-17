@@ -2,6 +2,7 @@
 
 #include "association.hpp"
 #include "born.hpp"
+#include "density.hpp"
 #include "derivatives.hpp"
 #include "electrolyte.hpp"
 #include "helmholtz.hpp"
@@ -230,7 +231,57 @@ NativeResult NativeModel::evaluate(
             * (-temperature * derivatives.temperature + compressibility - 1.0),
         detail::GAS_CONSTANT * cv_over_r,
         residual_cp,
+        molar_density,
+        detail::GAS_CONSTANT * temperature * pressure_slope_factor,
+        std::nullopt,
     };
+}
+
+NativeResult NativeModel::evaluate_pressure(
+    double temperature,
+    double pressure,
+    const std::vector<double>& mole_fractions,
+    const std::string& phase
+) const {
+    const std::size_t components = parameters_.segment_count.size();
+    if (!std::isfinite(temperature) || temperature <= 0.0
+        || !std::isfinite(pressure) || pressure <= 0.0
+        || mole_fractions.size() != components || !finite(mole_fractions)) {
+        throw std::invalid_argument("invalid native pressure state");
+    }
+    const auto sigma = detail::segment_sigma(temperature, parameters_);
+    const auto diameter = detail::segment_diameter(temperature, parameters_, sigma);
+    double packing_coefficient = 0.0;
+    for (std::size_t component = 0; component < components; ++component) {
+        packing_coefficient += mole_fractions[component]
+            * parameters_.segment_count[component]
+            * diameter[component] * diameter[component] * diameter[component];
+    }
+    packing_coefficient *= detail::PI / 6.0 * (detail::AVOGADRO / 1.0e30);
+    if (!(packing_coefficient > 0.0) || !std::isfinite(packing_coefficient)) {
+        throw std::invalid_argument("invalid pressure-state packing coefficient");
+    }
+    const double close_packing = detail::PI / (3.0 * std::sqrt(2.0));
+    const auto root = detail::solve_density(
+        pressure,
+        pressure / (detail::GAS_CONSTANT * temperature),
+        close_packing / packing_coefficient,
+        phase,
+        [this, temperature, &mole_fractions](double density) {
+            return evaluate(temperature, density, mole_fractions);
+        }
+    );
+    auto result = evaluate(temperature, root.molar_density, mole_fractions);
+    result.density_diagnostics = NativeDensityDiagnostics{
+        root.bracket_lower,
+        root.bracket_upper,
+        root.pressure_residual,
+        root.pressure_density_derivative,
+        root.iterations,
+        root.stable,
+        root.branch,
+    };
+    return result;
 }
 
 }  // namespace epcsaft
