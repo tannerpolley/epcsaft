@@ -8,7 +8,7 @@ reproducible thermodynamic results.
 
 Canonical local doctrine: `../ePC-SAFT-organization/GOVERNANCE.md`.
 
-The local candidate contains one typed parameter lifecycle and one scalar-
+The accepted provider contains one typed parameter lifecycle and one scalar-
 generic residual Helmholtz kernel for hard-chain, dispersion, association,
 Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
 chemical potentials, fugacity coefficients when defined, residual caloric
@@ -24,10 +24,11 @@ unlabelled pressure state must have one mechanically stable root. A genuine
 multi-root state requires `phase="vapor"` or `phase="liquid"`; a phase hint
 never renames a lone root.
 
-The currently accepted authority receipt is still
-`promotion-0009-provider-slice-1`, limited to the neutral explicit-density
-baseline. The full local candidate has not been pushed, independently
-validated, promoted, or released.
+Accepted authority receipt `promotion-0012-provider-full-candidate` promotes
+this exact provider scope to `ePC-SAFT/ePC-SAFT`. Its immutable installed-wheel
+proof includes 64 package tests and direct-data campaigns owned by
+`ePC-SAFT-validation`. This is a production-authority decision, not a package
+release or a claim beyond the recorded capability boundaries.
 
 Phase equilibrium, phase discovery/global stability, reaction and species
 equilibrium, multi-salt reference paths, regression, and ideal-gas caloric data

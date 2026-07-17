@@ -1,12 +1,14 @@
 version: 2
-status: local-candidate
+status: accepted
 
 authority:
-  effective_receipt: promotion-0009-provider-slice-1
-  effective_scope: neutral nonassociating nonionic PC-SAFT at explicit molar density
-  candidate_promotion_status: not-promoted
+  effective_receipt: promotion-0012-provider-full-candidate
+  effective_scope: >-
+    Neutral, associating, and bounded Figiel electrolyte EOS at explicit molar
+    density or specified pressure, plus bounded electrolyte reference states.
+  candidate_promotion_status: promoted
 
-candidate_scope: >-
+accepted_scope: >-
   Source-backed neutral, associating, and bounded ionic SSM+DS residual EOS at
   explicit molar density or specified pressure, with residual chemical,
   fugacity, caloric, density-root, and bounded electrolyte reference results.

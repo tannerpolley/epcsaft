@@ -64,7 +64,7 @@ The installed catalogs are:
 
 - Gross and Sadowski (2001) methane/ethane neutral PC-SAFT parameters; and
 - Gross and Sadowski (2001) pure-propane neutral PC-SAFT parameters needed by
-  the first scoped saturation consumer; and
+  the first scoped saturation consumer; plus
 - the bounded Figiel, Yu, and Held (2025) water/methanol/ethanol alkali-halide
   records needed for aqueous and mixed-solvent MIAC systems and explicit
   transfer reference states.
@@ -74,7 +74,7 @@ reaction/species equilibrium, regression, parameter fitting, ideal-gas
 caloric calculations, or multi-salt reference paths. Solver
 convergence is not a claim of global phase stability or literature validation.
 
-The full provider implementation is currently a local candidate. The accepted
-promotion receipt still covers only the earlier neutral explicit-density
-Slice 1 baseline; publication and promotion require separate validation and
-approval.
+Accepted promotion receipt `promotion-0012-provider-full-candidate` makes this
+repository the sole production owner of the stated provider scope. The receipt
+does not claim a release, equilibrium/global-stability capability, generic
+electrolyte coverage, or a native consumer SDK runtime.
