@@ -196,66 +196,45 @@ git commit -m "test: add source-backed electrolyte bundle"
 **Stop condition:** A required value lacks a defensible primary source,
 locator, unit, domain, or use basis.
 
-## Task 5: Refactor the native kernel without changing Slice 1 results
+## Task 5: Refactor the shared kernel and implement association
 
 **Files**
 
+- Create: `src/epcsaft/_native/association.hpp`
 - Create: `src/epcsaft/_native/model.hpp`
 - Create: `src/epcsaft/_native/helmholtz.hpp`
 - Modify: `src/epcsaft/_native/eos.hpp`
 - Modify: `src/epcsaft/_native/eos.cpp`
 - Modify: `src/epcsaft/_native/module.cpp`
 - Modify: `tests/test_eos.py`
-
-**Steps**
-
-1. Strengthen current golden and permutation tests so they fail on any neutral
-   numerical or API drift.
-2. Move immutable native parameters and scalar result types to `model.hpp`.
-3. Move the promoted scalar-generic hard-chain and dispersion equations to
-   `helmholtz.hpp`. Preserve one `residual_helmholtz` entry and one CppAD tape
-   owner.
-4. Bind one native model payload; do not expose contribution classes or a
-   native SDK.
-5. Build the wheel, run all tests in isolation, and commit:
-
-```bash
-git add src/epcsaft/_native tests/test_eos.py
-git commit -m "refactor: prepare shared Helmholtz kernel"
-```
-
-## Task 6: Implement association and implicit derivatives
-
-**Files**
-
-- Create: `src/epcsaft/_native/association.hpp`
-- Modify: `src/epcsaft/_native/model.hpp`
-- Modify: `src/epcsaft/_native/helmholtz.hpp`
-- Modify: `src/epcsaft/_native/eos.cpp`
-- Modify: `src/epcsaft/_native/module.cpp`
 - Create: `tests/test_association.py`
 
 **Steps**
 
-1. Add red tests for one-site and 2B water topologies, mass-action residuals,
+1. Confirm the current neutral golden and permutation tests pass, then add red
+   tests for one-site and 2B water topologies, mass-action residuals,
    nonzero association energy, low-density reduction, and invalid topology.
 2. Add independent finite-difference checks of density, temperature, and
    composition directions. Keep these as test oracles, never runtime modes.
-3. Implement the site-fraction value solve outside CppAD recording. Return
+3. Move immutable native parameters to `model.hpp` and the promoted scalar
+   neutral equations to `helmholtz.hpp` only as needed to add association.
+   Preserve one `residual_helmholtz` entry, one CppAD owner, one native model,
+   and the exact Slice 1 neutral results.
+4. Implement the site-fraction value solve outside CppAD recording. Return
    convergence residual, iteration count, and Jacobian conditioning to the
    native orchestrator.
-4. Implement CppAD partials of the defining mass-action and Helmholtz equations
+5. Implement CppAD partials of the defining mass-action and Helmholtz equations
    and exact implicit linear solves for consumed sensitivities.
-5. Reject nonphysical fractions, nonconvergence, and ill-conditioned
+6. Reject nonphysical fractions, nonconvergence, and ill-conditioned
    Jacobians through `EosError` translation.
-6. Build, test in isolation, and commit:
+7. Build, test in isolation, and commit:
 
 ```bash
 git add src/epcsaft/_native tests/test_association.py
 git commit -m "feat: evaluate associating PC-SAFT"
 ```
 
-## Task 7: Implement the dielectric model and Debye--Huckel term
+## Task 6: Implement the dielectric model and Debye--Huckel term
 
 **Files**
 
@@ -283,7 +262,7 @@ git add src/epcsaft/_native tests/test_debye_huckel.py
 git commit -m "feat: add Debye-Huckel electrostatics"
 ```
 
-## Task 8: Implement Born SSM+DS
+## Task 7: Implement Born SSM+DS
 
 **Files**
 
@@ -311,7 +290,7 @@ git add src/epcsaft/_native tests/test_born.py
 git commit -m "feat: add Born SSM DS contribution"
 ```
 
-## Task 9: Add residual chemical, fugacity, and caloric properties
+## Task 8: Add residual chemical, fugacity, and caloric properties
 
 **Files**
 
@@ -346,7 +325,7 @@ git add src/epcsaft/_native src/epcsaft/eos.py tests/test_properties.py
 git commit -m "feat: add residual EOS properties"
 ```
 
-## Task 10: Add branch-safe density closure and T/P evaluation
+## Task 9: Add branch-safe density closure and T/P evaluation
 
 **Files**
 
@@ -381,7 +360,7 @@ git add src/epcsaft/_native src/epcsaft/eos.py tests/test_density.py
 git commit -m "feat: solve branch-safe density states"
 ```
 
-## Task 11: Add explicit electrolyte reference-state quantities
+## Task 10: Add explicit electrolyte reference-state quantities
 
 **Files**
 
@@ -415,7 +394,7 @@ git add src/epcsaft/reference.py src/epcsaft/eos.py \
 git commit -m "feat: add electrolyte reference states"
 ```
 
-## Task 12: Run installed-artifact literature validation
+## Task 11: Run installed-artifact literature validation
 
 **Repositories**
 
@@ -428,7 +407,7 @@ git commit -m "feat: add electrolyte reference states"
 - Modify: `CONTEXT.md`
 - Modify: `AGENTS.md`
 - Modify: `ARCHITECTURE.yaml`
-- Add only compact package anchors required by Tasks 5--11
+- Add only compact package anchors required by Tasks 4--10
 
 **Validation files**
 
@@ -453,7 +432,7 @@ git commit -m "feat: add electrolyte reference states"
 6. Commit provider and validation changes in their owning repositories. Do not
    push or promote yet.
 
-## Task 13: Final verification and promotion preparation
+## Task 12: Final verification and promotion preparation
 
 **Files**
 
