@@ -9,7 +9,11 @@ import pint
 from ._core import NativeModel as _NativeModel
 from ._resolve import _ResolvedModel, _resolve_model
 from .parameters import ParameterSet
-from .records import SingleParameterRecord
+from .records import (
+    ConstantCorrelation,
+    ConstantPlusSumOfExponentialsCorrelation,
+    SingleParameterRecord,
+)
 from .units import ParameterError, _error, _quantity, unit_registry
 
 
@@ -44,16 +48,64 @@ def _eos_error(code: str, **context: object) -> EosError:
     return EosError(code, context.items())
 
 
-def _native_arguments(model: _ResolvedModel) -> tuple[list[float], ...]:
-    if model.topology != "neutral" or not all(
-        isinstance(record, SingleParameterRecord) for record in model.segment_diameter
-    ):
+def _native_arguments(
+    model: _ResolvedModel,
+) -> tuple[list[float] | list[int], ...]:
+    if model.topology == "ionic-ssm-ds":
         raise _error("invalid-value", topology=model.topology, reason="native-not-admitted")
+
+    sigma_constant: list[float] = []
+    term_component: list[int] = []
+    term_amplitude: list[float] = []
+    term_exponent: list[float] = []
+    for component, record in enumerate(model.segment_diameter):
+        if isinstance(record, SingleParameterRecord):
+            sigma_constant.append(_magnitude(record, "angstrom"))
+        else:
+            sigma_constant.append(float(record.constant.to("angstrom").magnitude))
+            if isinstance(record, ConstantPlusSumOfExponentialsCorrelation):
+                for term in record.terms:
+                    term_component.append(component)
+                    term_amplitude.append(float(term.amplitude.to("angstrom").magnitude))
+                    term_exponent.append(
+                        float(term.exponent_coefficient.to("1 / kelvin").magnitude)
+                    )
+            elif not isinstance(record, ConstantCorrelation):
+                raise _error(
+                    "invalid-value",
+                    family="segment_diameter",
+                    reason="unsupported-correlation",
+                )
+
+    component_position = {
+        component_id: index for index, component_id in enumerate(model.component_ids)
+    }
+    site_position = {site_id: index for index, site_id in enumerate(model.site_ids)}
+    sites = len(model.site_ids)
+    association_active = [0] * (sites * sites)
+    association_energy = [0.0] * (sites * sites)
+    association_volume = [0.0] * (sites * sites)
+    for pair in model.association_pairs:
+        a = site_position[pair.endpoint_a]
+        b = site_position[pair.endpoint_b]
+        for index in (a * sites + b, b * sites + a):
+            association_active[index] = 1
+            association_energy[index] = pair.energy_over_k
+            association_volume[index] = pair.volume
+
     return (
         list(model.segment_count),
-        [_magnitude(record, "angstrom") for record in model.segment_diameter],
+        sigma_constant,
+        term_component,
+        term_amplitude,
+        term_exponent,
         list(model.dispersion_energy_over_k),
         list(model.k_ij),
+        [component_position[component_id] for component_id, _ in model.site_ids],
+        list(model.site_multiplicity),
+        association_active,
+        association_energy,
+        association_volume,
     )
 
 
@@ -66,11 +118,11 @@ class EPCSAFT:
 
     def __init__(self, parameters: ParameterSet) -> None:
         model = _resolve_model(parameters)
-        m, sigma, epsilon_over_k, kij = _native_arguments(model)
+        native_arguments = _native_arguments(model)
         object.__setattr__(self, "_component_ids", parameters.component_ids)
         object.__setattr__(self, "_parameter_fingerprint", parameters.fingerprint)
         object.__setattr__(self, "_model", model)
-        object.__setattr__(self, "_native", _NativeModel(m, sigma, epsilon_over_k, kij))
+        object.__setattr__(self, "_native", _NativeModel(*native_arguments))
 
     @property
     def component_ids(self) -> tuple[str, ...]:
@@ -109,6 +161,7 @@ class EPCSAFT:
         return EosResult(
             hard_chain=native.hard_chain,
             dispersion=native.dispersion,
+            association=native.association,
             residual_helmholtz=native.residual_helmholtz,
             compressibility_factor=native.compressibility_factor,
             pressure=native.pressure * unit_registry.pascal,
@@ -130,6 +183,7 @@ def _state_magnitude(value: object, unit: str, field: str) -> float:
 class EosResult:
     hard_chain: float
     dispersion: float
+    association: float
     residual_helmholtz: float
     compressibility_factor: float
     pressure: pint.Quantity

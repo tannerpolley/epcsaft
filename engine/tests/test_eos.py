@@ -118,6 +118,7 @@ def test_gross_hard_chain_dispersion_and_pressure_goldens(
     assert isinstance(result, epcsaft.EosResult)
     assert result.hard_chain == pytest.approx(hard_chain, rel=5e-12, abs=5e-13)
     assert result.dispersion == pytest.approx(dispersion, rel=5e-12, abs=5e-13)
+    assert result.association == 0.0
     assert result.residual_helmholtz == pytest.approx(
         residual, rel=5e-12, abs=5e-13
     )

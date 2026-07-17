@@ -1,9 +1,13 @@
 #include "eos.hpp"
 
+#include "association.hpp"
+#include "helmholtz.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace epcsaft {
 namespace {
@@ -22,24 +26,50 @@ bool finite(const std::vector<double>& values) {
 
 }  // namespace
 
-NativeModel::NativeModel(
-    std::vector<double> m,
-    std::vector<double> sigma,
-    std::vector<double> epsilon_over_k,
-    std::vector<double> kij
-)
-    : m_(std::move(m)),
-      sigma_(std::move(sigma)),
-      epsilon_over_k_(std::move(epsilon_over_k)),
-      kij_(std::move(kij)) {
-    const auto size = m_.size();
-    if (size == 0 || sigma_.size() != size || epsilon_over_k_.size() != size ||
-        kij_.size() != size * size) {
+NativeModel::NativeModel(NativeParameters parameters)
+    : parameters_(std::move(parameters)) {
+    const std::size_t components = parameters_.segment_count.size();
+    const std::size_t terms = parameters_.sigma_term_component.size();
+    const std::size_t sites = parameters_.site_component.size();
+    if (components == 0 || parameters_.sigma_constant.size() != components ||
+        parameters_.dispersion_energy_over_k.size() != components ||
+        parameters_.k_ij.size() != components * components ||
+        parameters_.sigma_term_amplitude.size() != terms ||
+        parameters_.sigma_term_exponent.size() != terms ||
+        parameters_.site_multiplicity.size() != sites ||
+        parameters_.association_active.size() != sites * sites ||
+        parameters_.association_energy_over_k.size() != sites * sites ||
+        parameters_.association_volume.size() != sites * sites) {
         throw std::invalid_argument("inconsistent native model dimensions");
     }
-    if (!positive_finite(m_) || !positive_finite(sigma_) ||
-        !positive_finite(epsilon_over_k_) || !finite(kij_)) {
+    if (!positive_finite(parameters_.segment_count) ||
+        !positive_finite(parameters_.sigma_constant) ||
+        !positive_finite(parameters_.dispersion_energy_over_k) ||
+        !finite(parameters_.k_ij) ||
+        !finite(parameters_.sigma_term_amplitude) ||
+        !finite(parameters_.sigma_term_exponent) ||
+        !finite(parameters_.association_energy_over_k) ||
+        !finite(parameters_.association_volume)) {
         throw std::invalid_argument("invalid native model parameters");
+    }
+    for (int component : parameters_.sigma_term_component) {
+        if (component < 0 || static_cast<std::size_t>(component) >= components) {
+            throw std::invalid_argument("invalid sigma correlation component");
+        }
+    }
+    for (std::size_t site = 0; site < sites; ++site) {
+        const int component = parameters_.site_component[site];
+        if (component < 0 || static_cast<std::size_t>(component) >= components ||
+            parameters_.site_multiplicity[site] <= 0) {
+            throw std::invalid_argument("invalid association site");
+        }
+    }
+    for (std::size_t pair = 0; pair < sites * sites; ++pair) {
+        if (parameters_.association_active[pair] != 0 &&
+            (parameters_.association_energy_over_k[pair] <= 0.0 ||
+             parameters_.association_volume[pair] <= 0.0)) {
+            throw std::invalid_argument("invalid association pair");
+        }
     }
 }
 
@@ -48,35 +78,105 @@ NativeResult NativeModel::evaluate(
     double molar_density,
     const std::vector<double>& mole_fractions
 ) const {
+    const std::size_t components = parameters_.segment_count.size();
     if (!std::isfinite(temperature) || temperature <= 0.0 ||
         !std::isfinite(molar_density) || molar_density <= 0.0 ||
-        mole_fractions.size() != m_.size() || !finite(mole_fractions)) {
+        mole_fractions.size() != components || !finite(mole_fractions)) {
         throw std::invalid_argument("invalid native state");
     }
-
+    const auto sigma = detail::segment_sigma(temperature, parameters_);
+    if (!positive_finite(sigma)) {
+        throw std::invalid_argument("invalid segment diameter correlation");
+    }
+    const auto diameter = detail::segment_diameter(temperature, parameters_, sigma);
+    const auto site_fraction = detail::solve_site_fractions(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters_,
+        sigma,
+        diameter
+    );
     const auto values = detail::residual_helmholtz(
-        temperature, molar_density, mole_fractions,
-        m_, sigma_, epsilon_over_k_, kij_
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters_,
+        sigma,
+        diameter,
+        site_fraction
     );
 
     using ADScalar = CppAD::AD<double>;
-    std::vector<ADScalar> independent(1);
+    const std::size_t sites = site_fraction.size();
+    std::vector<ADScalar> independent(1 + sites);
     independent[0] = molar_density;
+    for (std::size_t site = 0; site < sites; ++site) {
+        independent[1 + site] = site_fraction[site];
+    }
     CppAD::Independent(independent);
+    std::vector<ADScalar> taped_fraction(sites);
+    for (std::size_t site = 0; site < sites; ++site) {
+        taped_fraction[site] = independent[1 + site];
+    }
     const auto taped = detail::residual_helmholtz(
-        temperature, independent[0], mole_fractions,
-        m_, sigma_, epsilon_over_k_, kij_
+        temperature,
+        independent[0],
+        mole_fractions,
+        parameters_,
+        sigma,
+        diameter,
+        taped_fraction
     );
-    std::vector<ADScalar> dependent = {taped.hard_chain + taped.dispersion};
+    const auto delta = detail::association_delta(
+        temperature,
+        independent[0],
+        mole_fractions,
+        parameters_,
+        sigma,
+        diameter
+    );
+    const auto mass_action = detail::association_residuals(
+        independent[0],
+        mole_fractions,
+        parameters_,
+        taped_fraction,
+        delta
+    );
+    std::vector<ADScalar> dependent = {
+        taped.hard_chain + taped.dispersion + taped.association,
+    };
+    dependent.insert(dependent.end(), mass_action.begin(), mass_action.end());
     CppAD::ADFun<double> function(independent, dependent);
-    const std::vector<double> state = {molar_density};
-    const double derivative = function.Jacobian(state)[0];
+    std::vector<double> state = {molar_density};
+    state.insert(state.end(), site_fraction.begin(), site_fraction.end());
+    const auto jacobian = function.Jacobian(state);
+    const std::size_t width = 1 + sites;
+    double density_derivative = jacobian[0];
+    if (sites != 0) {
+        std::vector<double> h_x(sites * sites);
+        std::vector<double> negative_h_rho(sites);
+        for (std::size_t row = 0; row < sites; ++row) {
+            negative_h_rho[row] = -jacobian[(1 + row) * width];
+            for (std::size_t column = 0; column < sites; ++column) {
+                h_x[row * sites + column] =
+                    jacobian[(1 + row) * width + 1 + column];
+            }
+        }
+        const auto fraction_derivative =
+            detail::solve_linear(std::move(h_x), std::move(negative_h_rho));
+        for (std::size_t site = 0; site < sites; ++site) {
+            density_derivative += jacobian[1 + site] * fraction_derivative[site];
+        }
+    }
 
-    const double residual = values.hard_chain + values.dispersion;
-    const double compressibility = 1.0 + molar_density * derivative;
+    const double residual =
+        values.hard_chain + values.dispersion + values.association;
+    const double compressibility = 1.0 + molar_density * density_derivative;
     return {
         values.hard_chain,
         values.dispersion,
+        values.association,
         residual,
         compressibility,
         compressibility * molar_density * detail::GAS_CONSTANT * temperature,
