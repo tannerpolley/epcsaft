@@ -42,6 +42,7 @@ struct NativeResult final {
 
 struct NativePurePhaseBlock;
 struct NativeParameterizedPurePhaseBlock;
+struct NativeMixturePhaseBlock;
 
 class NativeModel final {
 public:
@@ -58,6 +59,8 @@ public:
         const std::string& phase
     ) const;
     bool supports_native_sdk_v1() const;
+    bool supports_mixture_native_sdk_v1() const;
+    std::size_t component_count() const;
     NativePurePhaseBlock evaluate_pure_phase(
         double temperature,
         double amount,
@@ -70,6 +73,11 @@ public:
         double segment_count,
         double segment_diameter_angstrom,
         double dispersion_energy_over_k
+    ) const;
+    NativeMixturePhaseBlock evaluate_mixture_phase(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume
     ) const;
 
 private:

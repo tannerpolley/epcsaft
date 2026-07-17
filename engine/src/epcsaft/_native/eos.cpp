@@ -118,6 +118,14 @@ bool NativeModel::supports_native_sdk_v1() const {
     return detail::supports_pure_phase_block(parameters_);
 }
 
+bool NativeModel::supports_mixture_native_sdk_v1() const {
+    return detail::supports_mixture_phase_block(parameters_);
+}
+
+std::size_t NativeModel::component_count() const {
+    return parameters_.segment_count.size();
+}
+
 NativePurePhaseBlock NativeModel::evaluate_pure_phase(
     double temperature,
     double amount,
@@ -143,6 +151,14 @@ NativeParameterizedPurePhaseBlock NativeModel::evaluate_pure_phase_parameters(
         dispersion_energy_over_k,
         parameters_
     );
+}
+
+NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume
+) const {
+    return detail::mixture_phase_block(temperature, amounts, volume, parameters_);
 }
 
 NativeResult NativeModel::evaluate(

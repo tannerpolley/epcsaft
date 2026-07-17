@@ -30,6 +30,13 @@ struct NativeParameterizedPurePhaseBlock final {
     double chemical_potential_over_rt;
 };
 
+struct NativeMixturePhaseBlock final {
+    double helmholtz_over_rt_reference_amount;
+    std::vector<double> gradient;
+    std::vector<double> hessian;
+    double pressure_pa;
+};
+
 namespace detail {
 
 inline bool supports_pure_phase_block(const NativeParameters& parameters) {
@@ -37,6 +44,114 @@ inline bool supports_pure_phase_block(const NativeParameters& parameters) {
         && parameters.site_component.empty()
         && parameters.charge_number.size() == 1
         && parameters.charge_number[0] == 0;
+}
+
+inline bool supports_mixture_phase_block(const NativeParameters& parameters) {
+    return parameters.segment_count.size() >= 2
+        && parameters.site_component.empty()
+        && std::all_of(
+            parameters.charge_number.begin(),
+            parameters.charge_number.end(),
+            [](int charge) { return charge == 0; }
+        );
+}
+
+template <typename Scalar>
+Scalar mixture_phase_helmholtz_over_rt_reference_amount(
+    double temperature,
+    const std::vector<Scalar>& amounts,
+    const Scalar& volume,
+    const NativeParameters& parameters
+) {
+    Scalar total = Scalar(0.0);
+    for (const Scalar& amount : amounts) {
+        total += amount;
+    }
+    const Scalar density = total / volume;
+    std::vector<Scalar> composition;
+    composition.reserve(amounts.size());
+    for (const Scalar& amount : amounts) {
+        composition.push_back(amount / total);
+    }
+    const auto sigma = segment_sigma(Scalar(temperature), parameters);
+    const auto diameter = segment_diameter(Scalar(temperature), parameters, sigma);
+    const auto contributions = residual_helmholtz(
+        Scalar(temperature),
+        density,
+        composition,
+        parameters,
+        sigma,
+        diameter,
+        {},
+        Scalar(0.0),
+        Scalar(0.0)
+    );
+    Scalar ideal = Scalar(0.0);
+    for (const Scalar& amount : amounts) {
+        ideal += amount * (scalar_log(amount / volume) - Scalar(1.0));
+    }
+    return ideal + total * (contributions.hard_chain + contributions.dispersion);
+}
+
+inline NativeMixturePhaseBlock mixture_phase_block(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    const NativeParameters& parameters
+) {
+    if (!supports_mixture_phase_block(parameters)) {
+        throw std::logic_error(
+            "mixture phase block requires at least two neutral nonassociating components"
+        );
+    }
+    if (!std::isfinite(temperature) || temperature <= 0.0
+        || !std::isfinite(volume) || volume <= 0.0
+        || amounts.size() != parameters.segment_count.size()
+        || !std::all_of(amounts.begin(), amounts.end(), [](double amount) {
+            return std::isfinite(amount) && amount > 0.0;
+        })) {
+        throw std::invalid_argument(
+            "temperature, amounts, and volume must be positive and finite"
+        );
+    }
+
+    mixture_phase_helmholtz_over_rt_reference_amount(
+        temperature, amounts, volume, parameters
+    );
+
+    using ADScalar = CppAD::AD<double>;
+    std::vector<ADScalar> independent(amounts.begin(), amounts.end());
+    independent.push_back(volume);
+    CppAD::Independent(independent);
+    const std::vector<ADScalar> active_amounts(
+        independent.begin(), independent.end() - 1
+    );
+    const ADScalar phase = mixture_phase_helmholtz_over_rt_reference_amount(
+        temperature, active_amounts, independent.back(), parameters
+    );
+    CppAD::ADFun<double> function(independent, {phase});
+
+    std::vector<double> point(amounts.begin(), amounts.end());
+    point.push_back(volume);
+    const auto gradient = function.Jacobian(point);
+    const auto hessian = function.Hessian(point, 0);
+    const double value = function.Forward(0, point)[0];
+    if (!std::isfinite(value)
+        || !std::all_of(gradient.begin(), gradient.end(), [](double item) {
+            return std::isfinite(item);
+        })
+        || !std::all_of(hessian.begin(), hessian.end(), [](double item) {
+            return std::isfinite(item);
+        })) {
+        throw std::runtime_error("mixture phase block contains nonfinite values");
+    }
+
+    return {
+        value,
+        gradient,
+        hessian,
+        -GAS_CONSTANT * temperature * gradient.back(),
+    };
 }
 
 template <typename Scalar>

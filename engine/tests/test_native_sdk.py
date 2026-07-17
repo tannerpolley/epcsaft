@@ -11,6 +11,10 @@ from epcsaft import EPCSAFT, EosError, ParameterBundle, native_sdk, unit_registr
 CAPSULE_NAME = b"epcsaft.native_sdk.v1"
 ABI_VERSION = 1
 STATUS_OK = 0
+STATUS_INVALID_ARGUMENT = 1
+STATUS_UNSUPPORTED_MODEL = 2
+STATUS_DOMAIN_ERROR = 3
+STATUS_ABI_MISMATCH = 5
 
 
 class PhaseBlockResult(ctypes.Structure):
@@ -42,7 +46,23 @@ class ParameterizedPhaseBlockResult(ctypes.Structure):
     )
 
 
-class NativeSdkTable(ctypes.Structure):
+class MixturePhaseBlockResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("coordinate_count", ctypes.c_size_t),
+        ("gradient_capacity", ctypes.c_size_t),
+        ("hessian_capacity", ctypes.c_size_t),
+        ("gradient", ctypes.POINTER(ctypes.c_double)),
+        ("hessian", ctypes.POINTER(ctypes.c_double)),
+        ("helmholtz_over_rt_reference_amount", ctypes.c_double),
+        ("pressure_pa", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class AcceptedNativeSdkTable(ctypes.Structure):
     _fields_ = (
         ("abi_version", ctypes.c_uint32),
         ("table_size", ctypes.c_size_t),
@@ -51,6 +71,14 @@ class NativeSdkTable(ctypes.Structure):
         ("evaluate_pure_phase", ctypes.c_void_p),
         ("parameterized_result_size", ctypes.c_size_t),
         ("evaluate_pure_phase_parameters", ctypes.c_void_p),
+    )
+
+
+class NativeSdkTable(ctypes.Structure):
+    _fields_ = AcceptedNativeSdkTable._fields_ + (
+        ("component_count", ctypes.c_size_t),
+        ("mixture_result_size", ctypes.c_size_t),
+        ("evaluate_mixture_phase", ctypes.c_void_p),
     )
 
 
@@ -79,9 +107,24 @@ EvaluatePurePhaseParameters = ctypes.CFUNCTYPE(
     ctypes.POINTER(ParameterizedPhaseBlockResult),
 )
 
+EvaluateMixturePhase = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.c_double,
+    ctypes.POINTER(MixturePhaseBlockResult),
+)
+
 
 def _model(catalog: str, component: str) -> EPCSAFT:
     return EPCSAFT(ParameterBundle.from_catalog(catalog, version=1).select((component,)))
+
+
+def _mixture_model(component_ids: tuple[str, str] = ("methane", "ethane")) -> EPCSAFT:
+    parameters = ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
+    return EPCSAFT(parameters.select(component_ids))
 
 
 def _table(model: EPCSAFT) -> tuple[object, NativeSdkTable]:
@@ -141,6 +184,43 @@ def _evaluate_parameters(
     )
     assert status == result.status
     return result
+
+
+def _mixture_result(coordinate_count: int) -> tuple[MixturePhaseBlockResult, object, object]:
+    gradient = (ctypes.c_double * coordinate_count)()
+    hessian = (ctypes.c_double * (coordinate_count * coordinate_count))()
+    result = MixturePhaseBlockResult(
+        struct_size=ctypes.sizeof(MixturePhaseBlockResult),
+        coordinate_count=coordinate_count,
+        gradient_capacity=coordinate_count,
+        hessian_capacity=coordinate_count * coordinate_count,
+        gradient=gradient,
+        hessian=hessian,
+    )
+    return result, gradient, hessian
+
+
+def _evaluate_mixture(
+    table: NativeSdkTable,
+    temperature_k: float,
+    amounts_mol: tuple[float, ...],
+    volume_m3: float,
+) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+    assert table.table_size >= ctypes.sizeof(NativeSdkTable)
+    assert table.evaluate_mixture_phase
+    coordinate_count = len(amounts_mol) + 1
+    result, gradient, hessian = _mixture_result(coordinate_count)
+    amounts = (ctypes.c_double * len(amounts_mol))(*amounts_mol)
+    status = EvaluateMixturePhase(table.evaluate_mixture_phase)(
+        table.model_context,
+        temperature_k,
+        amounts,
+        len(amounts_mol),
+        volume_m3,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result, tuple(gradient), tuple(hessian)
 
 
 @pytest.mark.parametrize(
@@ -262,6 +342,100 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
     assert prefix.result_size == ctypes.sizeof(PhaseBlockResult)
     assert prefix.model_context
     assert prefix.evaluate_pure_phase
+    for field_name, _ in AcceptedNativeSdkTable._fields_:
+        assert getattr(NativeSdkTable, field_name).offset == getattr(
+            AcceptedNativeSdkTable, field_name
+        ).offset
+
+
+def test_native_sdk_mixture_phase_block_matches_public_thermodynamics_and_derivatives() -> None:
+    model = _mixture_model()
+    capsule, table = _table(model)
+    assert capsule is not None
+    assert table.component_count == 2
+    assert table.mixture_result_size == ctypes.sizeof(MixturePhaseBlockResult)
+    assert table.evaluate_mixture_phase
+
+    temperature_k = 220.0
+    point = (0.4, 0.6, 1.25e-4)
+    direction = (0.02, -0.01, -2.0e-6)
+
+    def shifted(scale: float) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+        return _evaluate_mixture(
+            table,
+            temperature_k,
+            (point[0] + scale * direction[0], point[1] + scale * direction[1]),
+            point[2] + scale * direction[2],
+        )
+
+    center, gradient, hessian = shifted(0.0)
+    assert center.status == STATUS_OK
+    assert center.error == b""
+    assert center.coordinate_count == 3
+    assert center.gradient_capacity == 3
+    assert center.hessian_capacity == 9
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    total = point[0] + point[1]
+    density = total / point[2]
+    composition = (point[0] / total, point[1] / total)
+    state = model.evaluate(
+        temperature=temperature_k * unit_registry.kelvin,
+        molar_density=density * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=composition,
+    )
+    expected = sum(amount * (math.log(amount / point[2]) - 1.0) for amount in point[:2])
+    expected += total * state.residual_helmholtz
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected, rel=2.0e-12, abs=2.0e-12
+    )
+    assert center.pressure_pa == pytest.approx(
+        state.pressure.to("pascal").magnitude, rel=2.0e-11, abs=1.0e-5
+    )
+
+    step = 2.0e-4
+    lower, lower_gradient, _ = shifted(-step)
+    upper, upper_gradient, _ = shifted(step)
+    gradient_contraction = sum(value * delta for value, delta in zip(gradient, direction))
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount
+        - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert gradient_contraction == pytest.approx(value_difference, rel=3.0e-8)
+    for row in range(3):
+        hessian_direction = sum(
+            hessian[row * 3 + column] * direction[column] for column in range(3)
+        )
+        gradient_difference = (upper_gradient[row] - lower_gradient[row]) / (2.0 * step)
+        assert hessian_direction == pytest.approx(gradient_difference, rel=3.0e-7)
+
+
+def test_native_sdk_mixture_phase_block_is_component_permutation_invariant() -> None:
+    forward_capsule, forward_table = _table(_mixture_model())
+    reverse_capsule, reverse_table = _table(_mixture_model(("ethane", "methane")))
+    assert forward_capsule is not None
+    assert reverse_capsule is not None
+    forward, forward_gradient, forward_hessian = _evaluate_mixture(
+        forward_table, 220.0, (0.4, 0.6), 1.25e-4
+    )
+    reverse, reverse_gradient, reverse_hessian = _evaluate_mixture(
+        reverse_table, 220.0, (0.6, 0.4), 1.25e-4
+    )
+    permutation = (1, 0, 2)
+    assert reverse.helmholtz_over_rt_reference_amount == pytest.approx(
+        forward.helmholtz_over_rt_reference_amount, rel=2.0e-13, abs=2.0e-13
+    )
+    assert reverse.pressure_pa == pytest.approx(forward.pressure_pa, rel=2.0e-13)
+    for row in range(3):
+        assert reverse_gradient[row] == pytest.approx(
+            forward_gradient[permutation[row]], rel=2.0e-13, abs=2.0e-13
+        )
+        for column in range(3):
+            assert reverse_hessian[row * 3 + column] == pytest.approx(
+                forward_hessian[permutation[row] * 3 + permutation[column]],
+                rel=2.0e-13,
+                abs=2.0e-13,
+            )
 
 
 def test_native_sdk_parameterized_phase_block_has_exact_parameter_derivatives() -> None:
@@ -312,14 +486,6 @@ def test_native_sdk_parameterized_phase_block_has_exact_parameter_derivatives() 
 
 
 def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
-    binary = EPCSAFT(
-        ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
-            ("methane", "ethane")
-        )
-    )
-    with pytest.raises(EosError, match="unsupported-native-sdk"):
-        native_sdk(binary)
-
     associating = _model("figiel-2025-reference-electrolytes", "ethanol")
     with pytest.raises(EosError, match="unsupported-native-sdk"):
         native_sdk(associating)
@@ -360,6 +526,89 @@ def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
         result = _evaluate(table, temperature, amount, volume)
         assert result.status != STATUS_OK
         assert result.error
+
+
+def test_native_sdk_mixture_callback_rejects_malformed_buffers_and_scope() -> None:
+    capsule, table = _table(_mixture_model())
+    assert capsule is not None
+    callback = EvaluateMixturePhase(table.evaluate_mixture_phase)
+    amounts = (ctypes.c_double * 2)(0.4, 0.6)
+
+    def call(
+        result: MixturePhaseBlockResult,
+        *,
+        amount_pointer: object = amounts,
+        amount_count: int = 2,
+        temperature_k: float = 220.0,
+    ) -> int:
+        return callback(
+            table.model_context,
+            temperature_k,
+            amount_pointer,
+            amount_count,
+            1.25e-4,
+            ctypes.byref(result),
+        )
+
+    malformed: list[tuple[MixturePhaseBlockResult, dict[str, object], int]] = []
+    result, _, _ = _mixture_result(3)
+    malformed.append((result, {"amount_pointer": None}, STATUS_INVALID_ARGUMENT))
+    result, _, _ = _mixture_result(3)
+    malformed.append((result, {"amount_count": 1}, STATUS_INVALID_ARGUMENT))
+    result, _, _ = _mixture_result(3)
+    result.gradient = ctypes.POINTER(ctypes.c_double)()
+    malformed.append((result, {}, STATUS_INVALID_ARGUMENT))
+    result, _, _ = _mixture_result(3)
+    result.hessian = ctypes.POINTER(ctypes.c_double)()
+    malformed.append((result, {}, STATUS_INVALID_ARGUMENT))
+    result, _, _ = _mixture_result(3)
+    result.gradient_capacity = 2
+    malformed.append((result, {}, STATUS_INVALID_ARGUMENT))
+    result, _, _ = _mixture_result(3)
+    result.hessian_capacity = 8
+    malformed.append((result, {}, STATUS_INVALID_ARGUMENT))
+    result, _, _ = _mixture_result(3)
+    malformed.append((result, {"temperature_k": 96.0}, STATUS_DOMAIN_ERROR))
+
+    for result, arguments, expected_status in malformed:
+        gradient_pointer = ctypes.cast(result.gradient, ctypes.c_void_p).value
+        hessian_pointer = ctypes.cast(result.hessian, ctypes.c_void_p).value
+        status = call(result, **arguments)
+        assert status == expected_status
+        assert result.status == status
+        assert result.error
+        assert ctypes.cast(result.gradient, ctypes.c_void_p).value == gradient_pointer
+        assert ctypes.cast(result.hessian, ctypes.c_void_p).value == hessian_pointer
+
+    result, _, _ = _mixture_result(3)
+    result.struct_size -= 1
+    assert call(result) == STATUS_ABI_MISMATCH
+
+    result, _, _ = _mixture_result(3)
+    nonpositive_amounts = (ctypes.c_double * 2)(0.0, 1.0)
+    assert call(result, amount_pointer=nonpositive_amounts) == STATUS_INVALID_ARGUMENT
+    assert result.status == STATUS_INVALID_ARGUMENT
+    assert result.error
+
+    pure_capsule, pure_table = _table(_model("gross-2001-methane-ethane", "methane"))
+    assert pure_capsule is not None
+    pure_mixture_result, _, _ = _mixture_result(2)
+    pure_amount = (ctypes.c_double * 1)(1.0)
+    status = EvaluateMixturePhase(pure_table.evaluate_mixture_phase)(
+        pure_table.model_context,
+        190.0,
+        pure_amount,
+        1,
+        1.0e-3,
+        ctypes.byref(pure_mixture_result),
+    )
+    assert status == STATUS_UNSUPPORTED_MODEL
+    assert pure_mixture_result.status == status
+    assert pure_mixture_result.error
+
+    mixture_pure_result = _evaluate(table, 220.0, 1.0, 1.25e-4)
+    assert mixture_pure_result.status == STATUS_UNSUPPORTED_MODEL
+    assert mixture_pure_result.error
 
     for segment_count, segment_diameter, dispersion_energy in (
         (0.0, 3.7039, 150.03),

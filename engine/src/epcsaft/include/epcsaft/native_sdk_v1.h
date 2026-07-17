@@ -78,6 +78,29 @@ typedef int (*epcsaft_evaluate_pure_phase_parameters_v1)(
     epcsaft_parameterized_phase_block_result_v1* result
 );
 
+typedef struct epcsaft_mixture_phase_block_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    size_t coordinate_count;
+    size_t gradient_capacity;
+    size_t hessian_capacity;
+    double* gradient;
+    double* hessian;
+    double helmholtz_over_rt_reference_amount;
+    double pressure_pa;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_mixture_phase_block_result_v1;
+
+typedef int (*epcsaft_evaluate_mixture_phase_v1)(
+    const void* model_context,
+    double temperature_k,
+    const double* amounts_mol,
+    size_t amount_count,
+    double volume_m3,
+    epcsaft_mixture_phase_block_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -86,6 +109,9 @@ typedef struct epcsaft_native_sdk_v1 {
     epcsaft_evaluate_pure_phase_v1 evaluate_pure_phase;
     size_t parameterized_result_size;
     epcsaft_evaluate_pure_phase_parameters_v1 evaluate_pure_phase_parameters;
+    size_t component_count;
+    size_t mixture_result_size;
+    epcsaft_evaluate_mixture_phase_v1 evaluate_mixture_phase;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

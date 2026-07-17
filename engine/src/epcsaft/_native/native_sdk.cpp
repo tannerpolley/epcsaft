@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace epcsaft {
 namespace {
@@ -41,6 +42,9 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate,
               sizeof(epcsaft_parameterized_phase_block_result_v1),
               &NativeSdkEndpoint::evaluate_parameters,
+              source_model.component_count(),
+              sizeof(epcsaft_mixture_phase_block_result_v1),
+              &NativeSdkEndpoint::evaluate_mixture,
           } {}
 
     static int evaluate(
@@ -207,6 +211,116 @@ struct NativeSdkEndpoint final {
             );
         }
     }
+
+    static int evaluate_mixture(
+        const void* context,
+        double temperature_k,
+        const double* amounts_mol,
+        size_t amount_count,
+        double volume_m3,
+        epcsaft_mixture_phase_block_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size != sizeof(epcsaft_mixture_phase_block_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        if (context == nullptr) {
+            result->status = EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+            std::snprintf(
+                result->error,
+                sizeof(result->error),
+                "%s",
+                "model context is null"
+            );
+            return result->status;
+        }
+
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        const std::size_t coordinate_count = endpoint.table.component_count + 1;
+        if (result->coordinate_count != coordinate_count
+            || result->gradient_capacity < coordinate_count
+            || result->hessian_capacity < coordinate_count * coordinate_count
+            || result->gradient == nullptr || result->hessian == nullptr) {
+            result->status = EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+            std::snprintf(
+                result->error,
+                sizeof(result->error),
+                "%s",
+                "mixture result buffers do not match the model coordinate count"
+            );
+            return result->status;
+        }
+
+        result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+        result->helmholtz_over_rt_reference_amount = 0.0;
+        result->pressure_pa = 0.0;
+        result->parameter_fingerprint[0] = '\0';
+        result->error[0] = '\0';
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+
+        if (amounts_mol == nullptr || amount_count != endpoint.table.component_count) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "amount buffer does not match the model component count"
+            );
+        }
+        if (!std::isfinite(temperature_k) || !std::isfinite(volume_m3)
+            || temperature_k <= 0.0 || volume_m3 <= 0.0
+            || !std::all_of(amounts_mol, amounts_mol + amount_count, [](double amount) {
+                return std::isfinite(amount) && amount > 0.0;
+            })) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "temperature, amounts, and volume must be positive and finite"
+            );
+        }
+        if ((std::isfinite(endpoint.temperature_min_k)
+             && temperature_k < endpoint.temperature_min_k)
+            || (std::isfinite(endpoint.temperature_max_k)
+                && temperature_k > endpoint.temperature_max_k)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "temperature is outside the parameter source domain"
+            );
+        }
+
+        try {
+            const std::vector<double> amounts(amounts_mol, amounts_mol + amount_count);
+            const auto block = endpoint.model.evaluate_mixture_phase(
+                temperature_k, amounts, volume_m3
+            );
+            std::copy(block.gradient.begin(), block.gradient.end(), result->gradient);
+            std::copy(block.hessian.begin(), block.hessian.end(), result->hessian);
+            result->helmholtz_over_rt_reference_amount =
+                block.helmholtz_over_rt_reference_amount;
+            result->pressure_pa = block.pressure_pa;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown provider evaluation failure"
+            );
+        }
+    }
 };
 
 }  // namespace
@@ -217,9 +331,10 @@ pybind11::capsule make_native_sdk_v1(
     double temperature_min_k,
     double temperature_max_k
 ) {
-    if (!model.supports_native_sdk_v1()) {
+    if (!model.supports_native_sdk_v1()
+        && !model.supports_mixture_native_sdk_v1()) {
         throw std::invalid_argument(
-            "native SDK v1 requires one pure nonassociating neutral model"
+            "native SDK v1 requires a supported neutral nonassociating model"
         );
     }
     if (parameter_fingerprint.empty()
