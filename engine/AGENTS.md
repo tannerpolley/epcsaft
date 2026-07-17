@@ -25,8 +25,10 @@ not promoted, released, or authoritative outside this checkout until a new
 receipt is accepted.
 
 The provider owns parameters, EOS/state/property evaluation, density closure,
-and CppAD. It does not own phase equilibrium or discovery, Ipopt, regression,
-Ceres, cross-package validation, reaction/species equilibrium, or a native
-consumer SDK. Do not add compatibility APIs, mutable scientific dictionaries,
+CppAD, and any admitted native consumer transport. It does not own phase
+equilibrium or discovery, Ipopt, regression, Ceres, cross-package validation,
+or reaction/species equilibrium. ADR 0001 selects the future native transport
+but adds no SDK runtime until its separate evidence gate passes. Do not add
+compatibility APIs, mutable scientific dictionaries,
 backend selectors, hidden physical defaults, duplicate equation owners, or
 runtime dependencies on the lab, migration repository, or sibling sources.

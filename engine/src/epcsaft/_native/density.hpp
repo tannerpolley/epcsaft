@@ -157,6 +157,9 @@ DensityRoot solve_density(
         throw std::runtime_error("no certified stable density root");
     }
     if (stable.size() == 1) {
+        if (!phase.empty()) {
+            throw std::runtime_error("requested density branch is unavailable");
+        }
         stable.front().branch = "single";
         return stable.front();
     }

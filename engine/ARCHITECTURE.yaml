@@ -51,14 +51,14 @@ public_surface:
   native_sdk_entries: []
 
 manifest:
-  tracked_files: 62
+  tracked_files: 64
   production_python_files: 9
   native_source_files: 10
-  installed_data_files: 12
+  installed_data_files: 15
   package_test_files: 10
-  physical_production_lines: 4203
-  physical_package_test_lines: 2786
-  physical_documentation_lines: 1710
+  physical_production_lines: 4205
+  physical_package_test_lines: 2854
+  physical_documentation_lines: 1221
   measurement: wc -l over tracked provider Python, C++, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
@@ -66,11 +66,11 @@ manifest:
     - path: src/epcsaft/records.py
       physical_lines: 437
     - path: src/epcsaft/_resolve.py
-      physical_lines: 442
+      physical_lines: 441
     - path: src/epcsaft/_bundle_io.py
       physical_lines: 417
     - path: tests/test_parameters.py
-      physical_lines: 989
+      physical_lines: 1008
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 
 excluded:

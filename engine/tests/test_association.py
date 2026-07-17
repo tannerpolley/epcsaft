@@ -184,3 +184,21 @@ def test_association_temperature_derivative_enters_residual_energy() -> None:
     assert result.residual_internal_energy.to("joule / mole").magnitude == (
         pytest.approx(-GAS_CONSTANT * temperature**2 * derivative, rel=2.0e-6)
     )
+
+
+def test_neutral_solvent_selection_does_not_activate_ionic_topology() -> None:
+    model = EPCSAFT(
+        ParameterBundle.from_catalog(
+            "figiel-2025-reference-electrolytes", version=1
+        ).select(("ethanol",))
+    )
+
+    result = model.evaluate(
+        temperature=298.15 * unit_registry.kelvin,
+        molar_density=17000.0 * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=(1.0,),
+    )
+
+    assert result.association < 0.0
+    assert result.debye_huckel == 0.0
+    assert result.born_ssm_ds == 0.0

@@ -888,7 +888,26 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
         "gross-2001-methane-ethane/1/components.csv",
         "gross-2001-methane-ethane/1/pair.csv",
         "gross-2001-methane-ethane/1/single.csv",
+        "gross-2001-propane/1/bundle.toml",
+        "gross-2001-propane/1/components.csv",
+        "gross-2001-propane/1/single.csv",
     ]
+
+
+def test_gross_2001_propane_catalog_is_exact() -> None:
+    bundle = ParameterBundle.from_catalog("gross-2001-propane", version=1)
+    parameters = bundle.select(("propane",))
+    values = {
+        record.family: record.value
+        for record in parameters.records
+        if isinstance(record, SingleParameterRecord)
+    }
+
+    assert values["molar_mass"].to("kilogram / mole").magnitude == Decimal("0.044096")
+    assert values["segment_count"] == Decimal("2.0020")
+    assert values["segment_diameter"].to("angstrom").magnitude == Decimal("3.6184")
+    assert values["dispersion_energy_over_k"].to("kelvin").magnitude == Decimal("208.11")
+    assert epcsaft.EPCSAFT(parameters).component_ids == ("propane",)
 
 
 def test_figiel_reference_electrolyte_catalog_is_exact_and_sparse() -> None:

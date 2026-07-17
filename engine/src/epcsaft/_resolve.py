@@ -316,16 +316,15 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
     site_ids, site_multiplicity, association_pairs = _association(sites, association_records)
     temperature_min, temperature_max, ion_fraction_max = _domain_limits(parameters)
 
-    ionic_families = {
-        "charge_number",
-        "born_diameter",
-        "solvation_factor",
-        "relative_permittivity",
-    }
-    ionic_records_present = any(
-        family in ionic_families for _, family in (*singles.keys(), *correlations.keys())
-    ) or bool(models)
-    if not ionic_records_present:
+    selected_charges = tuple(
+        singles.get((component_id, "charge_number"))
+        for component_id in component_ids
+    )
+    ionic_topology = any(
+        record is not None and int(record.value) != 0
+        for record in selected_charges
+    ) or any(family == "born_diameter" for _, family in singles)
+    if not ionic_topology:
         topology: Literal["neutral", "associating", "ionic-ssm-ds"] = (
             "associating" if site_ids else "neutral"
         )

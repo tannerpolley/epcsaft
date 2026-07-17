@@ -56,12 +56,15 @@ State quantities must be Pint quantities. Component and composition order is
 the selected `ParameterSet` order. Supply exactly one of `molar_density` or
 `pressure`. If more than one mechanically stable pressure root exists, select
 `phase="vapor"` or `phase="liquid"`; otherwise the solve rejects the ambiguous
-state. A phase hint on a one-root state reports `branch="single"` rather than
-inventing a phase identity.
+state. A phase-specific request rejects if only one stable root remains;
+omit `phase` to evaluate that state with the explicit `branch="single"`
+diagnostic.
 
 The installed catalogs are:
 
 - Gross and Sadowski (2001) methane/ethane neutral PC-SAFT parameters; and
+- Gross and Sadowski (2001) pure-propane neutral PC-SAFT parameters needed by
+  the first scoped saturation consumer; and
 - the bounded Figiel, Yu, and Held (2025) water/methanol/ethanol alkali-halide
   records needed for aqueous and mixed-solvent MIAC systems and explicit
   transfer reference states.

@@ -13,8 +13,8 @@ generic residual Helmholtz kernel for hard-chain, dispersion, association,
 Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
 chemical potentials, fugacity coefficients when defined, residual caloric
 properties, pressure, and branch diagnostics for pressure-specified states.
-The installed catalogs are Gross--Sadowski methane/ethane and the bounded
-Figiel--Yu--Held water/methanol/ethanol alkali-halide source bundle. One reference-state
+The installed catalogs are Gross--Sadowski methane/ethane and propane records
+and the bounded Figiel--Yu--Held water/methanol/ethanol alkali-halide source bundle. One reference-state
 module owns x-process infinite-dilution solvation and transfer plus single-ion
 and stoichiometric mean ionic activity on one explicit electroneutral formula-
 unit path.
@@ -30,8 +30,10 @@ baseline. The full local candidate has not been pushed, independently
 validated, promoted, or released.
 
 Phase equilibrium, phase discovery/global stability, reaction and species
-equilibrium, multi-salt reference paths, regression, native consumer transport,
-and ideal-gas caloric data remain outside this repository's current capability.
+equilibrium, multi-salt reference paths, regression, and ideal-gas caloric data
+remain outside this repository's current capability. ADR 0001 selects a narrow
+capsule transport for the first pure-saturation consumer; the transport is not
+implemented or admitted yet.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.

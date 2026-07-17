@@ -8,6 +8,7 @@ __pycache__/
 .mypy_cache/
 build/
 dist/
+uv.lock
 *.egg-info/
 .idea/
 .vscode/

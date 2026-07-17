@@ -70,16 +70,47 @@ def test_three_root_state_requires_an_explicit_branch() -> None:
     assert liquid.density_diagnostics.stable
 
 
-def test_phase_hint_does_not_relabel_a_single_root() -> None:
-    result = _methane().evaluate(
-        temperature=250.0 * unit_registry.kelvin,
-        pressure=10.0 * unit_registry.bar,
-        mole_fractions=(1.0,),
-        phase="liquid",
-    )
+def test_phase_request_rejects_a_single_root() -> None:
+    with pytest.raises(EosError, match="requested density branch is unavailable"):
+        _methane().evaluate(
+            temperature=250.0 * unit_registry.kelvin,
+            pressure=10.0 * unit_registry.bar,
+            mole_fractions=(1.0,),
+            phase="liquid",
+        )
 
+
+def test_root_topology_loss_is_reported_without_branch_relabelling() -> None:
+    model = _methane()
+    two_root_state = {
+        "temperature": 190.0 * unit_registry.kelvin,
+        "pressure": 45.0 * unit_registry.bar,
+        "mole_fractions": (1.0,),
+    }
+    vapor = model.evaluate(**two_root_state, phase="vapor")
+    liquid = model.evaluate(**two_root_state, phase="liquid")
+
+    assert vapor.density_diagnostics is not None
+    assert liquid.density_diagnostics is not None
+    assert vapor.density_diagnostics.branch == "vapor"
+    assert liquid.density_diagnostics.branch == "liquid"
+    assert vapor.molar_density < liquid.molar_density
+
+    one_root_state = {
+        "temperature": 191.0 * unit_registry.kelvin,
+        "pressure": 46.0 * unit_registry.bar,
+        "mole_fractions": (1.0,),
+    }
+    result = model.evaluate(**one_root_state)
     assert result.density_diagnostics is not None
     assert result.density_diagnostics.branch == "single"
+    assert result.density_diagnostics.stable
+    assert abs(
+        result.density_diagnostics.pressure_residual.to("pascal").magnitude
+    ) < 1.0e-3
+    for requested_phase in ("vapor", "liquid"):
+        with pytest.raises(EosError, match="requested density branch is unavailable"):
+            model.evaluate(**one_root_state, phase=requested_phase)
 
 
 def test_density_and_pressure_inputs_are_mutually_exclusive() -> None:

@@ -424,8 +424,9 @@ Mechanical stability requires a positive, numerically nonsingular slope. A
 deterministic logarithmic scan brackets sign-changing candidates in the
 positive-density interval below the packing limit. `phase=None` accepts one
 stable root. In a multi-root state, vapor and liquid requests select the
-lowest- and highest-density stable roots. A lone root is reported as `single`
-rather than relabelled from a phase hint. Failed closure reports through
+lowest- and highest-density stable roots. An unlabelled lone root is reported
+as `single`; a phase-specific request rejects after that branch topology is
+lost rather than relabelling the remaining root. Failed closure reports through
 `EosError`; this local root calculation is not a global phase-stability or
 critical-point certificate.
 
@@ -447,6 +448,11 @@ pressure. The dielectric suppression relation is not evidence for another
 solvent, temperature, component topology, or larger ion fraction. Solver
 convergence does not expand that evidence.
 
+Topology is determined by the selected components, not by unrelated records
+remaining in their source bundle. A selection containing no nonzero charge is
+neutral or associating according to its explicit sites; ionic contributions
+activate only when the selection contains both positive and negative charges.
+
 Construction or evaluation fails on:
 
 - missing parameter, model, pair, site, source, unit, or domain records;
@@ -463,5 +469,7 @@ This specification does not admit Bjerrum pairing, ion-pair equilibrium,
 reaction equilibrium, alternate dielectric rules, direct/SSM-only Born modes,
 analytic derivative modes, ideal-gas caloric data, phase equilibrium,
 regression, multi-salt reference paths, alternate single-ion conventions, or a
-public derivative/SDK contract. Adding one requires a new source-backed
-capability design rather than a flag in this model.
+runtime derivative/SDK contract. ADR 0001 selects the future native transport,
+but it adds no public symbol or capability until its separate implementation
+and evidence gate passes. Adding any other exclusion requires a new source-
+backed capability design rather than a flag in this model.
