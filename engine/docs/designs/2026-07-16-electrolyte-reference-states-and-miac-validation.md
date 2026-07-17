@@ -112,7 +112,10 @@ This is a physical tolerance test, not a frozen implementation golden.
 will retain the Hamer--Wu molality and molality-scale MIAC columns for LiCl,
 NaCl, KCl, LiBr, NaBr, and KBr, with DOI, table locators, transformation
 record, and hashes. These are the critically evaluated source tables cited by
-Figiel Figure 5; they are not digitized points from that figure.
+Figiel Figure 5; they are not digitized points from that figure. The retained
+range is `0.001 <= m <= 6 mol/kg`, exactly the overlap covered by the archived
+Figiel Figure 5 model curves. Higher-molality Hamer--Wu rows are outside this
+campaign rather than silently extrapolated.
 
 The campaign reports every prediction and the per-salt RMSE, MAE, bias, and
 maximum absolute error, plus pooled statistics. Acceptance requires:
@@ -132,4 +135,3 @@ replace the Hamer--Wu acceptance.
 The campaign retains one CSV result, one JSON receipt, and one source-data
 versus model plot. It does not retain the paper PDF, the old analysis
 framework, or an executable EOS copy.
-

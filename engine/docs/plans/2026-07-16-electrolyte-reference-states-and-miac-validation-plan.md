@@ -91,9 +91,9 @@
 - Consumes: installed public `epcsaft` wheel and the catalog/reference interface from Tasks 1--3.
 - Produces: one JSON receipt and one prediction CSV supplied by command-line output paths.
 
-- [ ] Copy only the six Hamer--Wu table columns `salt,molality_mol_kg,gamma_pm_m` and record DOI, table numbers, transcription, units, and source hash.
+- [ ] Copy only the six Hamer--Wu table columns `salt,molality_mol_kg,gamma_pm_m` through the Figure 5 model limit of 6 mol/kg and record DOI, table numbers, transcription, units, source hash, and the excluded-range rationale.
 - [ ] Write the campaign first so it fails against the currently installed provider because the new public reference interface is absent.
-- [ ] Build a provider wheel, install it in an isolated campaign environment, and rerun until the campaign evaluates every source row through public interfaces.
+- [ ] Build a provider wheel, install it in an isolated campaign environment, and rerun until the campaign evaluates every retained overlap row through public interfaces.
 - [ ] Implement the approved per-salt and pooled metrics and acceptance gates without importing lab or provider source paths.
 - [ ] Emit artifact hash, parameter fingerprints, every prediction, metric, tolerance, and limitation in the receipt.
 - [ ] Update validation repository context from Slice 1-only scope to the two owned campaigns.
@@ -116,4 +116,3 @@
 - [ ] Rebuild provider wheel and sdist, test the installed artifacts, and rerun the campaign from an isolated directory with no lab checkout on `PYTHONPATH`.
 - [ ] Run the cleanup hook in both repositories and inspect both worktrees.
 - [ ] Commit retained validation evidence; do not push.
-

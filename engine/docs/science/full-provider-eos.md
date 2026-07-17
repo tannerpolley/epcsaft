@@ -90,6 +90,7 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Family | Governing relation | Status | Source locator | Owner |
 |---|---|---|---|---|
 | Segment diameter | `d_i(T) = sigma_i [1 - 0.12 exp(-3(u_i/k_B)/T)]` | source equation | Gross2001 Eq. (A.6) | `_native/helmholtz.hpp` |
+| Ionic segment diameter | `d_i = 0.88 sigma_i` | source equation | Figiel2025 Eqs. (3), (4) | `_native/helmholtz.hpp` |
 | Mixture moments | `zeta_n = (pi/6) rho_hat sum_i x_i m_i d_i^n`, `n=0..3` | source equation | Gross2001 Eq. (A.8) | `_native/helmholtz.hpp` |
 | Hard chain | hard-sphere mixture Helmholtz minus chain contact terms | source equation | Gross2001 Eqs. (A.9), (A.16), (A.17) | `_native/helmholtz.hpp` |
 | Dispersion | first- and second-order perturbation terms using `I_1`, `I_2`, and `C_1` | source equation | Gross2001 Eqs. (A.10)-(A.15) | `_native/helmholtz.hpp` |
@@ -131,6 +132,14 @@ sigma_ij = (sigma_i + sigma_j)/2
 Both are source equations from Gross2001. A missing unlike-component `k_ij`
 record remains an input error under the clean parameter contract. The diagonal
 `k_ii = 0` is the exact self-interaction identity and is not a pair record.
+
+For charged components, Figiel2025 sets cation--cation and anion--anion
+dispersion energies to zero. This gives `d_i = 0.88 sigma_i` from Eqs. (3)--
+(4) and sets every same-sign `u_ij` to zero in the dispersion sums. Opposite-
+sign and solvent--ion pairs retain the Gross combining equation with their
+explicit source-backed `k_ij`. These ionic rules are part of the common scalar
+kernel, so Helmholtz values and CppAD composition derivatives consume the same
+definition.
 
 ## 5. Association
 
@@ -214,8 +223,9 @@ kappa = sqrt[rho_N e^2/(epsilon_0 epsilon_r,bulk k_B T)
 ```
 
 Only charged components enter the following sum. Their finite-size DH
-diameter is Figiel2025 Eq. (4), derived from Eq. (3) using the admitted ionic
-dispersion convention `u_ii = 0`:
+diameter is the same Figiel2025 Eq. (4) diameter used by the PC-SAFT mixture,
+derived from Eq. (3) using the admitted ionic dispersion convention
+`u_ii = 0`:
 
 ```text
 d_i^DH(T) = 0.88 sigma_i.

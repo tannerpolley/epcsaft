@@ -70,6 +70,20 @@ def test_source_backed_debye_huckel_matches_independent_si_oracle() -> None:
     assert result.debye_huckel < 0.0
 
 
+def test_figiel_ionic_pcsaft_uses_point_88_diameter_and_zero_same_sign_dispersion() -> None:
+    result = _electrolyte_model().evaluate(
+        temperature=298.15 * unit_registry.kelvin,
+        molar_density=8000.0 * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=(0.8, 0.1, 0.1),
+    )
+
+    # Independently evaluated from Figiel (2025) Eqs. 3--4 and the
+    # Gross--Sadowski hard-chain/dispersion equations. Like-charge pair
+    # energies are zero; unlike and solvent pairs retain their sourced k_ij.
+    assert result.hard_chain == pytest.approx(0.275885643732977, rel=2.0e-12)
+    assert result.dispersion == pytest.approx(-1.2668923254438385, rel=2.0e-12)
+
+
 def test_debye_huckel_pressure_uses_cppad_density_derivative() -> None:
     model = _electrolyte_model()
     temperature = 298.15

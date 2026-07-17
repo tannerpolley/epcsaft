@@ -101,11 +101,13 @@ std::vector<Scalar> segment_diameter(
 ) {
     std::vector<Scalar> diameter(sigma.size());
     for (std::size_t component = 0; component < sigma.size(); ++component) {
-        diameter[component] = sigma[component] *
-            (Scalar(1.0) - Scalar(0.12) * scalar_exp(
-                Scalar(-3.0 * parameters.dispersion_energy_over_k[component])
-                    / temperature
-            ));
+        diameter[component] = parameters.charge_number[component] == 0
+            ? sigma[component] *
+                (Scalar(1.0) - Scalar(0.12) * scalar_exp(
+                    Scalar(-3.0 * parameters.dispersion_energy_over_k[component])
+                        / temperature
+                ))
+            : Scalar(0.88) * sigma[component];
     }
     return diameter;
 }
@@ -201,10 +203,13 @@ HelmholtzResult<Scalar> residual_helmholtz(
     for (std::size_t i = 0; i < size; ++i) {
         for (std::size_t j = 0; j < size; ++j) {
             const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j]);
-            const double epsilon_ij = std::sqrt(
-                parameters.dispersion_energy_over_k[i] *
-                parameters.dispersion_energy_over_k[j]
-            ) * (1.0 - parameters.k_ij[i * size + j]);
+            const double epsilon_ij =
+                parameters.charge_number[i] * parameters.charge_number[j] > 0
+                ? 0.0
+                : std::sqrt(
+                    parameters.dispersion_energy_over_k[i] *
+                    parameters.dispersion_energy_over_k[j]
+                ) * (1.0 - parameters.k_ij[i * size + j]);
             const Scalar weight = mole_fractions[i] * mole_fractions[j] *
                 parameters.segment_count[i] * parameters.segment_count[j] *
                 sigma_ij * sigma_ij * sigma_ij;
