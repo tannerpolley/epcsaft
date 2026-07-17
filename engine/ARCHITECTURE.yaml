@@ -1,6 +1,6 @@
 version: 1
-status: candidate
-effective_gate: accepted provider-slice-1 promotion receipt
+status: effective
+effective_receipt: promotion-0009-provider-slice-1
 scope: neutral nonassociating nonionic PC-SAFT at explicit molar density
 
 owners:
@@ -42,8 +42,8 @@ manifest:
   package_test_files: 3
   physical_production_lines: 1912
   physical_package_test_lines: 1218
-  physical_documentation_lines: 155
-  measurement: wc -l over the admitted Python and C++ source files at the Slice 1 candidate commit
+  physical_documentation_lines: 156
+  measurement: wc -l over the admitted Python and C++ source files at the Slice 1 runtime commit
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
   oversized_files:

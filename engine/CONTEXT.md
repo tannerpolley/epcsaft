@@ -14,10 +14,11 @@ Specified-pressure density closure is the next functional slice. Association,
 ions, fugacity and caloric properties, phase equilibrium, regression, native
 consumer transport, and solver ownership remain outside the current boundary.
 
-The lab remains the transitional runtime authority until an accepted promotion
-receipt; this functional implementation does not itself transfer authority.
+Accepted promotion receipt `promotion-0009-provider-slice-1` makes this
+repository the sole production owner of the exact explicit-density capability
+described above. The lab copy remains non-authoritative provenance and
+research for this promoted slice.
 
-`runtime_source_of_truth: false`
+`runtime_source_of_truth: provider-slice-1-explicit-density-neutral-eos`
 
-The candidate maintenance ratchet is recorded in `ARCHITECTURE.yaml`. It
-becomes effective only with the accepted Slice 1 promotion receipt.
+The effective maintenance ratchet is recorded in `ARCHITECTURE.yaml`.
