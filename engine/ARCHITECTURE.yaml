@@ -1,17 +1,30 @@
-version: 1
-status: effective
-effective_receipt: promotion-0009-provider-slice-1
-scope: neutral nonassociating nonionic PC-SAFT at explicit molar density
+version: 2
+status: local-candidate
+
+authority:
+  effective_receipt: promotion-0009-provider-slice-1
+  effective_scope: neutral nonassociating nonionic PC-SAFT at explicit molar density
+  candidate_promotion_status: not-promoted
+
+candidate_scope: >-
+  Source-backed neutral, associating, and bounded ionic SSM+DS residual EOS at
+  explicit molar density or specified pressure, with residual chemical,
+  fugacity, caloric, and density-root results.
 
 owners:
   parameter_input:
     - ParameterBundle
     - ParameterSet
+  resolved_model: src/epcsaft/_resolve.py
   state_input: EPCSAFT.evaluate
   result: EosResult
-  nonlinear_equations: src/epcsaft/_native/eos.hpp
-  density_derivative: CppAD over the shared scalar EOS kernel
-  installed_parameter_data: src/epcsaft/data/bundles/gross-2001-methane-ethane/1
+  equation_kernel: src/epcsaft/_native/helmholtz.hpp
+  association: src/epcsaft/_native/association.hpp
+  electrolyte: src/epcsaft/_native/electrolyte.hpp
+  born_ssm_ds: src/epcsaft/_native/born.hpp
+  nonlinear_derivatives: src/epcsaft/_native/derivatives.hpp
+  density_closure: src/epcsaft/_native/density.hpp
+  installed_parameter_data: src/epcsaft/data/bundles
 
 public_surface:
   exports:
@@ -21,6 +34,8 @@ public_surface:
     - unit_registry
     - EPCSAFT
     - EosResult
+    - DensityDiagnostics
+    - EosError
   runtime_dependencies:
     - Pint
   direct_build_dependencies:
@@ -35,31 +50,34 @@ public_surface:
   native_sdk_entries: []
 
 manifest:
-  tracked_files: 33
-  production_python_files: 7
-  native_source_files: 3
-  installed_data_files: 4
-  package_test_files: 3
-  physical_production_lines: 1912
-  physical_package_test_lines: 1218
-  physical_documentation_lines: 156
-  measurement: wc -l over the admitted Python and C++ source files at the Slice 1 runtime commit
+  tracked_files: 58
+  production_python_files: 8
+  native_source_files: 10
+  installed_data_files: 12
+  package_test_files: 9
+  physical_production_lines: 3879
+  physical_package_test_lines: 2524
+  physical_documentation_lines: 1464
+  measurement: wc -l over tracked provider Python, C++, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
   oversized_files:
-    - path: src/epcsaft/_bundle_io.py
-      physical_lines: 368
     - path: src/epcsaft/records.py
-      physical_lines: 426
+      physical_lines: 437
+    - path: src/epcsaft/_resolve.py
+      physical_lines: 442
+    - path: src/epcsaft/_bundle_io.py
+      physical_lines: 417
     - path: tests/test_parameters.py
-      physical_lines: 760
+      physical_lines: 939
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 
 excluded:
-  - specified-pressure density closure and phase labels
-  - association and ions
-  - fugacity and caloric properties
-  - equilibrium and regression
+  - phase equilibrium, phase discovery, and global stability
+  - reaction, dissociation, ion-pair, and species equilibrium
+  - regression and parameter fitting
+  - ideal-gas and total caloric properties
+  - generic single-ion reference-state workflows
   - native consumer SDK
   - alternate derivative backends
   - compatibility interfaces
@@ -70,6 +88,7 @@ ratchet:
   reject:
     - parallel input or result representations
     - duplicate equation or derivative owners
-    - sibling-source, lab, or migration dependencies
+    - sibling-source, lab, or migration runtime dependencies
+    - hidden physical defaults or backend selectors
     - source files, tests, or dependencies unreachable from an admitted capability or its proof
   note: Line count is a cost ledger, not a code-golf target; moving semantics into opaque configuration does not reduce cost.

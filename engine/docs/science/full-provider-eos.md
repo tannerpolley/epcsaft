@@ -1,8 +1,8 @@
 # Full Provider EOS Scientific Specification
 
-Status: planned implementation authority for the approved full-provider
-program; not an executable capability claim until implementation and an
-accepted validation receipt exist
+Status: scientific equation authority for the local full-provider candidate;
+not a promoted capability claim until independent validation and an accepted
+receipt exist
 
 Design: `../designs/2026-07-16-full-provider-eos-design.md`
 
@@ -18,7 +18,7 @@ not override this bounded specification.
 | Gross2002 | Gross and Sadowski, *Ind. Eng. Chem. Res.* 2002, 41, 5510-5515, DOI `10.1021/ie010954d` | Association mixing for associating systems |
 | Chapman1990 | Chapman et al., *Ind. Eng. Chem. Res.* 1990, 29, 1709-1721, DOI `10.1021/ie00104a021` | Wertheim association energy and site-fraction equations |
 | Bulow2019 | Bülow et al., *Fluid Phase Equilibria* 2019, 492, 26-33, DOI `10.1016/j.fluid.2019.03.010` | Debye-Huckel contribution with composition-dependent dielectric treatment |
-| Figiel2025 | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2025, 64, 9406-9418, DOI `10.1021/acs.iecr.5c00475` | Fitted Born diameter, SSM+DS Born term, solvation factor, dielectric rule, fugacity and reference-state relations |
+| Figiel2025 | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2025, 64, 9406-9418, DOI `10.1021/acs.iecr.5c00475` | Fitted Born diameter, SSM+DS Born term, solvation factor, dielectric rule, and fugacity relations |
 | Figiel2025SI | Official ACS supporting information, DOI `10.1021/acs.iecr.5c00475.s001`, Figshare article `28888514`, file `54030209`, MD5 `4c3d3964d6e61b908c3ce3b17bb4e6b0` | Comparison of direct, SSM, and SSM+DS formulations and retained validation evidence |
 | Figiel2026Correction | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2026, DOI `10.1021/acs.iecr.6c01415` | Authoritative corrected text of Figiel2025 Eq. (7): restores the missing bracket and replaces the second `epsilon_r,bulk` with `epsilon_r,ion` |
 
@@ -31,6 +31,30 @@ Each equation below has one status:
 - **implementation convention**: an explicit indexing, unit, or API choice;
 - **bounded empirical relation**: a source correlation used only in its
   retained domain.
+
+### Archive distillation anchors
+
+The clean implementation was distilled from the read-only lab at
+`tannerpolley/ePC-SAFT-lab`; it was not independently reconstructed from this
+specification alone. The principal archived owners are:
+
+| Clean family | Archived owner or evidence |
+|---|---|
+| Hard-chain and dispersion | `packages/epcsaft/src/epcsaft/native/eos/residual/cppad/hard_chain_dispersion.h` |
+| Association | `packages/epcsaft/src/epcsaft/native/eos/residual/contributions/association.cpp` and the archived association tests |
+| Debye--Huckel and dielectric model | archived residual Helmholtz/electrolyte owners plus `docs/latex/equations.tex` |
+| Corrected Born SSM+DS | `packages/epcsaft/src/epcsaft/native/eos/residual/contributions/born.cpp`, the correction paper, and the archived Figiel evidence |
+| Pressure and density closure | archived state/property owners and branch tests; the clean solver deliberately removes unsafe warm-start relabelling |
+
+For the three retained methane/ethane neutral anchors, the clean and archived
+kernels agree within `5e-7` relative at identical `T`, `rho_m`, `x`, and
+parameters. The remaining systematic difference is the archive's
+`N_A = 6.022140857e23 mol^-1` versus the exact SI value
+`6.02214076e23 mol^-1` used by the clean provider. The clean goldens retain the
+exact SI value rather than preserving an obsolete constant for bitwise parity.
+Association, Debye--Huckel, Born, property, and density tests additionally use
+closed-form, thermodynamic-identity, finite-difference, or branch oracles that
+do not call the archived runtime.
 
 ## 2. Symbols, bases, and units
 
@@ -56,15 +80,14 @@ Component inputs use:
 - association site topology, `epsilon_AB/k_B [K]`, and `kappa_AB [-]`;
 - integer charge `z_i`, relative permittivity `epsilon_r [-]`, fitted Born
   diameter `d_i^Born [A]`, and solvation factor `f_i [-]`; and
-- pair values `k_ij`, `l_ij`, and `k_ij^hb` only when their consuming source
-  equation requires them.
+- pair values `k_ij` for the dispersion mixing equation.
 
 The clean native kernel converts every length to one basis before combining it
 with number density. It does not mix SI number density with Angstrom cubed.
 
 ## 3. Equation registry and owners
 
-| Family | Governing relation | Status | Source locator | Planned owner |
+| Family | Governing relation | Status | Source locator | Owner |
 |---|---|---|---|---|
 | Segment diameter | `d_i(T) = sigma_i [1 - 0.12 exp(-3(u_i/k_B)/T)]` | source equation | Gross2001 Eq. (A.6) | `_native/helmholtz.hpp` |
 | Mixture moments | `zeta_n = (pi/6) rho_hat sum_i x_i m_i d_i^n`, `n=0..3` | source equation | Gross2001 Eq. (A.8) | `_native/helmholtz.hpp` |
@@ -93,7 +116,7 @@ the Gross2001 temperature-corrected diameters, mixture moments, hard-sphere
 Helmholtz energy, hard-chain contact correction, and two dispersion
 perturbation terms. The coefficient arrays `a_0..a_6` and `b_0..b_6` are the
 Gross2001 universal constants already owned by
-`src/epcsaft/_native/eos.hpp` at Slice 1.
+`src/epcsaft/_native/helmholtz.hpp`.
 
 The pair rules consumed by this slice are
 
@@ -102,9 +125,9 @@ sigma_ij = (sigma_i + sigma_j)/2
 (u_ij/k_B) = sqrt[(u_i/k_B)(u_j/k_B)] (1 - k_ij).
 ```
 
-Both are source equations from Gross2001. A missing `k_ij` record remains an
-input error under the clean parameter contract; the resolver does not assume
-zero.
+Both are source equations from Gross2001. A missing unlike-component `k_ij`
+record remains an input error under the clean parameter contract. The diagonal
+`k_ii = 0` is the exact self-interaction identity and is not a pair record.
 
 ## 5. Association
 
@@ -339,63 +362,29 @@ Candidate roots must have a finite residual and a finite slope
 dR/d(rho_m) = R T [Z + rho_m Z_rho].
 ```
 
-Mechanical stability requires a positive slope. A deterministic scan and
-bracket identifies all candidates in the admitted positive-density interval.
-`phase=None` accepts one certified stable root. Vapor and liquid requests
-select the lowest- and highest-density certified stable roots. The solver
-rejects branch loss, coalescence, poor conditioning, and absent requested
-roots.
+Mechanical stability requires a positive, numerically nonsingular slope. A
+deterministic logarithmic scan brackets sign-changing candidates in the
+positive-density interval below the packing limit. `phase=None` accepts one
+stable root. In a multi-root state, vapor and liquid requests select the
+lowest- and highest-density stable roots. A lone root is reported as `single`
+rather than relabelled from a phase hint. Failed closure reports through
+`EosError`; this local root calculation is not a global phase-stability or
+critical-point certificate.
 
-## 10. Reference-state electrolyte quantities
+## 10. Domain and rejection rules
 
-Figiel2025 Eqs. (17), (19), (20), and (21) define the admitted x-process
-quantities. The x-process uses the same temperature in gas and liquid and the
-standard pressure `p^0 = 1 bar` used in the source:
+Finite temperature bounds attached to the selected source records are
+intersected by the resolver and enforced for every topology. A record whose
+source domain is explicitly unknown contributes no invented numerical bound.
 
-```text
-Delta_solv G_i^infinity = R T ln(phi_i^infinity)
-Delta_transfer G_i^(S1->S2,infinity)
-    = R T ln[phi_i^(S2,infinity)/phi_i^(S1,infinity)]
-gamma_i^* = phi_i/phi_i^infinity.
-```
-
-For an electrolyte with stoichiometric coefficients `nu_c` and `nu_a`,
-
-```text
-ln gamma_pm^* = [nu_c ln gamma_c^* + nu_a ln gamma_a^*]
-                /(nu_c + nu_a).
-```
-
-For the first water/NaCl capability, infinite dilution uses
-
-```text
-x_water(lambda) = 1 - 2 lambda,
-x_Na+(lambda) = lambda,
-x_Cl-(lambda) = lambda,
-lambda -> 0+.
-```
-
-For a later mixed-solvent capability, the salt-free solvent mole-fraction
-ratios remain fixed while the electrolyte follows its explicit stoichiometric
-electroneutral path. Solvation holds `T = 298.15 K` and `p = p^0` and takes
-`phi_i^infinity` along that path. Transfer compares two such limits at the
-same `T` and `p^0`, with each endpoint's named salt-free solvent composition.
-The provider does not evaluate a lone non-electroneutral bulk ion. Each API
-names the x, molality, or other concentration scale; scale conversion is not
-implicit.
-
-## 11. Domain and rejection rules
-
-The first electrolyte capability is bounded to exactly water, sodium cation,
-and chloride anion at `T = 298.15 K`, `p = 1 bar` for pressure-specified and
-reference-state calculations, and `0 <= x_ion <= 0.38`. The ordinary-state
+The first electrolyte model is bounded to exactly water, sodium cation, and
+chloride anion at `T = 298.15 K` and `0 <= x_ion <= 0.38`. The ordinary-state
 composition is electroneutral and contains no other neutral component. The
-explicit-density equation can be evaluated only when the corresponding
-pressure remains within this same reported-condition capability. The Figiel
-dielectric suppression relation is not evidence for another solvent,
-temperature, pressure, component topology, or larger ion fraction. A
-mathematically converged state outside this source domain is not physically
-accepted.
+retained Figiel records report `p = 1 bar`; evaluation at another pressure is
+a mathematical EOS result, not source-backed physical validation at that
+pressure. The dielectric suppression relation is not evidence for another
+solvent, temperature, component topology, or larger ion fraction. Solver
+convergence does not expand that evidence.
 
 Construction or evaluation fails on:
 
@@ -407,10 +396,11 @@ Construction or evaluation fails on:
   instability of a specified-pressure root; and
 - a requested derivative or property whose defining Jacobian is singular.
 
-## 12. Deliberate exclusions
+## 11. Deliberate exclusions
 
 This specification does not admit Bjerrum pairing, ion-pair equilibrium,
 reaction equilibrium, alternate dielectric rules, direct/SSM-only Born modes,
 analytic derivative modes, ideal-gas caloric data, phase equilibrium,
-regression, or a public derivative/SDK contract. Adding one requires a new
-source-backed capability design rather than a flag in this model.
+regression, generic single-ion reference-state workflows, or a public
+derivative/SDK contract. Adding one requires a new source-backed capability
+design rather than a flag in this model.

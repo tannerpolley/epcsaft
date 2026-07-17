@@ -1,24 +1,34 @@
 # Provider Repository Context
 
-This repository provides the clean `epcsaft` parameter contract and a usable
-neutral, nonassociating, nonionic PC-SAFT evaluator at explicit molar density.
-The current model returns hard-chain, dispersion, total residual Helmholtz,
-compressibility factor, and Pint pressure for ordered source-backed parameters
-and state inputs.
+This clean repository is the production home for ePC-SAFT provider code. Its
+optimization objective is minimum maintained surface subject to source-backed,
+reproducible thermodynamic results.
 
 `governance_doctrine_revision: 2`
 
 Canonical local doctrine: `../ePC-SAFT-organization/GOVERNANCE.md`.
 
-Specified-pressure density closure is the next functional slice. Association,
-ions, fugacity and caloric properties, phase equilibrium, regression, native
-consumer transport, and solver ownership remain outside the current boundary.
+The local candidate contains one typed parameter lifecycle and one scalar-
+generic residual Helmholtz kernel for hard-chain, dispersion, association,
+Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
+chemical potentials, fugacity coefficients when defined, residual caloric
+properties, pressure, and branch diagnostics for pressure-specified states.
+The installed catalogs are Gross--Sadowski methane/ethane and the bounded
+Figiel--Yu--Held water/sodium/chloride system.
 
-Accepted promotion receipt `promotion-0009-provider-slice-1` makes this
-repository the sole production owner of the exact explicit-density capability
-described above. The lab copy remains non-authoritative provenance and
-research for this promoted slice.
+Pressure closure accepts exactly one of molar density or pressure. An
+unlabelled pressure state must have one mechanically stable root. A genuine
+multi-root state requires `phase="vapor"` or `phase="liquid"`; a phase hint
+never renames a lone root.
 
-`runtime_source_of_truth: provider-slice-1-explicit-density-neutral-eos`
+The currently accepted authority receipt is still
+`promotion-0009-provider-slice-1`, limited to the neutral explicit-density
+baseline. The full local candidate has not been pushed, independently
+validated, promoted, or released.
 
-The effective maintenance ratchet is recorded in `ARCHITECTURE.yaml`.
+Phase equilibrium, phase discovery/global stability, reaction and species
+equilibrium, regression, native consumer transport, and ideal-gas caloric data
+remain outside this repository's current capability.
+
+The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
+scientific equation owner is `docs/science/full-provider-eos.md`.

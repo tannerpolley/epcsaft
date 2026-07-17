@@ -7,15 +7,26 @@ Before work, read doctrine revision 2 at
 `https://github.com/ePC-SAFT/.github/blob/main/GOVERNANCE.md`. Local policy may
 narrow that doctrine but must not contradict it.
 
-The current functional boundary is the source-backed parameter contract and
-neutral, nonassociating, nonionic PC-SAFT evaluation at explicit molar density.
-The package root has six public symbols: `ParameterBundle`, `ParameterSet`,
-`ParameterError`, `unit_registry`, `EPCSAFT`, and `EosResult`. Native C++
-owns the hard-chain and dispersion equations; CppAD owns the density derivative
-consumed by pressure; Pint remains the only Python runtime dependency.
+This repository owns one provider lifecycle:
 
-This repository is limited to provider parameters, EOS/state/property
-evaluation, density closure, CppAD, and a separately admitted resolved-input
-SDK. It does not own Ipopt, Ceres, equilibrium dispatch, regression workflows,
-or cross-package validation. Specified-pressure density closure is the next
-functional slice and requires its own approved implementation plan.
+```text
+ParameterBundle -> ParameterSet -> EPCSAFT.evaluate -> EosResult
+```
+
+The local candidate evaluates neutral, associating, and bounded ionic SSM+DS
+models at explicit molar density or specified pressure. Native C++ owns the
+hard-chain, dispersion, association, Debye--Huckel, Born SSM+DS, and density
+equations. CppAD is the sole nonlinear production derivative authority. Pint
+is the sole Python runtime dependency.
+
+Accepted receipt `promotion-0009-provider-slice-1` still governs only the
+published neutral explicit-density Slice 1 baseline. Later local commits are
+not promoted, released, or authoritative outside this checkout until a new
+receipt is accepted.
+
+The provider owns parameters, EOS/state/property evaluation, density closure,
+and CppAD. It does not own phase equilibrium or discovery, Ipopt, regression,
+Ceres, cross-package validation, reaction/species equilibrium, or a native
+consumer SDK. Do not add compatibility APIs, mutable scientific dictionaries,
+backend selectors, hidden physical defaults, duplicate equation owners, or
+runtime dependencies on the lab, migration repository, or sibling sources.

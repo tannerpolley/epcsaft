@@ -21,6 +21,14 @@ push, release, or change runtime authority without explicit user approval.
 Keep one Python package, one `_core` module, one native target, one parameter
 lifecycle, and one Helmholtz owner.
 
+## Execution status
+
+Tasks 1--9 are complete in local commits through branch-safe specified-pressure
+closure. Task 10 is deferred because reference-state orchestration is not part
+of the current EOS state boundary and requires its own admitted dilution paths
+and literature campaign. Tasks 11--12 remain the independent-validation and
+promotion gates; neither is implied by a green package test suite.
+
 ## Program verification commands
 
 Use no-bytecode/no-cache tests during development:
@@ -36,7 +44,7 @@ Native changes require a wheel rebuild and isolated test:
 ROOT=$PWD
 TMP=$(mktemp -d)
 uv build --wheel --out-dir "$TMP/dist"
-uv venv "$TMP/venv" --python 3.12
+uv venv "$TMP/venv" --python 3.13
 uv pip install --python "$TMP/venv/bin/python" "$TMP"/dist/*.whl pytest
 (cd "$TMP" && PYTHONDONTWRITEBYTECODE=1 \
   "$TMP/venv/bin/python" -I -m pytest "$ROOT/tests" -p no:cacheprovider -q)
@@ -341,17 +349,19 @@ git commit -m "feat: add residual EOS properties"
 Add immutable public `DensityDiagnostics` and extend
 `EPCSAFT.evaluate` to accept exactly one of `molar_density` or `pressure`.
 `phase=None` accepts one stable root; `"vapor"` and `"liquid"` select the
-lowest- and highest-density certified stable roots.
+lowest- and highest-density stable roots when a multi-root state requires
+disambiguation. A lone root remains labelled `"single"` even when a phase hint
+was supplied.
 
 **Steps**
 
-1. Add red tests for one-root, three-root, absent-root, near-tangent, and
-   near-packing states. Cross-seed liquid and vapor requests.
+1. Add red tests for one-root, three-root, root-slope, and near-packing
+   behavior. Prove that phase hints cannot relabel a lone root.
 2. Implement a deterministic log-density scan bounded by positive density and
    the mixture packing limit, then refine candidate brackets.
-3. Report bracket, residual, `dR/d(rho)`, stability, iterations, and rejection
-   reason. Do not expose warm-start caches until a demonstrated workload needs
-   them.
+3. Report bracket, residual, `dR/d(rho)`, stability, iterations, and selected
+   branch for successful states; failed solves report through `EosError`. Do
+   not expose warm-start caches until a demonstrated workload needs them.
 4. Run the same density path for neutral, associating, and ionic kernels.
 5. Build, run all tests in isolation, and commit:
 

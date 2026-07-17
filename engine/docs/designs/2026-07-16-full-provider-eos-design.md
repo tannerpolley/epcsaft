@@ -1,6 +1,6 @@
 # Full Provider EOS Design
 
-Status: approved design
+Status: approved design; local implementation complete through density closure
 
 Approved: 2026-07-16
 
@@ -17,13 +17,16 @@ supports:
 - the Figiel--Yu--Held solvation-shell plus dielectric-saturation (SSM+DS)
   Born formulation;
 - explicit-density and specified-pressure state evaluation;
-- residual chemical potentials, fugacity coefficients, source-defined
-  activity/reference-state quantities, and residual caloric properties; and
+- residual chemical potentials, fugacity coefficients, and residual caloric
+  properties; and
 - exact nonlinear derivatives required by those provider calculations.
 
 The optimization objective remains minimum maintained surface subject to those
-capabilities producing source-faithful, reproducible results. This is a clean
-implementation over retained evidence, not a port of the lab package.
+capabilities producing source-faithful, reproducible results. This is a
+source-faithful distillation of the lab's proven equations, parameters, and
+numerical evidence. It is neither a bulk port nor an independent rewrite: each
+clean owner is traced to an archived owner or independent retained oracle,
+while legacy configuration and compatibility surface is deliberately omitted.
 
 ## 2. Chosen architecture
 
@@ -63,9 +66,6 @@ target unless an observed build constraint proves that another is necessary.
   pressure, residual chemical potentials, fugacity coefficients, residual
   entropy, internal energy, enthalpy, isochoric heat capacity, and isobaric
   heat capacity.
-- Explicitly defined ion activity, mean ionic activity, and solvation/transfer
-  quantities only where their reference state, composition limit, concentration
-  scale, and standard-state conversion are part of the call contract.
 
 ### Excluded
 
@@ -77,6 +77,9 @@ target unless an observed build constraint proves that another is necessary.
   Ceres, and fitted-parameter workflows.
 - A public high-order derivative tensor API or native consumer SDK before a
   real extension consumer contract is approved.
+- Single-ion activity, infinite-dilution, solvation, and transfer workflows
+  before their reference paths and literature campaign are separately
+  admitted.
 - Alternative derivative backends, model/backend selectors, compatibility
   aliases, mutable scientific dictionaries, and undocumented defaults.
 
@@ -99,18 +102,16 @@ or
 ```
 
 `phase` is rejected for explicit-density evaluation. For specified-pressure
-evaluation, `None` accepts exactly one certified mechanically stable root and
+evaluation, `None` accepts exactly one resolved mechanically stable root and
 rejects an ambiguous multi-root state. The admitted explicit values are
-`"vapor"` and `"liquid"`; they request the lowest- and highest-density certified
-stable roots, respectively. If the requested branch is absent or cannot be
-certified, the solve fails rather than relabeling another root.
+`"vapor"` and `"liquid"`; they select the lowest- and highest-density stable
+roots when multiple roots exist. If only one stable root exists, its diagnostic
+branch is `"single"`; a hint never relabels it as liquid or vapor.
 
 `EosResult` remains the single state result. It gains only fields produced by
 the admitted full-provider capability. A small immutable density diagnostic
 record is returned for pressure-specified states and is absent for explicit-
-density states. Reference-state calculations use narrowly named `EPCSAFT`
-methods because they require more than one thermodynamic state and cannot be
-truthfully represented as fields of one state result.
+density states.
 
 No public argument selects a derivative backend or contribution
 implementation. Model activation follows the resolved record topology:
@@ -122,9 +123,7 @@ implementation. Model activation follows the resolved record topology:
 
 Partial topology is an input error. An ordinary charged composition must be
 electroneutral within a declared numerical tolerance; the provider does not
-invent counterions or alter composition. Infinite-dilution ion and mean-ionic
-reference states approach their limit along an explicit electroneutral
-stoichiometric path rather than evaluating a non-electroneutral bulk state.
+invent counterions or alter composition.
 
 ## 5. Resolved scientific input
 
@@ -155,8 +154,9 @@ source-bearing model data, not a universal constant.
 
 Sparse semantics are preserved: omission means absent, while a sourced zero is
 a present value. The resolver never substitutes zero, one, a combining rule,
-or another component's value for a missing record unless that exact relation
-is the admitted source equation.
+or another component's value for a missing unlike-component record unless that
+exact relation is the admitted source equation. The diagonal `k_ii = 0` is the
+exact self-interaction identity and is not an empirical pair record.
 
 ## 6. Governing kernel
 
@@ -242,9 +242,8 @@ the density branch is mechanically stable. Near a singular density or
 association Jacobian, the provider reports failure instead of a finite-looking
 property.
 
-Activity and solvation methods state the standard process and concentration
-scale explicitly. A successful fugacity calculation alone does not imply a
-validated single-ion activity convention or literature-scale conversion.
+A successful fugacity calculation does not imply a validated single-ion
+activity convention or literature-scale conversion.
 
 ## 8. Density closure
 
@@ -256,15 +255,13 @@ R(rho) = rho * R * T * Z(T, rho, x) - P_target = 0
 
 over a physically bounded positive-density domain derived from the packing
 fraction limit. A deterministic logarithmic scan identifies sign-changing
-brackets and near-tangent candidates. Each candidate is refined without
-recording the solver history.
+brackets. Each candidate is refined without recording the solver history.
 
-Every candidate records its bracket, residual, `dR/d(rho)`, mechanical-
-stability status, and rejection reason. The vapor request selects the
-lowest-density certified stable root; the liquid request selects the highest.
-Warm starts may accelerate refinement only after the requested branch has been
-identified and must be checked against the scan result. Root swaps,
-coalescence, absent branches, and poor conditioning fail explicitly.
+Every accepted root records its bracket, residual, `dR/d(rho)`, iteration
+count, and mechanical-stability status. Failed closure reports its reason
+through `EosError`. In a multi-root state, vapor selects the lowest-density
+stable root and liquid selects the highest. There is no warm-start or cache
+path. Nonpositive or numerically singular slopes are rejected.
 
 Cross-seeded tests must prove that a vapor request cannot return a liquid root
 and vice versa. The provider makes no critical-point or global phase-stability
@@ -274,17 +271,18 @@ claim from this local density closure.
 
 Parameter/model construction errors continue to use `ParameterError` and its
 stable context. State and solver failures use one public `EosError` subclass of
-`ValueError` with a stable code, immutable context, and optional immutable
-density diagnostics. Failed states raise `EosError`; successful states carry
-their convergence and validity statuses in `EosResult`. Message parsing is not
-an API.
+`ValueError` with a stable code and immutable context. Failed states raise
+`EosError`; successful pressure states carry density-solver diagnostics.
+Source and fit domains remain explicit on `ParameterSet` and bound admitted
+state inputs; a returned EOS value is not a separate physical-validation
+certificate. Message parsing is not an API.
 
 Diagnostics distinguish:
 
 1. solver convergence;
 2. numerical convergence under tolerance, scaling, and initialization checks;
-3. physical validity under source domain, electroneutrality, topology, branch,
-   and reference-state checks.
+3. physical validity under source domain, electroneutrality, topology, and
+   branch checks.
 
 No layer implies the next.
 
@@ -332,9 +330,8 @@ independently verifiable leaves:
 5. Add composition and temperature derivatives plus residual chemical,
    fugacity, and caloric properties.
 6. Add branch-safe density closure and specified-pressure evaluation.
-7. Add explicit reference-state electrolyte quantities and compact literature
-   campaigns.
-8. Reconcile documentation, update the architecture cost ledger, validate the
+7. Reconcile documentation and update the architecture cost ledger.
+8. Validate the
    immutable installed artifact, and prepare promotion receipts.
 
 Each leaf starts from tests, removes any displaced owner in the same commit,
