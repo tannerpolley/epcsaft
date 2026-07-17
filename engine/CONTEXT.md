@@ -14,7 +14,7 @@ Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
 chemical potentials, fugacity coefficients when defined, residual caloric
 properties, pressure, and branch diagnostics for pressure-specified states.
 The installed catalogs are Gross--Sadowski methane/ethane and the bounded
-Figiel--Yu--Held water/methanol alkali-halide source bundle. One reference-state
+Figiel--Yu--Held water/methanol/ethanol alkali-halide source bundle. One reference-state
 module owns x-process infinite-dilution solvation and transfer plus single-ion
 and stoichiometric mean ionic activity on one explicit electroneutral formula-
 unit path.

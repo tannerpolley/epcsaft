@@ -57,8 +57,8 @@ manifest:
   installed_data_files: 12
   package_test_files: 10
   physical_production_lines: 4203
-  physical_package_test_lines: 2694
-  physical_documentation_lines: 1668
+  physical_package_test_lines: 2786
+  physical_documentation_lines: 1710
   measurement: wc -l over tracked provider Python, C++, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
@@ -70,7 +70,7 @@ manifest:
     - path: src/epcsaft/_bundle_io.py
       physical_lines: 417
     - path: tests/test_parameters.py
-      physical_lines: 957
+      physical_lines: 989
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 
 excluded:

@@ -130,3 +130,30 @@ def test_nacl_mean_ionic_activity_matches_hamer_wu_at_one_molal() -> None:
         1.0 * unit_registry.mole / unit_registry.kilogram
     ).mean_ionic_activity_coefficient_molality
     assert abs(observed - 0.657) <= 0.08
+
+
+def test_nacl_activity_in_water_ethanol_matches_esteso() -> None:
+    model = _model("water", "ethanol", "sodium-cation", "chloride-anion")
+    water_moles = 0.4 / 0.0180153
+    ethanol_moles = 0.6 / 0.046069
+    solvent_moles = water_moles + ethanol_moles
+    reference = model.reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=1.0 * unit_registry.bar,
+        solvent_mole_fractions=(
+            water_moles / solvent_moles,
+            ethanol_moles / solvent_moles,
+            0.0,
+            0.0,
+        ),
+        phase="liquid",
+    )
+
+    # Esteso et al. (1989), J. Solution Chem. 18, Table I:
+    # 60 mass % ethanol in the salt-free solvent, m = 0.500 mol/kg,
+    # and gamma_pm,m = 0.415. The 0.08 gate is a model-accuracy tolerance,
+    # not the experimental precision.
+    observed = reference.at_molality(
+        0.5 * unit_registry.mole / unit_registry.kilogram
+    ).mean_ionic_activity_coefficient_molality
+    assert abs(observed - 0.415) <= 0.08

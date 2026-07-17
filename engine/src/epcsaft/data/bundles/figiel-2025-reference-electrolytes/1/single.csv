@@ -9,6 +9,11 @@ methanol-segment-count,methanol,segment_count,1.5255,,figiel-yu-held-2025,"Table
 methanol-dispersion-energy,methanol,dispersion_energy_over_k,188.90,kelvin,figiel-yu-held-2025,"Table 2, methanol column, u_i/k_B row",figiel-298-k-1-bar
 methanol-charge,methanol,charge_number,0,,figiel-yu-held-2025,"Table 2 identifies methanol as solvent; Table 3 separately lists ions",figiel-298-k-1-bar
 methanol-solvation-factor,methanol,solvation_factor,1.4,,figiel-yu-held-2025,"Table 2, methanol column, f_k row",figiel-298-k-1-bar
+ethanol-molar-mass,ethanol,molar_mass,46.069,gram / mole,nist-srd-69-ethanol,"Ethanol record, molecular weight",nist-ethanol-identity
+ethanol-segment-count,ethanol,segment_count,2.3827,,figiel-yu-held-2025,"Table 2, ethanol column, m_i^seg row",figiel-298-k-1-bar
+ethanol-dispersion-energy,ethanol,dispersion_energy_over_k,198.24,kelvin,figiel-yu-held-2025,"Table 2, ethanol column, u_i/k_B row",figiel-298-k-1-bar
+ethanol-charge,ethanol,charge_number,0,,figiel-yu-held-2025,"Table 2 identifies ethanol as solvent; Table 3 separately lists ions",figiel-298-k-1-bar
+ethanol-solvation-factor,ethanol,solvation_factor,1.6,,figiel-yu-held-2025,"Table 2, ethanol column, f_k row",figiel-298-k-1-bar
 lithium-segment-count,lithium-cation,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
 lithium-segment-diameter,lithium-cation,segment_diameter,2.8449,angstrom,figiel-yu-held-2025,"Table 3, Li+ row, sigma_i column",figiel-298-k-1-bar
 lithium-dispersion-energy,lithium-cation,dispersion_energy_over_k,360.00,kelvin,figiel-yu-held-2025,"Table 3, Li+ row, u_i/k_B column",figiel-298-k-1-bar

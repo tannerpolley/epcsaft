@@ -166,6 +166,12 @@ cross-association combining equation. Every allowed site pair therefore has
 both an energy and volume record; an omitted unlike-site pair is inactive,
 not inferred. String schemes and inferred donor/acceptor pairs are forbidden.
 
+The bounded 298.15 K water--ethanol selection stores both donor--acceptor
+cross pairs explicitly. Their energy and volume values are evaluated once
+from the Gross2002 cross-association equations using the Figiel2025 Table 2
+pure-solvent records and `k_hb = 0`. The runtime still performs no implicit
+combining or default insertion.
+
 The association Helmholtz contribution is
 
 ```text
@@ -395,7 +401,8 @@ values are path-defined model quantities. The stoichiometric MIAC is the
 literature comparison quantity.
 
 The first admitted reference scope contains exactly one cation, one anion,
-water or methanol, `T = 298.15 K`, and the selected Figiel parameter domain.
+water, methanol, ethanol, or a selected mixture of those solvents at
+`T = 298.15 K` within the Figiel parameter domain.
 Multi-salt reference paths, non-electroneutral dilution, automatic species
 generation, and alternative concentration conventions remain closed.
 
@@ -429,9 +436,11 @@ intersected by the resolver and enforced for every topology. A record whose
 source domain is explicitly unknown contributes no invented numerical bound.
 
 The first electrolyte model is bounded to the Figiel source records for water,
-methanol, `Li+`, `Na+`, `K+`, `Cl-`, and `Br-` at `T = 298.15 K` and
-`0 <= x_ion <= 0.38`. Each admitted MIAC calculation selects one solvent,
-one cation, and one anion. The ordinary-state composition is electroneutral. The
+methanol, ethanol, `Li+`, `Na+`, `K+`, `Cl-`, and `Br-` at `T = 298.15 K` and
+`0 <= x_ion <= 0.38`. Each admitted MIAC calculation selects one solvent
+composition, one cation, and one anion. A mixed-solvent selection additionally
+requires every solvent pair and cross-association record. The ordinary-state
+composition is electroneutral. The
 retained Figiel records report `p = 1 bar`; evaluation at another pressure is
 a mathematical EOS result, not source-backed physical validation at that
 pressure. The dielectric suppression relation is not evidence for another

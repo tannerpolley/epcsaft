@@ -62,8 +62,9 @@ inventing a phase identity.
 The installed catalogs are:
 
 - Gross and Sadowski (2001) methane/ethane neutral PC-SAFT parameters; and
-- the bounded Figiel, Yu, and Held (2025) water/methanol alkali-halide records
-  needed for six aqueous MIAC systems and explicit transfer reference states.
+- the bounded Figiel, Yu, and Held (2025) water/methanol/ethanol alkali-halide
+  records needed for aqueous and mixed-solvent MIAC systems and explicit
+  transfer reference states.
 
 This repository does not perform phase equilibrium or phase discovery,
 reaction/species equilibrium, regression, parameter fitting, ideal-gas

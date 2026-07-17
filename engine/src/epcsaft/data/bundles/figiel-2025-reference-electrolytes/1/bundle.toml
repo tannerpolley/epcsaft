@@ -8,7 +8,7 @@ files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.c
 source_id = "figiel-yu-held-2025"
 citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
 doi = "10.1021/acs.iecr.5c00475"
-use_basis = "primary equations and parameters for bounded water and methanol alkali-halide reference states"
+use_basis = "primary equations and parameters for bounded water, methanol, and ethanol alkali-halide reference states"
 
 [[sources]]
 source_id = "nist-srd-69-water"
@@ -19,6 +19,11 @@ use_basis = "water identity and molecular weight"
 source_id = "nist-srd-69-methanol"
 citation = "NIST Chemistry WebBook, SRD 69, Methanol, CAS 67-56-1."
 use_basis = "methanol identity and molecular weight"
+
+[[sources]]
+source_id = "nist-srd-69-ethanol"
+citation = "NIST Chemistry WebBook, SRD 69, Ethanol, CAS 64-17-5."
+use_basis = "ethanol identity and molecular weight"
 
 [[domains]]
 domain_id = "figiel-298-k-1-bar"
@@ -37,4 +42,8 @@ kind = "unknown"
 
 [[domains]]
 domain_id = "nist-methanol-identity"
+kind = "unknown"
+
+[[domains]]
+domain_id = "nist-ethanol-identity"
 kind = "unknown"

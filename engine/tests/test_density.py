@@ -129,3 +129,36 @@ def test_pressure_closure_runs_the_complete_electrolyte_eos() -> None:
     assert result.density_diagnostics is not None
     assert result.density_diagnostics.branch == "liquid"
     assert result.density_diagnostics.stable
+
+
+def test_ethanol_nabr_density_matches_held_measurement() -> None:
+    model = EPCSAFT(
+        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
+            ("ethanol", "sodium-cation", "bromide-anion")
+        )
+    )
+    ethanol_moles = 1.0 / 0.046069
+    salt_moles = 0.1422
+    total_moles = ethanol_moles + 2.0 * salt_moles
+    mole_fractions = (
+        ethanol_moles / total_moles,
+        salt_moles / total_moles,
+        salt_moles / total_moles,
+    )
+    result = model.evaluate(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=1.0 * unit_registry.bar,
+        mole_fractions=mole_fractions,
+        phase="liquid",
+    )
+    molar_masses = (0.046069, 0.02298, 0.0799)
+    mass_density = result.molar_density.to("mole / meter ** 3").magnitude * sum(
+        fraction * molar_mass
+        for fraction, molar_mass in zip(mole_fractions, molar_masses, strict=True)
+    )
+
+    # Held et al. (2012), DOI 10.1016/j.ces.2011.09.040, Table 1:
+    # ethanol + NaBr at 298.15 K, ambient pressure, m = 0.1422 mol/kg,
+    # rho = 795.96 kg/m3. One bar represents ambient pressure; the 20 kg/m3
+    # gate is a model-accuracy tolerance, not the reported instrument uncertainty.
+    assert abs(mass_density - 795.96) <= 20.0

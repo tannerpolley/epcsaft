@@ -897,6 +897,7 @@ def test_figiel_reference_electrolyte_catalog_is_exact_and_sparse() -> None:
     assert {component.component_id for component in bundle.components} == {
         "bromide-anion",
         "chloride-anion",
+        "ethanol",
         "lithium-cation",
         "methanol",
         "potassium-cation",
@@ -919,6 +920,10 @@ def test_figiel_reference_electrolyte_catalog_is_exact_and_sparse() -> None:
     assert values[("water", "charge_number")] == 0
     assert values[("water", "solvation_factor")] == Decimal("1.5")
     assert values[("methanol", "molar_mass")].to("gram / mole").magnitude == Decimal("32.042")
+    assert values[("ethanol", "molar_mass")].to("gram / mole").magnitude == Decimal("46.069")
+    assert values[("ethanol", "segment_count")] == Decimal("2.3827")
+    assert values[("ethanol", "dispersion_energy_over_k")].magnitude == Decimal("198.24")
+    assert values[("ethanol", "solvation_factor")] == Decimal("1.6")
     assert values[("lithium-cation", "born_diameter")].magnitude == Decimal("2.784")
     assert values[("sodium-cation", "segment_diameter")].magnitude == Decimal("2.8232")
     assert values[("sodium-cation", "born_diameter")].magnitude == Decimal("3.445")
@@ -933,6 +938,9 @@ def test_figiel_reference_electrolyte_catalog_is_exact_and_sparse() -> None:
         if isinstance(record, PairParameterRecord) and record.family == "k_ij"
     }
     assert pairs[("methanol", "water")] == Decimal("-0.0878")
+    assert pairs[("ethanol", "water")] == Decimal("-0.0617")
+    assert pairs[("ethanol", "sodium-cation")] == Decimal("0.05")
+    assert pairs[("chloride-anion", "ethanol")] == Decimal("0.8")
     assert pairs[("lithium-cation", "water")] == Decimal("-0.4")
     assert pairs[("bromide-anion", "potassium-cation")] == Decimal("-0.35")
     assert pairs[("chloride-anion", "sodium-cation")] == Decimal("0.8")
@@ -940,6 +948,27 @@ def test_figiel_reference_electrolyte_catalog_is_exact_and_sparse() -> None:
         record.family == "k_ij"
         for record in bundle.records
         if isinstance(record, PairParameterRecord)
+    )
+
+    associations = {
+        (
+            record.component_id_a,
+            record.site_id_a,
+            record.component_id_b,
+            record.site_id_b,
+            record.family,
+        ): record.value
+        for record in bundle.records
+        if isinstance(record, AssociationParameterRecord)
+    }
+    assert associations[("ethanol", "a", "ethanol", "b", "association_volume")] == Decimal(
+        "0.03238"
+    )
+    assert associations[("ethanol", "b", "water", "a", "association_energy_over_k")].to(
+        "kelvin"
+    ).magnitude == Decimal("2539.55")
+    assert associations[("ethanol", "a", "water", "b", "association_volume")] == Decimal(
+        "0.03797842747120087"
     )
 
     for cation, anion in (
@@ -955,3 +984,6 @@ def test_figiel_reference_electrolyte_catalog_is_exact_and_sparse() -> None:
 
     methanol_nabr = ("methanol", "sodium-cation", "bromide-anion")
     assert epcsaft.EPCSAFT(bundle.select(methanol_nabr)).component_ids == methanol_nabr
+
+    ethanol_nacl = ("water", "ethanol", "sodium-cation", "chloride-anion")
+    assert epcsaft.EPCSAFT(bundle.select(ethanol_nacl)).component_ids == ethanol_nacl
