@@ -17,8 +17,15 @@ from .records import (
 from .units import ParameterError, _error, _quantity, unit_registry
 
 
-def _magnitude(record: SingleParameterRecord, unit: str) -> float:
-    value = record.value
+def _magnitude(
+    record: SingleParameterRecord | ConstantCorrelation,
+    unit: str,
+) -> float:
+    value = (
+        record.value
+        if isinstance(record, SingleParameterRecord)
+        else record.constant
+    )
     if unit != "dimensionless":
         value = value.to(unit).magnitude
     return float(value)
@@ -50,10 +57,7 @@ def _eos_error(code: str, **context: object) -> EosError:
 
 def _native_arguments(
     model: _ResolvedModel,
-) -> tuple[list[float] | list[int], ...]:
-    if model.topology == "ionic-ssm-ds":
-        raise _error("invalid-value", topology=model.topology, reason="native-not-admitted")
-
+) -> tuple[object, ...]:
     sigma_constant: list[float] = []
     term_component: list[int] = []
     term_amplitude: list[float] = []
@@ -93,6 +97,25 @@ def _native_arguments(
             association_energy[index] = pair.energy_over_k
             association_volume[index] = pair.volume
 
+    components = len(model.component_ids)
+    if model.topology == "ionic-ssm-ds":
+        molar_mass = [
+            0.0 if value is None else value
+            for value in model.molar_mass_kg_per_mol
+        ]
+        charge_number = list(model.charge_number)
+        relative_permittivity = [
+            0.0 if record is None else _magnitude(record, "dimensionless")
+            for record in model.relative_permittivity
+        ]
+        dielectric_suppression = model.dielectric_ion_suppression_coefficient
+        assert dielectric_suppression is not None
+    else:
+        molar_mass = [0.0] * components
+        charge_number = [0] * components
+        relative_permittivity = [0.0] * components
+        dielectric_suppression = 0.0
+
     return (
         list(model.segment_count),
         sigma_constant,
@@ -106,6 +129,10 @@ def _native_arguments(
         association_active,
         association_energy,
         association_volume,
+        molar_mass,
+        charge_number,
+        relative_permittivity,
+        dielectric_suppression,
     )
 
 
@@ -154,6 +181,36 @@ class EPCSAFT:
         ):
             raise _eos_error("invalid-state", field="mole_fractions")
 
+        if self._model.topology == "ionic-ssm-ds":
+            if (
+                self._model.temperature_min_k is not None
+                and temperature_k < self._model.temperature_min_k
+            ) or (
+                self._model.temperature_max_k is not None
+                and temperature_k > self._model.temperature_max_k
+            ):
+                raise _eos_error("invalid-state", field="temperature")
+            ion_fraction = math.fsum(
+                fraction
+                for fraction, charge in zip(
+                    fractions, self._model.charge_number, strict=True
+                )
+                if charge != 0
+            )
+            if (
+                self._model.ion_mole_fraction_max is not None
+                and ion_fraction > self._model.ion_mole_fraction_max + 1.0e-12
+            ):
+                raise _eos_error("invalid-state", field="mole_fractions")
+            charge_balance = math.fsum(
+                fraction * charge
+                for fraction, charge in zip(
+                    fractions, self._model.charge_number, strict=True
+                )
+            )
+            if abs(charge_balance) > 1.0e-12:
+                raise _eos_error("invalid-state", field="electroneutrality")
+
         try:
             native = self._native.evaluate(temperature_k, density_molar, fractions)
         except (RuntimeError, ValueError) as exc:
@@ -162,6 +219,7 @@ class EPCSAFT:
             hard_chain=native.hard_chain,
             dispersion=native.dispersion,
             association=native.association,
+            debye_huckel=native.debye_huckel,
             residual_helmholtz=native.residual_helmholtz,
             compressibility_factor=native.compressibility_factor,
             pressure=native.pressure * unit_registry.pascal,
@@ -184,6 +242,7 @@ class EosResult:
     hard_chain: float
     dispersion: float
     association: float
+    debye_huckel: float
     residual_helmholtz: float
     compressibility_factor: float
     pressure: pint.Quantity

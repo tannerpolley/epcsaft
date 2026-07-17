@@ -56,12 +56,14 @@ def test_records_are_immutable_and_identifiers_are_exact() -> None:
         domain_id="sourced-upper-bound",
         kind="reported-conditions",
         pressure_max=2 * unit_registry.bar,
+        ion_mole_fraction_max=Decimal("0.38"),
     )
     component = ComponentRecord("methane", name="methane", aliases=("CH4",))
 
     assert source.source_id == "gross-sadowski-2001"
     assert domain.temperature_min.magnitude == Decimal("97")
     assert one_sided_domain.pressure_max.magnitude == Decimal("200000")
+    assert one_sided_domain.ion_mole_fraction_max == Decimal("0.38")
     assert component.aliases == ("CH4",)
     with pytest.raises(FrozenInstanceError):
         component.name = "Methane"

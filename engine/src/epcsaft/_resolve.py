@@ -53,6 +53,9 @@ class _ResolvedModel:
     solvation_factor: tuple[_TemperatureRecord | None, ...]
     ionic_region_relative_permittivity: float | None
     dielectric_ion_suppression_coefficient: float | None
+    temperature_min_k: float | None
+    temperature_max_k: float | None
+    ion_mole_fraction_max: float | None
 
 
 def _missing(*, component_id: str | None = None, family: str, pair: tuple[str, str] | None = None):
@@ -290,6 +293,9 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
             (),
             None,
             None,
+            None,
+            None,
+            None,
         )
 
     charge_records = tuple(
@@ -353,6 +359,40 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
             raise _error("invalid-value", family=family, value=value)
         model_values.append(value)
 
+    domain_by_id = {domain.domain_id: domain for domain in parameters.domains}
+    active_domain_ids = {
+        record.domain_id
+        for record in parameters.records
+        if record.domain_id in domain_by_id
+        and domain_by_id[record.domain_id].kind != "unknown"
+    }
+    active_domains = tuple(
+        domain_by_id[domain_id] for domain_id in active_domain_ids
+    )
+    lower_bounds = tuple(
+        float(domain.temperature_min.to("kelvin").magnitude)
+        for domain in active_domains
+        if domain.temperature_min is not None
+    )
+    upper_bounds = tuple(
+        float(domain.temperature_max.to("kelvin").magnitude)
+        for domain in active_domains
+        if domain.temperature_max is not None
+    )
+    ion_bounds = tuple(
+        float(domain.ion_mole_fraction_max)
+        for domain in active_domains
+        if domain.ion_mole_fraction_max is not None
+    )
+    temperature_min = max(lower_bounds) if lower_bounds else None
+    temperature_max = min(upper_bounds) if upper_bounds else None
+    if (
+        temperature_min is not None
+        and temperature_max is not None
+        and temperature_min > temperature_max
+    ):
+        raise _error("invalid-domain", field="temperature", value="empty-intersection")
+
     return _ResolvedModel(
         "ionic-ssm-ds",
         component_ids,
@@ -372,6 +412,9 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         tuple(solvation_factor),
         model_values[0],
         model_values[1],
+        temperature_min,
+        temperature_max,
+        min(ion_bounds) if ion_bounds else None,
     )
 
 

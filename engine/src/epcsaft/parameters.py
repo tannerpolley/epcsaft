@@ -265,6 +265,7 @@ class ParameterSet:
     bundle_fingerprint: str
     component_ids: tuple[str, ...]
     components: tuple[ComponentRecord, ...]
+    domains: tuple[ValidityDomain, ...]
     records: tuple
     fingerprint: str
 
@@ -286,6 +287,7 @@ class ParameterSet:
         object.__setattr__(instance, "bundle_fingerprint", bundle.fingerprint)
         object.__setattr__(instance, "component_ids", component_ids)
         object.__setattr__(instance, "components", components)
+        object.__setattr__(instance, "domains", bundle.domains)
         object.__setattr__(instance, "records", records)
         object.__setattr__(
             instance,

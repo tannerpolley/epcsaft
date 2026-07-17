@@ -131,6 +131,7 @@ class ValidityDomain:
     temperature_max: object | None = None
     pressure_min: object | None = None
     pressure_max: object | None = None
+    ion_mole_fraction_max: object | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "domain_id", _identifier(self.domain_id, field="domain_id"))
@@ -150,6 +151,11 @@ class ValidityDomain:
             "pressure_max": None
             if self.pressure_max is None
             else _quantity(self.pressure_max, "pascal", field="pressure_max"),
+            "ion_mole_fraction_max": None
+            if self.ion_mole_fraction_max is None
+            else _decimal_number(
+                self.ion_mole_fraction_max, field="ion_mole_fraction_max"
+            ),
         }
         for field, value in normalized.items():
             object.__setattr__(self, field, value)
@@ -158,6 +164,11 @@ class ValidityDomain:
             ("temperature", normalized["temperature_min"], normalized["temperature_max"]),
             ("pressure", normalized["pressure_min"], normalized["pressure_max"]),
         )
+        ion_max = normalized["ion_mole_fraction_max"]
+        if ion_max is not None and not (0 < ion_max <= 1):
+            raise _error(
+                "invalid-domain", field="ion_mole_fraction_max", value=ion_max
+            )
         if self.kind == "unknown" and any(value is not None for value in normalized.values()):
             raise _error("invalid-domain", field="kind", value=self.kind)
         if self.kind != "unknown" and all(value is None for value in normalized.values()):

@@ -135,6 +135,7 @@ def _domain(value: object) -> ValidityDomain:
         "pressure_min",
         "pressure_max",
         "pressure_unit",
+        "ion_mole_fraction_max",
     }
     data = _exact_keys(value, required, optional)
     kwargs: dict[str, object] = {"domain_id": data["domain_id"], "kind": data["kind"]}
@@ -147,6 +148,10 @@ def _domain(value: object) -> ValidityDomain:
             raise _error("invalid-schema", field=unit_name, value="unused")
         for name in bounds:
             kwargs[name] = _quantity(data[name], data[unit_name], field=name)
+    if "ion_mole_fraction_max" in data:
+        kwargs["ion_mole_fraction_max"] = _decimal(
+            data["ion_mole_fraction_max"], field="ion_mole_fraction_max"
+        )
     return ValidityDomain(**kwargs)  # type: ignore[arg-type]
 
 

@@ -47,6 +47,7 @@ struct HelmholtzResult final {
     Scalar hard_chain;
     Scalar dispersion;
     Scalar association;
+    Scalar debye_huckel;
 };
 
 template <typename Scalar>
@@ -103,7 +104,8 @@ HelmholtzResult<Scalar> residual_helmholtz(
     const NativeParameters& parameters,
     const std::vector<double>& sigma,
     const std::vector<double>& diameter,
-    const std::vector<Scalar>& site_fraction
+    const std::vector<Scalar>& site_fraction,
+    const Scalar& debye_huckel
 ) {
     const std::size_t size = parameters.segment_count.size();
     const Scalar number_density = molar_density * (AVOGADRO / 1.0e30);
@@ -205,7 +207,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
             parameters.site_multiplicity[site] *
             (scalar_log(site_fraction[site]) - site_fraction[site] / 2.0 + 0.5);
     }
-    return {hard_chain, dispersion, association};
+    return {hard_chain, dispersion, association, debye_huckel};
 }
 
 }  // namespace epcsaft::detail

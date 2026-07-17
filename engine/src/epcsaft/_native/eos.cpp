@@ -1,6 +1,7 @@
 #include "eos.hpp"
 
 #include "association.hpp"
+#include "electrolyte.hpp"
 #include "helmholtz.hpp"
 
 #include <algorithm>
@@ -39,7 +40,10 @@ NativeModel::NativeModel(NativeParameters parameters)
         parameters_.site_multiplicity.size() != sites ||
         parameters_.association_active.size() != sites * sites ||
         parameters_.association_energy_over_k.size() != sites * sites ||
-        parameters_.association_volume.size() != sites * sites) {
+        parameters_.association_volume.size() != sites * sites ||
+        parameters_.molar_mass_kg_per_mol.size() != components ||
+        parameters_.charge_number.size() != components ||
+        parameters_.relative_permittivity.size() != components) {
         throw std::invalid_argument("inconsistent native model dimensions");
     }
     if (!positive_finite(parameters_.segment_count) ||
@@ -49,7 +53,10 @@ NativeModel::NativeModel(NativeParameters parameters)
         !finite(parameters_.sigma_term_amplitude) ||
         !finite(parameters_.sigma_term_exponent) ||
         !finite(parameters_.association_energy_over_k) ||
-        !finite(parameters_.association_volume)) {
+        !finite(parameters_.association_volume) ||
+        !finite(parameters_.molar_mass_kg_per_mol) ||
+        !finite(parameters_.relative_permittivity) ||
+        !std::isfinite(parameters_.dielectric_ion_suppression_coefficient)) {
         throw std::invalid_argument("invalid native model parameters");
     }
     for (int component : parameters_.sigma_term_component) {
@@ -69,6 +76,23 @@ NativeModel::NativeModel(NativeParameters parameters)
             (parameters_.association_energy_over_k[pair] <= 0.0 ||
              parameters_.association_volume[pair] <= 0.0)) {
             throw std::invalid_argument("invalid association pair");
+        }
+    }
+    const bool ionic = std::any_of(
+        parameters_.charge_number.begin(),
+        parameters_.charge_number.end(),
+        [](int charge) { return charge != 0; }
+    );
+    if (ionic) {
+        if (!(parameters_.dielectric_ion_suppression_coefficient > 0.0)) {
+            throw std::invalid_argument("invalid dielectric suppression coefficient");
+        }
+        for (std::size_t component = 0; component < components; ++component) {
+            if (parameters_.charge_number[component] == 0
+                && (!(parameters_.molar_mass_kg_per_mol[component] > 0.0)
+                    || !(parameters_.relative_permittivity[component] > 0.0))) {
+                throw std::invalid_argument("invalid solvent dielectric parameters");
+            }
         }
     }
 }
@@ -97,6 +121,14 @@ NativeResult NativeModel::evaluate(
         sigma,
         diameter
     );
+    const auto electrolyte = detail::electrolyte_contribution(
+        temperature,
+        molar_density,
+        molar_density,
+        mole_fractions,
+        parameters_,
+        sigma
+    );
     const auto values = detail::residual_helmholtz(
         temperature,
         molar_density,
@@ -104,7 +136,8 @@ NativeResult NativeModel::evaluate(
         parameters_,
         sigma,
         diameter,
-        site_fraction
+        site_fraction,
+        electrolyte.debye_huckel
     );
 
     using ADScalar = CppAD::AD<double>;
@@ -126,7 +159,15 @@ NativeResult NativeModel::evaluate(
         parameters_,
         sigma,
         diameter,
-        taped_fraction
+        taped_fraction,
+        detail::electrolyte_contribution(
+            temperature,
+            independent[0],
+            molar_density,
+            mole_fractions,
+            parameters_,
+            sigma
+        ).debye_huckel
     );
     const auto delta = detail::association_delta(
         temperature,
@@ -144,7 +185,8 @@ NativeResult NativeModel::evaluate(
         delta
     );
     std::vector<ADScalar> dependent = {
-        taped.hard_chain + taped.dispersion + taped.association,
+        taped.hard_chain + taped.dispersion + taped.association
+            + taped.debye_huckel,
     };
     dependent.insert(dependent.end(), mass_action.begin(), mass_action.end());
     CppAD::ADFun<double> function(independent, dependent);
@@ -171,12 +213,14 @@ NativeResult NativeModel::evaluate(
     }
 
     const double residual =
-        values.hard_chain + values.dispersion + values.association;
+        values.hard_chain + values.dispersion + values.association
+        + values.debye_huckel;
     const double compressibility = 1.0 + molar_density * density_derivative;
     return {
         values.hard_chain,
         values.dispersion,
         values.association,
+        values.debye_huckel,
         residual,
         compressibility,
         compressibility * molar_density * detail::GAS_CONSTANT * temperature,

@@ -24,6 +24,7 @@ temperature_unit = "kelvin"
 pressure_min = 1
 pressure_max = 1
 pressure_unit = "bar"
+ion_mole_fraction_max = 0.38
 
 [[domains]]
 domain_id = "nist-water-identity"

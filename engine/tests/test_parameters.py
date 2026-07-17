@@ -908,8 +908,14 @@ def test_figiel_water_sodium_chloride_catalog_is_exact_and_sparse() -> None:
         "water",
     )
     assert bundle.fingerprint == (
-        "sha256:e3d0aea2b48e26150a282be1e485d3c91be9d2942cf25bc7959d37ec22216df4"
+        "sha256:7fb38c0cb61b523f66d61668f42ea968f2d439f40959d73b80b5534a3cc8e744"
     )
+    figiel_domain = next(
+        domain
+        for domain in bundle.domains
+        if domain.domain_id == "figiel-298-k-1-bar"
+    )
+    assert figiel_domain.ion_mole_fraction_max == Decimal("0.38")
 
     values = {
         (record.component_id, record.family): record.value

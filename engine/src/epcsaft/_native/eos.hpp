@@ -10,6 +10,7 @@ struct NativeResult final {
     double hard_chain;
     double dispersion;
     double association;
+    double debye_huckel;
     double residual_helmholtz;
     double compressibility_factor;
     double pressure;

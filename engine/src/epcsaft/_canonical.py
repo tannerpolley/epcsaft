@@ -63,6 +63,10 @@ def _domain(record: ValidityDomain) -> dict[str, object]:
         value = getattr(record, name)
         if value is not None:
             result[name] = _quantity(value, "pascal")
+    if record.ion_mole_fraction_max is not None:
+        result["ion_mole_fraction_max"] = _decimal(
+            record.ion_mole_fraction_max
+        )
     return result
 
 
