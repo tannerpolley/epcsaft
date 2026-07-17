@@ -46,11 +46,11 @@ gamma_pm = reference.at_molality(
 ```
 
 For a native equilibrium consumer, `native_sdk(model)` returns the model-bound
-capsule `epcsaft.native_sdk.v1`. Version 1 accepts only a pure nonassociating
-methane, ethane, or propane model and evaluates one fixed-temperature phase at
-explicit amount and volume. It returns the complete isothermal phase Helmholtz
-value on the documented reference basis plus its gradient, Hessian, and third
-tensor. The declaration-only C header is installed at
+capsule `epcsaft.native_sdk.v1`. Its accepted prefix evaluates a pure
+nonassociating methane, ethane, or propane phase at explicit amount and volume,
+returning the complete isothermal phase Helmholtz value on the documented
+reference basis plus its gradient, Hessian, and third tensor. The
+declaration-only C header is installed at
 `epcsaft/include/epcsaft/native_sdk_v1.h`.
 
 The same table has an additive pure-parameter entry for the first methane
@@ -59,6 +59,14 @@ regression slice. It returns the phase value, gradient, and Hessian in
 exact residual Jacobians without copying EOS equations. Regression targets,
 Ceres, bounds, diagnostics, and fitted records remain outside this package;
 binary and associating parameter fits are not admitted by this entry.
+
+A local append-only candidate entry evaluates the source-backed neutral
+methane/ethane phase in ordered component amounts and volume. It returns the
+extensive ideal-plus-hard-chain-plus-dispersion value, exact CppAD gradient and
+row-major Hessian, and pressure through caller-owned buffers. This candidate is
+not authoritative until its own promotion receipt is accepted; it adds no
+phase identity, density solve, third derivative, equilibrium, or regression
+contract. See `docs/science/neutral-mixture-native-sdk.md`.
 
 The capsule evaluates one phase state at a time. A consumer uses the same
 immutable model for every candidate phase; the provider does not construct

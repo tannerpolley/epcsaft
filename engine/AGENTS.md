@@ -43,3 +43,8 @@ still requires its own cross-wheel gate. Do not add
 compatibility APIs, mutable scientific dictionaries,
 backend selectors, hidden physical defaults, duplicate equation owners, or
 runtime dependencies on the lab, migration repository, or sibling sources.
+
+The append-only neutral methane/ethane mixture value, gradient, and Hessian
+entry is a local provider candidate pending its own review and promotion
+receipt. It changes no runtime authority and admits no association, ions,
+density solve, phase identity, third derivatives, equilibrium, or regression.

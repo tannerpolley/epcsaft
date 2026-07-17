@@ -1,7 +1,8 @@
 # ADR 0001: Versioned model-bound capsule for native consumers
 
-Status: implemented; authority determined by migration promotion receipt 0015;
-consumer gates separate
+Status: accepted pure prefix authority determined by migration promotion
+receipt 0015; append-only neutral-mixture entry is a local candidate pending
+independent review and its own promotion receipt; consumer gates separate
 
 Date: 2026-07-17
 
@@ -105,6 +106,13 @@ size-tagged pure-C function table containing:
 - one additive pure-phase evaluation function with active `m`, `sigma`, and
   `epsilon/k` coordinates.
 
+The local Slice 2 candidate appends immutable component count, mixture-result
+size, and one neutral-mixture evaluation function without changing the
+accepted prefix. The entry uses caller-owned amount, gradient, and Hessian
+buffers. Its model-bound coordinate order is `(n_1,...,n_C,V)`, with component
+order fixed by the selected parameter set, and it returns derivatives only
+through order two.
+
 The capsule owns the model context. A consumer keeps a Python reference to the
 capsule for as long as it calls the table; ordinary `Py_INCREF`/`Py_DECREF`
 provides retention, so a second native lifetime protocol is unnecessary. The
@@ -120,9 +128,12 @@ mixture-solver objects. The equilibrium package owns phase count, ordering,
 variables, constraints, Ipopt assembly, initialization, continuation,
 certification, and results.
 
-Version 1 rejects associating, ionic, mixture, out-of-source-domain,
-out-of-EOS-domain, and nonfinite inputs before returning a nominal result.
-The parameterized entry additionally rejects nonpositive active parameters.
+The accepted pure entries reject associating, ionic, mixture,
+out-of-source-domain, out-of-EOS-domain, and nonfinite inputs before returning
+a nominal result. The parameterized entry additionally rejects nonpositive
+active parameters. The local mixture candidate admits only the two-component
+source-backed Gross--Sadowski methane/ethane model in its bound component order
+and rejects pure, associating, ionic, malformed-buffer, and nonpositive states.
 Its returned fingerprint identifies the immutable source model from which the
 fit problem descends; candidate values remain explicit coordinates and never
 masquerade as a new source record.
@@ -167,11 +178,17 @@ the consumer artifact. Equilibrium implementation, regression target/Ceres
 implementation, cross-wheel evidence, and promotion remain separate bounded
 slices and receipts.
 
+The local mixture candidate adds provider-owned checks for explicit-density
+value and pressure agreement, centered directional gradient and Hessian
+agreement, component permutation, accepted-prefix offsets, buffer ownership,
+source domain, and unsupported-model rejection. These tests and an isolated
+wheel are candidate evidence only; they do not amend receipt 0015 or authorize
+consumer use.
+
 ## Deferred extensions
 
-- Nonassociating mixtures require an extensive phase function in ordered
-  `(n_1,...,n_C,V)` coordinates, including ideal mixing and only the derivative
-  orders consumed by their approved formulation.
+- Neutral nonassociating mixture families beyond the exact source-backed
+  methane/ethane candidate require separate scope and evidence.
 - Binary `k_ij`, association, electrolyte, and other fitted-parameter families
   require separate parameterized phase contracts and evidence. They are not
   implied by the pure three-parameter entry.

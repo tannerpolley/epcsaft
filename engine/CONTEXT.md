@@ -43,5 +43,12 @@ has no phase identity, density root, target residual, Ipopt, Ceres, equilibrium
 result, or fit result. Each consumer remains subject to its own installed-wheel
 gate and promotion receipt.
 
+The local Consumer Maturity Slice 2 prerequisite appends one candidate
+methane/ethane neutral-mixture phase entry to the same capsule. It returns the
+extensive ideal-plus-residual value and exact CppAD gradient/Hessian in ordered
+component amounts and volume. It is not authoritative until a separate
+promotion receipt is accepted, and it adds no phase, density, equilibrium, or
+regression ownership.
+
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.
