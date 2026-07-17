@@ -6,7 +6,7 @@ import pytest
 from pint import UnitRegistry
 
 import epcsaft
-from epcsaft import ParameterBundle, ParameterError
+from epcsaft import EosError, ParameterBundle, ParameterError
 from epcsaft import unit_registry
 from epcsaft.eos import EPCSAFT
 
@@ -76,10 +76,10 @@ def test_native_model_boundary_is_ordered_strict_and_immutable() -> None:
     )
     with pytest.raises(ParameterError) as exc_info:
         EPCSAFT(fixture.select(("water",)))
-    assert exc_info.value.code == "invalid-value"
+    assert exc_info.value.code == "missing-record"
     assert dict(exc_info.value.context) == {
-        "record_id": "water-association-energy",
-        "family": "association_energy_over_k",
+        "component_id": "water",
+        "family": "molar_mass",
     }
 
     assert epcsaft.__all__ == (
@@ -89,6 +89,7 @@ def test_native_model_boundary_is_ordered_strict_and_immutable() -> None:
         "unit_registry",
         "EPCSAFT",
         "EosResult",
+        "EosError",
     )
 
 
@@ -208,7 +209,7 @@ def test_evaluate_rejects_invalid_states_and_has_physical_limits() -> None:
     )
     for override in invalid_states:
         state = {**valid, **override}
-        with pytest.raises(ValueError):
+        with pytest.raises(EosError):
             model.evaluate(**state)
 
     low_density = 1.0e-6
@@ -229,7 +230,7 @@ def test_evaluate_rejects_invalid_states_and_has_physical_limits() -> None:
     close_density = close_packing * 6 / (
         math.pi * (AVOGADRO / 1.0e30) * diameter**3
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(EosError) as exc_info:
         model.evaluate(
             temperature=temperature * unit_registry.kelvin,
             molar_density=(close_density * (1 + 1.0e-12))
@@ -237,3 +238,13 @@ def test_evaluate_rejects_invalid_states_and_has_physical_limits() -> None:
             / unit_registry.meter**3,
             mole_fractions=(1.0, 0.0),
         )
+    assert exc_info.value.code == "evaluation-failed"
+    assert exc_info.value.context
+
+
+def test_eos_error_contract_is_stable_and_immutable() -> None:
+    error = EosError("invalid-state", (("field", "temperature"),))
+    assert isinstance(error, ValueError)
+    assert error.code == "invalid-state"
+    assert error.context == (("field", "temperature"),)
+    assert str(error) == "invalid-state (field=temperature)"

@@ -1,4 +1,4 @@
-from .eos import EPCSAFT, EosResult
+from .eos import EPCSAFT, EosError, EosResult
 from .parameters import ParameterBundle, ParameterSet
 from .units import ParameterError, unit_registry
 
@@ -9,4 +9,5 @@ __all__ = (
     "unit_registry",
     "EPCSAFT",
     "EosResult",
+    "EosError",
 )

@@ -1,0 +1,375 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from itertools import combinations
+from typing import Literal
+
+from .parameters import ParameterSet
+from .records import (
+    AssociationParameterRecord,
+    ConstantCorrelation,
+    ConstantPlusSumOfExponentialsCorrelation,
+    ModelParameterRecord,
+    PairParameterRecord,
+    SingleParameterRecord,
+    SiteRecord,
+)
+from .units import _error
+
+
+_ScalarRecord = SingleParameterRecord | ConstantCorrelation
+_TemperatureRecord = (
+    SingleParameterRecord
+    | ConstantCorrelation
+    | ConstantPlusSumOfExponentialsCorrelation
+)
+
+
+@dataclass(frozen=True, slots=True)
+class _ResolvedAssociationPair:
+    endpoint_a: tuple[str, str]
+    endpoint_b: tuple[str, str]
+    energy_over_k: float
+    volume: float
+
+
+@dataclass(frozen=True, slots=True)
+class _ResolvedModel:
+    topology: Literal["neutral", "associating", "ionic-ssm-ds"]
+    component_ids: tuple[str, ...]
+    molar_mass_kg_per_mol: tuple[float, ...]
+    segment_count: tuple[float, ...]
+    segment_diameter: tuple[_TemperatureRecord, ...]
+    dispersion_energy_over_k: tuple[float, ...]
+    k_ij: tuple[float, ...]
+    l_ij: tuple[float | None, ...]
+    k_hb_ij: tuple[float | None, ...]
+    site_ids: tuple[tuple[str, str], ...]
+    site_multiplicity: tuple[int, ...]
+    association_pairs: tuple[_ResolvedAssociationPair, ...]
+    charge_number: tuple[int, ...]
+    relative_permittivity: tuple[_TemperatureRecord | None, ...]
+    born_diameter_angstrom: tuple[float | None, ...]
+    solvation_factor: tuple[_TemperatureRecord | None, ...]
+    ionic_region_relative_permittivity: float | None
+    dielectric_ion_suppression_coefficient: float | None
+
+
+def _missing(*, component_id: str | None = None, family: str, pair: tuple[str, str] | None = None):
+    if component_id is not None:
+        return _error("missing-record", component_id=component_id, family=family)
+    assert pair is not None
+    return _error(
+        "missing-record",
+        component_id_a=pair[0],
+        component_id_b=pair[1],
+        family=family,
+    )
+
+
+def _magnitude(record: object, unit: str) -> float:
+    value = record.constant if isinstance(record, ConstantCorrelation) else record.value  # type: ignore[attr-defined]
+    if unit != "dimensionless":
+        value = value.to(unit).magnitude
+    return float(value)
+
+
+def _component_record(
+    component_id: str,
+    family: str,
+    singles: dict[tuple[str, str], SingleParameterRecord],
+    correlations: dict[tuple[str, str], _TemperatureRecord],
+    *,
+    allow_correlation: bool,
+) -> _TemperatureRecord:
+    key = (component_id, family)
+    candidates = tuple(
+        record
+        for record in (singles.get(key), correlations.get(key) if allow_correlation else None)
+        if record is not None
+    )
+    if not candidates:
+        raise _missing(component_id=component_id, family=family)
+    if len(candidates) != 1:
+        raise _error("invalid-value", component_id=component_id, family=family, reason="duplicate-owner")
+    return candidates[0]
+
+
+def _pair_matrix(
+    component_ids: tuple[str, ...],
+    pairs: dict[tuple[str, str, str], PairParameterRecord],
+    family: str,
+    *,
+    required: bool,
+) -> tuple[float | None, ...]:
+    size = len(component_ids)
+    matrix: list[float | None] = [None] * (size * size)
+    if required:
+        for index in range(size):
+            matrix[index * size + index] = 0.0
+    positions = {component_id: index for index, component_id in enumerate(component_ids)}
+    family_present = any(key[2] == family for key in pairs)
+    for component_a, component_b in combinations(component_ids, 2):
+        key = (*sorted((component_a, component_b)), family)
+        record = pairs.get(key)
+        if record is None:
+            if required or family_present:
+                raise _missing(pair=(key[0], key[1]), family=family)
+            continue
+        i = positions[component_a]
+        j = positions[component_b]
+        matrix[i * size + j] = matrix[j * size + i] = float(record.value)
+    return tuple(matrix)
+
+
+def _association(
+    sites: tuple[SiteRecord, ...],
+    records: tuple[AssociationParameterRecord, ...],
+) -> tuple[tuple[tuple[str, str], ...], tuple[int, ...], tuple[_ResolvedAssociationPair, ...]]:
+    if not sites:
+        if records:
+            raise _error("invalid-value", family="association", reason="missing-sites")
+        return (), (), ()
+    if not records:
+        raise _error("missing-record", family="association", reason="missing-site-pairs")
+
+    site_ids = tuple(sorted((record.component_id, record.site_id) for record in sites))
+    multiplicity_by_site = {
+        (record.component_id, record.site_id): record.multiplicity for record in sites
+    }
+    grouped: dict[
+        tuple[tuple[str, str], tuple[str, str]],
+        dict[str, AssociationParameterRecord],
+    ] = {}
+    for record in records:
+        endpoints = (
+            (record.component_id_a, record.site_id_a),
+            (record.component_id_b, record.site_id_b),
+        )
+        grouped.setdefault(endpoints, {})[record.family] = record
+
+    resolved = []
+    participating: set[tuple[str, str]] = set()
+    for endpoints, values in sorted(grouped.items()):
+        for family in ("association_energy_over_k", "association_volume"):
+            if family not in values:
+                raise _error(
+                    "missing-record",
+                    site_a=endpoints[0],
+                    site_b=endpoints[1],
+                    family=family,
+                )
+        resolved.append(
+            _ResolvedAssociationPair(
+                endpoint_a=endpoints[0],
+                endpoint_b=endpoints[1],
+                energy_over_k=_magnitude(values["association_energy_over_k"], "kelvin"),
+                volume=_magnitude(values["association_volume"], "dimensionless"),
+            )
+        )
+        participating.update(endpoints)
+    missing_site = next((site for site in site_ids if site not in participating), None)
+    if missing_site is not None:
+        raise _error("missing-record", site=missing_site, family="association")
+    return (
+        site_ids,
+        tuple(multiplicity_by_site[site] for site in site_ids),
+        tuple(resolved),
+    )
+
+
+def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
+    if not isinstance(parameters, ParameterSet):
+        raise _error("invalid-value", field="parameters", expected="ParameterSet")
+
+    singles = {
+        (record.component_id, record.family): record
+        for record in parameters.records
+        if isinstance(record, SingleParameterRecord)
+    }
+    correlations = {
+        (record.component_id, record.family): record
+        for record in parameters.records
+        if isinstance(record, (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation))
+    }
+    pair_records = {
+        (record.component_id_a, record.component_id_b, record.family): record
+        for record in parameters.records
+        if isinstance(record, PairParameterRecord)
+    }
+    sites = tuple(record for record in parameters.records if isinstance(record, SiteRecord))
+    association_records = tuple(
+        record
+        for record in parameters.records
+        if isinstance(record, AssociationParameterRecord)
+    )
+    models = {
+        record.family: record
+        for record in parameters.records
+        if isinstance(record, ModelParameterRecord)
+    }
+
+    recognized = (
+        SingleParameterRecord,
+        ConstantCorrelation,
+        ConstantPlusSumOfExponentialsCorrelation,
+        PairParameterRecord,
+        SiteRecord,
+        AssociationParameterRecord,
+        ModelParameterRecord,
+    )
+    unknown = next((record for record in parameters.records if not isinstance(record, recognized)), None)
+    if unknown is not None:
+        raise _error("invalid-value", record_id=getattr(unknown, "record_id", type(unknown).__name__))
+
+    component_ids = parameters.component_ids
+    molar_mass = tuple(
+        _magnitude(
+            _component_record(component_id, "molar_mass", singles, correlations, allow_correlation=False),
+            "kilogram / mole",
+        )
+        for component_id in component_ids
+    )
+    segment_count = tuple(
+        _magnitude(
+            _component_record(component_id, "segment_count", singles, correlations, allow_correlation=False),
+            "dimensionless",
+        )
+        for component_id in component_ids
+    )
+    segment_diameter = tuple(
+        _component_record(component_id, "segment_diameter", singles, correlations, allow_correlation=True)
+        for component_id in component_ids
+    )
+    dispersion_energy = tuple(
+        _magnitude(
+            _component_record(
+                component_id,
+                "dispersion_energy_over_k",
+                singles,
+                correlations,
+                allow_correlation=False,
+            ),
+            "kelvin",
+        )
+        for component_id in component_ids
+    )
+    k_ij = _pair_matrix(component_ids, pair_records, "k_ij", required=True)
+    l_ij = _pair_matrix(component_ids, pair_records, "l_ij", required=False)
+    k_hb_ij = _pair_matrix(component_ids, pair_records, "k_hb_ij", required=False)
+    site_ids, site_multiplicity, association_pairs = _association(sites, association_records)
+
+    ionic_families = {
+        "charge_number",
+        "born_diameter",
+        "solvation_factor",
+        "relative_permittivity",
+    }
+    ionic_records_present = any(
+        family in ionic_families for _, family in (*singles.keys(), *correlations.keys())
+    ) or bool(models)
+    if not ionic_records_present:
+        topology: Literal["neutral", "associating", "ionic-ssm-ds"] = (
+            "associating" if site_ids else "neutral"
+        )
+        return _ResolvedModel(
+            topology,
+            component_ids,
+            molar_mass,
+            segment_count,
+            segment_diameter,
+            dispersion_energy,
+            tuple(float(value) for value in k_ij),
+            l_ij,
+            k_hb_ij,
+            site_ids,
+            site_multiplicity,
+            association_pairs,
+            (),
+            (),
+            (),
+            (),
+            None,
+            None,
+        )
+
+    charge_records = tuple(
+        _component_record(component_id, "charge_number", singles, correlations, allow_correlation=False)
+        for component_id in component_ids
+    )
+    charges = tuple(int(record.value) for record in charge_records)  # type: ignore[union-attr]
+    if not any(charge > 0 for charge in charges) or not any(charge < 0 for charge in charges):
+        raise _error("invalid-value", family="charge_number", reason="missing-opposite-charges")
+
+    relative_permittivity: list[_TemperatureRecord | None] = []
+    born_diameter: list[float | None] = []
+    solvation_factor: list[_TemperatureRecord | None] = []
+    for component_id, charge in zip(component_ids, charges, strict=True):
+        if charge == 0:
+            relative_permittivity.append(
+                _component_record(
+                    component_id,
+                    "relative_permittivity",
+                    singles,
+                    correlations,
+                    allow_correlation=True,
+                )
+            )
+            born_diameter.append(None)
+        else:
+            relative_permittivity.append(None)
+            born = _component_record(
+                component_id,
+                "born_diameter",
+                singles,
+                correlations,
+                allow_correlation=False,
+            )
+            born_diameter.append(_magnitude(born, "angstrom"))
+        solvation_factor.append(
+            _component_record(
+                component_id,
+                "solvation_factor",
+                singles,
+                correlations,
+                allow_correlation=True,
+            )
+        )
+
+    required_models = (
+        "ionic_region_relative_permittivity",
+        "dielectric_ion_suppression_coefficient",
+    )
+    model_values = []
+    for family in required_models:
+        record = models.get(family)
+        if record is None:
+            raise _error("missing-record", family=family)
+        value = float(record.value)
+        if value <= 0.0:
+            raise _error("invalid-value", family=family, value=value)
+        model_values.append(value)
+
+    return _ResolvedModel(
+        "ionic-ssm-ds",
+        component_ids,
+        molar_mass,
+        segment_count,
+        segment_diameter,
+        dispersion_energy,
+        tuple(float(value) for value in k_ij),
+        l_ij,
+        k_hb_ij,
+        site_ids,
+        site_multiplicity,
+        association_pairs,
+        charges,
+        tuple(relative_permittivity),
+        tuple(born_diameter),
+        tuple(solvation_factor),
+        model_values[0],
+        model_values[1],
+    )
+
+
+__all__ = ()

@@ -1,33 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import combinations
 import math
-from typing import Final
+from typing import Iterable
 
 import pint
 
 from ._core import NativeModel as _NativeModel
+from ._resolve import _ResolvedModel, _resolve_model
 from .parameters import ParameterSet
-from .records import PairParameterRecord, SingleParameterRecord
-from .units import _error, _quantity, unit_registry
-
-
-_REQUIRED_SINGLE: Final = {
-    "segment_count": "dimensionless",
-    "segment_diameter": "angstrom",
-    "dispersion_energy_over_k": "kelvin",
-}
-_ALLOWED_SINGLE = frozenset({"molar_mass", *_REQUIRED_SINGLE})
-_ALLOWED_PAIR = frozenset({"k_ij"})
-
-
-def _reject(record: object) -> None:
-    raise _error(
-        "invalid-value",
-        record_id=getattr(record, "record_id", type(record).__name__),
-        family=getattr(record, "family", "site"),
-    )
+from .records import SingleParameterRecord
+from .units import ParameterError, _error, _quantity, unit_registry
 
 
 def _magnitude(record: SingleParameterRecord, unit: str) -> float:
@@ -37,73 +20,56 @@ def _magnitude(record: SingleParameterRecord, unit: str) -> float:
     return float(value)
 
 
-def _resolve(parameters: ParameterSet) -> tuple[list[float], ...]:
-    if not isinstance(parameters, ParameterSet):
-        raise _error("invalid-value", field="parameters", expected="ParameterSet")
+class EosError(ValueError):
+    """One stable public error for invalid states and EOS solver failures."""
 
-    for record in parameters.records:
-        if isinstance(record, SingleParameterRecord):
-            if record.family not in _ALLOWED_SINGLE:
-                _reject(record)
-        elif isinstance(record, PairParameterRecord):
-            if record.family not in _ALLOWED_PAIR:
-                _reject(record)
-        else:
-            _reject(record)
+    __slots__ = ("_code", "_context")
 
-    singles = {
-        (record.component_id, record.family): record
-        for record in parameters.records
-        if isinstance(record, SingleParameterRecord)
-    }
-    resolved: list[list[float]] = []
-    for family, unit in _REQUIRED_SINGLE.items():
-        values: list[float] = []
-        for component_id in parameters.component_ids:
-            record = singles.get((component_id, family))
-            if record is None:
-                raise _error(
-                    "missing-record", component_id=component_id, family=family
-                )
-            values.append(_magnitude(record, unit))
-        resolved.append(values)
+    def __init__(self, code: str, context: Iterable[tuple[str, object]] = ()) -> None:
+        self._code = code
+        self._context = tuple((str(key), str(value)) for key, value in context)
+        details = ", ".join(f"{key}={value}" for key, value in self._context)
+        super().__init__(f"{code} ({details})" if details else code)
 
-    size = len(parameters.component_ids)
-    kij = [0.0] * (size * size)
-    pairs = {
-        (record.component_id_a, record.component_id_b): record
-        for record in parameters.records
-        if isinstance(record, PairParameterRecord)
-    }
-    positions = {
-        component_id: index
-        for index, component_id in enumerate(parameters.component_ids)
-    }
-    for component_a, component_b in combinations(parameters.component_ids, 2):
-        key = tuple(sorted((component_a, component_b)))
-        record = pairs.get(key)
-        if record is None:
-            raise _error(
-                "missing-record",
-                component_id_a=key[0],
-                component_id_b=key[1],
-                family="k_ij",
-            )
-        i, j = positions[component_a], positions[component_b]
-        kij[i * size + j] = kij[j * size + i] = float(record.value)
-    return (*resolved, kij)
+    @property
+    def code(self) -> str:
+        return self._code
+
+    @property
+    def context(self) -> tuple[tuple[str, str], ...]:
+        return self._context
+
+
+def _eos_error(code: str, **context: object) -> EosError:
+    return EosError(code, context.items())
+
+
+def _native_arguments(model: _ResolvedModel) -> tuple[list[float], ...]:
+    if model.topology != "neutral" or not all(
+        isinstance(record, SingleParameterRecord) for record in model.segment_diameter
+    ):
+        raise _error("invalid-value", topology=model.topology, reason="native-not-admitted")
+    return (
+        list(model.segment_count),
+        [_magnitude(record, "angstrom") for record in model.segment_diameter],
+        list(model.dispersion_energy_over_k),
+        list(model.k_ij),
+    )
 
 
 @dataclass(frozen=True, slots=True, init=False)
 class EPCSAFT:
     _component_ids: tuple[str, ...]
     _parameter_fingerprint: str
+    _model: _ResolvedModel
     _native: _NativeModel
 
     def __init__(self, parameters: ParameterSet) -> None:
-        m, sigma, epsilon_over_k, kij = _resolve(parameters)
+        model = _resolve_model(parameters)
+        m, sigma, epsilon_over_k, kij = _native_arguments(model)
         object.__setattr__(self, "_component_ids", parameters.component_ids)
         object.__setattr__(self, "_parameter_fingerprint", parameters.fingerprint)
+        object.__setattr__(self, "_model", model)
         object.__setattr__(self, "_native", _NativeModel(m, sigma, epsilon_over_k, kij))
 
     @property
@@ -128,15 +94,18 @@ class EPCSAFT:
         try:
             fractions = tuple(float(value) for value in mole_fractions)  # type: ignore[union-attr]
         except (TypeError, ValueError) as exc:
-            raise ValueError("invalid mole_fractions") from exc
+            raise _eos_error("invalid-state", field="mole_fractions") from exc
         if (
             len(fractions) != len(self._component_ids)
             or any(not math.isfinite(value) or value < 0.0 for value in fractions)
             or abs(math.fsum(fractions) - 1.0) > 1.0e-12
         ):
-            raise ValueError("invalid mole_fractions")
+            raise _eos_error("invalid-state", field="mole_fractions")
 
-        native = self._native.evaluate(temperature_k, density_molar, fractions)
+        try:
+            native = self._native.evaluate(temperature_k, density_molar, fractions)
+        except (RuntimeError, ValueError) as exc:
+            raise _eos_error("evaluation-failed", reason=str(exc)) from exc
         return EosResult(
             hard_chain=native.hard_chain,
             dispersion=native.dispersion,
@@ -147,10 +116,13 @@ class EPCSAFT:
 
 
 def _state_magnitude(value: object, unit: str, field: str) -> float:
-    quantity = _quantity(value, unit, field=field)
+    try:
+        quantity = _quantity(value, unit, field=field)
+    except ParameterError as exc:
+        raise _eos_error("invalid-state", field=field) from exc
     magnitude = float(quantity.magnitude)
     if not math.isfinite(magnitude) or magnitude <= 0.0:
-        raise ValueError(f"{field} must be positive and finite")
+        raise _eos_error("invalid-state", field=field)
     return magnitude
 
 
@@ -163,4 +135,4 @@ class EosResult:
     pressure: pint.Quantity
 
 
-__all__ = ("EPCSAFT", "EosResult")
+__all__ = ("EPCSAFT", "EosError", "EosResult")
