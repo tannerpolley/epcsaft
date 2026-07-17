@@ -876,14 +876,14 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
     assert sorted(
         path.relative_to(catalog).as_posix() for path in catalog.rglob("*") if path.is_file()
     ) == [
-        "figiel-2025-water-sodium-chloride/1/association.csv",
-        "figiel-2025-water-sodium-chloride/1/bundle.toml",
-        "figiel-2025-water-sodium-chloride/1/components.csv",
-        "figiel-2025-water-sodium-chloride/1/correlations.toml",
-        "figiel-2025-water-sodium-chloride/1/model.csv",
-        "figiel-2025-water-sodium-chloride/1/pair.csv",
-        "figiel-2025-water-sodium-chloride/1/single.csv",
-        "figiel-2025-water-sodium-chloride/1/sites.csv",
+        "figiel-2025-reference-electrolytes/1/association.csv",
+        "figiel-2025-reference-electrolytes/1/bundle.toml",
+        "figiel-2025-reference-electrolytes/1/components.csv",
+        "figiel-2025-reference-electrolytes/1/correlations.toml",
+        "figiel-2025-reference-electrolytes/1/model.csv",
+        "figiel-2025-reference-electrolytes/1/pair.csv",
+        "figiel-2025-reference-electrolytes/1/single.csv",
+        "figiel-2025-reference-electrolytes/1/sites.csv",
         "gross-2001-methane-ethane/1/bundle.toml",
         "gross-2001-methane-ethane/1/components.csv",
         "gross-2001-methane-ethane/1/pair.csv",
@@ -891,17 +891,18 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
     ]
 
 
-def test_figiel_water_sodium_chloride_catalog_is_exact_and_sparse() -> None:
-    bundle = ParameterBundle.from_catalog("figiel-2025-water-sodium-chloride", version=1)
+def test_figiel_reference_electrolyte_catalog_is_exact_and_sparse() -> None:
+    bundle = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
     assert bundle.purpose == "installed-catalog"
-    assert tuple(component.component_id for component in bundle.components) == (
+    assert {component.component_id for component in bundle.components} == {
+        "bromide-anion",
         "chloride-anion",
+        "lithium-cation",
+        "methanol",
+        "potassium-cation",
         "sodium-cation",
         "water",
-    )
-    assert bundle.fingerprint == (
-        "sha256:5ca5062fee088fe409dc20403598144bf35221495894e94c9a225e3ccb695fc6"
-    )
+    }
     figiel_domain = next(
         domain for domain in bundle.domains if domain.domain_id == "figiel-298-k-1-bar"
     )
@@ -917,23 +918,40 @@ def test_figiel_water_sodium_chloride_catalog_is_exact_and_sparse() -> None:
     assert values[("water", "dispersion_energy_over_k")].magnitude == Decimal("353.95")
     assert values[("water", "charge_number")] == 0
     assert values[("water", "solvation_factor")] == Decimal("1.5")
+    assert values[("methanol", "molar_mass")].to("gram / mole").magnitude == Decimal("32.042")
+    assert values[("lithium-cation", "born_diameter")].magnitude == Decimal("2.784")
     assert values[("sodium-cation", "segment_diameter")].magnitude == Decimal("2.8232")
     assert values[("sodium-cation", "born_diameter")].magnitude == Decimal("3.445")
+    assert values[("potassium-cation", "born_diameter")].magnitude == Decimal("4.150")
     assert values[("chloride-anion", "segment_diameter")].magnitude == Decimal("2.7560")
     assert values[("chloride-anion", "born_diameter")].magnitude == Decimal("4.100")
+    assert values[("bromide-anion", "born_diameter")].magnitude == Decimal("4.480")
 
     pairs = {
         (record.component_id_a, record.component_id_b): record.value
         for record in bundle.records
         if isinstance(record, PairParameterRecord) and record.family == "k_ij"
     }
-    assert pairs == {
-        ("sodium-cation", "water"): Decimal("-0.3"),
-        ("chloride-anion", "water"): Decimal("-0.3"),
-        ("chloride-anion", "sodium-cation"): Decimal("0.8"),
-    }
+    assert pairs[("methanol", "water")] == Decimal("-0.0878")
+    assert pairs[("lithium-cation", "water")] == Decimal("-0.4")
+    assert pairs[("bromide-anion", "potassium-cation")] == Decimal("-0.35")
+    assert pairs[("chloride-anion", "sodium-cation")] == Decimal("0.8")
     assert all(
         record.family == "k_ij"
         for record in bundle.records
         if isinstance(record, PairParameterRecord)
     )
+
+    for cation, anion in (
+        ("lithium-cation", "chloride-anion"),
+        ("sodium-cation", "chloride-anion"),
+        ("potassium-cation", "chloride-anion"),
+        ("lithium-cation", "bromide-anion"),
+        ("sodium-cation", "bromide-anion"),
+        ("potassium-cation", "bromide-anion"),
+    ):
+        selected = ("water", cation, anion)
+        assert epcsaft.EPCSAFT(bundle.select(selected)).component_ids == selected
+
+    methanol_nabr = ("methanol", "sodium-cation", "bromide-anion")
+    assert epcsaft.EPCSAFT(bundle.select(methanol_nabr)).component_ids == methanol_nabr
