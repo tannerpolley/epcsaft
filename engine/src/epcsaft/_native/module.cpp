@@ -22,7 +22,33 @@ PYBIND11_MODULE(_core, module) {
             "compressibility_factor",
             &epcsaft::NativeResult::compressibility_factor
         )
-        .def_readonly("pressure", &epcsaft::NativeResult::pressure);
+        .def_readonly("pressure", &epcsaft::NativeResult::pressure)
+        .def_readonly(
+            "residual_chemical_potential_over_rt",
+            &epcsaft::NativeResult::residual_chemical_potential_over_rt
+        )
+        .def_readonly(
+            "log_fugacity_coefficient",
+            &epcsaft::NativeResult::log_fugacity_coefficient
+        )
+        .def_readonly(
+            "residual_entropy", &epcsaft::NativeResult::residual_entropy
+        )
+        .def_readonly(
+            "residual_internal_energy",
+            &epcsaft::NativeResult::residual_internal_energy
+        )
+        .def_readonly(
+            "residual_enthalpy", &epcsaft::NativeResult::residual_enthalpy
+        )
+        .def_readonly(
+            "residual_isochoric_heat_capacity",
+            &epcsaft::NativeResult::residual_isochoric_heat_capacity
+        )
+        .def_readonly(
+            "residual_isobaric_heat_capacity",
+            &epcsaft::NativeResult::residual_isobaric_heat_capacity
+        );
 
     py::class_<epcsaft::NativeModel>(module, "NativeModel")
         .def(py::init([](

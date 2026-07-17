@@ -37,7 +37,7 @@ Scalar electrolyte_log(const Scalar& value) {
 
 template <typename Scalar>
 struct ElectrolyteResult final {
-    double bulk_relative_permittivity;
+    Scalar bulk_relative_permittivity;
     Scalar debye_huckel;
 };
 
@@ -61,12 +61,15 @@ Scalar finite_size_chi(const Scalar& reduced, bool use_series) {
 
 template <typename Scalar>
 ElectrolyteResult<Scalar> electrolyte_contribution(
-    double temperature,
+    const Scalar& temperature,
     const Scalar& molar_density,
+    double reference_temperature,
     double reference_molar_density,
-    const std::vector<double>& mole_fractions,
+    const std::vector<Scalar>& mole_fractions,
+    const std::vector<double>& reference_mole_fractions,
     const NativeParameters& parameters,
-    const std::vector<double>& sigma
+    const std::vector<Scalar>& sigma,
+    const std::vector<double>& reference_sigma
 ) {
     bool has_ion = false;
     for (int charge : parameters.charge_number) {
@@ -75,14 +78,14 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     if (!has_ion) {
         return {0.0, Scalar(0.0)};
     }
-    double solvent_mass = 0.0;
-    double dielectric_mass = 0.0;
-    double ion_fraction = 0.0;
-    double charge_square_sum = 0.0;
+    Scalar solvent_mass = Scalar(0.0);
+    Scalar dielectric_mass = Scalar(0.0);
+    Scalar ion_fraction = Scalar(0.0);
+    Scalar charge_square_sum = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
         if (charge == 0) {
-            const double mass = mole_fractions[component]
+            const Scalar mass = mole_fractions[component]
                 * parameters.molar_mass_kg_per_mol[component];
             solvent_mass += mass;
             dielectric_mass += mass * parameters.relative_permittivity[component];
@@ -91,19 +94,48 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
             charge_square_sum += mole_fractions[component] * charge * charge;
         }
     }
-    if (!(solvent_mass > 0.0) || !std::isfinite(solvent_mass)) {
-        throw std::invalid_argument("electrolyte state has no solvent mass");
-    }
-    const double salt_free_permittivity = dielectric_mass / solvent_mass;
-    const double bulk_permittivity = salt_free_permittivity /
-        (1.0 + parameters.dielectric_ion_suppression_coefficient * ion_fraction);
-    if (!(bulk_permittivity > 0.0) || !std::isfinite(bulk_permittivity)) {
-        throw std::invalid_argument("bulk relative permittivity is nonpositive");
-    }
-    if (charge_square_sum == 0.0) {
-        return {bulk_permittivity, Scalar(0.0)};
+    const Scalar salt_free_permittivity = dielectric_mass / solvent_mass;
+    const Scalar bulk_permittivity = salt_free_permittivity /
+        (Scalar(1.0) + parameters.dielectric_ion_suppression_coefficient
+            * ion_fraction);
+    if constexpr (std::is_same_v<Scalar, double>) {
+        if (!(solvent_mass > 0.0) || !std::isfinite(solvent_mass)) {
+            throw std::invalid_argument("electrolyte state has no solvent mass");
+        }
+        if (!(bulk_permittivity > 0.0) || !std::isfinite(bulk_permittivity)) {
+            throw std::invalid_argument("bulk relative permittivity is nonpositive");
+        }
+        if (charge_square_sum == 0.0) {
+            return {bulk_permittivity, Scalar(0.0)};
+        }
     }
 
+    double reference_solvent_mass = 0.0;
+    double reference_dielectric_mass = 0.0;
+    double reference_ion_fraction = 0.0;
+    double reference_charge_square_sum = 0.0;
+    for (std::size_t component = 0;
+         component < reference_mole_fractions.size(); ++component) {
+        const int charge = parameters.charge_number[component];
+        if (charge == 0) {
+            const double mass = reference_mole_fractions[component]
+                * parameters.molar_mass_kg_per_mol[component];
+            reference_solvent_mass += mass;
+            reference_dielectric_mass += mass
+                * parameters.relative_permittivity[component];
+        } else {
+            reference_ion_fraction += reference_mole_fractions[component];
+            reference_charge_square_sum += reference_mole_fractions[component]
+                * charge * charge;
+        }
+    }
+    const double reference_permittivity =
+        (reference_dielectric_mass / reference_solvent_mass)
+        / (1.0 + parameters.dielectric_ion_suppression_coefficient
+            * reference_ion_fraction);
+    if (reference_charge_square_sum == 0.0) {
+        return {bulk_permittivity, Scalar(0.0)};
+    }
     const Scalar kappa = electrolyte_sqrt(
         molar_density * ELECTROLYTE_AVOGADRO
         * ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * charge_square_sum
@@ -111,19 +143,21 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     );
     const double reference_kappa = std::sqrt(
         reference_molar_density * ELECTROLYTE_AVOGADRO
-        * ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * charge_square_sum
-        / (VACUUM_PERMITTIVITY * bulk_permittivity * BOLTZMANN * temperature)
+        * ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * reference_charge_square_sum
+        / (VACUUM_PERMITTIVITY * reference_permittivity * BOLTZMANN
+            * reference_temperature)
     );
     Scalar weighted_chi = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
-        if (charge == 0 || mole_fractions[component] == 0.0) {
+        if (charge == 0) {
             continue;
         }
-        const double diameter_m = 0.88 * sigma[component] * 1.0e-10;
+        const Scalar diameter_m = Scalar(0.88e-10) * sigma[component];
         const Scalar reduced = kappa * diameter_m;
         const Scalar chi = finite_size_chi(
-            reduced, reference_kappa * diameter_m < 1.0e-3
+            reduced,
+            reference_kappa * 0.88e-10 * reference_sigma[component] < 1.0e-3
         );
         weighted_chi += mole_fractions[component] * charge * charge * chi;
     }

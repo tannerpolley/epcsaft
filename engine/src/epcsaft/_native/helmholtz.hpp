@@ -60,7 +60,15 @@ Scalar scalar_log(const Scalar& value) {
 }
 
 template <typename Scalar>
-Scalar polynomial(const std::array<double, 7>& coefficients, const Scalar& eta) {
+Scalar scalar_exp(const Scalar& value) {
+    if constexpr (std::is_same_v<Scalar, double>) {
+        return std::exp(value);
+    }
+    return CppAD::exp(value);
+}
+
+template <typename Scalar>
+Scalar polynomial(const std::array<Scalar, 7>& coefficients, const Scalar& eta) {
     Scalar value = coefficients.back();
     for (std::size_t index = coefficients.size() - 1; index > 0; --index) {
         value = value * eta + coefficients[index - 1];
@@ -68,30 +76,35 @@ Scalar polynomial(const std::array<double, 7>& coefficients, const Scalar& eta) 
     return value;
 }
 
-inline std::vector<double> segment_sigma(
-    double temperature,
+template <typename Scalar>
+std::vector<Scalar> segment_sigma(
+    const Scalar& temperature,
     const NativeParameters& parameters
 ) {
-    std::vector<double> sigma = parameters.sigma_constant;
+    std::vector<Scalar> sigma(
+        parameters.sigma_constant.begin(), parameters.sigma_constant.end()
+    );
     for (std::size_t term = 0; term < parameters.sigma_term_component.size(); ++term) {
         const std::size_t component =
             static_cast<std::size_t>(parameters.sigma_term_component[term]);
         sigma[component] += parameters.sigma_term_amplitude[term] *
-            std::exp(parameters.sigma_term_exponent[term] * temperature);
+            scalar_exp(Scalar(parameters.sigma_term_exponent[term]) * temperature);
     }
     return sigma;
 }
 
-inline std::vector<double> segment_diameter(
-    double temperature,
+template <typename Scalar>
+std::vector<Scalar> segment_diameter(
+    const Scalar& temperature,
     const NativeParameters& parameters,
-    const std::vector<double>& sigma
+    const std::vector<Scalar>& sigma
 ) {
-    std::vector<double> diameter(sigma.size());
+    std::vector<Scalar> diameter(sigma.size());
     for (std::size_t component = 0; component < sigma.size(); ++component) {
         diameter[component] = sigma[component] *
-            (1.0 - 0.12 * std::exp(
-                -3.0 * parameters.dispersion_energy_over_k[component] / temperature
+            (Scalar(1.0) - Scalar(0.12) * scalar_exp(
+                Scalar(-3.0 * parameters.dispersion_energy_over_k[component])
+                    / temperature
             ));
     }
     return diameter;
@@ -99,19 +112,19 @@ inline std::vector<double> segment_diameter(
 
 template <typename Scalar>
 HelmholtzResult<Scalar> residual_helmholtz(
-    double temperature,
+    const Scalar& temperature,
     const Scalar& molar_density,
-    const std::vector<double>& mole_fractions,
+    const std::vector<Scalar>& mole_fractions,
     const NativeParameters& parameters,
-    const std::vector<double>& sigma,
-    const std::vector<double>& diameter,
+    const std::vector<Scalar>& sigma,
+    const std::vector<Scalar>& diameter,
     const std::vector<Scalar>& site_fraction,
     const Scalar& debye_huckel,
     const Scalar& born_ssm_ds
 ) {
     const std::size_t size = parameters.segment_count.size();
     const Scalar number_density = molar_density * (AVOGADRO / 1.0e30);
-    double mean_segment_count = 0.0;
+    Scalar mean_segment_count = Scalar(0.0);
     for (std::size_t i = 0; i < size; ++i) {
         mean_segment_count += mole_fractions[i] * parameters.segment_count[i];
     }
@@ -120,10 +133,13 @@ HelmholtzResult<Scalar> residual_helmholtz(
         Scalar(0.0), Scalar(0.0), Scalar(0.0), Scalar(0.0),
     };
     for (std::size_t order = 0; order < zeta.size(); ++order) {
-        double moment = 0.0;
+        Scalar moment = Scalar(0.0);
         for (std::size_t i = 0; i < size; ++i) {
-            moment += mole_fractions[i] * parameters.segment_count[i] *
-                std::pow(diameter[i], static_cast<int>(order));
+            Scalar power = Scalar(1.0);
+            for (std::size_t exponent = 0; exponent < order; ++exponent) {
+                power *= diameter[i];
+            }
+            moment += mole_fractions[i] * parameters.segment_count[i] * power;
         }
         zeta[order] = (PI / 6.0) * number_density * moment;
     }
@@ -145,7 +161,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
 
     Scalar hard_chain = mean_segment_count * hard_sphere;
     for (std::size_t i = 0; i < size; ++i) {
-        const double contact_diameter = diameter[i] / 2.0;
+        const Scalar contact_diameter = diameter[i] / Scalar(2.0);
         const Scalar contact =
             Scalar(1.0) / one_minus_eta +
             contact_diameter * 3.0 * zeta[2] /
@@ -156,12 +172,12 @@ HelmholtzResult<Scalar> residual_helmholtz(
             scalar_log(contact);
     }
 
-    const double chain_factor_1 =
+    const Scalar chain_factor_1 =
         (mean_segment_count - 1.0) / mean_segment_count;
-    const double chain_factor_2 = chain_factor_1 *
+    const Scalar chain_factor_2 = chain_factor_1 *
         (mean_segment_count - 2.0) / mean_segment_count;
-    std::array<double, 7> a{};
-    std::array<double, 7> b{};
+    std::array<Scalar, 7> a{};
+    std::array<Scalar, 7> b{};
     for (std::size_t i = 0; i < a.size(); ++i) {
         a[i] = A0[i] + chain_factor_1 * A1[i] + chain_factor_2 * A2[i];
         b[i] = B0[i] + chain_factor_1 * B1[i] + chain_factor_2 * B2[i];
@@ -180,16 +196,16 @@ HelmholtzResult<Scalar> residual_helmholtz(
              ((one_minus_eta * (Scalar(2.0) - zeta[3])) *
               (one_minus_eta * (Scalar(2.0) - zeta[3]))));
 
-    double first_moment = 0.0;
-    double second_moment = 0.0;
+    Scalar first_moment = Scalar(0.0);
+    Scalar second_moment = Scalar(0.0);
     for (std::size_t i = 0; i < size; ++i) {
         for (std::size_t j = 0; j < size; ++j) {
-            const double sigma_ij = 0.5 * (sigma[i] + sigma[j]);
+            const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j]);
             const double epsilon_ij = std::sqrt(
                 parameters.dispersion_energy_over_k[i] *
                 parameters.dispersion_energy_over_k[j]
             ) * (1.0 - parameters.k_ij[i * size + j]);
-            const double weight = mole_fractions[i] * mole_fractions[j] *
+            const Scalar weight = mole_fractions[i] * mole_fractions[j] *
                 parameters.segment_count[i] * parameters.segment_count[j] *
                 sigma_ij * sigma_ij * sigma_ij;
             first_moment += weight * epsilon_ij / temperature;

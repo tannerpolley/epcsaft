@@ -28,12 +28,12 @@ Scalar association_exp(const Scalar& value) {
 
 template <typename Scalar>
 std::vector<Scalar> association_delta(
-    double temperature,
+    const Scalar& temperature,
     const Scalar& molar_density,
-    const std::vector<double>& mole_fractions,
+    const std::vector<Scalar>& mole_fractions,
     const NativeParameters& parameters,
-    const std::vector<double>& sigma,
-    const std::vector<double>& diameter
+    const std::vector<Scalar>& sigma,
+    const std::vector<Scalar>& diameter
 ) {
     const std::size_t components = parameters.segment_count.size();
     const std::size_t sites = parameters.site_component.size();
@@ -42,7 +42,7 @@ std::vector<Scalar> association_delta(
     Scalar zeta_2 = Scalar(0.0);
     Scalar zeta_3 = Scalar(0.0);
     for (std::size_t component = 0; component < components; ++component) {
-        const double weight = mole_fractions[component]
+        const Scalar weight = mole_fractions[component]
             * parameters.segment_count[component];
         zeta_2 += ASSOCIATION_PI / 6.0 * number_density * weight
             * diameter[component] * diameter[component];
@@ -60,7 +60,7 @@ std::vector<Scalar> association_delta(
                 continue;
             }
             const auto j = static_cast<std::size_t>(parameters.site_component[b]);
-            const double reduced_diameter =
+            const Scalar reduced_diameter =
                 diameter[i] * diameter[j] / (diameter[i] + diameter[j]);
             const Scalar contact =
                 Scalar(1.0) / one_minus_eta
@@ -68,11 +68,12 @@ std::vector<Scalar> association_delta(
                     / (one_minus_eta * one_minus_eta)
                 + 2.0 * reduced_diameter * reduced_diameter * zeta_2 * zeta_2
                     / (one_minus_eta * one_minus_eta * one_minus_eta);
-            const double sigma_ij = 0.5 * (sigma[i] + sigma[j]);
+            const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j]);
             delta[pair] = contact
-                * (association_exp(Scalar(
-                       parameters.association_energy_over_k[pair] / temperature
-                   )) - Scalar(1.0))
+                * (association_exp(
+                       Scalar(parameters.association_energy_over_k[pair])
+                           / temperature
+                   ) - Scalar(1.0))
                 * sigma_ij * sigma_ij * sigma_ij
                 * parameters.association_volume[pair];
         }
@@ -83,7 +84,7 @@ std::vector<Scalar> association_delta(
 template <typename Scalar>
 std::vector<Scalar> association_residuals(
     const Scalar& molar_density,
-    const std::vector<double>& mole_fractions,
+    const std::vector<Scalar>& mole_fractions,
     const NativeParameters& parameters,
     const std::vector<Scalar>& site_fractions,
     const std::vector<Scalar>& delta

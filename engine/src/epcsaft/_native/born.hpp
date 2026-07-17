@@ -6,47 +6,53 @@
 #include <cmath>
 #include <cstddef>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 namespace epcsaft::detail {
 
-inline double born_ssm_ds_contribution(
-    double temperature,
-    const std::vector<double>& mole_fractions,
+template <typename Scalar>
+Scalar born_ssm_ds_contribution(
+    const Scalar& temperature,
+    const std::vector<Scalar>& mole_fractions,
     const NativeParameters& parameters,
-    double bulk_relative_permittivity
+    const Scalar& bulk_relative_permittivity
 ) {
     bool has_ion = false;
     for (int charge : parameters.charge_number) {
         has_ion = has_ion || charge != 0;
     }
     if (!has_ion) {
-        return 0.0;
+        return Scalar(0.0);
     }
 
-    double fraction_sum = 0.0;
-    double weighted_solvation = 0.0;
+    Scalar fraction_sum = Scalar(0.0);
+    Scalar weighted_solvation = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         fraction_sum += mole_fractions[component];
         weighted_solvation +=
             mole_fractions[component] * parameters.solvation_factor[component];
     }
-    if (!(fraction_sum > 0.0) || !std::isfinite(weighted_solvation)) {
-        throw std::invalid_argument("invalid solvation-factor mixture");
+    if constexpr (std::is_same_v<Scalar, double>) {
+        if (!(fraction_sum > 0.0) || !std::isfinite(weighted_solvation)) {
+            throw std::invalid_argument("invalid solvation-factor mixture");
+        }
     }
-    const double mixture_solvation = weighted_solvation / fraction_sum;
-    double radial_work = 0.0;
+    const Scalar mixture_solvation = weighted_solvation / fraction_sum;
+    Scalar radial_work = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
-        if (charge == 0 || mole_fractions[component] == 0.0) {
+        if (charge == 0) {
             continue;
         }
         const double born_diameter =
             parameters.born_diameter_angstrom[component] * 1.0e-10;
-        const double shell_diameter = born_diameter
+        const Scalar shell_diameter = born_diameter
             * (1.0 + (mixture_solvation - 1.0) / std::abs(charge));
-        if (!(shell_diameter > 0.0) || !std::isfinite(shell_diameter)) {
-            throw std::invalid_argument("Born shell diameter is nonpositive");
+        if constexpr (std::is_same_v<Scalar, double>) {
+            if (!(shell_diameter > 0.0) || !std::isfinite(shell_diameter)) {
+                throw std::invalid_argument("Born shell diameter is nonpositive");
+            }
         }
         radial_work += mole_fractions[component] * charge * charge * (
             (1.0 - 1.0 / bulk_relative_permittivity) / shell_diameter

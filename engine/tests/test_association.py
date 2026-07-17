@@ -168,3 +168,33 @@ def test_association_has_the_correct_zero_density_limit() -> None:
     )
 
     assert abs(result.association) < 1.0e-8
+
+
+def test_association_temperature_derivative_enters_residual_energy() -> None:
+    model = _pure_2b_model()
+    temperature = 300.0
+    density = 1000.0
+    step = temperature * 2.0e-4
+
+    def residual_at(value: float) -> float:
+        return model.evaluate(
+            temperature=value * unit_registry.kelvin,
+            molar_density=density * unit_registry.mole / unit_registry.meter**3,
+            mole_fractions=(1.0,),
+        ).residual_helmholtz
+
+    derivative = (
+        -residual_at(temperature + 2.0 * step)
+        + 8.0 * residual_at(temperature + step)
+        - 8.0 * residual_at(temperature - step)
+        + residual_at(temperature - 2.0 * step)
+    ) / (12.0 * step)
+    result = model.evaluate(
+        temperature=temperature * unit_registry.kelvin,
+        molar_density=density * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=(1.0,),
+    )
+
+    assert result.residual_internal_energy.to("joule / mole").magnitude == (
+        pytest.approx(-GAS_CONSTANT * temperature**2 * derivative, rel=2.0e-6)
+    )

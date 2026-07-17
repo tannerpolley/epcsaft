@@ -241,6 +241,25 @@ class EPCSAFT:
             residual_helmholtz=native.residual_helmholtz,
             compressibility_factor=native.compressibility_factor,
             pressure=native.pressure * unit_registry.pascal,
+            residual_chemical_potential_over_rt=tuple(
+                native.residual_chemical_potential_over_rt
+            ),
+            log_fugacity_coefficient=None
+            if native.log_fugacity_coefficient is None
+            else tuple(native.log_fugacity_coefficient),
+            residual_entropy=native.residual_entropy
+            * unit_registry.joule / unit_registry.mole / unit_registry.kelvin,
+            residual_internal_energy=native.residual_internal_energy
+            * unit_registry.joule / unit_registry.mole,
+            residual_enthalpy=native.residual_enthalpy
+            * unit_registry.joule / unit_registry.mole,
+            residual_isochoric_heat_capacity=
+            native.residual_isochoric_heat_capacity
+            * unit_registry.joule / unit_registry.mole / unit_registry.kelvin,
+            residual_isobaric_heat_capacity=None
+            if native.residual_isobaric_heat_capacity is None
+            else native.residual_isobaric_heat_capacity
+            * unit_registry.joule / unit_registry.mole / unit_registry.kelvin,
         )
 
 
@@ -265,6 +284,13 @@ class EosResult:
     residual_helmholtz: float
     compressibility_factor: float
     pressure: pint.Quantity
+    residual_chemical_potential_over_rt: tuple[float, ...]
+    log_fugacity_coefficient: tuple[float, ...] | None
+    residual_entropy: pint.Quantity
+    residual_internal_energy: pint.Quantity
+    residual_enthalpy: pint.Quantity
+    residual_isochoric_heat_capacity: pint.Quantity
+    residual_isobaric_heat_capacity: pint.Quantity | None
 
 
 __all__ = ("EPCSAFT", "EosError", "EosResult")

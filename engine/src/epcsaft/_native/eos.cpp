@@ -2,6 +2,7 @@
 
 #include "association.hpp"
 #include "born.hpp"
+#include "derivatives.hpp"
 #include "electrolyte.hpp"
 #include "helmholtz.hpp"
 
@@ -138,9 +139,12 @@ NativeResult NativeModel::evaluate(
     const auto electrolyte = detail::electrolyte_contribution(
         temperature,
         molar_density,
+        temperature,
         molar_density,
         mole_fractions,
+        mole_fractions,
         parameters_,
+        sigma,
         sigma
     );
     const double born_ssm_ds = detail::born_ssm_ds_contribution(
@@ -161,83 +165,52 @@ NativeResult NativeModel::evaluate(
         born_ssm_ds
     );
 
-    using ADScalar = CppAD::AD<double>;
-    const std::size_t sites = site_fraction.size();
-    std::vector<ADScalar> independent(1 + sites);
-    independent[0] = molar_density;
-    for (std::size_t site = 0; site < sites; ++site) {
-        independent[1 + site] = site_fraction[site];
-    }
-    CppAD::Independent(independent);
-    std::vector<ADScalar> taped_fraction(sites);
-    for (std::size_t site = 0; site < sites; ++site) {
-        taped_fraction[site] = independent[1 + site];
-    }
-    const auto taped = detail::residual_helmholtz(
-        temperature,
-        independent[0],
-        mole_fractions,
-        parameters_,
-        sigma,
-        diameter,
-        taped_fraction,
-        detail::electrolyte_contribution(
-            temperature,
-            independent[0],
-            molar_density,
-            mole_fractions,
-            parameters_,
-            sigma
-        ).debye_huckel,
-        ADScalar(born_ssm_ds)
-    );
-    const auto delta = detail::association_delta(
-        temperature,
-        independent[0],
-        mole_fractions,
-        parameters_,
-        sigma,
-        diameter
-    );
-    const auto mass_action = detail::association_residuals(
-        independent[0],
-        mole_fractions,
-        parameters_,
-        taped_fraction,
-        delta
-    );
-    std::vector<ADScalar> dependent = {
-        taped.hard_chain + taped.dispersion + taped.association
-            + taped.debye_huckel + taped.born_ssm_ds,
-    };
-    dependent.insert(dependent.end(), mass_action.begin(), mass_action.end());
-    CppAD::ADFun<double> function(independent, dependent);
-    std::vector<double> state = {molar_density};
-    state.insert(state.end(), site_fraction.begin(), site_fraction.end());
-    const auto jacobian = function.Jacobian(state);
-    const std::size_t width = 1 + sites;
-    double density_derivative = jacobian[0];
-    if (sites != 0) {
-        std::vector<double> h_x(sites * sites);
-        std::vector<double> negative_h_rho(sites);
-        for (std::size_t row = 0; row < sites; ++row) {
-            negative_h_rho[row] = -jacobian[(1 + row) * width];
-            for (std::size_t column = 0; column < sites; ++column) {
-                h_x[row * sites + column] =
-                    jacobian[(1 + row) * width + 1 + column];
-            }
-        }
-        const auto fraction_derivative =
-            detail::solve_linear(std::move(h_x), std::move(negative_h_rho));
-        for (std::size_t site = 0; site < sites; ++site) {
-            density_derivative += jacobian[1 + site] * fraction_derivative[site];
-        }
-    }
-
     const double residual =
         values.hard_chain + values.dispersion + values.association
         + values.debye_huckel + values.born_ssm_ds;
-    const double compressibility = 1.0 + molar_density * density_derivative;
+    const auto derivatives = detail::thermodynamic_derivatives(
+        temperature, molar_density, mole_fractions, parameters_, site_fraction
+    );
+    const double compressibility = 1.0 + molar_density * derivatives.density;
+    double weighted_composition_derivative = 0.0;
+    for (std::size_t component = 0; component < components; ++component) {
+        weighted_composition_derivative += mole_fractions[component]
+            * derivatives.composition[component];
+    }
+    std::vector<double> chemical_potential(components);
+    std::optional<std::vector<double>> log_fugacity;
+    if (std::isfinite(compressibility) && compressibility > 0.0) {
+        log_fugacity.emplace(components);
+    }
+    for (std::size_t component = 0; component < components; ++component) {
+        chemical_potential[component] = residual + compressibility - 1.0
+            + derivatives.composition[component]
+            - weighted_composition_derivative;
+        if (log_fugacity.has_value()) {
+            (*log_fugacity)[component] = chemical_potential[component]
+                - std::log(compressibility);
+        }
+    }
+    const double z_temperature = molar_density
+        * derivatives.temperature_density;
+    const double z_density = derivatives.density
+        + molar_density * derivatives.density_density;
+    const double pressure_slope_factor = compressibility
+        + molar_density * z_density;
+    const double cv_over_r = -2.0 * temperature * derivatives.temperature
+        - temperature * temperature * derivatives.temperature_temperature;
+    std::optional<double> residual_cp;
+    if (std::isfinite(pressure_slope_factor)
+        && std::abs(pressure_slope_factor) > 1.0e-12) {
+        const double cp_over_r = cv_over_r
+            + (compressibility + temperature * z_temperature)
+                * (compressibility + temperature * z_temperature)
+                / pressure_slope_factor
+            - 1.0;
+        if (std::isfinite(cp_over_r)) {
+            residual_cp = detail::GAS_CONSTANT * cp_over_r;
+        }
+    }
     return {
         values.hard_chain,
         values.dispersion,
@@ -247,6 +220,16 @@ NativeResult NativeModel::evaluate(
         residual,
         compressibility,
         compressibility * molar_density * detail::GAS_CONSTANT * temperature,
+        std::move(chemical_potential),
+        std::move(log_fugacity),
+        detail::GAS_CONSTANT
+            * (-residual - temperature * derivatives.temperature),
+        -detail::GAS_CONSTANT * temperature * temperature
+            * derivatives.temperature,
+        detail::GAS_CONSTANT * temperature
+            * (-temperature * derivatives.temperature + compressibility - 1.0),
+        detail::GAS_CONSTANT * cv_over_r,
+        residual_cp,
     };
 }
 
