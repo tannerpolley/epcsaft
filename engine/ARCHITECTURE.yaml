@@ -23,18 +23,37 @@ public_surface:
     - EosResult
   runtime_dependencies:
     - Pint
+  direct_build_dependencies:
+    - scikit-build-core
+    - pybind11
+    - CMake
+    - Ninja
+    - CppAD 20250000.3
   native_modules:
     - epcsaft._core
   native_targets: 1
+  native_sdk_entries: []
 
 manifest:
+  tracked_files: 33
   production_python_files: 7
   native_source_files: 3
   installed_data_files: 4
   package_test_files: 3
   physical_production_lines: 1912
   physical_package_test_lines: 1218
+  physical_documentation_lines: 155
   measurement: wc -l over the admitted Python and C++ source files at the Slice 1 candidate commit
+  tracked_generated_files: 0
+  generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
+  oversized_files:
+    - path: src/epcsaft/_bundle_io.py
+      physical_lines: 368
+    - path: src/epcsaft/records.py
+      physical_lines: 426
+    - path: tests/test_parameters.py
+      physical_lines: 760
+  oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 
 excluded:
   - specified-pressure density closure and phase labels
