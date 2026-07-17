@@ -7,6 +7,6 @@ This repository owns organization profile, shared community files, reusable
 workflow policy, and Project conventions. Package-local behavior, tests,
 builds, releases, and capabilities stay with their package repository.
 
-The doctrine is canonical locally but is not yet published. Do not create a
-remote, push, mutate organization settings, or add live workflows or templates
-without a separately approved external-write plan.
+Doctrine revision 2 is canonical locally and at `ePC-SAFT/.github`. Do not
+create or change remotes, push, mutate organization settings, or add live
+workflows or templates without a separately approved external-write plan.

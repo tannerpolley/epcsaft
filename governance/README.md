@@ -2,12 +2,14 @@
 
 Repository role: organization_policy
 
-Intended GitHub home: `ePC-SAFT/.github`
+GitHub home: `ePC-SAFT/.github`
 
-Local status: canonical doctrine home; not yet published to GitHub.
+Status: canonical doctrine home at GitHub.
 
-No GitHub organization setting, template, workflow, issue, milestone, or
-Project item has changed.
+Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 2. This repository
+owns permanent ecosystem policy and shared organization conventions; it owns
+no package behavior, scientific capability, migration sequence, or validation
+evidence.
 
-Read `GOVERNANCE.md` for doctrine revision 2. Publication and all external
-writes remain separately gated.
+Runtime authority changes only through accepted promotion receipts. Pushes,
+publication changes, and other external writes remain separately gated.
