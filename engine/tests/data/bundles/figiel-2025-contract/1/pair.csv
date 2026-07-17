@@ -1,4 +1,2 @@
 record_id,component_id_a,component_id_b,family,value,unit,source_id,locator,domain_id
 potassium-iodide-kij,potassium-cation,iodide-anion,k_ij,0,,figiel-yu-held-2025,"Table 4, I- row, K+ column",figiel-298-k
-water-one-butanol-lij,water,one-butanol,l_ij,-0.0044,,ascani-held-2021,"Table 4, l_ij row, 1-Butanol column",ascani-unknown
-water-one-butanol-khb-ij,water,one-butanol,k_hb_ij,0.026,,ascani-held-2021,"Table 4, k_hb_ij row, 1-Butanol column",ascani-unknown

@@ -88,13 +88,22 @@ def _validate_records(
             referenced_components = ()
         elif isinstance(
             record,
-            (SingleParameterRecord, SiteRecord, ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation),
+            (
+                SingleParameterRecord,
+                SiteRecord,
+                ConstantCorrelation,
+                ConstantPlusSumOfExponentialsCorrelation,
+            ),
         ):
             referenced_components = (record.component_id,)
         else:
             referenced_components = (record.component_id_a, record.component_id_b)
         missing = next(
-            (component_id for component_id in referenced_components if component_id not in component_ids),
+            (
+                component_id
+                for component_id in referenced_components
+                if component_id not in component_ids
+            ),
             None,
         )
         if missing is not None:
@@ -129,7 +138,12 @@ def _record_components(record: object) -> tuple[str, ...]:
         return ()
     if isinstance(
         record,
-        (SingleParameterRecord, SiteRecord, ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation),
+        (
+            SingleParameterRecord,
+            SiteRecord,
+            ConstantCorrelation,
+            ConstantPlusSumOfExponentialsCorrelation,
+        ),
     ):
         return (record.component_id,)
     return (record.component_id_a, record.component_id_b)  # type: ignore[attr-defined]
@@ -220,14 +234,24 @@ class ParameterBundle:
         object.__setattr__(instance, "bundle_id", bundle_id)
         object.__setattr__(instance, "bundle_version", bundle_version)
         object.__setattr__(instance, "purpose", purpose)
-        object.__setattr__(instance, "sources", tuple(sorted(source_records, key=lambda item: item.source_id)))
-        object.__setattr__(instance, "domains", tuple(sorted(domain_records, key=lambda item: item.domain_id)))
+        object.__setattr__(
+            instance,
+            "sources",
+            tuple(sorted(source_records, key=lambda item: item.source_id)),
+        )
+        object.__setattr__(
+            instance,
+            "domains",
+            tuple(sorted(domain_records, key=lambda item: item.domain_id)),
+        )
         object.__setattr__(
             instance,
             "components",
             tuple(sorted(component_records, key=lambda item: item.component_id)),
         )
-        object.__setattr__(instance, "records", tuple(sorted(records, key=lambda item: item.record_id)))
+        object.__setattr__(
+            instance, "records", tuple(sorted(records, key=lambda item: item.record_id))
+        )
         object.__setattr__(instance, "fingerprint", _bundle_fingerprint(instance))
         return instance
 

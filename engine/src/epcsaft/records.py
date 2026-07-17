@@ -5,7 +5,6 @@ from typing import ClassVar, TypeAlias
 import re
 
 from .units import (
-    ParameterError,
     _decimal_number,
     _declared_quantity,
     _error,
@@ -28,19 +27,15 @@ _SINGLE_FAMILIES = frozenset(
         "solvation_factor",
     }
 )
-_PAIR_FAMILIES = frozenset({"k_ij", "l_ij", "k_hb_ij"})
-_ASSOCIATION_FAMILIES = frozenset(
-    {"association_energy_over_k", "association_volume"}
-)
+_PAIR_FAMILIES = frozenset({"k_ij"})
+_ASSOCIATION_FAMILIES = frozenset({"association_energy_over_k", "association_volume"})
 _MODEL_FAMILIES = frozenset(
     {
         "dielectric_ion_suppression_coefficient",
         "ionic_region_relative_permittivity",
     }
 )
-_CORRELATION_FAMILIES = frozenset(
-    {"segment_diameter", "relative_permittivity", "solvation_factor"}
-)
+_CORRELATION_FAMILIES = frozenset({"segment_diameter", "relative_permittivity", "solvation_factor"})
 _DIMENSIONAL_UNITS = {
     "molar_mass": "kilogram / mole",
     "segment_diameter": "angstrom",
@@ -55,8 +50,6 @@ _DIMENSIONLESS_FAMILIES = frozenset(
         "solvation_factor",
         "association_volume",
         "k_ij",
-        "l_ij",
-        "k_hb_ij",
         "dielectric_ion_suppression_coefficient",
         "ionic_region_relative_permittivity",
     }
@@ -153,32 +146,28 @@ class ValidityDomain:
             else _quantity(self.pressure_max, "pascal", field="pressure_max"),
             "ion_mole_fraction_max": None
             if self.ion_mole_fraction_max is None
-            else _decimal_number(
-                self.ion_mole_fraction_max, field="ion_mole_fraction_max"
-            ),
+            else _decimal_number(self.ion_mole_fraction_max, field="ion_mole_fraction_max"),
         }
         for field, value in normalized.items():
             object.__setattr__(self, field, value)
 
         bounds = (
-            ("temperature", normalized["temperature_min"], normalized["temperature_max"]),
+            (
+                "temperature",
+                normalized["temperature_min"],
+                normalized["temperature_max"],
+            ),
             ("pressure", normalized["pressure_min"], normalized["pressure_max"]),
         )
         ion_max = normalized["ion_mole_fraction_max"]
         if ion_max is not None and not (0 < ion_max <= 1):
-            raise _error(
-                "invalid-domain", field="ion_mole_fraction_max", value=ion_max
-            )
+            raise _error("invalid-domain", field="ion_mole_fraction_max", value=ion_max)
         if self.kind == "unknown" and any(value is not None for value in normalized.values()):
             raise _error("invalid-domain", field="kind", value=self.kind)
         if self.kind != "unknown" and all(value is None for value in normalized.values()):
             raise _error("invalid-domain", field="bounds", value="missing")
         for field, lower, upper in bounds:
-            if (
-                lower is not None
-                and upper is not None
-                and lower.magnitude > upper.magnitude
-            ):
+            if lower is not None and upper is not None and lower.magnitude > upper.magnitude:
                 raise _error("invalid-domain", field=field, value="reversed-bounds")
 
 
@@ -223,9 +212,7 @@ class SingleParameterRecord:
         family = _family(self.family, allowed=_SINGLE_FAMILIES)
         object.__setattr__(self, "family", family)
         object.__setattr__(self, "value", _parameter_value(family, self.value))
-        source_id, locator, domain_id = _provenance(
-            self.source_id, self.locator, self.domain_id
-        )
+        source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
@@ -245,9 +232,7 @@ class ModelParameterRecord:
         family = _family(self.family, allowed=_MODEL_FAMILIES)
         object.__setattr__(self, "family", family)
         object.__setattr__(self, "value", _parameter_value(family, self.value))
-        source_id, locator, domain_id = _provenance(
-            self.source_id, self.locator, self.domain_id
-        )
+        source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
@@ -276,9 +261,7 @@ class PairParameterRecord:
         family = _family(self.family, allowed=_PAIR_FAMILIES)
         object.__setattr__(self, "family", family)
         object.__setattr__(self, "value", _parameter_value(family, self.value))
-        source_id, locator, domain_id = _provenance(
-            self.source_id, self.locator, self.domain_id
-        )
+        source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
@@ -301,17 +284,13 @@ class SiteRecord:
             self, "component_id", _identifier(self.component_id, field="component_id")
         )
         object.__setattr__(self, "site_id", _identifier(self.site_id, field="site_id"))
-        object.__setattr__(
-            self, "site_class", _identifier(self.site_class, field="site_class")
-        )
+        object.__setattr__(self, "site_class", _identifier(self.site_class, field="site_class"))
         object.__setattr__(
             self,
             "multiplicity",
             _exact_integer(self.multiplicity, field="multiplicity", positive=True),
         )
-        source_id, locator, domain_id = _provenance(
-            self.source_id, self.locator, self.domain_id
-        )
+        source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
@@ -348,9 +327,7 @@ class AssociationParameterRecord:
         family = _family(self.family, allowed=_ASSOCIATION_FAMILIES)
         object.__setattr__(self, "family", family)
         object.__setattr__(self, "value", _parameter_value(family, self.value))
-        source_id, locator, domain_id = _provenance(
-            self.source_id, self.locator, self.domain_id
-        )
+        source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
@@ -396,12 +373,8 @@ class ConstantCorrelation:
         )
         family = _family(self.family, allowed=_CORRELATION_FAMILIES)
         object.__setattr__(self, "family", family)
-        object.__setattr__(
-            self, "constant", _parameter_value(family, self.constant)
-        )
-        source_id, locator, domain_id = _provenance(
-            self.source_id, self.locator, self.domain_id
-        )
+        object.__setattr__(self, "constant", _parameter_value(family, self.constant))
+        source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
@@ -439,17 +412,13 @@ class ConstantPlusSumOfExponentialsCorrelation:
             for term in terms
         )
         object.__setattr__(self, "terms", normalized_terms)
-        source_id, locator, domain_id = _provenance(
-            self.source_id, self.locator, self.domain_id
-        )
+        source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
 
 
-CorrelationRecord: TypeAlias = (
-    ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation
-)
+CorrelationRecord: TypeAlias = ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation
 
 
 __all__ = (

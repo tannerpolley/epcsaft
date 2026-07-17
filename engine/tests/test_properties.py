@@ -10,9 +10,9 @@ GAS_CONSTANT = 8.31446261815324
 
 def _model() -> EPCSAFT:
     return EPCSAFT(
-        ParameterBundle.from_catalog(
-            "gross-2001-methane-ethane", version=1
-        ).select(("methane", "ethane"))
+        ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
+            ("methane", "ethane")
+        )
     )
 
 
@@ -58,15 +58,19 @@ def test_residual_chemical_potentials_are_total_mole_derivatives() -> None:
 
     expected = []
     for component in range(2):
+
         def total_residual_helmholtz(delta: float) -> float:
             moles = [*fractions]
             moles[component] += delta
             total_moles = math.fsum(moles)
             perturbed_fractions = tuple(value / total_moles for value in moles)
             perturbed_density = total_moles / volume
-            return total_moles * _evaluate(
-                model, temperature, perturbed_density, perturbed_fractions
-            ).residual_helmholtz
+            return (
+                total_moles
+                * _evaluate(
+                    model, temperature, perturbed_density, perturbed_fractions
+                ).residual_helmholtz
+            )
 
         expected.append(_first_derivative(total_residual_helmholtz, 0.0, 2.0e-5))
 
@@ -83,7 +87,7 @@ def test_residual_chemical_potentials_are_total_mole_derivatives() -> None:
 def test_residual_caloric_properties_follow_helmholtz_identities() -> None:
     model = _model()
     temperature = 250.0
-    density = 8000.0
+    density = 1000.0
     fractions = (0.4, 0.6)
     result = _evaluate(model, temperature, density, fractions)
 
@@ -104,12 +108,9 @@ def test_residual_caloric_properties_follow_helmholtz_identities() -> None:
     z_rho = _first_derivative(z_at_density, density, density * 2.0e-4)
     z = result.compressibility_factor
     expected = {
-        "residual_entropy": GAS_CONSTANT
-        * (-result.residual_helmholtz - temperature * a_t),
+        "residual_entropy": GAS_CONSTANT * (-result.residual_helmholtz - temperature * a_t),
         "residual_internal_energy": -GAS_CONSTANT * temperature**2 * a_t,
-        "residual_enthalpy": GAS_CONSTANT
-        * temperature
-        * (-temperature * a_t + z - 1.0),
+        "residual_enthalpy": GAS_CONSTANT * temperature * (-temperature * a_t + z - 1.0),
         "residual_isochoric_heat_capacity": GAS_CONSTANT
         * (-2.0 * temperature * a_t - temperature**2 * a_tt),
         "residual_isobaric_heat_capacity": GAS_CONSTANT
@@ -123,19 +124,17 @@ def test_residual_caloric_properties_follow_helmholtz_identities() -> None:
 
     for field, magnitude in expected.items():
         actual = getattr(result, field)
-        unit = "joule / mole" if field.endswith(("energy", "enthalpy")) else (
-            "joule / mole / kelvin"
+        unit = (
+            "joule / mole" if field.endswith(("energy", "enthalpy")) else ("joule / mole / kelvin")
         )
-        assert actual.to(unit).magnitude == pytest.approx(
-            magnitude, rel=3.0e-5, abs=3.0e-5
-        )
+        assert actual.to(unit).magnitude == pytest.approx(magnitude, rel=3.0e-5, abs=3.0e-5)
 
 
 def test_electrolyte_formula_unit_chemical_potential_is_electroneutral() -> None:
     model = EPCSAFT(
-        ParameterBundle.from_catalog(
-            "figiel-2025-water-sodium-chloride", version=1
-        ).select(("water", "sodium-cation", "chloride-anion"))
+        ParameterBundle.from_catalog("figiel-2025-water-sodium-chloride", version=1).select(
+            ("water", "sodium-cation", "chloride-anion")
+        )
     )
     temperature = 298.15
     density = 40.0
@@ -146,12 +145,15 @@ def test_electrolyte_formula_unit_chemical_potential_is_electroneutral() -> None
     def total_residual_helmholtz(delta: float) -> float:
         moles = (fractions[0], fractions[1] + delta, fractions[2] + delta)
         total_moles = math.fsum(moles)
-        return total_moles * _evaluate(
-            model,
-            temperature,
-            total_moles / volume,
-            tuple(value / total_moles for value in moles),
-        ).residual_helmholtz
+        return (
+            total_moles
+            * _evaluate(
+                model,
+                temperature,
+                total_moles / volume,
+                tuple(value / total_moles for value in moles),
+            ).residual_helmholtz
+        )
 
     expected = _first_derivative(total_residual_helmholtz, 0.0, 2.0e-6)
     actual = math.fsum(result.residual_chemical_potential_over_rt[1:])

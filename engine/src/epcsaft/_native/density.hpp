@@ -84,7 +84,7 @@ DensityRoot refine_density_root(
         residual,
         slope,
         iteration + 1,
-        std::isfinite(slope) && slope > 0.0,
+        false,
         "",
     };
 }
@@ -97,8 +97,9 @@ DensityRoot solve_density(
     const std::string& phase,
     Evaluate&& evaluate
 ) {
-    if (!(pressure > 0.0) || !(maximum_density > 0.0)
-        || !std::isfinite(pressure) || !std::isfinite(maximum_density)) {
+    if (!(pressure > 0.0) || !(ideal_density > 0.0)
+        || !(maximum_density > 0.0) || !std::isfinite(pressure)
+        || !std::isfinite(ideal_density) || !std::isfinite(maximum_density)) {
         throw std::invalid_argument("invalid density solve bounds");
     }
     if (phase != "" && phase != "vapor" && phase != "liquid") {
@@ -141,6 +142,11 @@ DensityRoot solve_density(
         }
         previous_density = density;
         previous_residual = residual;
+    }
+    const double minimum_stable_slope = 1.0e-10 * pressure / ideal_density;
+    for (auto& root : roots) {
+        root.stable = std::isfinite(root.pressure_density_derivative)
+            && root.pressure_density_derivative > minimum_stable_slope;
     }
     std::vector<DensityRoot> stable;
     std::copy_if(

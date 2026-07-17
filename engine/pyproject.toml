@@ -5,7 +5,7 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "epcsaft"
 version = "0.1.0.dev0"
-description = "Source-traceable parameter input records for ePC-SAFT"
+description = "Source-traceable ePC-SAFT thermodynamic provider"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
@@ -18,3 +18,6 @@ wheel.exclude = ["epcsaft/_native/**"]
 cmake.source-dir = "."
 cmake.version = ">=3.20"
 ninja.version = ">=1.11"
+
+[tool.ruff]
+line-length = 100

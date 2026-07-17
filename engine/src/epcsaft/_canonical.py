@@ -64,9 +64,7 @@ def _domain(record: ValidityDomain) -> dict[str, object]:
         if value is not None:
             result[name] = _quantity(value, "pascal")
     if record.ion_mole_fraction_max is not None:
-        result["ion_mole_fraction_max"] = _decimal(
-            record.ion_mole_fraction_max
-        )
+        result["ion_mole_fraction_max"] = _decimal(record.ion_mole_fraction_max)
     return result
 
 
@@ -156,9 +154,7 @@ def _record(record: object) -> dict[str, object]:
             coefficients=[
                 {
                     "amplitude": _quantity(term.amplitude, "angstrom"),
-                    "exponent_coefficient": _quantity(
-                        term.exponent_coefficient, "1 / kelvin"
-                    ),
+                    "exponent_coefficient": _quantity(term.exponent_coefficient, "1 / kelvin"),
                 }
                 for term in record.terms
             ],
@@ -198,25 +194,29 @@ def _bundle_json(bundle: object) -> str:
             "sources": [
                 _source(record)
                 for record in sorted(
-                    bundle.sources, key=lambda item: item.source_id  # type: ignore[attr-defined]
+                    bundle.sources,
+                    key=lambda item: item.source_id,  # type: ignore[attr-defined]
                 )
             ],
             "domains": [
                 _domain(record)
                 for record in sorted(
-                    bundle.domains, key=lambda item: item.domain_id  # type: ignore[attr-defined]
+                    bundle.domains,
+                    key=lambda item: item.domain_id,  # type: ignore[attr-defined]
                 )
             ],
             "components": [
                 _component(record)
                 for record in sorted(
-                    bundle.components, key=lambda item: item.component_id  # type: ignore[attr-defined]
+                    bundle.components,
+                    key=lambda item: item.component_id,  # type: ignore[attr-defined]
                 )
             ],
             "records": [
                 _record(record)
                 for record in sorted(
-                    bundle.records, key=lambda item: item.record_id  # type: ignore[attr-defined]
+                    bundle.records,
+                    key=lambda item: item.record_id,  # type: ignore[attr-defined]
                 )
             ],
         },

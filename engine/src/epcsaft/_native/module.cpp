@@ -72,10 +72,6 @@ PYBIND11_MODULE(_core, module) {
         )
         .def_readonly("molar_density", &epcsaft::NativeResult::molar_density)
         .def_readonly(
-            "pressure_density_derivative",
-            &epcsaft::NativeResult::pressure_density_derivative
-        )
-        .def_readonly(
             "density_diagnostics", &epcsaft::NativeResult::density_diagnostics
         );
 

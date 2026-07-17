@@ -25,9 +25,7 @@ PROVENANCE = {
 
 
 def _single(record_id: str, component_id: str, family: str, value: object):
-    return SingleParameterRecord(
-        record_id, component_id, family, value, **PROVENANCE
-    )
+    return SingleParameterRecord(record_id, component_id, family, value, **PROVENANCE)
 
 
 def _base_singles(component_id: str, *, molar_mass: float = 0.018):
@@ -81,9 +79,9 @@ def _bundle(
 
 
 def test_neutral_associating_and_ionic_topologies_resolve_immutably() -> None:
-    neutral = ParameterBundle.from_catalog(
-        "gross-2001-methane-ethane", version=1
-    ).select(("methane", "ethane"))
+    neutral = ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
+        ("methane", "ethane")
+    )
     neutral_model = _resolve_model(neutral)
     assert neutral_model.topology == "neutral"
     assert neutral_model.component_ids == ("methane", "ethane")
@@ -118,7 +116,12 @@ def test_neutral_associating_and_ionic_topologies_resolve_immutably() -> None:
         ),
     )
     associating_model = _resolve_model(
-        _bundle((water,), singles=_base_singles("water"), sites=sites, associations=association)
+        _bundle(
+            (water,),
+            singles=_base_singles("water"),
+            sites=sites,
+            associations=association,
+        )
     )
     assert associating_model.topology == "associating"
     assert associating_model.site_ids == (("water", "a"), ("water", "b"))
@@ -139,9 +142,7 @@ def test_neutral_associating_and_ionic_topologies_resolve_immutably() -> None:
         _single("chloride-solvation", "chloride", "solvation_factor", 1),
     )
     pairs = tuple(
-        PairParameterRecord(
-            f"{a}-{b}-kij", a, b, "k_ij", 0, **PROVENANCE
-        )
+        PairParameterRecord(f"{a}-{b}-kij", a, b, "k_ij", 0, **PROVENANCE)
         for a, b in (("water", "sodium"), ("water", "chloride"), ("sodium", "chloride"))
     )
     correlations = (
@@ -186,10 +187,7 @@ def test_neutral_associating_and_ionic_topologies_resolve_immutably() -> None:
     without_unused_ion_masses = tuple(
         record
         for record in singles
-        if not (
-            record.family == "molar_mass"
-            and record.component_id in {"sodium", "chloride"}
-        )
+        if not (record.family == "molar_mass" and record.component_id in {"sodium", "chloride"})
     )
     lean_model = _resolve_model(
         _bundle(
@@ -228,7 +226,11 @@ def test_neutral_associating_and_ionic_topologies_resolve_immutably() -> None:
 def test_partial_ionic_topologies_are_rejected(removed_family: str) -> None:
     # Task 4 supplies the physical fixture. This compact synthetic topology
     # exercises completeness without claiming model-output evidence.
-    components = (ComponentRecord("water"), ComponentRecord("sodium"), ComponentRecord("chloride"))
+    components = (
+        ComponentRecord("water"),
+        ComponentRecord("sodium"),
+        ComponentRecord("chloride"),
+    )
     singles = [
         *(_base_singles("water")),
         *(_base_singles("sodium", molar_mass=0.023)),
@@ -248,12 +250,24 @@ def test_partial_ionic_topologies_are_rejected(removed_family: str) -> None:
     ]
     associations = [
         AssociationParameterRecord(
-            "water-ab-energy", "water", "a", "water", "b",
-            "association_energy_over_k", 2400 * unit_registry.kelvin, **PROVENANCE
+            "water-ab-energy",
+            "water",
+            "a",
+            "water",
+            "b",
+            "association_energy_over_k",
+            2400 * unit_registry.kelvin,
+            **PROVENANCE,
         ),
         AssociationParameterRecord(
-            "water-ab-volume", "water", "a", "water", "b",
-            "association_volume", 0.03, **PROVENANCE
+            "water-ab-volume",
+            "water",
+            "a",
+            "water",
+            "b",
+            "association_volume",
+            0.03,
+            **PROVENANCE,
         ),
     ]
     pairs = [
@@ -262,15 +276,25 @@ def test_partial_ionic_topologies_are_rejected(removed_family: str) -> None:
     ]
     correlations = [
         ConstantCorrelation(
-            "water-relative-permittivity", "water", "relative_permittivity", 78.3, **PROVENANCE
+            "water-relative-permittivity",
+            "water",
+            "relative_permittivity",
+            78.3,
+            **PROVENANCE,
         )
     ]
     models = [
         ModelParameterRecord(
-            "ionic-region-permittivity", "ionic_region_relative_permittivity", 8, **PROVENANCE
+            "ionic-region-permittivity",
+            "ionic_region_relative_permittivity",
+            8,
+            **PROVENANCE,
         ),
         ModelParameterRecord(
-            "dielectric-suppression", "dielectric_ion_suppression_coefficient", 7.01, **PROVENANCE
+            "dielectric-suppression",
+            "dielectric_ion_suppression_coefficient",
+            7.01,
+            **PROVENANCE,
         ),
     ]
 
@@ -307,7 +331,5 @@ def test_source_backed_figiel_catalog_resolves_without_unpublished_defaults() ->
     assert model.charge_number == (0, 1, -1)
     assert model.molar_mass_kg_per_mol == (0.0180153, None, None)
     assert model.k_ij == (0.0, -0.3, -0.3, -0.3, 0.0, 0.8, -0.3, 0.8, 0.0)
-    assert model.l_ij == (None,) * 9
-    assert model.k_hb_ij == (None,) * 9
     assert model.ionic_region_relative_permittivity == 8.0
     assert model.dielectric_ion_suppression_coefficient == 7.01

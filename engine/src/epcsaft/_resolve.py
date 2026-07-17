@@ -19,9 +19,7 @@ from .units import _error
 
 _ScalarRecord = SingleParameterRecord | ConstantCorrelation
 _TemperatureRecord = (
-    SingleParameterRecord
-    | ConstantCorrelation
-    | ConstantPlusSumOfExponentialsCorrelation
+    SingleParameterRecord | ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation
 )
 
 
@@ -42,8 +40,6 @@ class _ResolvedModel:
     segment_diameter: tuple[_TemperatureRecord, ...]
     dispersion_energy_over_k: tuple[float, ...]
     k_ij: tuple[float, ...]
-    l_ij: tuple[float | None, ...]
-    k_hb_ij: tuple[float | None, ...]
     site_ids: tuple[tuple[str, str], ...]
     site_multiplicity: tuple[int, ...]
     association_pairs: tuple[_ResolvedAssociationPair, ...]
@@ -88,13 +84,21 @@ def _component_record(
     key = (component_id, family)
     candidates = tuple(
         record
-        for record in (singles.get(key), correlations.get(key) if allow_correlation else None)
+        for record in (
+            singles.get(key),
+            correlations.get(key) if allow_correlation else None,
+        )
         if record is not None
     )
     if not candidates:
         raise _missing(component_id=component_id, family=family)
     if len(candidates) != 1:
-        raise _error("invalid-value", component_id=component_id, family=family, reason="duplicate-owner")
+        raise _error(
+            "invalid-value",
+            component_id=component_id,
+            family=family,
+            reason="duplicate-owner",
+        )
     return candidates[0]
 
 
@@ -181,6 +185,42 @@ def _association(
     )
 
 
+def _domain_limits(parameters: ParameterSet) -> tuple[float | None, float | None, float | None]:
+    domain_by_id = {domain.domain_id: domain for domain in parameters.domains}
+    active_domains = tuple(
+        domain_by_id[domain_id]
+        for domain_id in {
+            record.domain_id
+            for record in parameters.records
+            if record.domain_id in domain_by_id and domain_by_id[record.domain_id].kind != "unknown"
+        }
+    )
+    lower_bounds = tuple(
+        float(domain.temperature_min.to("kelvin").magnitude)
+        for domain in active_domains
+        if domain.temperature_min is not None
+    )
+    upper_bounds = tuple(
+        float(domain.temperature_max.to("kelvin").magnitude)
+        for domain in active_domains
+        if domain.temperature_max is not None
+    )
+    ion_bounds = tuple(
+        float(domain.ion_mole_fraction_max)
+        for domain in active_domains
+        if domain.ion_mole_fraction_max is not None
+    )
+    temperature_min = max(lower_bounds) if lower_bounds else None
+    temperature_max = min(upper_bounds) if upper_bounds else None
+    if (
+        temperature_min is not None
+        and temperature_max is not None
+        and temperature_min > temperature_max
+    ):
+        raise _error("invalid-domain", field="temperature", value="empty-intersection")
+    return temperature_min, temperature_max, min(ion_bounds) if ion_bounds else None
+
+
 def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
     if not isinstance(parameters, ParameterSet):
         raise _error("invalid-value", field="parameters", expected="ParameterSet")
@@ -202,9 +242,7 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
     }
     sites = tuple(record for record in parameters.records if isinstance(record, SiteRecord))
     association_records = tuple(
-        record
-        for record in parameters.records
-        if isinstance(record, AssociationParameterRecord)
+        record for record in parameters.records if isinstance(record, AssociationParameterRecord)
     )
     models = {
         record.family: record
@@ -221,9 +259,15 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         AssociationParameterRecord,
         ModelParameterRecord,
     )
-    unknown = next((record for record in parameters.records if not isinstance(record, recognized)), None)
+    unknown = next(
+        (record for record in parameters.records if not isinstance(record, recognized)),
+        None,
+    )
     if unknown is not None:
-        raise _error("invalid-value", record_id=getattr(unknown, "record_id", type(unknown).__name__))
+        raise _error(
+            "invalid-value",
+            record_id=getattr(unknown, "record_id", type(unknown).__name__),
+        )
 
     component_ids = parameters.component_ids
     molar_mass = tuple(
@@ -234,13 +278,25 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
     )
     segment_count = tuple(
         _magnitude(
-            _component_record(component_id, "segment_count", singles, correlations, allow_correlation=False),
+            _component_record(
+                component_id,
+                "segment_count",
+                singles,
+                correlations,
+                allow_correlation=False,
+            ),
             "dimensionless",
         )
         for component_id in component_ids
     )
     segment_diameter = tuple(
-        _component_record(component_id, "segment_diameter", singles, correlations, allow_correlation=True)
+        _component_record(
+            component_id,
+            "segment_diameter",
+            singles,
+            correlations,
+            allow_correlation=True,
+        )
         for component_id in component_ids
     )
     dispersion_energy = tuple(
@@ -257,9 +313,8 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         for component_id in component_ids
     )
     k_ij = _pair_matrix(component_ids, pair_records, "k_ij", required=True)
-    l_ij = _pair_matrix(component_ids, pair_records, "l_ij", required=False)
-    k_hb_ij = _pair_matrix(component_ids, pair_records, "k_hb_ij", required=False)
     site_ids, site_multiplicity, association_pairs = _association(sites, association_records)
+    temperature_min, temperature_max, ion_fraction_max = _domain_limits(parameters)
 
     ionic_families = {
         "charge_number",
@@ -282,8 +337,6 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
             segment_diameter,
             dispersion_energy,
             tuple(float(value) for value in k_ij),
-            l_ij,
-            k_hb_ij,
             site_ids,
             site_multiplicity,
             association_pairs,
@@ -293,13 +346,19 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
             (),
             None,
             None,
-            None,
-            None,
+            temperature_min,
+            temperature_max,
             None,
         )
 
     charge_records = tuple(
-        _component_record(component_id, "charge_number", singles, correlations, allow_correlation=False)
+        _component_record(
+            component_id,
+            "charge_number",
+            singles,
+            correlations,
+            allow_correlation=False,
+        )
         for component_id in component_ids
     )
     charges = tuple(int(record.value) for record in charge_records)  # type: ignore[union-attr]
@@ -309,9 +368,7 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
     relative_permittivity: list[_TemperatureRecord | None] = []
     born_diameter: list[float | None] = []
     solvation_factor: list[_TemperatureRecord | None] = []
-    for index, (component_id, charge) in enumerate(
-        zip(component_ids, charges, strict=True)
-    ):
+    for index, (component_id, charge) in enumerate(zip(component_ids, charges, strict=True)):
         if charge == 0:
             if molar_mass[index] is None:
                 raise _missing(component_id=component_id, family="molar_mass")
@@ -359,40 +416,6 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
             raise _error("invalid-value", family=family, value=value)
         model_values.append(value)
 
-    domain_by_id = {domain.domain_id: domain for domain in parameters.domains}
-    active_domain_ids = {
-        record.domain_id
-        for record in parameters.records
-        if record.domain_id in domain_by_id
-        and domain_by_id[record.domain_id].kind != "unknown"
-    }
-    active_domains = tuple(
-        domain_by_id[domain_id] for domain_id in active_domain_ids
-    )
-    lower_bounds = tuple(
-        float(domain.temperature_min.to("kelvin").magnitude)
-        for domain in active_domains
-        if domain.temperature_min is not None
-    )
-    upper_bounds = tuple(
-        float(domain.temperature_max.to("kelvin").magnitude)
-        for domain in active_domains
-        if domain.temperature_max is not None
-    )
-    ion_bounds = tuple(
-        float(domain.ion_mole_fraction_max)
-        for domain in active_domains
-        if domain.ion_mole_fraction_max is not None
-    )
-    temperature_min = max(lower_bounds) if lower_bounds else None
-    temperature_max = min(upper_bounds) if upper_bounds else None
-    if (
-        temperature_min is not None
-        and temperature_max is not None
-        and temperature_min > temperature_max
-    ):
-        raise _error("invalid-domain", field="temperature", value="empty-intersection")
-
     return _ResolvedModel(
         "ionic-ssm-ds",
         component_ids,
@@ -401,8 +424,6 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         segment_diameter,
         dispersion_energy,
         tuple(float(value) for value in k_ij),
-        l_ij,
-        k_hb_ij,
         site_ids,
         site_multiplicity,
         association_pairs,
@@ -414,7 +435,7 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         model_values[1],
         temperature_min,
         temperature_max,
-        min(ion_bounds) if ion_bounds else None,
+        ion_fraction_max,
     )
 
 

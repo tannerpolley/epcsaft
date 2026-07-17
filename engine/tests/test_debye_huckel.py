@@ -14,9 +14,9 @@ GAS_CONSTANT = 8.31446261815324
 
 def _electrolyte_model() -> EPCSAFT:
     return EPCSAFT(
-        ParameterBundle.from_catalog(
-            "figiel-2025-water-sodium-chloride", version=1
-        ).select(("water", "sodium-cation", "chloride-anion"))
+        ParameterBundle.from_catalog("figiel-2025-water-sodium-chloride", version=1).select(
+            ("water", "sodium-cation", "chloride-anion")
+        )
     )
 
 
@@ -33,8 +33,7 @@ def _debye_huckel_oracle(temperature: float, density: float) -> float:
     ion_fraction = fractions[1] + fractions[2]
     relative_permittivity = 78.09 / (1.0 + 7.01 * ion_fraction)
     ionic_strength_sum = sum(
-        fraction * charge * charge
-        for fraction, charge in zip(fractions, charges, strict=True)
+        fraction * charge * charge for fraction, charge in zip(fractions, charges, strict=True)
     )
     kappa = math.sqrt(
         density
@@ -44,28 +43,17 @@ def _debye_huckel_oracle(temperature: float, density: float) -> float:
         / (VACUUM_PERMITTIVITY * relative_permittivity * BOLTZMANN * temperature)
     )
     weighted_finite_size = 0.0
-    for fraction, charge, sigma in zip(
-        fractions, charges, sigmas_angstrom, strict=True
-    ):
+    for fraction, charge, sigma in zip(fractions, charges, sigmas_angstrom, strict=True):
         if charge == 0:
             continue
         q = kappa * 0.88 * sigma * 1.0e-10
-        chi = 3.0 / q**3 * (
-            1.5 + math.log1p(q) - 2.0 * (1.0 + q) + 0.5 * (1.0 + q) ** 2
-        )
+        chi = 3.0 / q**3 * (1.5 + math.log1p(q) - 2.0 * (1.0 + q) + 0.5 * (1.0 + q) ** 2)
         weighted_finite_size += fraction * charge * charge * chi
     return (
         -kappa
         * ELEMENTARY_CHARGE**2
         * weighted_finite_size
-        / (
-            12.0
-            * math.pi
-            * VACUUM_PERMITTIVITY
-            * relative_permittivity
-            * BOLTZMANN
-            * temperature
-        )
+        / (12.0 * math.pi * VACUUM_PERMITTIVITY * relative_permittivity * BOLTZMANN * temperature)
     )
 
 
@@ -170,9 +158,9 @@ def test_ionic_states_enforce_charge_balance_and_source_domain() -> None:
 
 def test_neutral_topology_has_zero_debye_huckel_contribution() -> None:
     result = EPCSAFT(
-        ParameterBundle.from_catalog(
-            "gross-2001-methane-ethane", version=1
-        ).select(("methane", "ethane"))
+        ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
+            ("methane", "ethane")
+        )
     ).evaluate(
         temperature=250.0 * unit_registry.kelvin,
         molar_density=1000.0 * unit_registry.mole / unit_registry.meter**3,

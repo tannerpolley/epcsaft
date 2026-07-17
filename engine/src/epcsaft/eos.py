@@ -21,11 +21,7 @@ def _magnitude(
     record: SingleParameterRecord | ConstantCorrelation,
     unit: str,
 ) -> float:
-    value = (
-        record.value
-        if isinstance(record, SingleParameterRecord)
-        else record.constant
-    )
+    value = record.value if isinstance(record, SingleParameterRecord) else record.constant
     if unit != "dimensionless":
         value = value.to(unit).magnitude
     return float(value)
@@ -99,19 +95,14 @@ def _native_arguments(
 
     components = len(model.component_ids)
     if model.topology == "ionic-ssm-ds":
-        molar_mass = [
-            0.0 if value is None else value
-            for value in model.molar_mass_kg_per_mol
-        ]
+        molar_mass = [0.0 if value is None else value for value in model.molar_mass_kg_per_mol]
         charge_number = list(model.charge_number)
         relative_permittivity = [
             0.0 if record is None else _magnitude(record, "dimensionless")
             for record in model.relative_permittivity
         ]
         dielectric_suppression = model.dielectric_ion_suppression_coefficient
-        born_diameter = [
-            0.0 if value is None else value for value in model.born_diameter_angstrom
-        ]
+        born_diameter = [0.0 if value is None else value for value in model.born_diameter_angstrom]
         solvation_factor = [
             _magnitude(record, "dimensionless")
             for record in model.solvation_factor
@@ -186,9 +177,7 @@ class EPCSAFT:
         phase: str | None = None,
     ) -> EosResult:
         if (molar_density is None) == (pressure is None):
-            raise _eos_error(
-                "invalid-state", reason="specify-exactly-one-of-density-or-pressure"
-            )
+            raise _eos_error("invalid-state", reason="specify-exactly-one-of-density-or-pressure")
         if phase not in (None, "vapor", "liquid"):
             raise _eos_error("invalid-state", field="phase")
         if molar_density is not None and phase is not None:
@@ -205,20 +194,19 @@ class EPCSAFT:
         ):
             raise _eos_error("invalid-state", field="mole_fractions")
 
+        if (
+            self._model.temperature_min_k is not None
+            and temperature_k < self._model.temperature_min_k
+        ) or (
+            self._model.temperature_max_k is not None
+            and temperature_k > self._model.temperature_max_k
+        ):
+            raise _eos_error("invalid-state", field="temperature")
+
         if self._model.topology == "ionic-ssm-ds":
-            if (
-                self._model.temperature_min_k is not None
-                and temperature_k < self._model.temperature_min_k
-            ) or (
-                self._model.temperature_max_k is not None
-                and temperature_k > self._model.temperature_max_k
-            ):
-                raise _eos_error("invalid-state", field="temperature")
             ion_fraction = math.fsum(
                 fraction
-                for fraction, charge in zip(
-                    fractions, self._model.charge_number, strict=True
-                )
+                for fraction, charge in zip(fractions, self._model.charge_number, strict=True)
                 if charge != 0
             )
             if (
@@ -228,9 +216,7 @@ class EPCSAFT:
                 raise _eos_error("invalid-state", field="mole_fractions")
             charge_balance = math.fsum(
                 fraction * charge
-                for fraction, charge in zip(
-                    fractions, self._model.charge_number, strict=True
-                )
+                for fraction, charge in zip(fractions, self._model.charge_number, strict=True)
             )
             if abs(charge_balance) > 1.0e-12:
                 raise _eos_error("invalid-state", field="electroneutrality")
@@ -240,9 +226,7 @@ class EPCSAFT:
                 density_molar = _state_magnitude(
                     molar_density, "mole / meter ** 3", "molar_density"
                 )
-                native = self._native.evaluate(
-                    temperature_k, density_molar, fractions
-                )
+                native = self._native.evaluate(temperature_k, density_molar, fractions)
             else:
                 pressure_pa = _state_magnitude(pressure, "pascal", "pressure")
                 native = self._native.evaluate_pressure(
@@ -260,44 +244,46 @@ class EPCSAFT:
             residual_helmholtz=native.residual_helmholtz,
             compressibility_factor=native.compressibility_factor,
             pressure=native.pressure * unit_registry.pascal,
-            residual_chemical_potential_over_rt=tuple(
-                native.residual_chemical_potential_over_rt
-            ),
+            residual_chemical_potential_over_rt=tuple(native.residual_chemical_potential_over_rt),
             log_fugacity_coefficient=None
             if native.log_fugacity_coefficient is None
             else tuple(native.log_fugacity_coefficient),
             residual_entropy=native.residual_entropy
-            * unit_registry.joule / unit_registry.mole / unit_registry.kelvin,
+            * unit_registry.joule
+            / unit_registry.mole
+            / unit_registry.kelvin,
             residual_internal_energy=native.residual_internal_energy
-            * unit_registry.joule / unit_registry.mole,
-            residual_enthalpy=native.residual_enthalpy
-            * unit_registry.joule / unit_registry.mole,
-            residual_isochoric_heat_capacity=
-            native.residual_isochoric_heat_capacity
-            * unit_registry.joule / unit_registry.mole / unit_registry.kelvin,
+            * unit_registry.joule
+            / unit_registry.mole,
+            residual_enthalpy=native.residual_enthalpy * unit_registry.joule / unit_registry.mole,
+            residual_isochoric_heat_capacity=native.residual_isochoric_heat_capacity
+            * unit_registry.joule
+            / unit_registry.mole
+            / unit_registry.kelvin,
             residual_isobaric_heat_capacity=None
             if native.residual_isobaric_heat_capacity is None
             else native.residual_isobaric_heat_capacity
-            * unit_registry.joule / unit_registry.mole / unit_registry.kelvin,
-            molar_density=native.molar_density
-            * unit_registry.mole / unit_registry.meter**3,
+            * unit_registry.joule
+            / unit_registry.mole
+            / unit_registry.kelvin,
+            molar_density=native.molar_density * unit_registry.mole / unit_registry.meter**3,
             density_diagnostics=None
             if diagnostics is None
             else DensityDiagnostics(
                 bracket_lower=diagnostics.bracket_lower
-                * unit_registry.mole / unit_registry.meter**3,
+                * unit_registry.mole
+                / unit_registry.meter**3,
                 bracket_upper=diagnostics.bracket_upper
-                * unit_registry.mole / unit_registry.meter**3,
-                pressure_residual=diagnostics.pressure_residual
-                * unit_registry.pascal,
-                pressure_density_derivative=
-                diagnostics.pressure_density_derivative
-                * unit_registry.pascal * unit_registry.meter**3
+                * unit_registry.mole
+                / unit_registry.meter**3,
+                pressure_residual=diagnostics.pressure_residual * unit_registry.pascal,
+                pressure_density_derivative=diagnostics.pressure_density_derivative
+                * unit_registry.pascal
+                * unit_registry.meter**3
                 / unit_registry.mole,
                 iterations=diagnostics.iterations,
                 stable=diagnostics.stable,
                 branch=diagnostics.branch,
-                rejection_reason=None,
             ),
         )
 
@@ -343,7 +329,6 @@ class DensityDiagnostics:
     iterations: int
     stable: bool
     branch: str
-    rejection_reason: str | None
 
 
 __all__ = ("EPCSAFT", "EosError", "EosResult", "DensityDiagnostics")

@@ -93,7 +93,11 @@ _COLUMNS = {
 
 
 def _exact_keys(value: object, required: set[str], optional: set[str] = set()) -> dict:
-    if not isinstance(value, dict) or not required <= value.keys() or not value.keys() <= required | optional:
+    if (
+        not isinstance(value, dict)
+        or not required <= value.keys()
+        or not value.keys() <= required | optional
+    ):
         raise _error("invalid-schema", field="keys", value="unexpected-or-missing")
     return value
 
@@ -225,7 +229,9 @@ def _components(path: Path) -> tuple[ComponentRecord, ...]:
 def _parameters(path: Path, name: str, record_type: type) -> tuple:
     result = []
     for row in _rows(path, name):
-        data: dict[str, object] = {key: value for key, value in row.items() if key not in {"unit", "value"}}
+        data: dict[str, object] = {
+            key: value for key, value in row.items() if key not in {"unit", "value"}
+        }
         data["value"] = _parameter_value(row)
         result.append(record_type(**data))
     return tuple(result)
@@ -259,7 +265,17 @@ def _correlations(path: Path) -> tuple:
     if not isinstance(document["correlations"], list) or not document["correlations"]:
         raise _error("invalid-schema", field="correlations", value="empty")
     result = []
-    common = {"record_id", "component_id", "family", "form", "constant", "output_unit", "source_id", "locator", "domain_id"}
+    common = {
+        "record_id",
+        "component_id",
+        "family",
+        "form",
+        "constant",
+        "output_unit",
+        "source_id",
+        "locator",
+        "domain_id",
+    }
     for raw in document["correlations"]:
         if not isinstance(raw, dict):
             raise _error("invalid-schema", field="correlation", value="not-table")
@@ -337,7 +353,15 @@ def _load_path(path: str | PathLike[str]) -> dict[str, object]:
     document = _toml(manifest_path)
     data = _exact_keys(
         document,
-        {"schema_version", "bundle_id", "bundle_version", "purpose", "files", "sources", "domains"},
+        {
+            "schema_version",
+            "bundle_id",
+            "bundle_version",
+            "purpose",
+            "files",
+            "sources",
+            "domains",
+        },
     )
     if type(data["schema_version"]) is not int or data["schema_version"] != 1:
         raise _error("invalid-schema", field="schema_version", value=data["schema_version"])
@@ -387,9 +411,7 @@ def _load_path(path: str | PathLike[str]) -> dict[str, object]:
             root / "association.csv", "association.csv", AssociationParameterRecord
         )
     if "model.csv" in files:
-        result["models"] = _parameters(
-            root / "model.csv", "model.csv", ModelParameterRecord
-        )
+        result["models"] = _parameters(root / "model.csv", "model.csv", ModelParameterRecord)
     if "correlations.toml" in files:
         result["correlations"] = _correlations(root / "correlations.toml")
     return result

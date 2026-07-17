@@ -25,9 +25,7 @@ PROVENANCE = {
 def _pure_2b_model() -> EPCSAFT:
     component = "water"
     singles = (
-        SingleParameterRecord(
-            "water-m", component, "segment_count", 1.0, **PROVENANCE
-        ),
+        SingleParameterRecord("water-m", component, "segment_count", 1.0, **PROVENANCE),
         SingleParameterRecord(
             "water-sigma",
             component,
@@ -44,9 +42,7 @@ def _pure_2b_model() -> EPCSAFT:
         ),
     )
     sites = tuple(
-        SiteRecord(
-            f"water-site-{site}", component, site, site, 1, **PROVENANCE
-        )
+        SiteRecord(f"water-site-{site}", component, site, site, 1, **PROVENANCE)
         for site in ("a", "b")
     )
     associations = tuple(
@@ -96,20 +92,12 @@ def _pure_2b_association(temperature: float, molar_density: float) -> float:
     eta = math.pi * number_density * diameter**3 / 6.0
     contact = (
         1.0 / (1.0 - eta)
-        + 1.5 * diameter * number_density * math.pi * diameter**2 / 6.0
-        / (1.0 - eta) ** 2
-        + 0.5
-        * diameter**2
-        * (number_density * math.pi * diameter**2 / 6.0) ** 2
-        / (1.0 - eta) ** 3
+        + 1.5 * diameter * number_density * math.pi * diameter**2 / 6.0 / (1.0 - eta) ** 2
+        + 0.5 * diameter**2 * (number_density * math.pi * diameter**2 / 6.0) ** 2 / (1.0 - eta) ** 3
     )
     delta = contact * math.expm1(2400.0 / temperature) * sigma**3 * 0.03
-    site_fraction = 2.0 / (
-        1.0 + math.sqrt(1.0 + 4.0 * number_density * delta)
-    )
-    return 2.0 * (
-        math.log(site_fraction) - 0.5 * site_fraction + 0.5
-    )
+    site_fraction = 2.0 / (1.0 + math.sqrt(1.0 + 4.0 * number_density * delta))
+    return 2.0 * (math.log(site_fraction) - 0.5 * site_fraction + 0.5)
 
 
 def test_pure_2b_association_matches_independent_closed_form() -> None:
@@ -155,9 +143,7 @@ def test_association_pressure_uses_total_density_derivative() -> None:
     )
     expected = (1.0 + density * derivative) * density * GAS_CONSTANT * temperature
 
-    assert result.pressure.to("pascal").magnitude == pytest.approx(
-        expected, rel=3.0e-7
-    )
+    assert result.pressure.to("pascal").magnitude == pytest.approx(expected, rel=3.0e-7)
 
 
 def test_association_has_the_correct_zero_density_limit() -> None:

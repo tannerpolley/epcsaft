@@ -10,12 +10,6 @@ citation = "Figiel, P.; Yu, X.; Held, C. Predicting Thermodynamic Properties of 
 doi = "10.1021/acs.iecr.5c00475"
 use_basis = "compact attributed factual package-test evidence"
 
-[[sources]]
-source_id = "ascani-held-2021"
-citation = "Ascani, M.; Held, C. Prediction of Salting-Out in Liquid-Liquid Two-Phase Systems with ePC-SAFT. Zeitschrift fuer anorganische und allgemeine Chemie 2021, 647, 1305-1314."
-doi = "10.1002/zaac.202100032"
-use_basis = "compact attributed factual package-test evidence"
-
 [[domains]]
 domain_id = "figiel-298-k-1-bar"
 kind = "reported-conditions"
@@ -35,8 +29,4 @@ temperature_unit = "kelvin"
 
 [[domains]]
 domain_id = "figiel-unknown"
-kind = "unknown"
-
-[[domains]]
-domain_id = "ascani-unknown"
 kind = "unknown"

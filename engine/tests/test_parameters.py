@@ -85,9 +85,7 @@ def _from_records(
     reverse: bool = False,
     ionic_permittivity: object = Decimal("8"),
 ):
-    source, domain, components, singles, pair = _bundle_records(
-        registry, reverse=reverse
-    )
+    source, domain, components, singles, pair = _bundle_records(registry, reverse=reverse)
     models = [
         ModelParameterRecord(
             "figiel-ionic-region-permittivity",
@@ -149,7 +147,12 @@ def _advanced_records():
             **PROVENANCE,
         ),
     )
-    return ComponentRecord("water", name="water", formula="H2O"), sites, association, correlations
+    return (
+        ComponentRecord("water", name="water", formula="H2O"),
+        sites,
+        association,
+        correlations,
+    )
 
 
 def _parsed_records_bundle():
@@ -462,7 +465,9 @@ def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
     reverse_selected = bundle.select(("methane", "ethane"))
     assert isinstance(selected, ParameterSet)
     assert selected.component_ids == ("ethane", "methane")
-    assert tuple(component.component_id for component in selected.components) == selected.component_ids
+    assert (
+        tuple(component.component_id for component in selected.components) == selected.component_ids
+    )
     assert selected.bundle_fingerprint == bundle.fingerprint
     assert selected.fingerprint != reverse_selected.fingerprint
     with pytest.raises(FrozenInstanceError):
@@ -474,9 +479,7 @@ def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
         purpose="package-test-fixture",
         sources=(SourceRecord("source-a", "Cafe\u0301\r\nLine", "test"),),
         domains=(ValidityDomain("unknown-domain", "unknown"),),
-        components=(
-            ComponentRecord("methane", name="Cafe\u0301\r\nLine", aliases=("CH4",)),
-        ),
+        components=(ComponentRecord("methane", name="Cafe\u0301\r\nLine", aliases=("CH4",)),),
     )
     expected_json = (
         '{"bundle":{"bundle_id":"golden-bundle","bundle_version":1,'
@@ -541,9 +544,7 @@ def test_one_strict_path_parser_preserves_sparse_zero_and_matches_records(
     _write_bundle(catalog_mismatch)
     assert (
         _error_code(
-            lambda: ParameterBundle._from_catalog_path(
-                "requested-bundle", 1, catalog_mismatch
-            )
+            lambda: ParameterBundle._from_catalog_path("requested-bundle", 1, catalog_mismatch)
         )
         == "invalid-schema"
     )
@@ -555,21 +556,25 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
     bad_schema = tmp_path / "bad-schema"
     _write_bundle(bad_schema, component_columns=COMPONENT_COLUMNS + ("extra",))
 
-    invalid_unit_record = lambda: SingleParameterRecord(
-        "invalid-unit-record",
-        "methane",
-        "molar_mass",
-        16,
-        **PROVENANCE,
-    )
-    invalid_correlation = lambda: ConstantPlusSumOfExponentialsCorrelation(
-        "invalid-correlation-record",
-        "methane",
-        "segment_diameter",
-        3 * unit_registry.angstrom,
-        (),
-        **PROVENANCE,
-    )
+    def invalid_unit_record():
+        return SingleParameterRecord(
+            "invalid-unit-record",
+            "methane",
+            "molar_mass",
+            16,
+            **PROVENANCE,
+        )
+
+    def invalid_correlation():
+        return ConstantPlusSumOfExponentialsCorrelation(
+            "invalid-correlation-record",
+            "methane",
+            "segment_diameter",
+            3 * unit_registry.angstrom,
+            (),
+            **PROVENANCE,
+        )
+
     missing_source = SingleParameterRecord(
         "missing-source-record",
         "methane",
@@ -692,9 +697,7 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
                 pairs=(pair, pair),
             )
         ),
-        _error_code(
-            lambda: ParameterBundle.from_catalog("missing-catalog", version=1)
-        ),
+        _error_code(lambda: ParameterBundle.from_catalog("missing-catalog", version=1)),
         _error_code(lambda: bundle.select(("CH4",))),
     }
     assert codes == {
@@ -750,13 +753,23 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
         assert singles[key].source_id == "gross-sadowski-2001"
         assert singles[key].locator.startswith("Table 2")
 
-    methane_domain = next(domain for domain in gross.domains if domain.domain_id == "methane-fit-range")
-    ethane_domain = next(domain for domain in gross.domains if domain.domain_id == "ethane-fit-range")
-    assert (methane_domain.temperature_min.magnitude, methane_domain.temperature_max.magnitude) == (
+    methane_domain = next(
+        domain for domain in gross.domains if domain.domain_id == "methane-fit-range"
+    )
+    ethane_domain = next(
+        domain for domain in gross.domains if domain.domain_id == "ethane-fit-range"
+    )
+    assert (
+        methane_domain.temperature_min.magnitude,
+        methane_domain.temperature_max.magnitude,
+    ) == (
         Decimal("97"),
         Decimal("300"),
     )
-    assert (ethane_domain.temperature_min.magnitude, ethane_domain.temperature_max.magnitude) == (
+    assert (
+        ethane_domain.temperature_min.magnitude,
+        ethane_domain.temperature_max.magnitude,
+    ) == (
         Decimal("90"),
         Decimal("305"),
     )
@@ -771,7 +784,9 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
         'p. 1254, paragraph beginning "Results for a ternary system of CO2-methane-ethane", '
         'statement "one can safely assume a kij equal to 0"'
     )
-    assert all(record.value != Decimal("0.0003") for record in gross.records if hasattr(record, "value"))
+    assert all(
+        record.value != Decimal("0.0003") for record in gross.records if hasattr(record, "value")
+    )
     selected = gross.select(("ethane", "methane"))
     assert selected.component_ids == ("ethane", "methane")
     assert selected.fingerprint == (
@@ -782,10 +797,9 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
     fixture = ParameterBundle.from_path(fixture_path)
     assert fixture.purpose == "package-test-fixture"
     assert fixture.fingerprint == (
-        "sha256:202ad0ca74959db80e834ad8c22a11fdb1526df622e14cbacee4cdb0a7b9d02c"
+        "sha256:262dee122040a5a4ef2da707ed8b4eb47991a3e04866f6644bcba59bbde1810b"
     )
     assert {source.source_id: source.doi for source in fixture.sources} == {
-        "ascani-held-2021": "10.1002/zaac.202100032",
         "figiel-yu-held-2025": "10.1021/acs.iecr.5c00475",
     }
     fixture_records = {record.record_id: record for record in fixture.records}
@@ -793,21 +807,11 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
     assert fixture_records["potassium-born-diameter"].value.magnitude == Decimal("4.150")
     assert fixture_records["potassium-solvation-factor"].value == Decimal("1")
     assert fixture_records["potassium-iodide-kij"].value == Decimal("0")
-    assert not any(
-        isinstance(record, PairParameterRecord)
-        and {record.component_id_a, record.component_id_b}
-        == {"hydrogen-cation", "iodide-anion"}
-        and record.family == "k_ij"
-        for record in fixture.records
-    )
-    assert fixture_records["water-one-butanol-lij"].value == Decimal("-0.0044")
-    assert fixture_records["water-one-butanol-khb-ij"].value == Decimal("0.026")
     assert fixture_records["water-relative-permittivity"].constant == Decimal("78.09")
     diameter = fixture_records["water-segment-diameter-correlation"]
     assert diameter.constant.magnitude == Decimal("2.7927")
     assert tuple(
-        (term.amplitude.magnitude, term.exponent_coefficient.magnitude)
-        for term in diameter.terms
+        (term.amplitude.magnitude, term.exponent_coefficient.magnitude) for term in diameter.terms
     ) == (
         (Decimal("10.11"), Decimal("-0.01775")),
         (Decimal("-1.417"), Decimal("-0.01146")),
@@ -830,8 +834,6 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
             "potassium-solvation-factor",
             "water-association-energy",
             "water-association-volume",
-            "water-one-butanol-khb-ij",
-            "water-one-butanol-lij",
             "water-relative-permittivity",
             "water-segment-diameter-correlation",
         )
@@ -856,14 +858,6 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
             "figiel-yu-held-2025",
             "Table 2, water column, kappa^AiBi row",
         ),
-        "water-one-butanol-khb-ij": (
-            "ascani-held-2021",
-            "Table 4, k_hb_ij row, 1-Butanol column",
-        ),
-        "water-one-butanol-lij": (
-            "ascani-held-2021",
-            "Table 4, l_ij row, 1-Butanol column",
-        ),
         "water-relative-permittivity": (
             "figiel-yu-held-2025",
             "Table 1, water row, dielectric constant column",
@@ -874,14 +868,13 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
         ),
     }
 
-    assert _error_code(
-        lambda: ParameterBundle.from_catalog("figiel-2025-contract", version=1)
-    ) == "missing-record"
+    assert (
+        _error_code(lambda: ParameterBundle.from_catalog("figiel-2025-contract", version=1))
+        == "missing-record"
+    )
     catalog = Path(epcsaft.__file__).parent / "data" / "bundles"
     assert sorted(
-        path.relative_to(catalog).as_posix()
-        for path in catalog.rglob("*")
-        if path.is_file()
+        path.relative_to(catalog).as_posix() for path in catalog.rglob("*") if path.is_file()
     ) == [
         "figiel-2025-water-sodium-chloride/1/association.csv",
         "figiel-2025-water-sodium-chloride/1/bundle.toml",
@@ -899,9 +892,7 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
 
 
 def test_figiel_water_sodium_chloride_catalog_is_exact_and_sparse() -> None:
-    bundle = ParameterBundle.from_catalog(
-        "figiel-2025-water-sodium-chloride", version=1
-    )
+    bundle = ParameterBundle.from_catalog("figiel-2025-water-sodium-chloride", version=1)
     assert bundle.purpose == "installed-catalog"
     assert tuple(component.component_id for component in bundle.components) == (
         "chloride-anion",
@@ -909,12 +900,10 @@ def test_figiel_water_sodium_chloride_catalog_is_exact_and_sparse() -> None:
         "water",
     )
     assert bundle.fingerprint == (
-        "sha256:7fb38c0cb61b523f66d61668f42ea968f2d439f40959d73b80b5534a3cc8e744"
+        "sha256:5ca5062fee088fe409dc20403598144bf35221495894e94c9a225e3ccb695fc6"
     )
     figiel_domain = next(
-        domain
-        for domain in bundle.domains
-        if domain.domain_id == "figiel-298-k-1-bar"
+        domain for domain in bundle.domains if domain.domain_id == "figiel-298-k-1-bar"
     )
     assert figiel_domain.ion_mole_fraction_max == Decimal("0.38")
 
@@ -943,8 +932,8 @@ def test_figiel_water_sodium_chloride_catalog_is_exact_and_sparse() -> None:
         ("chloride-anion", "water"): Decimal("-0.3"),
         ("chloride-anion", "sodium-cation"): Decimal("0.8"),
     }
-    assert not any(
-        isinstance(record, PairParameterRecord)
-        and record.family in {"l_ij", "k_hb_ij"}
+    assert all(
+        record.family == "k_ij"
         for record in bundle.records
+        if isinstance(record, PairParameterRecord)
     )

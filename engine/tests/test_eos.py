@@ -51,9 +51,7 @@ GAS_CONSTANT = 8.31446261815324
 
 def _model(component_ids: tuple[str, ...] = ("methane", "ethane")) -> EPCSAFT:
     return EPCSAFT(
-        ParameterBundle.from_catalog(
-            "gross-2001-methane-ethane", version=1
-        ).select(component_ids)
+        ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(component_ids)
     )
 
 
@@ -120,16 +118,10 @@ def test_gross_hard_chain_dispersion_and_pressure_goldens(
     assert result.hard_chain == pytest.approx(hard_chain, rel=5e-12, abs=5e-13)
     assert result.dispersion == pytest.approx(dispersion, rel=5e-12, abs=5e-13)
     assert result.association == 0.0
-    assert result.residual_helmholtz == pytest.approx(
-        residual, rel=5e-12, abs=5e-13
-    )
-    assert result.compressibility_factor == pytest.approx(
-        z, rel=5e-12, abs=5e-13
-    )
+    assert result.residual_helmholtz == pytest.approx(residual, rel=5e-12, abs=5e-13)
+    assert result.compressibility_factor == pytest.approx(z, rel=5e-12, abs=5e-13)
     assert result.pressure._REGISTRY is unit_registry
-    assert result.pressure.to("pascal").magnitude == pytest.approx(
-        pressure, rel=5e-12, abs=1e-6
-    )
+    assert result.pressure.to("pascal").magnitude == pytest.approx(pressure, rel=5e-12, abs=1e-6)
 
     step = density * 1.0e-3
 
@@ -146,12 +138,8 @@ def test_gross_hard_chain_dispersion_and_pressure_goldens(
         - 8 * residual_at(density - step)
         + residual_at(density - 2 * step)
     ) / (12 * step)
-    reconstructed = (
-        (1 + density * derivative) * density * GAS_CONSTANT * temperature
-    )
-    assert result.pressure.to("pascal").magnitude == pytest.approx(
-        reconstructed, rel=2e-7
-    )
+    reconstructed = (1 + density * derivative) * density * GAS_CONSTANT * temperature
+    assert result.pressure.to("pascal").magnitude == pytest.approx(reconstructed, rel=2e-7)
 
 
 def test_evaluate_is_permutation_invariant() -> None:
@@ -160,9 +148,7 @@ def test_evaluate_is_permutation_invariant() -> None:
         "molar_density": 8000 * unit_registry.mole / unit_registry.meter**3,
     }
     forward = _model().evaluate(**state, mole_fractions=(0.4, 0.6))
-    reverse = _model(("ethane", "methane")).evaluate(
-        **state, mole_fractions=(0.6, 0.4)
-    )
+    reverse = _model(("ethane", "methane")).evaluate(**state, mole_fractions=(0.6, 0.4))
 
     for field in (
         "hard_chain",
@@ -192,18 +178,12 @@ def test_evaluate_rejects_invalid_states_and_has_physical_limits() -> None:
         {"temperature": -1 * unit_registry.kelvin},
         {"temperature": math.nan * unit_registry.kelvin},
         {"temperature": math.inf * unit_registry.kelvin},
+        {"temperature": 50 * unit_registry.kelvin},
+        {"temperature": 301 * unit_registry.kelvin},
         {"molar_density": 0 * unit_registry.mole / unit_registry.meter**3},
         {"molar_density": -1 * unit_registry.mole / unit_registry.meter**3},
-        {
-            "molar_density": math.nan
-            * unit_registry.mole
-            / unit_registry.meter**3
-        },
-        {
-            "molar_density": math.inf
-            * unit_registry.mole
-            / unit_registry.meter**3
-        },
+        {"molar_density": math.nan * unit_registry.mole / unit_registry.meter**3},
+        {"molar_density": math.inf * unit_registry.mole / unit_registry.meter**3},
         {"mole_fractions": (1.0,)},
         {"mole_fractions": (-0.1, 1.1)},
         {"mole_fractions": (math.nan, math.nan)},
@@ -229,9 +209,7 @@ def test_evaluate_rejects_invalid_states_and_has_physical_limits() -> None:
     temperature = 250.0
     diameter = 3.7039 * (1 - 0.12 * math.exp(-3 * 150.03 / temperature))
     close_packing = math.pi / (3 * math.sqrt(2))
-    close_density = close_packing * 6 / (
-        math.pi * (AVOGADRO / 1.0e30) * diameter**3
-    )
+    close_density = close_packing * 6 / (math.pi * (AVOGADRO / 1.0e30) * diameter**3)
     with pytest.raises(EosError) as exc_info:
         model.evaluate(
             temperature=temperature * unit_registry.kelvin,

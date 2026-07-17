@@ -214,6 +214,15 @@ def test_sparse_closed_records_correlations_and_error_contract() -> None:
             value=1,
             **PROVENANCE,
         )
+    with pytest.raises(ParameterError, match="invalid-value"):
+        PairParameterRecord(
+            record_id="unsupported-pair-family",
+            component_id_a="water",
+            component_id_b="potassium-cation",
+            family="l_ij",
+            value=0,
+            **PROVENANCE,
+        )
     error = ParameterError(
         "invalid-value",
         (("field", "family"), ("value", "electrolyte_model")),
