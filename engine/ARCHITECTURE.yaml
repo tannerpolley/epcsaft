@@ -113,9 +113,9 @@ manifest:
   public_native_headers: 1
   installed_data_files: 15
   package_test_files: 11
-  physical_production_lines: 5446
-  physical_package_test_lines: 3762
-  physical_documentation_lines: 2036
+  physical_production_lines: 5444
+  physical_package_test_lines: 3776
+  physical_documentation_lines: 2041
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
@@ -129,7 +129,7 @@ manifest:
     - path: src/epcsaft/_native/phase_block.hpp
       physical_lines: 515
     - path: tests/test_native_sdk.py
-      physical_lines: 905
+      physical_lines: 919
     - path: tests/test_parameters.py
       physical_lines: 1009
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.

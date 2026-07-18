@@ -230,14 +230,7 @@ struct NativeSdkEndpoint final {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
         }
         if (result->struct_size != sizeof(epcsaft_mixture_phase_block_result_v1)) {
-            result->status = EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
-            std::snprintf(
-                result->error,
-                sizeof(result->error),
-                "%s",
-                "mixture result structure size does not match the v1 contract"
-            );
-            return result->status;
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
         }
         if (context == nullptr) {
             result->status = EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;

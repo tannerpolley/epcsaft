@@ -867,11 +867,25 @@ def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_in
         assert ctypes.cast(result.gradient, ctypes.c_void_p).value == gradient_pointer
         assert ctypes.cast(result.hessian, ctypes.c_void_p).value == hessian_pointer
 
-    result, _, _ = _mixture_result(4)
-    result.struct_size -= 1
-    assert call(result) == STATUS_ABI_MISMATCH
-    assert result.status == STATUS_ABI_MISMATCH
-    assert result.error
+    foreign_size = ctypes.sizeof(ctypes.c_uint32)
+    # Guard the four-byte foreign layout so any payload write is observable
+    # without invoking undefined behavior in the test process.
+    guarded_foreign_result = (ctypes.c_ubyte * ctypes.sizeof(MixturePhaseBlockResult))()
+    ctypes.c_uint32.from_buffer(guarded_foreign_result).value = foreign_size
+    for index in range(foreign_size, len(guarded_foreign_result)):
+        guarded_foreign_result[index] = 0xA5
+    canary = bytes(guarded_foreign_result)[foreign_size:]
+    status = callback(
+        table.model_context,
+        220.0,
+        amounts,
+        2,
+        1.25e-4,
+        0.0,
+        ctypes.cast(guarded_foreign_result, ctypes.POINTER(MixturePhaseBlockResult)),
+    )
+    assert status == STATUS_ABI_MISMATCH
+    assert bytes(guarded_foreign_result)[foreign_size:] == canary
 
     finite_unbounded, _, _ = _mixture_result(4)
     assert call(finite_unbounded, k_ij=-0.2) == STATUS_OK

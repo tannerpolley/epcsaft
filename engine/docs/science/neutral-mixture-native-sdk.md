@@ -76,6 +76,11 @@ must:
 - set the exact result `struct_size`; and
 - check both the returned status and result status before consuming outputs.
 
+A result `struct_size` mismatch is the sole return-code-authoritative failure:
+the provider returns `EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1` without writing
+the untrusted result layout. After exact-size acceptance, every failure also
+sets the matching result status and error text.
+
 For the active callback, `coordinate_count` is exactly four and the caller
 provides gradient and Hessian capacities of at least 4 and 16. The provider
 accepts any finite `k_ij`; regression owns fit bounds, transforms, scaling,

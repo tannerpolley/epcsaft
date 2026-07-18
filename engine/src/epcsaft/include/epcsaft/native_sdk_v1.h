@@ -78,6 +78,11 @@ typedef int (*epcsaft_evaluate_pure_phase_parameters_v1)(
     epcsaft_parameterized_phase_block_result_v1* result
 );
 
+/*
+ * A mixture result struct-size mismatch is return-code authoritative. The
+ * callbacks return ABI_MISMATCH without writing an untrusted result layout.
+ * After exact-size acceptance, failures also set result status and error.
+ */
 typedef struct epcsaft_mixture_phase_block_result_v1 {
     uint32_t struct_size;
     int32_t status;
