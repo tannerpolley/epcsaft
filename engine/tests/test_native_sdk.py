@@ -570,6 +570,51 @@ def test_native_sdk_active_kij_matches_fixed_and_directional_oracles(
         assert hessian_direction == pytest.approx(gradient_difference, rel=3.0e-7)
 
 
+def test_native_sdk_active_kij_matches_independent_high_precision_oracle() -> None:
+    temperature_k = 220.0
+    point = (0.4, 0.6, 1.25e-4, 0.037)
+    _, table = _table(_mixture_model())
+    result, gradient, hessian = _evaluate_mixture_kij(
+        table, temperature_k, point[:2], point[2], point[3]
+    )
+    # Frozen from an independent 70-digit Decimal transcription of Gross (2001),
+    # Eqs. A.6-A.17, using fourth-order five-point derivatives with steps
+    # (1e-5, 1e-5, 1e-9, 1e-5). The reference imports no provider implementation.
+    expected_value = 6.001964399394894
+    expected_gradient = (
+        6.62799207335156,
+        5.5565900739759755,
+        134.50820534947894,
+        0.9913299968451905,
+    )
+    expected_hessian = (
+        1.98583616542871,
+        -1.1078284190911964,
+        -1037.0993177341288,
+        2.4172796297654844,
+        -1.1078284190911964,
+        -0.9438004026648041,
+        8075.292873882889,
+        1.4899310731125321,
+        -1037.0993177341288,
+        8075.292873882889,
+        -35442687.97788865,
+        -6956.323991428179,
+        2.4172796297654844,
+        1.4899310731125321,
+        -6956.323991428179,
+        -0.20128500566962723,
+    )
+
+    assert result.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected_value, rel=2.0e-12, abs=2.0e-12
+    )
+    for actual, expected in zip(gradient, expected_gradient):
+        assert actual == pytest.approx(expected, rel=2.0e-11, abs=2.0e-11)
+    for actual, expected in zip(hessian, expected_hessian):
+        assert actual == pytest.approx(expected, rel=2.0e-11, abs=2.0e-10)
+
+
 def test_native_sdk_parameterized_phase_block_has_exact_parameter_derivatives() -> None:
     model = _model("gross-2001-methane-ethane", "methane")
     _, table = _table(model)
@@ -825,6 +870,8 @@ def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_in
     result, _, _ = _mixture_result(4)
     result.struct_size -= 1
     assert call(result) == STATUS_ABI_MISMATCH
+    assert result.status == STATUS_ABI_MISMATCH
+    assert result.error
 
     finite_unbounded, _, _ = _mixture_result(4)
     assert call(finite_unbounded, k_ij=-0.2) == STATUS_OK
