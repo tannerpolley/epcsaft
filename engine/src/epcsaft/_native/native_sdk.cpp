@@ -45,6 +45,7 @@ struct NativeSdkEndpoint final {
               source_model.component_count(),
               sizeof(epcsaft_mixture_phase_block_result_v1),
               &NativeSdkEndpoint::evaluate_mixture,
+              &NativeSdkEndpoint::evaluate_mixture_kij,
           } {}
 
     static int evaluate(
@@ -212,13 +213,18 @@ struct NativeSdkEndpoint final {
         }
     }
 
-    static int evaluate_mixture(
+    template <typename Evaluator>
+    static int evaluate_mixture_common(
         const void* context,
         double temperature_k,
         const double* amounts_mol,
         size_t amount_count,
         double volume_m3,
-        epcsaft_mixture_phase_block_result_v1* result
+        std::size_t additional_coordinate_count,
+        bool additional_inputs_valid,
+        const char* invalid_state_message,
+        epcsaft_mixture_phase_block_result_v1* result,
+        Evaluator evaluator
     ) noexcept {
         if (result == nullptr) {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
@@ -238,7 +244,8 @@ struct NativeSdkEndpoint final {
         }
 
         const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
-        const std::size_t coordinate_count = endpoint.table.component_count + 1;
+        const std::size_t coordinate_count =
+            endpoint.table.component_count + additional_coordinate_count;
         if (result->coordinate_count != coordinate_count
             || result->gradient_capacity < coordinate_count
             || result->hessian_capacity < coordinate_count * coordinate_count
@@ -272,12 +279,13 @@ struct NativeSdkEndpoint final {
         }
         if (!std::isfinite(temperature_k) || !std::isfinite(volume_m3)
             || temperature_k <= 0.0 || volume_m3 <= 0.0
+            || !additional_inputs_valid
             || !std::all_of(amounts_mol, amounts_mol + amount_count, [](double amount) {
                 return std::isfinite(amount) && amount > 0.0;
             })) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
-                "temperature, amounts, and volume must be positive and finite"
+                invalid_state_message
             );
         }
         if ((std::isfinite(endpoint.temperature_min_k)
@@ -292,9 +300,7 @@ struct NativeSdkEndpoint final {
 
         try {
             const std::vector<double> amounts(amounts_mol, amounts_mol + amount_count);
-            const auto block = endpoint.model.evaluate_mixture_phase(
-                temperature_k, amounts, volume_m3
-            );
+            const auto block = evaluator(endpoint.model, amounts);
             std::copy(block.gradient.begin(), block.gradient.end(), result->gradient);
             std::copy(block.hessian.begin(), block.hessian.end(), result->hessian);
             result->helmholtz_over_rt_reference_amount =
@@ -320,6 +326,65 @@ struct NativeSdkEndpoint final {
                 "unknown provider evaluation failure"
             );
         }
+    }
+
+    static int evaluate_mixture(
+        const void* context,
+        double temperature_k,
+        const double* amounts_mol,
+        size_t amount_count,
+        double volume_m3,
+        epcsaft_mixture_phase_block_result_v1* result
+    ) noexcept {
+        return evaluate_mixture_common(
+            context,
+            temperature_k,
+            amounts_mol,
+            amount_count,
+            volume_m3,
+            1,
+            true,
+            "temperature, amounts, and volume must be positive and finite",
+            result,
+            [temperature_k, volume_m3](
+                const NativeModel& model,
+                const std::vector<double>& amounts
+            ) {
+                return model.evaluate_mixture_phase(
+                    temperature_k, amounts, volume_m3
+                );
+            }
+        );
+    }
+
+    static int evaluate_mixture_kij(
+        const void* context,
+        double temperature_k,
+        const double* amounts_mol,
+        size_t amount_count,
+        double volume_m3,
+        double k_ij,
+        epcsaft_mixture_phase_block_result_v1* result
+    ) noexcept {
+        return evaluate_mixture_common(
+            context,
+            temperature_k,
+            amounts_mol,
+            amount_count,
+            volume_m3,
+            2,
+            std::isfinite(k_ij),
+            "temperature, amounts, volume, and k_ij must be finite and state coordinates positive",
+            result,
+            [temperature_k, volume_m3, k_ij](
+                const NativeModel& model,
+                const std::vector<double>& amounts
+            ) {
+                return model.evaluate_mixture_phase_kij(
+                    temperature_k, amounts, volume_m3, k_ij
+                );
+            }
+        );
     }
 };
 

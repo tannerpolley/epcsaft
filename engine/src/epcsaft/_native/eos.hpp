@@ -79,6 +79,12 @@ public:
         const std::vector<double>& amounts,
         double volume
     ) const;
+    NativeMixturePhaseBlock evaluate_mixture_phase_kij(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume,
+        double k_ij
+    ) const;
 
 private:
     const NativeParameters parameters_;

@@ -56,12 +56,57 @@ inline bool supports_mixture_phase_block(const NativeParameters& parameters) {
         );
 }
 
+inline bool supports_binary_interaction_phase_block(
+    const NativeParameters& parameters
+) {
+    return parameters.segment_count.size() == 2
+        && supports_mixture_phase_block(parameters);
+}
+
 template <typename Scalar>
+struct PhaseBlockParameters final {
+    std::vector<Scalar> segment_count;
+    std::vector<Scalar> sigma_constant;
+    std::vector<int> sigma_term_component;
+    std::vector<Scalar> sigma_term_amplitude;
+    std::vector<Scalar> sigma_term_exponent;
+    std::vector<Scalar> dispersion_energy_over_k;
+    std::vector<Scalar> k_ij;
+    std::vector<int> site_component;
+    std::vector<int> site_multiplicity;
+    std::vector<int> charge_number;
+};
+
+template <typename Scalar>
+std::vector<Scalar> phase_block_scalars(const std::vector<double>& values) {
+    return std::vector<Scalar>(values.begin(), values.end());
+}
+
+template <typename Scalar>
+PhaseBlockParameters<Scalar> binary_interaction_parameters(
+    const NativeParameters& parameters,
+    const Scalar& k_ij
+) {
+    return {
+        phase_block_scalars<Scalar>(parameters.segment_count),
+        phase_block_scalars<Scalar>(parameters.sigma_constant),
+        parameters.sigma_term_component,
+        phase_block_scalars<Scalar>(parameters.sigma_term_amplitude),
+        phase_block_scalars<Scalar>(parameters.sigma_term_exponent),
+        phase_block_scalars<Scalar>(parameters.dispersion_energy_over_k),
+        {Scalar(parameters.k_ij[0]), k_ij, k_ij, Scalar(parameters.k_ij[3])},
+        parameters.site_component,
+        parameters.site_multiplicity,
+        parameters.charge_number,
+    };
+}
+
+template <typename Scalar, typename Parameters>
 Scalar mixture_phase_helmholtz_over_rt_reference_amount(
     double temperature,
     const std::vector<Scalar>& amounts,
     const Scalar& volume,
-    const NativeParameters& parameters
+    const Parameters& parameters
 ) {
     Scalar total = Scalar(0.0);
     for (const Scalar& amount : amounts) {
@@ -93,17 +138,12 @@ Scalar mixture_phase_helmholtz_over_rt_reference_amount(
     return ideal + total * (contributions.hard_chain + contributions.dispersion);
 }
 
-inline NativeMixturePhaseBlock mixture_phase_block(
+inline void validate_mixture_phase_state(
     double temperature,
     const std::vector<double>& amounts,
     double volume,
     const NativeParameters& parameters
 ) {
-    if (!supports_mixture_phase_block(parameters)) {
-        throw std::logic_error(
-            "mixture phase block requires at least two neutral nonassociating components"
-        );
-    }
     if (!std::isfinite(temperature) || temperature <= 0.0
         || !std::isfinite(volume) || volume <= 0.0
         || amounts.size() != parameters.segment_count.size()
@@ -114,25 +154,21 @@ inline NativeMixturePhaseBlock mixture_phase_block(
             "temperature, amounts, and volume must be positive and finite"
         );
     }
+}
 
-    mixture_phase_helmholtz_over_rt_reference_amount(
-        temperature, amounts, volume, parameters
-    );
-
+template <typename PhaseFunction>
+NativeMixturePhaseBlock differentiated_mixture_phase_block(
+    double temperature,
+    const std::vector<double>& point,
+    std::size_t volume_coordinate,
+    PhaseFunction phase_function
+) {
     using ADScalar = CppAD::AD<double>;
-    std::vector<ADScalar> independent(amounts.begin(), amounts.end());
-    independent.push_back(volume);
+    std::vector<ADScalar> independent(point.begin(), point.end());
     CppAD::Independent(independent);
-    const std::vector<ADScalar> active_amounts(
-        independent.begin(), independent.end() - 1
-    );
-    const ADScalar phase = mixture_phase_helmholtz_over_rt_reference_amount(
-        temperature, active_amounts, independent.back(), parameters
-    );
+    const ADScalar phase = phase_function(independent);
     CppAD::ADFun<double> function(independent, {phase});
 
-    std::vector<double> point(amounts.begin(), amounts.end());
-    point.push_back(volume);
     const auto gradient = function.Jacobian(point);
     const auto hessian = function.Hessian(point, 0);
     const double value = function.Forward(0, point)[0];
@@ -150,26 +186,98 @@ inline NativeMixturePhaseBlock mixture_phase_block(
         value,
         gradient,
         hessian,
-        -GAS_CONSTANT * temperature * gradient.back(),
+        -GAS_CONSTANT * temperature * gradient[volume_coordinate],
     };
 }
 
-template <typename Scalar>
-struct PurePhaseParameters final {
-    std::vector<Scalar> segment_count;
-    std::vector<Scalar> sigma_constant;
-    std::vector<int> sigma_term_component;
-    std::vector<Scalar> sigma_term_amplitude;
-    std::vector<Scalar> sigma_term_exponent;
-    std::vector<Scalar> dispersion_energy_over_k;
-    std::vector<Scalar> k_ij;
-    std::vector<int> site_component;
-    std::vector<int> site_multiplicity;
-    std::vector<int> charge_number;
-};
+inline NativeMixturePhaseBlock mixture_phase_block(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    const NativeParameters& parameters
+) {
+    if (!supports_mixture_phase_block(parameters)) {
+        throw std::logic_error(
+            "mixture phase block requires at least two neutral nonassociating components"
+        );
+    }
+    validate_mixture_phase_state(temperature, amounts, volume, parameters);
+
+    mixture_phase_helmholtz_over_rt_reference_amount(
+        temperature, amounts, volume, parameters
+    );
+
+    std::vector<double> point(amounts.begin(), amounts.end());
+    point.push_back(volume);
+    const std::size_t volume_coordinate = amounts.size();
+    return differentiated_mixture_phase_block(
+        temperature,
+        point,
+        volume_coordinate,
+        [&](const auto& independent) {
+            using ADScalar = CppAD::AD<double>;
+            const std::vector<ADScalar> active_amounts(
+                independent.begin(), independent.begin() + volume_coordinate
+            );
+            return mixture_phase_helmholtz_over_rt_reference_amount(
+                temperature,
+                active_amounts,
+                independent[volume_coordinate],
+                parameters
+            );
+        }
+    );
+}
+
+inline NativeMixturePhaseBlock mixture_phase_block_kij(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double k_ij,
+    const NativeParameters& parameters
+) {
+    if (!supports_binary_interaction_phase_block(parameters)) {
+        throw std::logic_error(
+            "active k_ij phase block requires two neutral nonassociating components"
+        );
+    }
+    if (!std::isfinite(k_ij)) {
+        throw std::invalid_argument("k_ij must be finite");
+    }
+    validate_mixture_phase_state(temperature, amounts, volume, parameters);
+    const auto value_parameters = binary_interaction_parameters(parameters, k_ij);
+    mixture_phase_helmholtz_over_rt_reference_amount(
+        temperature, amounts, volume, value_parameters
+    );
+
+    std::vector<double> point(amounts.begin(), amounts.end());
+    point.push_back(volume);
+    point.push_back(k_ij);
+    const std::size_t volume_coordinate = amounts.size();
+    return differentiated_mixture_phase_block(
+        temperature,
+        point,
+        volume_coordinate,
+        [&](const auto& independent) {
+            using ADScalar = CppAD::AD<double>;
+            const std::vector<ADScalar> active_amounts(
+                independent.begin(), independent.begin() + volume_coordinate
+            );
+            const auto active_parameters = binary_interaction_parameters(
+                parameters, independent[volume_coordinate + 1]
+            );
+            return mixture_phase_helmholtz_over_rt_reference_amount(
+                temperature,
+                active_amounts,
+                independent[volume_coordinate],
+                active_parameters
+            );
+        }
+    );
+}
 
 template <typename Scalar>
-PurePhaseParameters<Scalar> pure_phase_parameters(
+PhaseBlockParameters<Scalar> pure_phase_parameters(
     const Scalar& segment_count,
     const Scalar& segment_diameter_angstrom,
     const Scalar& dispersion_energy_over_k

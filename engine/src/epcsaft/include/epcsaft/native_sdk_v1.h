@@ -101,6 +101,16 @@ typedef int (*epcsaft_evaluate_mixture_phase_v1)(
     epcsaft_mixture_phase_block_result_v1* result
 );
 
+typedef int (*epcsaft_evaluate_mixture_phase_kij_v1)(
+    const void* model_context,
+    double temperature_k,
+    const double* amounts_mol,
+    size_t amount_count,
+    double volume_m3,
+    double k_ij,
+    epcsaft_mixture_phase_block_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -112,6 +122,7 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t component_count;
     size_t mixture_result_size;
     epcsaft_evaluate_mixture_phase_v1 evaluate_mixture_phase;
+    epcsaft_evaluate_mixture_phase_kij_v1 evaluate_mixture_phase_kij;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

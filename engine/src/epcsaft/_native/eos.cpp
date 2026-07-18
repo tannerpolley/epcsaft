@@ -161,6 +161,17 @@ NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase(
     return detail::mixture_phase_block(temperature, amounts, volume, parameters_);
 }
 
+NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase_kij(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double k_ij
+) const {
+    return detail::mixture_phase_block_kij(
+        temperature, amounts, volume, k_ij, parameters_
+    );
+}
+
 NativeResult NativeModel::evaluate(
     double temperature,
     double molar_density,
