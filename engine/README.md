@@ -66,7 +66,10 @@ extensive ideal-plus-hard-chain-plus-dispersion value, exact CppAD gradient and
 row-major Hessian, and pressure through caller-owned buffers. This candidate is
 not authoritative until its own promotion receipt is accepted; it adds no
 phase identity, density solve, third derivative, equilibrium, or regression
-contract. See `docs/science/neutral-mixture-native-sdk.md`.
+contract. One further callback reuses the same result for coordinates
+`(n1,n2,V,kij)`, treating the unlike interaction as an explicit finite trial
+coordinate while leaving bounds, scaling, targets, and fit acceptance to the
+regression owner. See `docs/science/neutral-mixture-native-sdk.md`.
 
 The capsule evaluates one phase state at a time. A consumer uses the same
 immutable model for every candidate phase; the provider does not construct

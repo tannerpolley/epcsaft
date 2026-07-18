@@ -1,5 +1,5 @@
 version: 2
-status: accepted-provider-with-receipt-controlled-native-sdk-and-local-mixture-candidate
+status: accepted-provider-with-receipt-controlled-native-sdk-and-local-mixture-candidates
 
 authority:
   effective_receipt: promotion-0012-provider-full-candidate
@@ -29,6 +29,14 @@ native_sdk_candidates:
     coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
     derivative_order: 2
     exclusions: association, electrolyte, density solve, phase identity, parameter derivatives, third derivatives, Ipopt, Ceres, equilibrium, and regression targets
+  neutral_mixture_active_kij_hessian_v1:
+    status: local-candidate-pending-independent-review-and-promotion-receipt
+    scope: >-
+      Model-bound Gross--Sadowski methane/ethane extensive phase value,
+      gradient, Hessian, and pressure with one finite active unlike-pair k_ij.
+    coordinate_order: [methane_amount_mol, ethane_amount_mol, volume_m3, k_ij]
+    derivative_order: 2
+    exclusions: association, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, equilibrium, regression targets, fit bounds, scaling, and fit acceptance
 
 accepted_scope: >-
   Source-backed neutral, associating, and bounded ionic SSM+DS residual EOS at
@@ -92,17 +100,22 @@ public_surface:
       coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
       derivative_order: 2
       status: local-candidate-pending-independent-review-and-promotion-receipt
+    - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_mixture_phase_kij
+      coordinate_order: [methane_amount_mol, ethane_amount_mol, volume_m3, k_ij]
+      derivative_order: 2
+      status: local-candidate-pending-independent-review-and-promotion-receipt
 
 manifest:
-  tracked_files: 71
+  tracked_files: 73
   production_python_files: 9
   native_source_files: 13
   public_native_headers: 1
   installed_data_files: 15
   package_test_files: 11
-  physical_production_lines: 5238
-  physical_package_test_lines: 3496
-  physical_documentation_lines: 1982
+  physical_production_lines: 5439
+  physical_package_test_lines: 3715
+  physical_documentation_lines: 2036
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
@@ -114,7 +127,9 @@ manifest:
     - path: src/epcsaft/_bundle_io.py
       physical_lines: 417
     - path: src/epcsaft/_native/phase_block.hpp
-      physical_lines: 407
+      physical_lines: 515
+    - path: tests/test_native_sdk.py
+      physical_lines: 858
     - path: tests/test_parameters.py
       physical_lines: 1009
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
@@ -125,7 +140,7 @@ excluded:
   - regression and parameter fitting
   - ideal-gas and total caloric properties
   - multi-salt and alternate-convention reference-state workflows
-  - authoritative mixture, associating, electrolyte, and reactive native phase blocks; the exact local methane/ethane mixture candidate remains receipt-pending
+  - authoritative mixture, associating, electrolyte, and reactive native phase blocks; the exact local methane/ethane fixed and active-k_ij candidates remain receipt-pending
   - alternate derivative backends
   - compatibility interfaces
   - release and workflow machinery

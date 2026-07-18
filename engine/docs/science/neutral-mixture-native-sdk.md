@@ -1,4 +1,4 @@
-# Neutral Mixture Native SDK Candidate
+# Neutral Mixture Native SDK Candidates
 
 Status: local candidate pending independent review and promotion receipt
 
@@ -10,7 +10,9 @@ The append-only `evaluate_mixture_phase` entry in `epcsaft.native_sdk.v1`
 evaluates one fixed-temperature, neutral, nonassociating phase for the
 source-backed Gross--Sadowski methane/ethane parameter set. The capsule is
 bound to an immutable model, parameter fingerprint, source temperature domain,
-component count, and component order.
+component count, and component order. One further append-only
+`evaluate_mixture_phase_kij` pointer evaluates the same phase with the single
+unlike interaction parameter active.
 
 The admitted candidate fingerprints are:
 
@@ -49,13 +51,22 @@ P [Pa] = -R T n_ref * partial(Phi)/partial(V_m3).
 
 The numerical amount coordinates are magnitudes in mol and the volume
 coordinate is the magnitude in m3. The returned derivative numbers therefore
-carry the corresponding implied inverse-coordinate units. The entry returns
-no third tensor and no parameter derivatives.
+carry the corresponding implied inverse-coordinate units. The fixed entry
+returns no third tensor and no parameter derivatives.
+
+The active entry uses coordinates `(n_1_mol,n_2_mol,V_m3,k_ij)`. The trial
+value replaces only the unlike pair and is assigned symmetrically to matrix
+positions `(1,2)` and `(2,1)`; diagonal values remain those of the bound model.
+The same defining function and CppAD owner supply its value, four-element
+gradient, and 4-by-4 row-major Hessian. The source fingerprint continues to
+identify the immutable catalog model, not the trial coordinate.
 
 ## Native buffer contract
 
 The function table appends `component_count`, `mixture_result_size`, and the
-callback after the accepted pure prefix. A caller must:
+fixed callback after the accepted pure prefix, then appends exactly the active-
+`k_ij` callback pointer. Both callbacks use the same result structure. A caller
+must:
 
 - keep the capsule alive for every call;
 - pass exactly `component_count` positive finite amounts;
@@ -64,6 +75,11 @@ callback after the accepted pure prefix. A caller must:
   `coordinate_count` and `coordinate_count * coordinate_count`;
 - set the exact result `struct_size`; and
 - check both the returned status and result status before consuming outputs.
+
+For the active callback, `coordinate_count` is exactly four and the caller
+provides gradient and Hessian capacities of at least 4 and 16. The provider
+accepts any finite `k_ij`; regression owns fit bounds, transforms, scaling,
+targets, and acceptance.
 
 The provider preserves the caller's pointers and capacities, copies exactly
 the advertised number of gradient and Hessian values, and propagates neither
@@ -81,10 +97,16 @@ capacity mismatches, source-domain rejection, nonpositive amounts, result-size
 mismatch, and pure/mixture scope separation. Accepted-prefix field offsets are
 unchanged.
 
-This candidate does not own or admit association, ions, additional mixture
-families, binary parameter fitting, density closure, phase identity, phase
-discovery, third derivatives, parameter derivatives, Ipopt, Ceres,
-equilibrium residuals, regression targets, or fit acceptance. Implementation
-and a passing wheel do not transfer authority. A separate independently
-reviewed promotion receipt and each consumer's installed-wheel gate remain
-required.
+Active-`k_ij` evidence contracts all four gradient and Hessian coordinates
+against centered differences at 220 K and 280 K. At the catalog value
+`k_ij = 0`, value, pressure, state gradient, and state Hessian agree with the
+fixed callback. Negative evidence covers malformed four-coordinate buffers,
+nonfinite trial values and state inputs, pure models, association, and ions;
+a finite negative trial confirms that the provider applies no fit bound.
+
+These candidates do not own or admit association, ions, additional mixture
+families, density closure, phase identity, phase discovery, third derivatives,
+Ipopt, Ceres, equilibrium residuals, regression targets, fit bounds, scaling,
+or fit acceptance. Implementation and a passing wheel do not transfer
+authority. Separate independent review, a promotion receipt, and each
+consumer's installed-wheel gate remain required.

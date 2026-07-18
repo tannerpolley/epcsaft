@@ -45,6 +45,9 @@ backend selectors, hidden physical defaults, duplicate equation owners, or
 runtime dependencies on the lab, migration repository, or sibling sources.
 
 The append-only neutral methane/ethane mixture value, gradient, and Hessian
-entry is a local provider candidate pending its own review and promotion
-receipt. It changes no runtime authority and admits no association, ions,
-density solve, phase identity, third derivatives, equilibrium, or regression.
+entry and its further append-only active-`k_ij` entry are local provider
+candidates pending their own review and promotion receipts. The active entry
+accepts one finite trial unlike-pair value and returns derivatives in
+`(n1,n2,V,kij)` without owning fit bounds or scaling. These candidates change
+no runtime authority and admit no association, ions, density solve, phase
+identity, third derivatives, equilibrium, regression targets, or fitting.

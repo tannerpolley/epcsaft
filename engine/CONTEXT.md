@@ -44,11 +44,13 @@ result, or fit result. Each consumer remains subject to its own installed-wheel
 gate and promotion receipt.
 
 The local Consumer Maturity Slice 2 prerequisite appends one candidate
-methane/ethane neutral-mixture phase entry to the same capsule. It returns the
-extensive ideal-plus-residual value and exact CppAD gradient/Hessian in ordered
-component amounts and volume. It is not authoritative until a separate
-promotion receipt is accepted, and it adds no phase, density, equilibrium, or
-regression ownership.
+methane/ethane neutral-mixture phase entry to the same capsule and one further
+active-`k_ij` callback. The latter reuses the mixture result and returns the
+same extensive ideal-plus-residual value and exact CppAD gradient/Hessian in
+`(n1,n2,V,kij)`. It accepts any finite trial unlike-pair value; regression owns
+bounds, scaling, targets, and fit acceptance. Neither entry is authoritative
+until a separate promotion receipt is accepted, and neither adds phase,
+density, equilibrium, or regression ownership.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.
