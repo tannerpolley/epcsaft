@@ -1,5 +1,5 @@
 version: 2
-status: accepted-provider-with-receipt-controlled-native-sdk-local-mixture-candidates-and-active-born-design
+status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-candidates-and-active-born-design
 
 authority:
   effective_receipt: promotion-0012-provider-full-candidate
@@ -20,6 +20,16 @@ native_sdk_v1:
   exclusions: mixture, association, electrolyte, binary fitted parameters, density solve, phase identity, Ipopt, Ceres, equilibrium, and regression targets
 
 native_sdk_candidates:
+  full_electrolyte_phase_hessian_v1:
+    status: local-candidate-pending-independent-review-and-promotion-receipt
+    scope: >-
+      Exact immutable Figiel and Khudaida electrolyte selections evaluated as
+      complete ideal-plus-residual phase Helmholtz blocks with pressure in
+      ordered positive component amounts and extensive volume.
+    coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
+    derivative_order: 2
+    contributions: [ideal, hard_chain, dispersion, association, debye_huckel, born_ssm_ds]
+    exclusions: density solve, phase identity, complementarity, trace-species policy, third derivatives, Ipopt, equilibrium, regression, fitting, and authority
   neutral_mixture_phase_hessian_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
@@ -120,17 +130,22 @@ public_surface:
       coordinate_order: [methane_amount_mol, ethane_amount_mol, volume_m3, k_ij]
       derivative_order: 2
       status: local-candidate-pending-independent-review-and-promotion-receipt
+    - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_electrolyte_phase
+      coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
+      derivative_order: 2
+      status: local-candidate-pending-independent-review-and-promotion-receipt
 
 manifest:
-  tracked_files: 74
+  tracked_files: 82
   production_python_files: 9
   native_source_files: 13
   public_native_headers: 1
-  installed_data_files: 15
+  installed_data_files: 23
   package_test_files: 11
-  physical_production_lines: 5444
-  physical_package_test_lines: 3776
-  physical_documentation_lines: 2448
+  physical_production_lines: 5767
+  physical_package_test_lines: 4178
+  physical_documentation_lines: 2480
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
@@ -142,11 +157,11 @@ manifest:
     - path: src/epcsaft/_bundle_io.py
       physical_lines: 417
     - path: src/epcsaft/_native/phase_block.hpp
-      physical_lines: 515
+      physical_lines: 680
     - path: tests/test_native_sdk.py
-      physical_lines: 919
+      physical_lines: 1205
     - path: tests/test_parameters.py
-      physical_lines: 1009
+      physical_lines: 1125
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 
 excluded:
@@ -155,7 +170,7 @@ excluded:
   - regression and parameter fitting
   - ideal-gas and total caloric properties
   - multi-salt and alternate-convention reference-state workflows
-  - authoritative mixture, associating, electrolyte, and reactive native phase blocks; the exact local methane/ethane fixed and active-k_ij candidates remain receipt-pending and the active-Born solvation seam remains design-only
+  - authoritative mixture, associating, electrolyte, and reactive native phase blocks; the exact local methane/ethane and full-electrolyte candidates remain receipt-pending and the active-Born solvation seam remains design-only
   - alternate derivative backends
   - compatibility interfaces
   - release and workflow machinery

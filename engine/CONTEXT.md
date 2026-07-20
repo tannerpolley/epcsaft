@@ -13,11 +13,12 @@ generic residual Helmholtz kernel for hard-chain, dispersion, association,
 Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
 chemical potentials, fugacity coefficients when defined, residual caloric
 properties, pressure, and branch diagnostics for pressure-specified states.
-The installed catalogs are Gross--Sadowski methane/ethane and propane records
-and the bounded Figiel--Yu--Held water/methanol/ethanol alkali-halide source bundle. One reference-state
-module owns x-process infinite-dilution solvation and transfer plus single-ion
-and stoichiometric mean ionic activity on one explicit electroneutral formula-
-unit path.
+The installed catalogs are Gross--Sadowski methane/ethane and propane records,
+the bounded Figiel--Yu--Held water/methanol/ethanol alkali-halide source
+bundle, and one distinct Khudaida et al. water/ethanol/isobutanol/Na+/Cl-
+bundle at 293.15 K. One reference-state module owns x-process
+infinite-dilution solvation and transfer plus single-ion and stoichiometric mean
+ionic activity on one explicit electroneutral formula-unit path.
 
 Pressure closure accepts exactly one of molar density or pressure. An
 unlabelled pressure state must have one mechanically stable root. A genuine
@@ -51,6 +52,15 @@ same extensive ideal-plus-residual value and exact CppAD gradient/Hessian in
 bounds, scaling, targets, and fit acceptance. Neither entry is authoritative
 until a separate promotion receipt is accepted, and neither adds phase,
 density, equilibrium, or regression ownership.
+
+Migration D-024 records a local append-only full-electrolyte phase-block
+candidate in explicit component amounts and extensive volume. The callback
+uses the sole Provider Helmholtz and association owners for every active
+ideal, hard-chain, dispersion, association, Debye--Huckel, and corrected Born
+SSM+DS contribution. It admits exact immutable Figiel selections and the
+distinct Khudaida bundle and returns value, gradient, Hessian, pressure,
+fingerprint, component order, and charges. It adds no phase discovery,
+equilibrium, trace-species policy, fitting, or authority.
 
 Migration D-023 additionally records a documentation-only design candidate for
 one model-bound active-Born-diameter evaluation of the existing 298.15 K,

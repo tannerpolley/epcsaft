@@ -174,6 +174,13 @@ def _electrolyte_model(
     return EPCSAFT(parameters.select(component_ids))
 
 
+def _khudaida_model(component_ids: tuple[str, ...]) -> EPCSAFT:
+    parameters = ParameterBundle.from_catalog(
+        "khudaida-2026-figure-2-electrolyte-lle", version=1
+    )
+    return EPCSAFT(parameters.select(component_ids))
+
+
 def _table(model: EPCSAFT) -> tuple[object, NativeSdkTable]:
     capsule = native_sdk(model)
     get_name = ctypes.pythonapi.PyCapsule_GetName
@@ -1038,7 +1045,8 @@ def test_native_sdk_electrolyte_phase_matches_public_state_and_directional_deriv
 
 
 def test_native_sdk_electrolyte_phase_rejects_abi_domain_and_unsupported_models() -> None:
-    _, table = _electrolyte_table(_electrolyte_model())
+    capsule, table = _electrolyte_table(_electrolyte_model())
+    assert capsule is not None
     callback = EvaluateMixturePhase(table.evaluate_electrolyte_phase)
     amounts = (ctypes.c_double * 3)(0.98, 0.01, 0.01)
 
@@ -1052,6 +1060,7 @@ def test_native_sdk_electrolyte_phase_rejects_abi_domain_and_unsupported_models(
     for invalid in (
         (ctypes.c_double * 3)(0.98, 0.01, 0.02),
         (ctypes.c_double * 3)(0.50, 0.25, 0.25),
+        (ctypes.c_double * 3)(0.98, 0.0, 0.0),
         (ctypes.c_double * 3)(0.98, math.nan, 0.01),
     ):
         result, _, _ = _mixture_result(4)
@@ -1059,7 +1068,8 @@ def test_native_sdk_electrolyte_phase_rejects_abi_domain_and_unsupported_models(
         assert status == result.status != STATUS_OK
         assert result.error
 
-    _, neutral_table = _electrolyte_table(_mixture_model())
+    neutral_capsule, neutral_table = _electrolyte_table(_mixture_model())
+    assert neutral_capsule is not None
     neutral_result, _, _ = _mixture_result(3)
     neutral_amounts = (ctypes.c_double * 2)(0.4, 0.6)
     status = EvaluateMixturePhase(neutral_table.evaluate_electrolyte_phase)(
@@ -1072,6 +1082,117 @@ def test_native_sdk_electrolyte_phase_rejects_abi_domain_and_unsupported_models(
     )
     assert status == neutral_result.status == STATUS_UNSUPPORTED_MODEL
     assert neutral_result.error
+
+
+def test_native_sdk_khudaida_five_component_phase_block_and_permutation() -> None:
+    component_ids = (
+        "water",
+        "ethanol",
+        "isobutanol",
+        "sodium-cation",
+        "chloride-anion",
+    )
+    model = _khudaida_model(component_ids)
+    capsule, table = _electrolyte_table(model)
+    assert capsule is not None
+    assert table.component_count == 5
+    assert tuple(table.component_ids[index].decode() for index in range(5)) == component_ids
+    assert tuple(table.component_charges[index] for index in range(5)) == (0, 0, 0, 1, -1)
+
+    temperature_k = 293.15
+    point = (0.65905, 0.05095, 0.27015, 0.01985, 0.01985, 1.0e-3)
+    center, gradient, hessian = _evaluate_electrolyte(
+        table, temperature_k, point[:5], point[5]
+    )
+    assert center.status == STATUS_OK
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    total_amount = math.fsum(point[:5])
+    density = total_amount / point[5]
+    fractions = tuple(amount / total_amount for amount in point[:5])
+    public = model.evaluate(
+        temperature=temperature_k * unit_registry.kelvin,
+        molar_density=density * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=fractions,
+    )
+    expected_value = (
+        math.fsum(amount * (math.log(amount / point[5]) - 1.0) for amount in point[:5])
+        + total_amount * public.residual_helmholtz
+    )
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected_value, rel=4.0e-12, abs=4.0e-12
+    )
+    assert center.pressure_pa == pytest.approx(
+        public.pressure.to("pascal").magnitude, rel=4.0e-11, abs=2.0e-5
+    )
+    assert center.pressure_pa == pytest.approx(
+        -8.31446261815324 * temperature_k * gradient[-1], rel=4.0e-13
+    )
+
+    direction = (0.01, -0.004, -0.003, -0.001, -0.001, 2.0e-5)
+    step = 2.0e-4
+
+    def shifted(scale: float):
+        state = tuple(
+            value + scale * delta for value, delta in zip(point, direction, strict=True)
+        )
+        return _evaluate_electrolyte(table, temperature_k, state[:5], state[5])
+
+    lower, lower_gradient, _ = shifted(-step)
+    upper, upper_gradient, _ = shifted(step)
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount
+        - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert math.fsum(
+        left * right for left, right in zip(gradient, direction, strict=True)
+    ) == pytest.approx(value_difference, rel=3.0e-7, abs=3.0e-8)
+    for row in range(6):
+        hessian_direction = math.fsum(
+            hessian[row * 6 + column] * direction[column] for column in range(6)
+        )
+        gradient_difference = (upper_gradient[row] - lower_gradient[row]) / (2.0 * step)
+        assert hessian_direction == pytest.approx(
+            gradient_difference, rel=4.0e-6, abs=4.0e-6
+        )
+
+    permuted_ids = (
+        "chloride-anion",
+        "isobutanol",
+        "water",
+        "sodium-cation",
+        "ethanol",
+    )
+    permuted_model = _khudaida_model(permuted_ids)
+    permuted_capsule, permuted_table = _electrolyte_table(permuted_model)
+    assert permuted_capsule is not None
+    permutation = (4, 2, 0, 3, 1, 5)
+    permuted_result, permuted_gradient, permuted_hessian = _evaluate_electrolyte(
+        permuted_table,
+        temperature_k,
+        tuple(point[index] for index in permutation[:-1]),
+        point[-1],
+    )
+    assert tuple(permuted_table.component_charges[index] for index in range(5)) == (
+        -1,
+        0,
+        0,
+        1,
+        0,
+    )
+    assert permuted_result.helmholtz_over_rt_reference_amount == pytest.approx(
+        center.helmholtz_over_rt_reference_amount, rel=5.0e-13
+    )
+    assert permuted_result.pressure_pa == pytest.approx(center.pressure_pa, rel=5.0e-13)
+    assert permuted_gradient == pytest.approx(tuple(gradient[index] for index in permutation))
+    assert permuted_hessian == pytest.approx(
+        tuple(hessian[row * 6 + column] for row in permutation for column in permutation)
+    )
+    with pytest.raises(EosError, match="unadmitted-parameter-fingerprint"):
+        native_sdk(
+            _khudaida_model(
+                ("water", "isobutanol", "sodium-cation", "chloride-anion")
+            )
+        )
 
 
 def test_native_sdk_header_is_installed_package_data() -> None:

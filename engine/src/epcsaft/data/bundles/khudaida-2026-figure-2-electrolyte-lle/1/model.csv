@@ -1,0 +1,3 @@
+record_id,family,value,unit,source_id,locator,domain_id
+khudaida-ionic-region-permittivity,ionic_region_relative_permittivity,8,,khudaida-et-al-2026,"Table 6, NaCl ions dielectric constant row",khudaida-293-15-k-0-1-mpa
+khudaida-dielectric-suppression,dielectric_ion_suppression_coefficient,7.01,,khudaida-et-al-2026,"Eq. 4, denominator coefficient multiplying x_ion",khudaida-293-15-k-0-1-mpa

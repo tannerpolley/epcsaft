@@ -71,6 +71,14 @@ contract. One further callback reuses the same result for coordinates
 coordinate while leaving bounds, scaling, targets, and fit acceptance to the
 regression owner. See `docs/science/neutral-mixture-native-sdk.md`.
 
+The append-only electrolyte candidate callback evaluates the complete
+ideal-plus-residual phase Helmholtz block in ordered component amounts and
+volume, including association, Debye--Huckel, and corrected Born SSM+DS terms.
+It admits only immutable source-backed model bundles. The distinct Khudaida et
+al. (2026) bundle adds the exact water/ethanol/isobutanol/Na+/Cl- model at
+293.15 K without changing the Figiel bundle. Phase bounds, complementarity,
+equilibrium, and fit policy remain consumer-owned.
+
 The capsule evaluates one phase state at a time. A consumer uses the same
 immutable model for every candidate phase; the provider does not construct
 liquid/vapor objects or own phase identity, Ipopt, equilibrium constraints, or
@@ -98,7 +106,9 @@ The installed catalogs are:
   the first scoped saturation consumer; plus
 - the bounded Figiel, Yu, and Held (2025) water/methanol/ethanol alkali-halide
   records needed for aqueous and mixed-solvent MIAC systems and explicit
-  transfer reference states.
+  transfer reference states; plus
+- the distinct Khudaida et al. (2026) water/ethanol/isobutanol/Na+/Cl- records
+  for the source-bound 293.15 K electrolyte-LLE challenge.
 
 This repository does not perform phase equilibrium or phase discovery,
 reaction/species equilibrium, regression, parameter fitting, ideal-gas

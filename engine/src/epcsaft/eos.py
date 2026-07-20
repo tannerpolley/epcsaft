@@ -33,6 +33,18 @@ _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS = frozenset(
     }
 )
 
+_NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
+    "sha256:03f9b1d88843a2d53da3420d96987ec4a2305b2814cc4946cdb25d1db67f5f72": frozenset(
+        {
+            "water",
+            "ethanol",
+            "isobutanol",
+            "sodium-cation",
+            "chloride-anion",
+        }
+    ),
+}
+
 
 def _magnitude(
     record: SingleParameterRecord | ConstantCorrelation,
@@ -165,6 +177,7 @@ def _native_arguments(
 class EPCSAFT:
     _component_ids: tuple[str, ...]
     _parameter_fingerprint: str
+    _parameter_bundle_fingerprint: str
     _model: _ResolvedModel
     _native: _NativeModel
 
@@ -173,6 +186,7 @@ class EPCSAFT:
         native_arguments = _native_arguments(model)
         object.__setattr__(self, "_component_ids", parameters.component_ids)
         object.__setattr__(self, "_parameter_fingerprint", parameters.fingerprint)
+        object.__setattr__(self, "_parameter_bundle_fingerprint", parameters.bundle_fingerprint)
         object.__setattr__(self, "_model", model)
         object.__setattr__(self, "_native", _NativeModel(*native_arguments))
 
@@ -328,7 +342,17 @@ def native_sdk(model: EPCSAFT) -> object:
     if type(model) is not EPCSAFT:
         raise _eos_error("unsupported-native-sdk", reason="expected-exact-EPCSAFT-model")
     fingerprint = model._parameter_fingerprint
-    if fingerprint not in _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS:
+    bundle_selection = _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS.get(
+        model._parameter_bundle_fingerprint
+    )
+    if (
+        fingerprint not in _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS
+        and (
+            bundle_selection is None
+            or len(model._component_ids) != len(bundle_selection)
+            or frozenset(model._component_ids) != bundle_selection
+        )
+    ):
         raise _eos_error(
             "unsupported-native-sdk",
             reason="unadmitted-parameter-fingerprint",
