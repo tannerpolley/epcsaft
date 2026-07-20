@@ -88,6 +88,14 @@ class NativeSdkTable(ctypes.Structure):
     )
 
 
+class ElectrolyteNativeSdkTable(ctypes.Structure):
+    _fields_ = NativeSdkTable._fields_ + (
+        ("component_ids", ctypes.POINTER(ctypes.c_char_p)),
+        ("component_charges", ctypes.POINTER(ctypes.c_int32)),
+        ("evaluate_electrolyte_phase", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -97,6 +105,9 @@ FIXED_MIXTURE_PREFIX_SIZE = (
 )
 ACTIVE_KIJ_PREFIX_SIZE = NativeSdkTable.evaluate_mixture_phase_kij.offset + ctypes.sizeof(
     ctypes.c_void_p
+)
+ELECTROLYTE_PREFIX_SIZE = (
+    ElectrolyteNativeSdkTable.evaluate_electrolyte_phase.offset + ctypes.sizeof(ctypes.c_void_p)
 )
 
 
@@ -152,6 +163,17 @@ def _mixture_model(component_ids: tuple[str, str] = ("methane", "ethane")) -> EP
     return EPCSAFT(parameters.select(component_ids))
 
 
+def _electrolyte_model(
+    component_ids: tuple[str, str, str] = (
+        "water",
+        "sodium-cation",
+        "chloride-anion",
+    ),
+) -> EPCSAFT:
+    parameters = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
+    return EPCSAFT(parameters.select(component_ids))
+
+
 def _table(model: EPCSAFT) -> tuple[object, NativeSdkTable]:
     capsule = native_sdk(model)
     get_name = ctypes.pythonapi.PyCapsule_GetName
@@ -167,6 +189,20 @@ def _table(model: EPCSAFT) -> tuple[object, NativeSdkTable]:
     fixed_table = ctypes.cast(address, ctypes.POINTER(FixedMixtureNativeSdkTable)).contents
     assert fixed_table.table_size >= ACTIVE_KIJ_PREFIX_SIZE
     return capsule, ctypes.cast(address, ctypes.POINTER(NativeSdkTable)).contents
+
+
+def _electrolyte_table(
+    model: EPCSAFT,
+) -> tuple[object, ElectrolyteNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(ElectrolyteNativeSdkTable)).contents
+    assert table.table_size >= ELECTROLYTE_PREFIX_SIZE
+    return capsule, table
 
 
 def _evaluate(
@@ -275,6 +311,27 @@ def _evaluate_mixture_kij(
     return result, tuple(gradient), tuple(hessian)
 
 
+def _evaluate_electrolyte(
+    table: ElectrolyteNativeSdkTable,
+    temperature_k: float,
+    amounts_mol: tuple[float, ...],
+    volume_m3: float,
+) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+    coordinate_count = len(amounts_mol) + 1
+    result, gradient, hessian = _mixture_result(coordinate_count)
+    amounts = (ctypes.c_double * len(amounts_mol))(*amounts_mol)
+    status = EvaluateMixturePhase(table.evaluate_electrolyte_phase)(
+        table.model_context,
+        temperature_k,
+        amounts,
+        len(amounts_mol),
+        volume_m3,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result, tuple(gradient), tuple(hessian)
+
+
 @pytest.mark.parametrize(
     "catalog,component,temperature_k,density_mol_m3",
     (
@@ -293,7 +350,7 @@ def test_native_sdk_phase_block_matches_public_thermodynamics(
     capsule, table = _table(model)
     assert capsule is not None
     assert table.abi_version == ABI_VERSION
-    assert table.table_size == ctypes.sizeof(NativeSdkTable)
+    assert table.table_size >= ACTIVE_KIJ_PREFIX_SIZE
     assert table.result_size == ctypes.sizeof(PhaseBlockResult)
     assert table.parameterized_result_size == ctypes.sizeof(ParameterizedPhaseBlockResult)
     assert table.model_context
@@ -666,10 +723,6 @@ def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
     associating = _model("figiel-2025-reference-electrolytes", "ethanol")
     with pytest.raises(EosError, match="unsupported-native-sdk"):
         native_sdk(associating)
-    ionic_bundle = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
-    ionic = EPCSAFT(ionic_bundle.select(("water", "sodium-cation", "chloride-anion")))
-    with pytest.raises(EosError, match="unsupported-native-sdk"):
-        native_sdk(ionic)
 
     model = _model("gross-2001-methane-ethane", "methane")
     gross_bundle = ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
@@ -907,6 +960,118 @@ def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_in
     assert status == STATUS_UNSUPPORTED_MODEL
     assert pure_result.status == status
     assert pure_result.error
+
+
+def test_native_sdk_electrolyte_phase_matches_public_state_and_directional_derivatives() -> None:
+    model = _electrolyte_model()
+    capsule, table = _electrolyte_table(model)
+    assert capsule is not None
+    assert table.table_size == ctypes.sizeof(ElectrolyteNativeSdkTable) == 112
+    assert table.component_count == 3
+    assert tuple(table.component_ids[index].decode() for index in range(3)) == model.component_ids
+    assert tuple(table.component_charges[index] for index in range(3)) == (0, 1, -1)
+    assert table.evaluate_electrolyte_phase
+
+    temperature_k = 298.15
+    point = (0.98, 0.01, 0.01, 1.0e-3)
+    center, gradient, hessian = _evaluate_electrolyte(table, temperature_k, point[:3], point[3])
+    assert center.status == STATUS_OK
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    total_amount = math.fsum(point[:3])
+    density = total_amount / point[3]
+    fractions = tuple(amount / total_amount for amount in point[:3])
+    public = model.evaluate(
+        temperature=temperature_k * unit_registry.kelvin,
+        molar_density=density * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=fractions,
+    )
+    expected_value = (
+        math.fsum(amount * (math.log(amount / point[3]) - 1.0) for amount in point[:3])
+        + total_amount * public.residual_helmholtz
+    )
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected_value, rel=3.0e-12, abs=3.0e-12
+    )
+    assert center.pressure_pa == pytest.approx(
+        public.pressure.to("pascal").magnitude, rel=3.0e-11, abs=2.0e-5
+    )
+    assert center.pressure_pa == pytest.approx(
+        -8.31446261815324 * temperature_k * gradient[-1], rel=3.0e-13
+    )
+
+    direction = (0.02, -0.003, -0.003, 2.0e-5)
+    step = 2.0e-4
+
+    def shifted(scale: float):
+        state = tuple(value + scale * delta for value, delta in zip(point, direction, strict=True))
+        return _evaluate_electrolyte(table, temperature_k, state[:3], state[3])
+
+    lower, lower_gradient, _ = shifted(-step)
+    upper, upper_gradient, _ = shifted(step)
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert math.fsum(
+        left * right for left, right in zip(gradient, direction, strict=True)
+    ) == pytest.approx(value_difference, rel=2.0e-7, abs=2.0e-8)
+    for row in range(4):
+        hessian_direction = math.fsum(
+            hessian[row * 4 + column] * direction[column] for column in range(4)
+        )
+        gradient_difference = (upper_gradient[row] - lower_gradient[row]) / (2.0 * step)
+        assert hessian_direction == pytest.approx(gradient_difference, rel=2.0e-6, abs=2.0e-6)
+
+    permuted = _electrolyte_model(("water", "chloride-anion", "sodium-cation"))
+    _, permuted_table = _electrolyte_table(permuted)
+    permuted_result, permuted_gradient, permuted_hessian = _evaluate_electrolyte(
+        permuted_table, temperature_k, (point[0], point[2], point[1]), point[3]
+    )
+    permutation = (0, 2, 1, 3)
+    assert permuted_result.helmholtz_over_rt_reference_amount == pytest.approx(
+        center.helmholtz_over_rt_reference_amount, rel=3.0e-13
+    )
+    assert permuted_result.pressure_pa == pytest.approx(center.pressure_pa, rel=3.0e-13)
+    assert permuted_gradient == pytest.approx(tuple(gradient[index] for index in permutation))
+    assert permuted_hessian == pytest.approx(
+        tuple(hessian[row * 4 + column] for row in permutation for column in permutation)
+    )
+
+
+def test_native_sdk_electrolyte_phase_rejects_abi_domain_and_unsupported_models() -> None:
+    _, table = _electrolyte_table(_electrolyte_model())
+    callback = EvaluateMixturePhase(table.evaluate_electrolyte_phase)
+    amounts = (ctypes.c_double * 3)(0.98, 0.01, 0.01)
+
+    def call(result: MixturePhaseBlockResult, values: object = amounts) -> int:
+        return callback(table.model_context, 298.15, values, 3, 1.0e-3, ctypes.byref(result))
+
+    result, _, _ = _mixture_result(4)
+    result.struct_size -= 1
+    assert call(result) == STATUS_ABI_MISMATCH
+
+    for invalid in (
+        (ctypes.c_double * 3)(0.98, 0.01, 0.02),
+        (ctypes.c_double * 3)(0.50, 0.25, 0.25),
+        (ctypes.c_double * 3)(0.98, math.nan, 0.01),
+    ):
+        result, _, _ = _mixture_result(4)
+        status = call(result, invalid)
+        assert status == result.status != STATUS_OK
+        assert result.error
+
+    _, neutral_table = _electrolyte_table(_mixture_model())
+    neutral_result, _, _ = _mixture_result(3)
+    neutral_amounts = (ctypes.c_double * 2)(0.4, 0.6)
+    status = EvaluateMixturePhase(neutral_table.evaluate_electrolyte_phase)(
+        neutral_table.model_context,
+        220.0,
+        neutral_amounts,
+        2,
+        1.25e-4,
+        ctypes.byref(neutral_result),
+    )
+    assert status == neutral_result.status == STATUS_UNSUPPORTED_MODEL
+    assert neutral_result.error
 
 
 def test_native_sdk_header_is_installed_package_data() -> None:

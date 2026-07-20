@@ -1,5 +1,7 @@
 #pragma once
 
+#include "association.hpp"
+#include "derivatives.hpp"
 #include "helmholtz.hpp"
 #include "model.hpp"
 
@@ -61,6 +63,16 @@ inline bool supports_binary_interaction_phase_block(
 ) {
     return parameters.segment_count.size() == 2
         && supports_mixture_phase_block(parameters);
+}
+
+inline bool supports_electrolyte_phase_block(const NativeParameters& parameters) {
+    return parameters.segment_count.size() >= 3
+        && !parameters.site_component.empty()
+        && std::any_of(
+            parameters.charge_number.begin(),
+            parameters.charge_number.end(),
+            [](int charge) { return charge != 0; }
+        );
 }
 
 template <typename Scalar>
@@ -274,6 +286,159 @@ inline NativeMixturePhaseBlock mixture_phase_block_kij(
             );
         }
     );
+}
+
+inline NativeMixturePhaseBlock electrolyte_phase_block(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double ion_mole_fraction_max,
+    const NativeParameters& parameters
+) {
+    if (!supports_electrolyte_phase_block(parameters)) {
+        throw std::logic_error(
+            "electrolyte phase block requires an ionic associating model"
+        );
+    }
+    validate_mixture_phase_state(temperature, amounts, volume, parameters);
+
+    const std::size_t components = amounts.size();
+    const std::size_t coordinates = components + 1;
+    double total_amount = 0.0;
+    double ionic_amount = 0.0;
+    double charge_amount = 0.0;
+    for (std::size_t component = 0; component < components; ++component) {
+        total_amount += amounts[component];
+        const int charge = parameters.charge_number[component];
+        if (charge != 0) {
+            ionic_amount += amounts[component];
+        }
+        charge_amount += amounts[component] * static_cast<double>(charge);
+    }
+    if (std::abs(charge_amount / total_amount) > 1.0e-12) {
+        throw std::invalid_argument("electrolyte phase amounts must be electroneutral");
+    }
+    if (std::isfinite(ion_mole_fraction_max)
+        && ionic_amount / total_amount > ion_mole_fraction_max + 1.0e-12) {
+        throw std::invalid_argument("ion mole fraction exceeds the parameter source domain");
+    }
+
+    const double density = total_amount / volume;
+    std::vector<double> composition(components);
+    for (std::size_t component = 0; component < components; ++component) {
+        composition[component] = amounts[component] / total_amount;
+    }
+    const auto sigma = segment_sigma(temperature, parameters);
+    const auto diameter = segment_diameter(temperature, parameters, sigma);
+    const auto site_fractions = solve_site_fractions(
+        temperature, density, composition, parameters, sigma, diameter
+    );
+    const auto derivatives = thermodynamic_derivatives(
+        temperature, density, composition, parameters, site_fractions
+    );
+
+    std::vector<double> state_gradient(1 + components);
+    state_gradient[0] = derivatives.density;
+    std::copy(
+        derivatives.composition.begin(),
+        derivatives.composition.end(),
+        state_gradient.begin() + 1
+    );
+    std::vector<double> state_jacobian((1 + components) * coordinates, 0.0);
+    for (std::size_t amount = 0; amount < components; ++amount) {
+        state_jacobian[amount] = 1.0 / volume;
+        for (std::size_t component = 0; component < components; ++component) {
+            state_jacobian[(1 + component) * coordinates + amount] =
+                ((component == amount ? 1.0 : 0.0) - composition[component])
+                / total_amount;
+        }
+    }
+    state_jacobian[components] = -total_amount / (volume * volume);
+
+    std::vector<double> gradient(coordinates, 0.0);
+    std::vector<double> hessian(coordinates * coordinates, 0.0);
+    double ideal = 0.0;
+    for (std::size_t amount = 0; amount < components; ++amount) {
+        ideal += amounts[amount] * (std::log(amounts[amount] / volume) - 1.0);
+        gradient[amount] = std::log(amounts[amount] / volume);
+        hessian[amount * coordinates + amount] = 1.0 / amounts[amount];
+        hessian[amount * coordinates + components] = -1.0 / volume;
+        hessian[components * coordinates + amount] = -1.0 / volume;
+    }
+    gradient[components] = -total_amount / volume;
+    hessian[components * coordinates + components] =
+        total_amount / (volume * volume);
+
+    auto state_second = [&](std::size_t state, std::size_t left, std::size_t right) {
+        if (state == 0) {
+            if (left == components && right == components) {
+                return 2.0 * total_amount / (volume * volume * volume);
+            }
+            if (left == components || right == components) {
+                return -1.0 / (volume * volume);
+            }
+            return 0.0;
+        }
+        if (left == components || right == components) {
+            return 0.0;
+        }
+        const std::size_t component = state - 1;
+        return (
+            2.0 * composition[component]
+            - (component == left ? 1.0 : 0.0)
+            - (component == right ? 1.0 : 0.0)
+        ) / (total_amount * total_amount);
+    };
+
+    for (std::size_t left = 0; left < coordinates; ++left) {
+        const double total_left = left < components ? 1.0 : 0.0;
+        double residual_gradient = total_left * derivatives.residual_helmholtz;
+        for (std::size_t state = 0; state < 1 + components; ++state) {
+            residual_gradient += total_amount * state_gradient[state]
+                * state_jacobian[state * coordinates + left];
+        }
+        gradient[left] += residual_gradient;
+
+        for (std::size_t right = 0; right < coordinates; ++right) {
+            const double total_right = right < components ? 1.0 : 0.0;
+            double residual_hessian = 0.0;
+            for (std::size_t state = 0; state < 1 + components; ++state) {
+                const double left_derivative =
+                    state_jacobian[state * coordinates + left];
+                const double right_derivative =
+                    state_jacobian[state * coordinates + right];
+                residual_hessian += state_gradient[state]
+                    * (total_left * right_derivative
+                       + total_right * left_derivative
+                       + total_amount * state_second(state, left, right));
+                for (std::size_t other = 0; other < 1 + components; ++other) {
+                    residual_hessian += total_amount
+                        * derivatives.hessian[(1 + state) * (2 + components) + 1 + other]
+                        * left_derivative
+                        * state_jacobian[other * coordinates + right];
+                }
+            }
+            hessian[left * coordinates + right] += residual_hessian;
+        }
+    }
+
+    const double value = ideal + total_amount * derivatives.residual_helmholtz;
+    if (!std::isfinite(value)
+        || !std::all_of(gradient.begin(), gradient.end(), [](double item) {
+            return std::isfinite(item);
+        })
+        || !std::all_of(hessian.begin(), hessian.end(), [](double item) {
+            return std::isfinite(item);
+        })) {
+        throw std::runtime_error("electrolyte phase block contains nonfinite values");
+    }
+    const double pressure = -GAS_CONSTANT * temperature * gradient[components];
+    return {
+        value,
+        std::move(gradient),
+        std::move(hessian),
+        pressure,
+    };
 }
 
 template <typename Scalar>

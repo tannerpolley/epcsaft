@@ -122,8 +122,16 @@ bool NativeModel::supports_mixture_native_sdk_v1() const {
     return detail::supports_mixture_phase_block(parameters_);
 }
 
+bool NativeModel::supports_electrolyte_native_sdk_v1() const {
+    return detail::supports_electrolyte_phase_block(parameters_);
+}
+
 std::size_t NativeModel::component_count() const {
     return parameters_.segment_count.size();
+}
+
+const std::vector<int>& NativeModel::charge_numbers() const {
+    return parameters_.charge_number;
 }
 
 NativePurePhaseBlock NativeModel::evaluate_pure_phase(
@@ -169,6 +177,17 @@ NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase_kij(
 ) const {
     return detail::mixture_phase_block_kij(
         temperature, amounts, volume, k_ij, parameters_
+    );
+}
+
+NativeMixturePhaseBlock NativeModel::evaluate_electrolyte_phase(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double ion_mole_fraction_max
+) const {
+    return detail::electrolyte_phase_block(
+        temperature, amounts, volume, ion_mole_fraction_max, parameters_
     );
 }
 

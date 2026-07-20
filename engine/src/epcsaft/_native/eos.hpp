@@ -60,7 +60,9 @@ public:
     ) const;
     bool supports_native_sdk_v1() const;
     bool supports_mixture_native_sdk_v1() const;
+    bool supports_electrolyte_native_sdk_v1() const;
     std::size_t component_count() const;
+    const std::vector<int>& charge_numbers() const;
     NativePurePhaseBlock evaluate_pure_phase(
         double temperature,
         double amount,
@@ -84,6 +86,12 @@ public:
         const std::vector<double>& amounts,
         double volume,
         double k_ij
+    ) const;
+    NativeMixturePhaseBlock evaluate_electrolyte_phase(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume,
+        double ion_mole_fraction_max
     ) const;
 
 private:

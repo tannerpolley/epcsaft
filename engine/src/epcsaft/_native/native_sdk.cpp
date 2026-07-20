@@ -22,18 +22,38 @@ struct NativeSdkEndpoint final {
     std::string parameter_fingerprint;
     double temperature_min_k;
     double temperature_max_k;
+    double ion_mole_fraction_max;
+    std::vector<std::string> component_ids;
+    std::vector<const char*> component_id_pointers;
+    std::vector<int32_t> component_charges;
     epcsaft_native_sdk_v1 table;
 
     NativeSdkEndpoint(
         const NativeModel& source_model,
         std::string fingerprint,
         double minimum_temperature,
-        double maximum_temperature
+        double maximum_temperature,
+        std::vector<std::string> identifiers,
+        double maximum_ion_fraction
     )
         : model(source_model),
           parameter_fingerprint(std::move(fingerprint)),
           temperature_min_k(minimum_temperature),
           temperature_max_k(maximum_temperature),
+          ion_mole_fraction_max(maximum_ion_fraction),
+          component_ids(std::move(identifiers)),
+          component_id_pointers([&] {
+              std::vector<const char*> pointers;
+              pointers.reserve(component_ids.size());
+              for (const auto& identifier : component_ids) {
+                  pointers.push_back(identifier.c_str());
+              }
+              return pointers;
+          }()),
+          component_charges(
+              source_model.charge_numbers().begin(),
+              source_model.charge_numbers().end()
+          ),
           table{
               EPCSAFT_NATIVE_SDK_V1_ABI_VERSION,
               sizeof(epcsaft_native_sdk_v1),
@@ -46,6 +66,9 @@ struct NativeSdkEndpoint final {
               sizeof(epcsaft_mixture_phase_block_result_v1),
               &NativeSdkEndpoint::evaluate_mixture,
               &NativeSdkEndpoint::evaluate_mixture_kij,
+              component_id_pointers.data(),
+              component_charges.data(),
+              &NativeSdkEndpoint::evaluate_electrolyte,
           } {}
 
     static int evaluate(
@@ -386,6 +409,39 @@ struct NativeSdkEndpoint final {
             }
         );
     }
+
+    static int evaluate_electrolyte(
+        const void* context,
+        double temperature_k,
+        const double* amounts_mol,
+        size_t amount_count,
+        double volume_m3,
+        epcsaft_mixture_phase_block_result_v1* result
+    ) noexcept {
+        const auto* endpoint = static_cast<const NativeSdkEndpoint*>(context);
+        return evaluate_mixture_common(
+            context,
+            temperature_k,
+            amounts_mol,
+            amount_count,
+            volume_m3,
+            1,
+            true,
+            "temperature, amounts, and volume must be positive and finite",
+            result,
+            [temperature_k, volume_m3, endpoint](
+                const NativeModel& model,
+                const std::vector<double>& amounts
+            ) {
+                return model.evaluate_electrolyte_phase(
+                    temperature_k,
+                    amounts,
+                    volume_m3,
+                    endpoint->ion_mole_fraction_max
+                );
+            }
+        );
+    }
 };
 
 }  // namespace
@@ -394,23 +450,43 @@ pybind11::capsule make_native_sdk_v1(
     const NativeModel& model,
     const std::string& parameter_fingerprint,
     double temperature_min_k,
-    double temperature_max_k
+    double temperature_max_k,
+    const std::vector<std::string>& component_ids,
+    double ion_mole_fraction_max
 ) {
     if (!model.supports_native_sdk_v1()
-        && !model.supports_mixture_native_sdk_v1()) {
+        && !model.supports_mixture_native_sdk_v1()
+        && !model.supports_electrolyte_native_sdk_v1()) {
         throw std::invalid_argument(
-            "native SDK v1 requires a supported neutral nonassociating model"
+            "native SDK v1 requires a supported phase-block model"
         );
     }
     if (parameter_fingerprint.empty()
         || parameter_fingerprint.size() >= EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE) {
         throw std::invalid_argument("invalid parameter fingerprint");
     }
+    if (component_ids.size() != model.component_count()
+        || std::any_of(
+            component_ids.begin(), component_ids.end(), [](const auto& identifier) {
+                return identifier.empty();
+            }
+        )) {
+        throw std::invalid_argument("invalid component identifiers");
+    }
+    for (std::size_t left = 0; left < component_ids.size(); ++left) {
+        for (std::size_t right = left + 1; right < component_ids.size(); ++right) {
+            if (component_ids[left] == component_ids[right]) {
+                throw std::invalid_argument("duplicate component identifier");
+            }
+        }
+    }
     auto* endpoint = new NativeSdkEndpoint(
         model,
         parameter_fingerprint,
         temperature_min_k,
-        temperature_max_k
+        temperature_max_k,
+        component_ids,
+        ion_mole_fraction_max
     );
     return pybind11::capsule(
         &endpoint->table,

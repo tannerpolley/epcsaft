@@ -128,6 +128,9 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t mixture_result_size;
     epcsaft_evaluate_mixture_phase_v1 evaluate_mixture_phase;
     epcsaft_evaluate_mixture_phase_kij_v1 evaluate_mixture_phase_kij;
+    const char* const* component_ids;
+    const int32_t* component_charges;
+    epcsaft_evaluate_mixture_phase_v1 evaluate_electrolyte_phase;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

@@ -22,6 +22,8 @@ struct ThermodynamicDerivatives final {
     double temperature_temperature;
     double temperature_density;
     double density_density;
+    double residual_helmholtz;
+    std::vector<double> hessian;
 };
 
 inline double directional_second(
@@ -166,14 +168,17 @@ inline ThermodynamicDerivatives thermodynamic_derivatives(
     }
     const auto helmholtz_hessian = function.Hessian(point, 0);
 
+    std::vector<std::vector<double>> association_hessians(sites);
+    for (std::size_t site = 0; site < sites; ++site) {
+        association_hessians[site] = function.Hessian(point, 1 + site);
+    }
     auto reduced_second = [&](std::size_t left, std::size_t right) {
         std::vector<double> site_second(sites, 0.0);
         if (sites != 0) {
             std::vector<double> right_hand_side(sites);
             for (std::size_t site = 0; site < sites; ++site) {
-                const auto residual_hessian = function.Hessian(point, 1 + site);
                 right_hand_side[site] = -directional_second(
-                    residual_hessian, directions[left], directions[right]
+                    association_hessians[site], directions[left], directions[right]
                 );
             }
             site_second = solve_linear(
@@ -189,13 +194,24 @@ inline ThermodynamicDerivatives thermodynamic_derivatives(
         return value;
     };
 
+    std::vector<double> reduced_hessian(coordinates * coordinates);
+    for (std::size_t row = 0; row < coordinates; ++row) {
+        for (std::size_t column = 0; column < coordinates; ++column) {
+            reduced_hessian[row * coordinates + column] =
+                reduced_second(row, column);
+        }
+    }
+    const double residual_helmholtz = function.Forward(0, point)[0];
+
     return {
         gradient[0],
         gradient[1],
         std::vector<double>(gradient.begin() + 2, gradient.end()),
-        reduced_second(0, 0),
-        reduced_second(0, 1),
-        reduced_second(1, 1),
+        reduced_hessian[0],
+        reduced_hessian[1],
+        reduced_hessian[coordinates + 1],
+        residual_helmholtz,
+        std::move(reduced_hessian),
     };
 }
 

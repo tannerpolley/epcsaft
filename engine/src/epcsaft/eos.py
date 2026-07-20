@@ -28,6 +28,8 @@ _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS = frozenset(
         "sha256:9bfbc8d7789e51609945e61dbdf7a020decc8f9e31b408b0977724c7cb3e1551",
         "sha256:307fcb28d535b94782f3e3caf4012c0c8c0dc87ee4239d6c316de56553543286",
         "sha256:cb0c63530f96d51d5a24f48a2d02ae6567d163abdc373099ce096f7ff0a896f5",
+        "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+        "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
     }
 )
 
@@ -333,12 +335,19 @@ def native_sdk(model: EPCSAFT) -> object:
         )
     minimum = math.nan if model._model.temperature_min_k is None else model._model.temperature_min_k
     maximum = math.nan if model._model.temperature_max_k is None else model._model.temperature_max_k
+    maximum_ion_fraction = (
+        math.nan
+        if model._model.ion_mole_fraction_max is None
+        else model._model.ion_mole_fraction_max
+    )
     try:
         return _native_sdk_v1(
             model._native,
             fingerprint,
             minimum,
             maximum,
+            model._component_ids,
+            maximum_ion_fraction,
         )
     except (RuntimeError, ValueError) as exc:
         raise _eos_error("unsupported-native-sdk", reason=str(exc)) from exc
