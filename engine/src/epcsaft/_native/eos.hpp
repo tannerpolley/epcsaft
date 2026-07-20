@@ -44,6 +44,7 @@ struct NativeResult final {
 struct NativePurePhaseBlock;
 struct NativeParameterizedPurePhaseBlock;
 struct NativeMixturePhaseBlock;
+struct NativePackingFractionBlock;
 
 class NativeModel final {
 public:
@@ -99,6 +100,12 @@ public:
         const std::vector<double>& mole_fractions,
         double packing_fraction_min,
         double packing_fraction_max,
+        double ion_mole_fraction_max
+    ) const;
+    NativePackingFractionBlock evaluate_packing_fraction(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume,
         double ion_mole_fraction_max
     ) const;
 

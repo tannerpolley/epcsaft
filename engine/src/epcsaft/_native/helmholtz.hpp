@@ -124,6 +124,22 @@ inline double close_packing_fraction() {
     return PI / (3.0 * std::sqrt(2.0));
 }
 
+template <typename Scalar, typename Parameters>
+Scalar packing_fraction_from_geometry(
+    const Scalar& molar_density,
+    const std::vector<Scalar>& mole_fractions,
+    const Parameters& parameters,
+    const std::vector<Scalar>& diameter
+) {
+    Scalar moment = Scalar(0.0);
+    for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+        moment += mole_fractions[component]
+            * parameters.segment_count[component]
+            * diameter[component] * diameter[component] * diameter[component];
+    }
+    return (PI / 6.0) * molar_density * (AVOGADRO / 1.0e30) * moment;
+}
+
 template <typename Parameters>
 double packing_fraction_coefficient(
     double temperature,
@@ -132,18 +148,39 @@ double packing_fraction_coefficient(
 ) {
     const auto sigma = segment_sigma(temperature, parameters);
     const auto diameter = segment_diameter(temperature, parameters, sigma);
-    double coefficient = 0.0;
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         if (!(sigma[component] > 0.0) || !std::isfinite(sigma[component])
             || !(diameter[component] > 0.0)
             || !std::isfinite(diameter[component])) {
             throw std::invalid_argument("invalid segment diameter correlation");
         }
-        coefficient += mole_fractions[component]
-            * parameters.segment_count[component]
-            * diameter[component] * diameter[component] * diameter[component];
     }
-    return coefficient * PI / 6.0 * (AVOGADRO / 1.0e30);
+    return packing_fraction_from_geometry(
+        1.0, mole_fractions, parameters, diameter
+    );
+}
+
+template <typename Scalar, typename Parameters>
+Scalar phase_packing_fraction(
+    double temperature,
+    const std::vector<Scalar>& amounts,
+    const Scalar& volume,
+    const Parameters& parameters
+) {
+    Scalar total = Scalar(0.0);
+    for (const Scalar& amount : amounts) {
+        total += amount;
+    }
+    std::vector<Scalar> composition;
+    composition.reserve(amounts.size());
+    for (const Scalar& amount : amounts) {
+        composition.push_back(amount / total);
+    }
+    const auto sigma = segment_sigma(Scalar(temperature), parameters);
+    const auto diameter = segment_diameter(Scalar(temperature), parameters, sigma);
+    return packing_fraction_from_geometry(
+        total / volume, composition, parameters, diameter
+    );
 }
 
 template <typename Scalar, typename Parameters>
@@ -168,7 +205,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
     std::array<Scalar, 4> zeta = {
         Scalar(0.0), Scalar(0.0), Scalar(0.0), Scalar(0.0),
     };
-    for (std::size_t order = 0; order < zeta.size(); ++order) {
+    for (std::size_t order = 0; order < zeta.size() - 1; ++order) {
         Scalar moment = Scalar(0.0);
         for (std::size_t i = 0; i < size; ++i) {
             Scalar power = Scalar(1.0);
@@ -179,6 +216,9 @@ HelmholtzResult<Scalar> residual_helmholtz(
         }
         zeta[order] = (PI / 6.0) * number_density * moment;
     }
+    zeta[3] = packing_fraction_from_geometry(
+        molar_density, mole_fractions, parameters, diameter
+    );
     if constexpr (std::is_same_v<Scalar, double>) {
         if (zeta[3] >= close_packing_fraction()) {
             throw std::invalid_argument("packing fraction is at or above close packing");

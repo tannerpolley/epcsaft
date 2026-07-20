@@ -39,6 +39,12 @@ struct NativeMixturePhaseBlock final {
     double pressure_pa;
 };
 
+struct NativePackingFractionBlock final {
+    double packing_fraction;
+    std::vector<double> gradient;
+    std::vector<double> hessian;
+};
+
 namespace detail {
 
 inline bool supports_pure_phase_block(const NativeParameters& parameters) {
@@ -165,6 +171,34 @@ inline void validate_mixture_phase_state(
         throw std::invalid_argument(
             "temperature, amounts, and volume must be positive and finite"
         );
+    }
+}
+
+inline void validate_electrolyte_phase_state(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double ion_mole_fraction_max,
+    const NativeParameters& parameters
+) {
+    validate_mixture_phase_state(temperature, amounts, volume, parameters);
+    double total_amount = 0.0;
+    double ionic_amount = 0.0;
+    double charge_amount = 0.0;
+    for (std::size_t component = 0; component < amounts.size(); ++component) {
+        total_amount += amounts[component];
+        const int charge = parameters.charge_number[component];
+        if (charge != 0) {
+            ionic_amount += amounts[component];
+        }
+        charge_amount += amounts[component] * static_cast<double>(charge);
+    }
+    if (std::abs(charge_amount / total_amount) > 1.0e-12) {
+        throw std::invalid_argument("electrolyte phase amounts must be electroneutral");
+    }
+    if (std::isfinite(ion_mole_fraction_max)
+        && ionic_amount / total_amount > ion_mole_fraction_max + 1.0e-12) {
+        throw std::invalid_argument("ion mole fraction exceeds the parameter source domain");
     }
 }
 
@@ -300,27 +334,15 @@ inline NativeMixturePhaseBlock electrolyte_phase_block(
             "electrolyte phase block requires an ionic associating model"
         );
     }
-    validate_mixture_phase_state(temperature, amounts, volume, parameters);
+    validate_electrolyte_phase_state(
+        temperature, amounts, volume, ion_mole_fraction_max, parameters
+    );
 
     const std::size_t components = amounts.size();
     const std::size_t coordinates = components + 1;
     double total_amount = 0.0;
-    double ionic_amount = 0.0;
-    double charge_amount = 0.0;
     for (std::size_t component = 0; component < components; ++component) {
         total_amount += amounts[component];
-        const int charge = parameters.charge_number[component];
-        if (charge != 0) {
-            ionic_amount += amounts[component];
-        }
-        charge_amount += amounts[component] * static_cast<double>(charge);
-    }
-    if (std::abs(charge_amount / total_amount) > 1.0e-12) {
-        throw std::invalid_argument("electrolyte phase amounts must be electroneutral");
-    }
-    if (std::isfinite(ion_mole_fraction_max)
-        && ionic_amount / total_amount > ion_mole_fraction_max + 1.0e-12) {
-        throw std::invalid_argument("ion mole fraction exceeds the parameter source domain");
     }
 
     const double density = total_amount / volume;
@@ -439,6 +461,60 @@ inline NativeMixturePhaseBlock electrolyte_phase_block(
         std::move(hessian),
         pressure,
     };
+}
+
+inline NativePackingFractionBlock packing_fraction_block(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double ion_mole_fraction_max,
+    const NativeParameters& parameters
+) {
+    if (!supports_electrolyte_phase_block(parameters)) {
+        throw std::logic_error(
+            "packing fraction block requires an ionic associating model"
+        );
+    }
+    validate_electrolyte_phase_state(
+        temperature, amounts, volume, ion_mole_fraction_max, parameters
+    );
+    const double checked_value = phase_packing_fraction(
+        temperature, amounts, volume, parameters
+    );
+    if (!std::isfinite(checked_value)
+        || checked_value >= close_packing_fraction()) {
+        throw std::invalid_argument("packing fraction is outside the model domain");
+    }
+
+    using ADScalar = CppAD::AD<double>;
+    std::vector<double> point(amounts.begin(), amounts.end());
+    point.push_back(volume);
+    std::vector<ADScalar> independent(point.begin(), point.end());
+    CppAD::Independent(independent);
+    const std::size_t volume_coordinate = amounts.size();
+    const std::vector<ADScalar> active_amounts(
+        independent.begin(), independent.begin() + volume_coordinate
+    );
+    const ADScalar active_value = phase_packing_fraction(
+        temperature,
+        active_amounts,
+        independent[volume_coordinate],
+        parameters
+    );
+    CppAD::ADFun<double> function(independent, {active_value});
+    const double value = function.Forward(0, point)[0];
+    const auto gradient = function.Jacobian(point);
+    const auto hessian = function.Hessian(point, 0);
+    if (!std::isfinite(value)
+        || !std::all_of(gradient.begin(), gradient.end(), [](double item) {
+            return std::isfinite(item);
+        })
+        || !std::all_of(hessian.begin(), hessian.end(), [](double item) {
+            return std::isfinite(item);
+        })) {
+        throw std::runtime_error("packing fraction block contains nonfinite values");
+    }
+    return {value, gradient, hessian};
 }
 
 template <typename Scalar>

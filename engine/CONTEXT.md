@@ -62,12 +62,14 @@ distinct Khudaida bundle and returns value, gradient, Hessian, pressure,
 fingerprint, component order, and charges. It adds no phase discovery,
 equilibrium, trace-species policy, fitting, or authority.
 
-The separate D-024 volume-domain tail accepts the exact model fingerprint,
+The D-024 volume-domain tails share one Provider packing owner with pressure
+closure. The value convenience accepts the exact model fingerprint,
 temperature, ordered normalized composition, and caller-owned packing-fraction
-interval. It returns only the corresponding lower and upper molar volumes in
-`m^3/mol` through a size-gated two-double buffer. Pressure closure and this
-tail share one Provider packing-coefficient owner. Perdomo's Stage-I limits,
-search variables, initialization, and acceptance remain Equilibrium-owned.
+interval, returning the corresponding lower and upper molar volumes in
+`m^3/mol`. The derivative tail accepts positive ordered amounts and extensive
+volume and returns packing fraction plus exact CppAD gradient/Hessian in
+`(n_1,...,n_C,V)`. Perdomo limits, constraint construction, search variables,
+initialization, and acceptance remain Equilibrium-owned.
 
 Migration D-023 additionally records a documentation-only design candidate for
 one model-bound active-Born-diameter evaluation of the existing 298.15 K,

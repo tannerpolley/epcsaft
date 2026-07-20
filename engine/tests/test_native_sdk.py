@@ -102,6 +102,12 @@ class VolumeBoundsNativeSdkTable(ctypes.Structure):
     )
 
 
+class PackingFractionNativeSdkTable(ctypes.Structure):
+    _fields_ = VolumeBoundsNativeSdkTable._fields_ + (
+        ("evaluate_packing_fraction", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -117,6 +123,10 @@ ELECTROLYTE_PREFIX_SIZE = (
 )
 VOLUME_BOUNDS_PREFIX_SIZE = (
     VolumeBoundsNativeSdkTable.evaluate_molar_volume_bounds.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+PACKING_FRACTION_PREFIX_SIZE = (
+    PackingFractionNativeSdkTable.evaluate_packing_fraction.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
@@ -172,6 +182,21 @@ EvaluateMolarVolumeBounds = ctypes.CFUNCTYPE(
     ctypes.c_size_t,
     ctypes.c_double,
     ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+)
+
+EvaluatePackingFraction = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
     ctypes.POINTER(ctypes.c_double),
     ctypes.c_size_t,
 )
@@ -246,6 +271,20 @@ def _volume_bounds_table(
     assert address
     table = ctypes.cast(address, ctypes.POINTER(VolumeBoundsNativeSdkTable)).contents
     assert table.table_size >= VOLUME_BOUNDS_PREFIX_SIZE
+    return capsule, table
+
+
+def _packing_fraction_table(
+    model: EPCSAFT,
+) -> tuple[object, PackingFractionNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(PackingFractionNativeSdkTable)).contents
+    assert table.table_size >= PACKING_FRACTION_PREFIX_SIZE
     return capsule, table
 
 
@@ -515,6 +554,16 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
     assert (
         VolumeBoundsNativeSdkTable.evaluate_molar_volume_bounds.offset
         == ELECTROLYTE_PREFIX_SIZE
+    )
+    for field_name, _ in VolumeBoundsNativeSdkTable._fields_:
+        assert (
+            getattr(PackingFractionNativeSdkTable, field_name).offset
+            == getattr(VolumeBoundsNativeSdkTable, field_name).offset
+        )
+    assert VOLUME_BOUNDS_PREFIX_SIZE == ctypes.sizeof(VolumeBoundsNativeSdkTable)
+    assert (
+        PackingFractionNativeSdkTable.evaluate_packing_fraction.offset
+        == VOLUME_BOUNDS_PREFIX_SIZE
     )
 
 
@@ -1310,7 +1359,7 @@ def test_native_sdk_molar_volume_bounds_match_packing_oracles_and_permutation() 
     model = _khudaida_model(canonical_ids)
     capsule, table, bounds = evaluate(model, 293.15, composition)
     assert capsule is not None
-    assert table.table_size == ctypes.sizeof(VolumeBoundsNativeSdkTable) == 120
+    assert table.table_size >= ctypes.sizeof(VolumeBoundsNativeSdkTable) == 120
     water_sigma = 2.7927 + 10.11 * math.exp(-0.01775 * 293.15) - 1.417 * math.exp(
         -0.01146 * 293.15
     )
@@ -1401,6 +1450,185 @@ def test_native_sdk_molar_volume_bounds_reject_abi_fingerprint_and_domain_errors
     assert call(bounds=guarded, eta_min=0.74, eta_max=1.0e-6) == STATUS_INVALID_ARGUMENT
     assert call(bounds=guarded, eta_max=0.75) == STATUS_DOMAIN_ERROR
     assert tuple(guarded) == (11.0, 22.0)
+
+
+def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permutation() -> None:
+    canonical_ids = (
+        "water",
+        "ethanol",
+        "isobutanol",
+        "sodium-cation",
+        "chloride-anion",
+    )
+    temperature_k = 293.15
+    amounts = (0.65905, 0.05095, 0.27015, 0.01985, 0.01985)
+    volume_m3 = 1.0e-3
+    model = _khudaida_model(canonical_ids)
+
+    def evaluate(
+        selected_model: EPCSAFT,
+        selected_amounts: tuple[float, ...],
+    ) -> tuple[object, PackingFractionNativeSdkTable, float, tuple[float, ...], tuple[float, ...]]:
+        capsule, table = _packing_fraction_table(selected_model)
+        coordinates = len(selected_amounts) + 1
+        amount_values = (ctypes.c_double * len(selected_amounts))(*selected_amounts)
+        packing_fraction = ctypes.c_double()
+        gradient = (ctypes.c_double * coordinates)()
+        hessian = (ctypes.c_double * (coordinates * coordinates))()
+        status = EvaluatePackingFraction(table.evaluate_packing_fraction)(
+            table.model_context,
+            selected_model.parameter_fingerprint.encode(),
+            temperature_k,
+            amount_values,
+            len(selected_amounts),
+            volume_m3,
+            ctypes.byref(packing_fraction),
+            gradient,
+            coordinates,
+            hessian,
+            coordinates * coordinates,
+        )
+        assert status == STATUS_OK
+        return capsule, table, packing_fraction.value, tuple(gradient), tuple(hessian)
+
+    capsule, table, value, gradient, hessian = evaluate(model, amounts)
+    assert capsule is not None
+    assert table.table_size == ctypes.sizeof(PackingFractionNativeSdkTable) == 128
+    assert PackingFractionNativeSdkTable.evaluate_packing_fraction.offset == 120
+
+    water_sigma = 2.7927 + 10.11 * math.exp(-0.01775 * temperature_k) - 1.417 * math.exp(
+        -0.01146 * temperature_k
+    )
+    diameters = tuple(
+        0.88 * sigma
+        if charge
+        else sigma * (1.0 - 0.12 * math.exp(-3.0 * energy / temperature_k))
+        for sigma, energy, charge in zip(
+            (water_sigma, 3.1771, 3.5561, 2.8232, 2.7560),
+            (353.95, 198.24, 257.13, 230.0, 170.0),
+            (0, 0, 0, 1, -1),
+            strict=True,
+        )
+    )
+    weights = tuple(
+        math.pi / 6.0 * 6.02214076e23 / 1.0e30 * segments * diameter**3
+        for segments, diameter in zip(
+            (1.2047, 2.3827, 2.8440, 1.0, 1.0), diameters, strict=True
+        )
+    )
+    expected_value = math.fsum(
+        amount * weight for amount, weight in zip(amounts, weights, strict=True)
+    ) / volume_m3
+    expected_gradient = tuple(weight / volume_m3 for weight in weights) + (
+        -expected_value / volume_m3,
+    )
+    coordinates = 6
+    expected_hessian = [0.0] * (coordinates * coordinates)
+    for component, weight in enumerate(weights):
+        expected_hessian[component * coordinates + 5] = -weight / volume_m3**2
+        expected_hessian[5 * coordinates + component] = -weight / volume_m3**2
+    expected_hessian[5 * coordinates + 5] = 2.0 * expected_value / volume_m3**2
+    assert value == pytest.approx(expected_value, rel=2.0e-15)
+    assert gradient == pytest.approx(expected_gradient, rel=2.0e-15, abs=1.0e-15)
+    assert hessian == pytest.approx(expected_hessian, rel=3.0e-15, abs=1.0e-14)
+
+    direction = (0.01, -0.002, 0.004, 0.0005, 0.0005, 2.0e-6)
+    directional_gradient = math.fsum(
+        left * right for left, right in zip(gradient, direction, strict=True)
+    )
+    oracle_directional_gradient = math.fsum(
+        left * right for left, right in zip(expected_gradient, direction, strict=True)
+    )
+    assert directional_gradient == pytest.approx(oracle_directional_gradient, rel=2.0e-15)
+    for row in range(coordinates):
+        actual = math.fsum(
+            hessian[row * coordinates + column] * direction[column]
+            for column in range(coordinates)
+        )
+        expected = math.fsum(
+            expected_hessian[row * coordinates + column] * direction[column]
+            for column in range(coordinates)
+        )
+        assert actual == pytest.approx(expected, rel=3.0e-15, abs=1.0e-14)
+
+    permutation = (4, 2, 0, 3, 1, 5)
+    permuted_model = _khudaida_model(tuple(canonical_ids[index] for index in permutation[:-1]))
+    permuted_capsule, _, permuted_value, permuted_gradient, permuted_hessian = evaluate(
+        permuted_model, tuple(amounts[index] for index in permutation[:-1])
+    )
+    assert permuted_capsule is not None
+    assert permuted_value == pytest.approx(value, rel=2.0e-15)
+    assert permuted_gradient == pytest.approx(tuple(gradient[index] for index in permutation))
+    assert permuted_hessian == pytest.approx(
+        tuple(hessian[row * coordinates + column] for row in permutation for column in permutation)
+    )
+
+
+def test_native_sdk_packing_fraction_fails_closed_for_abi_model_and_domain_errors() -> None:
+    model = _khudaida_model(
+        ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
+    )
+    capsule, table = _packing_fraction_table(model)
+    assert capsule is not None
+    callback = EvaluatePackingFraction(table.evaluate_packing_fraction)
+    amounts = (ctypes.c_double * 5)(0.64, 0.08, 0.24, 0.02, 0.02)
+    value = ctypes.c_double(11.0)
+    gradient = (ctypes.c_double * 6)(*(12.0 for _ in range(6)))
+    hessian = (ctypes.c_double * 36)(*(13.0 for _ in range(36)))
+
+    def call(
+        *,
+        fingerprint: bytes | None = model.parameter_fingerprint.encode(),
+        temperature_k: float = 293.15,
+        amount_values: object = amounts,
+        amount_count: int = 5,
+        volume_m3: float = 1.0e-3,
+        gradient_capacity: int = 6,
+        hessian_capacity: int = 36,
+    ) -> int:
+        return callback(
+            table.model_context,
+            fingerprint,
+            temperature_k,
+            amount_values,
+            amount_count,
+            volume_m3,
+            ctypes.byref(value),
+            gradient,
+            gradient_capacity,
+            hessian,
+            hessian_capacity,
+        )
+
+    def assert_untouched() -> None:
+        assert value.value == 11.0
+        assert tuple(gradient) == (12.0,) * 6
+        assert tuple(hessian) == (13.0,) * 36
+
+    assert call(gradient_capacity=5) == STATUS_ABI_MISMATCH
+    assert_untouched()
+    assert call(hessian_capacity=35) == STATUS_ABI_MISMATCH
+    assert_untouched()
+    assert call(fingerprint=b"sha256:wrong") == STATUS_UNSUPPORTED_MODEL
+    assert_untouched()
+    assert call(temperature_k=math.nan) == STATUS_INVALID_ARGUMENT
+    assert_untouched()
+    assert call(temperature_k=294.0) == STATUS_DOMAIN_ERROR
+    assert_untouched()
+    assert call(amount_count=4) == STATUS_INVALID_ARGUMENT
+    assert_untouched()
+    assert call(amount_values=(ctypes.c_double * 5)(0.64, 0.08, 0.24, 0.0, 0.0)) == (
+        STATUS_INVALID_ARGUMENT
+    )
+    assert_untouched()
+    assert call(amount_values=(ctypes.c_double * 5)(0.64, 0.08, 0.24, 0.03, 0.01)) == (
+        STATUS_DOMAIN_ERROR
+    )
+    assert_untouched()
+    assert call(volume_m3=math.nan) == STATUS_INVALID_ARGUMENT
+    assert_untouched()
+    assert call(volume_m3=1.0e-6) == STATUS_DOMAIN_ERROR
+    assert_untouched()
 
 
 def test_native_sdk_header_is_installed_package_data() -> None:

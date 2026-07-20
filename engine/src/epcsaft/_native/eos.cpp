@@ -191,6 +191,17 @@ NativeMixturePhaseBlock NativeModel::evaluate_electrolyte_phase(
     );
 }
 
+NativePackingFractionBlock NativeModel::evaluate_packing_fraction(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double ion_mole_fraction_max
+) const {
+    return detail::packing_fraction_block(
+        temperature, amounts, volume, ion_mole_fraction_max, parameters_
+    );
+}
+
 std::array<double, 2> NativeModel::molar_volume_bounds(
     double temperature,
     const std::vector<double>& mole_fractions,

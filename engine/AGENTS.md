@@ -53,9 +53,11 @@ no runtime authority and admit no association, ions, density solve, phase
 identity, third derivatives, equilibrium, regression targets, or fitting.
 
 Migration D-024 additionally records local append-only full-electrolyte and
-molar-volume-bound candidates. The former evaluates the complete active
-Helmholtz phase block in explicit amounts and extensive volume. The latter
-maps caller-owned packing-fraction limits to composition- and
-temperature-specific molar-volume bounds through the same Provider packing
-owner. Neither candidate owns equilibrium, phase discovery, solver policy,
-fixed phase volumes, fitting, or authority.
+molar-volume-domain candidates. The phase callback evaluates the complete
+active Helmholtz block in explicit amounts and extensive volume. One domain
+callback maps caller-owned packing-fraction limits to composition- and
+temperature-specific molar-volume bounds; a further callback returns packing
+fraction and exact CppAD gradient/Hessian in those phase coordinates. Pressure
+closure and both domain callbacks share the same Provider packing owner. None
+owns equilibrium, phase discovery, solver policy, fixed phase volumes,
+fitting, or authority.

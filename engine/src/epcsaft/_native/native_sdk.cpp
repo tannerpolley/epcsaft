@@ -70,6 +70,7 @@ struct NativeSdkEndpoint final {
               component_charges.data(),
               &NativeSdkEndpoint::evaluate_electrolyte,
               &NativeSdkEndpoint::evaluate_molar_volume_bounds,
+              &NativeSdkEndpoint::evaluate_packing_fraction,
           } {}
 
     static int evaluate(
@@ -502,6 +503,72 @@ struct NativeSdkEndpoint final {
             return EPCSAFT_NATIVE_STATUS_OK_V1;
         } catch (const std::invalid_argument&) {
             return EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1;
+        } catch (...) {
+            return EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1;
+        }
+    }
+
+    static int evaluate_packing_fraction(
+        const void* context,
+        const char* expected_parameter_fingerprint,
+        double temperature_k,
+        const double* amounts_mol,
+        size_t amount_count,
+        double volume_m3,
+        double* packing_fraction,
+        double* gradient,
+        size_t gradient_capacity,
+        double* hessian,
+        size_t hessian_capacity
+    ) noexcept {
+        if (context == nullptr || expected_parameter_fingerprint == nullptr
+            || amounts_mol == nullptr || packing_fraction == nullptr
+            || gradient == nullptr || hessian == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        const std::size_t coordinate_count = endpoint.table.component_count + 1;
+        if (gradient_capacity != coordinate_count
+            || hessian_capacity != coordinate_count * coordinate_count) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        if (std::strcmp(
+                expected_parameter_fingerprint,
+                endpoint.parameter_fingerprint.c_str()
+            ) != 0) {
+            return EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1;
+        }
+        if (amount_count != endpoint.table.component_count
+            || !std::isfinite(temperature_k) || temperature_k <= 0.0
+            || !std::isfinite(volume_m3) || volume_m3 <= 0.0
+            || !std::all_of(amounts_mol, amounts_mol + amount_count, [](double amount) {
+                return std::isfinite(amount) && amount > 0.0;
+            })) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if ((std::isfinite(endpoint.temperature_min_k)
+             && temperature_k < endpoint.temperature_min_k)
+            || (std::isfinite(endpoint.temperature_max_k)
+                && temperature_k > endpoint.temperature_max_k)) {
+            return EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1;
+        }
+
+        try {
+            const std::vector<double> amounts(amounts_mol, amounts_mol + amount_count);
+            const auto block = endpoint.model.evaluate_packing_fraction(
+                temperature_k,
+                amounts,
+                volume_m3,
+                endpoint.ion_mole_fraction_max
+            );
+            *packing_fraction = block.packing_fraction;
+            std::copy(block.gradient.begin(), block.gradient.end(), gradient);
+            std::copy(block.hessian.begin(), block.hessian.end(), hessian);
+            return EPCSAFT_NATIVE_STATUS_OK_V1;
+        } catch (const std::invalid_argument&) {
+            return EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1;
+        } catch (const std::logic_error&) {
+            return EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1;
         } catch (...) {
             return EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1;
         }

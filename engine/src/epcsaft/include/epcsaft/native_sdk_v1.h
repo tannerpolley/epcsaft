@@ -141,6 +141,25 @@ typedef int (*epcsaft_evaluate_molar_volume_bounds_v1)(
     size_t bound_count
 );
 
+/*
+ * Evaluates the model packing fraction and exact derivatives in ordered
+ * coordinates (n_1, ..., n_C, V). Gradient and Hessian capacities must equal
+ * C + 1 and (C + 1)^2. Any failure leaves all output buffers untouched.
+ */
+typedef int (*epcsaft_evaluate_packing_fraction_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    const double* amounts_mol,
+    size_t amount_count,
+    double volume_m3,
+    double* packing_fraction,
+    double* gradient,
+    size_t gradient_capacity,
+    double* hessian,
+    size_t hessian_capacity
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -157,6 +176,7 @@ typedef struct epcsaft_native_sdk_v1 {
     const int32_t* component_charges;
     epcsaft_evaluate_mixture_phase_v1 evaluate_electrolyte_phase;
     epcsaft_evaluate_molar_volume_bounds_v1 evaluate_molar_volume_bounds;
+    epcsaft_evaluate_packing_fraction_v1 evaluate_packing_fraction;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

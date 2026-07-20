@@ -119,9 +119,9 @@ for the exact methane/ethane coordinate order `(n_1,n_2,V,k_ij)`. Its single
 active unlike-pair value is written symmetrically to both off-diagonal pair
 positions before the canonical Helmholtz owner is taped.
 
-The D-024 candidate appends the full-electrolyte phase callback and one
-model-bound molar-volume-domain callback. For an exact fingerprint,
-temperature, and composition in the table's component order, the latter uses
+The D-024 candidate appends the full-electrolyte phase callback and two
+model-bound volume-domain callbacks. For an exact fingerprint, temperature,
+and composition in the table's component order, the value convenience uses
 
 ```text
 K_eta(T,x) = (pi/6) (N_A/10^30) sum_i x_i m_i d_i(T)^3
@@ -137,6 +137,20 @@ policy. The callback uses a size-gated two-double caller buffer and no new
 result structure. A bound-count mismatch returns `ABI_MISMATCH` without a
 write; all failures are return-code authoritative because there is no second
 status/error payload owner.
+
+The adjacent derivative callback evaluates the same owner's
+
+```text
+eta(T,n,V) = (pi/6) (N_A/10^30) V^-1 sum_i n_i m_i d_i(T)^3
+```
+
+in coordinate order `(n_1,...,n_C,V)`. It returns the dimensionless value,
+gradient, and row-major Hessian through exact-size caller buffers. CppAD is the
+production derivative authority. Buffer-size mismatch returns `ABI_MISMATCH`;
+fingerprint, model, source-temperature, positive-state, electroneutrality,
+ion-fraction, and close-packing checks fail before any output write. The
+callback owns no packing limits or equilibrium constraint: Equilibrium supplies
+Perdomo's limits and consumes the value and derivatives in its NLP.
 
 D-023 identifies a later, design-only electrolyte tail for the first Figiel
 regression tracer. Its minimum contract is one model-bound callback for the

@@ -85,6 +85,12 @@ The Provider retains the temperature-dependent segment-diameter and packing
 geometry; consumers retain their search limits and solver policy. The callback
 adds no second result structure or fixed phase-volume constants.
 
+An adjacent append-only callback evaluates the same model packing fraction in
+explicit ordered component amounts and extensive volume. It returns the scalar
+value and exact CppAD gradient/Hessian in `(n_1,...,n_C,V)` through caller-owned
+buffers, so a consumer can impose composition-dependent packing constraints
+without copying Provider geometry. It adds no equilibrium or density owner.
+
 The capsule evaluates one phase state at a time. A consumer uses the same
 immutable model for every candidate phase; the provider does not construct
 liquid/vapor objects or own phase identity, Ipopt, equilibrium constraints, or
