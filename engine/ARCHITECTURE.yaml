@@ -46,6 +46,11 @@ native_sdk_candidates:
     active_coordinate: born_diameter_angstrom
     derivative_order: 1
     admitted_active_components: [lithium-cation, sodium-cation, potassium-cation, chloride-anion, bromide-anion]
+    reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
+    public_delegation: EPCSAFT.reference_state -> private epcsaft._core binding -> reference_sequence_owner
+    native_delegation: evaluate_ion_solvation_born -> reference_sequence_owner
+    public_behavior_change: none
+    ownership_check: schedule, composition, convergence, and terminal selection exist only in reference_sequence_owner
     exclusions: targets, residuals, scaling, bounds, Ceres, fit results, catalog persistence, other solvents or states, other ions, solvation-factor or dielectric parameters, generic parameter overlays, second derivatives, and authority
 
 accepted_scope: >-
@@ -125,7 +130,7 @@ manifest:
   package_test_files: 11
   physical_production_lines: 5444
   physical_package_test_lines: 3776
-  physical_documentation_lines: 2380
+  physical_documentation_lines: 2448
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.

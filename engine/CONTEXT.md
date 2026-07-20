@@ -61,6 +61,11 @@ authorize runtime code, targets, Ceres, fit policy, catalog admission, other
 electrolyte parameters, or broader species. The exact conditional contract and
 evidence gate live in
 `docs/designs/2026-07-20-active-born-solvation-native-sdk-design.md`.
+Its future implementation first moves the existing four-molality composition,
+schedule, convergence, and terminal-selection algorithm behind one private
+native reference-sequence owner. The public Python path then delegates through
+the existing `_core` module with unchanged behavior, and the future callback
+calls the same owner directly; neither path may duplicate the algorithm.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.

@@ -129,6 +129,16 @@ evidence gate are specified in
 `docs/designs/2026-07-20-active-born-solvation-native-sdk-design.md`. This ADR
 records neither implementation nor authority for that tail.
 
+Before that callback is implemented, the existing Python-owned four-molality
+algorithm must be refactored behind one private Provider-native owner,
+`epcsaft::detail::electrolyte_reference_sequence` in
+`src/epcsaft/_native/electrolyte_reference.hpp`. It alone owns electroneutral
+composition construction, the exact schedule, convergence adjudication, and
+terminal fugacity selection. The public `reference_state` path delegates to it
+through the existing private `_core` module with unchanged public behavior;
+the future callback calls it directly. Neither path may retain a second copy
+or expose this refactor as a new public abstraction.
+
 The capsule owns the model context. A consumer keeps a Python reference to the
 capsule for as long as it calls the table; ordinary `Py_INCREF`/`Py_DECREF`
 provides retention, so a second native lifetime protocol is unnecessary. The
@@ -218,6 +228,10 @@ them, an independent high-precision corrected-Born check, centered-difference
 checks of the complete first derivative, reference-value and derivative-limit
 convergence, exact prefix/result offsets, no-write ABI mismatch behavior, and
 installed-artifact negative space. It consumes no second derivative.
+Source inspection must additionally prove that the schedule, composition
+arithmetic, convergence comparison, and terminal selection occur only in the
+single internal reference-sequence owner; the Python and SDK paths contain
+delegation and result translation only.
 
 ## Deferred extensions
 
