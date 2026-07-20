@@ -2,8 +2,10 @@
 
 Status: accepted pure prefix authority determined by migration promotion
 receipt 0015; append-only neutral-mixture and active-kij entries are local
-candidates pending independent review and their own promotion receipts;
-consumer gates separate
+candidates pending independent review and their own promotion receipts; a
+model-bound active-Born solvation entry is design-only pending permanent-lab
+review, implementation, evidence, and its own authority decision; consumer
+gates separate
 
 Date: 2026-07-17
 
@@ -117,6 +119,16 @@ for the exact methane/ethane coordinate order `(n_1,n_2,V,k_ij)`. Its single
 active unlike-pair value is written symmetrically to both off-diagonal pair
 positions before the canonical Helmholtz owner is taped.
 
+D-023 identifies a later, design-only electrolyte tail for the first Figiel
+regression tracer. Its minimum contract is one model-bound callback for the
+existing 298.15 K, 1 bar water x-process single-ion solvation free energy with
+only the selected current-catalog ion Born diameter active. It returns one
+value and its first total fixed-pressure derivative. The exact model allowlist,
+reference path, implicit density sensitivity, proposed append-only ABI, and
+evidence gate are specified in
+`docs/designs/2026-07-20-active-born-solvation-native-sdk-design.md`. This ADR
+records neither implementation nor authority for that tail.
+
 The capsule owns the model context. A consumer keeps a Python reference to the
 capsule for as long as it calls the table; ordinary `Py_INCREF`/`Py_DECREF`
 provides retention, so a second native lifetime protocol is unnecessary. The
@@ -142,6 +154,13 @@ The active-`k_ij` callback additionally rejects nonfinite trial values but does
 not impose fit bounds or scaling. Its returned fingerprint identifies the
 immutable source model from which the fit problem descends; candidate values
 remain explicit coordinates and never masquerade as a new source record.
+
+The active-Born design admits only the five exact water/ion/counterion
+selections and fingerprints listed in its design. It fixes the active ion at
+component index 1, requires a positive finite trial diameter, and rejects any
+other solvent, component order, source fingerprint, ion, or state. H+, I-,
+sulfate, transition-metal/V species, generic electrolyte parameters, targets,
+and fit policy remain outside the contract.
 
 ## Compatibility
 
@@ -193,6 +212,13 @@ methane/ethane states, fixed-callback parity at the catalog value, the complete
 four-coordinate gradient and Hessian direction, its exact appended offset,
 finite-only trial admission, and binary/neutral/nonassociating scope.
 
+The design-only active-Born evidence gate requires source-owner parity for all
+five bound models, independent Figiel target points once Validation freezes
+them, an independent high-precision corrected-Born check, centered-difference
+checks of the complete first derivative, reference-value and derivative-limit
+convergence, exact prefix/result offsets, no-write ABI mismatch behavior, and
+installed-artifact negative space. It consumes no second derivative.
+
 ## Deferred extensions
 
 - Neutral nonassociating mixture families beyond the exact source-backed
@@ -201,6 +227,10 @@ finite-only trial admission, and binary/neutral/nonassociating scope.
   `k_ij` candidate, association, electrolyte, and other fitted-parameter
   families require separate parameterized phase contracts and evidence. They
   are not implied by the pure three-parameter entry or this bounded candidate.
+- The D-023 active-Born solvation design does not admit runtime implementation,
+  fitted parameters, additional ions, solvation-factor or dielectric
+  parameters, other solvents/states, a generic parameter overlay, or catalog
+  persistence.
 - Eliminated association requires every mixed implicit sensitivity through the
   highest consumed order; alternatively a route may lift the true site state
   and its defining constraints.

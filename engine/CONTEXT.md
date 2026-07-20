@@ -52,5 +52,15 @@ bounds, scaling, targets, and fit acceptance. Neither entry is authoritative
 until a separate promotion receipt is accepted, and neither adds phase,
 density, equilibrium, or regression ownership.
 
+Migration D-023 additionally records a documentation-only design candidate for
+one model-bound active-Born-diameter evaluation of the existing 298.15 K,
+1 bar water single-ion x-process solvation reference. It is limited to exact
+current-catalog Li+, Na+, K+, Cl-, and Br- model selections and would return
+only the scalar solvation Gibbs energy and its first derivative. It does not
+authorize runtime code, targets, Ceres, fit policy, catalog admission, other
+electrolyte parameters, or broader species. The exact conditional contract and
+evidence gate live in
+`docs/designs/2026-07-20-active-born-solvation-native-sdk-design.md`.
+
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.
