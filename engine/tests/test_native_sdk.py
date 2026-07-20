@@ -96,6 +96,12 @@ class ElectrolyteNativeSdkTable(ctypes.Structure):
     )
 
 
+class VolumeBoundsNativeSdkTable(ctypes.Structure):
+    _fields_ = ElectrolyteNativeSdkTable._fields_ + (
+        ("evaluate_molar_volume_bounds", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -108,6 +114,10 @@ ACTIVE_KIJ_PREFIX_SIZE = NativeSdkTable.evaluate_mixture_phase_kij.offset + ctyp
 )
 ELECTROLYTE_PREFIX_SIZE = (
     ElectrolyteNativeSdkTable.evaluate_electrolyte_phase.offset + ctypes.sizeof(ctypes.c_void_p)
+)
+VOLUME_BOUNDS_PREFIX_SIZE = (
+    VolumeBoundsNativeSdkTable.evaluate_molar_volume_bounds.offset
+    + ctypes.sizeof(ctypes.c_void_p)
 )
 
 
@@ -151,6 +161,19 @@ EvaluateMixturePhaseKij = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(MixturePhaseBlockResult),
+)
+
+EvaluateMolarVolumeBounds = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
 )
 
 
@@ -209,6 +232,20 @@ def _electrolyte_table(
     assert address
     table = ctypes.cast(address, ctypes.POINTER(ElectrolyteNativeSdkTable)).contents
     assert table.table_size >= ELECTROLYTE_PREFIX_SIZE
+    return capsule, table
+
+
+def _volume_bounds_table(
+    model: EPCSAFT,
+) -> tuple[object, VolumeBoundsNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(VolumeBoundsNativeSdkTable)).contents
+    assert table.table_size >= VOLUME_BOUNDS_PREFIX_SIZE
     return capsule, table
 
 
@@ -470,6 +507,15 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
         )
     assert FIXED_MIXTURE_PREFIX_SIZE == ctypes.sizeof(FixedMixtureNativeSdkTable)
     assert NativeSdkTable.evaluate_mixture_phase_kij.offset == FIXED_MIXTURE_PREFIX_SIZE
+    for field_name, _ in ElectrolyteNativeSdkTable._fields_:
+        assert (
+            getattr(VolumeBoundsNativeSdkTable, field_name).offset
+            == getattr(ElectrolyteNativeSdkTable, field_name).offset
+        )
+    assert (
+        VolumeBoundsNativeSdkTable.evaluate_molar_volume_bounds.offset
+        == ELECTROLYTE_PREFIX_SIZE
+    )
 
 
 def test_native_sdk_mixture_phase_block_matches_public_thermodynamics_and_derivatives() -> None:
@@ -973,7 +1019,7 @@ def test_native_sdk_electrolyte_phase_matches_public_state_and_directional_deriv
     model = _electrolyte_model()
     capsule, table = _electrolyte_table(model)
     assert capsule is not None
-    assert table.table_size == ctypes.sizeof(ElectrolyteNativeSdkTable) == 112
+    assert table.table_size >= ctypes.sizeof(ElectrolyteNativeSdkTable) == 112
     assert table.component_count == 3
     assert tuple(table.component_ids[index].decode() for index in range(3)) == model.component_ids
     assert tuple(table.component_charges[index] for index in range(3)) == (0, 1, -1)
@@ -1193,6 +1239,168 @@ def test_native_sdk_khudaida_five_component_phase_block_and_permutation() -> Non
                 ("water", "isobutanol", "sodium-cation", "chloride-anion")
             )
         )
+
+
+def test_native_sdk_molar_volume_bounds_match_packing_oracles_and_permutation() -> None:
+    eta_min = 1.0e-6
+    eta_max = 0.74
+
+    def oracle(
+        temperature_k: float,
+        composition: tuple[float, ...],
+        segment_count: tuple[float, ...],
+        sigma_angstrom: tuple[float, ...],
+        energy_over_k: tuple[float, ...],
+        charges: tuple[int, ...],
+    ) -> tuple[float, float]:
+        diameters = tuple(
+            0.88 * sigma
+            if charge
+            else sigma * (1.0 - 0.12 * math.exp(-3.0 * energy / temperature_k))
+            for sigma, energy, charge in zip(
+                sigma_angstrom, energy_over_k, charges, strict=True
+            )
+        )
+        coefficient = (
+            math.pi
+            / 6.0
+            * 6.02214076e23
+            / 1.0e30
+            * math.fsum(
+                fraction * segments * diameter**3
+                for fraction, segments, diameter in zip(
+                    composition, segment_count, diameters, strict=True
+                )
+            )
+        )
+        return coefficient / eta_max, coefficient / eta_min
+
+    def evaluate(
+        model: EPCSAFT,
+        temperature_k: float,
+        composition: tuple[float, ...],
+    ) -> tuple[object, VolumeBoundsNativeSdkTable, tuple[float, float]]:
+        capsule, table = _volume_bounds_table(model)
+        values = (ctypes.c_double * len(composition))(*composition)
+        bounds = (ctypes.c_double * 2)()
+        status = EvaluateMolarVolumeBounds(table.evaluate_molar_volume_bounds)(
+            table.model_context,
+            model.parameter_fingerprint.encode(),
+            temperature_k,
+            values,
+            len(composition),
+            eta_min,
+            eta_max,
+            bounds,
+            2,
+        )
+        assert status == STATUS_OK
+        return capsule, table, tuple(bounds)
+
+    canonical_ids = (
+        "water",
+        "ethanol",
+        "isobutanol",
+        "sodium-cation",
+        "chloride-anion",
+    )
+    amounts = (0.65905, 0.05095, 0.27015, 0.01985, 0.01985)
+    total = math.fsum(amounts)
+    composition = tuple(amount / total for amount in amounts)
+    model = _khudaida_model(canonical_ids)
+    capsule, table, bounds = evaluate(model, 293.15, composition)
+    assert capsule is not None
+    assert table.table_size == ctypes.sizeof(VolumeBoundsNativeSdkTable) == 120
+    water_sigma = 2.7927 + 10.11 * math.exp(-0.01775 * 293.15) - 1.417 * math.exp(
+        -0.01146 * 293.15
+    )
+    expected = oracle(
+        293.15,
+        composition,
+        (1.2047, 2.3827, 2.8440, 1.0, 1.0),
+        (water_sigma, 3.1771, 3.5561, 2.8232, 2.7560),
+        (353.95, 198.24, 257.13, 230.0, 170.0),
+        (0, 0, 0, 1, -1),
+    )
+    assert bounds == pytest.approx(expected, rel=2.0e-15)
+    assert tuple(table.component_ids[index].decode() for index in range(5)) == canonical_ids
+
+    permutation = (4, 2, 0, 3, 1)
+    permuted_ids = tuple(canonical_ids[index] for index in permutation)
+    permuted_model = _khudaida_model(permuted_ids)
+    permuted_capsule, _, permuted_bounds = evaluate(
+        permuted_model,
+        293.15,
+        tuple(composition[index] for index in permutation),
+    )
+    assert permuted_capsule is not None
+    assert permuted_bounds == pytest.approx(bounds, rel=2.0e-15)
+
+    figiel = _electrolyte_model()
+    figiel_capsule, _, figiel_bounds = evaluate(figiel, 298.15, (0.98, 0.01, 0.01))
+    assert figiel_capsule is not None
+    figiel_sigma = 2.7927 + 10.11 * math.exp(-0.01775 * 298.15) - 1.417 * math.exp(
+        -0.01146 * 298.15
+    )
+    assert figiel_bounds == pytest.approx(
+        oracle(
+            298.15,
+            (0.98, 0.01, 0.01),
+            (1.2047, 1.0, 1.0),
+            (figiel_sigma, 2.8232, 2.7560),
+            (353.95, 230.0, 170.0),
+            (0, 1, -1),
+        ),
+        rel=2.0e-15,
+    )
+
+
+def test_native_sdk_molar_volume_bounds_reject_abi_fingerprint_and_domain_errors() -> None:
+    model = _khudaida_model(
+        ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
+    )
+    capsule, table = _volume_bounds_table(model)
+    assert capsule is not None
+    callback = EvaluateMolarVolumeBounds(table.evaluate_molar_volume_bounds)
+    composition = (ctypes.c_double * 5)(0.64, 0.08, 0.24, 0.02, 0.02)
+
+    def call(
+        *,
+        fingerprint: bytes | None = model.parameter_fingerprint.encode(),
+        temperature_k: float = 293.15,
+        values: object = composition,
+        count: int = 5,
+        eta_min: float = 1.0e-6,
+        eta_max: float = 0.74,
+        bounds: object,
+        bound_count: int = 2,
+    ) -> int:
+        return callback(
+            table.model_context,
+            fingerprint,
+            temperature_k,
+            values,
+            count,
+            eta_min,
+            eta_max,
+            bounds,
+            bound_count,
+        )
+
+    guarded = (ctypes.c_double * 2)(11.0, 22.0)
+    assert call(bounds=guarded, bound_count=1) == STATUS_ABI_MISMATCH
+    assert tuple(guarded) == (11.0, 22.0)
+    assert call(bounds=guarded, fingerprint=b"sha256:wrong") == STATUS_UNSUPPORTED_MODEL
+    assert call(bounds=guarded, temperature_k=math.nan) == STATUS_INVALID_ARGUMENT
+    assert call(bounds=guarded, temperature_k=294.0) == STATUS_DOMAIN_ERROR
+    assert call(
+        bounds=guarded,
+        values=(ctypes.c_double * 5)(0.64, 0.08, 0.24, 0.03, 0.01),
+    ) == STATUS_DOMAIN_ERROR
+    assert call(bounds=guarded, eta_min=0.0) == STATUS_INVALID_ARGUMENT
+    assert call(bounds=guarded, eta_min=0.74, eta_max=1.0e-6) == STATUS_INVALID_ARGUMENT
+    assert call(bounds=guarded, eta_max=0.75) == STATUS_DOMAIN_ERROR
+    assert tuple(guarded) == (11.0, 22.0)
 
 
 def test_native_sdk_header_is_installed_package_data() -> None:

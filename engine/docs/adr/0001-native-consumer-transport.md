@@ -119,6 +119,25 @@ for the exact methane/ethane coordinate order `(n_1,n_2,V,k_ij)`. Its single
 active unlike-pair value is written symmetrically to both off-diagonal pair
 positions before the canonical Helmholtz owner is taped.
 
+The D-024 candidate appends the full-electrolyte phase callback and one
+model-bound molar-volume-domain callback. For an exact fingerprint,
+temperature, and composition in the table's component order, the latter uses
+
+```text
+K_eta(T,x) = (pi/6) (N_A/10^30) sum_i x_i m_i d_i(T)^3
+eta        = K_eta rho_m
+v_m        = K_eta/eta
+```
+
+from the same Provider packing owner used by pressure closure. Given
+`0 < eta_min < eta_max < pi/(3 sqrt(2))`, it writes
+`[K_eta/eta_max, K_eta/eta_min]` in `m^3/mol`. Packing limits are explicit
+caller inputs; the Provider does not own Perdomo initialization or solver
+policy. The callback uses a size-gated two-double caller buffer and no new
+result structure. A bound-count mismatch returns `ABI_MISMATCH` without a
+write; all failures are return-code authoritative because there is no second
+status/error payload owner.
+
 D-023 identifies a later, design-only electrolyte tail for the first Figiel
 regression tracer. Its minimum contract is one model-bound callback for the
 existing 298.15 K, 1 bar water x-process single-ion solvation free energy with

@@ -2,6 +2,7 @@
 
 #include "model.hpp"
 
+#include <array>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -91,6 +92,13 @@ public:
         double temperature,
         const std::vector<double>& amounts,
         double volume,
+        double ion_mole_fraction_max
+    ) const;
+    std::array<double, 2> molar_volume_bounds(
+        double temperature,
+        const std::vector<double>& mole_fractions,
+        double packing_fraction_min,
+        double packing_fraction_max,
         double ion_mole_fraction_max
     ) const;
 

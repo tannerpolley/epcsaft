@@ -120,6 +120,32 @@ std::vector<Scalar> segment_diameter(
     return diameter;
 }
 
+inline double close_packing_fraction() {
+    return PI / (3.0 * std::sqrt(2.0));
+}
+
+template <typename Parameters>
+double packing_fraction_coefficient(
+    double temperature,
+    const std::vector<double>& mole_fractions,
+    const Parameters& parameters
+) {
+    const auto sigma = segment_sigma(temperature, parameters);
+    const auto diameter = segment_diameter(temperature, parameters, sigma);
+    double coefficient = 0.0;
+    for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+        if (!(sigma[component] > 0.0) || !std::isfinite(sigma[component])
+            || !(diameter[component] > 0.0)
+            || !std::isfinite(diameter[component])) {
+            throw std::invalid_argument("invalid segment diameter correlation");
+        }
+        coefficient += mole_fractions[component]
+            * parameters.segment_count[component]
+            * diameter[component] * diameter[component] * diameter[component];
+    }
+    return coefficient * PI / 6.0 * (AVOGADRO / 1.0e30);
+}
+
 template <typename Scalar, typename Parameters>
 HelmholtzResult<Scalar> residual_helmholtz(
     const Scalar& temperature,
@@ -154,8 +180,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
         zeta[order] = (PI / 6.0) * number_density * moment;
     }
     if constexpr (std::is_same_v<Scalar, double>) {
-        const double close_packing = PI / (3.0 * std::sqrt(2.0));
-        if (zeta[3] >= close_packing) {
+        if (zeta[3] >= close_packing_fraction()) {
             throw std::invalid_argument("packing fraction is at or above close packing");
         }
     }

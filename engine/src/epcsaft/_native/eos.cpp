@@ -191,6 +191,67 @@ NativeMixturePhaseBlock NativeModel::evaluate_electrolyte_phase(
     );
 }
 
+std::array<double, 2> NativeModel::molar_volume_bounds(
+    double temperature,
+    const std::vector<double>& mole_fractions,
+    double packing_fraction_min,
+    double packing_fraction_max,
+    double ion_mole_fraction_max
+) const {
+    const std::size_t components = parameters_.segment_count.size();
+    if (!std::isfinite(temperature) || temperature <= 0.0
+        || mole_fractions.size() != components
+        || !std::isfinite(packing_fraction_min)
+        || !std::isfinite(packing_fraction_max)
+        || packing_fraction_min <= 0.0
+        || packing_fraction_min >= packing_fraction_max) {
+        throw std::invalid_argument("invalid molar-volume bound inputs");
+    }
+    if (packing_fraction_max >= detail::close_packing_fraction()) {
+        throw std::invalid_argument(
+            "packing-fraction upper bound is outside the model domain"
+        );
+    }
+
+    double total_fraction = 0.0;
+    double charge_fraction = 0.0;
+    double ion_fraction = 0.0;
+    for (std::size_t component = 0; component < components; ++component) {
+        const double fraction = mole_fractions[component];
+        if (!std::isfinite(fraction) || fraction < 0.0) {
+            throw std::invalid_argument("invalid model composition");
+        }
+        total_fraction += fraction;
+        const int charge = parameters_.charge_number[component];
+        charge_fraction += fraction * static_cast<double>(charge);
+        if (charge != 0) {
+            ion_fraction += fraction;
+        }
+    }
+    if (std::abs(total_fraction - 1.0) > 1.0e-12
+        || std::abs(charge_fraction) > 1.0e-12
+        || (std::isfinite(ion_mole_fraction_max)
+            && ion_fraction > ion_mole_fraction_max + 1.0e-12)) {
+        throw std::invalid_argument("composition is outside the model domain");
+    }
+
+    const double coefficient = detail::packing_fraction_coefficient(
+        temperature, mole_fractions, parameters_
+    );
+    if (!(coefficient > 0.0) || !std::isfinite(coefficient)) {
+        throw std::invalid_argument("invalid model packing coefficient");
+    }
+    const std::array<double, 2> bounds = {
+        coefficient / packing_fraction_max,
+        coefficient / packing_fraction_min,
+    };
+    if (!(bounds[0] > 0.0) || !(bounds[0] < bounds[1])
+        || !std::isfinite(bounds[1])) {
+        throw std::invalid_argument("invalid model molar-volume bounds");
+    }
+    return bounds;
+}
+
 NativeResult NativeModel::evaluate(
     double temperature,
     double molar_density,
@@ -327,23 +388,16 @@ NativeResult NativeModel::evaluate_pressure(
         || mole_fractions.size() != components || !finite(mole_fractions)) {
         throw std::invalid_argument("invalid native pressure state");
     }
-    const auto sigma = detail::segment_sigma(temperature, parameters_);
-    const auto diameter = detail::segment_diameter(temperature, parameters_, sigma);
-    double packing_coefficient = 0.0;
-    for (std::size_t component = 0; component < components; ++component) {
-        packing_coefficient += mole_fractions[component]
-            * parameters_.segment_count[component]
-            * diameter[component] * diameter[component] * diameter[component];
-    }
-    packing_coefficient *= detail::PI / 6.0 * (detail::AVOGADRO / 1.0e30);
+    const double packing_coefficient = detail::packing_fraction_coefficient(
+        temperature, mole_fractions, parameters_
+    );
     if (!(packing_coefficient > 0.0) || !std::isfinite(packing_coefficient)) {
         throw std::invalid_argument("invalid pressure-state packing coefficient");
     }
-    const double close_packing = detail::PI / (3.0 * std::sqrt(2.0));
     const auto root = detail::solve_density(
         pressure,
         pressure / (detail::GAS_CONSTANT * temperature),
-        close_packing / packing_coefficient,
+        detail::close_packing_fraction() / packing_coefficient,
         phase,
         [this, temperature, &mole_fractions](double density) {
             return evaluate(temperature, density, mole_fractions);

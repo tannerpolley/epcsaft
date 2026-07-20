@@ -79,6 +79,12 @@ al. (2026) bundle adds the exact water/ethanol/isobutanol/Na+/Cl- model at
 293.15 K without changing the Figiel bundle. Phase bounds, complementarity,
 equilibrium, and fit policy remain consumer-owned.
 
+One further append-only callback converts caller-owned packing-fraction limits
+to model-bound molar-volume limits at an ordered composition and temperature.
+The Provider retains the temperature-dependent segment-diameter and packing
+geometry; consumers retain their search limits and solver policy. The callback
+adds no second result structure or fixed phase-volume constants.
+
 The capsule evaluates one phase state at a time. A consumer uses the same
 immutable model for every candidate phase; the provider does not construct
 liquid/vapor objects or own phase identity, Ipopt, equilibrium constraints, or

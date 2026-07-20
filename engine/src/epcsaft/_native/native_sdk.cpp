@@ -69,6 +69,7 @@ struct NativeSdkEndpoint final {
               component_id_pointers.data(),
               component_charges.data(),
               &NativeSdkEndpoint::evaluate_electrolyte,
+              &NativeSdkEndpoint::evaluate_molar_volume_bounds,
           } {}
 
     static int evaluate(
@@ -441,6 +442,69 @@ struct NativeSdkEndpoint final {
                 );
             }
         );
+    }
+
+    static int evaluate_molar_volume_bounds(
+        const void* context,
+        const char* expected_parameter_fingerprint,
+        double temperature_k,
+        const double* mole_fractions,
+        size_t component_count,
+        double packing_fraction_min,
+        double packing_fraction_max,
+        double* molar_volume_bounds_m3_per_mol,
+        size_t bound_count
+    ) noexcept {
+        if (bound_count != EPCSAFT_NATIVE_MOLAR_VOLUME_BOUND_COUNT_V1) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        if (context == nullptr || expected_parameter_fingerprint == nullptr
+            || mole_fractions == nullptr
+            || molar_volume_bounds_m3_per_mol == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (std::strcmp(
+                expected_parameter_fingerprint,
+                endpoint.parameter_fingerprint.c_str()
+            ) != 0) {
+            return EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1;
+        }
+        if (component_count != endpoint.table.component_count
+            || !std::isfinite(temperature_k) || temperature_k <= 0.0
+            || !std::isfinite(packing_fraction_min)
+            || !std::isfinite(packing_fraction_max)
+            || packing_fraction_min <= 0.0
+            || packing_fraction_min >= packing_fraction_max) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if ((std::isfinite(endpoint.temperature_min_k)
+             && temperature_k < endpoint.temperature_min_k)
+            || (std::isfinite(endpoint.temperature_max_k)
+                && temperature_k > endpoint.temperature_max_k)) {
+            return EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1;
+        }
+
+        try {
+            const std::vector<double> composition(
+                mole_fractions, mole_fractions + component_count
+            );
+            const auto bounds = endpoint.model.molar_volume_bounds(
+                temperature_k,
+                composition,
+                packing_fraction_min,
+                packing_fraction_max,
+                endpoint.ion_mole_fraction_max
+            );
+            std::copy(
+                bounds.begin(), bounds.end(), molar_volume_bounds_m3_per_mol
+            );
+            return EPCSAFT_NATIVE_STATUS_OK_V1;
+        } catch (const std::invalid_argument&) {
+            return EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1;
+        } catch (...) {
+            return EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1;
+        }
     }
 };
 

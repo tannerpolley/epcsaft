@@ -20,6 +20,16 @@ native_sdk_v1:
   exclusions: mixture, association, electrolyte, binary fitted parameters, density solve, phase identity, Ipopt, Ceres, equilibrium, and regression targets
 
 native_sdk_candidates:
+  molar_volume_bounds_v1:
+    status: local-candidate-pending-independent-review-and-promotion-receipt
+    scope: >-
+      Exact model fingerprint, temperature, and ordered normalized composition
+      mapped from caller-owned packing-fraction limits to lower and upper molar
+      volumes through the Provider packing owner.
+    inputs: [parameter_fingerprint, temperature_k, mole_fractions_in_parameter_order, packing_fraction_min, packing_fraction_max]
+    output: [molar_volume_lower_m3_per_mol, molar_volume_upper_m3_per_mol]
+    result_owner: size-gated caller double buffer with return-code status
+    exclusions: fixed volumes, equilibrium, initialization, search policy, phase identity, fitting, domain registry, compatibility shim, and authority
   full_electrolyte_phase_hessian_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
@@ -135,6 +145,11 @@ public_surface:
       coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
       derivative_order: 2
       status: local-candidate-pending-independent-review-and-promotion-receipt
+    - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_molar_volume_bounds
+      input_order: [parameter_fingerprint, temperature_k, mole_fractions_in_parameter_order, packing_fraction_min, packing_fraction_max]
+      output_order: [molar_volume_lower_m3_per_mol, molar_volume_upper_m3_per_mol]
+      status: local-candidate-pending-independent-review-and-promotion-receipt
 
 manifest:
   tracked_files: 82
@@ -143,9 +158,9 @@ manifest:
   public_native_headers: 1
   installed_data_files: 23
   package_test_files: 11
-  physical_production_lines: 5767
-  physical_package_test_lines: 4178
-  physical_documentation_lines: 2480
+  physical_production_lines: 5944
+  physical_package_test_lines: 4386
+  physical_documentation_lines: 2539
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
@@ -156,10 +171,14 @@ manifest:
       physical_lines: 441
     - path: src/epcsaft/_bundle_io.py
       physical_lines: 417
+    - path: src/epcsaft/_native/eos.cpp
+      physical_lines: 419
+    - path: src/epcsaft/_native/native_sdk.cpp
+      physical_lines: 572
     - path: src/epcsaft/_native/phase_block.hpp
       physical_lines: 680
     - path: tests/test_native_sdk.py
-      physical_lines: 1205
+      physical_lines: 1413
     - path: tests/test_parameters.py
       physical_lines: 1125
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.

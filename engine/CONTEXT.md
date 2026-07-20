@@ -62,6 +62,13 @@ distinct Khudaida bundle and returns value, gradient, Hessian, pressure,
 fingerprint, component order, and charges. It adds no phase discovery,
 equilibrium, trace-species policy, fitting, or authority.
 
+The separate D-024 volume-domain tail accepts the exact model fingerprint,
+temperature, ordered normalized composition, and caller-owned packing-fraction
+interval. It returns only the corresponding lower and upper molar volumes in
+`m^3/mol` through a size-gated two-double buffer. Pressure closure and this
+tail share one Provider packing-coefficient owner. Perdomo's Stage-I limits,
+search variables, initialization, and acceptance remain Equilibrium-owned.
+
 Migration D-023 additionally records a documentation-only design candidate for
 one model-bound active-Born-diameter evaluation of the existing 298.15 K,
 1 bar water single-ion x-process solvation reference. It is limited to exact

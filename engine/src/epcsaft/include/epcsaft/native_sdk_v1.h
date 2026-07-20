@@ -116,6 +116,31 @@ typedef int (*epcsaft_evaluate_mixture_phase_kij_v1)(
     epcsaft_mixture_phase_block_result_v1* result
 );
 
+#define EPCSAFT_NATIVE_MOLAR_VOLUME_BOUND_COUNT_V1 2u
+
+enum epcsaft_native_molar_volume_bound_v1 {
+    EPCSAFT_NATIVE_MOLAR_VOLUME_LOWER_V1 = 0,
+    EPCSAFT_NATIVE_MOLAR_VOLUME_UPPER_V1 = 1
+};
+
+/*
+ * Converts caller-owned packing-fraction bounds to molar-volume bounds using
+ * the immutable model's temperature-dependent PC-SAFT packing geometry.
+ * The output order is [lower, upper] in m^3/mol. A bound-count mismatch is
+ * return-code authoritative and leaves the caller buffer untouched.
+ */
+typedef int (*epcsaft_evaluate_molar_volume_bounds_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    const double* mole_fractions,
+    size_t component_count,
+    double packing_fraction_min,
+    double packing_fraction_max,
+    double* molar_volume_bounds_m3_per_mol,
+    size_t bound_count
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -131,6 +156,7 @@ typedef struct epcsaft_native_sdk_v1 {
     const char* const* component_ids;
     const int32_t* component_charges;
     epcsaft_evaluate_mixture_phase_v1 evaluate_electrolyte_phase;
+    epcsaft_evaluate_molar_volume_bounds_v1 evaluate_molar_volume_bounds;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus
