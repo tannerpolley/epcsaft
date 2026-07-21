@@ -4,9 +4,16 @@ This clean repository is the production home for ePC-SAFT provider code. Its
 optimization objective is minimum maintained surface subject to source-backed,
 reproducible thermodynamic results.
 
-`governance_doctrine_revision: 2`
+`governance_doctrine_revision: 3`
 
 Canonical local doctrine: `../ePC-SAFT-organization/GOVERNANCE.md`.
+
+Provider owns both its package evidence and execution of assigned installed-
+artifact campaigns in the sibling Validation repository. The task remains based
+here; Validation remains the durable black-box evidence home and has no resident
+worker. Migration serializes exact campaign subjects and dispatches a separate
+reviewer only when required. This execution model does not change scientific
+admission or runtime authority.
 
 The accepted provider contains one typed parameter lifecycle and one scalar-
 generic residual Helmholtz kernel for hard-chain, dispersion, association,

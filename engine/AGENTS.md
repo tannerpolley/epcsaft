@@ -2,7 +2,7 @@
 
 Repository Profile: scientific-computing
 
-Before work, read doctrine revision 2 at
+Before work, read doctrine revision 3 at
 `../ePC-SAFT-organization/GOVERNANCE.md`. Its future published home is
 `https://github.com/ePC-SAFT/.github/blob/main/GOVERNANCE.md`. Local policy may
 narrow that doctrine but must not contradict it.
@@ -43,6 +43,12 @@ still requires its own cross-wheel gate. Do not add
 compatibility APIs, mutable scientific dictionaries,
 backend selectors, hidden physical defaults, duplicate equation owners, or
 runtime dependencies on the lab, migration repository, or sibling sources.
+
+The Provider task remains rooted in this repository and owns execution of its
+assigned black-box campaigns in the sibling Validation repository. Use only
+immutable installed public artifacts there; never import this source checkout or
+private seams. Do not create a resident Validation task. Package-authored
+evidence cannot self-accept promotion or broaden Provider authority.
 
 The append-only neutral methane/ethane mixture value, gradient, and Hessian
 entry and its further append-only active-`k_ij` entry are local provider
