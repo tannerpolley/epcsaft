@@ -44,11 +44,23 @@ compatibility APIs, mutable scientific dictionaries,
 backend selectors, hidden physical defaults, duplicate equation owners, or
 runtime dependencies on the lab, migration repository, or sibling sources.
 
-The Provider task remains rooted in this repository and owns execution of its
-assigned black-box campaigns in the sibling Validation repository. Use only
-immutable installed public artifacts there; never import this source checkout or
-private seams. Do not create a resident Validation task. Package-authored
-evidence cannot self-accept promotion or broaden Provider authority.
+## Agent home and Validation work
+
+- The Provider agent remains rooted in this repository and is the sole owner of
+  Provider implementation, parameter resolution, EOS/state/property behavior,
+  derivatives, density closure, and the native SDK.
+- When Migration assigns a bounded Provider campaign, this same agent may use a
+  clean checkout or worktree of the sibling Validation repository to author and
+  execute that campaign. Its task home does not move to Validation.
+- Validation work must use exact immutable installed public artifacts. It must
+  not import this source checkout, use private seams, copy Provider equations,
+  or add implementation code to Validation.
+- The Provider agent owns the campaign execution and evidence commit, then
+  returns to Provider work. It does not create or wait on a resident Validation
+  task, accept its own promotion, or broaden Provider authority from its own
+  evidence.
+- Migration serializes Validation writers and dispatches any required distinct
+  review after the exact stable subject is available.
 
 The append-only neutral methane/ethane mixture value, gradient, and Hessian
 entry and its further append-only active-`k_ij` entry are local provider
