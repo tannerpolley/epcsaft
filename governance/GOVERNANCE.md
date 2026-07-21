@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 2
+Doctrine revision: 3
 
-Approved: 2026-07-14
+Approved: 2026-07-21
 
 Owner: `ePC-SAFT/.github`
 
@@ -61,7 +61,7 @@ doctrine does not transfer any scientific implementation or capability.
 | `ePC-SAFT/ePC-SAFT` | `epcsaft` provider: resolved inputs, parameters, EOS/state/property evaluation, density closure, CppAD substrate, and the provider SDK | Ipopt equilibrium, Ceres regression, or cross-package validation campaigns |
 | `ePC-SAFT/ePC-SAFT-equilibrium` | `epcsaft-equilibrium`: equilibrium formulations, phase discovery, local NLPs, Ipopt, certification, and equilibrium results | Provider implementation, Ceres, or regression targets |
 | `ePC-SAFT/ePC-SAFT-regression` | `epcsaft-regression`: target contracts, parameter fitting, Ceres, fit diagnostics, and regression results | Provider implementation, Ipopt, or equilibrium dispatch |
-| `ePC-SAFT/ePC-SAFT-validation` | Installed-artifact, cross-package, and literature acceptance evidence | Production algorithms, private package imports, or a paper archive |
+| `ePC-SAFT/ePC-SAFT-validation` | Installed-artifact, cross-package, and literature acceptance evidence authored by the accountable package task | Production algorithms, private package imports, a paper archive, or a permanent execution owner |
 | `tannerpolley/ePC-SAFT-lab` | Transitional runtime source of record for not-yet-promoted slices; experiments, full provenance, papers, rejected alternatives, and migration evidence | Production distributions or releases, dependencies consumed by production or validation repositories, or authority for a promoted slice |
 
 One concept has one runtime owner. Before an accepted promotion receipt, the
@@ -70,6 +70,13 @@ authority does not make the lab a clean production package: it MUST NOT publish
 the slice as a production distribution or be consumed by production or
 validation repositories. After promotion, the destination is the sole
 production owner and the lab copy is non-authoritative provenance or research.
+
+Repository ownership and task residence are distinct. Validation is the
+durable evidence home, not a standing agent or implementation team. Provider,
+Equilibrium, or Regression remains accountable for its capability and performs
+the assigned black-box campaign in the Validation repository from a task rooted
+in its own package repository. Migration sequences exact subjects and prevents
+concurrent writers; it does not maintain a waiting Validation worker.
 
 ## 4. Dependency direction
 
@@ -215,10 +222,19 @@ artifacts. Neither oracle is runtime API or production input. Shared equations,
 source, generated material, or copied kernels between an implementation and
 its oracle MUST be declared and MUST NOT count as independent evidence.
 
-The validation repository owns black-box physical and cross-package behavior.
-It installs wheels or other declared artifacts built from immutable commits;
+The validation repository owns the durable black-box physical and cross-package
+evidence. The accountable package task installs wheels or other declared
+artifacts built from immutable commits and writes the bounded campaign there;
 an artifact need not be publicly released. It MUST NOT import sibling source
 trees or reproduce production algorithms.
+
+Task identity alone does not make evidence independent. A package-authored
+campaign MUST remain public-API-only, hash-bound, source-traceable, and separate
+from implementation internals. Independent acceptance still requires a bounded
+reviewer distinct from the producer when the receipt protocol requires one,
+but that reviewer is dispatched for the stable subject and MUST NOT become a
+permanent Validation worker. Self-validation may establish package evidence;
+it cannot accept its own promotion or broaden its own scientific claim.
 
 Black-box agreement alone does not prove derivative exactness, local KKT
 quality, phase completeness, or globality. Those require package-owned
@@ -347,3 +363,4 @@ authority changes only through accepted promotion receipts.
 | D-012 Release timing | Release review | Keep repositories public while deciding release timing and versions separately | Avoids premature release machinery | Yes | Release owner |
 | D-013 Lab role | User lab-role decision, clarified by independent review | Keep the lab as sole transitional runtime authority before promotion and non-authoritative provenance after promotion | Removes the transitional contradiction without creating dual production ownership | No | Lab and migration owners |
 | D-014 Pre-execution review remediation | Independent principal review and user-approved adjudication | Require whole-tree cutover inventory, portable hash-bound receipts, independent test-only oracle ownership, and rehearsed external operations | Repairs false-positive purge and unsafe cutover gates before execution | No | Organization and migration owners |
+| D-015 Package-rooted validation execution | User-approved workflow amendment | Keep Validation as the evidence repository while the accountable Provider, Equilibrium, or Regression task performs its own bounded installed-artifact campaign there; dispatch review only for a stable subject and keep no resident Validation worker | Removes permanent waiting tasks without weakening public-artifact, source, claim, or receipt boundaries | No | Package, validation-evidence, and migration owners |
