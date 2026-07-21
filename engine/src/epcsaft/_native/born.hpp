@@ -11,12 +11,13 @@
 
 namespace epcsaft::detail {
 
-template <typename Scalar>
-Scalar born_ssm_ds_contribution(
+template <typename Scalar, typename BornDiameter>
+Scalar born_ssm_ds_contribution_impl(
     const Scalar& temperature,
     const std::vector<Scalar>& mole_fractions,
     const NativeParameters& parameters,
-    const Scalar& bulk_relative_permittivity
+    const Scalar& bulk_relative_permittivity,
+    BornDiameter born_diameter_angstrom
 ) {
     bool has_ion = false;
     for (int charge : parameters.charge_number) {
@@ -45,8 +46,7 @@ Scalar born_ssm_ds_contribution(
         if (charge == 0) {
             continue;
         }
-        const double born_diameter =
-            parameters.born_diameter_angstrom[component] * 1.0e-10;
+        const Scalar born_diameter = born_diameter_angstrom(component) * 1.0e-10;
         const Scalar shell_diameter = born_diameter
             * (1.0 + (mixture_solvation - 1.0) / std::abs(charge));
         if constexpr (std::is_same_v<Scalar, double>) {
@@ -63,6 +63,48 @@ Scalar born_ssm_ds_contribution(
     return -ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * radial_work
         / (4.0 * ELECTROLYTE_PI * VACUUM_PERMITTIVITY * BOLTZMANN
            * temperature);
+}
+
+template <typename Scalar>
+Scalar born_ssm_ds_contribution(
+    const Scalar& temperature,
+    const std::vector<Scalar>& mole_fractions,
+    const NativeParameters& parameters,
+    const Scalar& bulk_relative_permittivity
+) {
+    return born_ssm_ds_contribution_impl(
+        temperature,
+        mole_fractions,
+        parameters,
+        bulk_relative_permittivity,
+        [&parameters](std::size_t component) {
+            return Scalar(parameters.born_diameter_angstrom[component]);
+        }
+    );
+}
+
+template <typename Scalar>
+Scalar born_ssm_ds_contribution_active(
+    const Scalar& temperature,
+    const std::vector<Scalar>& mole_fractions,
+    const NativeParameters& parameters,
+    const Scalar& bulk_relative_permittivity,
+    std::size_t active_component,
+    const Scalar& active_born_diameter_angstrom
+) {
+    return born_ssm_ds_contribution_impl(
+        temperature,
+        mole_fractions,
+        parameters,
+        bulk_relative_permittivity,
+        [&parameters, active_component, &active_born_diameter_angstrom](
+            std::size_t component
+        ) {
+            return component == active_component
+                ? active_born_diameter_angstrom
+                : Scalar(parameters.born_diameter_angstrom[component]);
+        }
+    );
 }
 
 }  // namespace epcsaft::detail

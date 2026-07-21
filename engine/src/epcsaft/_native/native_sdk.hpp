@@ -15,7 +15,9 @@ pybind11::capsule make_native_sdk_v1(
     double temperature_min_k,
     double temperature_max_k,
     const std::vector<std::string>& component_ids,
-    double ion_mole_fraction_max
+    double ion_mole_fraction_max,
+    bool phase_callbacks_admitted,
+    bool active_born_admitted
 );
 
 }  // namespace epcsaft

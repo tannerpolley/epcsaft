@@ -9,6 +9,8 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -17,12 +19,74 @@
 namespace epcsaft {
 namespace {
 
+bool active_born_model_admitted(
+    const std::string& fingerprint,
+    const std::vector<std::string>& component_ids,
+    const std::vector<int>& charges
+) {
+    if (component_ids.size() != 3 || charges.size() != 3
+        || component_ids[0] != "water" || charges[0] != 0) {
+        return false;
+    }
+    struct Admission final {
+        const char* fingerprint;
+        const char* active_ion;
+        const char* counter_ion;
+        int active_charge;
+    };
+    constexpr Admission admissions[] = {
+        {
+            "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+            "lithium-cation",
+            "chloride-anion",
+            1,
+        },
+        {
+            "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+            "sodium-cation",
+            "chloride-anion",
+            1,
+        },
+        {
+            "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+            "potassium-cation",
+            "chloride-anion",
+            1,
+        },
+        {
+            "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+            "chloride-anion",
+            "sodium-cation",
+            -1,
+        },
+        {
+            "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9",
+            "bromide-anion",
+            "sodium-cation",
+            -1,
+        },
+    };
+    return std::any_of(
+        std::begin(admissions),
+        std::end(admissions),
+        [&](const Admission& admission) {
+            return fingerprint == admission.fingerprint
+                && component_ids[1] == admission.active_ion
+                && component_ids[2] == admission.counter_ion
+                && charges[1] == admission.active_charge
+                && charges[2] == -admission.active_charge;
+        }
+    );
+}
+
 struct NativeSdkEndpoint final {
     NativeModel model;
     std::string parameter_fingerprint;
     double temperature_min_k;
     double temperature_max_k;
     double ion_mole_fraction_max;
+    bool phase_callbacks_admitted;
+    bool active_born_admitted;
     std::vector<std::string> component_ids;
     std::vector<const char*> component_id_pointers;
     std::vector<int32_t> component_charges;
@@ -34,13 +98,17 @@ struct NativeSdkEndpoint final {
         double minimum_temperature,
         double maximum_temperature,
         std::vector<std::string> identifiers,
-        double maximum_ion_fraction
+        double maximum_ion_fraction,
+        bool admit_phase_callbacks,
+        bool admit_active_born
     )
         : model(source_model),
           parameter_fingerprint(std::move(fingerprint)),
           temperature_min_k(minimum_temperature),
           temperature_max_k(maximum_temperature),
           ion_mole_fraction_max(maximum_ion_fraction),
+          phase_callbacks_admitted(admit_phase_callbacks),
+          active_born_admitted(admit_active_born),
           component_ids(std::move(identifiers)),
           component_id_pointers([&] {
               std::vector<const char*> pointers;
@@ -74,7 +142,98 @@ struct NativeSdkEndpoint final {
               temperature_min_k,
               temperature_max_k,
               ion_mole_fraction_max,
+              sizeof(epcsaft_ion_solvation_born_result_v1),
+              &NativeSdkEndpoint::evaluate_ion_solvation_born,
           } {}
+
+    static int evaluate_ion_solvation_born(
+        const void* context,
+        double temperature_k,
+        double pressure_pa,
+        double born_diameter_angstrom,
+        epcsaft_ion_solvation_born_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_ion_solvation_born_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const uint32_t result_size = result->struct_size;
+        std::memset(result, 0, sizeof(*result));
+        result->struct_size = result_size;
+        result->solvation_gibbs_j_per_mol = std::numeric_limits<double>::quiet_NaN();
+        result->derivative_j_per_mol_per_angstrom =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_molality_mol_per_kg =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_convergence_error =
+            std::numeric_limits<double>::quiet_NaN();
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "model context is null"
+            );
+        }
+        if (!std::isfinite(temperature_k) || !std::isfinite(pressure_pa)
+            || !std::isfinite(born_diameter_angstrom) || temperature_k <= 0.0
+            || pressure_pa <= 0.0 || born_diameter_angstrom <= 0.0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "temperature, pressure, and Born diameter must be positive and finite"
+            );
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.active_born_admitted) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "model is not admitted for active Born solvation"
+            );
+        }
+        if (temperature_k != 298.15 || pressure_pa != 100000.0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "active Born reference state requires 298.15 K and 100000 Pa"
+            );
+        }
+        try {
+            const auto value = endpoint.model.evaluate_ion_solvation_born(
+                temperature_k, pressure_pa, born_diameter_angstrom
+            );
+            result->solvation_gibbs_j_per_mol = value.solvation_gibbs_j_per_mol;
+            result->derivative_j_per_mol_per_angstrom =
+                value.derivative_j_per_mol_per_angstrom;
+            result->reference_molality_mol_per_kg =
+                value.reference_molality_mol_per_kg;
+            result->reference_convergence_error =
+                value.reference_convergence_error;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown active Born evaluation failure"
+            );
+        }
+    }
 
     static int evaluate(
         const void* context,
@@ -114,6 +273,12 @@ struct NativeSdkEndpoint final {
         }
 
         const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.phase_callbacks_admitted) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "model is not admitted for this phase callback"
+            );
+        }
         if ((std::isfinite(endpoint.temperature_min_k)
              && temperature_k < endpoint.temperature_min_k)
             || (std::isfinite(endpoint.temperature_max_k)
@@ -194,6 +359,12 @@ struct NativeSdkEndpoint final {
             );
         }
         const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.phase_callbacks_admitted) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "model is not admitted for this phase callback"
+            );
+        }
         if ((std::isfinite(endpoint.temperature_min_k)
              && temperature_k < endpoint.temperature_min_k)
             || (std::isfinite(endpoint.temperature_max_k)
@@ -272,6 +443,16 @@ struct NativeSdkEndpoint final {
         }
 
         const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.phase_callbacks_admitted) {
+            result->status = EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1;
+            std::snprintf(
+                result->error,
+                sizeof(result->error),
+                "%s",
+                "model is not admitted for this phase callback"
+            );
+            return result->status;
+        }
         const std::size_t coordinate_count =
             endpoint.table.component_count + additional_coordinate_count;
         if (result->coordinate_count != coordinate_count
@@ -468,6 +649,9 @@ struct NativeSdkEndpoint final {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
         }
         const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.phase_callbacks_admitted) {
+            return EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1;
+        }
         if (std::strcmp(
                 expected_parameter_fingerprint,
                 endpoint.parameter_fingerprint.c_str()
@@ -530,6 +714,9 @@ struct NativeSdkEndpoint final {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
         }
         const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.phase_callbacks_admitted) {
+            return EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1;
+        }
         const std::size_t coordinate_count = endpoint.table.component_count + 1;
         if (gradient_capacity != coordinate_count
             || hessian_capacity != coordinate_count * coordinate_count) {
@@ -586,14 +773,22 @@ pybind11::capsule make_native_sdk_v1(
     double temperature_min_k,
     double temperature_max_k,
     const std::vector<std::string>& component_ids,
-    double ion_mole_fraction_max
+    double ion_mole_fraction_max,
+    bool phase_callbacks_admitted,
+    bool active_born_admitted
 ) {
-    if (!model.supports_native_sdk_v1()
+    if (!active_born_admitted && (!model.supports_native_sdk_v1()
         && !model.supports_mixture_native_sdk_v1()
-        && !model.supports_electrolyte_native_sdk_v1()) {
+        && !model.supports_electrolyte_native_sdk_v1())) {
         throw std::invalid_argument(
             "native SDK v1 requires a supported phase-block model"
         );
+    }
+    if (active_born_admitted
+        && !active_born_model_admitted(
+            parameter_fingerprint, component_ids, model.charge_numbers()
+        )) {
+        throw std::invalid_argument("unsupported active Born model identity");
     }
     if (parameter_fingerprint.empty()
         || parameter_fingerprint.size() >= EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE) {
@@ -630,7 +825,9 @@ pybind11::capsule make_native_sdk_v1(
         temperature_min_k,
         temperature_max_k,
         component_ids,
-        ion_mole_fraction_max
+        ion_mole_fraction_max,
+        phase_callbacks_admitted,
+        active_born_admitted
     );
     return pybind11::capsule(
         &endpoint->table,

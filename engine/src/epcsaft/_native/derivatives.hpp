@@ -9,6 +9,7 @@
 #include <cppad/cppad.hpp>
 
 #include <cstddef>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -23,6 +24,7 @@ struct ThermodynamicDerivatives final {
     double temperature_density;
     double density_density;
     double residual_helmholtz;
+    std::optional<double> active_born;
     std::vector<double> hessian;
 };
 
@@ -41,17 +43,20 @@ inline double directional_second(
     return value;
 }
 
-inline ThermodynamicDerivatives thermodynamic_derivatives(
+inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     double temperature,
     double molar_density,
     const std::vector<double>& mole_fractions,
     const NativeParameters& parameters,
-    const std::vector<double>& site_fractions
+    const std::vector<double>& site_fractions,
+    std::optional<std::size_t> active_born_component,
+    double active_born_diameter_angstrom
 ) {
     using ADScalar = CppAD::AD<double>;
     const std::size_t components = mole_fractions.size();
     const std::size_t sites = site_fractions.size();
-    const std::size_t coordinates = 2 + components;
+    const std::size_t coordinates = 2 + components
+        + static_cast<std::size_t>(active_born_component.has_value());
     const std::size_t width = coordinates + sites;
 
     std::vector<ADScalar> independent(width);
@@ -60,13 +65,16 @@ inline ThermodynamicDerivatives thermodynamic_derivatives(
     for (std::size_t component = 0; component < components; ++component) {
         independent[2 + component] = mole_fractions[component];
     }
+    if (active_born_component.has_value()) {
+        independent[2 + components] = active_born_diameter_angstrom;
+    }
     for (std::size_t site = 0; site < sites; ++site) {
         independent[coordinates + site] = site_fractions[site];
     }
     CppAD::Independent(independent);
 
     const std::vector<ADScalar> composition(
-        independent.begin() + 2, independent.begin() + coordinates
+        independent.begin() + 2, independent.begin() + 2 + components
     );
     const std::vector<ADScalar> fractions(
         independent.begin() + coordinates, independent.end()
@@ -85,10 +93,21 @@ inline ThermodynamicDerivatives thermodynamic_derivatives(
         sigma,
         reference_sigma
     );
-    const auto born = born_ssm_ds_contribution(
-        independent[0], composition, parameters,
-        electrolyte.bulk_relative_permittivity
-    );
+    const auto born = active_born_component.has_value()
+        ? born_ssm_ds_contribution_active(
+            independent[0],
+            composition,
+            parameters,
+            electrolyte.bulk_relative_permittivity,
+            *active_born_component,
+            independent[2 + components]
+        )
+        : born_ssm_ds_contribution(
+            independent[0],
+            composition,
+            parameters,
+            electrolyte.bulk_relative_permittivity
+        );
     const auto contributions = residual_helmholtz(
         independent[0],
         independent[1],
@@ -121,6 +140,9 @@ inline ThermodynamicDerivatives thermodynamic_derivatives(
 
     std::vector<double> point = {temperature, molar_density};
     point.insert(point.end(), mole_fractions.begin(), mole_fractions.end());
+    if (active_born_component.has_value()) {
+        point.push_back(active_born_diameter_angstrom);
+    }
     point.insert(point.end(), site_fractions.begin(), site_fractions.end());
     const auto jacobian = function.Jacobian(point);
 
@@ -206,13 +228,57 @@ inline ThermodynamicDerivatives thermodynamic_derivatives(
     return {
         gradient[0],
         gradient[1],
-        std::vector<double>(gradient.begin() + 2, gradient.end()),
+        std::vector<double>(
+            gradient.begin() + 2,
+            gradient.begin() + 2 + static_cast<std::ptrdiff_t>(components)
+        ),
         reduced_hessian[0],
         reduced_hessian[1],
         reduced_hessian[coordinates + 1],
         residual_helmholtz,
+        active_born_component.has_value()
+            ? std::optional<double>(gradient[2 + components])
+            : std::nullopt,
         std::move(reduced_hessian),
     };
+}
+
+inline ThermodynamicDerivatives thermodynamic_derivatives(
+    double temperature,
+    double molar_density,
+    const std::vector<double>& mole_fractions,
+    const NativeParameters& parameters,
+    const std::vector<double>& site_fractions
+) {
+    return thermodynamic_derivatives_impl(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        site_fractions,
+        std::nullopt,
+        0.0
+    );
+}
+
+inline ThermodynamicDerivatives thermodynamic_derivatives_active_born(
+    double temperature,
+    double molar_density,
+    const std::vector<double>& mole_fractions,
+    const NativeParameters& parameters,
+    const std::vector<double>& site_fractions,
+    std::size_t active_component,
+    double active_born_diameter_angstrom
+) {
+    return thermodynamic_derivatives_impl(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        site_fractions,
+        active_component,
+        active_born_diameter_angstrom
+    );
 }
 
 }  // namespace epcsaft::detail

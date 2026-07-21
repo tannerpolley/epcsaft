@@ -46,6 +46,19 @@ struct NativeParameterizedPurePhaseBlock;
 struct NativeMixturePhaseBlock;
 struct NativePackingFractionBlock;
 
+struct NativeReferenceSequence final {
+    std::array<double, 2> log_fugacity;
+    double reference_molality;
+    double convergence_error;
+};
+
+struct NativeIonSolvationBorn final {
+    double solvation_gibbs_j_per_mol;
+    double derivative_j_per_mol_per_angstrom;
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+};
+
 class NativeModel final {
 public:
     explicit NativeModel(NativeParameters parameters);
@@ -107,6 +120,25 @@ public:
         const std::vector<double>& amounts,
         double volume,
         double ion_mole_fraction_max
+    ) const;
+    std::vector<double> reference_composition(
+        const std::vector<double>& solvent_fractions,
+        const std::array<std::size_t, 2>& ion_indices,
+        const std::array<int, 2>& stoichiometry,
+        double molality
+    ) const;
+    NativeReferenceSequence electrolyte_reference_sequence(
+        double temperature,
+        double pressure,
+        const std::vector<double>& solvent_fractions,
+        const std::array<std::size_t, 2>& ion_indices,
+        const std::array<int, 2>& stoichiometry,
+        const std::string& phase
+    ) const;
+    NativeIonSolvationBorn evaluate_ion_solvation_born(
+        double temperature,
+        double pressure,
+        double born_diameter_angstrom
     ) const;
 
 private:

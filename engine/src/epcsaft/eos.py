@@ -33,6 +33,16 @@ _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS = frozenset(
     }
 )
 
+_NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS = frozenset(
+    {
+        "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+        "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+        "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+        "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+        "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9",
+    }
+)
+
 _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
     "sha256:03f9b1d88843a2d53da3420d96987ec4a2305b2814cc4946cdb25d1db67f5f72": frozenset(
         {
@@ -345,14 +355,13 @@ def native_sdk(model: EPCSAFT) -> object:
     bundle_selection = _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS.get(
         model._parameter_bundle_fingerprint
     )
-    if (
-        fingerprint not in _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS
-        and (
-            bundle_selection is None
-            or len(model._component_ids) != len(bundle_selection)
-            or frozenset(model._component_ids) != bundle_selection
-        )
-    ):
+    phase_admitted = fingerprint in _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS or (
+        bundle_selection is not None
+        and len(model._component_ids) == len(bundle_selection)
+        and frozenset(model._component_ids) == bundle_selection
+    )
+    active_born_admitted = fingerprint in _NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS
+    if not phase_admitted and not active_born_admitted:
         raise _eos_error(
             "unsupported-native-sdk",
             reason="unadmitted-parameter-fingerprint",
@@ -372,6 +381,8 @@ def native_sdk(model: EPCSAFT) -> object:
             maximum,
             model._component_ids,
             maximum_ion_fraction,
+            phase_admitted,
+            active_born_admitted,
         )
     except (RuntimeError, ValueError) as exc:
         raise _eos_error("unsupported-native-sdk", reason=str(exc)) from exc

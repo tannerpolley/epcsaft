@@ -160,6 +160,32 @@ typedef int (*epcsaft_evaluate_packing_fraction_v1)(
     size_t hessian_capacity
 );
 
+/*
+ * Model-bound Figiel water reference tracer with one active ion Born diameter.
+ * The value is Delta_solv,x G_i^inf in J/mol and the derivative is its total
+ * fixed-(T,P,reference-path) derivative in J/(mol angstrom). A result
+ * struct-size mismatch is return-code authoritative and leaves the untrusted
+ * result layout untouched. Exact-size failures also set status and error.
+ */
+typedef struct epcsaft_ion_solvation_born_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double solvation_gibbs_j_per_mol;
+    double derivative_j_per_mol_per_angstrom;
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_ion_solvation_born_result_v1;
+
+typedef int (*epcsaft_evaluate_ion_solvation_born_v1)(
+    const void* model_context,
+    double temperature_k,
+    double pressure_pa,
+    double born_diameter_angstrom,
+    epcsaft_ion_solvation_born_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -182,6 +208,8 @@ typedef struct epcsaft_native_sdk_v1 {
     double source_temperature_max_k;
     /* NaN means that the bound source records declare no ionic-fraction cap. */
     double total_ion_mole_fraction_max;
+    size_t ion_solvation_born_result_size;
+    epcsaft_evaluate_ion_solvation_born_v1 evaluate_ion_solvation_born;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

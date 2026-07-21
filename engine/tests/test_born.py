@@ -1,4 +1,4 @@
-import math
+from decimal import Decimal, localcontext
 
 import pytest
 
@@ -19,45 +19,58 @@ def _model() -> EPCSAFT:
 
 
 def _born_oracle(temperature: float) -> float:
-    fractions = (0.9, 0.05, 0.05)
+    fractions = (Decimal("0.999998"), Decimal("0.000001"), Decimal("0.000001"))
     charges = (0, 1, -1)
-    born_diameters_angstrom = (0.0, 3.445, 4.100)
-    solvation_factors = (1.5, 1.0, 1.0)
+    born_diameters_angstrom = (Decimal("0"), Decimal("3.445"), Decimal("4.100"))
+    solvation_factors = (Decimal("1.5"), Decimal("1"), Decimal("1"))
     mixed_solvation = sum(
         fraction * factor for fraction, factor in zip(fractions, solvation_factors, strict=True)
     ) / sum(fractions)
-    bulk_permittivity = 78.09 / (1.0 + 7.01 * 0.1)
-    ionic_permittivity = 8.0
+    ion_fraction = fractions[1] + fractions[2]
+    bulk_permittivity = Decimal("78.09") / (Decimal("1") + Decimal("7.01") * ion_fraction)
+    ionic_permittivity = Decimal("8")
 
-    radial_sum = 0.0
+    radial_sum = Decimal("0")
     for fraction, charge, diameter_angstrom in zip(
         fractions, charges, born_diameters_angstrom, strict=True
     ):
         if charge == 0:
             continue
-        born_diameter = diameter_angstrom * 1.0e-10
-        shell_diameter = born_diameter * (1.0 + (mixed_solvation - 1.0) / abs(charge))
+        born_diameter = diameter_angstrom * Decimal("1e-10")
+        shell_diameter = born_diameter * (
+            Decimal("1") + (mixed_solvation - Decimal("1")) / abs(charge)
+        )
         radial_sum += (
             fraction
             * charge
             * charge
             * (
-                (1.0 - 1.0 / bulk_permittivity) / shell_diameter
-                + (1.0 - 1.0 / ionic_permittivity) * (1.0 / born_diameter - 1.0 / shell_diameter)
+                (Decimal("1") - Decimal("1") / bulk_permittivity) / shell_diameter
+                + (Decimal("1") - Decimal("1") / ionic_permittivity)
+                * (Decimal("1") / born_diameter - Decimal("1") / shell_diameter)
             )
         )
-    return (
-        -(ELEMENTARY_CHARGE**2)
-        * radial_sum
-        / (4.0 * math.pi * VACUUM_PERMITTIVITY * BOLTZMANN * temperature)
-    )
+    with localcontext() as context:
+        context.prec = 50
+        value = (
+            -(Decimal(str(ELEMENTARY_CHARGE)) ** 2)
+            * radial_sum
+            / (
+                Decimal("4")
+                * Decimal("3.1415926535897932384626433832795028841971693993751")
+                * Decimal(str(VACUUM_PERMITTIVITY))
+                * Decimal(str(BOLTZMANN))
+                * Decimal(str(temperature))
+            )
+        )
+    return float(value)
 
 
 def test_corrected_born_ssm_ds_matches_independent_two_region_oracle() -> None:
     result = _model().evaluate(
         temperature=298.15 * unit_registry.kelvin,
-        molar_density=40.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(0.9, 0.05, 0.05),
+        molar_density=40000.0 * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=(0.999998, 0.000001, 0.000001),
     )
 
     assert result.born_ssm_ds == pytest.approx(_born_oracle(298.15), rel=2.0e-12, abs=2.0e-12)

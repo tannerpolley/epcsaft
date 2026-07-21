@@ -76,6 +76,19 @@ PYBIND11_MODULE(_core, module) {
             "density_diagnostics", &epcsaft::NativeResult::density_diagnostics
         );
 
+    py::class_<epcsaft::NativeReferenceSequence>(module, "NativeReferenceSequence")
+        .def_readonly(
+            "log_fugacity", &epcsaft::NativeReferenceSequence::log_fugacity
+        )
+        .def_readonly(
+            "reference_molality",
+            &epcsaft::NativeReferenceSequence::reference_molality
+        )
+        .def_readonly(
+            "convergence_error",
+            &epcsaft::NativeReferenceSequence::convergence_error
+        );
+
     py::class_<epcsaft::NativeModel>(module, "NativeModel")
         .def(py::init([](
             std::vector<double> segment_count,
@@ -121,7 +134,23 @@ PYBIND11_MODULE(_core, module) {
             });
         }))
         .def("evaluate", &epcsaft::NativeModel::evaluate)
-        .def("evaluate_pressure", &epcsaft::NativeModel::evaluate_pressure);
+        .def("evaluate_pressure", &epcsaft::NativeModel::evaluate_pressure)
+        .def("reference_composition", &epcsaft::NativeModel::reference_composition)
+        .def(
+            "electrolyte_reference_sequence",
+            &epcsaft::NativeModel::electrolyte_reference_sequence
+        );
 
-    module.def("native_sdk_v1", &epcsaft::make_native_sdk_v1);
+    module.def(
+        "native_sdk_v1",
+        &epcsaft::make_native_sdk_v1,
+        py::arg("model"),
+        py::arg("parameter_fingerprint"),
+        py::arg("temperature_min_k"),
+        py::arg("temperature_max_k"),
+        py::arg("component_ids"),
+        py::arg("ion_mole_fraction_max"),
+        py::arg("phase_callbacks_admitted") = true,
+        py::arg("active_born_admitted") = false
+    );
 }

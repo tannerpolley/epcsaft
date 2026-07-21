@@ -14,28 +14,7 @@ if TYPE_CHECKING:
     from .eos import EPCSAFT
 
 
-_REFERENCE_MOLALITIES = (1.0e-6, 1.0e-8, 1.0e-10, 1.0e-12)
-_REFERENCE_CONVERGENCE_TOLERANCE = 5.0e-5
 _MOLAR_GAS_CONSTANT = 8.31446261815324
-
-
-def _formula_composition(
-    solvent_fractions: tuple[float, ...],
-    molar_masses: tuple[float | None, ...],
-    ion_indices: tuple[int, int],
-    stoichiometry: tuple[int, int],
-    molality: float,
-) -> tuple[float, ...]:
-    solvent_molar_mass = math.fsum(
-        fraction * (molar_masses[index] or 0.0)
-        for index, fraction in enumerate(solvent_fractions)
-    )
-    solvent_moles = 1.0 / solvent_molar_mass
-    total_moles = solvent_moles + molality * sum(stoichiometry)
-    composition = [fraction * solvent_moles / total_moles for fraction in solvent_fractions]
-    for index, coefficient in zip(ion_indices, stoichiometry, strict=True):
-        composition[index] = coefficient * molality / total_moles
-    return tuple(composition)
 
 
 def _log_fugacity(
@@ -113,17 +92,16 @@ class ElectrolyteReference:
             "mole / kilogram",
             "formula_unit_molality",
         )
-        composition = _formula_composition(
-            self.solvent_mole_fractions,
-            self._molar_masses,
-            self._ion_indices,
-            self.formula_stoichiometry,
-            molality,
+        composition = tuple(
+            self._eos._native.reference_composition(
+                self.solvent_mole_fractions,
+                self._ion_indices,
+                self.formula_stoichiometry,
+                molality,
+            )
         )
         water_index = (
-            self.component_ids.index("water")
-            if self._pure_water_log_fugacity is not None
-            else None
+            self.component_ids.index("water") if self._pure_water_log_fugacity is not None else None
         )
         finite_log_fugacity = _log_fugacity(
             self._eos,
@@ -142,22 +120,23 @@ class ElectrolyteReference:
         )
         single_ion = tuple(math.exp(value) for value in log_activity)
         coefficient_sum = sum(self.formula_stoichiometry)
-        log_mean = math.fsum(
-            coefficient * value
-            for coefficient, value in zip(
-                self.formula_stoichiometry,
-                log_activity,
-                strict=True,
+        log_mean = (
+            math.fsum(
+                coefficient * value
+                for coefficient, value in zip(
+                    self.formula_stoichiometry,
+                    log_activity,
+                    strict=True,
+                )
             )
-        ) / coefficient_sum
+            / coefficient_sum
+        )
         mean_mole_fraction = math.exp(log_mean)
         solvent_molar_mass = math.fsum(
             fraction * (self._molar_masses[index] or 0.0)
             for index, fraction in enumerate(self.solvent_mole_fractions)
         )
-        mean_molality = mean_mole_fraction / (
-            1.0 + solvent_molar_mass * molality * coefficient_sum
-        )
+        mean_molality = mean_mole_fraction / (1.0 + solvent_molar_mass * molality * coefficient_sum)
         osmotic_coefficient = None
         if self._pure_water_log_fugacity is not None and water_index is not None:
             log_solvent_activity = (
@@ -187,10 +166,8 @@ class ElectrolyteReference:
             self.ion_component_ids != target.ion_component_ids
             or self.formula_stoichiometry != target.formula_stoichiometry
             or self.phase != target.phase
-            or self.temperature.to("kelvin").magnitude
-            != target.temperature.to("kelvin").magnitude
-            or self.pressure.to("pascal").magnitude
-            != target.pressure.to("pascal").magnitude
+            or self.temperature.to("kelvin").magnitude != target.temperature.to("kelvin").magnitude
+            or self.pressure.to("pascal").magnitude != target.pressure.to("pascal").magnitude
         ):
             raise _eos_error("invalid-reference-state", reason="incompatible-transfer")
         scale = (
@@ -247,8 +224,7 @@ def build_reference_state(
         raise _eos_error("invalid-reference-state", field="solvent_mole_fractions")
     solvent_indices = tuple(index for index, charge in enumerate(charges) if charge == 0)
     if not solvent_indices or any(
-        solvent_fractions[index] > 0.0
-        and (model.molar_mass_kg_per_mol[index] or 0.0) <= 0.0
+        solvent_fractions[index] > 0.0 and (model.molar_mass_kg_per_mol[index] or 0.0) <= 0.0
         for index in solvent_indices
     ):
         raise _eos_error("invalid-reference-state", reason="solvent-molar-mass-required")
@@ -262,42 +238,21 @@ def build_reference_state(
     ion_indices = (cation, anion)
     temperature_quantity = temperature_k * unit_registry.kelvin
     pressure_quantity = pressure_pa * unit_registry.pascal
-    previous: tuple[float, float] | None = None
-    current: tuple[float, float] | None = None
-    convergence_error = math.inf
-    for molality in _REFERENCE_MOLALITIES:
-        composition = _formula_composition(
+    try:
+        sequence = eos._native.electrolyte_reference_sequence(
+            temperature_k,
+            pressure_pa,
             solvent_fractions,
-            model.molar_mass_kg_per_mol,
             ion_indices,
             stoichiometry,
-            molality,
+            phase,
         )
-        log_fugacity = _log_fugacity(
-            eos,
-            temperature=temperature_quantity,
-            pressure=pressure_quantity,
-            phase=phase,
-            composition=composition,
-            required_indices=ion_indices,
-        )
-        current = tuple(log_fugacity[index] for index in ion_indices)  # type: ignore[assignment]
-        if previous is not None:
-            convergence_error = max(
-                abs(value - old) for value, old in zip(current, previous, strict=True)
-            )
-        previous = current
-    assert current is not None
-    if convergence_error > _REFERENCE_CONVERGENCE_TOLERANCE:
-        raise _eos_error(
-            "reference-state-failed",
-            reason="limit-not-converged",
-            error=convergence_error,
-        )
+    except (RuntimeError, ValueError) as exc:
+        raise _eos_error("reference-state-failed", reason=str(exc)) from exc
+    current = tuple(sequence.log_fugacity)
+    convergence_error = sequence.convergence_error
 
-    active_solvents = tuple(
-        index for index in solvent_indices if solvent_fractions[index] > 0.0
-    )
+    active_solvents = tuple(index for index in solvent_indices if solvent_fractions[index] > 0.0)
     pure_water_log_fugacity = None
     if len(active_solvents) == 1 and eos.component_ids[active_solvents[0]] == "water":
         pure_water_log_fugacity = _log_fugacity(
@@ -318,7 +273,7 @@ def build_reference_state(
         pressure=pressure_quantity,
         phase=phase,
         infinite_dilution_log_fugacity=current,
-        reference_molality=_REFERENCE_MOLALITIES[-1]
+        reference_molality=sequence.reference_molality
         * unit_registry.mole
         / unit_registry.kilogram,
         convergence_error=convergence_error,

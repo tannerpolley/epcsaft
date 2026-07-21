@@ -152,7 +152,7 @@ ion-fraction, and close-packing checks fail before any output write. The
 callback owns no packing limits or equilibrium constraint: Equilibrium supplies
 Perdomo's limits and consumes the value and derivatives in its NLP.
 
-D-023 identifies a later, design-only electrolyte tail for the first Figiel
+D-023 identifies a local candidate electrolyte tail for the first Figiel
 regression tracer. Its minimum contract is one model-bound callback for the
 existing 298.15 K, 1 bar water x-process single-ion solvation free energy with
 only the selected current-catalog ion Born diameter active. It returns one
@@ -160,16 +160,16 @@ value and its first total fixed-pressure derivative. The exact model allowlist,
 reference path, implicit density sensitivity, proposed append-only ABI, and
 evidence gate are specified in
 `docs/designs/2026-07-20-active-born-solvation-native-sdk-design.md`. This ADR
-records neither implementation nor authority for that tail.
+records the implementation shape but no authority for that tail.
 
-Before that callback is implemented, the existing Python-owned four-molality
-algorithm must be refactored behind one private Provider-native owner,
+The former Python-owned four-molality algorithm is refactored behind one
+private Provider-native owner,
 `epcsaft::detail::electrolyte_reference_sequence` in
 `src/epcsaft/_native/electrolyte_reference.hpp`. It alone owns electroneutral
 composition construction, the exact schedule, convergence adjudication, and
 terminal fugacity selection. The public `reference_state` path delegates to it
 through the existing private `_core` module with unchanged public behavior;
-the future callback calls it directly. Neither path may retain a second copy
+the callback calls it directly. Neither path may retain a second copy
 or expose this refactor as a new public abstraction.
 
 The capsule owns the model context. A consumer keeps a Python reference to the
@@ -198,7 +198,7 @@ not impose fit bounds or scaling. Its returned fingerprint identifies the
 immutable source model from which the fit problem descends; candidate values
 remain explicit coordinates and never masquerade as a new source record.
 
-The active-Born design admits only the five exact water/ion/counterion
+The active-Born candidate admits only the five exact water/ion/counterion
 selections and fingerprints listed in its design. It fixes the active ion at
 component index 1, requires a positive finite trial diameter, and rejects any
 other solvent, component order, source fingerprint, ion, or state. H+, I-,
@@ -255,7 +255,7 @@ methane/ethane states, fixed-callback parity at the catalog value, the complete
 four-coordinate gradient and Hessian direction, its exact appended offset,
 finite-only trial admission, and binary/neutral/nonassociating scope.
 
-The design-only active-Born evidence gate requires source-owner parity for all
+The local active-Born evidence gate requires source-owner parity for all
 five bound models, independent Figiel target points once Validation freezes
 them, an independent high-precision corrected-Born check, centered-difference
 checks of the complete first derivative, reference-value and derivative-limit
@@ -274,8 +274,8 @@ delegation and result translation only.
   `k_ij` candidate, association, electrolyte, and other fitted-parameter
   families require separate parameterized phase contracts and evidence. They
   are not implied by the pure three-parameter entry or this bounded candidate.
-- The D-023 active-Born solvation design does not admit runtime implementation,
-  fitted parameters, additional ions, solvation-factor or dielectric
+- The D-023 active-Born solvation candidate does not admit fitted parameters,
+  additional ions, solvation-factor or dielectric
   parameters, other solvents/states, a generic parameter overlay, or catalog
   persistence.
 - Eliminated association requires every mixed implicit sensitivity through the

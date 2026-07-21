@@ -4,6 +4,7 @@
 #include "born.hpp"
 #include "density.hpp"
 #include "derivatives.hpp"
+#include "electrolyte_reference.hpp"
 #include "electrolyte.hpp"
 #include "helmholtz.hpp"
 #include "phase_block.hpp"
@@ -27,6 +28,96 @@ bool finite(const std::vector<double>& values) {
     return std::all_of(values.begin(), values.end(), [](double value) {
         return std::isfinite(value);
     });
+}
+
+detail::ReferenceObservation active_born_observation(
+    const NativeModel& model,
+    const NativeParameters& parameters,
+    double temperature,
+    double pressure,
+    const std::vector<double>& composition,
+    std::size_t active_component
+) {
+    const auto state = model.evaluate_pressure(
+        temperature, pressure, composition, "liquid"
+    );
+    if (!state.log_fugacity_coefficient.has_value()) {
+        throw std::runtime_error("reference fugacity is unavailable");
+    }
+    const auto sigma = detail::segment_sigma(temperature, parameters);
+    const auto diameter = detail::segment_diameter(temperature, parameters, sigma);
+    const auto site_fractions = detail::solve_site_fractions(
+        temperature,
+        state.molar_density,
+        composition,
+        parameters,
+        sigma,
+        diameter
+    );
+    const auto derivatives = detail::thermodynamic_derivatives_active_born(
+        temperature,
+        state.molar_density,
+        composition,
+        parameters,
+        site_fractions,
+        active_component,
+        parameters.born_diameter_angstrom[active_component]
+    );
+    if (!derivatives.active_born.has_value()) {
+        throw std::runtime_error("active Born derivative is unavailable");
+    }
+    const std::size_t components = composition.size();
+    const std::size_t coordinates = 3 + components;
+    const std::size_t active_coordinate = 2 + components;
+    const auto hessian = [&derivatives, coordinates](
+        std::size_t row, std::size_t column
+    ) {
+        return derivatives.hessian[row * coordinates + column];
+    };
+    const double compressibility = state.compressibility_factor;
+    const double pressure_diameter = state.molar_density * state.molar_density
+        * detail::GAS_CONSTANT * temperature * hessian(1, active_coordinate);
+    const double density_diameter = -pressure_diameter
+        / state.pressure_density_derivative;
+    std::array<double, 2> total_derivative{};
+    for (std::size_t ion = 0; ion < 2; ++ion) {
+        const std::size_t component = 1 + ion;
+        double weighted_composition_diameter = 0.0;
+        double weighted_composition_density = 0.0;
+        for (std::size_t mixture_component = 0;
+             mixture_component < components;
+             ++mixture_component) {
+            weighted_composition_diameter += composition[mixture_component]
+                * hessian(2 + mixture_component, active_coordinate);
+            weighted_composition_density += composition[mixture_component]
+                * hessian(2 + mixture_component, 1);
+        }
+        const double chemical_potential_diameter = *derivatives.active_born
+            + state.molar_density * hessian(1, active_coordinate)
+            + hessian(2 + component, active_coordinate)
+            - weighted_composition_diameter;
+        const double log_fugacity_diameter = chemical_potential_diameter
+            - state.molar_density * hessian(1, active_coordinate)
+                / compressibility;
+        const double compressibility_density = derivatives.density
+            + state.molar_density * derivatives.density_density;
+        const double chemical_potential_density = 2.0 * derivatives.density
+            + state.molar_density * derivatives.density_density
+            + hessian(2 + component, 1)
+            - weighted_composition_density;
+        const double log_fugacity_density = chemical_potential_density
+            - compressibility_density / compressibility;
+        total_derivative[ion] = detail::GAS_CONSTANT * temperature
+            * (log_fugacity_diameter
+               + log_fugacity_density * density_diameter);
+    }
+    return {
+        {
+            (*state.log_fugacity_coefficient)[1],
+            (*state.log_fugacity_coefficient)[2],
+        },
+        total_derivative,
+    };
 }
 
 }  // namespace
@@ -200,6 +291,105 @@ NativePackingFractionBlock NativeModel::evaluate_packing_fraction(
     return detail::packing_fraction_block(
         temperature, amounts, volume, ion_mole_fraction_max, parameters_
     );
+}
+
+std::vector<double> NativeModel::reference_composition(
+    const std::vector<double>& solvent_fractions,
+    const std::array<std::size_t, 2>& ion_indices,
+    const std::array<int, 2>& stoichiometry,
+    double molality
+) const {
+    return detail::formula_composition(
+        solvent_fractions,
+        parameters_.molar_mass_kg_per_mol,
+        ion_indices,
+        stoichiometry,
+        molality
+    );
+}
+
+NativeReferenceSequence NativeModel::electrolyte_reference_sequence(
+    double temperature,
+    double pressure,
+    const std::vector<double>& solvent_fractions,
+    const std::array<std::size_t, 2>& ion_indices,
+    const std::array<int, 2>& stoichiometry,
+    const std::string& phase
+) const {
+    const auto result = detail::electrolyte_reference_sequence(
+        solvent_fractions,
+        parameters_.molar_mass_kg_per_mol,
+        ion_indices,
+        stoichiometry,
+        [this, temperature, pressure, &ion_indices, &phase](
+            const std::vector<double>& composition
+        ) {
+            const auto state = evaluate_pressure(
+                temperature, pressure, composition, phase
+            );
+            if (!state.log_fugacity_coefficient.has_value()) {
+                throw std::runtime_error("reference fugacity is unavailable");
+            }
+            return detail::ReferenceObservation{
+                {
+                    (*state.log_fugacity_coefficient)[ion_indices[0]],
+                    (*state.log_fugacity_coefficient)[ion_indices[1]],
+                },
+                std::nullopt,
+            };
+        }
+    );
+    return {
+        result.log_fugacity,
+        result.molality,
+        result.convergence_error,
+    };
+}
+
+NativeIonSolvationBorn NativeModel::evaluate_ion_solvation_born(
+    double temperature,
+    double pressure,
+    double born_diameter_angstrom
+) const {
+    if (!std::isfinite(temperature) || !std::isfinite(pressure)
+        || !std::isfinite(born_diameter_angstrom) || temperature <= 0.0
+        || pressure <= 0.0 || born_diameter_angstrom <= 0.0) {
+        throw std::invalid_argument("invalid active Born reference inputs");
+    }
+    if (parameters_.charge_number.size() != 3
+        || parameters_.charge_number[0] != 0
+        || parameters_.charge_number[1] == 0
+        || parameters_.charge_number[2] == 0
+        || parameters_.charge_number[1] + parameters_.charge_number[2] != 0) {
+        throw std::logic_error("unsupported active Born reference model");
+    }
+    NativeParameters active_parameters = parameters_;
+    active_parameters.born_diameter_angstrom[1] = born_diameter_angstrom;
+    const NativeModel active_model(active_parameters);
+    const auto result = detail::electrolyte_reference_sequence(
+        std::vector<double>{1.0, 0.0, 0.0},
+        active_parameters.molar_mass_kg_per_mol,
+        std::array<std::size_t, 2>{1, 2},
+        std::array<int, 2>{1, 1},
+        [&active_model, &active_parameters, temperature, pressure](
+            const std::vector<double>& composition
+        ) {
+            return active_born_observation(
+                active_model,
+                active_parameters,
+                temperature,
+                pressure,
+                composition,
+                1
+            );
+        }
+    );
+    return {
+        detail::GAS_CONSTANT * temperature * result.log_fugacity[0],
+        (*result.derivative)[0],
+        result.molality,
+        result.convergence_error,
+    };
 }
 
 std::array<double, 2> NativeModel::molar_volume_bounds(

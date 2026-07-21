@@ -117,6 +117,26 @@ class ApplicabilityNativeSdkTable(ctypes.Structure):
     )
 
 
+class IonSolvationBornResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("solvation_gibbs_j_per_mol", ctypes.c_double),
+        ("derivative_j_per_mol_per_angstrom", ctypes.c_double),
+        ("reference_molality_mol_per_kg", ctypes.c_double),
+        ("reference_convergence_error", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class ActiveBornNativeSdkTable(ctypes.Structure):
+    _fields_ = ApplicabilityNativeSdkTable._fields_ + (
+        ("ion_solvation_born_result_size", ctypes.c_size_t),
+        ("evaluate_ion_solvation_born", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -141,6 +161,10 @@ PACKING_FRACTION_PREFIX_SIZE = (
 APPLICABILITY_PREFIX_SIZE = (
     ApplicabilityNativeSdkTable.total_ion_mole_fraction_max.offset
     + ctypes.sizeof(ctypes.c_double)
+)
+ACTIVE_BORN_PREFIX_SIZE = (
+    ActiveBornNativeSdkTable.evaluate_ion_solvation_born.offset
+    + ctypes.sizeof(ctypes.c_void_p)
 )
 
 
@@ -212,6 +236,15 @@ EvaluatePackingFraction = ctypes.CFUNCTYPE(
     ctypes.c_size_t,
     ctypes.POINTER(ctypes.c_double),
     ctypes.c_size_t,
+)
+
+EvaluateIonSolvationBorn = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(IonSolvationBornResult),
 )
 
 
@@ -313,6 +346,34 @@ def _applicability_table(
     table = ctypes.cast(address, ctypes.POINTER(ApplicabilityNativeSdkTable)).contents
     assert table.table_size >= APPLICABILITY_PREFIX_SIZE
     return capsule, table
+
+
+def _active_born_table(model: EPCSAFT) -> tuple[object, ActiveBornNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(ActiveBornNativeSdkTable)).contents
+    assert table.table_size >= ACTIVE_BORN_PREFIX_SIZE
+    return capsule, table
+
+
+def _evaluate_active_born(
+    table: ActiveBornNativeSdkTable,
+    born_diameter_angstrom: float,
+) -> IonSolvationBornResult:
+    result = IonSolvationBornResult(struct_size=ctypes.sizeof(IonSolvationBornResult))
+    status = EvaluateIonSolvationBorn(table.evaluate_ion_solvation_born)(
+        table.model_context,
+        298.15,
+        100000.0,
+        born_diameter_angstrom,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
 
 
 def _evaluate(
@@ -635,7 +696,7 @@ def test_native_sdk_applicability_metadata_matches_source_and_resolved_model(
     model = EPCSAFT(bundle.select(component_ids))
     capsule, table = _applicability_table(model)
     assert capsule is not None
-    assert table.table_size == APPLICABILITY_PREFIX_SIZE
+    assert table.table_size >= APPLICABILITY_PREFIX_SIZE
     assert model.parameter_fingerprint == expected_fingerprint
 
     source_minimum = float(source_domain.temperature_min.to("kelvin").magnitude)
@@ -1768,3 +1829,221 @@ def test_native_sdk_header_is_installed_package_data() -> None:
         / "native_sdk_v1.h"
     )
     assert header.is_file()
+
+
+@pytest.mark.parametrize(
+    ("active_ion", "counter_ion", "source_diameter", "fingerprint", "source_target"),
+    (
+        (
+            "lithium-cation",
+            "chloride-anion",
+            2.784,
+            "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+            -486200.0,
+        ),
+        (
+            "sodium-cation",
+            "chloride-anion",
+            3.445,
+            "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+            -381100.0,
+        ),
+        (
+            "potassium-cation",
+            "chloride-anion",
+            4.150,
+            "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+            -309100.0,
+        ),
+        (
+            "chloride-anion",
+            "sodium-cation",
+            4.100,
+            "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+            -314900.0,
+        ),
+        (
+            "bromide-anion",
+            "sodium-cation",
+            4.480,
+            "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9",
+            -290900.0,
+        ),
+    ),
+)
+def test_native_sdk_active_born_matches_public_reference_state(
+    active_ion: str,
+    counter_ion: str,
+    source_diameter: float,
+    fingerprint: str,
+    source_target: float,
+) -> None:
+    model = _electrolyte_model(("water", active_ion, counter_ion))
+    capsule, table = _active_born_table(model)
+    assert capsule is not None
+    assert model.parameter_fingerprint == fingerprint
+    assert table.table_size == ACTIVE_BORN_PREFIX_SIZE == 168
+    assert table.ion_solvation_born_result_size == ctypes.sizeof(
+        IonSolvationBornResult
+    ) == 272
+    assert table.evaluate_ion_solvation_born
+
+    observed = _evaluate_active_born(table, source_diameter)
+    reference = model.reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=1.0 * unit_registry.bar,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    active_position = reference.ion_component_ids.index(active_ion)
+    expected = reference.solvation_free_energy[active_position].to(
+        "joule / mole"
+    ).magnitude
+
+    assert observed.status == STATUS_OK
+    assert observed.solvation_gibbs_j_per_mol == pytest.approx(expected, abs=2.0e-8)
+    # Figiel et al. (2025), DOI 10.1021/acs.iecr.5c00475, SI Table S5.
+    # These source targets are evidence only; they are not runtime constants.
+    assert observed.solvation_gibbs_j_per_mol < 0.0
+    assert abs(observed.solvation_gibbs_j_per_mol - source_target) <= 1.5e3
+    assert math.isfinite(observed.derivative_j_per_mol_per_angstrom)
+    assert observed.reference_molality_mol_per_kg == 1.0e-12
+    assert 0.0 <= observed.reference_convergence_error <= 5.0e-5
+    assert observed.parameter_fingerprint.decode() == fingerprint
+    assert observed.error == b""
+
+
+@pytest.mark.parametrize(
+    ("active_ion", "counter_ion", "trial_diameter"),
+    (
+        ("sodium-cation", "chloride-anion", 3.2),
+        ("bromide-anion", "sodium-cation", 4.8),
+    ),
+)
+def test_native_sdk_active_born_derivative_matches_centered_difference(
+    active_ion: str,
+    counter_ion: str,
+    trial_diameter: float,
+) -> None:
+    _, table = _active_born_table(
+        _electrolyte_model(("water", active_ion, counter_ion))
+    )
+    center = _evaluate_active_born(table, trial_diameter)
+
+    estimates = []
+    for step in (2.0e-4, 1.0e-4):
+        upper = _evaluate_active_born(table, trial_diameter + step)
+        lower = _evaluate_active_born(table, trial_diameter - step)
+        estimates.append(
+            (upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol)
+            / (2.0 * step)
+        )
+    tolerance = max(
+        1.0e-3,
+        20.0 * abs(estimates[0] - estimates[1]),
+        2.0e-8 * abs(center.derivative_j_per_mol_per_angstrom),
+    )
+    assert abs(center.derivative_j_per_mol_per_angstrom - estimates[1]) <= tolerance
+
+
+def test_native_sdk_active_born_partial_trends_to_zero_at_large_diameter() -> None:
+    _, table = _active_born_table(
+        _electrolyte_model(("water", "sodium-cation", "chloride-anion"))
+    )
+    smaller = _evaluate_active_born(table, 16.0)
+    larger = _evaluate_active_born(table, 32.0)
+
+    assert abs(larger.derivative_j_per_mol_per_angstrom) < abs(
+        smaller.derivative_j_per_mol_per_angstrom
+    )
+
+
+def test_native_sdk_active_born_preserves_prior_prefix_and_fails_closed() -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "chloride-anion"))
+    _, table = _active_born_table(model)
+    for field_name, _ in ApplicabilityNativeSdkTable._fields_:
+        assert (
+            getattr(ActiveBornNativeSdkTable, field_name).offset
+            == getattr(ApplicabilityNativeSdkTable, field_name).offset
+        )
+    assert ActiveBornNativeSdkTable.ion_solvation_born_result_size.offset == 152
+    assert ActiveBornNativeSdkTable.evaluate_ion_solvation_born.offset == 160
+    assert ctypes.sizeof(ActiveBornNativeSdkTable) == 168
+
+    callback = EvaluateIonSolvationBorn(table.evaluate_ion_solvation_born)
+    undersized = IonSolvationBornResult(struct_size=8, status=123)
+    before = bytes(undersized)
+    status = callback(
+        table.model_context,
+        298.15,
+        100000.0,
+        3.445,
+        ctypes.byref(undersized),
+    )
+    assert status == STATUS_ABI_MISMATCH
+    assert bytes(undersized) == before
+
+    for temperature, pressure, diameter, expected_status in (
+        (math.nan, 100000.0, 3.445, STATUS_INVALID_ARGUMENT),
+        (298.15, 100000.0, 0.0, STATUS_INVALID_ARGUMENT),
+        (299.0, 100000.0, 3.445, STATUS_DOMAIN_ERROR),
+        (298.15, 101325.0, 3.445, STATUS_DOMAIN_ERROR),
+    ):
+        result = IonSolvationBornResult(
+            struct_size=ctypes.sizeof(IonSolvationBornResult)
+        )
+        status = callback(
+            table.model_context,
+            temperature,
+            pressure,
+            diameter,
+            ctypes.byref(result),
+        )
+        assert status == result.status == expected_status
+        assert math.isnan(result.solvation_gibbs_j_per_mol)
+        assert math.isnan(result.derivative_j_per_mol_per_angstrom)
+        assert math.isnan(result.reference_molality_mol_per_kg)
+        assert math.isnan(result.reference_convergence_error)
+        assert result.parameter_fingerprint == b""
+        assert result.error
+
+    null_result = IonSolvationBornResult(
+        struct_size=ctypes.sizeof(IonSolvationBornResult)
+    )
+    status = callback(None, 298.15, 100000.0, 3.445, ctypes.byref(null_result))
+    assert status == null_result.status == STATUS_INVALID_ARGUMENT
+    assert null_result.error
+
+    neutral_capsule, neutral_table = _active_born_table(_mixture_model())
+    assert neutral_capsule is not None
+    neutral_result = IonSolvationBornResult(
+        struct_size=ctypes.sizeof(IonSolvationBornResult)
+    )
+    status = EvaluateIonSolvationBorn(neutral_table.evaluate_ion_solvation_born)(
+        neutral_table.model_context,
+        298.15,
+        100000.0,
+        3.445,
+        ctypes.byref(neutral_result),
+    )
+    assert status == neutral_result.status == STATUS_UNSUPPORTED_MODEL
+    assert neutral_result.error
+
+    iodide_bundle = ParameterBundle.from_catalog("figiel-2025-aqueous-iodides", version=1)
+    iodide = EPCSAFT(
+        iodide_bundle.select(("water", "sodium-cation", "iodide-anion"))
+    )
+    with pytest.raises(EosError, match="unadmitted-parameter-fingerprint"):
+        native_sdk(iodide)
+
+    lithium = _electrolyte_model(("water", "lithium-cation", "chloride-anion"))
+    lithium_capsule, lithium_table = _electrolyte_table(lithium)
+    assert lithium_capsule is not None
+    phase_result, _, _ = _evaluate_electrolyte(
+        lithium_table,
+        298.15,
+        (1.0, 1.0e-6, 1.0e-6),
+        1.8e-5,
+    )
+    assert phase_result.status == STATUS_UNSUPPORTED_MODEL
+    assert phase_result.error

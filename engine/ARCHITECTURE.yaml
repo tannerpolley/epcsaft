@@ -1,5 +1,5 @@
 version: 2
-status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-candidates-and-active-born-design
+status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-and-active-born-candidates
 
 authority:
   effective_receipt: promotion-0012-provider-full-candidate
@@ -68,13 +68,15 @@ native_sdk_candidates:
     derivative_order: 2
     exclusions: association, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, equilibrium, regression targets, fit bounds, scaling, and fit acceptance
   figiel_water_active_born_solvation_v1:
-    status: design-only-pending-permanent-lab-review-validation-target-packet-implementation-and-authority
+    status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
       One model-bound 298.15 K, 1 bar water x-process single-ion solvation
       Gibbs energy and its first total fixed-pressure derivative with respect
       to the selected current-catalog ion Born diameter.
     active_coordinate: born_diameter_angstrom
     derivative_order: 1
+    table_size_bytes_64_bit: 168
+    result_size_bytes_64_bit: 272
     admitted_active_components: [lithium-cation, sodium-cation, potassium-cation, chloride-anion, bromide-anion]
     reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
     public_delegation: EPCSAFT.reference_state -> private epcsaft._core binding -> reference_sequence_owner

@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 
 import pytest
 
@@ -27,6 +28,10 @@ def test_water_nacl_reference_converges_on_an_electroneutral_path() -> None:
     assert reference.reference_molality.to("mole / kilogram").magnitude <= 1.0e-10
     assert reference.convergence_error <= 5.0e-5
     assert all(math.isfinite(value) for value in reference.infinite_dilution_log_fugacity)
+    assert reference.infinite_dilution_log_fugacity == pytest.approx(
+        (-154.0679654864907, -127.07688974125972),
+        abs=2.0e-12,
+    )
 
 
 def test_activity_follows_figiel_reference_and_scale_equations() -> None:
@@ -47,7 +52,9 @@ def test_activity_follows_figiel_reference_and_scale_equations() -> None:
     )
     assert state.log_fugacity_coefficient is not None
     expected_single = tuple(
-        math.exp(state.log_fugacity_coefficient[index] - reference.infinite_dilution_log_fugacity[k])
+        math.exp(
+            state.log_fugacity_coefficient[index] - reference.infinite_dilution_log_fugacity[k]
+        )
         for k, index in enumerate((1, 2))
     )
     assert activity.single_ion_activity_coefficients == pytest.approx(expected_single)
@@ -124,6 +131,30 @@ def test_solvation_free_energy_follows_figiel_x_process() -> None:
         value.to("joule / mole").magnitude for value in reference.solvation_free_energy
     )
     assert observed == pytest.approx(expected)
+
+
+def test_reference_sequence_algorithm_has_one_native_owner() -> None:
+    package_root = Path(__file__).parents[1] / "src" / "epcsaft"
+    python_source = (package_root / "reference.py").read_text()
+    native_source = (package_root / "_native" / "electrolyte_reference.hpp").read_text()
+    eos_source = (package_root / "_native" / "eos.cpp").read_text()
+
+    assert "_REFERENCE_MOLALITIES" not in python_source
+    assert "_REFERENCE_CONVERGENCE_TOLERANCE" not in python_source
+    assert "def _formula_composition" not in python_source
+    assert "for molality in" not in python_source
+    assert "REFERENCE_MOLALITIES" in native_source
+    assert "REFERENCE_CONVERGENCE_TOLERANCE" in native_source
+    assert "formula_composition" in native_source
+    assert "electrolyte_reference_sequence" in native_source
+    assert eos_source.count("detail::electrolyte_reference_sequence(") == 2
+    for delegate in (
+        python_source,
+        eos_source,
+        (package_root / "_native" / "module.cpp").read_text(),
+        (package_root / "_native" / "native_sdk.cpp").read_text(),
+    ):
+        assert "1.0e-6, 1.0e-8, 1.0e-10, 1.0e-12" not in delegate
 
 
 def test_transfer_free_energy_follows_figiel_ratio_and_reverses_sign() -> None:
