@@ -4,9 +4,8 @@ status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-a
 authority:
   effective_receipt: promotion-0012-provider-full-candidate
   effective_scope: >-
-    Neutral, associating, bounded Figiel SSM+DS electrolyte, and bounded Ascani
-    original-Born EOS at explicit molar density or specified pressure, plus
-    bounded electrolyte reference states.
+    Neutral, associating, and bounded Figiel electrolyte EOS at explicit molar
+    density or specified pressure, plus bounded electrolyte reference states.
   candidate_promotion_status: promoted
   native_sdk_receipt: promotion-0015-provider-native-sdk-v1
   native_sdk_authority: determined-by-receipt
@@ -87,10 +86,9 @@ native_sdk_candidates:
     exclusions: targets, residuals, scaling, bounds, Ceres, fit results, catalog persistence, other solvents or states, other ions, solvation-factor or dielectric parameters, generic parameter overlays, second derivatives, and authority
 
 accepted_scope: >-
-  Source-backed neutral, associating, bounded ionic SSM+DS, and bounded Ascani
-  original-Born residual EOS at explicit molar density or specified pressure,
-  with residual chemical, fugacity, caloric, density-root, and bounded
-  electrolyte reference results.
+  Source-backed neutral, associating, and bounded ionic SSM+DS residual EOS at
+  explicit molar density or specified pressure, with residual chemical,
+  fugacity, caloric, density-root, and bounded electrolyte reference results.
 
 owners:
   parameter_input:
