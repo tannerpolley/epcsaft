@@ -94,6 +94,7 @@ struct PhaseBlockParameters final {
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;
     std::vector<int> charge_number;
+    int electrolyte_model;
 };
 
 template <typename Scalar>
@@ -118,6 +119,7 @@ PhaseBlockParameters<Scalar> binary_interaction_parameters(
         parameters.site_component,
         parameters.site_multiplicity,
         parameters.charge_number,
+        parameters.electrolyte_model,
     };
 }
 
@@ -537,6 +539,7 @@ PhaseBlockParameters<Scalar> pure_phase_parameters(
         {},
         {},
         {0},
+        ELECTROLYTE_MODEL_NONE,
     };
 }
 

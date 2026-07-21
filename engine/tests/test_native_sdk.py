@@ -1569,9 +1569,11 @@ def test_native_sdk_molar_volume_bounds_match_packing_oracles_and_permutation() 
         sigma_angstrom: tuple[float, ...],
         energy_over_k: tuple[float, ...],
         charges: tuple[int, ...],
+        *,
+        charged_diameter_scale: float = 0.88,
     ) -> tuple[float, float]:
         diameters = tuple(
-            0.88 * sigma
+            charged_diameter_scale * sigma
             if charge
             else sigma * (1.0 - 0.12 * math.exp(-3.0 * energy / temperature_k))
             for sigma, energy, charge in zip(sigma_angstrom, energy_over_k, charges, strict=True)
@@ -1665,6 +1667,37 @@ def test_native_sdk_molar_volume_bounds_match_packing_oracles_and_permutation() 
             (0, 1, -1),
         ),
         rel=2.0e-15,
+    )
+
+    ascani_ids = (
+        "water",
+        "1-butanol",
+        "sodium-cation",
+        "potassium-cation",
+        "chloride-anion",
+    )
+    ascani_composition = (0.72, 0.20, 0.03, 0.01, 0.04)
+    ascani = _ascani_model(ascani_ids)
+    ascani_capsule, _, ascani_bounds = evaluate(ascani, 298.15, ascani_composition)
+    assert ascani_capsule is not None
+    ascani_water_sigma = (
+        2.7927 + 10.11 * math.exp(-0.01775 * 298.15) - 1.417 * math.exp(-0.01146 * 298.15)
+    )
+    ascani_geometry = (
+        298.15,
+        ascani_composition,
+        (1.2047, 2.7510, 1.0, 1.0, 1.0),
+        (ascani_water_sigma, 3.6139, 2.8232, 3.3417, 2.7560),
+        (353.95, 259.59, 230.0, 200.0, 170.0),
+        (0, 0, 1, 1, -1),
+    )
+    assert ascani_bounds == pytest.approx(
+        oracle(*ascani_geometry, charged_diameter_scale=1.0),
+        rel=2.0e-15,
+    )
+    assert ascani_bounds != pytest.approx(
+        oracle(*ascani_geometry, charged_diameter_scale=0.88),
+        rel=1.0e-8,
     )
 
 

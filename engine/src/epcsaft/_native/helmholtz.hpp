@@ -115,7 +115,12 @@ std::vector<Scalar> segment_diameter(
                     Scalar(-3.0 * parameters.dispersion_energy_over_k[component])
                         / temperature
                 ))
-            : Scalar(0.88) * sigma[component];
+            : Scalar(
+                  parameters.electrolyte_model
+                          == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
+                      ? 1.0
+                      : 0.88
+              ) * sigma[component];
     }
     return diameter;
 }

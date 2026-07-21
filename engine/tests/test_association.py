@@ -89,20 +89,22 @@ def _pure_2b_model() -> EPCSAFT:
 
 
 def test_ascani_lij_enters_dispersion_and_association_cross_diameter() -> None:
-    model = EPCSAFT(
-        ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1).select(
-            ("water", "1-butanol", "sodium-cation", "potassium-cation", "chloride-anion")
-        )
-    )
-    fractions = (0.74, 0.20, 0.02, 0.01, 0.03)
+    parameters = ParameterBundle.from_catalog(
+        "ascani-2022-case-study-2-electrolyte-lle", version=1
+    ).select(("water", "1-butanol"))
+    model = EPCSAFT(parameters)
+    fractions = (0.75, 0.25)
     source = model.evaluate(
         temperature=298.15 * unit_registry.kelvin,
         molar_density=1000.0 * unit_registry.mole / unit_registry.meter**3,
         mole_fractions=fractions,
     )
-    zero_lij_model = replace(model._model, l_ij=(0.0,) * 25)
+    zero_lij_model = replace(model._model, l_ij=(0.0,) * 4)
     zero_lij = NativeModel(*_native_arguments(zero_lij_model)).evaluate(298.15, 1000.0, fractions)
 
+    assert parameters.fingerprint == (
+        "sha256:e302721477358bd0240007cdaec972c20c60594a46a0cc821ddaea5e68f3206e"
+    )
     assert source.dispersion < zero_lij.dispersion
     assert source.association < zero_lij.association
 

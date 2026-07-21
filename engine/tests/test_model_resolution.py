@@ -389,6 +389,20 @@ def test_source_backed_ascani_catalog_resolves_distinct_topology_and_lij() -> No
     )
 
 
+def test_ascani_neutral_subset_retains_explicit_lij() -> None:
+    parameters = ParameterBundle.from_catalog(
+        "ascani-2022-case-study-2-electrolyte-lle", version=1
+    ).select(("water", "1-butanol"))
+    model = _resolve_model(parameters)
+
+    assert parameters.fingerprint == (
+        "sha256:e302721477358bd0240007cdaec972c20c60594a46a0cc821ddaea5e68f3206e"
+    )
+    assert model.topology == "associating"
+    assert model.k_ij == (0.0, -0.102, -0.102, 0.0)
+    assert model.l_ij == (0.0, -0.0044, -0.0044, 0.0)
+
+
 def test_ascani_topology_rejects_missing_explicit_lij() -> None:
     bundle = ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1)
     parameters = bundle.select(

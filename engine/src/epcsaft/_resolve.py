@@ -118,11 +118,11 @@ def _pair_matrix(
 ) -> tuple[float | None, ...]:
     size = len(component_ids)
     matrix: list[float | None] = [None] * (size * size)
-    if required:
+    family_present = any(key[2] == family for key in pairs)
+    if required or family_present:
         for index in range(size):
             matrix[index * size + index] = 0.0
     positions = {component_id: index for index, component_id in enumerate(component_ids)}
-    family_present = any(key[2] == family for key in pairs)
     for component_a, component_b in combinations(component_ids, 2):
         key = (*sorted((component_a, component_b)), family)
         record = pairs.get(key)
@@ -337,6 +337,7 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
     if not ionic_topology:
         topology: Literal["neutral", "associating"] = "associating" if site_ids else "neutral"
         k_ij = _pair_matrix(component_ids, pair_records, "k_ij", required=True)
+        l_ij = _pair_matrix(component_ids, pair_records, "l_ij", required=False)
         return _ResolvedModel(
             topology,
             component_ids,
@@ -345,7 +346,7 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
             segment_diameter,
             dispersion_energy,
             tuple(float(value) for value in k_ij),
-            tuple(0.0 for _ in range(len(component_ids) ** 2)),
+            tuple(0.0 if value is None else float(value) for value in l_ij),
             site_ids,
             site_multiplicity,
             association_pairs,

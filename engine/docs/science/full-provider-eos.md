@@ -94,7 +94,8 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Family | Governing relation | Status | Source locator | Owner |
 |---|---|---|---|---|
 | Segment diameter | `d_i(T) = sigma_i [1 - 0.12 exp(-3(u_i/k_B)/T)]` | source equation | Gross2001 Eq. (A.6) | `_native/helmholtz.hpp` |
-| Ionic segment diameter | `d_i = 0.88 sigma_i` | source equation | Figiel2025 Eqs. (3), (4) | `_native/helmholtz.hpp` |
+| Figiel ionic segment diameter | `d_i = 0.88 sigma_i` | source equation | Figiel2025 Eqs. (3), (4) | `_native/helmholtz.hpp` |
+| Ascani ionic segment diameter | `d_i = sigma_i` in hard-chain, Debye--Huckel, and Born terms | source equation | AscaniHeld2021 model description following Eq. (10) | `_native/helmholtz.hpp` |
 | Cross diameter | `sigma_ij = (sigma_i + sigma_j)(1-l_ij)/2` | source equation | Ascani2022SI Eq. (S4) | `_native/helmholtz.hpp`, `_native/association.hpp` |
 | Mixture moments | `zeta_n = (pi/6) rho_hat sum_i x_i m_i d_i^n`, `n=0..3` | source equation | Gross2001 Eq. (A.8) | `_native/helmholtz.hpp` |
 | Hard chain | hard-sphere mixture Helmholtz minus chain contact terms | source equation | Gross2001 Eqs. (A.9), (A.16), (A.17) | `_native/helmholtz.hpp` |
@@ -144,6 +145,9 @@ convention. A missing applicable unlike-component `k_ij` or Ascani `l_ij`
 record is an input error. Same-sign ion dispersion is equation-level
 `NOT_APPLICABLE`, not an implicit zero source record. The diagonal identities
 `k_ii = l_ii = 0` are not pair records.
+An associating neutral subset selected from the Ascani bundle retains its
+explicit source `l_ij`; only bundles with no selected `l_ij` family use the
+zero-matrix identity.
 
 For charged components, Figiel2025 sets cation--cation and anion--anion
 dispersion energies to zero. This gives `d_i = 0.88 sigma_i` from Eqs. (3)--
@@ -262,17 +266,20 @@ kappa = sqrt[rho_N e^2/(epsilon_0 epsilon_r,bulk k_B T)
              sum_i x_i z_i^2].
 ```
 
-Only charged components enter the following sum. Their finite-size DH
-diameter is the same Figiel2025 Eq. (4) diameter used by the PC-SAFT mixture,
-derived from Eq. (3) using the admitted ionic dispersion convention
-`u_ii = 0`:
+Only charged components enter the following sum. Their finite-size DH diameter
+is the same model-bound diameter used by the PC-SAFT mixture and packing owner:
 
 ```text
-d_i^DH(T) = 0.88 sigma_i.
+Figiel: d_i^DH(T) = 0.88 sigma_i,
+Ascani: d_i^DH(T) = sigma_i.
 ```
 
-Here `sigma_i` and `d_i^DH` use the same length basis and `d_i^DH` is converted
-to metres in the SI DH equation. For each charged component,
+The Figiel relation follows its Eqs. (3)--(4) and admitted `u_ii = 0`
+convention. AscaniHeld2021 explicitly uses `sigma_i` in the hard-chain,
+Debye--Huckel, and Born terms. The DH owner consumes the diameter already
+resolved by the common segment-diameter owner rather than applying a second
+scale. Here `sigma_i` and `d_i^DH` use the same length basis and `d_i^DH` is
+converted to metres in the SI DH equation. For each charged component,
 
 ```text
 chi_i = 3/(kappa d_i)^3

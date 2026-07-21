@@ -498,8 +498,8 @@ NativeResult NativeModel::evaluate(
         mole_fractions,
         mole_fractions,
         parameters_,
-        sigma,
-        sigma
+        diameter,
+        diameter
     );
     const double born_ssm_ds = detail::born_contribution(
         temperature,

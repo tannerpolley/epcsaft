@@ -68,8 +68,8 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     const std::vector<Scalar>& mole_fractions,
     const std::vector<double>& reference_mole_fractions,
     const NativeParameters& parameters,
-    const std::vector<Scalar>& sigma,
-    const std::vector<double>& reference_sigma
+    const std::vector<Scalar>& diameter,
+    const std::vector<double>& reference_diameter
 ) {
     bool has_ion = false;
     for (int charge : parameters.charge_number) {
@@ -171,11 +171,11 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         if (charge == 0) {
             continue;
         }
-        const Scalar diameter_m = Scalar(0.88e-10) * sigma[component];
+        const Scalar diameter_m = Scalar(1.0e-10) * diameter[component];
         const Scalar reduced = kappa * diameter_m;
         const Scalar chi = finite_size_chi(
             reduced,
-            reference_kappa * 0.88e-10 * reference_sigma[component] < 1.0e-3
+            reference_kappa * 1.0e-10 * reference_diameter[component] < 1.0e-3
         );
         weighted_chi += mole_fractions[component] * charge * charge * chi;
     }

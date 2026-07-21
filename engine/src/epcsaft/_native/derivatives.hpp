@@ -82,6 +82,9 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     const auto sigma = segment_sigma(independent[0], parameters);
     const auto diameter = segment_diameter(independent[0], parameters, sigma);
     const auto reference_sigma = segment_sigma(temperature, parameters);
+    const auto reference_diameter = segment_diameter(
+        temperature, parameters, reference_sigma
+    );
     const auto electrolyte = electrolyte_contribution(
         independent[0],
         independent[1],
@@ -90,8 +93,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         composition,
         mole_fractions,
         parameters,
-        sigma,
-        reference_sigma
+        diameter,
+        reference_diameter
     );
     const auto born = active_born_component.has_value()
         ? born_ssm_ds_contribution_active(

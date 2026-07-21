@@ -20,6 +20,14 @@ def _electrolyte_model() -> EPCSAFT:
     )
 
 
+def _ascani_model() -> EPCSAFT:
+    return EPCSAFT(
+        ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1).select(
+            ("water", "1-butanol", "sodium-cation", "potassium-cation", "chloride-anion")
+        )
+    )
+
+
 def _debye_huckel_oracle(temperature: float, density: float) -> float:
     fractions = (0.9, 0.05, 0.05)
     charges = (0, 1, -1)
@@ -57,6 +65,63 @@ def _debye_huckel_oracle(temperature: float, density: float) -> float:
     )
 
 
+def _ascani_debye_huckel_oracle(temperature: float, density: float) -> float:
+    fractions = (0.72, 0.20, 0.03, 0.01, 0.04)
+    charges = (0, 0, 1, 1, -1)
+    sigmas_angstrom = (
+        2.7927
+        + 10.11 * math.exp(-0.01775 * temperature)
+        - 1.417 * math.exp(-0.01146 * temperature),
+        3.6139,
+        2.8232,
+        3.3417,
+        2.7560,
+    )
+    solvent_masses = (0.01801528, 0.0741216)
+    solvent_permittivities = (
+        -105.2 * math.log(temperature) + 677.480,
+        -0.1077 * temperature + 49.723,
+    )
+    solvent_mass = math.fsum(
+        fraction * mass for fraction, mass in zip(fractions[:2], solvent_masses, strict=True)
+    )
+    salt_free_permittivity = (
+        math.fsum(
+            fraction * mass * permittivity
+            for fraction, mass, permittivity in zip(
+                fractions[:2], solvent_masses, solvent_permittivities, strict=True
+            )
+        )
+        / solvent_mass
+    )
+    bulk_permittivity = salt_free_permittivity * math.fsum(fractions[:2]) + 8.0 * math.fsum(
+        fractions[2:]
+    )
+    charge_square_sum = math.fsum(
+        fraction * charge * charge for fraction, charge in zip(fractions, charges, strict=True)
+    )
+    kappa = math.sqrt(
+        density
+        * AVOGADRO
+        * ELEMENTARY_CHARGE**2
+        * charge_square_sum
+        / (VACUUM_PERMITTIVITY * bulk_permittivity * BOLTZMANN * temperature)
+    )
+    weighted_finite_size = 0.0
+    for fraction, charge, sigma in zip(fractions, charges, sigmas_angstrom, strict=True):
+        if charge == 0:
+            continue
+        q = kappa * sigma * 1.0e-10
+        chi = 3.0 / q**3 * (1.5 + math.log1p(q) - 2.0 * (1.0 + q) + 0.5 * (1.0 + q) ** 2)
+        weighted_finite_size += fraction * charge * charge * chi
+    return (
+        -kappa
+        * ELEMENTARY_CHARGE**2
+        * weighted_finite_size
+        / (12.0 * math.pi * VACUUM_PERMITTIVITY * bulk_permittivity * BOLTZMANN * temperature)
+    )
+
+
 def test_source_backed_debye_huckel_matches_independent_si_oracle() -> None:
     result = _electrolyte_model().evaluate(
         temperature=298.15 * unit_registry.kelvin,
@@ -66,6 +131,19 @@ def test_source_backed_debye_huckel_matches_independent_si_oracle() -> None:
 
     assert result.debye_huckel == pytest.approx(
         _debye_huckel_oracle(298.15, 40.0), rel=2.0e-11, abs=2.0e-13
+    )
+    assert result.debye_huckel < 0.0
+
+
+def test_ascani_debye_huckel_uses_source_sigma_diameter() -> None:
+    result = _ascani_model().evaluate(
+        temperature=298.15 * unit_registry.kelvin,
+        molar_density=40.0 * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=(0.72, 0.20, 0.03, 0.01, 0.04),
+    )
+
+    assert result.debye_huckel == pytest.approx(
+        _ascani_debye_huckel_oracle(298.15, 40.0), rel=2.0e-11, abs=2.0e-13
     )
     assert result.debye_huckel < 0.0
 
