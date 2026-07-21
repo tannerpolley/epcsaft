@@ -6,6 +6,7 @@ import pytest
 
 import epcsaft
 from epcsaft import EPCSAFT, EosError, ParameterBundle, native_sdk, unit_registry
+from epcsaft._core import native_sdk_v1 as _native_sdk_v1
 
 
 CAPSULE_NAME = b"epcsaft.native_sdk.v1"
@@ -108,6 +109,14 @@ class PackingFractionNativeSdkTable(ctypes.Structure):
     )
 
 
+class ApplicabilityNativeSdkTable(ctypes.Structure):
+    _fields_ = PackingFractionNativeSdkTable._fields_ + (
+        ("source_temperature_min_k", ctypes.c_double),
+        ("source_temperature_max_k", ctypes.c_double),
+        ("total_ion_mole_fraction_max", ctypes.c_double),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -128,6 +137,10 @@ VOLUME_BOUNDS_PREFIX_SIZE = (
 PACKING_FRACTION_PREFIX_SIZE = (
     PackingFractionNativeSdkTable.evaluate_packing_fraction.offset
     + ctypes.sizeof(ctypes.c_void_p)
+)
+APPLICABILITY_PREFIX_SIZE = (
+    ApplicabilityNativeSdkTable.total_ion_mole_fraction_max.offset
+    + ctypes.sizeof(ctypes.c_double)
 )
 
 
@@ -285,6 +298,20 @@ def _packing_fraction_table(
     assert address
     table = ctypes.cast(address, ctypes.POINTER(PackingFractionNativeSdkTable)).contents
     assert table.table_size >= PACKING_FRACTION_PREFIX_SIZE
+    return capsule, table
+
+
+def _applicability_table(
+    model: EPCSAFT,
+) -> tuple[object, ApplicabilityNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(ApplicabilityNativeSdkTable)).contents
+    assert table.table_size >= APPLICABILITY_PREFIX_SIZE
     return capsule, table
 
 
@@ -565,6 +592,108 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
         PackingFractionNativeSdkTable.evaluate_packing_fraction.offset
         == VOLUME_BOUNDS_PREFIX_SIZE
     )
+    for field_name, _ in PackingFractionNativeSdkTable._fields_:
+        assert (
+            getattr(ApplicabilityNativeSdkTable, field_name).offset
+            == getattr(PackingFractionNativeSdkTable, field_name).offset
+        )
+    assert PACKING_FRACTION_PREFIX_SIZE == ctypes.sizeof(PackingFractionNativeSdkTable) == 128
+    assert ApplicabilityNativeSdkTable.source_temperature_min_k.offset == 128
+    assert ApplicabilityNativeSdkTable.source_temperature_max_k.offset == 136
+    assert ApplicabilityNativeSdkTable.total_ion_mole_fraction_max.offset == 144
+    assert APPLICABILITY_PREFIX_SIZE == ctypes.sizeof(ApplicabilityNativeSdkTable) == 152
+
+
+@pytest.mark.parametrize(
+    ("catalog", "component_ids", "domain_id", "expected_fingerprint", "expected"),
+    (
+        (
+            "figiel-2025-reference-electrolytes",
+            ("water", "sodium-cation", "chloride-anion"),
+            "figiel-298-k-1-bar",
+            "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+            (298.15, 298.15, 0.38),
+        ),
+        (
+            "khudaida-2026-figure-2-electrolyte-lle",
+            ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion"),
+            "khudaida-293-15-k-0-1-mpa",
+            "sha256:5a59828d86bb29c919513484a26cedaa0f025463aaa7c149ae3d1fbd0eda97ae",
+            (293.15, 293.15, math.nan),
+        ),
+    ),
+)
+def test_native_sdk_applicability_metadata_matches_source_and_resolved_model(
+    catalog: str,
+    component_ids: tuple[str, ...],
+    domain_id: str,
+    expected_fingerprint: str,
+    expected: tuple[float, float, float],
+) -> None:
+    bundle = ParameterBundle.from_catalog(catalog, version=1)
+    source_domain = next(domain for domain in bundle.domains if domain.domain_id == domain_id)
+    model = EPCSAFT(bundle.select(component_ids))
+    capsule, table = _applicability_table(model)
+    assert capsule is not None
+    assert table.table_size == APPLICABILITY_PREFIX_SIZE
+    assert model.parameter_fingerprint == expected_fingerprint
+
+    source_minimum = float(source_domain.temperature_min.to("kelvin").magnitude)
+    source_maximum = float(source_domain.temperature_max.to("kelvin").magnitude)
+    source_ion_maximum = (
+        math.nan
+        if source_domain.ion_mole_fraction_max is None
+        else float(source_domain.ion_mole_fraction_max)
+    )
+    observed = (
+        table.source_temperature_min_k,
+        table.source_temperature_max_k,
+        table.total_ion_mole_fraction_max,
+    )
+    assert observed[:2] == expected[:2] == (source_minimum, source_maximum)
+    assert observed[:2] == (
+        model._model.temperature_min_k,
+        model._model.temperature_max_k,
+    )
+    assert all(math.isfinite(value) and value > 0.0 for value in observed[:2])
+    assert observed[0] <= observed[1]
+    if math.isnan(expected[2]):
+        assert math.isnan(observed[2])
+        assert math.isnan(source_ion_maximum)
+        assert model._model.ion_mole_fraction_max is None
+    else:
+        assert observed[2] == expected[2] == source_ion_maximum
+        assert observed[2] == model._model.ion_mole_fraction_max
+        assert 0.0 < observed[2] <= 1.0
+
+
+@pytest.mark.parametrize(
+    ("temperature_min_k", "temperature_max_k", "ion_mole_fraction_max"),
+    (
+        (math.nan, math.nan, 0.38),
+        (math.nan, 298.15, 0.38),
+        (298.15, math.nan, 0.38),
+        (299.0, 298.15, 0.38),
+        (298.15, 298.15, 0.0),
+        (298.15, 298.15, 1.01),
+        (298.15, 298.15, math.inf),
+    ),
+)
+def test_native_sdk_applicability_metadata_rejects_missing_or_malformed_limits(
+    temperature_min_k: float,
+    temperature_max_k: float,
+    ion_mole_fraction_max: float,
+) -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "chloride-anion"))
+    with pytest.raises(ValueError):
+        _native_sdk_v1(
+            model._native,
+            model.parameter_fingerprint,
+            temperature_min_k,
+            temperature_max_k,
+            model.component_ids,
+            ion_mole_fraction_max,
+        )
 
 
 def test_native_sdk_mixture_phase_block_matches_public_thermodynamics_and_derivatives() -> None:
@@ -1493,7 +1622,7 @@ def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permuta
 
     capsule, table, value, gradient, hessian = evaluate(model, amounts)
     assert capsule is not None
-    assert table.table_size == ctypes.sizeof(PackingFractionNativeSdkTable) == 128
+    assert table.table_size >= ctypes.sizeof(PackingFractionNativeSdkTable) == 128
     assert PackingFractionNativeSdkTable.evaluate_packing_fraction.offset == 120
 
     water_sigma = 2.7927 + 10.11 * math.exp(-0.01775 * temperature_k) - 1.417 * math.exp(

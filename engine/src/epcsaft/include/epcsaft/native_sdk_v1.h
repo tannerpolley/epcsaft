@@ -177,6 +177,11 @@ typedef struct epcsaft_native_sdk_v1 {
     epcsaft_evaluate_mixture_phase_v1 evaluate_electrolyte_phase;
     epcsaft_evaluate_molar_volume_bounds_v1 evaluate_molar_volume_bounds;
     epcsaft_evaluate_packing_fraction_v1 evaluate_packing_fraction;
+    /* Immutable limits resolved from the bound parameter-source domains. */
+    double source_temperature_min_k;
+    double source_temperature_max_k;
+    /* NaN means that the bound source records declare no ionic-fraction cap. */
+    double total_ion_mole_fraction_max;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

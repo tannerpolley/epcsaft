@@ -71,6 +71,9 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_electrolyte,
               &NativeSdkEndpoint::evaluate_molar_volume_bounds,
               &NativeSdkEndpoint::evaluate_packing_fraction,
+              temperature_min_k,
+              temperature_max_k,
+              ion_mole_fraction_max,
           } {}
 
     static int evaluate(
@@ -610,6 +613,16 @@ pybind11::capsule make_native_sdk_v1(
                 throw std::invalid_argument("duplicate component identifier");
             }
         }
+    }
+    if (model.supports_electrolyte_native_sdk_v1()
+        && (!std::isfinite(temperature_min_k) || temperature_min_k <= 0.0
+            || !std::isfinite(temperature_max_k) || temperature_max_k <= 0.0
+            || temperature_min_k > temperature_max_k
+            || (!std::isnan(ion_mole_fraction_max)
+                && (!std::isfinite(ion_mole_fraction_max)
+                    || ion_mole_fraction_max <= 0.0
+                    || ion_mole_fraction_max > 1.0)))) {
+        throw std::invalid_argument("invalid electrolyte source applicability");
     }
     auto* endpoint = new NativeSdkEndpoint(
         model,
