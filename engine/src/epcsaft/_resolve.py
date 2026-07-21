@@ -33,13 +33,19 @@ class _ResolvedAssociationPair:
 
 @dataclass(frozen=True, slots=True)
 class _ResolvedModel:
-    topology: Literal["neutral", "associating", "ionic-ssm-ds"]
+    topology: Literal[
+        "neutral",
+        "associating",
+        "ionic-ssm-ds",
+        "ionic-ascani-original-born",
+    ]
     component_ids: tuple[str, ...]
     molar_mass_kg_per_mol: tuple[float | None, ...]
     segment_count: tuple[float, ...]
     segment_diameter: tuple[_TemperatureRecord, ...]
     dispersion_energy_over_k: tuple[float, ...]
     k_ij: tuple[float, ...]
+    l_ij: tuple[float, ...]
     site_ids: tuple[tuple[str, str], ...]
     site_multiplicity: tuple[int, ...]
     association_pairs: tuple[_ResolvedAssociationPair, ...]
@@ -108,6 +114,7 @@ def _pair_matrix(
     family: str,
     *,
     required: bool,
+    not_applicable: frozenset[frozenset[str]] = frozenset(),
 ) -> tuple[float | None, ...]:
     size = len(component_ids)
     matrix: list[float | None] = [None] * (size * size)
@@ -120,6 +127,12 @@ def _pair_matrix(
         key = (*sorted((component_a, component_b)), family)
         record = pairs.get(key)
         if record is None:
+            pair = frozenset((component_a, component_b))
+            if pair in not_applicable:
+                i = positions[component_a]
+                j = positions[component_b]
+                matrix[i * size + j] = matrix[j * size + i] = 0.0
+                continue
             if required or family_present:
                 raise _missing(pair=(key[0], key[1]), family=family)
             continue
@@ -312,22 +325,18 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         )
         for component_id in component_ids
     )
-    k_ij = _pair_matrix(component_ids, pair_records, "k_ij", required=True)
     site_ids, site_multiplicity, association_pairs = _association(sites, association_records)
     temperature_min, temperature_max, ion_fraction_max = _domain_limits(parameters)
 
     selected_charges = tuple(
-        singles.get((component_id, "charge_number"))
-        for component_id in component_ids
+        singles.get((component_id, "charge_number")) for component_id in component_ids
     )
     ionic_topology = any(
-        record is not None and int(record.value) != 0
-        for record in selected_charges
+        record is not None and int(record.value) != 0 for record in selected_charges
     ) or any(family == "born_diameter" for _, family in singles)
     if not ionic_topology:
-        topology: Literal["neutral", "associating", "ionic-ssm-ds"] = (
-            "associating" if site_ids else "neutral"
-        )
+        topology: Literal["neutral", "associating"] = "associating" if site_ids else "neutral"
+        k_ij = _pair_matrix(component_ids, pair_records, "k_ij", required=True)
         return _ResolvedModel(
             topology,
             component_ids,
@@ -336,6 +345,7 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
             segment_diameter,
             dispersion_energy,
             tuple(float(value) for value in k_ij),
+            tuple(0.0 for _ in range(len(component_ids) ** 2)),
             site_ids,
             site_multiplicity,
             association_pairs,
@@ -363,6 +373,71 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
     charges = tuple(int(record.value) for record in charge_records)  # type: ignore[union-attr]
     if not any(charge > 0 for charge in charges) or not any(charge < 0 for charge in charges):
         raise _error("invalid-value", family="charge_number", reason="missing-opposite-charges")
+
+    same_sign_ion_pairs = frozenset(
+        frozenset((component_ids[left], component_ids[right]))
+        for left, right in combinations(range(len(component_ids)), 2)
+        if charges[left] * charges[right] > 0
+    )
+    k_ij = _pair_matrix(
+        component_ids,
+        pair_records,
+        "k_ij",
+        required=True,
+        not_applicable=same_sign_ion_pairs,
+    )
+
+    figiel_schema_present = any(
+        family in {"born_diameter", "solvation_factor"} for _, family in singles
+    ) or any(
+        family
+        in {
+            "ionic_region_relative_permittivity",
+            "dielectric_ion_suppression_coefficient",
+        }
+        for family in models
+    )
+    l_ij_present = any(key[2] == "l_ij" for key in pair_records)
+    if figiel_schema_present and l_ij_present:
+        raise _error(
+            "invalid-value",
+            family="electrolyte-model",
+            reason="mixed-born-dielectric-schema",
+        )
+    if not figiel_schema_present:
+        l_ij = _pair_matrix(component_ids, pair_records, "l_ij", required=True)
+        relative_permittivity = tuple(
+            _component_record(
+                component_id,
+                "relative_permittivity",
+                singles,
+                correlations,
+                allow_correlation=True,
+            )
+            for component_id in component_ids
+        )
+        return _ResolvedModel(
+            "ionic-ascani-original-born",
+            component_ids,
+            molar_mass,
+            segment_count,
+            segment_diameter,
+            dispersion_energy,
+            tuple(float(value) for value in k_ij),
+            tuple(float(value) for value in l_ij),
+            site_ids,
+            site_multiplicity,
+            association_pairs,
+            charges,
+            relative_permittivity,
+            (),
+            (),
+            None,
+            None,
+            temperature_min,
+            temperature_max,
+            ion_fraction_max,
+        )
 
     relative_permittivity: list[_TemperatureRecord | None] = []
     born_diameter: list[float | None] = []
@@ -423,6 +498,7 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         segment_diameter,
         dispersion_energy,
         tuple(float(value) for value in k_ij),
+        tuple(0.0 for _ in range(len(component_ids) ** 2)),
         site_ids,
         site_multiplicity,
         association_pairs,

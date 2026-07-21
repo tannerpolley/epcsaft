@@ -27,7 +27,7 @@ _SINGLE_FAMILIES = frozenset(
         "solvation_factor",
     }
 )
-_PAIR_FAMILIES = frozenset({"k_ij"})
+_PAIR_FAMILIES = frozenset({"k_ij", "l_ij"})
 _ASSOCIATION_FAMILIES = frozenset({"association_energy_over_k", "association_volume"})
 _MODEL_FAMILIES = frozenset(
     {
@@ -50,6 +50,7 @@ _DIMENSIONLESS_FAMILIES = frozenset(
         "solvation_factor",
         "association_volume",
         "k_ij",
+        "l_ij",
         "dielectric_ion_suppression_coefficient",
         "ionic_region_relative_permittivity",
     }

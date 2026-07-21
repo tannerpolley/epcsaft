@@ -90,6 +90,7 @@ struct PhaseBlockParameters final {
     std::vector<Scalar> sigma_term_exponent;
     std::vector<Scalar> dispersion_energy_over_k;
     std::vector<Scalar> k_ij;
+    std::vector<Scalar> l_ij;
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;
     std::vector<int> charge_number;
@@ -113,6 +114,7 @@ PhaseBlockParameters<Scalar> binary_interaction_parameters(
         phase_block_scalars<Scalar>(parameters.sigma_term_exponent),
         phase_block_scalars<Scalar>(parameters.dispersion_energy_over_k),
         {Scalar(parameters.k_ij[0]), k_ij, k_ij, Scalar(parameters.k_ij[3])},
+        phase_block_scalars<Scalar>(parameters.l_ij),
         parameters.site_component,
         parameters.site_multiplicity,
         parameters.charge_number,
@@ -530,6 +532,7 @@ PhaseBlockParameters<Scalar> pure_phase_parameters(
         {},
         {},
         {dispersion_energy_over_k},
+        {Scalar(0.0)},
         {Scalar(0.0)},
         {},
         {},

@@ -4,6 +4,10 @@
 
 namespace epcsaft {
 
+inline constexpr int ELECTROLYTE_MODEL_NONE = 0;
+inline constexpr int ELECTROLYTE_MODEL_FIGIEL_SSM_DS = 1;
+inline constexpr int ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN = 2;
+
 struct NativeParameters final {
     std::vector<double> segment_count;
     std::vector<double> sigma_constant;
@@ -12,6 +16,7 @@ struct NativeParameters final {
     std::vector<double> sigma_term_exponent;
     std::vector<double> dispersion_energy_over_k;
     std::vector<double> k_ij;
+    std::vector<double> l_ij;
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;
     std::vector<int> association_active;
@@ -24,6 +29,7 @@ struct NativeParameters final {
     std::vector<double> born_diameter_angstrom;
     std::vector<double> solvation_factor;
     double ionic_region_relative_permittivity;
+    int electrolyte_model;
 };
 
 }  // namespace epcsaft

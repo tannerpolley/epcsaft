@@ -333,3 +333,90 @@ def test_source_backed_figiel_catalog_resolves_without_unpublished_defaults() ->
     assert model.k_ij == (0.0, -0.3, -0.3, -0.3, 0.0, 0.8, -0.3, 0.8, 0.0)
     assert model.ionic_region_relative_permittivity == 8.0
     assert model.dielectric_ion_suppression_coefficient == 7.01
+
+
+def test_source_backed_ascani_catalog_resolves_distinct_topology_and_lij() -> None:
+    component_ids = (
+        "water",
+        "1-butanol",
+        "sodium-cation",
+        "potassium-cation",
+        "chloride-anion",
+    )
+    model = _resolve_model(
+        ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1).select(
+            component_ids
+        )
+    )
+
+    assert model.topology == "ionic-ascani-original-born"
+    assert model.charge_number == (0, 0, 1, 1, -1)
+    assert model.born_diameter_angstrom == ()
+    assert model.solvation_factor == ()
+    assert model.ionic_region_relative_permittivity is None
+    assert model.dielectric_ion_suppression_coefficient is None
+    assert model.l_ij == (
+        0.0,
+        -0.0044,
+        0.0,
+        0.0,
+        0.0,
+        -0.0044,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    )
+    assert tuple(float(record.value) for record in model.relative_permittivity[2:]) == (
+        8.0,
+        8.0,
+        8.0,
+    )
+
+
+def test_ascani_topology_rejects_missing_explicit_lij() -> None:
+    bundle = ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1)
+    parameters = bundle.select(
+        ("water", "1-butanol", "sodium-cation", "potassium-cation", "chloride-anion")
+    )
+    records = tuple(
+        record
+        for record in parameters.records
+        if getattr(record, "record_id", "") != "water-sodium-lij"
+    )
+    object.__setattr__(parameters, "records", records)
+
+    with pytest.raises(ParameterError, match="missing-record.*l_ij"):
+        _resolve_model(parameters)
+
+
+def test_ionic_resolver_rejects_mixed_figiel_and_ascani_source_schemas() -> None:
+    parameters = ParameterBundle.from_catalog(
+        "ascani-2022-case-study-2-electrolyte-lle", version=1
+    ).select(("water", "1-butanol", "sodium-cation", "potassium-cation", "chloride-anion"))
+    figiel_model = next(
+        record
+        for record in ParameterBundle.from_catalog(
+            "figiel-2025-reference-electrolytes", version=1
+        ).records
+        if getattr(record, "family", "") == "ionic_region_relative_permittivity"
+    )
+    object.__setattr__(parameters, "records", (*parameters.records, figiel_model))
+
+    with pytest.raises(ParameterError, match="mixed-born-dielectric-schema"):
+        _resolve_model(parameters)

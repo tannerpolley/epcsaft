@@ -68,7 +68,8 @@ std::vector<Scalar> association_delta(
                     / (one_minus_eta * one_minus_eta)
                 + 2.0 * reduced_diameter * reduced_diameter * zeta_2 * zeta_2
                     / (one_minus_eta * one_minus_eta * one_minus_eta);
-            const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j]);
+            const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j])
+                * (Scalar(1.0) - parameters.l_ij[i * components + j]);
             delta[pair] = contact
                 * (association_exp(
                        Scalar(parameters.association_energy_over_k[pair])

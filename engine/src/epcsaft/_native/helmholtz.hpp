@@ -275,7 +275,8 @@ HelmholtzResult<Scalar> residual_helmholtz(
     Scalar second_moment = Scalar(0.0);
     for (std::size_t i = 0; i < size; ++i) {
         for (std::size_t j = 0; j < size; ++j) {
-            const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j]);
+            const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j])
+                * (Scalar(1.0) - parameters.l_ij[i * size + j]);
             const Scalar epsilon_ij =
                 parameters.charge_number[i] * parameters.charge_number[j] > 0
                 ? Scalar(0.0)

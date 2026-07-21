@@ -877,6 +877,13 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
     assert sorted(
         path.relative_to(catalog).as_posix() for path in catalog.rglob("*") if path.is_file()
     ) == [
+        "ascani-2022-case-study-2-electrolyte-lle/1/association.csv",
+        "ascani-2022-case-study-2-electrolyte-lle/1/bundle.toml",
+        "ascani-2022-case-study-2-electrolyte-lle/1/components.csv",
+        "ascani-2022-case-study-2-electrolyte-lle/1/correlations.toml",
+        "ascani-2022-case-study-2-electrolyte-lle/1/pair.csv",
+        "ascani-2022-case-study-2-electrolyte-lle/1/single.csv",
+        "ascani-2022-case-study-2-electrolyte-lle/1/sites.csv",
         "figiel-2025-aqueous-iodides/1/association.csv",
         "figiel-2025-aqueous-iodides/1/bundle.toml",
         "figiel-2025-aqueous-iodides/1/components.csv",
@@ -1030,13 +1037,9 @@ def test_figiel_aqueous_iodide_catalog_is_exact_and_source_complete() -> None:
     assert bundle.fingerprint == (
         "sha256:3833b38c72f3de554958cb424285da278fe6444e8d150521cd525bb47f9f0784"
     )
-    source = next(
-        source for source in bundle.sources if source.source_id == "figiel-yu-held-2025"
-    )
+    source = next(source for source in bundle.sources if source.source_id == "figiel-yu-held-2025")
     assert source.doi == "10.1021/acs.iecr.5c00475"
-    assert "ce80533925a91bc59d8d0d8056113c40611ca26c2edf04aced76986d50bd4bae" in (
-        source.use_basis
-    )
+    assert "ce80533925a91bc59d8d0d8056113c40611ca26c2edf04aced76986d50bd4bae" in (source.use_basis)
     assert {component.component_id for component in bundle.components} == {
         "water",
         "sodium-cation",
@@ -1050,9 +1053,7 @@ def test_figiel_aqueous_iodide_catalog_is_exact_and_source_complete() -> None:
     }
     assert values[("iodide-anion", "segment_count")] == Decimal("1")
     assert values[("iodide-anion", "segment_diameter")].magnitude == Decimal("3.6672")
-    assert values[("iodide-anion", "dispersion_energy_over_k")].magnitude == Decimal(
-        "200.00"
-    )
+    assert values[("iodide-anion", "dispersion_energy_over_k")].magnitude == Decimal("200.00")
     assert values[("iodide-anion", "charge_number")] == -1
     assert values[("iodide-anion", "born_diameter")].magnitude == Decimal("4.985")
 
@@ -1075,9 +1076,7 @@ def test_figiel_aqueous_iodide_catalog_is_exact_and_source_complete() -> None:
         assert parameters.fingerprint == fingerprint
         assert epcsaft.EPCSAFT(parameters).component_ids == selected
     assert (
-        _error_code(
-            lambda: bundle.select(("water", "lithium-cation", "iodide-anion"))
-        )
+        _error_code(lambda: bundle.select(("water", "lithium-cation", "iodide-anion")))
         == "invalid-selection"
     )
 
@@ -1100,15 +1099,11 @@ def test_khudaida_figure_2_catalog_preserves_the_published_model_tuple() -> None
     }
     assert values[("isobutanol", "segment_count")] == Decimal("2.8440")
     assert values[("isobutanol", "segment_diameter")].magnitude == Decimal("3.5561")
-    assert values[("isobutanol", "dispersion_energy_over_k")].magnitude == Decimal(
-        "257.13"
-    )
+    assert values[("isobutanol", "dispersion_energy_over_k")].magnitude == Decimal("257.13")
     assert values[("sodium-cation", "born_diameter")].magnitude == Decimal("3.445")
     assert values[("chloride-anion", "born_diameter")].magnitude == Decimal("4.100")
 
-    pair_records = [
-        record for record in bundle.records if isinstance(record, PairParameterRecord)
-    ]
+    pair_records = [record for record in bundle.records if isinstance(record, PairParameterRecord)]
     assert len(pair_records) == 10
     pairs = {
         frozenset((record.component_id_a, record.component_id_b)): record.value
@@ -1128,9 +1123,7 @@ def test_khudaida_figure_2_catalog_preserves_the_published_model_tuple() -> None
     }
 
     association_records = [
-        record
-        for record in bundle.records
-        if isinstance(record, AssociationParameterRecord)
+        record for record in bundle.records if isinstance(record, AssociationParameterRecord)
     ]
     assert len(association_records) == 18
     associations = {
@@ -1147,15 +1140,15 @@ def test_khudaida_figure_2_catalog_preserves_the_published_model_tuple() -> None
     assert associations[
         ("isobutanol", "b", "water", "a", "association_energy_over_k")
     ].magnitude == Decimal("2470.0")
-    assert associations[
-        ("isobutanol", "b", "water", "a", "association_volume")
-    ] == Decimal("0.01299623825352431")
+    assert associations[("isobutanol", "b", "water", "a", "association_volume")] == Decimal(
+        "0.01299623825352431"
+    )
     assert associations[
         ("ethanol", "a", "isobutanol", "b", "association_energy_over_k")
     ].magnitude == Decimal("2583.85")
-    assert associations[
-        ("ethanol", "a", "isobutanol", "b", "association_volume")
-    ] == Decimal("0.01119849133244554")
+    assert associations[("ethanol", "a", "isobutanol", "b", "association_volume")] == Decimal(
+        "0.01119849133244554"
+    )
 
     model_values = {
         record.family: record.value
@@ -1187,4 +1180,72 @@ def test_khudaida_figure_2_catalog_preserves_the_published_model_tuple() -> None
     )
     assert figiel.select(("water", "sodium-cation", "chloride-anion")).fingerprint == (
         "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d"
+    )
+
+
+def test_ascani_case_study_2_catalog_preserves_explicit_source_families() -> None:
+    bundle = ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1)
+    assert bundle.fingerprint == (
+        "sha256:b7a54dab41c61a71803f1d63bf25396188a2a1edc55172d5beddb99c3368c9fd"
+    )
+    assert bundle.select(
+        ("water", "1-butanol", "sodium-cation", "potassium-cation", "chloride-anion")
+    ).fingerprint == ("sha256:f775c7778dd2f6bdb6db42a6132085df18cd6083d181edc338bde44cf6519a03")
+    assert tuple(component.component_id for component in bundle.components) == (
+        "1-butanol",
+        "chloride-anion",
+        "potassium-cation",
+        "sodium-cation",
+        "water",
+    )
+
+    singles = {
+        (record.component_id, record.family): record.value
+        for record in bundle.records
+        if isinstance(record, SingleParameterRecord)
+    }
+    assert singles[("1-butanol", "segment_count")] == Decimal("2.7510")
+    assert singles[("sodium-cation", "segment_diameter")].magnitude == Decimal("2.8232")
+    assert singles[("potassium-cation", "segment_diameter")].magnitude == Decimal("3.3417")
+    assert singles[("chloride-anion", "segment_diameter")].magnitude == Decimal("2.7560")
+    assert all(family not in {"born_diameter", "solvation_factor"} for _, family in singles)
+    assert singles[("sodium-cation", "relative_permittivity")] == Decimal("8")
+    assert singles[("potassium-cation", "relative_permittivity")] == Decimal("8")
+    assert singles[("chloride-anion", "relative_permittivity")] == Decimal("8")
+
+    pairs = {
+        (record.family, frozenset((record.component_id_a, record.component_id_b))): record.value
+        for record in bundle.records
+        if isinstance(record, PairParameterRecord)
+    }
+    assert len([key for key in pairs if key[0] == "k_ij"]) == 9
+    assert ("k_ij", frozenset(("sodium-cation", "potassium-cation"))) not in pairs
+    assert pairs[("k_ij", frozenset(("water", "1-butanol")))] == Decimal("-0.102")
+    assert pairs[("k_ij", frozenset(("sodium-cation", "chloride-anion")))] == Decimal("0.317")
+    assert pairs[("k_ij", frozenset(("potassium-cation", "chloride-anion")))] == Decimal("0.064")
+    assert len([key for key in pairs if key[0] == "l_ij"]) == 10
+    assert pairs[("l_ij", frozenset(("water", "1-butanol")))] == Decimal("-0.0044")
+    assert all(
+        value == 0
+        for key, value in pairs.items()
+        if key[0] == "l_ij" and value != Decimal("-0.0044")
+    )
+
+    associations = {
+        (
+            record.component_id_a,
+            record.site_id_a,
+            record.component_id_b,
+            record.site_id_b,
+            record.family,
+        ): record.value
+        for record in bundle.records
+        if isinstance(record, AssociationParameterRecord)
+    }
+    assert len(associations) == 8
+    assert associations[
+        ("1-butanol", "b", "water", "a", "association_energy_over_k")
+    ].magnitude == Decimal("2420.51662")
+    assert associations[("1-butanol", "b", "water", "a", "association_volume")] == Decimal(
+        "0.016946922015303192"
     )

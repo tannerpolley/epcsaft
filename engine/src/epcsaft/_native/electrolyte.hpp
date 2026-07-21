@@ -80,24 +80,32 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     }
     Scalar solvent_mass = Scalar(0.0);
     Scalar dielectric_mass = Scalar(0.0);
+    Scalar solvent_fraction = Scalar(0.0);
     Scalar ion_fraction = Scalar(0.0);
+    Scalar ion_dielectric = Scalar(0.0);
     Scalar charge_square_sum = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
         if (charge == 0) {
+            solvent_fraction += mole_fractions[component];
             const Scalar mass = mole_fractions[component]
                 * parameters.molar_mass_kg_per_mol[component];
             solvent_mass += mass;
             dielectric_mass += mass * parameters.relative_permittivity[component];
         } else {
             ion_fraction += mole_fractions[component];
+            ion_dielectric += mole_fractions[component]
+                * parameters.relative_permittivity[component];
             charge_square_sum += mole_fractions[component] * charge * charge;
         }
     }
     const Scalar salt_free_permittivity = dielectric_mass / solvent_mass;
-    const Scalar bulk_permittivity = salt_free_permittivity /
-        (Scalar(1.0) + parameters.dielectric_ion_suppression_coefficient
-            * ion_fraction);
+    const Scalar bulk_permittivity = parameters.electrolyte_model
+            == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
+        ? salt_free_permittivity * solvent_fraction + ion_dielectric
+        : salt_free_permittivity /
+            (Scalar(1.0) + parameters.dielectric_ion_suppression_coefficient
+                * ion_fraction);
     if constexpr (std::is_same_v<Scalar, double>) {
         if (!(solvent_mass > 0.0) || !std::isfinite(solvent_mass)) {
             throw std::invalid_argument("electrolyte state has no solvent mass");
@@ -112,12 +120,15 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
 
     double reference_solvent_mass = 0.0;
     double reference_dielectric_mass = 0.0;
+    double reference_solvent_fraction = 0.0;
     double reference_ion_fraction = 0.0;
+    double reference_ion_dielectric = 0.0;
     double reference_charge_square_sum = 0.0;
     for (std::size_t component = 0;
          component < reference_mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
         if (charge == 0) {
+            reference_solvent_fraction += reference_mole_fractions[component];
             const double mass = reference_mole_fractions[component]
                 * parameters.molar_mass_kg_per_mol[component];
             reference_solvent_mass += mass;
@@ -125,14 +136,21 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
                 * parameters.relative_permittivity[component];
         } else {
             reference_ion_fraction += reference_mole_fractions[component];
+            reference_ion_dielectric += reference_mole_fractions[component]
+                * parameters.relative_permittivity[component];
             reference_charge_square_sum += reference_mole_fractions[component]
                 * charge * charge;
         }
     }
-    const double reference_permittivity =
-        (reference_dielectric_mass / reference_solvent_mass)
-        / (1.0 + parameters.dielectric_ion_suppression_coefficient
-            * reference_ion_fraction);
+    const double reference_salt_free_permittivity =
+        reference_dielectric_mass / reference_solvent_mass;
+    const double reference_permittivity = parameters.electrolyte_model
+            == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
+        ? reference_salt_free_permittivity * reference_solvent_fraction
+            + reference_ion_dielectric
+        : reference_salt_free_permittivity
+            / (1.0 + parameters.dielectric_ion_suppression_coefficient
+                * reference_ion_fraction);
     if (reference_charge_square_sum == 0.0) {
         return {bulk_permittivity, Scalar(0.0)};
     }

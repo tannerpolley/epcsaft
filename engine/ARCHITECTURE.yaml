@@ -4,8 +4,9 @@ status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-a
 authority:
   effective_receipt: promotion-0012-provider-full-candidate
   effective_scope: >-
-    Neutral, associating, and bounded Figiel electrolyte EOS at explicit molar
-    density or specified pressure, plus bounded electrolyte reference states.
+    Neutral, associating, bounded Figiel SSM+DS electrolyte, and bounded Ascani
+    original-Born EOS at explicit molar density or specified pressure, plus
+    bounded electrolyte reference states.
   candidate_promotion_status: promoted
   native_sdk_receipt: promotion-0015-provider-native-sdk-v1
   native_sdk_authority: determined-by-receipt
@@ -43,12 +44,12 @@ native_sdk_candidates:
   full_electrolyte_phase_hessian_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
-      Exact immutable Figiel and Khudaida electrolyte selections evaluated as
+      Exact immutable Figiel, Khudaida, and Ascani electrolyte selections evaluated as
       complete ideal-plus-residual phase Helmholtz blocks with pressure in
       ordered positive component amounts and extensive volume.
     coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
     derivative_order: 2
-    contributions: [ideal, hard_chain, dispersion, association, debye_huckel, born_ssm_ds]
+    contributions: [ideal, hard_chain, dispersion, association, debye_huckel, model_bound_born]
     exclusions: density solve, phase identity, complementarity, trace-species policy, third derivatives, Ipopt, equilibrium, regression, fitting, and authority
   neutral_mixture_phase_hessian_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
@@ -86,9 +87,10 @@ native_sdk_candidates:
     exclusions: targets, residuals, scaling, bounds, Ceres, fit results, catalog persistence, other solvents or states, other ions, solvation-factor or dielectric parameters, generic parameter overlays, second derivatives, and authority
 
 accepted_scope: >-
-  Source-backed neutral, associating, and bounded ionic SSM+DS residual EOS at
-  explicit molar density or specified pressure, with residual chemical,
-  fugacity, caloric, density-root, and bounded electrolyte reference results.
+  Source-backed neutral, associating, bounded ionic SSM+DS, and bounded Ascani
+  original-Born residual EOS at explicit molar density or specified pressure,
+  with residual chemical, fugacity, caloric, density-root, and bounded
+  electrolyte reference results.
 
 owners:
   parameter_input:
@@ -100,7 +102,7 @@ owners:
   equation_kernel: src/epcsaft/_native/helmholtz.hpp
   association: src/epcsaft/_native/association.hpp
   electrolyte: src/epcsaft/_native/electrolyte.hpp
-  born_ssm_ds: src/epcsaft/_native/born.hpp
+  born: src/epcsaft/_native/born.hpp
   nonlinear_derivatives: src/epcsaft/_native/derivatives.hpp
   native_phase_block: src/epcsaft/_native/phase_block.hpp
   native_consumer_transport: src/epcsaft/_native/native_sdk.cpp

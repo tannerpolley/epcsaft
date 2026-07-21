@@ -21,6 +21,8 @@ not override this bounded specification.
 | Figiel2025 | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2025, 64, 9406-9418, DOI `10.1021/acs.iecr.5c00475` | Fitted Born diameter, SSM+DS Born term, solvation factor, dielectric rule, fugacity relations, and electrolyte reference-state equations |
 | Figiel2025SI | Official ACS supporting information, DOI `10.1021/acs.iecr.5c00475.s001`, Figshare article `28888514`, file `54030209`, MD5 `4c3d3964d6e61b908c3ce3b17bb4e6b0` | Comparison of direct, SSM, and SSM+DS formulations and retained validation evidence |
 | Figiel2026Correction | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2026, DOI `10.1021/acs.iecr.6c01415` | Authoritative corrected text of Figiel2025 Eq. (7): restores the missing bracket and replaces the second `epsilon_r,bulk` with `epsilon_r,ion` |
+| Ascani2022 | Ascani, Sadowski, and Held, *J. Chem. Eng. Data* 2022, 67, 1972-1984, DOI `10.1021/acs.jced.1c00866` | Case Study 2 component, association, `k_ij`, `l_ij`, and `k_ij^hb` records at 298.15 K |
+| AscaniHeld2021 | Ascani and Held, *Z. Anorg. Allg. Chem.* 2021, 647, 1305-1314, DOI `10.1002/zaac.202100032` | Original Born equation and combined solvent-mass/ion-mole dielectric rule |
 | HamerWu1972 | Hamer and Wu, *J. Phys. Chem. Ref. Data* 1972, 1, 1047-1100, DOI `10.1063/1.3253108`; official NIST PDF SHA-256 `8399084b29b4db4ce35ab47ed679446dbedb9bf1686f99f43fce7b2073ee4beb` | Practical molal osmotic-coefficient definition and aqueous NaCl comparison value |
 
 Each equation below has one status:
@@ -79,9 +81,10 @@ Component inputs use:
 - segment count `m_i [-]`, segment diameter `sigma_i [A]`, and dispersion
   energy `u_i/k_B [K]`;
 - association site topology, `epsilon_AB/k_B [K]`, and `kappa_AB [-]`;
-- integer charge `z_i`, relative permittivity `epsilon_r [-]`, fitted Born
-  diameter `d_i^Born [A]`, and solvation factor `f_i [-]`; and
-- pair values `k_ij` for the dispersion mixing equation.
+- integer charge `z_i` and source-formulation-specific dielectric and Born
+  records; and
+- pair values `k_ij` for dispersion energy and, where the selected formulation
+  requires it, explicit `l_ij` for cross diameter.
 
 The clean native kernel converts every length to one basis before combining it
 with number density. It does not mix SI number density with Angstrom cubed.
@@ -92,13 +95,16 @@ with number density. It does not mix SI number density with Angstrom cubed.
 |---|---|---|---|---|
 | Segment diameter | `d_i(T) = sigma_i [1 - 0.12 exp(-3(u_i/k_B)/T)]` | source equation | Gross2001 Eq. (A.6) | `_native/helmholtz.hpp` |
 | Ionic segment diameter | `d_i = 0.88 sigma_i` | source equation | Figiel2025 Eqs. (3), (4) | `_native/helmholtz.hpp` |
+| Cross diameter | `sigma_ij = (sigma_i + sigma_j)(1-l_ij)/2` | source equation | Ascani2022SI Eq. (S4) | `_native/helmholtz.hpp`, `_native/association.hpp` |
 | Mixture moments | `zeta_n = (pi/6) rho_hat sum_i x_i m_i d_i^n`, `n=0..3` | source equation | Gross2001 Eq. (A.8) | `_native/helmholtz.hpp` |
 | Hard chain | hard-sphere mixture Helmholtz minus chain contact terms | source equation | Gross2001 Eqs. (A.9), (A.16), (A.17) | `_native/helmholtz.hpp` |
 | Dispersion | first- and second-order perturbation terms using `I_1`, `I_2`, and `C_1` | source equation | Gross2001 Eqs. (A.10)-(A.15) | `_native/helmholtz.hpp` |
 | Association | mass-action site fractions and `sum_i x_i sum_A [ln X_iA - X_iA/2 + 1/2]` | source equation | Chapman1990 Eqs. (19), (21) | `_native/association.hpp` |
 | Debye-Huckel | finite-size DH residual Helmholtz term | adapted source equation | Bulow2019 Eq. (2), with diameter and screening definitions below | `_native/electrolyte.hpp` |
-| Bulk dielectric | salt-free solvent mass mixing followed by ion suppression | bounded empirical relation | Figiel2025 Eqs. (11), (12) | `_native/electrolyte.hpp` |
+| Figiel bulk dielectric | salt-free solvent mass mixing followed by ion suppression | bounded empirical relation | Figiel2025 Eqs. (11), (12) | `_native/electrolyte.hpp` |
+| Ascani bulk dielectric | combined salt-free-solvent mass and ion-mole mixing | source equation | AscaniHeld2021 Eq. (13) | `_native/electrolyte.hpp` |
 | Born SSM+DS | piecewise-dielectric shell work | corrected source equation | Figiel2026Correction Eq. (7) | `_native/born.hpp` |
+| Original Born | direct charging work with ion diameter `sigma_i` | source equation | AscaniHeld2021 Eq. (10) and diameter convention | `_native/born.hpp` |
 | Total Helmholtz | `a^r = a^hc + a^disp + a^assoc + a^DH + a^Born` | source equation | Figiel2025 Eq. (1) | `_native/helmholtz.hpp` |
 | Pressure | `Z = 1 + rho_m (partial a^r/partial rho_m)_(T,x)` and `P = rho_m R T Z` | source equation | Gross2001 Eq. (A.24) | `_native/derivatives.hpp` |
 | Chemical potential | composition derivative of the common `a^r` owner | source equation | Gross2001 Eq. (A.33); Figiel2025 Eq. (13) | `_native/derivatives.hpp` |
@@ -124,16 +130,20 @@ perturbation terms. The coefficient arrays `a_0..a_6` and `b_0..b_6` are the
 Gross2001 universal constants already owned by
 `src/epcsaft/_native/helmholtz.hpp`.
 
-The pair rules consumed by this slice are
+The pair rules consumed by the admitted bundles are
 
 ```text
-sigma_ij = (sigma_i + sigma_j)/2
+sigma_ij = [(sigma_i + sigma_j)/2] (1 - l_ij)
 (u_ij/k_B) = sqrt[(u_i/k_B)(u_j/k_B)] (1 - k_ij).
 ```
 
-Both are source equations from Gross2001. A missing unlike-component `k_ij`
-record remains an input error under the clean parameter contract. The diagonal
-`k_ii = 0` is the exact self-interaction identity and is not a pair record.
+The `l_ij = 0` Gross rule remains an implementation identity for bundles that
+do not admit that family. The Ascani2022 bundle instead requires an explicit
+`l_ij` record for every unlike pair and uses its Eq. S4 `(1-l_ij)` sign
+convention. A missing applicable unlike-component `k_ij` or Ascani `l_ij`
+record is an input error. Same-sign ion dispersion is equation-level
+`NOT_APPLICABLE`, not an implicit zero source record. The diagonal identities
+`k_ii = l_ii = 0` are not pair records.
 
 For charged components, Figiel2025 sets cation--cation and anion--anion
 dispersion energies to zero. This gives `d_i = 0.88 sigma_i` from Eqs. (3)--
@@ -173,6 +183,12 @@ cross pairs explicitly. Their energy and volume values are evaluated once
 from the Gross2002 cross-association equations using the Figiel2025 Table 2
 pure-solvent records and `k_hb = 0`. The runtime still performs no implicit
 combining or default insertion.
+
+The Ascani2022 water--1-butanol selection likewise stores both cross directions
+explicitly. Their energy is the SI Eq. S6 arithmetic mean multiplied by
+`1-k_ij^hb` with the source value `k_ij^hb=0.026`; their volume is evaluated
+once from the cited Wolbach--Sandler rule. The distinct `k_ij^hb` provenance is
+therefore retained without adding a runtime pair matrix or overloading `k_ij`.
 
 The association Helmholtz contribution is
 
@@ -222,6 +238,22 @@ for water and methanol correlations, was checked against ethanol, uses data up
 to about `x_ion = 0.38`, and was evaluated by Figiel2025 at 298.15 K. Other
 temperatures require source-backed pure-solvent dielectric correlations and do
 not broaden the empirical ion-suppression evidence.
+
+For the bounded Ascani2022 Case Study 2 model, AscaniHeld2021 Eq. 13 instead
+defines
+
+```text
+x_sol = sum_(s in solvents) x_s,
+epsilon_r,bulk = epsilon_r,solvent^(salt-free) x_sol
+                 + sum_(i in ions) epsilon_r,i x_i.
+```
+
+The source records set `epsilon_r,i = 8` for the admitted alkali-halide ions.
+That mixture quantity is not Figiel's radial `epsilon_r,ion`: the Ascani bundle
+contains neither the Figiel radial-region model record nor a dielectric
+suppression coefficient. Its water and 1-butanol source correlations are
+evaluated exactly at the bundle's sole admitted temperature, 298.15 K. CppAD
+differentiates the displayed composition rule in the common owner.
 
 The defining Debye screening quantity is
 
@@ -307,8 +339,20 @@ both limiting diameters, and matches the archived candidate kernel.
 `epsilon_r,ion = 8` enters through a Figiel/Buelow source-bearing model record.
 The native source must not embed 8 or 7.01.
 
-The provider does not expose direct Born, SSM-only, or DS-only runtime modes.
-The admitted ionic formulation uses SSM+DS as one fixed equation.
+The distinct Ascani bundle uses the original Born expression
+
+```text
+a^(Born,original) = -e^2/(4 pi epsilon_0 k_B T)
+  sum_(i in ions) x_i z_i^2 (1 - 1/epsilon_r,bulk)/sigma_i.
+```
+
+The ion diameter is its source `sigma_i`, converted from angstrom to metre.
+SSM and DS are disabled for this bundle: there is no fitted Born diameter,
+solvation factor, shell, or radial dielectric input. The internal equation
+selection follows the mutually exclusive resolved source schema and immutable
+bundle fingerprint. It is not a caller-selectable Born mode or a literature
+`solvation_factor`. The existing result contribution slot carries whichever
+Born equation the immutable bundle selects; no second result owner is created.
 
 ## 8. Common derivatives and state properties
 
@@ -525,6 +569,16 @@ pressure. The dielectric suppression relation is not evidence for another
 solvent, temperature, component topology, or larger ion fraction. Solver
 convergence does not expand that evidence.
 
+The Ascani Case Study 2 bundle is a separate exact selection of water,
+1-butanol, `Na+`, `K+`, and `Cl-` at `T = 298.15 K` and `p = 1 bar`. It requires
+all ten unordered `k_ij` and `l_ij` pair classifications explicitly. The
+same-sign `Na+/K+` dispersion pair is source-marked not applicable; its
+equation-level zero cannot be used as source evidence for another pair. The
+bundle also carries the source-derived water/1-butanol cross-association
+energy and volume while preserving the distinct `k_ij_hb` provenance. Its
+combined dielectric and original-Born equations do not alter the Figiel
+SSM+DS bundles or their fingerprints.
+
 Topology is determined by the selected components, not by unrelated records
 remaining in their source bundle. A selection containing no nonzero charge is
 neutral or associating according to its explicit sites; ionic contributions
@@ -543,7 +597,7 @@ Construction or evaluation fails on:
 ## 13. Deliberate exclusions
 
 This specification does not admit Bjerrum pairing, ion-pair equilibrium,
-reaction equilibrium, alternate dielectric rules, direct/SSM-only Born modes,
+reaction equilibrium, additional dielectric rules, caller-selectable Born modes,
 analytic derivative modes, ideal-gas caloric data, phase equilibrium,
 regression, multi-salt reference paths, alternate single-ion conventions,
 mixture/associating/electrolyte native phase blocks, or reactive standard-state

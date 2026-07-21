@@ -130,6 +130,7 @@ NativeModel::NativeModel(NativeParameters parameters)
     if (components == 0 || parameters_.sigma_constant.size() != components ||
         parameters_.dispersion_energy_over_k.size() != components ||
         parameters_.k_ij.size() != components * components ||
+        parameters_.l_ij.size() != components * components ||
         parameters_.sigma_term_amplitude.size() != terms ||
         parameters_.sigma_term_exponent.size() != terms ||
         parameters_.site_multiplicity.size() != sites ||
@@ -147,6 +148,7 @@ NativeModel::NativeModel(NativeParameters parameters)
         !positive_finite(parameters_.sigma_constant) ||
         !positive_finite(parameters_.dispersion_energy_over_k) ||
         !finite(parameters_.k_ij) ||
+        !finite(parameters_.l_ij) ||
         !finite(parameters_.sigma_term_amplitude) ||
         !finite(parameters_.sigma_term_exponent) ||
         !finite(parameters_.association_energy_over_k) ||
@@ -184,24 +186,35 @@ NativeModel::NativeModel(NativeParameters parameters)
         [](int charge) { return charge != 0; }
     );
     if (ionic) {
-        if (!(parameters_.dielectric_ion_suppression_coefficient > 0.0)
-            || !(parameters_.ionic_region_relative_permittivity > 0.0)) {
-            throw std::invalid_argument("invalid electrolyte model parameters");
+        if (parameters_.electrolyte_model != ELECTROLYTE_MODEL_FIGIEL_SSM_DS
+            && parameters_.electrolyte_model
+                != ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN) {
+            throw std::invalid_argument("invalid electrolyte model selection");
         }
         for (std::size_t component = 0; component < components; ++component) {
-            if (!(parameters_.solvation_factor[component] > 0.0)) {
-                throw std::invalid_argument("invalid solvation factor");
-            }
             if (parameters_.charge_number[component] == 0
                 && (!(parameters_.molar_mass_kg_per_mol[component] > 0.0)
                     || !(parameters_.relative_permittivity[component] > 0.0))) {
                 throw std::invalid_argument("invalid solvent dielectric parameters");
             }
-            if (parameters_.charge_number[component] != 0
-                && !(parameters_.born_diameter_angstrom[component] > 0.0)) {
-                throw std::invalid_argument("invalid fitted Born diameter");
+            if (parameters_.electrolyte_model
+                == ELECTROLYTE_MODEL_FIGIEL_SSM_DS) {
+                if (!(parameters_.dielectric_ion_suppression_coefficient > 0.0)
+                    || !(parameters_.ionic_region_relative_permittivity > 0.0)
+                    || !(parameters_.solvation_factor[component] > 0.0)) {
+                    throw std::invalid_argument("invalid Figiel electrolyte parameters");
+                }
+                if (parameters_.charge_number[component] != 0
+                    && !(parameters_.born_diameter_angstrom[component] > 0.0)) {
+                    throw std::invalid_argument("invalid fitted Born diameter");
+                }
+            } else if (parameters_.charge_number[component] != 0
+                       && !(parameters_.relative_permittivity[component] > 0.0)) {
+                throw std::invalid_argument("invalid ionic dielectric parameter");
             }
         }
+    } else if (parameters_.electrolyte_model != ELECTROLYTE_MODEL_NONE) {
+        throw std::invalid_argument("neutral model has electrolyte selection");
     }
 }
 
@@ -488,11 +501,12 @@ NativeResult NativeModel::evaluate(
         sigma,
         sigma
     );
-    const double born_ssm_ds = detail::born_ssm_ds_contribution(
+    const double born_ssm_ds = detail::born_contribution(
         temperature,
         mole_fractions,
         parameters_,
-        electrolyte.bulk_relative_permittivity
+        electrolyte.bulk_relative_permittivity,
+        sigma
     );
     const auto values = detail::residual_helmholtz(
         temperature,

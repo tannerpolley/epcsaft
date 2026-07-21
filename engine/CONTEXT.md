@@ -22,8 +22,9 @@ chemical potentials, fugacity coefficients when defined, residual caloric
 properties, pressure, and branch diagnostics for pressure-specified states.
 The installed catalogs are Gross--Sadowski methane/ethane and propane records,
 the bounded Figiel--Yu--Held water/methanol/ethanol chloride/bromide source
-bundle, a distinct aqueous Na+/K+/I- source bundle, and one distinct Khudaida
-et al. water/ethanol/isobutanol/Na+/Cl- bundle at 293.15 K. One reference-state
+bundle, a distinct aqueous Na+/K+/I- source bundle, one distinct Khudaida et al.
+water/ethanol/isobutanol/Na+/Cl- bundle at 293.15 K, and one distinct Ascani et
+al. original-Born water/1-butanol/Na+/K+/Cl- bundle at 298.15 K. One reference-state
 module owns x-process
 infinite-dilution solvation and transfer plus single-ion and stoichiometric mean
 ionic activity on one explicit electroneutral formula-unit path. Its aqueous
@@ -66,9 +67,10 @@ density, equilibrium, or regression ownership.
 Migration D-024 records a local append-only full-electrolyte phase-block
 candidate in explicit component amounts and extensive volume. The callback
 uses the sole Provider Helmholtz and association owners for every active
-ideal, hard-chain, dispersion, association, Debye--Huckel, and corrected Born
-SSM+DS contribution. It admits exact immutable Figiel selections and the
-distinct Khudaida bundle and returns value, gradient, Hessian, pressure,
+ideal, hard-chain, dispersion, association, Debye--Huckel, and model-bound Born
+contribution. It admits exact immutable Figiel selections, the distinct
+Khudaida bundle, and the distinct Ascani original-Born bundle and returns value,
+gradient, Hessian, pressure,
 fingerprint, component order, and charges. It adds no phase discovery,
 equilibrium, trace-species policy, fitting, or authority.
 

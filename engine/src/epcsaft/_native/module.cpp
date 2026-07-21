@@ -98,6 +98,7 @@ PYBIND11_MODULE(_core, module) {
             std::vector<double> sigma_term_exponent,
             std::vector<double> dispersion_energy_over_k,
             std::vector<double> k_ij,
+            std::vector<double> l_ij,
             std::vector<int> site_component,
             std::vector<int> site_multiplicity,
             std::vector<int> association_active,
@@ -109,7 +110,8 @@ PYBIND11_MODULE(_core, module) {
             double dielectric_ion_suppression_coefficient,
             std::vector<double> born_diameter_angstrom,
             std::vector<double> solvation_factor,
-            double ionic_region_relative_permittivity
+            double ionic_region_relative_permittivity,
+            int electrolyte_model
         ) {
             return epcsaft::NativeModel(epcsaft::NativeParameters{
                 std::move(segment_count),
@@ -119,6 +121,7 @@ PYBIND11_MODULE(_core, module) {
                 std::move(sigma_term_exponent),
                 std::move(dispersion_energy_over_k),
                 std::move(k_ij),
+                std::move(l_ij),
                 std::move(site_component),
                 std::move(site_multiplicity),
                 std::move(association_active),
@@ -131,6 +134,7 @@ PYBIND11_MODULE(_core, module) {
                 std::move(born_diameter_angstrom),
                 std::move(solvation_factor),
                 ionic_region_relative_permittivity,
+                electrolyte_model,
             });
         }))
         .def("evaluate", &epcsaft::NativeModel::evaluate)

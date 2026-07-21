@@ -198,6 +198,19 @@ def test_sparse_closed_records_correlations_and_error_contract() -> None:
     assert pair.component_id_a == "iodide-anion"
     assert pair.component_id_b == "potassium-cation"
     assert pair.value == Decimal("0")
+    diameter_pair = PairParameterRecord(
+        record_id="ascani-water-butanol-lij",
+        component_id_a="water",
+        component_id_b="1-butanol",
+        family="l_ij",
+        value=Decimal("-0.0044"),
+        source_id="figiel-2025",
+        locator="Ascani 2022 SI Eq. S4 and Table S3",
+        domain_id="water-domain",
+    )
+    assert diameter_pair.component_id_a == "1-butanol"
+    assert diameter_pair.component_id_b == "water"
+    assert diameter_pair.value == Decimal("-0.0044")
     assert association.value.units == unit_registry.kelvin
     assert constant.form == "constant"
     assert constant.constant == Decimal("78.09")
@@ -220,7 +233,7 @@ def test_sparse_closed_records_correlations_and_error_contract() -> None:
             record_id="unsupported-pair-family",
             component_id_a="water",
             component_id_b="potassium-cation",
-            family="l_ij",
+            family="k_ij_hb",
             value=0,
             **PROVENANCE,
         )

@@ -84,6 +84,56 @@ Scalar born_ssm_ds_contribution(
 }
 
 template <typename Scalar>
+Scalar born_original_contribution(
+    const Scalar& temperature,
+    const std::vector<Scalar>& mole_fractions,
+    const NativeParameters& parameters,
+    const Scalar& bulk_relative_permittivity,
+    const std::vector<Scalar>& sigma_angstrom
+) {
+    Scalar radial_work = Scalar(0.0);
+    for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+        const int charge = parameters.charge_number[component];
+        if (charge == 0) {
+            continue;
+        }
+        const Scalar diameter = sigma_angstrom[component] * Scalar(1.0e-10);
+        radial_work += mole_fractions[component] * charge * charge / diameter;
+    }
+    return -ELEMENTARY_CHARGE * ELEMENTARY_CHARGE
+        * (Scalar(1.0) - Scalar(1.0) / bulk_relative_permittivity)
+        * radial_work
+        / (4.0 * ELECTROLYTE_PI * VACUUM_PERMITTIVITY * BOLTZMANN
+           * temperature);
+}
+
+template <typename Scalar>
+Scalar born_contribution(
+    const Scalar& temperature,
+    const std::vector<Scalar>& mole_fractions,
+    const NativeParameters& parameters,
+    const Scalar& bulk_relative_permittivity,
+    const std::vector<Scalar>& sigma_angstrom
+) {
+    if (parameters.electrolyte_model
+        == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN) {
+        return born_original_contribution(
+            temperature,
+            mole_fractions,
+            parameters,
+            bulk_relative_permittivity,
+            sigma_angstrom
+        );
+    }
+    return born_ssm_ds_contribution(
+        temperature,
+        mole_fractions,
+        parameters,
+        bulk_relative_permittivity
+    );
+}
+
+template <typename Scalar>
 Scalar born_ssm_ds_contribution_active(
     const Scalar& temperature,
     const std::vector<Scalar>& mole_fractions,

@@ -78,11 +78,14 @@ regression owner. See `docs/science/neutral-mixture-native-sdk.md`.
 
 The append-only electrolyte candidate callback evaluates the complete
 ideal-plus-residual phase Helmholtz block in ordered component amounts and
-volume, including association, Debye--Huckel, and corrected Born SSM+DS terms.
-It admits only immutable source-backed model bundles. The distinct Khudaida et
-al. (2026) bundle adds the exact water/ethanol/isobutanol/Na+/Cl- model at
-293.15 K without changing the Figiel bundle. Phase bounds, complementarity,
-equilibrium, and fit policy remain consumer-owned.
+volume, including association, Debye--Huckel, and the bundle-selected Born
+formulation. It admits only immutable source-backed model bundles. The distinct
+Khudaida et al. (2026) bundle adds its corrected SSM+DS
+water/ethanol/isobutanol/Na+/Cl- model at 293.15 K. The distinct Ascani et al.
+(2022) bundle adds the original-Born water/1-butanol/Na+/K+/Cl- model at
+298.15 K, with its combined dielectric rule and explicit `l_ij` records.
+Neither mutates a Figiel bundle. Phase bounds, complementarity, equilibrium,
+and fit policy remain consumer-owned.
 
 One further append-only callback converts caller-owned packing-fraction limits
 to model-bound molar-volume limits at an ordered composition and temperature.
@@ -128,7 +131,9 @@ The installed catalogs are:
   LiI remains unsupported because the published Li+/I- interaction is blank;
   plus
 - the distinct Khudaida et al. (2026) water/ethanol/isobutanol/Na+/Cl- records
-  for the source-bound 293.15 K electrolyte-LLE challenge.
+  at 293.15 K; and
+- the distinct Ascani et al. (2022) water/1-butanol/Na+/K+/Cl- original-Born
+  records at 298.15 K.
 
 This repository does not perform phase equilibrium or phase discovery,
 reaction/species equilibrium, regression, parameter fitting, ideal-gas

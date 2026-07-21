@@ -18,6 +18,14 @@ def _model() -> EPCSAFT:
     )
 
 
+def _ascani_model() -> EPCSAFT:
+    return EPCSAFT(
+        ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1).select(
+            ("water", "1-butanol", "sodium-cation", "potassium-cation", "chloride-anion")
+        )
+    )
+
+
 def _born_oracle(temperature: float) -> float:
     fractions = (Decimal("0.999998"), Decimal("0.000001"), Decimal("0.000001"))
     charges = (0, 1, -1)
@@ -120,3 +128,63 @@ def test_neutral_topology_has_zero_born_contribution() -> None:
     )
 
     assert result.born_ssm_ds == 0.0
+
+
+def test_ascani_original_born_and_combined_dielectric_match_independent_oracle() -> None:
+    temperature = Decimal("298.15")
+    fractions = tuple(Decimal(value) for value in ("0.74", "0.20", "0.02", "0.01", "0.03"))
+    masses = (Decimal("0.01801528"), Decimal("0.0741216"))
+    solvent_permittivities = (
+        -Decimal("105.2") * Decimal(str(float(temperature))).ln() + Decimal("677.480"),
+        -Decimal("0.1077") * temperature + Decimal("49.723"),
+    )
+    solvent_mass = sum(
+        fraction * mass for fraction, mass in zip(fractions[:2], masses, strict=True)
+    )
+    salt_free_permittivity = (
+        sum(
+            fraction * mass * permittivity
+            for fraction, mass, permittivity in zip(
+                fractions[:2], masses, solvent_permittivities, strict=True
+            )
+        )
+        / solvent_mass
+    )
+    bulk_permittivity = salt_free_permittivity * sum(fractions[:2]) + Decimal("8") * sum(
+        fractions[2:]
+    )
+    charges = (0, 0, 1, 1, -1)
+    sigma_angstrom = (
+        Decimal("0"),
+        Decimal("0"),
+        Decimal("2.8232"),
+        Decimal("3.3417"),
+        Decimal("2.7560"),
+    )
+    radial_sum = sum(
+        fraction * charge * charge / (sigma * Decimal("1e-10"))
+        for fraction, charge, sigma in zip(fractions, charges, sigma_angstrom, strict=True)
+        if charge
+    )
+    with localcontext() as context:
+        context.prec = 50
+        expected = (
+            -(Decimal(str(ELEMENTARY_CHARGE)) ** 2)
+            * (Decimal("1") - Decimal("1") / bulk_permittivity)
+            * radial_sum
+            / (
+                Decimal("4")
+                * Decimal("3.1415926535897932384626433832795028841971693993751")
+                * Decimal(str(VACUUM_PERMITTIVITY))
+                * Decimal(str(BOLTZMANN))
+                * temperature
+            )
+        )
+
+    result = _ascani_model().evaluate(
+        temperature=float(temperature) * unit_registry.kelvin,
+        molar_density=1000.0 * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=tuple(float(value) for value in fractions),
+    )
+    assert result.born_ssm_ds == pytest.approx(float(expected), rel=3.0e-12)
+    assert result.born_ssm_ds < 0.0

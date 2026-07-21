@@ -1,0 +1,20 @@
+record_id,component_id_a,component_id_b,family,value,unit,source_id,locator,domain_id
+water-butanol-kij,water,1-butanol,k_ij,-0.102,,ascani-et-al-2022,"Supporting Information Eq. S7 and Table S3 evaluated at 298.15 K",ascani-case-study-2-298-15-k-1-bar
+water-sodium-kij,water,sodium-cation,k_ij,0,,ascani-et-al-2022,"Main paper Case Study 2 explicit ion-neutral zero",ascani-case-study-2-298-15-k-1-bar
+water-potassium-kij,water,potassium-cation,k_ij,0,,ascani-et-al-2022,"Main paper Case Study 2 explicit ion-neutral zero",ascani-case-study-2-298-15-k-1-bar
+water-chloride-kij,water,chloride-anion,k_ij,0,,ascani-et-al-2022,"Main paper Case Study 2 explicit ion-neutral zero",ascani-case-study-2-298-15-k-1-bar
+butanol-sodium-kij,1-butanol,sodium-cation,k_ij,0,,ascani-et-al-2022,"Main paper Case Study 2 explicit ion-neutral zero",ascani-case-study-2-298-15-k-1-bar
+butanol-potassium-kij,1-butanol,potassium-cation,k_ij,0,,ascani-et-al-2022,"Main paper Case Study 2 explicit ion-neutral zero",ascani-case-study-2-298-15-k-1-bar
+butanol-chloride-kij,1-butanol,chloride-anion,k_ij,0,,ascani-et-al-2022,"Main paper Case Study 2 explicit ion-neutral zero",ascani-case-study-2-298-15-k-1-bar
+sodium-chloride-kij,sodium-cation,chloride-anion,k_ij,0.317,,ascani-et-al-2022,"Supporting Information Table S4, Na+/Cl- row",ascani-case-study-2-298-15-k-1-bar
+potassium-chloride-kij,potassium-cation,chloride-anion,k_ij,0.064,,ascani-et-al-2022,"Supporting Information Table S4, K+/Cl- row",ascani-case-study-2-298-15-k-1-bar
+water-butanol-lij,water,1-butanol,l_ij,-0.0044,,ascani-et-al-2022,"Supporting Information Eq. S4 and Table S3, (1-l_ij) convention",ascani-case-study-2-298-15-k-1-bar
+water-sodium-lij,water,sodium-cation,l_ij,0,,ascani-et-al-2022,"Supporting Information line 55, l_ij zero outside water/1-butanol",ascani-case-study-2-298-15-k-1-bar
+water-potassium-lij,water,potassium-cation,l_ij,0,,ascani-et-al-2022,"Supporting Information line 55, l_ij zero outside water/1-butanol",ascani-case-study-2-298-15-k-1-bar
+water-chloride-lij,water,chloride-anion,l_ij,0,,ascani-et-al-2022,"Supporting Information line 55, l_ij zero outside water/1-butanol",ascani-case-study-2-298-15-k-1-bar
+butanol-sodium-lij,1-butanol,sodium-cation,l_ij,0,,ascani-et-al-2022,"Supporting Information line 55, l_ij zero outside water/1-butanol",ascani-case-study-2-298-15-k-1-bar
+butanol-potassium-lij,1-butanol,potassium-cation,l_ij,0,,ascani-et-al-2022,"Supporting Information line 55, l_ij zero outside water/1-butanol",ascani-case-study-2-298-15-k-1-bar
+butanol-chloride-lij,1-butanol,chloride-anion,l_ij,0,,ascani-et-al-2022,"Supporting Information line 55, l_ij zero outside water/1-butanol",ascani-case-study-2-298-15-k-1-bar
+sodium-potassium-lij,sodium-cation,potassium-cation,l_ij,0,,ascani-et-al-2022,"Supporting Information line 55, l_ij zero outside water/1-butanol; same-sign dispersion remains not applicable",ascani-case-study-2-298-15-k-1-bar
+sodium-chloride-lij,sodium-cation,chloride-anion,l_ij,0,,ascani-et-al-2022,"Supporting Information line 55, l_ij zero outside water/1-butanol",ascani-case-study-2-298-15-k-1-bar
+potassium-chloride-lij,potassium-cation,chloride-anion,l_ij,0,,ascani-et-al-2022,"Supporting Information line 55, l_ij zero outside water/1-butanol",ascani-case-study-2-298-15-k-1-bar

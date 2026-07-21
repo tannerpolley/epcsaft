@@ -151,20 +151,16 @@ ELECTROLYTE_PREFIX_SIZE = (
     ElectrolyteNativeSdkTable.evaluate_electrolyte_phase.offset + ctypes.sizeof(ctypes.c_void_p)
 )
 VOLUME_BOUNDS_PREFIX_SIZE = (
-    VolumeBoundsNativeSdkTable.evaluate_molar_volume_bounds.offset
-    + ctypes.sizeof(ctypes.c_void_p)
+    VolumeBoundsNativeSdkTable.evaluate_molar_volume_bounds.offset + ctypes.sizeof(ctypes.c_void_p)
 )
 PACKING_FRACTION_PREFIX_SIZE = (
-    PackingFractionNativeSdkTable.evaluate_packing_fraction.offset
-    + ctypes.sizeof(ctypes.c_void_p)
+    PackingFractionNativeSdkTable.evaluate_packing_fraction.offset + ctypes.sizeof(ctypes.c_void_p)
 )
 APPLICABILITY_PREFIX_SIZE = (
-    ApplicabilityNativeSdkTable.total_ion_mole_fraction_max.offset
-    + ctypes.sizeof(ctypes.c_double)
+    ApplicabilityNativeSdkTable.total_ion_mole_fraction_max.offset + ctypes.sizeof(ctypes.c_double)
 )
 ACTIVE_BORN_PREFIX_SIZE = (
-    ActiveBornNativeSdkTable.evaluate_ion_solvation_born.offset
-    + ctypes.sizeof(ctypes.c_void_p)
+    ActiveBornNativeSdkTable.evaluate_ion_solvation_born.offset + ctypes.sizeof(ctypes.c_void_p)
 )
 
 
@@ -269,9 +265,12 @@ def _electrolyte_model(
 
 
 def _khudaida_model(component_ids: tuple[str, ...]) -> EPCSAFT:
-    parameters = ParameterBundle.from_catalog(
-        "khudaida-2026-figure-2-electrolyte-lle", version=1
-    )
+    parameters = ParameterBundle.from_catalog("khudaida-2026-figure-2-electrolyte-lle", version=1)
+    return EPCSAFT(parameters.select(component_ids))
+
+
+def _ascani_model(component_ids: tuple[str, ...]) -> EPCSAFT:
+    parameters = ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1)
     return EPCSAFT(parameters.select(component_ids))
 
 
@@ -639,10 +638,7 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
             getattr(VolumeBoundsNativeSdkTable, field_name).offset
             == getattr(ElectrolyteNativeSdkTable, field_name).offset
         )
-    assert (
-        VolumeBoundsNativeSdkTable.evaluate_molar_volume_bounds.offset
-        == ELECTROLYTE_PREFIX_SIZE
-    )
+    assert VolumeBoundsNativeSdkTable.evaluate_molar_volume_bounds.offset == ELECTROLYTE_PREFIX_SIZE
     for field_name, _ in VolumeBoundsNativeSdkTable._fields_:
         assert (
             getattr(PackingFractionNativeSdkTable, field_name).offset
@@ -650,8 +646,7 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
         )
     assert VOLUME_BOUNDS_PREFIX_SIZE == ctypes.sizeof(VolumeBoundsNativeSdkTable)
     assert (
-        PackingFractionNativeSdkTable.evaluate_packing_fraction.offset
-        == VOLUME_BOUNDS_PREFIX_SIZE
+        PackingFractionNativeSdkTable.evaluate_packing_fraction.offset == VOLUME_BOUNDS_PREFIX_SIZE
     )
     for field_name, _ in PackingFractionNativeSdkTable._fields_:
         assert (
@@ -1386,9 +1381,7 @@ def test_native_sdk_khudaida_five_component_phase_block_and_permutation() -> Non
 
     temperature_k = 293.15
     point = (0.65905, 0.05095, 0.27015, 0.01985, 0.01985, 1.0e-3)
-    center, gradient, hessian = _evaluate_electrolyte(
-        table, temperature_k, point[:5], point[5]
-    )
+    center, gradient, hessian = _evaluate_electrolyte(table, temperature_k, point[:5], point[5])
     assert center.status == STATUS_OK
     assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
     total_amount = math.fsum(point[:5])
@@ -1417,16 +1410,13 @@ def test_native_sdk_khudaida_five_component_phase_block_and_permutation() -> Non
     step = 2.0e-4
 
     def shifted(scale: float):
-        state = tuple(
-            value + scale * delta for value, delta in zip(point, direction, strict=True)
-        )
+        state = tuple(value + scale * delta for value, delta in zip(point, direction, strict=True))
         return _evaluate_electrolyte(table, temperature_k, state[:5], state[5])
 
     lower, lower_gradient, _ = shifted(-step)
     upper, upper_gradient, _ = shifted(step)
     value_difference = (
-        upper.helmholtz_over_rt_reference_amount
-        - lower.helmholtz_over_rt_reference_amount
+        upper.helmholtz_over_rt_reference_amount - lower.helmholtz_over_rt_reference_amount
     ) / (2.0 * step)
     assert math.fsum(
         left * right for left, right in zip(gradient, direction, strict=True)
@@ -1436,9 +1426,7 @@ def test_native_sdk_khudaida_five_component_phase_block_and_permutation() -> Non
             hessian[row * 6 + column] * direction[column] for column in range(6)
         )
         gradient_difference = (upper_gradient[row] - lower_gradient[row]) / (2.0 * step)
-        assert hessian_direction == pytest.approx(
-            gradient_difference, rel=4.0e-6, abs=4.0e-6
-        )
+        assert hessian_direction == pytest.approx(gradient_difference, rel=4.0e-6, abs=4.0e-6)
 
     permuted_ids = (
         "chloride-anion",
@@ -1473,11 +1461,101 @@ def test_native_sdk_khudaida_five_component_phase_block_and_permutation() -> Non
         tuple(hessian[row * 6 + column] for row in permutation for column in permutation)
     )
     with pytest.raises(EosError, match="unadmitted-parameter-fingerprint"):
-        native_sdk(
-            _khudaida_model(
-                ("water", "isobutanol", "sodium-cation", "chloride-anion")
-            )
+        native_sdk(_khudaida_model(("water", "isobutanol", "sodium-cation", "chloride-anion")))
+
+
+def test_native_sdk_ascani_phase_block_parity_derivatives_and_permutation() -> None:
+    component_ids = (
+        "water",
+        "1-butanol",
+        "sodium-cation",
+        "potassium-cation",
+        "chloride-anion",
+    )
+    model = _ascani_model(component_ids)
+    capsule, table = _electrolyte_table(model)
+    assert capsule is not None
+    assert tuple(table.component_ids[index].decode() for index in range(5)) == component_ids
+    assert tuple(table.component_charges[index] for index in range(5)) == (0, 0, 1, 1, -1)
+
+    temperature_k = 298.15
+    point = (0.70, 0.20, 0.02, 0.01, 0.03, 1.0e-3)
+    center, gradient, hessian = _evaluate_electrolyte(table, temperature_k, point[:5], point[5])
+    assert center.status == STATUS_OK
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    total_amount = math.fsum(point[:5])
+    density = total_amount / point[5]
+    fractions = tuple(amount / total_amount for amount in point[:5])
+    public = model.evaluate(
+        temperature=temperature_k * unit_registry.kelvin,
+        molar_density=density * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=fractions,
+    )
+    expected_value = (
+        math.fsum(amount * (math.log(amount / point[5]) - 1.0) for amount in point[:5])
+        + total_amount * public.residual_helmholtz
+    )
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected_value, rel=5.0e-12, abs=5.0e-12
+    )
+    assert center.pressure_pa == pytest.approx(
+        public.pressure.to("pascal").magnitude, rel=5.0e-11, abs=2.0e-5
+    )
+    assert center.pressure_pa == pytest.approx(
+        -8.31446261815324 * temperature_k * gradient[-1], rel=5.0e-13
+    )
+
+    direction = (0.007, -0.003, -0.001, -0.0005, -0.0015, 1.5e-5)
+    step = 2.0e-4
+
+    def shifted(scale: float):
+        state = tuple(value + scale * delta for value, delta in zip(point, direction, strict=True))
+        return _evaluate_electrolyte(table, temperature_k, state[:5], state[5])
+
+    lower, lower_gradient, _ = shifted(-step)
+    upper, upper_gradient, _ = shifted(step)
+    directional_gradient = math.fsum(
+        left * right for left, right in zip(gradient, direction, strict=True)
+    )
+    centered_gradient = (
+        upper.helmholtz_over_rt_reference_amount - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert directional_gradient == pytest.approx(centered_gradient, rel=4.0e-7, abs=4.0e-8)
+    for row in range(6):
+        hessian_direction = math.fsum(
+            hessian[row * 6 + column] * direction[column] for column in range(6)
         )
+        centered_hessian = (upper_gradient[row] - lower_gradient[row]) / (2.0 * step)
+        assert hessian_direction == pytest.approx(centered_hessian, rel=6.0e-6, abs=6.0e-6)
+
+    permuted_ids = (
+        "chloride-anion",
+        "potassium-cation",
+        "1-butanol",
+        "water",
+        "sodium-cation",
+    )
+    permutation = (4, 3, 1, 0, 2, 5)
+    permuted_model = _ascani_model(permuted_ids)
+    permuted_capsule, permuted_table = _electrolyte_table(permuted_model)
+    assert permuted_capsule is not None
+    permuted_result, permuted_gradient, permuted_hessian = _evaluate_electrolyte(
+        permuted_table,
+        temperature_k,
+        tuple(point[index] for index in permutation[:-1]),
+        point[-1],
+    )
+    assert permuted_result.helmholtz_over_rt_reference_amount == pytest.approx(
+        center.helmholtz_over_rt_reference_amount, rel=7.0e-13
+    )
+    assert permuted_result.pressure_pa == pytest.approx(center.pressure_pa, rel=7.0e-13)
+    assert permuted_gradient == pytest.approx(tuple(gradient[index] for index in permutation))
+    assert permuted_hessian == pytest.approx(
+        tuple(hessian[row * 6 + column] for row in permutation for column in permutation)
+    )
+
+    with pytest.raises(EosError, match="unadmitted-parameter-fingerprint"):
+        native_sdk(_ascani_model(("water", "1-butanol", "sodium-cation", "chloride-anion")))
 
 
 def test_native_sdk_molar_volume_bounds_match_packing_oracles_and_permutation() -> None:
@@ -1496,9 +1574,7 @@ def test_native_sdk_molar_volume_bounds_match_packing_oracles_and_permutation() 
             0.88 * sigma
             if charge
             else sigma * (1.0 - 0.12 * math.exp(-3.0 * energy / temperature_k))
-            for sigma, energy, charge in zip(
-                sigma_angstrom, energy_over_k, charges, strict=True
-            )
+            for sigma, energy, charge in zip(sigma_angstrom, energy_over_k, charges, strict=True)
         )
         coefficient = (
             math.pi
@@ -1550,9 +1626,7 @@ def test_native_sdk_molar_volume_bounds_match_packing_oracles_and_permutation() 
     capsule, table, bounds = evaluate(model, 293.15, composition)
     assert capsule is not None
     assert table.table_size >= ctypes.sizeof(VolumeBoundsNativeSdkTable) == 120
-    water_sigma = 2.7927 + 10.11 * math.exp(-0.01775 * 293.15) - 1.417 * math.exp(
-        -0.01146 * 293.15
-    )
+    water_sigma = 2.7927 + 10.11 * math.exp(-0.01775 * 293.15) - 1.417 * math.exp(-0.01146 * 293.15)
     expected = oracle(
         293.15,
         composition,
@@ -1578,8 +1652,8 @@ def test_native_sdk_molar_volume_bounds_match_packing_oracles_and_permutation() 
     figiel = _electrolyte_model()
     figiel_capsule, _, figiel_bounds = evaluate(figiel, 298.15, (0.98, 0.01, 0.01))
     assert figiel_capsule is not None
-    figiel_sigma = 2.7927 + 10.11 * math.exp(-0.01775 * 298.15) - 1.417 * math.exp(
-        -0.01146 * 298.15
+    figiel_sigma = (
+        2.7927 + 10.11 * math.exp(-0.01775 * 298.15) - 1.417 * math.exp(-0.01146 * 298.15)
     )
     assert figiel_bounds == pytest.approx(
         oracle(
@@ -1595,9 +1669,7 @@ def test_native_sdk_molar_volume_bounds_match_packing_oracles_and_permutation() 
 
 
 def test_native_sdk_molar_volume_bounds_reject_abi_fingerprint_and_domain_errors() -> None:
-    model = _khudaida_model(
-        ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
-    )
+    model = _khudaida_model(("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion"))
     capsule, table = _volume_bounds_table(model)
     assert capsule is not None
     callback = EvaluateMolarVolumeBounds(table.evaluate_molar_volume_bounds)
@@ -1632,10 +1704,13 @@ def test_native_sdk_molar_volume_bounds_reject_abi_fingerprint_and_domain_errors
     assert call(bounds=guarded, fingerprint=b"sha256:wrong") == STATUS_UNSUPPORTED_MODEL
     assert call(bounds=guarded, temperature_k=math.nan) == STATUS_INVALID_ARGUMENT
     assert call(bounds=guarded, temperature_k=294.0) == STATUS_DOMAIN_ERROR
-    assert call(
-        bounds=guarded,
-        values=(ctypes.c_double * 5)(0.64, 0.08, 0.24, 0.03, 0.01),
-    ) == STATUS_DOMAIN_ERROR
+    assert (
+        call(
+            bounds=guarded,
+            values=(ctypes.c_double * 5)(0.64, 0.08, 0.24, 0.03, 0.01),
+        )
+        == STATUS_DOMAIN_ERROR
+    )
     assert call(bounds=guarded, eta_min=0.0) == STATUS_INVALID_ARGUMENT
     assert call(bounds=guarded, eta_min=0.74, eta_max=1.0e-6) == STATUS_INVALID_ARGUMENT
     assert call(bounds=guarded, eta_max=0.75) == STATUS_DOMAIN_ERROR
@@ -1686,13 +1761,13 @@ def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permuta
     assert table.table_size >= ctypes.sizeof(PackingFractionNativeSdkTable) == 128
     assert PackingFractionNativeSdkTable.evaluate_packing_fraction.offset == 120
 
-    water_sigma = 2.7927 + 10.11 * math.exp(-0.01775 * temperature_k) - 1.417 * math.exp(
-        -0.01146 * temperature_k
+    water_sigma = (
+        2.7927
+        + 10.11 * math.exp(-0.01775 * temperature_k)
+        - 1.417 * math.exp(-0.01146 * temperature_k)
     )
     diameters = tuple(
-        0.88 * sigma
-        if charge
-        else sigma * (1.0 - 0.12 * math.exp(-3.0 * energy / temperature_k))
+        0.88 * sigma if charge else sigma * (1.0 - 0.12 * math.exp(-3.0 * energy / temperature_k))
         for sigma, energy, charge in zip(
             (water_sigma, 3.1771, 3.5561, 2.8232, 2.7560),
             (353.95, 198.24, 257.13, 230.0, 170.0),
@@ -1702,13 +1777,12 @@ def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permuta
     )
     weights = tuple(
         math.pi / 6.0 * 6.02214076e23 / 1.0e30 * segments * diameter**3
-        for segments, diameter in zip(
-            (1.2047, 2.3827, 2.8440, 1.0, 1.0), diameters, strict=True
-        )
+        for segments, diameter in zip((1.2047, 2.3827, 2.8440, 1.0, 1.0), diameters, strict=True)
     )
-    expected_value = math.fsum(
-        amount * weight for amount, weight in zip(amounts, weights, strict=True)
-    ) / volume_m3
+    expected_value = (
+        math.fsum(amount * weight for amount, weight in zip(amounts, weights, strict=True))
+        / volume_m3
+    )
     expected_gradient = tuple(weight / volume_m3 for weight in weights) + (
         -expected_value / volume_m3,
     )
@@ -1732,8 +1806,7 @@ def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permuta
     assert directional_gradient == pytest.approx(oracle_directional_gradient, rel=2.0e-15)
     for row in range(coordinates):
         actual = math.fsum(
-            hessian[row * coordinates + column] * direction[column]
-            for column in range(coordinates)
+            hessian[row * coordinates + column] * direction[column] for column in range(coordinates)
         )
         expected = math.fsum(
             expected_hessian[row * coordinates + column] * direction[column]
@@ -1755,9 +1828,7 @@ def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permuta
 
 
 def test_native_sdk_packing_fraction_fails_closed_for_abi_model_and_domain_errors() -> None:
-    model = _khudaida_model(
-        ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
-    )
+    model = _khudaida_model(("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion"))
     capsule, table = _packing_fraction_table(model)
     assert capsule is not None
     callback = EvaluatePackingFraction(table.evaluate_packing_fraction)
@@ -1883,9 +1954,7 @@ def test_native_sdk_active_born_matches_public_reference_state(
     assert capsule is not None
     assert model.parameter_fingerprint == fingerprint
     assert table.table_size == ACTIVE_BORN_PREFIX_SIZE == 168
-    assert table.ion_solvation_born_result_size == ctypes.sizeof(
-        IonSolvationBornResult
-    ) == 272
+    assert table.ion_solvation_born_result_size == ctypes.sizeof(IonSolvationBornResult) == 272
     assert table.evaluate_ion_solvation_born
 
     observed = _evaluate_active_born(table, source_diameter)
@@ -1896,9 +1965,7 @@ def test_native_sdk_active_born_matches_public_reference_state(
         phase="liquid",
     )
     active_position = reference.ion_component_ids.index(active_ion)
-    expected = reference.solvation_free_energy[active_position].to(
-        "joule / mole"
-    ).magnitude
+    expected = reference.solvation_free_energy[active_position].to("joule / mole").magnitude
 
     assert observed.status == STATUS_OK
     assert observed.solvation_gibbs_j_per_mol == pytest.approx(expected, abs=2.0e-8)
@@ -1925,9 +1992,7 @@ def test_native_sdk_active_born_derivative_matches_centered_difference(
     counter_ion: str,
     trial_diameter: float,
 ) -> None:
-    _, table = _active_born_table(
-        _electrolyte_model(("water", active_ion, counter_ion))
-    )
+    _, table = _active_born_table(_electrolyte_model(("water", active_ion, counter_ion)))
     center = _evaluate_active_born(table, trial_diameter)
 
     estimates = []
@@ -1935,8 +2000,7 @@ def test_native_sdk_active_born_derivative_matches_centered_difference(
         upper = _evaluate_active_born(table, trial_diameter + step)
         lower = _evaluate_active_born(table, trial_diameter - step)
         estimates.append(
-            (upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol)
-            / (2.0 * step)
+            (upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol) / (2.0 * step)
         )
     tolerance = max(
         1.0e-3,
@@ -1947,9 +2011,7 @@ def test_native_sdk_active_born_derivative_matches_centered_difference(
 
 
 def test_native_sdk_active_born_partial_trends_to_zero_at_large_diameter() -> None:
-    _, table = _active_born_table(
-        _electrolyte_model(("water", "sodium-cation", "chloride-anion"))
-    )
+    _, table = _active_born_table(_electrolyte_model(("water", "sodium-cation", "chloride-anion")))
     smaller = _evaluate_active_born(table, 16.0)
     larger = _evaluate_active_born(table, 32.0)
 
@@ -1989,9 +2051,7 @@ def test_native_sdk_active_born_preserves_prior_prefix_and_fails_closed() -> Non
         (299.0, 100000.0, 3.445, STATUS_DOMAIN_ERROR),
         (298.15, 101325.0, 3.445, STATUS_DOMAIN_ERROR),
     ):
-        result = IonSolvationBornResult(
-            struct_size=ctypes.sizeof(IonSolvationBornResult)
-        )
+        result = IonSolvationBornResult(struct_size=ctypes.sizeof(IonSolvationBornResult))
         status = callback(
             table.model_context,
             temperature,
@@ -2007,18 +2067,14 @@ def test_native_sdk_active_born_preserves_prior_prefix_and_fails_closed() -> Non
         assert result.parameter_fingerprint == b""
         assert result.error
 
-    null_result = IonSolvationBornResult(
-        struct_size=ctypes.sizeof(IonSolvationBornResult)
-    )
+    null_result = IonSolvationBornResult(struct_size=ctypes.sizeof(IonSolvationBornResult))
     status = callback(None, 298.15, 100000.0, 3.445, ctypes.byref(null_result))
     assert status == null_result.status == STATUS_INVALID_ARGUMENT
     assert null_result.error
 
     neutral_capsule, neutral_table = _active_born_table(_mixture_model())
     assert neutral_capsule is not None
-    neutral_result = IonSolvationBornResult(
-        struct_size=ctypes.sizeof(IonSolvationBornResult)
-    )
+    neutral_result = IonSolvationBornResult(struct_size=ctypes.sizeof(IonSolvationBornResult))
     status = EvaluateIonSolvationBorn(neutral_table.evaluate_ion_solvation_born)(
         neutral_table.model_context,
         298.15,
@@ -2030,9 +2086,7 @@ def test_native_sdk_active_born_preserves_prior_prefix_and_fails_closed() -> Non
     assert neutral_result.error
 
     iodide_bundle = ParameterBundle.from_catalog("figiel-2025-aqueous-iodides", version=1)
-    iodide = EPCSAFT(
-        iodide_bundle.select(("water", "sodium-cation", "iodide-anion"))
-    )
+    iodide = EPCSAFT(iodide_bundle.select(("water", "sodium-cation", "iodide-anion")))
     with pytest.raises(EosError, match="unadmitted-parameter-fingerprint"):
         native_sdk(iodide)
 

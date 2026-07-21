@@ -1,8 +1,11 @@
+from dataclasses import replace
 import math
 
 import pytest
 
 from epcsaft import EPCSAFT, ParameterBundle, unit_registry
+from epcsaft._core import NativeModel
+from epcsaft.eos import _native_arguments
 from epcsaft.records import (
     AssociationParameterRecord,
     ComponentRecord,
@@ -83,6 +86,25 @@ def _pure_2b_model() -> EPCSAFT:
         associations=associations,
     ).select((component,))
     return EPCSAFT(parameters)
+
+
+def test_ascani_lij_enters_dispersion_and_association_cross_diameter() -> None:
+    model = EPCSAFT(
+        ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1).select(
+            ("water", "1-butanol", "sodium-cation", "potassium-cation", "chloride-anion")
+        )
+    )
+    fractions = (0.74, 0.20, 0.02, 0.01, 0.03)
+    source = model.evaluate(
+        temperature=298.15 * unit_registry.kelvin,
+        molar_density=1000.0 * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=fractions,
+    )
+    zero_lij_model = replace(model._model, l_ij=(0.0,) * 25)
+    zero_lij = NativeModel(*_native_arguments(zero_lij_model)).evaluate(298.15, 1000.0, fractions)
+
+    assert source.dispersion < zero_lij.dispersion
+    assert source.association < zero_lij.association
 
 
 def _pure_2b_association(temperature: float, molar_density: float) -> float:
@@ -188,9 +210,9 @@ def test_association_temperature_derivative_enters_residual_energy() -> None:
 
 def test_neutral_solvent_selection_does_not_activate_ionic_topology() -> None:
     model = EPCSAFT(
-        ParameterBundle.from_catalog(
-            "figiel-2025-reference-electrolytes", version=1
-        ).select(("ethanol",))
+        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
+            ("ethanol",)
+        )
     )
 
     result = model.evaluate(

@@ -120,8 +120,14 @@ active unlike-pair value is written symmetrically to both off-diagonal pair
 positions before the canonical Helmholtz owner is taped.
 
 The D-024 candidate appends the full-electrolyte phase callback and two
-model-bound volume-domain callbacks. For an exact fingerprint, temperature,
-and composition in the table's component order, the value convenience uses
+model-bound volume-domain callbacks. The unchanged phase callback admits exact
+immutable Figiel and Khudaida corrected-SSM+DS selections and the distinct
+Ascani original-Born water/1-butanol/Na+/K+/Cl- selection. The Ascani source
+schema supplies explicit fixed `l_ij` cross-diameter records and precomputed
+source-bound cross-association records; these are immutable model data, not an
+active parameter ABI family. No callback, result structure, or table field is
+added for the Ascani bundle. For an exact fingerprint, temperature, and
+composition in the table's component order, the value convenience uses
 
 ```text
 K_eta(T,x) = (pi/6) (N_A/10^30) sum_i x_i m_i d_i(T)^3

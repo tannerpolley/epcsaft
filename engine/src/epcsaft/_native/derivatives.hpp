@@ -102,11 +102,12 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
             *active_born_component,
             independent[2 + components]
         )
-        : born_ssm_ds_contribution(
+        : born_contribution(
             independent[0],
             composition,
             parameters,
-            electrolyte.bulk_relative_permittivity
+            electrolyte.bulk_relative_permittivity,
+            sigma
         );
     const auto contributions = residual_helmholtz(
         independent[0],

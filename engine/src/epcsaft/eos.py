@@ -53,6 +53,15 @@ _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
             "chloride-anion",
         }
     ),
+    "sha256:b7a54dab41c61a71803f1d63bf25396188a2a1edc55172d5beddb99c3368c9fd": frozenset(
+        {
+            "water",
+            "1-butanol",
+            "sodium-cation",
+            "potassium-cation",
+            "chloride-anion",
+        }
+    ),
 }
 
 
@@ -133,24 +142,34 @@ def _native_arguments(
             association_volume[index] = pair.volume
 
     components = len(model.component_ids)
-    if model.topology == "ionic-ssm-ds":
+    if model.topology in {"ionic-ssm-ds", "ionic-ascani-original-born"}:
         molar_mass = [0.0 if value is None else value for value in model.molar_mass_kg_per_mol]
         charge_number = list(model.charge_number)
         relative_permittivity = [
             0.0 if record is None else _magnitude(record, "dimensionless")
             for record in model.relative_permittivity
         ]
-        dielectric_suppression = model.dielectric_ion_suppression_coefficient
-        born_diameter = [0.0 if value is None else value for value in model.born_diameter_angstrom]
-        solvation_factor = [
-            _magnitude(record, "dimensionless")
-            for record in model.solvation_factor
-            if record is not None
-        ]
-        ionic_permittivity = model.ionic_region_relative_permittivity
-        assert dielectric_suppression is not None
-        assert ionic_permittivity is not None
-        assert len(solvation_factor) == components
+        if model.topology == "ionic-ssm-ds":
+            dielectric_suppression = model.dielectric_ion_suppression_coefficient
+            born_diameter = [
+                0.0 if value is None else value for value in model.born_diameter_angstrom
+            ]
+            solvation_factor = [
+                _magnitude(record, "dimensionless")
+                for record in model.solvation_factor
+                if record is not None
+            ]
+            ionic_permittivity = model.ionic_region_relative_permittivity
+            electrolyte_model = 1
+            assert dielectric_suppression is not None
+            assert ionic_permittivity is not None
+            assert len(solvation_factor) == components
+        else:
+            dielectric_suppression = 0.0
+            born_diameter = [0.0] * components
+            solvation_factor = [0.0] * components
+            ionic_permittivity = 0.0
+            electrolyte_model = 2
     else:
         molar_mass = [0.0] * components
         charge_number = [0] * components
@@ -159,6 +178,7 @@ def _native_arguments(
         born_diameter = [0.0] * components
         solvation_factor = [0.0] * components
         ionic_permittivity = 0.0
+        electrolyte_model = 0
 
     return (
         list(model.segment_count),
@@ -168,6 +188,7 @@ def _native_arguments(
         term_exponent,
         list(model.dispersion_energy_over_k),
         list(model.k_ij),
+        list(model.l_ij),
         [component_position[component_id] for component_id, _ in model.site_ids],
         list(model.site_multiplicity),
         association_active,
@@ -180,6 +201,7 @@ def _native_arguments(
         born_diameter,
         solvation_factor,
         ionic_permittivity,
+        electrolyte_model,
     )
 
 
@@ -244,7 +266,7 @@ class EPCSAFT:
         ):
             raise _eos_error("invalid-state", field="temperature")
 
-        if self._model.topology == "ionic-ssm-ds":
+        if self._model.topology in {"ionic-ssm-ds", "ionic-ascani-original-born"}:
             ion_fraction = math.fsum(
                 fraction
                 for fraction, charge in zip(fractions, self._model.charge_number, strict=True)
