@@ -54,10 +54,58 @@ def test_activity_follows_figiel_reference_and_scale_equations() -> None:
 
     expected_mean_x = math.sqrt(expected_single[0] * expected_single[1])
     expected_mean_m = expected_mean_x / (1.0 + 0.0180153 * 0.1 * 2.0)
+    pure_solvent = model.evaluate(
+        temperature=reference.temperature,
+        pressure=reference.pressure,
+        mole_fractions=reference.solvent_mole_fractions,
+        phase="liquid",
+    )
+    assert pure_solvent.log_fugacity_coefficient is not None
+    log_solvent_activity = (
+        math.log(activity.mole_fractions[0])
+        + state.log_fugacity_coefficient[0]
+        - pure_solvent.log_fugacity_coefficient[0]
+    )
+    expected_osmotic = -log_solvent_activity / (2.0 * 0.1 * 0.0180153)
     assert activity.mean_ionic_activity_coefficient_mole_fraction == pytest.approx(expected_mean_x)
     assert activity.mean_ionic_activity_coefficient_molality == pytest.approx(expected_mean_m)
+    assert activity.practical_osmotic_coefficient_molality == pytest.approx(expected_osmotic)
     assert math.fsum(activity.mole_fractions) == pytest.approx(1.0)
     assert activity.mole_fractions[1] == activity.mole_fractions[2]
+
+
+def test_aqueous_osmotic_coefficient_approaches_ideal_dilution_limit() -> None:
+    reference = _model("water", "sodium-cation", "chloride-anion").reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=0.101 * unit_registry.megapascal,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+
+    observed = reference.at_molality(
+        1.0e-6 * unit_registry.mole / unit_registry.kilogram
+    ).practical_osmotic_coefficient_molality
+
+    assert observed is not None
+    assert abs(observed - 1.0) <= 2.0e-3
+
+
+@pytest.mark.parametrize("cation", ("sodium-cation", "potassium-cation"))
+def test_source_complete_iodides_expose_aqueous_osmotic_coefficient(cation: str) -> None:
+    bundle = ParameterBundle.from_catalog("figiel-2025-aqueous-iodides", version=1)
+    reference = EPCSAFT(bundle.select(("water", cation, "iodide-anion"))).reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=1.0 * unit_registry.bar,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+
+    observed = reference.at_molality(
+        0.1 * unit_registry.mole / unit_registry.kilogram
+    ).practical_osmotic_coefficient_molality
+
+    assert observed is not None
+    assert math.isfinite(observed) and observed > 0.0
 
 
 def test_solvation_free_energy_follows_figiel_x_process() -> None:
@@ -153,7 +201,6 @@ def test_nacl_activity_in_water_ethanol_matches_esteso() -> None:
     # 60 mass % ethanol in the salt-free solvent, m = 0.500 mol/kg,
     # and gamma_pm,m = 0.415. The 0.08 gate is a model-accuracy tolerance,
     # not the experimental precision.
-    observed = reference.at_molality(
-        0.5 * unit_registry.mole / unit_registry.kilogram
-    ).mean_ionic_activity_coefficient_molality
-    assert abs(observed - 0.415) <= 0.08
+    activity = reference.at_molality(0.5 * unit_registry.mole / unit_registry.kilogram)
+    assert abs(activity.mean_ionic_activity_coefficient_molality - 0.415) <= 0.08
+    assert activity.practical_osmotic_coefficient_molality is None

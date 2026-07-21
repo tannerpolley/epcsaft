@@ -21,6 +21,7 @@ not override this bounded specification.
 | Figiel2025 | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2025, 64, 9406-9418, DOI `10.1021/acs.iecr.5c00475` | Fitted Born diameter, SSM+DS Born term, solvation factor, dielectric rule, fugacity relations, and electrolyte reference-state equations |
 | Figiel2025SI | Official ACS supporting information, DOI `10.1021/acs.iecr.5c00475.s001`, Figshare article `28888514`, file `54030209`, MD5 `4c3d3964d6e61b908c3ce3b17bb4e6b0` | Comparison of direct, SSM, and SSM+DS formulations and retained validation evidence |
 | Figiel2026Correction | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2026, DOI `10.1021/acs.iecr.6c01415` | Authoritative corrected text of Figiel2025 Eq. (7): restores the missing bracket and replaces the second `epsilon_r,bulk` with `epsilon_r,ion` |
+| HamerWu1972 | Hamer and Wu, *J. Phys. Chem. Ref. Data* 1972, 1, 1047-1100, DOI `10.1063/1.3253108`; official NIST PDF SHA-256 `8399084b29b4db4ce35ab47ed679446dbedb9bf1686f99f43fce7b2073ee4beb` | Practical molal osmotic-coefficient definition and aqueous NaCl comparison value |
 
 Each equation below has one status:
 
@@ -105,6 +106,7 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Infinite-dilution solvation | `Delta_solv,x G_i^infinity = RT ln(phi_i^infinity)` | source equation | Figiel2025 Eq. (17) | `reference.py` |
 | Infinite-dilution transfer | `Delta_tr G_i = RT ln(phi_i^infinity,S2/phi_i^infinity,S1)` | source equation | Figiel2025 Eq. (19) | `reference.py` |
 | Ionic activity and MIAC | fugacity ratio, stoichiometric mean, and mole-fraction-to-molality conversion | source equations | Figiel2025 Eqs. (20)--(22) | `reference.py` |
+| Practical molal osmotic coefficient | pure-solvent-referenced solvent activity on the formula-unit molality basis | source equation | HamerWu1972 Eqs. (3.4'), (3.5) | `reference.py` |
 | Residual caloric properties | temperature and density derivatives of the common `a^r` owner | source equation and exact derivation | Gross2001 Eqs. (A.46)-(A.50) plus identities below | `_native/derivatives.hpp` |
 | Density closure | `rho_m R T Z(T,rho_m,x) - P_spec = 0` | exact derivation | pressure identity | `_native/density.hpp` |
 
@@ -458,6 +460,20 @@ and source-backed solvent molar masses. The reference module calls
 values are path-defined model quantities. The stoichiometric MIAC is the
 literature comparison quantity.
 
+For a single active water solvent, the same finite-molality pressure state
+also gives
+
+```text
+ln(a_water) = ln(x_water) + ln(phi_water) - ln(phi_water^0)
+Phi = -ln(a_water) / [m_solute M_water sum_i nu_i].
+```
+
+This is Hamer--Wu (1972) Eqs. (3.4') and (3.5) in the SI-equivalent basis:
+`m_solute` is formula-unit molality in `mol/kg` of salt-free solvent and
+`M_water` is the resolved molar mass in `kg/mol`. The pure-water fugacity
+coefficient is evaluated at the same temperature and pressure. Mixed-solvent
+references retain their MIAC result and expose no scalar osmotic coefficient.
+
 The first admitted reference scope contains exactly one cation, one anion,
 water, methanol, ethanol, or a selected mixture of those solvents at
 `T = 298.15 K` within the Figiel parameter domain.
@@ -496,7 +512,10 @@ source domain is explicitly unknown contributes no invented numerical bound.
 
 The first electrolyte model is bounded to the Figiel source records for water,
 methanol, ethanol, `Li+`, `Na+`, `K+`, `Cl-`, and `Br-` at `T = 298.15 K` and
-`0 <= x_ion <= 0.38`. Each admitted MIAC calculation selects one solvent
+`0 <= x_ion <= 0.38`. A distinct aqueous bundle admits source-complete NaI and
+KI at the same conditions without changing established model fingerprints.
+LiI remains excluded because Figiel Table 4 publishes no `Li+/I-` interaction.
+Each admitted MIAC calculation selects one solvent
 composition, one cation, and one anion. A mixed-solvent selection additionally
 requires every solvent pair and cross-association record. The ordinary-state
 composition is electroneutral. The

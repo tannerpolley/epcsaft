@@ -40,10 +40,15 @@ reference = electrolyte.reference_state(
     solvent_mole_fractions=(1.0, 0.0, 0.0),
     phase="liquid",
 )
-gamma_pm = reference.at_molality(
-    1 * u.mole / u.kilogram
-).mean_ionic_activity_coefficient_molality
+activity = reference.at_molality(1 * u.mole / u.kilogram)
+gamma_pm = activity.mean_ionic_activity_coefficient_molality
+osmotic_coefficient = activity.practical_osmotic_coefficient_molality
 ```
+
+The practical molal osmotic coefficient is available for the single-water
+reference path. Mixed-solvent references continue to return MIAC values and
+report this scalar as `None` because no mixed-solvent osmotic standard state is
+admitted.
 
 For a native equilibrium consumer, `native_sdk(model)` returns the model-bound
 capsule `epcsaft.native_sdk.v1`. Its accepted prefix evaluates a pure
@@ -116,9 +121,12 @@ The installed catalogs are:
 - Gross and Sadowski (2001) methane/ethane neutral PC-SAFT parameters; and
 - Gross and Sadowski (2001) pure-propane neutral PC-SAFT parameters needed by
   the first scoped saturation consumer; plus
-- the bounded Figiel, Yu, and Held (2025) water/methanol/ethanol alkali-halide
-  records needed for aqueous and mixed-solvent MIAC systems and explicit
-  transfer reference states; plus
+- the bounded Figiel, Yu, and Held (2025) water/methanol/ethanol
+  chloride/bromide records needed for aqueous and mixed-solvent MIAC systems
+  and explicit transfer reference states; plus
+- a distinct Figiel aqueous iodide bundle for source-complete NaI and KI;
+  LiI remains unsupported because the published Li+/I- interaction is blank;
+  plus
 - the distinct Khudaida et al. (2026) water/ethanol/isobutanol/Na+/Cl- records
   for the source-bound 293.15 K electrolyte-LLE challenge.
 

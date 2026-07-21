@@ -877,6 +877,14 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
     assert sorted(
         path.relative_to(catalog).as_posix() for path in catalog.rglob("*") if path.is_file()
     ) == [
+        "figiel-2025-aqueous-iodides/1/association.csv",
+        "figiel-2025-aqueous-iodides/1/bundle.toml",
+        "figiel-2025-aqueous-iodides/1/components.csv",
+        "figiel-2025-aqueous-iodides/1/correlations.toml",
+        "figiel-2025-aqueous-iodides/1/model.csv",
+        "figiel-2025-aqueous-iodides/1/pair.csv",
+        "figiel-2025-aqueous-iodides/1/single.csv",
+        "figiel-2025-aqueous-iodides/1/sites.csv",
         "figiel-2025-reference-electrolytes/1/association.csv",
         "figiel-2025-reference-electrolytes/1/bundle.toml",
         "figiel-2025-reference-electrolytes/1/components.csv",
@@ -1015,6 +1023,63 @@ def test_figiel_reference_electrolyte_catalog_is_exact_and_sparse() -> None:
 
     ethanol_nacl = ("water", "ethanol", "sodium-cation", "chloride-anion")
     assert epcsaft.EPCSAFT(bundle.select(ethanol_nacl)).component_ids == ethanol_nacl
+
+
+def test_figiel_aqueous_iodide_catalog_is_exact_and_source_complete() -> None:
+    bundle = ParameterBundle.from_catalog("figiel-2025-aqueous-iodides", version=1)
+    assert bundle.fingerprint == (
+        "sha256:3833b38c72f3de554958cb424285da278fe6444e8d150521cd525bb47f9f0784"
+    )
+    source = next(
+        source for source in bundle.sources if source.source_id == "figiel-yu-held-2025"
+    )
+    assert source.doi == "10.1021/acs.iecr.5c00475"
+    assert "ce80533925a91bc59d8d0d8056113c40611ca26c2edf04aced76986d50bd4bae" in (
+        source.use_basis
+    )
+    assert {component.component_id for component in bundle.components} == {
+        "water",
+        "sodium-cation",
+        "potassium-cation",
+        "iodide-anion",
+    }
+    values = {
+        (record.component_id, record.family): record.value
+        for record in bundle.records
+        if isinstance(record, SingleParameterRecord)
+    }
+    assert values[("iodide-anion", "segment_count")] == Decimal("1")
+    assert values[("iodide-anion", "segment_diameter")].magnitude == Decimal("3.6672")
+    assert values[("iodide-anion", "dispersion_energy_over_k")].magnitude == Decimal(
+        "200.00"
+    )
+    assert values[("iodide-anion", "charge_number")] == -1
+    assert values[("iodide-anion", "born_diameter")].magnitude == Decimal("4.985")
+
+    pairs = {
+        (record.component_id_a, record.component_id_b): record.value
+        for record in bundle.records
+        if isinstance(record, PairParameterRecord) and record.family == "k_ij"
+    }
+    assert pairs[("iodide-anion", "water")] == Decimal("-0.05")
+    assert pairs[("iodide-anion", "sodium-cation")] == Decimal("0.45")
+    assert pairs[("iodide-anion", "potassium-cation")] == Decimal("0")
+
+    fingerprints = {
+        "sodium-cation": "sha256:afdf4e6178125e94395895c57ca6833b7a6679aa7b42bdf7d969d78c90a305ce",
+        "potassium-cation": "sha256:c1032fd48e76a942f1a1fd720f43b6a1e4e53f62a095d79db9643597cb8353eb",
+    }
+    for cation, fingerprint in fingerprints.items():
+        selected = ("water", cation, "iodide-anion")
+        parameters = bundle.select(selected)
+        assert parameters.fingerprint == fingerprint
+        assert epcsaft.EPCSAFT(parameters).component_ids == selected
+    assert (
+        _error_code(
+            lambda: bundle.select(("water", "lithium-cation", "iodide-anion"))
+        )
+        == "invalid-selection"
+    )
 
 
 def test_khudaida_figure_2_catalog_preserves_the_published_model_tuple() -> None:

@@ -14,11 +14,14 @@ Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
 chemical potentials, fugacity coefficients when defined, residual caloric
 properties, pressure, and branch diagnostics for pressure-specified states.
 The installed catalogs are Gross--Sadowski methane/ethane and propane records,
-the bounded Figiel--Yu--Held water/methanol/ethanol alkali-halide source
-bundle, and one distinct Khudaida et al. water/ethanol/isobutanol/Na+/Cl-
-bundle at 293.15 K. One reference-state module owns x-process
+the bounded Figiel--Yu--Held water/methanol/ethanol chloride/bromide source
+bundle, a distinct aqueous Na+/K+/I- source bundle, and one distinct Khudaida
+et al. water/ethanol/isobutanol/Na+/Cl- bundle at 293.15 K. One reference-state
+module owns x-process
 infinite-dilution solvation and transfer plus single-ion and stoichiometric mean
-ionic activity on one explicit electroneutral formula-unit path.
+ionic activity on one explicit electroneutral formula-unit path. Its aqueous
+single-solvent result also reports the practical molal osmotic coefficient
+from the solvent-activity ratio on that pressure-state path.
 
 Pressure closure accepts exactly one of molar density or pressure. An
 unlabelled pressure state must have one mechanically stable root. A genuine

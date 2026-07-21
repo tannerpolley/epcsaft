@@ -9,7 +9,8 @@ The provider will own one bounded reference-state module built on
 solvation, transfer between explicit solvent reference states, single-ion
 activity on an electroneutral dilution path, and stoichiometric mean ionic
 activity coefficients (MIACs). The validation repository will own the broad
-six-salt comparison with the Hamer--Wu aqueous data used by Figiel.
+comparison for the eight source-complete aqueous salts with the Hamer--Wu data
+used by Figiel.
 
 No Helmholtz equation is copied into the reference module or validation
 repository. A successful reference-state calculation does not expand the EOS,
@@ -72,9 +73,14 @@ The immutable reference result owns:
 - the accepted reference molality and convergence error.
 
 `at_molality(...)` returns the finite-state mole fractions, single-ion activity
-coefficients, mole-fraction MIAC, and molality MIAC. `transfer_to(...)` returns
-component-ordered transfer free energies and requires matching ions,
-temperature, pressure, and reference convention.
+coefficients, mole-fraction MIAC, molality MIAC, and, for the single-water
+reference path, the dimensionless practical molal osmotic coefficient. The
+latter uses formula-unit molality per kilogram of salt-free solvent and the
+pure-water activity reference at the same temperature and pressure. A
+mixed-solvent reference reports the osmotic scalar as `None` without changing
+its MIAC behavior. `transfer_to(...)` returns component-ordered transfer free
+energies and requires matching ions, temperature, pressure, and reference
+convention.
 
 The implementation lives in `src/epcsaft/reference.py`. `EPCSAFT` remains the
 EOS owner and delegates only this reference-state orchestration. There is no
@@ -82,12 +88,16 @@ public tolerance knob, backend selector, mutable cache, or compatibility alias.
 
 ## Source parameters
 
-One sparse Figiel catalog bundle will replace the narrow water/NaCl bundle.
-It contains only the source records needed for water and methanol with
-`Li+`, `Na+`, `K+`, `Cl-`, and `Br-`. A caller selects one exact solvent/salt
-subsystem before constructing `EPCSAFT`. The six water salts are the admitted
-MIAC validation scope. Methanol supplies a real second solvent for transfer
-tests; it does not create a broad nonaqueous validation claim.
+One sparse Figiel catalog bundle replaces the narrow water/NaCl bundle. It
+contains only the source records needed for water, methanol, and ethanol with
+`Li+`, `Na+`, `K+`, `Cl-`, and `Br-`. A distinct aqueous Figiel bundle owns the
+source-complete `NaI` and `KI` selections without changing established model
+fingerprints. `LiI` remains unsupported because the Figiel Table 4 `Li+/I-`
+cell is blank and no zero is inferred. A caller selects one exact solvent/salt
+subsystem before constructing `EPCSAFT`. The eight source-complete water salts
+are the admitted public reference-property scope. Methanol and ethanol retain
+the existing transfer and mixed-solvent behavior; they do not create a broad
+nonaqueous validation claim.
 
 ## Provider tests
 
@@ -104,15 +114,19 @@ Hamer--Wu Table 16 gamma_pm^m: 0.657
 acceptance: absolute error <= 0.08
 ```
 
+The same Hamer--Wu table reports `Phi = 0.936` at this state. It is retained as
+a comparison diagnostic for the public transformation, not as a fit constant,
+model-acceptance threshold, or member of Haslam's undisclosed selected rows.
+
 This is a physical tolerance test, not a frozen implementation golden.
 
 ## Validation campaign
 
 `ePC-SAFT-validation` will run only against an installed provider wheel. It
 will retain the Hamer--Wu molality and molality-scale MIAC columns for LiCl,
-NaCl, KCl, LiBr, NaBr, and KBr, with DOI, table locators, transformation
-record, and hashes. These are the critically evaluated source tables cited by
-Figiel Figure 5; they are not digitized points from that figure. The retained
+NaCl, KCl, LiBr, NaBr, KBr, NaI, and KI, with DOI, table locators,
+transformation record, and hashes. These are the critically evaluated source
+tables cited by Figiel Figure 5; they are not digitized points from that figure. The retained
 range is `0.001 <= m <= 6 mol/kg`, exactly the overlap covered by the archived
 Figiel Figure 5 model curves. Higher-molality Hamer--Wu rows are outside this
 campaign rather than silently extrapolated.
