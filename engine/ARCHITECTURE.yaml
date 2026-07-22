@@ -1,5 +1,5 @@
 version: 2
-status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-and-active-born-candidates
+status: accepted-provider-with-receipt-controlled-native-sdk-and-private-water-ionization-candidate
 
 authority:
   effective_receipt: promotion-0012-provider-full-candidate
@@ -9,6 +9,7 @@ authority:
   candidate_promotion_status: promoted
   native_sdk_receipt: promotion-0015-provider-native-sdk-v1
   native_sdk_authority: determined-by-receipt
+  water_ionization_candidate_authority_effect: none
 
 native_sdk_v1:
   name: native-sdk-v1-pure-phase-block
@@ -20,6 +21,27 @@ native_sdk_v1:
   exclusions: mixture, association, electrolyte, binary fitted parameters, density solve, phase identity, Ipopt, Ceres, equilibrium, and regression targets
 
 native_sdk_candidates:
+  held_water_self_ionization_reference_v1:
+    status: private-local-candidate-no-authority-effect
+    scope: >-
+      Exact ordered water, hydronium-cation, and hydroxide-anion Held 2008
+      mechanical phase model at 298.15 K and 1 bar, plus one neutral 1:1
+      formula-unit infinite-dilution log-fugacity sum and direct pure-water
+      reference from the sole native reference-sequence owner.
+    ordered_components: [water, hydronium-cation, hydroxide-anion]
+    ordered_charges: [0, 1, -1]
+    parameter_bundle: held-2008-water-self-ionization@1
+    parameter_fingerprint: sha256:cc40aeb2902bfc9a7be46ceb066cfdb41c5cd5d1024fe119be3d559b75f8a256
+    helmholtz_basis_id: A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3
+    source_state: {temperature_k: 298.15, pressure_pa: 100000.0}
+    formulation: held-2008-debye-huckel
+    contributions: [ideal, hard_chain, dispersion, association, debye_huckel]
+    absent_contributions: [born]
+    sdk_table_size_bytes_64_bit: 224
+    standard_reference_result_size_bytes_64_bit: 368
+    reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
+    authority_effect: none
+    exclusions: reaction equilibrium, equilibrium constants, reactive standard-state transformation, individual-ion predictive standard chemical potentials, density-root ownership, phase identity, Ipopt, Ceres, regression, compatibility routes, promotion, receipt, and release
   packing_fraction_hessian_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
@@ -75,7 +97,8 @@ native_sdk_candidates:
       to the selected current-catalog ion Born diameter.
     active_coordinate: born_diameter_angstrom
     derivative_order: 1
-    table_size_bytes_64_bit: 168
+    required_prefix_size_bytes_64_bit: 168
+    current_table_size_bytes_64_bit: 224
     result_size_bytes_64_bit: 272
     admitted_active_components: [lithium-cation, sodium-cation, potassium-cation, chloride-anion, bromide-anion]
     reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
@@ -167,37 +190,46 @@ public_surface:
       coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
       derivative_order: 2
       status: local-candidate-pending-independent-review-and-promotion-receipt
+    - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_electrolyte_standard_reference
+      inputs: [temperature_k, pressure_pa]
+      output: [neutral_formula_unit_infinite_dilution_log_fugacity, pure_solvent_log_fugacity_coefficient, solvent_molar_mass_kg_per_mol, reference_molality_mol_per_kg, reference_convergence_error, parameter_fingerprint, helmholtz_basis_id]
+      status: private-local-candidate-no-authority-effect
 
 manifest:
-  tracked_files: 90
+  tracked_files: 106
   production_python_files: 9
-  native_source_files: 13
+  native_source_files: 14
   public_native_headers: 1
-  installed_data_files: 31
+  installed_data_files: 39
   package_test_files: 11
-  physical_production_lines: 6217
-  physical_package_test_lines: 4855
-  physical_documentation_lines: 2622
+  physical_production_lines: 7598
+  physical_package_test_lines: 6216
+  physical_documentation_lines: 2732
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
   oversized_files:
     - path: src/epcsaft/records.py
-      physical_lines: 437
+      physical_lines: 444
     - path: src/epcsaft/_resolve.py
-      physical_lines: 441
+      physical_lines: 630
     - path: src/epcsaft/_bundle_io.py
-      physical_lines: 417
+      physical_lines: 421
+    - path: src/epcsaft/eos.py
+      physical_lines: 481
     - path: src/epcsaft/_native/eos.cpp
-      physical_lines: 430
+      physical_lines: 704
     - path: src/epcsaft/_native/native_sdk.cpp
-      physical_lines: 639
+      physical_lines: 1026
     - path: src/epcsaft/_native/phase_block.hpp
-      physical_lines: 756
+      physical_lines: 762
     - path: tests/test_native_sdk.py
-      physical_lines: 1641
+      physical_lines: 2502
     - path: tests/test_parameters.py
-      physical_lines: 1125
+      physical_lines: 1404
+    - path: tests/test_model_resolution.py
+      physical_lines: 436
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 
 excluded:
@@ -206,7 +238,8 @@ excluded:
   - regression and parameter fitting
   - ideal-gas and total caloric properties
   - multi-salt and alternate-convention reference-state workflows
-  - authoritative mixture, associating, electrolyte, and reactive native phase blocks; the exact local methane/ethane and full-electrolyte candidates remain receipt-pending and the active-Born solvation seam remains design-only
+  - authoritative mixture, associating, and electrolyte native phase blocks; the exact local methane/ethane and full-electrolyte candidates remain receipt-pending, while the Held water-ionization model/reference tail remains private and non-authoritative
+  - reaction equilibrium, equilibrium constants, and reactive standard-state transformations in Provider
   - alternate derivative backends
   - compatibility interfaces
   - release and workflow machinery

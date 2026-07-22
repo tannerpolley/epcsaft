@@ -21,6 +21,7 @@ not override this bounded specification.
 | Figiel2025 | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2025, 64, 9406-9418, DOI `10.1021/acs.iecr.5c00475` | Fitted Born diameter, SSM+DS Born term, solvation factor, dielectric rule, fugacity relations, and electrolyte reference-state equations |
 | Figiel2025SI | Official ACS supporting information, DOI `10.1021/acs.iecr.5c00475.s001`, Figshare article `28888514`, file `54030209`, MD5 `4c3d3964d6e61b908c3ce3b17bb4e6b0` | Comparison of direct, SSM, and SSM+DS formulations and retained validation evidence |
 | Figiel2026Correction | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2026, DOI `10.1021/acs.iecr.6c01415` | Authoritative corrected text of Figiel2025 Eq. (7): restores the missing bracket and replaces the second `epsilon_r,bulk` with `epsilon_r,ion` |
+| Held2008 | Held, Cameretti, and Sadowski, *Fluid Phase Equilibria* 2008, 270, 87-96, DOI `10.1016/j.fluid.2008.06.010` | Private water/H3O+/OH- candidate parameters and fully dissociated water-electrolyte formulation at the reported 298.15 K, 1 bar state |
 | Ascani2022 | Ascani, Sadowski, and Held, *J. Chem. Eng. Data* 2022, 67, 1972-1984, DOI `10.1021/acs.jced.1c00866` | Case Study 2 component, association, `k_ij`, `l_ij`, and `k_ij^hb` records at 298.15 K |
 | AscaniHeld2021 | Ascani and Held, *Z. Anorg. Allg. Chem.* 2021, 647, 1305-1314, DOI `10.1002/zaac.202100032` | Original Born equation and combined solvent-mass/ion-mole dielectric rule |
 | HamerWu1972 | Hamer and Wu, *J. Phys. Chem. Ref. Data* 1972, 1, 1047-1100, DOI `10.1063/1.3253108`; official NIST PDF SHA-256 `8399084b29b4db4ce35ab47ed679446dbedb9bf1686f99f43fce7b2073ee4beb` | Practical molal osmotic-coefficient definition and aqueous NaCl comparison value |
@@ -95,6 +96,8 @@ with number density. It does not mix SI number density with Angstrom cubed.
 |---|---|---|---|---|
 | Segment diameter | `d_i(T) = sigma_i [1 - 0.12 exp(-3(u_i/k_B)/T)]` | source equation | Gross2001 Eq. (A.6) | `_native/helmholtz.hpp` |
 | Figiel ionic segment diameter | `d_i = 0.88 sigma_i` | source equation | Figiel2025 Eqs. (3), (4) | `_native/helmholtz.hpp` |
+| Held water-ionization formulation | water and ion hard-chain/dispersion plus association and Debye--Huckel; `a^Born = 0` | source equation and explicit absence | Held2008 Eqs. (1)--(7), Sections 2--3 | `_native/helmholtz.hpp`, `_native/electrolyte.hpp` |
+| Held ion--ion dispersion | `k_(H3O+,OH-) = 1`; water--ion `k_ij = 0` | source equation | Held2008 Eqs. (5), (6) and Section 3 | installed Held bundle and `_native/helmholtz.hpp` |
 | Ascani ionic segment diameter | `d_i = sigma_i` in hard-chain, Debye--Huckel, and Born terms | source equation | AscaniHeld2021 model description following Eq. (10) | `_native/helmholtz.hpp` |
 | Cross diameter | `sigma_ij = (sigma_i + sigma_j)(1-l_ij)/2` | source equation | Ascani2022SI Eq. (S4) | `_native/helmholtz.hpp`, `_native/association.hpp` |
 | Mixture moments | `zeta_n = (pi/6) rho_hat sum_i x_i m_i d_i^n`, `n=0..3` | source equation | Gross2001 Eq. (A.8) | `_native/helmholtz.hpp` |
@@ -531,6 +534,17 @@ water, methanol, ethanol, or a selected mixture of those solvents at
 Multi-salt reference paths, non-electroneutral dilution, automatic species
 generation, and alternative concentration conventions remain closed.
 
+The private Held water-ionization candidate reuses that same native
+formula-unit dilution owner at exactly `298.15 K` and `100000 Pa`. Its SDK tail
+returns only the neutral 1:1 sum
+`ln(phi_H3O+^infinity) + ln(phi_OH-^infinity)`, the direct pure-water
+`ln(phi_water^0)`, water molar mass, terminal molality, convergence error,
+fingerprint, and exact Helmholtz-basis identity. Individual ionic terms remain
+path-defined internal/public reference-state values and are not exposed by the
+candidate callback as predictive standard chemical potentials. Provider does
+not supply `K_w` or transform any external activity convention into this
+mechanical basis.
+
 ## 11. Density closure
 
 Specified-pressure evaluation solves
@@ -586,6 +600,14 @@ energy and volume while preserving the distinct `k_ij_hb` provenance. Its
 combined dielectric and original-Born equations do not alter the Figiel
 SSM+DS bundles or their fingerprints.
 
+The private Held2008 candidate is a separate exact selection of water,
+`H3O+`, and `OH-` at `T = 298.15 K` and `p = 1 bar`. It requires explicit
+water--ion `k_ij = 0` and ion--ion `k_ij = 1`, so no ion--ion dispersion is
+silently introduced. It uses the source's fully dissociated Debye--Huckel
+formulation with concentration-independent water permittivity and has no Born
+term. Evaluation or the standard-reference callback outside the recorded SDK
+state is not source-backed, and the callback fails closed outside that state.
+
 Topology is determined by the selected components, not by unrelated records
 remaining in their source bundle. A selection containing no nonzero charge is
 neutral or associating according to its explicit sites; ionic contributions
@@ -614,3 +636,8 @@ receipt `promotion-0015-provider-native-sdk-v1` alone determines their
 authority; this specification does not admit a consumer or fitted model.
 Adding any other exclusion requires a new source-backed capability design
 rather than a flag in this model.
+
+The private Held mechanical/reference candidate does not change those
+exclusions. Reaction stoichiometry, `K_w`, mixed-standard-state conversion,
+conservation constraints, Ipopt, KKT and physical certificates, globality, and
+predictive adjudication remain outside Provider and require their own authority.
