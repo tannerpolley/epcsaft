@@ -54,6 +54,28 @@ _NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS = frozenset(
     }
 )
 
+_NATIVE_SDK_V1_AQUEOUS_ACTIVE_SOLVATION_FACTOR_FINGERPRINTS = frozenset(
+    {
+        "sha256:b46a48ee5025e15a2d063b6f3ca4de54e29c33d429b94940913a9d225c78456b",
+    }
+)
+
+_FIGIEL_STAGED_AQUEOUS_SELECTIONS = frozenset(
+    ("water", cation, anion)
+    for cation in ("lithium-cation", "sodium-cation", "potassium-cation")
+    for anion in ("chloride-anion", "bromide-anion")
+)
+
+_FIGIEL_STAGED_ACTIVE_BORN_SELECTIONS = frozenset(
+    {
+        ("water", "lithium-cation", "chloride-anion"),
+        ("water", "sodium-cation", "chloride-anion"),
+        ("water", "potassium-cation", "chloride-anion"),
+        ("water", "chloride-anion", "sodium-cation"),
+        ("water", "bromide-anion", "sodium-cation"),
+    }
+)
+
 _NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS = {
     "sha256:9f017007adbea2c943dc91c4a8df5271a5400392ae89796b74959aac913b920c": frozenset(
         frozenset(("water", cation, anion))
@@ -224,12 +246,42 @@ def _native_arguments(
     )
 
 
+def _figiel_staged_trial_bundle_admitted(
+    parameters: ParameterSet, model: _ResolvedModel
+) -> bool:
+    if (
+        parameters.bundle_purpose != "user-provided"
+        or model.topology != "ionic-ssm-ds"
+        or model.component_ids not in _FIGIEL_STAGED_AQUEOUS_SELECTIONS
+        or model.charge_number != (0, 1, -1)
+        or model.temperature_min_k != 298.15
+        or model.temperature_max_k != 298.15
+        or model.pressure_min_pa != 100000.0
+        or model.pressure_max_pa != 100000.0
+        or model.ion_mole_fraction_max != 0.38
+    ):
+        return False
+    return all(
+        (
+            record.source_id == "figiel-yu-held-2025"
+            and record.domain_id == "figiel-298-k-1-bar"
+        )
+        or (
+            record.record_id == "water-molar-mass"
+            and record.source_id == "nist-srd-69-water"
+            and record.domain_id == "nist-water-identity"
+        )
+        for record in parameters.records
+    )
+
+
 @dataclass(frozen=True, slots=True, init=False)
 class EPCSAFT:
     _component_ids: tuple[str, ...]
     _parameter_fingerprint: str
     _parameter_bundle_purpose: str
     _parameter_bundle_fingerprint: str
+    _figiel_staged_trial_bundle_admitted: bool
     _model: _ResolvedModel
     _native: _NativeModel
 
@@ -240,6 +292,11 @@ class EPCSAFT:
         object.__setattr__(self, "_parameter_fingerprint", parameters.fingerprint)
         object.__setattr__(self, "_parameter_bundle_purpose", parameters.bundle_purpose)
         object.__setattr__(self, "_parameter_bundle_fingerprint", parameters.bundle_fingerprint)
+        object.__setattr__(
+            self,
+            "_figiel_staged_trial_bundle_admitted",
+            _figiel_staged_trial_bundle_admitted(parameters, model),
+        )
         object.__setattr__(self, "_model", model)
         object.__setattr__(self, "_native", _NativeModel(*native_arguments))
 
@@ -418,8 +475,27 @@ def native_sdk(model: EPCSAFT) -> object:
             and frozenset(model._component_ids) == bundle_selection
         )
     )
-    active_born_admitted = fingerprint in _NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS
-    aqueous_kij_admitted = fingerprint in _NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS
+    staged_trial_admitted = model._figiel_staged_trial_bundle_admitted
+    active_born_admitted = (
+        fingerprint in _NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS
+        or (
+            staged_trial_admitted
+            and model._component_ids in _FIGIEL_STAGED_ACTIVE_BORN_SELECTIONS
+        )
+    )
+    aqueous_kij_admitted = (
+        fingerprint in _NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS
+        or staged_trial_admitted
+    )
+    aqueous_solvation_factor_admitted = (
+        fingerprint
+        in _NATIVE_SDK_V1_AQUEOUS_ACTIVE_SOLVATION_FACTOR_FINGERPRINTS
+        or (
+            staged_trial_admitted
+            and model._component_ids
+            == ("water", "sodium-cation", "bromide-anion")
+        )
+    )
     neutral_reference_admitted = frozenset(model._component_ids) in (
         _NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS.get(
             model._parameter_bundle_fingerprint, frozenset()
@@ -429,6 +505,7 @@ def native_sdk(model: EPCSAFT) -> object:
         not phase_admitted
         and not active_born_admitted
         and not aqueous_kij_admitted
+        and not aqueous_solvation_factor_admitted
         and not neutral_reference_admitted
     ):
         raise _eos_error(
@@ -463,6 +540,8 @@ def native_sdk(model: EPCSAFT) -> object:
             pressure_maximum,
             neutral_reference_admitted,
             model._parameter_bundle_purpose == "user-provided",
+            aqueous_solvation_factor_admitted,
+            staged_trial_admitted,
         )
     except (RuntimeError, ValueError) as exc:
         raise _eos_error("unsupported-native-sdk", reason=str(exc)) from exc

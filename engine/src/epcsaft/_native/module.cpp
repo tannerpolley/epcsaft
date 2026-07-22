@@ -161,6 +161,8 @@ PYBIND11_MODULE(_core, module) {
         py::arg("pressure_min_pa") = std::numeric_limits<double>::quiet_NaN(),
         py::arg("pressure_max_pa") = std::numeric_limits<double>::quiet_NaN(),
         py::arg("neutral_reference_admitted") = false,
-        py::arg("unknown_applicability_admitted") = false
+        py::arg("unknown_applicability_admitted") = false,
+        py::arg("aqueous_solvation_factor_admitted") = false,
+        py::arg("staged_trial_bundle_admitted") = false
     );
 }

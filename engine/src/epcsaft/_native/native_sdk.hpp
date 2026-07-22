@@ -22,7 +22,9 @@ pybind11::capsule make_native_sdk_v1(
     double pressure_min_pa,
     double pressure_max_pa,
     bool neutral_reference_admitted,
-    bool unknown_applicability_admitted
+    bool unknown_applicability_admitted,
+    bool aqueous_solvation_factor_admitted,
+    bool staged_trial_bundle_admitted
 );
 
 }  // namespace epcsaft

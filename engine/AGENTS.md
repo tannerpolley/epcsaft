@@ -91,3 +91,13 @@ The exact implementation remains a local candidate until bounded independent
 subagent review. It does not authorize regression, target ownership, catalog
 writes, organic-solvent breadth, a generic parameter overlay, runtime
 authority, or promotion.
+
+Project Truss Provider issue `#22` appends one NaBr active-water-solvation-
+factor MIAC callback to support the frozen staged Figiel recovery. Its sole
+Provider design owner is
+`docs/designs/2026-07-22-aqueous-active-solvation-factor-native-sdk-design.md`.
+The callback consumes the existing CppAD, density, fugacity, association, and
+reference-sequence owners and returns only the value and exact total fixed-
+pressure first derivative. Source-complete user-provided staged bundles are
+narrowly admitted to the three existing family callbacks without adding a
+generic parameter overlay or catalog persistence.

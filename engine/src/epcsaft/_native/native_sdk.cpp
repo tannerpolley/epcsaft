@@ -25,7 +25,8 @@ namespace {
 bool active_born_model_admitted(
     const std::string& fingerprint,
     const std::vector<std::string>& component_ids,
-    const std::vector<int>& charges
+    const std::vector<int>& charges,
+    bool staged_trial_bundle_admitted
 ) {
     if (component_ids.size() != 3 || charges.size() != 3
         || component_ids[0] != "water" || charges[0] != 0) {
@@ -73,11 +74,12 @@ bool active_born_model_admitted(
         std::begin(admissions),
         std::end(admissions),
         [&](const Admission& admission) {
-            return fingerprint == admission.fingerprint
-                && component_ids[1] == admission.active_ion
+            return component_ids[1] == admission.active_ion
                 && component_ids[2] == admission.counter_ion
                 && charges[1] == admission.active_charge
-                && charges[2] == -admission.active_charge;
+                && charges[2] == -admission.active_charge
+                && (staged_trial_bundle_admitted
+                    || fingerprint == admission.fingerprint);
         }
     );
 }
@@ -85,7 +87,8 @@ bool active_born_model_admitted(
 bool aqueous_kij_model_admitted(
     const std::string& fingerprint,
     const std::vector<std::string>& component_ids,
-    const std::vector<int>& charges
+    const std::vector<int>& charges,
+    bool staged_trial_bundle_admitted
 ) {
     if (component_ids.size() != 3 || charges != std::vector<int>({0, 1, -1})
         || component_ids[0] != "water") {
@@ -124,11 +127,28 @@ bool aqueous_kij_model_admitted(
     };
     return std::any_of(
         std::begin(admissions), std::end(admissions), [&](const Admission& item) {
-            return fingerprint == item.fingerprint
-                && component_ids[1] == item.cation
-                && component_ids[2] == item.anion;
+            return component_ids[1] == item.cation
+                && component_ids[2] == item.anion
+                && (staged_trial_bundle_admitted
+                    || fingerprint == item.fingerprint);
         }
     );
+}
+
+bool aqueous_solvation_factor_model_admitted(
+    const std::string& fingerprint,
+    const std::vector<std::string>& component_ids,
+    const std::vector<int>& charges,
+    bool staged_trial_bundle_admitted
+) {
+    constexpr const char* sodium_bromide_fingerprint =
+        "sha256:b46a48ee5025e15a2d063b6f3ca4de54e29c33d429b94940913a9d225c78456b";
+    return component_ids == std::vector<std::string>({
+               "water", "sodium-cation", "bromide-anion"
+           })
+        && charges == std::vector<int>({0, 1, -1})
+        && (staged_trial_bundle_admitted
+            || fingerprint == sodium_bromide_fingerprint);
 }
 
 bool neutral_reference_model_shape_admitted(
@@ -160,6 +180,7 @@ struct NativeSdkEndpoint final {
     bool phase_callbacks_admitted;
     bool active_born_admitted;
     bool aqueous_kij_admitted;
+    bool aqueous_solvation_factor_admitted;
     bool neutral_reference_admitted;
     std::vector<std::string> component_ids;
     std::vector<const char*> component_id_pointers;
@@ -178,7 +199,8 @@ struct NativeSdkEndpoint final {
         bool admit_aqueous_kij,
         double minimum_pressure,
         double maximum_pressure,
-        bool admit_neutral_reference
+        bool admit_neutral_reference,
+        bool admit_aqueous_solvation_factor
     )
         : model(source_model),
           parameter_fingerprint(std::move(fingerprint)),
@@ -190,6 +212,9 @@ struct NativeSdkEndpoint final {
           phase_callbacks_admitted(admit_phase_callbacks),
           active_born_admitted(admit_active_born),
           aqueous_kij_admitted(admit_aqueous_kij),
+          aqueous_solvation_factor_admitted(
+              admit_aqueous_solvation_factor
+          ),
           neutral_reference_admitted(admit_neutral_reference),
           component_ids(std::move(identifiers)),
           component_id_pointers([&] {
@@ -231,6 +256,8 @@ struct NativeSdkEndpoint final {
               neutral_reference_admitted ? 2u : 0u,
               sizeof(epcsaft_neutral_reference_result_v1),
               &NativeSdkEndpoint::evaluate_neutral_reference,
+              sizeof(epcsaft_aqueous_miac_solvation_factor_result_v1),
+              &NativeSdkEndpoint::evaluate_aqueous_miac_solvation_factor,
           } {}
 
     static int evaluate_neutral_reference(
@@ -522,6 +549,113 @@ struct NativeSdkEndpoint final {
             return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
         } catch (...) {
             return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, "unknown aqueous active k_ij evaluation failure");
+        }
+    }
+
+    static int evaluate_aqueous_miac_solvation_factor(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        double molality,
+        double solvation_factor,
+        epcsaft_aqueous_miac_solvation_factor_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_aqueous_miac_solvation_factor_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const uint32_t result_size = result->struct_size;
+        std::memset(result, 0, sizeof(*result));
+        result->struct_size = result_size;
+        result->log_mean_ionic_activity_coefficient_molality =
+            std::numeric_limits<double>::quiet_NaN();
+        result->derivative = std::numeric_limits<double>::quiet_NaN();
+        result->reference_molality_mol_per_kg =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_convergence_error =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_derivative_convergence_error =
+            std::numeric_limits<double>::quiet_NaN();
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "model context and expected fingerprint are required"
+            );
+        }
+        if (!std::isfinite(temperature_k) || !std::isfinite(pressure_pa)
+            || !std::isfinite(molality) || !std::isfinite(solvation_factor)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "state and active solvation factor must be finite"
+            );
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.aqueous_solvation_factor_admitted
+            || std::strcmp(
+                endpoint.parameter_fingerprint.c_str(), expected_fingerprint
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "unsupported aqueous active solvation-factor model"
+            );
+        }
+        if (temperature_k != 298.15 || pressure_pa != 100000.0
+            || molality < 0.001 || molality > 6.0
+            || solvation_factor <= 0.0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "aqueous active solvation-factor state is outside the admitted domain"
+            );
+        }
+        try {
+            const auto value =
+                endpoint.model.evaluate_aqueous_miac_solvation_factor(
+                    temperature_k,
+                    pressure_pa,
+                    molality,
+                    solvation_factor
+                );
+            result->log_mean_ionic_activity_coefficient_molality =
+                value.log_mean_ionic_activity_coefficient_molality;
+            result->derivative = value.derivative;
+            result->reference_molality_mol_per_kg =
+                value.reference_molality_mol_per_kg;
+            result->reference_convergence_error =
+                value.reference_convergence_error;
+            result->reference_derivative_convergence_error =
+                value.reference_derivative_convergence_error;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const detail::DensityDomainError& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what()
+            );
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown aqueous active solvation-factor evaluation failure"
+            );
         }
     }
 
@@ -1159,10 +1293,12 @@ pybind11::capsule make_native_sdk_v1(
     double pressure_min_pa,
     double pressure_max_pa,
     bool neutral_reference_admitted,
-    bool unknown_applicability_admitted
+    bool unknown_applicability_admitted,
+    bool aqueous_solvation_factor_admitted,
+    bool staged_trial_bundle_admitted
 ) {
     if (!active_born_admitted && !aqueous_kij_admitted
-        && !neutral_reference_admitted
+        && !neutral_reference_admitted && !aqueous_solvation_factor_admitted
         && (!model.supports_native_sdk_v1()
         && !model.supports_mixture_native_sdk_v1()
         && !model.supports_electrolyte_native_sdk_v1())) {
@@ -1172,15 +1308,32 @@ pybind11::capsule make_native_sdk_v1(
     }
     if (active_born_admitted
         && !active_born_model_admitted(
-            parameter_fingerprint, component_ids, model.charge_numbers()
+            parameter_fingerprint,
+            component_ids,
+            model.charge_numbers(),
+            staged_trial_bundle_admitted
         )) {
         throw std::invalid_argument("unsupported active Born model identity");
     }
     if (aqueous_kij_admitted
         && !aqueous_kij_model_admitted(
-            parameter_fingerprint, component_ids, model.charge_numbers()
+            parameter_fingerprint,
+            component_ids,
+            model.charge_numbers(),
+            staged_trial_bundle_admitted
         )) {
         throw std::invalid_argument("unsupported aqueous active k_ij model identity");
+    }
+    if (aqueous_solvation_factor_admitted
+        && !aqueous_solvation_factor_model_admitted(
+            parameter_fingerprint,
+            component_ids,
+            model.charge_numbers(),
+            staged_trial_bundle_admitted
+        )) {
+        throw std::invalid_argument(
+            "unsupported aqueous active solvation-factor model identity"
+        );
     }
     if (neutral_reference_admitted
         && !neutral_reference_model_shape_admitted(
@@ -1241,7 +1394,8 @@ pybind11::capsule make_native_sdk_v1(
         aqueous_kij_admitted,
         pressure_min_pa,
         pressure_max_pa,
-        neutral_reference_admitted
+        neutral_reference_admitted,
+        aqueous_solvation_factor_admitted
     );
     return pybind11::capsule(
         &endpoint->table,

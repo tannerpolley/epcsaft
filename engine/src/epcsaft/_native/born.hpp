@@ -11,13 +11,14 @@
 
 namespace epcsaft::detail {
 
-template <typename Scalar, typename BornDiameter>
+template <typename Scalar, typename BornDiameter, typename SolvationFactor>
 Scalar born_ssm_ds_contribution_impl(
     const Scalar& temperature,
     const std::vector<Scalar>& mole_fractions,
     const NativeParameters& parameters,
     const Scalar& bulk_relative_permittivity,
-    BornDiameter born_diameter_angstrom
+    BornDiameter born_diameter_angstrom,
+    SolvationFactor solvation_factor
 ) {
     bool has_ion = false;
     for (int charge : parameters.charge_number) {
@@ -31,8 +32,8 @@ Scalar born_ssm_ds_contribution_impl(
     Scalar weighted_solvation = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         fraction_sum += mole_fractions[component];
-        weighted_solvation +=
-            mole_fractions[component] * parameters.solvation_factor[component];
+        weighted_solvation += mole_fractions[component]
+            * solvation_factor(component);
     }
     if constexpr (std::is_same_v<Scalar, double>) {
         if (!(fraction_sum > 0.0) || !std::isfinite(weighted_solvation)) {
@@ -79,6 +80,9 @@ Scalar born_ssm_ds_contribution(
         bulk_relative_permittivity,
         [&parameters](std::size_t component) {
             return Scalar(parameters.born_diameter_angstrom[component]);
+        },
+        [&parameters](std::size_t component) {
+            return Scalar(parameters.solvation_factor[component]);
         }
     );
 }
@@ -153,6 +157,36 @@ Scalar born_ssm_ds_contribution_active(
             return component == active_component
                 ? active_born_diameter_angstrom
                 : Scalar(parameters.born_diameter_angstrom[component]);
+        },
+        [&parameters](std::size_t component) {
+            return Scalar(parameters.solvation_factor[component]);
+        }
+    );
+}
+
+template <typename Scalar>
+Scalar born_ssm_ds_contribution_active_solvation_factor(
+    const Scalar& temperature,
+    const std::vector<Scalar>& mole_fractions,
+    const NativeParameters& parameters,
+    const Scalar& bulk_relative_permittivity,
+    std::size_t active_component,
+    const Scalar& active_solvation_factor
+) {
+    return born_ssm_ds_contribution_impl(
+        temperature,
+        mole_fractions,
+        parameters,
+        bulk_relative_permittivity,
+        [&parameters](std::size_t component) {
+            return Scalar(parameters.born_diameter_angstrom[component]);
+        },
+        [&parameters, active_component, &active_solvation_factor](
+            std::size_t component
+        ) {
+            return component == active_component
+                ? active_solvation_factor
+                : Scalar(parameters.solvation_factor[component]);
         }
     );
 }
