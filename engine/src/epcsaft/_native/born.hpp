@@ -116,6 +116,10 @@ Scalar born_contribution(
     const std::vector<Scalar>& sigma_angstrom
 ) {
     if (parameters.electrolyte_model
+        == ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL) {
+        return Scalar(0.0);
+    }
+    if (parameters.electrolyte_model
         == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN) {
         return born_original_contribution(
             temperature,

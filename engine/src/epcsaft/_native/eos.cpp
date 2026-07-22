@@ -188,7 +188,9 @@ NativeModel::NativeModel(NativeParameters parameters)
     if (ionic) {
         if (parameters_.electrolyte_model != ELECTROLYTE_MODEL_FIGIEL_SSM_DS
             && parameters_.electrolyte_model
-                != ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN) {
+                != ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
+            && parameters_.electrolyte_model
+                != ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL) {
             throw std::invalid_argument("invalid electrolyte model selection");
         }
         for (std::size_t component = 0; component < components; ++component) {
@@ -208,10 +210,30 @@ NativeModel::NativeModel(NativeParameters parameters)
                     && !(parameters_.born_diameter_angstrom[component] > 0.0)) {
                     throw std::invalid_argument("invalid fitted Born diameter");
                 }
-            } else if (parameters_.charge_number[component] != 0
+            } else if (parameters_.electrolyte_model
+                           == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
+                       && parameters_.charge_number[component] != 0
                        && !(parameters_.relative_permittivity[component] > 0.0)) {
                 throw std::invalid_argument("invalid ionic dielectric parameter");
+            } else if (parameters_.electrolyte_model
+                           == ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL
+                       && ((parameters_.charge_number[component] != 0
+                            && parameters_.relative_permittivity[component] != 0.0)
+                           || parameters_.born_diameter_angstrom[component] != 0.0
+                           || parameters_.solvation_factor[component] != 0.0)) {
+                throw std::invalid_argument("invalid Held electrolyte parameters");
             }
+        }
+        if (parameters_.electrolyte_model
+                == ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL
+            && (parameters_.dielectric_ion_suppression_coefficient != 0.0
+                || parameters_.ionic_region_relative_permittivity != 0.0
+                || std::any_of(
+                    parameters_.l_ij.begin(),
+                    parameters_.l_ij.end(),
+                    [](double value) { return value != 0.0; }
+                ))) {
+            throw std::invalid_argument("invalid Held electrolyte parameters");
         }
     } else if (parameters_.electrolyte_model != ELECTROLYTE_MODEL_NONE) {
         throw std::invalid_argument("neutral model has electrolyte selection");

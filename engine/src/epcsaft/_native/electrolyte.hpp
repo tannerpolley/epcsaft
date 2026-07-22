@@ -103,7 +103,10 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     const Scalar bulk_permittivity = parameters.electrolyte_model
             == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
         ? salt_free_permittivity * solvent_fraction + ion_dielectric
-        : salt_free_permittivity /
+        : parameters.electrolyte_model
+                == ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL
+            ? salt_free_permittivity
+            : salt_free_permittivity /
             (Scalar(1.0) + parameters.dielectric_ion_suppression_coefficient
                 * ion_fraction);
     if constexpr (std::is_same_v<Scalar, double>) {
@@ -148,7 +151,10 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
             == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
         ? reference_salt_free_permittivity * reference_solvent_fraction
             + reference_ion_dielectric
-        : reference_salt_free_permittivity
+        : parameters.electrolyte_model
+                == ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL
+            ? reference_salt_free_permittivity
+            : reference_salt_free_permittivity
             / (1.0 + parameters.dielectric_ion_suppression_coefficient
                 * reference_ion_fraction);
     if (reference_charge_square_sum == 0.0) {

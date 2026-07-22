@@ -44,6 +44,13 @@ _NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS = frozenset(
 )
 
 _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
+    "sha256:8ea2d7acbc179b82348fa938d081fe8d56f274bfe1f2167d10a507b7711aa1c2": frozenset(
+        {
+            "water",
+            "hydronium-cation",
+            "hydroxide-anion",
+        }
+    ),
     "sha256:03f9b1d88843a2d53da3420d96987ec4a2305b2814cc4946cdb25d1db67f5f72": frozenset(
         {
             "water",
@@ -142,7 +149,11 @@ def _native_arguments(
             association_volume[index] = pair.volume
 
     components = len(model.component_ids)
-    if model.topology in {"ionic-ssm-ds", "ionic-ascani-original-born"}:
+    if model.topology in {
+        "ionic-held-2008-debye-huckel",
+        "ionic-ssm-ds",
+        "ionic-ascani-original-born",
+    }:
         molar_mass = [0.0 if value is None else value for value in model.molar_mass_kg_per_mol]
         charge_number = list(model.charge_number)
         relative_permittivity = [
@@ -164,6 +175,12 @@ def _native_arguments(
             assert dielectric_suppression is not None
             assert ionic_permittivity is not None
             assert len(solvation_factor) == components
+        elif model.topology == "ionic-held-2008-debye-huckel":
+            dielectric_suppression = 0.0
+            born_diameter = [0.0] * components
+            solvation_factor = [0.0] * components
+            ionic_permittivity = 0.0
+            electrolyte_model = 3
         else:
             dielectric_suppression = 0.0
             born_diameter = [0.0] * components

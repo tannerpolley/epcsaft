@@ -196,6 +196,10 @@ def _parameter_value(row: dict[str, str]) -> object:
     if row["value"] == "":
         raise _error("missing-record", field="value", value=row["record_id"])
     family = row["family"]
+    if family == "electrolyte_formulation":
+        if row["unit"]:
+            raise _error("invalid-unit", field="unit", expected="blank")
+        return row["value"]
     if family == "charge_number":
         try:
             value = int(row["value"])

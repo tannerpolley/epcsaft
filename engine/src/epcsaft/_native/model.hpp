@@ -7,6 +7,7 @@ namespace epcsaft {
 inline constexpr int ELECTROLYTE_MODEL_NONE = 0;
 inline constexpr int ELECTROLYTE_MODEL_FIGIEL_SSM_DS = 1;
 inline constexpr int ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN = 2;
+inline constexpr int ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL = 3;
 
 struct NativeParameters final {
     std::vector<double> segment_count;

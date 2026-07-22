@@ -32,9 +32,11 @@ _ASSOCIATION_FAMILIES = frozenset({"association_energy_over_k", "association_vol
 _MODEL_FAMILIES = frozenset(
     {
         "dielectric_ion_suppression_coefficient",
+        "electrolyte_formulation",
         "ionic_region_relative_permittivity",
     }
 )
+_ELECTROLYTE_FORMULATIONS = frozenset({"held-2008-debye-huckel"})
 _CORRELATION_FAMILIES = frozenset({"segment_diameter", "relative_permittivity", "solvation_factor"})
 _DIMENSIONAL_UNITS = {
     "molar_mass": "kilogram / mole",
@@ -82,6 +84,10 @@ def _family(value: object, *, allowed: frozenset[str], field: str = "family") ->
 
 
 def _parameter_value(family: str, value: object) -> object:
+    if family == "electrolyte_formulation":
+        if not isinstance(value, str) or value not in _ELECTROLYTE_FORMULATIONS:
+            raise _error("invalid-value", field="value", family=family, value=value)
+        return value
     if family == "charge_number":
         return _exact_integer(value, field="value")
     if family in _DIMENSIONAL_UNITS:
