@@ -5,6 +5,18 @@ parameter lifecycle feeds one native residual Helmholtz kernel covering
 hard-chain, dispersion, association, Debye--Huckel, and corrected Born SSM+DS
 contributions.
 
+## Installation and Python use
+
+`epcsaft` requires Python 3.11 or newer and is not published to a package
+index. Install a supplied wheel with `python -m pip install /path/to/wheel`, or
+build the current checkout with `python -m pip install .`; source builds require
+a C++17 compiler, CMake 3.20 or newer, and Ninja.
+
+The [Python API guide](docs/python-api.md) is the canonical walkthrough for
+installed bundle IDs, component discovery and ordering, Pint state inputs,
+density and pressure routes, root selection, result interpretation,
+electrolyte activities, and stable errors.
+
 ```python
 from epcsaft import EPCSAFT, ParameterBundle, unit_registry as u
 

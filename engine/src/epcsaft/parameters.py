@@ -165,6 +165,11 @@ class ParameterBundle:
 
     @classmethod
     def from_catalog(cls, bundle_id: str, *, version: int) -> ParameterBundle:
+        """Load an immutable installed bundle by its exact ID and version.
+
+        Missing identities and malformed installed records raise ``ParameterError``.
+        Inspect ``components``, ``domains``, and ``sources`` before selecting a model.
+        """
         bundle_id = _identifier(bundle_id, field="bundle_id")
         version = _version(version)
         path = Path(__file__).with_name("data") / "bundles" / bundle_id / str(version)
@@ -256,6 +261,11 @@ class ParameterBundle:
         return instance
 
     def select(self, component_ids: Sequence[str]) -> ParameterSet:
+        """Select exact component IDs in the order used by every state and result.
+
+        The returned set has an order-sensitive fingerprint. Unknown or duplicate IDs
+        raise ``ParameterError``; model construction rejects incomplete source records.
+        """
         if isinstance(component_ids, str):
             raise _error("invalid-selection", field="component_ids", value="string")
         try:

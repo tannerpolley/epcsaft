@@ -187,15 +187,15 @@ public_surface:
       status: local-candidate-pending-independent-review-and-promotion-receipt
 
 manifest:
-  tracked_files: 99
+  tracked_files: 101
   production_python_files: 9
   native_source_files: 14
   public_native_headers: 1
   installed_data_files: 38
-  package_test_files: 11
-  physical_production_lines: 7609
-  physical_package_test_lines: 6098
-  physical_documentation_lines: 2885
+  package_test_files: 12
+  physical_production_lines: 7630
+  physical_package_test_lines: 6137
+  physical_documentation_lines: 3127
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.

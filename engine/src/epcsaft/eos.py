@@ -250,6 +250,12 @@ class EPCSAFT:
         mole_fractions: object,
         phase: str | None = None,
     ) -> EosResult:
+        """Evaluate one ordered composition at explicit density or specified pressure.
+
+        Dimensioned inputs must be Pint quantities. Supply exactly one of
+        ``molar_density`` and ``pressure``; ``phase`` is only valid for pressure
+        closure. Invalid states and failed density/EOS evaluations raise ``EosError``.
+        """
         if (molar_density is None) == (pressure is None):
             raise _eos_error("invalid-state", reason="specify-exactly-one-of-density-or-pressure")
         if phase not in (None, "vapor", "liquid"):
@@ -369,6 +375,11 @@ class EPCSAFT:
         solvent_mole_fractions: object,
         phase: str,
     ) -> ElectrolyteReference:
+        """Build one liquid electrolyte reference on the selected component order.
+
+        The model must contain one source-complete cation/anion formula unit and
+        solvent-only normalized reference fractions. Failures raise ``EosError``.
+        """
         from .reference import build_reference_state
 
         return build_reference_state(
