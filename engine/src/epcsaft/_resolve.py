@@ -57,6 +57,8 @@ class _ResolvedModel:
     dielectric_ion_suppression_coefficient: float | None
     temperature_min_k: float | None
     temperature_max_k: float | None
+    pressure_min_pa: float | None
+    pressure_max_pa: float | None
     ion_mole_fraction_max: float | None
 
 
@@ -198,7 +200,9 @@ def _association(
     )
 
 
-def _domain_limits(parameters: ParameterSet) -> tuple[float | None, float | None, float | None]:
+def _domain_limits(
+    parameters: ParameterSet,
+) -> tuple[float | None, float | None, float | None, float | None, float | None]:
     domain_by_id = {domain.domain_id: domain for domain in parameters.domains}
     active_domains = tuple(
         domain_by_id[domain_id]
@@ -218,6 +222,16 @@ def _domain_limits(parameters: ParameterSet) -> tuple[float | None, float | None
         for domain in active_domains
         if domain.temperature_max is not None
     )
+    pressure_lower_bounds = tuple(
+        float(domain.pressure_min.to("pascal").magnitude)
+        for domain in active_domains
+        if domain.pressure_min is not None
+    )
+    pressure_upper_bounds = tuple(
+        float(domain.pressure_max.to("pascal").magnitude)
+        for domain in active_domains
+        if domain.pressure_max is not None
+    )
     ion_bounds = tuple(
         float(domain.ion_mole_fraction_max)
         for domain in active_domains
@@ -225,13 +239,23 @@ def _domain_limits(parameters: ParameterSet) -> tuple[float | None, float | None
     )
     temperature_min = max(lower_bounds) if lower_bounds else None
     temperature_max = min(upper_bounds) if upper_bounds else None
+    pressure_min = max(pressure_lower_bounds) if pressure_lower_bounds else None
+    pressure_max = min(pressure_upper_bounds) if pressure_upper_bounds else None
     if (
         temperature_min is not None
         and temperature_max is not None
         and temperature_min > temperature_max
     ):
         raise _error("invalid-domain", field="temperature", value="empty-intersection")
-    return temperature_min, temperature_max, min(ion_bounds) if ion_bounds else None
+    if pressure_min is not None and pressure_max is not None and pressure_min > pressure_max:
+        raise _error("invalid-domain", field="pressure", value="empty-intersection")
+    return (
+        temperature_min,
+        temperature_max,
+        pressure_min,
+        pressure_max,
+        min(ion_bounds) if ion_bounds else None,
+    )
 
 
 def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
@@ -326,7 +350,9 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         for component_id in component_ids
     )
     site_ids, site_multiplicity, association_pairs = _association(sites, association_records)
-    temperature_min, temperature_max, ion_fraction_max = _domain_limits(parameters)
+    temperature_min, temperature_max, pressure_min, pressure_max, ion_fraction_max = (
+        _domain_limits(parameters)
+    )
 
     selected_charges = tuple(
         singles.get((component_id, "charge_number")) for component_id in component_ids
@@ -358,6 +384,8 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
             None,
             temperature_min,
             temperature_max,
+            pressure_min,
+            pressure_max,
             None,
         )
 
@@ -437,6 +465,8 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
             None,
             temperature_min,
             temperature_max,
+            pressure_min,
+            pressure_max,
             ion_fraction_max,
         )
 
@@ -511,6 +541,8 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         model_values[1],
         temperature_min,
         temperature_max,
+        pressure_min,
+        pressure_max,
         ion_fraction_max,
     )
 

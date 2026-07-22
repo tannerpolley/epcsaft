@@ -54,6 +54,14 @@ _NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS = frozenset(
     }
 )
 
+_NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS = {
+    "sha256:9f017007adbea2c943dc91c4a8df5271a5400392ae89796b74959aac913b920c": frozenset(
+        frozenset(("water", cation, anion))
+        for cation in ("lithium-cation", "sodium-cation", "potassium-cation")
+        for anion in ("chloride-anion", "bromide-anion")
+    )
+}
+
 _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
     "sha256:03f9b1d88843a2d53da3420d96987ec4a2305b2814cc4946cdb25d1db67f5f72": frozenset(
         {
@@ -406,13 +414,29 @@ def native_sdk(model: EPCSAFT) -> object:
     )
     active_born_admitted = fingerprint in _NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS
     aqueous_kij_admitted = fingerprint in _NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS
-    if not phase_admitted and not active_born_admitted and not aqueous_kij_admitted:
+    neutral_reference_admitted = frozenset(model._component_ids) in (
+        _NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS.get(
+            model._parameter_bundle_fingerprint, frozenset()
+        )
+    )
+    if (
+        not phase_admitted
+        and not active_born_admitted
+        and not aqueous_kij_admitted
+        and not neutral_reference_admitted
+    ):
         raise _eos_error(
             "unsupported-native-sdk",
             reason="unadmitted-parameter-fingerprint",
         )
     minimum = math.nan if model._model.temperature_min_k is None else model._model.temperature_min_k
     maximum = math.nan if model._model.temperature_max_k is None else model._model.temperature_max_k
+    pressure_minimum = (
+        math.nan if model._model.pressure_min_pa is None else model._model.pressure_min_pa
+    )
+    pressure_maximum = (
+        math.nan if model._model.pressure_max_pa is None else model._model.pressure_max_pa
+    )
     maximum_ion_fraction = (
         math.nan
         if model._model.ion_mole_fraction_max is None
@@ -429,6 +453,9 @@ def native_sdk(model: EPCSAFT) -> object:
             phase_admitted,
             active_born_admitted,
             aqueous_kij_admitted,
+            pressure_minimum,
+            pressure_maximum,
+            neutral_reference_admitted,
         )
     except (RuntimeError, ValueError) as exc:
         raise _eos_error("unsupported-native-sdk", reason=str(exc)) from exc

@@ -217,6 +217,65 @@ typedef int (*epcsaft_evaluate_aqueous_miac_kij_v1)(
     epcsaft_aqueous_miac_kij_result_v1* result
 );
 
+#define EPCSAFT_NATIVE_HELMHOLTZ_BASIS_ID_V1 \
+    "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
+
+enum epcsaft_neutral_reference_derivative_v1 {
+    EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_NONE_V1 = 0u,
+    EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_TEMPERATURE_V1 = 1u << 0,
+    EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_PRESSURE_V1 = 1u << 1,
+    EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_COMPOSITION_V1 = 1u << 2,
+    EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_PARAMETERS_V1 = 1u << 3
+};
+
+/*
+ * Complete charge-neutral standard-reference basis in the model's component
+ * order. neutral_basis is row-major [basis_row][component], and each
+ * dimensionless contraction is sum_i basis[row,i] * ln(phi_i^reference).
+ * reference_composition is the salt-free solvent composition used by the
+ * canonical four-molality limit. No predictive single-ion reference is
+ * exposed. The admitted v1 scope has one solvent and one cation/anion formula
+ * unit; its rows are the solvent unit row followed by the minimal neutral salt
+ * row. For (water,H3O+,OH-), water self-ionization is row -2*b_0+b_1.
+ *
+ * All capacities and dimensions must exactly match the immutable table. A
+ * struct-size mismatch is return-code authoritative and leaves the untrusted
+ * result layout untouched. Other failures set status/error and leave the
+ * caller-owned buffers untouched. derivative_availability is an explicit bit
+ * mask; v1 returns NONE and no T, P, composition, or parameter derivatives.
+ */
+typedef struct epcsaft_neutral_reference_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    size_t component_count;
+    size_t neutral_basis_row_count;
+    size_t neutral_basis_capacity;
+    size_t contraction_capacity;
+    size_t reference_composition_capacity;
+    double* neutral_basis;
+    double* log_fugacity_contractions;
+    double* reference_composition;
+    uint32_t derivative_availability;
+    double temperature_k;
+    double pressure_pa;
+    double solvent_molar_mass_kg_per_mol;
+    double reference_amount_mol;
+    double reference_number_density_mol_per_m3;
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char helmholtz_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_neutral_reference_result_v1;
+
+typedef int (*epcsaft_evaluate_neutral_reference_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    epcsaft_neutral_reference_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -243,6 +302,9 @@ typedef struct epcsaft_native_sdk_v1 {
     epcsaft_evaluate_ion_solvation_born_v1 evaluate_ion_solvation_born;
     size_t aqueous_miac_kij_result_size;
     epcsaft_evaluate_aqueous_miac_kij_v1 evaluate_aqueous_miac_kij;
+    size_t neutral_reference_basis_row_count;
+    size_t neutral_reference_result_size;
+    epcsaft_evaluate_neutral_reference_v1 evaluate_neutral_reference;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

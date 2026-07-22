@@ -70,6 +70,14 @@ reference basis plus its gradient, Hessian, and third tensor. The
 declaration-only C header is installed at
 `epcsaft/include/epcsaft/native_sdk_v1.h`.
 
+The append-only neutral-reference candidate returns a complete charge-neutral
+stoichiometric basis and its dimensionless reference log-fugacity contractions
+for each admitted single-water chloride/bromide Figiel model. Component order,
+charges, source fingerprint, salt-free composition, solvent molar mass,
+source-domain state, convergence, and the Helmholtz basis are explicit. It
+returns no derivatives or absolute single-ion standards; reaction constants,
+standard-state transformation, and equilibrium remain consumer-owned.
+
 The same table has an additive pure-parameter entry for the first methane
 regression slice. It returns the phase value, gradient, and Hessian in
 `(n,V,m,sigma,epsilon/k)` coordinates so a regression consumer can assemble
