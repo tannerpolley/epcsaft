@@ -26,6 +26,10 @@ persist and reload the strict version-1 schema without a second input
 representation. Callers keep provenance and validity domains explicit. The
 purpose neither promotes values into the installed catalog nor validates their
 scientific quality.
+An exact selected model from a persisted `user-provided` bundle can use the
+generic model-bound native phase, volume-domain, and packing callbacks. This
+transport admission does not admit source-specific native reference or active-
+parameter callbacks and does not make caller-owned values predictive.
 The installed catalogs are Gross--Sadowski methane/ethane and propane records,
 the bounded Figiel--Yu--Held water/methanol/ethanol chloride/bromide source
 bundle, a distinct aqueous Na+/K+/I- source bundle, one distinct Khudaida et al.

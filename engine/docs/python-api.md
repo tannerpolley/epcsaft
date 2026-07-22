@@ -238,6 +238,13 @@ permittivity, and Born-model records. Missing records fail closed during
 You remain responsible for the scientific quality and fitted domain of
 caller-supplied values.
 
+`native_sdk(model)` accepts an exact selected model reloaded from a
+`user-provided` bundle for the generic model-bound phase, molar-volume-domain,
+and packing callbacks. Source-specific reference and active-parameter callbacks
+retain their separate catalog admission and return unsupported status for an
+otherwise executable caller-owned model. Native transport does not validate or
+promote caller-owned parameters.
+
 ## Neutral state example
 
 This example inspects the bundle, selects an explicit order, and evaluates the

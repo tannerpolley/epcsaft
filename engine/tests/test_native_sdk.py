@@ -12,6 +12,15 @@ import epcsaft
 from epcsaft import EPCSAFT, EosError, ParameterBundle, native_sdk, unit_registry
 from epcsaft._core import NativeModel, native_sdk_v1 as _native_sdk_v1
 from epcsaft.eos import _native_arguments
+from epcsaft.records import (
+    AssociationParameterRecord,
+    ConstantCorrelation,
+    ConstantPlusSumOfExponentialsCorrelation,
+    ModelParameterRecord,
+    PairParameterRecord,
+    SingleParameterRecord,
+    SiteRecord,
+)
 
 
 CAPSULE_NAME = b"epcsaft.native_sdk.v1"
@@ -352,6 +361,33 @@ def _electrolyte_model(
 ) -> EPCSAFT:
     parameters = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
     return EPCSAFT(parameters.select(component_ids))
+
+
+def _user_provided_copy(bundle: ParameterBundle) -> ParameterBundle:
+    records = bundle.records
+    return ParameterBundle.from_records(
+        bundle_id=f"user-{bundle.bundle_id}",
+        bundle_version=bundle.bundle_version,
+        purpose="user-provided",
+        sources=bundle.sources,
+        domains=bundle.domains,
+        components=bundle.components,
+        singles=(record for record in records if isinstance(record, SingleParameterRecord)),
+        pairs=(record for record in records if isinstance(record, PairParameterRecord)),
+        sites=(record for record in records if isinstance(record, SiteRecord)),
+        associations=(
+            record for record in records if isinstance(record, AssociationParameterRecord)
+        ),
+        correlations=(
+            record
+            for record in records
+            if isinstance(
+                record,
+                (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation),
+            )
+        ),
+        models=(record for record in records if isinstance(record, ModelParameterRecord)),
+    )
 
 
 def _khudaida_model(component_ids: tuple[str, ...]) -> EPCSAFT:
@@ -1221,6 +1257,35 @@ def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
         result = _evaluate(table, temperature, amount, volume)
         assert result.status != STATUS_OK
         assert result.error
+
+
+def test_native_sdk_admits_reloaded_user_bundle_only_to_generic_phase_block(
+    tmp_path: Path,
+) -> None:
+    installed = ParameterBundle.from_catalog(
+        "figiel-2025-reference-electrolytes", version=1
+    )
+    emitted = tmp_path / "user-electrolyte"
+    _user_provided_copy(installed).to_path(emitted)
+    loaded = ParameterBundle.from_path(emitted)
+    model = EPCSAFT(
+        loaded.select(("water", "sodium-cation", "chloride-anion"))
+    )
+
+    _, phase_table = _electrolyte_table(model)
+    phase, gradient, hessian = _evaluate_electrolyte(
+        phase_table, 298.15, (0.98, 0.01, 0.01), 1.0e-3
+    )
+    assert phase.status == STATUS_OK
+    assert all(math.isfinite(value) for value in gradient)
+    assert all(math.isfinite(value) for value in hessian)
+
+    _, reference_table = _neutral_reference_table(model)
+    reference, _, _, _ = _evaluate_neutral_reference(
+        reference_table, model.parameter_fingerprint
+    )
+    assert reference.status == STATUS_UNSUPPORTED_MODEL
+    assert reference.error
 
 
 def test_native_sdk_mixture_callback_rejects_malformed_buffers_and_scope() -> None:

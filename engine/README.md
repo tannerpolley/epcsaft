@@ -106,7 +106,11 @@ regression owner. See `docs/science/neutral-mixture-native-sdk.md`.
 The append-only electrolyte candidate callback evaluates the complete
 ideal-plus-residual phase Helmholtz block in ordered component amounts and
 volume, including association, Debye--Huckel, and the bundle-selected Born
-formulation. It admits only immutable source-backed model bundles. The distinct
+formulation. It admits immutable source-backed catalog models and exact
+caller-owned models selected from persisted `user-provided` bundles. The latter
+admission supplies generic phase, volume-domain, and packing transport only; it
+does not validate the caller's parameter provenance or admit source-specific
+reference and parameter-derivative callbacks. The distinct
 Khudaida et al. (2026) bundle adds its corrected SSM+DS
 water/ethanol/isobutanol/Na+/Cl- model at 293.15 K. The distinct Ascani et al.
 (2022) bundle adds the original-Born water/1-butanol/Na+/K+/Cl- model at

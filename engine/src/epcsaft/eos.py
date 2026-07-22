@@ -228,6 +228,7 @@ def _native_arguments(
 class EPCSAFT:
     _component_ids: tuple[str, ...]
     _parameter_fingerprint: str
+    _parameter_bundle_purpose: str
     _parameter_bundle_fingerprint: str
     _model: _ResolvedModel
     _native: _NativeModel
@@ -237,6 +238,7 @@ class EPCSAFT:
         native_arguments = _native_arguments(model)
         object.__setattr__(self, "_component_ids", parameters.component_ids)
         object.__setattr__(self, "_parameter_fingerprint", parameters.fingerprint)
+        object.__setattr__(self, "_parameter_bundle_purpose", parameters.bundle_purpose)
         object.__setattr__(self, "_parameter_bundle_fingerprint", parameters.bundle_fingerprint)
         object.__setattr__(self, "_model", model)
         object.__setattr__(self, "_native", _NativeModel(*native_arguments))
@@ -407,10 +409,14 @@ def native_sdk(model: EPCSAFT) -> object:
     bundle_selection = _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS.get(
         model._parameter_bundle_fingerprint
     )
-    phase_admitted = fingerprint in _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS or (
-        bundle_selection is not None
-        and len(model._component_ids) == len(bundle_selection)
-        and frozenset(model._component_ids) == bundle_selection
+    phase_admitted = (
+        model._parameter_bundle_purpose == "user-provided"
+        or fingerprint in _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS
+        or (
+            bundle_selection is not None
+            and len(model._component_ids) == len(bundle_selection)
+            and frozenset(model._component_ids) == bundle_selection
+        )
     )
     active_born_admitted = fingerprint in _NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS
     aqueous_kij_admitted = fingerprint in _NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS

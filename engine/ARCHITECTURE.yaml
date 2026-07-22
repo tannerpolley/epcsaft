@@ -124,6 +124,10 @@ owners:
     - ParameterBundle
     - ParameterSet
   parameter_persistence: src/epcsaft/_bundle_io.py
+  user_provided_native_transport: >-
+    Exact persisted user-provided bundles may use generic model-bound phase,
+    molar-volume-domain, and packing callbacks; specialized reference and
+    active-parameter callbacks retain independent admission.
   resolved_model: src/epcsaft/_resolve.py
   state_input: EPCSAFT.evaluate
   result: EosResult
@@ -216,9 +220,9 @@ manifest:
   public_native_headers: 1
   installed_data_files: 38
   package_test_files: 13
-  physical_production_lines: 8325
-  physical_package_test_lines: 6837
-  physical_documentation_lines: 3648
+  physical_production_lines: 8333
+  physical_package_test_lines: 6903
+  physical_documentation_lines: 3667
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
@@ -237,9 +241,9 @@ manifest:
     - path: src/epcsaft/_native/phase_block.hpp
       physical_lines: 762
     - path: tests/test_native_sdk.py
-      physical_lines: 2936
+      physical_lines: 3001
     - path: tests/test_parameters.py
-      physical_lines: 1254
+      physical_lines: 1255
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 
 excluded:
