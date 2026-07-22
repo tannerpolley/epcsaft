@@ -232,6 +232,28 @@ def _bundle_fingerprint(bundle: object) -> str:
     return _fingerprint_json(_bundle_json(bundle))
 
 
+def _provenance_fingerprint(
+    sources: tuple[SourceRecord, ...], domains: tuple[ValidityDomain, ...]
+) -> str:
+    return _fingerprint_json(
+        _json(
+            {
+                "tag": _TAG,
+                "provenance": {
+                    "sources": [
+                        _source(record)
+                        for record in sorted(sources, key=lambda item: item.source_id)
+                    ],
+                    "domains": [
+                        _domain(record)
+                        for record in sorted(domains, key=lambda item: item.domain_id)
+                    ],
+                },
+            }
+        )
+    )
+
+
 def _set_fingerprint(
     bundle_fingerprint: str,
     component_ids: tuple[str, ...],

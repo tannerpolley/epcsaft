@@ -9,7 +9,7 @@ import pint
 from ._core import NativeModel as _NativeModel
 from ._core import native_sdk_v1 as _native_sdk_v1
 from ._resolve import _ResolvedModel, _resolve_model
-from .parameters import ParameterSet
+from .parameters import ParameterBundle, ParameterSet
 from .records import (
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
@@ -259,6 +259,14 @@ def _figiel_staged_trial_bundle_admitted(
         or model.pressure_min_pa != 100000.0
         or model.pressure_max_pa != 100000.0
         or model.ion_mole_fraction_max != 0.38
+    ):
+        return False
+    canonical = ParameterBundle.from_catalog(
+        "figiel-2025-reference-electrolytes", version=1
+    ).select(model.component_ids)
+    if (
+        parameters._source_domain_fingerprint
+        != canonical._source_domain_fingerprint
     ):
         return False
     return all(

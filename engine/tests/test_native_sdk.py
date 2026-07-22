@@ -434,7 +434,10 @@ def _user_provided_copy(
 
 
 def _figiel_trial_model(
-    component_ids: tuple[str, str, str], *, purpose: str = "user-provided"
+    component_ids: tuple[str, str, str],
+    *,
+    purpose: str = "user-provided",
+    spoof_source_metadata: bool = False,
 ) -> EPCSAFT:
     bundle = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
     records = tuple(
@@ -447,7 +450,12 @@ def _figiel_trial_model(
         bundle_id="figiel-staged-trial",
         bundle_version=1,
         purpose=purpose,
-        sources=bundle.sources,
+        sources=(
+            replace(source, citation="fabricated citation")
+            if spoof_source_metadata and source.source_id == "figiel-yu-held-2025"
+            else source
+            for source in bundle.sources
+        ),
         domains=bundle.domains,
         components=bundle.components,
         singles=(record for record in records if isinstance(record, SingleParameterRecord)),
@@ -2970,6 +2978,14 @@ def test_native_sdk_staged_figiel_user_bundles_are_narrowly_admitted() -> None:
                 purpose="package-test-fixture",
             )
         )
+    spoofed = _figiel_trial_model(
+        ("water", "sodium-cation", "bromide-anion"),
+        spoof_source_metadata=True,
+    )
+    _, spoofed_table = _aqueous_miac_solvation_factor_table(spoofed)
+    assert _evaluate_aqueous_miac_solvation_factor(
+        spoofed_table, spoofed.parameter_fingerprint, 1.0, 1.4
+    ).status == STATUS_UNSUPPORTED_MODEL
     reordered = _figiel_trial_model(("sodium-cation", "water", "bromide-anion"))
     _, reordered_table = _aqueous_miac_solvation_factor_table(reordered)
     assert _evaluate_aqueous_miac_solvation_factor(
