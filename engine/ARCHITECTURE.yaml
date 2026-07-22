@@ -123,6 +123,7 @@ owners:
   parameter_input:
     - ParameterBundle
     - ParameterSet
+  parameter_persistence: src/epcsaft/_bundle_io.py
   resolved_model: src/epcsaft/_resolve.py
   state_input: EPCSAFT.evaluate
   result: EosResult
@@ -139,6 +140,8 @@ owners:
   installed_parameter_data: src/epcsaft/data/bundles
 
 public_surface:
+  parameter_bundle_purposes: [installed-catalog, package-test-fixture, user-provided]
+  parameter_bundle_persistence: [ParameterBundle.to_path, ParameterBundle.from_path]
   exports:
     - ParameterBundle
     - ParameterSet
@@ -207,15 +210,15 @@ public_surface:
       status: project-truss-implementation-candidate-no-authority-effect
 
 manifest:
-  tracked_files: 101
+  tracked_files: 102
   production_python_files: 9
   native_source_files: 14
   public_native_headers: 1
   installed_data_files: 38
-  package_test_files: 12
-  physical_production_lines: 8017
-  physical_package_test_lines: 6475
-  physical_documentation_lines: 3229
+  package_test_files: 13
+  physical_production_lines: 8325
+  physical_package_test_lines: 6837
+  physical_documentation_lines: 3648
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
@@ -225,7 +228,8 @@ manifest:
     - path: src/epcsaft/_resolve.py
       physical_lines: 550
     - path: src/epcsaft/_bundle_io.py
-      physical_lines: 417
+      physical_lines: 675
+      capability_delta: strict version-1 persistence for user-provided bundles
     - path: src/epcsaft/_native/eos.cpp
       physical_lines: 814
     - path: src/epcsaft/_native/native_sdk.cpp

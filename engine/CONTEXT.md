@@ -20,6 +20,12 @@ generic residual Helmholtz kernel for hard-chain, dispersion, association,
 Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
 chemical potentials, fugacity coefficients when defined, residual caloric
 properties, pressure, and branch diagnostics for pressure-specified states.
+Callers can create `user-provided` bundles through
+`ParameterBundle.from_records(...)`. `to_path(...)` and `from_path(...)`
+persist and reload the strict version-1 schema without a second input
+representation. Callers keep provenance and validity domains explicit. The
+purpose neither promotes values into the installed catalog nor validates their
+scientific quality.
 The installed catalogs are Gross--Sadowski methane/ethane and propane records,
 the bounded Figiel--Yu--Held water/methanol/ethanol chloride/bromide source
 bundle, a distinct aqueous Na+/K+/I- source bundle, one distinct Khudaida et al.

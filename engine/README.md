@@ -17,6 +17,13 @@ installed bundle IDs, component discovery and ordering, Pint state inputs,
 density and pressure routes, root selection, result interpretation,
 electrolyte activities, and stable errors.
 
+The same guide includes a complete [user-provided bundle
+workflow](docs/python-api.md#user-provided-parameter-bundles). Create typed
+caller records with `ParameterBundle.from_records(...)`, persist the bundle
+with `bundle.to_path(...)`, and reload it with
+`ParameterBundle.from_path(...)`. Keep source provenance, validity domains,
+units, and required pair parameters explicit.
+
 ```python
 from epcsaft import EPCSAFT, ParameterBundle, unit_registry as u
 

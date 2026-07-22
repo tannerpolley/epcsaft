@@ -5,7 +5,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Iterable, Literal, Sequence
 
-from ._bundle_io import _load_path
+from ._bundle_io import _dump_path, _load_path
 from ._canonical import _bundle_fingerprint, _set_fingerprint
 from .records import (
     AssociationParameterRecord,
@@ -24,7 +24,7 @@ from .records import (
 from .units import _error
 
 
-_PURPOSES = frozenset({"installed-catalog", "package-test-fixture"})
+_PURPOSES = frozenset({"installed-catalog", "package-test-fixture", "user-provided"})
 
 
 def _version(value: object) -> int:
@@ -203,7 +203,7 @@ class ParameterBundle:
         *,
         bundle_id: str,
         bundle_version: int,
-        purpose: Literal["installed-catalog", "package-test-fixture"],
+        purpose: Literal["installed-catalog", "package-test-fixture", "user-provided"],
         sources: Iterable[SourceRecord],
         domains: Iterable[ValidityDomain],
         components: Iterable[ComponentRecord],
@@ -214,6 +214,12 @@ class ParameterBundle:
         correlations: Iterable[CorrelationRecord] = (),
         models: Iterable[ModelParameterRecord] = (),
     ) -> ParameterBundle:
+        """Create an immutable bundle from explicit typed parameter records.
+
+        Use ``purpose="user-provided"`` for caller-owned inputs. Every scientific
+        value retains its source and validity-domain reference; no physical value is
+        inferred. Persist the result with :meth:`ParameterBundle.to_path`.
+        """
         bundle_id = _identifier(bundle_id, field="bundle_id")
         bundle_version = _version(bundle_version)
         purpose = _purpose(purpose)
@@ -259,6 +265,14 @@ class ParameterBundle:
         )
         object.__setattr__(instance, "fingerprint", _bundle_fingerprint(instance))
         return instance
+
+    def to_path(self, path: str | PathLike[str]) -> None:
+        """Persist this bundle in the strict version-1 directory schema.
+
+        The target must not already exist. A failed write leaves no target directory.
+        Reload the saved bundle with :meth:`ParameterBundle.from_path`.
+        """
+        _dump_path(self, path)
 
     def select(self, component_ids: Sequence[str]) -> ParameterSet:
         """Select exact component IDs in the order used by every state and result.

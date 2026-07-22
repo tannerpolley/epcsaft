@@ -66,6 +66,178 @@ defines all later component and composition ordering. The bundle fingerprint
 identifies its source records; the selected-set fingerprint additionally binds
 the requested component order.
 
+## User-provided parameter bundles
+
+Use the same immutable, fingerprinted lifecycle for caller-owned parameters and
+the installed catalog. Construct caller-owned bundles with typed records and
+`purpose="user-provided"`, save them with `to_path(...)`, and reload them later
+with `from_path(...)`. `EPCSAFT` still receives an ordered `ParameterSet`, not a
+bundle directly:
+
+```text
+typed inputs -> ParameterBundle -> to_path/from_path -> ParameterSet -> EPCSAFT
+```
+
+Copy and adapt this complete pure-propane template. The values reproduce the
+Gross and Sadowski (2001) propane row to keep the example executable. For your
+own values, identify the actual source, locator, use basis, and validity domain.
+
+```python
+from decimal import Decimal
+from pathlib import Path
+
+from epcsaft import EPCSAFT, ParameterBundle, unit_registry as u
+from epcsaft.records import (
+    ComponentRecord,
+    SingleParameterRecord,
+    SourceRecord,
+    ValidityDomain,
+)
+
+source_id = "gross-sadowski-2001"
+domain_id = "propane-fit-range"
+provenance = {
+    "source_id": source_id,
+    "locator": "Table 2, propane row",
+    "domain_id": domain_id,
+}
+
+bundle = ParameterBundle.from_records(
+    bundle_id="my-propane-model",
+    bundle_version=1,
+    purpose="user-provided",
+    sources=(
+        SourceRecord(
+            source_id=source_id,
+            citation=(
+                "Gross, J.; Sadowski, G. PC-SAFT: An Equation of State Based "
+                "on a Perturbation Theory for Chain Molecules. Ind. Eng. Chem. "
+                "Res. 2001, 40, 1244-1260."
+            ),
+            doi="10.1021/ie0003887",
+            use_basis="user-provided model input",
+        ),
+    ),
+    domains=(
+        ValidityDomain(
+            domain_id=domain_id,
+            kind="fit-range",
+            temperature_min=Decimal("85") * u.kelvin,
+            temperature_max=Decimal("523") * u.kelvin,
+        ),
+    ),
+    components=(
+        ComponentRecord(
+            component_id="propane",
+            name="propane",
+            cas="74-98-6",
+            formula="C3H8",
+        ),
+    ),
+    singles=(
+        SingleParameterRecord(
+            "propane-molar-mass",
+            "propane",
+            "molar_mass",
+            Decimal("0.044096") * u.kilogram / u.mole,
+            **provenance,
+        ),
+        SingleParameterRecord(
+            "propane-segment-count",
+            "propane",
+            "segment_count",
+            Decimal("2.0020"),
+            **provenance,
+        ),
+        SingleParameterRecord(
+            "propane-segment-diameter",
+            "propane",
+            "segment_diameter",
+            Decimal("3.6184") * u.angstrom,
+            **provenance,
+        ),
+        SingleParameterRecord(
+            "propane-dispersion-energy",
+            "propane",
+            "dispersion_energy_over_k",
+            Decimal("208.11") * u.kelvin,
+            **provenance,
+        ),
+    ),
+)
+
+bundle_path = Path("my-propane-model")
+bundle.to_path(bundle_path)  # Refuses to overwrite an existing path.
+
+reloaded = ParameterBundle.from_path(bundle_path)
+model = EPCSAFT(reloaded.select(("propane",)))
+state = model.evaluate(
+    temperature=300 * u.kelvin,
+    pressure=1 * u.bar,
+    mole_fractions=(1.0,),
+    phase="vapor",
+)
+```
+
+`to_path(...)` writes the strict version-1 directory schema atomically. For the
+example above, the reusable on-disk template is:
+
+```text
+my-propane-model/
+├── bundle.toml
+├── components.csv
+└── single.csv
+```
+
+`bundle.toml`:
+
+```toml
+schema_version = 1
+bundle_id = "my-propane-model"
+bundle_version = 1
+purpose = "user-provided"
+files = ["components.csv", "single.csv"]
+
+[[sources]]
+source_id = "gross-sadowski-2001"
+citation = "Gross, J.; Sadowski, G. PC-SAFT. Ind. Eng. Chem. Res. 2001, 40, 1244-1260."
+use_basis = "user-provided model input"
+doi = "10.1021/ie0003887"
+
+[[domains]]
+domain_id = "propane-fit-range"
+kind = "fit-range"
+temperature_min = "85"
+temperature_max = "523"
+temperature_unit = "kelvin"
+```
+
+`components.csv`:
+
+```csv
+component_id,name,cas,formula,aliases
+propane,propane,74-98-6,C3H8,
+```
+
+`single.csv`:
+
+```csv
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+propane-molar-mass,propane,molar_mass,0.044096,kilogram / mole,gross-sadowski-2001,"Table 2, propane row",propane-fit-range
+propane-segment-count,propane,segment_count,2.002,,gross-sadowski-2001,"Table 2, propane row",propane-fit-range
+propane-segment-diameter,propane,segment_diameter,3.6184,angstrom,gross-sadowski-2001,"Table 2, propane row",propane-fit-range
+propane-dispersion-energy,propane,dispersion_energy_over_k,208.11,kelvin,gross-sadowski-2001,"Table 2, propane row",propane-fit-range
+```
+
+The `files` inventory is exact: do not place extra files inside the bundle
+directory. Multicomponent neutral models require an explicit `k_ij` record for
+every selected unlike pair, including a sourced zero. Association and ionic
+models likewise require their complete site, cross-parameter, charge,
+permittivity, and Born-model records. Missing records fail closed during
+`EPCSAFT(...)` construction. The `user-provided` purpose records provenance.
+You remain responsible for the scientific quality and fitted domain of
+caller-supplied values.
+
 ## Neutral state example
 
 This example inspects the bundle, selects an explicit order, and evaluates the
