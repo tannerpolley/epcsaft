@@ -2255,8 +2255,10 @@ def test_native_sdk_aqueous_miac_kij_matches_public_reference_state(
     assert table.table_size == AQUEOUS_MIAC_KIJ_PREFIX_SIZE == 184
     assert table.aqueous_miac_kij_result_size == ctypes.sizeof(AqueousMiacKijResult) == 296
     assert observed.status == STATUS_OK
+    # The derivative callback projects its value from the certified density
+    # midpoint to the requested pressure; this bound covers only that correction.
     assert observed.log_mean_ionic_activity_coefficient_molality == pytest.approx(
-        math.log(reference.mean_ionic_activity_coefficient_molality), abs=2.0e-11
+        math.log(reference.mean_ionic_activity_coefficient_molality), abs=8.0e-11
     )
     assert all(math.isfinite(value) for value in observed.derivative)
     assert observed.parameter_fingerprint.decode() == model.parameter_fingerprint
@@ -2447,6 +2449,54 @@ def test_native_sdk_aqueous_miac_kij_exact_derivatives(
             2.0e-8 * abs(center.derivative[coordinate]),
         )
         assert abs(center.derivative[coordinate] - estimates[1]) <= tolerance
+
+
+@pytest.mark.parametrize(
+    ("cation", "anion", "molality", "coordinate"),
+    (
+        ("sodium-cation", "bromide-anion", 0.6, 0),
+        ("potassium-cation", "chloride-anion", 3.0, 1),
+        ("potassium-cation", "bromide-anion", 0.01, 1),
+        ("lithium-cation", "chloride-anion", 0.02, 2),
+    ),
+)
+def test_native_sdk_aqueous_miac_kij_derivatives_cover_regression_discriminators(
+    cation: str,
+    anion: str,
+    molality: float,
+    coordinate: int,
+) -> None:
+    model = _electrolyte_model(("water", cation, anion))
+    _, table = _aqueous_miac_kij_table(model)
+    trial = (0.2, 0.2, 0.2)
+    center = _evaluate_aqueous_miac_kij(
+        table, model.parameter_fingerprint, molality, trial
+    )
+    estimates = []
+    for step in (1.0e-4, 5.0e-5):
+        upper = list(trial)
+        lower = list(trial)
+        upper[coordinate] += step
+        lower[coordinate] -= step
+        high = _evaluate_aqueous_miac_kij(
+            table, model.parameter_fingerprint, molality, tuple(upper)
+        )
+        low = _evaluate_aqueous_miac_kij(
+            table, model.parameter_fingerprint, molality, tuple(lower)
+        )
+        estimates.append(
+            (
+                high.log_mean_ionic_activity_coefficient_molality
+                - low.log_mean_ionic_activity_coefficient_molality
+            )
+            / (2.0 * step)
+        )
+    tolerance = max(
+        1.0e-8,
+        20.0 * abs(estimates[0] - estimates[1]),
+        2.0e-8 * abs(center.derivative[coordinate]),
+    )
+    assert abs(center.derivative[coordinate] - estimates[1]) <= tolerance
 
 
 def test_native_sdk_aqueous_miac_kij_preserves_prefix_and_fails_closed() -> None:
