@@ -5,6 +5,7 @@ from decimal import Decimal, InvalidOperation
 import json
 from os import PathLike
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import tomllib
 
 from .records import (
@@ -415,3 +416,260 @@ def _load_path(path: str | PathLike[str]) -> dict[str, object]:
     if "correlations.toml" in files:
         result["correlations"] = _correlations(root / "correlations.toml")
     return result
+
+
+def _number_text(value: object) -> str:
+    number = Decimal(str(value))
+    if number.is_zero():
+        return "0"
+    return format(number.normalize(), "f")
+
+
+def _toml_string(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def _parameter_text(family: str, value: object) -> tuple[str, str]:
+    if family == "charge_number":
+        return str(value), ""
+    unit = _DIMENSIONAL_UNITS.get(family, "")
+    if unit:
+        return _number_text(value.to(unit).magnitude), unit  # type: ignore[attr-defined]
+    return _number_text(value), ""
+
+
+def _write_manifest(root: Path, bundle: object, files: tuple[str, ...]) -> None:
+    lines = [
+        "schema_version = 1",
+        f"bundle_id = {_toml_string(bundle.bundle_id)}",  # type: ignore[attr-defined]
+        f"bundle_version = {bundle.bundle_version}",  # type: ignore[attr-defined]
+        f"purpose = {_toml_string(bundle.purpose)}",  # type: ignore[attr-defined]
+        f"files = [{', '.join(_toml_string(name) for name in files)}]",
+    ]
+    sources = bundle.sources  # type: ignore[attr-defined]
+    if not sources:
+        lines.append("sources = []")
+    domains = bundle.domains  # type: ignore[attr-defined]
+    if not domains:
+        lines.append("domains = []")
+    for source in sources:
+        lines.extend(
+            (
+                "",
+                "[[sources]]",
+                f"source_id = {_toml_string(source.source_id)}",
+                f"citation = {_toml_string(source.citation)}",
+                f"use_basis = {_toml_string(source.use_basis)}",
+            )
+        )
+        if source.doi is not None:
+            lines.append(f"doi = {_toml_string(source.doi)}")
+
+    for domain in domains:
+        lines.extend(
+            (
+                "",
+                "[[domains]]",
+                f"domain_id = {_toml_string(domain.domain_id)}",
+                f"kind = {_toml_string(domain.kind)}",
+            )
+        )
+        temperature_bounds = tuple(
+            (name, getattr(domain, name))
+            for name in ("temperature_min", "temperature_max")
+            if getattr(domain, name) is not None
+        )
+        for name, value in temperature_bounds:
+            magnitude = _number_text(value.to("kelvin").magnitude)  # type: ignore[attr-defined]
+            lines.append(f"{name} = {_toml_string(magnitude)}")
+        if temperature_bounds:
+            lines.append('temperature_unit = "kelvin"')
+        pressure_bounds = tuple(
+            (name, getattr(domain, name))
+            for name in ("pressure_min", "pressure_max")
+            if getattr(domain, name) is not None
+        )
+        for name, value in pressure_bounds:
+            magnitude = _number_text(value.to("pascal").magnitude)  # type: ignore[attr-defined]
+            lines.append(f"{name} = {_toml_string(magnitude)}")
+        if pressure_bounds:
+            lines.append('pressure_unit = "pascal"')
+        if domain.ion_mole_fraction_max is not None:
+            ion_max = _number_text(domain.ion_mole_fraction_max)
+            lines.append(f"ion_mole_fraction_max = {_toml_string(ion_max)}")
+    (root / "bundle.toml").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_csv(root: Path, name: str, rows: list[tuple[object, ...]]) -> None:
+    with (root / name).open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(_COLUMNS[name])
+        writer.writerows(rows)
+
+
+def _write_components(root: Path, components: tuple[ComponentRecord, ...]) -> None:
+    _write_csv(
+        root,
+        "components.csv",
+        [
+            (
+                record.component_id,
+                record.name or "",
+                record.cas or "",
+                record.formula or "",
+                json.dumps(record.aliases, ensure_ascii=False, separators=(",", ":"))
+                if record.aliases
+                else "",
+            )
+            for record in components
+        ],
+    )
+
+
+def _parameter_row(record: object, fields: tuple[str, ...]) -> tuple[object, ...]:
+    value, unit = _parameter_text(record.family, record.value)  # type: ignore[attr-defined]
+    return (
+        record.record_id,  # type: ignore[attr-defined]
+        *(getattr(record, field) for field in fields),
+        record.family,  # type: ignore[attr-defined]
+        value,
+        unit,
+        record.source_id,  # type: ignore[attr-defined]
+        record.locator,  # type: ignore[attr-defined]
+        record.domain_id,  # type: ignore[attr-defined]
+    )
+
+
+def _write_correlations(root: Path, records: tuple[object, ...]) -> None:
+    lines: list[str] = []
+    for record in records:
+        constant, output_unit = _parameter_text(record.family, record.constant)  # type: ignore[attr-defined]
+        if lines:
+            lines.append("")
+        lines.extend(
+            (
+                "[[correlations]]",
+                f"record_id = {_toml_string(record.record_id)}",  # type: ignore[attr-defined]
+                f"component_id = {_toml_string(record.component_id)}",  # type: ignore[attr-defined]
+                f"family = {_toml_string(record.family)}",  # type: ignore[attr-defined]
+                f"form = {_toml_string(record.form)}",  # type: ignore[attr-defined]
+                f"constant = {_toml_string(constant)}",
+                f"output_unit = {_toml_string(output_unit or 'dimensionless')}",
+            )
+        )
+        if isinstance(record, ConstantPlusSumOfExponentialsCorrelation):
+            coefficients = ", ".join(
+                "{ amplitude = "
+                f"{_toml_string(_number_text(term.amplitude.to('angstrom').magnitude))}, "
+                "exponent_coefficient = "
+                f"{_toml_string(_number_text(term.exponent_coefficient.to('1 / kelvin').magnitude))} }}"
+                for term in record.terms
+            )
+            lines.extend(
+                (
+                    'input_unit = "kelvin"',
+                    f"coefficients = [{coefficients}]",
+                )
+            )
+        lines.extend(
+            (
+                f"source_id = {_toml_string(record.source_id)}",  # type: ignore[attr-defined]
+                f"locator = {_toml_string(record.locator)}",  # type: ignore[attr-defined]
+                f"domain_id = {_toml_string(record.domain_id)}",  # type: ignore[attr-defined]
+            )
+        )
+    (root / "correlations.toml").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_bundle(root: Path, bundle: object) -> None:
+    records = bundle.records  # type: ignore[attr-defined]
+    groups = {
+        "single.csv": tuple(
+            record for record in records if isinstance(record, SingleParameterRecord)
+        ),
+        "pair.csv": tuple(record for record in records if isinstance(record, PairParameterRecord)),
+        "sites.csv": tuple(record for record in records if isinstance(record, SiteRecord)),
+        "association.csv": tuple(
+            record for record in records if isinstance(record, AssociationParameterRecord)
+        ),
+        "model.csv": tuple(
+            record for record in records if isinstance(record, ModelParameterRecord)
+        ),
+        "correlations.toml": tuple(
+            record
+            for record in records
+            if isinstance(record, (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation))
+        ),
+    }
+    files = ("components.csv", *(name for name, group in groups.items() if group))
+    _write_manifest(root, bundle, files)
+    _write_components(root, bundle.components)  # type: ignore[attr-defined]
+    if singles := groups["single.csv"]:
+        _write_csv(
+            root, "single.csv", [_parameter_row(record, ("component_id",)) for record in singles]
+        )
+    if pairs := groups["pair.csv"]:
+        _write_csv(
+            root,
+            "pair.csv",
+            [_parameter_row(record, ("component_id_a", "component_id_b")) for record in pairs],
+        )
+    if sites := groups["sites.csv"]:
+        _write_csv(
+            root,
+            "sites.csv",
+            [
+                (
+                    record.record_id,  # type: ignore[attr-defined]
+                    record.component_id,  # type: ignore[attr-defined]
+                    record.site_id,  # type: ignore[attr-defined]
+                    record.site_class,  # type: ignore[attr-defined]
+                    record.multiplicity,  # type: ignore[attr-defined]
+                    record.source_id,  # type: ignore[attr-defined]
+                    record.locator,  # type: ignore[attr-defined]
+                    record.domain_id,  # type: ignore[attr-defined]
+                )
+                for record in sites
+            ],
+        )
+    if associations := groups["association.csv"]:
+        _write_csv(
+            root,
+            "association.csv",
+            [
+                _parameter_row(
+                    record,
+                    ("component_id_a", "site_id_a", "component_id_b", "site_id_b"),
+                )
+                for record in associations
+            ],
+        )
+    if models := groups["model.csv"]:
+        _write_csv(root, "model.csv", [_parameter_row(record, ()) for record in models])
+    if correlations := groups["correlations.toml"]:
+        _write_correlations(root, correlations)
+
+
+def _dump_path(bundle: object, path: str | PathLike[str]) -> None:
+    try:
+        root = Path(path)
+    except TypeError as exc:
+        raise _error("invalid-value", field="path", value=path) from exc
+    if root.exists() or root.is_symlink():
+        raise _error("invalid-value", field="path", value=root, reason="already-exists")
+    if not root.parent.is_dir():
+        raise _error("invalid-value", field="path", value=root, reason="missing-parent")
+    if not bundle.components:  # type: ignore[attr-defined]
+        raise _error("invalid-value", field="components", value="empty")
+
+    try:
+        with TemporaryDirectory(prefix=f".{root.name}.", dir=root.parent) as temporary:
+            staged = Path(temporary)
+            _write_bundle(staged, bundle)
+            if root.exists() or root.is_symlink():
+                raise _error("invalid-value", field="path", value=root, reason="already-exists")
+            staged.rename(root)
+    except ParameterError:
+        raise
+    except (OSError, UnicodeError) as exc:
+        raise _error("invalid-value", field="path", value=root, reason="write-failed") from exc

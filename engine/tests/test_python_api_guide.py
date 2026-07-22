@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 
 import epcsaft
+import pytest
 from epcsaft import EPCSAFT, ParameterBundle
 
 
@@ -12,7 +13,9 @@ ROOT = Path(__file__).parents[1]
 GUIDE = ROOT / "docs" / "python-api.md"
 
 
-def test_python_api_guide_matches_the_installed_public_contract() -> None:
+def test_python_api_guide_matches_the_installed_public_contract(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     text = GUIDE.read_text(encoding="utf-8")
 
     catalog_root = Path(epcsaft.__file__).parent / "data" / "bundles"
@@ -24,6 +27,7 @@ def test_python_api_guide_matches_the_installed_public_contract() -> None:
 
     for public_method in (
         ParameterBundle.from_catalog,
+        ParameterBundle.to_path,
         ParameterBundle.select,
         EPCSAFT.evaluate,
         EPCSAFT.reference_state,
@@ -33,7 +37,10 @@ def test_python_api_guide_matches_the_installed_public_contract() -> None:
         assert len(documentation.splitlines()) >= 2
 
     blocks = re.findall(r"```python\n(.*?)```", text, flags=re.DOTALL)
-    assert len(blocks) == 3
+    assert len(blocks) == 4
     for index, block in enumerate(blocks):
+        example_root = tmp_path / f"example-{index + 1}"
+        example_root.mkdir()
+        monkeypatch.chdir(example_root)
         namespace = {"__name__": f"python_api_guide_{index}"}
         exec(compile(block, f"{GUIDE}#example-{index + 1}", "exec"), namespace)
