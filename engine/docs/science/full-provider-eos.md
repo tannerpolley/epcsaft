@@ -536,22 +536,27 @@ generation, and alternative concentration conventions remain closed.
 
 ### 10.1 Installed charge-neutral reference basis
 
-For each admitted single-water, one-cation/one-anion Figiel model, the native
-SDK exposes a complete basis for the null space of the ordered charge vector.
-The first row is the water unit row and the second is the minimal neutral salt
-formula unit. If `B` is this row-major basis and `c` its returned contractions,
+For an admitted aqueous phase model with `C` components, exactly one water
+reference carrier, at least one cation, and at least one anion, the native SDK
+exposes `C-1` rows spanning the null space of the ordered charge vector. Every
+neutral component contributes its unit row. For the charged components, the
+first cation is paired with every anion and every remaining cation is paired
+with the first anion. Each pair uses the smallest positive integer
+stoichiometry obtained from the greatest common divisor of the two charge
+magnitudes. If `B` is this row-major basis and `c` its returned contractions,
 
 ```text
 B q = 0
 c_r = sum_i B_ri ln(phi_i^reference).
 ```
 
-The water contraction uses the pure-water fugacity coefficient at the same
-`T,P`; the salt contraction uses the terminal values from the canonical
+Each neutral contraction uses that component's infinite-dilution fugacity
+coefficient in the reported pure-water composition at the same `T,P`; every
+ionic formula-unit contraction uses the terminal values from its canonical
 four-molality reference sequence. Any caller-owned charge-neutral row `nu` is
 represented as `nu = alpha B`, so its gauge-invariant Provider reference is
-`alpha c`. No individual ionic reference is exposed. In particular, for
-ordered `(water, H3O+, OH-)`, water self-ionization is
+`alpha c`. No individual ionic reference is exposed. In particular, the
+original ordered `(water, H3O+, OH-)` case retains
 
 ```text
 (-2, 1, 1) = -2 B_water + B_salt
@@ -559,13 +564,17 @@ Delta C_fugacity = c_salt - 2 c_water.
 ```
 
 The result binds the ordered components and charges already advertised by the
-model table, parameter fingerprint, exact source-domain `T,P`, salt-free
-composition, solvent molar mass, convergence diagnostics, and the Helmholtz
-basis `A/(RT n_ref)` with `n_ref = 1 mol` and
-`rho_ref = 1 mol m^-3`. It returns values only: temperature, pressure,
-composition, and parameter derivatives are explicitly unavailable. Reaction
-constants, standard-state conversions, gauges, constraints, and equilibrium
-remain consumer-owned.
+model table, parameter fingerprint, exact source-domain `T,P`, pure-water
+reference composition, water molar mass, the worst formula-unit convergence
+diagnostic, and the Helmholtz basis `A/(RT n_ref)` with `n_ref = 1 mol` and
+`rho_ref = 1 mol m^-3`. Existing exact catalog admissions remain intact. A full
+phase-admitted `user-provided` model may expose the same reference topology,
+but unknown source applicability fails value evaluation and its caller-owned
+provenance is not promoted by transport. This is not a simultaneous multi-salt
+finite-composition reference path. It returns values only: temperature,
+pressure, composition, and parameter derivatives are explicitly unavailable.
+Reaction constants, source standard-state conversions, gauges, constraints,
+and equilibrium remain consumer-owned.
 
 ## 11. Density closure
 

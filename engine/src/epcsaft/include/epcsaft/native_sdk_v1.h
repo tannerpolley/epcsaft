@@ -234,9 +234,12 @@ enum epcsaft_neutral_reference_derivative_v1 {
  * dimensionless contraction is sum_i basis[row,i] * ln(phi_i^reference).
  * reference_composition is the salt-free solvent composition used by the
  * canonical four-molality limit. No predictive single-ion reference is
- * exposed. The admitted v1 scope has one solvent and one cation/anion formula
- * unit; its rows are the solvent unit row followed by the minimal neutral salt
- * row. For (water,H3O+,OH-), water self-ionization is row -2*b_0+b_1.
+ * exposed. An admitted model has exactly one water reference carrier and at
+ * least one cation and anion. Its C-1 rows are every neutral component unit
+ * row followed by a minimal cation/anion spanning tree. Neutral components use
+ * their infinite-dilution fugacity in the reported pure-water composition;
+ * ionic rows use separate canonical formula-unit limits. For
+ * (water,H3O+,OH-), water self-ionization is row -2*b_0+b_1.
  *
  * All capacities and dimensions must exactly match the immutable table. A
  * struct-size mismatch is return-code authoritative and leaves the untrusted

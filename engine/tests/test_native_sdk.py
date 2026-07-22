@@ -1266,7 +1266,7 @@ def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
         assert result.error
 
 
-def test_native_sdk_admits_reloaded_user_bundle_only_to_generic_phase_block(
+def test_native_sdk_unknown_user_bundle_keeps_reference_domain_closed(
     tmp_path: Path,
 ) -> None:
     installed = ParameterBundle.from_catalog(
@@ -1288,10 +1288,11 @@ def test_native_sdk_admits_reloaded_user_bundle_only_to_generic_phase_block(
     assert all(math.isfinite(value) for value in hessian)
 
     _, reference_table = _neutral_reference_table(model)
+    assert reference_table.neutral_reference_basis_row_count == 2
     reference, _, _, _ = _evaluate_neutral_reference(
         reference_table, model.parameter_fingerprint
     )
-    assert reference.status == STATUS_UNSUPPORTED_MODEL
+    assert reference.status == STATUS_DOMAIN_ERROR
     assert reference.error
 
 
@@ -2851,6 +2852,76 @@ def test_native_sdk_neutral_reference_is_complete_and_matches_public_owner() -> 
             assert supported_result.status == STATUS_OK
 
 
+def test_native_sdk_neutral_reference_spans_multicomponent_user_model() -> None:
+    component_ids = (
+        "water",
+        "1-butanol",
+        "sodium-cation",
+        "potassium-cation",
+        "chloride-anion",
+    )
+    installed = ParameterBundle.from_catalog(
+        "ascani-2022-case-study-2-electrolyte-lle", version=1
+    )
+    models = (
+        EPCSAFT(installed.select(component_ids)),
+        EPCSAFT(_user_provided_copy(installed).select(component_ids)),
+    )
+    expected_basis = (
+        1.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0, 1.0,
+        0.0, 0.0, 0.0, 1.0, 1.0,
+    )
+
+    for model in models:
+        _, table = _neutral_reference_table(model)
+        assert table.neutral_reference_basis_row_count == 4
+        result, basis, contractions, reference_composition = _evaluate_neutral_reference(
+            table, model.parameter_fingerprint
+        )
+        pure_water = model._native.evaluate_pressure(
+            298.15, 100000.0, (1.0, 0.0, 0.0, 0.0, 0.0), "liquid"
+        )
+        sodium_chloride = model._native.electrolyte_reference_sequence(
+            298.15,
+            100000.0,
+            (1.0, 0.0, 0.0, 0.0, 0.0),
+            (2, 4),
+            (1, 1),
+            "liquid",
+        )
+        potassium_chloride = model._native.electrolyte_reference_sequence(
+            298.15,
+            100000.0,
+            (1.0, 0.0, 0.0, 0.0, 0.0),
+            (3, 4),
+            (1, 1),
+            "liquid",
+        )
+
+        assert result.status == STATUS_OK
+        assert tuple(table.component_charges[index] for index in range(5)) == (0, 0, 1, 1, -1)
+        assert basis == expected_basis
+        assert reference_composition == (1.0, 0.0, 0.0, 0.0, 0.0)
+        assert contractions == pytest.approx(
+            (
+                pure_water.log_fugacity_coefficient[0],
+                pure_water.log_fugacity_coefficient[1],
+                math.fsum(sodium_chloride.log_fugacity),
+                math.fsum(potassium_chloride.log_fugacity),
+            ),
+            abs=3.0e-12,
+        )
+        assert result.reference_convergence_error == pytest.approx(
+            max(
+                sodium_chloride.convergence_error,
+                potassium_chloride.convergence_error,
+            ),
+            abs=3.0e-12,
+        )
+
+
 def test_native_sdk_neutral_reference_is_permutation_invariant_and_fails_closed() -> None:
     canonical = _electrolyte_model()
     _, canonical_table = _neutral_reference_table(canonical)
@@ -2929,9 +3000,7 @@ def test_native_sdk_neutral_reference_is_permutation_invariant_and_fails_closed(
     assert status == STATUS_ABI_MISMATCH
     assert bytes(undersized) == before
 
-    unsupported = _khudaida_model(
-        ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
-    )
+    unsupported = _mixture_model()
     _, unsupported_table = _neutral_reference_table(unsupported)
     assert unsupported_table.neutral_reference_basis_row_count == 0
     unsupported_result = NeutralReferenceResult(
@@ -2942,7 +3011,7 @@ def test_native_sdk_neutral_reference_is_permutation_invariant_and_fails_closed(
     )(
         unsupported_table.model_context,
         unsupported.parameter_fingerprint.encode(),
-        293.15,
+        220.0,
         100000.0,
         ctypes.byref(unsupported_result),
     )

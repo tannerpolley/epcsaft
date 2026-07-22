@@ -135,7 +135,7 @@ bool neutral_reference_model_shape_admitted(
     const std::vector<std::string>& component_ids,
     const std::vector<int>& charges
 ) {
-    if (component_ids.size() != 3 || charges.size() != 3) {
+    if (component_ids.size() != charges.size()) {
         return false;
     }
     std::size_t water_count = 0;
@@ -146,7 +146,7 @@ bool neutral_reference_model_shape_admitted(
         cation_count += charges[component] > 0;
         anion_count += charges[component] < 0;
     }
-    return water_count == 1 && cation_count == 1 && anion_count == 1;
+    return water_count == 1 && cation_count > 0 && anion_count > 0;
 }
 
 struct NativeSdkEndpoint final {
@@ -228,7 +228,7 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_ion_solvation_born,
               sizeof(epcsaft_aqueous_miac_kij_result_v1),
               &NativeSdkEndpoint::evaluate_aqueous_miac_kij,
-              neutral_reference_admitted ? 2u : 0u,
+              neutral_reference_admitted ? component_ids.size() - 1u : 0u,
               sizeof(epcsaft_neutral_reference_result_v1),
               &NativeSdkEndpoint::evaluate_neutral_reference,
           } {}
@@ -288,7 +288,11 @@ struct NativeSdkEndpoint final {
                 "unsupported neutral standard-reference model identity"
             );
         }
-        if (temperature_k < endpoint.temperature_min_k
+        if (!std::isfinite(endpoint.temperature_min_k)
+            || !std::isfinite(endpoint.temperature_max_k)
+            || !std::isfinite(endpoint.pressure_min_pa)
+            || !std::isfinite(endpoint.pressure_max_pa)
+            || temperature_k < endpoint.temperature_min_k
             || temperature_k > endpoint.temperature_max_k
             || pressure_pa < endpoint.pressure_min_pa
             || pressure_pa > endpoint.pressure_max_pa) {
@@ -297,8 +301,8 @@ struct NativeSdkEndpoint final {
                 "standard-reference state is outside the parameter source domain"
             );
         }
-        constexpr std::size_t row_count = 2;
         const std::size_t component_count = endpoint.component_ids.size();
+        const std::size_t row_count = component_count - 1;
         if (result->component_count != component_count
             || result->neutral_basis_row_count != row_count
             || result->neutral_basis_capacity != row_count * component_count
@@ -314,43 +318,27 @@ struct NativeSdkEndpoint final {
         }
         try {
             std::size_t solvent = component_count;
-            std::size_t cation = component_count;
-            std::size_t anion = component_count;
+            std::vector<std::size_t> cations;
+            std::vector<std::size_t> anions;
             for (std::size_t component = 0; component < component_count; ++component) {
                 if (endpoint.component_ids[component] == "water"
                     && endpoint.component_charges[component] == 0) {
                     solvent = component;
-                } else if (endpoint.component_charges[component] > 0) {
-                    cation = component;
+                }
+                if (endpoint.component_charges[component] > 0) {
+                    cations.push_back(component);
                 } else if (endpoint.component_charges[component] < 0) {
-                    anion = component;
+                    anions.push_back(component);
                 }
             }
-            if (solvent == component_count || cation == component_count
-                || anion == component_count) {
+            if (solvent == component_count || cations.empty() || anions.empty()) {
                 return fail(
                     EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
                     "neutral reference component topology is incomplete"
                 );
             }
-            const int divisor = std::gcd(
-                std::abs(endpoint.component_charges[cation]),
-                std::abs(endpoint.component_charges[anion])
-            );
-            const std::array<int, 2> stoichiometry = {
-                std::abs(endpoint.component_charges[anion]) / divisor,
-                std::abs(endpoint.component_charges[cation]) / divisor,
-            };
             std::vector<double> reference_composition(component_count, 0.0);
             reference_composition[solvent] = 1.0;
-            const auto sequence = endpoint.model.electrolyte_reference_sequence(
-                temperature_k,
-                pressure_pa,
-                reference_composition,
-                std::array<std::size_t, 2>{cation, anion},
-                stoichiometry,
-                "liquid"
-            );
             const auto pure_state = endpoint.model.evaluate_pressure(
                 temperature_k, pressure_pa, reference_composition, "liquid"
             );
@@ -358,14 +346,57 @@ struct NativeSdkEndpoint final {
                 throw std::runtime_error("pure-solvent reference fugacity is unavailable");
             }
             std::vector<double> basis(row_count * component_count, 0.0);
-            basis[solvent] = 1.0;
-            basis[component_count + cation] = stoichiometry[0];
-            basis[component_count + anion] = stoichiometry[1];
-            const std::array<double, 2> contractions = {
-                (*pure_state.log_fugacity_coefficient)[solvent],
-                stoichiometry[0] * sequence.log_fugacity[0]
-                    + stoichiometry[1] * sequence.log_fugacity[1],
+            std::vector<double> contractions(row_count, 0.0);
+            std::size_t row = 0;
+            for (std::size_t component = 0; component < component_count; ++component) {
+                if (endpoint.component_charges[component] == 0) {
+                    basis[row * component_count + component] = 1.0;
+                    contractions[row] = (*pure_state.log_fugacity_coefficient)[component];
+                    ++row;
+                }
+            }
+            double reference_molality = std::numeric_limits<double>::quiet_NaN();
+            double reference_convergence_error = 0.0;
+            auto append_pair = [&](std::size_t cation, std::size_t anion) {
+                const int divisor = std::gcd(
+                    std::abs(endpoint.component_charges[cation]),
+                    std::abs(endpoint.component_charges[anion])
+                );
+                const std::array<int, 2> stoichiometry = {
+                    std::abs(endpoint.component_charges[anion]) / divisor,
+                    std::abs(endpoint.component_charges[cation]) / divisor,
+                };
+                const auto sequence = endpoint.model.electrolyte_reference_sequence(
+                    temperature_k,
+                    pressure_pa,
+                    reference_composition,
+                    std::array<std::size_t, 2>{cation, anion},
+                    stoichiometry,
+                    "liquid"
+                );
+                basis[row * component_count + cation] = stoichiometry[0];
+                basis[row * component_count + anion] = stoichiometry[1];
+                contractions[row] = stoichiometry[0] * sequence.log_fugacity[0]
+                    + stoichiometry[1] * sequence.log_fugacity[1];
+                if (std::isnan(reference_molality)) {
+                    reference_molality = sequence.reference_molality;
+                } else if (sequence.reference_molality != reference_molality) {
+                    throw std::runtime_error("neutral reference molality changed between rows");
+                }
+                reference_convergence_error = std::max(
+                    reference_convergence_error, sequence.convergence_error
+                );
+                ++row;
             };
+            for (std::size_t anion : anions) {
+                append_pair(cations.front(), anion);
+            }
+            for (std::size_t index = 1; index < cations.size(); ++index) {
+                append_pair(cations[index], anions.front());
+            }
+            if (row != row_count) {
+                throw std::runtime_error("neutral reference basis dimension changed");
+            }
             const auto& molar_masses = endpoint.model.molar_masses_kg_per_mol();
             const double solvent_molar_mass = molar_masses[solvent];
             if (!std::all_of(basis.begin(), basis.end(), [](double value) {
@@ -377,10 +408,10 @@ struct NativeSdkEndpoint final {
                     }
                 )
                 || !std::isfinite(solvent_molar_mass) || solvent_molar_mass <= 0.0
-                || !std::isfinite(sequence.reference_molality)
-                || sequence.reference_molality <= 0.0
-                || !std::isfinite(sequence.convergence_error)
-                || sequence.convergence_error < 0.0) {
+                || !std::isfinite(reference_molality)
+                || reference_molality <= 0.0
+                || !std::isfinite(reference_convergence_error)
+                || reference_convergence_error < 0.0) {
                 throw std::runtime_error("neutral standard-reference result is nonfinite");
             }
             std::copy(basis.begin(), basis.end(), result->neutral_basis);
@@ -399,8 +430,8 @@ struct NativeSdkEndpoint final {
             result->solvent_molar_mass_kg_per_mol = solvent_molar_mass;
             result->reference_amount_mol = 1.0;
             result->reference_number_density_mol_per_m3 = 1.0;
-            result->reference_molality_mol_per_kg = sequence.reference_molality;
-            result->reference_convergence_error = sequence.convergence_error;
+            result->reference_molality_mol_per_kg = reference_molality;
+            result->reference_convergence_error = reference_convergence_error;
             std::snprintf(
                 result->parameter_fingerprint,
                 sizeof(result->parameter_fingerprint),
@@ -1224,9 +1255,14 @@ pybind11::capsule make_native_sdk_v1(
         throw std::invalid_argument("invalid electrolyte source applicability");
     }
     if (neutral_reference_admitted
-        && (!std::isfinite(pressure_min_pa) || pressure_min_pa <= 0.0
-            || !std::isfinite(pressure_max_pa) || pressure_max_pa <= 0.0
-            || pressure_min_pa > pressure_max_pa)) {
+        && ((!unknown_applicability_admitted
+             && (std::isnan(pressure_min_pa) || std::isnan(pressure_max_pa)))
+            || (!std::isnan(pressure_min_pa)
+                && (!std::isfinite(pressure_min_pa) || pressure_min_pa <= 0.0))
+            || (!std::isnan(pressure_max_pa)
+                && (!std::isfinite(pressure_max_pa) || pressure_max_pa <= 0.0))
+            || (std::isfinite(pressure_min_pa) && std::isfinite(pressure_max_pa)
+                && pressure_min_pa > pressure_max_pa))) {
         throw std::invalid_argument("invalid neutral reference pressure applicability");
     }
     auto* endpoint = new NativeSdkEndpoint(
