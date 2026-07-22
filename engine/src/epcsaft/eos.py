@@ -462,6 +462,7 @@ def native_sdk(model: EPCSAFT) -> object:
             pressure_minimum,
             pressure_maximum,
             neutral_reference_admitted,
+            model._parameter_bundle_purpose == "user-provided",
         )
     except (RuntimeError, ValueError) as exc:
         raise _eos_error("unsupported-native-sdk", reason=str(exc)) from exc
