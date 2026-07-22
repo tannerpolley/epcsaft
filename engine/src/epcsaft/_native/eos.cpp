@@ -30,6 +30,47 @@ bool finite(const std::vector<double>& values) {
     });
 }
 
+double log_fugacity_density(
+    const NativeResult& state,
+    const detail::ThermodynamicDerivatives& derivatives,
+    const std::vector<double>& composition,
+    std::size_t component,
+    std::size_t coordinates
+) {
+    auto hessian = [&derivatives, coordinates](
+        std::size_t row, std::size_t column
+    ) {
+        return derivatives.hessian[row * coordinates + column];
+    };
+    double weighted_composition_density = 0.0;
+    for (std::size_t mixture_component = 0;
+         mixture_component < composition.size();
+         ++mixture_component) {
+        weighted_composition_density += composition[mixture_component]
+            * hessian(2 + mixture_component, 1);
+    }
+    const double compressibility_density = derivatives.density
+        + state.molar_density * derivatives.density_density;
+    const double chemical_potential_density = 2.0 * derivatives.density
+        + state.molar_density * derivatives.density_density
+        + hessian(2 + component, 1)
+        - weighted_composition_density;
+    return chemical_potential_density
+        - compressibility_density / state.compressibility_factor;
+}
+
+double fixed_pressure_log_fugacity(
+    const NativeResult& state,
+    double pressure,
+    std::size_t component,
+    double fugacity_density
+) {
+    const double density_correction = -(state.pressure - pressure)
+        / state.pressure_density_derivative;
+    return (*state.log_fugacity_coefficient)[component]
+        + fugacity_density * density_correction;
+}
+
 detail::ReferenceObservation active_born_observation(
     const NativeModel& model,
     const NativeParameters& parameters,
@@ -164,8 +205,16 @@ detail::ReferenceObservation active_aqueous_kij_observation(
         return derivatives.hessian[row * coordinates + column];
     };
     const double compressibility = state.compressibility_factor;
-    const double compressibility_density = derivatives.density
-        + state.molar_density * derivatives.density_density;
+    std::array<double, 2> fugacity_density{};
+    std::array<double, 2> corrected_log_fugacity{};
+    for (std::size_t ion = 0; ion < 2; ++ion) {
+        fugacity_density[ion] = log_fugacity_density(
+            state, derivatives, composition, 1 + ion, coordinates
+        );
+        corrected_log_fugacity[ion] = fixed_pressure_log_fugacity(
+            state, pressure, 1 + ion, fugacity_density[ion]
+        );
+    }
     std::vector<double> total_derivative(6);
     for (std::size_t active = 0; active < 3; ++active) {
         const std::size_t active_coordinate = active_offset + active;
@@ -175,14 +224,11 @@ detail::ReferenceObservation active_aqueous_kij_observation(
         for (std::size_t ion = 0; ion < 2; ++ion) {
             const std::size_t component = 1 + ion;
             double weighted_composition_k = 0.0;
-            double weighted_composition_density = 0.0;
             for (std::size_t mixture_component = 0;
                  mixture_component < components;
                  ++mixture_component) {
                 weighted_composition_k += composition[mixture_component]
                     * hessian(2 + mixture_component, active_coordinate);
-                weighted_composition_density += composition[mixture_component]
-                    * hessian(2 + mixture_component, 1);
             }
             const double chemical_potential_k =
                 derivatives.active_aqueous_k_ij[active]
@@ -192,22 +238,12 @@ detail::ReferenceObservation active_aqueous_kij_observation(
             const double log_fugacity_k = chemical_potential_k
                 - state.molar_density * hessian(1, active_coordinate)
                     / compressibility;
-            const double chemical_potential_density =
-                2.0 * derivatives.density
-                + state.molar_density * derivatives.density_density
-                + hessian(2 + component, 1)
-                - weighted_composition_density;
-            const double log_fugacity_density = chemical_potential_density
-                - compressibility_density / compressibility;
             total_derivative[ion * 3 + active] = log_fugacity_k
-                + log_fugacity_density * density_k;
+                + fugacity_density[ion] * density_k;
         }
     }
     return {
-        {
-            (*state.log_fugacity_coefficient)[1],
-            (*state.log_fugacity_coefficient)[2],
-        },
+        corrected_log_fugacity,
         std::move(total_derivative),
     };
 }
