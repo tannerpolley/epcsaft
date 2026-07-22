@@ -14,6 +14,8 @@ pybind11::capsule make_native_sdk_v1(
     const std::string& parameter_fingerprint,
     double temperature_min_k,
     double temperature_max_k,
+    double pressure_min_pa,
+    double pressure_max_pa,
     const std::vector<std::string>& component_ids,
     double ion_mole_fraction_max,
     bool phase_callbacks_admitted,

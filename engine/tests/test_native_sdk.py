@@ -137,6 +137,16 @@ class ActiveBornNativeSdkTable(ctypes.Structure):
     )
 
 
+class BasisNativeSdkTable(ctypes.Structure):
+    _fields_ = ActiveBornNativeSdkTable._fields_ + (
+        ("helmholtz_basis_id", ctypes.c_char_p),
+        ("reference_amount_mol", ctypes.c_double),
+        ("reference_number_density_mol_per_m3", ctypes.c_double),
+        ("source_pressure_min_pa", ctypes.c_double),
+        ("source_pressure_max_pa", ctypes.c_double),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -161,6 +171,9 @@ APPLICABILITY_PREFIX_SIZE = (
 )
 ACTIVE_BORN_PREFIX_SIZE = (
     ActiveBornNativeSdkTable.evaluate_ion_solvation_born.offset + ctypes.sizeof(ctypes.c_void_p)
+)
+BASIS_PREFIX_SIZE = BasisNativeSdkTable.source_pressure_max_pa.offset + ctypes.sizeof(
+    ctypes.c_double
 )
 
 
@@ -367,6 +380,18 @@ def _active_born_table(model: EPCSAFT) -> tuple[object, ActiveBornNativeSdkTable
     assert address
     table = ctypes.cast(address, ctypes.POINTER(ActiveBornNativeSdkTable)).contents
     assert table.table_size >= ACTIVE_BORN_PREFIX_SIZE
+    return capsule, table
+
+
+def _basis_table(model: EPCSAFT) -> tuple[object, BasisNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(BasisNativeSdkTable)).contents
+    assert table.table_size >= BASIS_PREFIX_SIZE
     return capsule, table
 
 
@@ -671,6 +696,41 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
     assert APPLICABILITY_PREFIX_SIZE == ctypes.sizeof(ApplicabilityNativeSdkTable) == 152
 
 
+def test_native_sdk_helmholtz_basis_and_pressure_metadata_are_append_only() -> None:
+    held = _held_water_ionization_model()
+    capsule, table = _basis_table(held)
+    assert capsule is not None
+    for field_name, _ in ActiveBornNativeSdkTable._fields_:
+        assert getattr(BasisNativeSdkTable, field_name).offset == getattr(
+            ActiveBornNativeSdkTable, field_name
+        ).offset
+    assert BasisNativeSdkTable.helmholtz_basis_id.offset == 168
+    assert BasisNativeSdkTable.reference_amount_mol.offset == 176
+    assert BasisNativeSdkTable.reference_number_density_mol_per_m3.offset == 184
+    assert BasisNativeSdkTable.source_pressure_min_pa.offset == 192
+    assert BasisNativeSdkTable.source_pressure_max_pa.offset == 200
+    assert BASIS_PREFIX_SIZE == ctypes.sizeof(BasisNativeSdkTable) == 208
+    assert table.helmholtz_basis_id.decode() == (
+        "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
+    )
+    assert table.reference_amount_mol == 1.0
+    assert table.reference_number_density_mol_per_m3 == 1.0
+    assert table.source_pressure_min_pa == 100000.0
+    assert table.source_pressure_max_pa == 100000.0
+
+    _, khudaida = _basis_table(
+        _khudaida_model(
+            ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
+        )
+    )
+    assert khudaida.source_pressure_min_pa == 100000.0
+    assert khudaida.source_pressure_max_pa == 100000.0
+
+    _, gross = _basis_table(_mixture_model())
+    assert math.isnan(gross.source_pressure_min_pa)
+    assert math.isnan(gross.source_pressure_max_pa)
+
+
 @pytest.mark.parametrize(
     ("catalog", "component_ids", "domain_id", "expected_fingerprint", "expected"),
     (
@@ -758,8 +818,38 @@ def test_native_sdk_applicability_metadata_rejects_missing_or_malformed_limits(
             model.parameter_fingerprint,
             temperature_min_k,
             temperature_max_k,
+            math.nan,
+            math.nan,
             model.component_ids,
             ion_mole_fraction_max,
+        )
+
+
+@pytest.mark.parametrize(
+    ("pressure_min_pa", "pressure_max_pa"),
+    (
+        (0.0, math.nan),
+        (math.nan, 0.0),
+        (math.inf, math.nan),
+        (math.nan, math.inf),
+        (200000.0, 100000.0),
+    ),
+)
+def test_native_sdk_rejects_malformed_pressure_limits(
+    pressure_min_pa: float,
+    pressure_max_pa: float,
+) -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "chloride-anion"))
+    with pytest.raises(ValueError, match="invalid source pressure applicability"):
+        _native_sdk_v1(
+            model._native,
+            model.parameter_fingerprint,
+            298.15,
+            298.15,
+            pressure_min_pa,
+            pressure_max_pa,
+            model.component_ids,
+            0.38,
         )
 
 
@@ -2074,7 +2164,8 @@ def test_native_sdk_active_born_matches_public_reference_state(
     capsule, table = _active_born_table(model)
     assert capsule is not None
     assert model.parameter_fingerprint == fingerprint
-    assert table.table_size == ACTIVE_BORN_PREFIX_SIZE == 168
+    assert ACTIVE_BORN_PREFIX_SIZE == 168
+    assert table.table_size == BASIS_PREFIX_SIZE == 208
     assert table.ion_solvation_born_result_size == ctypes.sizeof(IonSolvationBornResult) == 272
     assert table.evaluate_ion_solvation_born
 

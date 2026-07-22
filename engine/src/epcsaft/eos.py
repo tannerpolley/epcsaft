@@ -407,6 +407,12 @@ def native_sdk(model: EPCSAFT) -> object:
         )
     minimum = math.nan if model._model.temperature_min_k is None else model._model.temperature_min_k
     maximum = math.nan if model._model.temperature_max_k is None else model._model.temperature_max_k
+    minimum_pressure = (
+        math.nan if model._model.pressure_min_pa is None else model._model.pressure_min_pa
+    )
+    maximum_pressure = (
+        math.nan if model._model.pressure_max_pa is None else model._model.pressure_max_pa
+    )
     maximum_ion_fraction = (
         math.nan
         if model._model.ion_mole_fraction_max is None
@@ -418,6 +424,8 @@ def native_sdk(model: EPCSAFT) -> object:
             fingerprint,
             minimum,
             maximum,
+            minimum_pressure,
+            maximum_pressure,
             model._component_ids,
             maximum_ion_fraction,
             phase_admitted,

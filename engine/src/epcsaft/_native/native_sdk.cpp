@@ -84,6 +84,8 @@ struct NativeSdkEndpoint final {
     std::string parameter_fingerprint;
     double temperature_min_k;
     double temperature_max_k;
+    double pressure_min_pa;
+    double pressure_max_pa;
     double ion_mole_fraction_max;
     bool phase_callbacks_admitted;
     bool active_born_admitted;
@@ -97,6 +99,8 @@ struct NativeSdkEndpoint final {
         std::string fingerprint,
         double minimum_temperature,
         double maximum_temperature,
+        double minimum_pressure,
+        double maximum_pressure,
         std::vector<std::string> identifiers,
         double maximum_ion_fraction,
         bool admit_phase_callbacks,
@@ -106,6 +110,8 @@ struct NativeSdkEndpoint final {
           parameter_fingerprint(std::move(fingerprint)),
           temperature_min_k(minimum_temperature),
           temperature_max_k(maximum_temperature),
+          pressure_min_pa(minimum_pressure),
+          pressure_max_pa(maximum_pressure),
           ion_mole_fraction_max(maximum_ion_fraction),
           phase_callbacks_admitted(admit_phase_callbacks),
           active_born_admitted(admit_active_born),
@@ -144,6 +150,11 @@ struct NativeSdkEndpoint final {
               ion_mole_fraction_max,
               sizeof(epcsaft_ion_solvation_born_result_v1),
               &NativeSdkEndpoint::evaluate_ion_solvation_born,
+              EPCSAFT_NATIVE_SDK_V1_HELMHOLTZ_BASIS_ID,
+              1.0,
+              1.0,
+              pressure_min_pa,
+              pressure_max_pa,
           } {}
 
     static int evaluate_ion_solvation_born(
@@ -772,6 +783,8 @@ pybind11::capsule make_native_sdk_v1(
     const std::string& parameter_fingerprint,
     double temperature_min_k,
     double temperature_max_k,
+    double pressure_min_pa,
+    double pressure_max_pa,
     const std::vector<std::string>& component_ids,
     double ion_mole_fraction_max,
     bool phase_callbacks_admitted,
@@ -819,11 +832,22 @@ pybind11::capsule make_native_sdk_v1(
                     || ion_mole_fraction_max > 1.0)))) {
         throw std::invalid_argument("invalid electrolyte source applicability");
     }
+    const auto valid_pressure_bound = [](double value) {
+        return std::isnan(value) || (std::isfinite(value) && value > 0.0);
+    };
+    if (!valid_pressure_bound(pressure_min_pa)
+        || !valid_pressure_bound(pressure_max_pa)
+        || (std::isfinite(pressure_min_pa) && std::isfinite(pressure_max_pa)
+            && pressure_min_pa > pressure_max_pa)) {
+        throw std::invalid_argument("invalid source pressure applicability");
+    }
     auto* endpoint = new NativeSdkEndpoint(
         model,
         parameter_fingerprint,
         temperature_min_k,
         temperature_max_k,
+        pressure_min_pa,
+        pressure_max_pa,
         component_ids,
         ion_mole_fraction_max,
         phase_callbacks_admitted,

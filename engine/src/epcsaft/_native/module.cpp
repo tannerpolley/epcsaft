@@ -152,6 +152,8 @@ PYBIND11_MODULE(_core, module) {
         py::arg("parameter_fingerprint"),
         py::arg("temperature_min_k"),
         py::arg("temperature_max_k"),
+        py::arg("pressure_min_pa"),
+        py::arg("pressure_max_pa"),
         py::arg("component_ids"),
         py::arg("ion_mole_fraction_max"),
         py::arg("phase_callbacks_admitted") = true,

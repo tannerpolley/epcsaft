@@ -1392,3 +1392,13 @@ def test_electrolyte_formulation_identity_is_closed() -> None:
             "unknown-formulation",
             **PROVENANCE,
         )
+
+
+def test_validity_domain_rejects_reversed_pressure_bounds() -> None:
+    with pytest.raises(ParameterError, match="reversed-bounds"):
+        ValidityDomain(
+            "reversed-pressure",
+            "reported-conditions",
+            pressure_min=2 * unit_registry.bar,
+            pressure_max=1 * unit_registry.bar,
+        )

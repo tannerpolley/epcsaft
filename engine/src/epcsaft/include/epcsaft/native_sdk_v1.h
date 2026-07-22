@@ -12,6 +12,8 @@ extern "C" {
 #define EPCSAFT_NATIVE_SDK_V1_ABI_VERSION 1u
 #define EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE 72u
 #define EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE 160u
+#define EPCSAFT_NATIVE_SDK_V1_HELMHOLTZ_BASIS_ID \
+    "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
 
 enum epcsaft_native_status_v1 {
     EPCSAFT_NATIVE_STATUS_OK_V1 = 0,
@@ -210,6 +212,13 @@ typedef struct epcsaft_native_sdk_v1 {
     double total_ion_mole_fraction_max;
     size_t ion_solvation_born_result_size;
     epcsaft_evaluate_ion_solvation_born_v1 evaluate_ion_solvation_born;
+    /* Exact coordinate basis for all Helmholtz values and derivatives above. */
+    const char* helmholtz_basis_id;
+    double reference_amount_mol;
+    double reference_number_density_mol_per_m3;
+    /* NaN means that the bound source records declare no pressure limit. */
+    double source_pressure_min_pa;
+    double source_pressure_max_pa;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus
