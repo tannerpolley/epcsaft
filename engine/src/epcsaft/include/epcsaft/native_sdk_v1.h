@@ -186,6 +186,37 @@ typedef int (*epcsaft_evaluate_ion_solvation_born_v1)(
     epcsaft_ion_solvation_born_result_v1* result
 );
 
+#define EPCSAFT_AQUEOUS_ACTIVE_KIJ_COORDINATE_COUNT_V1 3u
+
+enum epcsaft_aqueous_active_kij_coordinate_v1 {
+    EPCSAFT_AQUEOUS_KIJ_WATER_CATION_V1 = 0,
+    EPCSAFT_AQUEOUS_KIJ_WATER_ANION_V1 = 1,
+    EPCSAFT_AQUEOUS_KIJ_CATION_ANION_V1 = 2
+};
+
+typedef struct epcsaft_aqueous_miac_kij_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double log_mean_ionic_activity_coefficient_molality;
+    double derivative[EPCSAFT_AQUEOUS_ACTIVE_KIJ_COORDINATE_COUNT_V1];
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+    double reference_derivative_convergence_error;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_aqueous_miac_kij_result_v1;
+
+typedef int (*epcsaft_evaluate_aqueous_miac_kij_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    double formula_unit_molality_mol_per_kg,
+    const double* k_ij,
+    size_t k_ij_count,
+    epcsaft_aqueous_miac_kij_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -210,6 +241,8 @@ typedef struct epcsaft_native_sdk_v1 {
     double total_ion_mole_fraction_max;
     size_t ion_solvation_born_result_size;
     epcsaft_evaluate_ion_solvation_born_v1 evaluate_ion_solvation_born;
+    size_t aqueous_miac_kij_result_size;
+    epcsaft_evaluate_aqueous_miac_kij_v1 evaluate_aqueous_miac_kij;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

@@ -155,6 +155,7 @@ PYBIND11_MODULE(_core, module) {
         py::arg("component_ids"),
         py::arg("ion_mole_fraction_max"),
         py::arg("phase_callbacks_admitted") = true,
-        py::arg("active_born_admitted") = false
+        py::arg("active_born_admitted") = false,
+        py::arg("aqueous_kij_admitted") = false
     );
 }

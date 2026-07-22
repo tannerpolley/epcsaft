@@ -137,6 +137,27 @@ class ActiveBornNativeSdkTable(ctypes.Structure):
     )
 
 
+class AqueousMiacKijResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("log_mean_ionic_activity_coefficient_molality", ctypes.c_double),
+        ("derivative", ctypes.c_double * 3),
+        ("reference_molality_mol_per_kg", ctypes.c_double),
+        ("reference_convergence_error", ctypes.c_double),
+        ("reference_derivative_convergence_error", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class AqueousMiacKijNativeSdkTable(ctypes.Structure):
+    _fields_ = ActiveBornNativeSdkTable._fields_ + (
+        ("aqueous_miac_kij_result_size", ctypes.c_size_t),
+        ("evaluate_aqueous_miac_kij", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -161,6 +182,10 @@ APPLICABILITY_PREFIX_SIZE = (
 )
 ACTIVE_BORN_PREFIX_SIZE = (
     ActiveBornNativeSdkTable.evaluate_ion_solvation_born.offset + ctypes.sizeof(ctypes.c_void_p)
+)
+AQUEOUS_MIAC_KIJ_PREFIX_SIZE = (
+    AqueousMiacKijNativeSdkTable.evaluate_aqueous_miac_kij.offset
+    + ctypes.sizeof(ctypes.c_void_p)
 )
 
 
@@ -241,6 +266,18 @@ EvaluateIonSolvationBorn = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(IonSolvationBornResult),
+)
+
+EvaluateAqueousMiacKij = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.POINTER(AqueousMiacKijResult),
 )
 
 
@@ -357,6 +394,42 @@ def _active_born_table(model: EPCSAFT) -> tuple[object, ActiveBornNativeSdkTable
     table = ctypes.cast(address, ctypes.POINTER(ActiveBornNativeSdkTable)).contents
     assert table.table_size >= ACTIVE_BORN_PREFIX_SIZE
     return capsule, table
+
+
+def _aqueous_miac_kij_table(
+    model: EPCSAFT,
+) -> tuple[object, AqueousMiacKijNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(AqueousMiacKijNativeSdkTable)).contents
+    assert table.table_size >= AQUEOUS_MIAC_KIJ_PREFIX_SIZE
+    return capsule, table
+
+
+def _evaluate_aqueous_miac_kij(
+    table: AqueousMiacKijNativeSdkTable,
+    fingerprint: str,
+    molality: float,
+    k_ij: tuple[float, float, float],
+) -> AqueousMiacKijResult:
+    coordinates = (ctypes.c_double * 3)(*k_ij)
+    result = AqueousMiacKijResult(struct_size=ctypes.sizeof(AqueousMiacKijResult))
+    status = EvaluateAqueousMiacKij(table.evaluate_aqueous_miac_kij)(
+        table.model_context,
+        fingerprint.encode(),
+        298.15,
+        100000.0,
+        molality,
+        coordinates,
+        3,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
 
 
 def _evaluate_active_born(
@@ -1986,7 +2059,8 @@ def test_native_sdk_active_born_matches_public_reference_state(
     capsule, table = _active_born_table(model)
     assert capsule is not None
     assert model.parameter_fingerprint == fingerprint
-    assert table.table_size == ACTIVE_BORN_PREFIX_SIZE == 168
+    assert ACTIVE_BORN_PREFIX_SIZE == 168
+    assert table.table_size == AQUEOUS_MIAC_KIJ_PREFIX_SIZE == 184
     assert table.ion_solvation_born_result_size == ctypes.sizeof(IonSolvationBornResult) == 272
     assert table.evaluate_ion_solvation_born
 
@@ -2134,3 +2208,141 @@ def test_native_sdk_active_born_preserves_prior_prefix_and_fails_closed() -> Non
     )
     assert phase_result.status == STATUS_UNSUPPORTED_MODEL
     assert phase_result.error
+
+
+@pytest.mark.parametrize(
+    ("cation", "anion"),
+    (
+        ("lithium-cation", "chloride-anion"),
+        ("sodium-cation", "chloride-anion"),
+        ("potassium-cation", "chloride-anion"),
+        ("lithium-cation", "bromide-anion"),
+        ("sodium-cation", "bromide-anion"),
+        ("potassium-cation", "bromide-anion"),
+    ),
+)
+def test_native_sdk_aqueous_miac_kij_matches_public_reference_state(
+    cation: str,
+    anion: str,
+) -> None:
+    model = _electrolyte_model(("water", cation, anion))
+    _, table = _aqueous_miac_kij_table(model)
+    catalog = model._model.k_ij
+    k_ij = (catalog[1], catalog[2], catalog[5])
+    observed = _evaluate_aqueous_miac_kij(
+        table, model.parameter_fingerprint, 1.0, k_ij
+    )
+    reference = model.reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=1.0 * unit_registry.bar,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    ).at_molality(1.0 * unit_registry.mole / unit_registry.kilogram)
+
+    assert table.table_size == AQUEOUS_MIAC_KIJ_PREFIX_SIZE == 184
+    assert table.aqueous_miac_kij_result_size == ctypes.sizeof(AqueousMiacKijResult) == 296
+    assert observed.status == STATUS_OK
+    assert observed.log_mean_ionic_activity_coefficient_molality == pytest.approx(
+        math.log(reference.mean_ionic_activity_coefficient_molality), abs=2.0e-11
+    )
+    assert all(math.isfinite(value) for value in observed.derivative)
+    assert observed.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+
+@pytest.mark.parametrize(
+    ("cation", "anion", "molality"),
+    (
+        ("lithium-cation", "chloride-anion", 0.02),
+        ("potassium-cation", "bromide-anion", 4.0),
+    ),
+)
+def test_native_sdk_aqueous_miac_kij_exact_derivatives(
+    cation: str,
+    anion: str,
+    molality: float,
+) -> None:
+    model = _electrolyte_model(("water", cation, anion))
+    _, table = _aqueous_miac_kij_table(model)
+    trial = (-0.15, 0.20, 0.35)
+    center = _evaluate_aqueous_miac_kij(
+        table, model.parameter_fingerprint, molality, trial
+    )
+    for coordinate in range(3):
+        estimates = []
+        for step in (1.0e-4, 5.0e-5):
+            upper = list(trial)
+            lower = list(trial)
+            upper[coordinate] += step
+            lower[coordinate] -= step
+            high = _evaluate_aqueous_miac_kij(
+                table, model.parameter_fingerprint, molality, tuple(upper)
+            )
+            low = _evaluate_aqueous_miac_kij(
+                table, model.parameter_fingerprint, molality, tuple(lower)
+            )
+            estimates.append(
+                (
+                    high.log_mean_ionic_activity_coefficient_molality
+                    - low.log_mean_ionic_activity_coefficient_molality
+                )
+                / (2.0 * step)
+            )
+        tolerance = max(
+            1.0e-8,
+            20.0 * abs(estimates[0] - estimates[1]),
+            2.0e-8 * abs(center.derivative[coordinate]),
+        )
+        assert abs(center.derivative[coordinate] - estimates[1]) <= tolerance
+
+
+def test_native_sdk_aqueous_miac_kij_preserves_prefix_and_fails_closed() -> None:
+    model = _electrolyte_model()
+    capsule, table = _aqueous_miac_kij_table(model)
+    assert capsule is not None
+    for field_name, field_type in ActiveBornNativeSdkTable._fields_:
+        assert field_type is not None
+        assert (
+            getattr(AqueousMiacKijNativeSdkTable, field_name).offset
+            == getattr(ActiveBornNativeSdkTable, field_name).offset
+        )
+    assert AqueousMiacKijNativeSdkTable.aqueous_miac_kij_result_size.offset == 168
+    assert AqueousMiacKijNativeSdkTable.evaluate_aqueous_miac_kij.offset == 176
+    assert ctypes.sizeof(AqueousMiacKijNativeSdkTable) == 184
+
+    callback = EvaluateAqueousMiacKij(table.evaluate_aqueous_miac_kij)
+    coordinates = (ctypes.c_double * 3)(0.0, 0.0, 0.0)
+    for fingerprint, temperature, molality, count, expected in (
+        (model.parameter_fingerprint.encode(), math.nan, 1.0, 3, STATUS_INVALID_ARGUMENT),
+        (model.parameter_fingerprint.encode(), 298.15, 0.0, 3, STATUS_DOMAIN_ERROR),
+        (b"sha256:wrong", 298.15, 1.0, 3, STATUS_UNSUPPORTED_MODEL),
+        (model.parameter_fingerprint.encode(), 298.15, 1.0, 2, STATUS_ABI_MISMATCH),
+    ):
+        result = AqueousMiacKijResult(struct_size=ctypes.sizeof(AqueousMiacKijResult))
+        status = callback(
+            table.model_context,
+            fingerprint,
+            temperature,
+            100000.0,
+            molality,
+            coordinates,
+            count,
+            ctypes.byref(result),
+        )
+        assert status == result.status == expected, result.error.decode()
+        assert math.isnan(result.log_mean_ionic_activity_coefficient_molality)
+        assert all(math.isnan(value) for value in result.derivative)
+        assert result.parameter_fingerprint == b""
+        assert result.error
+
+    with pytest.raises(ValueError, match="unsupported aqueous active k_ij model identity"):
+        _native_sdk_v1(
+            model._native,
+            model.parameter_fingerprint,
+            298.15,
+            298.15,
+            ("water", "potassium-cation", "chloride-anion"),
+            0.38,
+            False,
+            False,
+            True,
+        )

@@ -1,8 +1,8 @@
 # Model-Bound Aqueous Active-`k_ij` MIAC Design
 
-Status: design candidate for bounded independent subagent review; no runtime
-callback, installed artifact, Regression fit, Validation campaign, or
-authority exists.
+Status: local implementation candidate pending bounded independent subagent
+review; no retained installed artifact, Regression fit, Validation campaign,
+or authority exists.
 
 Project Truss outcome: `ePC-SAFT/ePC-SAFT-regression#1`; Provider leaf:
 `ePC-SAFT/ePC-SAFT#1`. The Provider implementation base is
@@ -345,7 +345,7 @@ review rather than widening surface.
 | Append one model-bound aqueous MIAC value/derivative callback | Exact three-column Ceres input, one existing reference/density owner, six fingerprints, no generic surface | Approve for review |
 
 The current handoff status is
-`PROVIDER_AQUEOUS_ACTIVE_KIJ_DERIVATIVE_DESIGN_READY_FOR_INDEPENDENT_SUBAGENT_REVIEW`.
-Runtime implementation remains unauthorized until that bounded review
-approves an exact stable commit; the approval changes sequencing only and
-transfers no scientific or production authority.
+`PROVIDER_AQUEOUS_ACTIVE_KIJ_IMPLEMENTATION_CANDIDATE_PASSED_LOCAL_GATES_INDEPENDENT_REVIEW_PENDING`.
+The callback remains a local candidate until bounded independent subagent
+review approves an exact stable commit; the approval changes sequencing only
+and transfers no scientific or production authority.

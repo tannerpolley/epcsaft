@@ -18,12 +18,12 @@ inline constexpr double REFERENCE_CONVERGENCE_TOLERANCE = 5.0e-5;
 
 struct ReferenceObservation final {
     std::array<double, 2> log_fugacity;
-    std::optional<std::array<double, 2>> derivative;
+    std::optional<std::vector<double>> derivative;
 };
 
 struct ReferenceSequenceResult final {
     std::array<double, 2> log_fugacity;
-    std::optional<std::array<double, 2>> derivative;
+    std::optional<std::vector<double>> derivative;
     double molality;
     double convergence_error;
     std::optional<double> derivative_convergence_error;
@@ -109,14 +109,19 @@ ReferenceSequenceResult electrolyte_reference_sequence(
                 std::abs(current->log_fugacity[1] - previous->log_fugacity[1])
             );
             if (current->derivative.has_value() && previous->derivative.has_value()) {
-                derivative_convergence_error = std::max(
-                    std::abs(
-                        (*current->derivative)[0] - (*previous->derivative)[0]
-                    ),
-                    std::abs(
-                        (*current->derivative)[1] - (*previous->derivative)[1]
-                    )
-                );
+                if (current->derivative->size() != previous->derivative->size()) {
+                    throw std::runtime_error("reference derivative size changed");
+                }
+                derivative_convergence_error = 0.0;
+                for (std::size_t index = 0; index < current->derivative->size(); ++index) {
+                    derivative_convergence_error = std::max(
+                        *derivative_convergence_error,
+                        std::abs(
+                            (*current->derivative)[index]
+                            - (*previous->derivative)[index]
+                        )
+                    );
+                }
             }
         }
         previous = current;
@@ -133,13 +138,10 @@ ReferenceSequenceResult electrolyte_reference_sequence(
                 throw std::runtime_error("nonfinite reference derivative");
             }
         }
-        const double derivative_scale = std::max(
-            1.0,
-            std::max(
-                std::abs((*current->derivative)[0]),
-                std::abs((*current->derivative)[1])
-            )
-        );
+        double derivative_scale = 1.0;
+        for (double value : *current->derivative) {
+            derivative_scale = std::max(derivative_scale, std::abs(value));
+        }
         if (*derivative_convergence_error
             > REFERENCE_CONVERGENCE_TOLERANCE * derivative_scale) {
             throw std::runtime_error("reference derivative limit did not converge");
