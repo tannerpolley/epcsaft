@@ -138,6 +138,9 @@ public_surface:
     - DensityDiagnostics
     - EosError
     - native_sdk
+    - ElectrolyteReference
+    - IonicActivity
+    - TransferFreeEnergy
   runtime_dependencies:
     - Pint
   direct_build_dependencies:
@@ -193,9 +196,9 @@ manifest:
   public_native_headers: 1
   installed_data_files: 38
   package_test_files: 11
-  physical_production_lines: 7609
-  physical_package_test_lines: 6098
-  physical_documentation_lines: 2885
+  physical_production_lines: 7615
+  physical_package_test_lines: 6124
+  physical_documentation_lines: 2890
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
@@ -215,7 +218,7 @@ manifest:
     - path: tests/test_native_sdk.py
       physical_lines: 2624
     - path: tests/test_parameters.py
-      physical_lines: 1251
+      physical_lines: 1254
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 
 excluded:
