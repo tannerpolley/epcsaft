@@ -23,6 +23,7 @@ struct ReferenceObservation final {
 
 struct ReferenceSequenceResult final {
     std::array<double, 2> log_fugacity;
+    std::optional<double> pure_solvent_log_fugacity_coefficient;
     std::optional<std::array<double, 2>> derivative;
     double molality;
     double convergence_error;
@@ -75,14 +76,20 @@ inline std::vector<double> formula_composition(
     return composition;
 }
 
-template <typename Evaluator>
+template <typename Evaluator, typename PureSolventEvaluator>
 ReferenceSequenceResult electrolyte_reference_sequence(
     const std::vector<double>& solvent_fractions,
     const std::vector<double>& molar_masses_kg_per_mol,
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
-    Evaluator evaluator
+    Evaluator evaluator,
+    PureSolventEvaluator pure_solvent_evaluator
 ) {
+    const auto pure_solvent_log_fugacity = pure_solvent_evaluator(solvent_fractions);
+    if (pure_solvent_log_fugacity.has_value()
+        && !std::isfinite(*pure_solvent_log_fugacity)) {
+        throw std::runtime_error("nonfinite pure-solvent reference fugacity");
+    }
     std::optional<ReferenceObservation> previous;
     std::optional<ReferenceObservation> current;
     double convergence_error = INFINITY;
@@ -147,6 +154,7 @@ ReferenceSequenceResult electrolyte_reference_sequence(
     }
     return {
         current->log_fugacity,
+        pure_solvent_log_fugacity,
         current->derivative,
         REFERENCE_MOLALITIES.back(),
         convergence_error,

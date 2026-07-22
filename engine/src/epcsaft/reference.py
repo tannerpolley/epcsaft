@@ -209,7 +209,10 @@ def build_reference_state(
 
     model = eos._model
     charges = model.charge_number
-    if model.topology != "ionic-ssm-ds" or len(charges) != len(eos.component_ids):
+    if model.topology not in {
+        "ionic-ssm-ds",
+        "ionic-held-2008-debye-huckel",
+    } or len(charges) != len(eos.component_ids):
         raise _eos_error("invalid-reference-state", reason="electrolyte-required")
     cations = tuple(index for index, charge in enumerate(charges) if charge > 0)
     anions = tuple(index for index, charge in enumerate(charges) if charge < 0)
@@ -255,14 +258,9 @@ def build_reference_state(
     active_solvents = tuple(index for index in solvent_indices if solvent_fractions[index] > 0.0)
     pure_water_log_fugacity = None
     if len(active_solvents) == 1 and eos.component_ids[active_solvents[0]] == "water":
-        pure_water_log_fugacity = _log_fugacity(
-            eos,
-            temperature=temperature_quantity,
-            pressure=pressure_quantity,
-            phase=phase,
-            composition=solvent_fractions,
-            required_indices=(active_solvents[0],),
-        )[active_solvents[0]]
+        pure_water_log_fugacity = sequence.pure_solvent_log_fugacity_coefficient
+        if pure_water_log_fugacity is None or not math.isfinite(pure_water_log_fugacity):
+            raise _eos_error("reference-state-failed", reason="pure-solvent-fugacity-unavailable")
 
     return ElectrolyteReference(
         component_ids=eos.component_ids,

@@ -188,6 +188,33 @@ typedef int (*epcsaft_evaluate_ion_solvation_born_v1)(
     epcsaft_ion_solvation_born_result_v1* result
 );
 
+/*
+ * Gauge-invariant standard-reference data for the admitted 1:1 water,
+ * hydronium, hydroxide model. The ionic value is the neutral formula-unit
+ * sum; this interface does not assign predictive single-ion standard states.
+ */
+typedef struct epcsaft_electrolyte_standard_reference_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double temperature_k;
+    double pressure_pa;
+    double formula_unit_infinite_dilution_log_fugacity;
+    double pure_solvent_log_fugacity_coefficient;
+    double solvent_molar_mass_kg_per_mol;
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char helmholtz_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_electrolyte_standard_reference_result_v1;
+
+typedef int (*epcsaft_evaluate_electrolyte_standard_reference_v1)(
+    const void* model_context,
+    double temperature_k,
+    double pressure_pa,
+    epcsaft_electrolyte_standard_reference_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -219,6 +246,9 @@ typedef struct epcsaft_native_sdk_v1 {
     /* NaN means that the bound source records declare no pressure limit. */
     double source_pressure_min_pa;
     double source_pressure_max_pa;
+    size_t electrolyte_standard_reference_result_size;
+    epcsaft_evaluate_electrolyte_standard_reference_v1
+        evaluate_electrolyte_standard_reference;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

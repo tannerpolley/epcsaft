@@ -120,6 +120,35 @@ detail::ReferenceObservation active_born_observation(
     };
 }
 
+std::optional<double> single_solvent_log_fugacity(
+    const NativeModel& model,
+    double temperature,
+    double pressure,
+    const std::vector<double>& solvent_fractions,
+    const std::string& phase
+) {
+    std::optional<std::size_t> solvent_index;
+    for (std::size_t component = 0; component < solvent_fractions.size(); ++component) {
+        if (solvent_fractions[component] <= 0.0) {
+            continue;
+        }
+        if (solvent_index.has_value()) {
+            return std::nullopt;
+        }
+        solvent_index = component;
+    }
+    if (!solvent_index.has_value()) {
+        return std::nullopt;
+    }
+    const auto state = model.evaluate_pressure(
+        temperature, pressure, solvent_fractions, phase
+    );
+    if (!state.log_fugacity_coefficient.has_value()) {
+        throw std::runtime_error("pure-solvent reference fugacity is unavailable");
+    }
+    return (*state.log_fugacity_coefficient)[*solvent_index];
+}
+
 }  // namespace
 
 NativeModel::NativeModel(NativeParameters parameters)
@@ -260,6 +289,10 @@ const std::vector<int>& NativeModel::charge_numbers() const {
     return parameters_.charge_number;
 }
 
+const std::vector<double>& NativeModel::molar_masses_kg_per_mol() const {
+    return parameters_.molar_mass_kg_per_mol;
+}
+
 NativePurePhaseBlock NativeModel::evaluate_pure_phase(
     double temperature,
     double amount,
@@ -372,10 +405,18 @@ NativeReferenceSequence NativeModel::electrolyte_reference_sequence(
                 },
                 std::nullopt,
             };
+        },
+        [this, temperature, pressure, &phase](
+            const std::vector<double>& composition
+        ) {
+            return single_solvent_log_fugacity(
+                *this, temperature, pressure, composition, phase
+            );
         }
     );
     return {
         result.log_fugacity,
+        result.pure_solvent_log_fugacity_coefficient,
         result.molality,
         result.convergence_error,
     };
@@ -416,6 +457,13 @@ NativeIonSolvationBorn NativeModel::evaluate_ion_solvation_born(
                 pressure,
                 composition,
                 1
+            );
+        },
+        [&active_model, temperature, pressure](
+            const std::vector<double>& composition
+        ) {
+            return single_solvent_log_fugacity(
+                active_model, temperature, pressure, composition, "liquid"
             );
         }
     );

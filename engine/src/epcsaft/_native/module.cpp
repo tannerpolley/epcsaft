@@ -81,6 +81,10 @@ PYBIND11_MODULE(_core, module) {
             "log_fugacity", &epcsaft::NativeReferenceSequence::log_fugacity
         )
         .def_readonly(
+            "pure_solvent_log_fugacity_coefficient",
+            &epcsaft::NativeReferenceSequence::pure_solvent_log_fugacity_coefficient
+        )
+        .def_readonly(
             "reference_molality",
             &epcsaft::NativeReferenceSequence::reference_molality
         )

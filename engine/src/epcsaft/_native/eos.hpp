@@ -48,6 +48,7 @@ struct NativePackingFractionBlock;
 
 struct NativeReferenceSequence final {
     std::array<double, 2> log_fugacity;
+    std::optional<double> pure_solvent_log_fugacity_coefficient;
     double reference_molality;
     double convergence_error;
 };
@@ -78,6 +79,7 @@ public:
     bool supports_electrolyte_native_sdk_v1() const;
     std::size_t component_count() const;
     const std::vector<int>& charge_numbers() const;
+    const std::vector<double>& molar_masses_kg_per_mol() const;
     NativePurePhaseBlock evaluate_pure_phase(
         double temperature,
         double amount,

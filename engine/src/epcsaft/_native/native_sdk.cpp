@@ -79,6 +79,20 @@ bool active_born_model_admitted(
     );
 }
 
+bool held_water_reference_model_admitted(
+    const std::string& fingerprint,
+    const std::vector<std::string>& component_ids,
+    const std::vector<int>& charges
+) {
+    return fingerprint
+            == "sha256:cc40aeb2902bfc9a7be46ceb066cfdb41c5cd5d1024fe119be3d559b75f8a256"
+        && component_ids
+            == std::vector<std::string>{
+                "water", "hydronium-cation", "hydroxide-anion"
+            }
+        && charges == std::vector<int>{0, 1, -1};
+}
+
 struct NativeSdkEndpoint final {
     NativeModel model;
     std::string parameter_fingerprint;
@@ -155,6 +169,8 @@ struct NativeSdkEndpoint final {
               1.0,
               pressure_min_pa,
               pressure_max_pa,
+              sizeof(epcsaft_electrolyte_standard_reference_result_v1),
+              &NativeSdkEndpoint::evaluate_electrolyte_standard_reference,
           } {}
 
     static int evaluate_ion_solvation_born(
@@ -242,6 +258,143 @@ struct NativeSdkEndpoint final {
             return fail(
                 EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
                 "unknown active Born evaluation failure"
+            );
+        }
+    }
+
+    static int evaluate_electrolyte_standard_reference(
+        const void* context,
+        double temperature_k,
+        double pressure_pa,
+        epcsaft_electrolyte_standard_reference_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_electrolyte_standard_reference_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const uint32_t result_size = result->struct_size;
+        std::memset(result, 0, sizeof(*result));
+        result->struct_size = result_size;
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+        result->temperature_k = nan;
+        result->pressure_pa = nan;
+        result->formula_unit_infinite_dilution_log_fugacity = nan;
+        result->pure_solvent_log_fugacity_coefficient = nan;
+        result->solvent_molar_mass_kg_per_mol = nan;
+        result->reference_molality_mol_per_kg = nan;
+        result->reference_convergence_error = nan;
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "model context is null"
+            );
+        }
+        if (!std::isfinite(temperature_k) || temperature_k <= 0.0
+            || !std::isfinite(pressure_pa) || pressure_pa <= 0.0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "temperature and pressure must be positive and finite"
+            );
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!held_water_reference_model_admitted(
+                endpoint.parameter_fingerprint,
+                endpoint.component_ids,
+                endpoint.model.charge_numbers()
+            )) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "model is not the admitted ordered Held water reference"
+            );
+        }
+        if ((std::isfinite(endpoint.temperature_min_k)
+             && temperature_k < endpoint.temperature_min_k)
+            || (std::isfinite(endpoint.temperature_max_k)
+                && temperature_k > endpoint.temperature_max_k)
+            || (std::isfinite(endpoint.pressure_min_pa)
+                && pressure_pa < endpoint.pressure_min_pa)
+            || (std::isfinite(endpoint.pressure_max_pa)
+                && pressure_pa > endpoint.pressure_max_pa)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "state is outside the bound source reference domain"
+            );
+        }
+        try {
+            const auto sequence = endpoint.model.electrolyte_reference_sequence(
+                temperature_k,
+                pressure_pa,
+                std::vector<double>{1.0, 0.0, 0.0},
+                std::array<std::size_t, 2>{1, 2},
+                std::array<int, 2>{1, 1},
+                "liquid"
+            );
+            const auto& molar_masses = endpoint.model.molar_masses_kg_per_mol();
+            if (!sequence.pure_solvent_log_fugacity_coefficient.has_value()
+                || molar_masses.size() != 3) {
+                return fail(
+                    EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                    "standard-reference result is incomplete"
+                );
+            }
+            const double formula_unit_log_fugacity =
+                sequence.log_fugacity[0] + sequence.log_fugacity[1];
+            const double pure_solvent_log_fugacity =
+                *sequence.pure_solvent_log_fugacity_coefficient;
+            const double solvent_molar_mass = molar_masses[0];
+            if (!std::isfinite(formula_unit_log_fugacity)
+                || !std::isfinite(pure_solvent_log_fugacity)
+                || !std::isfinite(solvent_molar_mass) || solvent_molar_mass <= 0.0
+                || !std::isfinite(sequence.reference_molality)
+                || sequence.reference_molality <= 0.0
+                || !std::isfinite(sequence.convergence_error)
+                || sequence.convergence_error < 0.0) {
+                return fail(
+                    EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                    "standard-reference result is nonfinite"
+                );
+            }
+            result->temperature_k = temperature_k;
+            result->pressure_pa = pressure_pa;
+            result->formula_unit_infinite_dilution_log_fugacity =
+                formula_unit_log_fugacity;
+            result->pure_solvent_log_fugacity_coefficient =
+                pure_solvent_log_fugacity;
+            result->solvent_molar_mass_kg_per_mol = solvent_molar_mass;
+            result->reference_molality_mol_per_kg = sequence.reference_molality;
+            result->reference_convergence_error = sequence.convergence_error;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->helmholtz_basis_id,
+                sizeof(result->helmholtz_basis_id),
+                "%s",
+                EPCSAFT_NATIVE_SDK_V1_HELMHOLTZ_BASIS_ID
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown standard-reference evaluation failure"
             );
         }
     }

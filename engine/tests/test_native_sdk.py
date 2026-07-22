@@ -147,6 +147,30 @@ class BasisNativeSdkTable(ctypes.Structure):
     )
 
 
+class ElectrolyteStandardReferenceResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("temperature_k", ctypes.c_double),
+        ("pressure_pa", ctypes.c_double),
+        ("formula_unit_infinite_dilution_log_fugacity", ctypes.c_double),
+        ("pure_solvent_log_fugacity_coefficient", ctypes.c_double),
+        ("solvent_molar_mass_kg_per_mol", ctypes.c_double),
+        ("reference_molality_mol_per_kg", ctypes.c_double),
+        ("reference_convergence_error", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("helmholtz_basis_id", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class StandardReferenceNativeSdkTable(ctypes.Structure):
+    _fields_ = BasisNativeSdkTable._fields_ + (
+        ("electrolyte_standard_reference_result_size", ctypes.c_size_t),
+        ("evaluate_electrolyte_standard_reference", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -174,6 +198,10 @@ ACTIVE_BORN_PREFIX_SIZE = (
 )
 BASIS_PREFIX_SIZE = BasisNativeSdkTable.source_pressure_max_pa.offset + ctypes.sizeof(
     ctypes.c_double
+)
+STANDARD_REFERENCE_PREFIX_SIZE = (
+    StandardReferenceNativeSdkTable.evaluate_electrolyte_standard_reference.offset
+    + ctypes.sizeof(ctypes.c_void_p)
 )
 
 
@@ -217,6 +245,14 @@ EvaluateMixturePhaseKij = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(MixturePhaseBlockResult),
+)
+
+EvaluateElectrolyteStandardReference = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ElectrolyteStandardReferenceResult),
 )
 
 EvaluateMolarVolumeBounds = ctypes.CFUNCTYPE(
@@ -393,6 +429,40 @@ def _basis_table(model: EPCSAFT) -> tuple[object, BasisNativeSdkTable]:
     table = ctypes.cast(address, ctypes.POINTER(BasisNativeSdkTable)).contents
     assert table.table_size >= BASIS_PREFIX_SIZE
     return capsule, table
+
+
+def _standard_reference_table(
+    model: EPCSAFT,
+) -> tuple[object, StandardReferenceNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(StandardReferenceNativeSdkTable)).contents
+    assert table.table_size >= STANDARD_REFERENCE_PREFIX_SIZE
+    return capsule, table
+
+
+def _evaluate_standard_reference(
+    table: StandardReferenceNativeSdkTable,
+    temperature_k: float = 298.15,
+    pressure_pa: float = 100000.0,
+) -> ElectrolyteStandardReferenceResult:
+    result = ElectrolyteStandardReferenceResult(
+        struct_size=ctypes.sizeof(ElectrolyteStandardReferenceResult)
+    )
+    status = EvaluateElectrolyteStandardReference(
+        table.evaluate_electrolyte_standard_reference
+    )(
+        table.model_context,
+        temperature_k,
+        pressure_pa,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
 
 
 def _evaluate_active_born(
@@ -729,6 +799,122 @@ def test_native_sdk_helmholtz_basis_and_pressure_metadata_are_append_only() -> N
     _, gross = _basis_table(_mixture_model())
     assert math.isnan(gross.source_pressure_min_pa)
     assert math.isnan(gross.source_pressure_max_pa)
+
+
+def test_native_sdk_held_standard_reference_matches_the_public_owner() -> None:
+    model = _held_water_ionization_model()
+    capsule, table = _standard_reference_table(model)
+    assert capsule is not None
+    for field_name, _ in BasisNativeSdkTable._fields_:
+        assert getattr(StandardReferenceNativeSdkTable, field_name).offset == getattr(
+            BasisNativeSdkTable, field_name
+        ).offset
+    assert StandardReferenceNativeSdkTable.electrolyte_standard_reference_result_size.offset == 208
+    assert StandardReferenceNativeSdkTable.evaluate_electrolyte_standard_reference.offset == 216
+    assert STANDARD_REFERENCE_PREFIX_SIZE == ctypes.sizeof(StandardReferenceNativeSdkTable) == 224
+    assert table.electrolyte_standard_reference_result_size == ctypes.sizeof(
+        ElectrolyteStandardReferenceResult
+    )
+    assert table.electrolyte_standard_reference_result_size == 368
+    assert table.evaluate_electrolyte_standard_reference
+
+    observed = _evaluate_standard_reference(table)
+    reference = model.reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=100000.0 * unit_registry.pascal,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    pure_water = model.evaluate(
+        temperature=reference.temperature,
+        pressure=reference.pressure,
+        mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    assert pure_water.log_fugacity_coefficient is not None
+
+    assert observed.status == STATUS_OK
+    assert observed.temperature_k == 298.15
+    assert observed.pressure_pa == 100000.0
+    assert observed.formula_unit_infinite_dilution_log_fugacity == pytest.approx(
+        math.fsum(reference.infinite_dilution_log_fugacity), abs=2.0e-12
+    )
+    assert observed.pure_solvent_log_fugacity_coefficient == pytest.approx(
+        pure_water.log_fugacity_coefficient[0], abs=2.0e-12
+    )
+    assert observed.solvent_molar_mass_kg_per_mol == pytest.approx(0.01801528, abs=1.0e-12)
+    assert observed.reference_molality_mol_per_kg == 1.0e-12
+    assert 0.0 <= observed.reference_convergence_error <= 5.0e-5
+    assert observed.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert observed.helmholtz_basis_id.decode() == (
+        "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
+    )
+    assert observed.error == b""
+
+
+def test_native_sdk_held_standard_reference_fails_closed() -> None:
+    model = _held_water_ionization_model()
+    _, table = _standard_reference_table(model)
+    callback = EvaluateElectrolyteStandardReference(
+        table.evaluate_electrolyte_standard_reference
+    )
+
+    undersized = ElectrolyteStandardReferenceResult(struct_size=8, status=123)
+    before = bytes(undersized)
+    status = callback(
+        table.model_context,
+        298.15,
+        100000.0,
+        ctypes.byref(undersized),
+    )
+    assert status == STATUS_ABI_MISMATCH
+    assert bytes(undersized) == before
+
+    for temperature, pressure, expected_status in (
+        (math.nan, 100000.0, STATUS_INVALID_ARGUMENT),
+        (298.15, 0.0, STATUS_INVALID_ARGUMENT),
+        (299.0, 100000.0, STATUS_DOMAIN_ERROR),
+        (298.15, 101325.0, STATUS_DOMAIN_ERROR),
+    ):
+        result = _evaluate_standard_reference(table, temperature, pressure)
+        assert result.status == expected_status
+        for field in (
+            "temperature_k",
+            "pressure_pa",
+            "formula_unit_infinite_dilution_log_fugacity",
+            "pure_solvent_log_fugacity_coefficient",
+            "solvent_molar_mass_kg_per_mol",
+            "reference_molality_mol_per_kg",
+            "reference_convergence_error",
+        ):
+            assert math.isnan(getattr(result, field))
+        assert result.parameter_fingerprint == b""
+        assert result.helmholtz_basis_id == b""
+        assert result.error
+
+    unsupported_models = (
+        _mixture_model(),
+        _ascani_model(
+            (
+                "water",
+                "1-butanol",
+                "sodium-cation",
+                "potassium-cation",
+                "chloride-anion",
+            )
+        ),
+        _held_water_ionization_model(
+            ("hydronium-cation", "water", "hydroxide-anion")
+        ),
+    )
+    for unsupported in unsupported_models:
+        _, unsupported_table = _standard_reference_table(unsupported)
+        result = _evaluate_standard_reference(unsupported_table)
+        assert result.status == STATUS_UNSUPPORTED_MODEL
+        assert math.isnan(result.formula_unit_infinite_dilution_log_fugacity)
+        assert result.parameter_fingerprint == b""
+        assert result.helmholtz_basis_id == b""
+        assert result.error
 
 
 @pytest.mark.parametrize(
@@ -2165,7 +2351,8 @@ def test_native_sdk_active_born_matches_public_reference_state(
     assert capsule is not None
     assert model.parameter_fingerprint == fingerprint
     assert ACTIVE_BORN_PREFIX_SIZE == 168
-    assert table.table_size == BASIS_PREFIX_SIZE == 208
+    assert BASIS_PREFIX_SIZE == 208
+    assert table.table_size == STANDARD_REFERENCE_PREFIX_SIZE == 224
     assert table.ion_solvation_born_result_size == ctypes.sizeof(IonSolvationBornResult) == 272
     assert table.evaluate_ion_solvation_born
 
