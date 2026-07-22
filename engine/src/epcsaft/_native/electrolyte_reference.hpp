@@ -103,6 +103,13 @@ ReferenceSequenceResult electrolyte_reference_sequence(
                 throw std::runtime_error("nonfinite reference fugacity");
             }
         }
+        if (current->derivative.has_value()) {
+            for (double value : *current->derivative) {
+                if (!std::isfinite(value)) {
+                    throw std::runtime_error("nonfinite reference derivative");
+                }
+            }
+        }
         if (previous.has_value()) {
             convergence_error = std::max(
                 std::abs(current->log_fugacity[0] - previous->log_fugacity[0]),
@@ -132,11 +139,6 @@ ReferenceSequenceResult electrolyte_reference_sequence(
     if (current->derivative.has_value()) {
         if (!derivative_convergence_error.has_value()) {
             throw std::runtime_error("reference derivative limit unavailable");
-        }
-        for (double value : *current->derivative) {
-            if (!std::isfinite(value)) {
-                throw std::runtime_error("nonfinite reference derivative");
-            }
         }
         double derivative_scale = 1.0;
         for (double value : *current->derivative) {

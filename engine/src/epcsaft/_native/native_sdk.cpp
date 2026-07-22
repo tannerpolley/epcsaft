@@ -1,4 +1,5 @@
 #include "native_sdk.hpp"
+#include "density.hpp"
 #include "phase_block.hpp"
 
 #include <epcsaft/native_sdk_v1.h>
@@ -282,6 +283,8 @@ struct NativeSdkEndpoint final {
             );
             result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
             return result->status;
+        } catch (const detail::DensityDomainError& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
         } catch (const std::invalid_argument& error) {
             return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
         } catch (const std::logic_error& error) {
