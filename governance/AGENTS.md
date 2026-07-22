@@ -1,7 +1,7 @@
 # Organization Policy Repository Agent Contract
 
 Read `GOVERNANCE.md` before planning, reviewing, or changing any ePC-SAFT
-repository. Doctrine revision 3 is the canonical ecosystem policy.
+repository. Doctrine revision 4 is the canonical ecosystem policy.
 
 ## Agent role
 
@@ -18,6 +18,6 @@ review gates. No permanent Validation agent is part of the ecosystem topology.
 
 ## External boundaries
 
-Doctrine revision 3 is canonical locally and at `ePC-SAFT/.github`. Do not
+Doctrine revision 4 is canonical locally and at `ePC-SAFT/.github`. Do not
 create or change remotes, push, mutate organization settings, or add live
 workflows or templates without a separately approved external-write plan.

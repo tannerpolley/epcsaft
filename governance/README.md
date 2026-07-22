@@ -6,7 +6,7 @@ GitHub home: `ePC-SAFT/.github`
 
 Status: canonical doctrine home at GitHub.
 
-Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 2. This repository
+Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 4. This repository
 owns permanent ecosystem policy and shared organization conventions; it owns
 no package behavior, scientific capability, migration sequence, or validation
 evidence.

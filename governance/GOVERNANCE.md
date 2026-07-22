@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 3
+Doctrine revision: 4
 
-Approved: 2026-07-21
+Approved: 2026-07-22
 
 Owner: `ePC-SAFT/.github`
 
@@ -62,14 +62,20 @@ doctrine does not transfer any scientific implementation or capability.
 | `ePC-SAFT/ePC-SAFT-equilibrium` | `epcsaft-equilibrium`: equilibrium formulations, phase discovery, local NLPs, Ipopt, certification, and equilibrium results | Provider implementation, Ceres, or regression targets |
 | `ePC-SAFT/ePC-SAFT-regression` | `epcsaft-regression`: target contracts, parameter fitting, Ceres, fit diagnostics, and regression results | Provider implementation, Ipopt, or equilibrium dispatch |
 | `ePC-SAFT/ePC-SAFT-validation` | Installed-artifact, cross-package, and literature acceptance evidence authored by the accountable package task | Production algorithms, private package imports, a paper archive, or a permanent execution owner |
-| `tannerpolley/ePC-SAFT-lab` | Transitional runtime source of record for not-yet-promoted slices; experiments, full provenance, papers, rejected alternatives, and migration evidence | Production distributions or releases, dependencies consumed by production or validation repositories, or authority for a promoted slice |
+| `ePC-SAFT/ePC-SAFT-lab` | Non-production experiments, manufactured and independent reference oracles, broad provenance, source indexes, and rejected alternatives | Production distributions or releases, runtime authority, admission receipts, or dependencies consumed by production or validation repositories |
 
-One concept has one runtime owner. Before an accepted promotion receipt, the
-lab is the sole transitional runtime authority for that slice. Transitional
-authority does not make the lab a clean production package: it MUST NOT publish
-the slice as a production distribution or be consumed by production or
-validation repositories. After promotion, the destination is the sole
-production owner and the lab copy is non-authoritative provenance or research.
+One concept has one runtime owner. A capability without an accepted production
+owner is non-production; no lab or legacy copy supplies transitional runtime
+authority. The lab MAY investigate such a capability, but production and
+validation repositories MUST NOT depend on it. Promotion distills a clean,
+independently evidenced slice into its unique package owner rather than
+transferring authority from a runnable archive.
+
+The complete pre-migration monorepo and related historical repositories live
+outside the authority topology under the local `ePC-SAFT-legacy` container.
+The public `tannerpolley/ePC-SAFT-legacy-monorepo` is a read-only historical
+repository. Legacy code, tracker state, branches, tags, and releases are
+provenance only; they own no current runtime, roadmap, or governance authority.
 
 Repository ownership and task residence are distinct. Validation is the
 durable evidence home, not a standing agent or implementation team. Provider,
@@ -276,9 +282,9 @@ checkout being validated.
 
 A receipt cannot accept itself. Its validator MUST pass, the producer and
 reviewer MUST differ for acceptance, and the user MUST approve the authority
-change. Before that moment the lab remains the sole transitional runtime
-authority. After it, the destination is the sole production owner and the lab
-copy is non-authoritative.
+change. Before that moment the candidate is non-production. After it, the
+destination is the sole production owner and any lab or legacy copy remains
+non-authoritative provenance.
 
 The first runtime promotion is the smallest complete provider thermodynamic
 path. Later slices MUST reuse its public and native contracts rather than add
@@ -326,13 +332,15 @@ mutation, publication, and release remain explicit external-write gates. This
 doctrine authorizes none of them by itself.
 
 Before any repository rename, transfer, or old-name reuse, the migration owner
-MUST capture an immutable machine-readable export, inventory Actions and
-reusable-workflow references, rehearse the intended sequence on sacrificial
-repositories, and record redirect behavior, namespace-reuse eligibility,
-metadata restoration, and every accepted loss. Each mutation requires an
-operation receipt stating preconditions, exact request, expected
-postconditions, retry and stop behavior, reversibility, irreversible effects,
-and recovery owner, followed by a state receipt proving the result.
+MUST perform an operation-specific read-only preflight, capture immutable
+machine-readable exports for metadata at risk, inventory Actions and reusable
+workflow references, and record redirect behavior, namespace-reuse
+eligibility, metadata restoration, and every accepted loss. A sacrificial
+rehearsal is required only when the preflight cannot establish the behavior or
+rollback boundary. Each mutation requires a cutover record stating
+preconditions, exact request, expected postconditions, retry and stop behavior,
+reversibility, irreversible effects, and recovery owner, followed by a state
+record proving the result.
 
 ## 11. Enforcement and amendment
 
@@ -361,6 +369,7 @@ authority changes only through accepted promotion receipts.
 | D-010 Architecture baseline | User optimization objective | Baseline after the first complete slice and reject code-golf gaming | Keeps the architecture ratchet meaningful | No | Each package owner |
 | D-011 Tracker ownership | Tracker design review | Use package-local issues and one organization Project | Aligns work with code ownership | No | Organization policy |
 | D-012 Release timing | Release review | Keep repositories public while deciding release timing and versions separately | Avoids premature release machinery | Yes | Release owner |
-| D-013 Lab role | User lab-role decision, clarified by independent review | Keep the lab as sole transitional runtime authority before promotion and non-authoritative provenance after promotion | Removes the transitional contradiction without creating dual production ownership | No | Lab and migration owners |
+| D-013 Lab role | User lab-role decision, superseded by D-016 | The original monorepo served as transitional authority during early migration | Preserved as historical doctrine; no longer governs current lab or legacy repositories | No | Lab and migration owners |
 | D-014 Pre-execution review remediation | Independent principal review and user-approved adjudication | Require whole-tree cutover inventory, portable hash-bound receipts, independent test-only oracle ownership, and rehearsed external operations | Repairs false-positive purge and unsafe cutover gates before execution | No | Organization and migration owners |
 | D-015 Package-rooted validation execution | User-approved workflow amendment | Keep Validation as the evidence repository while the accountable Provider, Equilibrium, or Regression task performs its own bounded installed-artifact campaign there; dispatch review only for a stable subject and keep no resident Validation worker | Removes permanent waiting tasks without weakening public-artifact, source, claim, or receipt boundaries | No | Package, validation-evidence, and migration owners |
+| D-016 Lab and legacy separation | User-approved 2026-07-22 repository cutover | Give `ePC-SAFT/ePC-SAFT-lab` fresh history and a permanent non-production experimental role; retain the old monorepo and related projects under `ePC-SAFT-legacy` with no authority | Separates active research from historical code and removes fallback runtime authority from both lab and legacy | No | Organization, Migration, and Lab |
