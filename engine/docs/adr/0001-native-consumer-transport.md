@@ -3,9 +3,9 @@
 Status: accepted pure prefix authority determined by migration promotion
 receipt 0015; append-only neutral-mixture and active-kij entries are local
 candidates pending independent review and their own promotion receipts; a
-model-bound active-Born solvation entry is design-only pending permanent-lab
-review, implementation, evidence, and its own authority decision; consumer
-gates separate
+model-bound active-Born solvation entry is design-only pending bounded
+independent review, implementation, evidence, and its own authority decision;
+consumer gates separate
 
 Date: 2026-07-17
 

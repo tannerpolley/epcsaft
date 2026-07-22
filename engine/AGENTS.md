@@ -79,3 +79,16 @@ fraction and exact CppAD gradient/Hessian in those phase coordinates. Pressure
 closure and both domain callbacks share the same Provider packing owner. None
 owns equilibrium, phase discovery, solver policy, fixed phase volumes,
 fitting, or authority.
+
+Project Truss Provider leaf `ePC-SAFT/ePC-SAFT#1` records the design-only
+candidate for one aqueous Figiel MIAC value/derivative callback with exactly
+three active interactions in `(water--cation, water--anion, cation--anion)`
+order. Its sole Provider design owner is
+`docs/designs/2026-07-21-aqueous-active-kij-miac-native-sdk-design.md`.
+Status is
+`PROVIDER_AQUEOUS_ACTIVE_KIJ_DERIVATIVE_DESIGN_READY_FOR_INDEPENDENT_SUBAGENT_REVIEW`.
+Do not implement the callback until a bounded independent subagent review
+approves an exact stable design subject. That review authorizes implementation
+sequencing only; it does not authorize regression, target ownership, catalog
+writes, organic-solvent breadth, a generic parameter overlay, runtime
+authority, or promotion.

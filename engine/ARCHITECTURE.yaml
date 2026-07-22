@@ -1,5 +1,5 @@
 version: 2
-status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-and-active-born-candidates
+status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-active-born-and-aqueous-kij-design-candidates
 
 authority:
   effective_receipt: promotion-0012-provider-full-candidate
@@ -84,6 +84,24 @@ native_sdk_candidates:
     public_behavior_change: none
     ownership_check: schedule, composition, convergence, and terminal selection exist only in reference_sequence_owner
     exclusions: targets, residuals, scaling, bounds, Ceres, fit results, catalog persistence, other solvents or states, other ions, solvation-factor or dielectric parameters, generic parameter overlays, second derivatives, and authority
+  figiel_aqueous_active_kij_miac_v1:
+    status: design-only-pending-independent-subagent-review
+    scope: >-
+      One model-bound 298.15 K, 1 bar water/cation/anion molality-scale mean
+      ionic activity logarithm and its exact total fixed-pressure first
+      derivative with respect to three local trial binary interactions.
+    coordinate_order: [water_cation_k_ij, water_anion_k_ij, cation_anion_k_ij]
+    derivative_order: 1
+    admitted_salts: [LiCl, NaCl, KCl, LiBr, NaBr, KBr]
+    molality_domain_mol_per_kg: [0.001, 6.0]
+    table_size_bytes_64_bit_candidate: 184
+    result_size_bytes_64_bit_candidate: 296
+    reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
+    equation_owner: src/epcsaft/_native/helmholtz.hpp
+    derivative_owner: src/epcsaft/_native/derivatives.hpp
+    density_owner: src/epcsaft/_native/density.hpp
+    public_behavior_change: none-design-only
+    exclusions: runtime callback before approval, targets, residuals, scaling, bounds, Ceres, fit results, rank claims, catalog persistence, organic solvents, expanded ions, generic parameter overlays, numerical production derivatives, third derivatives, and authority
 
 accepted_scope: >-
   Source-backed neutral, associating, and bounded ionic SSM+DS residual EOS at
@@ -206,7 +224,7 @@ excluded:
   - regression and parameter fitting
   - ideal-gas and total caloric properties
   - multi-salt and alternate-convention reference-state workflows
-  - authoritative mixture, associating, electrolyte, and reactive native phase blocks; the exact local methane/ethane and full-electrolyte candidates remain receipt-pending and the active-Born solvation seam remains design-only
+  - authoritative mixture, associating, electrolyte, and reactive native phase blocks; the exact local methane/ethane and full-electrolyte candidates remain receipt-pending, while the aqueous active-k_ij MIAC seam remains design-only pending bounded independent subagent review
   - alternate derivative backends
   - compatibility interfaces
   - release and workflow machinery
