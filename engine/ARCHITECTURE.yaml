@@ -220,8 +220,8 @@ manifest:
   public_native_headers: 1
   installed_data_files: 38
   package_test_files: 13
-  physical_production_lines: 8333
-  physical_package_test_lines: 6903
+  physical_production_lines: 8343
+  physical_package_test_lines: 6910
   physical_documentation_lines: 3667
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
@@ -235,13 +235,13 @@ manifest:
       physical_lines: 675
       capability_delta: strict version-1 persistence for user-provided bundles
     - path: src/epcsaft/_native/eos.cpp
-      physical_lines: 814
+      physical_lines: 850
     - path: src/epcsaft/_native/native_sdk.cpp
-      physical_lines: 1256
+      physical_lines: 1263
     - path: src/epcsaft/_native/phase_block.hpp
       physical_lines: 762
     - path: tests/test_native_sdk.py
-      physical_lines: 3001
+      physical_lines: 3058
     - path: tests/test_parameters.py
       physical_lines: 1255
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.

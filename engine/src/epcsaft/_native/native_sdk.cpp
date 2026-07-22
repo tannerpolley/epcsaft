@@ -1158,7 +1158,8 @@ pybind11::capsule make_native_sdk_v1(
     bool aqueous_kij_admitted,
     double pressure_min_pa,
     double pressure_max_pa,
-    bool neutral_reference_admitted
+    bool neutral_reference_admitted,
+    bool unknown_applicability_admitted
 ) {
     if (!active_born_admitted && !aqueous_kij_admitted
         && !neutral_reference_admitted
@@ -1207,9 +1208,15 @@ pybind11::capsule make_native_sdk_v1(
         }
     }
     if (model.supports_electrolyte_native_sdk_v1()
-        && (!std::isfinite(temperature_min_k) || temperature_min_k <= 0.0
-            || !std::isfinite(temperature_max_k) || temperature_max_k <= 0.0
-            || temperature_min_k > temperature_max_k
+        && ((!unknown_applicability_admitted
+             && (std::isnan(temperature_min_k) || std::isnan(temperature_max_k)))
+            || (!std::isnan(temperature_min_k)
+             && (!std::isfinite(temperature_min_k) || temperature_min_k <= 0.0))
+            || (!std::isnan(temperature_max_k)
+                && (!std::isfinite(temperature_max_k) || temperature_max_k <= 0.0))
+            || (std::isfinite(temperature_min_k)
+                && std::isfinite(temperature_max_k)
+                && temperature_min_k > temperature_max_k)
             || (!std::isnan(ion_mole_fraction_max)
                 && (!std::isfinite(ion_mole_fraction_max)
                     || ion_mole_fraction_max <= 0.0

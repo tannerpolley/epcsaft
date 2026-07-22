@@ -20,6 +20,7 @@ from epcsaft.records import (
     PairParameterRecord,
     SingleParameterRecord,
     SiteRecord,
+    ValidityDomain,
 )
 
 
@@ -363,14 +364,20 @@ def _electrolyte_model(
     return EPCSAFT(parameters.select(component_ids))
 
 
-def _user_provided_copy(bundle: ParameterBundle) -> ParameterBundle:
+def _user_provided_copy(
+    bundle: ParameterBundle, *, unknown_applicability: bool = False
+) -> ParameterBundle:
     records = bundle.records
     return ParameterBundle.from_records(
         bundle_id=f"user-{bundle.bundle_id}",
         bundle_version=bundle.bundle_version,
         purpose="user-provided",
         sources=bundle.sources,
-        domains=bundle.domains,
+        domains=(
+            tuple(ValidityDomain(domain.domain_id, "unknown") for domain in bundle.domains)
+            if unknown_applicability
+            else bundle.domains
+        ),
         components=bundle.components,
         singles=(record for record in records if isinstance(record, SingleParameterRecord)),
         pairs=(record for record in records if isinstance(record, PairParameterRecord)),
@@ -1266,7 +1273,7 @@ def test_native_sdk_admits_reloaded_user_bundle_only_to_generic_phase_block(
         "figiel-2025-reference-electrolytes", version=1
     )
     emitted = tmp_path / "user-electrolyte"
-    _user_provided_copy(installed).to_path(emitted)
+    _user_provided_copy(installed, unknown_applicability=True).to_path(emitted)
     loaded = ParameterBundle.from_path(emitted)
     model = EPCSAFT(
         loaded.select(("water", "sodium-cation", "chloride-anion"))
