@@ -473,6 +473,7 @@ def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
         tuple(component.component_id for component in selected.components) == selected.component_ids
     )
     assert selected.bundle_fingerprint == bundle.fingerprint
+    assert selected.bundle_purpose == bundle.purpose
     assert selected.fingerprint != reverse_selected.fingerprint
     with pytest.raises(FrozenInstanceError):
         selected.component_ids = ("methane",)

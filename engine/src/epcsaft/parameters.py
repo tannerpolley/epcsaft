@@ -310,6 +310,7 @@ class ParameterBundle:
 class ParameterSet:
     bundle_id: str
     bundle_version: int
+    bundle_purpose: str
     bundle_fingerprint: str
     component_ids: tuple[str, ...]
     components: tuple[ComponentRecord, ...]
@@ -332,6 +333,7 @@ class ParameterSet:
         instance = object.__new__(cls)
         object.__setattr__(instance, "bundle_id", bundle.bundle_id)
         object.__setattr__(instance, "bundle_version", bundle.bundle_version)
+        object.__setattr__(instance, "bundle_purpose", bundle.purpose)
         object.__setattr__(instance, "bundle_fingerprint", bundle.fingerprint)
         object.__setattr__(instance, "component_ids", component_ids)
         object.__setattr__(instance, "components", components)
