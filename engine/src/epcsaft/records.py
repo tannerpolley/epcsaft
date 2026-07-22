@@ -25,6 +25,12 @@ _SINGLE_FAMILIES = frozenset(
         "relative_permittivity",
         "born_diameter",
         "solvation_factor",
+        "schreckenberg_dielectric_volume",
+        "schreckenberg_dielectric_temperature",
+        "zuber_ion_suppression_coefficient",
+        "rueben_dipole_scaling",
+        "rueben_polarizability_scaling",
+        "rueben_correlation_integral_parameter",
     }
 )
 _PAIR_FAMILIES = frozenset({"k_ij", "l_ij"})
@@ -41,6 +47,10 @@ _DIMENSIONAL_UNITS = {
     "segment_diameter": "angstrom",
     "dispersion_energy_over_k": "kelvin",
     "born_diameter": "angstrom",
+    "schreckenberg_dielectric_volume": "meter ** 3 / mole",
+    "schreckenberg_dielectric_temperature": "kelvin",
+    "rueben_dipole_scaling": "debye ** 2",
+    "rueben_polarizability_scaling": "angstrom ** 3",
     "association_energy_over_k": "kelvin",
 }
 _DIMENSIONLESS_FAMILIES = frozenset(
@@ -53,6 +63,8 @@ _DIMENSIONLESS_FAMILIES = frozenset(
         "l_ij",
         "dielectric_ion_suppression_coefficient",
         "ionic_region_relative_permittivity",
+        "zuber_ion_suppression_coefficient",
+        "rueben_correlation_integral_parameter",
     }
 )
 

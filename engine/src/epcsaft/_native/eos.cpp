@@ -269,7 +269,13 @@ NativeModel::NativeModel(NativeParameters parameters)
         parameters_.charge_number.size() != components ||
         parameters_.relative_permittivity.size() != components ||
         parameters_.born_diameter_angstrom.size() != components ||
-        parameters_.solvation_factor.size() != components) {
+        parameters_.solvation_factor.size() != components ||
+        parameters_.schreckenberg_dielectric_volume_m3_per_mol.size() != components ||
+        parameters_.schreckenberg_dielectric_temperature_k.size() != components ||
+        parameters_.zuber_ion_suppression_coefficient.size() != components ||
+        parameters_.rueben_dipole_scaling_debye2.size() != components ||
+        parameters_.rueben_polarizability_scaling_angstrom3.size() != components ||
+        parameters_.rueben_correlation_integral_parameter.size() != components) {
         throw std::invalid_argument("inconsistent native model dimensions");
     }
     if (!positive_finite(parameters_.segment_count) ||
@@ -286,6 +292,12 @@ NativeModel::NativeModel(NativeParameters parameters)
         !std::isfinite(parameters_.dielectric_ion_suppression_coefficient) ||
         !finite(parameters_.born_diameter_angstrom) ||
         !finite(parameters_.solvation_factor) ||
+        !finite(parameters_.schreckenberg_dielectric_volume_m3_per_mol) ||
+        !finite(parameters_.schreckenberg_dielectric_temperature_k) ||
+        !finite(parameters_.zuber_ion_suppression_coefficient) ||
+        !finite(parameters_.rueben_dipole_scaling_debye2) ||
+        !finite(parameters_.rueben_polarizability_scaling_angstrom3) ||
+        !finite(parameters_.rueben_correlation_integral_parameter) ||
         !std::isfinite(parameters_.ionic_region_relative_permittivity)) {
         throw std::invalid_argument("invalid native model parameters");
     }
@@ -319,29 +331,82 @@ NativeModel::NativeModel(NativeParameters parameters)
                 != ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN) {
             throw std::invalid_argument("invalid electrolyte model selection");
         }
+        const bool ssm_ds = parameters_.electrolyte_model
+            == ELECTROLYTE_MODEL_FIGIEL_SSM_DS;
+        const bool valid_ssm_permittivity = parameters_.permittivity_model
+                == PERMITTIVITY_MODEL_FIGIEL_COMPOSITION
+            || parameters_.permittivity_model
+                == PERMITTIVITY_MODEL_SCHRECKENBERG_DENSITY
+            || parameters_.permittivity_model
+                == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC
+            || parameters_.permittivity_model
+                == PERMITTIVITY_MODEL_RUEBEN_PERTURBATION;
+        if ((ssm_ds && !valid_ssm_permittivity)
+            || (!ssm_ds && parameters_.permittivity_model
+                != PERMITTIVITY_MODEL_ASCANI_MOLE_FRACTION)) {
+            throw std::invalid_argument("incompatible electrolyte and permittivity models");
+        }
+        std::size_t solvent_count = 0;
         for (std::size_t component = 0; component < components; ++component) {
-            if (parameters_.charge_number[component] == 0
+            const bool solvent = parameters_.charge_number[component] == 0;
+            solvent_count += static_cast<std::size_t>(solvent);
+            const bool needs_tabulated_permittivity = parameters_.permittivity_model
+                    == PERMITTIVITY_MODEL_FIGIEL_COMPOSITION
+                || parameters_.permittivity_model
+                    == PERMITTIVITY_MODEL_ASCANI_MOLE_FRACTION
+                || parameters_.permittivity_model
+                    == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC;
+            if (solvent
                 && (!(parameters_.molar_mass_kg_per_mol[component] > 0.0)
-                    || !(parameters_.relative_permittivity[component] > 0.0))) {
+                    || (needs_tabulated_permittivity
+                        && !(parameters_.relative_permittivity[component] > 0.0)))) {
                 throw std::invalid_argument("invalid solvent dielectric parameters");
             }
-            if (parameters_.electrolyte_model
-                == ELECTROLYTE_MODEL_FIGIEL_SSM_DS) {
-                if (!(parameters_.dielectric_ion_suppression_coefficient > 0.0)
-                    || !(parameters_.ionic_region_relative_permittivity > 0.0)
+            if (ssm_ds) {
+                if (!(parameters_.ionic_region_relative_permittivity > 0.0)
                     || !(parameters_.solvation_factor[component] > 0.0)) {
-                    throw std::invalid_argument("invalid Figiel electrolyte parameters");
+                    throw std::invalid_argument("invalid SSM+DS electrolyte parameters");
                 }
-                if (parameters_.charge_number[component] != 0
+                if (!solvent
                     && !(parameters_.born_diameter_angstrom[component] > 0.0)) {
                     throw std::invalid_argument("invalid fitted Born diameter");
                 }
-            } else if (parameters_.charge_number[component] != 0
+            } else if (!solvent
                        && !(parameters_.relative_permittivity[component] > 0.0)) {
                 throw std::invalid_argument("invalid ionic dielectric parameter");
             }
+            if (parameters_.permittivity_model
+                    == PERMITTIVITY_MODEL_SCHRECKENBERG_DENSITY
+                && solvent
+                && (!(parameters_.schreckenberg_dielectric_volume_m3_per_mol[component] > 0.0)
+                    || !(parameters_.schreckenberg_dielectric_temperature_k[component] > 0.0))) {
+                throw std::invalid_argument("invalid Schreckenberg solvent parameters");
+            }
+            if (parameters_.permittivity_model
+                    == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC
+                && !solvent
+                && !(parameters_.zuber_ion_suppression_coefficient[component] > 0.0)) {
+                throw std::invalid_argument("invalid Zuber ion parameter");
+            }
+            if (parameters_.permittivity_model
+                == PERMITTIVITY_MODEL_RUEBEN_PERTURBATION) {
+                if (parameters_.rueben_dipole_scaling_debye2[component] < 0.0
+                    || parameters_.rueben_polarizability_scaling_angstrom3[component] < 0.0
+                    || !(parameters_.rueben_correlation_integral_parameter[component] > 0.0)) {
+                    throw std::invalid_argument("invalid Rueben permittivity parameters");
+                }
+            }
         }
-    } else if (parameters_.electrolyte_model != ELECTROLYTE_MODEL_NONE) {
+        if (parameters_.permittivity_model == PERMITTIVITY_MODEL_FIGIEL_COMPOSITION
+            && !(parameters_.dielectric_ion_suppression_coefficient > 0.0)) {
+            throw std::invalid_argument("invalid Figiel suppression parameter");
+        }
+        if (parameters_.permittivity_model == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC
+            && solvent_count != 1) {
+            throw std::invalid_argument("Zuber mixed-solvent volume data are required");
+        }
+    } else if (parameters_.electrolyte_model != ELECTROLYTE_MODEL_NONE
+               || parameters_.permittivity_model != PERMITTIVITY_MODEL_NONE) {
         throw std::invalid_argument("neutral model has electrolyte selection");
     }
 }
@@ -788,6 +853,7 @@ NativeResult NativeModel::evaluate(
         values.association,
         values.debye_huckel,
         values.born_ssm_ds,
+        electrolyte.bulk_relative_permittivity,
         residual,
         compressibility,
         compressibility * molar_density * detail::GAS_CONSTANT * temperature,

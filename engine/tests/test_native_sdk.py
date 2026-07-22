@@ -2970,7 +2970,25 @@ int main() {
     } catch (const std::runtime_error&) {
         evaluation_classified = true;
     }
-    return evaluation_classified ? 0 : 4;
+    if (!evaluation_classified) return 4;
+
+    const double adjacent_lower = 59456.796534681715;
+    const double adjacent_upper = std::nextafter(
+        adjacent_lower,
+        std::numeric_limits<double>::infinity()
+    );
+    const auto adjacent_root = epcsaft::detail::refine_density_root(
+        1.0, adjacent_lower, adjacent_upper, -2.0e-6,
+        [adjacent_lower](double density) {
+            return State{
+                density <= adjacent_lower ? 1.0 - 2.0e-6 : 1.0 + 2.0e-6,
+                1.0,
+            };
+        }
+    );
+    if (!(adjacent_root.molar_density >= adjacent_lower
+          && adjacent_root.molar_density <= adjacent_upper)) return 5;
+    return 0;
 }
 '''
     output = tmp_path / "owner-contract"

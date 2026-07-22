@@ -36,10 +36,100 @@ Scalar electrolyte_log(const Scalar& value) {
 }
 
 template <typename Scalar>
+Scalar electrolyte_exp(const Scalar& value) {
+    if constexpr (std::is_same_v<Scalar, double>) {
+        return std::exp(value);
+    }
+    return CppAD::exp(value);
+}
+
+template <typename Scalar>
 struct ElectrolyteResult final {
     Scalar bulk_relative_permittivity;
     Scalar debye_huckel;
 };
+
+template <typename Scalar>
+Scalar bulk_relative_permittivity(
+    const Scalar& temperature,
+    const Scalar& molar_density,
+    const std::vector<Scalar>& mole_fractions,
+    const NativeParameters& parameters
+) {
+    Scalar solvent_mass = Scalar(0.0);
+    Scalar dielectric_mass = Scalar(0.0);
+    Scalar solvent_fraction = Scalar(0.0);
+    Scalar ion_fraction = Scalar(0.0);
+    Scalar ion_dielectric = Scalar(0.0);
+    Scalar schreckenberg_volume = Scalar(0.0);
+    Scalar schreckenberg_temperature = Scalar(0.0);
+    Scalar zuber_suppression = Scalar(0.0);
+    Scalar rueben_effective_density = Scalar(0.0);
+    Scalar rueben_correlation = Scalar(0.0);
+
+    const Scalar number_density_angstrom3 =
+        molar_density * ELECTROLYTE_AVOGADRO * 1.0e-30;
+    for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+        const Scalar fraction = mole_fractions[component];
+        const int charge = parameters.charge_number[component];
+        if (charge == 0) {
+            solvent_fraction += fraction;
+            const Scalar mass = fraction * parameters.molar_mass_kg_per_mol[component];
+            solvent_mass += mass;
+            dielectric_mass += mass * parameters.relative_permittivity[component];
+            schreckenberg_volume += fraction
+                * parameters.schreckenberg_dielectric_volume_m3_per_mol[component];
+            schreckenberg_temperature += fraction
+                * parameters.schreckenberg_dielectric_temperature_k[component];
+        } else {
+            ion_fraction += fraction;
+            ion_dielectric += fraction * parameters.relative_permittivity[component];
+            zuber_suppression += fraction
+                * parameters.zuber_ion_suppression_coefficient[component];
+        }
+        rueben_effective_density += number_density_angstrom3 * fraction
+            * (
+                parameters.rueben_dipole_scaling_debye2[component]
+                    * 1.0e-19 / (BOLTZMANN * temperature)
+                + 3.0 * parameters.rueben_polarizability_scaling_angstrom3[component]
+            );
+        rueben_correlation += fraction
+            * parameters.rueben_correlation_integral_parameter[component];
+    }
+
+    if (parameters.permittivity_model == PERMITTIVITY_MODEL_RUEBEN_PERTURBATION) {
+        const Scalar y_effective = (4.0 * ELECTROLYTE_PI / 9.0)
+            * rueben_effective_density;
+        const Scalar integral = Scalar(1.0) + rueben_correlation
+            * (electrolyte_exp(-y_effective) - Scalar(1.0));
+        return Scalar(1.0) + Scalar(3.0) * y_effective
+            * (
+                Scalar(1.0) + y_effective
+                + ((17.0 / 16.0) * integral - Scalar(1.0))
+                    * y_effective * y_effective
+            );
+    }
+    if (parameters.permittivity_model == PERMITTIVITY_MODEL_SCHRECKENBERG_DENSITY) {
+        const Scalar mixed_volume = schreckenberg_volume / solvent_fraction;
+        const Scalar mixed_temperature = schreckenberg_temperature / solvent_fraction;
+        return Scalar(1.0) + molar_density * solvent_fraction * mixed_volume
+            * (mixed_temperature / temperature - Scalar(1.0));
+    }
+
+    const Scalar salt_free_permittivity = dielectric_mass / solvent_mass;
+    if (parameters.permittivity_model == PERMITTIVITY_MODEL_ASCANI_MOLE_FRACTION) {
+        return salt_free_permittivity * solvent_fraction + ion_dielectric;
+    }
+    if (parameters.permittivity_model == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC) {
+        return salt_free_permittivity / (Scalar(1.0) + zuber_suppression);
+    }
+    if (parameters.permittivity_model == PERMITTIVITY_MODEL_FIGIEL_COMPOSITION) {
+        return salt_free_permittivity
+            / (Scalar(1.0) + parameters.dielectric_ion_suppression_coefficient
+                * ion_fraction);
+    }
+    throw std::invalid_argument("invalid relative permittivity model");
+}
 
 template <typename Scalar>
 Scalar finite_size_chi(const Scalar& reduced, bool use_series) {
@@ -79,33 +169,20 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         return {0.0, Scalar(0.0)};
     }
     Scalar solvent_mass = Scalar(0.0);
-    Scalar dielectric_mass = Scalar(0.0);
-    Scalar solvent_fraction = Scalar(0.0);
-    Scalar ion_fraction = Scalar(0.0);
-    Scalar ion_dielectric = Scalar(0.0);
     Scalar charge_square_sum = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
         if (charge == 0) {
-            solvent_fraction += mole_fractions[component];
             const Scalar mass = mole_fractions[component]
                 * parameters.molar_mass_kg_per_mol[component];
             solvent_mass += mass;
-            dielectric_mass += mass * parameters.relative_permittivity[component];
         } else {
-            ion_fraction += mole_fractions[component];
-            ion_dielectric += mole_fractions[component]
-                * parameters.relative_permittivity[component];
             charge_square_sum += mole_fractions[component] * charge * charge;
         }
     }
-    const Scalar salt_free_permittivity = dielectric_mass / solvent_mass;
-    const Scalar bulk_permittivity = parameters.electrolyte_model
-            == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
-        ? salt_free_permittivity * solvent_fraction + ion_dielectric
-        : salt_free_permittivity /
-            (Scalar(1.0) + parameters.dielectric_ion_suppression_coefficient
-                * ion_fraction);
+    const Scalar bulk_permittivity = detail::bulk_relative_permittivity(
+        temperature, molar_density, mole_fractions, parameters
+    );
     if constexpr (std::is_same_v<Scalar, double>) {
         if (!(solvent_mass > 0.0) || !std::isfinite(solvent_mass)) {
             throw std::invalid_argument("electrolyte state has no solvent mass");
@@ -118,39 +195,21 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         }
     }
 
-    double reference_solvent_mass = 0.0;
-    double reference_dielectric_mass = 0.0;
-    double reference_solvent_fraction = 0.0;
-    double reference_ion_fraction = 0.0;
-    double reference_ion_dielectric = 0.0;
     double reference_charge_square_sum = 0.0;
     for (std::size_t component = 0;
          component < reference_mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
-        if (charge == 0) {
-            reference_solvent_fraction += reference_mole_fractions[component];
-            const double mass = reference_mole_fractions[component]
-                * parameters.molar_mass_kg_per_mol[component];
-            reference_solvent_mass += mass;
-            reference_dielectric_mass += mass
-                * parameters.relative_permittivity[component];
-        } else {
-            reference_ion_fraction += reference_mole_fractions[component];
-            reference_ion_dielectric += reference_mole_fractions[component]
-                * parameters.relative_permittivity[component];
+        if (charge != 0) {
             reference_charge_square_sum += reference_mole_fractions[component]
                 * charge * charge;
         }
     }
-    const double reference_salt_free_permittivity =
-        reference_dielectric_mass / reference_solvent_mass;
-    const double reference_permittivity = parameters.electrolyte_model
-            == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
-        ? reference_salt_free_permittivity * reference_solvent_fraction
-            + reference_ion_dielectric
-        : reference_salt_free_permittivity
-            / (1.0 + parameters.dielectric_ion_suppression_coefficient
-                * reference_ion_fraction);
+    const double reference_permittivity = detail::bulk_relative_permittivity(
+        reference_temperature,
+        reference_molar_density,
+        reference_mole_fractions,
+        parameters
+    );
     if (reference_charge_square_sum == 0.0) {
         return {bulk_permittivity, Scalar(0.0)};
     }
