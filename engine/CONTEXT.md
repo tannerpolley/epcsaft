@@ -114,5 +114,15 @@ downstream fit exists. Bounded independent subagent review changes sequencing
 only; it does not transfer runtime, catalog, regression, scientific,
 promotion, or publication authority.
 
+Project Truss Provider issue `#10` adds a separate append-only installed-SDK
+candidate for charge-neutral reacting standard references. It returns the
+complete neutral stoichiometric basis and gauge-invariant reference
+log-fugacity contractions for the exact current six aqueous chloride/bromide
+Figiel selections, including arbitrary component permutations. The same
+reference-sequence and pressure-state owners supply the values; no single-ion
+standard, reaction constant, reaction solver, chemistry selector, or broader
+catalog admission is introduced. The result explicitly reports that `T`, `P`,
+composition, and parameter derivatives are unavailable.
+
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.

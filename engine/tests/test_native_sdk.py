@@ -164,6 +164,40 @@ class AqueousMiacKijNativeSdkTable(ctypes.Structure):
     )
 
 
+class NeutralReferenceResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("component_count", ctypes.c_size_t),
+        ("neutral_basis_row_count", ctypes.c_size_t),
+        ("neutral_basis_capacity", ctypes.c_size_t),
+        ("contraction_capacity", ctypes.c_size_t),
+        ("reference_composition_capacity", ctypes.c_size_t),
+        ("neutral_basis", ctypes.POINTER(ctypes.c_double)),
+        ("log_fugacity_contractions", ctypes.POINTER(ctypes.c_double)),
+        ("reference_composition", ctypes.POINTER(ctypes.c_double)),
+        ("derivative_availability", ctypes.c_uint32),
+        ("temperature_k", ctypes.c_double),
+        ("pressure_pa", ctypes.c_double),
+        ("solvent_molar_mass_kg_per_mol", ctypes.c_double),
+        ("reference_amount_mol", ctypes.c_double),
+        ("reference_number_density_mol_per_m3", ctypes.c_double),
+        ("reference_molality_mol_per_kg", ctypes.c_double),
+        ("reference_convergence_error", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("helmholtz_basis_id", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class NeutralReferenceNativeSdkTable(ctypes.Structure):
+    _fields_ = AqueousMiacKijNativeSdkTable._fields_ + (
+        ("neutral_reference_basis_row_count", ctypes.c_size_t),
+        ("neutral_reference_result_size", ctypes.c_size_t),
+        ("evaluate_neutral_reference", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -191,6 +225,10 @@ ACTIVE_BORN_PREFIX_SIZE = (
 )
 AQUEOUS_MIAC_KIJ_PREFIX_SIZE = (
     AqueousMiacKijNativeSdkTable.evaluate_aqueous_miac_kij.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+NEUTRAL_REFERENCE_PREFIX_SIZE = (
+    NeutralReferenceNativeSdkTable.evaluate_neutral_reference.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
@@ -284,6 +322,15 @@ EvaluateAqueousMiacKij = ctypes.CFUNCTYPE(
     ctypes.POINTER(ctypes.c_double),
     ctypes.c_size_t,
     ctypes.POINTER(AqueousMiacKijResult),
+)
+
+EvaluateNeutralReference = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(NeutralReferenceResult),
 )
 
 
@@ -414,6 +461,54 @@ def _aqueous_miac_kij_table(
     table = ctypes.cast(address, ctypes.POINTER(AqueousMiacKijNativeSdkTable)).contents
     assert table.table_size >= AQUEOUS_MIAC_KIJ_PREFIX_SIZE
     return capsule, table
+
+
+def _neutral_reference_table(
+    model: EPCSAFT,
+) -> tuple[object, NeutralReferenceNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(NeutralReferenceNativeSdkTable)).contents
+    assert table.table_size >= NEUTRAL_REFERENCE_PREFIX_SIZE
+    return capsule, table
+
+
+def _evaluate_neutral_reference(
+    table: NeutralReferenceNativeSdkTable,
+    fingerprint: str,
+    *,
+    temperature_k: float = 298.15,
+    pressure_pa: float = 100000.0,
+) -> tuple[NeutralReferenceResult, tuple[float, ...], tuple[float, ...], tuple[float, ...]]:
+    component_count = table.component_count
+    row_count = table.neutral_reference_basis_row_count
+    basis = (ctypes.c_double * (component_count * row_count))()
+    contractions = (ctypes.c_double * row_count)()
+    reference_composition = (ctypes.c_double * component_count)()
+    result = NeutralReferenceResult(
+        struct_size=ctypes.sizeof(NeutralReferenceResult),
+        component_count=component_count,
+        neutral_basis_row_count=row_count,
+        neutral_basis_capacity=component_count * row_count,
+        contraction_capacity=row_count,
+        reference_composition_capacity=component_count,
+        neutral_basis=basis,
+        log_fugacity_contractions=contractions,
+        reference_composition=reference_composition,
+    )
+    status = EvaluateNeutralReference(table.evaluate_neutral_reference)(
+        table.model_context,
+        fingerprint.encode(),
+        temperature_k,
+        pressure_pa,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result, tuple(basis), tuple(contractions), tuple(reference_composition)
 
 
 def _evaluate_aqueous_miac_kij(
@@ -2066,7 +2161,7 @@ def test_native_sdk_active_born_matches_public_reference_state(
     assert capsule is not None
     assert model.parameter_fingerprint == fingerprint
     assert ACTIVE_BORN_PREFIX_SIZE == 168
-    assert table.table_size == AQUEOUS_MIAC_KIJ_PREFIX_SIZE == 184
+    assert table.table_size >= AQUEOUS_MIAC_KIJ_PREFIX_SIZE == 184
     assert table.ion_solvation_born_result_size == ctypes.sizeof(IonSolvationBornResult) == 272
     assert table.evaluate_ion_solvation_born
 
@@ -2252,7 +2347,7 @@ def test_native_sdk_aqueous_miac_kij_matches_public_reference_state(
         phase="liquid",
     ).at_molality(molality * unit_registry.mole / unit_registry.kilogram)
 
-    assert table.table_size == AQUEOUS_MIAC_KIJ_PREFIX_SIZE == 184
+    assert table.table_size >= AQUEOUS_MIAC_KIJ_PREFIX_SIZE == 184
     assert table.aqueous_miac_kij_result_size == ctypes.sizeof(AqueousMiacKijResult) == 296
     assert observed.status == STATUS_OK
     assert observed.log_mean_ionic_activity_coefficient_molality == pytest.approx(
@@ -2527,12 +2622,229 @@ def test_native_sdk_aqueous_miac_kij_installed_header_layout() -> None:
 
 _Static_assert(offsetof(epcsaft_native_sdk_v1, aqueous_miac_kij_result_size) == 168, "result-size offset");
 _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_kij) == 176, "callback offset");
-_Static_assert(sizeof(epcsaft_native_sdk_v1) == 184, "table size");
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 184, "table prefix size");
 _Static_assert(offsetof(epcsaft_aqueous_miac_kij_result_v1, log_mean_ionic_activity_coefficient_molality) == 8, "value offset");
 _Static_assert(offsetof(epcsaft_aqueous_miac_kij_result_v1, derivative) == 16, "derivative offset");
 _Static_assert(offsetof(epcsaft_aqueous_miac_kij_result_v1, parameter_fingerprint) == 64, "fingerprint offset");
 _Static_assert(offsetof(epcsaft_aqueous_miac_kij_result_v1, error) == 136, "error offset");
 _Static_assert(sizeof(epcsaft_aqueous_miac_kij_result_v1) == 296, "result size");
+int main(void) { return 0; }
+'''
+    completed = subprocess.run(
+        (compiler, "-std=c11", f"-I{include_root}", "-x", "c", "-fsyntax-only", "-"),
+        input=source,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_native_sdk_neutral_reference_is_complete_and_matches_public_owner() -> None:
+    model = _electrolyte_model()
+    capsule, table = _neutral_reference_table(model)
+    assert capsule is not None
+    assert table.table_size == NEUTRAL_REFERENCE_PREFIX_SIZE == 208
+    assert table.neutral_reference_basis_row_count == 2
+    assert table.neutral_reference_result_size == ctypes.sizeof(NeutralReferenceResult) == 440
+
+    result, basis, contractions, reference_composition = _evaluate_neutral_reference(
+        table, model.parameter_fingerprint
+    )
+    public_reference = model.reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=1.0 * unit_registry.bar,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    pure_water = model.evaluate(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=1.0 * unit_registry.bar,
+        mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    assert pure_water.log_fugacity_coefficient is not None
+
+    assert result.status == STATUS_OK
+    assert tuple(table.component_ids[index].decode() for index in range(3)) == model.component_ids
+    assert tuple(table.component_charges[index] for index in range(3)) == (0, 1, -1)
+    assert basis == (1.0, 0.0, 0.0, 0.0, 1.0, 1.0)
+    assert reference_composition == (1.0, 0.0, 0.0)
+    assert contractions[0] == pytest.approx(pure_water.log_fugacity_coefficient[0], abs=2e-12)
+    assert contractions[1] == pytest.approx(
+        math.fsum(public_reference.infinite_dilution_log_fugacity_coefficient),
+        abs=2e-12,
+    )
+    assert result.temperature_k == 298.15
+    assert result.pressure_pa == 100000.0
+    assert model._model.pressure_min_pa == result.pressure_pa
+    assert model._model.pressure_max_pa == result.pressure_pa
+    assert result.solvent_molar_mass_kg_per_mol == model._model.molar_mass_kg_per_mol[0]
+    assert result.reference_amount_mol == 1.0
+    assert result.reference_number_density_mol_per_m3 == 1.0
+    assert result.reference_molality_mol_per_kg == 1.0e-12
+    assert result.reference_convergence_error == public_reference.convergence_error
+    assert result.derivative_availability == 0
+    assert result.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert result.helmholtz_basis_id.decode() == (
+        "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
+    )
+    assert result.error == b""
+
+    # Two independent charge-neutral rows span the same space under a basis change.
+    reactions = ((-2.0, 1.0, 1.0), (1.0, 1.0, 1.0))
+    basis_coefficients = ((-2.0, 1.0), (1.0, 1.0))
+    reconstructed = tuple(
+        tuple(
+            math.fsum(coefficient * basis[row * 3 + component] for row, coefficient in enumerate(weights))
+            for component in range(3)
+        )
+        for weights in basis_coefficients
+    )
+    assert reconstructed == reactions
+    reaction_contractions = tuple(
+        math.fsum(coefficient * contractions[row] for row, coefficient in enumerate(weights))
+        for weights in basis_coefficients
+    )
+    transformed_rows = (
+        tuple(left + right for left, right in zip(*reactions, strict=True)),
+        reactions[1],
+    )
+    transformed_values = (reaction_contractions[0] + reaction_contractions[1], reaction_contractions[1])
+    assert transformed_rows[0] == (-1.0, 2.0, 2.0)
+    assert transformed_values[0] == pytest.approx(
+        -contractions[0] + 2.0 * contractions[1], abs=2e-15
+    )
+    # For (water, H3O+, OH-), this is the accepted water self-ionization offset.
+    assert reaction_contractions[0] == pytest.approx(contractions[1] - 2.0 * contractions[0])
+
+    for cation in ("lithium-cation", "sodium-cation", "potassium-cation"):
+        for anion in ("chloride-anion", "bromide-anion"):
+            supported = _electrolyte_model(("water", cation, anion))
+            _, supported_table = _neutral_reference_table(supported)
+            assert supported_table.neutral_reference_basis_row_count == 2
+            supported_result, *_ = _evaluate_neutral_reference(
+                supported_table, supported.parameter_fingerprint
+            )
+            assert supported_result.status == STATUS_OK
+
+
+def test_native_sdk_neutral_reference_is_permutation_invariant_and_fails_closed() -> None:
+    canonical = _electrolyte_model()
+    _, canonical_table = _neutral_reference_table(canonical)
+    canonical_result, _, canonical_contractions, _ = _evaluate_neutral_reference(
+        canonical_table, canonical.parameter_fingerprint
+    )
+
+    permuted = _electrolyte_model(("chloride-anion", "water", "sodium-cation"))
+    _, table = _neutral_reference_table(permuted)
+    result, basis, contractions, reference_composition = _evaluate_neutral_reference(
+        table, permuted.parameter_fingerprint
+    )
+    assert tuple(table.component_ids[index].decode() for index in range(3)) == permuted.component_ids
+    assert tuple(table.component_charges[index] for index in range(3)) == (-1, 0, 1)
+    assert basis == (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    assert reference_composition == (0.0, 1.0, 0.0)
+    assert contractions == pytest.approx(canonical_contractions, abs=3e-12)
+    assert result.reference_convergence_error == pytest.approx(
+        canonical_result.reference_convergence_error, abs=5e-12
+    )
+    assert result.parameter_fingerprint.decode() == permuted.parameter_fingerprint
+
+    callback = EvaluateNeutralReference(table.evaluate_neutral_reference)
+    basis_buffer = (ctypes.c_double * 6)(*([123.0] * 6))
+    contraction_buffer = (ctypes.c_double * 2)(123.0, 123.0)
+    composition_buffer = (ctypes.c_double * 3)(123.0, 123.0, 123.0)
+
+    def call(
+        *, fingerprint: bytes = permuted.parameter_fingerprint.encode(), temperature: float = 298.15,
+        pressure: float = 100000.0, basis_capacity: int = 6,
+    ) -> NeutralReferenceResult:
+        failure = NeutralReferenceResult(
+            struct_size=ctypes.sizeof(NeutralReferenceResult),
+            component_count=3,
+            neutral_basis_row_count=2,
+            neutral_basis_capacity=basis_capacity,
+            contraction_capacity=2,
+            reference_composition_capacity=3,
+            neutral_basis=basis_buffer,
+            log_fugacity_contractions=contraction_buffer,
+            reference_composition=composition_buffer,
+        )
+        status = callback(
+            table.model_context,
+            fingerprint,
+            temperature,
+            pressure,
+            ctypes.byref(failure),
+        )
+        assert status == failure.status
+        return failure
+
+    for failure, expected in (
+        (call(fingerprint=b"sha256:wrong"), STATUS_UNSUPPORTED_MODEL),
+        (call(temperature=299.0), STATUS_DOMAIN_ERROR),
+        (call(pressure=101325.0), STATUS_DOMAIN_ERROR),
+        (call(basis_capacity=5), STATUS_INVALID_ARGUMENT),
+    ):
+        assert failure.status == expected
+        assert failure.parameter_fingerprint == b""
+        assert failure.helmholtz_basis_id == b""
+        assert failure.error
+        assert tuple(basis_buffer) == (123.0,) * 6
+        assert tuple(contraction_buffer) == (123.0,) * 2
+        assert tuple(composition_buffer) == (123.0,) * 3
+
+    undersized = NeutralReferenceResult(struct_size=8, status=123)
+    before = bytes(undersized)
+    status = callback(
+        table.model_context,
+        permuted.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        ctypes.byref(undersized),
+    )
+    assert status == STATUS_ABI_MISMATCH
+    assert bytes(undersized) == before
+
+    unsupported = _khudaida_model(
+        ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
+    )
+    _, unsupported_table = _neutral_reference_table(unsupported)
+    assert unsupported_table.neutral_reference_basis_row_count == 0
+    unsupported_result = NeutralReferenceResult(
+        struct_size=ctypes.sizeof(NeutralReferenceResult)
+    )
+    unsupported_status = EvaluateNeutralReference(
+        unsupported_table.evaluate_neutral_reference
+    )(
+        unsupported_table.model_context,
+        unsupported.parameter_fingerprint.encode(),
+        293.15,
+        100000.0,
+        ctypes.byref(unsupported_result),
+    )
+    assert unsupported_status == unsupported_result.status == STATUS_UNSUPPORTED_MODEL
+    assert unsupported_result.error
+
+
+def test_native_sdk_neutral_reference_installed_header_layout() -> None:
+    compiler = shutil.which("cc")
+    assert compiler is not None
+    include_root = Path(epcsaft.__file__).parent / "include"
+    source = r'''
+#include <stddef.h>
+#include "epcsaft/native_sdk_v1.h"
+
+_Static_assert(offsetof(epcsaft_native_sdk_v1, neutral_reference_basis_row_count) == 184, "row-count offset");
+_Static_assert(offsetof(epcsaft_native_sdk_v1, neutral_reference_result_size) == 192, "result-size offset");
+_Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_neutral_reference) == 200, "callback offset");
+_Static_assert(sizeof(epcsaft_native_sdk_v1) == 208, "table size");
+_Static_assert(offsetof(epcsaft_neutral_reference_result_v1, neutral_basis) == 48, "basis offset");
+_Static_assert(offsetof(epcsaft_neutral_reference_result_v1, derivative_availability) == 72, "derivative offset");
+_Static_assert(offsetof(epcsaft_neutral_reference_result_v1, parameter_fingerprint) == 136, "fingerprint offset");
+_Static_assert(offsetof(epcsaft_neutral_reference_result_v1, error) == 280, "error offset");
+_Static_assert(sizeof(epcsaft_neutral_reference_result_v1) == 440, "result size");
 int main(void) { return 0; }
 '''
     completed = subprocess.run(

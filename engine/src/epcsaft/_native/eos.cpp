@@ -330,6 +330,10 @@ const std::vector<int>& NativeModel::charge_numbers() const {
     return parameters_.charge_number;
 }
 
+const std::vector<double>& NativeModel::molar_masses_kg_per_mol() const {
+    return parameters_.molar_mass_kg_per_mol;
+}
+
 NativePurePhaseBlock NativeModel::evaluate_pure_phase(
     double temperature,
     double amount,

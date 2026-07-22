@@ -18,7 +18,10 @@ pybind11::capsule make_native_sdk_v1(
     double ion_mole_fraction_max,
     bool phase_callbacks_admitted,
     bool active_born_admitted,
-    bool aqueous_kij_admitted
+    bool aqueous_kij_admitted,
+    double pressure_min_pa,
+    double pressure_max_pa,
+    bool neutral_reference_admitted
 );
 
 }  // namespace epcsaft

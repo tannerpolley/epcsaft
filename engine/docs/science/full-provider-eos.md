@@ -534,6 +534,39 @@ water, methanol, ethanol, or a selected mixture of those solvents at
 Multi-salt reference paths, non-electroneutral dilution, automatic species
 generation, and alternative concentration conventions remain closed.
 
+### 10.1 Installed charge-neutral reference basis
+
+For each admitted single-water, one-cation/one-anion Figiel model, the native
+SDK exposes a complete basis for the null space of the ordered charge vector.
+The first row is the water unit row and the second is the minimal neutral salt
+formula unit. If `B` is this row-major basis and `c` its returned contractions,
+
+```text
+B q = 0
+c_r = sum_i B_ri ln(phi_i^reference).
+```
+
+The water contraction uses the pure-water fugacity coefficient at the same
+`T,P`; the salt contraction uses the terminal values from the canonical
+four-molality reference sequence. Any caller-owned charge-neutral row `nu` is
+represented as `nu = alpha B`, so its gauge-invariant Provider reference is
+`alpha c`. No individual ionic reference is exposed. In particular, for
+ordered `(water, H3O+, OH-)`, water self-ionization is
+
+```text
+(-2, 1, 1) = -2 B_water + B_salt
+Delta C_fugacity = c_salt - 2 c_water.
+```
+
+The result binds the ordered components and charges already advertised by the
+model table, parameter fingerprint, exact source-domain `T,P`, salt-free
+composition, solvent molar mass, convergence diagnostics, and the Helmholtz
+basis `A/(RT n_ref)` with `n_ref = 1 mol` and
+`rho_ref = 1 mol m^-3`. It returns values only: temperature, pressure,
+composition, and parameter derivatives are explicitly unavailable. Reaction
+constants, standard-state conversions, gauges, constraints, and equilibrium
+remain consumer-owned.
+
 ## 11. Density closure
 
 Specified-pressure evaluation solves

@@ -5,6 +5,8 @@ receipt 0015; append-only neutral-mixture and active-kij entries are local
 candidates pending independent review and their own promotion receipts; a
 model-bound active-Born solvation entry is design-only pending bounded
 independent review, implementation, evidence, and its own authority decision;
+an append-only charge-neutral reference-basis entry is a Project Truss
+implementation candidate with no authority effect;
 consumer gates separate
 
 Date: 2026-07-17
@@ -177,6 +179,20 @@ terminal fugacity selection. The public `reference_state` path delegates to it
 through the existing private `_core` module with unchanged public behavior;
 the callback calls it directly. Neither path may retain a second copy
 or expose this refactor as a new public abstraction.
+
+The final local candidate tail exposes an equivalently complete charge-neutral
+reference basis rather than accepting reaction rows. For the exact current
+single-water/one-cation/one-anion Figiel selections, the immutable table reports
+two rows. The callback returns their ordered stoichiometric matrix, the
+dimensionless reference log-fugacity contractions, salt-free composition,
+solvent molar mass, exact `T,P`, convergence state, source fingerprint, and
+typed Helmholtz basis. The table's existing component IDs and charges complete
+the mapping. Equivalent reaction bases and species permutations therefore
+require only consumer-side linear algebra; the Provider assigns no absolute
+single-ion reference. Derivative availability is an explicit zero bit mask:
+this v1 entry returns no temperature, pressure, composition, or parameter
+derivatives. The existing reference-sequence and fixed-pressure EOS owners
+remain the only numerical owners.
 
 The capsule owns the model context. A consumer keeps a Python reference to the
 capsule for as long as it calls the table; ordinary `Py_INCREF`/`Py_DECREF`
