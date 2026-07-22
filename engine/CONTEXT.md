@@ -108,9 +108,12 @@ association, density, and reference-sequence owners. The contract and evidence
 gate live in
 `docs/designs/2026-07-21-aqueous-active-kij-miac-native-sdk-design.md`.
 Current status is
-`PROVIDER_AQUEOUS_ACTIVE_KIJ_DERIVATIVE_DESIGN_READY_FOR_PERMANENT_LAB_REVIEW`;
+`PROVIDER_AQUEOUS_ACTIVE_KIJ_DERIVATIVE_DESIGN_READY_FOR_INDEPENDENT_SUBAGENT_REVIEW`;
 there is no callback or artifact, and runtime implementation remains forbidden
-until permanent lab approves an exact design subject.
+until a bounded independent subagent review approves an exact stable design
+subject. That review opens only the separate implementation leaf; it does not
+transfer runtime, catalog, regression, scientific, promotion, or publication
+authority.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.

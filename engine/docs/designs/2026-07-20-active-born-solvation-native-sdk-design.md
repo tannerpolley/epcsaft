@@ -20,7 +20,7 @@ This is an authority-neutral implementation candidate. It does not admit a
 target, residual definition, scale, weight, bound, Ceres object, fit result,
 catalog write, new density solver, generic active-parameter overlay, or
 additional ion.
-Implementation was authorized after permanent-lab design approval and
+Implementation was authorized after bounded independent design review and
 Validation's immutable Figiel main/SI target packet; neither transfers runtime
 authority.
 
@@ -330,4 +330,6 @@ solver, persistence layer, or compatibility layout is required.
 
 Regression owns the eventual target residual and Ceres integration. Validation
 owns the immutable primary-source target packet and installed-artifact
-cross-check. Migration and permanent lab alone can adjudicate authority.
+cross-check. Migration and explicit user authority alone can adjudicate
+authority; a bounded independent subagent review cannot promote its own
+subject.

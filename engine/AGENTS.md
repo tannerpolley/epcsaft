@@ -86,8 +86,9 @@ three active interactions in `(water--cation, water--anion, cation--anion)`
 order. Its sole Provider design owner is
 `docs/designs/2026-07-21-aqueous-active-kij-miac-native-sdk-design.md`.
 Status is
-`PROVIDER_AQUEOUS_ACTIVE_KIJ_DERIVATIVE_DESIGN_READY_FOR_PERMANENT_LAB_REVIEW`.
-Do not implement the callback until permanent lab approves an exact stable
-design subject. The design does not authorize regression, target ownership,
-catalog writes, organic-solvent breadth, a generic parameter overlay, or
-runtime authority.
+`PROVIDER_AQUEOUS_ACTIVE_KIJ_DERIVATIVE_DESIGN_READY_FOR_INDEPENDENT_SUBAGENT_REVIEW`.
+Do not implement the callback until a bounded independent subagent review
+approves an exact stable design subject. That review authorizes implementation
+sequencing only; it does not authorize regression, target ownership, catalog
+writes, organic-solvent breadth, a generic parameter overlay, runtime
+authority, or promotion.

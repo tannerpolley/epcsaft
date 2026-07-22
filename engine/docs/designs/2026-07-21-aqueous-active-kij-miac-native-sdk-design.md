@@ -1,7 +1,8 @@
 # Model-Bound Aqueous Active-`k_ij` MIAC Design
 
-Status: design candidate for permanent-lab review; no runtime callback,
-installed artifact, Regression fit, Validation campaign, or authority exists.
+Status: design candidate for bounded independent subagent review; no runtime
+callback, installed artifact, Regression fit, Validation campaign, or
+authority exists.
 
 Project Truss outcome: `ePC-SAFT/ePC-SAFT-regression#1`; Provider leaf:
 `ePC-SAFT/ePC-SAFT#1`. The Provider implementation base is
@@ -262,8 +263,11 @@ roots. Regression solver and scientific acceptance statuses remain separate.
 
 ## Evidence gate before implementation handoff
 
-The implementation may begin only after permanent lab approves this exact
-design subject. The minimum retained Provider proof is then:
+The implementation may begin only after a bounded independent subagent review
+approves this exact stable design subject. That approval opens only the
+separate implementation leaf and cannot promote runtime, catalog, regression,
+scientific, or publication authority. The minimum retained Provider proof is
+then:
 
 1. **Source and identity.** Installed-header tests bind the six fingerprints,
    exact component/charge order, coordinate enum, state, molality domain,
@@ -341,6 +345,7 @@ review rather than widening surface.
 | Append one model-bound aqueous MIAC value/derivative callback | Exact three-column Ceres input, one existing reference/density owner, six fingerprints, no generic surface | Approve for review |
 
 The current handoff status is
-`PROVIDER_AQUEOUS_ACTIVE_KIJ_DERIVATIVE_DESIGN_READY_FOR_PERMANENT_LAB_REVIEW`.
-Runtime implementation remains unauthorized until that review approves an
-exact stable commit.
+`PROVIDER_AQUEOUS_ACTIVE_KIJ_DERIVATIVE_DESIGN_READY_FOR_INDEPENDENT_SUBAGENT_REVIEW`.
+Runtime implementation remains unauthorized until that bounded review
+approves an exact stable commit; the approval changes sequencing only and
+transfers no scientific or production authority.
