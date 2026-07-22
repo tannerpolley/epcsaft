@@ -198,7 +198,8 @@ HelmholtzResult<Scalar> residual_helmholtz(
     const std::vector<Scalar>& diameter,
     const std::vector<Scalar>& site_fraction,
     const Scalar& debye_huckel,
-    const Scalar& born_ssm_ds
+    const Scalar& born_ssm_ds,
+    const std::vector<Scalar>& active_aqueous_k_ij = {}
 ) {
     const std::size_t size = parameters.segment_count.size();
     const Scalar number_density = molar_density * (AVOGADRO / 1.0e30);
@@ -282,13 +283,26 @@ HelmholtzResult<Scalar> residual_helmholtz(
         for (std::size_t j = 0; j < size; ++j) {
             const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j])
                 * (Scalar(1.0) - parameters.l_ij[i * size + j]);
+            Scalar k_ij = Scalar(parameters.k_ij[i * size + j]);
+            if (!active_aqueous_k_ij.empty() && i != j) {
+                if (size != 3 || active_aqueous_k_ij.size() != 3) {
+                    throw std::invalid_argument("invalid active aqueous k_ij coordinates");
+                }
+                if ((i == 0 && j == 1) || (i == 1 && j == 0)) {
+                    k_ij = active_aqueous_k_ij[0];
+                } else if ((i == 0 && j == 2) || (i == 2 && j == 0)) {
+                    k_ij = active_aqueous_k_ij[1];
+                } else {
+                    k_ij = active_aqueous_k_ij[2];
+                }
+            }
             const Scalar epsilon_ij =
                 parameters.charge_number[i] * parameters.charge_number[j] > 0
                 ? Scalar(0.0)
                 : scalar_sqrt(
                     parameters.dispersion_energy_over_k[i] *
                     parameters.dispersion_energy_over_k[j]
-                ) * (1.0 - parameters.k_ij[i * size + j]);
+                ) * (Scalar(1.0) - k_ij);
             const Scalar weight = mole_fractions[i] * mole_fractions[j] *
                 parameters.segment_count[i] * parameters.segment_count[j] *
                 sigma_ij * sigma_ij * sigma_ij;

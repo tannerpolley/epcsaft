@@ -79,7 +79,7 @@ detail::ReferenceObservation active_born_observation(
         * detail::GAS_CONSTANT * temperature * hessian(1, active_coordinate);
     const double density_diameter = -pressure_diameter
         / state.pressure_density_derivative;
-    std::array<double, 2> total_derivative{};
+    std::vector<double> total_derivative(2);
     for (std::size_t ion = 0; ion < 2; ++ion) {
         const std::size_t component = 1 + ion;
         double weighted_composition_diameter = 0.0;
@@ -117,6 +117,98 @@ detail::ReferenceObservation active_born_observation(
             (*state.log_fugacity_coefficient)[2],
         },
         total_derivative,
+    };
+}
+
+detail::ReferenceObservation active_aqueous_kij_observation(
+    const NativeModel& model,
+    const NativeParameters& parameters,
+    double temperature,
+    double pressure,
+    const std::vector<double>& composition,
+    const std::array<double, 3>& k_ij
+) {
+    const auto state = model.evaluate_pressure(
+        temperature, pressure, composition, "liquid"
+    );
+    if (!state.log_fugacity_coefficient.has_value()) {
+        throw std::runtime_error("reference fugacity is unavailable");
+    }
+    const auto sigma = detail::segment_sigma(temperature, parameters);
+    const auto diameter = detail::segment_diameter(temperature, parameters, sigma);
+    const auto site_fractions = detail::solve_site_fractions(
+        temperature,
+        state.molar_density,
+        composition,
+        parameters,
+        sigma,
+        diameter
+    );
+    const auto derivatives = detail::thermodynamic_derivatives_active_aqueous_kij(
+        temperature,
+        state.molar_density,
+        composition,
+        parameters,
+        site_fractions,
+        k_ij
+    );
+    if (derivatives.active_aqueous_k_ij.size() != 3) {
+        throw std::runtime_error("active aqueous k_ij derivative is unavailable");
+    }
+    const std::size_t components = composition.size();
+    const std::size_t coordinates = 2 + components + 3;
+    const std::size_t active_offset = 2 + components;
+    const auto hessian = [&derivatives, coordinates](
+        std::size_t row, std::size_t column
+    ) {
+        return derivatives.hessian[row * coordinates + column];
+    };
+    const double compressibility = state.compressibility_factor;
+    const double compressibility_density = derivatives.density
+        + state.molar_density * derivatives.density_density;
+    std::vector<double> total_derivative(6);
+    for (std::size_t active = 0; active < 3; ++active) {
+        const std::size_t active_coordinate = active_offset + active;
+        const double pressure_k = state.molar_density * state.molar_density
+            * detail::GAS_CONSTANT * temperature * hessian(1, active_coordinate);
+        const double density_k = -pressure_k / state.pressure_density_derivative;
+        for (std::size_t ion = 0; ion < 2; ++ion) {
+            const std::size_t component = 1 + ion;
+            double weighted_composition_k = 0.0;
+            double weighted_composition_density = 0.0;
+            for (std::size_t mixture_component = 0;
+                 mixture_component < components;
+                 ++mixture_component) {
+                weighted_composition_k += composition[mixture_component]
+                    * hessian(2 + mixture_component, active_coordinate);
+                weighted_composition_density += composition[mixture_component]
+                    * hessian(2 + mixture_component, 1);
+            }
+            const double chemical_potential_k =
+                derivatives.active_aqueous_k_ij[active]
+                + state.molar_density * hessian(1, active_coordinate)
+                + hessian(2 + component, active_coordinate)
+                - weighted_composition_k;
+            const double log_fugacity_k = chemical_potential_k
+                - state.molar_density * hessian(1, active_coordinate)
+                    / compressibility;
+            const double chemical_potential_density =
+                2.0 * derivatives.density
+                + state.molar_density * derivatives.density_density
+                + hessian(2 + component, 1)
+                - weighted_composition_density;
+            const double log_fugacity_density = chemical_potential_density
+                - compressibility_density / compressibility;
+            total_derivative[ion * 3 + active] = log_fugacity_k
+                + log_fugacity_density * density_k;
+        }
+    }
+    return {
+        {
+            (*state.log_fugacity_coefficient)[1],
+            (*state.log_fugacity_coefficient)[2],
+        },
+        std::move(total_derivative),
     };
 }
 
@@ -402,6 +494,90 @@ NativeIonSolvationBorn NativeModel::evaluate_ion_solvation_born(
         (*result.derivative)[0],
         result.molality,
         result.convergence_error,
+    };
+}
+
+NativeAqueousMiacKij NativeModel::evaluate_aqueous_miac_kij(
+    double temperature,
+    double pressure,
+    double molality,
+    const std::array<double, 3>& k_ij
+) const {
+    if (!std::isfinite(temperature) || !std::isfinite(pressure)
+        || !std::isfinite(molality) || temperature <= 0.0 || pressure <= 0.0
+        || molality <= 0.0
+        || !std::all_of(k_ij.begin(), k_ij.end(), [](double value) {
+            return std::isfinite(value);
+        })) {
+        throw std::invalid_argument("invalid active aqueous k_ij inputs");
+    }
+    if (parameters_.charge_number.size() != 3
+        || parameters_.charge_number != std::vector<int>({0, 1, -1})) {
+        throw std::logic_error("unsupported active aqueous k_ij model");
+    }
+    NativeParameters active_parameters = parameters_;
+    active_parameters.k_ij[1] = active_parameters.k_ij[3] = k_ij[0];
+    active_parameters.k_ij[2] = active_parameters.k_ij[6] = k_ij[1];
+    active_parameters.k_ij[5] = active_parameters.k_ij[7] = k_ij[2];
+    const NativeModel active_model(active_parameters);
+    const auto composition = detail::formula_composition(
+        std::vector<double>{1.0, 0.0, 0.0},
+        active_parameters.molar_mass_kg_per_mol,
+        std::array<std::size_t, 2>{1, 2},
+        std::array<int, 2>{1, 1},
+        molality
+    );
+    const auto finite = active_aqueous_kij_observation(
+        active_model,
+        active_parameters,
+        temperature,
+        pressure,
+        composition,
+        k_ij
+    );
+    const auto reference = detail::electrolyte_reference_sequence(
+        std::vector<double>{1.0, 0.0, 0.0},
+        active_parameters.molar_mass_kg_per_mol,
+        std::array<std::size_t, 2>{1, 2},
+        std::array<int, 2>{1, 1},
+        [&active_model, &active_parameters, temperature, pressure, &k_ij](
+            const std::vector<double>& reference_composition
+        ) {
+            return active_aqueous_kij_observation(
+                active_model,
+                active_parameters,
+                temperature,
+                pressure,
+                reference_composition,
+                k_ij
+            );
+        }
+    );
+    if (!finite.derivative.has_value() || !reference.derivative.has_value()
+        || finite.derivative->size() != 6 || reference.derivative->size() != 6
+        || !reference.derivative_convergence_error.has_value()) {
+        throw std::runtime_error("active aqueous k_ij derivative is unavailable");
+    }
+    std::array<double, 3> total_derivative{};
+    for (std::size_t active = 0; active < 3; ++active) {
+        total_derivative[active] = 0.5 * (
+            (*finite.derivative)[active] + (*finite.derivative)[3 + active]
+            - (*reference.derivative)[active]
+            - (*reference.derivative)[3 + active]
+        );
+    }
+    const double conversion = std::log(
+        1.0 + 2.0 * active_parameters.molar_mass_kg_per_mol[0] * molality
+    );
+    return {
+        0.5 * (
+            finite.log_fugacity[0] + finite.log_fugacity[1]
+            - reference.log_fugacity[0] - reference.log_fugacity[1]
+        ) - conversion,
+        total_derivative,
+        reference.molality,
+        reference.convergence_error,
+        *reference.derivative_convergence_error,
     };
 }
 

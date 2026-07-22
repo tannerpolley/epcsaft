@@ -43,6 +43,17 @@ _NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS = frozenset(
     }
 )
 
+_NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS = frozenset(
+    {
+        "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+        "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+        "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+        "sha256:1258d8f76ddb4300d4983e70a2efa107b5cdc468748fe8760a04f82c4de38668",
+        "sha256:b46a48ee5025e15a2d063b6f3ca4de54e29c33d429b94940913a9d225c78456b",
+        "sha256:1d498278767a568e2120286f27f98a0b79268c92a68805d85ca30a21f14f3284",
+    }
+)
+
 _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
     "sha256:03f9b1d88843a2d53da3420d96987ec4a2305b2814cc4946cdb25d1db67f5f72": frozenset(
         {
@@ -383,7 +394,8 @@ def native_sdk(model: EPCSAFT) -> object:
         and frozenset(model._component_ids) == bundle_selection
     )
     active_born_admitted = fingerprint in _NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS
-    if not phase_admitted and not active_born_admitted:
+    aqueous_kij_admitted = fingerprint in _NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS
+    if not phase_admitted and not active_born_admitted and not aqueous_kij_admitted:
         raise _eos_error(
             "unsupported-native-sdk",
             reason="unadmitted-parameter-fingerprint",
@@ -405,6 +417,7 @@ def native_sdk(model: EPCSAFT) -> object:
             maximum_ion_fraction,
             phase_admitted,
             active_born_admitted,
+            aqueous_kij_admitted,
         )
     except (RuntimeError, ValueError) as exc:
         raise _eos_error("unsupported-native-sdk", reason=str(exc)) from exc

@@ -1,12 +1,17 @@
 import ctypes
+from dataclasses import replace
 import gc
 import math
+from pathlib import Path
+import shutil
+import subprocess
 
 import pytest
 
 import epcsaft
 from epcsaft import EPCSAFT, EosError, ParameterBundle, native_sdk, unit_registry
-from epcsaft._core import native_sdk_v1 as _native_sdk_v1
+from epcsaft._core import NativeModel, native_sdk_v1 as _native_sdk_v1
+from epcsaft.eos import _native_arguments
 
 
 CAPSULE_NAME = b"epcsaft.native_sdk.v1"
@@ -15,6 +20,7 @@ STATUS_OK = 0
 STATUS_INVALID_ARGUMENT = 1
 STATUS_UNSUPPORTED_MODEL = 2
 STATUS_DOMAIN_ERROR = 3
+STATUS_EVALUATION_ERROR = 4
 STATUS_ABI_MISMATCH = 5
 
 
@@ -137,6 +143,27 @@ class ActiveBornNativeSdkTable(ctypes.Structure):
     )
 
 
+class AqueousMiacKijResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("log_mean_ionic_activity_coefficient_molality", ctypes.c_double),
+        ("derivative", ctypes.c_double * 3),
+        ("reference_molality_mol_per_kg", ctypes.c_double),
+        ("reference_convergence_error", ctypes.c_double),
+        ("reference_derivative_convergence_error", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class AqueousMiacKijNativeSdkTable(ctypes.Structure):
+    _fields_ = ActiveBornNativeSdkTable._fields_ + (
+        ("aqueous_miac_kij_result_size", ctypes.c_size_t),
+        ("evaluate_aqueous_miac_kij", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -161,6 +188,10 @@ APPLICABILITY_PREFIX_SIZE = (
 )
 ACTIVE_BORN_PREFIX_SIZE = (
     ActiveBornNativeSdkTable.evaluate_ion_solvation_born.offset + ctypes.sizeof(ctypes.c_void_p)
+)
+AQUEOUS_MIAC_KIJ_PREFIX_SIZE = (
+    AqueousMiacKijNativeSdkTable.evaluate_aqueous_miac_kij.offset
+    + ctypes.sizeof(ctypes.c_void_p)
 )
 
 
@@ -241,6 +272,18 @@ EvaluateIonSolvationBorn = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(IonSolvationBornResult),
+)
+
+EvaluateAqueousMiacKij = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.POINTER(AqueousMiacKijResult),
 )
 
 
@@ -357,6 +400,42 @@ def _active_born_table(model: EPCSAFT) -> tuple[object, ActiveBornNativeSdkTable
     table = ctypes.cast(address, ctypes.POINTER(ActiveBornNativeSdkTable)).contents
     assert table.table_size >= ACTIVE_BORN_PREFIX_SIZE
     return capsule, table
+
+
+def _aqueous_miac_kij_table(
+    model: EPCSAFT,
+) -> tuple[object, AqueousMiacKijNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(AqueousMiacKijNativeSdkTable)).contents
+    assert table.table_size >= AQUEOUS_MIAC_KIJ_PREFIX_SIZE
+    return capsule, table
+
+
+def _evaluate_aqueous_miac_kij(
+    table: AqueousMiacKijNativeSdkTable,
+    fingerprint: str,
+    molality: float,
+    k_ij: tuple[float, float, float],
+) -> AqueousMiacKijResult:
+    coordinates = (ctypes.c_double * 3)(*k_ij)
+    result = AqueousMiacKijResult(struct_size=ctypes.sizeof(AqueousMiacKijResult))
+    status = EvaluateAqueousMiacKij(table.evaluate_aqueous_miac_kij)(
+        table.model_context,
+        fingerprint.encode(),
+        298.15,
+        100000.0,
+        molality,
+        coordinates,
+        3,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
 
 
 def _evaluate_active_born(
@@ -1986,7 +2065,8 @@ def test_native_sdk_active_born_matches_public_reference_state(
     capsule, table = _active_born_table(model)
     assert capsule is not None
     assert model.parameter_fingerprint == fingerprint
-    assert table.table_size == ACTIVE_BORN_PREFIX_SIZE == 168
+    assert ACTIVE_BORN_PREFIX_SIZE == 168
+    assert table.table_size == AQUEOUS_MIAC_KIJ_PREFIX_SIZE == 184
     assert table.ion_solvation_born_result_size == ctypes.sizeof(IonSolvationBornResult) == 272
     assert table.evaluate_ion_solvation_born
 
@@ -2134,3 +2214,411 @@ def test_native_sdk_active_born_preserves_prior_prefix_and_fails_closed() -> Non
     )
     assert phase_result.status == STATUS_UNSUPPORTED_MODEL
     assert phase_result.error
+
+
+@pytest.mark.parametrize(
+    ("cation", "anion", "molality"),
+    (
+        *(
+            (cation, anion, molality)
+            for cation, anion in (
+                ("lithium-cation", "chloride-anion"),
+                ("sodium-cation", "chloride-anion"),
+                ("potassium-cation", "chloride-anion"),
+                ("lithium-cation", "bromide-anion"),
+                ("sodium-cation", "bromide-anion"),
+                ("potassium-cation", "bromide-anion"),
+            )
+            for molality in (0.001, 1.0, 6.0)
+        ),
+    ),
+)
+def test_native_sdk_aqueous_miac_kij_matches_public_reference_state(
+    cation: str,
+    anion: str,
+    molality: float,
+) -> None:
+    model = _electrolyte_model(("water", cation, anion))
+    _, table = _aqueous_miac_kij_table(model)
+    catalog = model._model.k_ij
+    k_ij = (catalog[1], catalog[2], catalog[5])
+    observed = _evaluate_aqueous_miac_kij(
+        table, model.parameter_fingerprint, molality, k_ij
+    )
+    reference = model.reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=1.0 * unit_registry.bar,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    ).at_molality(molality * unit_registry.mole / unit_registry.kilogram)
+
+    assert table.table_size == AQUEOUS_MIAC_KIJ_PREFIX_SIZE == 184
+    assert table.aqueous_miac_kij_result_size == ctypes.sizeof(AqueousMiacKijResult) == 296
+    assert observed.status == STATUS_OK
+    assert observed.log_mean_ionic_activity_coefficient_molality == pytest.approx(
+        math.log(reference.mean_ionic_activity_coefficient_molality), abs=2.0e-11
+    )
+    assert all(math.isfinite(value) for value in observed.derivative)
+    assert observed.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+
+def _native_with_aqueous_kij(model: EPCSAFT, k_ij: tuple[float, float, float]) -> NativeModel:
+    matrix = list(model._model.k_ij)
+    matrix[1] = matrix[3] = k_ij[0]
+    matrix[2] = matrix[6] = k_ij[1]
+    matrix[5] = matrix[7] = k_ij[2]
+    return NativeModel(*_native_arguments(replace(model._model, k_ij=tuple(matrix))))
+
+
+def _aqueous_composition(model: EPCSAFT, molality: float) -> tuple[float, float, float]:
+    solvent_moles = 1.0 / model._model.molar_mass_kg_per_mol[0]
+    total_moles = solvent_moles + 2.0 * molality
+    return (
+        solvent_moles / total_moles,
+        molality / total_moles,
+        molality / total_moles,
+    )
+
+
+def test_native_sdk_aqueous_miac_kij_uses_canonical_dispersion_density_and_reference_owners() -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "chloride-anion"))
+    _, table = _aqueous_miac_kij_table(model)
+    molality = 1.0
+    center = (-0.15, 0.20, 0.35)
+    step = 5.0e-5
+    callback = _evaluate_aqueous_miac_kij(
+        table, model.parameter_fingerprint, molality, center
+    )
+    composition = _aqueous_composition(model, molality)
+    center_native = _native_with_aqueous_kij(model, center)
+    center_state = center_native.evaluate_pressure(
+        298.15, 100000.0, composition, "liquid"
+    )
+
+    pressure_derivative = []
+    reference_derivative = []
+    fixed_density_derivative = []
+    for coordinate in range(3):
+        upper = list(center)
+        lower = list(center)
+        upper[coordinate] += step
+        lower[coordinate] -= step
+        upper_native = _native_with_aqueous_kij(model, tuple(upper))
+        lower_native = _native_with_aqueous_kij(model, tuple(lower))
+        upper_pressure = upper_native.evaluate_pressure(
+            298.15, 100000.0, composition, "liquid"
+        )
+        lower_pressure = lower_native.evaluate_pressure(
+            298.15, 100000.0, composition, "liquid"
+        )
+        upper_fixed = upper_native.evaluate(298.15, center_state.molar_density, composition)
+        lower_fixed = lower_native.evaluate(298.15, center_state.molar_density, composition)
+        upper_reference = upper_native.electrolyte_reference_sequence(
+            298.15, 100000.0, (1.0, 0.0, 0.0), (1, 2), (1, 1), "liquid"
+        )
+        lower_reference = lower_native.electrolyte_reference_sequence(
+            298.15, 100000.0, (1.0, 0.0, 0.0), (1, 2), (1, 1), "liquid"
+        )
+        pressure_derivative.append(
+            0.5
+            * sum(
+                upper_pressure.log_fugacity_coefficient[ion]
+                - lower_pressure.log_fugacity_coefficient[ion]
+                for ion in (1, 2)
+            )
+            / (2.0 * step)
+        )
+        fixed_density_derivative.append(
+            0.5
+            * sum(
+                upper_fixed.log_fugacity_coefficient[ion]
+                - lower_fixed.log_fugacity_coefficient[ion]
+                for ion in (1, 2)
+            )
+            / (2.0 * step)
+        )
+        reference_derivative.append(
+            0.5
+            * sum(
+                upper_reference.log_fugacity[ion] - lower_reference.log_fugacity[ion]
+                for ion in (0, 1)
+            )
+            / (2.0 * step)
+        )
+        for unchanged in ("hard_chain", "association", "debye_huckel", "born_ssm_ds"):
+            assert getattr(upper_fixed, unchanged) == pytest.approx(
+                getattr(lower_fixed, unchanged), abs=2.0e-13
+            )
+        assert upper_fixed.dispersion != lower_fixed.dispersion
+
+    total = [
+        finite - reference
+        for finite, reference in zip(pressure_derivative, reference_derivative, strict=True)
+    ]
+    coarse_total = []
+    for coordinate in range(3):
+        upper = list(center)
+        lower = list(center)
+        upper[coordinate] += 2.0 * step
+        lower[coordinate] -= 2.0 * step
+        upper_native = _native_with_aqueous_kij(model, tuple(upper))
+        lower_native = _native_with_aqueous_kij(model, tuple(lower))
+        upper_pressure = upper_native.evaluate_pressure(
+            298.15, 100000.0, composition, "liquid"
+        )
+        lower_pressure = lower_native.evaluate_pressure(
+            298.15, 100000.0, composition, "liquid"
+        )
+        upper_reference = upper_native.electrolyte_reference_sequence(
+            298.15, 100000.0, (1.0, 0.0, 0.0), (1, 2), (1, 1), "liquid"
+        )
+        lower_reference = lower_native.electrolyte_reference_sequence(
+            298.15, 100000.0, (1.0, 0.0, 0.0), (1, 2), (1, 1), "liquid"
+        )
+        finite = 0.5 * sum(
+            upper_pressure.log_fugacity_coefficient[ion]
+            - lower_pressure.log_fugacity_coefficient[ion]
+            for ion in (1, 2)
+        ) / (4.0 * step)
+        reference = 0.5 * sum(
+            upper_reference.log_fugacity[ion] - lower_reference.log_fugacity[ion]
+            for ion in (0, 1)
+        ) / (4.0 * step)
+        coarse_total.append(finite - reference)
+    for exact, fine, coarse in zip(
+        callback.derivative, total, coarse_total, strict=True
+    ):
+        tolerance = max(1.0e-8, 20.0 * abs(coarse - fine), 2.0e-8 * abs(exact))
+        assert abs(exact - fine) <= tolerance
+    assert max(
+        abs(fixed - pressure)
+        for fixed, pressure in zip(fixed_density_derivative, pressure_derivative, strict=True)
+    ) > 1.0e-7
+
+    malformed_arguments = list(_native_arguments(model._model))
+    malformed_arguments[11] = [1.0e308 if value else value for value in malformed_arguments[11]]
+    with pytest.raises(RuntimeError, match="association"):
+        NativeModel(*malformed_arguments).evaluate(
+            298.15, center_state.molar_density, composition
+        )
+
+
+@pytest.mark.parametrize(
+    ("cation", "anion", "molality"),
+    (
+        ("lithium-cation", "chloride-anion", 0.02),
+        ("potassium-cation", "bromide-anion", 4.0),
+    ),
+)
+def test_native_sdk_aqueous_miac_kij_exact_derivatives(
+    cation: str,
+    anion: str,
+    molality: float,
+) -> None:
+    model = _electrolyte_model(("water", cation, anion))
+    _, table = _aqueous_miac_kij_table(model)
+    trial = (-0.15, 0.20, 0.35)
+    center = _evaluate_aqueous_miac_kij(
+        table, model.parameter_fingerprint, molality, trial
+    )
+    for coordinate in range(3):
+        estimates = []
+        for step in (1.0e-4, 5.0e-5):
+            upper = list(trial)
+            lower = list(trial)
+            upper[coordinate] += step
+            lower[coordinate] -= step
+            high = _evaluate_aqueous_miac_kij(
+                table, model.parameter_fingerprint, molality, tuple(upper)
+            )
+            low = _evaluate_aqueous_miac_kij(
+                table, model.parameter_fingerprint, molality, tuple(lower)
+            )
+            estimates.append(
+                (
+                    high.log_mean_ionic_activity_coefficient_molality
+                    - low.log_mean_ionic_activity_coefficient_molality
+                )
+                / (2.0 * step)
+            )
+        tolerance = max(
+            1.0e-8,
+            20.0 * abs(estimates[0] - estimates[1]),
+            2.0e-8 * abs(center.derivative[coordinate]),
+        )
+        assert abs(center.derivative[coordinate] - estimates[1]) <= tolerance
+
+
+def test_native_sdk_aqueous_miac_kij_preserves_prefix_and_fails_closed() -> None:
+    model = _electrolyte_model()
+    capsule, table = _aqueous_miac_kij_table(model)
+    assert capsule is not None
+    for field_name, field_type in ActiveBornNativeSdkTable._fields_:
+        assert field_type is not None
+        assert (
+            getattr(AqueousMiacKijNativeSdkTable, field_name).offset
+            == getattr(ActiveBornNativeSdkTable, field_name).offset
+        )
+    assert AqueousMiacKijNativeSdkTable.aqueous_miac_kij_result_size.offset == 168
+    assert AqueousMiacKijNativeSdkTable.evaluate_aqueous_miac_kij.offset == 176
+    assert ctypes.sizeof(AqueousMiacKijNativeSdkTable) == 184
+
+    callback = EvaluateAqueousMiacKij(table.evaluate_aqueous_miac_kij)
+    coordinates = (ctypes.c_double * 3)(0.0, 0.0, 0.0)
+    for fingerprint, temperature, molality, count, expected in (
+        (model.parameter_fingerprint.encode(), math.nan, 1.0, 3, STATUS_INVALID_ARGUMENT),
+        (model.parameter_fingerprint.encode(), 298.15, 0.0, 3, STATUS_DOMAIN_ERROR),
+        (b"sha256:wrong", 298.15, 1.0, 3, STATUS_UNSUPPORTED_MODEL),
+        (model.parameter_fingerprint.encode(), 298.15, 1.0, 2, STATUS_ABI_MISMATCH),
+    ):
+        result = AqueousMiacKijResult(struct_size=ctypes.sizeof(AqueousMiacKijResult))
+        status = callback(
+            table.model_context,
+            fingerprint,
+            temperature,
+            100000.0,
+            molality,
+            coordinates,
+            count,
+            ctypes.byref(result),
+        )
+        assert status == result.status == expected, result.error.decode()
+        assert math.isnan(result.log_mean_ionic_activity_coefficient_molality)
+        assert all(math.isnan(value) for value in result.derivative)
+        assert result.parameter_fingerprint == b""
+        assert result.error
+
+    with pytest.raises(ValueError, match="unsupported aqueous active k_ij model identity"):
+        _native_sdk_v1(
+            model._native,
+            model.parameter_fingerprint,
+            298.15,
+            298.15,
+            ("water", "potassium-cation", "chloride-anion"),
+            0.38,
+            False,
+            False,
+            True,
+        )
+
+    lithium = _electrolyte_model(("water", "lithium-cation", "chloride-anion"))
+    _, lithium_table = _aqueous_miac_kij_table(lithium)
+    for trial, expected in (
+        ((100.0, 100.0, 100.0), STATUS_DOMAIN_ERROR),
+        ((-100.0, -100.0, -100.0), STATUS_EVALUATION_ERROR),
+    ):
+        result = _evaluate_aqueous_miac_kij(
+            lithium_table, lithium.parameter_fingerprint, 1.0, trial
+        )
+        assert result.status == expected
+        assert math.isnan(result.log_mean_ionic_activity_coefficient_molality)
+        assert all(math.isnan(value) for value in result.derivative)
+        assert result.parameter_fingerprint == b""
+        assert result.error
+
+
+def test_native_sdk_aqueous_miac_kij_installed_header_layout() -> None:
+    compiler = shutil.which("cc")
+    assert compiler is not None
+    include_root = Path(epcsaft.__file__).parent / "include"
+    source = r'''
+#include <stddef.h>
+#include "epcsaft/native_sdk_v1.h"
+
+_Static_assert(offsetof(epcsaft_native_sdk_v1, aqueous_miac_kij_result_size) == 168, "result-size offset");
+_Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_kij) == 176, "callback offset");
+_Static_assert(sizeof(epcsaft_native_sdk_v1) == 184, "table size");
+_Static_assert(offsetof(epcsaft_aqueous_miac_kij_result_v1, log_mean_ionic_activity_coefficient_molality) == 8, "value offset");
+_Static_assert(offsetof(epcsaft_aqueous_miac_kij_result_v1, derivative) == 16, "derivative offset");
+_Static_assert(offsetof(epcsaft_aqueous_miac_kij_result_v1, parameter_fingerprint) == 64, "fingerprint offset");
+_Static_assert(offsetof(epcsaft_aqueous_miac_kij_result_v1, error) == 136, "error offset");
+_Static_assert(sizeof(epcsaft_aqueous_miac_kij_result_v1) == 296, "result size");
+int main(void) { return 0; }
+'''
+    completed = subprocess.run(
+        (compiler, "-std=c11", f"-I{include_root}", "-x", "c", "-fsyntax-only", "-"),
+        input=source,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_native_sdk_internal_reference_and_density_failure_contracts(tmp_path: Path) -> None:
+    compiler = shutil.which("c++")
+    assert compiler is not None
+    native_root = Path(__file__).parents[1] / "src" / "epcsaft" / "_native"
+    source = r'''
+#include "density.hpp"
+#include "electrolyte_reference.hpp"
+
+#include <array>
+#include <cmath>
+#include <limits>
+#include <stdexcept>
+#include <vector>
+
+struct State { double pressure; double pressure_density_derivative; };
+
+int main() {
+    bool rejected_nonfinite_reference = false;
+    int call = 0;
+    try {
+        epcsaft::detail::electrolyte_reference_sequence(
+            std::vector<double>{1.0, 0.0, 0.0},
+            std::vector<double>{0.018, 0.007, 0.035},
+            std::array<std::size_t, 2>{1, 2},
+            std::array<int, 2>{1, 1},
+            [&call](const std::vector<double>&) {
+                ++call;
+                std::vector<double> derivative(6, 1.0);
+                if (call == 3) {
+                    derivative[4] = std::numeric_limits<double>::quiet_NaN();
+                }
+                return epcsaft::detail::ReferenceObservation{{0.0, 0.0}, derivative};
+            }
+        );
+    } catch (const std::runtime_error&) {
+        rejected_nonfinite_reference = true;
+    }
+    if (!rejected_nonfinite_reference) return 1;
+
+    bool domain_classified = false;
+    try {
+        epcsaft::detail::solve_density(
+            1.0, 1.0, 10.0, "liquid",
+            [](double density) { return State{density, 1.0}; }
+        );
+    } catch (const epcsaft::detail::DensityDomainError&) {
+        domain_classified = true;
+    }
+    if (!domain_classified) return 2;
+
+    bool evaluation_classified = false;
+    try {
+        epcsaft::detail::refine_density_root(
+            1.0, 0.5, 1.5, -0.5,
+            [](double) {
+                return State{std::numeric_limits<double>::quiet_NaN(), 1.0};
+            }
+        );
+    } catch (const epcsaft::detail::DensityDomainError&) {
+        return 3;
+    } catch (const std::runtime_error&) {
+        evaluation_classified = true;
+    }
+    return evaluation_classified ? 0 : 4;
+}
+'''
+    output = tmp_path / "owner-contract"
+    compiled = subprocess.run(
+        (compiler, "-std=c++17", f"-I{native_root}", "-x", "c++", "-", "-o", str(output)),
+        input=source,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert compiled.returncode == 0, compiled.stderr
+    executed = subprocess.run((str(output),), capture_output=True, text=True, check=False)
+    assert executed.returncode == 0, executed.stderr

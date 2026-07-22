@@ -1,5 +1,5 @@
 version: 2
-status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-active-born-and-aqueous-kij-design-candidates
+status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-active-born-and-aqueous-kij-implementation-candidates
 
 authority:
   effective_receipt: promotion-0012-provider-full-candidate
@@ -85,7 +85,7 @@ native_sdk_candidates:
     ownership_check: schedule, composition, convergence, and terminal selection exist only in reference_sequence_owner
     exclusions: targets, residuals, scaling, bounds, Ceres, fit results, catalog persistence, other solvents or states, other ions, solvation-factor or dielectric parameters, generic parameter overlays, second derivatives, and authority
   figiel_aqueous_active_kij_miac_v1:
-    status: design-only-pending-independent-subagent-review
+    status: local-implementation-candidate-pending-independent-subagent-review
     scope: >-
       One model-bound 298.15 K, 1 bar water/cation/anion molality-scale mean
       ionic activity logarithm and its exact total fixed-pressure first
@@ -94,14 +94,14 @@ native_sdk_candidates:
     derivative_order: 1
     admitted_salts: [LiCl, NaCl, KCl, LiBr, NaBr, KBr]
     molality_domain_mol_per_kg: [0.001, 6.0]
-    table_size_bytes_64_bit_candidate: 184
-    result_size_bytes_64_bit_candidate: 296
+    table_size_bytes_64_bit: 184
+    result_size_bytes_64_bit: 296
     reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
     equation_owner: src/epcsaft/_native/helmholtz.hpp
     derivative_owner: src/epcsaft/_native/derivatives.hpp
     density_owner: src/epcsaft/_native/density.hpp
-    public_behavior_change: none-design-only
-    exclusions: runtime callback before approval, targets, residuals, scaling, bounds, Ceres, fit results, rank claims, catalog persistence, organic solvents, expanded ions, generic parameter overlays, numerical production derivatives, third derivatives, and authority
+    public_behavior_change: append-only-local-native-sdk-callback-candidate
+    exclusions: targets, residuals, scaling, bounds, Ceres, fit results, rank claims, catalog persistence, organic solvents, expanded ions, generic parameter overlays, numerical production derivatives, third derivatives, and authority
 
 accepted_scope: >-
   Source-backed neutral, associating, and bounded ionic SSM+DS residual EOS at
@@ -187,35 +187,35 @@ public_surface:
       status: local-candidate-pending-independent-review-and-promotion-receipt
 
 manifest:
-  tracked_files: 90
+  tracked_files: 99
   production_python_files: 9
-  native_source_files: 13
+  native_source_files: 14
   public_native_headers: 1
-  installed_data_files: 31
+  installed_data_files: 38
   package_test_files: 11
-  physical_production_lines: 6217
-  physical_package_test_lines: 4855
-  physical_documentation_lines: 2622
+  physical_production_lines: 7609
+  physical_package_test_lines: 6098
+  physical_documentation_lines: 2885
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
   oversized_files:
     - path: src/epcsaft/records.py
-      physical_lines: 437
+      physical_lines: 438
     - path: src/epcsaft/_resolve.py
-      physical_lines: 441
+      physical_lines: 518
     - path: src/epcsaft/_bundle_io.py
       physical_lines: 417
     - path: src/epcsaft/_native/eos.cpp
-      physical_lines: 430
+      physical_lines: 810
     - path: src/epcsaft/_native/native_sdk.cpp
-      physical_lines: 639
+      physical_lines: 1008
     - path: src/epcsaft/_native/phase_block.hpp
-      physical_lines: 756
+      physical_lines: 762
     - path: tests/test_native_sdk.py
-      physical_lines: 1641
+      physical_lines: 2624
     - path: tests/test_parameters.py
-      physical_lines: 1125
+      physical_lines: 1251
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 
 excluded:
@@ -224,7 +224,7 @@ excluded:
   - regression and parameter fitting
   - ideal-gas and total caloric properties
   - multi-salt and alternate-convention reference-state workflows
-  - authoritative mixture, associating, electrolyte, and reactive native phase blocks; the exact local methane/ethane and full-electrolyte candidates remain receipt-pending, while the aqueous active-k_ij MIAC seam remains design-only pending bounded independent subagent review
+  - authoritative mixture, associating, electrolyte, and reactive native phase blocks; the exact local methane/ethane and full-electrolyte candidates remain receipt-pending, while the aqueous active-k_ij MIAC seam remains a local implementation candidate pending bounded independent subagent review
   - alternate derivative backends
   - compatibility interfaces
   - release and workflow machinery

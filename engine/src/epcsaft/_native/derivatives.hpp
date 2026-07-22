@@ -8,6 +8,7 @@
 
 #include <cppad/cppad.hpp>
 
+#include <array>
 #include <cstddef>
 #include <optional>
 #include <stdexcept>
@@ -25,6 +26,7 @@ struct ThermodynamicDerivatives final {
     double density_density;
     double residual_helmholtz;
     std::optional<double> active_born;
+    std::vector<double> active_aqueous_k_ij;
     std::vector<double> hessian;
 };
 
@@ -50,13 +52,19 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     const NativeParameters& parameters,
     const std::vector<double>& site_fractions,
     std::optional<std::size_t> active_born_component,
-    double active_born_diameter_angstrom
+    double active_born_diameter_angstrom,
+    const std::optional<std::array<double, 3>>& active_aqueous_k_ij
 ) {
     using ADScalar = CppAD::AD<double>;
     const std::size_t components = mole_fractions.size();
     const std::size_t sites = site_fractions.size();
-    const std::size_t coordinates = 2 + components
-        + static_cast<std::size_t>(active_born_component.has_value());
+    const std::size_t born_coordinates =
+        static_cast<std::size_t>(active_born_component.has_value());
+    const std::size_t kij_coordinates = active_aqueous_k_ij.has_value() ? 3 : 0;
+    const std::size_t coordinates = 2 + components + born_coordinates
+        + kij_coordinates;
+    const std::size_t born_offset = 2 + components;
+    const std::size_t kij_offset = born_offset + born_coordinates;
     const std::size_t width = coordinates + sites;
 
     std::vector<ADScalar> independent(width);
@@ -66,7 +74,12 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         independent[2 + component] = mole_fractions[component];
     }
     if (active_born_component.has_value()) {
-        independent[2 + components] = active_born_diameter_angstrom;
+        independent[born_offset] = active_born_diameter_angstrom;
+    }
+    if (active_aqueous_k_ij.has_value()) {
+        for (std::size_t coordinate = 0; coordinate < 3; ++coordinate) {
+            independent[kij_offset + coordinate] = (*active_aqueous_k_ij)[coordinate];
+        }
     }
     for (std::size_t site = 0; site < sites; ++site) {
         independent[coordinates + site] = site_fractions[site];
@@ -103,7 +116,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
             parameters,
             electrolyte.bulk_relative_permittivity,
             *active_born_component,
-            independent[2 + components]
+            independent[born_offset]
         )
         : born_contribution(
             independent[0],
@@ -112,6 +125,13 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
             electrolyte.bulk_relative_permittivity,
             sigma
         );
+    std::vector<ADScalar> active_k_values;
+    if (active_aqueous_k_ij.has_value()) {
+        active_k_values.assign(
+            independent.begin() + static_cast<std::ptrdiff_t>(kij_offset),
+            independent.begin() + static_cast<std::ptrdiff_t>(kij_offset + 3)
+        );
+    }
     const auto contributions = residual_helmholtz(
         independent[0],
         independent[1],
@@ -121,7 +141,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         diameter,
         fractions,
         electrolyte.debye_huckel,
-        born
+        born,
+        active_k_values
     );
     const auto delta = association_delta(
         independent[0],
@@ -146,6 +167,11 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     point.insert(point.end(), mole_fractions.begin(), mole_fractions.end());
     if (active_born_component.has_value()) {
         point.push_back(active_born_diameter_angstrom);
+    }
+    if (active_aqueous_k_ij.has_value()) {
+        point.insert(
+            point.end(), active_aqueous_k_ij->begin(), active_aqueous_k_ij->end()
+        );
     }
     point.insert(point.end(), site_fractions.begin(), site_fractions.end());
     const auto jacobian = function.Jacobian(point);
@@ -241,8 +267,14 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         reduced_hessian[coordinates + 1],
         residual_helmholtz,
         active_born_component.has_value()
-            ? std::optional<double>(gradient[2 + components])
+            ? std::optional<double>(gradient[born_offset])
             : std::nullopt,
+        active_aqueous_k_ij.has_value()
+            ? std::vector<double>(
+                gradient.begin() + static_cast<std::ptrdiff_t>(kij_offset),
+                gradient.begin() + static_cast<std::ptrdiff_t>(kij_offset + 3)
+            )
+            : std::vector<double>{},
         std::move(reduced_hessian),
     };
 }
@@ -261,7 +293,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives(
         parameters,
         site_fractions,
         std::nullopt,
-        0.0
+        0.0,
+        std::nullopt
     );
 }
 
@@ -281,7 +314,28 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_born(
         parameters,
         site_fractions,
         active_component,
-        active_born_diameter_angstrom
+        active_born_diameter_angstrom,
+        std::nullopt
+    );
+}
+
+inline ThermodynamicDerivatives thermodynamic_derivatives_active_aqueous_kij(
+    double temperature,
+    double molar_density,
+    const std::vector<double>& mole_fractions,
+    const NativeParameters& parameters,
+    const std::vector<double>& site_fractions,
+    const std::array<double, 3>& active_aqueous_k_ij
+) {
+    return thermodynamic_derivatives_impl(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        site_fractions,
+        std::nullopt,
+        0.0,
+        active_aqueous_k_ij
     );
 }
 

@@ -10,6 +10,11 @@
 
 namespace epcsaft::detail {
 
+class DensityDomainError final : public std::runtime_error {
+public:
+    using std::runtime_error::runtime_error;
+};
+
 struct DensityRoot final {
     double molar_density;
     double bracket_lower;
@@ -108,7 +113,7 @@ DensityRoot solve_density(
     const double lower = std::max(1.0e-12, ideal_density * 1.0e-8);
     const double upper = maximum_density * 0.999;
     if (!(lower < upper)) {
-        throw std::runtime_error("density interval is empty");
+        throw DensityDomainError("density interval is empty");
     }
 
     constexpr std::size_t scan_intervals = 360;
@@ -154,17 +159,17 @@ DensityRoot solve_density(
         [](const DensityRoot& root) { return root.stable; }
     );
     if (stable.empty()) {
-        throw std::runtime_error("no certified stable density root");
+        throw DensityDomainError("no certified stable density root");
     }
     if (stable.size() == 1) {
         if (!phase.empty()) {
-            throw std::runtime_error("requested density branch is unavailable");
+            throw DensityDomainError("requested density branch is unavailable");
         }
         stable.front().branch = "single";
         return stable.front();
     }
     if (phase.empty()) {
-        throw std::runtime_error("density root is ambiguous");
+        throw DensityDomainError("density root is ambiguous");
     }
     if (phase == "vapor") {
         stable.front().branch = "vapor";

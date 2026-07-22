@@ -1,4 +1,5 @@
 #include "native_sdk.hpp"
+#include "density.hpp"
 #include "phase_block.hpp"
 
 #include <epcsaft/native_sdk_v1.h>
@@ -6,6 +7,7 @@
 #include <pybind11/pybind11.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -79,6 +81,55 @@ bool active_born_model_admitted(
     );
 }
 
+bool aqueous_kij_model_admitted(
+    const std::string& fingerprint,
+    const std::vector<std::string>& component_ids,
+    const std::vector<int>& charges
+) {
+    if (component_ids.size() != 3 || charges != std::vector<int>({0, 1, -1})
+        || component_ids[0] != "water") {
+        return false;
+    }
+    struct Admission final {
+        const char* fingerprint;
+        const char* cation;
+        const char* anion;
+    };
+    constexpr Admission admissions[] = {
+        {
+            "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+            "lithium-cation", "chloride-anion",
+        },
+        {
+            "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+            "sodium-cation", "chloride-anion",
+        },
+        {
+            "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+            "potassium-cation", "chloride-anion",
+        },
+        {
+            "sha256:1258d8f76ddb4300d4983e70a2efa107b5cdc468748fe8760a04f82c4de38668",
+            "lithium-cation", "bromide-anion",
+        },
+        {
+            "sha256:b46a48ee5025e15a2d063b6f3ca4de54e29c33d429b94940913a9d225c78456b",
+            "sodium-cation", "bromide-anion",
+        },
+        {
+            "sha256:1d498278767a568e2120286f27f98a0b79268c92a68805d85ca30a21f14f3284",
+            "potassium-cation", "bromide-anion",
+        },
+    };
+    return std::any_of(
+        std::begin(admissions), std::end(admissions), [&](const Admission& item) {
+            return fingerprint == item.fingerprint
+                && component_ids[1] == item.cation
+                && component_ids[2] == item.anion;
+        }
+    );
+}
+
 struct NativeSdkEndpoint final {
     NativeModel model;
     std::string parameter_fingerprint;
@@ -87,6 +138,7 @@ struct NativeSdkEndpoint final {
     double ion_mole_fraction_max;
     bool phase_callbacks_admitted;
     bool active_born_admitted;
+    bool aqueous_kij_admitted;
     std::vector<std::string> component_ids;
     std::vector<const char*> component_id_pointers;
     std::vector<int32_t> component_charges;
@@ -100,7 +152,8 @@ struct NativeSdkEndpoint final {
         std::vector<std::string> identifiers,
         double maximum_ion_fraction,
         bool admit_phase_callbacks,
-        bool admit_active_born
+        bool admit_active_born,
+        bool admit_aqueous_kij
     )
         : model(source_model),
           parameter_fingerprint(std::move(fingerprint)),
@@ -109,6 +162,7 @@ struct NativeSdkEndpoint final {
           ion_mole_fraction_max(maximum_ion_fraction),
           phase_callbacks_admitted(admit_phase_callbacks),
           active_born_admitted(admit_active_born),
+          aqueous_kij_admitted(admit_aqueous_kij),
           component_ids(std::move(identifiers)),
           component_id_pointers([&] {
               std::vector<const char*> pointers;
@@ -144,7 +198,103 @@ struct NativeSdkEndpoint final {
               ion_mole_fraction_max,
               sizeof(epcsaft_ion_solvation_born_result_v1),
               &NativeSdkEndpoint::evaluate_ion_solvation_born,
+              sizeof(epcsaft_aqueous_miac_kij_result_v1),
+              &NativeSdkEndpoint::evaluate_aqueous_miac_kij,
           } {}
+
+    static int evaluate_aqueous_miac_kij(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        double molality,
+        const double* k_ij,
+        size_t k_ij_count,
+        epcsaft_aqueous_miac_kij_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size != sizeof(epcsaft_aqueous_miac_kij_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const uint32_t result_size = result->struct_size;
+        std::memset(result, 0, sizeof(*result));
+        result->struct_size = result_size;
+        result->log_mean_ionic_activity_coefficient_molality =
+            std::numeric_limits<double>::quiet_NaN();
+        std::fill(
+            std::begin(result->derivative),
+            std::end(result->derivative),
+            std::numeric_limits<double>::quiet_NaN()
+        );
+        result->reference_molality_mol_per_kg =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_convergence_error =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_derivative_convergence_error =
+            std::numeric_limits<double>::quiet_NaN();
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr || k_ij == nullptr) {
+            return fail(EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1, "required pointer is null");
+        }
+        if (k_ij_count != EPCSAFT_AQUEOUS_ACTIVE_KIJ_COORDINATE_COUNT_V1) {
+            return fail(EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1, "active k_ij count must be three");
+        }
+        if (!std::isfinite(temperature_k) || !std::isfinite(pressure_pa)
+            || !std::isfinite(molality)
+            || !std::all_of(k_ij, k_ij + k_ij_count, [](double value) {
+                return std::isfinite(value);
+            })) {
+            return fail(EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1, "state and active k_ij must be finite");
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.aqueous_kij_admitted
+            || std::strcmp(
+                endpoint.parameter_fingerprint.c_str(), expected_fingerprint
+            ) != 0) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, "unsupported aqueous active k_ij model");
+        }
+        if (temperature_k != 298.15 || pressure_pa != 100000.0
+            || molality < 0.001 || molality > 6.0) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, "aqueous active k_ij state is outside the admitted domain");
+        }
+        try {
+            const std::array<double, 3> coordinates = {k_ij[0], k_ij[1], k_ij[2]};
+            const auto value = endpoint.model.evaluate_aqueous_miac_kij(
+                temperature_k, pressure_pa, molality, coordinates
+            );
+            result->log_mean_ionic_activity_coefficient_molality =
+                value.log_mean_ionic_activity_coefficient_molality;
+            std::copy(value.derivative.begin(), value.derivative.end(), result->derivative);
+            result->reference_molality_mol_per_kg = value.reference_molality_mol_per_kg;
+            result->reference_convergence_error = value.reference_convergence_error;
+            result->reference_derivative_convergence_error =
+                value.reference_derivative_convergence_error;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const detail::DensityDomainError& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, "unknown aqueous active k_ij evaluation failure");
+        }
+    }
 
     static int evaluate_ion_solvation_born(
         const void* context,
@@ -775,9 +925,11 @@ pybind11::capsule make_native_sdk_v1(
     const std::vector<std::string>& component_ids,
     double ion_mole_fraction_max,
     bool phase_callbacks_admitted,
-    bool active_born_admitted
+    bool active_born_admitted,
+    bool aqueous_kij_admitted
 ) {
-    if (!active_born_admitted && (!model.supports_native_sdk_v1()
+    if (!active_born_admitted && !aqueous_kij_admitted
+        && (!model.supports_native_sdk_v1()
         && !model.supports_mixture_native_sdk_v1()
         && !model.supports_electrolyte_native_sdk_v1())) {
         throw std::invalid_argument(
@@ -789,6 +941,12 @@ pybind11::capsule make_native_sdk_v1(
             parameter_fingerprint, component_ids, model.charge_numbers()
         )) {
         throw std::invalid_argument("unsupported active Born model identity");
+    }
+    if (aqueous_kij_admitted
+        && !aqueous_kij_model_admitted(
+            parameter_fingerprint, component_ids, model.charge_numbers()
+        )) {
+        throw std::invalid_argument("unsupported aqueous active k_ij model identity");
     }
     if (parameter_fingerprint.empty()
         || parameter_fingerprint.size() >= EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE) {
@@ -827,7 +985,8 @@ pybind11::capsule make_native_sdk_v1(
         component_ids,
         ion_mole_fraction_max,
         phase_callbacks_admitted,
-        active_born_admitted
+        active_born_admitted,
+        aqueous_kij_admitted
     );
     return pybind11::capsule(
         &endpoint->table,

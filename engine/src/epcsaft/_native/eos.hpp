@@ -59,6 +59,14 @@ struct NativeIonSolvationBorn final {
     double reference_convergence_error;
 };
 
+struct NativeAqueousMiacKij final {
+    double log_mean_ionic_activity_coefficient_molality;
+    std::array<double, 3> derivative;
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+    double reference_derivative_convergence_error;
+};
+
 class NativeModel final {
 public:
     explicit NativeModel(NativeParameters parameters);
@@ -139,6 +147,12 @@ public:
         double temperature,
         double pressure,
         double born_diameter_angstrom
+    ) const;
+    NativeAqueousMiacKij evaluate_aqueous_miac_kij(
+        double temperature,
+        double pressure,
+        double formula_unit_molality_mol_per_kg,
+        const std::array<double, 3>& k_ij
     ) const;
 
 private:
