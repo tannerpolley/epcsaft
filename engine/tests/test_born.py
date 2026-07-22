@@ -81,14 +81,14 @@ def test_corrected_born_ssm_ds_matches_independent_two_region_oracle() -> None:
         mole_fractions=(0.999998, 0.000001, 0.000001),
     )
 
-    assert result.born_ssm_ds == pytest.approx(_born_oracle(298.15), rel=2.0e-12, abs=2.0e-12)
-    assert result.born_ssm_ds < 0.0
+    assert result.born == pytest.approx(_born_oracle(298.15), rel=2.0e-12, abs=2.0e-12)
+    assert result.born < 0.0
     assert result.residual_helmholtz == pytest.approx(
         result.hard_chain
         + result.dispersion
         + result.association
         + result.debye_huckel
-        + result.born_ssm_ds
+        + result.born
     )
 
 
@@ -112,8 +112,8 @@ def test_born_has_zero_ion_reduction_and_no_density_dependence() -> None:
         mole_fractions=(1.0, 0.0, 0.0),
     )
 
-    assert dilute.born_ssm_ds == pytest.approx(dense.born_ssm_ds, abs=1.0e-13)
-    assert solvent.born_ssm_ds == 0.0
+    assert dilute.born == pytest.approx(dense.born, abs=1.0e-13)
+    assert solvent.born == 0.0
 
 
 def test_neutral_topology_has_zero_born_contribution() -> None:
@@ -127,7 +127,7 @@ def test_neutral_topology_has_zero_born_contribution() -> None:
         mole_fractions=(0.4, 0.6),
     )
 
-    assert result.born_ssm_ds == 0.0
+    assert result.born == 0.0
 
 
 def test_ascani_original_born_and_combined_dielectric_match_independent_oracle() -> None:
@@ -186,5 +186,5 @@ def test_ascani_original_born_and_combined_dielectric_match_independent_oracle()
         molar_density=1000.0 * unit_registry.mole / unit_registry.meter**3,
         mole_fractions=tuple(float(value) for value in fractions),
     )
-    assert result.born_ssm_ds == pytest.approx(float(expected), rel=3.0e-12)
-    assert result.born_ssm_ds < 0.0
+    assert result.born == pytest.approx(float(expected), rel=3.0e-12)
+    assert result.born < 0.0

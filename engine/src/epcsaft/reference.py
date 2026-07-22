@@ -66,7 +66,7 @@ class ElectrolyteReference:
     temperature: pint.Quantity
     pressure: pint.Quantity
     phase: str
-    infinite_dilution_log_fugacity: tuple[float, float]
+    infinite_dilution_log_fugacity_coefficient: tuple[float, float]
     reference_molality: pint.Quantity
     convergence_error: float
     _eos: EPCSAFT
@@ -83,7 +83,7 @@ class ElectrolyteReference:
             / unit_registry.mole
         )
         return tuple(  # type: ignore[return-value]
-            value * scale for value in self.infinite_dilution_log_fugacity
+            value * scale for value in self.infinite_dilution_log_fugacity_coefficient
         )
 
     def at_molality(self, formula_unit_molality: object) -> IonicActivity:
@@ -115,7 +115,9 @@ class ElectrolyteReference:
         log_activity = tuple(
             finite_log_fugacity[index] - reference
             for index, reference in zip(
-                self._ion_indices, self.infinite_dilution_log_fugacity, strict=True
+                self._ion_indices,
+                self.infinite_dilution_log_fugacity_coefficient,
+                strict=True,
             )
         )
         single_ion = tuple(math.exp(value) for value in log_activity)
@@ -179,8 +181,8 @@ class ElectrolyteReference:
         values = tuple(
             (target_value - source_value) * scale
             for source_value, target_value in zip(
-                self.infinite_dilution_log_fugacity,
-                target.infinite_dilution_log_fugacity,
+                self.infinite_dilution_log_fugacity_coefficient,
+                target.infinite_dilution_log_fugacity_coefficient,
                 strict=True,
             )
         )
@@ -272,7 +274,7 @@ def build_reference_state(
         temperature=temperature_quantity,
         pressure=pressure_quantity,
         phase=phase,
-        infinite_dilution_log_fugacity=current,
+        infinite_dilution_log_fugacity_coefficient=current,
         reference_molality=sequence.reference_molality
         * unit_registry.mole
         / unit_registry.kilogram,

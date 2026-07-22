@@ -3,7 +3,14 @@ from pathlib import Path
 
 import pytest
 
-from epcsaft import EPCSAFT, ParameterBundle, unit_registry
+from epcsaft import (
+    EPCSAFT,
+    ElectrolyteReference,
+    IonicActivity,
+    ParameterBundle,
+    TransferFreeEnergy,
+    unit_registry,
+)
 
 
 def _model(*component_ids: str) -> EPCSAFT:
@@ -21,14 +28,18 @@ def test_water_nacl_reference_converges_on_an_electroneutral_path() -> None:
         phase="liquid",
     )
 
+    assert isinstance(reference, ElectrolyteReference)
     assert reference.component_ids == model.component_ids
     assert reference.ion_component_ids == ("sodium-cation", "chloride-anion")
     assert reference.formula_stoichiometry == (1, 1)
     assert reference.solvent_mole_fractions == (1.0, 0.0, 0.0)
     assert reference.reference_molality.to("mole / kilogram").magnitude <= 1.0e-10
     assert reference.convergence_error <= 5.0e-5
-    assert all(math.isfinite(value) for value in reference.infinite_dilution_log_fugacity)
-    assert reference.infinite_dilution_log_fugacity == pytest.approx(
+    assert all(
+        math.isfinite(value) for value in reference.infinite_dilution_log_fugacity_coefficient
+    )
+    assert not hasattr(reference, "infinite_dilution_log_fugacity")
+    assert reference.infinite_dilution_log_fugacity_coefficient == pytest.approx(
         (-154.0679654864907, -127.07688974125972),
         abs=2.0e-12,
     )
@@ -44,6 +55,7 @@ def test_activity_follows_figiel_reference_and_scale_equations() -> None:
     )
 
     activity = reference.at_molality(0.1 * unit_registry.mole / unit_registry.kilogram)
+    assert isinstance(activity, IonicActivity)
     state = model.evaluate(
         temperature=reference.temperature,
         pressure=reference.pressure,
@@ -53,7 +65,8 @@ def test_activity_follows_figiel_reference_and_scale_equations() -> None:
     assert state.log_fugacity_coefficient is not None
     expected_single = tuple(
         math.exp(
-            state.log_fugacity_coefficient[index] - reference.infinite_dilution_log_fugacity[k]
+            state.log_fugacity_coefficient[index]
+            - reference.infinite_dilution_log_fugacity_coefficient[k]
         )
         for k, index in enumerate((1, 2))
     )
@@ -125,7 +138,8 @@ def test_solvation_free_energy_follows_figiel_x_process() -> None:
 
     gas_constant = 8.31446261815324
     expected = tuple(
-        gas_constant * 298.15 * value for value in reference.infinite_dilution_log_fugacity
+        gas_constant * 298.15 * value
+        for value in reference.infinite_dilution_log_fugacity_coefficient
     )
     observed = tuple(
         value.to("joule / mole").magnitude for value in reference.solvation_free_energy
@@ -176,12 +190,13 @@ def test_transfer_free_energy_follows_figiel_ratio_and_reverses_sign() -> None:
     forward = water.transfer_to(methanol)
     reverse = methanol.transfer_to(water)
     identity = water.transfer_to(water)
+    assert isinstance(forward, TransferFreeEnergy)
     scale = 8.31446261815324 * 298.15
     expected = tuple(
         scale * (target - source)
         for source, target in zip(
-            water.infinite_dilution_log_fugacity,
-            methanol.infinite_dilution_log_fugacity,
+            water.infinite_dilution_log_fugacity_coefficient,
+            methanol.infinite_dilution_log_fugacity_coefficient,
             strict=True,
         )
     )

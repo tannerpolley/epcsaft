@@ -122,6 +122,8 @@ potentials, fugacity coefficients when defined, and residual entropy, internal
 energy, enthalpy, `C_V`, and `C_P` when defined. Pressure-specified states also
 return immutable root diagnostics with the bracket, pressure residual,
 `dP/dρ`, iteration count, mechanical-stability status, and branch.
+The model-neutral `born` field carries the Born contribution selected by the
+immutable parameter bundle, whether corrected SSM+DS or original Born.
 
 State quantities must be Pint quantities. Component and composition order is
 the selected `ParameterSet` order. Supply exactly one of `molar_density` or

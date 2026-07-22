@@ -156,7 +156,7 @@ def test_pressure_closure_runs_the_complete_electrolyte_eos() -> None:
     assert result.pressure.to("bar").magnitude == pytest.approx(1.0, abs=1.0e-9)
     assert result.association != 0.0
     assert result.debye_huckel != 0.0
-    assert result.born_ssm_ds != 0.0
+    assert result.born != 0.0
     assert result.density_diagnostics is not None
     assert result.density_diagnostics.branch == "liquid"
     assert result.density_diagnostics.stable
