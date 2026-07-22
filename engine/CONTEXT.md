@@ -4,7 +4,7 @@ This clean repository is the production home for ePC-SAFT provider code. Its
 optimization objective is minimum maintained surface subject to source-backed,
 reproducible thermodynamic results.
 
-`governance_doctrine_revision: 3`
+`governance_doctrine_revision: 4`
 
 Canonical local doctrine: `../ePC-SAFT-organization/GOVERNANCE.md`.
 
