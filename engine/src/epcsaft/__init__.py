@@ -1,5 +1,6 @@
 from .eos import DensityDiagnostics, EPCSAFT, EosError, EosResult, native_sdk
 from .parameters import ParameterBundle, ParameterSet
+from .reference import ElectrolyteReference, IonicActivity, TransferFreeEnergy
 from .units import ParameterError, unit_registry
 
 __all__ = (
@@ -12,4 +13,7 @@ __all__ = (
     "DensityDiagnostics",
     "EosError",
     "native_sdk",
+    "ElectrolyteReference",
+    "IonicActivity",
+    "TransferFreeEnergy",
 )

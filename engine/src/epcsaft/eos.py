@@ -314,7 +314,7 @@ class EPCSAFT:
             dispersion=native.dispersion,
             association=native.association,
             debye_huckel=native.debye_huckel,
-            born_ssm_ds=native.born_ssm_ds,
+            born=native.born_ssm_ds,
             residual_helmholtz=native.residual_helmholtz,
             compressibility_factor=native.compressibility_factor,
             pressure=native.pressure * unit_registry.pascal,
@@ -440,7 +440,7 @@ class EosResult:
     dispersion: float
     association: float
     debye_huckel: float
-    born_ssm_ds: float
+    born: float
     residual_helmholtz: float
     compressibility_factor: float
     pressure: pint.Quantity

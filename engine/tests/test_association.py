@@ -225,4 +225,4 @@ def test_neutral_solvent_selection_does_not_activate_ionic_topology() -> None:
 
     assert result.association < 0.0
     assert result.debye_huckel == 0.0
-    assert result.born_ssm_ds == 0.0
+    assert result.born == 0.0

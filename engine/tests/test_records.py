@@ -40,6 +40,9 @@ def test_records_are_immutable_and_identifiers_are_exact() -> None:
         "DensityDiagnostics",
         "EosError",
         "native_sdk",
+        "ElectrolyteReference",
+        "IonicActivity",
+        "TransferFreeEnergy",
     )
 
     source = SourceRecord(

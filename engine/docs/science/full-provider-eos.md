@@ -358,8 +358,8 @@ SSM and DS are disabled for this bundle: there is no fitted Born diameter,
 solvation factor, shell, or radial dielectric input. The internal equation
 selection follows the mutually exclusive resolved source schema and immutable
 bundle fingerprint. It is not a caller-selectable Born mode or a literature
-`solvation_factor`. The existing result contribution slot carries whichever
-Born equation the immutable bundle selects; no second result owner is created.
+`solvation_factor`. `EosResult.born` carries whichever Born equation the
+immutable bundle selects; no second result owner is created.
 
 ## 8. Common derivatives and state properties
 
@@ -495,6 +495,9 @@ Delta_tr G_i^(infinity,S1->S2)
     = RT [ln(phi_i^infinity,S2) - ln(phi_i^infinity,S1)]
 gamma_i^* = phi_i^S / phi_i^infinity,S.
 ```
+
+`ElectrolyteReference.infinite_dilution_log_fugacity_coefficient` stores the
+two dimensionless `ln(phi_i^infinity,S)` values in `ion_component_ids` order.
 
 For one formula unit with stoichiometric coefficients `nu_i`,
 

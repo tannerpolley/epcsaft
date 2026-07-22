@@ -435,6 +435,9 @@ def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
         "DensityDiagnostics",
         "EosError",
         "native_sdk",
+        "ElectrolyteReference",
+        "IonicActivity",
+        "TransferFreeEnergy",
     )
     foreign = UnitRegistry()
     bundle = _from_records()
