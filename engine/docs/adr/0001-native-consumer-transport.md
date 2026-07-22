@@ -181,18 +181,28 @@ the callback calls it directly. Neither path may retain a second copy
 or expose this refactor as a new public abstraction.
 
 The final local candidate tail exposes an equivalently complete charge-neutral
-reference basis rather than accepting reaction rows. For the exact current
-single-water/one-cation/one-anion Figiel selections, the immutable table reports
-two rows. The callback returns their ordered stoichiometric matrix, the
-dimensionless reference log-fugacity contractions, salt-free composition,
-solvent molar mass, exact `T,P`, convergence state, source fingerprint, and
-typed Helmholtz basis. The table's existing component IDs and charges complete
-the mapping. Equivalent reaction bases and species permutations therefore
-require only consumer-side linear algebra; the Provider assigns no absolute
-single-ion reference. Derivative availability is an explicit zero bit mask:
-this v1 entry returns no temperature, pressure, composition, or parameter
-derivatives. The existing reference-sequence and fixed-pressure EOS owners
-remain the only numerical owners.
+reference basis rather than accepting reaction rows. An admitted aqueous phase
+model must contain exactly one water reference carrier, at least one cation and
+one anion, and may contain additional neutral components and ions. The table
+reports `C-1` rows: one unit row for every neutral component, then minimal
+formula-unit rows joining the first cation to every anion and every remaining
+cation to the first anion. This deterministic spanning tree is a complete
+basis of the ordered charge-null space, including unequal charge magnitudes.
+
+The callback evaluates the neutral rows at infinite dilution in the explicit
+pure-water reference composition and evaluates every formula-unit row through
+the canonical four-molality reference sequence. It returns the ordered basis,
+dimensionless log-fugacity contractions, reference composition, water molar
+mass, exact `T,P`, worst row convergence error, source fingerprint, and typed
+Helmholtz basis. The existing exact Figiel selections preserve their admission;
+full phase-admitted catalog and authenticated `user-provided` models use the
+same topology rule. An unknown caller-owned domain may transport the table but
+cannot evaluate a reference value. Equivalent reaction bases and species
+permutations require only consumer-side linear algebra; the Provider assigns
+no absolute single-ion reference. Derivative availability is an explicit zero
+bit mask: this v1 entry returns no temperature, pressure, composition, or
+parameter derivatives. The existing reference-sequence and fixed-pressure EOS
+owners remain the only numerical owners.
 
 The capsule owns the model context. A consumer keeps a Python reference to the
 capsule for as long as it calls the table; ordinary `Py_INCREF`/`Py_DECREF`
