@@ -203,6 +203,7 @@ typedef struct epcsaft_electrolyte_standard_reference_result_v1 {
     double solvent_molar_mass_kg_per_mol;
     double reference_molality_mol_per_kg;
     double reference_convergence_error;
+    double pure_solvent_molar_volume_m3_per_mol;
     char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
     char helmholtz_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];

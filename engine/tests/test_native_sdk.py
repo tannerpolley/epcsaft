@@ -158,6 +158,7 @@ class ElectrolyteStandardReferenceResult(ctypes.Structure):
         ("solvent_molar_mass_kg_per_mol", ctypes.c_double),
         ("reference_molality_mol_per_kg", ctypes.c_double),
         ("reference_convergence_error", ctypes.c_double),
+        ("pure_solvent_molar_volume_m3_per_mol", ctypes.c_double),
         ("parameter_fingerprint", ctypes.c_char * 72),
         ("helmholtz_basis_id", ctypes.c_char * 72),
         ("error", ctypes.c_char * 160),
@@ -815,7 +816,7 @@ def test_native_sdk_held_standard_reference_matches_the_public_owner() -> None:
     assert table.electrolyte_standard_reference_result_size == ctypes.sizeof(
         ElectrolyteStandardReferenceResult
     )
-    assert table.electrolyte_standard_reference_result_size == 368
+    assert table.electrolyte_standard_reference_result_size == 376
     assert table.evaluate_electrolyte_standard_reference
 
     observed = _evaluate_standard_reference(table)
@@ -845,6 +846,10 @@ def test_native_sdk_held_standard_reference_matches_the_public_owner() -> None:
     assert observed.solvent_molar_mass_kg_per_mol == pytest.approx(0.01801528, abs=1.0e-12)
     assert observed.reference_molality_mol_per_kg == 1.0e-12
     assert 0.0 <= observed.reference_convergence_error <= 5.0e-5
+    assert observed.pure_solvent_molar_volume_m3_per_mol == pytest.approx(
+        1.0 / pure_water.molar_density.to("mole / meter**3").magnitude,
+        rel=2.0e-12,
+    )
     assert observed.parameter_fingerprint.decode() == model.parameter_fingerprint
     assert observed.helmholtz_basis_id.decode() == (
         "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
@@ -886,6 +891,7 @@ def test_native_sdk_held_standard_reference_fails_closed() -> None:
             "solvent_molar_mass_kg_per_mol",
             "reference_molality_mol_per_kg",
             "reference_convergence_error",
+            "pure_solvent_molar_volume_m3_per_mol",
         ):
             assert math.isnan(getattr(result, field))
         assert result.parameter_fingerprint == b""

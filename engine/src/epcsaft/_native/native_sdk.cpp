@@ -286,6 +286,7 @@ struct NativeSdkEndpoint final {
         result->solvent_molar_mass_kg_per_mol = nan;
         result->reference_molality_mol_per_kg = nan;
         result->reference_convergence_error = nan;
+        result->pure_solvent_molar_volume_m3_per_mol = nan;
         auto fail = [&](int status, const char* message) {
             result->status = status;
             std::snprintf(result->error, sizeof(result->error), "%s", message);
@@ -350,13 +351,23 @@ struct NativeSdkEndpoint final {
             const double pure_solvent_log_fugacity =
                 *sequence.pure_solvent_log_fugacity_coefficient;
             const double solvent_molar_mass = molar_masses[0];
+            const auto pure_solvent_state = endpoint.model.evaluate_pressure(
+                temperature_k,
+                pressure_pa,
+                std::vector<double>{1.0, 0.0, 0.0},
+                "liquid"
+            );
+            const double pure_solvent_molar_volume = 1.0
+                / pure_solvent_state.molar_density;
             if (!std::isfinite(formula_unit_log_fugacity)
                 || !std::isfinite(pure_solvent_log_fugacity)
                 || !std::isfinite(solvent_molar_mass) || solvent_molar_mass <= 0.0
                 || !std::isfinite(sequence.reference_molality)
                 || sequence.reference_molality <= 0.0
                 || !std::isfinite(sequence.convergence_error)
-                || sequence.convergence_error < 0.0) {
+                || sequence.convergence_error < 0.0
+                || !std::isfinite(pure_solvent_molar_volume)
+                || pure_solvent_molar_volume <= 0.0) {
                 return fail(
                     EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
                     "standard-reference result is nonfinite"
@@ -371,6 +382,8 @@ struct NativeSdkEndpoint final {
             result->solvent_molar_mass_kg_per_mol = solvent_molar_mass;
             result->reference_molality_mol_per_kg = sequence.reference_molality;
             result->reference_convergence_error = sequence.convergence_error;
+            result->pure_solvent_molar_volume_m3_per_mol =
+                pure_solvent_molar_volume;
             std::snprintf(
                 result->parameter_fingerprint,
                 sizeof(result->parameter_fingerprint),

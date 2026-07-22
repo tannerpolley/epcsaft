@@ -111,5 +111,11 @@ native reference-sequence owner. The public Python path delegates through
 the existing `_core` module with unchanged behavior, and the callback
 calls the same owner directly; neither path may duplicate the algorithm.
 
+The private Held water-ionization standard-reference tail also returns the
+exact pure-water liquid molar volume selected by Provider's existing
+fixed-pressure density closure. This is a model/state-bound initialization
+coordinate for the Equilibrium candidate, not a phase-discovery result or a
+transfer of density-root ownership.
+
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.

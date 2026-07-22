@@ -538,8 +538,11 @@ The private Held water-ionization candidate reuses that same native
 formula-unit dilution owner at exactly `298.15 K` and `100000 Pa`. Its SDK tail
 returns only the neutral 1:1 sum
 `ln(phi_H3O+^infinity) + ln(phi_OH-^infinity)`, the direct pure-water
-`ln(phi_water^0)`, water molar mass, terminal molality, convergence error,
-fingerprint, and exact Helmholtz-basis identity. Individual ionic terms remain
+`ln(phi_water^0)`, the same fixed-pressure liquid root's molar volume, water
+molar mass, terminal molality, convergence error, fingerprint, and exact
+Helmholtz-basis identity. The liquid molar volume is state initialization
+evidence; Provider still owns the density closure and Equilibrium still owns
+the reacting-phase root and certificates. Individual ionic terms remain
 path-defined internal/public reference-state values and are not exposed by the
 candidate callback as predictive standard chemical potentials. Provider does
 not supply `K_w` or transform any external activity convention into this
