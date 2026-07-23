@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import ClassVar, TypeAlias
+from typing import ClassVar, Literal, TypeAlias, get_args
 import re
 
 from .units import (
@@ -14,28 +14,35 @@ from .units import (
 
 
 _ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
-_DOMAIN_KINDS = frozenset({"fit-range", "reported-conditions", "unknown"})
-_SINGLE_FAMILIES = frozenset(
-    {
-        "molar_mass",
-        "segment_count",
-        "segment_diameter",
-        "dispersion_energy_over_k",
-        "charge_number",
-        "relative_permittivity",
-        "born_diameter",
-        "solvation_factor",
-    }
-)
-_PAIR_FAMILIES = frozenset({"k_ij", "l_ij"})
-_ASSOCIATION_FAMILIES = frozenset({"association_energy_over_k", "association_volume"})
-_MODEL_FAMILIES = frozenset(
-    {
-        "dielectric_ion_suppression_coefficient",
-        "ionic_region_relative_permittivity",
-    }
-)
-_CORRELATION_FAMILIES = frozenset({"segment_diameter", "relative_permittivity", "solvation_factor"})
+DomainKind: TypeAlias = Literal["fit-range", "reported-conditions", "unknown"]
+SingleParameterFamily: TypeAlias = Literal[
+    "molar_mass",
+    "segment_count",
+    "segment_diameter",
+    "dispersion_energy_over_k",
+    "charge_number",
+    "relative_permittivity",
+    "born_diameter",
+    "solvation_factor",
+]
+PairParameterFamily: TypeAlias = Literal["k_ij", "l_ij"]
+AssociationParameterFamily: TypeAlias = Literal[
+    "association_energy_over_k", "association_volume"
+]
+ModelParameterFamily: TypeAlias = Literal[
+    "dielectric_ion_suppression_coefficient",
+    "ionic_region_relative_permittivity",
+]
+CorrelationFamily: TypeAlias = Literal[
+    "segment_diameter", "relative_permittivity", "solvation_factor"
+]
+
+_DOMAIN_KINDS = frozenset(get_args(DomainKind))
+_SINGLE_FAMILIES = frozenset(get_args(SingleParameterFamily))
+_PAIR_FAMILIES = frozenset(get_args(PairParameterFamily))
+_ASSOCIATION_FAMILIES = frozenset(get_args(AssociationParameterFamily))
+_MODEL_FAMILIES = frozenset(get_args(ModelParameterFamily))
+_CORRELATION_FAMILIES = frozenset(get_args(CorrelationFamily))
 _DIMENSIONAL_UNITS = {
     "molar_mass": "kilogram / mole",
     "segment_diameter": "angstrom",
@@ -120,7 +127,7 @@ class SourceRecord:
 @dataclass(frozen=True, slots=True)
 class ValidityDomain:
     domain_id: str
-    kind: str
+    kind: DomainKind
     temperature_min: object | None = None
     temperature_max: object | None = None
     pressure_min: object | None = None
@@ -199,7 +206,7 @@ class ComponentRecord:
 class SingleParameterRecord:
     record_id: str
     component_id: str
-    family: str
+    family: SingleParameterFamily
     value: object
     source_id: str
     locator: str
@@ -222,7 +229,7 @@ class SingleParameterRecord:
 @dataclass(frozen=True, slots=True)
 class ModelParameterRecord:
     record_id: str
-    family: str
+    family: ModelParameterFamily
     value: object
     source_id: str
     locator: str
@@ -244,7 +251,7 @@ class PairParameterRecord:
     record_id: str
     component_id_a: str
     component_id_b: str
-    family: str
+    family: PairParameterFamily
     value: object
     source_id: str
     locator: str
@@ -304,7 +311,7 @@ class AssociationParameterRecord:
     site_id_a: str
     component_id_b: str
     site_id_b: str
-    family: str
+    family: AssociationParameterFamily
     value: object
     source_id: str
     locator: str
@@ -361,7 +368,7 @@ class ConstantCorrelation:
 
     record_id: str
     component_id: str
-    family: str
+    family: CorrelationFamily
     constant: object
     source_id: str
     locator: str
@@ -387,7 +394,7 @@ class ConstantPlusSumOfExponentialsCorrelation:
 
     record_id: str
     component_id: str
-    family: str
+    family: Literal["segment_diameter"]
     constant: object
     terms: tuple[ExponentialTerm, ...]
     source_id: str
@@ -423,14 +430,20 @@ CorrelationRecord: TypeAlias = ConstantCorrelation | ConstantPlusSumOfExponentia
 
 
 __all__ = (
+    "AssociationParameterFamily",
     "AssociationParameterRecord",
     "ComponentRecord",
     "ConstantCorrelation",
     "ConstantPlusSumOfExponentialsCorrelation",
+    "CorrelationFamily",
     "CorrelationRecord",
+    "DomainKind",
     "ExponentialTerm",
+    "ModelParameterFamily",
     "ModelParameterRecord",
+    "PairParameterFamily",
     "PairParameterRecord",
+    "SingleParameterFamily",
     "SingleParameterRecord",
     "SiteRecord",
     "SourceRecord",

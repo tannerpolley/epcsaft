@@ -39,9 +39,27 @@ modules.
 
 ## Installed parameter bundles
 
-There is deliberately no mutable catalog registry or list API. Use an exact ID
-and version from this table, then inspect the immutable public `components`,
-`domains`, and `sources` records on the loaded bundle.
+There is no mutable catalog registry. Discover the installed, validated bundles
+as an immutable tuple, or load one exact ID and version directly. Each discovered
+bundle exposes immutable `components`, `domains`, `sources`, and `fingerprint`
+records. Catalog loading rejects a manifest whose purpose is not
+`installed-catalog`; placing a caller-owned bundle under package data cannot
+promote it.
+
+```python
+from epcsaft import ParameterBundle
+
+catalog = ParameterBundle.catalog()
+available = tuple(
+    (
+        bundle.bundle_id,
+        bundle.bundle_version,
+        tuple(component.component_id for component in bundle.components),
+    )
+    for bundle in catalog
+)
+assert ("gross-2001-propane", 1, ("propane",)) in available
+```
 
 | Bundle ID | Version | Exact component IDs | Source evidence domain and topology limits |
 | --- | ---: | --- | --- |
@@ -245,6 +263,53 @@ retain their separate catalog admission and return unsupported status for an
 otherwise executable caller-owned model. Native transport does not validate or
 promote caller-owned parameters.
 
+## Parameter authoring schema
+
+Every parameter record carries `source_id`, a source locator, and `domain_id`.
+The referenced source and domain must be present in the same bundle. Identifiers
+use lowercase letters, digits, and single hyphens; component aliases are metadata
+and are never accepted in `select(...)`.
+
+The family annotations are public `Literal` types in `epcsaft.records`, so IDEs
+and static type checkers can identify misspelled families before runtime.
+
+| Record class | Allowed family | Canonical value unit |
+| --- | --- | --- |
+| `SingleParameterRecord` | `molar_mass` | `kilogram / mole` |
+| `SingleParameterRecord` | `segment_count` | dimensionless |
+| `SingleParameterRecord` or correlation | `segment_diameter` | `angstrom` |
+| `SingleParameterRecord` | `dispersion_energy_over_k` | `kelvin` |
+| `SingleParameterRecord` | `charge_number` | exact integer |
+| `SingleParameterRecord` or constant correlation | `relative_permittivity` | dimensionless |
+| `SingleParameterRecord` | `born_diameter` | `angstrom` |
+| `SingleParameterRecord` or constant correlation | `solvation_factor` | dimensionless |
+| `PairParameterRecord` | `k_ij`, `l_ij` | dimensionless |
+| `AssociationParameterRecord` | `association_energy_over_k` | `kelvin` |
+| `AssociationParameterRecord` | `association_volume` | dimensionless |
+| `ModelParameterRecord` | `ionic_region_relative_permittivity` | dimensionless |
+| `ModelParameterRecord` | `dielectric_ion_suppression_coefficient` | dimensionless |
+
+`ConstantCorrelation` supports `segment_diameter`, `relative_permittivity`, and
+`solvation_factor`. `ConstantPlusSumOfExponentialsCorrelation` is limited to
+`segment_diameter`; its constant and amplitudes use angstrom and every exponent
+coefficient uses `1 / kelvin`.
+
+Model construction applies these topology requirements through the same resolver
+used for evaluation:
+
+| Topology | Complete selected-set requirements |
+| --- | --- |
+| Neutral | Every component has `segment_count`, `segment_diameter`, and `dispersion_energy_over_k`; every unlike pair has an explicit `k_ij`, including a sourced zero. `molar_mass` is retained when supplied but is not required for a neutral EOS state. |
+| Associating | All neutral requirements, plus `SiteRecord` entries. Every declared site participates in at least one site pair, and each active pair has both `association_energy_over_k` and `association_volume`. |
+| Corrected Born SSM+DS | Every component has the three PC-SAFT families and an explicit `charge_number`, including zero for solvents. Every required unlike pair has `k_ij`; same-sign ion pairs are structurally not applicable. Neutral components have `molar_mass` and `relative_permittivity`; ionic components have `born_diameter`; all components have `solvation_factor`. The bundle has both model-level dielectric families. |
+| Original Born | Every component has the three PC-SAFT families, `charge_number`, and `relative_permittivity`. Every required unlike pair has `k_ij`, and every unlike pair has `l_ij`. Do not combine this schema with corrected-Born diameter, solvation-factor, or model-level dielectric records. |
+
+`ParameterBundle.from_records(...)` validates record types, identifiers,
+provenance references, site references, and duplicate semantic ownership.
+`EPCSAFT(bundle.select(...))` then validates the complete selected topology. A
+`ParameterError` identifies the missing component, pair, site, or family; it
+never fills a scientific value implicitly.
+
 ## Neutral state example
 
 This example inspects the bundle, selects an explicit order, and evaluates the
@@ -272,6 +337,10 @@ direct = model.evaluate(
     mole_fractions=(0.4, 0.6),
 )
 assert direct.density_diagnostics is None
+assert direct.component_ids == model.component_ids
+assert direct.mole_fractions == (0.4, 0.6)
+assert direct.temperature.to("kelvin").magnitude == 250
+assert direct.parameter_fingerprint == parameters.fingerprint
 assert math.isfinite(direct.residual_helmholtz)
 assert direct.log_fugacity_coefficient is not None
 
@@ -285,7 +354,9 @@ assert closed.density_diagnostics is not None
 assert closed.density_diagnostics.branch == "single"
 ```
 
-`residual_helmholtz` and each contribution are dimensionless molar residual
+Every `EosResult` echoes the canonical temperature, ordered mole fractions,
+component IDs, and parameter fingerprint that produced it. `residual_helmholtz`
+and each contribution are dimensionless molar residual
 Helmholtz quantities on the `A_res/(nRT)` basis. `compressibility_factor` is
 `Z`; `residual_chemical_potential_over_rt[i]` is `mu_i_res/(RT)`; and
 `log_fugacity_coefficient[i]` is `ln(phi_i)`, all in `model.component_ids`
@@ -325,6 +396,7 @@ reference = electrolyte.reference_state(
     phase="liquid",
 )
 activity = reference.at_molality(1 * u.mole / u.kilogram)
+assert activity.component_ids == electrolyte.component_ids
 assert activity.ion_component_ids == ("sodium-cation", "chloride-anion")
 assert math.isfinite(activity.mean_ionic_activity_coefficient_molality)
 assert activity.practical_osmotic_coefficient_molality is not None
@@ -392,16 +464,31 @@ try:
     )
 except EosError as error:
     assert error.code == "invalid-state"
-    assert error.context == (("field", "temperature"),)
+    assert dict(error.context) == {
+        "field": "temperature",
+        "reason": "invalid-unit",
+        "expected_unit": "kelvin",
+    }
 ```
 
 Common `ParameterError.code` values include `missing-record`,
 `invalid-selection`, `invalid-schema`, `invalid-unit`, and `invalid-domain`.
 Common `EosError.code` values include `invalid-state`, `evaluation-failed`,
 `invalid-reference-state`, and `reference-state-failed`. Domain violations use
-`invalid-state` with a `field` such as `temperature`, `mole_fractions`, or
-`electroneutrality`. Native SDK errors are a separate consumer contract and
-are not part of normal Python state evaluation.
+`invalid-state` with a `field`, machine-readable `reason`, rejected value when
+appropriate, and the applicable unit, range, expected count, normalization
+tolerance, charge-balance tolerance, or ionic-fraction limit. Native SDK errors
+are a separate consumer contract and are not part of normal Python state
+evaluation.
+
+## Static typing
+
+The wheel includes the PEP 561 `py.typed` marker. State quantities are typed as
+Pint quantities, pressure- and density-specified calls have separate overloads,
+electrolyte reference construction accepts only the literal phase `"liquid"`,
+and `Phase`, `BundlePurpose`, `DomainKind`, and parameter-family `Literal`
+aliases are public. Runtime validation remains authoritative for dimensionality,
+normalization, domains, and source completeness.
 
 Solver convergence means only that the requested numerical state was found.
 It does not establish numerical sensitivity, literature agreement, phase

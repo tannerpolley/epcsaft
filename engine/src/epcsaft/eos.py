@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
-from typing import TYPE_CHECKING, Iterable
+from typing import Any, TYPE_CHECKING, Iterable, Literal, SupportsFloat, TypeAlias, overload
 
 import pint
 
 from ._core import NativeModel as _NativeModel
 from ._core import native_sdk_v1 as _native_sdk_v1
 from ._resolve import _ResolvedModel, _resolve_model
-from .parameters import ParameterBundle, ParameterSet
+from .parameters import BundlePurpose, ParameterBundle, ParameterSet
 from .records import (
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
@@ -19,6 +19,9 @@ from .units import ParameterError, _error, _quantity, unit_registry
 
 if TYPE_CHECKING:
     from .reference import ElectrolyteReference
+
+
+Phase: TypeAlias = Literal["vapor", "liquid"]
 
 
 _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS = frozenset(
@@ -293,7 +296,7 @@ def _figiel_staged_trial_bundle_admitted(
 class EPCSAFT:
     _component_ids: tuple[str, ...]
     _parameter_fingerprint: str
-    _parameter_bundle_purpose: str
+    _parameter_bundle_purpose: BundlePurpose
     _parameter_bundle_fingerprint: str
     _figiel_staged_trial_bundle_admitted: bool
     _model: _ResolvedModel
@@ -322,6 +325,28 @@ class EPCSAFT:
     def parameter_fingerprint(self) -> str:
         return self._parameter_fingerprint
 
+    @overload
+    def evaluate(
+        self,
+        *,
+        temperature: pint.Quantity[Any],
+        molar_density: pint.Quantity[Any],
+        pressure: None = None,
+        mole_fractions: Iterable[SupportsFloat],
+        phase: None = None,
+    ) -> EosResult: ...
+
+    @overload
+    def evaluate(
+        self,
+        *,
+        temperature: pint.Quantity[Any],
+        molar_density: None = None,
+        pressure: pint.Quantity[Any],
+        mole_fractions: Iterable[SupportsFloat],
+        phase: Phase | None = None,
+    ) -> EosResult: ...
+
     def evaluate(
         self,
         *,
@@ -347,13 +372,31 @@ class EPCSAFT:
         try:
             fractions = tuple(float(value) for value in mole_fractions)  # type: ignore[union-attr]
         except (TypeError, ValueError) as exc:
-            raise _eos_error("invalid-state", field="mole_fractions") from exc
-        if (
-            len(fractions) != len(self._component_ids)
-            or any(not math.isfinite(value) or value < 0.0 for value in fractions)
-            or abs(math.fsum(fractions) - 1.0) > 1.0e-12
-        ):
-            raise _eos_error("invalid-state", field="mole_fractions")
+            raise _eos_error(
+                "invalid-state", field="mole_fractions", reason="not-numeric-sequence"
+            ) from exc
+        if len(fractions) != len(self._component_ids):
+            raise _eos_error(
+                "invalid-state",
+                field="mole_fractions",
+                reason="component-count",
+                value=len(fractions),
+                expected=len(self._component_ids),
+            )
+        if any(not math.isfinite(value) for value in fractions):
+            raise _eos_error("invalid-state", field="mole_fractions", reason="nonfinite")
+        if any(value < 0.0 for value in fractions):
+            raise _eos_error("invalid-state", field="mole_fractions", reason="negative")
+        fraction_sum = math.fsum(fractions)
+        if abs(fraction_sum - 1.0) > 1.0e-12:
+            raise _eos_error(
+                "invalid-state",
+                field="mole_fractions",
+                reason="not-normalized",
+                value=fraction_sum,
+                expected=1.0,
+                tolerance=1.0e-12,
+            )
 
         if (
             self._model.temperature_min_k is not None
@@ -362,7 +405,17 @@ class EPCSAFT:
             self._model.temperature_max_k is not None
             and temperature_k > self._model.temperature_max_k
         ):
-            raise _eos_error("invalid-state", field="temperature")
+            context: dict[str, object] = {
+                "field": "temperature",
+                "reason": "outside-domain",
+                "value": temperature_k,
+            }
+            if self._model.temperature_min_k is not None:
+                context["minimum"] = self._model.temperature_min_k
+            if self._model.temperature_max_k is not None:
+                context["maximum"] = self._model.temperature_max_k
+            context["unit"] = "kelvin"
+            raise _eos_error("invalid-state", **context)
 
         if self._model.topology in {"ionic-ssm-ds", "ionic-ascani-original-born"}:
             ion_fraction = math.fsum(
@@ -374,29 +427,48 @@ class EPCSAFT:
                 self._model.ion_mole_fraction_max is not None
                 and ion_fraction > self._model.ion_mole_fraction_max + 1.0e-12
             ):
-                raise _eos_error("invalid-state", field="mole_fractions")
+                raise _eos_error(
+                    "invalid-state",
+                    field="mole_fractions",
+                    reason="ion-fraction-limit",
+                    value=ion_fraction,
+                    maximum=self._model.ion_mole_fraction_max,
+                )
             charge_balance = math.fsum(
                 fraction * charge
                 for fraction, charge in zip(fractions, self._model.charge_number, strict=True)
             )
             if abs(charge_balance) > 1.0e-12:
-                raise _eos_error("invalid-state", field="electroneutrality")
-
-        try:
-            if molar_density is not None:
-                density_molar = _state_magnitude(
-                    molar_density, "mole / meter ** 3", "molar_density"
+                raise _eos_error(
+                    "invalid-state",
+                    field="electroneutrality",
+                    reason="charge-balance",
+                    value=charge_balance,
+                    tolerance=1.0e-12,
                 )
+
+        if molar_density is not None:
+            density_molar = _state_magnitude(
+                molar_density, "mole / meter ** 3", "molar_density"
+            )
+            try:
                 native = self._native.evaluate(temperature_k, density_molar, fractions)
-            else:
-                pressure_pa = _state_magnitude(pressure, "pascal", "pressure")
+            except (RuntimeError, ValueError) as exc:
+                raise _eos_error("evaluation-failed", reason=str(exc)) from exc
+        else:
+            pressure_pa = _state_magnitude(pressure, "pascal", "pressure")
+            try:
                 native = self._native.evaluate_pressure(
                     temperature_k, pressure_pa, fractions, phase or ""
                 )
-        except (RuntimeError, ValueError) as exc:
-            raise _eos_error("evaluation-failed", reason=str(exc)) from exc
+            except (RuntimeError, ValueError) as exc:
+                raise _eos_error("evaluation-failed", reason=str(exc)) from exc
         diagnostics = native.density_diagnostics
         return EosResult(
+            component_ids=self._component_ids,
+            temperature=temperature_k * unit_registry.kelvin,
+            mole_fractions=fractions,
+            parameter_fingerprint=self._parameter_fingerprint,
             hard_chain=native.hard_chain,
             dispersion=native.dispersion,
             association=native.association,
@@ -454,7 +526,7 @@ class EPCSAFT:
         temperature: object,
         pressure: object,
         solvent_mole_fractions: object,
-        phase: str,
+        phase: Literal["liquid"],
     ) -> ElectrolyteReference:
         """Build one liquid electrolyte reference on the selected component order.
 
@@ -581,15 +653,54 @@ def _state_magnitude(value: object, unit: str, field: str) -> float:
     try:
         quantity = _quantity(value, unit, field=field)
     except ParameterError as exc:
-        raise _eos_error("invalid-state", field=field) from exc
+        details = dict(exc.context)
+        if exc.code == "invalid-value":
+            rejected = details.get("value")
+            if rejected is not None:
+                try:
+                    rejected_number = float(rejected)
+                except ValueError:
+                    pass
+                else:
+                    if not math.isfinite(rejected_number):
+                        raise _eos_error(
+                            "invalid-state",
+                            field=field,
+                            reason="nonfinite",
+                            value=rejected,
+                        ) from exc
+            context = {"field": field, "reason": exc.code}
+            for key in ("value", "value_type"):
+                if key in details:
+                    context[key] = details[key]
+            raise _eos_error("invalid-state", **context) from exc
+        raise _eos_error(
+            "invalid-state",
+            field=field,
+            reason=exc.code,
+            expected_unit=details.get("expected", unit),
+        ) from exc
     magnitude = float(quantity.magnitude)
-    if not math.isfinite(magnitude) or magnitude <= 0.0:
-        raise _eos_error("invalid-state", field=field)
+    if not math.isfinite(magnitude):
+        raise _eos_error(
+            "invalid-state",
+            field=field,
+            reason="nonfinite",
+            value=magnitude,
+        )
+    if magnitude <= 0.0:
+        raise _eos_error("invalid-state", field=field, reason="nonpositive", value=magnitude)
     return magnitude
 
 
 @dataclass(frozen=True, slots=True)
 class EosResult:
+    """Immutable properties plus the resolved state and parameter identity."""
+
+    component_ids: tuple[str, ...]
+    temperature: pint.Quantity[float]
+    mole_fractions: tuple[float, ...]
+    parameter_fingerprint: str
     hard_chain: float
     dispersion: float
     association: float
@@ -597,27 +708,27 @@ class EosResult:
     born: float
     residual_helmholtz: float
     compressibility_factor: float
-    pressure: pint.Quantity
+    pressure: pint.Quantity[float]
     residual_chemical_potential_over_rt: tuple[float, ...]
     log_fugacity_coefficient: tuple[float, ...] | None
-    residual_entropy: pint.Quantity
-    residual_internal_energy: pint.Quantity
-    residual_enthalpy: pint.Quantity
-    residual_isochoric_heat_capacity: pint.Quantity
-    residual_isobaric_heat_capacity: pint.Quantity | None
-    molar_density: pint.Quantity
+    residual_entropy: pint.Quantity[float]
+    residual_internal_energy: pint.Quantity[float]
+    residual_enthalpy: pint.Quantity[float]
+    residual_isochoric_heat_capacity: pint.Quantity[float]
+    residual_isobaric_heat_capacity: pint.Quantity[float] | None
+    molar_density: pint.Quantity[float]
     density_diagnostics: DensityDiagnostics | None
 
 
 @dataclass(frozen=True, slots=True)
 class DensityDiagnostics:
-    bracket_lower: pint.Quantity
-    bracket_upper: pint.Quantity
-    pressure_residual: pint.Quantity
-    pressure_density_derivative: pint.Quantity
+    bracket_lower: pint.Quantity[float]
+    bracket_upper: pint.Quantity[float]
+    pressure_residual: pint.Quantity[float]
+    pressure_density_derivative: pint.Quantity[float]
     iterations: int
     stable: bool
     branch: str
 
 
-__all__ = ("EPCSAFT", "EosError", "EosResult", "DensityDiagnostics", "native_sdk")
+__all__ = ("DensityDiagnostics", "EPCSAFT", "EosError", "EosResult", "Phase", "native_sdk")
