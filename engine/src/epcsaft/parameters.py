@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
-from typing import Iterable, Literal, Sequence
+from typing import Iterable, Literal, Sequence, TypeAlias, get_args
 
 from ._bundle_io import _dump_path, _load_path
 from ._canonical import _bundle_fingerprint, _provenance_fingerprint, _set_fingerprint
@@ -24,7 +24,11 @@ from .records import (
 from .units import _error
 
 
-_PURPOSES = frozenset({"installed-catalog", "package-test-fixture", "user-provided"})
+BundlePurpose: TypeAlias = Literal[
+    "installed-catalog", "package-test-fixture", "user-provided"
+]
+
+_PURPOSES = frozenset(get_args(BundlePurpose))
 
 
 def _version(value: object) -> int:
@@ -153,7 +157,7 @@ def _record_components(record: object) -> tuple[str, ...]:
 class ParameterBundle:
     bundle_id: str
     bundle_version: int
-    purpose: str
+    purpose: BundlePurpose
     sources: tuple[SourceRecord, ...]
     domains: tuple[ValidityDomain, ...]
     components: tuple[ComponentRecord, ...]
@@ -178,6 +182,41 @@ class ParameterBundle:
         return cls._from_catalog_path(bundle_id, version, path)
 
     @classmethod
+    def catalog(cls) -> tuple[ParameterBundle, ...]:
+        """Return every installed catalog bundle in stable identity order.
+
+        The returned tuple and each bundle are immutable. Catalog discovery performs
+        the same schema, provenance, and fingerprint validation as ``from_catalog``.
+        """
+        root = Path(__file__).with_name("data") / "bundles"
+        identities: list[tuple[str, int]] = []
+        for bundle_path in root.iterdir():
+            if not bundle_path.is_dir():
+                continue
+            for version_path in bundle_path.iterdir():
+                if not version_path.is_dir():
+                    continue
+                try:
+                    version = int(version_path.name)
+                except ValueError as exc:
+                    raise _error(
+                        "invalid-schema",
+                        field="catalog-version",
+                        value=version_path.name,
+                    ) from exc
+                if version <= 0 or str(version) != version_path.name:
+                    raise _error(
+                        "invalid-schema",
+                        field="catalog-version",
+                        value=version_path.name,
+                    )
+                identities.append((bundle_path.name, version))
+        return tuple(
+            cls.from_catalog(bundle_id, version=version)
+            for bundle_id, version in sorted(identities)
+        )
+
+    @classmethod
     def _from_catalog_path(
         cls,
         bundle_id: str,
@@ -191,10 +230,21 @@ class ParameterBundle:
                 field="catalog-identity",
                 value=f"{bundle.bundle_id}/{bundle.bundle_version}",
             )
+        if bundle.purpose != "installed-catalog":
+            raise _error(
+                "invalid-schema",
+                field="catalog-purpose",
+                value=bundle.purpose,
+            )
         return bundle
 
     @classmethod
     def from_path(cls, path: str | PathLike[str]) -> ParameterBundle:
+        """Load and validate one bundle directory in the strict version-1 schema.
+
+        The directory inventory must exactly match its manifest. Scientific records
+        retain their declared units, provenance, domains, and canonical fingerprint.
+        """
         return cls.from_records(**_load_path(path))
 
     @classmethod
@@ -203,7 +253,7 @@ class ParameterBundle:
         *,
         bundle_id: str,
         bundle_version: int,
-        purpose: Literal["installed-catalog", "package-test-fixture", "user-provided"],
+        purpose: BundlePurpose,
         sources: Iterable[SourceRecord],
         domains: Iterable[ValidityDomain],
         components: Iterable[ComponentRecord],
@@ -310,7 +360,7 @@ class ParameterBundle:
 class ParameterSet:
     bundle_id: str
     bundle_version: int
-    bundle_purpose: str
+    bundle_purpose: BundlePurpose
     bundle_fingerprint: str
     component_ids: tuple[str, ...]
     components: tuple[ComponentRecord, ...]
@@ -362,4 +412,4 @@ class ParameterSet:
         return instance
 
 
-__all__ = ("ParameterBundle", "ParameterSet")
+__all__ = ("BundlePurpose", "ParameterBundle", "ParameterSet")

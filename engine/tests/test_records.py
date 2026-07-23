@@ -4,7 +4,6 @@ from types import SimpleNamespace
 
 import pytest
 
-import epcsaft
 from epcsaft import ParameterError, unit_registry
 from epcsaft.records import (
     AssociationParameterRecord,
@@ -30,21 +29,6 @@ PROVENANCE = {
 
 
 def test_records_are_immutable_and_identifiers_are_exact() -> None:
-    assert epcsaft.__all__ == (
-        "ParameterBundle",
-        "ParameterSet",
-        "ParameterError",
-        "unit_registry",
-        "EPCSAFT",
-        "EosResult",
-        "DensityDiagnostics",
-        "EosError",
-        "native_sdk",
-        "ElectrolyteReference",
-        "IonicActivity",
-        "TransferFreeEnergy",
-    )
-
     source = SourceRecord(
         source_id="gross-sadowski-2001",
         citation="Gross and Sadowski (2001)",

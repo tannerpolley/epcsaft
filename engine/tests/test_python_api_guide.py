@@ -26,7 +26,10 @@ def test_python_api_guide_matches_the_installed_public_contract(
         assert all(f"`{component.component_id}`" in row for component in bundle.components)
 
     for public_method in (
+        ParameterBundle.catalog,
         ParameterBundle.from_catalog,
+        ParameterBundle.from_path,
+        ParameterBundle.from_records,
         ParameterBundle.to_path,
         ParameterBundle.select,
         EPCSAFT.evaluate,
@@ -37,7 +40,7 @@ def test_python_api_guide_matches_the_installed_public_contract(
         assert len(documentation.splitlines()) >= 2
 
     blocks = re.findall(r"```python\n(.*?)```", text, flags=re.DOTALL)
-    assert len(blocks) == 4
+    assert len(blocks) == 5
     for index, block in enumerate(blocks):
         example_root = tmp_path / f"example-{index + 1}"
         example_root.mkdir()
