@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Iterable, Literal, Sequence
 
 from ._bundle_io import _dump_path, _load_path
-from ._canonical import _bundle_fingerprint, _set_fingerprint
+from ._canonical import _bundle_fingerprint, _provenance_fingerprint, _set_fingerprint
 from .records import (
     AssociationParameterRecord,
     ComponentRecord,
@@ -317,6 +317,7 @@ class ParameterSet:
     domains: tuple[ValidityDomain, ...]
     records: tuple
     fingerprint: str
+    _source_domain_fingerprint: str
 
     def __init__(self) -> None:
         raise TypeError("use ParameterBundle.select")
@@ -339,6 +340,16 @@ class ParameterSet:
         object.__setattr__(instance, "components", components)
         object.__setattr__(instance, "domains", bundle.domains)
         object.__setattr__(instance, "records", records)
+        source_ids = {record.source_id for record in records}
+        domain_ids = {record.domain_id for record in records}
+        object.__setattr__(
+            instance,
+            "_source_domain_fingerprint",
+            _provenance_fingerprint(
+                tuple(source for source in bundle.sources if source.source_id in source_ids),
+                tuple(domain for domain in bundle.domains if domain.domain_id in domain_ids),
+            ),
+        )
         object.__setattr__(
             instance,
             "fingerprint",

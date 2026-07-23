@@ -279,6 +279,33 @@ typedef int (*epcsaft_evaluate_neutral_reference_v1)(
     epcsaft_neutral_reference_result_v1* result
 );
 
+/*
+ * Model-bound NaBr molality-scale mean ionic activity with one active water
+ * solvation factor. The derivative is total at fixed temperature and pressure
+ * through the canonical density and electrolyte reference sequence.
+ */
+typedef struct epcsaft_aqueous_miac_solvation_factor_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double log_mean_ionic_activity_coefficient_molality;
+    double derivative;
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+    double reference_derivative_convergence_error;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_aqueous_miac_solvation_factor_result_v1;
+
+typedef int (*epcsaft_evaluate_aqueous_miac_solvation_factor_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    double formula_unit_molality_mol_per_kg,
+    double solvation_factor,
+    epcsaft_aqueous_miac_solvation_factor_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -308,6 +335,9 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t neutral_reference_basis_row_count;
     size_t neutral_reference_result_size;
     epcsaft_evaluate_neutral_reference_v1 evaluate_neutral_reference;
+    size_t aqueous_miac_solvation_factor_result_size;
+    epcsaft_evaluate_aqueous_miac_solvation_factor_v1
+        evaluate_aqueous_miac_solvation_factor;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

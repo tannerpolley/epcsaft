@@ -124,6 +124,18 @@ downstream fit exists. Bounded independent subagent review changes sequencing
 only; it does not transfer runtime, catalog, regression, scientific,
 promotion, or publication authority.
 
+Project Truss Provider issue `#22` adds the one missing staged-recovery seam:
+an append-only NaBr `ln(gamma_pm^m)` value plus exact total fixed-pressure
+first derivative with respect to active `f_water`. The implementation tapes
+that coordinate in the existing CppAD Born owner and reuses the existing
+association, density, fugacity, and electrolyte reference sequence. Its exact
+contract is
+`docs/designs/2026-07-22-aqueous-active-solvation-factor-native-sdk-design.md`.
+Installed NaBr remains fingerprint-bound; only source-complete, ordered,
+corrected-SSM+DS Figiel user bundles with exact applicability may use the
+staged active callbacks. This is Provider transport evidence, not a fit,
+catalog change, scientific acceptance, or authority transfer.
+
 Project Truss Provider issue `#10` adds a separate append-only installed-SDK
 candidate for charge-neutral reacting standard references. For an admitted
 aqueous phase model with one explicit water reference carrier, it returns a

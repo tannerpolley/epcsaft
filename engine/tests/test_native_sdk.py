@@ -208,6 +208,27 @@ class NeutralReferenceNativeSdkTable(ctypes.Structure):
     )
 
 
+class AqueousMiacSolvationFactorResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("log_mean_ionic_activity_coefficient_molality", ctypes.c_double),
+        ("derivative", ctypes.c_double),
+        ("reference_molality_mol_per_kg", ctypes.c_double),
+        ("reference_convergence_error", ctypes.c_double),
+        ("reference_derivative_convergence_error", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class AqueousMiacSolvationFactorNativeSdkTable(ctypes.Structure):
+    _fields_ = NeutralReferenceNativeSdkTable._fields_ + (
+        ("aqueous_miac_solvation_factor_result_size", ctypes.c_size_t),
+        ("evaluate_aqueous_miac_solvation_factor", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -239,6 +260,10 @@ AQUEOUS_MIAC_KIJ_PREFIX_SIZE = (
 )
 NEUTRAL_REFERENCE_PREFIX_SIZE = (
     NeutralReferenceNativeSdkTable.evaluate_neutral_reference.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+AQUEOUS_MIAC_SOLVATION_FACTOR_PREFIX_SIZE = (
+    AqueousMiacSolvationFactorNativeSdkTable.evaluate_aqueous_miac_solvation_factor.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
@@ -343,6 +368,17 @@ EvaluateNeutralReference = ctypes.CFUNCTYPE(
     ctypes.POINTER(NeutralReferenceResult),
 )
 
+EvaluateAqueousMiacSolvationFactor = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(AqueousMiacSolvationFactorResult),
+)
+
 
 def _model(catalog: str, component: str) -> EPCSAFT:
     return EPCSAFT(ParameterBundle.from_catalog(catalog, version=1).select((component,)))
@@ -395,6 +431,50 @@ def _user_provided_copy(
         ),
         models=(record for record in records if isinstance(record, ModelParameterRecord)),
     )
+
+
+def _figiel_trial_model(
+    component_ids: tuple[str, str, str],
+    *,
+    purpose: str = "user-provided",
+    spoof_source_metadata: bool = False,
+) -> EPCSAFT:
+    bundle = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
+    records = tuple(
+        replace(record, value=1.4)
+        if record.record_id == "water-solvation-factor"
+        else record
+        for record in bundle.records
+    )
+    trial = ParameterBundle.from_records(
+        bundle_id="figiel-staged-trial",
+        bundle_version=1,
+        purpose=purpose,
+        sources=(
+            replace(source, citation="fabricated citation")
+            if spoof_source_metadata and source.source_id == "figiel-yu-held-2025"
+            else source
+            for source in bundle.sources
+        ),
+        domains=bundle.domains,
+        components=bundle.components,
+        singles=(record for record in records if isinstance(record, SingleParameterRecord)),
+        pairs=(record for record in records if isinstance(record, PairParameterRecord)),
+        sites=(record for record in records if isinstance(record, SiteRecord)),
+        associations=(
+            record for record in records if isinstance(record, AssociationParameterRecord)
+        ),
+        correlations=(
+            record
+            for record in records
+            if isinstance(
+                record,
+                (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation),
+            )
+        ),
+        models=(record for record in records if isinstance(record, ModelParameterRecord)),
+    )
+    return EPCSAFT(trial.select(component_ids))
 
 
 def _khudaida_model(component_ids: tuple[str, ...]) -> EPCSAFT:
@@ -518,6 +598,46 @@ def _neutral_reference_table(
     table = ctypes.cast(address, ctypes.POINTER(NeutralReferenceNativeSdkTable)).contents
     assert table.table_size >= NEUTRAL_REFERENCE_PREFIX_SIZE
     return capsule, table
+
+
+def _aqueous_miac_solvation_factor_table(
+    model: EPCSAFT,
+) -> tuple[object, AqueousMiacSolvationFactorNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(AqueousMiacSolvationFactorNativeSdkTable)
+    ).contents
+    assert table.table_size >= AQUEOUS_MIAC_SOLVATION_FACTOR_PREFIX_SIZE
+    return capsule, table
+
+
+def _evaluate_aqueous_miac_solvation_factor(
+    table: AqueousMiacSolvationFactorNativeSdkTable,
+    fingerprint: str,
+    molality: float,
+    solvation_factor: float,
+) -> AqueousMiacSolvationFactorResult:
+    result = AqueousMiacSolvationFactorResult(
+        struct_size=ctypes.sizeof(AqueousMiacSolvationFactorResult)
+    )
+    status = EvaluateAqueousMiacSolvationFactor(
+        table.evaluate_aqueous_miac_solvation_factor
+    )(
+        table.model_context,
+        fingerprint.encode(),
+        298.15,
+        100000.0,
+        molality,
+        solvation_factor,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
 
 
 def _evaluate_neutral_reference(
@@ -2763,11 +2883,203 @@ int main(void) { return 0; }
     assert completed.returncode == 0, completed.stderr
 
 
+def test_native_sdk_aqueous_miac_solvation_factor_matches_public_value_and_exact_derivative() -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
+    _, table = _aqueous_miac_solvation_factor_table(model)
+    assert table.aqueous_miac_solvation_factor_result_size == 280
+
+    fixed = _evaluate_aqueous_miac_solvation_factor(
+        table, model.parameter_fingerprint, 1.0, 1.5
+    )
+    reference = model.reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=1.0 * unit_registry.bar,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    public = reference.at_molality(1.0 * unit_registry.mole / unit_registry.kilogram)
+    assert fixed.status == STATUS_OK
+    assert fixed.log_mean_ionic_activity_coefficient_molality == pytest.approx(
+        math.log(public.mean_ionic_activity_coefficient_molality), abs=8.0e-11
+    )
+    assert fixed.reference_molality_mol_per_kg == pytest.approx(
+        reference.reference_molality.to("mole / kilogram").magnitude,
+        rel=0.0,
+        abs=0.0,
+    )
+    assert fixed.reference_convergence_error == pytest.approx(
+        reference.convergence_error, rel=0.0, abs=0.0
+    )
+    assert math.isfinite(fixed.reference_derivative_convergence_error)
+    assert fixed.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    molalities = (
+        0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1,
+        0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.4,
+        3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0,
+    )
+    for solvation_factor in (1.35, 1.65):
+        for molality in molalities:
+            center = _evaluate_aqueous_miac_solvation_factor(
+                table, model.parameter_fingerprint, molality, solvation_factor
+            )
+            estimates = []
+            for step in (1.0e-4, 5.0e-5):
+                high = _evaluate_aqueous_miac_solvation_factor(
+                    table,
+                    model.parameter_fingerprint,
+                    molality,
+                    solvation_factor + step,
+                )
+                low = _evaluate_aqueous_miac_solvation_factor(
+                    table,
+                    model.parameter_fingerprint,
+                    molality,
+                    solvation_factor - step,
+                )
+                estimates.append(
+                    (
+                        high.log_mean_ionic_activity_coefficient_molality
+                        - low.log_mean_ionic_activity_coefficient_molality
+                    )
+                    / (2.0 * step)
+                )
+            tolerance = max(
+                1.0e-8,
+                20.0 * abs(estimates[0] - estimates[1]),
+                2.0e-8 * abs(center.derivative),
+            )
+            assert abs(center.derivative - estimates[1]) <= tolerance
+
+
+def test_native_sdk_staged_figiel_user_bundles_are_narrowly_admitted() -> None:
+    nacl = _figiel_trial_model(("water", "sodium-cation", "chloride-anion"))
+    _, nacl_table = _aqueous_miac_solvation_factor_table(nacl)
+    assert nacl_table.evaluate_ion_solvation_born
+    assert nacl_table.evaluate_aqueous_miac_kij
+    assert nacl_table.evaluate_aqueous_miac_solvation_factor
+    assert _evaluate_active_born(nacl_table, 3.4).status == STATUS_OK
+    assert _evaluate_aqueous_miac_kij(
+        nacl_table, nacl.parameter_fingerprint, 1.0, (-0.2, -0.2, 0.2)
+    ).status == STATUS_OK
+
+    nabr = _figiel_trial_model(("water", "sodium-cation", "bromide-anion"))
+    _, nabr_table = _aqueous_miac_solvation_factor_table(nabr)
+    assert _evaluate_aqueous_miac_solvation_factor(
+        nabr_table, nabr.parameter_fingerprint, 1.0, 1.4
+    ).status == STATUS_OK
+    assert _evaluate_aqueous_miac_kij(
+        nabr_table, nabr.parameter_fingerprint, 1.0, (-0.2, -0.2, 0.2)
+    ).status == STATUS_OK
+
+    with pytest.raises(EosError, match="unsupported-native-sdk"):
+        native_sdk(
+            _figiel_trial_model(
+                ("water", "sodium-cation", "bromide-anion"),
+                purpose="package-test-fixture",
+            )
+        )
+    spoofed = _figiel_trial_model(
+        ("water", "sodium-cation", "bromide-anion"),
+        spoof_source_metadata=True,
+    )
+    _, spoofed_table = _aqueous_miac_solvation_factor_table(spoofed)
+    assert _evaluate_aqueous_miac_solvation_factor(
+        spoofed_table, spoofed.parameter_fingerprint, 1.0, 1.4
+    ).status == STATUS_UNSUPPORTED_MODEL
+    reordered = _figiel_trial_model(("sodium-cation", "water", "bromide-anion"))
+    _, reordered_table = _aqueous_miac_solvation_factor_table(reordered)
+    assert _evaluate_aqueous_miac_solvation_factor(
+        reordered_table, reordered.parameter_fingerprint, 1.0, 1.4
+    ).status == STATUS_UNSUPPORTED_MODEL
+
+    catalog = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
+    unknown = EPCSAFT(
+        _user_provided_copy(catalog, unknown_applicability=True).select(
+            ("water", "sodium-cation", "bromide-anion")
+        )
+    )
+    _, unknown_table = _aqueous_miac_solvation_factor_table(unknown)
+    assert _evaluate_aqueous_miac_solvation_factor(
+        unknown_table, unknown.parameter_fingerprint, 1.0, 1.4
+    ).status == STATUS_UNSUPPORTED_MODEL
+
+
+def test_native_sdk_aqueous_miac_solvation_factor_preserves_abi_and_fails_closed() -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
+    capsule, table = _aqueous_miac_solvation_factor_table(model)
+    assert capsule is not None
+    for field_name, field_type in NeutralReferenceNativeSdkTable._fields_:
+        assert field_type is not None
+        assert (
+            getattr(AqueousMiacSolvationFactorNativeSdkTable, field_name).offset
+            == getattr(NeutralReferenceNativeSdkTable, field_name).offset
+        )
+    assert AqueousMiacSolvationFactorNativeSdkTable.aqueous_miac_solvation_factor_result_size.offset == 208
+    assert AqueousMiacSolvationFactorNativeSdkTable.evaluate_aqueous_miac_solvation_factor.offset == 216
+    assert ctypes.sizeof(AqueousMiacSolvationFactorNativeSdkTable) == 224
+
+    callback = EvaluateAqueousMiacSolvationFactor(
+        table.evaluate_aqueous_miac_solvation_factor
+    )
+    for fingerprint, temperature, molality, solvation_factor, expected in (
+        (model.parameter_fingerprint.encode(), math.nan, 1.0, 1.5, STATUS_INVALID_ARGUMENT),
+        (model.parameter_fingerprint.encode(), 298.15, 0.0, 1.5, STATUS_DOMAIN_ERROR),
+        (model.parameter_fingerprint.encode(), 298.15, 1.0, math.nan, STATUS_INVALID_ARGUMENT),
+        (b"sha256:wrong", 298.15, 1.0, 1.5, STATUS_UNSUPPORTED_MODEL),
+    ):
+        result = AqueousMiacSolvationFactorResult(
+            struct_size=ctypes.sizeof(AqueousMiacSolvationFactorResult)
+        )
+        status = callback(
+            table.model_context,
+            fingerprint,
+            temperature,
+            100000.0,
+            molality,
+            solvation_factor,
+            ctypes.byref(result),
+        )
+        assert status == result.status == expected
+        assert math.isnan(result.log_mean_ionic_activity_coefficient_molality)
+        assert math.isnan(result.derivative)
+        assert result.parameter_fingerprint == b""
+        assert result.error
+
+
+def test_native_sdk_aqueous_miac_solvation_factor_installed_header_layout() -> None:
+    compiler = shutil.which("cc")
+    assert compiler is not None
+    include_root = Path(epcsaft.__file__).parent / "include"
+    source = r'''
+#include <stddef.h>
+#include "epcsaft/native_sdk_v1.h"
+
+_Static_assert(offsetof(epcsaft_native_sdk_v1, aqueous_miac_solvation_factor_result_size) == 208, "result-size offset");
+_Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_solvation_factor) == 216, "callback offset");
+_Static_assert(sizeof(epcsaft_native_sdk_v1) == 224, "table size");
+_Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, log_mean_ionic_activity_coefficient_molality) == 8, "value offset");
+_Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, derivative) == 16, "derivative offset");
+_Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, parameter_fingerprint) == 48, "fingerprint offset");
+_Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, error) == 120, "error offset");
+_Static_assert(sizeof(epcsaft_aqueous_miac_solvation_factor_result_v1) == 280, "result size");
+int main(void) { return 0; }
+'''
+    completed = subprocess.run(
+        (compiler, "-std=c11", f"-I{include_root}", "-x", "c", "-fsyntax-only", "-"),
+        input=source,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
 def test_native_sdk_neutral_reference_is_complete_and_matches_public_owner() -> None:
     model = _electrolyte_model()
     capsule, table = _neutral_reference_table(model)
     assert capsule is not None
-    assert table.table_size == NEUTRAL_REFERENCE_PREFIX_SIZE == 208
+    assert table.table_size >= NEUTRAL_REFERENCE_PREFIX_SIZE == 208
     assert table.neutral_reference_basis_row_count == 2
     assert table.neutral_reference_result_size == ctypes.sizeof(NeutralReferenceResult) == 440
 
@@ -3030,7 +3342,7 @@ def test_native_sdk_neutral_reference_installed_header_layout() -> None:
 _Static_assert(offsetof(epcsaft_native_sdk_v1, neutral_reference_basis_row_count) == 184, "row-count offset");
 _Static_assert(offsetof(epcsaft_native_sdk_v1, neutral_reference_result_size) == 192, "result-size offset");
 _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_neutral_reference) == 200, "callback offset");
-_Static_assert(sizeof(epcsaft_native_sdk_v1) == 208, "table size");
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 208, "table prefix size");
 _Static_assert(offsetof(epcsaft_neutral_reference_result_v1, neutral_basis) == 48, "basis offset");
 _Static_assert(offsetof(epcsaft_neutral_reference_result_v1, derivative_availability) == 72, "derivative offset");
 _Static_assert(offsetof(epcsaft_neutral_reference_result_v1, parameter_fingerprint) == 136, "fingerprint offset");

@@ -248,6 +248,85 @@ detail::ReferenceObservation active_aqueous_kij_observation(
     };
 }
 
+detail::ReferenceObservation active_solvation_factor_observation(
+    const NativeModel& model,
+    const NativeParameters& parameters,
+    double temperature,
+    double pressure,
+    const std::vector<double>& composition,
+    double solvation_factor
+) {
+    const auto state = model.evaluate_pressure(
+        temperature, pressure, composition, "liquid"
+    );
+    if (!state.log_fugacity_coefficient.has_value()) {
+        throw std::runtime_error("reference fugacity is unavailable");
+    }
+    const auto sigma = detail::segment_sigma(temperature, parameters);
+    const auto diameter = detail::segment_diameter(temperature, parameters, sigma);
+    const auto site_fractions = detail::solve_site_fractions(
+        temperature,
+        state.molar_density,
+        composition,
+        parameters,
+        sigma,
+        diameter
+    );
+    const auto derivatives =
+        detail::thermodynamic_derivatives_active_solvation_factor(
+            temperature,
+            state.molar_density,
+            composition,
+            parameters,
+            site_fractions,
+            solvation_factor
+        );
+    if (!derivatives.active_solvation_factor.has_value()) {
+        throw std::runtime_error("active solvation-factor derivative is unavailable");
+    }
+    const std::size_t components = composition.size();
+    const std::size_t coordinates = 2 + components + 1;
+    const std::size_t active_coordinate = 2 + components;
+    const auto hessian = [&derivatives, coordinates](
+        std::size_t row, std::size_t column
+    ) {
+        return derivatives.hessian[row * coordinates + column];
+    };
+    const double pressure_factor = state.molar_density * state.molar_density
+        * detail::GAS_CONSTANT * temperature * hessian(1, active_coordinate);
+    const double density_factor = -pressure_factor
+        / state.pressure_density_derivative;
+    std::array<double, 2> corrected_log_fugacity{};
+    std::vector<double> total_derivative(2);
+    for (std::size_t ion = 0; ion < 2; ++ion) {
+        const std::size_t component = 1 + ion;
+        const double fugacity_density = log_fugacity_density(
+            state, derivatives, composition, component, coordinates
+        );
+        corrected_log_fugacity[ion] = fixed_pressure_log_fugacity(
+            state, pressure, component, fugacity_density
+        );
+        double weighted_composition_factor = 0.0;
+        for (std::size_t mixture_component = 0;
+             mixture_component < components;
+             ++mixture_component) {
+            weighted_composition_factor += composition[mixture_component]
+                * hessian(2 + mixture_component, active_coordinate);
+        }
+        const double chemical_potential_factor =
+            *derivatives.active_solvation_factor
+            + state.molar_density * hessian(1, active_coordinate)
+            + hessian(2 + component, active_coordinate)
+            - weighted_composition_factor;
+        const double log_fugacity_factor = chemical_potential_factor
+            - state.molar_density * hessian(1, active_coordinate)
+                / state.compressibility_factor;
+        total_derivative[ion] = log_fugacity_factor
+            + fugacity_density * density_factor;
+    }
+    return {corrected_log_fugacity, std::move(total_derivative)};
+}
+
 }  // namespace
 
 NativeModel::NativeModel(NativeParameters parameters)
@@ -617,6 +696,110 @@ NativeAqueousMiacKij NativeModel::evaluate_aqueous_miac_kij(
         total_derivative,
         reference.molality,
         reference.convergence_error,
+        *reference.derivative_convergence_error,
+    };
+}
+
+NativeAqueousMiacSolvationFactor
+NativeModel::evaluate_aqueous_miac_solvation_factor(
+    double temperature,
+    double pressure,
+    double molality,
+    double solvation_factor
+) const {
+    if (!std::isfinite(temperature) || !std::isfinite(pressure)
+        || !std::isfinite(molality) || !std::isfinite(solvation_factor)
+        || temperature <= 0.0 || pressure <= 0.0 || molality <= 0.0
+        || solvation_factor <= 0.0) {
+        throw std::invalid_argument("invalid active solvation-factor inputs");
+    }
+    if (parameters_.charge_number != std::vector<int>({0, 1, -1})) {
+        throw std::logic_error("unsupported active solvation-factor model");
+    }
+    NativeParameters active_parameters = parameters_;
+    active_parameters.solvation_factor[0] = solvation_factor;
+    const NativeModel active_model(active_parameters);
+    const auto composition = detail::formula_composition(
+        std::vector<double>{1.0, 0.0, 0.0},
+        active_parameters.molar_mass_kg_per_mol,
+        std::array<std::size_t, 2>{1, 2},
+        std::array<int, 2>{1, 1},
+        molality
+    );
+    const auto finite = active_solvation_factor_observation(
+        active_model,
+        active_parameters,
+        temperature,
+        pressure,
+        composition,
+        solvation_factor
+    );
+    const auto reference = detail::electrolyte_reference_sequence(
+        std::vector<double>{1.0, 0.0, 0.0},
+        active_parameters.molar_mass_kg_per_mol,
+        std::array<std::size_t, 2>{1, 2},
+        std::array<int, 2>{1, 1},
+        [&active_model, &active_parameters, temperature, pressure, solvation_factor](
+            const std::vector<double>& reference_composition
+        ) {
+            return active_solvation_factor_observation(
+                active_model,
+                active_parameters,
+                temperature,
+                pressure,
+                reference_composition,
+                solvation_factor
+            );
+        }
+    );
+    if (!finite.derivative.has_value() || !reference.derivative.has_value()
+        || finite.derivative->size() != 2 || reference.derivative->size() != 2
+        || !reference.derivative_convergence_error.has_value()) {
+        throw std::runtime_error(
+            "active solvation-factor derivative is unavailable"
+        );
+    }
+    const double conversion = std::log(
+        1.0 + 2.0 * active_parameters.molar_mass_kg_per_mol[0] * molality
+    );
+    auto finite_log_fugacity = finite.log_fugacity;
+    auto reference_log_fugacity = reference.log_fugacity;
+    double reference_molality = reference.molality;
+    double reference_convergence_error = reference.convergence_error;
+    if (solvation_factor == parameters_.solvation_factor[0]) {
+        const auto finite_state = active_model.evaluate_pressure(
+            temperature, pressure, composition, "liquid"
+        );
+        if (!finite_state.log_fugacity_coefficient.has_value()) {
+            throw std::runtime_error("finite fugacity is unavailable");
+        }
+        finite_log_fugacity = {
+            (*finite_state.log_fugacity_coefficient)[1],
+            (*finite_state.log_fugacity_coefficient)[2],
+        };
+        const auto value_reference = active_model.electrolyte_reference_sequence(
+            temperature,
+            pressure,
+            std::vector<double>{1.0, 0.0, 0.0},
+            std::array<std::size_t, 2>{1, 2},
+            std::array<int, 2>{1, 1},
+            "liquid"
+        );
+        reference_log_fugacity = value_reference.log_fugacity;
+        reference_molality = value_reference.reference_molality;
+        reference_convergence_error = value_reference.convergence_error;
+    }
+    return {
+        0.5 * (
+            finite_log_fugacity[0] + finite_log_fugacity[1]
+            - reference_log_fugacity[0] - reference_log_fugacity[1]
+        ) - conversion,
+        0.5 * (
+            (*finite.derivative)[0] + (*finite.derivative)[1]
+            - (*reference.derivative)[0] - (*reference.derivative)[1]
+        ),
+        reference_molality,
+        reference_convergence_error,
         *reference.derivative_convergence_error,
     };
 }
