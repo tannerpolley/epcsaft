@@ -1,8 +1,9 @@
 # Aqueous Active Solvation-Factor Native SDK Design
 
-Status: implementation candidate for Project Truss Provider issue #22. This
-document owns only the appended Provider callback; Regression's staged target,
-residual, bounds, starts, ranks, and acceptance remain in
+Status: scalar implementation candidate from Project Truss Provider issue #22,
+with the shared batch transport amendment in issue #29. This document owns
+only the appended Provider callback; Regression's staged target, residual,
+bounds, starts, ranks, and acceptance remain in
 `ePC-SAFT-regression/docs/science/figiel-aqueous-kij-regression.md`.
 
 ## Capability
@@ -19,8 +20,13 @@ callback accepts one finite positive trial water solvation factor and returns:
 - structured status/error output.
 
 The ABI appends a 280-byte size-gated result and two 64-bit table fields at
-offsets 208 and 216. The complete table becomes 224 bytes; every prior field
-and offset is unchanged.
+offsets 208 and 216. Its scalar prefix ends at 224 bytes; every prior field and
+offset is unchanged.
+
+The shared batch throughput amendment is owned by
+`2026-07-21-aqueous-active-kij-miac-native-sdk-design.md`. Its typed
+active-solvation-factor tail is at offset 232 in the complete 240-byte table;
+the original scalar prefix and this scientific contract remain unchanged.
 
 ## Derivative owner
 

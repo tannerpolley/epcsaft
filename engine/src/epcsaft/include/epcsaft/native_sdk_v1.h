@@ -306,6 +306,39 @@ typedef int (*epcsaft_evaluate_aqueous_miac_solvation_factor_v1)(
     epcsaft_aqueous_miac_solvation_factor_result_v1* result
 );
 
+/*
+ * Batch forms of the existing active aqueous MIAC callbacks. Molalities and
+ * results are caller-owned arrays with identical nonzero counts. Provider
+ * evaluates the active model and derivative reference sequence once, then
+ * returns one ordinary scalar result record per molality in input order. The
+ * exact catalog solvation-factor coordinate retains its existing value-parity
+ * reference sequence once per batch.
+ */
+typedef int (*epcsaft_evaluate_aqueous_miac_kij_batch_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    const double* formula_unit_molalities_mol_per_kg,
+    size_t molality_count,
+    const double* k_ij,
+    size_t k_ij_count,
+    epcsaft_aqueous_miac_kij_result_v1* results,
+    size_t result_count
+);
+
+typedef int (*epcsaft_evaluate_aqueous_miac_solvation_factor_batch_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    const double* formula_unit_molalities_mol_per_kg,
+    size_t molality_count,
+    double solvation_factor,
+    epcsaft_aqueous_miac_solvation_factor_result_v1* results,
+    size_t result_count
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -338,6 +371,10 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t aqueous_miac_solvation_factor_result_size;
     epcsaft_evaluate_aqueous_miac_solvation_factor_v1
         evaluate_aqueous_miac_solvation_factor;
+    epcsaft_evaluate_aqueous_miac_kij_batch_v1
+        evaluate_aqueous_miac_kij_batch;
+    epcsaft_evaluate_aqueous_miac_solvation_factor_batch_v1
+        evaluate_aqueous_miac_solvation_factor_batch;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

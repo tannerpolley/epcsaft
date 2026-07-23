@@ -336,6 +336,34 @@ module, registry, overlay, compatibility shim, or catalog record is justified.
 If implementation cannot remain within those owners, it returns for design
 review rather than widening surface.
 
+## Batch throughput amendment
+
+Project Truss Provider issue `ePC-SAFT/ePC-SAFT#29` adds two typed append-only
+tails to the same 64-bit SDK table:
+
+- offset 224: active aqueous `k_ij` over an ordered molality array;
+- offset 232: active water-solvation-factor over an ordered molality array;
+- complete table size: 240 bytes.
+
+Both callbacks reuse the existing scalar result records. They require equal
+positive molality/result counts, preserve input order, initialize every
+correctly size-declared result fail-closed, and apply the existing model,
+fingerprint, state, and `0.001-6 mol/kg` gates. If any result size is unknown,
+the entire result array remains untouched because Provider cannot safely write
+an unknown ABI record. The active model and derivative reference sequence are
+constructed once per salt and parameter vector. At the exact catalog
+solvation-factor coordinate, the pre-existing public-value parity branch also
+runs its value reference once per batch, never once per row. Finite-row values
+and exact total fixed-pressure derivatives then execute through bounded
+Provider-owned CppAD concurrency; scalar callbacks delegate to the same
+calculation owner with a one-row array.
+
+The consumer must require the 240-byte tail and may not fall back to scalar
+row calls. Installed evidence must establish bitwise scalar/batch parity over
+the frozen 21-row and 164-row inputs and a bounded Stage-C throughput result.
+This amendment changes transport cost only: equations, rows, derivatives,
+diagnostics, bounds, targets, fit policy, and authority remain unchanged.
+
 ## Alternatives and decision
 
 | Alternative | Consequence | Decision |

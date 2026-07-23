@@ -622,9 +622,21 @@ NativeAqueousMiacKij NativeModel::evaluate_aqueous_miac_kij(
     double molality,
     const std::array<double, 3>& k_ij
 ) const {
+    return evaluate_aqueous_miac_kij_batch(
+        temperature, pressure, std::vector<double>{molality}, k_ij
+    ).front();
+}
+
+std::vector<NativeAqueousMiacKij>
+NativeModel::evaluate_aqueous_miac_kij_batch(
+    double temperature,
+    double pressure,
+    const std::vector<double>& molalities,
+    const std::array<double, 3>& k_ij
+) const {
     if (!std::isfinite(temperature) || !std::isfinite(pressure)
-        || !std::isfinite(molality) || temperature <= 0.0 || pressure <= 0.0
-        || molality <= 0.0
+        || temperature <= 0.0 || pressure <= 0.0
+        || molalities.empty() || !positive_finite(molalities)
         || !std::all_of(k_ij.begin(), k_ij.end(), [](double value) {
             return std::isfinite(value);
         })) {
@@ -639,21 +651,6 @@ NativeAqueousMiacKij NativeModel::evaluate_aqueous_miac_kij(
     active_parameters.k_ij[2] = active_parameters.k_ij[6] = k_ij[1];
     active_parameters.k_ij[5] = active_parameters.k_ij[7] = k_ij[2];
     const NativeModel active_model(active_parameters);
-    const auto composition = detail::formula_composition(
-        std::vector<double>{1.0, 0.0, 0.0},
-        active_parameters.molar_mass_kg_per_mol,
-        std::array<std::size_t, 2>{1, 2},
-        std::array<int, 2>{1, 1},
-        molality
-    );
-    const auto finite = active_aqueous_kij_observation(
-        active_model,
-        active_parameters,
-        temperature,
-        pressure,
-        composition,
-        k_ij
-    );
     const auto reference = detail::electrolyte_reference_sequence(
         std::vector<double>{1.0, 0.0, 0.0},
         active_parameters.molar_mass_kg_per_mol,
@@ -672,32 +669,74 @@ NativeAqueousMiacKij NativeModel::evaluate_aqueous_miac_kij(
             );
         }
     );
-    if (!finite.derivative.has_value() || !reference.derivative.has_value()
-        || finite.derivative->size() != 6 || reference.derivative->size() != 6
+    if (!reference.derivative.has_value() || reference.derivative->size() != 6
         || !reference.derivative_convergence_error.has_value()) {
         throw std::runtime_error("active aqueous k_ij derivative is unavailable");
     }
-    std::array<double, 3> total_derivative{};
-    for (std::size_t active = 0; active < 3; ++active) {
-        total_derivative[active] = 0.5 * (
-            (*finite.derivative)[active] + (*finite.derivative)[3 + active]
-            - (*reference.derivative)[active]
-            - (*reference.derivative)[3 + active]
+    std::vector<NativeAqueousMiacKij> results(molalities.size());
+    detail::cppad_parallel_for(molalities.size(), [&](std::size_t index) {
+        const double molality = molalities[index];
+        const auto composition = detail::formula_composition(
+            std::vector<double>{1.0, 0.0, 0.0},
+            active_parameters.molar_mass_kg_per_mol,
+            std::array<std::size_t, 2>{1, 2},
+            std::array<int, 2>{1, 1},
+            molality
         );
-    }
-    const double conversion = std::log(
-        1.0 + 2.0 * active_parameters.molar_mass_kg_per_mol[0] * molality
-    );
-    return {
-        0.5 * (
-            finite.log_fugacity[0] + finite.log_fugacity[1]
-            - reference.log_fugacity[0] - reference.log_fugacity[1]
-        ) - conversion,
-        total_derivative,
-        reference.molality,
-        reference.convergence_error,
-        *reference.derivative_convergence_error,
-    };
+        const auto finite = active_aqueous_kij_observation(
+            active_model,
+            active_parameters,
+            temperature,
+            pressure,
+            composition,
+            k_ij
+        );
+        if (!finite.derivative.has_value() || finite.derivative->size() != 6) {
+            throw std::runtime_error(
+                "active aqueous k_ij derivative is unavailable"
+            );
+        }
+        std::array<double, 3> total_derivative{};
+        for (std::size_t active = 0; active < 3; ++active) {
+            total_derivative[active] = 0.5 * (
+                (*finite.derivative)[active] + (*finite.derivative)[3 + active]
+                - (*reference.derivative)[active]
+                - (*reference.derivative)[3 + active]
+            );
+        }
+        const double conversion = std::log(
+            1.0 + 2.0 * active_parameters.molar_mass_kg_per_mol[0] * molality
+        );
+        results[index] = {
+            0.5 * (
+                finite.log_fugacity[0] + finite.log_fugacity[1]
+                - reference.log_fugacity[0] - reference.log_fugacity[1]
+            ) - conversion,
+            total_derivative,
+            reference.molality,
+            reference.convergence_error,
+            *reference.derivative_convergence_error,
+        };
+        const auto& result = results[index];
+        if (!std::isfinite(
+                result.log_mean_ionic_activity_coefficient_molality
+            )
+            || !std::all_of(
+                result.derivative.begin(),
+                result.derivative.end(),
+                [](double value) { return std::isfinite(value); }
+            )
+            || !std::isfinite(result.reference_molality_mol_per_kg)
+            || !std::isfinite(result.reference_convergence_error)
+            || !std::isfinite(
+                result.reference_derivative_convergence_error
+            )) {
+            throw std::runtime_error(
+                "active aqueous k_ij result contains nonfinite values"
+            );
+        }
+    });
+    return results;
 }
 
 NativeAqueousMiacSolvationFactor
@@ -707,9 +746,25 @@ NativeModel::evaluate_aqueous_miac_solvation_factor(
     double molality,
     double solvation_factor
 ) const {
+    return evaluate_aqueous_miac_solvation_factor_batch(
+        temperature,
+        pressure,
+        std::vector<double>{molality},
+        solvation_factor
+    ).front();
+}
+
+std::vector<NativeAqueousMiacSolvationFactor>
+NativeModel::evaluate_aqueous_miac_solvation_factor_batch(
+    double temperature,
+    double pressure,
+    const std::vector<double>& molalities,
+    double solvation_factor
+) const {
     if (!std::isfinite(temperature) || !std::isfinite(pressure)
-        || !std::isfinite(molality) || !std::isfinite(solvation_factor)
-        || temperature <= 0.0 || pressure <= 0.0 || molality <= 0.0
+        || !std::isfinite(solvation_factor)
+        || temperature <= 0.0 || pressure <= 0.0
+        || molalities.empty() || !positive_finite(molalities)
         || solvation_factor <= 0.0) {
         throw std::invalid_argument("invalid active solvation-factor inputs");
     }
@@ -719,21 +774,6 @@ NativeModel::evaluate_aqueous_miac_solvation_factor(
     NativeParameters active_parameters = parameters_;
     active_parameters.solvation_factor[0] = solvation_factor;
     const NativeModel active_model(active_parameters);
-    const auto composition = detail::formula_composition(
-        std::vector<double>{1.0, 0.0, 0.0},
-        active_parameters.molar_mass_kg_per_mol,
-        std::array<std::size_t, 2>{1, 2},
-        std::array<int, 2>{1, 1},
-        molality
-    );
-    const auto finite = active_solvation_factor_observation(
-        active_model,
-        active_parameters,
-        temperature,
-        pressure,
-        composition,
-        solvation_factor
-    );
     const auto reference = detail::electrolyte_reference_sequence(
         std::vector<double>{1.0, 0.0, 0.0},
         active_parameters.molar_mass_kg_per_mol,
@@ -752,31 +792,16 @@ NativeModel::evaluate_aqueous_miac_solvation_factor(
             );
         }
     );
-    if (!finite.derivative.has_value() || !reference.derivative.has_value()
-        || finite.derivative->size() != 2 || reference.derivative->size() != 2
+    if (!reference.derivative.has_value() || reference.derivative->size() != 2
         || !reference.derivative_convergence_error.has_value()) {
         throw std::runtime_error(
             "active solvation-factor derivative is unavailable"
         );
     }
-    const double conversion = std::log(
-        1.0 + 2.0 * active_parameters.molar_mass_kg_per_mol[0] * molality
-    );
-    auto finite_log_fugacity = finite.log_fugacity;
     auto reference_log_fugacity = reference.log_fugacity;
     double reference_molality = reference.molality;
     double reference_convergence_error = reference.convergence_error;
     if (solvation_factor == parameters_.solvation_factor[0]) {
-        const auto finite_state = active_model.evaluate_pressure(
-            temperature, pressure, composition, "liquid"
-        );
-        if (!finite_state.log_fugacity_coefficient.has_value()) {
-            throw std::runtime_error("finite fugacity is unavailable");
-        }
-        finite_log_fugacity = {
-            (*finite_state.log_fugacity_coefficient)[1],
-            (*finite_state.log_fugacity_coefficient)[2],
-        };
         const auto value_reference = active_model.electrolyte_reference_sequence(
             temperature,
             pressure,
@@ -789,19 +814,74 @@ NativeModel::evaluate_aqueous_miac_solvation_factor(
         reference_molality = value_reference.reference_molality;
         reference_convergence_error = value_reference.convergence_error;
     }
-    return {
-        0.5 * (
-            finite_log_fugacity[0] + finite_log_fugacity[1]
-            - reference_log_fugacity[0] - reference_log_fugacity[1]
-        ) - conversion,
-        0.5 * (
-            (*finite.derivative)[0] + (*finite.derivative)[1]
-            - (*reference.derivative)[0] - (*reference.derivative)[1]
-        ),
-        reference_molality,
-        reference_convergence_error,
-        *reference.derivative_convergence_error,
-    };
+    std::vector<NativeAqueousMiacSolvationFactor> results(molalities.size());
+    detail::cppad_parallel_for(molalities.size(), [&](std::size_t index) {
+        const double molality = molalities[index];
+        const auto composition = detail::formula_composition(
+            std::vector<double>{1.0, 0.0, 0.0},
+            active_parameters.molar_mass_kg_per_mol,
+            std::array<std::size_t, 2>{1, 2},
+            std::array<int, 2>{1, 1},
+            molality
+        );
+        const auto finite = active_solvation_factor_observation(
+            active_model,
+            active_parameters,
+            temperature,
+            pressure,
+            composition,
+            solvation_factor
+        );
+        if (!finite.derivative.has_value() || finite.derivative->size() != 2) {
+            throw std::runtime_error(
+                "active solvation-factor derivative is unavailable"
+            );
+        }
+        auto finite_log_fugacity = finite.log_fugacity;
+        if (solvation_factor == parameters_.solvation_factor[0]) {
+            const auto finite_state = active_model.evaluate_pressure(
+                temperature, pressure, composition, "liquid"
+            );
+            if (!finite_state.log_fugacity_coefficient.has_value()) {
+                throw std::runtime_error("finite fugacity is unavailable");
+            }
+            finite_log_fugacity = {
+                (*finite_state.log_fugacity_coefficient)[1],
+                (*finite_state.log_fugacity_coefficient)[2],
+            };
+        }
+        const double conversion = std::log(
+            1.0 + 2.0 * active_parameters.molar_mass_kg_per_mol[0] * molality
+        );
+        results[index] = {
+            0.5 * (
+                finite_log_fugacity[0] + finite_log_fugacity[1]
+                - reference_log_fugacity[0] - reference_log_fugacity[1]
+            ) - conversion,
+            0.5 * (
+                (*finite.derivative)[0] + (*finite.derivative)[1]
+                - (*reference.derivative)[0] - (*reference.derivative)[1]
+            ),
+            reference_molality,
+            reference_convergence_error,
+            *reference.derivative_convergence_error,
+        };
+        const auto& result = results[index];
+        if (!std::isfinite(
+                result.log_mean_ionic_activity_coefficient_molality
+            )
+            || !std::isfinite(result.derivative)
+            || !std::isfinite(result.reference_molality_mol_per_kg)
+            || !std::isfinite(result.reference_convergence_error)
+            || !std::isfinite(
+                result.reference_derivative_convergence_error
+            )) {
+            throw std::runtime_error(
+                "active solvation-factor result contains nonfinite values"
+            );
+        }
+    });
+    return results;
 }
 
 std::array<double, 2> NativeModel::molar_volume_bounds(

@@ -9,6 +9,7 @@ set(PYBIND11_FINDPYTHON ON)
 
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
+find_package(Threads REQUIRED)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -96,5 +97,6 @@ if(EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR)
     )
 endif()
 target_compile_features(_core PRIVATE cxx_std_17)
+target_link_libraries(_core PRIVATE Threads::Threads)
 
 install(TARGETS _core LIBRARY DESTINATION epcsaft RUNTIME DESTINATION epcsaft)

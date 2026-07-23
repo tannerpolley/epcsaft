@@ -258,6 +258,8 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_neutral_reference,
               sizeof(epcsaft_aqueous_miac_solvation_factor_result_v1),
               &NativeSdkEndpoint::evaluate_aqueous_miac_solvation_factor,
+              &NativeSdkEndpoint::evaluate_aqueous_miac_kij_batch,
+              &NativeSdkEndpoint::evaluate_aqueous_miac_solvation_factor_batch,
           } {}
 
     static int evaluate_neutral_reference(
@@ -686,6 +688,301 @@ struct NativeSdkEndpoint final {
             return fail(
                 EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
                 "unknown aqueous active solvation-factor evaluation failure"
+            );
+        }
+    }
+
+    static int evaluate_aqueous_miac_kij_batch(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        const double* molalities,
+        size_t molality_count,
+        const double* k_ij,
+        size_t k_ij_count,
+        epcsaft_aqueous_miac_kij_result_v1* results,
+        size_t result_count
+    ) noexcept {
+        if (results == nullptr || result_count == 0) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        for (std::size_t index = 0; index < result_count; ++index) {
+            if (results[index].struct_size
+                != sizeof(epcsaft_aqueous_miac_kij_result_v1)) {
+                return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+            }
+        }
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+        for (std::size_t index = 0; index < result_count; ++index) {
+            const uint32_t result_size = results[index].struct_size;
+            std::memset(&results[index], 0, sizeof(results[index]));
+            results[index].struct_size = result_size;
+            results[index].log_mean_ionic_activity_coefficient_molality = nan;
+            std::fill(
+                std::begin(results[index].derivative),
+                std::end(results[index].derivative),
+                nan
+            );
+            results[index].reference_molality_mol_per_kg = nan;
+            results[index].reference_convergence_error = nan;
+            results[index].reference_derivative_convergence_error = nan;
+        }
+        auto fail = [&](int status, const char* message) {
+            for (std::size_t index = 0; index < result_count; ++index) {
+                results[index].status = status;
+                std::snprintf(
+                    results[index].error,
+                    sizeof(results[index].error),
+                    "%s",
+                    message
+                );
+            }
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr
+            || molalities == nullptr || k_ij == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "required pointer is null"
+            );
+        }
+        if (molality_count != result_count
+            || k_ij_count != EPCSAFT_AQUEOUS_ACTIVE_KIJ_COORDINATE_COUNT_V1) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1,
+                "batch dimensions do not match"
+            );
+        }
+        if (!std::isfinite(temperature_k) || !std::isfinite(pressure_pa)
+            || !std::all_of(
+                molalities,
+                molalities + molality_count,
+                [](double value) { return std::isfinite(value); }
+            )
+            || !std::all_of(k_ij, k_ij + k_ij_count, [](double value) {
+                return std::isfinite(value);
+            })) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "state and active k_ij must be finite"
+            );
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.aqueous_kij_admitted
+            || std::strcmp(
+                endpoint.parameter_fingerprint.c_str(), expected_fingerprint
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "unsupported aqueous active k_ij model"
+            );
+        }
+        if (temperature_k != 298.15 || pressure_pa != 100000.0
+            || std::any_of(
+                molalities,
+                molalities + molality_count,
+                [](double value) { return value < 0.001 || value > 6.0; }
+            )) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "aqueous active k_ij state is outside the admitted domain"
+            );
+        }
+        try {
+            const std::array<double, 3> coordinates = {
+                k_ij[0], k_ij[1], k_ij[2]
+            };
+            const auto values = endpoint.model.evaluate_aqueous_miac_kij_batch(
+                temperature_k,
+                pressure_pa,
+                std::vector<double>(
+                    molalities, molalities + molality_count
+                ),
+                coordinates
+            );
+            if (values.size() != result_count) {
+                throw std::runtime_error(
+                    "aqueous active k_ij batch result count mismatch"
+                );
+            }
+            for (std::size_t index = 0; index < result_count; ++index) {
+                results[index].log_mean_ionic_activity_coefficient_molality =
+                    values[index].log_mean_ionic_activity_coefficient_molality;
+                std::copy(
+                    values[index].derivative.begin(),
+                    values[index].derivative.end(),
+                    results[index].derivative
+                );
+                results[index].reference_molality_mol_per_kg =
+                    values[index].reference_molality_mol_per_kg;
+                results[index].reference_convergence_error =
+                    values[index].reference_convergence_error;
+                results[index].reference_derivative_convergence_error =
+                    values[index].reference_derivative_convergence_error;
+                std::snprintf(
+                    results[index].parameter_fingerprint,
+                    sizeof(results[index].parameter_fingerprint),
+                    "%s",
+                    endpoint.parameter_fingerprint.c_str()
+                );
+                results[index].status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            }
+            return EPCSAFT_NATIVE_STATUS_OK_V1;
+        } catch (const detail::DensityDomainError& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown aqueous active k_ij batch evaluation failure"
+            );
+        }
+    }
+
+    static int evaluate_aqueous_miac_solvation_factor_batch(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        const double* molalities,
+        size_t molality_count,
+        double solvation_factor,
+        epcsaft_aqueous_miac_solvation_factor_result_v1* results,
+        size_t result_count
+    ) noexcept {
+        if (results == nullptr || result_count == 0) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        for (std::size_t index = 0; index < result_count; ++index) {
+            if (results[index].struct_size
+                != sizeof(epcsaft_aqueous_miac_solvation_factor_result_v1)) {
+                return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+            }
+        }
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+        for (std::size_t index = 0; index < result_count; ++index) {
+            const uint32_t result_size = results[index].struct_size;
+            std::memset(&results[index], 0, sizeof(results[index]));
+            results[index].struct_size = result_size;
+            results[index].log_mean_ionic_activity_coefficient_molality = nan;
+            results[index].derivative = nan;
+            results[index].reference_molality_mol_per_kg = nan;
+            results[index].reference_convergence_error = nan;
+            results[index].reference_derivative_convergence_error = nan;
+        }
+        auto fail = [&](int status, const char* message) {
+            for (std::size_t index = 0; index < result_count; ++index) {
+                results[index].status = status;
+                std::snprintf(
+                    results[index].error,
+                    sizeof(results[index].error),
+                    "%s",
+                    message
+                );
+            }
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr
+            || molalities == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "required pointer is null"
+            );
+        }
+        if (molality_count != result_count) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1,
+                "batch dimensions do not match"
+            );
+        }
+        if (!std::isfinite(temperature_k) || !std::isfinite(pressure_pa)
+            || !std::isfinite(solvation_factor)
+            || !std::all_of(
+                molalities,
+                molalities + molality_count,
+                [](double value) { return std::isfinite(value); }
+            )) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "state and active solvation factor must be finite"
+            );
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.aqueous_solvation_factor_admitted
+            || std::strcmp(
+                endpoint.parameter_fingerprint.c_str(), expected_fingerprint
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "unsupported aqueous active solvation-factor model"
+            );
+        }
+        if (temperature_k != 298.15 || pressure_pa != 100000.0
+            || solvation_factor <= 0.0
+            || std::any_of(
+                molalities,
+                molalities + molality_count,
+                [](double value) { return value < 0.001 || value > 6.0; }
+            )) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "aqueous active solvation-factor state is outside the admitted domain"
+            );
+        }
+        try {
+            const auto values =
+                endpoint.model.evaluate_aqueous_miac_solvation_factor_batch(
+                    temperature_k,
+                    pressure_pa,
+                    std::vector<double>(
+                        molalities, molalities + molality_count
+                    ),
+                    solvation_factor
+                );
+            if (values.size() != result_count) {
+                throw std::runtime_error(
+                    "aqueous active solvation-factor batch result count mismatch"
+                );
+            }
+            for (std::size_t index = 0; index < result_count; ++index) {
+                results[index].log_mean_ionic_activity_coefficient_molality =
+                    values[index].log_mean_ionic_activity_coefficient_molality;
+                results[index].derivative = values[index].derivative;
+                results[index].reference_molality_mol_per_kg =
+                    values[index].reference_molality_mol_per_kg;
+                results[index].reference_convergence_error =
+                    values[index].reference_convergence_error;
+                results[index].reference_derivative_convergence_error =
+                    values[index].reference_derivative_convergence_error;
+                std::snprintf(
+                    results[index].parameter_fingerprint,
+                    sizeof(results[index].parameter_fingerprint),
+                    "%s",
+                    endpoint.parameter_fingerprint.c_str()
+                );
+                results[index].status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            }
+            return EPCSAFT_NATIVE_STATUS_OK_V1;
+        } catch (const detail::DensityDomainError& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what()
+            );
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown aqueous active solvation-factor batch evaluation failure"
             );
         }
     }

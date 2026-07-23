@@ -213,6 +213,7 @@ NativeMixturePhaseBlock differentiated_mixture_phase_block(
     std::size_t volume_coordinate,
     PhaseFunction phase_function
 ) {
+    CppAdSerialGuard cppad_guard;
     using ADScalar = CppAD::AD<double>;
     std::vector<ADScalar> independent(point.begin(), point.end());
     CppAD::Independent(independent);
@@ -490,6 +491,7 @@ inline NativePackingFractionBlock packing_fraction_block(
         throw std::invalid_argument("packing fraction is outside the model domain");
     }
 
+    CppAdSerialGuard cppad_guard;
     using ADScalar = CppAD::AD<double>;
     std::vector<double> point(amounts.begin(), amounts.end());
     point.push_back(volume);
@@ -604,6 +606,7 @@ inline NativePurePhaseBlock pure_phase_block(
         temperature, amount, volume, parameters
     );
 
+    CppAdSerialGuard cppad_guard;
     using ADScalar = CppAD::AD<double>;
     std::vector<ADScalar> independent = {amount, volume};
     CppAD::Independent(independent);
@@ -704,6 +707,7 @@ inline NativeParameterizedPurePhaseBlock parameterized_pure_phase_block(
         temperature, amount, volume, value_parameters
     );
 
+    CppAdSerialGuard cppad_guard;
     using ADScalar = CppAD::AD<double>;
     std::vector<ADScalar> independent = {
         amount,
