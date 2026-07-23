@@ -250,8 +250,8 @@ manifest:
   public_native_headers: 1
   installed_data_files: 38
   package_test_files: 13
-  physical_production_lines: 8981
-  physical_package_test_lines: 7291
+  physical_production_lines: 8990
+  physical_package_test_lines: 7311
   physical_documentation_lines: 3835
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0

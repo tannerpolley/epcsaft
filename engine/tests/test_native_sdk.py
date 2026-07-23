@@ -2972,6 +2972,26 @@ def test_native_sdk_staged_figiel_user_bundles_are_narrowly_admitted() -> None:
         nabr_table, nabr.parameter_fingerprint, 1.0, (-0.2, -0.2, 0.2)
     ).status == STATUS_OK
 
+    for active_anion, counterion in (
+        ("chloride-anion", "sodium-cation"),
+        ("bromide-anion", "sodium-cation"),
+    ):
+        anion_model = _figiel_trial_model(("water", active_anion, counterion))
+        _, anion_table = _aqueous_miac_solvation_factor_table(anion_model)
+        assert _evaluate_active_born(anion_table, 4.2).status == STATUS_OK
+        assert _evaluate_aqueous_miac_kij(
+            anion_table,
+            anion_model.parameter_fingerprint,
+            1.0,
+            (-0.2, -0.2, 0.2),
+        ).status == STATUS_UNSUPPORTED_MODEL
+        assert _evaluate_aqueous_miac_solvation_factor(
+            anion_table,
+            anion_model.parameter_fingerprint,
+            1.0,
+            1.4,
+        ).status == STATUS_UNSUPPORTED_MODEL
+
     with pytest.raises(EosError, match="unsupported-native-sdk"):
         native_sdk(
             _figiel_trial_model(
