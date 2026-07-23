@@ -124,6 +124,15 @@ total fixed-pressure first derivative from the existing Helmholtz,
 association, density, and reference-sequence owners. The contract and evidence
 gate live in
 `docs/designs/2026-07-21-aqueous-active-kij-miac-native-sdk-design.md`.
+Project Truss issue `ePC-SAFT/ePC-SAFT#29` appends typed batch tails for this
+callback and the NaBr active-solvation-factor callback. A batch preserves row
+order and exact scalar results while constructing the active model and
+derivative reference sequence once per salt and parameter vector; the exact
+catalog solvation-factor coordinate retains one additional batch-level
+public-value parity sequence. Provider owns the
+bounded CppAD row concurrency; Regression must reject a scalar-only artifact
+instead of entering an unbounded per-row fit. This throughput transport changes
+no equation, derivative order, admission boundary, fitted value, or authority.
 Current status is
 `PROVIDER_AQUEOUS_ACTIVE_KIJ_IMPLEMENTATION_CANDIDATE_PASSED_LOCAL_GATES_INDEPENDENT_REVIEW_PENDING`;
 the callback is a local implementation candidate and no retained artifact or

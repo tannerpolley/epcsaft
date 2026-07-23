@@ -15,6 +15,7 @@ set(PYBIND11_FINDPYTHON ON)
 
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
+find_package(Threads REQUIRED)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -89,6 +90,7 @@ endif()
 pybind11_add_module(
     _core
     NO_EXTRAS
+    "${cppad_SOURCE_DIR}/cppad_lib/temp_file.cpp"
     src/epcsaft/_native/eos.cpp
     src/epcsaft/_native/module.cpp
     src/epcsaft/_native/native_sdk.cpp
@@ -102,12 +104,14 @@ if(EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR)
     )
 endif()
 target_compile_features(_core PRIVATE cxx_std_17)
+target_link_libraries(_core PRIVATE Threads::Threads)
 
 install(TARGETS _core LIBRARY DESTINATION epcsaft RUNTIME DESTINATION epcsaft)
 
 if(EPCSAFT_ENABLE_CPP_DEBUG)
     add_executable(
         epcsaft_cpp_debug
+        "${cppad_SOURCE_DIR}/cppad_lib/temp_file.cpp"
         src/epcsaft/_native/cpp_debug_main.cpp
         src/epcsaft/_native/eos.cpp
     )
@@ -122,6 +126,7 @@ if(EPCSAFT_ENABLE_CPP_DEBUG)
         )
     endif()
     target_compile_features(epcsaft_cpp_debug PRIVATE cxx_std_17)
+    target_link_libraries(epcsaft_cpp_debug PRIVATE Threads::Threads)
 
     enable_testing()
     add_test(

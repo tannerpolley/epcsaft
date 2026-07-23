@@ -1,4 +1,5 @@
 import ctypes
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 import gc
 import math
@@ -229,6 +230,13 @@ class AqueousMiacSolvationFactorNativeSdkTable(ctypes.Structure):
     )
 
 
+class AqueousMiacBatchNativeSdkTable(ctypes.Structure):
+    _fields_ = AqueousMiacSolvationFactorNativeSdkTable._fields_ + (
+        ("evaluate_aqueous_miac_kij_batch", ctypes.c_void_p),
+        ("evaluate_aqueous_miac_solvation_factor_batch", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -264,6 +272,10 @@ NEUTRAL_REFERENCE_PREFIX_SIZE = (
 )
 AQUEOUS_MIAC_SOLVATION_FACTOR_PREFIX_SIZE = (
     AqueousMiacSolvationFactorNativeSdkTable.evaluate_aqueous_miac_solvation_factor.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+AQUEOUS_MIAC_BATCH_PREFIX_SIZE = (
+    AqueousMiacBatchNativeSdkTable.evaluate_aqueous_miac_solvation_factor_batch.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
@@ -377,6 +389,33 @@ EvaluateAqueousMiacSolvationFactor = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(AqueousMiacSolvationFactorResult),
+)
+
+EvaluateAqueousMiacKijBatch = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.POINTER(AqueousMiacKijResult),
+    ctypes.c_size_t,
+)
+
+EvaluateAqueousMiacSolvationFactorBatch = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.c_double,
+    ctypes.POINTER(AqueousMiacSolvationFactorResult),
+    ctypes.c_size_t,
 )
 
 
@@ -616,6 +655,22 @@ def _aqueous_miac_solvation_factor_table(
     return capsule, table
 
 
+def _aqueous_miac_batch_table(
+    model: EPCSAFT,
+) -> tuple[object, AqueousMiacBatchNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(AqueousMiacBatchNativeSdkTable)
+    ).contents
+    assert table.table_size >= AQUEOUS_MIAC_BATCH_PREFIX_SIZE
+    return capsule, table
+
+
 def _evaluate_aqueous_miac_solvation_factor(
     table: AqueousMiacSolvationFactorNativeSdkTable,
     fingerprint: str,
@@ -638,6 +693,38 @@ def _evaluate_aqueous_miac_solvation_factor(
     )
     assert status == result.status
     return result
+
+
+def _evaluate_aqueous_miac_solvation_factor_batch(
+    table: AqueousMiacBatchNativeSdkTable,
+    fingerprint: str,
+    molalities: tuple[float, ...],
+    solvation_factor: float,
+) -> tuple[AqueousMiacSolvationFactorResult, ...]:
+    molality_values = (ctypes.c_double * len(molalities))(*molalities)
+    results = (AqueousMiacSolvationFactorResult * len(molalities))(
+        *(
+            AqueousMiacSolvationFactorResult(
+                struct_size=ctypes.sizeof(AqueousMiacSolvationFactorResult)
+            )
+            for _ in molalities
+        )
+    )
+    status = EvaluateAqueousMiacSolvationFactorBatch(
+        table.evaluate_aqueous_miac_solvation_factor_batch
+    )(
+        table.model_context,
+        fingerprint.encode(),
+        298.15,
+        100000.0,
+        molality_values,
+        len(molalities),
+        solvation_factor,
+        results,
+        len(molalities),
+    )
+    assert all(result.status == status for result in results)
+    return tuple(results)
 
 
 def _evaluate_neutral_reference(
@@ -694,6 +781,36 @@ def _evaluate_aqueous_miac_kij(
     )
     assert status == result.status
     return result
+
+
+def _evaluate_aqueous_miac_kij_batch(
+    table: AqueousMiacBatchNativeSdkTable,
+    fingerprint: str,
+    molalities: tuple[float, ...],
+    k_ij: tuple[float, float, float],
+) -> tuple[AqueousMiacKijResult, ...]:
+    molality_values = (ctypes.c_double * len(molalities))(*molalities)
+    coordinates = (ctypes.c_double * 3)(*k_ij)
+    results = (AqueousMiacKijResult * len(molalities))(
+        *(
+            AqueousMiacKijResult(struct_size=ctypes.sizeof(AqueousMiacKijResult))
+            for _ in molalities
+        )
+    )
+    status = EvaluateAqueousMiacKijBatch(table.evaluate_aqueous_miac_kij_batch)(
+        table.model_context,
+        fingerprint.encode(),
+        298.15,
+        100000.0,
+        molality_values,
+        len(molalities),
+        coordinates,
+        3,
+        results,
+        len(molalities),
+    )
+    assert all(result.status == status for result in results)
+    return tuple(results)
 
 
 def _evaluate_active_born(
@@ -2952,6 +3069,216 @@ def test_native_sdk_aqueous_miac_solvation_factor_matches_public_value_and_exact
             assert abs(center.derivative - estimates[1]) <= tolerance
 
 
+def test_native_sdk_aqueous_miac_batches_preserve_scalar_results() -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
+    _, table = _aqueous_miac_batch_table(model)
+
+    assert AqueousMiacBatchNativeSdkTable.evaluate_aqueous_miac_kij_batch.offset == 224
+    assert (
+        AqueousMiacBatchNativeSdkTable.evaluate_aqueous_miac_solvation_factor_batch.offset
+        == 232
+    )
+    assert ctypes.sizeof(AqueousMiacBatchNativeSdkTable) == 240
+
+    molalities = (0.001, 1.0, 6.0)
+    solvation_factor = 1.35
+    batch_solvation = _evaluate_aqueous_miac_solvation_factor_batch(
+        table,
+        model.parameter_fingerprint,
+        molalities,
+        solvation_factor,
+    )
+    scalar_solvation = tuple(
+        _evaluate_aqueous_miac_solvation_factor(
+            table,
+            model.parameter_fingerprint,
+            molality,
+            solvation_factor,
+        )
+        for molality in molalities
+    )
+    for batch, scalar in zip(batch_solvation, scalar_solvation, strict=True):
+        assert batch.status == scalar.status == STATUS_OK
+        assert (
+            batch.log_mean_ionic_activity_coefficient_molality
+            == scalar.log_mean_ionic_activity_coefficient_molality
+        )
+        assert batch.derivative == scalar.derivative
+        assert (
+            batch.reference_molality_mol_per_kg
+            == scalar.reference_molality_mol_per_kg
+        )
+        assert batch.reference_convergence_error == scalar.reference_convergence_error
+        assert (
+            batch.reference_derivative_convergence_error
+            == scalar.reference_derivative_convergence_error
+        )
+        assert batch.parameter_fingerprint == scalar.parameter_fingerprint
+        assert batch.error == scalar.error == b""
+
+    coordinates = (-0.2, -0.3, 0.4)
+    batch_kij = _evaluate_aqueous_miac_kij_batch(
+        table,
+        model.parameter_fingerprint,
+        molalities,
+        coordinates,
+    )
+    scalar_kij = tuple(
+        _evaluate_aqueous_miac_kij(
+            table,
+            model.parameter_fingerprint,
+            molality,
+            coordinates,
+        )
+        for molality in molalities
+    )
+    for batch, scalar in zip(batch_kij, scalar_kij, strict=True):
+        assert batch.status == scalar.status == STATUS_OK
+        assert (
+            batch.log_mean_ionic_activity_coefficient_molality
+            == scalar.log_mean_ionic_activity_coefficient_molality
+        )
+        assert tuple(batch.derivative) == tuple(scalar.derivative)
+        assert (
+            batch.reference_molality_mol_per_kg
+            == scalar.reference_molality_mol_per_kg
+        )
+        assert batch.reference_convergence_error == scalar.reference_convergence_error
+        assert (
+            batch.reference_derivative_convergence_error
+            == scalar.reference_derivative_convergence_error
+        )
+        assert batch.parameter_fingerprint == scalar.parameter_fingerprint
+        assert batch.error == scalar.error == b""
+
+
+def test_native_sdk_aqueous_miac_batches_fail_closed() -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
+    _, table = _aqueous_miac_batch_table(model)
+    molalities = (ctypes.c_double * 2)(0.001, 6.0)
+    malformed = (AqueousMiacSolvationFactorResult * 2)(
+        AqueousMiacSolvationFactorResult(
+            struct_size=ctypes.sizeof(AqueousMiacSolvationFactorResult) - 1,
+            status=123,
+        ),
+        AqueousMiacSolvationFactorResult(
+            struct_size=ctypes.sizeof(AqueousMiacSolvationFactorResult),
+            status=456,
+        ),
+    )
+    malformed_before = bytes(malformed)
+    malformed_status = EvaluateAqueousMiacSolvationFactorBatch(
+        table.evaluate_aqueous_miac_solvation_factor_batch
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        molalities,
+        2,
+        1.35,
+        malformed,
+        2,
+    )
+    assert malformed_status == STATUS_ABI_MISMATCH
+    assert bytes(malformed) == malformed_before
+
+    solvation_results = (AqueousMiacSolvationFactorResult * 2)(
+        *(
+            AqueousMiacSolvationFactorResult(
+                struct_size=ctypes.sizeof(AqueousMiacSolvationFactorResult)
+            )
+            for _ in range(2)
+        )
+    )
+    solvation_status = EvaluateAqueousMiacSolvationFactorBatch(
+        table.evaluate_aqueous_miac_solvation_factor_batch
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        molalities,
+        1,
+        1.35,
+        solvation_results,
+        2,
+    )
+    assert solvation_status == STATUS_ABI_MISMATCH
+    assert all(result.status == solvation_status for result in solvation_results)
+    assert all(
+        math.isnan(result.log_mean_ionic_activity_coefficient_molality)
+        for result in solvation_results
+    )
+    assert all(result.error for result in solvation_results)
+
+    coordinates = (ctypes.c_double * 3)(-0.2, -0.3, 0.4)
+    kij_results = (AqueousMiacKijResult * 2)(
+        *(
+            AqueousMiacKijResult(
+                struct_size=ctypes.sizeof(AqueousMiacKijResult)
+            )
+            for _ in range(2)
+        )
+    )
+    kij_status = EvaluateAqueousMiacKijBatch(
+        table.evaluate_aqueous_miac_kij_batch
+    )(
+        table.model_context,
+        b"sha256:wrong",
+        298.15,
+        100000.0,
+        molalities,
+        2,
+        coordinates,
+        3,
+        kij_results,
+        2,
+    )
+    assert kij_status == STATUS_UNSUPPORTED_MODEL
+    assert all(result.status == kij_status for result in kij_results)
+    assert all(
+        math.isnan(result.log_mean_ionic_activity_coefficient_molality)
+        and all(math.isnan(value) for value in result.derivative)
+        for result in kij_results
+    )
+    assert all(result.error for result in kij_results)
+
+
+def test_native_sdk_aqueous_miac_batch_serializes_other_cppad_callbacks() -> None:
+    electrolyte = _electrolyte_model(
+        ("water", "sodium-cation", "bromide-anion")
+    )
+    batch_capsule, batch_table = _aqueous_miac_batch_table(electrolyte)
+    pure_capsule, pure_table = _table(
+        _model("gross-2001-methane-ethane", "methane")
+    )
+    assert batch_capsule is not None
+    assert pure_capsule is not None
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        batch_future = executor.submit(
+            _evaluate_aqueous_miac_kij_batch,
+            batch_table,
+            electrolyte.parameter_fingerprint,
+            (0.001, 1.0, 6.0),
+            (-0.2, -0.3, 0.4),
+        )
+        phase_future = executor.submit(
+            _evaluate,
+            pure_table,
+            150.0,
+            1.0,
+            1.0e-3,
+        )
+        batch = batch_future.result(timeout=60.0)
+        phase = phase_future.result(timeout=60.0)
+
+    assert all(result.status == STATUS_OK for result in batch)
+    assert phase.status == STATUS_OK
+    assert math.isfinite(phase.helmholtz_over_rt_reference_amount)
+
+
 def test_native_sdk_staged_figiel_user_bundles_are_narrowly_admitted() -> None:
     nacl = _figiel_trial_model(("water", "sodium-cation", "chloride-anion"))
     _, nacl_table = _aqueous_miac_solvation_factor_table(nacl)
@@ -3077,7 +3404,9 @@ def test_native_sdk_aqueous_miac_solvation_factor_installed_header_layout() -> N
 
 _Static_assert(offsetof(epcsaft_native_sdk_v1, aqueous_miac_solvation_factor_result_size) == 208, "result-size offset");
 _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_solvation_factor) == 216, "callback offset");
-_Static_assert(sizeof(epcsaft_native_sdk_v1) == 224, "table size");
+_Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_kij_batch) == 224, "kij batch callback offset");
+_Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_solvation_factor_batch) == 232, "solvation-factor batch callback offset");
+_Static_assert(sizeof(epcsaft_native_sdk_v1) == 240, "table size");
 _Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, log_mean_ionic_activity_coefficient_molality) == 8, "value offset");
 _Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, derivative) == 16, "derivative offset");
 _Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, parameter_fingerprint) == 48, "fingerprint offset");
