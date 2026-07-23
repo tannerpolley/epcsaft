@@ -50,6 +50,20 @@ assert pressure_specified.component_ids == model.component_ids
 assert pressure_specified.mole_fractions == (0.4, 0.6)
 ```
 
+## Direct C++ debug harness
+
+For local debugging and custom-model experiments, configure the optional
+unsupported direct-C++ harness with `-DEPCSAFT_ENABLE_CPP_DEBUG=ON`, then build
+the `epcsaft_cpp_debug` target and run its `epcsaft_cpp_debug_smoke` CTest. The
+command-line interface requires every `NativeParameters` field, temperature,
+molar density, and mole-fraction value explicitly; `--help` documents the
+units and comma-separated list conventions.
+
+This target is off by default, is not installed or exported by wheel builds,
+and has no public C++ ABI or production-consumer support. It calls the same
+`NativeModel::evaluate` implementation used by `_core` without importing
+Python at runtime.
+
 For a bounded Figiel electrolyte, construct one explicit reference state and
 reuse it across concentrations:
 

@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.20)
 
 project(${SKBUILD_PROJECT_NAME} VERSION ${SKBUILD_PROJECT_VERSION} LANGUAGES CXX)
 
+option(
+    EPCSAFT_ENABLE_CPP_DEBUG
+    "Build the unsupported direct-C++ debug/custom-state harness"
+    OFF
+)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -98,3 +104,31 @@ endif()
 target_compile_features(_core PRIVATE cxx_std_17)
 
 install(TARGETS _core LIBRARY DESTINATION epcsaft RUNTIME DESTINATION epcsaft)
+
+if(EPCSAFT_ENABLE_CPP_DEBUG)
+    add_executable(
+        epcsaft_cpp_debug
+        src/epcsaft/_native/cpp_debug_main.cpp
+        src/epcsaft/_native/eos.cpp
+    )
+    target_include_directories(epcsaft_cpp_debug PRIVATE src/epcsaft/_native)
+    target_include_directories(
+        epcsaft_cpp_debug SYSTEM PRIVATE "${EPCSAFT_CPPAD_INCLUDE_DIR}"
+    )
+    if(EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR)
+        target_include_directories(
+            epcsaft_cpp_debug SYSTEM PRIVATE
+            "${EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR}"
+        )
+    endif()
+    target_compile_features(epcsaft_cpp_debug PRIVATE cxx_std_17)
+
+    enable_testing()
+    add_test(
+        NAME epcsaft_cpp_debug_smoke
+        COMMAND
+            "${CMAKE_COMMAND}"
+            "-DEPCSAFT_CPP_DEBUG_EXECUTABLE=$<TARGET_FILE:epcsaft_cpp_debug>"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/cpp_debug_harness.cmake"
+    )
+endif()
