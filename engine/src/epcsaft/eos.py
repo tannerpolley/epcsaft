@@ -249,11 +249,17 @@ def _native_arguments(
 def _figiel_staged_trial_bundle_admitted(
     parameters: ParameterSet, model: _ResolvedModel
 ) -> bool:
+    admitted_component_order = (
+        model.component_ids in _FIGIEL_STAGED_AQUEOUS_SELECTIONS
+        and model.charge_number == (0, 1, -1)
+    ) or (
+        model.component_ids in _FIGIEL_STAGED_ACTIVE_BORN_SELECTIONS
+        and model.charge_number == (0, -1, 1)
+    )
     if (
         parameters.bundle_purpose != "user-provided"
         or model.topology != "ionic-ssm-ds"
-        or model.component_ids not in _FIGIEL_STAGED_AQUEOUS_SELECTIONS
-        or model.charge_number != (0, 1, -1)
+        or not admitted_component_order
         or model.temperature_min_k != 298.15
         or model.temperature_max_k != 298.15
         or model.pressure_min_pa != 100000.0
@@ -493,7 +499,10 @@ def native_sdk(model: EPCSAFT) -> object:
     )
     aqueous_kij_admitted = (
         fingerprint in _NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS
-        or staged_trial_admitted
+        or (
+            staged_trial_admitted
+            and model._component_ids in _FIGIEL_STAGED_AQUEOUS_SELECTIONS
+        )
     )
     aqueous_solvation_factor_admitted = (
         fingerprint
