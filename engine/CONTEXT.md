@@ -30,6 +30,13 @@ An exact selected model from a persisted `user-provided` bundle can use the
 generic model-bound native phase, volume-domain, and packing callbacks. This
 transport admission does not admit source-specific native reference or active-
 parameter callbacks and does not make caller-owned values predictive.
+`ParameterBundle.catalog()` exposes the immutable installed bundles for
+discovery. State and ionic-activity results repeat their component order, and
+state results retain canonical temperature, composition, and parameter
+fingerprint. Structured state errors preserve the rejected field, reason, and
+applicable units, limits, or tolerances. The distributed Python interface is
+marked with `py.typed` and exposes literal types for phases, purposes, domains,
+and parameter families; runtime validation remains the scientific authority.
 The installed catalogs are Gross--Sadowski methane/ethane and propane records,
 the bounded Figiel--Yu--Held water/methanol/ethanol chloride/bromide source
 bundle, a distinct aqueous Na+/K+/I- source bundle, one distinct Khudaida et al.

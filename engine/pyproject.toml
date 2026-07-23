@@ -21,3 +21,9 @@ ninja.version = ">=1.11"
 
 [tool.ruff]
 line-length = 100
+
+[tool.mypy]
+files = ["tests/typecheck/public_api.py"]
+follow_imports = "silent"
+python_version = "3.11"
+strict = true

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 from math import gcd
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import pint
 
@@ -42,7 +42,10 @@ def _log_fugacity(
 
 @dataclass(frozen=True, slots=True)
 class IonicActivity:
-    formula_unit_molality: pint.Quantity
+    """Immutable electrolyte activity result in the complete model component order."""
+
+    component_ids: tuple[str, ...]
+    formula_unit_molality: pint.Quantity[float]
     mole_fractions: tuple[float, ...]
     ion_component_ids: tuple[str, str]
     single_ion_activity_coefficients: tuple[float, float]
@@ -54,7 +57,7 @@ class IonicActivity:
 @dataclass(frozen=True, slots=True)
 class TransferFreeEnergy:
     ion_component_ids: tuple[str, str]
-    values: tuple[pint.Quantity, pint.Quantity]
+    values: tuple[pint.Quantity[float], pint.Quantity[float]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,11 +66,11 @@ class ElectrolyteReference:
     ion_component_ids: tuple[str, str]
     formula_stoichiometry: tuple[int, int]
     solvent_mole_fractions: tuple[float, ...]
-    temperature: pint.Quantity
-    pressure: pint.Quantity
+    temperature: pint.Quantity[float]
+    pressure: pint.Quantity[float]
     phase: str
     infinite_dilution_log_fugacity_coefficient: tuple[float, float]
-    reference_molality: pint.Quantity
+    reference_molality: pint.Quantity[float]
     convergence_error: float
     _eos: EPCSAFT
     _ion_indices: tuple[int, int]
@@ -75,7 +78,9 @@ class ElectrolyteReference:
     _pure_water_log_fugacity: float | None
 
     @property
-    def solvation_free_energy(self) -> tuple[pint.Quantity, pint.Quantity]:
+    def solvation_free_energy(
+        self,
+    ) -> tuple[pint.Quantity[float], pint.Quantity[float]]:
         scale = (
             _MOLAR_GAS_CONSTANT
             * self.temperature.to("kelvin").magnitude
@@ -152,6 +157,7 @@ class ElectrolyteReference:
             if not math.isfinite(osmotic_coefficient):
                 raise _eos_error("reference-state-failed", reason="nonfinite-osmotic-coefficient")
         return IonicActivity(
+            component_ids=self.component_ids,
             formula_unit_molality=molality * unit_registry.mole / unit_registry.kilogram,
             mole_fractions=composition,
             ion_component_ids=self.ion_component_ids,
@@ -198,7 +204,7 @@ def build_reference_state(
     temperature: object,
     pressure: object,
     solvent_mole_fractions: object,
-    phase: str,
+    phase: Literal["liquid"],
 ) -> ElectrolyteReference:
     temperature_k = _state_magnitude(temperature, "kelvin", "temperature")
     pressure_pa = _state_magnitude(pressure, "pascal", "pressure")

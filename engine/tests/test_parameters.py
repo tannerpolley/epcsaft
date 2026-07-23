@@ -8,7 +8,7 @@ import pytest
 from pint import UnitRegistry
 
 import epcsaft
-from epcsaft import ParameterBundle, ParameterError, ParameterSet, unit_registry
+from epcsaft import BundlePurpose, ParameterBundle, ParameterError, ParameterSet, unit_registry
 from epcsaft._canonical import _bundle_json
 from epcsaft.records import (
     AssociationParameterRecord,
@@ -84,6 +84,7 @@ def _from_records(
     *,
     reverse: bool = False,
     ionic_permittivity: object = Decimal("8"),
+    purpose: BundlePurpose = "package-test-fixture",
 ):
     source, domain, components, singles, pair = _bundle_records(registry, reverse=reverse)
     models = [
@@ -105,7 +106,7 @@ def _from_records(
     return ParameterBundle.from_records(
         bundle_id="test-bundle",
         bundle_version=1,
-        purpose="package-test-fixture",
+        purpose=purpose,
         sources=(source,),
         domains=(domain,),
         components=components,
@@ -425,20 +426,6 @@ def _error_code(call) -> str:
 
 
 def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
-    assert epcsaft.__all__ == (
-        "ParameterBundle",
-        "ParameterSet",
-        "ParameterError",
-        "unit_registry",
-        "EPCSAFT",
-        "EosResult",
-        "DensityDiagnostics",
-        "EosError",
-        "native_sdk",
-        "ElectrolyteReference",
-        "IonicActivity",
-        "TransferFreeEnergy",
-    )
     foreign = UnitRegistry()
     bundle = _from_records()
     equivalent = _from_records(foreign, reverse=True)
@@ -716,6 +703,40 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
         "duplicate-record",
         "missing-record",
         "invalid-selection",
+    }
+
+
+def test_catalog_discovery_returns_sorted_immutable_bundles() -> None:
+    catalog = ParameterBundle.catalog()
+
+    assert isinstance(catalog, tuple)
+    assert tuple((bundle.bundle_id, bundle.bundle_version) for bundle in catalog) == tuple(
+        sorted((bundle.bundle_id, bundle.bundle_version) for bundle in catalog)
+    )
+    assert {bundle.bundle_id for bundle in catalog} == {
+        "ascani-2022-case-study-2-electrolyte-lle",
+        "figiel-2025-aqueous-iodides",
+        "figiel-2025-reference-electrolytes",
+        "gross-2001-methane-ethane",
+        "gross-2001-propane",
+        "khudaida-2026-figure-2-electrolyte-lle",
+    }
+    assert all(bundle.purpose == "installed-catalog" for bundle in catalog)
+    assert all(bundle.components and bundle.domains and bundle.sources for bundle in catalog)
+
+
+def test_catalog_loading_rejects_a_non_catalog_bundle(tmp_path: Path) -> None:
+    bundle = _from_records(purpose="user-provided")
+    path = tmp_path / "test-bundle"
+    bundle.to_path(path)
+
+    with pytest.raises(ParameterError) as exc_info:
+        ParameterBundle._from_catalog_path("test-bundle", 1, path)
+
+    assert exc_info.value.code == "invalid-schema"
+    assert dict(exc_info.value.context) == {
+        "field": "catalog-purpose",
+        "value": "user-provided",
     }
 
 

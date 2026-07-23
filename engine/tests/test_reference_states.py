@@ -56,6 +56,7 @@ def test_activity_follows_figiel_reference_and_scale_equations() -> None:
 
     activity = reference.at_molality(0.1 * unit_registry.mole / unit_registry.kilogram)
     assert isinstance(activity, IonicActivity)
+    assert activity.component_ids == model.component_ids
     state = model.evaluate(
         temperature=reference.temperature,
         pressure=reference.pressure,

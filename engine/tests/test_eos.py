@@ -83,12 +83,14 @@ def test_native_model_boundary_is_ordered_strict_and_immutable() -> None:
     assert epcsaft.__all__ == (
         "ParameterBundle",
         "ParameterSet",
+        "BundlePurpose",
         "ParameterError",
         "unit_registry",
         "EPCSAFT",
         "EosResult",
         "DensityDiagnostics",
         "EosError",
+        "Phase",
         "native_sdk",
         "ElectrolyteReference",
         "IonicActivity",
@@ -119,6 +121,10 @@ def test_gross_hard_chain_dispersion_and_pressure_goldens(
     )
 
     assert isinstance(result, epcsaft.EosResult)
+    assert result.component_ids == model.component_ids
+    assert result.mole_fractions == fractions
+    assert result.temperature.to("kelvin").magnitude == pytest.approx(temperature)
+    assert result.parameter_fingerprint == model.parameter_fingerprint
     assert result.hard_chain == pytest.approx(hard_chain, rel=5e-12, abs=5e-13)
     assert result.dispersion == pytest.approx(dispersion, rel=5e-12, abs=5e-13)
     assert result.association == 0.0
@@ -226,6 +232,83 @@ def test_evaluate_rejects_invalid_states_and_has_physical_limits() -> None:
         )
     assert exc_info.value.code == "evaluation-failed"
     assert exc_info.value.context
+
+
+@pytest.mark.parametrize(
+    "override,expected_context",
+    (
+        (
+            {"temperature": 250.0},
+            {
+                "field": "temperature",
+                "reason": "invalid-unit",
+                "expected_unit": "kelvin",
+            },
+        ),
+        (
+            {"temperature": 50 * unit_registry.kelvin},
+            {
+                "field": "temperature",
+                "reason": "outside-domain",
+                "value": "50.0",
+                "minimum": "97.0",
+                "maximum": "300.0",
+                "unit": "kelvin",
+            },
+        ),
+        (
+            {"mole_fractions": (0.4, 0.61)},
+            {
+                "field": "mole_fractions",
+                "reason": "not-normalized",
+                "value": "1.01",
+                "expected": "1.0",
+                "tolerance": "1e-12",
+            },
+        ),
+        (
+            {"molar_density": None, "pressure": 1 * unit_registry.meter},
+            {
+                "field": "pressure",
+                "reason": "invalid-unit",
+                "expected_unit": "pascal",
+            },
+        ),
+        (
+            {
+                "molar_density": -1 * unit_registry.mole / unit_registry.meter**3,
+            },
+            {
+                "field": "molar_density",
+                "reason": "nonpositive",
+                "value": "-1.0",
+            },
+        ),
+        (
+            {"temperature": float("nan") * unit_registry.kelvin},
+            {
+                "field": "temperature",
+                "reason": "nonfinite",
+                "value": "nan",
+            },
+        ),
+    ),
+)
+def test_invalid_state_errors_explain_the_rejected_input(
+    override: dict[str, object], expected_context: dict[str, str]
+) -> None:
+    state = {
+        "temperature": 250 * unit_registry.kelvin,
+        "molar_density": 8000 * unit_registry.mole / unit_registry.meter**3,
+        "mole_fractions": (0.4, 0.6),
+        **override,
+    }
+
+    with pytest.raises(EosError) as exc_info:
+        _model().evaluate(**state)
+
+    assert exc_info.value.code == "invalid-state"
+    assert dict(exc_info.value.context) == expected_context
 
 
 def test_eos_error_contract_is_stable_and_immutable() -> None:

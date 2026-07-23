@@ -17,6 +17,10 @@ installed bundle IDs, component discovery and ordering, Pint state inputs,
 density and pressure routes, root selection, result interpretation,
 electrolyte activities, and stable errors.
 
+`ParameterBundle.catalog()` returns the installed bundles as an immutable tuple.
+You can inspect exact IDs, versions, components, sources, and domains without a
+mutable registry.
+
 The same guide includes a complete [user-provided bundle
 workflow](docs/python-api.md#user-provided-parameter-bundles). Create typed
 caller records with `ParameterBundle.from_records(...)`, persist the bundle
@@ -42,6 +46,8 @@ pressure_specified = model.evaluate(
     pressure=10 * u.bar,
     mole_fractions=(0.4, 0.6),
 )
+assert pressure_specified.component_ids == model.component_ids
+assert pressure_specified.mole_fractions == (0.4, 0.6)
 ```
 
 For a bounded Figiel electrolyte, construct one explicit reference state and
@@ -147,6 +153,10 @@ potentials, fugacity coefficients when defined, and residual entropy, internal
 energy, enthalpy, `C_V`, and `C_P` when defined. Pressure-specified states also
 return immutable root diagnostics with the bracket, pressure residual,
 `dP/dρ`, iteration count, mechanical-stability status, and branch.
+Each result also carries its canonical temperature, ordered composition,
+component IDs, and parameter fingerprint. Distributed wheels include `py.typed`;
+the public interface provides Pint quantity, phase, bundle-purpose, domain, and
+parameter-family annotations for static tooling.
 The model-neutral `born` field carries the Born contribution selected by the
 immutable parameter bundle, whether corrected SSM+DS or original Born.
 
