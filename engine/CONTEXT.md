@@ -137,14 +137,18 @@ staged active callbacks. This is Provider transport evidence, not a fit,
 catalog change, scientific acceptance, or authority transfer.
 
 Project Truss Provider issue `#10` adds a separate append-only installed-SDK
-candidate for charge-neutral reacting standard references. It returns the
+candidate for charge-neutral reacting standard references. For an admitted
+aqueous phase model with one explicit water reference carrier, it returns a
 complete neutral stoichiometric basis and gauge-invariant reference
-log-fugacity contractions for the exact current six aqueous chloride/bromide
-Figiel selections, including arbitrary component permutations. The same
-reference-sequence and pressure-state owners supply the values; no single-ion
-standard, reaction constant, reaction solver, chemistry selector, or broader
-catalog admission is introduced. The result explicitly reports that `T`, `P`,
-composition, and parameter derivatives are unavailable.
+log-fugacity contractions for any number of neutral components, cations, and
+anions. The exact current Figiel selections retain their existing admission;
+full admitted catalog and authenticated `user-provided` phase models can use
+the same tail. Unknown caller-owned applicability transports the dimensions
+but fails value evaluation until finite source temperature and pressure bounds
+exist. The same reference-sequence and pressure-state owners supply the values;
+no single-ion standard, reaction constant, reaction solver, chemistry selector,
+or catalog admission is introduced. The result explicitly reports that `T`,
+`P`, composition, and parameter derivatives are unavailable.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.

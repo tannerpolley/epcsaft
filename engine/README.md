@@ -79,10 +79,16 @@ declaration-only C header is installed at
 
 The append-only neutral-reference candidate returns a complete charge-neutral
 stoichiometric basis and its dimensionless reference log-fugacity contractions
-for each admitted single-water chloride/bromide Figiel model. Component order,
-charges, source fingerprint, salt-free composition, solvent molar mass,
-source-domain state, convergence, and the Helmholtz basis are explicit. It
-returns no derivatives or absolute single-ion standards; reaction constants,
+for an admitted aqueous phase model containing one explicit water reference
+carrier, any neutral components, and one or more cations and anions. Neutral
+unit rows use their infinite-dilution fugacity in the reported pure-water
+composition; minimal cation/anion formula-unit rows use the canonical
+four-molality limits. Component order, charges, source fingerprint,
+composition, solvent molar mass, source-domain state, convergence, and the
+Helmholtz basis are explicit. Authenticated user bundles with unknown
+applicability expose the topology but fail value evaluation until finite source
+temperature and pressure bounds are supplied. The callback returns no
+derivatives or absolute single-ion standards; reaction constants, source
 standard-state transformation, and equilibrium remain consumer-owned.
 
 The same table has an additive pure-parameter entry for the first methane

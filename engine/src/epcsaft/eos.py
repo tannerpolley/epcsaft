@@ -504,10 +504,23 @@ def native_sdk(model: EPCSAFT) -> object:
             == ("water", "sodium-cation", "bromide-anion")
         )
     )
-    neutral_reference_admitted = frozenset(model._component_ids) in (
+    catalog_neutral_reference_admitted = frozenset(model._component_ids) in (
         _NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS.get(
             model._parameter_bundle_fingerprint, frozenset()
         )
+    )
+    neutral_reference_admitted = catalog_neutral_reference_admitted or (
+        phase_admitted
+        and len(model._model.charge_number) == len(model._component_ids)
+        and sum(
+            component_id == "water" and charge == 0
+            for component_id, charge in zip(
+                model._component_ids, model._model.charge_number, strict=True
+            )
+        )
+        == 1
+        and any(charge > 0 for charge in model._model.charge_number)
+        and any(charge < 0 for charge in model._model.charge_number)
     )
     if (
         not phase_admitted
