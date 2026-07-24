@@ -2,6 +2,7 @@
 #include <epcsaft/native_sdk_v1.h>
 
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <vector>
 
@@ -17,7 +18,10 @@ int main(int argc, char** argv) {
         return 3;
     }
     const epcsaft_native_sdk_v1* sdk = epcsaft_native_model_sdk_v1(model);
+    const char* fingerprint = epcsaft_native_model_fingerprint_v1(model);
     const bool valid = sdk != nullptr
+        && fingerprint != nullptr
+        && std::strncmp(fingerprint, "sha256:", 7) == 0
         && sdk->abi_version == EPCSAFT_NATIVE_SDK_V1_ABI_VERSION
         && sdk->component_count == 2
         && sdk->evaluate_mixture_phase != nullptr;

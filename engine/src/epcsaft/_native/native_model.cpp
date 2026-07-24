@@ -17,6 +17,7 @@
 
 struct epcsaft_native_model_handle_v1 {
     const epcsaft_native_sdk_v1* sdk;
+    std::string fingerprint;
 };
 
 namespace {
@@ -89,9 +90,11 @@ extern "C" epcsaft_native_model_handle_v1* epcsaft_native_model_load_v1(
         const epcsaft::NativeModel model(
             parameters(document.at("native_parameters"))
         );
+        const std::string fingerprint =
+            sdk.at("parameter_fingerprint").get<std::string>();
         const epcsaft_native_sdk_v1* table = epcsaft::create_native_sdk_v1(
             model,
-            sdk.at("parameter_fingerprint").get<std::string>(),
+            fingerprint,
             optional_limit(sdk, "temperature_min_k"),
             optional_limit(sdk, "temperature_max_k"),
             sdk.at("component_ids").get<std::vector<std::string>>(),
@@ -106,7 +109,7 @@ extern "C" epcsaft_native_model_handle_v1* epcsaft_native_model_load_v1(
             sdk.at("aqueous_solvation_factor_admitted").get<bool>(),
             sdk.at("staged_trial_bundle_admitted").get<bool>()
         );
-        return new epcsaft_native_model_handle_v1{table};
+        return new epcsaft_native_model_handle_v1{table, fingerprint};
     } catch (const std::exception& exception) {
         copy_error(exception.what(), error, error_capacity);
         return nullptr;
@@ -120,6 +123,12 @@ extern "C" const epcsaft_native_sdk_v1* epcsaft_native_model_sdk_v1(
     const epcsaft_native_model_handle_v1* model
 ) {
     return model == nullptr ? nullptr : model->sdk;
+}
+
+extern "C" const char* epcsaft_native_model_fingerprint_v1(
+    const epcsaft_native_model_handle_v1* model
+) {
+    return model == nullptr ? nullptr : model->fingerprint.c_str();
 }
 
 extern "C" void epcsaft_native_model_destroy_v1(

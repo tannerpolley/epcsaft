@@ -60,6 +60,8 @@ model format for native consumers. Installed wheels export the CMake target
 returned `epcsaft_native_sdk_v1` table, and releases it with
 `epcsaft_native_model_destroy_v1`. This is the supported installed transport;
 it exposes no Provider C++ implementation types or EOS equations.
+`epcsaft_native_model_fingerprint_v1` returns the handle-owned model identity
+for downstream result and callback validation.
 
 For local Provider debugging, configure `-DEPCSAFT_ENABLE_CPP_DEBUG=ON`, build
 `epcsaft_cpp_debug`, and run its `epcsaft_cpp_debug_smoke` CTest. The executable

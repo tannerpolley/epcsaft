@@ -26,6 +26,11 @@ const epcsaft_native_sdk_v1* epcsaft_native_model_sdk_v1(
     const epcsaft_native_model_handle_v1* model
 );
 
+/* The returned string remains valid until the model handle is destroyed. */
+const char* epcsaft_native_model_fingerprint_v1(
+    const epcsaft_native_model_handle_v1* model
+);
+
 void epcsaft_native_model_destroy_v1(epcsaft_native_model_handle_v1* model);
 
 #ifdef __cplusplus
