@@ -169,6 +169,8 @@ owners:
   native_phase_block: src/epcsaft/_native/phase_block.hpp
   native_consumer_transport: src/epcsaft/_native/native_sdk.cpp
   native_consumer_declaration: src/epcsaft/include/epcsaft/native_sdk_v1.h
+  native_model_transport: src/epcsaft/_native/native_model.cpp
+  native_model_declaration: src/epcsaft/include/epcsaft/native_model_v1.h
   density_closure: src/epcsaft/_native/density.hpp
   electrolyte_reference: src/epcsaft/reference.py
   installed_parameter_data: src/epcsaft/data/bundles
@@ -190,6 +192,7 @@ public_surface:
     - DensityDiagnostics
     - EosError
     - Phase
+    - export_native_model
     - native_sdk
     - ElectrolyteReference
     - IonicActivity
@@ -202,18 +205,26 @@ public_surface:
     - CMake
     - Ninja
     - CppAD 20250000.3
+    - nlohmann-json 3.11.3
   native_modules:
     - epcsaft._core
-  native_targets: 1
+  native_targets: 2
+  installed_native_targets:
+    - name: epcsaft::native_sdk
+      library: epcsaft/lib/libepcsaft_native_sdk.a
+      cmake_config: epcsaft/cmake/epcsaftConfig.cmake
+      model_format: epcsaft-resolved-native-model-v1
+      lifetime_owner: epcsaft_native_model_handle_v1
+      public_cpp_types: false
   optional_native_debug_targets:
     - name: epcsaft_cpp_debug
       cmake_option: EPCSAFT_ENABLE_CPP_DEBUG
       source: src/epcsaft/_native/cpp_debug_main.cpp
       test: tests/cpp_debug_harness.cmake
-      owner: NativeModel::evaluate
+      owner: epcsaft::native_sdk
       installed: false
       public_abi: false
-      status: local-debug-and-custom-experiment-only
+      status: local-debug-over-supported-installed-transport
   native_sdk_entries:
     - capsule: epcsaft.native_sdk.v1
       entry: evaluate_pure_phase

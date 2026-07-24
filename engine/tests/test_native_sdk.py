@@ -10,7 +10,14 @@ import subprocess
 import pytest
 
 import epcsaft
-from epcsaft import EPCSAFT, EosError, ParameterBundle, native_sdk, unit_registry
+from epcsaft import (
+    EPCSAFT,
+    EosError,
+    ParameterBundle,
+    export_native_model,
+    native_sdk,
+    unit_registry,
+)
 from epcsaft._core import NativeModel, native_sdk_v1 as _native_sdk_v1
 from epcsaft.eos import _native_arguments
 from epcsaft.records import (
@@ -33,6 +40,21 @@ STATUS_UNSUPPORTED_MODEL = 2
 STATUS_DOMAIN_ERROR = 3
 STATUS_EVALUATION_ERROR = 4
 STATUS_ABI_MISMATCH = 5
+
+
+def test_resolved_model_artifact_is_native_loadable(tmp_path: Path) -> None:
+    model = EPCSAFT(
+        ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
+            ("methane", "ethane")
+        )
+    )
+    artifact = tmp_path / "model.json"
+
+    export_native_model(model, artifact)
+
+    payload = artifact.read_text(encoding="utf-8")
+    assert '"schema":"epcsaft-resolved-native-model-v1"' in payload
+    assert model.parameter_fingerprint in payload
 
 
 class PhaseBlockResult(ctypes.Structure):

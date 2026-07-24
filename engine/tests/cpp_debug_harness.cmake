@@ -1,34 +1,17 @@
 if(NOT DEFINED EPCSAFT_CPP_DEBUG_EXECUTABLE)
     message(FATAL_ERROR "EPCSAFT_CPP_DEBUG_EXECUTABLE is required")
 endif()
+if(NOT DEFINED EPCSAFT_CPP_DEBUG_MODEL)
+    message(FATAL_ERROR "EPCSAFT_CPP_DEBUG_MODEL is required")
+endif()
 
 execute_process(
     COMMAND
         "${EPCSAFT_CPP_DEBUG_EXECUTABLE}"
+        "--model-config=${EPCSAFT_CPP_DEBUG_MODEL}"
         --temperature-k=250
         --molar-density-mol-per-m3=1000
-        --mole-fractions=1
-        --segment-count=1
-        --sigma-constant-angstrom=3.7039
-        --sigma-term-component=
-        --sigma-term-amplitude=
-        --sigma-term-exponent=
-        --dispersion-energy-over-k-k=150.03
-        --k-ij=0
-        --l-ij=0
-        --site-component=
-        --site-multiplicity=
-        --association-active=
-        --association-energy-over-k-k=
-        --association-volume=
-        --molar-mass-kg-per-mol=0.016043
-        --charge-number=0
-        --relative-permittivity=1
-        --dielectric-ion-suppression-coefficient=1
-        --born-diameter-angstrom=1
-        --solvation-factor=1
-        --ionic-region-relative-permittivity=1
-        --electrolyte-model=0
+        --mole-fractions=0.4,0.6
     RESULT_VARIABLE result
     OUTPUT_VARIABLE output
     ERROR_VARIABLE error_output
@@ -40,10 +23,8 @@ endif()
 
 foreach(expected IN ITEMS
     "pressure_pa="
-    "residual_helmholtz="
-    "residual_chemical_potential_over_rt=["
-    "log_fugacity_coefficient=["
-    "density_diagnostics=unavailable"
+    "helmholtz_over_rt_reference_amount="
+    "parameter_fingerprint=sha256:"
 )
     string(FIND "${output}" "${expected}" position)
     if(position EQUAL -1)

@@ -1,5 +1,5 @@
 #include "eos.hpp"
-#include "native_sdk.hpp"
+#include "native_sdk_pybind.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

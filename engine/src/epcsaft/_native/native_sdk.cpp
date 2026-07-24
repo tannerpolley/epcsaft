@@ -4,8 +4,6 @@
 
 #include <epcsaft/native_sdk_v1.h>
 
-#include <pybind11/pybind11.h>
-
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -1608,7 +1606,7 @@ struct NativeSdkEndpoint final {
 
 }  // namespace
 
-pybind11::capsule make_native_sdk_v1(
+const epcsaft_native_sdk_v1* create_native_sdk_v1(
     const NativeModel& model,
     const std::string& parameter_fingerprint,
     double temperature_min_k,
@@ -1730,21 +1728,13 @@ pybind11::capsule make_native_sdk_v1(
         neutral_reference_admitted,
         aqueous_solvation_factor_admitted
     );
-    return pybind11::capsule(
-        &endpoint->table,
-        EPCSAFT_NATIVE_SDK_V1_CAPSULE_NAME,
-        [](PyObject* capsule) {
-            void* pointer = PyCapsule_GetPointer(
-                capsule, EPCSAFT_NATIVE_SDK_V1_CAPSULE_NAME
-            );
-            if (pointer == nullptr) {
-                PyErr_Clear();
-                return;
-            }
-            const auto* table = static_cast<const epcsaft_native_sdk_v1*>(pointer);
-            delete static_cast<const NativeSdkEndpoint*>(table->model_context);
-        }
-    );
+    return &endpoint->table;
+}
+
+void destroy_native_sdk_v1(const epcsaft_native_sdk_v1* sdk) noexcept {
+    if (sdk != nullptr) {
+        delete static_cast<const NativeSdkEndpoint*>(sdk->model_context);
+    }
 }
 
 }  // namespace epcsaft

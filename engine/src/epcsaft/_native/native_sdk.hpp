@@ -2,14 +2,14 @@
 
 #include "eos.hpp"
 
-#include <pybind11/pybind11.h>
+#include <epcsaft/native_sdk_v1.h>
 
 #include <string>
 #include <vector>
 
 namespace epcsaft {
 
-pybind11::capsule make_native_sdk_v1(
+const epcsaft_native_sdk_v1* create_native_sdk_v1(
     const NativeModel& model,
     const std::string& parameter_fingerprint,
     double temperature_min_k,
@@ -26,5 +26,7 @@ pybind11::capsule make_native_sdk_v1(
     bool aqueous_solvation_factor_admitted,
     bool staged_trial_bundle_admitted
 );
+
+void destroy_native_sdk_v1(const epcsaft_native_sdk_v1* sdk) noexcept;
 
 }  // namespace epcsaft

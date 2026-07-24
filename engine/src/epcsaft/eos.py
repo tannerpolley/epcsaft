@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 import math
+from os import PathLike
+from pathlib import Path
 from typing import Any, TYPE_CHECKING, Iterable, Literal, SupportsFloat, TypeAlias, overload
 
 import pint
@@ -544,8 +547,7 @@ class EPCSAFT:
         )
 
 
-def native_sdk(model: EPCSAFT) -> object:
-    """Return the model-bound version-1 native provider capsule."""
+def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
     if type(model) is not EPCSAFT:
         raise _eos_error("unsupported-native-sdk", reason="expected-exact-EPCSAFT-model")
     fingerprint = model._parameter_fingerprint
@@ -627,26 +629,78 @@ def native_sdk(model: EPCSAFT) -> object:
         if model._model.ion_mole_fraction_max is None
         else model._model.ion_mole_fraction_max
     )
+    return {
+        "parameter_fingerprint": fingerprint,
+        "temperature_min_k": minimum,
+        "temperature_max_k": maximum,
+        "component_ids": model._component_ids,
+        "ion_mole_fraction_max": maximum_ion_fraction,
+        "phase_callbacks_admitted": phase_admitted,
+        "active_born_admitted": active_born_admitted,
+        "aqueous_kij_admitted": aqueous_kij_admitted,
+        "pressure_min_pa": pressure_minimum,
+        "pressure_max_pa": pressure_maximum,
+        "neutral_reference_admitted": neutral_reference_admitted,
+        "unknown_applicability_admitted": model._parameter_bundle_purpose == "user-provided",
+        "aqueous_solvation_factor_admitted": aqueous_solvation_factor_admitted,
+        "staged_trial_bundle_admitted": staged_trial_admitted,
+    }
+
+
+def native_sdk(model: EPCSAFT) -> object:
+    """Return the model-bound version-1 native provider capsule."""
+    configuration = _native_sdk_configuration(model)
     try:
-        return _native_sdk_v1(
-            model._native,
-            fingerprint,
-            minimum,
-            maximum,
-            model._component_ids,
-            maximum_ion_fraction,
-            phase_admitted,
-            active_born_admitted,
-            aqueous_kij_admitted,
-            pressure_minimum,
-            pressure_maximum,
-            neutral_reference_admitted,
-            model._parameter_bundle_purpose == "user-provided",
-            aqueous_solvation_factor_admitted,
-            staged_trial_admitted,
-        )
+        return _native_sdk_v1(model._native, **configuration)
     except (RuntimeError, ValueError) as exc:
         raise _eos_error("unsupported-native-sdk", reason=str(exc)) from exc
+
+
+def export_native_model(model: EPCSAFT, path: str | PathLike[str]) -> None:
+    """Write one immutable resolved-model artifact for the installed native SDK."""
+    configuration = _native_sdk_configuration(model)
+    names = (
+        "segment_count",
+        "sigma_constant_angstrom",
+        "sigma_term_component",
+        "sigma_term_amplitude_angstrom",
+        "sigma_term_exponent_per_k",
+        "dispersion_energy_over_k_k",
+        "k_ij",
+        "l_ij",
+        "site_component",
+        "site_multiplicity",
+        "association_active",
+        "association_energy_over_k_k",
+        "association_volume",
+        "molar_mass_kg_per_mol",
+        "charge_number",
+        "relative_permittivity",
+        "dielectric_ion_suppression_coefficient",
+        "born_diameter_angstrom",
+        "solvation_factor",
+        "ionic_region_relative_permittivity",
+        "electrolyte_model",
+    )
+    native_parameters = dict(zip(names, _native_arguments(model._model), strict=True))
+    for key in (
+        "temperature_min_k",
+        "temperature_max_k",
+        "ion_mole_fraction_max",
+        "pressure_min_pa",
+        "pressure_max_pa",
+    ):
+        if math.isnan(float(configuration[key])):
+            configuration[key] = None
+    payload = {
+        "schema": "epcsaft-resolved-native-model-v1",
+        "native_parameters": native_parameters,
+        "sdk": configuration,
+    }
+    target = Path(path)
+    with target.open("x", encoding="utf-8") as stream:
+        json.dump(payload, stream, allow_nan=False, separators=(",", ":"), sort_keys=True)
+        stream.write("\n")
 
 
 def _state_magnitude(value: object, unit: str, field: str) -> float:
@@ -731,4 +785,12 @@ class DensityDiagnostics:
     branch: str
 
 
-__all__ = ("DensityDiagnostics", "EPCSAFT", "EosError", "EosResult", "Phase", "native_sdk")
+__all__ = (
+    "DensityDiagnostics",
+    "EPCSAFT",
+    "EosError",
+    "EosResult",
+    "Phase",
+    "export_native_model",
+    "native_sdk",
+)

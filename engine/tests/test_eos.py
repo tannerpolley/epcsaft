@@ -92,6 +92,7 @@ def test_native_model_boundary_is_ordered_strict_and_immutable() -> None:
         "EosError",
         "Phase",
         "native_sdk",
+        "export_native_model",
         "ElectrolyteReference",
         "IonicActivity",
         "TransferFreeEnergy",
