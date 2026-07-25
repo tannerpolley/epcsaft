@@ -216,3 +216,20 @@ double residual_helmholtz(double a, double b) {
 def test_repository_equation_registry_is_current_and_complete() -> None:
     module = _load_sync_module()
     module.synchronize(REPO_ROOT, check=True)
+
+
+def test_required_provider_equation_families_are_present() -> None:
+    module = _load_sync_module()
+    entries = module.parse_equations(
+        REPO_ROOT / "docs" / "latex" / "equations.tex",
+        REPO_ROOT,
+    )
+    eqids = {entry.eqid for entry in entries}
+    assert {
+        "figiel_bulk_permittivity",
+        "ascani_bulk_permittivity",
+        "debye_screening_parameter",
+        "debye_huckel_helmholtz",
+        "original_born_helmholtz",
+        "ssm_ds_born_helmholtz",
+    } <= eqids

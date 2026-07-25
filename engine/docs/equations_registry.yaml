@@ -16,6 +16,22 @@ equations:
         line: 204
         comment_line: 217
         symbol: "residual_helmholtz"
+  - eqid: "ascani_bulk_permittivity"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:ascani_bulk_permittivity"
+    source: "\\cite{AscaniHeld2021}, Eq.~(13)"
+    status: "Source equation"
+    description: "Ascani combined solvent-mass and ion-mole bulk relative permittivity."
+    change_note: "Ion mixture permittivities remain distinct from Figiel radial-region permittivity."
+    latex: "\\epsilon_{r,\\mathrm{bulk}}=\n\\epsilon_{r,\\mathrm{sf}}\\sum_{s\\in\\mathcal{S}}x_s\n+\\sum_{i\\in\\mathcal{I}}x_i\\epsilon_{r,i}.\n\\label{eq:ascani_bulk_permittivity}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 426
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 66
+        comment_line: 109
+        symbol: "electrolyte_contribution"
   - eqid: "ascani_ionic_segment_diameter"
     section: "Parameter setup"
     subsection: ""
@@ -96,6 +112,38 @@ equations:
         line: 31
         comment_line: 75
         symbol: "association_delta"
+  - eqid: "born_model_selection"
+    section: "Born solvation relations"
+    subsection: "Association"
+    label: "eq:born_model_selection"
+    source: "Provider model-bound routing of \\cite{Figiel2026Correction} and \\cite{AscaniHeld2021}"
+    status: "Implementation convention"
+    description: "Select the source-consistent Born contribution from immutable model identity."
+    change_note: "Documents routing without adding a public selector or case branch."
+    latex: "a^{Born}=\n\\begin{cases}\na^{Born}_{\\mathrm{original}},&\n\\mathcal{M}=\\mathcal{M}_{\\mathrm{Ascani}},\\\\\na^{Born}_{\\mathrm{SSM+DS}},&\n\\mathcal{M}\\in\\mathcal{M}_{\\mathrm{Figiel}}.\n\\end{cases}\n\\label{eq:born_model_selection}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 567
+    implementation_refs:
+      - file: "src/epcsaft/_native/born.hpp"
+        line: 123
+        comment_line: 122
+        symbol: "born_contribution"
+  - eqid: "born_shell_diameter"
+    section: "Born solvation relations"
+    subsection: "Association"
+    label: "eq:born_shell_diameter"
+    source: "\\cite{Figiel2025}, shell-thickness definition preceding Eq.~(7)"
+    status: "Source equation"
+    description: "Ion-specific outer Born shell diameter."
+    change_note: "The fitted Born diameter and resolved solvation factor remain distinct inputs."
+    latex: "D_i=d_i^{Born}\n\\left(1+\\frac{f_{\\mathrm{mix}}-1}{|z_i|}\\right).\n\\label{eq:born_shell_diameter}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 504
+    implementation_refs:
+      - file: "src/epcsaft/_native/born.hpp"
+        line: 15
+        comment_line: 52
+        symbol: "born_ssm_ds_contribution_impl"
   - eqid: "close_packing_fraction"
     section: "Density and packing"
     subsection: ""
@@ -144,6 +192,54 @@ equations:
         line: 204
         comment_line: 306
         symbol: "residual_helmholtz"
+  - eqid: "debye_finite_size_chi"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:debye_finite_size_chi"
+    source: "\\cite{Bulow2019}, finite-size function in Eq.~(2)"
+    status: "Source equation"
+    description: "Finite-size Debye--Huckel correction and its cancellation-safe series."
+    change_note: "The reference-state reduced diameter selects the numerical branch."
+    latex: "\\chi(y)=\n\\begin{cases}\n1-\\dfrac{3}{4}y+\\dfrac{3}{5}y^2-\\dfrac{1}{2}y^3\n+\\dfrac{3}{7}y^4-\\dfrac{3}{8}y^5+\\dfrac{1}{3}y^6,\n& y_{\\mathrm{ref}}<10^{-3},\\\\[6pt]\n\\dfrac{3\\left[\\ln(1+y)-y+y^2/2\\right]}{y^3},\n& y_{\\mathrm{ref}}\\ge10^{-3},\n\\end{cases}\n\\qquad y=\\kappa d_i.\n\\label{eq:debye_finite_size_chi}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 460
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 48
+        comment_line: 47
+        symbol: "finite_size_chi"
+  - eqid: "debye_huckel_helmholtz"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:debye_huckel_helmholtz"
+    source: "\\cite{Bulow2019}, Eq.~(2)"
+    status: "Source equation"
+    description: "Finite-size Debye--Huckel residual Helmholtz contribution."
+    change_note: "Uses the model-routed common segment diameter converted to metres."
+    latex: "a^{DH}=\n-\\frac{\\kappa e^2}\n{12\\pi\\epsilon_0\\epsilon_{r,\\mathrm{bulk}}k_BT}\n\\sum_{i\\in\\mathcal{I}}x_i z_i^2\\chi(\\kappa d_i).\n\\label{eq:debye_huckel_helmholtz}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 478
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 66
+        comment_line: 190
+        symbol: "electrolyte_contribution"
+  - eqid: "debye_screening_parameter"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:debye_screening_parameter"
+    source: "\\cite{Bulow2019}, Debye screening definition associated with Eq.~(2)"
+    status: "Source equation"
+    description: "SI Debye screening parameter for the resolved bulk dielectric."
+    change_note: "Uses molar density and the current Provider physical constants."
+    latex: "\\kappa=\n\\sqrt{\\frac{\\rho_mN_Ae^2S_z}\n{\\epsilon_0\\epsilon_{r,\\mathrm{bulk}}k_BT}}.\n\\label{eq:debye_screening_parameter}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 448
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 66
+        comment_line: 164
+        symbol: "electrolyte_contribution"
   - eqid: "dispersion_chain_coefficients"
     section: "Contribution intermediates"
     subsection: "Dispersion"
@@ -272,6 +368,22 @@ equations:
         line: 204
         comment_line: 336
         symbol: "residual_helmholtz"
+  - eqid: "figiel_bulk_permittivity"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:figiel_bulk_permittivity"
+    source: "\\cite{Figiel2025}, Eq.~(11)"
+    status: "Bounded empirical relation"
+    description: "Figiel-family ion-suppressed bulk relative permittivity."
+    change_note: "The suppression coefficient is an explicit resolved model record."
+    latex: "\\epsilon_{r,\\mathrm{bulk}}=\n\\frac{\\epsilon_{r,\\mathrm{sf}}}\n{1+C_\\epsilon x_{\\mathrm{ion}}},\n\\qquad\nx_{\\mathrm{ion}}=\\sum_{i\\in\\mathcal{I}}x_i.\n\\label{eq:figiel_bulk_permittivity}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 412
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 66
+        comment_line: 108
+        symbol: "electrolyte_contribution"
   - eqid: "figiel_ionic_segment_diameter"
     section: "Parameter setup"
     subsection: ""
@@ -336,6 +448,22 @@ equations:
         line: 204
         comment_line: 250
         symbol: "residual_helmholtz"
+  - eqid: "ionic_strength_charge_sum"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:ionic_strength_charge_sum"
+    source: "\\cite{Bulow2019}, charge-weighted composition in the screening definition"
+    status: "Source equation"
+    description: "Mole-fraction charge-square sum entering Debye screening."
+    change_note: "Only charged components contribute."
+    latex: "S_z=\\sum_{i\\in\\mathcal{I}}x_i z_i^2.\n\\label{eq:ionic_strength_charge_sum}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 438
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 66
+        comment_line: 102
+        symbol: "electrolyte_contribution"
   - eqid: "mean_segment_count"
     section: "Density and packing"
     subsection: ""
@@ -352,6 +480,22 @@ equations:
         line: 204
         comment_line: 219
         symbol: "residual_helmholtz"
+  - eqid: "mixture_solvation_factor"
+    section: "Born solvation relations"
+    subsection: "Association"
+    label: "eq:mixture_solvation_factor"
+    source: "\\cite{Figiel2025}, SSM+DS solvation-factor mixing rule"
+    status: "Source equation"
+    description: "Mole-fraction-weighted mixture solvation factor."
+    change_note: "Retains the explicit fraction normalization used by the Provider."
+    latex: "f_{\\mathrm{mix}}=\n\\frac{\\sum_kx_kf_k}{\\sum_kx_k}.\n\\label{eq:mixture_solvation_factor}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 493
+    implementation_refs:
+      - file: "src/epcsaft/_native/born.hpp"
+        line: 15
+        comment_line: 43
+        symbol: "born_ssm_ds_contribution_impl"
   - eqid: "neutral_segment_diameter"
     section: "Parameter setup"
     subsection: ""
@@ -368,6 +512,38 @@ equations:
         line: 113
         comment_line: 110
         symbol: "segment_diameter"
+  - eqid: "original_born_helmholtz"
+    section: "Born solvation relations"
+    subsection: "Association"
+    label: "eq:original_born_helmholtz"
+    source: "\\cite{AscaniHeld2021}, Eq.~(10)"
+    status: "Source equation"
+    description: "Dimensionless original-Born residual Helmholtz contribution."
+    change_note: "SSM and DS are absent for the source-routed Ascani model."
+    latex: "a^{Born}_{\\mathrm{original}}=\n-\\frac{e^2}{4\\pi\\epsilon_0k_BT}\n\\left(1-\\epsilon_{r,\\mathrm{bulk}}^{-1}\\right)\nW_{\\mathrm{original}}.\n\\label{eq:original_born_helmholtz}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 554
+    implementation_refs:
+      - file: "src/epcsaft/_native/born.hpp"
+        line: 96
+        comment_line: 113
+        symbol: "born_original_contribution"
+  - eqid: "original_born_radial_work"
+    section: "Born solvation relations"
+    subsection: "Association"
+    label: "eq:original_born_radial_work"
+    source: "\\cite{AscaniHeld2021}, Eq.~(10) and ion-diameter convention"
+    status: "Source equation"
+    description: "Original-Born charge-square diameter sum."
+    change_note: "Uses the Ascani ion sigma as the Born diameter."
+    latex: "W_{\\mathrm{original}}=\n\\sum_{i\\in\\mathcal{I}}\\frac{x_i z_i^2}{\\sigma_i}.\n\\label{eq:original_born_radial_work}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 543
+    implementation_refs:
+      - file: "src/epcsaft/_native/born.hpp"
+        line: 96
+        comment_line: 110
+        symbol: "born_original_contribution"
   - eqid: "packing_fraction"
     section: "Density and packing"
     subsection: ""
@@ -448,6 +624,22 @@ equations:
         line: 204
         comment_line: 355
         symbol: "residual_helmholtz"
+  - eqid: "salt_free_solvent_permittivity"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:salt_free_solvent_permittivity"
+    source: "\\cite{Figiel2025}, Eq.~(11) solvent basis; \\cite{AscaniHeld2021}, Eq.~(13)"
+    status: "Source equation"
+    description: "Mass-weighted relative permittivity of the salt-free solvent mixture."
+    change_note: "Uses component molar masses and excludes ions from the denominator."
+    latex: "\\epsilon_{r,\\mathrm{sf}}=\n\\frac{\\sum_{s\\in\\mathcal{S}}x_sM_s\\epsilon_{r,s}}\n{\\sum_{s\\in\\mathcal{S}}x_sM_s}.\n\\label{eq:salt_free_solvent_permittivity}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 400
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 66
+        comment_line: 106
+        symbol: "electrolyte_contribution"
   - eqid: "same_sign_ionic_dispersion"
     section: "Parameter setup"
     subsection: ""
@@ -480,6 +672,50 @@ equations:
         line: 93
         comment_line: 92
         symbol: "segment_sigma"
+  - eqid: "ssm_ds_born_helmholtz"
+    section: "Born solvation relations"
+    subsection: "Association"
+    label: "eq:ssm_ds_born_helmholtz"
+    source: "\\cite{Figiel2026Correction}, corrected Eq.~(7)"
+    status: "Source equation"
+    description: "Dimensionless SSM+DS Born residual Helmholtz contribution."
+    change_note: "Shared by fixed and active-coordinate evaluation paths."
+    latex: "a^{Born}_{\\mathrm{SSM+DS}}=\n-\\frac{e^2}{4\\pi\\epsilon_0k_BT}\\,\nW_{\\mathrm{SSM+DS}}.\n\\label{eq:ssm_ds_born_helmholtz}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 531
+    implementation_refs:
+      - file: "src/epcsaft/_native/born.hpp"
+        line: 15
+        comment_line: 67
+        symbol: "born_ssm_ds_contribution_impl"
+      - file: "src/epcsaft/_native/born.hpp"
+        line: 75
+        comment_line: 74
+        symbol: "born_ssm_ds_contribution"
+      - file: "src/epcsaft/_native/born.hpp"
+        line: 150
+        comment_line: 149
+        symbol: "born_ssm_ds_contribution_active"
+      - file: "src/epcsaft/_native/born.hpp"
+        line: 178
+        comment_line: 177
+        symbol: "born_ssm_ds_contribution_active_solvation_factor"
+  - eqid: "ssm_ds_radial_work"
+    section: "Born solvation relations"
+    subsection: "Association"
+    label: "eq:ssm_ds_radial_work"
+    source: "\\cite{Figiel2026Correction}, corrected Eq.~(7)"
+    status: "Source equation"
+    description: "Corrected piecewise-dielectric SSM+DS radial charging sum."
+    change_note: "Restores the ionic-region dielectric in the inner-shell term."
+    latex: "W_{\\mathrm{SSM+DS}}=\n\\sum_{i\\in\\mathcal{I}}x_i z_i^2\n\\left[\n\\frac{1-\\epsilon_{r,\\mathrm{bulk}}^{-1}}{D_i}\n+\\left(1-\\epsilon_{r,\\mathrm{ion}}^{-1}\\right)\n\\left(\\frac{1}{d_i^{Born}}-\\frac{1}{D_i}\\right)\n\\right].\n\\label{eq:ssm_ds_radial_work}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 515
+    implementation_refs:
+      - file: "src/epcsaft/_native/born.hpp"
+        line: 15
+        comment_line: 60
+        symbol: "born_ssm_ds_contribution_impl"
 source_exclusions:
   - file: "src/epcsaft/_native/association.hpp"
     line: 23
@@ -493,6 +729,14 @@ source_exclusions:
     line: 174
     symbol: "solve_linear"
     reason: "numerical iteration mechanics"
+  - file: "src/epcsaft/_native/electrolyte.hpp"
+    line: 24
+    symbol: "electrolyte_sqrt"
+    reason: "scalar utility dispatch"
+  - file: "src/epcsaft/_native/electrolyte.hpp"
+    line: 33
+    symbol: "electrolyte_log"
+    reason: "scalar utility dispatch"
   - file: "src/epcsaft/_native/helmholtz.hpp"
     line: 56
     symbol: "scalar_log"

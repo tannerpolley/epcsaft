@@ -18,6 +18,24 @@ $$
 \label{eq:angstrom_number_density}
 $$
 
+## `ascani_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Source equation
+- Source: \cite{AscaniHeld2021}, Eq.~(13)
+- Description: Ascani combined solvent-mass and ion-mole bulk relative permittivity.
+- Change note: Ion mixture permittivities remain distinct from Figiel radial-region permittivity.
+- LaTeX: `docs/latex/equations.tex:426`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:66` (`electrolyte_contribution`)
+
+$$
+\epsilon_{r,\mathrm{bulk}}=
+\epsilon_{r,\mathrm{sf}}\sum_{s\in\mathcal{S}}x_s
++\sum_{i\in\mathcal{I}}x_i\epsilon_{r,i}.
+\label{eq:ascani_bulk_permittivity}
+$$
+
 ## `ascani_ionic_segment_diameter`
 
 - Section: Parameter setup
@@ -108,6 +126,45 @@ $$
 \label{eq:association_strength}
 $$
 
+## `born_model_selection`
+
+- Section: Born solvation relations / Association
+- Status: Implementation convention
+- Source: Provider model-bound routing of \cite{Figiel2026Correction} and \cite{AscaniHeld2021}
+- Description: Select the source-consistent Born contribution from immutable model identity.
+- Change note: Documents routing without adding a public selector or case branch.
+- LaTeX: `docs/latex/equations.tex:567`
+- Implementation:
+  - `src/epcsaft/_native/born.hpp:123` (`born_contribution`)
+
+$$
+a^{Born}=
+\begin{cases}
+a^{Born}_{\mathrm{original}},&
+\mathcal{M}=\mathcal{M}_{\mathrm{Ascani}},\\
+a^{Born}_{\mathrm{SSM+DS}},&
+\mathcal{M}\in\mathcal{M}_{\mathrm{Figiel}}.
+\end{cases}
+\label{eq:born_model_selection}
+$$
+
+## `born_shell_diameter`
+
+- Section: Born solvation relations / Association
+- Status: Source equation
+- Source: \cite{Figiel2025}, shell-thickness definition preceding Eq.~(7)
+- Description: Ion-specific outer Born shell diameter.
+- Change note: The fitted Born diameter and resolved solvation factor remain distinct inputs.
+- LaTeX: `docs/latex/equations.tex:504`
+- Implementation:
+  - `src/epcsaft/_native/born.hpp:15` (`born_ssm_ds_contribution_impl`)
+
+$$
+D_i=d_i^{Born}
+\left(1+\frac{f_{\mathrm{mix}}-1}{|z_i|}\right).
+\label{eq:born_shell_diameter}
+$$
+
 ## `close_packing_fraction`
 
 - Section: Density and packing
@@ -156,6 +213,67 @@ $$
 $$
 \sigma_{ij}=\frac{\sigma_i+\sigma_j}{2}(1-l_{ij}).
 \label{eq:cross_segment_diameter}
+$$
+
+## `debye_finite_size_chi`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Source equation
+- Source: \cite{Bulow2019}, finite-size function in Eq.~(2)
+- Description: Finite-size Debye--Huckel correction and its cancellation-safe series.
+- Change note: The reference-state reduced diameter selects the numerical branch.
+- LaTeX: `docs/latex/equations.tex:460`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:48` (`finite_size_chi`)
+
+$$
+\chi(y)=
+\begin{cases}
+1-\dfrac{3}{4}y+\dfrac{3}{5}y^2-\dfrac{1}{2}y^3
++\dfrac{3}{7}y^4-\dfrac{3}{8}y^5+\dfrac{1}{3}y^6,
+& y_{\mathrm{ref}}<10^{-3},\\[6pt]
+\dfrac{3\left[\ln(1+y)-y+y^2/2\right]}{y^3},
+& y_{\mathrm{ref}}\ge10^{-3},
+\end{cases}
+\qquad y=\kappa d_i.
+\label{eq:debye_finite_size_chi}
+$$
+
+## `debye_huckel_helmholtz`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Source equation
+- Source: \cite{Bulow2019}, Eq.~(2)
+- Description: Finite-size Debye--Huckel residual Helmholtz contribution.
+- Change note: Uses the model-routed common segment diameter converted to metres.
+- LaTeX: `docs/latex/equations.tex:478`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:66` (`electrolyte_contribution`)
+
+$$
+a^{DH}=
+-\frac{\kappa e^2}
+{12\pi\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}
+\sum_{i\in\mathcal{I}}x_i z_i^2\chi(\kappa d_i).
+\label{eq:debye_huckel_helmholtz}
+$$
+
+## `debye_screening_parameter`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Source equation
+- Source: \cite{Bulow2019}, Debye screening definition associated with Eq.~(2)
+- Description: SI Debye screening parameter for the resolved bulk dielectric.
+- Change note: Uses molar density and the current Provider physical constants.
+- LaTeX: `docs/latex/equations.tex:448`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:66` (`electrolyte_contribution`)
+
+$$
+\kappa=
+\sqrt{\frac{\rho_mN_Ae^2S_z}
+{\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}}.
+\label{eq:debye_screening_parameter}
 $$
 
 ## `dispersion_chain_coefficients`
@@ -301,6 +419,26 @@ M_2=\sum_i\sum_j x_ix_jm_im_j\sigma_{ij}^3
 \label{eq:dispersion_second_moment}
 $$
 
+## `figiel_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Bounded empirical relation
+- Source: \cite{Figiel2025}, Eq.~(11)
+- Description: Figiel-family ion-suppressed bulk relative permittivity.
+- Change note: The suppression coefficient is an explicit resolved model record.
+- LaTeX: `docs/latex/equations.tex:412`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:66` (`electrolyte_contribution`)
+
+$$
+\epsilon_{r,\mathrm{bulk}}=
+\frac{\epsilon_{r,\mathrm{sf}}}
+{1+C_\epsilon x_{\mathrm{ion}}},
+\qquad
+x_{\mathrm{ion}}=\sum_{i\in\mathcal{I}}x_i.
+\label{eq:figiel_bulk_permittivity}
+$$
+
 ## `figiel_ionic_segment_diameter`
 
 - Section: Parameter setup
@@ -374,6 +512,22 @@ a^{hs}=\frac{1}{\zeta_0}\left[
 \label{eq:hard_sphere_helmholtz}
 $$
 
+## `ionic_strength_charge_sum`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Source equation
+- Source: \cite{Bulow2019}, charge-weighted composition in the screening definition
+- Description: Mole-fraction charge-square sum entering Debye screening.
+- Change note: Only charged components contribute.
+- LaTeX: `docs/latex/equations.tex:438`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:66` (`electrolyte_contribution`)
+
+$$
+S_z=\sum_{i\in\mathcal{I}}x_i z_i^2.
+\label{eq:ionic_strength_charge_sum}
+$$
+
 ## `mean_segment_count`
 
 - Section: Density and packing
@@ -388,6 +542,23 @@ $$
 $$
 \overline{m}=\sum_i x_i m_i.
 \label{eq:mean_segment_count}
+$$
+
+## `mixture_solvation_factor`
+
+- Section: Born solvation relations / Association
+- Status: Source equation
+- Source: \cite{Figiel2025}, SSM+DS solvation-factor mixing rule
+- Description: Mole-fraction-weighted mixture solvation factor.
+- Change note: Retains the explicit fraction normalization used by the Provider.
+- LaTeX: `docs/latex/equations.tex:493`
+- Implementation:
+  - `src/epcsaft/_native/born.hpp:15` (`born_ssm_ds_contribution_impl`)
+
+$$
+f_{\mathrm{mix}}=
+\frac{\sum_kx_kf_k}{\sum_kx_k}.
+\label{eq:mixture_solvation_factor}
 $$
 
 ## `neutral_segment_diameter`
@@ -405,6 +576,42 @@ $$
 d_i(T)=\sigma_i(T)\left[1-0.12\exp\left(-\frac{3(\epsilon_i/k_B)}{T}\right)\right],
 \qquad z_i=0.
 \label{eq:neutral_segment_diameter}
+$$
+
+## `original_born_helmholtz`
+
+- Section: Born solvation relations / Association
+- Status: Source equation
+- Source: \cite{AscaniHeld2021}, Eq.~(10)
+- Description: Dimensionless original-Born residual Helmholtz contribution.
+- Change note: SSM and DS are absent for the source-routed Ascani model.
+- LaTeX: `docs/latex/equations.tex:554`
+- Implementation:
+  - `src/epcsaft/_native/born.hpp:96` (`born_original_contribution`)
+
+$$
+a^{Born}_{\mathrm{original}}=
+-\frac{e^2}{4\pi\epsilon_0k_BT}
+\left(1-\epsilon_{r,\mathrm{bulk}}^{-1}\right)
+W_{\mathrm{original}}.
+\label{eq:original_born_helmholtz}
+$$
+
+## `original_born_radial_work`
+
+- Section: Born solvation relations / Association
+- Status: Source equation
+- Source: \cite{AscaniHeld2021}, Eq.~(10) and ion-diameter convention
+- Description: Original-Born charge-square diameter sum.
+- Change note: Uses the Ascani ion sigma as the Born diameter.
+- LaTeX: `docs/latex/equations.tex:543`
+- Implementation:
+  - `src/epcsaft/_native/born.hpp:96` (`born_original_contribution`)
+
+$$
+W_{\mathrm{original}}=
+\sum_{i\in\mathcal{I}}\frac{x_i z_i^2}{\sigma_i}.
+\label{eq:original_born_radial_work}
 $$
 
 ## `packing_fraction`
@@ -492,6 +699,24 @@ a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}.
 \label{eq:residual_helmholtz}
 $$
 
+## `salt_free_solvent_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Source equation
+- Source: \cite{Figiel2025}, Eq.~(11) solvent basis; \cite{AscaniHeld2021}, Eq.~(13)
+- Description: Mass-weighted relative permittivity of the salt-free solvent mixture.
+- Change note: Uses component molar masses and excludes ions from the denominator.
+- LaTeX: `docs/latex/equations.tex:400`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:66` (`electrolyte_contribution`)
+
+$$
+\epsilon_{r,\mathrm{sf}}=
+\frac{\sum_{s\in\mathcal{S}}x_sM_s\epsilon_{r,s}}
+{\sum_{s\in\mathcal{S}}x_sM_s}.
+\label{eq:salt_free_solvent_permittivity}
+$$
+
 ## `same_sign_ionic_dispersion`
 
 - Section: Parameter setup
@@ -524,11 +749,56 @@ $$
 \label{eq:segment_sigma_correlation}
 $$
 
+## `ssm_ds_born_helmholtz`
+
+- Section: Born solvation relations / Association
+- Status: Source equation
+- Source: \cite{Figiel2026Correction}, corrected Eq.~(7)
+- Description: Dimensionless SSM+DS Born residual Helmholtz contribution.
+- Change note: Shared by fixed and active-coordinate evaluation paths.
+- LaTeX: `docs/latex/equations.tex:531`
+- Implementation:
+  - `src/epcsaft/_native/born.hpp:15` (`born_ssm_ds_contribution_impl`)
+  - `src/epcsaft/_native/born.hpp:75` (`born_ssm_ds_contribution`)
+  - `src/epcsaft/_native/born.hpp:150` (`born_ssm_ds_contribution_active`)
+  - `src/epcsaft/_native/born.hpp:178` (`born_ssm_ds_contribution_active_solvation_factor`)
+
+$$
+a^{Born}_{\mathrm{SSM+DS}}=
+-\frac{e^2}{4\pi\epsilon_0k_BT}\,
+W_{\mathrm{SSM+DS}}.
+\label{eq:ssm_ds_born_helmholtz}
+$$
+
+## `ssm_ds_radial_work`
+
+- Section: Born solvation relations / Association
+- Status: Source equation
+- Source: \cite{Figiel2026Correction}, corrected Eq.~(7)
+- Description: Corrected piecewise-dielectric SSM+DS radial charging sum.
+- Change note: Restores the ionic-region dielectric in the inner-shell term.
+- LaTeX: `docs/latex/equations.tex:515`
+- Implementation:
+  - `src/epcsaft/_native/born.hpp:15` (`born_ssm_ds_contribution_impl`)
+
+$$
+W_{\mathrm{SSM+DS}}=
+\sum_{i\in\mathcal{I}}x_i z_i^2
+\left[
+\frac{1-\epsilon_{r,\mathrm{bulk}}^{-1}}{D_i}
++\left(1-\epsilon_{r,\mathrm{ion}}^{-1}\right)
+\left(\frac{1}{d_i^{Born}}-\frac{1}{D_i}\right)
+\right].
+\label{eq:ssm_ds_radial_work}
+$$
+
 ## Audited source exclusions
 
 - `src/epcsaft/_native/association.hpp:23` (`association_exp`): scalar utility dispatch
 - `src/epcsaft/_native/association.hpp:119` (`solve_site_fractions`): numerical iteration mechanics
 - `src/epcsaft/_native/association.hpp:174` (`solve_linear`): numerical iteration mechanics
+- `src/epcsaft/_native/electrolyte.hpp:24` (`electrolyte_sqrt`): scalar utility dispatch
+- `src/epcsaft/_native/electrolyte.hpp:33` (`electrolyte_log`): scalar utility dispatch
 - `src/epcsaft/_native/helmholtz.hpp:56` (`scalar_log`): scalar utility dispatch
 - `src/epcsaft/_native/helmholtz.hpp:65` (`scalar_exp`): scalar utility dispatch
 - `src/epcsaft/_native/helmholtz.hpp:74` (`scalar_sqrt`): scalar utility dispatch

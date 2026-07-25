@@ -20,6 +20,7 @@ inline constexpr double ELECTROLYTE_PI =
     3.141592653589793238462643383279502884;
 
 template <typename Scalar>
+// EqExclude: scalar utility dispatch
 Scalar electrolyte_sqrt(const Scalar& value) {
     if constexpr (std::is_same_v<Scalar, double>) {
         return std::sqrt(value);
@@ -28,6 +29,7 @@ Scalar electrolyte_sqrt(const Scalar& value) {
 }
 
 template <typename Scalar>
+// EqExclude: scalar utility dispatch
 Scalar electrolyte_log(const Scalar& value) {
     if constexpr (std::is_same_v<Scalar, double>) {
         return std::log(value);
@@ -42,6 +44,7 @@ struct ElectrolyteResult final {
 };
 
 template <typename Scalar>
+// EqID: debye_finite_size_chi
 Scalar finite_size_chi(const Scalar& reduced, bool use_series) {
     if (use_series) {
         const Scalar reduced_2 = reduced * reduced;
@@ -96,10 +99,14 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
             ion_fraction += mole_fractions[component];
             ion_dielectric += mole_fractions[component]
                 * parameters.relative_permittivity[component];
+            // EqID: ionic_strength_charge_sum
             charge_square_sum += mole_fractions[component] * charge * charge;
         }
     }
+    // EqID: salt_free_solvent_permittivity
     const Scalar salt_free_permittivity = dielectric_mass / solvent_mass;
+    // EqID: figiel_bulk_permittivity
+    // EqID: ascani_bulk_permittivity
     const Scalar bulk_permittivity = parameters.electrolyte_model
             == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
         ? salt_free_permittivity * solvent_fraction + ion_dielectric
@@ -154,6 +161,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     if (reference_charge_square_sum == 0.0) {
         return {bulk_permittivity, Scalar(0.0)};
     }
+    // EqID: debye_screening_parameter
     const Scalar kappa = electrolyte_sqrt(
         molar_density * ELECTROLYTE_AVOGADRO
         * ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * charge_square_sum
@@ -179,6 +187,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         );
         weighted_chi += mole_fractions[component] * charge * charge * chi;
     }
+    // EqID: debye_huckel_helmholtz
     const Scalar debye_huckel = -kappa * ELEMENTARY_CHARGE * ELEMENTARY_CHARGE
         * weighted_chi
         / (12.0 * ELECTROLYTE_PI * VACUUM_PERMITTIVITY * bulk_permittivity

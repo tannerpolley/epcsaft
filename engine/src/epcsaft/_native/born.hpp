@@ -40,6 +40,7 @@ Scalar born_ssm_ds_contribution_impl(
             throw std::invalid_argument("invalid solvation-factor mixture");
         }
     }
+    // EqID: mixture_solvation_factor
     const Scalar mixture_solvation = weighted_solvation / fraction_sum;
     Scalar radial_work = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
@@ -48,6 +49,7 @@ Scalar born_ssm_ds_contribution_impl(
             continue;
         }
         const Scalar born_diameter = born_diameter_angstrom(component) * 1.0e-10;
+        // EqID: born_shell_diameter
         const Scalar shell_diameter = born_diameter
             * (1.0 + (mixture_solvation - 1.0) / std::abs(charge));
         if constexpr (std::is_same_v<Scalar, double>) {
@@ -55,18 +57,21 @@ Scalar born_ssm_ds_contribution_impl(
                 throw std::invalid_argument("Born shell diameter is nonpositive");
             }
         }
+        // EqID: ssm_ds_radial_work
         radial_work += mole_fractions[component] * charge * charge * (
             (1.0 - 1.0 / bulk_relative_permittivity) / shell_diameter
             + (1.0 - 1.0 / parameters.ionic_region_relative_permittivity)
                 * (1.0 / born_diameter - 1.0 / shell_diameter)
         );
     }
+    // EqID: ssm_ds_born_helmholtz
     return -ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * radial_work
         / (4.0 * ELECTROLYTE_PI * VACUUM_PERMITTIVITY * BOLTZMANN
            * temperature);
 }
 
 template <typename Scalar>
+// EqID: ssm_ds_born_helmholtz
 Scalar born_ssm_ds_contribution(
     const Scalar& temperature,
     const std::vector<Scalar>& mole_fractions,
@@ -102,8 +107,10 @@ Scalar born_original_contribution(
             continue;
         }
         const Scalar diameter = sigma_angstrom[component] * Scalar(1.0e-10);
+        // EqID: original_born_radial_work
         radial_work += mole_fractions[component] * charge * charge / diameter;
     }
+    // EqID: original_born_helmholtz
     return -ELEMENTARY_CHARGE * ELEMENTARY_CHARGE
         * (Scalar(1.0) - Scalar(1.0) / bulk_relative_permittivity)
         * radial_work
@@ -112,6 +119,7 @@ Scalar born_original_contribution(
 }
 
 template <typename Scalar>
+// EqID: born_model_selection
 Scalar born_contribution(
     const Scalar& temperature,
     const std::vector<Scalar>& mole_fractions,
@@ -138,6 +146,7 @@ Scalar born_contribution(
 }
 
 template <typename Scalar>
+// EqID: ssm_ds_born_helmholtz
 Scalar born_ssm_ds_contribution_active(
     const Scalar& temperature,
     const std::vector<Scalar>& mole_fractions,
@@ -165,6 +174,7 @@ Scalar born_ssm_ds_contribution_active(
 }
 
 template <typename Scalar>
+// EqID: ssm_ds_born_helmholtz
 Scalar born_ssm_ds_contribution_active_solvation_factor(
     const Scalar& temperature,
     const std::vector<Scalar>& mole_fractions,

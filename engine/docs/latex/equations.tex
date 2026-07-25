@@ -390,6 +390,191 @@ a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}.
 \label{eq:residual_helmholtz}
 \end{equation}
 
+\section{Electrolyte dielectric and Debye--Huckel relations}
+
+% EqID: salt_free_solvent_permittivity
+% Source: \cite{Figiel2025}, Eq.~(11) solvent basis; \cite{AscaniHeld2021}, Eq.~(13)
+% Status: Source equation
+% Description: Mass-weighted relative permittivity of the salt-free solvent mixture.
+% Change note: Uses component molar masses and excludes ions from the denominator.
+\begin{equation}
+\epsilon_{r,\mathrm{sf}}=
+\frac{\sum_{s\in\mathcal{S}}x_sM_s\epsilon_{r,s}}
+{\sum_{s\in\mathcal{S}}x_sM_s}.
+\label{eq:salt_free_solvent_permittivity}
+\end{equation}
+
+% EqID: figiel_bulk_permittivity
+% Source: \cite{Figiel2025}, Eq.~(11)
+% Status: Bounded empirical relation
+% Description: Figiel-family ion-suppressed bulk relative permittivity.
+% Change note: The suppression coefficient is an explicit resolved model record.
+\begin{equation}
+\epsilon_{r,\mathrm{bulk}}=
+\frac{\epsilon_{r,\mathrm{sf}}}
+{1+C_\epsilon x_{\mathrm{ion}}},
+\qquad
+x_{\mathrm{ion}}=\sum_{i\in\mathcal{I}}x_i.
+\label{eq:figiel_bulk_permittivity}
+\end{equation}
+
+% EqID: ascani_bulk_permittivity
+% Source: \cite{AscaniHeld2021}, Eq.~(13)
+% Status: Source equation
+% Description: Ascani combined solvent-mass and ion-mole bulk relative permittivity.
+% Change note: Ion mixture permittivities remain distinct from Figiel radial-region permittivity.
+\begin{equation}
+\epsilon_{r,\mathrm{bulk}}=
+\epsilon_{r,\mathrm{sf}}\sum_{s\in\mathcal{S}}x_s
++\sum_{i\in\mathcal{I}}x_i\epsilon_{r,i}.
+\label{eq:ascani_bulk_permittivity}
+\end{equation}
+
+% EqID: ionic_strength_charge_sum
+% Source: \cite{Bulow2019}, charge-weighted composition in the screening definition
+% Status: Source equation
+% Description: Mole-fraction charge-square sum entering Debye screening.
+% Change note: Only charged components contribute.
+\begin{equation}
+S_z=\sum_{i\in\mathcal{I}}x_i z_i^2.
+\label{eq:ionic_strength_charge_sum}
+\end{equation}
+
+% EqID: debye_screening_parameter
+% Source: \cite{Bulow2019}, Debye screening definition associated with Eq.~(2)
+% Status: Source equation
+% Description: SI Debye screening parameter for the resolved bulk dielectric.
+% Change note: Uses molar density and the current Provider physical constants.
+\begin{equation}
+\kappa=
+\sqrt{\frac{\rho_mN_Ae^2S_z}
+{\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}}.
+\label{eq:debye_screening_parameter}
+\end{equation}
+
+% EqID: debye_finite_size_chi
+% Source: \cite{Bulow2019}, finite-size function in Eq.~(2)
+% Status: Source equation
+% Description: Finite-size Debye--Huckel correction and its cancellation-safe series.
+% Change note: The reference-state reduced diameter selects the numerical branch.
+\begin{equation}
+\chi(y)=
+\begin{cases}
+1-\dfrac{3}{4}y+\dfrac{3}{5}y^2-\dfrac{1}{2}y^3
++\dfrac{3}{7}y^4-\dfrac{3}{8}y^5+\dfrac{1}{3}y^6,
+& y_{\mathrm{ref}}<10^{-3},\\[6pt]
+\dfrac{3\left[\ln(1+y)-y+y^2/2\right]}{y^3},
+& y_{\mathrm{ref}}\ge10^{-3},
+\end{cases}
+\qquad y=\kappa d_i.
+\label{eq:debye_finite_size_chi}
+\end{equation}
+
+% EqID: debye_huckel_helmholtz
+% Source: \cite{Bulow2019}, Eq.~(2)
+% Status: Source equation
+% Description: Finite-size Debye--Huckel residual Helmholtz contribution.
+% Change note: Uses the model-routed common segment diameter converted to metres.
+\begin{equation}
+a^{DH}=
+-\frac{\kappa e^2}
+{12\pi\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}
+\sum_{i\in\mathcal{I}}x_i z_i^2\chi(\kappa d_i).
+\label{eq:debye_huckel_helmholtz}
+\end{equation}
+
+\section{Born solvation relations}
+
+% EqID: mixture_solvation_factor
+% Source: \cite{Figiel2025}, SSM+DS solvation-factor mixing rule
+% Status: Source equation
+% Description: Mole-fraction-weighted mixture solvation factor.
+% Change note: Retains the explicit fraction normalization used by the Provider.
+\begin{equation}
+f_{\mathrm{mix}}=
+\frac{\sum_kx_kf_k}{\sum_kx_k}.
+\label{eq:mixture_solvation_factor}
+\end{equation}
+
+% EqID: born_shell_diameter
+% Source: \cite{Figiel2025}, shell-thickness definition preceding Eq.~(7)
+% Status: Source equation
+% Description: Ion-specific outer Born shell diameter.
+% Change note: The fitted Born diameter and resolved solvation factor remain distinct inputs.
+\begin{equation}
+D_i=d_i^{Born}
+\left(1+\frac{f_{\mathrm{mix}}-1}{|z_i|}\right).
+\label{eq:born_shell_diameter}
+\end{equation}
+
+% EqID: ssm_ds_radial_work
+% Source: \cite{Figiel2026Correction}, corrected Eq.~(7)
+% Status: Source equation
+% Description: Corrected piecewise-dielectric SSM+DS radial charging sum.
+% Change note: Restores the ionic-region dielectric in the inner-shell term.
+\begin{equation}
+W_{\mathrm{SSM+DS}}=
+\sum_{i\in\mathcal{I}}x_i z_i^2
+\left[
+\frac{1-\epsilon_{r,\mathrm{bulk}}^{-1}}{D_i}
++\left(1-\epsilon_{r,\mathrm{ion}}^{-1}\right)
+\left(\frac{1}{d_i^{Born}}-\frac{1}{D_i}\right)
+\right].
+\label{eq:ssm_ds_radial_work}
+\end{equation}
+
+% EqID: ssm_ds_born_helmholtz
+% Source: \cite{Figiel2026Correction}, corrected Eq.~(7)
+% Status: Source equation
+% Description: Dimensionless SSM+DS Born residual Helmholtz contribution.
+% Change note: Shared by fixed and active-coordinate evaluation paths.
+\begin{equation}
+a^{Born}_{\mathrm{SSM+DS}}=
+-\frac{e^2}{4\pi\epsilon_0k_BT}\,
+W_{\mathrm{SSM+DS}}.
+\label{eq:ssm_ds_born_helmholtz}
+\end{equation}
+
+% EqID: original_born_radial_work
+% Source: \cite{AscaniHeld2021}, Eq.~(10) and ion-diameter convention
+% Status: Source equation
+% Description: Original-Born charge-square diameter sum.
+% Change note: Uses the Ascani ion sigma as the Born diameter.
+\begin{equation}
+W_{\mathrm{original}}=
+\sum_{i\in\mathcal{I}}\frac{x_i z_i^2}{\sigma_i}.
+\label{eq:original_born_radial_work}
+\end{equation}
+
+% EqID: original_born_helmholtz
+% Source: \cite{AscaniHeld2021}, Eq.~(10)
+% Status: Source equation
+% Description: Dimensionless original-Born residual Helmholtz contribution.
+% Change note: SSM and DS are absent for the source-routed Ascani model.
+\begin{equation}
+a^{Born}_{\mathrm{original}}=
+-\frac{e^2}{4\pi\epsilon_0k_BT}
+\left(1-\epsilon_{r,\mathrm{bulk}}^{-1}\right)
+W_{\mathrm{original}}.
+\label{eq:original_born_helmholtz}
+\end{equation}
+
+% EqID: born_model_selection
+% Source: Provider model-bound routing of \cite{Figiel2026Correction} and \cite{AscaniHeld2021}
+% Status: Implementation convention
+% Description: Select the source-consistent Born contribution from immutable model identity.
+% Change note: Documents routing without adding a public selector or case branch.
+\begin{equation}
+a^{Born}=
+\begin{cases}
+a^{Born}_{\mathrm{original}},&
+\mathcal{M}=\mathcal{M}_{\mathrm{Ascani}},\\
+a^{Born}_{\mathrm{SSM+DS}},&
+\mathcal{M}\in\mathcal{M}_{\mathrm{Figiel}}.
+\end{cases}
+\label{eq:born_model_selection}
+\end{equation}
+
 \printbibliography
 
 \end{document}
