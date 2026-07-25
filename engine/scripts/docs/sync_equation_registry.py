@@ -312,12 +312,10 @@ def parse_source_annotations(
         lines = path.read_text(encoding="utf-8").splitlines()
         functions = _function_spans(path)
         classified: set[tuple[str, int]] = set()
-        annotation_count = 0
         for comment_line, line in enumerate(lines, start=1):
             match = ANNOTATION_PATTERN.match(line)
             if not match:
                 continue
-            annotation_count += 1
             owner = _annotation_owner(comment_line, functions)
             if owner is None:
                 raise ValueError(
@@ -352,7 +350,7 @@ def parse_source_annotations(
                         reason=reason,
                     )
                 )
-        if require_classification or annotation_count:
+        if require_classification:
             for function in functions:
                 if (function.symbol, function.start) not in classified:
                     unclassified.append(

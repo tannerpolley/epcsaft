@@ -27,6 +27,8 @@ struct DensityRoot final {
 };
 
 template <typename Evaluate>
+// EqID: density_residual
+// EqExclude: numerical iteration mechanics
 DensityRoot refine_density_root(
     double pressure,
     double bracket_lower,
@@ -95,6 +97,8 @@ DensityRoot refine_density_root(
 }
 
 template <typename Evaluate>
+// EqID: mechanical_stability
+// EqExclude: numerical iteration mechanics
 DensityRoot solve_density(
     double pressure,
     double ideal_density,

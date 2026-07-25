@@ -29,10 +29,12 @@ inline std::atomic<bool> active{false};
 inline thread_local std::size_t thread_index = 0;
 inline thread_local bool worker = false;
 
+// EqExclude: transport and buffer mechanics
 inline bool in_parallel() {
     return active.load(std::memory_order_acquire);
 }
 
+// EqExclude: transport and buffer mechanics
 inline std::size_t thread_number() {
     return thread_index;
 }
@@ -53,6 +55,7 @@ private:
 };
 
 template <typename Function>
+// EqExclude: transport and buffer mechanics
 void cppad_parallel_for(std::size_t count, Function&& function) {
     if (count == 0) {
         return;
@@ -159,6 +162,7 @@ struct ThermodynamicDerivatives final {
     std::vector<double> hessian;
 };
 
+// EqExclude: CppAD-generated derivative machinery
 inline double directional_second(
     const std::vector<double>& hessian,
     const std::vector<double>& left,
@@ -174,6 +178,7 @@ inline double directional_second(
     return value;
 }
 
+// EqExclude: CppAD-generated derivative machinery
 inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     double temperature,
     double molar_density,
@@ -431,6 +436,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     };
 }
 
+// EqExclude: CppAD-generated derivative machinery
 inline ThermodynamicDerivatives thermodynamic_derivatives(
     double temperature,
     double molar_density,
@@ -451,6 +457,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives(
     );
 }
 
+// EqExclude: CppAD-generated derivative machinery
 inline ThermodynamicDerivatives thermodynamic_derivatives_active_born(
     double temperature,
     double molar_density,
@@ -473,6 +480,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_born(
     );
 }
 
+// EqExclude: CppAD-generated derivative machinery
 inline ThermodynamicDerivatives thermodynamic_derivatives_active_solvation_factor(
     double temperature,
     double molar_density,
@@ -494,6 +502,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_solvation_facto
     );
 }
 
+// EqExclude: CppAD-generated derivative machinery
 inline ThermodynamicDerivatives thermodynamic_derivatives_active_aqueous_kij(
     double temperature,
     double molar_density,

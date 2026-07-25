@@ -390,6 +390,219 @@ a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}.
 \label{eq:residual_helmholtz}
 \end{equation}
 
+\section{Thermodynamic properties}
+
+CppAD records the defining equations in this document and supplies the
+required partial derivatives. CppAD is the sole nonlinear derivative
+authority; the relations below transform those partials into reported
+properties and do not introduce a handwritten derivative implementation.
+
+% EqID: compressibility_factor
+% Source: \cite{Gross2001}, Eq.~(A.24)
+% Status: Source equation
+% Description: Compressibility factor from the residual Helmholtz density derivative.
+% Change note: Uses molar density as the independent density coordinate.
+\begin{equation}
+Z=1+\rho_m a_\rho,
+\qquad
+a_\rho=\left(\frac{\partial a^r}{\partial\rho_m}\right)_{T,\boldsymbol{x}}.
+\label{eq:compressibility_factor}
+\end{equation}
+
+% EqID: pressure
+% Source: \cite{Gross2001}, Eq.~(A.24)
+% Status: Source equation
+% Description: EOS pressure from compressibility factor.
+% Change note: Returns pressure in pascals on the SI molar-density basis.
+\begin{equation}
+P=\rho_mRTZ.
+\label{eq:pressure}
+\end{equation}
+
+% EqID: pressure_density_derivative
+% Source: Exact derivative of Eq.~\eqref{eq:pressure}
+% Status: Exact derivation
+% Description: Isothermal pressure derivative used by density closure and stability checks.
+% Change note: Transforms CppAD density partials without expanding the EOS derivative.
+\begin{equation}
+\left(\frac{\partial P}{\partial\rho_m}\right)_{T,\boldsymbol{x}}
+=RT\left(Z+\rho_mZ_\rho\right),
+\qquad
+Z_\rho=a_\rho+\rho_ma_{\rho\rho}.
+\label{eq:pressure_density_derivative}
+\end{equation}
+
+% EqID: residual_chemical_potential
+% Source: \cite{Gross2001}, Eq.~(A.33)
+% Status: Source equation
+% Description: Dimensionless residual chemical potential under unconstrained composition partials.
+% Change note: Mirrors the current constant-temperature, constant-density mixture convention.
+\begin{equation}
+\frac{\mu_i^r}{RT}
+=a^r+(Z-1)+a_{x_i}-\sum_jx_ja_{x_j}.
+\label{eq:residual_chemical_potential}
+\end{equation}
+
+% EqID: log_fugacity_coefficient
+% Source: \cite{Gross2001}, Eq.~(A.32)
+% Status: Source equation
+% Description: Natural logarithm of the component fugacity coefficient.
+% Change note: Available only when the compressibility factor is positive.
+\begin{equation}
+\ln\phi_i=\frac{\mu_i^r}{RT}-\ln Z.
+\label{eq:log_fugacity_coefficient}
+\end{equation}
+
+% EqID: residual_entropy
+% Source: \cite{Gross2001}, Eq.~(A.46)
+% Status: Source equation
+% Description: Residual entropy at the same temperature and density.
+% Change note: Does not silently change to a same-pressure ideal-gas reference.
+\begin{equation}
+s_V^r=-R\left(a^r+Ta_T\right).
+\label{eq:residual_entropy}
+\end{equation}
+
+% EqID: residual_internal_energy
+% Source: \cite{Gross2001}, Eq.~(A.47)
+% Status: Source equation
+% Description: Residual molar internal energy.
+% Change note: Uses the CppAD temperature partial at fixed density and composition.
+\begin{equation}
+u^r=-RT^2a_T.
+\label{eq:residual_internal_energy}
+\end{equation}
+
+% EqID: residual_enthalpy
+% Source: \cite{Gross2001}, Eq.~(A.48)
+% Status: Source equation
+% Description: Residual molar enthalpy.
+% Change note: Includes the residual pressure-volume term Z-1.
+\begin{equation}
+h^r=RT\left[-Ta_T+(Z-1)\right].
+\label{eq:residual_enthalpy}
+\end{equation}
+
+% EqID: residual_heat_capacity_cv
+% Source: \cite{Gross2001}, Eq.~(A.49)
+% Status: Source equation
+% Description: Residual isochoric molar heat capacity.
+% Change note: Transforms CppAD first and second temperature partials.
+\begin{equation}
+c_v^r=R\left(-2Ta_T-T^2a_{TT}\right).
+\label{eq:residual_heat_capacity_cv}
+\end{equation}
+
+% EqID: residual_heat_capacity_cp
+% Source: \cite{Gross2001}, Eq.~(A.50)
+% Status: Source equation
+% Description: Residual isobaric molar heat capacity on a conditioned mechanical branch.
+% Change note: The final minus one removes the ideal-gas cp-cv contribution.
+\begin{equation}
+\frac{c_p^r}{R}
+=\frac{c_v^r}{R}
++\frac{(Z+TZ_T)^2}{Z+\rho_mZ_\rho}-1.
+\label{eq:residual_heat_capacity_cp}
+\end{equation}
+
+% EqID: log_fugacity_density_derivative
+% Source: Exact derivative of Eqs.~\eqref{eq:residual_chemical_potential} and \eqref{eq:log_fugacity_coefficient}
+% Status: Exact derivation
+% Description: Density derivative of log fugacity used by active fixed-pressure observations.
+% Change note: Expressed in terms of CppAD Hessian entries rather than expanded EOS derivatives.
+\begin{equation}
+\begin{aligned}
+\left(\ln\phi_i\right)_\rho
+&=\left(\frac{\mu_i^r}{RT}\right)_\rho-\frac{Z_\rho}{Z},\\
+\left(\frac{\mu_i^r}{RT}\right)_\rho
+&=2a_\rho+\rho_ma_{\rho\rho}
++a_{x_i\rho}-\sum_jx_ja_{x_j\rho}.
+\end{aligned}
+\label{eq:log_fugacity_density_derivative}
+\end{equation}
+
+% EqID: fixed_pressure_fugacity_correction
+% Source: Provider Newton correction using Eq.~\eqref{eq:pressure_density_derivative}
+% Status: Implementation convention
+% Description: Correct a converged-state log fugacity for its bounded pressure residual.
+% Change note: Documents the exact arithmetic used by the reference observation owner.
+\begin{equation}
+\begin{aligned}
+\Delta\rho_m&=-\frac{P-P^\star}{P_\rho},\\
+\ln\phi_i(P^\star)&\approx
+\ln\phi_i(P)+(\ln\phi_i)_\rho\,\Delta\rho_m.
+\end{aligned}
+\label{eq:fixed_pressure_fugacity_correction}
+\end{equation}
+
+% EqID: fixed_pressure_total_derivative
+% Source: Exact implicit derivative of the pressure constraint
+% Status: Exact derivation
+% Description: Total derivative of a property with respect to an active coordinate at fixed pressure.
+% Change note: Shared by active Born, aqueous k_ij, and solvation-factor observations.
+\begin{equation}
+\left.\frac{dQ}{d\theta}\right|_{P}
+=Q_\theta+Q_\rho\left.\frac{d\rho_m}{d\theta}\right|_P,
+\qquad
+\left.\frac{d\rho_m}{d\theta}\right|_P=-\frac{P_\theta}{P_\rho}.
+\label{eq:fixed_pressure_total_derivative}
+\end{equation}
+
+\section{Density closure and mechanical domain}
+
+% EqID: density_residual
+% Source: Exact pressure-closure equation using Eq.~\eqref{eq:pressure}
+% Status: Exact derivation
+% Description: Scalar residual whose roots are specified-pressure EOS states.
+% Change note: Root-search mechanics are not thermodynamic equations.
+\begin{equation}
+F(\rho_m;T,\boldsymbol{x},P^\star)
+=P_{\mathrm{EOS}}(T,\rho_m,\boldsymbol{x})-P^\star=0.
+\label{eq:density_residual}
+\end{equation}
+
+% EqID: ideal_gas_density
+% Source: Ideal-gas limiting relation
+% Status: Exact derivation
+% Description: Ideal-gas density scale used to construct the density search interval.
+% Change note: This is a numerical scale, not a replacement EOS.
+\begin{equation}
+\rho_{\mathrm{ideal}}=\frac{P^\star}{RT}.
+\label{eq:ideal_gas_density}
+\end{equation}
+
+% EqID: density_upper_bound
+% Source: Exact inversion of Eqs.~\eqref{eq:packing_fraction_coefficient} and \eqref{eq:close_packing_fraction}
+% Status: Exact derivation
+% Description: Model-specific density boundary implied by close packing.
+% Change note: Reuses the sole Provider packing geometry owner.
+\begin{equation}
+\rho_{\max}=\frac{\eta_{\mathrm{cp}}}{c_\eta(T,\boldsymbol{x})}.
+\label{eq:density_upper_bound}
+\end{equation}
+
+% EqID: mechanical_stability
+% Source: Standard isothermal mechanical-stability criterion
+% Status: Source equation
+% Description: Positive isothermal pressure slope required for a stable density root.
+% Change note: The implementation adds a documented numerical conditioning floor.
+\begin{equation}
+\left(\frac{\partial P}{\partial\rho_m}\right)_{T,\boldsymbol{x}}>0,
+\qquad
+P_\rho>10^{-10}\frac{P^\star}{\rho_{\mathrm{ideal}}}
+\quad\text{for certified roots}.
+\label{eq:mechanical_stability}
+\end{equation}
+
+\section{Derivative authority}
+
+The independent coordinates taped by the common nonlinear owner are
+$(T,\rho_m,\boldsymbol{x})$, optional active model coordinates, and association
+site fractions. CppAD differentiates the defining Helmholtz and mass-action
+relations. The Provider then applies the implicit association solves and exact
+property transformations above. No analytical nonlinear gradient or Hessian
+catalogue is maintained beside CppAD.
+
 \section{Electrolyte dielectric and Debye--Huckel relations}
 
 % EqID: salt_free_solvent_permittivity

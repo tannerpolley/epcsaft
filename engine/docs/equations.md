@@ -25,7 +25,7 @@ $$
 - Source: \cite{AscaniHeld2021}, Eq.~(13)
 - Description: Ascani combined solvent-mass and ion-mole bulk relative permittivity.
 - Change note: Ion mixture permittivities remain distinct from Figiel radial-region permittivity.
-- LaTeX: `docs/latex/equations.tex:426`
+- LaTeX: `docs/latex/equations.tex:639`
 - Implementation:
   - `src/epcsaft/_native/electrolyte.hpp:66` (`electrolyte_contribution`)
 
@@ -133,7 +133,7 @@ $$
 - Source: Provider model-bound routing of \cite{Figiel2026Correction} and \cite{AscaniHeld2021}
 - Description: Select the source-consistent Born contribution from immutable model identity.
 - Change note: Documents routing without adding a public selector or case branch.
-- LaTeX: `docs/latex/equations.tex:567`
+- LaTeX: `docs/latex/equations.tex:780`
 - Implementation:
   - `src/epcsaft/_native/born.hpp:123` (`born_contribution`)
 
@@ -155,7 +155,7 @@ $$
 - Source: \cite{Figiel2025}, shell-thickness definition preceding Eq.~(7)
 - Description: Ion-specific outer Born shell diameter.
 - Change note: The fitted Born diameter and resolved solvation factor remain distinct inputs.
-- LaTeX: `docs/latex/equations.tex:504`
+- LaTeX: `docs/latex/equations.tex:717`
 - Implementation:
   - `src/epcsaft/_native/born.hpp:15` (`born_ssm_ds_contribution_impl`)
 
@@ -179,6 +179,24 @@ $$
 $$
 \eta_{\mathrm{cp}}=\frac{\pi}{3\sqrt{2}}.
 \label{eq:close_packing_fraction}
+$$
+
+## `compressibility_factor`
+
+- Section: Thermodynamic properties / Association
+- Status: Source equation
+- Source: \cite{Gross2001}, Eq.~(A.24)
+- Description: Compressibility factor from the residual Helmholtz density derivative.
+- Change note: Uses molar density as the independent density coordinate.
+- LaTeX: `docs/latex/equations.tex:405`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:953` (`evaluate`)
+
+$$
+Z=1+\rho_m a_\rho,
+\qquad
+a_\rho=\left(\frac{\partial a^r}{\partial\rho_m}\right)_{T,\boldsymbol{x}}.
+\label{eq:compressibility_factor}
 $$
 
 ## `cross_dispersion_energy`
@@ -222,7 +240,7 @@ $$
 - Source: \cite{Bulow2019}, finite-size function in Eq.~(2)
 - Description: Finite-size Debye--Huckel correction and its cancellation-safe series.
 - Change note: The reference-state reduced diameter selects the numerical branch.
-- LaTeX: `docs/latex/equations.tex:460`
+- LaTeX: `docs/latex/equations.tex:673`
 - Implementation:
   - `src/epcsaft/_native/electrolyte.hpp:48` (`finite_size_chi`)
 
@@ -246,7 +264,7 @@ $$
 - Source: \cite{Bulow2019}, Eq.~(2)
 - Description: Finite-size Debye--Huckel residual Helmholtz contribution.
 - Change note: Uses the model-routed common segment diameter converted to metres.
-- LaTeX: `docs/latex/equations.tex:478`
+- LaTeX: `docs/latex/equations.tex:691`
 - Implementation:
   - `src/epcsaft/_native/electrolyte.hpp:66` (`electrolyte_contribution`)
 
@@ -265,7 +283,7 @@ $$
 - Source: \cite{Bulow2019}, Debye screening definition associated with Eq.~(2)
 - Description: SI Debye screening parameter for the resolved bulk dielectric.
 - Change note: Uses molar density and the current Provider physical constants.
-- LaTeX: `docs/latex/equations.tex:448`
+- LaTeX: `docs/latex/equations.tex:661`
 - Implementation:
   - `src/epcsaft/_native/electrolyte.hpp:66` (`electrolyte_contribution`)
 
@@ -274,6 +292,39 @@ $$
 \sqrt{\frac{\rho_mN_Ae^2S_z}
 {\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}}.
 \label{eq:debye_screening_parameter}
+$$
+
+## `density_residual`
+
+- Section: Density closure and mechanical domain / Association
+- Status: Exact derivation
+- Source: Exact pressure-closure equation using Eq.~\eqref{eq:pressure}
+- Description: Scalar residual whose roots are specified-pressure EOS states.
+- Change note: Root-search mechanics are not thermodynamic equations.
+- LaTeX: `docs/latex/equations.tex:558`
+- Implementation:
+  - `src/epcsaft/_native/density.hpp:32` (`refine_density_root`)
+
+$$
+F(\rho_m;T,\boldsymbol{x},P^\star)
+=P_{\mathrm{EOS}}(T,\rho_m,\boldsymbol{x})-P^\star=0.
+\label{eq:density_residual}
+$$
+
+## `density_upper_bound`
+
+- Section: Density closure and mechanical domain / Association
+- Status: Exact derivation
+- Source: Exact inversion of Eqs.~\eqref{eq:packing_fraction_coefficient} and \eqref{eq:close_packing_fraction}
+- Description: Model-specific density boundary implied by close packing.
+- Change note: Reuses the sole Provider packing geometry owner.
+- LaTeX: `docs/latex/equations.tex:579`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:1088` (`evaluate_pressure`)
+
+$$
+\rho_{\max}=\frac{\eta_{\mathrm{cp}}}{c_\eta(T,\boldsymbol{x})}.
+\label{eq:density_upper_bound}
 $$
 
 ## `dispersion_chain_coefficients`
@@ -426,7 +477,7 @@ $$
 - Source: \cite{Figiel2025}, Eq.~(11)
 - Description: Figiel-family ion-suppressed bulk relative permittivity.
 - Change note: The suppression coefficient is an explicit resolved model record.
-- LaTeX: `docs/latex/equations.tex:412`
+- LaTeX: `docs/latex/equations.tex:625`
 - Implementation:
   - `src/epcsaft/_native/electrolyte.hpp:66` (`electrolyte_contribution`)
 
@@ -454,6 +505,47 @@ $$
 d_i=0.88\,\sigma_i,\qquad z_i\ne0,\quad
 \mathcal{M}\ne\mathcal{M}_{\mathrm{Ascani}}.
 \label{eq:figiel_ionic_segment_diameter}
+$$
+
+## `fixed_pressure_fugacity_correction`
+
+- Section: Thermodynamic properties / Association
+- Status: Implementation convention
+- Source: Provider Newton correction using Eq.~\eqref{eq:pressure_density_derivative}
+- Description: Correct a converged-state log fugacity for its bounded pressure residual.
+- Change note: Documents the exact arithmetic used by the reference observation owner.
+- LaTeX: `docs/latex/equations.tex:529`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:63` (`fixed_pressure_log_fugacity`)
+
+$$
+\begin{aligned}
+\Delta\rho_m&=-\frac{P-P^\star}{P_\rho},\\
+\ln\phi_i(P^\star)&\approx
+\ln\phi_i(P)+(\ln\phi_i)_\rho\,\Delta\rho_m.
+\end{aligned}
+\label{eq:fixed_pressure_fugacity_correction}
+$$
+
+## `fixed_pressure_total_derivative`
+
+- Section: Thermodynamic properties / Association
+- Status: Exact derivation
+- Source: Exact implicit derivative of the pressure constraint
+- Description: Total derivative of a property with respect to an active coordinate at fixed pressure.
+- Change note: Shared by active Born, aqueous k_ij, and solvation-factor observations.
+- LaTeX: `docs/latex/equations.tex:543`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:77` (`active_born_observation`)
+  - `src/epcsaft/_native/eos.cpp:168` (`active_aqueous_kij_observation`)
+  - `src/epcsaft/_native/eos.cpp:256` (`active_solvation_factor_observation`)
+
+$$
+\left.\frac{dQ}{d\theta}\right|_{P}
+=Q_\theta+Q_\rho\left.\frac{d\rho_m}{d\theta}\right|_P,
+\qquad
+\left.\frac{d\rho_m}{d\theta}\right|_P=-\frac{P_\theta}{P_\rho}.
+\label{eq:fixed_pressure_total_derivative}
 $$
 
 ## `hard_chain_helmholtz`
@@ -512,6 +604,22 @@ a^{hs}=\frac{1}{\zeta_0}\left[
 \label{eq:hard_sphere_helmholtz}
 $$
 
+## `ideal_gas_density`
+
+- Section: Density closure and mechanical domain / Association
+- Status: Exact derivation
+- Source: Ideal-gas limiting relation
+- Description: Ideal-gas density scale used to construct the density search interval.
+- Change note: This is a numerical scale, not a replacement EOS.
+- LaTeX: `docs/latex/equations.tex:569`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:1088` (`evaluate_pressure`)
+
+$$
+\rho_{\mathrm{ideal}}=\frac{P^\star}{RT}.
+\label{eq:ideal_gas_density}
+$$
+
 ## `ionic_strength_charge_sum`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations / Association
@@ -519,13 +627,51 @@ $$
 - Source: \cite{Bulow2019}, charge-weighted composition in the screening definition
 - Description: Mole-fraction charge-square sum entering Debye screening.
 - Change note: Only charged components contribute.
-- LaTeX: `docs/latex/equations.tex:438`
+- LaTeX: `docs/latex/equations.tex:651`
 - Implementation:
   - `src/epcsaft/_native/electrolyte.hpp:66` (`electrolyte_contribution`)
 
 $$
 S_z=\sum_{i\in\mathcal{I}}x_i z_i^2.
 \label{eq:ionic_strength_charge_sum}
+$$
+
+## `log_fugacity_coefficient`
+
+- Section: Thermodynamic properties / Association
+- Status: Source equation
+- Source: \cite{Gross2001}, Eq.~(A.32)
+- Description: Natural logarithm of the component fugacity coefficient.
+- Change note: Available only when the compressibility factor is positive.
+- LaTeX: `docs/latex/equations.tex:451`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:953` (`evaluate`)
+
+$$
+\ln\phi_i=\frac{\mu_i^r}{RT}-\ln Z.
+\label{eq:log_fugacity_coefficient}
+$$
+
+## `log_fugacity_density_derivative`
+
+- Section: Thermodynamic properties / Association
+- Status: Exact derivation
+- Source: Exact derivative of Eqs.~\eqref{eq:residual_chemical_potential} and \eqref{eq:log_fugacity_coefficient}
+- Description: Density derivative of log fugacity used by active fixed-pressure observations.
+- Change note: Expressed in terms of CppAD Hessian entries rather than expanded EOS derivatives.
+- LaTeX: `docs/latex/equations.tex:513`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:33` (`log_fugacity_density`)
+
+$$
+\begin{aligned}
+\left(\ln\phi_i\right)_\rho
+&=\left(\frac{\mu_i^r}{RT}\right)_\rho-\frac{Z_\rho}{Z},\\
+\left(\frac{\mu_i^r}{RT}\right)_\rho
+&=2a_\rho+\rho_ma_{\rho\rho}
++a_{x_i\rho}-\sum_jx_ja_{x_j\rho}.
+\end{aligned}
+\label{eq:log_fugacity_density_derivative}
 $$
 
 ## `mean_segment_count`
@@ -544,6 +690,25 @@ $$
 \label{eq:mean_segment_count}
 $$
 
+## `mechanical_stability`
+
+- Section: Density closure and mechanical domain / Association
+- Status: Source equation
+- Source: Standard isothermal mechanical-stability criterion
+- Description: Positive isothermal pressure slope required for a stable density root.
+- Change note: The implementation adds a documented numerical conditioning floor.
+- LaTeX: `docs/latex/equations.tex:589`
+- Implementation:
+  - `src/epcsaft/_native/density.hpp:102` (`solve_density`)
+
+$$
+\left(\frac{\partial P}{\partial\rho_m}\right)_{T,\boldsymbol{x}}>0,
+\qquad
+P_\rho>10^{-10}\frac{P^\star}{\rho_{\mathrm{ideal}}}
+\quad\text{for certified roots}.
+\label{eq:mechanical_stability}
+$$
+
 ## `mixture_solvation_factor`
 
 - Section: Born solvation relations / Association
@@ -551,7 +716,7 @@ $$
 - Source: \cite{Figiel2025}, SSM+DS solvation-factor mixing rule
 - Description: Mole-fraction-weighted mixture solvation factor.
 - Change note: Retains the explicit fraction normalization used by the Provider.
-- LaTeX: `docs/latex/equations.tex:493`
+- LaTeX: `docs/latex/equations.tex:706`
 - Implementation:
   - `src/epcsaft/_native/born.hpp:15` (`born_ssm_ds_contribution_impl`)
 
@@ -585,7 +750,7 @@ $$
 - Source: \cite{AscaniHeld2021}, Eq.~(10)
 - Description: Dimensionless original-Born residual Helmholtz contribution.
 - Change note: SSM and DS are absent for the source-routed Ascani model.
-- LaTeX: `docs/latex/equations.tex:554`
+- LaTeX: `docs/latex/equations.tex:767`
 - Implementation:
   - `src/epcsaft/_native/born.hpp:96` (`born_original_contribution`)
 
@@ -604,7 +769,7 @@ $$
 - Source: \cite{AscaniHeld2021}, Eq.~(10) and ion-diameter convention
 - Description: Original-Born charge-square diameter sum.
 - Change note: Uses the Ascani ion sigma as the Born diameter.
-- LaTeX: `docs/latex/equations.tex:543`
+- LaTeX: `docs/latex/equations.tex:756`
 - Implementation:
   - `src/epcsaft/_native/born.hpp:96` (`born_original_contribution`)
 
@@ -683,6 +848,124 @@ $$
 \label{eq:phase_packing_fraction}
 $$
 
+## `pressure`
+
+- Section: Thermodynamic properties / Association
+- Status: Source equation
+- Source: \cite{Gross2001}, Eq.~(A.24)
+- Description: EOS pressure from compressibility factor.
+- Change note: Returns pressure in pascals on the SI molar-density basis.
+- LaTeX: `docs/latex/equations.tex:417`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:953` (`evaluate`)
+
+$$
+P=\rho_mRTZ.
+\label{eq:pressure}
+$$
+
+## `pressure_density_derivative`
+
+- Section: Thermodynamic properties / Association
+- Status: Exact derivation
+- Source: Exact derivative of Eq.~\eqref{eq:pressure}
+- Description: Isothermal pressure derivative used by density closure and stability checks.
+- Change note: Transforms CppAD density partials without expanding the EOS derivative.
+- LaTeX: `docs/latex/equations.tex:427`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:953` (`evaluate`)
+
+$$
+\left(\frac{\partial P}{\partial\rho_m}\right)_{T,\boldsymbol{x}}
+=RT\left(Z+\rho_mZ_\rho\right),
+\qquad
+Z_\rho=a_\rho+\rho_ma_{\rho\rho}.
+\label{eq:pressure_density_derivative}
+$$
+
+## `residual_chemical_potential`
+
+- Section: Thermodynamic properties / Association
+- Status: Source equation
+- Source: \cite{Gross2001}, Eq.~(A.33)
+- Description: Dimensionless residual chemical potential under unconstrained composition partials.
+- Change note: Mirrors the current constant-temperature, constant-density mixture convention.
+- LaTeX: `docs/latex/equations.tex:440`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:953` (`evaluate`)
+
+$$
+\frac{\mu_i^r}{RT}
+=a^r+(Z-1)+a_{x_i}-\sum_jx_ja_{x_j}.
+\label{eq:residual_chemical_potential}
+$$
+
+## `residual_enthalpy`
+
+- Section: Thermodynamic properties / Association
+- Status: Source equation
+- Source: \cite{Gross2001}, Eq.~(A.48)
+- Description: Residual molar enthalpy.
+- Change note: Includes the residual pressure-volume term Z-1.
+- LaTeX: `docs/latex/equations.tex:481`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:953` (`evaluate`)
+
+$$
+h^r=RT\left[-Ta_T+(Z-1)\right].
+\label{eq:residual_enthalpy}
+$$
+
+## `residual_entropy`
+
+- Section: Thermodynamic properties / Association
+- Status: Source equation
+- Source: \cite{Gross2001}, Eq.~(A.46)
+- Description: Residual entropy at the same temperature and density.
+- Change note: Does not silently change to a same-pressure ideal-gas reference.
+- LaTeX: `docs/latex/equations.tex:461`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:953` (`evaluate`)
+
+$$
+s_V^r=-R\left(a^r+Ta_T\right).
+\label{eq:residual_entropy}
+$$
+
+## `residual_heat_capacity_cp`
+
+- Section: Thermodynamic properties / Association
+- Status: Source equation
+- Source: \cite{Gross2001}, Eq.~(A.50)
+- Description: Residual isobaric molar heat capacity on a conditioned mechanical branch.
+- Change note: The final minus one removes the ideal-gas cp-cv contribution.
+- LaTeX: `docs/latex/equations.tex:501`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:953` (`evaluate`)
+
+$$
+\frac{c_p^r}{R}
+=\frac{c_v^r}{R}
++\frac{(Z+TZ_T)^2}{Z+\rho_mZ_\rho}-1.
+\label{eq:residual_heat_capacity_cp}
+$$
+
+## `residual_heat_capacity_cv`
+
+- Section: Thermodynamic properties / Association
+- Status: Source equation
+- Source: \cite{Gross2001}, Eq.~(A.49)
+- Description: Residual isochoric molar heat capacity.
+- Change note: Transforms CppAD first and second temperature partials.
+- LaTeX: `docs/latex/equations.tex:491`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:953` (`evaluate`)
+
+$$
+c_v^r=R\left(-2Ta_T-T^2a_{TT}\right).
+\label{eq:residual_heat_capacity_cv}
+$$
+
 ## `residual_helmholtz`
 
 - Section: Residual Helmholtz energy / Association
@@ -699,6 +982,22 @@ a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}.
 \label{eq:residual_helmholtz}
 $$
 
+## `residual_internal_energy`
+
+- Section: Thermodynamic properties / Association
+- Status: Source equation
+- Source: \cite{Gross2001}, Eq.~(A.47)
+- Description: Residual molar internal energy.
+- Change note: Uses the CppAD temperature partial at fixed density and composition.
+- LaTeX: `docs/latex/equations.tex:471`
+- Implementation:
+  - `src/epcsaft/_native/eos.cpp:953` (`evaluate`)
+
+$$
+u^r=-RT^2a_T.
+\label{eq:residual_internal_energy}
+$$
+
 ## `salt_free_solvent_permittivity`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations / Association
@@ -706,7 +1005,7 @@ $$
 - Source: \cite{Figiel2025}, Eq.~(11) solvent basis; \cite{AscaniHeld2021}, Eq.~(13)
 - Description: Mass-weighted relative permittivity of the salt-free solvent mixture.
 - Change note: Uses component molar masses and excludes ions from the denominator.
-- LaTeX: `docs/latex/equations.tex:400`
+- LaTeX: `docs/latex/equations.tex:613`
 - Implementation:
   - `src/epcsaft/_native/electrolyte.hpp:66` (`electrolyte_contribution`)
 
@@ -756,7 +1055,7 @@ $$
 - Source: \cite{Figiel2026Correction}, corrected Eq.~(7)
 - Description: Dimensionless SSM+DS Born residual Helmholtz contribution.
 - Change note: Shared by fixed and active-coordinate evaluation paths.
-- LaTeX: `docs/latex/equations.tex:531`
+- LaTeX: `docs/latex/equations.tex:744`
 - Implementation:
   - `src/epcsaft/_native/born.hpp:15` (`born_ssm_ds_contribution_impl`)
   - `src/epcsaft/_native/born.hpp:75` (`born_ssm_ds_contribution`)
@@ -777,7 +1076,7 @@ $$
 - Source: \cite{Figiel2026Correction}, corrected Eq.~(7)
 - Description: Corrected piecewise-dielectric SSM+DS radial charging sum.
 - Change note: Restores the ionic-region dielectric in the inner-shell term.
-- LaTeX: `docs/latex/equations.tex:515`
+- LaTeX: `docs/latex/equations.tex:728`
 - Implementation:
   - `src/epcsaft/_native/born.hpp:15` (`born_ssm_ds_contribution_impl`)
 
@@ -797,6 +1096,17 @@ $$
 - `src/epcsaft/_native/association.hpp:23` (`association_exp`): scalar utility dispatch
 - `src/epcsaft/_native/association.hpp:119` (`solve_site_fractions`): numerical iteration mechanics
 - `src/epcsaft/_native/association.hpp:174` (`solve_linear`): numerical iteration mechanics
+- `src/epcsaft/_native/density.hpp:32` (`refine_density_root`): numerical iteration mechanics
+- `src/epcsaft/_native/density.hpp:102` (`solve_density`): numerical iteration mechanics
+- `src/epcsaft/_native/derivatives.hpp:33` (`in_parallel`): transport and buffer mechanics
+- `src/epcsaft/_native/derivatives.hpp:38` (`thread_number`): transport and buffer mechanics
+- `src/epcsaft/_native/derivatives.hpp:59` (`cppad_parallel_for`): transport and buffer mechanics
+- `src/epcsaft/_native/derivatives.hpp:166` (`directional_second`): CppAD-generated derivative machinery
+- `src/epcsaft/_native/derivatives.hpp:182` (`thermodynamic_derivatives_impl`): CppAD-generated derivative machinery
+- `src/epcsaft/_native/derivatives.hpp:440` (`thermodynamic_derivatives`): CppAD-generated derivative machinery
+- `src/epcsaft/_native/derivatives.hpp:461` (`thermodynamic_derivatives_active_born`): CppAD-generated derivative machinery
+- `src/epcsaft/_native/derivatives.hpp:484` (`thermodynamic_derivatives_active_solvation_factor`): CppAD-generated derivative machinery
+- `src/epcsaft/_native/derivatives.hpp:506` (`thermodynamic_derivatives_active_aqueous_kij`): CppAD-generated derivative machinery
 - `src/epcsaft/_native/electrolyte.hpp:24` (`electrolyte_sqrt`): scalar utility dispatch
 - `src/epcsaft/_native/electrolyte.hpp:33` (`electrolyte_log`): scalar utility dispatch
 - `src/epcsaft/_native/helmholtz.hpp:56` (`scalar_log`): scalar utility dispatch

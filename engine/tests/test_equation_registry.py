@@ -233,3 +233,22 @@ def test_required_provider_equation_families_are_present() -> None:
         "original_born_helmholtz",
         "ssm_ds_born_helmholtz",
     } <= eqids
+
+
+def test_property_identities_and_cppad_boundary_are_documented() -> None:
+    tex = (REPO_ROOT / "docs" / "latex" / "equations.tex").read_text()
+    for eqid in (
+        "compressibility_factor",
+        "pressure",
+        "residual_chemical_potential",
+        "log_fugacity_coefficient",
+        "residual_entropy",
+        "residual_enthalpy",
+        "residual_heat_capacity_cp",
+        "density_residual",
+        "mechanical_stability",
+    ):
+        assert f"% EqID: {eqid}" in tex
+    assert "CppAD is the sole nonlinear derivative authority" in tex
+    assert "% Status: Analytical derivative" not in tex
+    assert "% Status: Manual derivative" not in tex

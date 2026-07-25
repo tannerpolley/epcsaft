@@ -37,6 +37,7 @@ double log_fugacity_density(
     std::size_t component,
     std::size_t coordinates
 ) {
+    // EqID: log_fugacity_density_derivative
     auto hessian = [&derivatives, coordinates](
         std::size_t row, std::size_t column
     ) {
@@ -65,12 +66,14 @@ double fixed_pressure_log_fugacity(
     std::size_t component,
     double fugacity_density
 ) {
+    // EqID: fixed_pressure_fugacity_correction
     const double density_correction = -(state.pressure - pressure)
         / state.pressure_density_derivative;
     return (*state.log_fugacity_coefficient)[component]
         + fugacity_density * density_correction;
 }
 
+// EqID: fixed_pressure_total_derivative
 detail::ReferenceObservation active_born_observation(
     const NativeModel& model,
     const NativeParameters& parameters,
@@ -161,6 +164,7 @@ detail::ReferenceObservation active_born_observation(
     };
 }
 
+// EqID: fixed_pressure_total_derivative
 detail::ReferenceObservation active_aqueous_kij_observation(
     const NativeModel& model,
     const NativeParameters& parameters,
@@ -248,6 +252,7 @@ detail::ReferenceObservation active_aqueous_kij_observation(
     };
 }
 
+// EqID: fixed_pressure_total_derivative
 detail::ReferenceObservation active_solvation_factor_observation(
     const NativeModel& model,
     const NativeParameters& parameters,
@@ -1005,6 +1010,7 @@ NativeResult NativeModel::evaluate(
     const auto derivatives = detail::thermodynamic_derivatives(
         temperature, molar_density, mole_fractions, parameters_, site_fraction
     );
+    // EqID: compressibility_factor
     const double compressibility = 1.0 + molar_density * derivatives.density;
     double weighted_composition_derivative = 0.0;
     for (std::size_t component = 0; component < components; ++component) {
@@ -1017,10 +1023,12 @@ NativeResult NativeModel::evaluate(
         log_fugacity.emplace(components);
     }
     for (std::size_t component = 0; component < components; ++component) {
+        // EqID: residual_chemical_potential
         chemical_potential[component] = residual + compressibility - 1.0
             + derivatives.composition[component]
             - weighted_composition_derivative;
         if (log_fugacity.has_value()) {
+            // EqID: log_fugacity_coefficient
             (*log_fugacity)[component] = chemical_potential[component]
                 - std::log(compressibility);
         }
@@ -1036,6 +1044,7 @@ NativeResult NativeModel::evaluate(
     std::optional<double> residual_cp;
     if (std::isfinite(pressure_slope_factor)
         && pressure_slope_factor > 1.0e-10) {
+        // EqID: residual_heat_capacity_cp
         const double cp_over_r = cv_over_r
             + (compressibility + temperature * z_temperature)
                 * (compressibility + temperature * z_temperature)
@@ -1053,18 +1062,24 @@ NativeResult NativeModel::evaluate(
         values.born_ssm_ds,
         residual,
         compressibility,
+        // EqID: pressure
         compressibility * molar_density * detail::GAS_CONSTANT * temperature,
         std::move(chemical_potential),
         std::move(log_fugacity),
+        // EqID: residual_entropy
         detail::GAS_CONSTANT
             * (-residual - temperature * derivatives.temperature),
+        // EqID: residual_internal_energy
         -detail::GAS_CONSTANT * temperature * temperature
             * derivatives.temperature,
+        // EqID: residual_enthalpy
         detail::GAS_CONSTANT * temperature
             * (-temperature * derivatives.temperature + compressibility - 1.0),
+        // EqID: residual_heat_capacity_cv
         detail::GAS_CONSTANT * cv_over_r,
         residual_cp,
         molar_density,
+        // EqID: pressure_density_derivative
         detail::GAS_CONSTANT * temperature * pressure_slope_factor,
         std::nullopt,
     };
@@ -1082,6 +1097,7 @@ NativeResult NativeModel::evaluate_pressure(
         || mole_fractions.size() != components || !finite(mole_fractions)) {
         throw std::invalid_argument("invalid native pressure state");
     }
+    // EqID: density_upper_bound
     const double packing_coefficient = detail::packing_fraction_coefficient(
         temperature, mole_fractions, parameters_
     );
@@ -1090,6 +1106,7 @@ NativeResult NativeModel::evaluate_pressure(
     }
     const auto root = detail::solve_density(
         pressure,
+        // EqID: ideal_gas_density
         pressure / (detail::GAS_CONSTANT * temperature),
         detail::close_packing_fraction() / packing_coefficient,
         phase,
