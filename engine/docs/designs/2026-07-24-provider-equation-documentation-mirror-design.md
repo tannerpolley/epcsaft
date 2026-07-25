@@ -43,7 +43,9 @@ native ABI, runtime dependency, capability, or authority.
 The three surfaces have distinct roles:
 
 1. `src/epcsaft/_native/**` remains the sole production implementation of the
-   defining equations.
+   EOS and native defining equations; the small exact reference/property
+   transformations currently owned by `src/epcsaft/reference.py` remain
+   Python-owned.
 2. `docs/science/full-provider-eos.md` remains the normative contract for
    admitted capability, sources, units, conventions, derivative policy, and
    failure boundaries.
@@ -74,7 +76,15 @@ The corresponding C++ owner carries a nearby comment:
 // EqID: residual_helmholtz
 ```
 
-A Provider-owned synchronization script parses both surfaces and generates:
+A Python-owned transformation uses the same identifier with its native comment
+syntax:
+
+```python
+# EqID: practical_osmotic_coefficient
+```
+
+A Provider-owned synchronization script parses the LaTeX and both implementation
+surfaces and generates:
 
 - `docs/equations_registry.yaml`, the machine-readable traceability registry;
 - `docs/equations.md`, the searchable GitHub-rendered equation index.
@@ -87,8 +97,8 @@ Rejected alternatives:
 
 - A registry-first design would make YAML the scientific editing surface and
   weaken direct review of notation and equation structure.
-- Generating LaTeX from C++ comments would place presentation markup and
-  bibliography concerns inside the native implementation.
+- Generating LaTeX from implementation comments would place presentation
+  markup and bibliography concerns inside production source.
 - Human-maintained file and line references without stable identifiers would
   permit silent drift and break during ordinary refactoring.
 
@@ -147,16 +157,16 @@ handwritten derivative formula is a production owner.
 The checker fails closed when:
 
 - a LaTeX `EqID` is duplicated;
-- a C++ `EqID` has no LaTeX entry;
-- an implemented LaTeX equation has no C++ owner comment;
+- an implementation `EqID` has no LaTeX entry;
+- an implemented LaTeX equation has no C++ or Python owner comment;
 - an equation lacks required source, status, description, or change metadata;
 - an identifier uses an unknown status or malformed name;
 - a generated Markdown or YAML file differs from current source; or
 - a prohibited handwritten nonlinear derivative entry is introduced.
 
-An equation may have multiple C++ owner references when one defining relation
-is reused. Generated records include current file, line, and nearby symbol
-context. Authored documentation does not depend on line numbers.
+An equation may have multiple implementation-owner references when one
+defining relation is reused. Generated records include current file, line, and
+nearby symbol context. Authored documentation does not depend on line numbers.
 
 Documentation-only thermodynamic identities must use an explicit
 documentation or exact-derivation status. They cannot be counted as direct
@@ -166,11 +176,12 @@ C++ coverage.
 
 Reconstruct one equation family at a time:
 
-1. identify the current scalar-generic C++ owner;
+1. identify the current scalar-generic C++ owner or exact Python transformation
+   owner;
 2. identify the current scientific-contract entry and source locator;
 3. compare the legacy equation only as provenance and structural guidance;
 4. write the current equation using Provider units, bases, and conventions;
-5. attach the stable `EqID` beside the defining C++ expression;
+5. attach the stable `EqID` beside the defining implementation expression;
 6. generate and inspect the registry and Markdown view; and
 7. verify that the family contains no obsolete derivative or model variant.
 
@@ -191,14 +202,15 @@ Add:
 
 Modify only:
 
-- current native equation-owner files to add `EqID` comments;
+- current native equation-owner files and `reference.py` to add `EqID`
+  comments;
 - `docs/science/full-provider-eos.md` to point to the local checked mirror and
   state its non-runtime role;
 - the smallest existing contributor or test entry point needed to document
   the synchronization command.
 
-No native function body, build target, packaging input, or public symbol is
-changed by the documentation slice.
+No native or Python function body, build target, packaging input, or public
+symbol is changed by the documentation slice.
 
 ## 9. Verification
 
