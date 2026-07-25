@@ -232,6 +232,21 @@ def test_required_provider_equation_families_are_present() -> None:
         "debye_huckel_helmholtz",
         "original_born_helmholtz",
         "ssm_ds_born_helmholtz",
+        "formula_unit_composition",
+        "reference_molality_sequence",
+        "single_ion_activity_coefficient",
+        "mean_ionic_activity_coefficient",
+        "molality_activity_conversion",
+        "practical_osmotic_coefficient",
+        "infinite_dilution_solvation_energy",
+        "transfer_free_energy",
+        "phase_total_amount",
+        "phase_mole_fraction",
+        "phase_molar_density",
+        "phase_dimensionless_helmholtz",
+        "phase_pressure",
+        "packing_volume_bounds",
+        "neutral_reference_stoichiometric_basis",
     } <= eqids
 
 

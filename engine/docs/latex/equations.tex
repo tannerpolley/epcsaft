@@ -788,6 +788,271 @@ a^{Born}_{\mathrm{SSM+DS}},&
 \label{eq:born_model_selection}
 \end{equation}
 
+\section{Electrolyte reference states and reported activities}
+
+% EqID: charge_balanced_formula_stoichiometry
+% Source: Exact integer charge-balance construction
+% Status: Exact derivation
+% Description: Smallest positive cation and anion stoichiometric coefficients.
+% Change note: Shared by the public reference-state owner and native neutral basis.
+\begin{equation}
+g=\gcd(|z_+|,|z_-|),
+\qquad
+\nu_+=\frac{|z_-|}{g},
+\qquad
+\nu_-=\frac{|z_+|}{g},
+\qquad
+\nu_+z_++\nu_-z_-=0.
+\label{eq:charge_balanced_formula_stoichiometry}
+\end{equation}
+
+% EqID: formula_unit_composition
+% Source: \cite{Figiel2025}, formula-unit molality reference-state basis
+% Status: Exact derivation
+% Description: Convert salt formula-unit molality per kilogram of salt-free solvent to mole fractions.
+% Change note: Uses one kilogram of salt-free solvent as the construction basis.
+\begin{equation}
+\begin{aligned}
+\overline M_s&=\sum_{s\in\mathcal{S}}y_sM_s,
+&n_s^{(0)}&=\frac{1}{\overline M_s},\\
+n_{\mathrm{tot}}&=n_s^{(0)}+m(\nu_++\nu_-),
+&x_s&=\frac{y_sn_s^{(0)}}{n_{\mathrm{tot}}},
+&x_\pm&=\frac{\nu_\pm m}{n_{\mathrm{tot}}}.
+\end{aligned}
+\label{eq:formula_unit_composition}
+\end{equation}
+
+% EqID: reference_molality_sequence
+% Source: Provider convergence sequence for the \cite{Figiel2025} infinite-dilution reference
+% Status: Implementation convention
+% Description: Fixed four-molality sequence and terminal fugacity selection.
+% Change note: One internal owner constructs composition, adjudicates convergence, and selects the terminal observation.
+\begin{equation}
+\mathcal{M}_{\mathrm{ref}}=
+\{10^{-6},10^{-8},10^{-10},10^{-12}\}
+\ \si{\mole\per\kilogram},
+\qquad
+\ln\phi_i^\infty\equiv\ln\phi_i(m=10^{-12}).
+\label{eq:reference_molality_sequence}
+\end{equation}
+
+% EqID: single_ion_activity_coefficient
+% Source: \cite{Figiel2025}, electrolyte reference-state fugacity relation
+% Status: Source equation
+% Description: Single-ion mole-fraction activity coefficient relative to the infinite-dilution fugacity reference.
+% Change note: Exposes the exponential of the finite-minus-reference log fugacity.
+\begin{equation}
+\gamma_i^{(x)}=
+\exp\left(\ln\phi_i-\ln\phi_i^\infty\right).
+\label{eq:single_ion_activity_coefficient}
+\end{equation}
+
+% EqID: mean_ionic_activity_coefficient
+% Source: \cite{Figiel2025}, stoichiometric mean ionic activity definition
+% Status: Source equation
+% Description: Stoichiometric mean ionic activity coefficient on the mole-fraction basis.
+% Change note: Supports the one-formula-unit cation/anion topology.
+\begin{equation}
+\ln\gamma_\pm^{(x)}
+=\frac{\nu_+\ln\gamma_+^{(x)}+\nu_-\ln\gamma_-^{(x)}}
+{\nu_++\nu_-}.
+\label{eq:mean_ionic_activity_coefficient}
+\end{equation}
+
+% EqID: molality_activity_conversion
+% Source: \cite{Figiel2025}, mole-fraction to molality activity conversion
+% Status: Source equation
+% Description: Convert the mean ionic coefficient to the formula-unit molality basis.
+% Change note: Uses salt-free solvent molar mass in kilograms per mole.
+\begin{equation}
+\gamma_\pm^{(m)}=
+\frac{\gamma_\pm^{(x)}}
+{1+\overline M_s\,m(\nu_++\nu_-)}.
+\label{eq:molality_activity_conversion}
+\end{equation}
+
+% EqID: practical_osmotic_coefficient
+% Source: \cite{HamerWu1972}, practical molal osmotic-coefficient definition
+% Status: Source equation
+% Description: Dimensionless practical molal osmotic coefficient from pure-solvent-referenced solvent activity.
+% Change note: Defined only for the admitted single-active-solvent aqueous path.
+\begin{equation}
+\Phi=
+-\frac{\ln a_s}
+{(\nu_++\nu_-)mM_s},
+\qquad
+\ln a_s=\ln x_s+\ln\phi_s-\ln\phi_s^{\mathrm{pure}}.
+\label{eq:practical_osmotic_coefficient}
+\end{equation}
+
+% EqID: infinite_dilution_solvation_energy
+% Source: \cite{Figiel2025}, infinite-dilution fugacity-to-solvation-energy relation
+% Status: Source equation
+% Description: Single-ion infinite-dilution solvation Gibbs energy on the Provider reference convention.
+% Change note: Uses the terminal reference-sequence log fugacity.
+\begin{equation}
+\Delta G_{i,\mathrm{solv}}^\infty
+=RT\ln\phi_i^\infty.
+\label{eq:infinite_dilution_solvation_energy}
+\end{equation}
+
+% EqID: transfer_free_energy
+% Source: \cite{Figiel2025}, transfer Gibbs-energy relation
+% Status: Source equation
+% Description: Ion transfer free energy between compatible solvent reference states.
+% Change note: Source and target must share temperature, pressure, phase, ions, and stoichiometry.
+\begin{equation}
+\Delta G_{i,\mathrm{tr}}^{A\rightarrow B}
+=RT\left(\ln\phi_{i,B}^{\infty}-\ln\phi_{i,A}^{\infty}\right).
+\label{eq:transfer_free_energy}
+\end{equation}
+
+\section{Native phase coordinates}
+
+% EqID: phase_total_amount
+% Source: Exact extensive-coordinate definition
+% Status: Exact derivation
+% Description: Total phase amount from explicit component amounts.
+% Change note: Shared by neutral and electrolyte phase blocks.
+\begin{equation}
+n=\sum_i n_i.
+\label{eq:phase_total_amount}
+\end{equation}
+
+% EqID: phase_mole_fraction
+% Source: Exact extensive-to-intensive coordinate transformation
+% Status: Exact derivation
+% Description: Phase mole fractions from explicit component amounts.
+% Change note: Requires every admitted amount to be strictly positive.
+\begin{equation}
+x_i=\frac{n_i}{n}.
+\label{eq:phase_mole_fraction}
+\end{equation}
+
+% EqID: phase_molar_density
+% Source: Exact extensive-to-intensive coordinate transformation
+% Status: Exact derivation
+% Description: Phase molar density from total amount and extensive volume.
+% Change note: Uses SI mole and cubic-metre coordinates.
+\begin{equation}
+\rho_m=\frac{n}{V}.
+\label{eq:phase_molar_density}
+\end{equation}
+
+% EqID: phase_dimensionless_helmholtz
+% Source: Exact ideal-mixing plus residual Helmholtz construction
+% Status: Exact derivation
+% Description: Complete fixed-temperature phase Helmholtz function in explicit amount-volume coordinates.
+% Change note: Uses n_ref=1 mol and rho_ref=1 mol m^-3 as immutable unit references.
+\begin{equation}
+\Phi\equiv\frac{A}{RTn_{\mathrm{ref}}}
+=\sum_i\frac{n_i}{n_{\mathrm{ref}}}
+\left[
+\ln\left(\frac{n_i/V}{\rho_{\mathrm{ref}}}\right)-1
+\right]
++\frac{n}{n_{\mathrm{ref}}}a^r(T,\rho_m,\boldsymbol{x}).
+\label{eq:phase_dimensionless_helmholtz}
+\end{equation}
+
+% EqID: phase_pressure
+% Source: Exact extensive Helmholtz derivative
+% Status: Exact derivation
+% Description: Phase pressure from the volume gradient of the dimensionless phase Helmholtz function.
+% Change note: Returned on the original pascal scale.
+\begin{equation}
+P=-RTn_{\mathrm{ref}}
+\left(\frac{\partial\Phi}{\partial V}\right)_{T,\boldsymbol{n}}.
+\label{eq:phase_pressure}
+\end{equation}
+
+% EqID: packing_volume_bounds
+% Source: Exact inversion of eta=c_eta/V_m
+% Status: Exact derivation
+% Description: Molar-volume interval corresponding to caller-owned packing-fraction limits.
+% Change note: The Provider owns c_eta while the caller owns eta_min and eta_max.
+\begin{equation}
+V_{m,\min}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\max}},
+\qquad
+V_{m,\max}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\min}}.
+\label{eq:packing_volume_bounds}
+\end{equation}
+
+% EqID: active_binary_interaction_mapping
+% Source: Provider active-coordinate convention for the symmetric binary pair
+% Status: Implementation convention
+% Description: Map one active unlike-pair k_ij coordinate into the symmetric binary matrix.
+% Change note: Diagonal catalog values remain fixed.
+\begin{equation}
+\boldsymbol{k}(\theta)=
+\begin{bmatrix}
+k_{11}&\theta\\
+\theta&k_{22}
+\end{bmatrix}.
+\label{eq:active_binary_interaction_mapping}
+\end{equation}
+
+% EqID: pure_active_parameter_mapping
+% Source: Provider parameterized pure-phase coordinate convention
+% Status: Implementation convention
+% Description: Construct the pure nonassociating model from active m, sigma, and epsilon-over-k coordinates.
+% Change note: No generic mutable parameter overlay is introduced.
+\begin{equation}
+\boldsymbol{\theta}_{\mathrm{pure}}
+=\left(m,\sigma,\epsilon/k_B\right),
+\qquad
+\boldsymbol{k}=\boldsymbol{l}=(0).
+\label{eq:pure_active_parameter_mapping}
+\end{equation}
+
+% EqID: electrolyte_phase_coordinate_jacobian
+% Source: Exact Jacobian of Eqs.~\eqref{eq:phase_mole_fraction}--\eqref{eq:phase_molar_density}
+% Status: Exact derivation
+% Description: State-coordinate Jacobian used to transform electrolyte Helmholtz gradients.
+% Change note: Evaluated analytically around the sole CppAD state derivative owner.
+\begin{equation}
+\frac{\partial\rho_m}{\partial n_j}=\frac{1}{V},
+\quad
+\frac{\partial\rho_m}{\partial V}=-\frac{n}{V^2},
+\quad
+\frac{\partial x_i}{\partial n_j}=\frac{\delta_{ij}-x_i}{n},
+\quad
+\frac{\partial x_i}{\partial V}=0.
+\label{eq:electrolyte_phase_coordinate_jacobian}
+\end{equation}
+
+% EqID: electrolyte_phase_hessian_chain_rule
+% Source: Exact second-order multivariable chain rule
+% Status: Exact derivation
+% Description: Transform state Helmholtz Hessians into explicit amount-volume coordinates.
+% Change note: CppAD supplies state Hessians; the Provider applies this exact coordinate transformation.
+\begin{equation}
+\frac{\partial^2(na^r)}{\partial q_\alpha\partial q_\beta}
+=n_\alpha a^r_{y_p}y_{p,\beta}
++n_\beta a^r_{y_p}y_{p,\alpha}
++n\left(
+a^r_{y_py_q}y_{p,\alpha}y_{q,\beta}
++a^r_{y_p}y_{p,\alpha\beta}
+\right),
+\quad
+\boldsymbol{y}=(\rho_m,\boldsymbol{x}).
+\label{eq:electrolyte_phase_hessian_chain_rule}
+\end{equation}
+
+% EqID: neutral_reference_stoichiometric_basis
+% Source: Exact charge-neutral basis built from Eq.~\eqref{eq:charge_balanced_formula_stoichiometry}
+% Status: Exact derivation
+% Description: Native standard-reference rows and log-fugacity contractions.
+% Change note: Solvent unit rows and a spanning set of cation-anion formula rows are immutable for a resolved model.
+\begin{equation}
+\boldsymbol{b}^{(s)}=\boldsymbol{e}_s,
+\qquad
+\boldsymbol{b}^{(+-)}=\nu_+\boldsymbol{e}_+
++\nu_-\boldsymbol{e}_-,
+\qquad
+c_r=\sum_i b_i^{(r)}\ln\phi_i^\infty.
+\label{eq:neutral_reference_stoichiometric_basis}
+\end{equation}
+
 \printbibliography
 
 \end{document}

@@ -47,6 +47,7 @@ struct NativePackingFractionBlock final {
 
 namespace detail {
 
+// EqExclude: input and domain validation
 inline bool supports_pure_phase_block(const NativeParameters& parameters) {
     return parameters.segment_count.size() == 1
         && parameters.site_component.empty()
@@ -54,6 +55,7 @@ inline bool supports_pure_phase_block(const NativeParameters& parameters) {
         && parameters.charge_number[0] == 0;
 }
 
+// EqExclude: input and domain validation
 inline bool supports_mixture_phase_block(const NativeParameters& parameters) {
     return parameters.segment_count.size() >= 2
         && parameters.site_component.empty()
@@ -64,6 +66,7 @@ inline bool supports_mixture_phase_block(const NativeParameters& parameters) {
         );
 }
 
+// EqExclude: input and domain validation
 inline bool supports_binary_interaction_phase_block(
     const NativeParameters& parameters
 ) {
@@ -71,6 +74,7 @@ inline bool supports_binary_interaction_phase_block(
         && supports_mixture_phase_block(parameters);
 }
 
+// EqExclude: input and domain validation
 inline bool supports_electrolyte_phase_block(const NativeParameters& parameters) {
     return parameters.segment_count.size() >= 3
         && !parameters.site_component.empty()
@@ -98,11 +102,13 @@ struct PhaseBlockParameters final {
 };
 
 template <typename Scalar>
+// EqExclude: scalar utility dispatch
 std::vector<Scalar> phase_block_scalars(const std::vector<double>& values) {
     return std::vector<Scalar>(values.begin(), values.end());
 }
 
 template <typename Scalar>
+// EqID: active_binary_interaction_mapping
 PhaseBlockParameters<Scalar> binary_interaction_parameters(
     const NativeParameters& parameters,
     const Scalar& k_ij
@@ -130,14 +136,17 @@ Scalar mixture_phase_helmholtz_over_rt_reference_amount(
     const Scalar& volume,
     const Parameters& parameters
 ) {
+    // EqID: phase_total_amount
     Scalar total = Scalar(0.0);
     for (const Scalar& amount : amounts) {
         total += amount;
     }
+    // EqID: phase_molar_density
     const Scalar density = total / volume;
     std::vector<Scalar> composition;
     composition.reserve(amounts.size());
     for (const Scalar& amount : amounts) {
+        // EqID: phase_mole_fraction
         composition.push_back(amount / total);
     }
     const auto sigma = segment_sigma(Scalar(temperature), parameters);
@@ -157,9 +166,11 @@ Scalar mixture_phase_helmholtz_over_rt_reference_amount(
     for (const Scalar& amount : amounts) {
         ideal += amount * (scalar_log(amount / volume) - Scalar(1.0));
     }
+    // EqID: phase_dimensionless_helmholtz
     return ideal + total * (contributions.hard_chain + contributions.dispersion);
 }
 
+// EqExclude: input and domain validation
 inline void validate_mixture_phase_state(
     double temperature,
     const std::vector<double>& amounts,
@@ -178,6 +189,7 @@ inline void validate_mixture_phase_state(
     }
 }
 
+// EqExclude: input and domain validation
 inline void validate_electrolyte_phase_state(
     double temperature,
     const std::vector<double>& amounts,
@@ -207,6 +219,8 @@ inline void validate_electrolyte_phase_state(
 }
 
 template <typename PhaseFunction>
+// EqID: phase_pressure
+// EqExclude: CppAD-generated derivative machinery
 NativeMixturePhaseBlock differentiated_mixture_phase_block(
     double temperature,
     const std::vector<double>& point,
@@ -241,6 +255,7 @@ NativeMixturePhaseBlock differentiated_mixture_phase_block(
     };
 }
 
+// EqExclude: transport and buffer mechanics
 inline NativeMixturePhaseBlock mixture_phase_block(
     double temperature,
     const std::vector<double>& amounts,
@@ -280,6 +295,7 @@ inline NativeMixturePhaseBlock mixture_phase_block(
     );
 }
 
+// EqExclude: transport and buffer mechanics
 inline NativeMixturePhaseBlock mixture_phase_block_kij(
     double temperature,
     const std::vector<double>& amounts,
@@ -327,6 +343,8 @@ inline NativeMixturePhaseBlock mixture_phase_block_kij(
     );
 }
 
+// EqID: electrolyte_phase_coordinate_jacobian
+// EqID: electrolyte_phase_hessian_chain_rule
 inline NativeMixturePhaseBlock electrolyte_phase_block(
     double temperature,
     const std::vector<double>& amounts,
@@ -345,14 +363,17 @@ inline NativeMixturePhaseBlock electrolyte_phase_block(
 
     const std::size_t components = amounts.size();
     const std::size_t coordinates = components + 1;
+    // EqID: phase_total_amount
     double total_amount = 0.0;
     for (std::size_t component = 0; component < components; ++component) {
         total_amount += amounts[component];
     }
 
+    // EqID: phase_molar_density
     const double density = total_amount / volume;
     std::vector<double> composition(components);
     for (std::size_t component = 0; component < components; ++component) {
+        // EqID: phase_mole_fraction
         composition[component] = amounts[component] / total_amount;
     }
     const auto sigma = segment_sigma(temperature, parameters);
@@ -449,6 +470,7 @@ inline NativeMixturePhaseBlock electrolyte_phase_block(
         }
     }
 
+    // EqID: phase_dimensionless_helmholtz
     const double value = ideal + total_amount * derivatives.residual_helmholtz;
     if (!std::isfinite(value)
         || !std::all_of(gradient.begin(), gradient.end(), [](double item) {
@@ -459,6 +481,7 @@ inline NativeMixturePhaseBlock electrolyte_phase_block(
         })) {
         throw std::runtime_error("electrolyte phase block contains nonfinite values");
     }
+    // EqID: phase_pressure
     const double pressure = -GAS_CONSTANT * temperature * gradient[components];
     return {
         value,
@@ -468,6 +491,8 @@ inline NativeMixturePhaseBlock electrolyte_phase_block(
     };
 }
 
+// EqID: phase_packing_fraction
+// EqExclude: CppAD-generated derivative machinery
 inline NativePackingFractionBlock packing_fraction_block(
     double temperature,
     const std::vector<double>& amounts,
@@ -524,6 +549,7 @@ inline NativePackingFractionBlock packing_fraction_block(
 }
 
 template <typename Scalar>
+// EqID: pure_active_parameter_mapping
 PhaseBlockParameters<Scalar> pure_phase_parameters(
     const Scalar& segment_count,
     const Scalar& segment_diameter_angstrom,
@@ -552,6 +578,7 @@ Scalar pure_phase_helmholtz_over_rt_reference_amount(
     const Scalar& volume,
     const Parameters& parameters
 ) {
+    // EqID: phase_molar_density
     const Scalar density = amount / volume;
     const std::vector<Scalar> composition = {Scalar(1.0)};
     const auto sigma = segment_sigma(Scalar(temperature), parameters);
@@ -570,9 +597,11 @@ Scalar pure_phase_helmholtz_over_rt_reference_amount(
         Scalar(0.0)
     );
     const Scalar residual = contributions.hard_chain + contributions.dispersion;
+    // EqID: phase_dimensionless_helmholtz
     return amount * (scalar_log(density) - Scalar(1.0) + residual);
 }
 
+// EqExclude: CppAD-generated derivative machinery
 inline double cubic_directional_derivative(
     CppAD::ADFun<double>& function,
     const std::array<double, 2>& point,
@@ -587,6 +616,8 @@ inline double cubic_directional_derivative(
     return 6.0 * function.Forward(3, zero)[0];
 }
 
+// EqID: phase_pressure
+// EqExclude: CppAD-generated derivative machinery
 inline NativePurePhaseBlock pure_phase_block(
     double temperature,
     double amount,
@@ -670,6 +701,8 @@ inline NativePurePhaseBlock pure_phase_block(
     };
 }
 
+// EqID: phase_pressure
+// EqExclude: CppAD-generated derivative machinery
 inline NativeParameterizedPurePhaseBlock parameterized_pure_phase_block(
     double temperature,
     double amount,

@@ -889,6 +889,7 @@ NativeModel::evaluate_aqueous_miac_solvation_factor_batch(
     return results;
 }
 
+// EqID: packing_volume_bounds
 std::array<double, 2> NativeModel::molar_volume_bounds(
     double temperature,
     const std::vector<double>& mole_fractions,

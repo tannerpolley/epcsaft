@@ -20,6 +20,7 @@
 namespace epcsaft {
 namespace {
 
+// EqExclude: input and domain validation
 bool active_born_model_admitted(
     const std::string& fingerprint,
     const std::vector<std::string>& component_ids,
@@ -82,6 +83,7 @@ bool active_born_model_admitted(
     );
 }
 
+// EqExclude: input and domain validation
 bool aqueous_kij_model_admitted(
     const std::string& fingerprint,
     const std::vector<std::string>& component_ids,
@@ -133,6 +135,7 @@ bool aqueous_kij_model_admitted(
     );
 }
 
+// EqExclude: input and domain validation
 bool aqueous_solvation_factor_model_admitted(
     const std::string& fingerprint,
     const std::vector<std::string>& component_ids,
@@ -149,6 +152,7 @@ bool aqueous_solvation_factor_model_admitted(
             || fingerprint == sodium_bromide_fingerprint);
 }
 
+// EqExclude: input and domain validation
 bool neutral_reference_model_shape_admitted(
     const std::vector<std::string>& component_ids,
     const std::vector<int>& charges
@@ -260,6 +264,7 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_aqueous_miac_solvation_factor_batch,
           } {}
 
+    // EqID: neutral_reference_stoichiometric_basis
     static int evaluate_neutral_reference(
         const void* context,
         const char* expected_fingerprint,
@@ -489,6 +494,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_aqueous_miac_kij(
         const void* context,
         const char* expected_fingerprint,
@@ -583,6 +589,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_aqueous_miac_solvation_factor(
         const void* context,
         const char* expected_fingerprint,
@@ -690,6 +697,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_aqueous_miac_kij_batch(
         const void* context,
         const char* expected_fingerprint,
@@ -843,6 +851,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_aqueous_miac_solvation_factor_batch(
         const void* context,
         const char* expected_fingerprint,
@@ -985,6 +994,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_ion_solvation_born(
         const void* context,
         double temperature_k,
@@ -1074,6 +1084,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate(
         const void* context,
         double temperature_k,
@@ -1165,6 +1176,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_parameters(
         const void* context,
         double temperature_k,
@@ -1252,6 +1264,7 @@ struct NativeSdkEndpoint final {
     }
 
     template <typename Evaluator>
+    // EqExclude: transport and buffer mechanics
     static int evaluate_mixture_common(
         const void* context,
         double temperature_k,
@@ -1376,6 +1389,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_mixture(
         const void* context,
         double temperature_k,
@@ -1405,6 +1419,7 @@ struct NativeSdkEndpoint final {
         );
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_mixture_kij(
         const void* context,
         double temperature_k,
@@ -1435,6 +1450,7 @@ struct NativeSdkEndpoint final {
         );
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_electrolyte(
         const void* context,
         double temperature_k,
@@ -1468,6 +1484,7 @@ struct NativeSdkEndpoint final {
         );
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_molar_volume_bounds(
         const void* context,
         const char* expected_parameter_fingerprint,
@@ -1534,6 +1551,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_packing_fraction(
         const void* context,
         const char* expected_parameter_fingerprint,
@@ -1606,6 +1624,7 @@ struct NativeSdkEndpoint final {
 
 }  // namespace
 
+// EqExclude: transport and buffer mechanics
 const epcsaft_native_sdk_v1* create_native_sdk_v1(
     const NativeModel& model,
     const std::string& parameter_fingerprint,
@@ -1731,6 +1750,7 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     return &endpoint->table;
 }
 
+// EqExclude: transport and buffer mechanics
 void destroy_native_sdk_v1(const epcsaft_native_sdk_v1* sdk) noexcept {
     if (sdk != nullptr) {
         delete static_cast<const NativeSdkEndpoint*>(sdk->model_context);

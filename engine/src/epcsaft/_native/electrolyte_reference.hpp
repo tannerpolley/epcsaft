@@ -29,6 +29,7 @@ struct ReferenceSequenceResult final {
     std::optional<double> derivative_convergence_error;
 };
 
+// EqID: formula_unit_composition
 inline std::vector<double> formula_composition(
     const std::vector<double>& solvent_fractions,
     const std::vector<double>& molar_masses_kg_per_mol,
@@ -76,6 +77,7 @@ inline std::vector<double> formula_composition(
 }
 
 template <typename Evaluator>
+// EqID: reference_molality_sequence
 ReferenceSequenceResult electrolyte_reference_sequence(
     const std::vector<double>& solvent_fractions,
     const std::vector<double>& molar_masses_kg_per_mol,

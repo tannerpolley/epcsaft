@@ -31,6 +31,14 @@ ANNOTATION_PATTERN = re.compile(
     r"^\s*(?://|#)\s*(EqID|EqExclude):\s*(.+?)\s*$"
 )
 CPP_NAME_PATTERN = re.compile(r"((?:\w+::)*~?\w+)\s*$")
+CPP_DECLARATION_PREFIX_PATTERN = re.compile(
+    r"^(?:"
+    r"inline|static|constexpr|consteval|virtual|explicit|const|"
+    r"bool|void|int|double|Scalar|"
+    r"std::|detail::|"
+    r"[A-Z]\w*"
+    r")\b"
+)
 CPP_CONTROL_PREFIXES = (
     "if",
     "for",
@@ -221,21 +229,42 @@ def _closing_brace_line(lines: list[str], start: int) -> int:
 
 
 def _cpp_function_spans(path: Path) -> list[_FunctionSpan]:
-    lines = path.read_text(encoding="utf-8").splitlines()
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    class_names = set(re.findall(r"\b(?:class|struct)\s+(\w+)", text))
     spans: list[_FunctionSpan] = []
     for offset, line in enumerate(lines):
         stripped = line.strip()
         if (
-            line != line.lstrip()
-            or "(" not in stripped
+            "(" not in stripped
             or stripped.startswith(CPP_CONTROL_PREFIXES)
+            or stripped.startswith(("}", "|", "&", "!", "?", ":", "+", "-", "*", "/"))
         ):
             continue
         prefix = stripped.split("(", 1)[0]
+        if "=" in prefix or "[" in prefix:
+            continue
         name_match = CPP_NAME_PATTERN.search(prefix)
         if not name_match:
             continue
         name = name_match.group(1)
+        qualified_parts = name.split("::")
+        constructor = (
+            len(qualified_parts) >= 2
+            and qualified_parts[-1] == qualified_parts[-2]
+        )
+        qualified_definition = "::" in name and line == line.lstrip()
+        class_body_method = name.removeprefix("~") in class_names
+        if (
+            (
+                not CPP_DECLARATION_PREFIX_PATTERN.match(prefix)
+                or not any(character.isspace() for character in prefix)
+            )
+            and not constructor
+            and not qualified_definition
+            and not class_body_method
+        ):
+            continue
         if name in {"sizeof", "alignof", "decltype"}:
             continue
         signature = stripped
