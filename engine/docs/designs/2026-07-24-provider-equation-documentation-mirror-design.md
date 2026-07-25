@@ -35,6 +35,11 @@ The mirror must make it inexpensive to answer:
 - which thermodynamic basis and units it uses; and
 - whether the documentation and implementation have drifted.
 
+Every production arithmetic relation that defines a thermodynamic, model,
+property, coordinate, conversion, or source-backed helper quantity is in
+scope. Multiple implementation statements may evaluate one displayed
+relation, but no defining relation may remain silently undocumented.
+
 This work changes no equation, parameter, numerical algorithm, public API,
 native ABI, runtime dependency, capability, or authority.
 
@@ -130,8 +135,10 @@ only current Provider mathematics:
     Provider thermodynamics rather than transport mechanics.
 
 The inventory includes defining equations and exact thermodynamic identities.
-It excludes ordinary validation checks, buffer handling, serialization,
-iteration histories, and other control flow.
+It also includes subordinate polynomial, mixing, conversion, limiting, and
+coordinate relations when they carry real mathematical meaning in the
+implementation. It excludes ordinary validation checks, buffer handling,
+serialization, iteration histories, and other control flow.
 
 ## 5. Derivative boundary
 
@@ -167,6 +174,14 @@ The checker fails closed when:
 An equation may have multiple implementation-owner references when one
 defining relation is reused. Generated records include current file, line, and
 nearby symbol context. Authored documentation does not depend on line numbers.
+
+Every production function in the declared mathematical-owner files must be
+classified by at least one nearby `EqID` or by an explicit
+`EqExclude: <reason>` annotation. Exclusions are restricted to numerical
+algorithm mechanics, validation, transport/buffer mechanics, serialization,
+or scalar utility dispatch. The generated registry reports exclusions with
+their reasons so untracked arithmetic cannot hide behind an implicit file
+boundary.
 
 Documentation-only thermodynamic identities must use an explicit
 documentation or exact-derivation status. They cannot be counted as direct
@@ -220,12 +235,14 @@ The implementation gate requires:
 2. generated Markdown and YAML freshness;
 3. unique and complete metadata;
 4. declared equation-family coverage;
-5. negative space for handwritten nonlinear derivative entries;
-6. an optional successful local LaTeX build when `latexmk` is available;
-7. the existing complete Provider test suite, proving runtime results are
+5. complete classification of mathematical-owner functions as an equation or
+   a reasoned exclusion;
+6. negative space for handwritten nonlinear derivative entries;
+7. an optional successful local LaTeX build when `latexmk` is available;
+8. the existing complete Provider test suite, proving runtime results are
    unchanged;
-8. lint and `git diff --check`; and
-9. the repository cleanup audit.
+9. lint and `git diff --check`; and
+10. the repository cleanup audit.
 
 The LaTeX toolchain is documentation tooling only. It does not become a
 runtime or wheel dependency.
