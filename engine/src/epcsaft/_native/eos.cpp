@@ -18,12 +18,14 @@
 namespace epcsaft {
 namespace {
 
+// EqExclude: input and domain validation
 bool positive_finite(const std::vector<double>& values) {
     return std::all_of(values.begin(), values.end(), [](double value) {
         return std::isfinite(value) && value > 0.0;
     });
 }
 
+// EqExclude: input and domain validation
 bool finite(const std::vector<double>& values) {
     return std::all_of(values.begin(), values.end(), [](double value) {
         return std::isfinite(value);
@@ -334,6 +336,7 @@ detail::ReferenceObservation active_solvation_factor_observation(
 
 }  // namespace
 
+// EqExclude: input and domain validation
 NativeModel::NativeModel(NativeParameters parameters)
     : parameters_(std::move(parameters)) {
     const std::size_t components = parameters_.segment_count.size();
@@ -430,30 +433,37 @@ NativeModel::NativeModel(NativeParameters parameters)
     }
 }
 
+// EqExclude: input and domain validation
 bool NativeModel::supports_native_sdk_v1() const {
     return detail::supports_pure_phase_block(parameters_);
 }
 
+// EqExclude: input and domain validation
 bool NativeModel::supports_mixture_native_sdk_v1() const {
     return detail::supports_mixture_phase_block(parameters_);
 }
 
+// EqExclude: input and domain validation
 bool NativeModel::supports_electrolyte_native_sdk_v1() const {
     return detail::supports_electrolyte_phase_block(parameters_);
 }
 
+// EqExclude: serialization
 std::size_t NativeModel::component_count() const {
     return parameters_.segment_count.size();
 }
 
+// EqExclude: serialization
 const std::vector<int>& NativeModel::charge_numbers() const {
     return parameters_.charge_number;
 }
 
+// EqExclude: serialization
 const std::vector<double>& NativeModel::molar_masses_kg_per_mol() const {
     return parameters_.molar_mass_kg_per_mol;
 }
 
+// EqExclude: transport and buffer mechanics
 NativePurePhaseBlock NativeModel::evaluate_pure_phase(
     double temperature,
     double amount,
@@ -462,6 +472,7 @@ NativePurePhaseBlock NativeModel::evaluate_pure_phase(
     return detail::pure_phase_block(temperature, amount, volume, parameters_);
 }
 
+// EqExclude: transport and buffer mechanics
 NativeParameterizedPurePhaseBlock NativeModel::evaluate_pure_phase_parameters(
     double temperature,
     double amount,
@@ -481,6 +492,7 @@ NativeParameterizedPurePhaseBlock NativeModel::evaluate_pure_phase_parameters(
     );
 }
 
+// EqExclude: transport and buffer mechanics
 NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase(
     double temperature,
     const std::vector<double>& amounts,
@@ -489,6 +501,7 @@ NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase(
     return detail::mixture_phase_block(temperature, amounts, volume, parameters_);
 }
 
+// EqExclude: transport and buffer mechanics
 NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase_kij(
     double temperature,
     const std::vector<double>& amounts,
@@ -500,6 +513,7 @@ NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase_kij(
     );
 }
 
+// EqExclude: transport and buffer mechanics
 NativeMixturePhaseBlock NativeModel::evaluate_electrolyte_phase(
     double temperature,
     const std::vector<double>& amounts,
@@ -511,6 +525,7 @@ NativeMixturePhaseBlock NativeModel::evaluate_electrolyte_phase(
     );
 }
 
+// EqExclude: transport and buffer mechanics
 NativePackingFractionBlock NativeModel::evaluate_packing_fraction(
     double temperature,
     const std::vector<double>& amounts,
@@ -522,6 +537,7 @@ NativePackingFractionBlock NativeModel::evaluate_packing_fraction(
     );
 }
 
+// EqID: formula_unit_composition
 std::vector<double> NativeModel::reference_composition(
     const std::vector<double>& solvent_fractions,
     const std::array<std::size_t, 2>& ion_indices,
@@ -537,6 +553,7 @@ std::vector<double> NativeModel::reference_composition(
     );
 }
 
+// EqID: reference_molality_sequence
 NativeReferenceSequence NativeModel::electrolyte_reference_sequence(
     double temperature,
     double pressure,
@@ -575,6 +592,8 @@ NativeReferenceSequence NativeModel::electrolyte_reference_sequence(
     };
 }
 
+// EqID: infinite_dilution_solvation_energy
+// EqID: fixed_pressure_total_derivative
 NativeIonSolvationBorn NativeModel::evaluate_ion_solvation_born(
     double temperature,
     double pressure,
@@ -621,6 +640,7 @@ NativeIonSolvationBorn NativeModel::evaluate_ion_solvation_born(
     };
 }
 
+// EqExclude: transport and buffer mechanics
 NativeAqueousMiacKij NativeModel::evaluate_aqueous_miac_kij(
     double temperature,
     double pressure,
@@ -633,6 +653,9 @@ NativeAqueousMiacKij NativeModel::evaluate_aqueous_miac_kij(
 }
 
 std::vector<NativeAqueousMiacKij>
+// EqID: mean_ionic_activity_coefficient
+// EqID: molality_activity_conversion
+// EqID: fixed_pressure_total_derivative
 NativeModel::evaluate_aqueous_miac_kij_batch(
     double temperature,
     double pressure,
@@ -745,6 +768,7 @@ NativeModel::evaluate_aqueous_miac_kij_batch(
 }
 
 NativeAqueousMiacSolvationFactor
+// EqExclude: transport and buffer mechanics
 NativeModel::evaluate_aqueous_miac_solvation_factor(
     double temperature,
     double pressure,
@@ -760,6 +784,9 @@ NativeModel::evaluate_aqueous_miac_solvation_factor(
 }
 
 std::vector<NativeAqueousMiacSolvationFactor>
+// EqID: mean_ionic_activity_coefficient
+// EqID: molality_activity_conversion
+// EqID: fixed_pressure_total_derivative
 NativeModel::evaluate_aqueous_miac_solvation_factor_batch(
     double temperature,
     double pressure,

@@ -17,6 +17,12 @@ installed bundle IDs, component discovery and ordering, Pint state inputs,
 density and pressure routes, root selection, result interpretation,
 electrolyte activities, and stable errors.
 
+The [checked equation mirror](docs/equations.md) maps every retained
+mathematical relation to its C++ or Python implementation owner and to the
+[normative scientific contract](docs/science/full-provider-eos.md). The
+implementation remains executable authority; the generated Markdown and
+LaTeX views are synchronized documentation mirrors.
+
 `ParameterBundle.catalog()` returns the installed bundles as an immutable tuple.
 You can inspect exact IDs, versions, components, sources, and domains without a
 mutable registry.

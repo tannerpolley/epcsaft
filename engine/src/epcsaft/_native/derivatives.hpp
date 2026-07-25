@@ -43,6 +43,7 @@ inline std::size_t thread_number() {
 
 class CppAdSerialGuard final {
 public:
+    // EqExclude: transport and buffer mechanics
     CppAdSerialGuard()
         : lock_(cppad_parallel::execution_mutex, std::defer_lock) {
         if (!cppad_parallel::worker) {

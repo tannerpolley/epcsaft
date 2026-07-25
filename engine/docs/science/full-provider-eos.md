@@ -7,8 +7,16 @@ native-SDK authority is determined separately by migration promotion receipt
 Design: `../designs/2026-07-16-full-provider-eos-design.md`
 
 This file owns the scientific equations and conventions consumed by the clean
-provider. The lab equation catalogue and native code remain evidence. They do
-not override this bounded specification.
+provider. The [checked Provider equation mirror](../equations.md) maps those
+relations to their current C++ and Python owners and provides synchronized
+Markdown and LaTeX views. Runtime source remains executable authority; the
+mirror does not create a second equation implementation.
+
+The legacy `equations.tex` is retained only as provenance at review commit
+`7920e56dbb0fc1fb418bae44e67ef50f334b75cd`, blob
+`2e970476258558de05391d9d77f31d1736d78de8`, and SHA-256
+`a0f2f3aff12042a8a50c5254c2af23e04b60af3e886b97b2756e6ecad800bacc`.
+It does not override this bounded specification or the current implementation.
 
 ## 1. Sources and evidence classes
 
@@ -45,7 +53,7 @@ specification alone. The principal archived owners are:
 |---|---|
 | Hard-chain and dispersion | `packages/epcsaft/src/epcsaft/native/eos/residual/cppad/hard_chain_dispersion.h` |
 | Association | `packages/epcsaft/src/epcsaft/native/eos/residual/contributions/association.cpp` and the archived association tests |
-| Debye--Huckel and dielectric model | archived residual Helmholtz/electrolyte owners plus `docs/latex/equations.tex` |
+| Debye--Huckel and dielectric model | archived residual Helmholtz/electrolyte owners plus the checked local [equation mirror](../equations.md) distilled from the legacy LaTeX provenance |
 | Corrected Born SSM+DS | `packages/epcsaft/src/epcsaft/native/eos/residual/contributions/born.cpp`, the correction paper, and the archived Figiel evidence |
 | Pressure and density closure | archived state/property owners and branch tests; the clean solver deliberately removes unsafe warm-start relabelling |
 

@@ -267,3 +267,22 @@ def test_property_identities_and_cppad_boundary_are_documented() -> None:
     assert "CppAD is the sole nonlinear derivative authority" in tex
     assert "% Status: Analytical derivative" not in tex
     assert "% Status: Manual derivative" not in tex
+
+
+def test_science_contract_links_the_checked_equation_mirror() -> None:
+    science = (REPO_ROOT / "docs" / "science" / "full-provider-eos.md").read_text()
+    readme = (REPO_ROOT / "README.md").read_text()
+    assert "../equations.md" in science
+    assert "docs/equations.md" in readme
+
+
+def test_every_declared_math_owner_function_is_classified() -> None:
+    module = _load_sync_module()
+    entries, refs, exclusions = module.load_repository_inputs(REPO_ROOT)
+    module.validate_registry(
+        entries,
+        refs,
+        exclusions,
+        module.load_bibliography_keys(REPO_ROOT),
+    )
+    assert module.unclassified_owner_functions(REPO_ROOT) == []
