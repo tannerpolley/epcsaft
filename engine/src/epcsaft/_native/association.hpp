@@ -19,6 +19,7 @@ inline constexpr double ASSOCIATION_NUMBER_DENSITY_FACTOR = 6.02214076e-7;
 inline constexpr double ASSOCIATION_PI = 3.141592653589793238462643383279502884;
 
 template <typename Scalar>
+// EqExclude: scalar utility dispatch
 Scalar association_exp(const Scalar& value) {
     if constexpr (std::is_same_v<Scalar, double>) {
         return std::exp(value);
@@ -62,6 +63,7 @@ std::vector<Scalar> association_delta(
             const auto j = static_cast<std::size_t>(parameters.site_component[b]);
             const Scalar reduced_diameter =
                 diameter[i] * diameter[j] / (diameter[i] + diameter[j]);
+            // EqID: association_contact
             const Scalar contact =
                 Scalar(1.0) / one_minus_eta
                 + 3.0 * reduced_diameter * zeta_2
@@ -70,6 +72,7 @@ std::vector<Scalar> association_delta(
                     / (one_minus_eta * one_minus_eta * one_minus_eta);
             const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j])
                 * (Scalar(1.0) - parameters.l_ij[i * components + j]);
+            // EqID: association_strength
             delta[pair] = contact
                 * (association_exp(
                        Scalar(parameters.association_energy_over_k[pair])
@@ -104,6 +107,7 @@ std::vector<Scalar> association_residuals(
                 * site_fractions[b]
                 * delta[a * sites + b];
         }
+        // EqID: association_mass_action
         residuals[a] = site_fractions[a]
             * (Scalar(1.0) + number_density * bonded_density)
             - Scalar(1.0);
@@ -111,6 +115,7 @@ std::vector<Scalar> association_residuals(
     return residuals;
 }
 
+// EqExclude: numerical iteration mechanics
 inline std::vector<double> solve_site_fractions(
     double temperature,
     double molar_density,
@@ -165,6 +170,7 @@ inline std::vector<double> solve_site_fractions(
     throw std::runtime_error("association solve did not converge");
 }
 
+// EqExclude: numerical iteration mechanics
 inline std::vector<double> solve_linear(
     std::vector<double> matrix,
     std::vector<double> right_hand_side

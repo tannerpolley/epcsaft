@@ -1,0 +1,507 @@
+schema_version: 1
+equations:
+  - eqid: "angstrom_number_density"
+    section: "Symbols, bases, and units"
+    subsection: ""
+    label: "eq:angstrom_number_density"
+    source: "\\cite{Gross2001}, unit conversion used by Appendix A"
+    status: "Exact derivation"
+    description: "Convert molar density to molecular number density on the angstrom basis."
+    change_note: "Uses the current Provider Avogadro constant and angstrom conversion."
+    latex: "\\widehat{\\rho}=\\rho_m\\,N_A\\,10^{-30}.\n\\label{eq:angstrom_number_density}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 42
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 217
+        symbol: "residual_helmholtz"
+  - eqid: "ascani_ionic_segment_diameter"
+    section: "Parameter setup"
+    subsection: ""
+    label: "eq:ascani_ionic_segment_diameter"
+    source: "\\cite{AscaniHeld2021}, ion diameter convention"
+    status: "Source equation"
+    description: "Ascani original-Born ionic hard-chain diameter."
+    change_note: "Preserves the source-routed full-sigma diameter."
+    latex: "d_i=\\sigma_i,\\qquad z_i\\ne0,\\quad\n\\mathcal{M}=\\mathcal{M}_{\\mathrm{Ascani}}.\n\\label{eq:ascani_ionic_segment_diameter}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 86
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 113
+        comment_line: 112
+        symbol: "segment_diameter"
+  - eqid: "association_contact"
+    section: "Contribution intermediates"
+    subsection: "Association"
+    label: "eq:association_contact"
+    source: "\\cite{Gross2001}, hard-sphere contact rule used by association"
+    status: "Source equation"
+    description: "Unlike-site hard-sphere contact function."
+    change_note: "Mirrors the reduced-diameter association contact expression."
+    latex: "g_{ij}^{hs}=\n\\frac{1}{1-\\eta}\n+\\frac{3d_id_j}{d_i+d_j}\\frac{\\zeta_2}{(1-\\eta)^2}\n+2\\left(\\frac{d_id_j}{d_i+d_j}\\right)^2\n\\frac{\\zeta_2^2}{(1-\\eta)^3}.\n\\label{eq:association_contact}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 337
+    implementation_refs:
+      - file: "src/epcsaft/_native/association.hpp"
+        line: 31
+        comment_line: 66
+        symbol: "association_delta"
+  - eqid: "association_helmholtz"
+    section: "Contribution intermediates"
+    subsection: "Association"
+    label: "eq:association_helmholtz"
+    source: "\\cite{Chapman1990}, Eq.~(21)"
+    status: "Source equation"
+    description: "Association residual Helmholtz contribution."
+    change_note: "Uses explicit site multiplicity from the resolved model."
+    latex: "a^{assoc}=\\sum_A x_{i(A)}\\nu_A\n\\left(\\ln X_A-\\frac{X_A}{2}+\\frac{1}{2}\\right).\n\\label{eq:association_helmholtz}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 375
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 346
+        symbol: "residual_helmholtz"
+  - eqid: "association_mass_action"
+    section: "Contribution intermediates"
+    subsection: "Association"
+    label: "eq:association_mass_action"
+    source: "\\cite{Chapman1990}, Eq.~(19)"
+    status: "Source equation"
+    description: "Association site-fraction mass-action equation with explicit multiplicity."
+    change_note: "Written in the zero-residual form used by the Provider."
+    latex: "F_A=X_A\\left[\n1+\\widehat{\\rho}\\sum_B x_{i(B)}\\,\\nu_B\\,X_B\\Delta_{AB}\n\\right]-1=0.\n\\label{eq:association_mass_action}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 363
+    implementation_refs:
+      - file: "src/epcsaft/_native/association.hpp"
+        line: 89
+        comment_line: 110
+        symbol: "association_residuals"
+  - eqid: "association_strength"
+    section: "Contribution intermediates"
+    subsection: "Association"
+    label: "eq:association_strength"
+    source: "\\cite{Gross2002}, cross-association rule; \\cite{Chapman1990}, association strength"
+    status: "Source equation"
+    description: "Site-pair association strength using explicit source-resolved cross records."
+    change_note: "Keeps association energy and volume distinct from k_ij and l_ij."
+    latex: "\\Delta_{AB}^{ij}=g_{ij}^{hs}\n\\left[\\exp\\left(\\frac{\\epsilon_{AB}^{ij}/k_B}{T}\\right)-1\\right]\n\\sigma_{ij}^3\\kappa_{AB}^{ij}.\n\\label{eq:association_strength}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 351
+    implementation_refs:
+      - file: "src/epcsaft/_native/association.hpp"
+        line: 31
+        comment_line: 75
+        symbol: "association_delta"
+  - eqid: "close_packing_fraction"
+    section: "Density and packing"
+    subsection: ""
+    label: "eq:close_packing_fraction"
+    source: "Geometric close packing of equal spheres"
+    status: "Exact derivation"
+    description: "Provider hard upper packing-domain boundary."
+    change_note: "Mirrors close_packing_fraction without introducing solver policy."
+    latex: "\\eta_{\\mathrm{cp}}=\\frac{\\pi}{3\\sqrt{2}}.\n\\label{eq:close_packing_fraction}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 163
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 137
+        comment_line: 136
+        symbol: "close_packing_fraction"
+  - eqid: "cross_dispersion_energy"
+    section: "Parameter setup"
+    subsection: ""
+    label: "eq:cross_dispersion_energy"
+    source: "\\cite{Gross2001}, Eq.~(A.7)"
+    status: "Source equation"
+    description: "Unlike-pair dispersion energy for an applicable pair."
+    change_note: "Keeps k_ij semantically distinct from l_ij and association data."
+    latex: "\\frac{\\epsilon_{ij}}{k_B}\n=\\sqrt{\\frac{\\epsilon_i}{k_B}\\frac{\\epsilon_j}{k_B}}\\,(1-k_{ij}),\n\\qquad z_iz_j\\le0.\n\\label{eq:cross_dispersion_energy}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 107
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 322
+        symbol: "residual_helmholtz"
+  - eqid: "cross_segment_diameter"
+    section: "Parameter setup"
+    subsection: ""
+    label: "eq:cross_segment_diameter"
+    source: "\\cite{Gross2001}, Eq.~(A.7), with source-receipted l_ij extension"
+    status: "Source equation"
+    description: "Unlike-pair segment diameter including the distinct l_ij family."
+    change_note: "Makes the current l_ij semantics explicit."
+    latex: "\\sigma_{ij}=\\frac{\\sigma_i+\\sigma_j}{2}(1-l_{ij}).\n\\label{eq:cross_segment_diameter}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 97
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 306
+        symbol: "residual_helmholtz"
+  - eqid: "dispersion_chain_coefficients"
+    section: "Contribution intermediates"
+    subsection: "Dispersion"
+    label: "eq:dispersion_chain_coefficients"
+    source: "\\cite{Gross2001}, Eqs.~(A.13)--(A.14)"
+    status: "Source equation"
+    description: "Chain-length interpolation of universal dispersion coefficients."
+    change_note: "Mirrors the current A0/A1/A2 and B0/B1/B2 arrays."
+    latex: "\\begin{aligned}\na_k(\\overline m)&=a_{0k}\n+\\frac{\\overline m-1}{\\overline m}a_{1k}\n+\\frac{(\\overline m-1)(\\overline m-2)}{\\overline m^2}a_{2k},\\\\\nb_k(\\overline m)&=b_{0k}\n+\\frac{\\overline m-1}{\\overline m}b_{1k}\n+\\frac{(\\overline m-1)(\\overline m-2)}{\\overline m^2}b_{2k}.\n\\end{aligned}\n\\label{eq:dispersion_chain_coefficients}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 240
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 274
+        symbol: "residual_helmholtz"
+  - eqid: "dispersion_compressibility_factor"
+    section: "Contribution intermediates"
+    subsection: "Dispersion"
+    label: "eq:dispersion_compressibility_factor"
+    source: "\\cite{Gross2001}, Eq.~(A.15)"
+    status: "Source equation"
+    description: "Chain compressibility correction multiplying the second-order term."
+    change_note: "Mirrors the current rational expression."
+    latex: "C_1=\\left[\n1+\\overline m\\frac{8\\eta-2\\eta^2}{(1-\\eta)^4}\n+(1-\\overline m)\n\\frac{20\\eta-27\\eta^2+12\\eta^3-2\\eta^4}\n{[(1-\\eta)(2-\\eta)]^2}\n\\right]^{-1}.\n\\label{eq:dispersion_compressibility_factor}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 287
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 292
+        symbol: "residual_helmholtz"
+  - eqid: "dispersion_first_moment"
+    section: "Contribution intermediates"
+    subsection: "Dispersion"
+    label: "eq:dispersion_first_moment"
+    source: "\\cite{Gross2001}, Eq.~(A.10) mixture sum"
+    status: "Source equation"
+    description: "First unlike-pair dispersion mixture moment."
+    change_note: "Includes current segment counts and cross diameter."
+    latex: "M_1=\\sum_i\\sum_j x_ix_jm_im_j\\sigma_{ij}^3\n\\frac{\\epsilon_{ij}/k_B}{T}.\n\\label{eq:dispersion_first_moment}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 302
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 334
+        symbol: "residual_helmholtz"
+  - eqid: "dispersion_helmholtz"
+    section: "Contribution intermediates"
+    subsection: "Dispersion"
+    label: "eq:dispersion_helmholtz"
+    source: "\\cite{Gross2001}, Eq.~(A.10)"
+    status: "Source equation"
+    description: "PC-SAFT first- and second-order dispersion Helmholtz contribution."
+    change_note: "Reconciled to the current angstrom number-density basis."
+    latex: "a^{disp}=-2\\pi\\widehat{\\rho}I_1M_1\n-\\pi\\widehat{\\rho}\\,\\overline m\\,C_1I_2M_2.\n\\label{eq:dispersion_helmholtz}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 324
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 341
+        symbol: "residual_helmholtz"
+  - eqid: "dispersion_integral_one"
+    section: "Contribution intermediates"
+    subsection: "Dispersion"
+    label: "eq:dispersion_integral_one"
+    source: "\\cite{Gross2001}, Eq.~(A.11)"
+    status: "Source equation"
+    description: "First PC-SAFT dispersion integral correlation."
+    change_note: "Evaluated through the shared polynomial owner."
+    latex: "I_1(\\eta,\\overline m)=\\sum_{k=0}^{6}a_k(\\overline m)\\eta^k.\n\\label{eq:dispersion_integral_one}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 267
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 285
+        symbol: "residual_helmholtz"
+  - eqid: "dispersion_integral_two"
+    section: "Contribution intermediates"
+    subsection: "Dispersion"
+    label: "eq:dispersion_integral_two"
+    source: "\\cite{Gross2001}, Eq.~(A.12)"
+    status: "Source equation"
+    description: "Second PC-SAFT dispersion integral correlation."
+    change_note: "Evaluated through the shared polynomial owner."
+    latex: "I_2(\\eta,\\overline m)=\\sum_{k=0}^{6}b_k(\\overline m)\\eta^k.\n\\label{eq:dispersion_integral_two}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 277
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 287
+        symbol: "residual_helmholtz"
+  - eqid: "dispersion_polynomial"
+    section: "Contribution intermediates"
+    subsection: "Dispersion"
+    label: "eq:dispersion_polynomial"
+    source: "\\cite{Gross2001}, polynomial form in Eqs.~(A.11)--(A.12)"
+    status: "Exact derivation"
+    description: "Horner-evaluated sixth-order dispersion polynomial."
+    change_note: "Documents the real arithmetic performed by polynomial."
+    latex: "\\mathcal{P}(\\boldsymbol{c},\\eta)=\\sum_{k=0}^{6}c_k\\eta^k.\n\\label{eq:dispersion_polynomial}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 257
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 83
+        comment_line: 82
+        symbol: "polynomial"
+  - eqid: "dispersion_second_moment"
+    section: "Contribution intermediates"
+    subsection: "Dispersion"
+    label: "eq:dispersion_second_moment"
+    source: "\\cite{Gross2001}, Eq.~(A.10) mixture sum"
+    status: "Source equation"
+    description: "Second unlike-pair dispersion mixture moment."
+    change_note: "Includes the squared reduced pair energy."
+    latex: "M_2=\\sum_i\\sum_j x_ix_jm_im_j\\sigma_{ij}^3\n\\left(\\frac{\\epsilon_{ij}/k_B}{T}\\right)^2.\n\\label{eq:dispersion_second_moment}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 313
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 336
+        symbol: "residual_helmholtz"
+  - eqid: "figiel_ionic_segment_diameter"
+    section: "Parameter setup"
+    subsection: ""
+    label: "eq:figiel_ionic_segment_diameter"
+    source: "\\cite{Figiel2025}, ionic hard-chain diameter convention"
+    status: "Implementation convention"
+    description: "Figiel-family ionic hard-chain diameter."
+    change_note: "Preserves the current 0.88 sigma routing for Figiel electrolyte models."
+    latex: "d_i=0.88\\,\\sigma_i,\\qquad z_i\\ne0,\\quad\n\\mathcal{M}\\ne\\mathcal{M}_{\\mathrm{Ascani}}.\n\\label{eq:figiel_ionic_segment_diameter}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 75
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 113
+        comment_line: 111
+        symbol: "segment_diameter"
+  - eqid: "hard_chain_helmholtz"
+    section: "Contribution intermediates"
+    subsection: "Hard chain"
+    label: "eq:hard_chain_helmholtz"
+    source: "\\cite{Gross2001}, Eq.~(A.16)"
+    status: "Source equation"
+    description: "PC-SAFT hard-chain residual Helmholtz contribution."
+    change_note: "Mirrors the site-independent chain term."
+    latex: "a^{hc}=\\overline{m}\\,a^{hs}\n-\\sum_i x_i(m_i-1)\\ln g_{ii}^{hs}.\n\\label{eq:hard_chain_helmholtz}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 227
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 259
+        symbol: "residual_helmholtz"
+  - eqid: "hard_sphere_contact"
+    section: "Contribution intermediates"
+    subsection: "Hard chain"
+    label: "eq:hard_sphere_contact"
+    source: "\\cite{Gross2001}, Eq.~(A.17)"
+    status: "Source equation"
+    description: "Hard-sphere radial distribution function at segment contact."
+    change_note: "Uses the current pure-component contact diameter d_i/2."
+    latex: "g_{ii}^{hs}=\n\\frac{1}{1-\\eta}\n+\\frac{3(d_i/2)\\zeta_2}{(1-\\eta)^2}\n+\\frac{2(d_i/2)^2\\zeta_2^2}{(1-\\eta)^3}.\n\\label{eq:hard_sphere_contact}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 214
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 263
+        symbol: "residual_helmholtz"
+  - eqid: "hard_sphere_helmholtz"
+    section: "Contribution intermediates"
+    subsection: "Hard chain"
+    label: "eq:hard_sphere_helmholtz"
+    source: "\\cite{Gross2001}, Eqs.~(A.8)--(A.9)"
+    status: "Source equation"
+    description: "Boublik-Mansoori-Carnahan-Starling-Leland hard-sphere Helmholtz term."
+    change_note: "Mirrors the current zeta-based expression."
+    latex: "a^{hs}=\\frac{1}{\\zeta_0}\\left[\n\\frac{3\\zeta_1\\zeta_2}{1-\\zeta_3}\n+\\frac{\\zeta_2^3}{\\zeta_3(1-\\zeta_3)^2}\n+\\left(\\frac{\\zeta_2^3}{\\zeta_3^2}-\\zeta_0\\right)\n\\ln(1-\\zeta_3)\\right].\n\\label{eq:hard_sphere_helmholtz}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 200
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 250
+        symbol: "residual_helmholtz"
+  - eqid: "mean_segment_count"
+    section: "Density and packing"
+    subsection: ""
+    label: "eq:mean_segment_count"
+    source: "\\cite{Gross2001}, Appendix A mixture definition"
+    status: "Source equation"
+    description: "Composition-averaged segment count."
+    change_note: "Reconciled to the current residual Helmholtz owner."
+    latex: "\\overline{m}=\\sum_i x_i m_i.\n\\label{eq:mean_segment_count}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 131
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 219
+        symbol: "residual_helmholtz"
+  - eqid: "neutral_segment_diameter"
+    section: "Parameter setup"
+    subsection: ""
+    label: "eq:neutral_segment_diameter"
+    source: "\\cite{Gross2001}, Eq.~(A.6)"
+    status: "Source equation"
+    description: "Temperature-dependent hard-chain diameter for neutral components."
+    change_note: "Reconciled to the current neutral diameter branch."
+    latex: "d_i(T)=\\sigma_i(T)\\left[1-0.12\\exp\\left(-\\frac{3(\\epsilon_i/k_B)}{T}\\right)\\right],\n\\qquad z_i=0.\n\\label{eq:neutral_segment_diameter}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 64
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 113
+        comment_line: 110
+        symbol: "segment_diameter"
+  - eqid: "packing_fraction"
+    section: "Density and packing"
+    subsection: ""
+    label: "eq:packing_fraction"
+    source: "\\cite{Gross2001}, Eq.~(A.8) at n=3"
+    status: "Source equation"
+    description: "Packing fraction from molar density and segment geometry."
+    change_note: "Shared by Helmholtz evaluation and Provider domain owners."
+    latex: "\\eta=\\zeta_3\n=\\frac{\\pi}{6}\\rho_mN_A10^{-30}\\sum_i x_i m_i d_i^3.\n\\label{eq:packing_fraction}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 152
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 143
+        comment_line: 142
+        symbol: "packing_fraction_from_geometry"
+  - eqid: "packing_fraction_coefficient"
+    section: "Density and packing"
+    subsection: ""
+    label: "eq:packing_fraction_coefficient"
+    source: "Exact specialization of Eq.~\\eqref{eq:packing_fraction}"
+    status: "Exact derivation"
+    description: "Composition and temperature coefficient satisfying eta=rho_m c_eta."
+    change_note: "Mirrors the value-only volume-domain helper."
+    latex: "c_\\eta(T,\\boldsymbol{x})=\n\\frac{\\pi}{6}N_A10^{-30}\\sum_i x_i m_i d_i(T)^3,\n\\qquad \\eta=\\rho_m c_\\eta.\n\\label{eq:packing_fraction_coefficient}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 173
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 160
+        comment_line: 159
+        symbol: "packing_fraction_coefficient"
+  - eqid: "packing_moments"
+    section: "Density and packing"
+    subsection: ""
+    label: "eq:packing_moments"
+    source: "\\cite{Gross2001}, Eq.~(A.8)"
+    status: "Source equation"
+    description: "Segment-density moments used by hard-chain and association terms."
+    change_note: "Uses the current angstrom number-density basis."
+    latex: "\\zeta_n=\\frac{\\pi}{6}\\widehat{\\rho}\\sum_i x_i m_i d_i^n,\n\\qquad n=0,1,2,3.\n\\label{eq:packing_moments}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 141
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 225
+        symbol: "residual_helmholtz"
+  - eqid: "phase_packing_fraction"
+    section: "Density and packing"
+    subsection: ""
+    label: "eq:phase_packing_fraction"
+    source: "Exact extensive-coordinate form of Eq.~\\eqref{eq:packing_fraction}"
+    status: "Exact derivation"
+    description: "Packing fraction in explicit component amounts and extensive volume."
+    change_note: "Mirrors the native phase-domain derivative owner."
+    latex: "\\eta(T,\\boldsymbol{n},V)=\n\\frac{\\pi}{6}\\frac{N_A10^{-30}}{V}\\sum_i n_i m_i d_i(T)^3.\n\\label{eq:phase_packing_fraction}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 185
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 181
+        comment_line: 180
+        symbol: "phase_packing_fraction"
+  - eqid: "residual_helmholtz"
+    section: "Residual Helmholtz energy"
+    subsection: "Association"
+    label: "eq:residual_helmholtz"
+    source: "\\cite{Gross2001}, PC-SAFT residual decomposition, extended by the admitted electrolyte terms"
+    status: "Implementation convention"
+    description: "Sum of every active residual Helmholtz contribution."
+    change_note: "Mirrors the single Provider Helmholtz owner and its contribution result."
+    latex: "a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}.\n\\label{eq:residual_helmholtz}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 388
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 355
+        symbol: "residual_helmholtz"
+  - eqid: "same_sign_ionic_dispersion"
+    section: "Parameter setup"
+    subsection: ""
+    label: "eq:same_sign_ionic_dispersion"
+    source: "\\cite{Figiel2025}, same-sign ion convention"
+    status: "Implementation convention"
+    description: "Suppress dispersion between equally charged ions."
+    change_note: "Mirrors the charged-pair branch in residual_helmholtz."
+    latex: "\\epsilon_{ij}=0,\\qquad z_iz_j>0.\n\\label{eq:same_sign_ionic_dispersion}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 119
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 204
+        comment_line: 323
+        symbol: "residual_helmholtz"
+  - eqid: "segment_sigma_correlation"
+    section: "Parameter setup"
+    subsection: ""
+    label: "eq:segment_sigma_correlation"
+    source: "Source-receipted component correlation represented by the Provider parameter schema"
+    status: "Bounded empirical relation"
+    description: "Evaluate a component segment-size correlation from its constant and exponential terms."
+    change_note: "Mirrors the general sparse correlation implemented by segment_sigma."
+    latex: "\\sigma_i(T)=\\sigma_{i,0}+\\sum_{q\\in\\mathcal{Q}_i} A_q\\exp(b_qT).\n\\label{eq:segment_sigma_correlation}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 54
+    implementation_refs:
+      - file: "src/epcsaft/_native/helmholtz.hpp"
+        line: 93
+        comment_line: 92
+        symbol: "segment_sigma"
+source_exclusions:
+  - file: "src/epcsaft/_native/association.hpp"
+    line: 23
+    symbol: "association_exp"
+    reason: "scalar utility dispatch"
+  - file: "src/epcsaft/_native/association.hpp"
+    line: 119
+    symbol: "solve_site_fractions"
+    reason: "numerical iteration mechanics"
+  - file: "src/epcsaft/_native/association.hpp"
+    line: 174
+    symbol: "solve_linear"
+    reason: "numerical iteration mechanics"
+  - file: "src/epcsaft/_native/helmholtz.hpp"
+    line: 56
+    symbol: "scalar_log"
+    reason: "scalar utility dispatch"
+  - file: "src/epcsaft/_native/helmholtz.hpp"
+    line: 65
+    symbol: "scalar_exp"
+    reason: "scalar utility dispatch"
+  - file: "src/epcsaft/_native/helmholtz.hpp"
+    line: 74
+    symbol: "scalar_sqrt"
+    reason: "scalar utility dispatch"

@@ -211,3 +211,8 @@ double residual_helmholtz(double a, double b) {
     with pytest.raises(ValueError, match="generated equation documentation is stale"):
         module.synchronize(tmp_path, check=True)
     assert not (tmp_path / "docs" / "equations.md").exists()
+
+
+def test_repository_equation_registry_is_current_and_complete() -> None:
+    module = _load_sync_module()
+    module.synchronize(REPO_ROOT, check=True)

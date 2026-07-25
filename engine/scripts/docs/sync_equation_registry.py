@@ -27,16 +27,22 @@ METADATA_PATTERN = re.compile(
     r"^%\s*(EqID|Source|Status|Description|Change note):\s*(.+?)\s*$"
 )
 LABEL_PATTERN = re.compile(r"\\label\{([^}]+)\}")
-CPP_FUNCTION_PATTERN = re.compile(
-    r"^\s*(?:template\s*<[^;{}]+>\s*)?"
-    r"(?:inline\s+|static\s+|constexpr\s+|consteval\s+|virtual\s+|explicit\s+)*"
-    r"[\w:<>,*&\s]+\s+"
-    r"(?P<name>(?:\w+::)*~?\w+)\s*\([^;{}]*\)"
-    r"(?:\s+const)?(?:\s+noexcept)?(?:\s*->\s*[^{]+)?\s*\{",
-    re.MULTILINE,
-)
 ANNOTATION_PATTERN = re.compile(
     r"^\s*(?://|#)\s*(EqID|EqExclude):\s*(.+?)\s*$"
+)
+CPP_NAME_PATTERN = re.compile(r"((?:\w+::)*~?\w+)\s*$")
+CPP_CONTROL_PREFIXES = (
+    "if",
+    "for",
+    "while",
+    "switch",
+    "catch",
+    "return",
+    "throw",
+    "static_cast",
+    "reinterpret_cast",
+    "const_cast",
+    "dynamic_cast",
 )
 
 ALLOWED_EXCLUSIONS = frozenset(
@@ -215,16 +221,47 @@ def _closing_brace_line(lines: list[str], start: int) -> int:
 
 
 def _cpp_function_spans(path: Path) -> list[_FunctionSpan]:
-    text = path.read_text(encoding="utf-8")
-    lines = text.splitlines()
-    spans = []
-    for match in CPP_FUNCTION_PATTERN.finditer(text):
-        start = text.count("\n", 0, match.start()) + 1
+    lines = path.read_text(encoding="utf-8").splitlines()
+    spans: list[_FunctionSpan] = []
+    for offset, line in enumerate(lines):
+        stripped = line.strip()
+        if (
+            line != line.lstrip()
+            or "(" not in stripped
+            or stripped.startswith(CPP_CONTROL_PREFIXES)
+        ):
+            continue
+        prefix = stripped.split("(", 1)[0]
+        name_match = CPP_NAME_PATTERN.search(prefix)
+        if not name_match:
+            continue
+        name = name_match.group(1)
+        if name in {"sizeof", "alignof", "decltype"}:
+            continue
+        signature = stripped
+        cursor = offset
+        paren_depth = stripped.count("(") - stripped.count(")")
+        while cursor + 1 < len(lines) and (
+            paren_depth > 0
+            or (
+                "{" not in signature
+                and ";" not in signature
+                and "=" not in signature.split(")", 1)[-1]
+            )
+        ):
+            cursor += 1
+            continuation = lines[cursor].strip()
+            signature += " " + continuation
+            paren_depth += continuation.count("(") - continuation.count(")")
+        tail = signature.rsplit(")", 1)[-1] if ")" in signature else signature
+        if "{" not in tail or ";" in tail.split("{", 1)[0]:
+            continue
+        start = offset + 1
         spans.append(
             _FunctionSpan(
-                symbol=match.group("name").split("::")[-1],
+                symbol=name.split("::")[-1],
                 start=start,
-                end=_closing_brace_line(lines, start),
+                end=_closing_brace_line(lines, cursor + 1),
             )
         )
     return spans
@@ -253,7 +290,10 @@ def _annotation_owner(
 
 
 def parse_source_annotations(
-    source_root: Path, repo_root: Path
+    source_root: Path,
+    repo_root: Path,
+    *,
+    require_classification: bool = True,
 ) -> tuple[dict[str, list[SourceReference]], list[SourceExclusion]]:
     """Parse equation links and require every discovered function to be classified."""
     references: dict[str, list[SourceReference]] = {}
@@ -272,10 +312,12 @@ def parse_source_annotations(
         lines = path.read_text(encoding="utf-8").splitlines()
         functions = _function_spans(path)
         classified: set[tuple[str, int]] = set()
+        annotation_count = 0
         for comment_line, line in enumerate(lines, start=1):
             match = ANNOTATION_PATTERN.match(line)
             if not match:
                 continue
+            annotation_count += 1
             owner = _annotation_owner(comment_line, functions)
             if owner is None:
                 raise ValueError(
@@ -310,11 +352,12 @@ def parse_source_annotations(
                         reason=reason,
                     )
                 )
-        for function in functions:
-            if (function.symbol, function.start) not in classified:
-                unclassified.append(
-                    f"{path.relative_to(repo_root)}:{function.start}:{function.symbol}"
-                )
+        if require_classification or annotation_count:
+            for function in functions:
+                if (function.symbol, function.start) not in classified:
+                    unclassified.append(
+                        f"{path.relative_to(repo_root)}:{function.start}:{function.symbol}"
+                    )
     if unclassified:
         raise ValueError(
             "unclassified mathematical-owner function: " + ", ".join(unclassified)
@@ -357,7 +400,9 @@ def load_repository_inputs(
         exclusions: list[SourceExclusion] = []
         for path in existing:
             path_references, path_exclusions = parse_source_annotations(
-                path.parent if path.is_dir() else path, repo_root
+                path,
+                repo_root,
+                require_classification=False,
             )
             for eqid, refs in path_references.items():
                 references.setdefault(eqid, []).extend(refs)
@@ -539,14 +584,21 @@ def synchronize(repo_root: Path, *, check: bool) -> None:
 
 def unclassified_owner_functions(repo_root: Path) -> list[str]:
     """Return unclassified symbols, preserving parse diagnostics as values."""
-    try:
-        load_repository_inputs(repo_root)
-    except ValueError as error:
-        prefix = "unclassified mathematical-owner function: "
-        if str(error).startswith(prefix):
-            return str(error).removeprefix(prefix).split(", ")
-        raise
-    return []
+    unclassified: list[str] = []
+    prefix = "unclassified mathematical-owner function: "
+    for relative in MATH_OWNER_FILES:
+        path = repo_root / relative
+        if not path.exists():
+            unclassified.append(f"{relative}:missing")
+            continue
+        try:
+            parse_source_annotations(path, repo_root)
+        except ValueError as error:
+            if str(error).startswith(prefix):
+                unclassified.extend(str(error).removeprefix(prefix).split(", "))
+                continue
+            raise
+    return unclassified
 
 
 def main() -> None:

@@ -52,6 +52,7 @@ struct HelmholtzResult final {
 };
 
 template <typename Scalar>
+// EqExclude: scalar utility dispatch
 Scalar scalar_log(const Scalar& value) {
     if constexpr (std::is_same_v<Scalar, double>) {
         return std::log(value);
@@ -60,6 +61,7 @@ Scalar scalar_log(const Scalar& value) {
 }
 
 template <typename Scalar>
+// EqExclude: scalar utility dispatch
 Scalar scalar_exp(const Scalar& value) {
     if constexpr (std::is_same_v<Scalar, double>) {
         return std::exp(value);
@@ -68,6 +70,7 @@ Scalar scalar_exp(const Scalar& value) {
 }
 
 template <typename Scalar>
+// EqExclude: scalar utility dispatch
 Scalar scalar_sqrt(const Scalar& value) {
     if constexpr (std::is_same_v<Scalar, double>) {
         return std::sqrt(value);
@@ -76,6 +79,7 @@ Scalar scalar_sqrt(const Scalar& value) {
 }
 
 template <typename Scalar>
+// EqID: dispersion_polynomial
 Scalar polynomial(const std::array<Scalar, 7>& coefficients, const Scalar& eta) {
     Scalar value = coefficients.back();
     for (std::size_t index = coefficients.size() - 1; index > 0; --index) {
@@ -85,6 +89,7 @@ Scalar polynomial(const std::array<Scalar, 7>& coefficients, const Scalar& eta) 
 }
 
 template <typename Scalar, typename Parameters>
+// EqID: segment_sigma_correlation
 std::vector<Scalar> segment_sigma(
     const Scalar& temperature,
     const Parameters& parameters
@@ -102,6 +107,9 @@ std::vector<Scalar> segment_sigma(
 }
 
 template <typename Scalar, typename Parameters>
+// EqID: neutral_segment_diameter
+// EqID: figiel_ionic_segment_diameter
+// EqID: ascani_ionic_segment_diameter
 std::vector<Scalar> segment_diameter(
     const Scalar& temperature,
     const Parameters& parameters,
@@ -125,11 +133,13 @@ std::vector<Scalar> segment_diameter(
     return diameter;
 }
 
+// EqID: close_packing_fraction
 inline double close_packing_fraction() {
     return PI / (3.0 * std::sqrt(2.0));
 }
 
 template <typename Scalar, typename Parameters>
+// EqID: packing_fraction
 Scalar packing_fraction_from_geometry(
     const Scalar& molar_density,
     const std::vector<Scalar>& mole_fractions,
@@ -146,6 +156,7 @@ Scalar packing_fraction_from_geometry(
 }
 
 template <typename Parameters>
+// EqID: packing_fraction_coefficient
 double packing_fraction_coefficient(
     double temperature,
     const std::vector<double>& mole_fractions,
@@ -166,6 +177,7 @@ double packing_fraction_coefficient(
 }
 
 template <typename Scalar, typename Parameters>
+// EqID: phase_packing_fraction
 Scalar phase_packing_fraction(
     double temperature,
     const std::vector<Scalar>& amounts,
@@ -202,12 +214,15 @@ HelmholtzResult<Scalar> residual_helmholtz(
     const std::vector<Scalar>& active_aqueous_k_ij = {}
 ) {
     const std::size_t size = parameters.segment_count.size();
+    // EqID: angstrom_number_density
     const Scalar number_density = molar_density * (AVOGADRO / 1.0e30);
+    // EqID: mean_segment_count
     Scalar mean_segment_count = Scalar(0.0);
     for (std::size_t i = 0; i < size; ++i) {
         mean_segment_count += mole_fractions[i] * parameters.segment_count[i];
     }
 
+    // EqID: packing_moments
     std::array<Scalar, 4> zeta = {
         Scalar(0.0), Scalar(0.0), Scalar(0.0), Scalar(0.0),
     };
@@ -232,6 +247,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
     }
 
     const Scalar one_minus_eta = Scalar(1.0) - zeta[3];
+    // EqID: hard_sphere_helmholtz
     const Scalar hard_sphere =
         (3.0 * zeta[1] * zeta[2] / one_minus_eta +
          zeta[2] * zeta[2] * zeta[2] /
@@ -240,9 +256,11 @@ HelmholtzResult<Scalar> residual_helmholtz(
              scalar_log(one_minus_eta)) /
         zeta[0];
 
+    // EqID: hard_chain_helmholtz
     Scalar hard_chain = mean_segment_count * hard_sphere;
     for (std::size_t i = 0; i < size; ++i) {
         const Scalar contact_diameter = diameter[i] / Scalar(2.0);
+        // EqID: hard_sphere_contact
         const Scalar contact =
             Scalar(1.0) / one_minus_eta +
             contact_diameter * 3.0 * zeta[2] /
@@ -253,6 +271,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
             scalar_log(contact);
     }
 
+    // EqID: dispersion_chain_coefficients
     const Scalar chain_factor_1 =
         (mean_segment_count - 1.0) / mean_segment_count;
     const Scalar chain_factor_2 = chain_factor_1 *
@@ -263,11 +282,14 @@ HelmholtzResult<Scalar> residual_helmholtz(
         a[i] = A0[i] + chain_factor_1 * A1[i] + chain_factor_2 * A2[i];
         b[i] = B0[i] + chain_factor_1 * B1[i] + chain_factor_2 * B2[i];
     }
+    // EqID: dispersion_integral_one
     const Scalar integral_1 = polynomial(a, zeta[3]);
+    // EqID: dispersion_integral_two
     const Scalar integral_2 = polynomial(b, zeta[3]);
     const Scalar eta_2 = zeta[3] * zeta[3];
     const Scalar eta_3 = eta_2 * zeta[3];
     const Scalar eta_4 = eta_3 * zeta[3];
+    // EqID: dispersion_compressibility_factor
     const Scalar c1 = Scalar(1.0) /
         (Scalar(1.0) +
          mean_segment_count * (8.0 * zeta[3] - 2.0 * eta_2) /
@@ -281,6 +303,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
     Scalar second_moment = Scalar(0.0);
     for (std::size_t i = 0; i < size; ++i) {
         for (std::size_t j = 0; j < size; ++j) {
+            // EqID: cross_segment_diameter
             const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j])
                 * (Scalar(1.0) - parameters.l_ij[i * size + j]);
             Scalar k_ij = Scalar(parameters.k_ij[i * size + j]);
@@ -296,6 +319,8 @@ HelmholtzResult<Scalar> residual_helmholtz(
                     k_ij = active_aqueous_k_ij[2];
                 }
             }
+            // EqID: cross_dispersion_energy
+            // EqID: same_sign_ionic_dispersion
             const Scalar epsilon_ij =
                 parameters.charge_number[i] * parameters.charge_number[j] > 0
                 ? Scalar(0.0)
@@ -306,15 +331,19 @@ HelmholtzResult<Scalar> residual_helmholtz(
             const Scalar weight = mole_fractions[i] * mole_fractions[j] *
                 parameters.segment_count[i] * parameters.segment_count[j] *
                 sigma_ij * sigma_ij * sigma_ij;
+            // EqID: dispersion_first_moment
             first_moment += weight * epsilon_ij / temperature;
+            // EqID: dispersion_second_moment
             second_moment += weight * epsilon_ij * epsilon_ij /
                 (temperature * temperature);
         }
     }
+    // EqID: dispersion_helmholtz
     const Scalar dispersion =
         -2.0 * PI * number_density * integral_1 * first_moment -
         PI * number_density * mean_segment_count * c1 * integral_2 * second_moment;
 
+    // EqID: association_helmholtz
     Scalar association = 0.0;
     for (std::size_t site = 0; site < site_fraction.size(); ++site) {
         const std::size_t component =
@@ -323,6 +352,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
             parameters.site_multiplicity[site] *
             (scalar_log(site_fraction[site]) - site_fraction[site] / 2.0 + 0.5);
     }
+    // EqID: residual_helmholtz
     return {hard_chain, dispersion, association, debye_huckel, born_ssm_ds};
 }
 
