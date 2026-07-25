@@ -856,6 +856,8 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_ion_solvation_solvent_permittivity,
               sizeof(epcsaft_associating_parameterized_phase_block_result_v1),
               &NativeSdkEndpoint::evaluate_associating_parameters,
+              sizeof(epcsaft_electrolyte_phase_value_result_v1),
+              &NativeSdkEndpoint::evaluate_electrolyte_value,
           } {}
 
     // EqExclude: transport and buffer mechanics
@@ -2833,6 +2835,102 @@ struct NativeSdkEndpoint final {
                 );
             }
         );
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_electrolyte_value(
+        const void* context,
+        double temperature_k,
+        const double* amounts_mol,
+        size_t amount_count,
+        double volume_m3,
+        epcsaft_electrolyte_phase_value_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_electrolyte_phase_value_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const uint32_t result_size = result->struct_size;
+        std::memset(result, 0, sizeof(*result));
+        result->struct_size = result_size;
+        result->helmholtz_over_rt_reference_amount =
+            std::numeric_limits<double>::quiet_NaN();
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "model context is null"
+            );
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.phase_callbacks_admitted) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "model is not admitted for this phase callback"
+            );
+        }
+        if (amounts_mol == nullptr
+            || amount_count != endpoint.table.component_count
+            || !std::isfinite(temperature_k) || temperature_k <= 0.0
+            || !std::isfinite(volume_m3) || volume_m3 <= 0.0
+            || !std::all_of(
+                amounts_mol,
+                amounts_mol + amount_count,
+                [](double amount) {
+                    return std::isfinite(amount) && amount > 0.0;
+                }
+            )) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "temperature, amounts, and volume must be positive and finite"
+            );
+        }
+        if ((std::isfinite(endpoint.temperature_min_k)
+             && temperature_k < endpoint.temperature_min_k)
+            || (std::isfinite(endpoint.temperature_max_k)
+                && temperature_k > endpoint.temperature_max_k)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "temperature is outside the parameter source domain"
+            );
+        }
+        try {
+            const std::vector<double> amounts(
+                amounts_mol, amounts_mol + amount_count
+            );
+            result->helmholtz_over_rt_reference_amount =
+                endpoint.model.evaluate_electrolyte_phase_value(
+                    temperature_k,
+                    amounts,
+                    volume_m3,
+                    endpoint.ion_mole_fraction_max
+                );
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            return result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown provider evaluation failure"
+            );
+        }
     }
 
     // EqExclude: transport and buffer mechanics

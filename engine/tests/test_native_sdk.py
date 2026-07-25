@@ -432,6 +432,23 @@ class AssociatingParameterizedNativeSdkTable(ctypes.Structure):
     )
 
 
+class ElectrolytePhaseValueResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("helmholtz_over_rt_reference_amount", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class ElectrolytePhaseValueNativeSdkTable(ctypes.Structure):
+    _fields_ = AssociatingParameterizedNativeSdkTable._fields_ + (
+        ("electrolyte_phase_value_result_size", ctypes.c_size_t),
+        ("evaluate_electrolyte_phase_value", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -510,6 +527,10 @@ ASSOCIATING_PARAMETERIZED_PREFIX_SIZE = (
     .evaluate_diameter_basis_associating_pure_phase_parameters.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
+ELECTROLYTE_PHASE_VALUE_PREFIX_SIZE = (
+    ElectrolytePhaseValueNativeSdkTable.evaluate_electrolyte_phase_value.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
 
 
 EvaluatePurePhase = ctypes.CFUNCTYPE(
@@ -580,6 +601,15 @@ EvaluateMixturePhaseKij = ctypes.CFUNCTYPE(
     ctypes.POINTER(MixturePhaseBlockResult),
 )
 EvaluateMixturePhaseLij = EvaluateMixturePhaseKij
+EvaluateElectrolytePhaseValue = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.c_double,
+    ctypes.POINTER(ElectrolytePhaseValueResult),
+)
 EvaluatePurePhaseParameter = ctypes.CFUNCTYPE(
     ctypes.c_int,
     ctypes.c_void_p,
@@ -1019,6 +1049,22 @@ def _electrolyte_table(
     assert address
     table = ctypes.cast(address, ctypes.POINTER(ElectrolyteNativeSdkTable)).contents
     assert table.table_size >= ELECTROLYTE_PREFIX_SIZE
+    return capsule, table
+
+
+def _electrolyte_value_table(
+    model: Mixture,
+) -> tuple[object, ElectrolytePhaseValueNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(ElectrolytePhaseValueNativeSdkTable)
+    ).contents
+    assert table.table_size >= ELECTROLYTE_PHASE_VALUE_PREFIX_SIZE
     return capsule, table
 
 
@@ -2480,6 +2526,30 @@ _Static_assert(sizeof(epcsaft_native_sdk_v1) >= 360, "final table size");
 _Static_assert(
     sizeof(epcsaft_ion_solvation_solvent_permittivity_result_v1) == 272,
     "solvent-permittivity result size"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, associating_parameterized_result_size) == 360,
+    "associating-parameterized result-size offset"
+);
+_Static_assert(
+    offsetof(
+        epcsaft_native_sdk_v1,
+        evaluate_diameter_basis_associating_pure_phase_parameters
+    ) == 368,
+    "associating-parameterized callback offset"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, electrolyte_phase_value_result_size) == 376,
+    "electrolyte-value result-size offset"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, evaluate_electrolyte_phase_value) == 384,
+    "electrolyte-value callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) == 392, "final table size");
+_Static_assert(
+    sizeof(epcsaft_electrolyte_phase_value_result_v1) == 248,
+    "electrolyte-value result size"
 );
 
 int main(void) {
@@ -3981,6 +4051,114 @@ def test_native_sdk_electrolyte_phase_rejects_abi_domain_and_unsupported_models(
     )
     assert status == neutral_result.status == STATUS_UNSUPPORTED_MODEL
     assert neutral_result.error
+
+
+def test_native_sdk_electrolyte_phase_value_matches_full_phase_block() -> None:
+    model = _electrolyte_model()
+    capsule, table = _electrolyte_value_table(model)
+    assert capsule is not None
+    assert table.electrolyte_phase_value_result_size == ctypes.sizeof(
+        ElectrolytePhaseValueResult
+    )
+    assert table.evaluate_electrolyte_phase_value
+
+    amounts = (0.98, 0.01, 0.01)
+    volume = 1.0e-3
+    full, _, _ = _evaluate_electrolyte(table, 298.15, amounts, volume)
+    raw_amounts = (ctypes.c_double * len(amounts))(*amounts)
+    value = ElectrolytePhaseValueResult(
+        struct_size=ctypes.sizeof(ElectrolytePhaseValueResult)
+    )
+    status = EvaluateElectrolytePhaseValue(
+        table.evaluate_electrolyte_phase_value
+    )(
+        table.model_context,
+        298.15,
+        raw_amounts,
+        len(amounts),
+        volume,
+        ctypes.byref(value),
+    )
+    assert status == value.status == STATUS_OK
+    assert value.helmholtz_over_rt_reference_amount == pytest.approx(
+        full.helmholtz_over_rt_reference_amount,
+        rel=3.0e-13,
+    )
+    assert value.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    value.struct_size -= 1
+    expected_status = value.status
+    expected_helmholtz = value.helmholtz_over_rt_reference_amount
+    expected_fingerprint = value.parameter_fingerprint
+    status = EvaluateElectrolytePhaseValue(
+        table.evaluate_electrolyte_phase_value
+    )(
+        table.model_context,
+        298.15,
+        raw_amounts,
+        len(amounts),
+        volume,
+        ctypes.byref(value),
+    )
+    assert status == STATUS_ABI_MISMATCH
+    assert value.status == expected_status
+    assert value.helmholtz_over_rt_reference_amount == expected_helmholtz
+    assert value.parameter_fingerprint == expected_fingerprint
+
+
+def test_native_sdk_electrolyte_phase_value_rejects_invalid_and_unsupported_inputs() -> None:
+    _, table = _electrolyte_value_table(_electrolyte_model())
+    callback = EvaluateElectrolytePhaseValue(
+        table.evaluate_electrolyte_phase_value
+    )
+
+    def call(
+        values: tuple[float, ...],
+        *,
+        temperature_k: float = 298.15,
+        context: object = table.model_context,
+    ) -> ElectrolytePhaseValueResult:
+        raw_amounts = (ctypes.c_double * len(values))(*values)
+        result = ElectrolytePhaseValueResult(
+            struct_size=ctypes.sizeof(ElectrolytePhaseValueResult)
+        )
+        status = callback(
+            context,
+            temperature_k,
+            raw_amounts,
+            len(values),
+            1.0e-3,
+            ctypes.byref(result),
+        )
+        assert status == result.status
+        assert math.isnan(result.helmholtz_over_rt_reference_amount)
+        assert not result.parameter_fingerprint
+        assert result.error
+        return result
+
+    assert call((0.98, 0.0, 0.02)).status == STATUS_INVALID_ARGUMENT
+    assert call((0.98, 0.01, 0.01), temperature_k=297.0).status == STATUS_DOMAIN_ERROR
+    assert call((0.98, 0.01, 0.01), context=None).status == STATUS_INVALID_ARGUMENT
+
+    _, neutral_table = _electrolyte_value_table(_mixture_model())
+    neutral_amounts = (ctypes.c_double * 2)(0.4, 0.6)
+    unsupported = ElectrolytePhaseValueResult(
+        struct_size=ctypes.sizeof(ElectrolytePhaseValueResult)
+    )
+    status = EvaluateElectrolytePhaseValue(
+        neutral_table.evaluate_electrolyte_phase_value
+    )(
+        neutral_table.model_context,
+        220.0,
+        neutral_amounts,
+        2,
+        1.0e-3,
+        ctypes.byref(unsupported),
+    )
+    assert status == unsupported.status == STATUS_UNSUPPORTED_MODEL
+    assert math.isnan(unsupported.helmholtz_over_rt_reference_amount)
+    assert not unsupported.parameter_fingerprint
+    assert unsupported.error
 
 
 def test_native_sdk_khudaida_five_component_phase_block_and_permutation() -> None:

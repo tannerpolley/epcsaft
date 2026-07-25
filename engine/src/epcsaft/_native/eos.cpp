@@ -852,6 +852,18 @@ NativeMixturePhaseBlock NativeModel::evaluate_electrolyte_phase(
 }
 
 // EqExclude: transport and buffer mechanics
+double NativeModel::evaluate_electrolyte_phase_value(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double ion_mole_fraction_max
+) const {
+    return evaluate_electrolyte_phase(
+        temperature, amounts, volume, ion_mole_fraction_max
+    ).helmholtz_over_rt_reference_amount;
+}
+
+// EqExclude: transport and buffer mechanics
 NativePackingFractionBlock NativeModel::evaluate_packing_fraction(
     double temperature,
     const std::vector<double>& amounts,
