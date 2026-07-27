@@ -648,7 +648,7 @@ $$
 - Change note: Uses one kilogram of salt-free solvent as the construction basis.
 - LaTeX: `docs/latex/equations.tex:885`
 - Implementation:
-  - `src/epcsaft/_native/electrolyte_reference.hpp:38` (`formula_composition`)
+  - `src/epcsaft/_native/electrolyte_reference.hpp:41` (`formula_composition`)
   - `src/epcsaft/_native/eos.cpp:663` (`reference_composition`)
 
 $$
@@ -1238,7 +1238,7 @@ $$
 - Change note: One internal owner constructs composition, adjudicates convergence, and selects the terminal observation.
 - LaTeX: `docs/latex/equations.tex:901`
 - Implementation:
-  - `src/epcsaft/_native/electrolyte_reference.hpp:86` (`electrolyte_reference_sequence`)
+  - `src/epcsaft/_native/electrolyte_reference.hpp:89` (`electrolyte_reference_sequence`)
   - `src/epcsaft/_native/eos.cpp:679` (`electrolyte_reference_sequence`)
 
 $$

@@ -362,6 +362,13 @@ Helmholtz quantities on the `A_res/(nRT)` basis. `compressibility_factor` is
 `log_fugacity_coefficient[i]` is `ln(phi_i)`, all in `model.component_ids`
 order. The Provider returns fugacity coefficients, not component fugacities.
 Pressure, molar density, and residual caloric properties are Pint quantities.
+For ionic states, `EPCSAFT.permittivity_model` identifies the source-named bulk
+dielectric topology. The Figiel SSM+DS model reports
+`"figiel-composition"`, and the original-Born model reports
+`"ascani-mole-fraction"`. Neutral and associating states report `"none"` and
+set `EosResult.bulk_relative_permittivity` to `None`. Ionic results expose the
+dimensionless bulk relative permittivity used by the Provider's
+Debye--Huckel and Born calculations.
 See [the EOS science contract](science/full-provider-eos.md) for the equations,
 units, and reference bases.
 

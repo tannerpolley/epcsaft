@@ -379,6 +379,7 @@ class EPCSAFT:
 
     @property
     def permittivity_model(self) -> str:
+        """Return the source-named bulk-permittivity model used by this state."""
         return self._model.permittivity_model
 
     @property

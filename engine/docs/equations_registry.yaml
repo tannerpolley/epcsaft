@@ -577,8 +577,8 @@ equations:
     tex_line: 885
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte_reference.hpp"
-        line: 38
-        comment_line: 37
+        line: 41
+        comment_line: 40
         symbol: "formula_composition"
       - file: "src/epcsaft/_native/eos.cpp"
         line: 663
@@ -1153,8 +1153,8 @@ equations:
     tex_line: 901
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte_reference.hpp"
-        line: 86
-        comment_line: 85
+        line: 89
+        comment_line: 88
         symbol: "electrolyte_reference_sequence"
       - file: "src/epcsaft/_native/eos.cpp"
         line: 679
