@@ -63,6 +63,17 @@ epcsaft::NativeParameters parameters(const Json& value) {
         value.at("solvation_factor").get<std::vector<double>>(),
         value.at("ionic_region_relative_permittivity").get<double>(),
         value.at("electrolyte_model").get<int>(),
+        value.at("schreckenberg_dielectric_volume_m3_per_mol")
+            .get<std::vector<double>>(),
+        value.at("schreckenberg_dielectric_temperature_k")
+            .get<std::vector<double>>(),
+        value.at("zuber_ion_suppression_coefficient").get<std::vector<double>>(),
+        value.at("rueben_dipole_scaling_debye2").get<std::vector<double>>(),
+        value.at("rueben_polarizability_scaling_angstrom3")
+            .get<std::vector<double>>(),
+        value.at("rueben_correlation_integral_parameter")
+            .get<std::vector<double>>(),
+        value.at("permittivity_model").get<int>(),
     };
 }
 

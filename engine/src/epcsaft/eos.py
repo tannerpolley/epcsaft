@@ -741,6 +741,13 @@ def export_native_model(model: EPCSAFT, path: str | PathLike[str]) -> None:
         "solvation_factor",
         "ionic_region_relative_permittivity",
         "electrolyte_model",
+        "schreckenberg_dielectric_volume_m3_per_mol",
+        "schreckenberg_dielectric_temperature_k",
+        "zuber_ion_suppression_coefficient",
+        "rueben_dipole_scaling_debye2",
+        "rueben_polarizability_scaling_angstrom3",
+        "rueben_correlation_integral_parameter",
+        "permittivity_model",
     )
     native_parameters = dict(zip(names, _native_arguments(model._model), strict=True))
     for key in (
