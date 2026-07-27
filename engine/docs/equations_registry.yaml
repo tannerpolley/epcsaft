@@ -10,7 +10,7 @@ equations:
     change_note: "Diagonal catalog values remain fixed."
     latex: "\\boldsymbol{k}(\\theta)=\n\\begin{bmatrix}\nk_{11}&\\theta\\\\\n\\theta&k_{22}\n\\end{bmatrix}.\n\\label{eq:active_binary_interaction_mapping}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 985
+    tex_line: 1056
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
         line: 112
@@ -45,9 +45,9 @@ equations:
     tex_line: 639
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
-        line: 66
-        comment_line: 109
-        symbol: "electrolyte_contribution"
+        line: 56
+        comment_line: 132
+        symbol: "bulk_relative_permittivity"
   - eqid: "ascani_ionic_segment_diameter"
     section: "Parameter setup"
     subsection: ""
@@ -138,7 +138,7 @@ equations:
     change_note: "Documents routing without adding a public selector or case branch."
     latex: "a^{Born}=\n\\begin{cases}\na^{Born}_{\\mathrm{original}},&\n\\mathcal{M}=\\mathcal{M}_{\\mathrm{Ascani}},\\\\\na^{Born}_{\\mathrm{SSM+DS}},&\n\\mathcal{M}\\in\\mathcal{M}_{\\mathrm{Figiel}}.\n\\end{cases}\n\\label{eq:born_model_selection}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 780
+    tex_line: 851
     implementation_refs:
       - file: "src/epcsaft/_native/born.hpp"
         line: 123
@@ -154,7 +154,7 @@ equations:
     change_note: "The fitted Born diameter and resolved solvation factor remain distinct inputs."
     latex: "D_i=d_i^{Born}\n\\left(1+\\frac{f_{\\mathrm{mix}}-1}{|z_i|}\\right).\n\\label{eq:born_shell_diameter}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 717
+    tex_line: 788
     implementation_refs:
       - file: "src/epcsaft/_native/born.hpp"
         line: 15
@@ -170,7 +170,7 @@ equations:
     change_note: "Shared by the public reference-state owner and native neutral basis."
     latex: "g=\\gcd(|z_+|,|z_-|),\n\\qquad\n\\nu_+=\\frac{|z_-|}{g},\n\\qquad\n\\nu_-=\\frac{|z_+|}{g},\n\\qquad\n\\nu_+z_++\\nu_-z_-=0.\n\\label{eq:charge_balanced_formula_stoichiometry}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 798
+    tex_line: 869
     implementation_refs:
       - file: "src/epcsaft/reference.py"
         line: 208
@@ -205,8 +205,8 @@ equations:
     tex_line: 405
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 981
-        comment_line: 1041
+        line: 1046
+        comment_line: 1106
         symbol: "evaluate"
   - eqid: "cross_dispersion_energy"
     section: "Parameter setup"
@@ -250,11 +250,11 @@ equations:
     change_note: "The reference-state reduced diameter selects the numerical branch."
     latex: "\\chi(y)=\n\\begin{cases}\n1-\\dfrac{3}{4}y+\\dfrac{3}{5}y^2-\\dfrac{1}{2}y^3\n+\\dfrac{3}{7}y^4-\\dfrac{3}{8}y^5+\\dfrac{1}{3}y^6,\n& y_{\\mathrm{ref}}<10^{-3},\\\\[6pt]\n\\dfrac{3\\left[\\ln(1+y)-y+y^2/2\\right]}{y^3},\n& y_{\\mathrm{ref}}\\ge10^{-3},\n\\end{cases}\n\\qquad y=\\kappa d_i.\n\\label{eq:debye_finite_size_chi}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 673
+    tex_line: 744
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
-        line: 48
-        comment_line: 47
+        line: 150
+        comment_line: 149
         symbol: "finite_size_chi"
   - eqid: "debye_huckel_helmholtz"
     section: "Electrolyte dielectric and Debye--Huckel relations"
@@ -266,11 +266,11 @@ equations:
     change_note: "Uses the model-routed common segment diameter converted to metres."
     latex: "a^{DH}=\n-\\frac{\\kappa e^2}\n{12\\pi\\epsilon_0\\epsilon_{r,\\mathrm{bulk}}k_BT}\n\\sum_{i\\in\\mathcal{I}}x_i z_i^2\\chi(\\kappa d_i).\n\\label{eq:debye_huckel_helmholtz}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 691
+    tex_line: 762
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
-        line: 66
-        comment_line: 190
+        line: 168
+        comment_line: 258
         symbol: "electrolyte_contribution"
   - eqid: "debye_screening_parameter"
     section: "Electrolyte dielectric and Debye--Huckel relations"
@@ -282,11 +282,11 @@ equations:
     change_note: "Uses molar density and the current Provider physical constants."
     latex: "\\kappa=\n\\sqrt{\\frac{\\rho_mN_Ae^2S_z}\n{\\epsilon_0\\epsilon_{r,\\mathrm{bulk}}k_BT}}.\n\\label{eq:debye_screening_parameter}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 661
+    tex_line: 732
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
-        line: 66
-        comment_line: 164
+        line: 168
+        comment_line: 232
         symbol: "electrolyte_contribution"
   - eqid: "density_residual"
     section: "Density closure and mechanical domain"
@@ -317,8 +317,8 @@ equations:
     tex_line: 579
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1116
-        comment_line: 1128
+        line: 1182
+        comment_line: 1194
         symbol: "evaluate_pressure"
   - eqid: "dispersion_chain_coefficients"
     section: "Contribution intermediates"
@@ -458,7 +458,7 @@ equations:
     change_note: "Evaluated analytically around the sole CppAD state derivative owner."
     latex: "\\frac{\\partial\\rho_m}{\\partial n_j}=\\frac{1}{V},\n\\quad\n\\frac{\\partial\\rho_m}{\\partial V}=-\\frac{n}{V^2},\n\\quad\n\\frac{\\partial x_i}{\\partial n_j}=\\frac{\\delta_{ij}-x_i}{n},\n\\quad\n\\frac{\\partial x_i}{\\partial V}=0.\n\\label{eq:electrolyte_phase_coordinate_jacobian}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1012
+    tex_line: 1083
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
         line: 348
@@ -474,7 +474,7 @@ equations:
     change_note: "CppAD supplies state Hessians; the Provider applies this exact coordinate transformation."
     latex: "\\frac{\\partial^2(na^r)}{\\partial q_\\alpha\\partial q_\\beta}\n=n_\\alpha a^r_{y_p}y_{p,\\beta}\n+n_\\beta a^r_{y_p}y_{p,\\alpha}\n+n\\left(\na^r_{y_py_q}y_{p,\\alpha}y_{q,\\beta}\n+a^r_{y_p}y_{p,\\alpha\\beta}\n\\right),\n\\quad\n\\boldsymbol{y}=(\\rho_m,\\boldsymbol{x}).\n\\label{eq:electrolyte_phase_hessian_chain_rule}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1028
+    tex_line: 1099
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
         line: 348
@@ -493,9 +493,9 @@ equations:
     tex_line: 625
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
-        line: 66
-        comment_line: 108
-        symbol: "electrolyte_contribution"
+        line: 56
+        comment_line: 140
+        symbol: "bulk_relative_permittivity"
   - eqid: "figiel_ionic_segment_diameter"
     section: "Parameter setup"
     subsection: ""
@@ -553,16 +553,16 @@ equations:
         comment_line: 257
         symbol: "active_solvation_factor_observation"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 597
-        comment_line: 596
+        line: 662
+        comment_line: 661
         symbol: "evaluate_ion_solvation_born"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 659
-        comment_line: 658
+        line: 724
+        comment_line: 723
         symbol: "evaluate_aqueous_miac_kij_batch"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 790
-        comment_line: 789
+        line: 855
+        comment_line: 854
         symbol: "evaluate_aqueous_miac_solvation_factor_batch"
   - eqid: "formula_unit_composition"
     section: "Electrolyte reference states and reported activities"
@@ -574,15 +574,15 @@ equations:
     change_note: "Uses one kilogram of salt-free solvent as the construction basis."
     latex: "\\begin{aligned}\n\\overline M_s&=\\sum_{s\\in\\mathcal{S}}y_sM_s,\n&n_s^{(0)}&=\\frac{1}{\\overline M_s},\\\\\nn_{\\mathrm{tot}}&=n_s^{(0)}+m(\\nu_++\\nu_-),\n&x_s&=\\frac{y_sn_s^{(0)}}{n_{\\mathrm{tot}}},\n&x_\\pm&=\\frac{\\nu_\\pm m}{n_{\\mathrm{tot}}}.\n\\end{aligned}\n\\label{eq:formula_unit_composition}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 814
+    tex_line: 885
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte_reference.hpp"
         line: 33
         comment_line: 32
         symbol: "formula_composition"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 541
-        comment_line: 540
+        line: 606
+        comment_line: 605
         symbol: "reference_composition"
   - eqid: "hard_chain_helmholtz"
     section: "Contribution intermediates"
@@ -645,8 +645,8 @@ equations:
     tex_line: 569
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1116
-        comment_line: 1137
+        line: 1182
+        comment_line: 1203
         symbol: "evaluate_pressure"
   - eqid: "infinite_dilution_solvation_energy"
     section: "Electrolyte reference states and reported activities"
@@ -658,11 +658,11 @@ equations:
     change_note: "Uses the terminal reference-sequence log fugacity."
     latex: "\\Delta G_{i,\\mathrm{solv}}^\\infty\n=RT\\ln\\phi_i^\\infty.\n\\label{eq:infinite_dilution_solvation_energy}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 893
+    tex_line: 964
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 597
-        comment_line: 595
+        line: 662
+        comment_line: 660
         symbol: "evaluate_ion_solvation_born"
       - file: "src/epcsaft/reference.py"
         line: 82
@@ -678,11 +678,11 @@ equations:
     change_note: "Only charged components contribute."
     latex: "S_z=\\sum_{i\\in\\mathcal{I}}x_i z_i^2.\n\\label{eq:ionic_strength_charge_sum}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 651
+    tex_line: 722
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
-        line: 66
-        comment_line: 102
+        line: 168
+        comment_line: 195
         symbol: "electrolyte_contribution"
   - eqid: "log_fugacity_coefficient"
     section: "Thermodynamic properties"
@@ -697,8 +697,8 @@ equations:
     tex_line: 451
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 981
-        comment_line: 1059
+        line: 1046
+        comment_line: 1124
         symbol: "evaluate"
   - eqid: "log_fugacity_density_derivative"
     section: "Thermodynamic properties"
@@ -726,15 +726,15 @@ equations:
     change_note: "Supports the one-formula-unit cation/anion topology."
     latex: "\\ln\\gamma_\\pm^{(x)}\n=\\frac{\\nu_+\\ln\\gamma_+^{(x)}+\\nu_-\\ln\\gamma_-^{(x)}}\n{\\nu_++\\nu_-}.\n\\label{eq:mean_ionic_activity_coefficient}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 855
+    tex_line: 926
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 659
-        comment_line: 656
+        line: 724
+        comment_line: 721
         symbol: "evaluate_aqueous_miac_kij_batch"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 790
-        comment_line: 787
+        line: 855
+        comment_line: 852
         symbol: "evaluate_aqueous_miac_solvation_factor_batch"
       - file: "src/epcsaft/reference.py"
         line: 96
@@ -769,8 +769,8 @@ equations:
     tex_line: 589
     implementation_refs:
       - file: "src/epcsaft/_native/density.hpp"
-        line: 102
-        comment_line: 100
+        line: 105
+        comment_line: 103
         symbol: "solve_density"
   - eqid: "mixture_solvation_factor"
     section: "Born solvation relations"
@@ -782,7 +782,7 @@ equations:
     change_note: "Retains the explicit fraction normalization used by the Provider."
     latex: "f_{\\mathrm{mix}}=\n\\frac{\\sum_kx_kf_k}{\\sum_kx_k}.\n\\label{eq:mixture_solvation_factor}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 706
+    tex_line: 777
     implementation_refs:
       - file: "src/epcsaft/_native/born.hpp"
         line: 15
@@ -798,15 +798,15 @@ equations:
     change_note: "Uses salt-free solvent molar mass in kilograms per mole."
     latex: "\\gamma_\\pm^{(m)}=\n\\frac{\\gamma_\\pm^{(x)}}\n{1+\\overline M_s\\,m(\\nu_++\\nu_-)}.\n\\label{eq:molality_activity_conversion}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 867
+    tex_line: 938
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 659
-        comment_line: 657
+        line: 724
+        comment_line: 722
         symbol: "evaluate_aqueous_miac_kij_batch"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 790
-        comment_line: 788
+        line: 855
+        comment_line: 853
         symbol: "evaluate_aqueous_miac_solvation_factor_batch"
       - file: "src/epcsaft/reference.py"
         line: 96
@@ -822,7 +822,7 @@ equations:
     change_note: "Solvent unit rows and a spanning set of cation-anion formula rows are immutable for a resolved model."
     latex: "\\boldsymbol{b}^{(s)}=\\boldsymbol{e}_s,\n\\qquad\n\\boldsymbol{b}^{(+-)}=\\nu_+\\boldsymbol{e}_+\n+\\nu_-\\boldsymbol{e}_-,\n\\qquad\nc_r=\\sum_i b_i^{(r)}\\ln\\phi_i^\\infty.\n\\label{eq:neutral_reference_stoichiometric_basis}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1046
+    tex_line: 1117
     implementation_refs:
       - file: "src/epcsaft/_native/native_sdk.cpp"
         line: 268
@@ -854,7 +854,7 @@ equations:
     change_note: "SSM and DS are absent for the source-routed Ascani model."
     latex: "a^{Born}_{\\mathrm{original}}=\n-\\frac{e^2}{4\\pi\\epsilon_0k_BT}\n\\left(1-\\epsilon_{r,\\mathrm{bulk}}^{-1}\\right)\nW_{\\mathrm{original}}.\n\\label{eq:original_born_helmholtz}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 767
+    tex_line: 838
     implementation_refs:
       - file: "src/epcsaft/_native/born.hpp"
         line: 96
@@ -870,7 +870,7 @@ equations:
     change_note: "Uses the Ascani ion sigma as the Born diameter."
     latex: "W_{\\mathrm{original}}=\n\\sum_{i\\in\\mathcal{I}}\\frac{x_i z_i^2}{\\sigma_i}.\n\\label{eq:original_born_radial_work}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 756
+    tex_line: 827
     implementation_refs:
       - file: "src/epcsaft/_native/born.hpp"
         line: 96
@@ -934,11 +934,11 @@ equations:
     change_note: "The Provider owns c_eta while the caller owns eta_min and eta_max."
     latex: "V_{m,\\min}=\\frac{c_\\eta(T,\\boldsymbol{x})}{\\eta_{\\max}},\n\\qquad\nV_{m,\\max}=\\frac{c_\\eta(T,\\boldsymbol{x})}{\\eta_{\\min}}.\n\\label{eq:packing_volume_bounds}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 973
+    tex_line: 1044
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 920
-        comment_line: 919
+        line: 985
+        comment_line: 984
         symbol: "molar_volume_bounds"
   - eqid: "phase_dimensionless_helmholtz"
     section: "Native phase coordinates"
@@ -950,7 +950,7 @@ equations:
     change_note: "Uses n_ref=1 mol and rho_ref=1 mol m^-3 as immutable unit references."
     latex: "\\Phi\\equiv\\frac{A}{RTn_{\\mathrm{ref}}}\n=\\sum_i\\frac{n_i}{n_{\\mathrm{ref}}}\n\\left[\n\\ln\\left(\\frac{n_i/V}{\\rho_{\\mathrm{ref}}}\\right)-1\n\\right]\n+\\frac{n}{n_{\\mathrm{ref}}}a^r(T,\\rho_m,\\boldsymbol{x}).\n\\label{eq:phase_dimensionless_helmholtz}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 947
+    tex_line: 1018
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
         line: 133
@@ -974,7 +974,7 @@ equations:
     change_note: "Uses SI mole and cubic-metre coordinates."
     latex: "\\rho_m=\\frac{n}{V}.\n\\label{eq:phase_molar_density}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 937
+    tex_line: 1008
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
         line: 133
@@ -998,7 +998,7 @@ equations:
     change_note: "Requires every admitted amount to be strictly positive."
     latex: "x_i=\\frac{n_i}{n}.\n\\label{eq:phase_mole_fraction}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 927
+    tex_line: 998
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
         line: 133
@@ -1038,7 +1038,7 @@ equations:
     change_note: "Returned on the original pascal scale."
     latex: "P=-RTn_{\\mathrm{ref}}\n\\left(\\frac{\\partial\\Phi}{\\partial V}\\right)_{T,\\boldsymbol{n}}.\n\\label{eq:phase_pressure}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 962
+    tex_line: 1033
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
         line: 224
@@ -1066,7 +1066,7 @@ equations:
     change_note: "Shared by neutral and electrolyte phase blocks."
     latex: "n=\\sum_i n_i.\n\\label{eq:phase_total_amount}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 917
+    tex_line: 988
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
         line: 133
@@ -1086,7 +1086,7 @@ equations:
     change_note: "Defined only for the admitted single-active-solvent aqueous path."
     latex: "\\Phi=\n-\\frac{\\ln a_s}\n{(\\nu_++\\nu_-)mM_s},\n\\qquad\n\\ln a_s=\\ln x_s+\\ln\\phi_s-\\ln\\phi_s^{\\mathrm{pure}}.\n\\label{eq:practical_osmotic_coefficient}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 879
+    tex_line: 950
     implementation_refs:
       - file: "src/epcsaft/reference.py"
         line: 96
@@ -1105,8 +1105,8 @@ equations:
     tex_line: 417
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 981
-        comment_line: 1093
+        line: 1046
+        comment_line: 1159
         symbol: "evaluate"
   - eqid: "pressure_density_derivative"
     section: "Thermodynamic properties"
@@ -1121,8 +1121,8 @@ equations:
     tex_line: 427
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 981
-        comment_line: 1110
+        line: 1046
+        comment_line: 1176
         symbol: "evaluate"
   - eqid: "pure_active_parameter_mapping"
     section: "Native phase coordinates"
@@ -1134,7 +1134,7 @@ equations:
     change_note: "No generic mutable parameter overlay is introduced."
     latex: "\\boldsymbol{\\theta}_{\\mathrm{pure}}\n=\\left(m,\\sigma,\\epsilon/k_B\\right),\n\\qquad\n\\boldsymbol{k}=\\boldsymbol{l}=(0).\n\\label{eq:pure_active_parameter_mapping}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 999
+    tex_line: 1070
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
         line: 553
@@ -1150,15 +1150,15 @@ equations:
     change_note: "One internal owner constructs composition, adjudicates convergence, and selects the terminal observation."
     latex: "\\mathcal{M}_{\\mathrm{ref}}=\n\\{10^{-6},10^{-8},10^{-10},10^{-12}\\}\n\\ \\si{\\mole\\per\\kilogram},\n\\qquad\n\\ln\\phi_i^\\infty\\equiv\\ln\\phi_i(m=10^{-12}).\n\\label{eq:reference_molality_sequence}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 830
+    tex_line: 901
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte_reference.hpp"
         line: 81
         comment_line: 80
         symbol: "electrolyte_reference_sequence"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 557
-        comment_line: 556
+        line: 622
+        comment_line: 621
         symbol: "electrolyte_reference_sequence"
   - eqid: "residual_chemical_potential"
     section: "Thermodynamic properties"
@@ -1173,8 +1173,8 @@ equations:
     tex_line: 440
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 981
-        comment_line: 1054
+        line: 1046
+        comment_line: 1119
         symbol: "evaluate"
   - eqid: "residual_enthalpy"
     section: "Thermodynamic properties"
@@ -1189,8 +1189,8 @@ equations:
     tex_line: 481
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 981
-        comment_line: 1103
+        line: 1046
+        comment_line: 1169
         symbol: "evaluate"
   - eqid: "residual_entropy"
     section: "Thermodynamic properties"
@@ -1205,8 +1205,8 @@ equations:
     tex_line: 461
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 981
-        comment_line: 1097
+        line: 1046
+        comment_line: 1163
         symbol: "evaluate"
   - eqid: "residual_heat_capacity_cp"
     section: "Thermodynamic properties"
@@ -1221,8 +1221,8 @@ equations:
     tex_line: 501
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 981
-        comment_line: 1075
+        line: 1046
+        comment_line: 1140
         symbol: "evaluate"
   - eqid: "residual_heat_capacity_cv"
     section: "Thermodynamic properties"
@@ -1237,8 +1237,8 @@ equations:
     tex_line: 491
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 981
-        comment_line: 1106
+        line: 1046
+        comment_line: 1172
         symbol: "evaluate"
   - eqid: "residual_helmholtz"
     section: "Residual Helmholtz energy"
@@ -1269,9 +1269,65 @@ equations:
     tex_line: 471
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 981
-        comment_line: 1100
+        line: 1046
+        comment_line: 1166
         symbol: "evaluate"
+  - eqid: "rueben_bulk_permittivity"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:rueben_bulk_permittivity"
+    source: "Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (6)"
+    status: "Source equation"
+    description: "Rueben perturbation-theory bulk relative permittivity."
+    change_note: "The relation tends to one as all component partial densities vanish."
+    latex: "\\epsilon_{r,\\mathrm{bulk}}=\n1+3y\\left\\{1+y+\\left[\\frac{17}{16}I-1\\right]y^2\\right\\}.\n\\label{eq:rueben_bulk_permittivity}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 711
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 56
+        comment_line: 112
+        symbol: "bulk_relative_permittivity"
+  - eqid: "rueben_correlation_integral"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:rueben_correlation_integral"
+    source: "Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (5)"
+    status: "Source equation"
+    description: "Rueben correlation integral from component correlation parameters."
+    change_note: "The correlation parameter is an explicit record for every component."
+    latex: "I=1+\\left(\\sum_i a_{2,i}x_i\\right)\\left[\\exp(-y)-1\\right].\n\\label{eq:rueben_correlation_integral}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 701
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 56
+        comment_line: 100
+        symbol: "bulk_relative_permittivity"
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 56
+        comment_line: 109
+        symbol: "bulk_relative_permittivity"
+  - eqid: "rueben_effective_dipolar_density"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:rueben_effective_dipolar_density"
+    source: "Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (4)"
+    status: "Source equation"
+    description: "Rueben effective dipolar-density variable in the Angstrom number-density basis."
+    change_note: "Dipole-squared and polarizability records are explicit for every component."
+    latex: "y=\\frac{4\\pi}{9}\\sum_i \\widehat{\\rho}_i\n\\left(\\frac{\\mu_i^2\\,10^{-19}}{k_BT}+3\\alpha_i\\right),\n\\qquad\n\\widehat{\\rho}_i=\\rho_mN_Ax_i10^{-30}.\n\\label{eq:rueben_effective_dipolar_density}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 688
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 56
+        comment_line: 93
+        symbol: "bulk_relative_permittivity"
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 56
+        comment_line: 106
+        symbol: "bulk_relative_permittivity"
   - eqid: "salt_free_solvent_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
     subsection: "Association"
@@ -1285,9 +1341,9 @@ equations:
     tex_line: 613
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
-        line: 66
-        comment_line: 106
-        symbol: "electrolyte_contribution"
+        line: 56
+        comment_line: 129
+        symbol: "bulk_relative_permittivity"
   - eqid: "same_sign_ionic_dispersion"
     section: "Parameter setup"
     subsection: ""
@@ -1304,6 +1360,38 @@ equations:
         line: 204
         comment_line: 323
         symbol: "residual_helmholtz"
+  - eqid: "schreckenberg_bulk_permittivity"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:schreckenberg_bulk_permittivity"
+    source: "Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (1a), (2a), and (2b)"
+    status: "Bounded empirical relation"
+    description: "Schreckenberg density-and-temperature bulk relative permittivity."
+    change_note: "The solvent partial density makes the dilute-density limit explicit."
+    latex: "\\epsilon_{r,\\mathrm{bulk}}=\n1+\\rho_m x_{\\mathrm{solv}}d_{V,\\mathrm{mix}}\n\\left(\\frac{d_{T,\\mathrm{mix}}}{T}-1\\right).\n\\label{eq:schreckenberg_bulk_permittivity}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 664
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 56
+        comment_line: 124
+        symbol: "bulk_relative_permittivity"
+  - eqid: "schreckenberg_mixed_parameters"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:schreckenberg_mixed_parameters"
+    source: "Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (2a)--(2b)"
+    status: "Bounded empirical relation"
+    description: "Solvent-fraction-normalized Schreckenberg mixture parameters."
+    change_note: "Only neutral-solvent components enter these mixtures."
+    latex: "x_{\\mathrm{solv}}=\\sum_{s\\in\\mathcal{S}}x_s,\\qquad\nd_{V,\\mathrm{mix}}=\\frac{\\sum_{s\\in\\mathcal{S}}x_sd_{V,s}}{x_{\\mathrm{solv}}},\n\\qquad\nd_{T,\\mathrm{mix}}=\\frac{\\sum_{s\\in\\mathcal{S}}x_sd_{T,s}}{x_{\\mathrm{solv}}}.\n\\label{eq:schreckenberg_mixed_parameters}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 651
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 56
+        comment_line: 121
+        symbol: "bulk_relative_permittivity"
   - eqid: "segment_sigma_correlation"
     section: "Parameter setup"
     subsection: ""
@@ -1330,7 +1418,7 @@ equations:
     change_note: "Exposes the exponential of the finite-minus-reference log fugacity."
     latex: "\\gamma_i^{(x)}=\n\\exp\\left(\\ln\\phi_i-\\ln\\phi_i^\\infty\\right).\n\\label{eq:single_ion_activity_coefficient}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 844
+    tex_line: 915
     implementation_refs:
       - file: "src/epcsaft/reference.py"
         line: 96
@@ -1346,7 +1434,7 @@ equations:
     change_note: "Shared by fixed and active-coordinate evaluation paths."
     latex: "a^{Born}_{\\mathrm{SSM+DS}}=\n-\\frac{e^2}{4\\pi\\epsilon_0k_BT}\\,\nW_{\\mathrm{SSM+DS}}.\n\\label{eq:ssm_ds_born_helmholtz}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 744
+    tex_line: 815
     implementation_refs:
       - file: "src/epcsaft/_native/born.hpp"
         line: 15
@@ -1374,7 +1462,7 @@ equations:
     change_note: "Restores the ionic-region dielectric in the inner-shell term."
     latex: "W_{\\mathrm{SSM+DS}}=\n\\sum_{i\\in\\mathcal{I}}x_i z_i^2\n\\left[\n\\frac{1-\\epsilon_{r,\\mathrm{bulk}}^{-1}}{D_i}\n+\\left(1-\\epsilon_{r,\\mathrm{ion}}^{-1}\\right)\n\\left(\\frac{1}{d_i^{Born}}-\\frac{1}{D_i}\\right)\n\\right].\n\\label{eq:ssm_ds_radial_work}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 728
+    tex_line: 799
     implementation_refs:
       - file: "src/epcsaft/_native/born.hpp"
         line: 15
@@ -1390,12 +1478,28 @@ equations:
     change_note: "Source and target must share temperature, pressure, phase, ions, and stoichiometry."
     latex: "\\Delta G_{i,\\mathrm{tr}}^{A\\rightarrow B}\n=RT\\left(\\ln\\phi_{i,B}^{\\infty}-\\ln\\phi_{i,A}^{\\infty}\\right).\n\\label{eq:transfer_free_energy}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 904
+    tex_line: 975
     implementation_refs:
       - file: "src/epcsaft/reference.py"
         line: 176
         comment_line: 193
         symbol: "transfer_to"
+  - eqid: "zuber_bulk_permittivity"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: "Association"
+    label: "eq:zuber_bulk_permittivity"
+    source: "Zuber et al. (2014), DOI 10.1016/j.fluid.2014.05.037, Eq. (9)"
+    status: "Bounded empirical relation"
+    description: "Zuber single-solvent ion-specific dielectric suppression."
+    change_note: "Each ion-solvent suppression coefficient is an explicit resolved record."
+    latex: "\\epsilon_{r,\\mathrm{bulk}}=\n\\frac{\\epsilon_{r,s}(T)}\n{1+\\sum_{i\\in\\mathcal{I}}\\alpha_{i,s}x_i}.\n\\label{eq:zuber_bulk_permittivity}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 676
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 56
+        comment_line: 136
+        symbol: "bulk_relative_permittivity"
 source_exclusions:
   - file: "src/epcsaft/_native/association.hpp"
     line: 23
@@ -1414,7 +1518,7 @@ source_exclusions:
     symbol: "refine_density_root"
     reason: "numerical iteration mechanics"
   - file: "src/epcsaft/_native/density.hpp"
-    line: 102
+    line: 105
     symbol: "solve_density"
     reason: "numerical iteration mechanics"
   - file: "src/epcsaft/_native/derivatives.hpp"
@@ -1465,6 +1569,10 @@ source_exclusions:
     line: 33
     symbol: "electrolyte_log"
     reason: "scalar utility dispatch"
+  - file: "src/epcsaft/_native/electrolyte.hpp"
+    line: 42
+    symbol: "electrolyte_exp"
+    reason: "scalar utility dispatch"
   - file: "src/epcsaft/_native/eos.cpp"
     line: 22
     symbol: "positive_finite"
@@ -1478,59 +1586,59 @@ source_exclusions:
     symbol: "NativeModel"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 437
+    line: 502
     symbol: "supports_native_sdk_v1"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 442
+    line: 507
     symbol: "supports_mixture_native_sdk_v1"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 447
+    line: 512
     symbol: "supports_electrolyte_native_sdk_v1"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 452
+    line: 517
     symbol: "component_count"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 457
+    line: 522
     symbol: "charge_numbers"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 462
+    line: 527
     symbol: "molar_masses_kg_per_mol"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 467
+    line: 532
     symbol: "evaluate_pure_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 476
+    line: 541
     symbol: "evaluate_pure_phase_parameters"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 496
+    line: 561
     symbol: "evaluate_mixture_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 505
+    line: 570
     symbol: "evaluate_mixture_phase_kij"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 517
+    line: 582
     symbol: "evaluate_electrolyte_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 529
+    line: 594
     symbol: "evaluate_packing_fraction"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 644
+    line: 709
     symbol: "evaluate_aqueous_miac_kij"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 772
+    line: 837
     symbol: "evaluate_aqueous_miac_solvation_factor"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/helmholtz.hpp"

@@ -57,6 +57,9 @@ DensityRoot refine_density_root(
                 <= 1.0e-10 * std::max(1.0, midpoint)) {
             break;
         }
+        if (std::nextafter(bracket_lower, bracket_upper) >= bracket_upper) {
+            break;
+        }
         const double slope = state.pressure_density_derivative;
         if (std::isfinite(slope) && slope != 0.0) {
             const double candidate = midpoint - residual / slope;

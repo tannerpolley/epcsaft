@@ -29,6 +29,10 @@ It does not override this bounded specification or the current implementation.
 | Figiel2025 | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2025, 64, 9406-9418, DOI `10.1021/acs.iecr.5c00475` | Fitted Born diameter, SSM+DS Born term, solvation factor, dielectric rule, fugacity relations, and electrolyte reference-state equations |
 | Figiel2025SI | Official ACS supporting information, DOI `10.1021/acs.iecr.5c00475.s001`, Figshare article `28888514`, file `54030209`, MD5 `4c3d3964d6e61b908c3ce3b17bb4e6b0` | Comparison of direct, SSM, and SSM+DS formulations and retained validation evidence |
 | Figiel2026Correction | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2026, DOI `10.1021/acs.iecr.6c01415` | Authoritative corrected text of Figiel2025 Eq. (7): restores the missing bracket and replaces the second `epsilon_r,bulk` with `epsilon_r,ion` |
+| Zuber2014 | Zuber et al., *Fluid Phase Equilibria* 2014, DOI `10.1016/j.fluid.2014.05.037` | Ion-specific dielectric suppression, Eqs. (8)--(10) and Table 2 |
+| Yang2024 | Yang, Kontogeorgis, and de Hemptinne, *Fluid Phase Equilibria* 2024, 583, 114103, DOI `10.1016/j.fluid.2024.114103` | Schreckenberg/Uematsu--Frank density-and-temperature dielectric model, Eqs. (1a), (2a), and (2b), and solvent parameters |
+| Rueben2024 | Rueben et al., *J. Chem. Eng. Data* 2024, DOI `10.1021/acs.jced.4c00347` | Partial-density perturbation-theory dielectric model, Eqs. (4)--(6), and PT2 ion parameters |
+| Perdomo2025 | Perdomo et al., *Comput. Chem. Eng.* 2025, 194, 108977, DOI `10.1016/j.compchemeng.2024.108977` | Read-only NaCl--water vapor/liquid endpoint diagnostic; not an ePC-SAFT parameter source |
 | Ascani2022 | Ascani, Sadowski, and Held, *J. Chem. Eng. Data* 2022, 67, 1972-1984, DOI `10.1021/acs.jced.1c00866` | Case Study 2 component, association, `k_ij`, `l_ij`, and `k_ij^hb` records at 298.15 K |
 | AscaniHeld2021 | Ascani and Held, *Z. Anorg. Allg. Chem.* 2021, 647, 1305-1314, DOI `10.1002/zaac.202100032` | Original Born equation and combined solvent-mass/ion-mole dielectric rule |
 | HamerWu1972 | Hamer and Wu, *J. Phys. Chem. Ref. Data* 1972, 1, 1047-1100, DOI `10.1063/1.3253108`; official NIST PDF SHA-256 `8399084b29b4db4ce35ab47ed679446dbedb9bf1686f99f43fce7b2073ee4beb` | Practical molal osmotic-coefficient definition and aqueous NaCl comparison value |
@@ -112,6 +116,9 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Debye-Huckel | finite-size DH residual Helmholtz term | adapted source equation | Bulow2019 Eq. (2), with diameter and screening definitions below | `_native/electrolyte.hpp` |
 | Figiel bulk dielectric | salt-free solvent mass mixing followed by ion suppression | bounded empirical relation | Figiel2025 Eqs. (11), (12) | `_native/electrolyte.hpp` |
 | Ascani bulk dielectric | combined salt-free-solvent mass and ion-mole mixing | source equation | AscaniHeld2021 Eq. (13) | `_native/electrolyte.hpp` |
+| Schreckenberg bulk dielectric | solvent-density and temperature correlation | bounded empirical relation | Yang2024 Eqs. (1a), (2a), (2b) | `_native/electrolyte.hpp` |
+| Zuber bulk dielectric | pure-solvent dielectric with ion-specific suppression | bounded empirical relation | Zuber2014 Eq. (9), Table 2 | `_native/electrolyte.hpp` |
+| Rueben bulk dielectric | partial-density perturbation-theory relation | source equation | Rueben2024 Eqs. (4)--(6) | `_native/electrolyte.hpp` |
 | Born SSM+DS | piecewise-dielectric shell work | corrected source equation | Figiel2026Correction Eq. (7) | `_native/born.hpp` |
 | Original Born | direct charging work with ion diameter `sigma_i` | source equation | AscaniHeld2021 Eq. (10) and diameter convention | `_native/born.hpp` |
 | Total Helmholtz | `a^r = a^hc + a^disp + a^assoc + a^DH + a^Born` | source equation | Figiel2025 Eq. (1) | `_native/helmholtz.hpp` |
@@ -228,6 +235,13 @@ residual, failed convergence, or an ill-conditioned association Jacobian.
 
 ## 6. Bulk dielectric and Debye-Huckel
 
+The relative-permittivity topology is selected by a complete, source-bearing
+parameter family. It is not a caller option and there is no phase label or
+runtime fallback. Mixed or incomplete topology records fail during model
+resolution.
+
+### 6.1 Figiel composition-only and Ascani mole-fraction topologies
+
 For the bounded Figiel2025 solvent/electrolyte model, first form salt-free
 solvent mass fractions from component molar masses:
 
@@ -266,6 +280,143 @@ contains neither the Figiel radial-region model record nor a dielectric
 suppression coefficient. Its water and 1-butanol source correlations are
 evaluated exactly at the bundle's sole admitted temperature, 298.15 K. CppAD
 differentiates the displayed composition rule in the common owner.
+
+### 6.2 Schreckenberg density topology
+
+Yang2024 Eqs. (1a), (2a), and (2b) give the implemented
+Schreckenberg/Uematsu--Frank topology. With `S` the neutral-solvent set,
+
+```text
+x_solv = sum_(s in S) x_s,
+d_V,mix = sum_(s in S) x_s d_V,s / x_solv,
+d_T,mix = sum_(s in S) x_s d_T,s / x_solv,
+epsilon_r,bulk = 1 + rho_m x_solv d_V,mix (d_T,mix/T - 1).
+```
+
+The admitted water comparison uses `d_V = 0.3777 dm3 mol^-1` and
+`d_T = 1403 K` from Yang2024. Because solvent partial density is explicit,
+`epsilon_r,bulk -> 1` as `rho_m x_solv -> 0`. Every neutral solvent requires
+both parameters; missing records fail closed.
+
+### 6.3 Zuber ion-specific topology
+
+For a single source-supported solvent, Zuber2014 Eq. (9) is
+
+```text
+epsilon_r,bulk = epsilon_r,s(T) /
+                 [1 + sum_(i in ions) alpha_i,s x_i].
+```
+
+The water/Na+/Cl- comparison uses the Table 2 coefficients
+`alpha_Na+,water = 3.62` and `alpha_Cl-,water = 6.80`. These parameters are
+ion--solvent specific and are not replacements for Figiel's universal
+`C_epsilon = 7.01`. Zuber Eq. (8) requires solvent volume fractions for a
+mixed-solvent system. The current topology therefore admits exactly one
+neutral solvent and rejects a mixed-solvent selection rather than inventing
+volume data or a mixing rule.
+
+### 6.4 Rueben perturbation topology
+
+Rueben2024 Eqs. (4)--(6) are implemented in the source's Angstrom number-density
+basis. Let `rho_hat_i = rho_m N_A x_i 10^-30` in particles per Angstrom cubed:
+
+```text
+y = (4 pi/9) sum_i rho_hat_i
+      [mu2_i 10^-19/(k_B T) + 3 alpha_i],
+I = 1 + [sum_i a2_i x_i] [exp(-y) - 1],
+epsilon_r,bulk = 1 + 3 y {1 + y + [(17/16) I - 1] y^2}.
+```
+
+`mu2_i`, `alpha_i`, and `a2_i` are the source-backed dipole-squared,
+polarizability, and correlation-integral records. The water/Na+/Cl- comparison
+uses water `mu2=5.199 D2`, `alpha=0 A3`, `a2=0.1276`, and Rueben2024 PT2 ion
+values Na+ `(5.407 D2, 0 A3, 0.215)` and Cl- `(2.563 D2, 0 A3, 0.138)`.
+All three records are required for every selected component. The equation gives
+`epsilon_r,bulk -> 1` as all partial densities approach zero.
+
+### 6.5 Common electrostatic owner and bounded comparison
+
+The selected `epsilon_r,bulk` is evaluated once by the scalar-generic native
+owner and is consumed unchanged by both Debye--Huckel and the selected Born
+equation. Temperature, density, composition, and parameter dependence therefore
+remain inside the common CppAD tape. `EPCSAFT.permittivity_model` reports the
+source-named topology and `EosResult.bulk_relative_permittivity` reports the
+evaluated state value.
+
+The bounded comparison uses Perdomo2025 Table 3 at `T=298.15 K` and
+`P=2508 Pa`, with explicit-species compositions in Provider order
+`(water,Na+,Cl-)`:
+
+```text
+x_v = (1-2(1.41063e-116), 1.41063e-116, 1.41063e-116),
+x_l = (0.826112, 0.086944, 0.086944).
+```
+
+At the corrected retained vapor volume `V=0.9841 m3 mol^-1`, Figiel gives
+`epsilon_r=78.09`, while Schreckenberg and Rueben give approximately
+`1.00142` and `1.000324`. Thus the density topologies repair the dilute-vapor
+limit at the equation level. The retained SAFT-gamma Mie liquid volume
+`1.787e-5 m3 mol^-1` is not an ePC-SAFT pressure root: direct ePC-SAFT pressures
+are about `-2.08e8` to `-2.16e8 Pa` across the four topologies. Comparisons of
+chemical potentials therefore use each topology's own pressure-certified
+root, not the retained foreign-EOS liquid volume.
+
+The diagnostic changes only the permittivity records on the installed
+Figiel2025 ePC-SAFT/SSM+DS parameter base. Its immutable fingerprints are:
+
+```text
+Figiel          sha256:79faf0da75ddb6dfe44d0282f93c5c9497941bee82227d8d76dd1149618838ef
+Zuber           sha256:bb00c286a3d36a14485b96ae72577716a3a8813708d7ec5907f1da7cc03bcc1f
+Schreckenberg   sha256:07d3034eb210e89c6a2ecb736735c85fafeb6161c03c4febd473428c8883d47a
+Rueben          sha256:9d7ae94f2cda937ea541a3d65da3d04c66d62cca0af8fff23896456f3602cbf2
+```
+
+The vapor root is `V=0.9862436645 m3 mol^-1` for every topology. The liquid
+root and electrostatic results are:
+
+| topology | liquid `rho_m` / mol m^-3 | `epsilon_v` | `epsilon_l` | `a_l^DH` | `a_l^Born` | mean-ion gap / `RT` | water gap / `RT` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Figiel composition-only | 59380.0341 | 78.0900 | 35.1922 | -0.350489 | -24.5552 | -269.7235 | 0.0170 |
+| Zuber ion-specific | 59364.9061 | 78.0900 | 40.9716 | -0.292775 | -24.6290 | -269.5921 | 0.0089 |
+| Schreckenberg density | 59466.9217 | 1.001419 | 69.7591 | -0.154498 | -24.8146 | -170.8193 | -0.0177 |
+| Rueben perturbation | 59456.7965 | 1.000323 | 74.7311 | -0.142058 | -24.8321 | -170.6547 | -0.0231 |
+
+Here the reported phase-equilibrium diagnostic is evaluated from Provider
+fugacity coefficients,
+
+```text
+Delta_mu_ion/(RT) = (1/2) sum_(i=Na+,Cl-)
+                     ln[(x_i^v phi_i^v)/(x_i^l phi_i^l)],
+Delta_mu_water/(RT) = ln[(x_water^v phi_water^v)/
+                          (x_water^l phi_water^l)].
+```
+
+All displayed roots have positive `dP/d(rho_m)` and pressure closure within
+`3e-6 Pa`. Zuber's explicit ion coefficients barely change the approximately
+`270 RT` mismatch. Schreckenberg and Rueben improve it by about `99 RT`, but a
+remaining `171 RT` mean-ion gap is still far from equilibrium. The water gap is
+already within `0.024 RT`, which localizes this endpoint disagreement to ionic
+solvation rather than solvent phase equality.
+
+As a liquid-property cross-check at `298.15 K`, `1 bar`, and `1 mol kg^-1`
+aqueous NaCl, HamerWu1972 Table 16 reports `gamma_+/-=0.657`. With all other
+Figiel parameters unchanged, the Provider returns `0.70721` for Figiel,
+`0.66422` for Zuber, and `0.55220` for Rueben. Their corresponding practical
+osmotic diagnostics are `0.97101`, `0.94640`, and `0.87190`; no acceptance claim
+is assigned to those three osmotic numbers here. The Schreckenberg reference
+sequence fails closed because its requested liquid branch becomes a lone
+stable root during the dilution schedule, and the Provider correctly refuses
+to relabel a single root as a requested phase. That is an unresolved
+reference-path/topology interaction, not a fitted-property result.
+
+Since the retained ePC-SAFT ion, Born, and interaction parameters were not
+fitted with the density topologies, this is equation and topology evidence,
+not VLE validation or authority to change a catalog default. The next
+scientific step is a Regression-owned sensitivity/refit study with liquid
+dielectric-decrement, density, MIAC, and osmotic anchors before cross-package
+equilibrium validation. The density-based topology is worth pursuing; changing
+only the Zuber suppression coefficients is not supported as the next priority
+by this comparison.
 
 The defining Debye screening quantity is
 
@@ -629,6 +780,15 @@ pressure. The dielectric suppression relation is not evidence for another
 solvent, temperature, component topology, or larger ion fraction. Solver
 convergence does not expand that evidence.
 
+The Schreckenberg, Zuber, and Rueben parameter families are source-named
+implementation capabilities, not installed catalog defaults. A custom
+`ParameterBundle.from_records(...)` selection must provide one complete
+topology. Zuber currently requires one neutral solvent because the Provider has
+no source-backed mixed-solvent volume-fraction payload. Rueben requires its
+three parameters for every selected component. No new topology broadens the
+temperature, pressure, composition, or fitted-parameter evidence of an
+existing bundle.
+
 The Ascani Case Study 2 bundle is a separate exact selection of water,
 1-butanol, `Na+`, `K+`, and `Cl-` at `T = 298.15 K` and `p = 1 bar`. It requires
 all ten unordered `k_ij` and `l_ij` pair classifications explicitly. The
@@ -657,7 +817,8 @@ Construction or evaluation fails on:
 ## 13. Deliberate exclusions
 
 This specification does not admit Bjerrum pairing, ion-pair equilibrium,
-reaction equilibrium, additional dielectric rules, caller-selectable Born modes,
+reaction equilibrium, caller-selected dielectric or Born modes, unsupported
+Zuber mixed-solvent volume mixing, synthetic Rueben parameter completion,
 analytic derivative modes, ideal-gas caloric data, phase equilibrium,
 regression, multi-salt reference paths, alternate single-ion conventions,
 mixture/associating/electrolyte native phase blocks, or reactive standard-state

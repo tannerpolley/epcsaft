@@ -189,6 +189,14 @@ def _native_arguments(
             association_volume[index] = pair.volume
 
     components = len(model.component_ids)
+    permittivity_model_codes = {
+        "none": 0,
+        "figiel-composition": 1,
+        "ascani-mole-fraction": 2,
+        "schreckenberg-density": 3,
+        "zuber-ion-specific": 4,
+        "rueben-perturbation": 5,
+    }
     if model.topology in {"ionic-ssm-ds", "ionic-ascani-original-born"}:
         molar_mass = [0.0 if value is None else value for value in model.molar_mass_kg_per_mol]
         charge_number = list(model.charge_number)
@@ -197,7 +205,11 @@ def _native_arguments(
             for record in model.relative_permittivity
         ]
         if model.topology == "ionic-ssm-ds":
-            dielectric_suppression = model.dielectric_ion_suppression_coefficient
+            dielectric_suppression = (
+                0.0
+                if model.dielectric_ion_suppression_coefficient is None
+                else model.dielectric_ion_suppression_coefficient
+            )
             born_diameter = [
                 0.0 if value is None else value for value in model.born_diameter_angstrom
             ]
@@ -208,7 +220,6 @@ def _native_arguments(
             ]
             ionic_permittivity = model.ionic_region_relative_permittivity
             electrolyte_model = 1
-            assert dielectric_suppression is not None
             assert ionic_permittivity is not None
             assert len(solvation_factor) == components
         else:
@@ -249,6 +260,17 @@ def _native_arguments(
         solvation_factor,
         ionic_permittivity,
         electrolyte_model,
+        list(model.schreckenberg_dielectric_volume_m3_per_mol)
+        or [0.0] * components,
+        list(model.schreckenberg_dielectric_temperature_k)
+        or [0.0] * components,
+        list(model.zuber_ion_suppression_coefficient) or [0.0] * components,
+        list(model.rueben_dipole_scaling_debye2) or [0.0] * components,
+        list(model.rueben_polarizability_scaling_angstrom3)
+        or [0.0] * components,
+        list(model.rueben_correlation_integral_parameter)
+        or [0.0] * components,
+        permittivity_model_codes[model.permittivity_model],
     )
 
 
@@ -323,6 +345,10 @@ class EPCSAFT:
     @property
     def component_ids(self) -> tuple[str, ...]:
         return self._component_ids
+
+    @property
+    def permittivity_model(self) -> str:
+        return self._model.permittivity_model
 
     @property
     def parameter_fingerprint(self) -> str:
@@ -477,6 +503,9 @@ class EPCSAFT:
             association=native.association,
             debye_huckel=native.debye_huckel,
             born=native.born_ssm_ds,
+            bulk_relative_permittivity=None
+            if self._model.permittivity_model == "none"
+            else native.bulk_relative_permittivity,
             residual_helmholtz=native.residual_helmholtz,
             compressibility_factor=native.compressibility_factor,
             pressure=native.pressure * unit_registry.pascal,
@@ -760,6 +789,7 @@ class EosResult:
     association: float
     debye_huckel: float
     born: float
+    bulk_relative_permittivity: float | None
     residual_helmholtz: float
     compressibility_factor: float
     pressure: pint.Quantity[float]

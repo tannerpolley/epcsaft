@@ -643,6 +643,77 @@ x_{\mathrm{ion}}=\sum_{i\in\mathcal{I}}x_i.
 \label{eq:ascani_bulk_permittivity}
 \end{equation}
 
+% EqID: schreckenberg_mixed_parameters
+% Source: Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (2a)--(2b)
+% Status: Bounded empirical relation
+% Description: Solvent-fraction-normalized Schreckenberg mixture parameters.
+% Change note: Only neutral-solvent components enter these mixtures.
+\begin{equation}
+x_{\mathrm{solv}}=\sum_{s\in\mathcal{S}}x_s,\qquad
+d_{V,\mathrm{mix}}=\frac{\sum_{s\in\mathcal{S}}x_sd_{V,s}}{x_{\mathrm{solv}}},
+\qquad
+d_{T,\mathrm{mix}}=\frac{\sum_{s\in\mathcal{S}}x_sd_{T,s}}{x_{\mathrm{solv}}}.
+\label{eq:schreckenberg_mixed_parameters}
+\end{equation}
+
+% EqID: schreckenberg_bulk_permittivity
+% Source: Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (1a), (2a), and (2b)
+% Status: Bounded empirical relation
+% Description: Schreckenberg density-and-temperature bulk relative permittivity.
+% Change note: The solvent partial density makes the dilute-density limit explicit.
+\begin{equation}
+\epsilon_{r,\mathrm{bulk}}=
+1+\rho_m x_{\mathrm{solv}}d_{V,\mathrm{mix}}
+\left(\frac{d_{T,\mathrm{mix}}}{T}-1\right).
+\label{eq:schreckenberg_bulk_permittivity}
+\end{equation}
+
+% EqID: zuber_bulk_permittivity
+% Source: Zuber et al. (2014), DOI 10.1016/j.fluid.2014.05.037, Eq. (9)
+% Status: Bounded empirical relation
+% Description: Zuber single-solvent ion-specific dielectric suppression.
+% Change note: Each ion-solvent suppression coefficient is an explicit resolved record.
+\begin{equation}
+\epsilon_{r,\mathrm{bulk}}=
+\frac{\epsilon_{r,s}(T)}
+{1+\sum_{i\in\mathcal{I}}\alpha_{i,s}x_i}.
+\label{eq:zuber_bulk_permittivity}
+\end{equation}
+
+% EqID: rueben_effective_dipolar_density
+% Source: Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (4)
+% Status: Source equation
+% Description: Rueben effective dipolar-density variable in the Angstrom number-density basis.
+% Change note: Dipole-squared and polarizability records are explicit for every component.
+\begin{equation}
+y=\frac{4\pi}{9}\sum_i \widehat{\rho}_i
+\left(\frac{\mu_i^2\,10^{-19}}{k_BT}+3\alpha_i\right),
+\qquad
+\widehat{\rho}_i=\rho_mN_Ax_i10^{-30}.
+\label{eq:rueben_effective_dipolar_density}
+\end{equation}
+
+% EqID: rueben_correlation_integral
+% Source: Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (5)
+% Status: Source equation
+% Description: Rueben correlation integral from component correlation parameters.
+% Change note: The correlation parameter is an explicit record for every component.
+\begin{equation}
+I=1+\left(\sum_i a_{2,i}x_i\right)\left[\exp(-y)-1\right].
+\label{eq:rueben_correlation_integral}
+\end{equation}
+
+% EqID: rueben_bulk_permittivity
+% Source: Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (6)
+% Status: Source equation
+% Description: Rueben perturbation-theory bulk relative permittivity.
+% Change note: The relation tends to one as all component partial densities vanish.
+\begin{equation}
+\epsilon_{r,\mathrm{bulk}}=
+1+3y\left\{1+y+\left[\frac{17}{16}I-1\right]y^2\right\}.
+\label{eq:rueben_bulk_permittivity}
+\end{equation}
+
 % EqID: ionic_strength_charge_sum
 % Source: \cite{Bulow2019}, charge-weighted composition in the screening definition
 % Status: Source equation

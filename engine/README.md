@@ -183,6 +183,13 @@ the public interface provides Pint quantity, phase, bundle-purpose, domain, and
 parameter-family annotations for static tooling.
 The model-neutral `born` field carries the Born contribution selected by the
 immutable parameter bundle, whether corrected SSM+DS or original Born.
+`EPCSAFT.permittivity_model` identifies the source-named dielectric topology,
+and `EosResult.bulk_relative_permittivity` exposes the exact value shared by
+Debye--Huckel and Born. In addition to the installed Figiel and Ascani
+topologies, complete source-bearing record sets can resolve Schreckenberg
+density, Zuber ion-specific, or Rueben perturbation topologies. These are
+parameter-record capabilities, not caller-selected phase modes or new catalog
+defaults; unsupported or mixed records fail closed.
 
 State quantities must be Pint quantities. Component and composition order is
 the selected `ParameterSet` order. Supply exactly one of `molar_density` or

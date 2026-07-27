@@ -388,6 +388,8 @@ state = electrolyte.evaluate(
 assert state.density_diagnostics is not None
 assert state.density_diagnostics.branch == "liquid"
 assert state.debye_huckel != 0.0
+assert electrolyte.permittivity_model == "figiel-composition"
+assert state.bulk_relative_permittivity > 1.0
 
 reference = electrolyte.reference_state(
     temperature=298.15 * u.kelvin,
@@ -407,6 +409,24 @@ single-ion coefficients, stoichiometric mean coefficients on mole-fraction and
 molality scales, and the practical molal osmotic coefficient for a
 single-active-water reference. The osmotic field is `None` for mixed-solvent
 references because no mixed-solvent osmotic standard state is admitted.
+
+`EPCSAFT.permittivity_model` identifies the immutable, source-named topology
+resolved from the parameter records. Current values are
+`figiel-composition`, `ascani-mole-fraction`, `schreckenberg-density`,
+`zuber-ion-specific`, and `rueben-perturbation` for ionic models. Callers do
+not select this value during state evaluation. The latter three topologies are
+available through complete source-bearing `ParameterBundle.from_records(...)`
+inputs; they are not alternate modes silently applied to an installed catalog
+bundle. Mixed or incomplete topology records fail during construction.
+
+`EosResult.bulk_relative_permittivity` is the dimensionless state value used
+by both Debye--Huckel and the bundle-selected Born formulation. Density-based
+Schreckenberg and Rueben models approach one in the zero-density limit. The
+Zuber implementation currently requires exactly one neutral solvent because
+its source mixed-solvent equation requires solvent-volume data not represented
+by the admitted parameter payload. Neutral models report
+`permittivity_model="none"` and `bulk_relative_permittivity=None` rather than a
+synthetic dielectric value.
 
 ## State and root contract
 
@@ -431,6 +451,9 @@ references because no mixed-solvent osmotic standard state is admitted.
   iterations, local mechanical-stability flag, and branch. These diagnostics
   certify the selected density root, not phase completeness or global
   stability.
+- A pressure-specific `phase` request is a branch-identity assertion, not a
+  liquid/vapor hint. If a density-dependent permittivity topology leaves only
+  one stable root, omit `phase` and inspect `branch="single"`.
 
 `log_fugacity_coefficient` is `None` when `Z` is nonfinite or nonpositive.
 `residual_isobaric_heat_capacity` is `None` when the local pressure slope does
