@@ -1,0 +1,13 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+water-molar-mass,water,molar_mass,18.01528,gram / mole,nist-srd-69-water,"Water record, molecular weight",nist-water-identity
+water-segment-count,water,segment_count,1.204659,,held-cameretti-sadowski-2008,"Table 1, segment number",held-water-ionization-298-15-k-1-bar
+water-dispersion-energy,water,dispersion_energy_over_k,353.9449,kelvin,held-cameretti-sadowski-2008,"Table 1, dispersion energy",held-water-ionization-298-15-k-1-bar
+water-charge,water,charge_number,0,,held-cameretti-sadowski-2008,"Section 2, water is the neutral solvent",held-water-ionization-298-15-k-1-bar
+hydronium-segment-count,hydronium-cation,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-water-ionization-298-15-k-1-bar
+hydronium-segment-diameter,hydronium-cation,segment_diameter,2.2740,angstrom,held-cameretti-sadowski-2008,"Table 2, H+ row; Section 4.1 identifies aqueous H+ as hydronium",held-water-ionization-298-15-k-1-bar
+hydronium-dispersion-energy,hydronium-cation,dispersion_energy_over_k,1616.4939,kelvin,held-cameretti-sadowski-2008,"Table 2, H+ row",held-water-ionization-298-15-k-1-bar
+hydronium-charge,hydronium-cation,charge_number,+1,,held-cameretti-sadowski-2008,"Table 2, H+ ion label",held-water-ionization-298-15-k-1-bar
+hydroxide-segment-count,hydroxide-anion,segment_count,1,,held-cameretti-sadowski-2008,"Section 2, ion segment number is one",held-water-ionization-298-15-k-1-bar
+hydroxide-segment-diameter,hydroxide-anion,segment_diameter,1.6401,angstrom,held-cameretti-sadowski-2008,"Table 2, OH- row",held-water-ionization-298-15-k-1-bar
+hydroxide-dispersion-energy,hydroxide-anion,dispersion_energy_over_k,2444.7555,kelvin,held-cameretti-sadowski-2008,"Table 2, OH- row",held-water-ionization-298-15-k-1-bar
+hydroxide-charge,hydroxide-anion,charge_number,-1,,held-cameretti-sadowski-2008,"Table 2, OH- ion label",held-water-ionization-298-15-k-1-bar

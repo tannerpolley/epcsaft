@@ -1,0 +1,4 @@
+record_id,component_id_a,component_id_b,family,value,unit,source_id,locator,domain_id
+water-hydronium-kij,water,hydronium-cation,k_ij,0,,held-cameretti-sadowski-2008,"Section 2 Eqs. 5-6, no binary interaction parameter for water-ion dispersion",held-water-ionization-298-15-k-1-bar
+water-hydroxide-kij,water,hydroxide-anion,k_ij,0,,held-cameretti-sadowski-2008,"Section 2 Eqs. 5-6, no binary interaction parameter for water-ion dispersion",held-water-ionization-298-15-k-1-bar
+hydronium-hydroxide-kij,hydronium-cation,hydroxide-anion,k_ij,1,,held-cameretti-sadowski-2008,"Section 3, ion-ion dispersion is neglected",held-water-ionization-298-15-k-1-bar

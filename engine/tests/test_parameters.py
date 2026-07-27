@@ -3,6 +3,7 @@ from dataclasses import FrozenInstanceError
 from decimal import Decimal
 import json
 from pathlib import Path
+import shutil
 
 import pytest
 from pint import UnitRegistry
@@ -716,11 +717,12 @@ def test_catalog_discovery_returns_sorted_immutable_bundles() -> None:
     assert {bundle.bundle_id for bundle in catalog} == {
         "ascani-2022-case-study-2-electrolyte-lle",
         "figiel-2025-aqueous-iodides",
-        "figiel-2025-reference-electrolytes",
-        "gross-2001-methane-ethane",
-        "gross-2001-propane",
-        "khudaida-2026-figure-2-electrolyte-lle",
-    }
+            "figiel-2025-reference-electrolytes",
+            "gross-2001-methane-ethane",
+            "gross-2001-propane",
+            "held-2008-water-self-ionization",
+            "khudaida-2026-figure-2-electrolyte-lle",
+        }
     assert all(bundle.purpose == "installed-catalog" for bundle in catalog)
     assert all(bundle.components and bundle.domains and bundle.sources for bundle in catalog)
 
@@ -932,6 +934,14 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
         "gross-2001-propane/1/bundle.toml",
         "gross-2001-propane/1/components.csv",
         "gross-2001-propane/1/single.csv",
+        "held-2008-water-self-ionization/1/association.csv",
+        "held-2008-water-self-ionization/1/bundle.toml",
+        "held-2008-water-self-ionization/1/components.csv",
+        "held-2008-water-self-ionization/1/correlations.toml",
+        "held-2008-water-self-ionization/1/model.csv",
+        "held-2008-water-self-ionization/1/pair.csv",
+        "held-2008-water-self-ionization/1/single.csv",
+        "held-2008-water-self-ionization/1/sites.csv",
         "khudaida-2026-figure-2-electrolyte-lle/1/association.csv",
         "khudaida-2026-figure-2-electrolyte-lle/1/bundle.toml",
         "khudaida-2026-figure-2-electrolyte-lle/1/components.csv",
@@ -1274,3 +1284,147 @@ def test_ascani_case_study_2_catalog_preserves_explicit_source_families() -> Non
     assert associations[("1-butanol", "b", "water", "a", "association_volume")] == Decimal(
         "0.016946922015303192"
     )
+
+
+def test_held_2008_water_self_ionization_catalog_is_exact_and_source_complete() -> None:
+    bundle = ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1)
+    assert bundle.fingerprint == (
+        "sha256:8ea2d7acbc179b82348fa938d081fe8d56f274bfe1f2167d10a507b7711aa1c2"
+    )
+    source = next(
+        source
+        for source in bundle.sources
+        if source.source_id == "held-cameretti-sadowski-2008"
+    )
+    assert source.doi == "10.1016/j.fluid.2008.06.010"
+    selected = ("water", "hydronium-cation", "hydroxide-anion")
+    parameters = bundle.select(selected)
+    model = epcsaft.EPCSAFT(parameters)
+
+    assert parameters.component_ids == selected
+    assert tuple(component.formula for component in parameters.components) == (
+        "H2O",
+        "H3O+",
+        "OH-",
+    )
+    assert model._model.topology == "ionic-held-2008-debye-huckel"
+
+    singles = {
+        (record.component_id, record.family): record.value
+        for record in parameters.records
+        if isinstance(record, SingleParameterRecord)
+    }
+    assert singles[("water", "segment_count")] == Decimal("1.204659")
+    assert singles[("water", "dispersion_energy_over_k")].magnitude == Decimal("353.9449")
+    assert singles[("hydronium-cation", "segment_diameter")].magnitude == Decimal("2.2740")
+    assert singles[("hydronium-cation", "dispersion_energy_over_k")].magnitude == Decimal(
+        "1616.4939"
+    )
+    assert singles[("hydroxide-anion", "segment_diameter")].magnitude == Decimal("1.6401")
+    assert singles[("hydroxide-anion", "dispersion_energy_over_k")].magnitude == Decimal(
+        "2444.7555"
+    )
+
+    model_records = {
+        record.family: record.value
+        for record in parameters.records
+        if isinstance(record, ModelParameterRecord)
+    }
+    assert model_records == {"electrolyte_formulation": "held-2008-debye-huckel"}
+
+
+@pytest.mark.parametrize(
+    ("filename", "record_id", "missing_family"),
+    (
+        ("model.csv", "held-electrolyte-formulation", "electrolyte_formulation"),
+        ("single.csv", "hydronium-segment-diameter", "segment_diameter"),
+        ("association.csv", "water-association-energy", "association_energy_over_k"),
+        ("pair.csv", "hydronium-hydroxide-kij", "k_ij"),
+    ),
+)
+def test_held_2008_catalog_fails_closed_on_missing_source_family(
+    tmp_path: Path,
+    filename: str,
+    record_id: str,
+    missing_family: str,
+) -> None:
+    catalog = Path(epcsaft.__file__).parent / "data" / "bundles"
+    source = catalog / "held-2008-water-self-ionization" / "1"
+    mutated = tmp_path / "held-mutated"
+    shutil.copytree(source, mutated)
+    path = mutated / filename
+    if filename == "model.csv":
+        path.unlink()
+        manifest = mutated / "bundle.toml"
+        manifest.write_text(
+            manifest.read_text(encoding="utf-8").replace(
+                '"association.csv", "model.csv", "correlations.toml"',
+                '"association.csv", "correlations.toml"',
+            ),
+            encoding="utf-8",
+        )
+    else:
+        rows = list(csv.reader(path.read_text(encoding="utf-8").splitlines()))
+        with path.open("w", encoding="utf-8", newline="") as stream:
+            csv.writer(stream).writerows(row for row in rows if not row or row[0] != record_id)
+
+    bundle = ParameterBundle.from_path(mutated)
+    with pytest.raises(ParameterError) as exc_info:
+        epcsaft.EPCSAFT(bundle.select(("water", "hydronium-cation", "hydroxide-anion")))
+
+    assert exc_info.value.code == "missing-record"
+    assert ("family", missing_family) in exc_info.value.context
+
+
+@pytest.mark.parametrize(
+    ("record_id", "mutated_value"),
+    (
+        ("water-hydronium-kij", "0.1"),
+        ("hydronium-hydroxide-kij", "0.9"),
+    ),
+)
+def test_held_2008_catalog_rejects_dispersion_rule_mutation(
+    tmp_path: Path,
+    record_id: str,
+    mutated_value: str,
+) -> None:
+    catalog = Path(epcsaft.__file__).parent / "data" / "bundles"
+    source = catalog / "held-2008-water-self-ionization" / "1"
+    mutated = tmp_path / "held-mutated"
+    shutil.copytree(source, mutated)
+    path = mutated / "pair.csv"
+    rows = list(csv.DictReader(path.read_text(encoding="utf-8").splitlines()))
+    for row in rows:
+        if row["record_id"] == record_id:
+            row["value"] = mutated_value
+    with path.open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=rows[0])
+        writer.writeheader()
+        writer.writerows(rows)
+
+    bundle = ParameterBundle.from_path(mutated)
+    with pytest.raises(ParameterError) as exc_info:
+        epcsaft.EPCSAFT(bundle.select(("water", "hydronium-cation", "hydroxide-anion")))
+
+    assert exc_info.value.code == "invalid-value"
+    assert ("family", "k_ij") in exc_info.value.context
+
+
+def test_electrolyte_formulation_identity_is_closed() -> None:
+    with pytest.raises(ParameterError, match="invalid-value"):
+        ModelParameterRecord(
+            "unknown-electrolyte-formulation",
+            "electrolyte_formulation",
+            "unknown-formulation",
+            **PROVENANCE,
+        )
+
+
+def test_validity_domain_rejects_reversed_pressure_bounds() -> None:
+    with pytest.raises(ParameterError, match="reversed-bounds"):
+        ValidityDomain(
+            "reversed-pressure",
+            "reported-conditions",
+            pressure_min=2 * unit_registry.bar,
+            pressure_max=1 * unit_registry.bar,
+        )

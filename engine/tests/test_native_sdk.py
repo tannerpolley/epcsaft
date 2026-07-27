@@ -538,6 +538,17 @@ def _figiel_trial_model(
     return EPCSAFT(trial.select(component_ids))
 
 
+def _held_water_ionization_model(
+    component_ids: tuple[str, str, str] = (
+        "water",
+        "hydronium-cation",
+        "hydroxide-anion",
+    ),
+) -> EPCSAFT:
+    parameters = ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1)
+    return EPCSAFT(parameters.select(component_ids))
+
+
 def _khudaida_model(component_ids: tuple[str, ...]) -> EPCSAFT:
     parameters = ParameterBundle.from_catalog("khudaida-2026-figure-2-electrolyte-lle", version=1)
     return EPCSAFT(parameters.select(component_ids))
@@ -1136,6 +1147,86 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
     assert APPLICABILITY_PREFIX_SIZE == ctypes.sizeof(ApplicabilityNativeSdkTable) == 152
 
 
+def test_native_sdk_held_neutral_reference_matches_the_public_owner() -> None:
+    model = _held_water_ionization_model()
+    capsule, table = _neutral_reference_table(model)
+    assert capsule is not None
+    observed, basis, contractions, composition = _evaluate_neutral_reference(
+        table, model.parameter_fingerprint
+    )
+    reference = model.reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=100000.0 * unit_registry.pascal,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    pure_water = model.evaluate(
+        temperature=reference.temperature,
+        pressure=reference.pressure,
+        mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    assert pure_water.log_fugacity_coefficient is not None
+
+    assert observed.status == STATUS_OK
+    assert observed.temperature_k == 298.15
+    assert observed.pressure_pa == 100000.0
+    assert basis == pytest.approx((1.0, 0.0, 0.0, 0.0, 1.0, 1.0))
+    assert contractions == pytest.approx(
+        (
+            pure_water.log_fugacity_coefficient[0],
+            math.fsum(reference.infinite_dilution_log_fugacity_coefficient),
+        ),
+        abs=2.0e-12,
+    )
+    assert composition == pytest.approx((1.0, 0.0, 0.0))
+    assert observed.solvent_molar_mass_kg_per_mol == pytest.approx(0.01801528, abs=1.0e-12)
+    assert observed.reference_molality_mol_per_kg == 1.0e-12
+    assert 0.0 <= observed.reference_convergence_error <= 5.0e-5
+    assert 1.0 / pure_water.molar_density.to("mole / meter**3").magnitude > 0.0
+    assert observed.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert observed.helmholtz_basis_id.decode() == (
+        "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
+    )
+    assert observed.error == b""
+
+
+def test_native_sdk_held_neutral_reference_is_domain_bound_and_permutation_safe() -> None:
+    model = _held_water_ionization_model()
+    _, table = _neutral_reference_table(model)
+    result, _, _, _ = _evaluate_neutral_reference(
+        table,
+        model.parameter_fingerprint,
+        temperature_k=299.0,
+    )
+    assert result.status == STATUS_DOMAIN_ERROR
+    assert result.error
+
+    permuted = _held_water_ionization_model(
+        ("hydroxide-anion", "water", "hydronium-cation")
+    )
+    _, permuted_table = _neutral_reference_table(permuted)
+    permuted_result, permuted_basis, permuted_contractions, composition = (
+        _evaluate_neutral_reference(
+            permuted_table,
+            permuted.parameter_fingerprint,
+        )
+    )
+    assert permuted_result.status == STATUS_OK
+    assert permuted_basis == pytest.approx((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
+    canonical_reference = model.reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=100000.0 * unit_registry.pascal,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    assert permuted_contractions[1] == pytest.approx(
+        math.fsum(canonical_reference.infinite_dilution_log_fugacity_coefficient),
+        abs=5.0e-12,
+    )
+    assert composition == pytest.approx((0.0, 1.0, 0.0))
+
+
 @pytest.mark.parametrize(
     ("catalog", "component_ids", "domain_id", "expected_fingerprint", "expected"),
     (
@@ -1225,6 +1316,37 @@ def test_native_sdk_applicability_metadata_rejects_missing_or_malformed_limits(
             temperature_max_k,
             model.component_ids,
             ion_mole_fraction_max,
+        )
+
+
+@pytest.mark.parametrize(
+    ("pressure_min_pa", "pressure_max_pa"),
+    (
+        (0.0, math.nan),
+        (math.nan, 0.0),
+        (math.inf, math.nan),
+        (math.nan, math.inf),
+        (200000.0, 100000.0),
+    ),
+)
+def test_native_sdk_rejects_malformed_pressure_limits(
+    pressure_min_pa: float,
+    pressure_max_pa: float,
+) -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "chloride-anion"))
+    with pytest.raises(
+        ValueError, match="invalid neutral reference pressure applicability"
+    ):
+        _native_sdk_v1(
+            model._native,
+            model.parameter_fingerprint,
+            298.15,
+            298.15,
+            model.component_ids,
+            0.38,
+            pressure_min_pa=pressure_min_pa,
+            pressure_max_pa=pressure_max_pa,
+            neutral_reference_admitted=True,
         )
 
 
@@ -1820,6 +1942,83 @@ def test_native_sdk_electrolyte_phase_matches_public_state_and_directional_deriv
         permuted_table, temperature_k, (point[0], point[2], point[1]), point[3]
     )
     permutation = (0, 2, 1, 3)
+    assert permuted_result.helmholtz_over_rt_reference_amount == pytest.approx(
+        center.helmholtz_over_rt_reference_amount, rel=3.0e-13
+    )
+    assert permuted_result.pressure_pa == pytest.approx(center.pressure_pa, rel=3.0e-13)
+    assert permuted_gradient == pytest.approx(tuple(gradient[index] for index in permutation))
+    assert permuted_hessian == pytest.approx(
+        tuple(hessian[row * 4 + column] for row in permutation for column in permutation)
+    )
+
+
+def test_native_sdk_held_phase_matches_public_state_and_directional_derivatives() -> None:
+    model = _held_water_ionization_model()
+    capsule, table = _electrolyte_table(model)
+    assert capsule is not None
+    assert tuple(table.component_ids[index].decode() for index in range(3)) == model.component_ids
+    assert tuple(table.component_charges[index] for index in range(3)) == (0, 1, -1)
+
+    temperature_k = 298.15
+    point = (0.98, 0.01, 0.01, 2.5e-5)
+    center, gradient, hessian = _evaluate_electrolyte(table, temperature_k, point[:3], point[3])
+    assert center.status == STATUS_OK
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    total_amount = math.fsum(point[:3])
+    density = total_amount / point[3]
+    fractions = tuple(amount / total_amount for amount in point[:3])
+    public = model.evaluate(
+        temperature=temperature_k * unit_registry.kelvin,
+        molar_density=density * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=fractions,
+    )
+    expected_value = (
+        math.fsum(amount * (math.log(amount / point[3]) - 1.0) for amount in point[:3])
+        + total_amount * public.residual_helmholtz
+    )
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected_value, rel=3.0e-12, abs=3.0e-12
+    )
+    assert center.pressure_pa == pytest.approx(
+        public.pressure.to("pascal").magnitude, rel=3.0e-11, abs=2.0e-5
+    )
+    assert center.pressure_pa == pytest.approx(
+        -8.31446261815324 * temperature_k * gradient[-1], rel=3.0e-13
+    )
+
+    direction = (0.02, -0.003, -0.003, 5.0e-7)
+    step = 2.0e-4
+
+    def shifted(scale: float):
+        state = tuple(value + scale * delta for value, delta in zip(point, direction, strict=True))
+        return _evaluate_electrolyte(table, temperature_k, state[:3], state[3])
+
+    lower, lower_gradient, _ = shifted(-step)
+    upper, upper_gradient, _ = shifted(step)
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert math.fsum(
+        left * right for left, right in zip(gradient, direction, strict=True)
+    ) == pytest.approx(value_difference, rel=3.0e-7, abs=3.0e-8)
+    for row in range(4):
+        hessian_direction = math.fsum(
+            hessian[row * 4 + column] * direction[column] for column in range(4)
+        )
+        gradient_difference = (upper_gradient[row] - lower_gradient[row]) / (2.0 * step)
+        assert hessian_direction == pytest.approx(gradient_difference, rel=3.0e-6, abs=3.0e-6)
+
+    permuted = _held_water_ionization_model(
+        ("hydroxide-anion", "water", "hydronium-cation")
+    )
+    _, permuted_table = _electrolyte_table(permuted)
+    permutation = (2, 0, 1, 3)
+    permuted_result, permuted_gradient, permuted_hessian = _evaluate_electrolyte(
+        permuted_table,
+        temperature_k,
+        tuple(point[index] for index in permutation[:-1]),
+        point[3],
+    )
     assert permuted_result.helmholtz_over_rt_reference_amount == pytest.approx(
         center.helmholtz_over_rt_reference_amount, rel=3.0e-13
     )

@@ -37,6 +37,7 @@ AssociationParameterFamily: TypeAlias = Literal[
 ]
 ModelParameterFamily: TypeAlias = Literal[
     "dielectric_ion_suppression_coefficient",
+    "electrolyte_formulation",
     "ionic_region_relative_permittivity",
 ]
 CorrelationFamily: TypeAlias = Literal[
@@ -48,6 +49,7 @@ _SINGLE_FAMILIES = frozenset(get_args(SingleParameterFamily))
 _PAIR_FAMILIES = frozenset(get_args(PairParameterFamily))
 _ASSOCIATION_FAMILIES = frozenset(get_args(AssociationParameterFamily))
 _MODEL_FAMILIES = frozenset(get_args(ModelParameterFamily))
+_ELECTROLYTE_FORMULATIONS = frozenset({"held-2008-debye-huckel"})
 _CORRELATION_FAMILIES = frozenset(get_args(CorrelationFamily))
 _DIMENSIONAL_UNITS = {
     "molar_mass": "kilogram / mole",
@@ -101,6 +103,10 @@ def _family(value: object, *, allowed: frozenset[str], field: str = "family") ->
 
 
 def _parameter_value(family: str, value: object) -> object:
+    if family == "electrolyte_formulation":
+        if not isinstance(value, str) or value not in _ELECTROLYTE_FORMULATIONS:
+            raise _error("invalid-value", field="value", family=family, value=value)
+        return value
     if family == "charge_number":
         return _exact_integer(value, field="value")
     if family in _DIMENSIONAL_UNITS:

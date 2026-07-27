@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from itertools import combinations
 from typing import Literal
@@ -36,6 +37,7 @@ class _ResolvedModel:
     topology: Literal[
         "neutral",
         "associating",
+        "ionic-held-2008-debye-huckel",
         "ionic-ssm-ds",
         "ionic-ascani-original-born",
     ]
@@ -67,6 +69,7 @@ class _ResolvedModel:
         "schreckenberg-density",
         "zuber-ion-specific",
         "rueben-perturbation",
+        "held-water",
     ] = "none"
     schreckenberg_dielectric_volume_m3_per_mol: tuple[float, ...] = ()
     schreckenberg_dielectric_temperature_k: tuple[float, ...] = ()
@@ -98,8 +101,8 @@ def _magnitude(record: object, unit: str) -> float:
 def _component_record(
     component_id: str,
     family: str,
-    singles: dict[tuple[str, str], SingleParameterRecord],
-    correlations: dict[tuple[str, str], _TemperatureRecord],
+    singles: Mapping[tuple[str, str], SingleParameterRecord],
+    correlations: Mapping[tuple[str, str], _TemperatureRecord],
     *,
     allow_correlation: bool,
 ) -> _TemperatureRecord:
@@ -441,11 +444,90 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         for family in models
     )
     l_ij_present = any(key[2] == "l_ij" for key in pair_records)
+    formulation_record = models.get("electrolyte_formulation")
+    formulation = None if formulation_record is None else formulation_record.value
     if figiel_schema_present and l_ij_present:
         raise _error(
             "invalid-value",
             family="electrolyte-model",
             reason="mixed-born-dielectric-schema",
+        )
+    if formulation is not None and (figiel_schema_present or l_ij_present):
+        raise _error(
+            "invalid-value",
+            family="electrolyte-model",
+            reason="mixed-formulation-schema",
+        )
+    if formulation is None and not figiel_schema_present and not l_ij_present:
+        raise _error("missing-record", family="electrolyte_formulation")
+    if formulation == "held-2008-debye-huckel":
+        held_charges = {
+            "water": 0,
+            "hydronium-cation": 1,
+            "hydroxide-anion": -1,
+        }
+        if set(component_ids) != set(held_charges) or any(
+            charge != held_charges[component_id]
+            for component_id, charge in zip(component_ids, charges, strict=True)
+        ):
+            raise _error(
+                "invalid-value",
+                family="electrolyte_formulation",
+                reason="component-charge-contract",
+            )
+        held_k_ij = tuple(value for value in k_ij if value is not None)
+        if len(held_k_ij) != len(k_ij):
+            raise _error("missing-record", family="k_ij")
+        for left, right in combinations(range(len(component_ids)), 2):
+            expected = 1.0 if charges[left] != 0 and charges[right] != 0 else 0.0
+            if held_k_ij[left * len(component_ids) + right] != expected:
+                raise _error(
+                    "invalid-value",
+                    family="k_ij",
+                    reason="held-dispersion-rule",
+                )
+        held_relative_permittivity: list[_TemperatureRecord | None] = []
+        for index, (component_id, charge) in enumerate(
+            zip(component_ids, charges, strict=True)
+        ):
+            if charge == 0:
+                if molar_mass[index] is None:
+                    raise _missing(component_id=component_id, family="molar_mass")
+                held_relative_permittivity.append(
+                    _component_record(
+                        component_id,
+                        "relative_permittivity",
+                        singles,
+                        correlations,
+                        allow_correlation=True,
+                    )
+                )
+            else:
+                held_relative_permittivity.append(None)
+        return _ResolvedModel(
+            "ionic-held-2008-debye-huckel",
+            component_ids,
+            molar_mass,
+            segment_count,
+            segment_diameter,
+            dispersion_energy,
+            held_k_ij,
+            tuple(0.0 for _ in range(len(component_ids) ** 2)),
+            site_ids,
+            site_multiplicity,
+            association_pairs,
+            charges,
+            tuple(held_relative_permittivity),
+            (),
+            (),
+            None,
+            None,
+            temperature_min,
+            temperature_max,
+            pressure_min,
+            pressure_max,
+            ion_fraction_max,
+            "held-water",
         )
     if not figiel_schema_present:
         l_ij = _pair_matrix(component_ids, pair_records, "l_ij", required=True)

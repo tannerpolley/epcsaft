@@ -49,6 +49,7 @@ struct NativePackingFractionBlock;
 
 struct NativeReferenceSequence final {
     std::array<double, 2> log_fugacity;
+    std::optional<double> pure_solvent_log_fugacity_coefficient;
     double reference_molality;
     double convergence_error;
 };

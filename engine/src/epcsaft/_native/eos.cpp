@@ -334,6 +334,36 @@ detail::ReferenceObservation active_solvation_factor_observation(
     return {corrected_log_fugacity, std::move(total_derivative)};
 }
 
+// EqExclude: transport and buffer mechanics
+std::optional<double> single_solvent_log_fugacity(
+    const NativeModel& model,
+    double temperature,
+    double pressure,
+    const std::vector<double>& solvent_fractions,
+    const std::string& phase
+) {
+    std::optional<std::size_t> solvent_index;
+    for (std::size_t component = 0; component < solvent_fractions.size(); ++component) {
+        if (solvent_fractions[component] <= 0.0) {
+            continue;
+        }
+        if (solvent_index.has_value()) {
+            return std::nullopt;
+        }
+        solvent_index = component;
+    }
+    if (!solvent_index.has_value()) {
+        return std::nullopt;
+    }
+    const auto state = model.evaluate_pressure(
+        temperature, pressure, solvent_fractions, phase
+    );
+    if (!state.log_fugacity_coefficient.has_value()) {
+        throw std::runtime_error("pure-solvent reference fugacity is unavailable");
+    }
+    return (*state.log_fugacity_coefficient)[*solvent_index];
+}
+
 }  // namespace
 
 // EqExclude: input and domain validation
@@ -415,11 +445,17 @@ NativeModel::NativeModel(NativeParameters parameters)
     if (ionic) {
         if (parameters_.electrolyte_model != ELECTROLYTE_MODEL_FIGIEL_SSM_DS
             && parameters_.electrolyte_model
-                != ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN) {
+                != ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
+            && parameters_.electrolyte_model
+                != ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL) {
             throw std::invalid_argument("invalid electrolyte model selection");
         }
         const bool ssm_ds = parameters_.electrolyte_model
             == ELECTROLYTE_MODEL_FIGIEL_SSM_DS;
+        const bool ascani = parameters_.electrolyte_model
+            == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN;
+        const bool held = parameters_.electrolyte_model
+            == ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL;
         const bool valid_ssm_permittivity = parameters_.permittivity_model
                 == PERMITTIVITY_MODEL_FIGIEL_COMPOSITION
             || parameters_.permittivity_model
@@ -429,8 +465,10 @@ NativeModel::NativeModel(NativeParameters parameters)
             || parameters_.permittivity_model
                 == PERMITTIVITY_MODEL_RUEBEN_PERTURBATION;
         if ((ssm_ds && !valid_ssm_permittivity)
-            || (!ssm_ds && parameters_.permittivity_model
-                != PERMITTIVITY_MODEL_ASCANI_MOLE_FRACTION)) {
+            || (ascani && parameters_.permittivity_model
+                != PERMITTIVITY_MODEL_ASCANI_MOLE_FRACTION)
+            || (held && parameters_.permittivity_model
+                != PERMITTIVITY_MODEL_HELD_WATER)) {
             throw std::invalid_argument("incompatible electrolyte and permittivity models");
         }
         std::size_t solvent_count = 0;
@@ -442,7 +480,9 @@ NativeModel::NativeModel(NativeParameters parameters)
                 || parameters_.permittivity_model
                     == PERMITTIVITY_MODEL_ASCANI_MOLE_FRACTION
                 || parameters_.permittivity_model
-                    == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC;
+                    == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC
+                || parameters_.permittivity_model
+                    == PERMITTIVITY_MODEL_HELD_WATER;
             if (solvent
                 && (!(parameters_.molar_mass_kg_per_mol[component] > 0.0)
                     || (needs_tabulated_permittivity
@@ -458,9 +498,16 @@ NativeModel::NativeModel(NativeParameters parameters)
                     && !(parameters_.born_diameter_angstrom[component] > 0.0)) {
                     throw std::invalid_argument("invalid fitted Born diameter");
                 }
-            } else if (!solvent
+            } else if (ascani && !solvent
                        && !(parameters_.relative_permittivity[component] > 0.0)) {
                 throw std::invalid_argument("invalid ionic dielectric parameter");
+            } else if (parameters_.electrolyte_model
+                           == ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL
+                       && ((parameters_.charge_number[component] != 0
+                            && parameters_.relative_permittivity[component] != 0.0)
+                           || parameters_.born_diameter_angstrom[component] != 0.0
+                           || parameters_.solvation_factor[component] != 0.0)) {
+                throw std::invalid_argument("invalid Held electrolyte parameters");
             }
             if (parameters_.permittivity_model
                     == PERMITTIVITY_MODEL_SCHRECKENBERG_DENSITY
@@ -491,6 +538,16 @@ NativeModel::NativeModel(NativeParameters parameters)
         if (parameters_.permittivity_model == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC
             && solvent_count != 1) {
             throw std::invalid_argument("Zuber mixed-solvent volume data are required");
+        }
+        if (held
+            && (parameters_.dielectric_ion_suppression_coefficient != 0.0
+                || parameters_.ionic_region_relative_permittivity != 0.0
+                || std::any_of(
+                    parameters_.l_ij.begin(),
+                    parameters_.l_ij.end(),
+                    [](double value) { return value != 0.0; }
+                ))) {
+            throw std::invalid_argument("invalid Held electrolyte parameters");
         }
     } else if (parameters_.electrolyte_model != ELECTROLYTE_MODEL_NONE
                || parameters_.permittivity_model != PERMITTIVITY_MODEL_NONE) {
@@ -650,8 +707,12 @@ NativeReferenceSequence NativeModel::electrolyte_reference_sequence(
             };
         }
     );
+    const auto pure_solvent_log_fugacity = single_solvent_log_fugacity(
+        *this, temperature, pressure, solvent_fractions, phase
+    );
     return {
         result.log_fugacity,
+        pure_solvent_log_fugacity,
         result.molality,
         result.convergence_error,
     };

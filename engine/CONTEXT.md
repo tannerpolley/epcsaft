@@ -48,6 +48,19 @@ ionic activity on one explicit electroneutral formula-unit path. Its aqueous
 single-solvent result also reports the practical molal osmotic coefficient
 from the solvent-activity ratio on that pressure-state path.
 
+Migration D-028 binds one additional private Provider candidate for the exact
+ordered water/H3O+/OH- mechanical model of Held, Cameretti, and Sadowski (2008)
+at 298.15 K and 1 bar. The installed record set closes component identity,
+charge, association, water--ion dispersion, excluded ion--ion dispersion,
+constant-water-dielectric Debye--Huckel behavior, and zero Born contribution.
+The append-only SDK tail declares the exact Helmholtz coordinate basis and
+source pressure bounds and returns one neutral formula-unit reference sum plus
+the pure-water reference from the existing native dilution owner. This is not
+a reactive standard-state model: Equilibrium exclusively owns `K_w`, its
+reference conversion, reaction/balance constraints, Ipopt, and certificates.
+The candidate has `authority_effect: none`; no receipt, promotion, release, or
+source-backed nonideal reaction claim follows from its presence here.
+
 Pressure closure accepts exactly one of molar density or pressure. An
 unlabelled pressure state must have one mechanically stable root. A genuine
 multi-root state requires `phase="vapor"` or `phase="liquid"`; a phase hint
@@ -165,6 +178,11 @@ exist. The same reference-sequence and pressure-state owners supply the values;
 no single-ion standard, reaction constant, reaction solver, chemistry selector,
 or catalog admission is introduced. The result explicitly reports that `T`,
 `P`, composition, and parameter derivatives are unavailable.
+
+The private Held water-ionization bundle uses that same generic neutral-reference
+tail and the existing fixed-pressure density closure. Consumers obtain its
+pure-water liquid molar volume from the ordinary public pure-water state; no
+second standard-reference callback or density owner is retained.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.

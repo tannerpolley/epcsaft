@@ -12,6 +12,8 @@ extern "C" {
 #define EPCSAFT_NATIVE_SDK_V1_ABI_VERSION 1u
 #define EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE 72u
 #define EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE 160u
+#define EPCSAFT_NATIVE_SDK_V1_HELMHOLTZ_BASIS_ID \
+    "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
 
 enum epcsaft_native_status_v1 {
     EPCSAFT_NATIVE_STATUS_OK_V1 = 0,

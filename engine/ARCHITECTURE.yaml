@@ -1,5 +1,5 @@
 version: 2
-status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-active-born-aqueous-kij-active-solvation-factor-and-neutral-reference-implementation-candidates
+status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-active-born-aqueous-kij-active-solvation-factor-neutral-reference-and-private-water-ionization-implementation-candidates
 
 authority:
   effective_receipt: promotion-0012-provider-full-candidate
@@ -9,6 +9,7 @@ authority:
   candidate_promotion_status: promoted
   native_sdk_receipt: promotion-0015-provider-native-sdk-v1
   native_sdk_authority: determined-by-receipt
+  water_ionization_candidate_authority_effect: none
 
 native_sdk_v1:
   name: native-sdk-v1-pure-phase-block
@@ -20,6 +21,27 @@ native_sdk_v1:
   exclusions: mixture, association, electrolyte, binary fitted parameters, density solve, phase identity, Ipopt, Ceres, equilibrium, and regression targets
 
 native_sdk_candidates:
+  held_water_self_ionization_reference_v1:
+    status: private-local-candidate-no-authority-effect
+    scope: >-
+      Exact ordered water, hydronium-cation, and hydroxide-anion Held 2008
+      mechanical phase model at 298.15 K and 1 bar, plus one neutral 1:1
+      formula-unit infinite-dilution log-fugacity sum and direct pure-water
+      reference from the sole native reference-sequence owner.
+    ordered_components: [water, hydronium-cation, hydroxide-anion]
+    ordered_charges: [0, 1, -1]
+    parameter_bundle: held-2008-water-self-ionization@1
+    parameter_fingerprint: sha256:cc40aeb2902bfc9a7be46ceb066cfdb41c5cd5d1024fe119be3d559b75f8a256
+    helmholtz_basis_id: A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3
+    source_state: {temperature_k: 298.15, pressure_pa: 100000.0}
+    formulation: held-2008-debye-huckel
+    contributions: [ideal, hard_chain, dispersion, association, debye_huckel]
+    absent_contributions: [born]
+    sdk_table_size_bytes_64_bit: 224
+    standard_reference_result_size_bytes_64_bit: 368
+    reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
+    authority_effect: none
+    exclusions: reaction equilibrium, equilibrium constants, reactive standard-state transformation, individual-ion predictive standard chemical potentials, density-root ownership, phase identity, Ipopt, Ceres, regression, compatibility routes, promotion, receipt, and release
   packing_fraction_hessian_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
@@ -75,7 +97,8 @@ native_sdk_candidates:
       to the selected current-catalog ion Born diameter.
     active_coordinate: born_diameter_angstrom
     derivative_order: 1
-    table_size_bytes_64_bit: 168
+    required_prefix_size_bytes_64_bit: 168
+    current_table_size_bytes_64_bit: 224
     result_size_bytes_64_bit: 272
     admitted_active_components: [lithium-cation, sodium-cation, potassium-cation, chloride-anion, bromide-anion]
     reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
@@ -339,7 +362,8 @@ excluded:
   - regression and parameter fitting
   - ideal-gas and total caloric properties
   - multi-salt and alternate-convention reference-state workflows
-  - authoritative mixture, associating, electrolyte, and reactive native phase blocks; the exact local methane/ethane and full-electrolyte candidates remain receipt-pending, while the aqueous active-k_ij MIAC seam remains a local implementation candidate pending bounded independent subagent review
+  - authoritative mixture, associating, electrolyte, and reactive native phase blocks; the exact local methane/ethane and full-electrolyte candidates remain receipt-pending, while the aqueous active-k_ij MIAC seam and Held water-ionization model remain local implementation candidates
+  - reaction equilibrium, equilibrium constants, and reactive standard-state transformations in Provider
   - alternate derivative backends
   - compatibility interfaces
   - release and workflow machinery

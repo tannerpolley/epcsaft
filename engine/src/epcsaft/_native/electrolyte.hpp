@@ -132,6 +132,10 @@ Scalar bulk_relative_permittivity(
         // EqID: ascani_bulk_permittivity
         return salt_free_permittivity * solvent_fraction + ion_dielectric;
     }
+    if (parameters.permittivity_model == PERMITTIVITY_MODEL_HELD_WATER) {
+        // EqID: salt_free_solvent_permittivity
+        return salt_free_permittivity;
+    }
     if (parameters.permittivity_model == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC) {
         // EqID: zuber_bulk_permittivity
         return salt_free_permittivity / (Scalar(1.0) + zuber_suppression);

@@ -1729,7 +1729,7 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
             || (!std::isnan(pressure_max_pa)
                 && (!std::isfinite(pressure_max_pa) || pressure_max_pa <= 0.0))
             || (std::isfinite(pressure_min_pa) && std::isfinite(pressure_max_pa)
-                && pressure_min_pa > pressure_max_pa))) {
+            && pressure_min_pa > pressure_max_pa))) {
         throw std::invalid_argument("invalid neutral reference pressure applicability");
     }
     auto* endpoint = new NativeSdkEndpoint(

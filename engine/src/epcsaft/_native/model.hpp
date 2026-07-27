@@ -7,12 +7,14 @@ namespace epcsaft {
 inline constexpr int ELECTROLYTE_MODEL_NONE = 0;
 inline constexpr int ELECTROLYTE_MODEL_FIGIEL_SSM_DS = 1;
 inline constexpr int ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN = 2;
+inline constexpr int ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL = 3;
 inline constexpr int PERMITTIVITY_MODEL_NONE = 0;
 inline constexpr int PERMITTIVITY_MODEL_FIGIEL_COMPOSITION = 1;
 inline constexpr int PERMITTIVITY_MODEL_ASCANI_MOLE_FRACTION = 2;
 inline constexpr int PERMITTIVITY_MODEL_SCHRECKENBERG_DENSITY = 3;
 inline constexpr int PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC = 4;
 inline constexpr int PERMITTIVITY_MODEL_RUEBEN_PERTURBATION = 5;
+inline constexpr int PERMITTIVITY_MODEL_HELD_WATER = 6;
 
 struct NativeParameters final {
     std::vector<double> segment_count;

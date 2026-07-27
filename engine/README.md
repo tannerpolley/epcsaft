@@ -154,6 +154,18 @@ water/ethanol/isobutanol/Na+/Cl- model at 293.15 K. The distinct Ascani et al.
 Neither mutates a Figiel bundle. Phase bounds, complementarity, equilibrium,
 and fit policy remain consumer-owned.
 
+A private, non-authoritative Held--Cameretti--Sadowski candidate adds the exact
+ordered `(water, hydronium-cation, hydroxide-anion)` mechanical phase model at
+`298.15 K` and `1 bar`. Its formulation uses the source-bound water and ion
+parameters, water--ion dispersion, no ion--ion dispersion, association, and
+Debye--Huckel contribution; Born is absent. The existing generic
+charge-neutral reference tail returns its gauge-invariant water and
+cation-plus-anion basis contractions, convergence evidence, fingerprint, and
+Helmholtz-basis identity. The ordinary public pure-water state supplies the
+fixed-pressure liquid molar volume. It does not own `K_w`, reaction
+stoichiometry, reactive standard-state conversion, species equilibrium, or any
+solver, and has `authority_effect: none`.
+
 One further append-only callback converts caller-owned packing-fraction limits
 to model-bound molar-volume limits at an ordered composition and temperature.
 The Provider retains the temperature-dependent segment-diameter and packing
@@ -213,7 +225,9 @@ The installed catalogs are:
 - the distinct Khudaida et al. (2026) water/ethanol/isobutanol/Na+/Cl- records
   at 293.15 K; and
 - the distinct Ascani et al. (2022) water/1-butanol/Na+/K+/Cl- original-Born
-  records at 298.15 K.
+  records at 298.15 K; and
+- the private Held et al. (2008) water/H3O+/OH- candidate records at
+  298.15 K and 1 bar, with no authority or reactive-equilibrium claim.
 
 This repository does not perform phase equilibrium or phase discovery,
 reaction/species equilibrium, regression, parameter fitting, ideal-gas
