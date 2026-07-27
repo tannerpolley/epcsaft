@@ -682,8 +682,14 @@ NativeReferenceSequence NativeModel::electrolyte_reference_sequence(
     const std::vector<double>& solvent_fractions,
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
-    const std::string& phase
+    const std::string& phase,
+    NativeEvaluationBudget* budget
 ) const {
+    auto checkpoint = [budget] {
+        if (budget != nullptr) {
+            budget->checkpoint();
+        }
+    };
     const auto result = detail::electrolyte_reference_sequence(
         solvent_fractions,
         parameters_.molar_mass_kg_per_mol,
@@ -705,7 +711,8 @@ NativeReferenceSequence NativeModel::electrolyte_reference_sequence(
                 },
                 std::nullopt,
             };
-        }
+        },
+        checkpoint
     );
     const auto pure_solvent_log_fugacity = single_solvent_log_fugacity(
         *this, temperature, pressure, solvent_fractions, phase
@@ -786,7 +793,8 @@ NativeModel::evaluate_aqueous_miac_kij_batch(
     double temperature,
     double pressure,
     const std::vector<double>& molalities,
-    const std::array<double, 3>& k_ij
+    const std::array<double, 3>& k_ij,
+    NativeEvaluationBudget* budget
 ) const {
     if (!std::isfinite(temperature) || !std::isfinite(pressure)
         || temperature <= 0.0 || pressure <= 0.0
@@ -805,6 +813,11 @@ NativeModel::evaluate_aqueous_miac_kij_batch(
     active_parameters.k_ij[2] = active_parameters.k_ij[6] = k_ij[1];
     active_parameters.k_ij[5] = active_parameters.k_ij[7] = k_ij[2];
     const NativeModel active_model(active_parameters);
+    auto checkpoint = [budget] {
+        if (budget != nullptr) {
+            budget->checkpoint();
+        }
+    };
     const auto reference = detail::electrolyte_reference_sequence(
         std::vector<double>{1.0, 0.0, 0.0},
         active_parameters.molar_mass_kg_per_mol,
@@ -821,7 +834,8 @@ NativeModel::evaluate_aqueous_miac_kij_batch(
                 reference_composition,
                 k_ij
             );
-        }
+        },
+        checkpoint
     );
     if (!reference.derivative.has_value() || reference.derivative->size() != 6
         || !reference.derivative_convergence_error.has_value()) {
@@ -829,6 +843,7 @@ NativeModel::evaluate_aqueous_miac_kij_batch(
     }
     std::vector<NativeAqueousMiacKij> results(molalities.size());
     detail::cppad_parallel_for(molalities.size(), [&](std::size_t index) {
+        checkpoint();
         const double molality = molalities[index];
         const auto composition = detail::formula_composition(
             std::vector<double>{1.0, 0.0, 0.0},
@@ -917,7 +932,8 @@ NativeModel::evaluate_aqueous_miac_solvation_factor_batch(
     double temperature,
     double pressure,
     const std::vector<double>& molalities,
-    double solvation_factor
+    double solvation_factor,
+    NativeEvaluationBudget* budget
 ) const {
     if (!std::isfinite(temperature) || !std::isfinite(pressure)
         || !std::isfinite(solvation_factor)
@@ -932,6 +948,11 @@ NativeModel::evaluate_aqueous_miac_solvation_factor_batch(
     NativeParameters active_parameters = parameters_;
     active_parameters.solvation_factor[0] = solvation_factor;
     const NativeModel active_model(active_parameters);
+    auto checkpoint = [budget] {
+        if (budget != nullptr) {
+            budget->checkpoint();
+        }
+    };
     const auto reference = detail::electrolyte_reference_sequence(
         std::vector<double>{1.0, 0.0, 0.0},
         active_parameters.molar_mass_kg_per_mol,
@@ -948,7 +969,8 @@ NativeModel::evaluate_aqueous_miac_solvation_factor_batch(
                 reference_composition,
                 solvation_factor
             );
-        }
+        },
+        checkpoint
     );
     if (!reference.derivative.has_value() || reference.derivative->size() != 2
         || !reference.derivative_convergence_error.has_value()) {
@@ -966,7 +988,8 @@ NativeModel::evaluate_aqueous_miac_solvation_factor_batch(
             std::vector<double>{1.0, 0.0, 0.0},
             std::array<std::size_t, 2>{1, 2},
             std::array<int, 2>{1, 1},
-            "liquid"
+            "liquid",
+            budget
         );
         reference_log_fugacity = value_reference.log_fugacity;
         reference_molality = value_reference.reference_molality;
@@ -974,6 +997,7 @@ NativeModel::evaluate_aqueous_miac_solvation_factor_batch(
     }
     std::vector<NativeAqueousMiacSolvationFactor> results(molalities.size());
     detail::cppad_parallel_for(molalities.size(), [&](std::size_t index) {
+        checkpoint();
         const double molality = molalities[index];
         const auto composition = detail::formula_composition(
             std::vector<double>{1.0, 0.0, 0.0},

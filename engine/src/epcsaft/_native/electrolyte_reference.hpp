@@ -11,6 +11,11 @@
 
 namespace epcsaft::detail {
 
+struct NoopReferenceCheckpoint final {
+    // EqExclude: transport and buffer mechanics
+    void operator()() const {}
+};
+
 inline constexpr std::array<double, 4> REFERENCE_MOLALITIES = {
     1.0e-6, 1.0e-8, 1.0e-10, 1.0e-12,
 };
@@ -76,14 +81,15 @@ inline std::vector<double> formula_composition(
     return composition;
 }
 
-template <typename Evaluator>
+template <typename Evaluator, typename Checkpoint = NoopReferenceCheckpoint>
 // EqID: reference_molality_sequence
 ReferenceSequenceResult electrolyte_reference_sequence(
     const std::vector<double>& solvent_fractions,
     const std::vector<double>& molar_masses_kg_per_mol,
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
-    Evaluator evaluator
+    Evaluator evaluator,
+    Checkpoint checkpoint = {}
 ) {
     std::optional<ReferenceObservation> previous;
     std::optional<ReferenceObservation> current;
@@ -91,6 +97,7 @@ ReferenceSequenceResult electrolyte_reference_sequence(
     std::optional<double> derivative_convergence_error;
 
     for (double molality : REFERENCE_MOLALITIES) {
+        checkpoint();
         current = evaluator(
             formula_composition(
                 solvent_fractions,

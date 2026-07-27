@@ -3,8 +3,13 @@
 #include "model.hpp"
 
 #include <array>
+#include <atomic>
+#include <chrono>
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -75,6 +80,59 @@ struct NativeAqueousMiacSolvationFactor final {
     double reference_molality_mol_per_kg;
     double reference_convergence_error;
     double reference_derivative_convergence_error;
+};
+
+class NativeEvaluationCancelled final : public std::runtime_error {
+public:
+    NativeEvaluationCancelled()
+        : std::runtime_error("aqueous MIAC evaluation work budget exhausted") {}
+};
+
+class NativeEvaluationDeadlineExceeded final : public std::runtime_error {
+public:
+    NativeEvaluationDeadlineExceeded()
+        : std::runtime_error("aqueous MIAC evaluation deadline exceeded") {}
+};
+
+class NativeEvaluationBudget final {
+public:
+    NativeEvaluationBudget(std::uint64_t work_budget, std::uint64_t deadline_ns)
+        : remaining_work_(work_budget), deadline_ns_(deadline_ns) {}
+
+    void checkpoint() {
+        if (deadline_ns_ != 0 && monotonic_now_ns() >= deadline_ns_) {
+            throw NativeEvaluationDeadlineExceeded();
+        }
+        if (remaining_work_.load(std::memory_order_relaxed)
+            == std::numeric_limits<std::uint64_t>::max()) {
+            return;
+        }
+        std::uint64_t remaining = remaining_work_.load(
+            std::memory_order_relaxed
+        );
+        while (remaining != 0) {
+            if (remaining_work_.compare_exchange_weak(
+                    remaining,
+                    remaining - 1,
+                    std::memory_order_relaxed,
+                    std::memory_order_relaxed
+                )) {
+                return;
+            }
+        }
+        throw NativeEvaluationCancelled();
+    }
+
+private:
+    static std::uint64_t monotonic_now_ns() {
+        const auto now = std::chrono::steady_clock::now().time_since_epoch();
+        return static_cast<std::uint64_t>(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(now).count()
+        );
+    }
+
+    std::atomic<std::uint64_t> remaining_work_;
+    const std::uint64_t deadline_ns_;
 };
 
 class NativeModel final {
@@ -152,7 +210,8 @@ public:
         const std::vector<double>& solvent_fractions,
         const std::array<std::size_t, 2>& ion_indices,
         const std::array<int, 2>& stoichiometry,
-        const std::string& phase
+        const std::string& phase,
+        NativeEvaluationBudget* budget = nullptr
     ) const;
     NativeIonSolvationBorn evaluate_ion_solvation_born(
         double temperature,
@@ -169,7 +228,8 @@ public:
         double temperature,
         double pressure,
         const std::vector<double>& formula_unit_molalities_mol_per_kg,
-        const std::array<double, 3>& k_ij
+        const std::array<double, 3>& k_ij,
+        NativeEvaluationBudget* budget = nullptr
     ) const;
     NativeAqueousMiacSolvationFactor evaluate_aqueous_miac_solvation_factor(
         double temperature,
@@ -182,7 +242,8 @@ public:
         double temperature,
         double pressure,
         const std::vector<double>& formula_unit_molalities_mol_per_kg,
-        double solvation_factor
+        double solvation_factor,
+        NativeEvaluationBudget* budget = nullptr
     ) const;
 
 private:

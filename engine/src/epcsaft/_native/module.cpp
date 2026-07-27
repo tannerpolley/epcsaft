@@ -165,7 +165,22 @@ PYBIND11_MODULE(_core, module) {
         .def("reference_composition", &epcsaft::NativeModel::reference_composition)
         .def(
             "electrolyte_reference_sequence",
-            &epcsaft::NativeModel::electrolyte_reference_sequence
+            [](const epcsaft::NativeModel& model,
+               double temperature,
+               double pressure,
+               const std::vector<double>& solvent_fractions,
+               const std::array<std::size_t, 2>& ion_indices,
+               const std::array<int, 2>& stoichiometry,
+               const std::string& phase) {
+                return model.electrolyte_reference_sequence(
+                    temperature,
+                    pressure,
+                    solvent_fractions,
+                    ion_indices,
+                    stoichiometry,
+                    phase
+                );
+            }
         );
 
     module.def(
