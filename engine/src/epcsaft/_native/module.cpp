@@ -37,6 +37,10 @@ PYBIND11_MODULE(_core, module) {
         .def_readonly("dispersion", &epcsaft::NativeResult::dispersion)
         .def_readonly("association", &epcsaft::NativeResult::association)
         .def_readonly("debye_huckel", &epcsaft::NativeResult::debye_huckel)
+        .def_readonly(
+            "bulk_relative_permittivity",
+            &epcsaft::NativeResult::bulk_relative_permittivity
+        )
         .def_readonly("born_ssm_ds", &epcsaft::NativeResult::born_ssm_ds)
         .def_readonly(
             "residual_helmholtz", &epcsaft::NativeResult::residual_helmholtz

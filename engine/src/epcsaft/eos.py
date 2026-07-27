@@ -319,6 +319,14 @@ class EPCSAFT:
         return self._component_ids
 
     @property
+    def permittivity_model(self) -> str:
+        """Return the source-named bulk-permittivity model used by this state."""
+        return {
+            "ionic-ssm-ds": "figiel-composition",
+            "ionic-ascani-original-born": "ascani-mole-fraction",
+        }.get(self._model.topology, "none")
+
+    @property
     def parameter_fingerprint(self) -> str:
         return self._parameter_fingerprint
 
@@ -401,6 +409,11 @@ class EPCSAFT:
             dispersion=native.dispersion,
             association=native.association,
             debye_huckel=native.debye_huckel,
+            bulk_relative_permittivity=(
+                None
+                if self.permittivity_model == "none"
+                else native.bulk_relative_permittivity
+            ),
             born=native.born_ssm_ds,
             residual_helmholtz=native.residual_helmholtz,
             compressibility_factor=native.compressibility_factor,
@@ -594,6 +607,7 @@ class EosResult:
     dispersion: float
     association: float
     debye_huckel: float
+    bulk_relative_permittivity: float | None
     born: float
     residual_helmholtz: float
     compressibility_factor: float

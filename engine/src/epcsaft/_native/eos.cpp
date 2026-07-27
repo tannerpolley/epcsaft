@@ -970,6 +970,7 @@ NativeResult NativeModel::evaluate(
         values.dispersion,
         values.association,
         values.debye_huckel,
+        electrolyte.bulk_relative_permittivity,
         values.born_ssm_ds,
         residual,
         compressibility,
