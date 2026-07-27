@@ -19,8 +19,18 @@ enum epcsaft_native_status_v1 {
     EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1 = 2,
     EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1 = 3,
     EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1 = 4,
-    EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1 = 5
+    EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1 = 5,
+    EPCSAFT_NATIVE_STATUS_CANCELLED_V1 = 6,
+    EPCSAFT_NATIVE_STATUS_DEADLINE_EXCEEDED_V1 = 7
 };
+
+#define EPCSAFT_NATIVE_EVALUATION_BUDGET_UNLIMITED_V1 UINT64_MAX
+
+typedef struct epcsaft_native_evaluation_budget_v1 {
+    uint32_t struct_size;
+    uint64_t work_budget;
+    uint64_t deadline_ns;
+} epcsaft_native_evaluation_budget_v1;
 
 typedef struct epcsaft_phase_block_result_v1 {
     uint32_t struct_size;
@@ -339,6 +349,41 @@ typedef int (*epcsaft_evaluate_aqueous_miac_solvation_factor_batch_v1)(
     size_t result_count
 );
 
+/*
+ * Cooperative bounded forms of the two batch callbacks. The 240-byte batch
+ * prefix remains unchanged; these callbacks are available only in the
+ * appended tail. `work_budget` counts safe reference/row checkpoints and
+ * UINT64_MAX disables that limit. `deadline_ns` is an absolute monotonic
+ * clock deadline; zero disables it. Provider joins all row workers before
+ * returning CANCELLED or DEADLINE_EXCEEDED.
+ */
+typedef int (*epcsaft_evaluate_aqueous_miac_kij_batch_bounded_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    const double* formula_unit_molalities_mol_per_kg,
+    size_t molality_count,
+    const double* k_ij,
+    size_t k_ij_count,
+    epcsaft_aqueous_miac_kij_result_v1* results,
+    size_t result_count,
+    const epcsaft_native_evaluation_budget_v1* budget
+);
+
+typedef int (*epcsaft_evaluate_aqueous_miac_solvation_factor_batch_bounded_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    const double* formula_unit_molalities_mol_per_kg,
+    size_t molality_count,
+    double solvation_factor,
+    epcsaft_aqueous_miac_solvation_factor_result_v1* results,
+    size_t result_count,
+    const epcsaft_native_evaluation_budget_v1* budget
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -375,6 +420,11 @@ typedef struct epcsaft_native_sdk_v1 {
         evaluate_aqueous_miac_kij_batch;
     epcsaft_evaluate_aqueous_miac_solvation_factor_batch_v1
         evaluate_aqueous_miac_solvation_factor_batch;
+    size_t evaluation_budget_size;
+    epcsaft_evaluate_aqueous_miac_kij_batch_bounded_v1
+        evaluate_aqueous_miac_kij_batch_bounded;
+    epcsaft_evaluate_aqueous_miac_solvation_factor_batch_bounded_v1
+        evaluate_aqueous_miac_solvation_factor_batch_bounded;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

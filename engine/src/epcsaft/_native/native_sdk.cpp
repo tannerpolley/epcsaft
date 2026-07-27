@@ -9,11 +9,13 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <iterator>
 #include <limits>
 #include <numeric>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -260,6 +262,9 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_aqueous_miac_solvation_factor,
               &NativeSdkEndpoint::evaluate_aqueous_miac_kij_batch,
               &NativeSdkEndpoint::evaluate_aqueous_miac_solvation_factor_batch,
+              sizeof(epcsaft_native_evaluation_budget_v1),
+              &NativeSdkEndpoint::evaluate_aqueous_miac_kij_batch_bounded,
+              &NativeSdkEndpoint::evaluate_aqueous_miac_solvation_factor_batch_bounded,
           } {}
 
     static int evaluate_neutral_reference(
@@ -692,7 +697,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
-    static int evaluate_aqueous_miac_kij_batch(
+    static int evaluate_aqueous_miac_kij_batch_impl(
         const void* context,
         const char* expected_fingerprint,
         double temperature_k,
@@ -702,7 +707,8 @@ struct NativeSdkEndpoint final {
         const double* k_ij,
         size_t k_ij_count,
         epcsaft_aqueous_miac_kij_result_v1* results,
-        size_t result_count
+        size_t result_count,
+        const epcsaft_native_evaluation_budget_v1* budget
     ) noexcept {
         if (results == nullptr || result_count == 0) {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
@@ -789,6 +795,17 @@ struct NativeSdkEndpoint final {
                 "aqueous active k_ij state is outside the admitted domain"
             );
         }
+        std::optional<NativeEvaluationBudget> bounded_budget;
+        if (budget != nullptr) {
+            if (budget->struct_size
+                != sizeof(epcsaft_native_evaluation_budget_v1)) {
+                return fail(
+                    EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1,
+                    "evaluation budget size does not match"
+                );
+            }
+            bounded_budget.emplace(budget->work_budget, budget->deadline_ns);
+        }
         try {
             const std::array<double, 3> coordinates = {
                 k_ij[0], k_ij[1], k_ij[2]
@@ -799,7 +816,8 @@ struct NativeSdkEndpoint final {
                 std::vector<double>(
                     molalities, molalities + molality_count
                 ),
-                coordinates
+                coordinates,
+                bounded_budget.has_value() ? &*bounded_budget : nullptr
             );
             if (values.size() != result_count) {
                 throw std::runtime_error(
@@ -831,6 +849,12 @@ struct NativeSdkEndpoint final {
             return EPCSAFT_NATIVE_STATUS_OK_V1;
         } catch (const detail::DensityDomainError& error) {
             return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const NativeEvaluationCancelled& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_CANCELLED_V1, error.what());
+        } catch (const NativeEvaluationDeadlineExceeded& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DEADLINE_EXCEEDED_V1, error.what()
+            );
         } catch (const std::invalid_argument& error) {
             return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
         } catch (const std::logic_error& error) {
@@ -845,7 +869,62 @@ struct NativeSdkEndpoint final {
         }
     }
 
-    static int evaluate_aqueous_miac_solvation_factor_batch(
+    static int evaluate_aqueous_miac_kij_batch(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        const double* molalities,
+        size_t molality_count,
+        const double* k_ij,
+        size_t k_ij_count,
+        epcsaft_aqueous_miac_kij_result_v1* results,
+        size_t result_count
+    ) noexcept {
+        return evaluate_aqueous_miac_kij_batch_impl(
+            context,
+            expected_fingerprint,
+            temperature_k,
+            pressure_pa,
+            molalities,
+            molality_count,
+            k_ij,
+            k_ij_count,
+            results,
+            result_count,
+            nullptr
+        );
+    }
+
+    static int evaluate_aqueous_miac_kij_batch_bounded(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        const double* molalities,
+        size_t molality_count,
+        const double* k_ij,
+        size_t k_ij_count,
+        epcsaft_aqueous_miac_kij_result_v1* results,
+        size_t result_count,
+        const epcsaft_native_evaluation_budget_v1* budget
+    ) noexcept {
+        return evaluate_aqueous_miac_kij_batch_impl(
+            context,
+            expected_fingerprint,
+            temperature_k,
+            pressure_pa,
+            molalities,
+            molality_count,
+            k_ij,
+            k_ij_count,
+            results,
+            result_count,
+            budget
+        );
+    }
+
+    static int evaluate_aqueous_miac_solvation_factor_batch_impl(
         const void* context,
         const char* expected_fingerprint,
         double temperature_k,
@@ -854,7 +933,8 @@ struct NativeSdkEndpoint final {
         size_t molality_count,
         double solvation_factor,
         epcsaft_aqueous_miac_solvation_factor_result_v1* results,
-        size_t result_count
+        size_t result_count,
+        const epcsaft_native_evaluation_budget_v1* budget
     ) noexcept {
         if (results == nullptr || result_count == 0) {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
@@ -935,6 +1015,17 @@ struct NativeSdkEndpoint final {
                 "aqueous active solvation-factor state is outside the admitted domain"
             );
         }
+        std::optional<NativeEvaluationBudget> bounded_budget;
+        if (budget != nullptr) {
+            if (budget->struct_size
+                != sizeof(epcsaft_native_evaluation_budget_v1)) {
+                return fail(
+                    EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1,
+                    "evaluation budget size does not match"
+                );
+            }
+            bounded_budget.emplace(budget->work_budget, budget->deadline_ns);
+        }
         try {
             const auto values =
                 endpoint.model.evaluate_aqueous_miac_solvation_factor_batch(
@@ -943,7 +1034,8 @@ struct NativeSdkEndpoint final {
                     std::vector<double>(
                         molalities, molalities + molality_count
                     ),
-                    solvation_factor
+                    solvation_factor,
+                    bounded_budget.has_value() ? &*bounded_budget : nullptr
                 );
             if (values.size() != result_count) {
                 throw std::runtime_error(
@@ -971,6 +1063,12 @@ struct NativeSdkEndpoint final {
             return EPCSAFT_NATIVE_STATUS_OK_V1;
         } catch (const detail::DensityDomainError& error) {
             return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const NativeEvaluationCancelled& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_CANCELLED_V1, error.what());
+        } catch (const NativeEvaluationDeadlineExceeded& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DEADLINE_EXCEEDED_V1, error.what()
+            );
         } catch (const std::invalid_argument& error) {
             return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
         } catch (const std::logic_error& error) {
@@ -985,6 +1083,57 @@ struct NativeSdkEndpoint final {
                 "unknown aqueous active solvation-factor batch evaluation failure"
             );
         }
+    }
+
+    static int evaluate_aqueous_miac_solvation_factor_batch(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        const double* molalities,
+        size_t molality_count,
+        double solvation_factor,
+        epcsaft_aqueous_miac_solvation_factor_result_v1* results,
+        size_t result_count
+    ) noexcept {
+        return evaluate_aqueous_miac_solvation_factor_batch_impl(
+            context,
+            expected_fingerprint,
+            temperature_k,
+            pressure_pa,
+            molalities,
+            molality_count,
+            solvation_factor,
+            results,
+            result_count,
+            nullptr
+        );
+    }
+
+    static int evaluate_aqueous_miac_solvation_factor_batch_bounded(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        const double* molalities,
+        size_t molality_count,
+        double solvation_factor,
+        epcsaft_aqueous_miac_solvation_factor_result_v1* results,
+        size_t result_count,
+        const epcsaft_native_evaluation_budget_v1* budget
+    ) noexcept {
+        return evaluate_aqueous_miac_solvation_factor_batch_impl(
+            context,
+            expected_fingerprint,
+            temperature_k,
+            pressure_pa,
+            molalities,
+            molality_count,
+            solvation_factor,
+            results,
+            result_count,
+            budget
+        );
     }
 
     static int evaluate_ion_solvation_born(

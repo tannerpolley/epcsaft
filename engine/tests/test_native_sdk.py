@@ -6,6 +6,7 @@ import math
 from pathlib import Path
 import shutil
 import subprocess
+import time
 
 import pytest
 
@@ -33,6 +34,8 @@ STATUS_UNSUPPORTED_MODEL = 2
 STATUS_DOMAIN_ERROR = 3
 STATUS_EVALUATION_ERROR = 4
 STATUS_ABI_MISMATCH = 5
+STATUS_CANCELLED = 6
+STATUS_DEADLINE_EXCEEDED = 7
 
 
 class PhaseBlockResult(ctypes.Structure):
@@ -237,6 +240,22 @@ class AqueousMiacBatchNativeSdkTable(ctypes.Structure):
     )
 
 
+class NativeEvaluationBudget(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("work_budget", ctypes.c_uint64),
+        ("deadline_ns", ctypes.c_uint64),
+    )
+
+
+class AqueousMiacBoundedBatchNativeSdkTable(ctypes.Structure):
+    _fields_ = AqueousMiacBatchNativeSdkTable._fields_ + (
+        ("evaluation_budget_size", ctypes.c_size_t),
+        ("evaluate_aqueous_miac_kij_batch_bounded", ctypes.c_void_p),
+        ("evaluate_aqueous_miac_solvation_factor_batch_bounded", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -276,6 +295,10 @@ AQUEOUS_MIAC_SOLVATION_FACTOR_PREFIX_SIZE = (
 )
 AQUEOUS_MIAC_BATCH_PREFIX_SIZE = (
     AqueousMiacBatchNativeSdkTable.evaluate_aqueous_miac_solvation_factor_batch.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+AQUEOUS_MIAC_BOUNDED_BATCH_PREFIX_SIZE = (
+    AqueousMiacBoundedBatchNativeSdkTable.evaluate_aqueous_miac_solvation_factor_batch_bounded.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
@@ -416,6 +439,35 @@ EvaluateAqueousMiacSolvationFactorBatch = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.POINTER(AqueousMiacSolvationFactorResult),
     ctypes.c_size_t,
+)
+
+EvaluateAqueousMiacKijBatchBounded = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.POINTER(AqueousMiacKijResult),
+    ctypes.c_size_t,
+    ctypes.POINTER(NativeEvaluationBudget),
+)
+
+EvaluateAqueousMiacSolvationFactorBatchBounded = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.c_double,
+    ctypes.POINTER(AqueousMiacSolvationFactorResult),
+    ctypes.c_size_t,
+    ctypes.POINTER(NativeEvaluationBudget),
 )
 
 
@@ -668,6 +720,22 @@ def _aqueous_miac_batch_table(
         address, ctypes.POINTER(AqueousMiacBatchNativeSdkTable)
     ).contents
     assert table.table_size >= AQUEOUS_MIAC_BATCH_PREFIX_SIZE
+    return capsule, table
+
+
+def _aqueous_miac_bounded_batch_table(
+    model: EPCSAFT,
+) -> tuple[object, AqueousMiacBoundedBatchNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(AqueousMiacBoundedBatchNativeSdkTable)
+    ).contents
+    assert table.table_size >= AQUEOUS_MIAC_BOUNDED_BATCH_PREFIX_SIZE
     return capsule, table
 
 
@@ -3116,6 +3184,164 @@ def test_native_sdk_aqueous_miac_batches_preserve_scalar_results() -> None:
         assert batch.parameter_fingerprint == scalar.parameter_fingerprint
         assert batch.error == scalar.error == b""
 
+
+def test_native_sdk_aqueous_miac_bounded_batches_cancel_without_background_work() -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
+    _, table = _aqueous_miac_bounded_batch_table(model)
+    assert table.evaluation_budget_size == ctypes.sizeof(NativeEvaluationBudget) == 24
+    assert (
+        AqueousMiacBoundedBatchNativeSdkTable.evaluation_budget_size.offset
+        == 240
+    )
+    assert (
+        AqueousMiacBoundedBatchNativeSdkTable.evaluate_aqueous_miac_kij_batch_bounded.offset
+        == 248
+    )
+    assert (
+        AqueousMiacBoundedBatchNativeSdkTable.evaluate_aqueous_miac_solvation_factor_batch_bounded.offset
+        == 256
+    )
+    assert ctypes.sizeof(AqueousMiacBoundedBatchNativeSdkTable) == 264
+
+    molalities = tuple(0.001 + (5.999 * index / 163.0) for index in range(164))
+    molality_values = (ctypes.c_double * len(molalities))(*molalities)
+    coordinates = (ctypes.c_double * 3)(-0.2, -0.3, 0.4)
+    cancelled_results = (AqueousMiacKijResult * len(molalities))(
+        *(
+            AqueousMiacKijResult(
+                struct_size=ctypes.sizeof(AqueousMiacKijResult)
+            )
+            for _ in molalities
+        )
+    )
+    tiny_budget = NativeEvaluationBudget(
+        struct_size=ctypes.sizeof(NativeEvaluationBudget),
+        work_budget=0,
+        deadline_ns=0,
+    )
+    started = time.perf_counter()
+    cancelled_status = EvaluateAqueousMiacKijBatchBounded(
+        table.evaluate_aqueous_miac_kij_batch_bounded
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        molality_values,
+        len(molalities),
+        coordinates,
+        3,
+        cancelled_results,
+        len(molalities),
+        ctypes.byref(tiny_budget),
+    )
+    cancellation_elapsed = time.perf_counter() - started
+    assert cancelled_status == STATUS_CANCELLED
+    assert all(result.status == STATUS_CANCELLED for result in cancelled_results)
+    assert all(result.error for result in cancelled_results)
+    assert cancellation_elapsed < 5.0
+
+    deadline_results = (AqueousMiacKijResult * 1)(
+        AqueousMiacKijResult(struct_size=ctypes.sizeof(AqueousMiacKijResult))
+    )
+    expired_budget = NativeEvaluationBudget(
+        struct_size=ctypes.sizeof(NativeEvaluationBudget),
+        work_budget=(1 << 64) - 1,
+        deadline_ns=1,
+    )
+    deadline_status = EvaluateAqueousMiacKijBatchBounded(
+        table.evaluate_aqueous_miac_kij_batch_bounded
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        (ctypes.c_double * 1)(1.0),
+        1,
+        coordinates,
+        3,
+        deadline_results,
+        1,
+        ctypes.byref(expired_budget),
+    )
+    assert deadline_status == STATUS_DEADLINE_EXCEEDED
+    assert deadline_results[0].status == STATUS_DEADLINE_EXCEEDED
+    assert deadline_results[0].error
+
+    solvation_cancelled_results = (AqueousMiacSolvationFactorResult * len(molalities))(
+        *(
+            AqueousMiacSolvationFactorResult(
+                struct_size=ctypes.sizeof(AqueousMiacSolvationFactorResult)
+            )
+            for _ in molalities
+        )
+    )
+    solvation_budget = NativeEvaluationBudget(
+        struct_size=ctypes.sizeof(NativeEvaluationBudget),
+        work_budget=0,
+        deadline_ns=0,
+    )
+    solvation_cancelled_status = EvaluateAqueousMiacSolvationFactorBatchBounded(
+        table.evaluate_aqueous_miac_solvation_factor_batch_bounded
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        molality_values,
+        len(molalities),
+        1.35,
+        solvation_cancelled_results,
+        len(molalities),
+        ctypes.byref(solvation_budget),
+    )
+    assert solvation_cancelled_status == STATUS_CANCELLED
+    assert all(
+        result.status == STATUS_CANCELLED and result.error
+        for result in solvation_cancelled_results
+    )
+
+    bounded_results = (AqueousMiacKijResult * 3)(
+        *(
+            AqueousMiacKijResult(
+                struct_size=ctypes.sizeof(AqueousMiacKijResult)
+            )
+            for _ in range(3)
+        )
+    )
+    sufficient_budget = NativeEvaluationBudget(
+        struct_size=ctypes.sizeof(NativeEvaluationBudget),
+        work_budget=(1 << 64) - 1,
+        deadline_ns=0,
+    )
+    short_molalities = (ctypes.c_double * 3)(0.001, 1.0, 6.0)
+    bounded_status = EvaluateAqueousMiacKijBatchBounded(
+        table.evaluate_aqueous_miac_kij_batch_bounded
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        short_molalities,
+        3,
+        coordinates,
+        3,
+        bounded_results,
+        3,
+        ctypes.byref(sufficient_budget),
+    )
+    existing_results = _evaluate_aqueous_miac_kij_batch(
+        ctypes.cast(
+            ctypes.pointer(table), ctypes.POINTER(AqueousMiacBatchNativeSdkTable)
+        ).contents,
+        model.parameter_fingerprint,
+        (0.001, 1.0, 6.0),
+        (-0.2, -0.3, 0.4),
+    )
+    assert bounded_status == STATUS_OK
+    for bounded, existing in zip(bounded_results, existing_results, strict=True):
+        assert bytes(bounded) == bytes(existing)
+
     coordinates = (-0.2, -0.3, 0.4)
     batch_kij = _evaluate_aqueous_miac_kij_batch(
         table,
@@ -3406,7 +3632,11 @@ _Static_assert(offsetof(epcsaft_native_sdk_v1, aqueous_miac_solvation_factor_res
 _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_solvation_factor) == 216, "callback offset");
 _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_kij_batch) == 224, "kij batch callback offset");
 _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_solvation_factor_batch) == 232, "solvation-factor batch callback offset");
-_Static_assert(sizeof(epcsaft_native_sdk_v1) == 240, "table size");
+_Static_assert(offsetof(epcsaft_native_sdk_v1, evaluation_budget_size) == 240, "budget-size offset");
+_Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_kij_batch_bounded) == 248, "bounded kij callback offset");
+_Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_solvation_factor_batch_bounded) == 256, "bounded solvation-factor callback offset");
+_Static_assert(sizeof(epcsaft_native_sdk_v1) == 264, "table size");
+_Static_assert(sizeof(epcsaft_native_evaluation_budget_v1) == 24, "budget size");
 _Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, log_mean_ionic_activity_coefficient_molality) == 8, "value offset");
 _Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, derivative) == 16, "derivative offset");
 _Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, parameter_fingerprint) == 48, "fingerprint offset");
