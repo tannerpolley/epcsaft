@@ -1735,6 +1735,7 @@ def test_native_sdk_describes_exact_associating_pure_parameter_contracts() -> No
             "m3",
             unit,
         )
+        assert coordinates[-1].component_index == -1
         assert descriptor.topology_fingerprint
 
 

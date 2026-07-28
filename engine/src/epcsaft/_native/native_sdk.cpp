@@ -489,9 +489,11 @@ struct NativeSdkEndpoint final {
               pure_dispersion_energy_coordinates[2].unit = "kelvin";
               pure_association_energy_coordinates[2].kind =
                   EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_ENERGY_OVER_K_V1;
+              pure_association_energy_coordinates[2].component_index = -1;
               pure_association_energy_coordinates[2].unit = "kelvin";
               pure_association_volume_coordinates[2].kind =
                   EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_VOLUME_V1;
+              pure_association_volume_coordinates[2].component_index = -1;
               pure_association_volume_coordinates[2].unit = "dimensionless";
               auto descriptor = [&](
                   uint32_t capability,
