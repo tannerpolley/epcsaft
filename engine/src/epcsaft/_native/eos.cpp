@@ -708,7 +708,7 @@ NativeParameterizedPurePhaseBlock NativeModel::evaluate_pure_phase_parameters(
 
 // EqExclude: transport and buffer mechanics
 NativeAssociatingParameterizedPurePhaseBlock
-NativeModel::evaluate_associating_pure_phase_parameters(
+NativeModel::evaluate_diameter_basis_associating_pure_phase_parameters(
     double temperature,
     double amount,
     double volume,

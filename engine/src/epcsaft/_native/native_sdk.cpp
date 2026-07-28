@@ -2471,7 +2471,8 @@ struct NativeSdkEndpoint final {
         }
         try {
             const auto block =
-                endpoint.model.evaluate_associating_pure_phase_parameters(
+                endpoint.model
+                    .evaluate_diameter_basis_associating_pure_phase_parameters(
                     temperature_k,
                     amount_mol,
                     volume_m3,

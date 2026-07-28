@@ -200,7 +200,7 @@ public:
         double dispersion_energy_over_k
     ) const;
     NativeAssociatingParameterizedPurePhaseBlock
-    evaluate_associating_pure_phase_parameters(
+    evaluate_diameter_basis_associating_pure_phase_parameters(
         double temperature,
         double amount,
         double volume,

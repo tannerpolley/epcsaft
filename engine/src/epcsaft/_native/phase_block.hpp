@@ -1079,7 +1079,8 @@ associating_parameterized_pure_phase_block(
         composition,
         value_parameters,
         value_sigma,
-        value_diameter
+        value_diameter,
+        true
     );
 
     CppAdSerialGuard cppad_guard;
@@ -1166,7 +1167,8 @@ associating_parameterized_pure_phase_block(
         sigma,
         diameter,
         association_energies,
-        association_volumes
+        association_volumes,
+        true
     );
     const auto mass_action = association_residuals(
         active_density,

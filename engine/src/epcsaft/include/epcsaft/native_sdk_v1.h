@@ -119,7 +119,13 @@ typedef struct epcsaft_associating_parameterized_phase_block_result_v1 {
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
 } epcsaft_associating_parameterized_phase_block_result_v1;
 
-typedef int (*epcsaft_evaluate_associating_pure_phase_parameters_v1)(
+/*
+ * Source-model variant used by Baygi--Pahlavanzadeh 2015 Eq. (4): the
+ * association-strength volume factor is d_ij^3 rather than sigma_ij^3.
+ * The ordinary Provider EOS and scalar association callbacks retain their
+ * source-owned sigma_ij^3 convention.
+ */
+typedef int (*epcsaft_evaluate_diameter_basis_associating_pure_phase_parameters_v1)(
     const void* model_context,
     double temperature_k,
     double amount_mol,
@@ -743,8 +749,8 @@ typedef struct epcsaft_native_sdk_v1 {
     epcsaft_evaluate_ion_solvation_solvent_permittivity_v1
         evaluate_ion_solvation_solvent_permittivity;
     size_t associating_parameterized_result_size;
-    epcsaft_evaluate_associating_pure_phase_parameters_v1
-        evaluate_associating_pure_phase_parameters;
+    epcsaft_evaluate_diameter_basis_associating_pure_phase_parameters_v1
+        evaluate_diameter_basis_associating_pure_phase_parameters;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

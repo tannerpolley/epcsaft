@@ -36,7 +36,8 @@ std::vector<Scalar> association_delta_values(
     const std::vector<Scalar>& sigma,
     const std::vector<Scalar>& diameter,
     const std::vector<Scalar>& association_energy_over_k,
-    const std::vector<Scalar>& association_volume
+    const std::vector<Scalar>& association_volume,
+    bool temperature_dependent_size_basis = false
 ) {
     const std::size_t components = parameters.segment_count.size();
     const std::size_t sites = parameters.site_component.size();
@@ -72,14 +73,16 @@ std::vector<Scalar> association_delta_values(
                     / (one_minus_eta * one_minus_eta)
                 + 2.0 * reduced_diameter * reduced_diameter * zeta_2 * zeta_2
                     / (one_minus_eta * one_minus_eta * one_minus_eta);
-            const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j])
-                * (Scalar(1.0) - parameters.l_ij[i * components + j]);
+            const Scalar size_ij = temperature_dependent_size_basis
+                ? Scalar(0.5) * (diameter[i] + diameter[j])
+                : Scalar(0.5) * (sigma[i] + sigma[j])
+                    * (Scalar(1.0) - parameters.l_ij[i * components + j]);
             // EqID: association_strength
             delta[pair] = contact
                 * (association_exp(
                        association_energy_over_k[pair] / temperature
                    ) - Scalar(1.0))
-                * sigma_ij * sigma_ij * sigma_ij
+                * size_ij * size_ij * size_ij
                 * association_volume[pair];
         }
     }
@@ -189,14 +192,23 @@ inline std::vector<double> solve_site_fractions(
     const std::vector<double>& mole_fractions,
     const NativeParameters& parameters,
     const std::vector<double>& sigma,
-    const std::vector<double>& diameter
+    const std::vector<double>& diameter,
+    bool temperature_dependent_size_basis = false
 ) {
     const std::size_t sites = parameters.site_component.size();
     if (sites == 0) {
         return {};
     }
-    const auto delta = association_delta(
-        temperature, molar_density, mole_fractions, parameters, sigma, diameter
+    const auto delta = association_delta_values(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        sigma,
+        diameter,
+        parameters.association_energy_over_k,
+        parameters.association_volume,
+        temperature_dependent_size_basis
     );
     const double number_density =
         molar_density * ASSOCIATION_NUMBER_DENSITY_FACTOR;

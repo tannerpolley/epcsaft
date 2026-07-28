@@ -425,7 +425,10 @@ class AssociatingParameterizedPhaseBlockResult(ctypes.Structure):
 class AssociatingParameterizedNativeSdkTable(ctypes.Structure):
     _fields_ = IonSolvationSolventPermittivityNativeSdkTable._fields_ + (
         ("associating_parameterized_result_size", ctypes.c_size_t),
-        ("evaluate_associating_pure_phase_parameters", ctypes.c_void_p),
+        (
+            "evaluate_diameter_basis_associating_pure_phase_parameters",
+            ctypes.c_void_p,
+        ),
     )
 
 
@@ -504,7 +507,7 @@ ION_SOLVATION_SOLVENT_PERMITTIVITY_PREFIX_SIZE = (
 )
 ASSOCIATING_PARAMETERIZED_PREFIX_SIZE = (
     AssociatingParameterizedNativeSdkTable
-    .evaluate_associating_pure_phase_parameters.offset
+    .evaluate_diameter_basis_associating_pure_phase_parameters.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
@@ -1404,7 +1407,7 @@ def _evaluate_associating_parameters(
         struct_size=ctypes.sizeof(AssociatingParameterizedPhaseBlockResult)
     )
     status = EvaluateAssociatingPurePhaseParameters(
-        table.evaluate_associating_pure_phase_parameters
+        table.evaluate_diameter_basis_associating_pure_phase_parameters
     )(
         table.model_context,
         temperature_k,
@@ -2736,7 +2739,7 @@ def test_native_sdk_joint_associating_parameters_have_exact_seven_coordinate_hes
     assert table.associating_parameterized_result_size == ctypes.sizeof(
         AssociatingParameterizedPhaseBlockResult
     )
-    assert table.evaluate_associating_pure_phase_parameters
+    assert table.evaluate_diameter_basis_associating_pure_phase_parameters
 
     temperature_k = 298.15
     point = (1.0, 5.86e-5, 2.3827, 3.1771, 198.24, 2653.4, 0.03238)
@@ -2769,9 +2772,45 @@ def test_native_sdk_joint_associating_parameters_have_exact_seven_coordinate_hes
         / unit_registry.meter**3,
         mole_fractions=(1.0,),
     )
-    assert center.pressure_pa == pytest.approx(
-        state.pressure.to("pascal").magnitude,
-        rel=3.0e-12,
+    density = point[0] / point[1]
+    number_density = density * 6.02214076e-7
+    diameter = point[3] * (
+        1.0 - 0.12 * math.exp(-3.0 * point[4] / temperature_k)
+    )
+    zeta_2 = math.pi / 6.0 * number_density * point[2] * diameter**2
+    zeta_3 = math.pi / 6.0 * number_density * point[2] * diameter**3
+    contact = (
+        1.0 / (1.0 - zeta_3)
+        + 1.5 * diameter * zeta_2 / (1.0 - zeta_3) ** 2
+        + 0.5 * diameter**2 * zeta_2**2 / (1.0 - zeta_3) ** 3
+    )
+    delta = (
+        contact
+        * math.expm1(point[5] / temperature_k)
+        * diameter**3
+        * point[6]
+    )
+    site_fraction = 2.0 / (
+        1.0 + math.sqrt(1.0 + 4.0 * number_density * delta)
+    )
+    diameter_basis_association = 2.0 * (
+        math.log(site_fraction) - 0.5 * site_fraction + 0.5
+    )
+    expected_phase = point[0] * (
+        math.log(density)
+        - 1.0
+        + state.hard_chain
+        + state.dispersion
+        + diameter_basis_association
+    )
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected_phase, rel=2.0e-12
+    )
+    assert center.helmholtz_over_rt_reference_amount != pytest.approx(
+        math.log(density)
+        - 1.0
+        + state.residual_helmholtz,
+        rel=1.0e-5,
     )
 
     step = 1.0e-2
