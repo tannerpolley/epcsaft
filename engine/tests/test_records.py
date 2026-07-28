@@ -27,6 +27,49 @@ PROVENANCE = {
     "domain_id": "figiel-reported-conditions",
 }
 
+RELATIVE_PERMITTIVITY_FORMULATIONS = (
+    "none",
+    "ion-fraction-suppression",
+    "component-permittivity-mixing",
+    "density-volume-temperature",
+    "ion-specific-suppression",
+    "dipolar-density-perturbation",
+    "solvent-only",
+)
+
+
+@pytest.mark.parametrize("value", RELATIVE_PERMITTIVITY_FORMULATIONS)
+def test_relative_permittivity_formulation_record_accepts_generic_values(value: str) -> None:
+    record = ModelParameterRecord(
+        "permittivity-formulation",
+        "relative_permittivity_formulation",
+        value,
+        **PROVENANCE,
+    )
+
+    assert record.value == value
+
+
+@pytest.mark.parametrize(
+    "value",
+    (
+        "figiel-composition",
+        "ascani-mole-fraction",
+        "schreckenberg-density",
+        "zuber-ion-specific",
+        "rueben-perturbation",
+        "held-water",
+    ),
+)
+def test_relative_permittivity_formulation_rejects_legacy_values(value: str) -> None:
+    with pytest.raises(ParameterError, match="invalid-value"):
+        ModelParameterRecord(
+            "permittivity-formulation",
+            "relative_permittivity_formulation",
+            value,
+            **PROVENANCE,
+        )
+
 
 def test_records_are_immutable_and_identifiers_are_exact() -> None:
     source = SourceRecord(
@@ -243,7 +286,7 @@ def test_model_parameter_records_are_closed_finite_and_source_backed() -> None:
     )
     suppression = ModelParameterRecord(
         record_id="figiel-dielectric-suppression",
-        family="dielectric_ion_suppression_coefficient",
+        family="ion_fraction_suppression_coefficient",
         value=Decimal("7.01"),
         **PROVENANCE,
     )

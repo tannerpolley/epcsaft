@@ -1302,14 +1302,14 @@ def test_native_sdk_held_neutral_reference_is_domain_bound_and_permutation_safe(
             "figiel-2025-reference-electrolytes",
             ("water", "sodium-cation", "chloride-anion"),
             "figiel-298-k-1-bar",
-            "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+            "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
             (298.15, 298.15, 0.38),
         ),
         (
             "khudaida-2026-figure-2-electrolyte-lle",
             ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion"),
             "khudaida-293-15-k-0-1-mpa",
-            "sha256:5a59828d86bb29c919513484a26cedaa0f025463aaa7c149ae3d1fbd0eda97ae",
+            "sha256:b43fac77754d9d5cca8b3db2cbe709892a786d97b756084b167ce126ab4c3007",
             (293.15, 293.15, math.nan),
         ),
     ),
@@ -1687,7 +1687,16 @@ def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
         sources=gross_bundle.sources,
         domains=gross.domains,
         components=gross.components,
-        singles=gross.records,
+        singles=tuple(
+            record
+            for record in gross.records
+            if isinstance(record, SingleParameterRecord)
+        ),
+        models=tuple(
+            record
+            for record in gross.records
+            if isinstance(record, ModelParameterRecord)
+        ),
     )
     synthetic_model = EPCSAFT(synthetic.select(("methane",)))
     assert synthetic_model.parameter_fingerprint != model.parameter_fingerprint
@@ -2715,35 +2724,35 @@ def test_native_sdk_header_is_installed_package_data() -> None:
             "lithium-cation",
             "chloride-anion",
             2.784,
-            "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+            "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
             -486200.0,
         ),
         (
             "sodium-cation",
             "chloride-anion",
             3.445,
-            "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+            "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
             -381100.0,
         ),
         (
             "potassium-cation",
             "chloride-anion",
             4.150,
-            "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+            "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
             -309100.0,
         ),
         (
             "chloride-anion",
             "sodium-cation",
             4.100,
-            "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+            "sha256:a8383fb8f70a1bb8c258f1662c792cd5507af1d23db71ad4575026b5dcab55ea",
             -314900.0,
         ),
         (
             "bromide-anion",
             "sodium-cation",
             4.480,
-            "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9",
+            "sha256:f313c30e9471daed0638ab70ff43eb033ed828724547c4b32857442ed35f1107",
             -290900.0,
         ),
     ),
@@ -3773,14 +3782,19 @@ def test_native_sdk_staged_figiel_user_bundles_are_narrowly_admitted() -> None:
                 purpose="package-test-fixture",
             )
         )
-    spoofed = _figiel_trial_model(
+    provenance_renamed = _figiel_trial_model(
         ("water", "sodium-cation", "bromide-anion"),
         spoof_source_metadata=True,
     )
-    _, spoofed_table = _aqueous_miac_solvation_factor_table(spoofed)
+    _, provenance_renamed_table = _aqueous_miac_solvation_factor_table(
+        provenance_renamed
+    )
     assert _evaluate_aqueous_miac_solvation_factor(
-        spoofed_table, spoofed.parameter_fingerprint, 1.0, 1.4
-    ).status == STATUS_UNSUPPORTED_MODEL
+        provenance_renamed_table,
+        provenance_renamed.parameter_fingerprint,
+        1.0,
+        1.4,
+    ).status == STATUS_OK
     reordered = _figiel_trial_model(("sodium-cation", "water", "bromide-anion"))
     _, reordered_table = _aqueous_miac_solvation_factor_table(reordered)
     assert _evaluate_aqueous_miac_solvation_factor(

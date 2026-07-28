@@ -226,8 +226,8 @@ def test_required_provider_equation_families_are_present() -> None:
     )
     eqids = {entry.eqid for entry in entries}
     assert {
-        "figiel_bulk_permittivity",
-        "ascani_bulk_permittivity",
+        "ion_fraction_suppressed_bulk_permittivity",
+        "component_mixed_bulk_permittivity",
         "debye_screening_parameter",
         "debye_huckel_helmholtz",
         "original_born_helmholtz",

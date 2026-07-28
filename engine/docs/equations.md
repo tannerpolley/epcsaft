@@ -38,41 +38,6 @@ $$
 \label{eq:angstrom_number_density}
 $$
 
-## `ascani_bulk_permittivity`
-
-- Section: Electrolyte dielectric and Debye--Huckel relations / Association
-- Status: Source equation
-- Source: \cite{AscaniHeld2021}, Eq.~(13)
-- Description: Ascani combined solvent-mass and ion-mole bulk relative permittivity.
-- Change note: Ion mixture permittivities remain distinct from Figiel radial-region permittivity.
-- LaTeX: `docs/latex/equations.tex:639`
-- Implementation:
-  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
-
-$$
-\epsilon_{r,\mathrm{bulk}}=
-\epsilon_{r,\mathrm{sf}}\sum_{s\in\mathcal{S}}x_s
-+\sum_{i\in\mathcal{I}}x_i\epsilon_{r,i}.
-\label{eq:ascani_bulk_permittivity}
-$$
-
-## `ascani_ionic_segment_diameter`
-
-- Section: Parameter setup
-- Status: Source equation
-- Source: \cite{AscaniHeld2021}, ion diameter convention
-- Description: Ascani original-Born ionic hard-chain diameter.
-- Change note: Preserves the source-routed full-sigma diameter.
-- LaTeX: `docs/latex/equations.tex:86`
-- Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:113` (`segment_diameter`)
-
-$$
-d_i=\sigma_i,\qquad z_i\ne0,\quad
-\mathcal{M}=\mathcal{M}_{\mathrm{Ascani}}.
-\label{eq:ascani_ionic_segment_diameter}
-$$
-
 ## `association_contact`
 
 - Section: Contribution intermediates / Association
@@ -223,6 +188,24 @@ $$
 \label{eq:close_packing_fraction}
 $$
 
+## `component_mixed_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Source equation
+- Source: \cite{AscaniHeld2021}, Eq.~(13)
+- Description: Ascani combined solvent-mass and ion-mole bulk relative permittivity.
+- Change note: Ion mixture permittivities remain distinct from Figiel radial-region permittivity.
+- LaTeX: `docs/latex/equations.tex:639`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
+
+$$
+\epsilon_{r,\mathrm{bulk}}=
+\epsilon_{r,\mathrm{sf}}\sum_{s\in\mathcal{S}}x_s
++\sum_{i\in\mathcal{I}}x_i\epsilon_{r,i}.
+\label{eq:component_mixed_bulk_permittivity}
+$$
+
 ## `compressibility_factor`
 
 - Section: Thermodynamic properties / Association
@@ -239,6 +222,23 @@ Z=1+\rho_m a_\rho,
 \qquad
 a_\rho=\left(\frac{\partial a^r}{\partial\rho_m}\right)_{T,\boldsymbol{x}}.
 \label{eq:compressibility_factor}
+$$
+
+## `corrected_born_ionic_segment_diameter`
+
+- Section: Parameter setup
+- Status: Implementation convention
+- Source: \cite{Figiel2025}, ionic hard-chain diameter convention
+- Description: Figiel-family ionic hard-chain diameter.
+- Change note: Preserves the current 0.88 sigma routing for Figiel electrolyte models.
+- LaTeX: `docs/latex/equations.tex:75`
+- Implementation:
+  - `src/epcsaft/_native/helmholtz.hpp:113` (`segment_diameter`)
+
+$$
+d_i=0.88\,\sigma_i,\qquad z_i\ne0,\quad
+\mathcal{M}\ne\mathcal{M}_{\mathrm{Ascani}}.
+\label{eq:corrected_born_ionic_segment_diameter}
 $$
 
 ## `cross_dispersion_energy`
@@ -336,6 +336,43 @@ $$
 \label{eq:debye_screening_parameter}
 $$
 
+## `density_correlated_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Bounded empirical relation
+- Source: Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (1a), (2a), and (2b)
+- Description: Schreckenberg density-and-temperature bulk relative permittivity.
+- Change note: The solvent partial density makes the dilute-density limit explicit.
+- LaTeX: `docs/latex/equations.tex:664`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
+
+$$
+\epsilon_{r,\mathrm{bulk}}=
+1+\rho_m x_{\mathrm{solv}}d_{V,\mathrm{mix}}
+\left(\frac{d_{T,\mathrm{mix}}}{T}-1\right).
+\label{eq:density_correlated_bulk_permittivity}
+$$
+
+## `density_correlation_mixed_parameters`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Bounded empirical relation
+- Source: Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (2a)--(2b)
+- Description: Solvent-fraction-normalized Schreckenberg mixture parameters.
+- Change note: Only neutral-solvent components enter these mixtures.
+- LaTeX: `docs/latex/equations.tex:651`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
+
+$$
+x_{\mathrm{solv}}=\sum_{s\in\mathcal{S}}x_s,\qquad
+d_{V,\mathrm{mix}}=\frac{\sum_{s\in\mathcal{S}}x_sd_{V,s}}{x_{\mathrm{solv}}},
+\qquad
+d_{T,\mathrm{mix}}=\frac{\sum_{s\in\mathcal{S}}x_sd_{T,s}}{x_{\mathrm{solv}}}.
+\label{eq:density_correlation_mixed_parameters}
+$$
+
 ## `density_residual`
 
 - Section: Density closure and mechanical domain / Association
@@ -367,6 +404,40 @@ $$
 $$
 \rho_{\max}=\frac{\eta_{\mathrm{cp}}}{c_\eta(T,\boldsymbol{x})}.
 \label{eq:density_upper_bound}
+$$
+
+## `dipolar_correlation_integral`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Source equation
+- Source: Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (5)
+- Description: Rueben correlation integral from component correlation parameters.
+- Change note: The correlation parameter is an explicit record for every component.
+- LaTeX: `docs/latex/equations.tex:701`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
+  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
+
+$$
+I=1+\left(\sum_i a_{2,i}x_i\right)\left[\exp(-y)-1\right].
+\label{eq:dipolar_correlation_integral}
+$$
+
+## `dipolar_perturbation_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Source equation
+- Source: Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (6)
+- Description: Rueben perturbation-theory bulk relative permittivity.
+- Change note: The relation tends to one as all component partial densities vanish.
+- LaTeX: `docs/latex/equations.tex:711`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
+
+$$
+\epsilon_{r,\mathrm{bulk}}=
+1+3y\left\{1+y+\left[\frac{17}{16}I-1\right]y^2\right\}.
+\label{eq:dipolar_perturbation_bulk_permittivity}
 $$
 
 ## `dispersion_chain_coefficients`
@@ -512,6 +583,26 @@ M_2=\sum_i\sum_j x_ix_jm_im_j\sigma_{ij}^3
 \label{eq:dispersion_second_moment}
 $$
 
+## `effective_dipolar_density`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Source equation
+- Source: Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (4)
+- Description: Rueben effective dipolar-density variable in the Angstrom number-density basis.
+- Change note: Dipole-squared and polarizability records are explicit for every component.
+- LaTeX: `docs/latex/equations.tex:688`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
+  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
+
+$$
+y=\frac{4\pi}{9}\sum_i \widehat{\rho}_i
+\left(\frac{\mu_i^2\,10^{-19}}{k_BT}+3\alpha_i\right),
+\qquad
+\widehat{\rho}_i=\rho_mN_Ax_i10^{-30}.
+\label{eq:effective_dipolar_density}
+$$
+
 ## `electrolyte_phase_coordinate_jacobian`
 
 - Section: Native phase coordinates / Association
@@ -556,43 +647,6 @@ a^r_{y_py_q}y_{p,\alpha}y_{q,\beta}
 \quad
 \boldsymbol{y}=(\rho_m,\boldsymbol{x}).
 \label{eq:electrolyte_phase_hessian_chain_rule}
-$$
-
-## `figiel_bulk_permittivity`
-
-- Section: Electrolyte dielectric and Debye--Huckel relations / Association
-- Status: Bounded empirical relation
-- Source: \cite{Figiel2025}, Eq.~(11)
-- Description: Figiel-family ion-suppressed bulk relative permittivity.
-- Change note: The suppression coefficient is an explicit resolved model record.
-- LaTeX: `docs/latex/equations.tex:625`
-- Implementation:
-  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
-
-$$
-\epsilon_{r,\mathrm{bulk}}=
-\frac{\epsilon_{r,\mathrm{sf}}}
-{1+C_\epsilon x_{\mathrm{ion}}},
-\qquad
-x_{\mathrm{ion}}=\sum_{i\in\mathcal{I}}x_i.
-\label{eq:figiel_bulk_permittivity}
-$$
-
-## `figiel_ionic_segment_diameter`
-
-- Section: Parameter setup
-- Status: Implementation convention
-- Source: \cite{Figiel2025}, ionic hard-chain diameter convention
-- Description: Figiel-family ionic hard-chain diameter.
-- Change note: Preserves the current 0.88 sigma routing for Figiel electrolyte models.
-- LaTeX: `docs/latex/equations.tex:75`
-- Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:113` (`segment_diameter`)
-
-$$
-d_i=0.88\,\sigma_i,\qquad z_i\ne0,\quad
-\mathcal{M}\ne\mathcal{M}_{\mathrm{Ascani}}.
-\label{eq:figiel_ionic_segment_diameter}
 $$
 
 ## `fixed_pressure_fugacity_correction`
@@ -750,6 +804,44 @@ $$
 \Delta G_{i,\mathrm{solv}}^\infty
 =RT\ln\phi_i^\infty.
 \label{eq:infinite_dilution_solvation_energy}
+$$
+
+## `ion_fraction_suppressed_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Bounded empirical relation
+- Source: \cite{Figiel2025}, Eq.~(11)
+- Description: Figiel-family ion-suppressed bulk relative permittivity.
+- Change note: The suppression coefficient is an explicit resolved model record.
+- LaTeX: `docs/latex/equations.tex:625`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
+
+$$
+\epsilon_{r,\mathrm{bulk}}=
+\frac{\epsilon_{r,\mathrm{sf}}}
+{1+C_\epsilon x_{\mathrm{ion}}},
+\qquad
+x_{\mathrm{ion}}=\sum_{i\in\mathcal{I}}x_i.
+\label{eq:ion_fraction_suppressed_bulk_permittivity}
+$$
+
+## `ion_specific_suppressed_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations / Association
+- Status: Bounded empirical relation
+- Source: Zuber et al. (2014), DOI 10.1016/j.fluid.2014.05.037, Eq. (9)
+- Description: Zuber single-solvent ion-specific dielectric suppression.
+- Change note: Each ion-solvent suppression coefficient is an explicit resolved record.
+- LaTeX: `docs/latex/equations.tex:676`
+- Implementation:
+  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
+
+$$
+\epsilon_{r,\mathrm{bulk}}=
+\frac{\epsilon_{r,s}(T)}
+{1+\sum_{i\in\mathcal{I}}\alpha_{i,s}x_i}.
+\label{eq:ion_specific_suppressed_bulk_permittivity}
 $$
 
 ## `ionic_strength_charge_sum`
@@ -953,6 +1045,23 @@ a^{Born}_{\mathrm{original}}=
 \left(1-\epsilon_{r,\mathrm{bulk}}^{-1}\right)
 W_{\mathrm{original}}.
 \label{eq:original_born_helmholtz}
+$$
+
+## `original_born_ionic_segment_diameter`
+
+- Section: Parameter setup
+- Status: Source equation
+- Source: \cite{AscaniHeld2021}, ion diameter convention
+- Description: Ascani original-Born ionic hard-chain diameter.
+- Change note: Preserves the source-routed full-sigma diameter.
+- LaTeX: `docs/latex/equations.tex:86`
+- Implementation:
+  - `src/epcsaft/_native/helmholtz.hpp:113` (`segment_diameter`)
+
+$$
+d_i=\sigma_i,\qquad z_i\ne0,\quad
+\mathcal{M}=\mathcal{M}_{\mathrm{Ascani}}.
+\label{eq:original_born_ionic_segment_diameter}
 $$
 
 ## `original_born_radial_work`
@@ -1365,60 +1474,6 @@ u^r=-RT^2a_T.
 \label{eq:residual_internal_energy}
 $$
 
-## `rueben_bulk_permittivity`
-
-- Section: Electrolyte dielectric and Debye--Huckel relations / Association
-- Status: Source equation
-- Source: Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (6)
-- Description: Rueben perturbation-theory bulk relative permittivity.
-- Change note: The relation tends to one as all component partial densities vanish.
-- LaTeX: `docs/latex/equations.tex:711`
-- Implementation:
-  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
-
-$$
-\epsilon_{r,\mathrm{bulk}}=
-1+3y\left\{1+y+\left[\frac{17}{16}I-1\right]y^2\right\}.
-\label{eq:rueben_bulk_permittivity}
-$$
-
-## `rueben_correlation_integral`
-
-- Section: Electrolyte dielectric and Debye--Huckel relations / Association
-- Status: Source equation
-- Source: Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (5)
-- Description: Rueben correlation integral from component correlation parameters.
-- Change note: The correlation parameter is an explicit record for every component.
-- LaTeX: `docs/latex/equations.tex:701`
-- Implementation:
-  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
-  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
-
-$$
-I=1+\left(\sum_i a_{2,i}x_i\right)\left[\exp(-y)-1\right].
-\label{eq:rueben_correlation_integral}
-$$
-
-## `rueben_effective_dipolar_density`
-
-- Section: Electrolyte dielectric and Debye--Huckel relations / Association
-- Status: Source equation
-- Source: Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (4)
-- Description: Rueben effective dipolar-density variable in the Angstrom number-density basis.
-- Change note: Dipole-squared and polarizability records are explicit for every component.
-- LaTeX: `docs/latex/equations.tex:688`
-- Implementation:
-  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
-  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
-
-$$
-y=\frac{4\pi}{9}\sum_i \widehat{\rho}_i
-\left(\frac{\mu_i^2\,10^{-19}}{k_BT}+3\alpha_i\right),
-\qquad
-\widehat{\rho}_i=\rho_mN_Ax_i10^{-30}.
-\label{eq:rueben_effective_dipolar_density}
-$$
-
 ## `salt_free_solvent_permittivity`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations / Association
@@ -1452,43 +1507,6 @@ $$
 $$
 \epsilon_{ij}=0,\qquad z_iz_j>0.
 \label{eq:same_sign_ionic_dispersion}
-$$
-
-## `schreckenberg_bulk_permittivity`
-
-- Section: Electrolyte dielectric and Debye--Huckel relations / Association
-- Status: Bounded empirical relation
-- Source: Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (1a), (2a), and (2b)
-- Description: Schreckenberg density-and-temperature bulk relative permittivity.
-- Change note: The solvent partial density makes the dilute-density limit explicit.
-- LaTeX: `docs/latex/equations.tex:664`
-- Implementation:
-  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
-
-$$
-\epsilon_{r,\mathrm{bulk}}=
-1+\rho_m x_{\mathrm{solv}}d_{V,\mathrm{mix}}
-\left(\frac{d_{T,\mathrm{mix}}}{T}-1\right).
-\label{eq:schreckenberg_bulk_permittivity}
-$$
-
-## `schreckenberg_mixed_parameters`
-
-- Section: Electrolyte dielectric and Debye--Huckel relations / Association
-- Status: Bounded empirical relation
-- Source: Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (2a)--(2b)
-- Description: Solvent-fraction-normalized Schreckenberg mixture parameters.
-- Change note: Only neutral-solvent components enter these mixtures.
-- LaTeX: `docs/latex/equations.tex:651`
-- Implementation:
-  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
-
-$$
-x_{\mathrm{solv}}=\sum_{s\in\mathcal{S}}x_s,\qquad
-d_{V,\mathrm{mix}}=\frac{\sum_{s\in\mathcal{S}}x_sd_{V,s}}{x_{\mathrm{solv}}},
-\qquad
-d_{T,\mathrm{mix}}=\frac{\sum_{s\in\mathcal{S}}x_sd_{T,s}}{x_{\mathrm{solv}}}.
-\label{eq:schreckenberg_mixed_parameters}
 $$
 
 ## `segment_sigma_correlation`
@@ -1582,24 +1600,6 @@ $$
 \Delta G_{i,\mathrm{tr}}^{A\rightarrow B}
 =RT\left(\ln\phi_{i,B}^{\infty}-\ln\phi_{i,A}^{\infty}\right).
 \label{eq:transfer_free_energy}
-$$
-
-## `zuber_bulk_permittivity`
-
-- Section: Electrolyte dielectric and Debye--Huckel relations / Association
-- Status: Bounded empirical relation
-- Source: Zuber et al. (2014), DOI 10.1016/j.fluid.2014.05.037, Eq. (9)
-- Description: Zuber single-solvent ion-specific dielectric suppression.
-- Change note: Each ion-solvent suppression coefficient is an explicit resolved record.
-- LaTeX: `docs/latex/equations.tex:676`
-- Implementation:
-  - `src/epcsaft/_native/electrolyte.hpp:56` (`bulk_relative_permittivity`)
-
-$$
-\epsilon_{r,\mathrm{bulk}}=
-\frac{\epsilon_{r,s}(T)}
-{1+\sum_{i\in\mathcal{I}}\alpha_{i,s}x_i}.
-\label{eq:zuber_bulk_permittivity}
 $$
 
 ## Audited source exclusions

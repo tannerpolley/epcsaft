@@ -16,8 +16,8 @@ unlike interaction parameter active.
 
 The admitted candidate fingerprints are:
 
-- methane, ethane: `sha256:307fcb28d535b94782f3e3caf4012c0c8c0dc87ee4239d6c316de56553543286`;
-- ethane, methane: `sha256:cb0c63530f96d51d5a24f48a2d02ae6567d163abdc373099ce096f7ff0a896f5`.
+- methane, ethane: `sha256:3a840001adcb8b82f44e48307ad61e566f6a65d9b82d8312299a439dbce09195`;
+- ethane, methane: `sha256:99ae0ffd9f61aee8c2e0fb718960534a2d0700c1adf5b72c1984517eded21f5b`.
 
 Both fingerprints describe an ordered selection from the same installed
 source bundle. They do not admit synthetic copies or fitted candidates.

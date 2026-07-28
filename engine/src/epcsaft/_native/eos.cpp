@@ -387,12 +387,12 @@ NativeModel::NativeModel(NativeParameters parameters)
         parameters_.relative_permittivity.size() != components ||
         parameters_.born_diameter_angstrom.size() != components ||
         parameters_.solvation_factor.size() != components ||
-        parameters_.schreckenberg_dielectric_volume_m3_per_mol.size() != components ||
-        parameters_.schreckenberg_dielectric_temperature_k.size() != components ||
-        parameters_.zuber_ion_suppression_coefficient.size() != components ||
-        parameters_.rueben_dipole_scaling_debye2.size() != components ||
-        parameters_.rueben_polarizability_scaling_angstrom3.size() != components ||
-        parameters_.rueben_correlation_integral_parameter.size() != components) {
+        parameters_.dielectric_volume_m3_per_mol.size() != components ||
+        parameters_.dielectric_temperature_k.size() != components ||
+        parameters_.ion_specific_suppression_coefficient.size() != components ||
+        parameters_.dipole_scaling_debye2.size() != components ||
+        parameters_.polarizability_scaling_angstrom3.size() != components ||
+        parameters_.correlation_integral_parameter.size() != components) {
         throw std::invalid_argument("inconsistent native model dimensions");
     }
     if (!positive_finite(parameters_.segment_count) ||
@@ -406,15 +406,15 @@ NativeModel::NativeModel(NativeParameters parameters)
         !finite(parameters_.association_volume) ||
         !finite(parameters_.molar_mass_kg_per_mol) ||
         !finite(parameters_.relative_permittivity) ||
-        !std::isfinite(parameters_.dielectric_ion_suppression_coefficient) ||
+        !std::isfinite(parameters_.ion_fraction_suppression_coefficient) ||
         !finite(parameters_.born_diameter_angstrom) ||
         !finite(parameters_.solvation_factor) ||
-        !finite(parameters_.schreckenberg_dielectric_volume_m3_per_mol) ||
-        !finite(parameters_.schreckenberg_dielectric_temperature_k) ||
-        !finite(parameters_.zuber_ion_suppression_coefficient) ||
-        !finite(parameters_.rueben_dipole_scaling_debye2) ||
-        !finite(parameters_.rueben_polarizability_scaling_angstrom3) ||
-        !finite(parameters_.rueben_correlation_integral_parameter) ||
+        !finite(parameters_.dielectric_volume_m3_per_mol) ||
+        !finite(parameters_.dielectric_temperature_k) ||
+        !finite(parameters_.ion_specific_suppression_coefficient) ||
+        !finite(parameters_.dipole_scaling_debye2) ||
+        !finite(parameters_.polarizability_scaling_angstrom3) ||
+        !finite(parameters_.correlation_integral_parameter) ||
         !std::isfinite(parameters_.ionic_region_relative_permittivity)) {
         throw std::invalid_argument("invalid native model parameters");
     }
@@ -443,46 +443,46 @@ NativeModel::NativeModel(NativeParameters parameters)
         [](int charge) { return charge != 0; }
     );
     if (ionic) {
-        if (parameters_.electrolyte_model != ELECTROLYTE_MODEL_FIGIEL_SSM_DS
+        if (parameters_.electrolyte_model != ELECTROLYTE_MODEL_SSM_DS
             && parameters_.electrolyte_model
-                != ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
+                != ELECTROLYTE_MODEL_ORIGINAL_BORN
             && parameters_.electrolyte_model
-                != ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL) {
+                != ELECTROLYTE_MODEL_FULLY_DISSOCIATED_DEBYE_HUCKEL) {
             throw std::invalid_argument("invalid electrolyte model selection");
         }
         const bool ssm_ds = parameters_.electrolyte_model
-            == ELECTROLYTE_MODEL_FIGIEL_SSM_DS;
-        const bool ascani = parameters_.electrolyte_model
-            == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN;
-        const bool held = parameters_.electrolyte_model
-            == ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL;
-        const bool valid_ssm_permittivity = parameters_.permittivity_model
-                == PERMITTIVITY_MODEL_FIGIEL_COMPOSITION
-            || parameters_.permittivity_model
-                == PERMITTIVITY_MODEL_SCHRECKENBERG_DENSITY
-            || parameters_.permittivity_model
-                == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC
-            || parameters_.permittivity_model
-                == PERMITTIVITY_MODEL_RUEBEN_PERTURBATION;
+            == ELECTROLYTE_MODEL_SSM_DS;
+        const bool original_born = parameters_.electrolyte_model
+            == ELECTROLYTE_MODEL_ORIGINAL_BORN;
+        const bool fully_dissociated = parameters_.electrolyte_model
+            == ELECTROLYTE_MODEL_FULLY_DISSOCIATED_DEBYE_HUCKEL;
+        const bool valid_ssm_permittivity = parameters_.relative_permittivity_formulation
+                == RELATIVE_PERMITTIVITY_FORMULATION_ION_FRACTION_SUPPRESSION
+            || parameters_.relative_permittivity_formulation
+                == RELATIVE_PERMITTIVITY_FORMULATION_DENSITY_VOLUME_TEMPERATURE
+            || parameters_.relative_permittivity_formulation
+                == RELATIVE_PERMITTIVITY_FORMULATION_ION_SPECIFIC_SUPPRESSION
+            || parameters_.relative_permittivity_formulation
+                == RELATIVE_PERMITTIVITY_FORMULATION_DIPOLAR_DENSITY_PERTURBATION;
         if ((ssm_ds && !valid_ssm_permittivity)
-            || (ascani && parameters_.permittivity_model
-                != PERMITTIVITY_MODEL_ASCANI_MOLE_FRACTION)
-            || (held && parameters_.permittivity_model
-                != PERMITTIVITY_MODEL_HELD_WATER)) {
+            || (original_born && parameters_.relative_permittivity_formulation
+                != RELATIVE_PERMITTIVITY_FORMULATION_COMPONENT_MIXING)
+            || (fully_dissociated && parameters_.relative_permittivity_formulation
+                != RELATIVE_PERMITTIVITY_FORMULATION_SOLVENT_ONLY)) {
             throw std::invalid_argument("incompatible electrolyte and permittivity models");
         }
         std::size_t solvent_count = 0;
         for (std::size_t component = 0; component < components; ++component) {
             const bool solvent = parameters_.charge_number[component] == 0;
             solvent_count += static_cast<std::size_t>(solvent);
-            const bool needs_tabulated_permittivity = parameters_.permittivity_model
-                    == PERMITTIVITY_MODEL_FIGIEL_COMPOSITION
-                || parameters_.permittivity_model
-                    == PERMITTIVITY_MODEL_ASCANI_MOLE_FRACTION
-                || parameters_.permittivity_model
-                    == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC
-                || parameters_.permittivity_model
-                    == PERMITTIVITY_MODEL_HELD_WATER;
+            const bool needs_tabulated_permittivity = parameters_.relative_permittivity_formulation
+                    == RELATIVE_PERMITTIVITY_FORMULATION_ION_FRACTION_SUPPRESSION
+                || parameters_.relative_permittivity_formulation
+                    == RELATIVE_PERMITTIVITY_FORMULATION_COMPONENT_MIXING
+                || parameters_.relative_permittivity_formulation
+                    == RELATIVE_PERMITTIVITY_FORMULATION_ION_SPECIFIC_SUPPRESSION
+                || parameters_.relative_permittivity_formulation
+                    == RELATIVE_PERMITTIVITY_FORMULATION_SOLVENT_ONLY;
             if (solvent
                 && (!(parameters_.molar_mass_kg_per_mol[component] > 0.0)
                     || (needs_tabulated_permittivity
@@ -498,59 +498,59 @@ NativeModel::NativeModel(NativeParameters parameters)
                     && !(parameters_.born_diameter_angstrom[component] > 0.0)) {
                     throw std::invalid_argument("invalid fitted Born diameter");
                 }
-            } else if (ascani && !solvent
+            } else if (original_born && !solvent
                        && !(parameters_.relative_permittivity[component] > 0.0)) {
                 throw std::invalid_argument("invalid ionic dielectric parameter");
             } else if (parameters_.electrolyte_model
-                           == ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL
+                           == ELECTROLYTE_MODEL_FULLY_DISSOCIATED_DEBYE_HUCKEL
                        && ((parameters_.charge_number[component] != 0
                             && parameters_.relative_permittivity[component] != 0.0)
                            || parameters_.born_diameter_angstrom[component] != 0.0
                            || parameters_.solvation_factor[component] != 0.0)) {
-                throw std::invalid_argument("invalid Held electrolyte parameters");
+                throw std::invalid_argument("invalid fully dissociated electrolyte parameters");
             }
-            if (parameters_.permittivity_model
-                    == PERMITTIVITY_MODEL_SCHRECKENBERG_DENSITY
+            if (parameters_.relative_permittivity_formulation
+                    == RELATIVE_PERMITTIVITY_FORMULATION_DENSITY_VOLUME_TEMPERATURE
                 && solvent
-                && (!(parameters_.schreckenberg_dielectric_volume_m3_per_mol[component] > 0.0)
-                    || !(parameters_.schreckenberg_dielectric_temperature_k[component] > 0.0))) {
-                throw std::invalid_argument("invalid Schreckenberg solvent parameters");
+                && (!(parameters_.dielectric_volume_m3_per_mol[component] > 0.0)
+                    || !(parameters_.dielectric_temperature_k[component] > 0.0))) {
+                throw std::invalid_argument("invalid density formulation solvent parameters");
             }
-            if (parameters_.permittivity_model
-                    == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC
+            if (parameters_.relative_permittivity_formulation
+                    == RELATIVE_PERMITTIVITY_FORMULATION_ION_SPECIFIC_SUPPRESSION
                 && !solvent
-                && !(parameters_.zuber_ion_suppression_coefficient[component] > 0.0)) {
-                throw std::invalid_argument("invalid Zuber ion parameter");
+                && !(parameters_.ion_specific_suppression_coefficient[component] > 0.0)) {
+                throw std::invalid_argument("invalid ion-specific suppression parameter");
             }
-            if (parameters_.permittivity_model
-                == PERMITTIVITY_MODEL_RUEBEN_PERTURBATION) {
-                if (parameters_.rueben_dipole_scaling_debye2[component] < 0.0
-                    || parameters_.rueben_polarizability_scaling_angstrom3[component] < 0.0
-                    || !(parameters_.rueben_correlation_integral_parameter[component] > 0.0)) {
-                    throw std::invalid_argument("invalid Rueben permittivity parameters");
+            if (parameters_.relative_permittivity_formulation
+                == RELATIVE_PERMITTIVITY_FORMULATION_DIPOLAR_DENSITY_PERTURBATION) {
+                if (parameters_.dipole_scaling_debye2[component] < 0.0
+                    || parameters_.polarizability_scaling_angstrom3[component] < 0.0
+                    || !(parameters_.correlation_integral_parameter[component] > 0.0)) {
+                    throw std::invalid_argument("invalid dipolar perturbation parameters");
                 }
             }
         }
-        if (parameters_.permittivity_model == PERMITTIVITY_MODEL_FIGIEL_COMPOSITION
-            && !(parameters_.dielectric_ion_suppression_coefficient > 0.0)) {
-            throw std::invalid_argument("invalid Figiel suppression parameter");
+        if (parameters_.relative_permittivity_formulation == RELATIVE_PERMITTIVITY_FORMULATION_ION_FRACTION_SUPPRESSION
+            && !(parameters_.ion_fraction_suppression_coefficient > 0.0)) {
+            throw std::invalid_argument("invalid ion-fraction suppression parameter");
         }
-        if (parameters_.permittivity_model == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC
+        if (parameters_.relative_permittivity_formulation == RELATIVE_PERMITTIVITY_FORMULATION_ION_SPECIFIC_SUPPRESSION
             && solvent_count != 1) {
-            throw std::invalid_argument("Zuber mixed-solvent volume data are required");
+            throw std::invalid_argument("mixed-solvent volume data are required");
         }
-        if (held
-            && (parameters_.dielectric_ion_suppression_coefficient != 0.0
+        if (fully_dissociated
+            && (parameters_.ion_fraction_suppression_coefficient != 0.0
                 || parameters_.ionic_region_relative_permittivity != 0.0
                 || std::any_of(
                     parameters_.l_ij.begin(),
                     parameters_.l_ij.end(),
                     [](double value) { return value != 0.0; }
                 ))) {
-            throw std::invalid_argument("invalid Held electrolyte parameters");
+            throw std::invalid_argument("invalid fully dissociated electrolyte parameters");
         }
     } else if (parameters_.electrolyte_model != ELECTROLYTE_MODEL_NONE
-               || parameters_.permittivity_model != PERMITTIVITY_MODEL_NONE) {
+               || parameters_.relative_permittivity_formulation != RELATIVE_PERMITTIVITY_FORMULATION_NONE) {
         throw std::invalid_argument("neutral model has electrolyte selection");
     }
 }

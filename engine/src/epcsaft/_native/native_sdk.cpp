@@ -41,31 +41,31 @@ bool active_born_model_admitted(
     };
     constexpr Admission admissions[] = {
         {
-            "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+            "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
             "lithium-cation",
             "chloride-anion",
             1,
         },
         {
-            "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+            "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
             "sodium-cation",
             "chloride-anion",
             1,
         },
         {
-            "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+            "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
             "potassium-cation",
             "chloride-anion",
             1,
         },
         {
-            "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+            "sha256:a8383fb8f70a1bb8c258f1662c792cd5507af1d23db71ad4575026b5dcab55ea",
             "chloride-anion",
             "sodium-cation",
             -1,
         },
         {
-            "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9",
+            "sha256:f313c30e9471daed0638ab70ff43eb033ed828724547c4b32857442ed35f1107",
             "bromide-anion",
             "sodium-cation",
             -1,
@@ -103,27 +103,27 @@ bool aqueous_kij_model_admitted(
     };
     constexpr Admission admissions[] = {
         {
-            "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+            "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
             "lithium-cation", "chloride-anion",
         },
         {
-            "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+            "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
             "sodium-cation", "chloride-anion",
         },
         {
-            "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+            "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
             "potassium-cation", "chloride-anion",
         },
         {
-            "sha256:1258d8f76ddb4300d4983e70a2efa107b5cdc468748fe8760a04f82c4de38668",
+            "sha256:19be2cea6620c8a6cd3c965325422bded799d2b39acb240a4c4e858059d6412e",
             "lithium-cation", "bromide-anion",
         },
         {
-            "sha256:b46a48ee5025e15a2d063b6f3ca4de54e29c33d429b94940913a9d225c78456b",
+            "sha256:80f83701040d7d0863c7121b7379b86a9e8bd30c1fa3e4a5651330c41c588131",
             "sodium-cation", "bromide-anion",
         },
         {
-            "sha256:1d498278767a568e2120286f27f98a0b79268c92a68805d85ca30a21f14f3284",
+            "sha256:8ec6c31ada39713132b340a184e0c06b0f9d070892be2aaa721e9aa92015ae31",
             "potassium-cation", "bromide-anion",
         },
     };
@@ -145,7 +145,7 @@ bool aqueous_solvation_factor_model_admitted(
     bool staged_trial_bundle_admitted
 ) {
     constexpr const char* sodium_bromide_fingerprint =
-        "sha256:b46a48ee5025e15a2d063b6f3ca4de54e29c33d429b94940913a9d225c78456b";
+        "sha256:80f83701040d7d0863c7121b7379b86a9e8bd30c1fa3e4a5651330c41c588131";
     return component_ids == std::vector<std::string>({
                "water", "sodium-cation", "bromide-anion"
            })

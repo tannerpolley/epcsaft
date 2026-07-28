@@ -2,7 +2,7 @@ schema_version = 1
 bundle_id = "ascani-2022-case-study-2-electrolyte-lle"
 bundle_version = 1
 purpose = "installed-catalog"
-files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "correlations.toml"]
+files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "model.csv", "correlations.toml"]
 
 [[sources]]
 source_id = "ascani-et-al-2022"

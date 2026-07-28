@@ -64,11 +64,11 @@ Scalar bulk_relative_permittivity(
     Scalar solvent_fraction = Scalar(0.0);
     Scalar ion_fraction = Scalar(0.0);
     Scalar ion_dielectric = Scalar(0.0);
-    Scalar schreckenberg_volume = Scalar(0.0);
-    Scalar schreckenberg_temperature = Scalar(0.0);
-    Scalar zuber_suppression = Scalar(0.0);
-    Scalar rueben_effective_density = Scalar(0.0);
-    Scalar rueben_correlation = Scalar(0.0);
+    Scalar dielectric_volume = Scalar(0.0);
+    Scalar dielectric_temperature = Scalar(0.0);
+    Scalar ion_specific_suppression = Scalar(0.0);
+    Scalar effective_dipolar_density = Scalar(0.0);
+    Scalar dipolar_correlation = Scalar(0.0);
 
     const Scalar number_density_angstrom3 =
         molar_density * ELECTROLYTE_AVOGADRO * 1.0e-30;
@@ -80,36 +80,36 @@ Scalar bulk_relative_permittivity(
             const Scalar mass = fraction * parameters.molar_mass_kg_per_mol[component];
             solvent_mass += mass;
             dielectric_mass += mass * parameters.relative_permittivity[component];
-            schreckenberg_volume += fraction
-                * parameters.schreckenberg_dielectric_volume_m3_per_mol[component];
-            schreckenberg_temperature += fraction
-                * parameters.schreckenberg_dielectric_temperature_k[component];
+            dielectric_volume += fraction
+                * parameters.dielectric_volume_m3_per_mol[component];
+            dielectric_temperature += fraction
+                * parameters.dielectric_temperature_k[component];
         } else {
             ion_fraction += fraction;
             ion_dielectric += fraction * parameters.relative_permittivity[component];
-            zuber_suppression += fraction
-                * parameters.zuber_ion_suppression_coefficient[component];
+            ion_specific_suppression += fraction
+                * parameters.ion_specific_suppression_coefficient[component];
         }
-        // EqID: rueben_effective_dipolar_density
-        rueben_effective_density += number_density_angstrom3 * fraction
+        // EqID: effective_dipolar_density
+        effective_dipolar_density += number_density_angstrom3 * fraction
             * (
-                parameters.rueben_dipole_scaling_debye2[component]
+                parameters.dipole_scaling_debye2[component]
                     * 1.0e-19 / (BOLTZMANN * temperature)
-                + 3.0 * parameters.rueben_polarizability_scaling_angstrom3[component]
+                + 3.0 * parameters.polarizability_scaling_angstrom3[component]
             );
-        // EqID: rueben_correlation_integral
-        rueben_correlation += fraction
-            * parameters.rueben_correlation_integral_parameter[component];
+        // EqID: dipolar_correlation_integral
+        dipolar_correlation += fraction
+            * parameters.correlation_integral_parameter[component];
     }
 
-    if (parameters.permittivity_model == PERMITTIVITY_MODEL_RUEBEN_PERTURBATION) {
-        // EqID: rueben_effective_dipolar_density
+    if (parameters.relative_permittivity_formulation == RELATIVE_PERMITTIVITY_FORMULATION_DIPOLAR_DENSITY_PERTURBATION) {
+        // EqID: effective_dipolar_density
         const Scalar y_effective = (4.0 * ELECTROLYTE_PI / 9.0)
-            * rueben_effective_density;
-        // EqID: rueben_correlation_integral
-        const Scalar integral = Scalar(1.0) + rueben_correlation
+            * effective_dipolar_density;
+        // EqID: dipolar_correlation_integral
+        const Scalar integral = Scalar(1.0) + dipolar_correlation
             * (electrolyte_exp(-y_effective) - Scalar(1.0));
-        // EqID: rueben_bulk_permittivity
+        // EqID: dipolar_perturbation_bulk_permittivity
         return Scalar(1.0) + Scalar(3.0) * y_effective
             * (
                 Scalar(1.0) + y_effective
@@ -117,33 +117,33 @@ Scalar bulk_relative_permittivity(
                     * y_effective * y_effective
             );
     }
-    if (parameters.permittivity_model == PERMITTIVITY_MODEL_SCHRECKENBERG_DENSITY) {
-        // EqID: schreckenberg_mixed_parameters
-        const Scalar mixed_volume = schreckenberg_volume / solvent_fraction;
-        const Scalar mixed_temperature = schreckenberg_temperature / solvent_fraction;
-        // EqID: schreckenberg_bulk_permittivity
+    if (parameters.relative_permittivity_formulation == RELATIVE_PERMITTIVITY_FORMULATION_DENSITY_VOLUME_TEMPERATURE) {
+        // EqID: density_correlation_mixed_parameters
+        const Scalar mixed_volume = dielectric_volume / solvent_fraction;
+        const Scalar mixed_temperature = dielectric_temperature / solvent_fraction;
+        // EqID: density_correlated_bulk_permittivity
         return Scalar(1.0) + molar_density * solvent_fraction * mixed_volume
             * (mixed_temperature / temperature - Scalar(1.0));
     }
 
     // EqID: salt_free_solvent_permittivity
     const Scalar salt_free_permittivity = dielectric_mass / solvent_mass;
-    if (parameters.permittivity_model == PERMITTIVITY_MODEL_ASCANI_MOLE_FRACTION) {
-        // EqID: ascani_bulk_permittivity
+    if (parameters.relative_permittivity_formulation == RELATIVE_PERMITTIVITY_FORMULATION_COMPONENT_MIXING) {
+        // EqID: component_mixed_bulk_permittivity
         return salt_free_permittivity * solvent_fraction + ion_dielectric;
     }
-    if (parameters.permittivity_model == PERMITTIVITY_MODEL_HELD_WATER) {
+    if (parameters.relative_permittivity_formulation == RELATIVE_PERMITTIVITY_FORMULATION_SOLVENT_ONLY) {
         // EqID: salt_free_solvent_permittivity
         return salt_free_permittivity;
     }
-    if (parameters.permittivity_model == PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC) {
-        // EqID: zuber_bulk_permittivity
-        return salt_free_permittivity / (Scalar(1.0) + zuber_suppression);
+    if (parameters.relative_permittivity_formulation == RELATIVE_PERMITTIVITY_FORMULATION_ION_SPECIFIC_SUPPRESSION) {
+        // EqID: ion_specific_suppressed_bulk_permittivity
+        return salt_free_permittivity / (Scalar(1.0) + ion_specific_suppression);
     }
-    if (parameters.permittivity_model == PERMITTIVITY_MODEL_FIGIEL_COMPOSITION) {
-        // EqID: figiel_bulk_permittivity
+    if (parameters.relative_permittivity_formulation == RELATIVE_PERMITTIVITY_FORMULATION_ION_FRACTION_SUPPRESSION) {
+        // EqID: ion_fraction_suppressed_bulk_permittivity
         return salt_free_permittivity
-            / (Scalar(1.0) + parameters.dielectric_ion_suppression_coefficient
+            / (Scalar(1.0) + parameters.ion_fraction_suppression_coefficient
                 * ion_fraction);
     }
     throw std::invalid_argument("invalid relative permittivity model");

@@ -108,6 +108,7 @@ from pathlib import Path
 from epcsaft import EPCSAFT, ParameterBundle, unit_registry as u
 from epcsaft.records import (
     ComponentRecord,
+    ModelParameterRecord,
     SingleParameterRecord,
     SourceRecord,
     ValidityDomain,
@@ -183,6 +184,14 @@ bundle = ParameterBundle.from_records(
             **provenance,
         ),
     ),
+    models=(
+        ModelParameterRecord(
+            "relative-permittivity-formulation",
+            "relative_permittivity_formulation",
+            "none",
+            **provenance,
+        ),
+    ),
 )
 
 bundle_path = Path("my-propane-model")
@@ -205,6 +214,7 @@ example above, the reusable on-disk template is:
 my-propane-model/
 ├── bundle.toml
 ├── components.csv
+├── model.csv
 └── single.csv
 ```
 
@@ -215,7 +225,7 @@ schema_version = 1
 bundle_id = "my-propane-model"
 bundle_version = 1
 purpose = "user-provided"
-files = ["components.csv", "single.csv"]
+files = ["components.csv", "model.csv", "single.csv"]
 
 [[sources]]
 source_id = "gross-sadowski-2001"
@@ -236,6 +246,13 @@ temperature_unit = "kelvin"
 ```csv
 component_id,name,cas,formula,aliases
 propane,propane,74-98-6,C3H8,
+```
+
+`model.csv`:
+
+```csv
+record_id,family,value,unit,source_id,locator,domain_id
+relative-permittivity-formulation,relative_permittivity_formulation,none,,gross-sadowski-2001,"Table 2, propane row",propane-fit-range
 ```
 
 `single.csv`:
@@ -288,7 +305,7 @@ and static type checkers can identify misspelled families before runtime.
 | `AssociationParameterRecord` | `association_energy_over_k` | `kelvin` |
 | `AssociationParameterRecord` | `association_volume` | dimensionless |
 | `ModelParameterRecord` | `ionic_region_relative_permittivity` | dimensionless |
-| `ModelParameterRecord` | `dielectric_ion_suppression_coefficient` | dimensionless |
+| `ModelParameterRecord` | `ion_fraction_suppression_coefficient` | dimensionless |
 
 `ConstantCorrelation` supports `segment_diameter`, `relative_permittivity`, and
 `solvation_factor`. `ConstantPlusSumOfExponentialsCorrelation` is limited to
@@ -363,10 +380,10 @@ Helmholtz quantities on the `A_res/(nRT)` basis. `compressibility_factor` is
 `log_fugacity_coefficient[i]` is `ln(phi_i)`, all in `model.component_ids`
 order. The Provider returns fugacity coefficients, not component fugacities.
 Pressure, molar density, and residual caloric properties are Pint quantities.
-For ionic states, `EPCSAFT.permittivity_model` identifies the source-named bulk
+For ionic states, `EPCSAFT.relative_permittivity_formulation` identifies the source-named bulk
 dielectric topology. The Figiel SSM+DS model reports
-`"figiel-composition"`, and the original-Born model reports
-`"ascani-mole-fraction"`. Neutral and associating states report `"none"` and
+`"ion-fraction-suppression"`, and the original-Born model reports
+`"component-permittivity-mixing"`. Neutral and associating states report `"none"` and
 set `EosResult.bulk_relative_permittivity` to `None`. Ionic results expose the
 dimensionless bulk relative permittivity used by the Provider's
 Debye--Huckel and Born calculations.
@@ -396,7 +413,7 @@ state = electrolyte.evaluate(
 assert state.density_diagnostics is not None
 assert state.density_diagnostics.branch == "liquid"
 assert state.debye_huckel != 0.0
-assert electrolyte.permittivity_model == "figiel-composition"
+assert electrolyte.relative_permittivity_formulation == "ion-fraction-suppression"
 assert state.bulk_relative_permittivity > 1.0
 
 reference = electrolyte.reference_state(
@@ -418,10 +435,10 @@ molality scales, and the practical molal osmotic coefficient for a
 single-active-water reference. The osmotic field is `None` for mixed-solvent
 references because no mixed-solvent osmotic standard state is admitted.
 
-`EPCSAFT.permittivity_model` identifies the immutable, source-named topology
+`EPCSAFT.relative_permittivity_formulation` identifies the immutable, source-named topology
 resolved from the parameter records. Current values are
-`figiel-composition`, `ascani-mole-fraction`, `schreckenberg-density`,
-`zuber-ion-specific`, and `rueben-perturbation` for ionic models. Callers do
+`ion-fraction-suppression`, `component-permittivity-mixing`, `density-volume-temperature`,
+`ion-specific-suppression`, and `dipolar-density-perturbation` for ionic models. Callers do
 not select this value during state evaluation. The latter three topologies are
 available through complete source-bearing `ParameterBundle.from_records(...)`
 inputs; they are not alternate modes silently applied to an installed catalog
@@ -433,7 +450,7 @@ Schreckenberg and Rueben models approach one in the zero-density limit. The
 Zuber implementation currently requires exactly one neutral solvent because
 its source mixed-solvent equation requires solvent-volume data not represented
 by the admitted parameter payload. Neutral models report
-`permittivity_model="none"` and `bulk_relative_permittivity=None` rather than a
+`relative_permittivity_formulation="none"` and `bulk_relative_permittivity=None` rather than a
 synthetic dielectric value.
 
 ## State and root contract

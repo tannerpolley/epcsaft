@@ -342,7 +342,7 @@ All three records are required for every selected component. The equation gives
 The selected `epsilon_r,bulk` is evaluated once by the scalar-generic native
 owner and is consumed unchanged by both Debye--Huckel and the selected Born
 equation. Temperature, density, composition, and parameter dependence therefore
-remain inside the common CppAD tape. `EPCSAFT.permittivity_model` reports the
+remain inside the common CppAD tape. `EPCSAFT.relative_permittivity_formulation` reports the
 source-named topology and `EosResult.bulk_relative_permittivity` reports the
 evaluated state value.
 

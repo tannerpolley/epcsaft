@@ -57,12 +57,12 @@ The six admitted ordered models and immutable source fingerprints are:
 
 | Salt | Ordered components | Source fingerprint |
 | --- | --- | --- |
-| LiCl | `(water, lithium-cation, chloride-anion)` | `sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c` |
-| NaCl | `(water, sodium-cation, chloride-anion)` | `sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d` |
-| KCl | `(water, potassium-cation, chloride-anion)` | `sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4` |
-| LiBr | `(water, lithium-cation, bromide-anion)` | `sha256:1258d8f76ddb4300d4983e70a2efa107b5cdc468748fe8760a04f82c4de38668` |
-| NaBr | `(water, sodium-cation, bromide-anion)` | `sha256:b46a48ee5025e15a2d063b6f3ca4de54e29c33d429b94940913a9d225c78456b` |
-| KBr | `(water, potassium-cation, bromide-anion)` | `sha256:1d498278767a568e2120286f27f98a0b79268c92a68805d85ca30a21f14f3284` |
+| LiCl | `(water, lithium-cation, chloride-anion)` | `sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a` |
+| NaCl | `(water, sodium-cation, chloride-anion)` | `sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf` |
+| KCl | `(water, potassium-cation, chloride-anion)` | `sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b` |
+| LiBr | `(water, lithium-cation, bromide-anion)` | `sha256:19be2cea6620c8a6cd3c965325422bded799d2b39acb240a4c4e858059d6412e` |
+| NaBr | `(water, sodium-cation, bromide-anion)` | `sha256:80f83701040d7d0863c7121b7379b86a9e8bd30c1fa3e4a5651330c41c588131` |
+| KBr | `(water, potassium-cation, bromide-anion)` | `sha256:8ec6c31ada39713132b340a184e0c06b0f9d070892be2aaa721e9aa92015ae31` |
 
 Admission requires the fingerprint and the structural invariants: three
 components in the exact order above, charges `(0,+1,-1)`, `ionic-ssm-ds`

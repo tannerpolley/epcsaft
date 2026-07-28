@@ -15,6 +15,15 @@ from .units import (
 
 _ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 DomainKind: TypeAlias = Literal["fit-range", "reported-conditions", "unknown"]
+RelativePermittivityFormulation: TypeAlias = Literal[
+    "none",
+    "ion-fraction-suppression",
+    "component-permittivity-mixing",
+    "density-volume-temperature",
+    "ion-specific-suppression",
+    "dipolar-density-perturbation",
+    "solvent-only",
+]
 SingleParameterFamily: TypeAlias = Literal[
     "molar_mass",
     "segment_count",
@@ -24,21 +33,22 @@ SingleParameterFamily: TypeAlias = Literal[
     "relative_permittivity",
     "born_diameter",
     "solvation_factor",
-    "schreckenberg_dielectric_volume",
-    "schreckenberg_dielectric_temperature",
-    "zuber_ion_suppression_coefficient",
-    "rueben_dipole_scaling",
-    "rueben_polarizability_scaling",
-    "rueben_correlation_integral_parameter",
+    "dielectric_volume",
+    "dielectric_temperature",
+    "ion_specific_suppression_coefficient",
+    "dipole_scaling",
+    "polarizability_scaling",
+    "correlation_integral_parameter",
 ]
 PairParameterFamily: TypeAlias = Literal["k_ij", "l_ij"]
 AssociationParameterFamily: TypeAlias = Literal[
     "association_energy_over_k", "association_volume"
 ]
 ModelParameterFamily: TypeAlias = Literal[
-    "dielectric_ion_suppression_coefficient",
+    "ion_fraction_suppression_coefficient",
     "electrolyte_formulation",
     "ionic_region_relative_permittivity",
+    "relative_permittivity_formulation",
 ]
 CorrelationFamily: TypeAlias = Literal[
     "segment_diameter", "relative_permittivity", "solvation_factor"
@@ -49,17 +59,20 @@ _SINGLE_FAMILIES = frozenset(get_args(SingleParameterFamily))
 _PAIR_FAMILIES = frozenset(get_args(PairParameterFamily))
 _ASSOCIATION_FAMILIES = frozenset(get_args(AssociationParameterFamily))
 _MODEL_FAMILIES = frozenset(get_args(ModelParameterFamily))
-_ELECTROLYTE_FORMULATIONS = frozenset({"held-2008-debye-huckel"})
+_ELECTROLYTE_FORMULATIONS = frozenset({"fully-dissociated-debye-huckel"})
+_RELATIVE_PERMITTIVITY_FORMULATIONS = frozenset(
+    get_args(RelativePermittivityFormulation)
+)
 _CORRELATION_FAMILIES = frozenset(get_args(CorrelationFamily))
 _DIMENSIONAL_UNITS = {
     "molar_mass": "kilogram / mole",
     "segment_diameter": "angstrom",
     "dispersion_energy_over_k": "kelvin",
     "born_diameter": "angstrom",
-    "schreckenberg_dielectric_volume": "meter ** 3 / mole",
-    "schreckenberg_dielectric_temperature": "kelvin",
-    "rueben_dipole_scaling": "debye ** 2",
-    "rueben_polarizability_scaling": "angstrom ** 3",
+    "dielectric_volume": "meter ** 3 / mole",
+    "dielectric_temperature": "kelvin",
+    "dipole_scaling": "debye ** 2",
+    "polarizability_scaling": "angstrom ** 3",
     "association_energy_over_k": "kelvin",
 }
 _DIMENSIONLESS_FAMILIES = frozenset(
@@ -70,10 +83,10 @@ _DIMENSIONLESS_FAMILIES = frozenset(
         "association_volume",
         "k_ij",
         "l_ij",
-        "dielectric_ion_suppression_coefficient",
+        "ion_fraction_suppression_coefficient",
         "ionic_region_relative_permittivity",
-        "zuber_ion_suppression_coefficient",
-        "rueben_correlation_integral_parameter",
+        "ion_specific_suppression_coefficient",
+        "correlation_integral_parameter",
     }
 )
 
@@ -103,6 +116,13 @@ def _family(value: object, *, allowed: frozenset[str], field: str = "family") ->
 
 
 def _parameter_value(family: str, value: object) -> object:
+    if family == "relative_permittivity_formulation":
+        if (
+            not isinstance(value, str)
+            or value not in _RELATIVE_PERMITTIVITY_FORMULATIONS
+        ):
+            raise _error("invalid-value", field="value", family=family, value=value)
+        return value
     if family == "electrolyte_formulation":
         if not isinstance(value, str) or value not in _ELECTROLYTE_FORMULATIONS:
             raise _error("invalid-value", field="value", family=family, value=value)
@@ -461,6 +481,7 @@ __all__ = (
     "ModelParameterRecord",
     "PairParameterFamily",
     "PairParameterRecord",
+    "RelativePermittivityFormulation",
     "SingleParameterFamily",
     "SingleParameterRecord",
     "SiteRecord",

@@ -173,7 +173,7 @@ typedef int (*epcsaft_evaluate_packing_fraction_v1)(
 );
 
 /*
- * Model-bound Figiel water reference tracer with one active ion Born diameter.
+ * Model-bound aqueous reference tracer with one active ion Born diameter.
  * The value is Delta_solv,x G_i^inf in J/mol and the derivative is its total
  * fixed-(T,P,reference-path) derivative in J/(mol angstrom). A result
  * struct-size mismatch is return-code authoritative and leaves the untrusted

@@ -108,8 +108,8 @@ std::vector<Scalar> segment_sigma(
 
 template <typename Scalar, typename Parameters>
 // EqID: neutral_segment_diameter
-// EqID: figiel_ionic_segment_diameter
-// EqID: ascani_ionic_segment_diameter
+// EqID: corrected_born_ionic_segment_diameter
+// EqID: original_born_ionic_segment_diameter
 std::vector<Scalar> segment_diameter(
     const Scalar& temperature,
     const Parameters& parameters,
@@ -125,7 +125,7 @@ std::vector<Scalar> segment_diameter(
                 ))
             : Scalar(
                   parameters.electrolyte_model
-                          == ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN
+                          == ELECTROLYTE_MODEL_ORIGINAL_BORN
                       ? 1.0
                       : 0.88
               ) * sigma[component];

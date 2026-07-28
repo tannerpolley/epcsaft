@@ -12,7 +12,7 @@ import pint
 from ._core import NativeModel as _NativeModel
 from ._core import native_sdk_v1 as _native_sdk_v1
 from ._resolve import _ResolvedModel, _resolve_model
-from .parameters import BundlePurpose, ParameterBundle, ParameterSet
+from .parameters import BundlePurpose, ParameterSet
 from .records import (
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
@@ -29,50 +29,50 @@ Phase: TypeAlias = Literal["vapor", "liquid"]
 
 _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS = frozenset(
     {
-        "sha256:5f836aa84935df70be2e5cffae51b178a7b797c2cee036e9ff47d8097ca94bbf",
-        "sha256:288fbcaa1304881c16f64c3a784eeed19b75c58cca4558f92a21268e5e91258a",
-        "sha256:9bfbc8d7789e51609945e61dbdf7a020decc8f9e31b408b0977724c7cb3e1551",
-        "sha256:307fcb28d535b94782f3e3caf4012c0c8c0dc87ee4239d6c316de56553543286",
-        "sha256:cb0c63530f96d51d5a24f48a2d02ae6567d163abdc373099ce096f7ff0a896f5",
-        "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
-        "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+        "sha256:905e7a6e22eb1073347575bf833d5aa059d9ccf562e4408cb186d74f580ba36f",
+        "sha256:b81f32e44adb46080dfa91026c6428045e04a219900305767672d0547f9a9fb9",
+        "sha256:1194db349d0608c89419e70c56ccec9ada2ae0884dd8e64e519e9560e7e8ae42",
+        "sha256:3a840001adcb8b82f44e48307ad61e566f6a65d9b82d8312299a439dbce09195",
+        "sha256:99ae0ffd9f61aee8c2e0fb718960534a2d0700c1adf5b72c1984517eded21f5b",
+        "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
+        "sha256:a8383fb8f70a1bb8c258f1662c792cd5507af1d23db71ad4575026b5dcab55ea",
     }
 )
 
 _NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS = frozenset(
     {
-        "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
-        "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
-        "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
-        "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
-        "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9",
+        "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
+        "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
+        "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
+        "sha256:a8383fb8f70a1bb8c258f1662c792cd5507af1d23db71ad4575026b5dcab55ea",
+        "sha256:f313c30e9471daed0638ab70ff43eb033ed828724547c4b32857442ed35f1107",
     }
 )
 
 _NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS = frozenset(
     {
-        "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
-        "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
-        "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
-        "sha256:1258d8f76ddb4300d4983e70a2efa107b5cdc468748fe8760a04f82c4de38668",
-        "sha256:b46a48ee5025e15a2d063b6f3ca4de54e29c33d429b94940913a9d225c78456b",
-        "sha256:1d498278767a568e2120286f27f98a0b79268c92a68805d85ca30a21f14f3284",
+        "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
+        "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
+        "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
+        "sha256:19be2cea6620c8a6cd3c965325422bded799d2b39acb240a4c4e858059d6412e",
+        "sha256:80f83701040d7d0863c7121b7379b86a9e8bd30c1fa3e4a5651330c41c588131",
+        "sha256:8ec6c31ada39713132b340a184e0c06b0f9d070892be2aaa721e9aa92015ae31",
     }
 )
 
 _NATIVE_SDK_V1_AQUEOUS_ACTIVE_SOLVATION_FACTOR_FINGERPRINTS = frozenset(
     {
-        "sha256:b46a48ee5025e15a2d063b6f3ca4de54e29c33d429b94940913a9d225c78456b",
+        "sha256:80f83701040d7d0863c7121b7379b86a9e8bd30c1fa3e4a5651330c41c588131",
     }
 )
 
-_FIGIEL_STAGED_AQUEOUS_SELECTIONS = frozenset(
+_STAGED_AQUEOUS_SELECTIONS = frozenset(
     ("water", cation, anion)
     for cation in ("lithium-cation", "sodium-cation", "potassium-cation")
     for anion in ("chloride-anion", "bromide-anion")
 )
 
-_FIGIEL_STAGED_ACTIVE_BORN_SELECTIONS = frozenset(
+_STAGED_ACTIVE_BORN_SELECTIONS = frozenset(
     {
         ("water", "lithium-cation", "chloride-anion"),
         ("water", "sodium-cation", "chloride-anion"),
@@ -83,12 +83,12 @@ _FIGIEL_STAGED_ACTIVE_BORN_SELECTIONS = frozenset(
 )
 
 _NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS = {
-    "sha256:9f017007adbea2c943dc91c4a8df5271a5400392ae89796b74959aac913b920c": frozenset(
+    "sha256:d56aa57f04f48f1881865fb85daa700b66d3f1bcb75e8a9d7149baedfc925352": frozenset(
         frozenset(("water", cation, anion))
         for cation in ("lithium-cation", "sodium-cation", "potassium-cation")
         for anion in ("chloride-anion", "bromide-anion")
     ),
-    "sha256:8ea2d7acbc179b82348fa938d081fe8d56f274bfe1f2167d10a507b7711aa1c2": (
+    "sha256:ebb6350a0820ff88f10f6179ea75df909773d8dc871020fbf08c3fae0ec067bb": (
         frozenset(
             {
                 frozenset(
@@ -104,14 +104,14 @@ _NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS = {
 }
 
 _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
-    "sha256:8ea2d7acbc179b82348fa938d081fe8d56f274bfe1f2167d10a507b7711aa1c2": frozenset(
+    "sha256:ebb6350a0820ff88f10f6179ea75df909773d8dc871020fbf08c3fae0ec067bb": frozenset(
         {
             "water",
             "hydronium-cation",
             "hydroxide-anion",
         }
     ),
-    "sha256:03f9b1d88843a2d53da3420d96987ec4a2305b2814cc4946cdb25d1db67f5f72": frozenset(
+    "sha256:c675d388fb17ca0c1d875afada046527749fc30ae60dce89f7bc2554d939f406": frozenset(
         {
             "water",
             "ethanol",
@@ -120,7 +120,7 @@ _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
             "chloride-anion",
         }
     ),
-    "sha256:b7a54dab41c61a71803f1d63bf25396188a2a1edc55172d5beddb99c3368c9fd": frozenset(
+    "sha256:756c71c8d7bd8c66e499eda037644f273c911333e689ca21ce986b7f0102fd25": frozenset(
         {
             "water",
             "1-butanol",
@@ -209,19 +209,19 @@ def _native_arguments(
             association_volume[index] = pair.volume
 
     components = len(model.component_ids)
-    permittivity_model_codes = {
+    relative_permittivity_formulation_codes = {
         "none": 0,
-        "figiel-composition": 1,
-        "ascani-mole-fraction": 2,
-        "schreckenberg-density": 3,
-        "zuber-ion-specific": 4,
-        "rueben-perturbation": 5,
-        "held-water": 6,
+        "ion-fraction-suppression": 1,
+        "component-permittivity-mixing": 2,
+        "density-volume-temperature": 3,
+        "ion-specific-suppression": 4,
+        "dipolar-density-perturbation": 5,
+        "solvent-only": 6,
     }
     if model.topology in {
-        "ionic-held-2008-debye-huckel",
+        "ionic-fully-dissociated-debye-huckel",
         "ionic-ssm-ds",
-        "ionic-ascani-original-born",
+        "ionic-original-born",
     }:
         molar_mass = [0.0 if value is None else value for value in model.molar_mass_kg_per_mol]
         charge_number = list(model.charge_number)
@@ -232,8 +232,8 @@ def _native_arguments(
         if model.topology == "ionic-ssm-ds":
             dielectric_suppression = (
                 0.0
-                if model.dielectric_ion_suppression_coefficient is None
-                else model.dielectric_ion_suppression_coefficient
+                if model.ion_fraction_suppression_coefficient is None
+                else model.ion_fraction_suppression_coefficient
             )
             born_diameter = [
                 0.0 if value is None else value for value in model.born_diameter_angstrom
@@ -247,7 +247,7 @@ def _native_arguments(
             electrolyte_model = 1
             assert ionic_permittivity is not None
             assert len(solvation_factor) == components
-        elif model.topology == "ionic-held-2008-debye-huckel":
+        elif model.topology == "ionic-fully-dissociated-debye-huckel":
             dielectric_suppression = 0.0
             born_diameter = [0.0] * components
             solvation_factor = [0.0] * components
@@ -291,33 +291,35 @@ def _native_arguments(
         solvation_factor,
         ionic_permittivity,
         electrolyte_model,
-        list(model.schreckenberg_dielectric_volume_m3_per_mol)
+        list(model.dielectric_volume_m3_per_mol)
         or [0.0] * components,
-        list(model.schreckenberg_dielectric_temperature_k)
+        list(model.dielectric_temperature_k)
         or [0.0] * components,
-        list(model.zuber_ion_suppression_coefficient) or [0.0] * components,
-        list(model.rueben_dipole_scaling_debye2) or [0.0] * components,
-        list(model.rueben_polarizability_scaling_angstrom3)
+        list(model.ion_specific_suppression_coefficient) or [0.0] * components,
+        list(model.dipole_scaling_debye2) or [0.0] * components,
+        list(model.polarizability_scaling_angstrom3)
         or [0.0] * components,
-        list(model.rueben_correlation_integral_parameter)
+        list(model.correlation_integral_parameter)
         or [0.0] * components,
-        permittivity_model_codes[model.permittivity_model],
+        relative_permittivity_formulation_codes[model.relative_permittivity_formulation],
     )
 
 
-def _figiel_staged_trial_bundle_admitted(
+def _staged_aqueous_trial_bundle_admitted(
     parameters: ParameterSet, model: _ResolvedModel
 ) -> bool:
     admitted_component_order = (
-        model.component_ids in _FIGIEL_STAGED_AQUEOUS_SELECTIONS
+        model.component_ids in _STAGED_AQUEOUS_SELECTIONS
         and model.charge_number == (0, 1, -1)
     ) or (
-        model.component_ids in _FIGIEL_STAGED_ACTIVE_BORN_SELECTIONS
+        model.component_ids in _STAGED_ACTIVE_BORN_SELECTIONS
         and model.charge_number == (0, -1, 1)
     )
     if (
         parameters.bundle_purpose != "user-provided"
         or model.topology != "ionic-ssm-ds"
+        or model.relative_permittivity_formulation
+        != "ion-fraction-suppression"
         or not admitted_component_order
         or model.temperature_min_k != 298.15
         or model.temperature_max_k != 298.15
@@ -326,25 +328,11 @@ def _figiel_staged_trial_bundle_admitted(
         or model.ion_mole_fraction_max != 0.38
     ):
         return False
-    canonical = ParameterBundle.from_catalog(
-        "figiel-2025-reference-electrolytes", version=1
-    ).select(model.component_ids)
-    if (
-        parameters._source_domain_fingerprint
-        != canonical._source_domain_fingerprint
-    ):
-        return False
-    return all(
-        (
-            record.source_id == "figiel-yu-held-2025"
-            and record.domain_id == "figiel-298-k-1-bar"
-        )
-        or (
-            record.record_id == "water-molar-mass"
-            and record.source_id == "nist-srd-69-water"
-            and record.domain_id == "nist-water-identity"
-        )
-        for record in parameters.records
+    return (
+        model.ionic_region_relative_permittivity is not None
+        and model.ion_fraction_suppression_coefficient is not None
+        and len(model.born_diameter_angstrom) == len(model.component_ids)
+        and len(model.solvation_factor) == len(model.component_ids)
     )
 
 
@@ -354,7 +342,7 @@ class EPCSAFT:
     _parameter_fingerprint: str
     _parameter_bundle_purpose: BundlePurpose
     _parameter_bundle_fingerprint: str
-    _figiel_staged_trial_bundle_admitted: bool
+    _staged_aqueous_trial_bundle_admitted: bool
     _model: _ResolvedModel
     _native: _NativeModel
 
@@ -367,8 +355,8 @@ class EPCSAFT:
         object.__setattr__(self, "_parameter_bundle_fingerprint", parameters.bundle_fingerprint)
         object.__setattr__(
             self,
-            "_figiel_staged_trial_bundle_admitted",
-            _figiel_staged_trial_bundle_admitted(parameters, model),
+            "_staged_aqueous_trial_bundle_admitted",
+            _staged_aqueous_trial_bundle_admitted(parameters, model),
         )
         object.__setattr__(self, "_model", model)
         object.__setattr__(self, "_native", _NativeModel(*native_arguments))
@@ -378,9 +366,9 @@ class EPCSAFT:
         return self._component_ids
 
     @property
-    def permittivity_model(self) -> str:
-        """Return the source-named bulk-permittivity model used by this state."""
-        return self._model.permittivity_model
+    def relative_permittivity_formulation(self) -> str:
+        """Return the generic relative-permittivity formulation used by this state."""
+        return self._model.relative_permittivity_formulation
 
     @property
     def parameter_fingerprint(self) -> str:
@@ -478,7 +466,7 @@ class EPCSAFT:
             context["unit"] = "kelvin"
             raise _eos_error("invalid-state", **context)
 
-        if self._model.topology in {"ionic-ssm-ds", "ionic-ascani-original-born"}:
+        if self._model.topology in {"ionic-ssm-ds", "ionic-original-born"}:
             ion_fraction = math.fsum(
                 fraction
                 for fraction, charge in zip(fractions, self._model.charge_number, strict=True)
@@ -536,7 +524,7 @@ class EPCSAFT:
             debye_huckel=native.debye_huckel,
             born=native.born_ssm_ds,
             bulk_relative_permittivity=None
-            if self._model.permittivity_model == "none"
+            if self._model.relative_permittivity_formulation == "none"
             else native.bulk_relative_permittivity,
             residual_helmholtz=native.residual_helmholtz,
             compressibility_factor=native.compressibility_factor,
@@ -624,19 +612,19 @@ def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
             and frozenset(model._component_ids) == bundle_selection
         )
     )
-    staged_trial_admitted = model._figiel_staged_trial_bundle_admitted
+    staged_trial_admitted = model._staged_aqueous_trial_bundle_admitted
     active_born_admitted = (
         fingerprint in _NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS
         or (
             staged_trial_admitted
-            and model._component_ids in _FIGIEL_STAGED_ACTIVE_BORN_SELECTIONS
+            and model._component_ids in _STAGED_ACTIVE_BORN_SELECTIONS
         )
     )
     aqueous_kij_admitted = (
         fingerprint in _NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS
         or (
             staged_trial_admitted
-            and model._component_ids in _FIGIEL_STAGED_AQUEOUS_SELECTIONS
+            and model._component_ids in _STAGED_AQUEOUS_SELECTIONS
         )
     )
     aqueous_solvation_factor_admitted = (
@@ -737,18 +725,18 @@ def export_native_model(model: EPCSAFT, path: str | PathLike[str]) -> None:
         "molar_mass_kg_per_mol",
         "charge_number",
         "relative_permittivity",
-        "dielectric_ion_suppression_coefficient",
+        "ion_fraction_suppression_coefficient",
         "born_diameter_angstrom",
         "solvation_factor",
         "ionic_region_relative_permittivity",
         "electrolyte_model",
-        "schreckenberg_dielectric_volume_m3_per_mol",
-        "schreckenberg_dielectric_temperature_k",
-        "zuber_ion_suppression_coefficient",
-        "rueben_dipole_scaling_debye2",
-        "rueben_polarizability_scaling_angstrom3",
-        "rueben_correlation_integral_parameter",
-        "permittivity_model",
+        "dielectric_volume_m3_per_mol",
+        "dielectric_temperature_k",
+        "ion_specific_suppression_coefficient",
+        "dipole_scaling_debye2",
+        "polarizability_scaling_angstrom3",
+        "correlation_integral_parameter",
+        "relative_permittivity_formulation",
     )
     native_parameters = dict(zip(names, _native_arguments(model._model), strict=True))
     for key in (
