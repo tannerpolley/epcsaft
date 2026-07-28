@@ -631,7 +631,7 @@ struct NativeSdkEndpoint final {
                       figiel_dielectric_suppression_coordinates
                   );
                   dielectric.observation_contract =
-                      EPCSAFT_NATIVE_OBSERVATION_RELATIVE_PERMITTIVITY_V1;
+                      EPCSAFT_NATIVE_OBSERVATION_RELATIVE_PERMITTIVITY_RATIO_V1;
                   dielectric.derivative_order = 1;
                   dielectric.temperature_min_k = 298.15;
                   dielectric.temperature_max_k = 298.15;

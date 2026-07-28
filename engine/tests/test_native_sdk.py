@@ -1938,6 +1938,10 @@ _Static_assert(
     "dielectric parameter family"
 );
 _Static_assert(
+    EPCSAFT_NATIVE_OBSERVATION_RELATIVE_PERMITTIVITY_RATIO_V1 == 4u,
+    "relative-permittivity-ratio observation"
+);
+_Static_assert(
     offsetof(epcsaft_native_sdk_v1, figiel_permittivity_result_size) == 296,
     "result-size offset"
 );
