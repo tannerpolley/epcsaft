@@ -325,6 +325,12 @@ class CapabilityNativeSdkTable(ctypes.Structure):
     )
 
 
+class LijNativeSdkTable(ctypes.Structure):
+    _fields_ = CapabilityNativeSdkTable._fields_ + (
+        ("evaluate_mixture_phase_lij", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -373,6 +379,10 @@ AQUEOUS_MIAC_BOUNDED_BATCH_PREFIX_SIZE = (
 CAPABILITY_PREFIX_SIZE = (
     CapabilityNativeSdkTable.capabilities.offset + ctypes.sizeof(ctypes.c_void_p)
 )
+ACTIVE_LIJ_PREFIX_SIZE = (
+    LijNativeSdkTable.evaluate_mixture_phase_lij.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
 
 
 EvaluatePurePhase = ctypes.CFUNCTYPE(
@@ -416,6 +426,7 @@ EvaluateMixturePhaseKij = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.POINTER(MixturePhaseBlockResult),
 )
+EvaluateMixturePhaseLij = EvaluateMixturePhaseKij
 
 EvaluateMolarVolumeBounds = ctypes.CFUNCTYPE(
     ctypes.c_int,
@@ -689,6 +700,18 @@ def _capability_table(
     assert address
     table = ctypes.cast(address, ctypes.POINTER(CapabilityNativeSdkTable)).contents
     assert table.table_size >= CAPABILITY_PREFIX_SIZE
+    return capsule, table
+
+
+def _lij_table(model: EPCSAFT) -> tuple[object, LijNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(LijNativeSdkTable)).contents
+    assert table.table_size >= ACTIVE_LIJ_PREFIX_SIZE
     return capsule, table
 
 
@@ -1100,6 +1123,30 @@ def _evaluate_mixture_kij(
     return result, tuple(gradient), tuple(hessian)
 
 
+def _evaluate_mixture_lij(
+    table: LijNativeSdkTable,
+    temperature_k: float,
+    amounts_mol: tuple[float, ...],
+    volume_m3: float,
+    l_ij: float,
+) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+    assert table.evaluate_mixture_phase_lij
+    coordinate_count = len(amounts_mol) + 2
+    result, gradient, hessian = _mixture_result(coordinate_count)
+    amounts = (ctypes.c_double * len(amounts_mol))(*amounts_mol)
+    status = EvaluateMixturePhaseLij(table.evaluate_mixture_phase_lij)(
+        table.model_context,
+        temperature_k,
+        amounts,
+        len(amounts_mol),
+        volume_m3,
+        l_ij,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result, tuple(gradient), tuple(hessian)
+
+
 def _evaluate_electrolyte(
     table: ElectrolyteNativeSdkTable,
     temperature_k: float,
@@ -1286,13 +1333,20 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
     assert CapabilityNativeSdkTable.capability_count.offset == 264
     assert CapabilityNativeSdkTable.capabilities.offset == 272
     assert ctypes.sizeof(CapabilityNativeSdkTable) == 280
+    for field_name, _ in CapabilityNativeSdkTable._fields_:
+        assert (
+            getattr(LijNativeSdkTable, field_name).offset
+            == getattr(CapabilityNativeSdkTable, field_name).offset
+        )
+    assert LijNativeSdkTable.evaluate_mixture_phase_lij.offset == 280
+    assert ctypes.sizeof(LijNativeSdkTable) == 288
 
 
-def test_native_sdk_describes_the_exact_neutral_binary_kij_derivative_contract() -> None:
+def test_native_sdk_describes_the_exact_neutral_binary_pair_derivative_contracts() -> None:
     model = _mixture_model()
     capsule, table = _capability_table(model)
     assert capsule is not None
-    assert table.capability_count == 1
+    assert table.capability_count == 2
     assert table.capabilities
 
     descriptor = table.capabilities[0]
@@ -1365,10 +1419,46 @@ def test_native_sdk_describes_the_exact_neutral_binary_kij_derivative_contract()
     ) == ((-1, -1), (-1, -1), (-1, -1), (0, 1))
 
     _, reversed_table = _capability_table(_mixture_model(("ethane", "methane")))
-    assert reversed_table.capability_count == 1
+    assert reversed_table.capability_count == 2
     assert (
         reversed_table.capabilities[0].topology_fingerprint
         != descriptor.topology_fingerprint
+    )
+
+    lij = table.capabilities[1]
+    assert (
+        lij.schema_version,
+        lij.capability,
+        lij.parameter_family,
+        lij.parameter_identity,
+        lij.observation_contract,
+        lij.model_domain,
+        lij.tensor_layout,
+        lij.derivative_order,
+        lij.maturity,
+        lij.authority_effect,
+    ) == (1, 2, 2, 1, 1, 1, 1, 2, 1, 0)
+    assert lij.component_count == 2
+    assert tuple(
+        lij.component_ids[index].decode()
+        for index in range(lij.component_count)
+    ) == ("methane", "ethane")
+    assert lij.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert lij.topology_fingerprint.decode() == descriptor.topology_fingerprint.decode()
+    lij_coordinates = tuple(
+        lij.coordinates[index] for index in range(lij.coordinate_count)
+    )
+    assert tuple(coordinate.kind for coordinate in lij_coordinates) == (
+        1,
+        1,
+        2,
+        4,
+    )
+    assert tuple(coordinate.unit.decode() for coordinate in lij_coordinates) == (
+        "mol",
+        "mol",
+        "m3",
+        "dimensionless",
     )
 
 
@@ -1741,6 +1831,84 @@ def test_native_sdk_active_kij_matches_fixed_and_directional_oracles(
         )
         gradient_difference = (upper_gradient[row] - lower_gradient[row]) / (2.0 * step)
         assert hessian_direction == pytest.approx(gradient_difference, rel=3.0e-7)
+
+
+@pytest.mark.parametrize(
+    ("temperature_k", "point", "direction"),
+    (
+        (220.0, (0.4, 0.6, 1.25e-4, 0.0), (0.02, -0.01, -2.0e-6, 0.01)),
+        (280.0, (0.7, 0.3, 2.5e-4, -0.02), (-0.015, 0.02, 3.0e-6, -0.008)),
+    ),
+)
+def test_native_sdk_active_lij_matches_fixed_and_directional_oracles(
+    temperature_k: float,
+    point: tuple[float, float, float, float],
+    direction: tuple[float, float, float, float],
+) -> None:
+    model = _mixture_model()
+    capsule, table = _lij_table(model)
+    assert capsule is not None
+
+    def shifted(
+        scale: float,
+    ) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+        values = tuple(
+            value + scale * delta
+            for value, delta in zip(point, direction, strict=True)
+        )
+        return _evaluate_mixture_lij(
+            table,
+            temperature_k,
+            (values[0], values[1]),
+            values[2],
+            values[3],
+        )
+
+    center, gradient, hessian = shifted(0.0)
+    assert center.status == STATUS_OK
+    assert center.error == b""
+    assert center.coordinate_count == 4
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert center.pressure_pa == pytest.approx(
+        -8.31446261815324 * temperature_k * gradient[2], rel=2.0e-13
+    )
+    if point[3] == 0.0:
+        fixed, fixed_gradient, fixed_hessian = _evaluate_mixture(
+            table, temperature_k, point[:2], point[2]
+        )
+        assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+            fixed.helmholtz_over_rt_reference_amount,
+            rel=2.0e-13,
+            abs=2.0e-13,
+        )
+        assert center.pressure_pa == pytest.approx(
+            fixed.pressure_pa, rel=2.0e-13
+        )
+        for row in range(3):
+            assert gradient[row] == pytest.approx(
+                fixed_gradient[row], rel=2.0e-13, abs=2.0e-13
+            )
+            for column in range(3):
+                assert hessian[row * 4 + column] == pytest.approx(
+                    fixed_hessian[row * 3 + column],
+                    rel=2.0e-13,
+                    abs=2.0e-13,
+                )
+
+    step = 2.0e-4
+    _, lower_gradient, _ = shifted(-step)
+    _, upper_gradient, _ = shifted(step)
+    for row in range(4):
+        hessian_direction = sum(
+            hessian[row * 4 + column] * direction[column]
+            for column in range(4)
+        )
+        gradient_difference = (
+            upper_gradient[row] - lower_gradient[row]
+        ) / (2.0 * step)
+        assert hessian_direction == pytest.approx(
+            gradient_difference, rel=3.0e-7
+        )
 
 
 def test_native_sdk_active_kij_matches_independent_high_precision_oracle() -> None:

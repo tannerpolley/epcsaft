@@ -179,6 +179,12 @@ public:
         double volume,
         double k_ij
     ) const;
+    NativeMixturePhaseBlock evaluate_mixture_phase_lij(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume,
+        double l_ij
+    ) const;
     NativeMixturePhaseBlock evaluate_electrolyte_phase(
         double temperature,
         const std::vector<double>& amounts,

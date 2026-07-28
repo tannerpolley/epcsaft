@@ -636,6 +636,18 @@ NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase_kij(
 }
 
 // EqExclude: transport and buffer mechanics
+NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase_lij(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double l_ij
+) const {
+    return detail::mixture_phase_block_lij(
+        temperature, amounts, volume, l_ij, parameters_
+    );
+}
+
+// EqExclude: transport and buffer mechanics
 NativeMixturePhaseBlock NativeModel::evaluate_electrolyte_phase(
     double temperature,
     const std::vector<double>& amounts,

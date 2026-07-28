@@ -129,6 +129,28 @@ PhaseBlockParameters<Scalar> binary_interaction_parameters(
     };
 }
 
+template <typename Scalar>
+// EqID: active_binary_size_interaction_mapping
+PhaseBlockParameters<Scalar> binary_size_interaction_parameters(
+    const NativeParameters& parameters,
+    const Scalar& l_ij
+) {
+    return {
+        phase_block_scalars<Scalar>(parameters.segment_count),
+        phase_block_scalars<Scalar>(parameters.sigma_constant),
+        parameters.sigma_term_component,
+        phase_block_scalars<Scalar>(parameters.sigma_term_amplitude),
+        phase_block_scalars<Scalar>(parameters.sigma_term_exponent),
+        phase_block_scalars<Scalar>(parameters.dispersion_energy_over_k),
+        phase_block_scalars<Scalar>(parameters.k_ij),
+        {Scalar(parameters.l_ij[0]), l_ij, l_ij, Scalar(parameters.l_ij[3])},
+        parameters.site_component,
+        parameters.site_multiplicity,
+        parameters.charge_number,
+        parameters.electrolyte_model,
+    };
+}
+
 template <typename Scalar, typename Parameters>
 Scalar mixture_phase_helmholtz_over_rt_reference_amount(
     double temperature,
@@ -331,6 +353,55 @@ inline NativeMixturePhaseBlock mixture_phase_block_kij(
                 independent.begin(), independent.begin() + volume_coordinate
             );
             const auto active_parameters = binary_interaction_parameters(
+                parameters, independent[volume_coordinate + 1]
+            );
+            return mixture_phase_helmholtz_over_rt_reference_amount(
+                temperature,
+                active_amounts,
+                independent[volume_coordinate],
+                active_parameters
+            );
+        }
+    );
+}
+
+// EqExclude: transport and buffer mechanics
+inline NativeMixturePhaseBlock mixture_phase_block_lij(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double l_ij,
+    const NativeParameters& parameters
+) {
+    if (!supports_binary_interaction_phase_block(parameters)) {
+        throw std::logic_error(
+            "active l_ij phase block requires two neutral nonassociating components"
+        );
+    }
+    if (!std::isfinite(l_ij)) {
+        throw std::invalid_argument("l_ij must be finite");
+    }
+    validate_mixture_phase_state(temperature, amounts, volume, parameters);
+    const auto value_parameters =
+        binary_size_interaction_parameters(parameters, l_ij);
+    mixture_phase_helmholtz_over_rt_reference_amount(
+        temperature, amounts, volume, value_parameters
+    );
+
+    std::vector<double> point(amounts.begin(), amounts.end());
+    point.push_back(volume);
+    point.push_back(l_ij);
+    const std::size_t volume_coordinate = amounts.size();
+    return differentiated_mixture_phase_block(
+        temperature,
+        point,
+        volume_coordinate,
+        [&](const auto& independent) {
+            using ADScalar = CppAD::AD<double>;
+            const std::vector<ADScalar> active_amounts(
+                independent.begin(), independent.begin() + volume_coordinate
+            );
+            const auto active_parameters = binary_size_interaction_parameters(
                 parameters, independent[volume_coordinate + 1]
             );
             return mixture_phase_helmholtz_over_rt_reference_amount(

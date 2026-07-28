@@ -128,6 +128,16 @@ typedef int (*epcsaft_evaluate_mixture_phase_kij_v1)(
     epcsaft_mixture_phase_block_result_v1* result
 );
 
+typedef int (*epcsaft_evaluate_mixture_phase_lij_v1)(
+    const void* model_context,
+    double temperature_k,
+    const double* amounts_mol,
+    size_t amount_count,
+    double volume_m3,
+    double l_ij,
+    epcsaft_mixture_phase_block_result_v1* result
+);
+
 #define EPCSAFT_NATIVE_MOLAR_VOLUME_BOUND_COUNT_V1 2u
 
 enum epcsaft_native_molar_volume_bound_v1 {
@@ -389,11 +399,13 @@ typedef int (*epcsaft_evaluate_aqueous_miac_solvation_factor_batch_bounded_v1)(
 #define EPCSAFT_NATIVE_CAPABILITY_SCHEMA_VERSION_V1 1u
 
 enum epcsaft_native_capability_v1 {
-    EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_KIJ_HELMHOLTZ_V1 = 1u
+    EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_KIJ_HELMHOLTZ_V1 = 1u,
+    EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_LIJ_HELMHOLTZ_V1 = 2u
 };
 
 enum epcsaft_native_parameter_family_v1 {
-    EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1 = 1u
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1 = 1u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_LIJ_V1 = 2u
 };
 
 enum epcsaft_native_parameter_identity_v1 {
@@ -423,7 +435,8 @@ enum epcsaft_native_authority_effect_v1 {
 enum epcsaft_native_capability_coordinate_kind_v1 {
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1 = 1u,
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_VOLUME_V1 = 2u,
-    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1 = 3u
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1 = 3u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_LIJ_V1 = 4u
 };
 
 typedef struct epcsaft_native_capability_coordinate_v1 {
@@ -513,6 +526,7 @@ typedef struct epcsaft_native_sdk_v1 {
         evaluate_aqueous_miac_solvation_factor_batch_bounded;
     size_t capability_count;
     const epcsaft_native_capability_descriptor_v1* capabilities;
+    epcsaft_evaluate_mixture_phase_lij_v1 evaluate_mixture_phase_lij;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

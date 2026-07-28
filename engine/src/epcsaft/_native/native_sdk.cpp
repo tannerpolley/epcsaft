@@ -192,6 +192,8 @@ struct NativeSdkEndpoint final {
     std::vector<int32_t> component_charges;
     std::array<epcsaft_native_capability_coordinate_v1, 4>
         neutral_binary_kij_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 4>
+        neutral_binary_lij_coordinates;
     std::vector<epcsaft_native_capability_descriptor_v1> capabilities;
     epcsaft_native_sdk_v1 table;
 
@@ -273,6 +275,40 @@ struct NativeSdkEndpoint final {
                   "dimensionless",
               },
           }},
+          neutral_binary_lij_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1,
+                  0,
+                  -1,
+                  -1,
+                  "mol",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1,
+                  1,
+                  -1,
+                  -1,
+                  "mol",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_VOLUME_V1,
+                  -1,
+                  -1,
+                  -1,
+                  "m3",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_LIJ_V1,
+                  -1,
+                  0,
+                  1,
+                  "dimensionless",
+              },
+          }},
           capabilities([&] {
               std::vector<epcsaft_native_capability_descriptor_v1> result;
               const bool exact_neutral_binary =
@@ -337,6 +373,14 @@ struct NativeSdkEndpoint final {
                   EPCSAFT_NATIVE_SDK_V1_HELMHOLTZ_BASIS_ID
               );
               result.push_back(descriptor);
+              descriptor.capability =
+                  EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_LIJ_HELMHOLTZ_V1;
+              descriptor.parameter_family =
+                  EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_LIJ_V1;
+              descriptor.coordinate_count =
+                  neutral_binary_lij_coordinates.size();
+              descriptor.coordinates = neutral_binary_lij_coordinates.data();
+              result.push_back(descriptor);
               return result;
           }()),
           table{
@@ -375,6 +419,7 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_aqueous_miac_solvation_factor_batch_bounded,
               capabilities.size(),
               capabilities.empty() ? nullptr : capabilities.data(),
+              &NativeSdkEndpoint::evaluate_mixture_lij,
           } {}
 
     // EqID: neutral_reference_stoichiometric_basis
@@ -1706,6 +1751,37 @@ struct NativeSdkEndpoint final {
             ) {
                 return model.evaluate_mixture_phase_kij(
                     temperature_k, amounts, volume_m3, k_ij
+                );
+            }
+        );
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_mixture_lij(
+        const void* context,
+        double temperature_k,
+        const double* amounts_mol,
+        size_t amount_count,
+        double volume_m3,
+        double l_ij,
+        epcsaft_mixture_phase_block_result_v1* result
+    ) noexcept {
+        return evaluate_mixture_common(
+            context,
+            temperature_k,
+            amounts_mol,
+            amount_count,
+            volume_m3,
+            2,
+            std::isfinite(l_ij),
+            "temperature, amounts, volume, and l_ij must be finite and state coordinates positive",
+            result,
+            [temperature_k, volume_m3, l_ij](
+                const NativeModel& model,
+                const std::vector<double>& amounts
+            ) {
+                return model.evaluate_mixture_phase_lij(
+                    temperature_k, amounts, volume_m3, l_ij
                 );
             }
         );
