@@ -195,6 +195,7 @@ PYBIND11_MODULE(_core, module) {
         py::arg("phase_callbacks_admitted") = true,
         py::arg("active_born_admitted") = false,
         py::arg("aqueous_kij_admitted") = false,
+        py::arg("figiel_dielectric_admitted") = false,
         py::arg("pressure_min_pa") = std::numeric_limits<double>::quiet_NaN(),
         py::arg("pressure_max_pa") = std::numeric_limits<double>::quiet_NaN(),
         py::arg("neutral_reference_admitted") = false,

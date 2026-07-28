@@ -138,6 +138,16 @@ bool aqueous_kij_model_admitted(
 }
 
 // EqExclude: input and domain validation
+bool figiel_dielectric_model_admitted(
+    const std::vector<std::string>& component_ids,
+    const std::vector<int>& charges
+) {
+    return component_ids.size() == 3
+        && charges == std::vector<int>({0, 1, -1})
+        && (component_ids[0] == "water" || component_ids[0] == "methanol");
+}
+
+// EqExclude: input and domain validation
 bool aqueous_solvation_factor_model_admitted(
     const std::string& fingerprint,
     const std::vector<std::string>& component_ids,
@@ -185,6 +195,7 @@ struct NativeSdkEndpoint final {
     bool phase_callbacks_admitted;
     bool active_born_admitted;
     bool aqueous_kij_admitted;
+    bool figiel_dielectric_admitted;
     bool aqueous_solvation_factor_admitted;
     bool neutral_reference_admitted;
     std::vector<std::string> component_ids;
@@ -225,6 +236,7 @@ struct NativeSdkEndpoint final {
         bool admit_phase_callbacks,
         bool admit_active_born,
         bool admit_aqueous_kij,
+        bool admit_figiel_dielectric,
         double minimum_pressure,
         double maximum_pressure,
         bool admit_neutral_reference,
@@ -242,6 +254,7 @@ struct NativeSdkEndpoint final {
           phase_callbacks_admitted(admit_phase_callbacks),
           active_born_admitted(admit_active_born),
           aqueous_kij_admitted(admit_aqueous_kij),
+          figiel_dielectric_admitted(admit_figiel_dielectric),
           aqueous_solvation_factor_admitted(
               admit_aqueous_solvation_factor
           ),
@@ -607,6 +620,8 @@ struct NativeSdkEndpoint final {
                       EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_CATION_ANION_KIJ_MIAC_V1,
                       aqueous_cation_anion_kij_coordinates
                   ));
+              }
+              if (figiel_dielectric_admitted) {
                   auto dielectric = descriptor(
                       EPCSAFT_NATIVE_CAPABILITY_FIGIEL_DIELECTRIC_SUPPRESSION_V1,
                       EPCSAFT_NATIVE_PARAMETER_FAMILY_DIELECTRIC_ION_SUPPRESSION_V1,
@@ -707,7 +722,7 @@ struct NativeSdkEndpoint final {
         }
         const auto& endpoint =
             *static_cast<const NativeSdkEndpoint*>(context);
-        if (!endpoint.aqueous_kij_admitted
+        if (!endpoint.figiel_dielectric_admitted
             || std::strcmp(
                 expected_fingerprint,
                 endpoint.parameter_fingerprint.c_str()
@@ -2354,6 +2369,7 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     bool phase_callbacks_admitted,
     bool active_born_admitted,
     bool aqueous_kij_admitted,
+    bool figiel_dielectric_admitted,
     double pressure_min_pa,
     double pressure_max_pa,
     bool neutral_reference_admitted,
@@ -2363,6 +2379,7 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     const std::string& topology_fingerprint
 ) {
     if (!active_born_admitted && !aqueous_kij_admitted
+        && !figiel_dielectric_admitted
         && !neutral_reference_admitted && !aqueous_solvation_factor_admitted
         && (!model.supports_native_sdk_v1()
         && !model.supports_mixture_native_sdk_v1()
@@ -2388,6 +2405,14 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
             staged_trial_bundle_admitted
         )) {
         throw std::invalid_argument("unsupported aqueous active k_ij model identity");
+    }
+    if (figiel_dielectric_admitted
+        && !figiel_dielectric_model_admitted(
+            component_ids, model.charge_numbers()
+        )) {
+        throw std::invalid_argument(
+            "unsupported active Figiel dielectric model identity"
+        );
     }
     if (aqueous_solvation_factor_admitted
         && !aqueous_solvation_factor_model_admitted(
@@ -2469,6 +2494,7 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
         phase_callbacks_admitted,
         active_born_admitted,
         aqueous_kij_admitted,
+        figiel_dielectric_admitted,
         pressure_min_pa,
         pressure_max_pa,
         neutral_reference_admitted,

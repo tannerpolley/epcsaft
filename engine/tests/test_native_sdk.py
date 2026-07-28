@@ -1810,6 +1810,23 @@ def test_native_sdk_describes_figiel_dielectric_suppression_coordinate() -> None
         coordinate.unit.decode(),
     ) == (10, -1, -1, -1, "dimensionless")
 
+    methanol = _electrolyte_model(
+        ("methanol", "sodium-cation", "bromide-anion")
+    )
+    _, methanol_table = _capability_table(methanol)
+    methanol_matches = tuple(
+        descriptor
+        for descriptor in methanol_table.capabilities[
+            : methanol_table.capability_count
+        ]
+        if descriptor.capability == 11
+    )
+    assert len(methanol_matches) == 1
+    assert tuple(
+        methanol_matches[0].component_ids[index].decode()
+        for index in range(methanol_matches[0].component_count)
+    ) == ("methanol", "sodium-cation", "bromide-anion")
+
 
 def test_native_sdk_evaluates_figiel_dielectric_suppression_exact_derivative() -> None:
     model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
@@ -1877,6 +1894,31 @@ def test_native_sdk_evaluates_figiel_dielectric_suppression_exact_derivative() -
         assert math.isnan(failure.derivative)
         assert failure.parameter_fingerprint == b""
         assert failure.error
+
+    methanol = _electrolyte_model(
+        ("methanol", "sodium-cation", "bromide-anion")
+    )
+    _, methanol_table = _figiel_permittivity_table(methanol)
+    methanol_result = FigielPermittivityResult(
+        struct_size=ctypes.sizeof(FigielPermittivityResult)
+    )
+    methanol_status = EvaluateFigielPermittivity(
+        methanol_table.evaluate_figiel_permittivity
+    )(
+        methanol_table.model_context,
+        methanol.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        mole_fraction,
+        coefficient,
+        ctypes.byref(methanol_result),
+    )
+    assert methanol_status == methanol_result.status == STATUS_OK
+    assert methanol_result.salt_free_relative_permittivity == 33.05
+    assert (
+        methanol_result.bulk_relative_permittivity
+        / methanol_result.salt_free_relative_permittivity
+    ) == pytest.approx(1.0 / denominator)
 
 
 def test_native_sdk_figiel_permittivity_installed_header_layout() -> None:

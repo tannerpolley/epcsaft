@@ -686,6 +686,12 @@ def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
             and model._component_ids in _FIGIEL_STAGED_AQUEOUS_SELECTIONS
         )
     )
+    figiel_dielectric_admitted = (
+        len(model._component_ids) == 3
+        and model._component_ids[0] in ("water", "methanol")
+        and tuple(model._model.charge_number) == (0, 1, -1)
+        and model._model.permittivity_model == "figiel-composition"
+    )
     aqueous_solvation_factor_admitted = (
         fingerprint
         in _NATIVE_SDK_V1_AQUEOUS_ACTIVE_SOLVATION_FACTOR_FINGERPRINTS
@@ -717,6 +723,7 @@ def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
         not phase_admitted
         and not active_born_admitted
         and not aqueous_kij_admitted
+        and not figiel_dielectric_admitted
         and not aqueous_solvation_factor_admitted
         and not neutral_reference_admitted
     ):
@@ -746,6 +753,7 @@ def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
         "phase_callbacks_admitted": phase_admitted,
         "active_born_admitted": active_born_admitted,
         "aqueous_kij_admitted": aqueous_kij_admitted,
+        "figiel_dielectric_admitted": figiel_dielectric_admitted,
         "pressure_min_pa": pressure_minimum,
         "pressure_max_pa": pressure_maximum,
         "neutral_reference_admitted": neutral_reference_admitted,

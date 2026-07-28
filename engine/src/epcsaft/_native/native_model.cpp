@@ -113,6 +113,7 @@ extern "C" epcsaft_native_model_handle_v1* epcsaft_native_model_load_v1(
             sdk.at("phase_callbacks_admitted").get<bool>(),
             sdk.at("active_born_admitted").get<bool>(),
             sdk.at("aqueous_kij_admitted").get<bool>(),
+            sdk.value("figiel_dielectric_admitted", false),
             optional_limit(sdk, "pressure_min_pa"),
             optional_limit(sdk, "pressure_max_pa"),
             sdk.at("neutral_reference_admitted").get<bool>(),
