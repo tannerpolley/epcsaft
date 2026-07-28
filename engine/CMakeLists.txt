@@ -26,6 +26,13 @@ FetchContent_Declare(
     SOURCE_SUBDIR cmake-do-not-configure
 )
 FetchContent_MakeAvailable(cppad)
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(nlohmann_json)
 
 set(EPCSAFT_CPPAD_INCLUDE_DIR "${cppad_SOURCE_DIR}/include")
 set(EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR "")
@@ -87,46 +94,89 @@ int main() {
     )
 endif()
 
+add_library(
+    epcsaft_native_sdk
+    STATIC
+    "${cppad_SOURCE_DIR}/cppad_lib/temp_file.cpp"
+    src/epcsaft/_native/eos.cpp
+    src/epcsaft/_native/native_sdk.cpp
+    src/epcsaft/_native/native_model.cpp
+)
+add_library(epcsaft::native_sdk ALIAS epcsaft_native_sdk)
+set_target_properties(
+    epcsaft_native_sdk
+    PROPERTIES EXPORT_NAME native_sdk POSITION_INDEPENDENT_CODE ON
+)
+target_include_directories(
+    epcsaft_native_sdk
+    PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/epcsaft/include>"
+        "$<INSTALL_INTERFACE:epcsaft/include>"
+    PRIVATE src/epcsaft/_native
+)
+target_include_directories(
+    epcsaft_native_sdk SYSTEM PRIVATE "${EPCSAFT_CPPAD_INCLUDE_DIR}"
+)
+target_include_directories(
+    epcsaft_native_sdk SYSTEM PRIVATE "${nlohmann_json_SOURCE_DIR}/single_include"
+)
+if(EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR)
+    target_include_directories(
+        epcsaft_native_sdk SYSTEM PRIVATE "${EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR}"
+    )
+endif()
+target_compile_features(epcsaft_native_sdk PUBLIC cxx_std_17)
+target_link_libraries(epcsaft_native_sdk PUBLIC Threads::Threads)
+
 pybind11_add_module(
     _core
     NO_EXTRAS
-    "${cppad_SOURCE_DIR}/cppad_lib/temp_file.cpp"
-    src/epcsaft/_native/eos.cpp
     src/epcsaft/_native/module.cpp
-    src/epcsaft/_native/native_sdk.cpp
+    src/epcsaft/_native/native_sdk_pybind.cpp
 )
 target_include_directories(_core PRIVATE src/epcsaft/_native)
-target_include_directories(_core PRIVATE src/epcsaft/include)
-target_include_directories(_core SYSTEM PRIVATE "${EPCSAFT_CPPAD_INCLUDE_DIR}")
-if(EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR)
-    target_include_directories(
-        _core SYSTEM PRIVATE "${EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR}"
-    )
-endif()
 target_compile_features(_core PRIVATE cxx_std_17)
-target_link_libraries(_core PRIVATE Threads::Threads)
+target_link_libraries(_core PRIVATE epcsaft_native_sdk)
 
 install(TARGETS _core LIBRARY DESTINATION epcsaft RUNTIME DESTINATION epcsaft)
+install(
+    TARGETS epcsaft_native_sdk
+    EXPORT epcsaftTargets
+    ARCHIVE DESTINATION epcsaft/lib
+)
+install(DIRECTORY src/epcsaft/include/epcsaft DESTINATION epcsaft/include)
+install(
+    EXPORT epcsaftTargets
+    FILE epcsaftTargets.cmake
+    NAMESPACE epcsaft::
+    DESTINATION epcsaft/cmake
+)
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+    cmake/epcsaftConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/epcsaftConfig.cmake"
+    INSTALL_DESTINATION epcsaft/cmake
+)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/epcsaftConfigVersion.cmake"
+    VERSION "${PROJECT_VERSION}"
+    COMPATIBILITY SameMajorVersion
+)
+install(
+    FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/epcsaftConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/epcsaftConfigVersion.cmake"
+    DESTINATION epcsaft/cmake
+)
 
 if(EPCSAFT_ENABLE_CPP_DEBUG)
     add_executable(
         epcsaft_cpp_debug
-        "${cppad_SOURCE_DIR}/cppad_lib/temp_file.cpp"
         src/epcsaft/_native/cpp_debug_main.cpp
-        src/epcsaft/_native/eos.cpp
     )
     target_include_directories(epcsaft_cpp_debug PRIVATE src/epcsaft/_native)
-    target_include_directories(
-        epcsaft_cpp_debug SYSTEM PRIVATE "${EPCSAFT_CPPAD_INCLUDE_DIR}"
-    )
-    if(EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR)
-        target_include_directories(
-            epcsaft_cpp_debug SYSTEM PRIVATE
-            "${EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR}"
-        )
-    endif()
     target_compile_features(epcsaft_cpp_debug PRIVATE cxx_std_17)
-    target_link_libraries(epcsaft_cpp_debug PRIVATE Threads::Threads)
+    target_link_libraries(epcsaft_cpp_debug PRIVATE epcsaft_native_sdk)
 
     enable_testing()
     add_test(
@@ -134,6 +184,7 @@ if(EPCSAFT_ENABLE_CPP_DEBUG)
         COMMAND
             "${CMAKE_COMMAND}"
             "-DEPCSAFT_CPP_DEBUG_EXECUTABLE=$<TARGET_FILE:epcsaft_cpp_debug>"
+            "-DEPCSAFT_CPP_DEBUG_MODEL=${CMAKE_CURRENT_SOURCE_DIR}/tests/data/native_models/gross-methane-ethane.json"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/cpp_debug_harness.cmake"
     )
 endif()

@@ -24,6 +24,12 @@ SingleParameterFamily: TypeAlias = Literal[
     "relative_permittivity",
     "born_diameter",
     "solvation_factor",
+    "schreckenberg_dielectric_volume",
+    "schreckenberg_dielectric_temperature",
+    "zuber_ion_suppression_coefficient",
+    "rueben_dipole_scaling",
+    "rueben_polarizability_scaling",
+    "rueben_correlation_integral_parameter",
 ]
 PairParameterFamily: TypeAlias = Literal["k_ij", "l_ij"]
 AssociationParameterFamily: TypeAlias = Literal[
@@ -31,6 +37,7 @@ AssociationParameterFamily: TypeAlias = Literal[
 ]
 ModelParameterFamily: TypeAlias = Literal[
     "dielectric_ion_suppression_coefficient",
+    "electrolyte_formulation",
     "ionic_region_relative_permittivity",
 ]
 CorrelationFamily: TypeAlias = Literal[
@@ -42,12 +49,17 @@ _SINGLE_FAMILIES = frozenset(get_args(SingleParameterFamily))
 _PAIR_FAMILIES = frozenset(get_args(PairParameterFamily))
 _ASSOCIATION_FAMILIES = frozenset(get_args(AssociationParameterFamily))
 _MODEL_FAMILIES = frozenset(get_args(ModelParameterFamily))
+_ELECTROLYTE_FORMULATIONS = frozenset({"held-2008-debye-huckel"})
 _CORRELATION_FAMILIES = frozenset(get_args(CorrelationFamily))
 _DIMENSIONAL_UNITS = {
     "molar_mass": "kilogram / mole",
     "segment_diameter": "angstrom",
     "dispersion_energy_over_k": "kelvin",
     "born_diameter": "angstrom",
+    "schreckenberg_dielectric_volume": "meter ** 3 / mole",
+    "schreckenberg_dielectric_temperature": "kelvin",
+    "rueben_dipole_scaling": "debye ** 2",
+    "rueben_polarizability_scaling": "angstrom ** 3",
     "association_energy_over_k": "kelvin",
 }
 _DIMENSIONLESS_FAMILIES = frozenset(
@@ -60,6 +72,8 @@ _DIMENSIONLESS_FAMILIES = frozenset(
         "l_ij",
         "dielectric_ion_suppression_coefficient",
         "ionic_region_relative_permittivity",
+        "zuber_ion_suppression_coefficient",
+        "rueben_correlation_integral_parameter",
     }
 )
 
@@ -89,6 +103,10 @@ def _family(value: object, *, allowed: frozenset[str], field: str = "family") ->
 
 
 def _parameter_value(family: str, value: object) -> object:
+    if family == "electrolyte_formulation":
+        if not isinstance(value, str) or value not in _ELECTROLYTE_FORMULATIONS:
+            raise _error("invalid-value", field="value", family=family, value=value)
+        return value
     if family == "charge_number":
         return _exact_integer(value, field="value")
     if family in _DIMENSIONAL_UNITS:

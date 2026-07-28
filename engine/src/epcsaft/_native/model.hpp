@@ -7,6 +7,14 @@ namespace epcsaft {
 inline constexpr int ELECTROLYTE_MODEL_NONE = 0;
 inline constexpr int ELECTROLYTE_MODEL_FIGIEL_SSM_DS = 1;
 inline constexpr int ELECTROLYTE_MODEL_ASCANI_ORIGINAL_BORN = 2;
+inline constexpr int ELECTROLYTE_MODEL_HELD_2008_DEBYE_HUCKEL = 3;
+inline constexpr int PERMITTIVITY_MODEL_NONE = 0;
+inline constexpr int PERMITTIVITY_MODEL_FIGIEL_COMPOSITION = 1;
+inline constexpr int PERMITTIVITY_MODEL_ASCANI_MOLE_FRACTION = 2;
+inline constexpr int PERMITTIVITY_MODEL_SCHRECKENBERG_DENSITY = 3;
+inline constexpr int PERMITTIVITY_MODEL_ZUBER_ION_SPECIFIC = 4;
+inline constexpr int PERMITTIVITY_MODEL_RUEBEN_PERTURBATION = 5;
+inline constexpr int PERMITTIVITY_MODEL_HELD_WATER = 6;
 
 struct NativeParameters final {
     std::vector<double> segment_count;
@@ -30,6 +38,13 @@ struct NativeParameters final {
     std::vector<double> solvation_factor;
     double ionic_region_relative_permittivity;
     int electrolyte_model;
+    std::vector<double> schreckenberg_dielectric_volume_m3_per_mol;
+    std::vector<double> schreckenberg_dielectric_temperature_k;
+    std::vector<double> zuber_ion_suppression_coefficient;
+    std::vector<double> rueben_dipole_scaling_debye2;
+    std::vector<double> rueben_polarizability_scaling_angstrom3;
+    std::vector<double> rueben_correlation_integral_parameter;
+    int permittivity_model;
 };
 
 }  // namespace epcsaft

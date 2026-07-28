@@ -28,6 +28,14 @@ def _ascani_model() -> EPCSAFT:
     )
 
 
+def _held_water_ionization_model() -> EPCSAFT:
+    return EPCSAFT(
+        ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1).select(
+            ("water", "hydronium-cation", "hydroxide-anion")
+        )
+    )
+
+
 def _debye_huckel_oracle(temperature: float, density: float) -> float:
     fractions = (0.9, 0.05, 0.05)
     charges = (0, 1, -1)
@@ -133,6 +141,53 @@ def test_source_backed_debye_huckel_matches_independent_si_oracle() -> None:
         _debye_huckel_oracle(298.15, 40.0), rel=2.0e-11, abs=2.0e-13
     )
     assert result.debye_huckel < 0.0
+
+
+def test_held_2008_constant_dielectric_debye_huckel_matches_si_oracle() -> None:
+    temperature = 298.15
+    density = 40000.0
+    fractions = (0.98, 0.01, 0.01)
+    charges = (0, 1, -1)
+    sigmas_angstrom = (0.0, 2.2740, 1.6401)
+    charge_square_sum = math.fsum(
+        fraction * charge * charge for fraction, charge in zip(fractions, charges, strict=True)
+    )
+    kappa = math.sqrt(
+        density
+        * AVOGADRO
+        * ELEMENTARY_CHARGE**2
+        * charge_square_sum
+        / (VACUUM_PERMITTIVITY * 78.09 * BOLTZMANN * temperature)
+    )
+    weighted_chi = 0.0
+    for fraction, charge, sigma in zip(fractions, charges, sigmas_angstrom, strict=True):
+        if charge == 0:
+            continue
+        reduced = kappa * 0.88 * sigma * 1.0e-10
+        chi = (
+            3.0
+            * (math.log1p(reduced) - reduced + 0.5 * reduced * reduced)
+            / reduced**3
+        )
+        weighted_chi += fraction * charge * charge * chi
+    expected = (
+        -kappa
+        * ELEMENTARY_CHARGE**2
+        * weighted_chi
+        / (12.0 * math.pi * VACUUM_PERMITTIVITY * 78.09 * BOLTZMANN * temperature)
+    )
+
+    result = _held_water_ionization_model().evaluate(
+        temperature=temperature * unit_registry.kelvin,
+        molar_density=density * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=fractions,
+    )
+
+    assert result.debye_huckel == pytest.approx(expected, rel=2.0e-11, abs=2.0e-13)
+    assert result.hard_chain > 0.0
+    assert result.dispersion < 0.0
+    assert result.association < 0.0
+    assert result.born == 0.0
 
 
 def test_ascani_debye_huckel_uses_source_sigma_diameter() -> None:

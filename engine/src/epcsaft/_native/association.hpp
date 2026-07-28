@@ -19,6 +19,7 @@ inline constexpr double ASSOCIATION_NUMBER_DENSITY_FACTOR = 6.02214076e-7;
 inline constexpr double ASSOCIATION_PI = 3.141592653589793238462643383279502884;
 
 template <typename Scalar>
+// EqExclude: scalar utility dispatch
 Scalar association_exp(const Scalar& value) {
     if constexpr (std::is_same_v<Scalar, double>) {
         return std::exp(value);
@@ -26,14 +27,17 @@ Scalar association_exp(const Scalar& value) {
     return CppAD::exp(value);
 }
 
-template <typename Scalar>
-std::vector<Scalar> association_delta(
+template <typename Scalar, typename Parameters>
+std::vector<Scalar> association_delta_values(
     const Scalar& temperature,
     const Scalar& molar_density,
     const std::vector<Scalar>& mole_fractions,
-    const NativeParameters& parameters,
+    const Parameters& parameters,
     const std::vector<Scalar>& sigma,
-    const std::vector<Scalar>& diameter
+    const std::vector<Scalar>& diameter,
+    const std::vector<Scalar>& association_energy_over_k,
+    const std::vector<Scalar>& association_volume,
+    bool temperature_dependent_size_basis = false
 ) {
     const std::size_t components = parameters.segment_count.size();
     const std::size_t sites = parameters.site_component.size();
@@ -62,31 +66,104 @@ std::vector<Scalar> association_delta(
             const auto j = static_cast<std::size_t>(parameters.site_component[b]);
             const Scalar reduced_diameter =
                 diameter[i] * diameter[j] / (diameter[i] + diameter[j]);
+            // EqID: association_contact
             const Scalar contact =
                 Scalar(1.0) / one_minus_eta
                 + 3.0 * reduced_diameter * zeta_2
                     / (one_minus_eta * one_minus_eta)
                 + 2.0 * reduced_diameter * reduced_diameter * zeta_2 * zeta_2
                     / (one_minus_eta * one_minus_eta * one_minus_eta);
-            const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j])
-                * (Scalar(1.0) - parameters.l_ij[i * components + j]);
+            Scalar size_ij;
+            if (temperature_dependent_size_basis) {
+                // EqID: association_strength_diameter_basis
+                size_ij = Scalar(0.5) * (diameter[i] + diameter[j]);
+            } else {
+                size_ij = Scalar(0.5) * (sigma[i] + sigma[j])
+                    * (Scalar(1.0) - parameters.l_ij[i * components + j]);
+            }
+            // EqID: association_strength
             delta[pair] = contact
                 * (association_exp(
-                       Scalar(parameters.association_energy_over_k[pair])
-                           / temperature
+                       association_energy_over_k[pair] / temperature
                    ) - Scalar(1.0))
-                * sigma_ij * sigma_ij * sigma_ij
-                * parameters.association_volume[pair];
+                * size_ij * size_ij * size_ij
+                * association_volume[pair];
         }
     }
     return delta;
 }
 
 template <typename Scalar>
-std::vector<Scalar> association_residuals(
+// EqExclude: scalar utility dispatch
+std::vector<Scalar> association_delta(
+    const Scalar& temperature,
     const Scalar& molar_density,
     const std::vector<Scalar>& mole_fractions,
     const NativeParameters& parameters,
+    const std::vector<Scalar>& sigma,
+    const std::vector<Scalar>& diameter
+) {
+    return association_delta_values(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        sigma,
+        diameter,
+        std::vector<Scalar>(
+            parameters.association_energy_over_k.begin(),
+            parameters.association_energy_over_k.end()
+        ),
+        std::vector<Scalar>(
+            parameters.association_volume.begin(),
+            parameters.association_volume.end()
+        )
+    );
+}
+
+template <typename Scalar>
+// EqExclude: scalar utility dispatch
+std::vector<Scalar> association_delta_active_pure_parameter(
+    const Scalar& temperature,
+    const Scalar& molar_density,
+    const std::vector<Scalar>& mole_fractions,
+    const NativeParameters& parameters,
+    const std::vector<Scalar>& sigma,
+    const std::vector<Scalar>& diameter,
+    const Scalar& parameter_value,
+    bool active_energy
+) {
+    std::vector<Scalar> energy(
+        parameters.association_energy_over_k.begin(),
+        parameters.association_energy_over_k.end()
+    );
+    std::vector<Scalar> volume(
+        parameters.association_volume.begin(),
+        parameters.association_volume.end()
+    );
+    auto& active = active_energy ? energy : volume;
+    for (std::size_t pair = 0; pair < parameters.association_active.size(); ++pair) {
+        if (parameters.association_active[pair] != 0) {
+            active[pair] = parameter_value;
+        }
+    }
+    return association_delta_values(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        sigma,
+        diameter,
+        energy,
+        volume
+    );
+}
+
+template <typename Scalar, typename Parameters>
+std::vector<Scalar> association_residuals(
+    const Scalar& molar_density,
+    const std::vector<Scalar>& mole_fractions,
+    const Parameters& parameters,
     const std::vector<Scalar>& site_fractions,
     const std::vector<Scalar>& delta
 ) {
@@ -104,6 +181,7 @@ std::vector<Scalar> association_residuals(
                 * site_fractions[b]
                 * delta[a * sites + b];
         }
+        // EqID: association_mass_action
         residuals[a] = site_fractions[a]
             * (Scalar(1.0) + number_density * bonded_density)
             - Scalar(1.0);
@@ -111,20 +189,30 @@ std::vector<Scalar> association_residuals(
     return residuals;
 }
 
+// EqExclude: numerical iteration mechanics
 inline std::vector<double> solve_site_fractions(
     double temperature,
     double molar_density,
     const std::vector<double>& mole_fractions,
     const NativeParameters& parameters,
     const std::vector<double>& sigma,
-    const std::vector<double>& diameter
+    const std::vector<double>& diameter,
+    bool temperature_dependent_size_basis = false
 ) {
     const std::size_t sites = parameters.site_component.size();
     if (sites == 0) {
         return {};
     }
-    const auto delta = association_delta(
-        temperature, molar_density, mole_fractions, parameters, sigma, diameter
+    const auto delta = association_delta_values(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        sigma,
+        diameter,
+        parameters.association_energy_over_k,
+        parameters.association_volume,
+        temperature_dependent_size_basis
     );
     const double number_density =
         molar_density * ASSOCIATION_NUMBER_DENSITY_FACTOR;
@@ -165,6 +253,7 @@ inline std::vector<double> solve_site_fractions(
     throw std::runtime_error("association solve did not converge");
 }
 
+// EqExclude: numerical iteration mechanics
 inline std::vector<double> solve_linear(
     std::vector<double> matrix,
     std::vector<double> right_hand_side

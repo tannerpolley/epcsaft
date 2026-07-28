@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from itertools import combinations
 from typing import Literal
@@ -36,6 +37,7 @@ class _ResolvedModel:
     topology: Literal[
         "neutral",
         "associating",
+        "ionic-held-2008-debye-huckel",
         "ionic-ssm-ds",
         "ionic-ascani-original-born",
     ]
@@ -60,6 +62,21 @@ class _ResolvedModel:
     pressure_min_pa: float | None
     pressure_max_pa: float | None
     ion_mole_fraction_max: float | None
+    permittivity_model: Literal[
+        "none",
+        "figiel-composition",
+        "ascani-mole-fraction",
+        "schreckenberg-density",
+        "zuber-ion-specific",
+        "rueben-perturbation",
+        "held-water",
+    ] = "none"
+    schreckenberg_dielectric_volume_m3_per_mol: tuple[float, ...] = ()
+    schreckenberg_dielectric_temperature_k: tuple[float, ...] = ()
+    zuber_ion_suppression_coefficient: tuple[float, ...] = ()
+    rueben_dipole_scaling_debye2: tuple[float, ...] = ()
+    rueben_polarizability_scaling_angstrom3: tuple[float, ...] = ()
+    rueben_correlation_integral_parameter: tuple[float, ...] = ()
 
 
 def _missing(*, component_id: str | None = None, family: str, pair: tuple[str, str] | None = None):
@@ -84,8 +101,8 @@ def _magnitude(record: object, unit: str) -> float:
 def _component_record(
     component_id: str,
     family: str,
-    singles: dict[tuple[str, str], SingleParameterRecord],
-    correlations: dict[tuple[str, str], _TemperatureRecord],
+    singles: Mapping[tuple[str, str], SingleParameterRecord],
+    correlations: Mapping[tuple[str, str], _TemperatureRecord],
     *,
     allow_correlation: bool,
 ) -> _TemperatureRecord:
@@ -427,11 +444,90 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         for family in models
     )
     l_ij_present = any(key[2] == "l_ij" for key in pair_records)
+    formulation_record = models.get("electrolyte_formulation")
+    formulation = None if formulation_record is None else formulation_record.value
     if figiel_schema_present and l_ij_present:
         raise _error(
             "invalid-value",
             family="electrolyte-model",
             reason="mixed-born-dielectric-schema",
+        )
+    if formulation is not None and (figiel_schema_present or l_ij_present):
+        raise _error(
+            "invalid-value",
+            family="electrolyte-model",
+            reason="mixed-formulation-schema",
+        )
+    if formulation is None and not figiel_schema_present and not l_ij_present:
+        raise _error("missing-record", family="electrolyte_formulation")
+    if formulation == "held-2008-debye-huckel":
+        held_charges = {
+            "water": 0,
+            "hydronium-cation": 1,
+            "hydroxide-anion": -1,
+        }
+        if set(component_ids) != set(held_charges) or any(
+            charge != held_charges[component_id]
+            for component_id, charge in zip(component_ids, charges, strict=True)
+        ):
+            raise _error(
+                "invalid-value",
+                family="electrolyte_formulation",
+                reason="component-charge-contract",
+            )
+        held_k_ij = tuple(value for value in k_ij if value is not None)
+        if len(held_k_ij) != len(k_ij):
+            raise _error("missing-record", family="k_ij")
+        for left, right in combinations(range(len(component_ids)), 2):
+            expected = 1.0 if charges[left] != 0 and charges[right] != 0 else 0.0
+            if held_k_ij[left * len(component_ids) + right] != expected:
+                raise _error(
+                    "invalid-value",
+                    family="k_ij",
+                    reason="held-dispersion-rule",
+                )
+        held_relative_permittivity: list[_TemperatureRecord | None] = []
+        for index, (component_id, charge) in enumerate(
+            zip(component_ids, charges, strict=True)
+        ):
+            if charge == 0:
+                if molar_mass[index] is None:
+                    raise _missing(component_id=component_id, family="molar_mass")
+                held_relative_permittivity.append(
+                    _component_record(
+                        component_id,
+                        "relative_permittivity",
+                        singles,
+                        correlations,
+                        allow_correlation=True,
+                    )
+                )
+            else:
+                held_relative_permittivity.append(None)
+        return _ResolvedModel(
+            "ionic-held-2008-debye-huckel",
+            component_ids,
+            molar_mass,
+            segment_count,
+            segment_diameter,
+            dispersion_energy,
+            held_k_ij,
+            tuple(0.0 for _ in range(len(component_ids) ** 2)),
+            site_ids,
+            site_multiplicity,
+            association_pairs,
+            charges,
+            tuple(held_relative_permittivity),
+            (),
+            (),
+            None,
+            None,
+            temperature_min,
+            temperature_max,
+            pressure_min,
+            pressure_max,
+            ion_fraction_max,
+            "held-water",
         )
     if not figiel_schema_present:
         l_ij = _pair_matrix(component_ids, pair_records, "l_ij", required=True)
@@ -468,7 +564,25 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
             pressure_min,
             pressure_max,
             ion_fraction_max,
+            "ascani-mole-fraction",
         )
+
+    candidate_models = []
+    if "dielectric_ion_suppression_coefficient" in models:
+        candidate_models.append("figiel-composition")
+    if any(family.startswith("schreckenberg_") for _, family in singles):
+        candidate_models.append("schreckenberg-density")
+    if any(family == "zuber_ion_suppression_coefficient" for _, family in singles):
+        candidate_models.append("zuber-ion-specific")
+    if any(family.startswith("rueben_") for _, family in singles):
+        candidate_models.append("rueben-perturbation")
+    if len(candidate_models) != 1:
+        raise _error(
+            "invalid-value",
+            family="relative-permittivity-model",
+            reason="missing-or-mixed-topology",
+        )
+    permittivity_model = candidate_models[0]
 
     relative_permittivity: list[_TemperatureRecord | None] = []
     born_diameter: list[float | None] = []
@@ -477,15 +591,18 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         if charge == 0:
             if molar_mass[index] is None:
                 raise _missing(component_id=component_id, family="molar_mass")
-            relative_permittivity.append(
-                _component_record(
-                    component_id,
-                    "relative_permittivity",
-                    singles,
-                    correlations,
-                    allow_correlation=True,
+            if permittivity_model in {"figiel-composition", "zuber-ion-specific"}:
+                relative_permittivity.append(
+                    _component_record(
+                        component_id,
+                        "relative_permittivity",
+                        singles,
+                        correlations,
+                        allow_correlation=True,
+                    )
                 )
-            )
+            else:
+                relative_permittivity.append(None)
             born_diameter.append(None)
         else:
             relative_permittivity.append(None)
@@ -507,10 +624,9 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
             )
         )
 
-    required_models = (
-        "ionic_region_relative_permittivity",
-        "dielectric_ion_suppression_coefficient",
-    )
+    required_models = ["ionic_region_relative_permittivity"]
+    if permittivity_model == "figiel-composition":
+        required_models.append("dielectric_ion_suppression_coefficient")
     model_values = []
     for family in required_models:
         record = models.get(family)
@@ -520,6 +636,67 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         if value <= 0.0:
             raise _error("invalid-value", family=family, value=value)
         model_values.append(value)
+
+    dielectric_suppression = (
+        model_values[1] if permittivity_model == "figiel-composition" else None
+    )
+
+    def component_values(family: str, unit: str) -> tuple[float, ...]:
+        values = []
+        for component_id in component_ids:
+            record = singles.get((component_id, family))
+            values.append(0.0 if record is None else _magnitude(record, unit))
+        return tuple(values)
+
+    schreckenberg_volume = component_values(
+        "schreckenberg_dielectric_volume", "meter ** 3 / mole"
+    )
+    schreckenberg_temperature = component_values(
+        "schreckenberg_dielectric_temperature", "kelvin"
+    )
+    zuber_alpha = component_values("zuber_ion_suppression_coefficient", "dimensionless")
+    rueben_dipole = component_values("rueben_dipole_scaling", "debye ** 2")
+    rueben_polarizability = component_values(
+        "rueben_polarizability_scaling", "angstrom ** 3"
+    )
+    rueben_correlation = component_values(
+        "rueben_correlation_integral_parameter", "dimensionless"
+    )
+
+    for index, charge in enumerate(charges):
+        if permittivity_model == "schreckenberg-density" and charge == 0:
+            if schreckenberg_volume[index] <= 0.0 or schreckenberg_temperature[index] <= 0.0:
+                raise _error(
+                    "missing-record",
+                    component_id=component_ids[index],
+                    family="schreckenberg-permittivity-parameters",
+                )
+        if permittivity_model == "zuber-ion-specific" and charge != 0:
+            if zuber_alpha[index] <= 0.0:
+                raise _error(
+                    "missing-record",
+                    component_id=component_ids[index],
+                    family="zuber_ion_suppression_coefficient",
+                )
+        if permittivity_model == "rueben-perturbation":
+            if rueben_dipole[index] < 0.0 or rueben_polarizability[index] < 0.0:
+                raise _error(
+                    "invalid-value",
+                    component_id=component_ids[index],
+                    family="rueben-permittivity-parameters",
+                )
+            if rueben_correlation[index] <= 0.0:
+                raise _error(
+                    "missing-record",
+                    component_id=component_ids[index],
+                    family="rueben_correlation_integral_parameter",
+                )
+    if permittivity_model == "zuber-ion-specific" and sum(charge == 0 for charge in charges) != 1:
+        raise _error(
+            "invalid-value",
+            family="relative-permittivity-model",
+            reason="zuber-mixed-solvent-volume-data-required",
+        )
 
     return _ResolvedModel(
         "ionic-ssm-ds",
@@ -538,12 +715,19 @@ def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
         tuple(born_diameter),
         tuple(solvation_factor),
         model_values[0],
-        model_values[1],
+        dielectric_suppression,
         temperature_min,
         temperature_max,
         pressure_min,
         pressure_max,
         ion_fraction_max,
+        permittivity_model,
+        schreckenberg_volume,
+        schreckenberg_temperature,
+        zuber_alpha,
+        rueben_dipole,
+        rueben_polarizability,
+        rueben_correlation,
     )
 
 

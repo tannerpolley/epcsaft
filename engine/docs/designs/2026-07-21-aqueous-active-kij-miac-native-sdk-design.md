@@ -364,6 +364,23 @@ the frozen 21-row and 164-row inputs and a bounded Stage-C throughput result.
 This amendment changes transport cost only: equations, rows, derivatives,
 diagnostics, bounds, targets, fit policy, and authority remain unchanged.
 
+## Cooperative evaluation-budget tail
+
+The Provider appends one 24-byte evaluation-budget descriptor and two typed
+bounded-batch callbacks after the 240-byte throughput prefix, making the
+current complete table 264 bytes on the supported 64-bit ABI. Existing
+consumers that require only the 240-byte prefix remain valid and retain the
+original batch behavior. The descriptor carries an atomic work budget counted
+at safe reference-sequence and row checkpoints plus an absolute monotonic
+deadline in nanoseconds; `UINT64_MAX` and zero disable the respective limits.
+
+The bounded callbacks return the existing result records with a uniform
+`CANCELLED` or `DEADLINE_EXCEEDED` status when a checkpoint rejects further
+work. Provider-owned CppAD workers stop claiming new rows after the first
+checkpoint exception and are joined before the callback returns. No equation,
+derivative, row ordering, fingerprint, model admission, scalar callback, or
+unbounded batch contract changes.
+
 ## Alternatives and decision
 
 | Alternative | Consequence | Decision |

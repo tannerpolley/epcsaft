@@ -6,11 +6,19 @@ import math
 from pathlib import Path
 import shutil
 import subprocess
+import time
 
 import pytest
 
 import epcsaft
-from epcsaft import EPCSAFT, EosError, ParameterBundle, native_sdk, unit_registry
+from epcsaft import (
+    EPCSAFT,
+    EosError,
+    ParameterBundle,
+    export_native_model,
+    native_sdk,
+    unit_registry,
+)
 from epcsaft._core import NativeModel, native_sdk_v1 as _native_sdk_v1
 from epcsaft.eos import _native_arguments
 from epcsaft.records import (
@@ -33,6 +41,23 @@ STATUS_UNSUPPORTED_MODEL = 2
 STATUS_DOMAIN_ERROR = 3
 STATUS_EVALUATION_ERROR = 4
 STATUS_ABI_MISMATCH = 5
+STATUS_CANCELLED = 6
+STATUS_DEADLINE_EXCEEDED = 7
+
+
+def test_resolved_model_artifact_is_native_loadable(tmp_path: Path) -> None:
+    model = EPCSAFT(
+        ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
+            ("methane", "ethane")
+        )
+    )
+    artifact = tmp_path / "model.json"
+
+    export_native_model(model, artifact)
+
+    payload = artifact.read_text(encoding="utf-8")
+    assert '"schema":"epcsaft-resolved-native-model-v1"' in payload
+    assert model.parameter_fingerprint in payload
 
 
 class PhaseBlockResult(ctypes.Structure):
@@ -237,6 +262,176 @@ class AqueousMiacBatchNativeSdkTable(ctypes.Structure):
     )
 
 
+class NativeEvaluationBudget(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("work_budget", ctypes.c_uint64),
+        ("deadline_ns", ctypes.c_uint64),
+    )
+
+
+class AqueousMiacBoundedBatchNativeSdkTable(ctypes.Structure):
+    _fields_ = AqueousMiacBatchNativeSdkTable._fields_ + (
+        ("evaluation_budget_size", ctypes.c_size_t),
+        ("evaluate_aqueous_miac_kij_batch_bounded", ctypes.c_void_p),
+        ("evaluate_aqueous_miac_solvation_factor_batch_bounded", ctypes.c_void_p),
+    )
+
+
+class NativeCapabilityCoordinate(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("kind", ctypes.c_uint32),
+        ("component_index", ctypes.c_int32),
+        ("pair_component_index_a", ctypes.c_int32),
+        ("pair_component_index_b", ctypes.c_int32),
+        ("unit", ctypes.c_char_p),
+    )
+
+
+class NativeCapabilityDescriptor(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("schema_version", ctypes.c_uint32),
+        ("capability", ctypes.c_uint32),
+        ("parameter_family", ctypes.c_uint32),
+        ("parameter_identity", ctypes.c_uint32),
+        ("observation_contract", ctypes.c_uint32),
+        ("model_domain", ctypes.c_uint32),
+        ("tensor_layout", ctypes.c_uint32),
+        ("derivative_order", ctypes.c_uint32),
+        ("maturity", ctypes.c_uint32),
+        ("authority_effect", ctypes.c_uint32),
+        ("unsupported_status", ctypes.c_int32),
+        ("domain_status", ctypes.c_int32),
+        ("state_coordinate_count", ctypes.c_size_t),
+        ("active_parameter_count", ctypes.c_size_t),
+        ("coordinate_count", ctypes.c_size_t),
+        ("coordinates", ctypes.POINTER(NativeCapabilityCoordinate)),
+        ("component_count", ctypes.c_size_t),
+        ("component_ids", ctypes.POINTER(ctypes.c_char_p)),
+        ("temperature_min_k", ctypes.c_double),
+        ("temperature_max_k", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("topology_fingerprint", ctypes.c_char * 72),
+        ("helmholtz_basis_id", ctypes.c_char * 72),
+    )
+
+
+class CapabilityNativeSdkTable(ctypes.Structure):
+    _fields_ = AqueousMiacBoundedBatchNativeSdkTable._fields_ + (
+        ("capability_count", ctypes.c_size_t),
+        ("capabilities", ctypes.POINTER(NativeCapabilityDescriptor)),
+    )
+
+
+class LijNativeSdkTable(ctypes.Structure):
+    _fields_ = CapabilityNativeSdkTable._fields_ + (
+        ("evaluate_mixture_phase_lij", ctypes.c_void_p),
+    )
+
+
+class PureParameterNativeSdkTable(ctypes.Structure):
+    _fields_ = LijNativeSdkTable._fields_ + (
+        ("evaluate_pure_phase_parameter", ctypes.c_void_p),
+    )
+
+
+class FigielPermittivityResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("bulk_relative_permittivity", ctypes.c_double),
+        ("derivative", ctypes.c_double),
+        ("salt_free_relative_permittivity", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class FigielPermittivityNativeSdkTable(ctypes.Structure):
+    _fields_ = PureParameterNativeSdkTable._fields_ + (
+        ("figiel_permittivity_result_size", ctypes.c_size_t),
+        ("evaluate_figiel_permittivity", ctypes.c_void_p),
+    )
+
+
+class IonSolvationKijResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("solvation_gibbs_j_per_mol", ctypes.c_double),
+        ("derivative", ctypes.c_double * 3),
+        ("reference_molality_mol_per_kg", ctypes.c_double),
+        ("reference_convergence_error", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class IonSolvationKijNativeSdkTable(ctypes.Structure):
+    _fields_ = FigielPermittivityNativeSdkTable._fields_ + (
+        ("ion_solvation_kij_result_size", ctypes.c_size_t),
+        ("evaluate_ion_solvation_kij", ctypes.c_void_p),
+    )
+
+
+class IonSolvationIonicPermittivityResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("solvation_gibbs_j_per_mol", ctypes.c_double),
+        ("derivative_j_per_mol", ctypes.c_double),
+        ("reference_molality_mol_per_kg", ctypes.c_double),
+        ("reference_convergence_error", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class IonSolvationIonicPermittivityNativeSdkTable(ctypes.Structure):
+    _fields_ = IonSolvationKijNativeSdkTable._fields_ + (
+        ("ion_solvation_ionic_permittivity_result_size", ctypes.c_size_t),
+        ("evaluate_ion_solvation_ionic_permittivity", ctypes.c_void_p),
+    )
+
+
+class IonSolvationSolventPermittivityResult(ctypes.Structure):
+    _fields_ = IonSolvationIonicPermittivityResult._fields_
+
+
+class IonSolvationSolventPermittivityNativeSdkTable(ctypes.Structure):
+    _fields_ = IonSolvationIonicPermittivityNativeSdkTable._fields_ + (
+        ("ion_solvation_solvent_permittivity_result_size", ctypes.c_size_t),
+        ("evaluate_ion_solvation_solvent_permittivity", ctypes.c_void_p),
+    )
+
+
+class AssociatingParameterizedPhaseBlockResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("helmholtz_over_rt_reference_amount", ctypes.c_double),
+        ("gradient", ctypes.c_double * 7),
+        ("hessian", ctypes.c_double * 49),
+        ("pressure_pa", ctypes.c_double),
+        ("chemical_potential_over_rt", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("topology_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class AssociatingParameterizedNativeSdkTable(ctypes.Structure):
+    _fields_ = IonSolvationSolventPermittivityNativeSdkTable._fields_ + (
+        ("associating_parameterized_result_size", ctypes.c_size_t),
+        (
+            "evaluate_diameter_basis_associating_pure_phase_parameters",
+            ctypes.c_void_p,
+        ),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -278,6 +473,43 @@ AQUEOUS_MIAC_BATCH_PREFIX_SIZE = (
     AqueousMiacBatchNativeSdkTable.evaluate_aqueous_miac_solvation_factor_batch.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
+AQUEOUS_MIAC_BOUNDED_BATCH_PREFIX_SIZE = (
+    AqueousMiacBoundedBatchNativeSdkTable.evaluate_aqueous_miac_solvation_factor_batch_bounded.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+CAPABILITY_PREFIX_SIZE = (
+    CapabilityNativeSdkTable.capabilities.offset + ctypes.sizeof(ctypes.c_void_p)
+)
+ACTIVE_LIJ_PREFIX_SIZE = (
+    LijNativeSdkTable.evaluate_mixture_phase_lij.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+ACTIVE_PURE_PARAMETER_PREFIX_SIZE = (
+    PureParameterNativeSdkTable.evaluate_pure_phase_parameter.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+FIGIEL_PERMITTIVITY_PREFIX_SIZE = (
+    FigielPermittivityNativeSdkTable.evaluate_figiel_permittivity.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+ION_SOLVATION_KIJ_PREFIX_SIZE = (
+    IonSolvationKijNativeSdkTable.evaluate_ion_solvation_kij.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+ION_SOLVATION_IONIC_PERMITTIVITY_PREFIX_SIZE = (
+    IonSolvationIonicPermittivityNativeSdkTable.evaluate_ion_solvation_ionic_permittivity.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+ION_SOLVATION_SOLVENT_PERMITTIVITY_PREFIX_SIZE = (
+    IonSolvationSolventPermittivityNativeSdkTable
+    .evaluate_ion_solvation_solvent_permittivity.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+ASSOCIATING_PARAMETERIZED_PREFIX_SIZE = (
+    AssociatingParameterizedNativeSdkTable
+    .evaluate_diameter_basis_associating_pure_phase_parameters.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
 
 
 EvaluatePurePhase = ctypes.CFUNCTYPE(
@@ -287,6 +519,18 @@ EvaluatePurePhase = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(PhaseBlockResult),
+)
+
+EvaluateIonSolvationKij = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_size_t,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.POINTER(IonSolvationKijResult),
 )
 
 EvaluatePurePhaseParameters = ctypes.CFUNCTYPE(
@@ -299,6 +543,20 @@ EvaluatePurePhaseParameters = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(ParameterizedPhaseBlockResult),
+)
+
+EvaluateAssociatingPurePhaseParameters = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(AssociatingParameterizedPhaseBlockResult),
 )
 
 EvaluateMixturePhase = ctypes.CFUNCTYPE(
@@ -318,6 +576,17 @@ EvaluateMixturePhaseKij = ctypes.CFUNCTYPE(
     ctypes.POINTER(ctypes.c_double),
     ctypes.c_size_t,
     ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(MixturePhaseBlockResult),
+)
+EvaluateMixturePhaseLij = EvaluateMixturePhaseKij
+EvaluatePurePhaseParameter = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_uint32,
     ctypes.c_double,
     ctypes.POINTER(MixturePhaseBlockResult),
 )
@@ -359,6 +628,26 @@ EvaluateIonSolvationBorn = ctypes.CFUNCTYPE(
     ctypes.POINTER(IonSolvationBornResult),
 )
 
+EvaluateIonSolvationIonicPermittivity = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(IonSolvationIonicPermittivityResult),
+)
+
+EvaluateIonSolvationSolventPermittivity = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(IonSolvationSolventPermittivityResult),
+)
+
 EvaluateAqueousMiacKij = ctypes.CFUNCTYPE(
     ctypes.c_int,
     ctypes.c_void_p,
@@ -391,6 +680,17 @@ EvaluateAqueousMiacSolvationFactor = ctypes.CFUNCTYPE(
     ctypes.POINTER(AqueousMiacSolvationFactorResult),
 )
 
+EvaluateFigielPermittivity = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(FigielPermittivityResult),
+)
+
 EvaluateAqueousMiacKijBatch = ctypes.CFUNCTYPE(
     ctypes.c_int,
     ctypes.c_void_p,
@@ -416,6 +716,35 @@ EvaluateAqueousMiacSolvationFactorBatch = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.POINTER(AqueousMiacSolvationFactorResult),
     ctypes.c_size_t,
+)
+
+EvaluateAqueousMiacKijBatchBounded = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.POINTER(AqueousMiacKijResult),
+    ctypes.c_size_t,
+    ctypes.POINTER(NativeEvaluationBudget),
+)
+
+EvaluateAqueousMiacSolvationFactorBatchBounded = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.c_double,
+    ctypes.POINTER(AqueousMiacSolvationFactorResult),
+    ctypes.c_size_t,
+    ctypes.POINTER(NativeEvaluationBudget),
 )
 
 
@@ -516,6 +845,17 @@ def _figiel_trial_model(
     return EPCSAFT(trial.select(component_ids))
 
 
+def _held_water_ionization_model(
+    component_ids: tuple[str, str, str] = (
+        "water",
+        "hydronium-cation",
+        "hydroxide-anion",
+    ),
+) -> EPCSAFT:
+    parameters = ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1)
+    return EPCSAFT(parameters.select(component_ids))
+
+
 def _khudaida_model(component_ids: tuple[str, ...]) -> EPCSAFT:
     parameters = ParameterBundle.from_catalog("khudaida-2026-figure-2-electrolyte-lle", version=1)
     return EPCSAFT(parameters.select(component_ids))
@@ -541,6 +881,131 @@ def _table(model: EPCSAFT) -> tuple[object, NativeSdkTable]:
     fixed_table = ctypes.cast(address, ctypes.POINTER(FixedMixtureNativeSdkTable)).contents
     assert fixed_table.table_size >= ACTIVE_KIJ_PREFIX_SIZE
     return capsule, ctypes.cast(address, ctypes.POINTER(NativeSdkTable)).contents
+
+
+def _capability_table(
+    model: EPCSAFT,
+) -> tuple[object, CapabilityNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(CapabilityNativeSdkTable)).contents
+    assert table.table_size >= CAPABILITY_PREFIX_SIZE
+    return capsule, table
+
+
+def _figiel_permittivity_table(
+    model: EPCSAFT,
+) -> tuple[object, FigielPermittivityNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(FigielPermittivityNativeSdkTable)
+    ).contents
+    assert table.table_size >= ctypes.sizeof(
+        FigielPermittivityNativeSdkTable
+    )
+    return capsule, table
+
+
+def _ion_solvation_kij_table(
+    model: EPCSAFT,
+) -> tuple[object, IonSolvationKijNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(IonSolvationKijNativeSdkTable)
+    ).contents
+    assert table.table_size >= ION_SOLVATION_KIJ_PREFIX_SIZE
+    return capsule, table
+
+
+def _ion_solvation_ionic_permittivity_table(
+    model: EPCSAFT,
+) -> tuple[object, IonSolvationIonicPermittivityNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(IonSolvationIonicPermittivityNativeSdkTable)
+    ).contents
+    assert table.table_size >= ION_SOLVATION_IONIC_PERMITTIVITY_PREFIX_SIZE
+    return capsule, table
+
+
+def _ion_solvation_solvent_permittivity_table(
+    model: EPCSAFT,
+) -> tuple[object, IonSolvationSolventPermittivityNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address,
+        ctypes.POINTER(IonSolvationSolventPermittivityNativeSdkTable),
+    ).contents
+    assert table.table_size >= ION_SOLVATION_SOLVENT_PERMITTIVITY_PREFIX_SIZE
+    return capsule, table
+
+
+def _lij_table(model: EPCSAFT) -> tuple[object, LijNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(LijNativeSdkTable)).contents
+    assert table.table_size >= ACTIVE_LIJ_PREFIX_SIZE
+    return capsule, table
+
+
+def _pure_parameter_table(
+    model: EPCSAFT,
+) -> tuple[object, PureParameterNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(PureParameterNativeSdkTable)
+    ).contents
+    assert table.table_size >= ACTIVE_PURE_PARAMETER_PREFIX_SIZE
+    return capsule, table
+
+
+def _associating_parameterized_table(
+    model: EPCSAFT,
+) -> tuple[object, AssociatingParameterizedNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(AssociatingParameterizedNativeSdkTable)
+    ).contents
+    assert table.table_size >= ASSOCIATING_PARAMETERIZED_PREFIX_SIZE
+    return capsule, table
 
 
 def _electrolyte_table(
@@ -668,6 +1133,22 @@ def _aqueous_miac_batch_table(
         address, ctypes.POINTER(AqueousMiacBatchNativeSdkTable)
     ).contents
     assert table.table_size >= AQUEOUS_MIAC_BATCH_PREFIX_SIZE
+    return capsule, table
+
+
+def _aqueous_miac_bounded_batch_table(
+    model: EPCSAFT,
+) -> tuple[object, AqueousMiacBoundedBatchNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(AqueousMiacBoundedBatchNativeSdkTable)
+    ).contents
+    assert table.table_size >= AQUEOUS_MIAC_BOUNDED_BATCH_PREFIX_SIZE
     return capsule, table
 
 
@@ -829,6 +1310,50 @@ def _evaluate_active_born(
     return result
 
 
+def _evaluate_ionic_permittivity(
+    table: IonSolvationIonicPermittivityNativeSdkTable,
+    fingerprint: str,
+    ionic_region_relative_permittivity: float,
+) -> IonSolvationIonicPermittivityResult:
+    result = IonSolvationIonicPermittivityResult(
+        struct_size=ctypes.sizeof(IonSolvationIonicPermittivityResult)
+    )
+    status = EvaluateIonSolvationIonicPermittivity(
+        table.evaluate_ion_solvation_ionic_permittivity
+    )(
+        table.model_context,
+        fingerprint.encode(),
+        298.15,
+        100000.0,
+        ionic_region_relative_permittivity,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
+
+
+def _evaluate_solvent_permittivity(
+    table: IonSolvationSolventPermittivityNativeSdkTable,
+    fingerprint: str,
+    solvent_relative_permittivity: float,
+) -> IonSolvationSolventPermittivityResult:
+    result = IonSolvationSolventPermittivityResult(
+        struct_size=ctypes.sizeof(IonSolvationSolventPermittivityResult)
+    )
+    status = EvaluateIonSolvationSolventPermittivity(
+        table.evaluate_ion_solvation_solvent_permittivity
+    )(
+        table.model_context,
+        fingerprint.encode(),
+        298.15,
+        100000.0,
+        solvent_relative_permittivity,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
+
+
 def _evaluate(
     table: NativeSdkTable,
     temperature_k: float,
@@ -867,6 +1392,26 @@ def _evaluate_parameters(
         segment_count,
         segment_diameter_angstrom,
         dispersion_energy_over_k,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
+
+
+def _evaluate_associating_parameters(
+    table: AssociatingParameterizedNativeSdkTable,
+    temperature_k: float,
+    values: tuple[float, float, float, float, float, float, float],
+) -> AssociatingParameterizedPhaseBlockResult:
+    result = AssociatingParameterizedPhaseBlockResult(
+        struct_size=ctypes.sizeof(AssociatingParameterizedPhaseBlockResult)
+    )
+    status = EvaluateAssociatingPurePhaseParameters(
+        table.evaluate_diameter_basis_associating_pure_phase_parameters
+    )(
+        table.model_context,
+        temperature_k,
+        *values,
         ctypes.byref(result),
     )
     assert status == result.status
@@ -929,6 +1474,52 @@ def _evaluate_mixture_kij(
         len(amounts_mol),
         volume_m3,
         k_ij,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result, tuple(gradient), tuple(hessian)
+
+
+def _evaluate_mixture_lij(
+    table: LijNativeSdkTable,
+    temperature_k: float,
+    amounts_mol: tuple[float, ...],
+    volume_m3: float,
+    l_ij: float,
+) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+    assert table.evaluate_mixture_phase_lij
+    coordinate_count = len(amounts_mol) + 2
+    result, gradient, hessian = _mixture_result(coordinate_count)
+    amounts = (ctypes.c_double * len(amounts_mol))(*amounts_mol)
+    status = EvaluateMixturePhaseLij(table.evaluate_mixture_phase_lij)(
+        table.model_context,
+        temperature_k,
+        amounts,
+        len(amounts_mol),
+        volume_m3,
+        l_ij,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result, tuple(gradient), tuple(hessian)
+
+
+def _evaluate_pure_parameter(
+    table: PureParameterNativeSdkTable,
+    temperature_k: float,
+    amount_mol: float,
+    volume_m3: float,
+    parameter_family: int,
+    parameter_value: float,
+) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+    result, gradient, hessian = _mixture_result(3)
+    status = EvaluatePurePhaseParameter(table.evaluate_pure_phase_parameter)(
+        table.model_context,
+        temperature_k,
+        amount_mol,
+        volume_m3,
+        parameter_family,
+        parameter_value,
         ctypes.byref(result),
     )
     assert status == result.status
@@ -1112,6 +1703,1319 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
     assert ApplicabilityNativeSdkTable.source_temperature_max_k.offset == 136
     assert ApplicabilityNativeSdkTable.total_ion_mole_fraction_max.offset == 144
     assert APPLICABILITY_PREFIX_SIZE == ctypes.sizeof(ApplicabilityNativeSdkTable) == 152
+    for field_name, _ in AqueousMiacBoundedBatchNativeSdkTable._fields_:
+        assert (
+            getattr(CapabilityNativeSdkTable, field_name).offset
+            == getattr(AqueousMiacBoundedBatchNativeSdkTable, field_name).offset
+        )
+    assert AQUEOUS_MIAC_BOUNDED_BATCH_PREFIX_SIZE == 264
+    assert CapabilityNativeSdkTable.capability_count.offset == 264
+    assert CapabilityNativeSdkTable.capabilities.offset == 272
+    assert ctypes.sizeof(CapabilityNativeSdkTable) == 280
+    for field_name, _ in CapabilityNativeSdkTable._fields_:
+        assert (
+            getattr(LijNativeSdkTable, field_name).offset
+            == getattr(CapabilityNativeSdkTable, field_name).offset
+        )
+    assert LijNativeSdkTable.evaluate_mixture_phase_lij.offset == 280
+    assert ctypes.sizeof(LijNativeSdkTable) == 288
+    for field_name, _ in LijNativeSdkTable._fields_:
+        assert (
+            getattr(PureParameterNativeSdkTable, field_name).offset
+            == getattr(LijNativeSdkTable, field_name).offset
+        )
+    assert PureParameterNativeSdkTable.evaluate_pure_phase_parameter.offset == 288
+    assert ctypes.sizeof(PureParameterNativeSdkTable) == 296
+    for field_name, _ in PureParameterNativeSdkTable._fields_:
+        assert (
+            getattr(FigielPermittivityNativeSdkTable, field_name).offset
+            == getattr(PureParameterNativeSdkTable, field_name).offset
+        )
+    assert FigielPermittivityNativeSdkTable.figiel_permittivity_result_size.offset == 296
+    assert FigielPermittivityNativeSdkTable.evaluate_figiel_permittivity.offset == 304
+    assert FIGIEL_PERMITTIVITY_PREFIX_SIZE == ctypes.sizeof(
+        FigielPermittivityNativeSdkTable
+    ) == 312
+
+
+def test_native_sdk_describes_the_exact_neutral_binary_pair_derivative_contracts() -> None:
+    model = _mixture_model()
+    capsule, table = _capability_table(model)
+    assert capsule is not None
+    assert table.capability_count == 2
+    assert table.capabilities
+
+    descriptor = table.capabilities[0]
+    assert descriptor.struct_size == ctypes.sizeof(NativeCapabilityDescriptor)
+    assert (
+        descriptor.schema_version,
+        descriptor.capability,
+        descriptor.parameter_family,
+        descriptor.parameter_identity,
+        descriptor.observation_contract,
+        descriptor.model_domain,
+        descriptor.tensor_layout,
+        descriptor.derivative_order,
+        descriptor.maturity,
+        descriptor.authority_effect,
+    ) == (1, 1, 1, 1, 1, 1, 1, 2, 1, 0)
+    assert descriptor.unsupported_status == STATUS_UNSUPPORTED_MODEL
+    assert descriptor.domain_status == STATUS_DOMAIN_ERROR
+    assert (
+        descriptor.state_coordinate_count,
+        descriptor.active_parameter_count,
+        descriptor.coordinate_count,
+        descriptor.component_count,
+    ) == (3, 1, 4, 2)
+    assert tuple(
+        descriptor.component_ids[index].decode()
+        for index in range(descriptor.component_count)
+    ) == ("methane", "ethane")
+    assert (
+        descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
+    )
+    assert descriptor.topology_fingerprint.decode() == (
+        "sha256:172e3c9dce280763cf785db5d6fc94deeb30a23359346b2222a836077930351a"
+    )
+    assert descriptor.topology_fingerprint != descriptor.parameter_fingerprint
+    assert descriptor.helmholtz_basis_id.decode() == (
+        "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
+    )
+    assert (
+        descriptor.temperature_min_k,
+        descriptor.temperature_max_k,
+    ) == (
+        model._model.temperature_min_k,
+        model._model.temperature_max_k,
+    )
+
+    coordinates = tuple(
+        descriptor.coordinates[index] for index in range(descriptor.coordinate_count)
+    )
+    assert all(
+        coordinate.struct_size == ctypes.sizeof(NativeCapabilityCoordinate)
+        for coordinate in coordinates
+    )
+    assert tuple(coordinate.kind for coordinate in coordinates) == (1, 1, 2, 3)
+    assert tuple(coordinate.unit.decode() for coordinate in coordinates) == (
+        "mol",
+        "mol",
+        "m3",
+        "dimensionless",
+    )
+    assert tuple(coordinate.component_index for coordinate in coordinates) == (
+        0,
+        1,
+        -1,
+        -1,
+    )
+    assert tuple(
+        (coordinate.pair_component_index_a, coordinate.pair_component_index_b)
+        for coordinate in coordinates
+    ) == ((-1, -1), (-1, -1), (-1, -1), (0, 1))
+
+    _, reversed_table = _capability_table(_mixture_model(("ethane", "methane")))
+    assert reversed_table.capability_count == 2
+    assert (
+        reversed_table.capabilities[0].topology_fingerprint
+        != descriptor.topology_fingerprint
+    )
+
+    lij = table.capabilities[1]
+    assert (
+        lij.schema_version,
+        lij.capability,
+        lij.parameter_family,
+        lij.parameter_identity,
+        lij.observation_contract,
+        lij.model_domain,
+        lij.tensor_layout,
+        lij.derivative_order,
+        lij.maturity,
+        lij.authority_effect,
+    ) == (1, 2, 2, 1, 1, 1, 1, 2, 1, 0)
+    assert lij.component_count == 2
+    assert tuple(
+        lij.component_ids[index].decode()
+        for index in range(lij.component_count)
+    ) == ("methane", "ethane")
+    assert lij.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert lij.topology_fingerprint.decode() == descriptor.topology_fingerprint.decode()
+    lij_coordinates = tuple(
+        lij.coordinates[index] for index in range(lij.coordinate_count)
+    )
+    assert tuple(coordinate.kind for coordinate in lij_coordinates) == (
+        1,
+        1,
+        2,
+        4,
+    )
+    assert tuple(coordinate.unit.decode() for coordinate in lij_coordinates) == (
+        "mol",
+        "mol",
+        "m3",
+        "dimensionless",
+    )
+
+
+def test_native_sdk_describes_exact_scalar_pure_parameter_contracts() -> None:
+    model = _model("gross-2001-methane-ethane", "methane")
+    _, table = _capability_table(model)
+    assert table.capability_count == 3
+    expected = (
+        (3, 3, 5, "dimensionless"),
+        (4, 4, 6, "angstrom"),
+        (5, 5, 7, "kelvin"),
+    )
+    for descriptor, (
+        capability_code,
+        family_code,
+        coordinate_kind,
+        unit,
+    ) in zip(table.capabilities[:3], expected, strict=True):
+        assert (
+            descriptor.schema_version,
+            descriptor.capability,
+            descriptor.parameter_family,
+            descriptor.parameter_identity,
+            descriptor.observation_contract,
+            descriptor.model_domain,
+            descriptor.tensor_layout,
+            descriptor.derivative_order,
+            descriptor.maturity,
+            descriptor.authority_effect,
+        ) == (1, capability_code, family_code, 2, 1, 2, 1, 2, 1, 0)
+        assert (
+            descriptor.state_coordinate_count,
+            descriptor.active_parameter_count,
+            descriptor.coordinate_count,
+            descriptor.component_count,
+        ) == (2, 1, 3, 1)
+        coordinates = tuple(
+            descriptor.coordinates[index]
+            for index in range(descriptor.coordinate_count)
+        )
+        assert tuple(item.kind for item in coordinates) == (
+            1,
+            2,
+            coordinate_kind,
+        )
+        assert tuple(item.unit.decode() for item in coordinates) == (
+            "mol",
+            "m3",
+            unit,
+        )
+        assert coordinates[-1].component_index == 0
+        assert (
+            descriptor.parameter_fingerprint.decode()
+            == model.parameter_fingerprint
+        )
+
+
+def test_native_sdk_describes_exact_associating_pure_parameter_contracts() -> None:
+    model = _model("figiel-2025-reference-electrolytes", "ethanol")
+    _, table = _capability_table(model)
+    assert table.capability_count == 2
+    expected = (
+        (15, 9, 11, "kelvin"),
+        (16, 10, 12, "dimensionless"),
+    )
+    for descriptor, (
+        capability_code,
+        family_code,
+        coordinate_kind,
+        unit,
+    ) in zip(table.capabilities[:2], expected, strict=True):
+        assert (
+            descriptor.schema_version,
+            descriptor.capability,
+            descriptor.parameter_family,
+            descriptor.parameter_identity,
+            descriptor.observation_contract,
+            descriptor.model_domain,
+            descriptor.tensor_layout,
+            descriptor.derivative_order,
+            descriptor.maturity,
+            descriptor.authority_effect,
+        ) == (1, capability_code, family_code, 3, 1, 7, 1, 2, 1, 0)
+        coordinates = tuple(
+            descriptor.coordinates[index]
+            for index in range(descriptor.coordinate_count)
+        )
+        assert tuple(item.kind for item in coordinates) == (
+            1,
+            2,
+            coordinate_kind,
+        )
+        assert tuple(item.unit.decode() for item in coordinates) == (
+            "mol",
+            "m3",
+            unit,
+        )
+        assert coordinates[-1].component_index == -1
+        assert descriptor.topology_fingerprint
+
+
+@pytest.mark.parametrize(
+    ("component_ids", "expected"),
+    (
+        (
+            ("water", "sodium-cation", "chloride-anion"),
+            (6, 6, 2, 3, 8, 1),
+        ),
+        (
+            ("water", "sodium-cation", "bromide-anion"),
+            (7, 7, 3, 4, 9, 0),
+        ),
+    ),
+)
+def test_native_sdk_describes_exact_direct_observable_parameter_contracts(
+    component_ids: tuple[str, ...],
+    expected: tuple[int, int, int, int, int, int],
+) -> None:
+    model = _electrolyte_model(component_ids)
+    _, table = _capability_table(model)
+    (
+        capability_code,
+        family_code,
+        observation_code,
+        model_domain_code,
+        coordinate_kind,
+        active_component_index,
+    ) = expected
+    matches = tuple(
+        descriptor
+        for descriptor in table.capabilities[: table.capability_count]
+        if descriptor.capability == capability_code
+    )
+    assert len(matches) == 1
+    descriptor = matches[0]
+    assert (
+        descriptor.schema_version,
+        descriptor.parameter_family,
+        descriptor.parameter_identity,
+        descriptor.observation_contract,
+        descriptor.model_domain,
+        descriptor.tensor_layout,
+        descriptor.derivative_order,
+        descriptor.maturity,
+        descriptor.authority_effect,
+    ) == (1, family_code, 2, observation_code, model_domain_code, 1, 1, 1, 0)
+    assert (
+        descriptor.state_coordinate_count,
+        descriptor.active_parameter_count,
+        descriptor.coordinate_count,
+        descriptor.component_count,
+    ) == (0, 1, 1, 3)
+    assert tuple(
+        descriptor.component_ids[index].decode()
+        for index in range(descriptor.component_count)
+    ) == component_ids
+    coordinate = descriptor.coordinates[0]
+    assert (
+        coordinate.kind,
+        coordinate.component_index,
+        coordinate.pair_component_index_a,
+        coordinate.pair_component_index_b,
+    ) == (coordinate_kind, active_component_index, -1, -1)
+    assert coordinate.unit.decode() == (
+        "angstrom" if coordinate_kind == 8 else "dimensionless"
+    )
+    assert (
+        descriptor.temperature_min_k,
+        descriptor.temperature_max_k,
+    ) == (298.15, 298.15)
+    assert descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert descriptor.topology_fingerprint.decode().startswith("sha256:")
+
+
+def test_native_sdk_describes_each_aqueous_kij_as_a_scalar_miac_coordinate() -> None:
+    component_ids = ("water", "sodium-cation", "bromide-anion")
+    model = _electrolyte_model(component_ids)
+    _, table = _capability_table(model)
+
+    descriptors = tuple(
+        descriptor
+        for descriptor in table.capabilities[: table.capability_count]
+        if descriptor.capability in (8, 9, 10)
+    )
+
+    assert tuple(descriptor.capability for descriptor in descriptors) == (8, 9, 10)
+    assert tuple(
+        (
+            descriptor.coordinates[0].pair_component_index_a,
+            descriptor.coordinates[0].pair_component_index_b,
+        )
+        for descriptor in descriptors
+    ) == ((0, 1), (0, 2), (1, 2))
+    for descriptor in descriptors:
+        assert (
+            descriptor.schema_version,
+            descriptor.parameter_family,
+            descriptor.parameter_identity,
+            descriptor.observation_contract,
+            descriptor.model_domain,
+            descriptor.tensor_layout,
+            descriptor.derivative_order,
+            descriptor.maturity,
+            descriptor.authority_effect,
+        ) == (1, 1, 1, 3, 4, 1, 1, 1, 0)
+        assert (
+            descriptor.state_coordinate_count,
+            descriptor.active_parameter_count,
+            descriptor.coordinate_count,
+            descriptor.component_count,
+        ) == (0, 1, 1, 3)
+        assert tuple(
+            descriptor.component_ids[index].decode()
+            for index in range(descriptor.component_count)
+        ) == component_ids
+        coordinate = descriptor.coordinates[0]
+        assert (
+            coordinate.kind,
+            coordinate.component_index,
+            coordinate.unit.decode(),
+        ) == (3, -1, "dimensionless")
+        assert (
+            descriptor.temperature_min_k,
+            descriptor.temperature_max_k,
+        ) == (298.15, 298.15)
+        assert descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
+        assert descriptor.topology_fingerprint.decode().startswith("sha256:")
+
+
+def test_native_sdk_describes_figiel_dielectric_suppression_coordinate() -> None:
+    component_ids = ("water", "sodium-cation", "bromide-anion")
+    model = _electrolyte_model(component_ids)
+    _, table = _capability_table(model)
+
+    matches = tuple(
+        descriptor
+        for descriptor in table.capabilities[: table.capability_count]
+        if descriptor.capability == 11
+    )
+
+    assert len(matches) == 1
+    descriptor = matches[0]
+    assert (
+        descriptor.schema_version,
+        descriptor.parameter_family,
+        descriptor.parameter_identity,
+        descriptor.observation_contract,
+        descriptor.model_domain,
+        descriptor.tensor_layout,
+        descriptor.derivative_order,
+        descriptor.maturity,
+        descriptor.authority_effect,
+    ) == (1, 8, 3, 4, 5, 1, 1, 1, 0)
+    assert (
+        descriptor.state_coordinate_count,
+        descriptor.active_parameter_count,
+        descriptor.coordinate_count,
+        descriptor.component_count,
+    ) == (0, 1, 1, 3)
+    coordinate = descriptor.coordinates[0]
+    assert (
+        coordinate.kind,
+        coordinate.component_index,
+        coordinate.pair_component_index_a,
+        coordinate.pair_component_index_b,
+        coordinate.unit.decode(),
+    ) == (10, -1, -1, -1, "dimensionless")
+
+    methanol = _electrolyte_model(
+        ("methanol", "sodium-cation", "bromide-anion")
+    )
+    _, methanol_table = _capability_table(methanol)
+    methanol_matches = tuple(
+        descriptor
+        for descriptor in methanol_table.capabilities[
+            : methanol_table.capability_count
+        ]
+        if descriptor.capability == 11
+    )
+    assert len(methanol_matches) == 1
+    assert tuple(
+        methanol_matches[0].component_ids[index].decode()
+        for index in range(methanol_matches[0].component_count)
+    ) == ("methanol", "sodium-cation", "bromide-anion")
+
+
+def test_native_sdk_evaluates_figiel_dielectric_suppression_exact_derivative() -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
+    _, table = _figiel_permittivity_table(model)
+    assert table.figiel_permittivity_result_size == ctypes.sizeof(
+        FigielPermittivityResult
+    )
+    callback = EvaluateFigielPermittivity(table.evaluate_figiel_permittivity)
+
+    def evaluate(
+        coefficient: float,
+        *,
+        fingerprint: bytes | None = None,
+        temperature: float = 298.15,
+        pressure: float = 100000.0,
+        mole_fraction: float = 0.1,
+    ) -> FigielPermittivityResult:
+        result = FigielPermittivityResult(
+            struct_size=ctypes.sizeof(FigielPermittivityResult)
+        )
+        status = callback(
+            table.model_context,
+            fingerprint or model.parameter_fingerprint.encode(),
+            temperature,
+            pressure,
+            mole_fraction,
+            coefficient,
+            ctypes.byref(result),
+        )
+        assert status == result.status
+        return result
+
+    coefficient = 7.01
+    mole_fraction = 0.1
+    salt_free = 78.09
+    denominator = 1.0 + coefficient * mole_fraction
+    result = evaluate(coefficient)
+    assert result.status == STATUS_OK
+    assert result.salt_free_relative_permittivity == salt_free
+    assert result.bulk_relative_permittivity == pytest.approx(
+        salt_free / denominator
+    )
+    assert result.derivative == pytest.approx(
+        -salt_free * mole_fraction / denominator**2
+    )
+    assert result.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert not result.error
+
+    step = 1.0e-5
+    finite_difference = (
+        evaluate(coefficient + step).bulk_relative_permittivity
+        - evaluate(coefficient - step).bulk_relative_permittivity
+    ) / (2.0 * step)
+    assert result.derivative == pytest.approx(finite_difference, rel=2.0e-10)
+
+    for failure, expected in (
+        (evaluate(coefficient, fingerprint=b"sha256:wrong"), STATUS_UNSUPPORTED_MODEL),
+        (evaluate(coefficient, temperature=300.0), STATUS_DOMAIN_ERROR),
+        (evaluate(coefficient, pressure=101325.0), STATUS_DOMAIN_ERROR),
+        (evaluate(coefficient, mole_fraction=-0.1), STATUS_DOMAIN_ERROR),
+        (evaluate(-1.0), STATUS_DOMAIN_ERROR),
+    ):
+        assert failure.status == expected
+        assert math.isnan(failure.bulk_relative_permittivity)
+        assert math.isnan(failure.derivative)
+        assert failure.parameter_fingerprint == b""
+        assert failure.error
+
+    methanol = _electrolyte_model(
+        ("methanol", "sodium-cation", "bromide-anion")
+    )
+    _, methanol_table = _figiel_permittivity_table(methanol)
+    methanol_result = FigielPermittivityResult(
+        struct_size=ctypes.sizeof(FigielPermittivityResult)
+    )
+    methanol_status = EvaluateFigielPermittivity(
+        methanol_table.evaluate_figiel_permittivity
+    )(
+        methanol_table.model_context,
+        methanol.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        mole_fraction,
+        coefficient,
+        ctypes.byref(methanol_result),
+    )
+    assert methanol_status == methanol_result.status == STATUS_OK
+    assert methanol_result.salt_free_relative_permittivity == 33.05
+    assert (
+        methanol_result.bulk_relative_permittivity
+        / methanol_result.salt_free_relative_permittivity
+    ) == pytest.approx(1.0 / denominator)
+
+
+def test_native_sdk_evaluates_organic_ion_solvation_kij_derivatives() -> None:
+    model = _electrolyte_model(
+        ("methanol", "potassium-cation", "bromide-anion")
+    )
+    _, table = _ion_solvation_kij_table(model)
+    assert table.ion_solvation_kij_result_size == ctypes.sizeof(
+        IonSolvationKijResult
+    )
+    callback = EvaluateIonSolvationKij(table.evaluate_ion_solvation_kij)
+
+    def evaluate(
+        coordinates: tuple[float, float, float],
+        *,
+        active_ion: int = 1,
+    ) -> IonSolvationKijResult:
+        values = (ctypes.c_double * 3)(*coordinates)
+        result = IonSolvationKijResult(
+            struct_size=ctypes.sizeof(IonSolvationKijResult)
+        )
+        status = callback(
+            table.model_context,
+            model.parameter_fingerprint.encode(),
+            298.15,
+            100000.0,
+            active_ion,
+            values,
+            3,
+            ctypes.byref(result),
+        )
+        assert status == result.status
+        return result
+
+    coordinates = (0.32, 0.15, -0.35)
+    result = evaluate(coordinates)
+    assert result.status == STATUS_OK
+    assert math.isfinite(result.solvation_gibbs_j_per_mol)
+    assert all(math.isfinite(value) for value in result.derivative)
+    assert result.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    step = 1.0e-5
+    for active in range(3):
+        low = list(coordinates)
+        high = list(coordinates)
+        low[active] -= step
+        high[active] += step
+        finite_difference = (
+            evaluate(tuple(high)).solvation_gibbs_j_per_mol
+            - evaluate(tuple(low)).solvation_gibbs_j_per_mol
+        ) / (2.0 * step)
+        assert result.derivative[active] == pytest.approx(
+            finite_difference, rel=2.0e-6, abs=1.0e-3
+        )
+
+    _, capability_table = _capability_table(model)
+    matches = tuple(
+        descriptor
+        for descriptor in capability_table.capabilities[
+            : capability_table.capability_count
+        ]
+        if descriptor.capability in (12, 13, 14)
+    )
+    assert len(matches) == 3
+    assert all(
+        descriptor.parameter_family == 1
+        and descriptor.parameter_identity == 1
+        and descriptor.observation_contract == 2
+        and descriptor.model_domain == 6
+        and descriptor.derivative_order == 1
+        for descriptor in matches
+    )
+    assert {
+        (
+            descriptor.coordinates[0].pair_component_index_a,
+            descriptor.coordinates[0].pair_component_index_b,
+        )
+        for descriptor in matches
+    } == {(0, 1), (0, 2), (1, 2)}
+
+
+def test_native_sdk_rejects_forced_organic_ion_solvation_kij_admission() -> None:
+    unsupported = _electrolyte_model(
+        ("water", "sodium-cation", "bromide-anion")
+    )
+    with pytest.raises(
+        ValueError,
+        match="unsupported active ion-solvation k_ij model identity",
+    ):
+        _native_sdk_v1(
+            unsupported._native,
+            unsupported.parameter_fingerprint,
+            298.15,
+            298.15,
+            unsupported.component_ids,
+            0.38,
+            phase_callbacks_admitted=False,
+            ion_solvation_kij_admitted=True,
+            topology_fingerprint=(
+                "sha256:00d2476a7b107097ff8de62754753515d7b58883cdfc37a2e7cc4727f28bc25a"
+            ),
+        )
+
+    admitted = _electrolyte_model(
+        ("methanol", "potassium-cation", "bromide-anion")
+    )
+    with pytest.raises(
+        ValueError,
+        match="unsupported active ion-solvation k_ij model identity",
+    ):
+        _native_sdk_v1(
+            admitted._native,
+            admitted.parameter_fingerprint,
+            298.15,
+            298.15,
+            admitted.component_ids,
+            0.38,
+            phase_callbacks_admitted=False,
+            ion_solvation_kij_admitted=True,
+            topology_fingerprint="sha256:altered",
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="unsupported active ion-solvation k_ij model identity",
+    ):
+        _native_sdk_v1(
+            admitted._native,
+            "sha256:altered",
+            298.15,
+            298.15,
+            admitted.component_ids,
+            0.38,
+            phase_callbacks_admitted=False,
+            ion_solvation_kij_admitted=True,
+            topology_fingerprint=(
+                "sha256:00d2476a7b107097ff8de62754753515d7b58883cdfc37a2e7cc4727f28bc25a"
+            ),
+        )
+
+
+def test_native_sdk_figiel_permittivity_installed_header_layout() -> None:
+    compiler = shutil.which("cc")
+    assert compiler is not None
+    include_root = Path(epcsaft.__file__).parent / "include"
+    source = r"""
+#include <stddef.h>
+#include <epcsaft/native_sdk_v1.h>
+
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_FIGIEL_DIELECTRIC_SUPPRESSION_V1 == 11u,
+    "dielectric capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_DIELECTRIC_ION_SUPPRESSION_V1 == 8u,
+    "dielectric parameter family"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_OBSERVATION_RELATIVE_PERMITTIVITY_RATIO_V1 == 4u,
+    "relative-permittivity-ratio observation"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, figiel_permittivity_result_size) == 296,
+    "result-size offset"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, evaluate_figiel_permittivity) == 304,
+    "callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 312, "table prefix size");
+_Static_assert(
+    sizeof(epcsaft_figiel_permittivity_result_v1) == 264,
+    "result size"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_CATION_KIJ_V1 == 12u,
+    "ion-solvation solvent-cation capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_SINGLE_ION_SOLVATION_V1 == 6u,
+    "single-ion-solvation model domain"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, ion_solvation_kij_result_size) == 312,
+    "ion-solvation result-size offset"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, evaluate_ion_solvation_kij) == 320,
+    "ion-solvation callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 328, "extended table size");
+_Static_assert(
+    sizeof(epcsaft_ion_solvation_kij_result_v1) == 288,
+    "ion-solvation result size"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_IONIC_REGION_PERMITTIVITY_V1 == 17u,
+    "ionic-region-permittivity capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_IONIC_REGION_RELATIVE_PERMITTIVITY_V1 == 11u,
+    "ionic-region-permittivity parameter family"
+);
+_Static_assert(
+    offsetof(
+        epcsaft_native_sdk_v1,
+        ion_solvation_ionic_permittivity_result_size
+    ) == 328,
+    "ionic-region-permittivity result-size offset"
+);
+_Static_assert(
+    offsetof(
+        epcsaft_native_sdk_v1,
+        evaluate_ion_solvation_ionic_permittivity
+    ) == 336,
+    "ionic-region-permittivity callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 344, "final table size");
+_Static_assert(
+    sizeof(epcsaft_ion_solvation_ionic_permittivity_result_v1) == 272,
+    "ionic-region-permittivity result size"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_PERMITTIVITY_V1 == 18u,
+    "solvent-permittivity capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_RELATIVE_PERMITTIVITY_V1 == 12u,
+    "solvent-permittivity parameter family"
+);
+_Static_assert(
+    offsetof(
+        epcsaft_native_sdk_v1,
+        ion_solvation_solvent_permittivity_result_size
+    ) == 344,
+    "solvent-permittivity result-size offset"
+);
+_Static_assert(
+    offsetof(
+        epcsaft_native_sdk_v1,
+        evaluate_ion_solvation_solvent_permittivity
+    ) == 352,
+    "solvent-permittivity callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 360, "final table size");
+_Static_assert(
+    sizeof(epcsaft_ion_solvation_solvent_permittivity_result_v1) == 272,
+    "solvent-permittivity result size"
+);
+
+int main(void) {
+    epcsaft_evaluate_figiel_permittivity_v1 callback = 0;
+    epcsaft_evaluate_ion_solvation_kij_v1 ion_callback = 0;
+    epcsaft_evaluate_ion_solvation_ionic_permittivity_v1
+        ionic_permittivity_callback = 0;
+    epcsaft_evaluate_ion_solvation_solvent_permittivity_v1
+        solvent_permittivity_callback = 0;
+    return callback != 0 || ion_callback != 0
+        || ionic_permittivity_callback != 0
+        || solvent_permittivity_callback != 0;
+}
+"""
+    completed = subprocess.run(
+        (
+            compiler,
+            "-std=c11",
+            "-Werror",
+            f"-I{include_root}",
+            "-x",
+            "c",
+            "-fsyntax-only",
+            "-",
+        ),
+        input=source,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_native_sdk_scalar_pure_parameter_installed_header_layout() -> None:
+    compiler = shutil.which("cc")
+    if compiler is None:
+        pytest.skip("C compiler is required for the installed-header contract")
+    include_root = Path(epcsaft.__file__).parent / "include"
+    source = r"""
+#include <stddef.h>
+#include <epcsaft/native_sdk_v1.h>
+
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_PURE_SEGMENT_COUNT_HELMHOLTZ_V1 == 3u,
+    "segment-count capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1 == 4u,
+    "segment-diameter family"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1 == 7u,
+    "dispersion-energy coordinate"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_BORN_V1 == 6u,
+    "Born direct-observable capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_OBSERVATION_AQUEOUS_MEAN_IONIC_ACTIVITY_V1 == 3u,
+    "aqueous mean-ionic-activity observation"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, evaluate_pure_phase_parameter) == 288,
+    "pure-parameter callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 296, "table prefix size");
+
+int main(void) {
+    epcsaft_evaluate_pure_phase_parameter_v1 callback = 0;
+    return callback != 0;
+}
+"""
+    completed = subprocess.run(
+        (
+            compiler,
+            "-std=c11",
+            "-Werror",
+            f"-I{include_root}",
+            "-x",
+            "c",
+            "-fsyntax-only",
+            "-",
+        ),
+        input=source,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.parametrize(
+    ("family_code", "parameter_value", "full_coordinate"),
+    (
+        (3, 1.0, 2),
+        (4, 3.7039, 3),
+        (5, 150.03, 4),
+    ),
+)
+def test_native_sdk_scalar_pure_parameter_callback_matches_full_exact_block(
+    family_code: int,
+    parameter_value: float,
+    full_coordinate: int,
+) -> None:
+    model = _model("gross-2001-methane-ethane", "methane")
+    capsule, table = _pure_parameter_table(model)
+    assert capsule is not None
+    temperature_k = 150.0
+    point = (1.0, 2.0e-3, parameter_value)
+    direction = (0.01, -2.0e-5, 0.02)
+
+    def shifted(
+        scale: float,
+    ) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+        values = tuple(
+            value + scale * delta
+            for value, delta in zip(point, direction, strict=True)
+        )
+        return _evaluate_pure_parameter(
+            table,
+            temperature_k,
+            values[0],
+            values[1],
+            family_code,
+            values[2],
+        )
+
+    center, gradient, hessian = shifted(0.0)
+    full = _evaluate_parameters(
+        table,
+        temperature_k,
+        point[0],
+        point[1],
+        parameter_value if family_code == 3 else 1.0,
+        parameter_value if family_code == 4 else 3.7039,
+        parameter_value if family_code == 5 else 150.03,
+    )
+    selected = (0, 1, full_coordinate)
+    assert center.status == STATUS_OK
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        full.helmholtz_over_rt_reference_amount, rel=2.0e-13, abs=2.0e-13
+    )
+    assert center.pressure_pa == pytest.approx(full.pressure_pa, rel=2.0e-13)
+    assert gradient == pytest.approx(tuple(full.gradient[index] for index in selected))
+    assert hessian == pytest.approx(
+        tuple(full.hessian[row * 5 + column] for row in selected for column in selected)
+    )
+
+    step = 2.0e-4
+    lower, lower_gradient, _ = shifted(-step)
+    upper, upper_gradient, _ = shifted(step)
+    value_direction = sum(
+        value * delta for value, delta in zip(gradient, direction, strict=True)
+    )
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount
+        - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert value_direction == pytest.approx(value_difference, rel=3.0e-8)
+    for row in range(3):
+        hessian_direction = sum(
+            hessian[row * 3 + column] * direction[column]
+            for column in range(3)
+        )
+        gradient_difference = (
+            upper_gradient[row] - lower_gradient[row]
+        ) / (2.0 * step)
+        assert hessian_direction == pytest.approx(
+            gradient_difference, rel=3.0e-7
+        )
+
+
+@pytest.mark.parametrize(
+    ("family_code", "parameter_value", "parameter_step"),
+    (
+        (9, 2653.4, 2.0e-3),
+        (10, 0.03238, 2.0e-8),
+    ),
+)
+def test_native_sdk_associating_pure_parameter_callback_has_exact_hessian(
+    family_code: int,
+    parameter_value: float,
+    parameter_step: float,
+) -> None:
+    model = _model("figiel-2025-reference-electrolytes", "ethanol")
+    capsule, table = _pure_parameter_table(model)
+    assert capsule is not None
+    temperature_k = 298.15
+    point = (1.0, 5.86e-5, parameter_value)
+    direction = (1.0e-3, -2.0e-8, parameter_step)
+
+    def shifted(
+        scale: float,
+    ) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+        values = tuple(
+            value + scale * delta
+            for value, delta in zip(point, direction, strict=True)
+        )
+        return _evaluate_pure_parameter(
+            table,
+            temperature_k,
+            values[0],
+            values[1],
+            family_code,
+            values[2],
+        )
+
+    center, gradient, hessian = shifted(0.0)
+    assert center.status == STATUS_OK
+    assert all(math.isfinite(value) for value in gradient)
+    assert all(math.isfinite(value) for value in hessian)
+    assert center.pressure_pa == pytest.approx(
+        -8.31446261815324 * temperature_k * gradient[1], rel=2.0e-13
+    )
+    provider_state = model.evaluate(
+        temperature=temperature_k * unit_registry.kelvin,
+        molar_density=(point[0] / point[1])
+        * unit_registry.mole
+        / unit_registry.meter**3,
+        mole_fractions=(1.0,),
+    )
+    assert center.pressure_pa == pytest.approx(
+        provider_state.pressure.to("pascal").magnitude,
+        rel=3.0e-12,
+    )
+
+    difference_step = 1.0e-2
+    lower, lower_gradient, _ = shifted(-difference_step)
+    upper, upper_gradient, _ = shifted(difference_step)
+    value_direction = sum(
+        value * delta for value, delta in zip(gradient, direction, strict=True)
+    )
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount
+        - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * difference_step)
+    assert value_direction == pytest.approx(value_difference, rel=2.0e-6)
+    for row in range(3):
+        hessian_direction = sum(
+            hessian[row * 3 + column] * direction[column]
+            for column in range(3)
+        )
+        gradient_difference = (
+            upper_gradient[row] - lower_gradient[row]
+        ) / (2.0 * difference_step)
+        assert hessian_direction == pytest.approx(
+            gradient_difference, rel=2.0e-5, abs=2.0e-8
+        )
+
+
+def test_native_sdk_joint_associating_parameters_have_exact_seven_coordinate_hessian(
+) -> None:
+    model = _model("figiel-2025-reference-electrolytes", "ethanol")
+    capsule, table = _associating_parameterized_table(model)
+    assert capsule is not None
+    assert table.associating_parameterized_result_size == ctypes.sizeof(
+        AssociatingParameterizedPhaseBlockResult
+    )
+    assert table.evaluate_diameter_basis_associating_pure_phase_parameters
+
+    temperature_k = 298.15
+    point = (1.0, 5.86e-5, 2.3827, 3.1771, 198.24, 2653.4, 0.03238)
+    direction = (1.0e-3, -2.0e-8, 2.0e-4, -1.0e-4, 2.0e-2, 2.0e-1, 2.0e-6)
+
+    def shifted(scale: float) -> AssociatingParameterizedPhaseBlockResult:
+        return _evaluate_associating_parameters(
+            table,
+            temperature_k,
+            tuple(
+                value + scale * delta
+                for value, delta in zip(point, direction, strict=True)
+            ),
+        )
+
+    center = shifted(0.0)
+    assert center.status == STATUS_OK
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert center.topology_fingerprint
+    assert all(math.isfinite(value) for value in center.gradient)
+    assert all(math.isfinite(value) for value in center.hessian)
+    assert center.pressure_pa == pytest.approx(
+        -8.31446261815324 * temperature_k * center.gradient[1], rel=2.0e-13
+    )
+
+    state = model.evaluate(
+        temperature=temperature_k * unit_registry.kelvin,
+        molar_density=(point[0] / point[1])
+        * unit_registry.mole
+        / unit_registry.meter**3,
+        mole_fractions=(1.0,),
+    )
+    density = point[0] / point[1]
+    number_density = density * 6.02214076e-7
+    diameter = point[3] * (
+        1.0 - 0.12 * math.exp(-3.0 * point[4] / temperature_k)
+    )
+    zeta_2 = math.pi / 6.0 * number_density * point[2] * diameter**2
+    zeta_3 = math.pi / 6.0 * number_density * point[2] * diameter**3
+    contact = (
+        1.0 / (1.0 - zeta_3)
+        + 1.5 * diameter * zeta_2 / (1.0 - zeta_3) ** 2
+        + 0.5 * diameter**2 * zeta_2**2 / (1.0 - zeta_3) ** 3
+    )
+    delta = (
+        contact
+        * math.expm1(point[5] / temperature_k)
+        * diameter**3
+        * point[6]
+    )
+    site_fraction = 2.0 / (
+        1.0 + math.sqrt(1.0 + 4.0 * number_density * delta)
+    )
+    diameter_basis_association = 2.0 * (
+        math.log(site_fraction) - 0.5 * site_fraction + 0.5
+    )
+    expected_phase = point[0] * (
+        math.log(density)
+        - 1.0
+        + state.hard_chain
+        + state.dispersion
+        + diameter_basis_association
+    )
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected_phase, rel=2.0e-12
+    )
+    assert center.helmholtz_over_rt_reference_amount != pytest.approx(
+        math.log(density)
+        - 1.0
+        + state.residual_helmholtz,
+        rel=1.0e-5,
+    )
+
+    step = 1.0e-2
+    lower = shifted(-step)
+    upper = shifted(step)
+    value_direction = sum(
+        value * delta
+        for value, delta in zip(center.gradient, direction, strict=True)
+    )
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount
+        - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert value_direction == pytest.approx(value_difference, rel=2.0e-6)
+    for row in range(7):
+        hessian_direction = sum(
+            center.hessian[row * 7 + column] * direction[column]
+            for column in range(7)
+        )
+        gradient_difference = (
+            upper.gradient[row] - lower.gradient[row]
+        ) / (2.0 * step)
+        assert hessian_direction == pytest.approx(
+            gradient_difference, rel=3.0e-5, abs=2.0e-8
+        )
+
+
+def test_native_sdk_joint_associating_parameters_reject_nonassociating_model(
+) -> None:
+    model = _model("gross-2001-methane-ethane", "methane")
+    _, table = _associating_parameterized_table(model)
+    result = _evaluate_associating_parameters(
+        table,
+        150.0,
+        (1.0, 2.0e-3, 1.0, 3.7039, 150.03, 2500.0, 0.03),
+    )
+    assert result.status == STATUS_UNSUPPORTED_MODEL
+    assert b"2B model" in result.error
+
+
+def test_native_sdk_joint_associating_parameters_require_one_of_each_2b_site(
+) -> None:
+    model = _model("figiel-2025-reference-electrolytes", "ethanol")
+    malformed = NativeModel(
+        *_native_arguments(replace(model._model, site_multiplicity=(2, 1)))
+    )
+    with pytest.raises(
+        ValueError, match="native SDK v1 requires a supported phase-block model"
+    ):
+        _native_sdk_v1(
+            malformed,
+            model.parameter_fingerprint,
+            298.15,
+            298.15,
+            model.component_ids,
+            math.nan,
+            phase_callbacks_admitted=True,
+            topology_fingerprint=f"sha256:{'0' * 64}",
+        )
+
+
+@pytest.mark.parametrize(
+    ("family_code", "parameter_value", "expected_status"),
+    (
+        (999, 1.0, STATUS_INVALID_ARGUMENT),
+        (3, math.nan, STATUS_INVALID_ARGUMENT),
+        (3, 0.0, STATUS_DOMAIN_ERROR),
+    ),
+)
+def test_native_sdk_scalar_pure_parameter_callback_rejects_invalid_inputs(
+    family_code: int,
+    parameter_value: float,
+    expected_status: int,
+) -> None:
+    model = _model("gross-2001-methane-ethane", "methane")
+    capsule, table = _pure_parameter_table(model)
+    assert capsule is not None
+    result, _, _ = _evaluate_pure_parameter(
+        table, 150.0, 1.0, 2.0e-3, family_code, parameter_value
+    )
+    assert result.status == expected_status
+
+
+def test_native_sdk_scalar_pure_parameter_callback_fails_closed_on_malformed_buffers(
+) -> None:
+    model = _model("gross-2001-methane-ethane", "methane")
+    capsule, table = _pure_parameter_table(model)
+    assert capsule is not None
+    callback = EvaluatePurePhaseParameter(table.evaluate_pure_phase_parameter)
+
+    def call(
+        result: MixturePhaseBlockResult,
+        *,
+        context: object = table.model_context,
+        temperature_k: float = 150.0,
+    ) -> int:
+        return callback(
+            context,
+            temperature_k,
+            1.0,
+            2.0e-3,
+            3,
+            1.0,
+            ctypes.byref(result),
+        )
+
+    result, _, _ = _mixture_result(3)
+    result.gradient_capacity = 2
+    assert call(result) == STATUS_INVALID_ARGUMENT
+    assert result.status == STATUS_INVALID_ARGUMENT
+    assert result.error
+
+    result, _, _ = _mixture_result(3)
+    assert call(result, context=None) == STATUS_INVALID_ARGUMENT
+    assert result.status == STATUS_INVALID_ARGUMENT
+    assert result.error
+
+    result, _, _ = _mixture_result(3)
+    assert call(result, temperature_k=0.0) == STATUS_INVALID_ARGUMENT
+    assert result.status == STATUS_INVALID_ARGUMENT
+    assert result.error
+
+    result, _, _ = _mixture_result(3)
+    result.struct_size -= 1
+    assert call(result) == STATUS_ABI_MISMATCH
+
+
+def test_native_sdk_held_neutral_reference_matches_the_public_owner() -> None:
+    model = _held_water_ionization_model()
+    capsule, table = _neutral_reference_table(model)
+    assert capsule is not None
+    observed, basis, contractions, composition = _evaluate_neutral_reference(
+        table, model.parameter_fingerprint
+    )
+    reference = model.reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=100000.0 * unit_registry.pascal,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    pure_water = model.evaluate(
+        temperature=reference.temperature,
+        pressure=reference.pressure,
+        mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    assert pure_water.log_fugacity_coefficient is not None
+
+    assert observed.status == STATUS_OK
+    assert observed.temperature_k == 298.15
+    assert observed.pressure_pa == 100000.0
+    assert basis == pytest.approx((1.0, 0.0, 0.0, 0.0, 1.0, 1.0))
+    assert contractions == pytest.approx(
+        (
+            pure_water.log_fugacity_coefficient[0],
+            math.fsum(reference.infinite_dilution_log_fugacity_coefficient),
+        ),
+        abs=2.0e-12,
+    )
+    assert composition == pytest.approx((1.0, 0.0, 0.0))
+    assert observed.solvent_molar_mass_kg_per_mol == pytest.approx(0.01801528, abs=1.0e-12)
+    assert observed.reference_molality_mol_per_kg == 1.0e-12
+    assert 0.0 <= observed.reference_convergence_error <= 5.0e-5
+    assert 1.0 / pure_water.molar_density.to("mole / meter**3").magnitude > 0.0
+    assert observed.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert observed.helmholtz_basis_id.decode() == (
+        "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
+    )
+    assert observed.error == b""
+
+
+def test_native_sdk_held_neutral_reference_is_domain_bound_and_permutation_safe() -> None:
+    model = _held_water_ionization_model()
+    _, table = _neutral_reference_table(model)
+    result, _, _, _ = _evaluate_neutral_reference(
+        table,
+        model.parameter_fingerprint,
+        temperature_k=299.0,
+    )
+    assert result.status == STATUS_DOMAIN_ERROR
+    assert result.error
+
+    permuted = _held_water_ionization_model(
+        ("hydroxide-anion", "water", "hydronium-cation")
+    )
+    _, permuted_table = _neutral_reference_table(permuted)
+    permuted_result, permuted_basis, permuted_contractions, composition = (
+        _evaluate_neutral_reference(
+            permuted_table,
+            permuted.parameter_fingerprint,
+        )
+    )
+    assert permuted_result.status == STATUS_OK
+    assert permuted_basis == pytest.approx((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
+    canonical_reference = model.reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=100000.0 * unit_registry.pascal,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    assert permuted_contractions[1] == pytest.approx(
+        math.fsum(canonical_reference.infinite_dilution_log_fugacity_coefficient),
+        abs=5.0e-12,
+    )
+    assert composition == pytest.approx((0.0, 1.0, 0.0))
 
 
 @pytest.mark.parametrize(
@@ -1203,6 +3107,37 @@ def test_native_sdk_applicability_metadata_rejects_missing_or_malformed_limits(
             temperature_max_k,
             model.component_ids,
             ion_mole_fraction_max,
+        )
+
+
+@pytest.mark.parametrize(
+    ("pressure_min_pa", "pressure_max_pa"),
+    (
+        (0.0, math.nan),
+        (math.nan, 0.0),
+        (math.inf, math.nan),
+        (math.nan, math.inf),
+        (200000.0, 100000.0),
+    ),
+)
+def test_native_sdk_rejects_malformed_pressure_limits(
+    pressure_min_pa: float,
+    pressure_max_pa: float,
+) -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "chloride-anion"))
+    with pytest.raises(
+        ValueError, match="invalid neutral reference pressure applicability"
+    ):
+        _native_sdk_v1(
+            model._native,
+            model.parameter_fingerprint,
+            298.15,
+            298.15,
+            model.component_ids,
+            0.38,
+            pressure_min_pa=pressure_min_pa,
+            pressure_max_pa=pressure_max_pa,
+            neutral_reference_admitted=True,
         )
 
 
@@ -1368,6 +3303,92 @@ def test_native_sdk_active_kij_matches_fixed_and_directional_oracles(
         assert hessian_direction == pytest.approx(gradient_difference, rel=3.0e-7)
 
 
+@pytest.mark.parametrize(
+    ("temperature_k", "point", "direction"),
+    (
+        (220.0, (0.4, 0.6, 1.25e-4, 0.0), (0.02, -0.01, -2.0e-6, 0.01)),
+        (280.0, (0.7, 0.3, 2.5e-4, -0.02), (-0.015, 0.02, 3.0e-6, -0.008)),
+    ),
+)
+def test_native_sdk_active_lij_matches_fixed_and_directional_oracles(
+    temperature_k: float,
+    point: tuple[float, float, float, float],
+    direction: tuple[float, float, float, float],
+) -> None:
+    model = _mixture_model()
+    capsule, table = _lij_table(model)
+    assert capsule is not None
+
+    def shifted(
+        scale: float,
+    ) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+        values = tuple(
+            value + scale * delta
+            for value, delta in zip(point, direction, strict=True)
+        )
+        return _evaluate_mixture_lij(
+            table,
+            temperature_k,
+            (values[0], values[1]),
+            values[2],
+            values[3],
+        )
+
+    center, gradient, hessian = shifted(0.0)
+    assert center.status == STATUS_OK
+    assert center.error == b""
+    assert center.coordinate_count == 4
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert center.pressure_pa == pytest.approx(
+        -8.31446261815324 * temperature_k * gradient[2], rel=2.0e-13
+    )
+    if point[3] == 0.0:
+        fixed, fixed_gradient, fixed_hessian = _evaluate_mixture(
+            table, temperature_k, point[:2], point[2]
+        )
+        assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+            fixed.helmholtz_over_rt_reference_amount,
+            rel=2.0e-13,
+            abs=2.0e-13,
+        )
+        assert center.pressure_pa == pytest.approx(
+            fixed.pressure_pa, rel=2.0e-13
+        )
+        for row in range(3):
+            assert gradient[row] == pytest.approx(
+                fixed_gradient[row], rel=2.0e-13, abs=2.0e-13
+            )
+            for column in range(3):
+                assert hessian[row * 4 + column] == pytest.approx(
+                    fixed_hessian[row * 3 + column],
+                    rel=2.0e-13,
+                    abs=2.0e-13,
+                )
+
+    step = 2.0e-4
+    lower, lower_gradient, _ = shifted(-step)
+    upper, upper_gradient, _ = shifted(step)
+    gradient_direction = sum(
+        value * delta for value, delta in zip(gradient, direction)
+    )
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount
+        - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert gradient_direction == pytest.approx(value_difference, rel=3.0e-8)
+    for row in range(4):
+        hessian_direction = sum(
+            hessian[row * 4 + column] * direction[column]
+            for column in range(4)
+        )
+        gradient_difference = (
+            upper_gradient[row] - lower_gradient[row]
+        ) / (2.0 * step)
+        assert hessian_direction == pytest.approx(
+            gradient_difference, rel=3.0e-7
+        )
+
+
 def test_native_sdk_active_kij_matches_independent_high_precision_oracle() -> None:
     temperature_k = 220.0
     point = (0.4, 0.6, 1.25e-4, 0.037)
@@ -1436,6 +3457,17 @@ def test_native_sdk_parameterized_phase_block_has_exact_parameter_derivatives() 
         fixed.chemical_potential_over_rt, rel=2.0e-13
     )
     assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert (
+        center.gradient[2].hex(),
+        center.hessian[3].hex(),
+        center.hessian[8].hex(),
+        center.hessian[13].hex(),
+    ) == (
+        "-0x1.6fdef6ff64731p-3",
+        "-0x1.22470c02f3168p-3",
+        "0x1.17dc4a225752ep+5",
+        "-0x1.247d050916fadp-3",
+    )
 
     step = 2.0e-5
     lower = shifted(-step)
@@ -1461,7 +3493,7 @@ def test_native_sdk_parameterized_phase_block_has_exact_parameter_derivatives() 
 
 
 def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
-    associating = _model("figiel-2025-reference-electrolytes", "ethanol")
+    associating = _model("figiel-2025-reference-electrolytes", "water")
     with pytest.raises(EosError, match="unsupported-native-sdk"):
         native_sdk(associating)
 
@@ -1634,10 +3666,21 @@ def test_native_sdk_mixture_callback_rejects_malformed_buffers_and_scope() -> No
         assert result.error
 
 
-def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_inputs() -> None:
-    capsule, table = _table(_mixture_model())
+@pytest.mark.parametrize(
+    ("table_factory", "callback_type", "callback_field"),
+    (
+        (_table, EvaluateMixturePhaseKij, "evaluate_mixture_phase_kij"),
+        (_lij_table, EvaluateMixturePhaseLij, "evaluate_mixture_phase_lij"),
+    ),
+)
+def test_native_sdk_active_pair_rejects_malformed_buffers_models_and_nonfinite_inputs(
+    table_factory,
+    callback_type,
+    callback_field: str,
+) -> None:
+    capsule, table = table_factory(_mixture_model())
     assert capsule is not None
-    callback = EvaluateMixturePhaseKij(table.evaluate_mixture_phase_kij)
+    callback = callback_type(getattr(table, callback_field))
     amounts = (ctypes.c_double * 2)(0.4, 0.6)
 
     def call(
@@ -1647,7 +3690,7 @@ def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_in
         amount_count: int = 2,
         temperature_k: float = 220.0,
         volume_m3: float = 1.25e-4,
-        k_ij: float = 0.0,
+        pair_parameter: float = 0.0,
     ) -> int:
         return callback(
             table.model_context,
@@ -1655,7 +3698,7 @@ def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_in
             amount_pointer,
             amount_count,
             volume_m3,
-            k_ij,
+            pair_parameter,
             ctypes.byref(result),
         )
 
@@ -1677,9 +3720,13 @@ def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_in
     result, _, _ = _mixture_result(4)
     malformed.append((result, {"volume_m3": math.inf}, STATUS_INVALID_ARGUMENT))
     result, _, _ = _mixture_result(4)
-    malformed.append((result, {"k_ij": math.nan}, STATUS_INVALID_ARGUMENT))
+    malformed.append(
+        (result, {"pair_parameter": math.nan}, STATUS_INVALID_ARGUMENT)
+    )
     result, _, _ = _mixture_result(4)
-    malformed.append((result, {"k_ij": math.inf}, STATUS_INVALID_ARGUMENT))
+    malformed.append(
+        (result, {"pair_parameter": math.inf}, STATUS_INVALID_ARGUMENT)
+    )
 
     for result, arguments, expected_status in malformed:
         gradient_pointer = ctypes.cast(result.gradient, ctypes.c_void_p).value
@@ -1712,14 +3759,16 @@ def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_in
     assert bytes(guarded_foreign_result)[foreign_size:] == canary
 
     finite_unbounded, _, _ = _mixture_result(4)
-    assert call(finite_unbounded, k_ij=-0.2) == STATUS_OK
+    assert call(finite_unbounded, pair_parameter=-0.2) == STATUS_OK
     assert finite_unbounded.status == STATUS_OK
 
-    pure_capsule, pure_table = _table(_model("gross-2001-methane-ethane", "methane"))
+    pure_capsule, pure_table = table_factory(
+        _model("gross-2001-methane-ethane", "methane")
+    )
     assert pure_capsule is not None
     pure_result, _, _ = _mixture_result(3)
     pure_amount = (ctypes.c_double * 1)(1.0)
-    status = EvaluateMixturePhaseKij(pure_table.evaluate_mixture_phase_kij)(
+    status = callback_type(getattr(pure_table, callback_field))(
         pure_table.model_context,
         190.0,
         pure_amount,
@@ -1798,6 +3847,83 @@ def test_native_sdk_electrolyte_phase_matches_public_state_and_directional_deriv
         permuted_table, temperature_k, (point[0], point[2], point[1]), point[3]
     )
     permutation = (0, 2, 1, 3)
+    assert permuted_result.helmholtz_over_rt_reference_amount == pytest.approx(
+        center.helmholtz_over_rt_reference_amount, rel=3.0e-13
+    )
+    assert permuted_result.pressure_pa == pytest.approx(center.pressure_pa, rel=3.0e-13)
+    assert permuted_gradient == pytest.approx(tuple(gradient[index] for index in permutation))
+    assert permuted_hessian == pytest.approx(
+        tuple(hessian[row * 4 + column] for row in permutation for column in permutation)
+    )
+
+
+def test_native_sdk_held_phase_matches_public_state_and_directional_derivatives() -> None:
+    model = _held_water_ionization_model()
+    capsule, table = _electrolyte_table(model)
+    assert capsule is not None
+    assert tuple(table.component_ids[index].decode() for index in range(3)) == model.component_ids
+    assert tuple(table.component_charges[index] for index in range(3)) == (0, 1, -1)
+
+    temperature_k = 298.15
+    point = (0.98, 0.01, 0.01, 2.5e-5)
+    center, gradient, hessian = _evaluate_electrolyte(table, temperature_k, point[:3], point[3])
+    assert center.status == STATUS_OK
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    total_amount = math.fsum(point[:3])
+    density = total_amount / point[3]
+    fractions = tuple(amount / total_amount for amount in point[:3])
+    public = model.evaluate(
+        temperature=temperature_k * unit_registry.kelvin,
+        molar_density=density * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=fractions,
+    )
+    expected_value = (
+        math.fsum(amount * (math.log(amount / point[3]) - 1.0) for amount in point[:3])
+        + total_amount * public.residual_helmholtz
+    )
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected_value, rel=3.0e-12, abs=3.0e-12
+    )
+    assert center.pressure_pa == pytest.approx(
+        public.pressure.to("pascal").magnitude, rel=3.0e-11, abs=2.0e-5
+    )
+    assert center.pressure_pa == pytest.approx(
+        -8.31446261815324 * temperature_k * gradient[-1], rel=3.0e-13
+    )
+
+    direction = (0.02, -0.003, -0.003, 5.0e-7)
+    step = 2.0e-4
+
+    def shifted(scale: float):
+        state = tuple(value + scale * delta for value, delta in zip(point, direction, strict=True))
+        return _evaluate_electrolyte(table, temperature_k, state[:3], state[3])
+
+    lower, lower_gradient, _ = shifted(-step)
+    upper, upper_gradient, _ = shifted(step)
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert math.fsum(
+        left * right for left, right in zip(gradient, direction, strict=True)
+    ) == pytest.approx(value_difference, rel=3.0e-7, abs=3.0e-8)
+    for row in range(4):
+        hessian_direction = math.fsum(
+            hessian[row * 4 + column] * direction[column] for column in range(4)
+        )
+        gradient_difference = (upper_gradient[row] - lower_gradient[row]) / (2.0 * step)
+        assert hessian_direction == pytest.approx(gradient_difference, rel=3.0e-6, abs=3.0e-6)
+
+    permuted = _held_water_ionization_model(
+        ("hydroxide-anion", "water", "hydronium-cation")
+    )
+    _, permuted_table = _electrolyte_table(permuted)
+    permutation = (2, 0, 1, 3)
+    permuted_result, permuted_gradient, permuted_hessian = _evaluate_electrolyte(
+        permuted_table,
+        temperature_k,
+        tuple(point[index] for index in permutation[:-1]),
+        point[3],
+    )
     assert permuted_result.helmholtz_over_rt_reference_amount == pytest.approx(
         center.helmholtz_over_rt_reference_amount, rel=3.0e-13
     )
@@ -2605,8 +4731,9 @@ def test_native_sdk_active_born_preserves_prior_prefix_and_fails_closed() -> Non
 
     iodide_bundle = ParameterBundle.from_catalog("figiel-2025-aqueous-iodides", version=1)
     iodide = EPCSAFT(iodide_bundle.select(("water", "sodium-cation", "iodide-anion")))
-    with pytest.raises(EosError, match="unadmitted-parameter-fingerprint"):
-        native_sdk(iodide)
+    _, iodide_table = _active_born_table(iodide)
+    iodide_result = _evaluate_active_born(iodide_table, 3.4)
+    assert iodide_result.status == STATUS_UNSUPPORTED_MODEL
 
     lithium = _electrolyte_model(("water", "lithium-cation", "chloride-anion"))
     lithium_capsule, lithium_table = _electrolyte_table(lithium)
@@ -2619,6 +4746,194 @@ def test_native_sdk_active_born_preserves_prior_prefix_and_fails_closed() -> Non
     )
     assert phase_result.status == STATUS_UNSUPPORTED_MODEL
     assert phase_result.error
+
+
+@pytest.mark.parametrize(
+    ("active_ion", "counter_ion", "source_diameter"),
+    (
+        ("sodium-cation", "chloride-anion", 3.445),
+        ("bromide-anion", "sodium-cation", 4.480),
+    ),
+)
+def test_native_sdk_ionic_region_permittivity_is_model_bound_and_exact(
+    active_ion: str,
+    counter_ion: str,
+    source_diameter: float,
+) -> None:
+    model = _electrolyte_model(("water", active_ion, counter_ion))
+    _, table = _ion_solvation_ionic_permittivity_table(model)
+    descriptors = {
+        descriptor.capability: descriptor
+        for descriptor in table.capabilities[: table.capability_count]
+    }
+    descriptor = descriptors[17]
+    assert descriptor.parameter_family == 11
+    assert descriptor.parameter_identity == 3
+    assert descriptor.observation_contract == 2
+    assert descriptor.model_domain == 3
+    assert descriptor.derivative_order == 1
+    assert descriptor.coordinate_count == 1
+    assert descriptor.coordinates[0].kind == 13
+    assert descriptor.coordinates[0].unit == b"dimensionless"
+    assert descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    center = _evaluate_ionic_permittivity(table, model.parameter_fingerprint, 8.0)
+    source_born = _evaluate_active_born(
+        table,
+        source_diameter,
+    )
+    assert center.status == STATUS_OK
+    assert center.solvation_gibbs_j_per_mol == pytest.approx(
+        source_born.solvation_gibbs_j_per_mol, abs=2.0e-8
+    )
+    assert center.reference_molality_mol_per_kg == 1.0e-12
+    assert 0.0 <= center.reference_convergence_error <= 5.0e-5
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    estimates = []
+    for step in (2.0e-4, 1.0e-4):
+        upper = _evaluate_ionic_permittivity(
+            table, model.parameter_fingerprint, 8.0 + step
+        )
+        lower = _evaluate_ionic_permittivity(
+            table, model.parameter_fingerprint, 8.0 - step
+        )
+        estimates.append(
+            (upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol)
+            / (2.0 * step)
+        )
+    tolerance = max(
+        1.0e-3,
+        20.0 * abs(estimates[0] - estimates[1]),
+        2.0e-8 * abs(center.derivative_j_per_mol),
+    )
+    assert abs(center.derivative_j_per_mol - estimates[1]) <= tolerance
+
+    wrong_fingerprint = _evaluate_ionic_permittivity(
+        table, "sha256:" + "0" * 64, 8.0
+    )
+    assert wrong_fingerprint.status == STATUS_UNSUPPORTED_MODEL
+
+    for invalid_value, expected_status in (
+        (1.0, STATUS_DOMAIN_ERROR),
+        (math.nan, STATUS_INVALID_ARGUMENT),
+    ):
+        invalid = _evaluate_ionic_permittivity(
+            table, model.parameter_fingerprint, invalid_value
+        )
+        assert invalid.status == expected_status
+        assert math.isnan(invalid.solvation_gibbs_j_per_mol)
+        assert math.isnan(invalid.derivative_j_per_mol)
+        assert invalid.error
+
+    neutral = _mixture_model()
+    _, neutral_table = _ion_solvation_ionic_permittivity_table(neutral)
+    unsupported = _evaluate_ionic_permittivity(
+        neutral_table, neutral.parameter_fingerprint, 8.0
+    )
+    assert unsupported.status == STATUS_UNSUPPORTED_MODEL
+    assert unsupported.error
+
+
+@pytest.mark.parametrize(
+    ("active_ion", "counter_ion", "source_diameter"),
+    (
+        ("sodium-cation", "chloride-anion", 3.445),
+        ("bromide-anion", "sodium-cation", 4.480),
+    ),
+)
+def test_native_sdk_solvent_permittivity_is_component_bound_and_exact(
+    active_ion: str,
+    counter_ion: str,
+    source_diameter: float,
+) -> None:
+    model = _electrolyte_model(("water", active_ion, counter_ion))
+    _, table = _ion_solvation_solvent_permittivity_table(model)
+    descriptors = {
+        descriptor.capability: descriptor
+        for descriptor in table.capabilities[: table.capability_count]
+    }
+    descriptor = descriptors[18]
+    assert descriptor.parameter_family == 12
+    assert descriptor.parameter_identity == 2
+    assert descriptor.observation_contract == 2
+    assert descriptor.model_domain == 3
+    assert descriptor.derivative_order == 1
+    assert descriptor.coordinate_count == 1
+    assert descriptor.coordinates[0].kind == 14
+    assert descriptor.coordinates[0].component_index == 0
+    assert descriptor.coordinates[0].unit == b"dimensionless"
+    assert descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    center = _evaluate_solvent_permittivity(
+        table, model.parameter_fingerprint, 78.09
+    )
+    source_born = _evaluate_active_born(table, source_diameter)
+    assert center.status == STATUS_OK
+    assert center.solvation_gibbs_j_per_mol == pytest.approx(
+        source_born.solvation_gibbs_j_per_mol, abs=2.0e-8
+    )
+    assert center.reference_molality_mol_per_kg == 1.0e-12
+    assert 0.0 <= center.reference_convergence_error <= 5.0e-5
+
+    estimates = []
+    for step in (2.0e-3, 1.0e-3):
+        upper = _evaluate_solvent_permittivity(
+            table, model.parameter_fingerprint, 78.09 + step
+        )
+        lower = _evaluate_solvent_permittivity(
+            table, model.parameter_fingerprint, 78.09 - step
+        )
+        estimates.append(
+            (upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol)
+            / (2.0 * step)
+        )
+    tolerance = max(
+        1.0e-3,
+        20.0 * abs(estimates[0] - estimates[1]),
+        2.0e-8 * abs(center.derivative_j_per_mol),
+    )
+    assert abs(center.derivative_j_per_mol - estimates[1]) <= tolerance
+
+    wrong_fingerprint = _evaluate_solvent_permittivity(
+        table, "sha256:" + "0" * 64, 78.09
+    )
+    assert wrong_fingerprint.status == STATUS_UNSUPPORTED_MODEL
+
+    for invalid_value, expected_status in (
+        (1.0, STATUS_DOMAIN_ERROR),
+        (math.nan, STATUS_INVALID_ARGUMENT),
+    ):
+        invalid = _evaluate_solvent_permittivity(
+            table, model.parameter_fingerprint, invalid_value
+        )
+        assert invalid.status == expected_status
+        assert math.isnan(invalid.solvation_gibbs_j_per_mol)
+        assert math.isnan(invalid.derivative_j_per_mol)
+        assert invalid.error
+
+    callback = EvaluateIonSolvationSolventPermittivity(
+        table.evaluate_ion_solvation_solvent_permittivity
+    )
+    assert (
+        callback(
+            table.model_context,
+            model.parameter_fingerprint.encode(),
+            298.15,
+            100000.0,
+            78.09,
+            None,
+        )
+        == STATUS_INVALID_ARGUMENT
+    )
+
+    neutral = _mixture_model()
+    _, neutral_table = _ion_solvation_solvent_permittivity_table(neutral)
+    unsupported = _evaluate_solvent_permittivity(
+        neutral_table, neutral.parameter_fingerprint, 78.09
+    )
+    assert unsupported.status == STATUS_UNSUPPORTED_MODEL
+    assert unsupported.error
 
 
 @pytest.mark.parametrize(
@@ -3116,6 +5431,164 @@ def test_native_sdk_aqueous_miac_batches_preserve_scalar_results() -> None:
         assert batch.parameter_fingerprint == scalar.parameter_fingerprint
         assert batch.error == scalar.error == b""
 
+
+def test_native_sdk_aqueous_miac_bounded_batches_cancel_without_background_work() -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
+    _, table = _aqueous_miac_bounded_batch_table(model)
+    assert table.evaluation_budget_size == ctypes.sizeof(NativeEvaluationBudget) == 24
+    assert (
+        AqueousMiacBoundedBatchNativeSdkTable.evaluation_budget_size.offset
+        == 240
+    )
+    assert (
+        AqueousMiacBoundedBatchNativeSdkTable.evaluate_aqueous_miac_kij_batch_bounded.offset
+        == 248
+    )
+    assert (
+        AqueousMiacBoundedBatchNativeSdkTable.evaluate_aqueous_miac_solvation_factor_batch_bounded.offset
+        == 256
+    )
+    assert ctypes.sizeof(AqueousMiacBoundedBatchNativeSdkTable) == 264
+
+    molalities = tuple(0.001 + (5.999 * index / 163.0) for index in range(164))
+    molality_values = (ctypes.c_double * len(molalities))(*molalities)
+    coordinates = (ctypes.c_double * 3)(-0.2, -0.3, 0.4)
+    cancelled_results = (AqueousMiacKijResult * len(molalities))(
+        *(
+            AqueousMiacKijResult(
+                struct_size=ctypes.sizeof(AqueousMiacKijResult)
+            )
+            for _ in molalities
+        )
+    )
+    tiny_budget = NativeEvaluationBudget(
+        struct_size=ctypes.sizeof(NativeEvaluationBudget),
+        work_budget=0,
+        deadline_ns=0,
+    )
+    started = time.perf_counter()
+    cancelled_status = EvaluateAqueousMiacKijBatchBounded(
+        table.evaluate_aqueous_miac_kij_batch_bounded
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        molality_values,
+        len(molalities),
+        coordinates,
+        3,
+        cancelled_results,
+        len(molalities),
+        ctypes.byref(tiny_budget),
+    )
+    cancellation_elapsed = time.perf_counter() - started
+    assert cancelled_status == STATUS_CANCELLED
+    assert all(result.status == STATUS_CANCELLED for result in cancelled_results)
+    assert all(result.error for result in cancelled_results)
+    assert cancellation_elapsed < 5.0
+
+    deadline_results = (AqueousMiacKijResult * 1)(
+        AqueousMiacKijResult(struct_size=ctypes.sizeof(AqueousMiacKijResult))
+    )
+    expired_budget = NativeEvaluationBudget(
+        struct_size=ctypes.sizeof(NativeEvaluationBudget),
+        work_budget=(1 << 64) - 1,
+        deadline_ns=1,
+    )
+    deadline_status = EvaluateAqueousMiacKijBatchBounded(
+        table.evaluate_aqueous_miac_kij_batch_bounded
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        (ctypes.c_double * 1)(1.0),
+        1,
+        coordinates,
+        3,
+        deadline_results,
+        1,
+        ctypes.byref(expired_budget),
+    )
+    assert deadline_status == STATUS_DEADLINE_EXCEEDED
+    assert deadline_results[0].status == STATUS_DEADLINE_EXCEEDED
+    assert deadline_results[0].error
+
+    solvation_cancelled_results = (AqueousMiacSolvationFactorResult * len(molalities))(
+        *(
+            AqueousMiacSolvationFactorResult(
+                struct_size=ctypes.sizeof(AqueousMiacSolvationFactorResult)
+            )
+            for _ in molalities
+        )
+    )
+    solvation_budget = NativeEvaluationBudget(
+        struct_size=ctypes.sizeof(NativeEvaluationBudget),
+        work_budget=0,
+        deadline_ns=0,
+    )
+    solvation_cancelled_status = EvaluateAqueousMiacSolvationFactorBatchBounded(
+        table.evaluate_aqueous_miac_solvation_factor_batch_bounded
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        molality_values,
+        len(molalities),
+        1.35,
+        solvation_cancelled_results,
+        len(molalities),
+        ctypes.byref(solvation_budget),
+    )
+    assert solvation_cancelled_status == STATUS_CANCELLED
+    assert all(
+        result.status == STATUS_CANCELLED and result.error
+        for result in solvation_cancelled_results
+    )
+
+    bounded_results = (AqueousMiacKijResult * 3)(
+        *(
+            AqueousMiacKijResult(
+                struct_size=ctypes.sizeof(AqueousMiacKijResult)
+            )
+            for _ in range(3)
+        )
+    )
+    sufficient_budget = NativeEvaluationBudget(
+        struct_size=ctypes.sizeof(NativeEvaluationBudget),
+        work_budget=(1 << 64) - 1,
+        deadline_ns=0,
+    )
+    short_molalities = (ctypes.c_double * 3)(0.001, 1.0, 6.0)
+    bounded_status = EvaluateAqueousMiacKijBatchBounded(
+        table.evaluate_aqueous_miac_kij_batch_bounded
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        100000.0,
+        short_molalities,
+        3,
+        coordinates,
+        3,
+        bounded_results,
+        3,
+        ctypes.byref(sufficient_budget),
+    )
+    existing_results = _evaluate_aqueous_miac_kij_batch(
+        ctypes.cast(
+            ctypes.pointer(table), ctypes.POINTER(AqueousMiacBatchNativeSdkTable)
+        ).contents,
+        model.parameter_fingerprint,
+        (0.001, 1.0, 6.0),
+        (-0.2, -0.3, 0.4),
+    )
+    assert bounded_status == STATUS_OK
+    for bounded, existing in zip(bounded_results, existing_results, strict=True):
+        assert bytes(bounded) == bytes(existing)
+
     coordinates = (-0.2, -0.3, 0.4)
     batch_kij = _evaluate_aqueous_miac_kij_batch(
         table,
@@ -3319,13 +5792,32 @@ def test_native_sdk_staged_figiel_user_bundles_are_narrowly_admitted() -> None:
             1.4,
         ).status == STATUS_UNSUPPORTED_MODEL
 
-    with pytest.raises(EosError, match="unsupported-native-sdk"):
-        native_sdk(
-            _figiel_trial_model(
-                ("water", "sodium-cation", "bromide-anion"),
-                purpose="package-test-fixture",
-            )
+    fixture = _figiel_trial_model(
+        ("water", "sodium-cation", "bromide-anion"),
+        purpose="package-test-fixture",
+    )
+    _, fixture_table = _capability_table(fixture)
+    assert {
+        descriptor.capability
+        for descriptor in fixture_table.capabilities[
+            : fixture_table.capability_count
+        ]
+    } == {11}
+    _, fixture_active_table = _aqueous_miac_solvation_factor_table(fixture)
+    assert (
+        _evaluate_active_born(fixture_active_table, 3.4).status
+        == STATUS_UNSUPPORTED_MODEL
+    )
+    assert (
+        _evaluate_aqueous_miac_kij(
+            fixture_active_table,
+            fixture.parameter_fingerprint,
+            1.0,
+            (-0.2, -0.2, 0.2),
         )
+        .status
+        == STATUS_UNSUPPORTED_MODEL
+    )
     spoofed = _figiel_trial_model(
         ("water", "sodium-cation", "bromide-anion"),
         spoof_source_metadata=True,
@@ -3406,7 +5898,11 @@ _Static_assert(offsetof(epcsaft_native_sdk_v1, aqueous_miac_solvation_factor_res
 _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_solvation_factor) == 216, "callback offset");
 _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_kij_batch) == 224, "kij batch callback offset");
 _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_solvation_factor_batch) == 232, "solvation-factor batch callback offset");
-_Static_assert(sizeof(epcsaft_native_sdk_v1) == 240, "table size");
+_Static_assert(offsetof(epcsaft_native_sdk_v1, evaluation_budget_size) == 240, "budget-size offset");
+_Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_kij_batch_bounded) == 248, "bounded kij callback offset");
+_Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_solvation_factor_batch_bounded) == 256, "bounded solvation-factor callback offset");
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 264, "table prefix size");
+_Static_assert(sizeof(epcsaft_native_evaluation_budget_v1) == 24, "budget size");
 _Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, log_mean_ionic_activity_coefficient_molality) == 8, "value offset");
 _Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, derivative) == 16, "derivative offset");
 _Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, parameter_fingerprint) == 48, "fingerprint offset");
@@ -3772,7 +6268,25 @@ int main() {
     } catch (const std::runtime_error&) {
         evaluation_classified = true;
     }
-    return evaluation_classified ? 0 : 4;
+    if (!evaluation_classified) return 4;
+
+    const double adjacent_lower = 59456.796534681715;
+    const double adjacent_upper = std::nextafter(
+        adjacent_lower,
+        std::numeric_limits<double>::infinity()
+    );
+    const auto adjacent_root = epcsaft::detail::refine_density_root(
+        1.0, adjacent_lower, adjacent_upper, -2.0e-6,
+        [adjacent_lower](double density) {
+            return State{
+                density <= adjacent_lower ? 1.0 - 2.0e-6 : 1.0 + 2.0e-6,
+                1.0,
+            };
+        }
+    );
+    if (!(adjacent_root.molar_density >= adjacent_lower
+          && adjacent_root.molar_density <= adjacent_upper)) return 5;
+    return 0;
 }
 '''
     output = tmp_path / "owner-contract"

@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 _MOLAR_GAS_CONSTANT = 8.31446261815324
 
 
+# EqExclude: transport and buffer mechanics
 def _log_fugacity(
     eos: EPCSAFT,
     *,
@@ -81,6 +82,7 @@ class ElectrolyteReference:
     def solvation_free_energy(
         self,
     ) -> tuple[pint.Quantity[float], pint.Quantity[float]]:
+        # EqID: infinite_dilution_solvation_energy
         scale = (
             _MOLAR_GAS_CONSTANT
             * self.temperature.to("kelvin").magnitude
@@ -125,8 +127,10 @@ class ElectrolyteReference:
                 strict=True,
             )
         )
+        # EqID: single_ion_activity_coefficient
         single_ion = tuple(math.exp(value) for value in log_activity)
         coefficient_sum = sum(self.formula_stoichiometry)
+        # EqID: mean_ionic_activity_coefficient
         log_mean = (
             math.fsum(
                 coefficient * value
@@ -143,6 +147,7 @@ class ElectrolyteReference:
             fraction * (self._molar_masses[index] or 0.0)
             for index, fraction in enumerate(self.solvent_mole_fractions)
         )
+        # EqID: molality_activity_conversion
         mean_molality = mean_mole_fraction / (1.0 + solvent_molar_mass * molality * coefficient_sum)
         osmotic_coefficient = None
         if self._pure_water_log_fugacity is not None and water_index is not None:
@@ -151,6 +156,7 @@ class ElectrolyteReference:
                 + finite_log_fugacity[water_index]
                 - self._pure_water_log_fugacity
             )
+            # EqID: practical_osmotic_coefficient
             osmotic_coefficient = -log_solvent_activity / (
                 coefficient_sum * molality * solvent_molar_mass
             )
@@ -184,6 +190,7 @@ class ElectrolyteReference:
             * unit_registry.joule
             / unit_registry.mole
         )
+        # EqID: transfer_free_energy
         values = tuple(
             (target_value - source_value) * scale
             for source_value, target_value in zip(
@@ -217,7 +224,10 @@ def build_reference_state(
 
     model = eos._model
     charges = model.charge_number
-    if model.topology != "ionic-ssm-ds" or len(charges) != len(eos.component_ids):
+    if model.topology not in {
+        "ionic-ssm-ds",
+        "ionic-held-2008-debye-huckel",
+    } or len(charges) != len(eos.component_ids):
         raise _eos_error("invalid-reference-state", reason="electrolyte-required")
     cations = tuple(index for index, charge in enumerate(charges) if charge > 0)
     anions = tuple(index for index, charge in enumerate(charges) if charge < 0)
@@ -239,6 +249,7 @@ def build_reference_state(
 
     cation, anion = cations[0], anions[0]
     divisor = gcd(abs(charges[cation]), abs(charges[anion]))
+    # EqID: charge_balanced_formula_stoichiometry
     stoichiometry = (
         abs(charges[anion]) // divisor,
         abs(charges[cation]) // divisor,
@@ -263,14 +274,9 @@ def build_reference_state(
     active_solvents = tuple(index for index in solvent_indices if solvent_fractions[index] > 0.0)
     pure_water_log_fugacity = None
     if len(active_solvents) == 1 and eos.component_ids[active_solvents[0]] == "water":
-        pure_water_log_fugacity = _log_fugacity(
-            eos,
-            temperature=temperature_quantity,
-            pressure=pressure_quantity,
-            phase=phase,
-            composition=solvent_fractions,
-            required_indices=(active_solvents[0],),
-        )[active_solvents[0]]
+        pure_water_log_fugacity = sequence.pure_solvent_log_fugacity_coefficient
+        if pure_water_log_fugacity is None or not math.isfinite(pure_water_log_fugacity):
+            raise _eos_error("reference-state-failed", reason="pure-solvent-fugacity-unavailable")
 
     return ElectrolyteReference(
         component_ids=eos.component_ids,

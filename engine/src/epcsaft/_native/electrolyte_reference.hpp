@@ -11,9 +11,17 @@
 
 namespace epcsaft::detail {
 
+struct NoopReferenceCheckpoint final {
+    // EqExclude: transport and buffer mechanics
+    void operator()() const {}
+};
+
 inline constexpr std::array<double, 4> REFERENCE_MOLALITIES = {
     1.0e-6, 1.0e-8, 1.0e-10, 1.0e-12,
 };
+// Keep the historical reported reference molality at 1e-12 while using one
+// lower point as a convergence witness for associating organic solvents.
+inline constexpr double REFERENCE_CONVERGENCE_WITNESS_MOLALITY = 1.0e-14;
 inline constexpr double REFERENCE_CONVERGENCE_TOLERANCE = 5.0e-5;
 
 struct ReferenceObservation final {
@@ -29,6 +37,7 @@ struct ReferenceSequenceResult final {
     std::optional<double> derivative_convergence_error;
 };
 
+// EqID: formula_unit_composition
 inline std::vector<double> formula_composition(
     const std::vector<double>& solvent_fractions,
     const std::vector<double>& molar_masses_kg_per_mol,
@@ -75,13 +84,15 @@ inline std::vector<double> formula_composition(
     return composition;
 }
 
-template <typename Evaluator>
+template <typename Evaluator, typename Checkpoint = NoopReferenceCheckpoint>
+// EqID: reference_molality_sequence
 ReferenceSequenceResult electrolyte_reference_sequence(
     const std::vector<double>& solvent_fractions,
     const std::vector<double>& molar_masses_kg_per_mol,
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
-    Evaluator evaluator
+    Evaluator evaluator,
+    Checkpoint checkpoint = {}
 ) {
     std::optional<ReferenceObservation> previous;
     std::optional<ReferenceObservation> current;
@@ -89,6 +100,7 @@ ReferenceSequenceResult electrolyte_reference_sequence(
     std::optional<double> derivative_convergence_error;
 
     for (double molality : REFERENCE_MOLALITIES) {
+        checkpoint();
         current = evaluator(
             formula_composition(
                 solvent_fractions,
@@ -132,6 +144,51 @@ ReferenceSequenceResult electrolyte_reference_sequence(
             }
         }
         previous = current;
+    }
+    if (convergence_error > REFERENCE_CONVERGENCE_TOLERANCE) {
+        checkpoint();
+        current = evaluator(
+            formula_composition(
+                solvent_fractions,
+                molar_masses_kg_per_mol,
+                ion_indices,
+                stoichiometry,
+                REFERENCE_CONVERGENCE_WITNESS_MOLALITY
+            )
+        );
+        for (double value : current->log_fugacity) {
+            if (!std::isfinite(value)) {
+                throw std::runtime_error("nonfinite reference fugacity");
+            }
+        }
+        if (current->derivative.has_value()) {
+            for (double value : *current->derivative) {
+                if (!std::isfinite(value)) {
+                    throw std::runtime_error("nonfinite reference derivative");
+                }
+            }
+        }
+        if (previous.has_value()) {
+            convergence_error = std::max(
+                std::abs(current->log_fugacity[0] - previous->log_fugacity[0]),
+                std::abs(current->log_fugacity[1] - previous->log_fugacity[1])
+            );
+            if (current->derivative.has_value() && previous->derivative.has_value()) {
+                if (current->derivative->size() != previous->derivative->size()) {
+                    throw std::runtime_error("reference derivative size changed");
+                }
+                derivative_convergence_error = 0.0;
+                for (std::size_t index = 0; index < current->derivative->size(); ++index) {
+                    derivative_convergence_error = std::max(
+                        *derivative_convergence_error,
+                        std::abs(
+                            (*current->derivative)[index]
+                            - (*previous->derivative)[index]
+                        )
+                    );
+                }
+            }
+        }
     }
     if (!current.has_value() || convergence_error > REFERENCE_CONVERGENCE_TOLERANCE) {
         throw std::runtime_error("reference limit did not converge");

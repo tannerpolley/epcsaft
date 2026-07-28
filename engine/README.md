@@ -17,6 +17,12 @@ installed bundle IDs, component discovery and ordering, Pint state inputs,
 density and pressure routes, root selection, result interpretation,
 electrolyte activities, and stable errors.
 
+The [checked equation mirror](docs/equations.md) maps every retained
+mathematical relation to its C++ or Python implementation owner and to the
+[normative scientific contract](docs/science/full-provider-eos.md). The
+implementation remains executable authority; the generated Markdown and
+LaTeX views are synchronized documentation mirrors.
+
 `ParameterBundle.catalog()` returns the installed bundles as an immutable tuple.
 You can inspect exact IDs, versions, components, sources, and domains without a
 mutable registry.
@@ -52,17 +58,21 @@ assert pressure_specified.mole_fractions == (0.4, 0.6)
 
 ## Direct C++ debug harness
 
-For local debugging and custom-model experiments, configure the optional
-unsupported direct-C++ harness with `-DEPCSAFT_ENABLE_CPP_DEBUG=ON`, then build
-the `epcsaft_cpp_debug` target and run its `epcsaft_cpp_debug_smoke` CTest. The
-command-line interface requires every `NativeParameters` field, temperature,
-molar density, and mole-fraction value explicitly; `--help` documents the
-units and comma-separated list conventions.
+`export_native_model(model, path)` writes the Provider's resolved immutable
+model format for native consumers. Installed wheels export the CMake target
+`epcsaft::native_sdk` from `epcsaft/cmake`; its public C headers are under
+`epcsaft/include`. A consumer loads the resolved model with
+`epcsaft_native_model_load_v1`, keeps that handle alive while it uses the
+returned `epcsaft_native_sdk_v1` table, and releases it with
+`epcsaft_native_model_destroy_v1`. This is the supported installed transport;
+it exposes no Provider C++ implementation types or EOS equations.
+`epcsaft_native_model_fingerprint_v1` returns the handle-owned model identity
+for downstream result and callback validation.
 
-This target is off by default, is not installed or exported by wheel builds,
-and has no public C++ ABI or production-consumer support. It calls the same
-`NativeModel::evaluate` implementation used by `_core` without importing
-Python at runtime.
+For local Provider debugging, configure `-DEPCSAFT_ENABLE_CPP_DEBUG=ON`, build
+`epcsaft_cpp_debug`, and run its `epcsaft_cpp_debug_smoke` CTest. The executable
+uses that same installed-consumer model and SDK contract. The debug executable
+itself remains opt-in and is not installed.
 
 For a bounded Figiel electrolyte, construct one explicit reference state and
 reuse it across concentrations:
@@ -89,8 +99,8 @@ reference path. Mixed-solvent references continue to return MIAC values and
 report this scalar as `None` because no mixed-solvent osmotic standard state is
 admitted.
 
-For a native equilibrium consumer, `native_sdk(model)` returns the model-bound
-capsule `epcsaft.native_sdk.v1`. Its accepted prefix evaluates a pure
+For an in-process Python extension consumer, `native_sdk(model)` returns the
+same model-bound table in capsule `epcsaft.native_sdk.v1`. Its accepted prefix evaluates a pure
 nonassociating methane, ethane, or propane phase at explicit amount and volume,
 returning the complete isothermal phase Helmholtz value on the documented
 reference basis plus its gradient, Hessian, and third tensor. The
@@ -144,6 +154,18 @@ water/ethanol/isobutanol/Na+/Cl- model at 293.15 K. The distinct Ascani et al.
 Neither mutates a Figiel bundle. Phase bounds, complementarity, equilibrium,
 and fit policy remain consumer-owned.
 
+A private, non-authoritative Held--Cameretti--Sadowski candidate adds the exact
+ordered `(water, hydronium-cation, hydroxide-anion)` mechanical phase model at
+`298.15 K` and `1 bar`. Its formulation uses the source-bound water and ion
+parameters, water--ion dispersion, no ion--ion dispersion, association, and
+Debye--Huckel contribution; Born is absent. The existing generic
+charge-neutral reference tail returns its gauge-invariant water and
+cation-plus-anion basis contractions, convergence evidence, fingerprint, and
+Helmholtz-basis identity. The ordinary public pure-water state supplies the
+fixed-pressure liquid molar volume. It does not own `K_w`, reaction
+stoichiometry, reactive standard-state conversion, species equilibrium, or any
+solver, and has `authority_effect: none`.
+
 One further append-only callback converts caller-owned packing-fraction limits
 to model-bound molar-volume limits at an ordered composition and temperature.
 The Provider retains the temperature-dependent segment-diameter and packing
@@ -173,6 +195,13 @@ the public interface provides Pint quantity, phase, bundle-purpose, domain, and
 parameter-family annotations for static tooling.
 The model-neutral `born` field carries the Born contribution selected by the
 immutable parameter bundle, whether corrected SSM+DS or original Born.
+`EPCSAFT.permittivity_model` identifies the source-named dielectric topology,
+and `EosResult.bulk_relative_permittivity` exposes the exact value shared by
+Debye--Huckel and Born. In addition to the installed Figiel and Ascani
+topologies, complete source-bearing record sets can resolve Schreckenberg
+density, Zuber ion-specific, or Rueben perturbation topologies. These are
+parameter-record capabilities, not caller-selected phase modes or new catalog
+defaults; unsupported or mixed records fail closed.
 
 State quantities must be Pint quantities. Component and composition order is
 the selected `ParameterSet` order. Supply exactly one of `molar_density` or
@@ -196,7 +225,9 @@ The installed catalogs are:
 - the distinct Khudaida et al. (2026) water/ethanol/isobutanol/Na+/Cl- records
   at 293.15 K; and
 - the distinct Ascani et al. (2022) water/1-butanol/Na+/K+/Cl- original-Born
-  records at 298.15 K.
+  records at 298.15 K; and
+- the private Held et al. (2008) water/H3O+/OH- candidate records at
+  298.15 K and 1 bar, with no authority or reactive-equilibrium claim.
 
 This repository does not perform phase equilibrium or phase discovery,
 reaction/species equilibrium, regression, parameter fitting, ideal-gas

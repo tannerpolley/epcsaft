@@ -79,6 +79,9 @@ def _component(record: ComponentRecord) -> dict[str, object]:
 
 
 def _value(family: str, value: object) -> object:
+    if family == "electrolyte_formulation":
+        assert isinstance(value, str)
+        return _string(value)
     if family == "charge_number":
         return value
     if family in _DIMENSIONAL_UNITS:

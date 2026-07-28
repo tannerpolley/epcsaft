@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import json
 import math
+from os import PathLike
+from pathlib import Path
 from typing import Any, TYPE_CHECKING, Iterable, Literal, SupportsFloat, TypeAlias, overload
 
 import pint
@@ -33,6 +37,7 @@ _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS = frozenset(
         "sha256:cb0c63530f96d51d5a24f48a2d02ae6567d163abdc373099ce096f7ff0a896f5",
         "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
         "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+        "sha256:9bde35a37d090db81b652abbc51b81378cade3dca99c365b573e8e1134091699",
     }
 )
 
@@ -84,10 +89,30 @@ _NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS = {
         frozenset(("water", cation, anion))
         for cation in ("lithium-cation", "sodium-cation", "potassium-cation")
         for anion in ("chloride-anion", "bromide-anion")
-    )
+    ),
+    "sha256:8ea2d7acbc179b82348fa938d081fe8d56f274bfe1f2167d10a507b7711aa1c2": (
+        frozenset(
+            {
+                frozenset(
+                    {
+                        "water",
+                        "hydronium-cation",
+                        "hydroxide-anion",
+                    }
+                )
+            }
+        )
+    ),
 }
 
 _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
+    "sha256:8ea2d7acbc179b82348fa938d081fe8d56f274bfe1f2167d10a507b7711aa1c2": frozenset(
+        {
+            "water",
+            "hydronium-cation",
+            "hydroxide-anion",
+        }
+    ),
     "sha256:03f9b1d88843a2d53da3420d96987ec4a2305b2814cc4946cdb25d1db67f5f72": frozenset(
         {
             "water",
@@ -186,7 +211,20 @@ def _native_arguments(
             association_volume[index] = pair.volume
 
     components = len(model.component_ids)
-    if model.topology in {"ionic-ssm-ds", "ionic-ascani-original-born"}:
+    permittivity_model_codes = {
+        "none": 0,
+        "figiel-composition": 1,
+        "ascani-mole-fraction": 2,
+        "schreckenberg-density": 3,
+        "zuber-ion-specific": 4,
+        "rueben-perturbation": 5,
+        "held-water": 6,
+    }
+    if model.topology in {
+        "ionic-held-2008-debye-huckel",
+        "ionic-ssm-ds",
+        "ionic-ascani-original-born",
+    }:
         molar_mass = [0.0 if value is None else value for value in model.molar_mass_kg_per_mol]
         charge_number = list(model.charge_number)
         relative_permittivity = [
@@ -194,7 +232,11 @@ def _native_arguments(
             for record in model.relative_permittivity
         ]
         if model.topology == "ionic-ssm-ds":
-            dielectric_suppression = model.dielectric_ion_suppression_coefficient
+            dielectric_suppression = (
+                0.0
+                if model.dielectric_ion_suppression_coefficient is None
+                else model.dielectric_ion_suppression_coefficient
+            )
             born_diameter = [
                 0.0 if value is None else value for value in model.born_diameter_angstrom
             ]
@@ -205,9 +247,14 @@ def _native_arguments(
             ]
             ionic_permittivity = model.ionic_region_relative_permittivity
             electrolyte_model = 1
-            assert dielectric_suppression is not None
             assert ionic_permittivity is not None
             assert len(solvation_factor) == components
+        elif model.topology == "ionic-held-2008-debye-huckel":
+            dielectric_suppression = 0.0
+            born_diameter = [0.0] * components
+            solvation_factor = [0.0] * components
+            ionic_permittivity = 0.0
+            electrolyte_model = 3
         else:
             dielectric_suppression = 0.0
             born_diameter = [0.0] * components
@@ -246,6 +293,17 @@ def _native_arguments(
         solvation_factor,
         ionic_permittivity,
         electrolyte_model,
+        list(model.schreckenberg_dielectric_volume_m3_per_mol)
+        or [0.0] * components,
+        list(model.schreckenberg_dielectric_temperature_k)
+        or [0.0] * components,
+        list(model.zuber_ion_suppression_coefficient) or [0.0] * components,
+        list(model.rueben_dipole_scaling_debye2) or [0.0] * components,
+        list(model.rueben_polarizability_scaling_angstrom3)
+        or [0.0] * components,
+        list(model.rueben_correlation_integral_parameter)
+        or [0.0] * components,
+        permittivity_model_codes[model.permittivity_model],
     )
 
 
@@ -320,6 +378,11 @@ class EPCSAFT:
     @property
     def component_ids(self) -> tuple[str, ...]:
         return self._component_ids
+
+    @property
+    def permittivity_model(self) -> str:
+        """Return the source-named bulk-permittivity model used by this state."""
+        return self._model.permittivity_model
 
     @property
     def parameter_fingerprint(self) -> str:
@@ -474,6 +537,9 @@ class EPCSAFT:
             association=native.association,
             debye_huckel=native.debye_huckel,
             born=native.born_ssm_ds,
+            bulk_relative_permittivity=None
+            if self._model.permittivity_model == "none"
+            else native.bulk_relative_permittivity,
             residual_helmholtz=native.residual_helmholtz,
             compressibility_factor=native.compressibility_factor,
             pressure=native.pressure * unit_registry.pascal,
@@ -544,8 +610,53 @@ class EPCSAFT:
         )
 
 
-def native_sdk(model: EPCSAFT) -> object:
-    """Return the model-bound version-1 native provider capsule."""
+def _native_topology_fingerprint(model: EPCSAFT) -> str:
+    resolved = model._model
+    charges = resolved.charge_number or (0,) * len(resolved.component_ids)
+    neutral_phase = (
+        resolved.topology == "neutral"
+        and len(resolved.component_ids) in (1, 2)
+        and not any(charges)
+        and not resolved.site_ids
+        and not resolved.association_pairs
+    )
+    if neutral_phase:
+        pure = len(resolved.component_ids) == 1
+        payload = {
+            "schema": (
+                "epcsaft-native-neutral-pure-topology-v1"
+                if pure
+                else "epcsaft-native-neutral-binary-topology-v1"
+            ),
+            "component_ids": resolved.component_ids,
+            "topology": resolved.topology,
+            "charge_number": charges,
+            "site_ids": resolved.site_ids,
+            "site_multiplicity": resolved.site_multiplicity,
+            "association_pair_count": len(resolved.association_pairs),
+            "helmholtz_terms": ("ideal", "hard-chain", "dispersion"),
+        }
+    else:
+        payload = {
+            "schema": "epcsaft-native-model-topology-v1",
+            "component_ids": resolved.component_ids,
+            "topology": resolved.topology,
+            "charge_number": charges,
+            "site_ids": resolved.site_ids,
+            "site_multiplicity": resolved.site_multiplicity,
+            "association_endpoints": tuple(
+                (pair.endpoint_a, pair.endpoint_b)
+                for pair in resolved.association_pairs
+            ),
+            "permittivity_model": resolved.permittivity_model,
+        }
+    encoded = json.dumps(
+        payload, separators=(",", ":"), sort_keys=True
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
+def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
     if type(model) is not EPCSAFT:
         raise _eos_error("unsupported-native-sdk", reason="expected-exact-EPCSAFT-model")
     fingerprint = model._parameter_fingerprint
@@ -575,6 +686,28 @@ def native_sdk(model: EPCSAFT) -> object:
             staged_trial_admitted
             and model._component_ids in _FIGIEL_STAGED_AQUEOUS_SELECTIONS
         )
+    )
+    figiel_dielectric_admitted = (
+        len(model._component_ids) == 3
+        and model._component_ids[0] in ("water", "methanol")
+        and tuple(model._model.charge_number) == (0, 1, -1)
+        and model._model.permittivity_model == "figiel-composition"
+    )
+    ion_solvation_kij_admitted = (
+        model._parameter_bundle_fingerprint
+        == "sha256:9f017007adbea2c943dc91c4a8df5271a5400392ae89796b74959aac913b920c"
+        and model._component_ids
+        in {
+            ("methanol", "potassium-cation", "bromide-anion"),
+            ("ethanol", "sodium-cation", "chloride-anion"),
+        }
+        and len(model._component_ids) == 3
+        and tuple(model._model.charge_number) == (0, 1, -1)
+        and model._model.permittivity_model == "figiel-composition"
+        and model._model.temperature_min_k == 298.15
+        and model._model.temperature_max_k == 298.15
+        and model._model.pressure_min_pa == 100000.0
+        and model._model.pressure_max_pa == 100000.0
     )
     aqueous_solvation_factor_admitted = (
         fingerprint
@@ -607,6 +740,8 @@ def native_sdk(model: EPCSAFT) -> object:
         not phase_admitted
         and not active_born_admitted
         and not aqueous_kij_admitted
+        and not figiel_dielectric_admitted
+        and not ion_solvation_kij_admitted
         and not aqueous_solvation_factor_admitted
         and not neutral_reference_admitted
     ):
@@ -627,26 +762,88 @@ def native_sdk(model: EPCSAFT) -> object:
         if model._model.ion_mole_fraction_max is None
         else model._model.ion_mole_fraction_max
     )
+    return {
+        "parameter_fingerprint": fingerprint,
+        "temperature_min_k": minimum,
+        "temperature_max_k": maximum,
+        "component_ids": model._component_ids,
+        "ion_mole_fraction_max": maximum_ion_fraction,
+        "phase_callbacks_admitted": phase_admitted,
+        "active_born_admitted": active_born_admitted,
+        "aqueous_kij_admitted": aqueous_kij_admitted,
+        "figiel_dielectric_admitted": figiel_dielectric_admitted,
+        "ion_solvation_kij_admitted": ion_solvation_kij_admitted,
+        "pressure_min_pa": pressure_minimum,
+        "pressure_max_pa": pressure_maximum,
+        "neutral_reference_admitted": neutral_reference_admitted,
+        "unknown_applicability_admitted": model._parameter_bundle_purpose == "user-provided",
+        "aqueous_solvation_factor_admitted": aqueous_solvation_factor_admitted,
+        "staged_trial_bundle_admitted": staged_trial_admitted,
+        "topology_fingerprint": _native_topology_fingerprint(model),
+    }
+
+
+def native_sdk(model: EPCSAFT) -> object:
+    """Return the model-bound version-1 native provider capsule."""
+    configuration = _native_sdk_configuration(model)
     try:
-        return _native_sdk_v1(
-            model._native,
-            fingerprint,
-            minimum,
-            maximum,
-            model._component_ids,
-            maximum_ion_fraction,
-            phase_admitted,
-            active_born_admitted,
-            aqueous_kij_admitted,
-            pressure_minimum,
-            pressure_maximum,
-            neutral_reference_admitted,
-            model._parameter_bundle_purpose == "user-provided",
-            aqueous_solvation_factor_admitted,
-            staged_trial_admitted,
-        )
+        return _native_sdk_v1(model._native, **configuration)
     except (RuntimeError, ValueError) as exc:
         raise _eos_error("unsupported-native-sdk", reason=str(exc)) from exc
+
+
+def export_native_model(model: EPCSAFT, path: str | PathLike[str]) -> None:
+    """Write one immutable resolved-model artifact for the installed native SDK."""
+    configuration = _native_sdk_configuration(model)
+    names = (
+        "segment_count",
+        "sigma_constant_angstrom",
+        "sigma_term_component",
+        "sigma_term_amplitude_angstrom",
+        "sigma_term_exponent_per_k",
+        "dispersion_energy_over_k_k",
+        "k_ij",
+        "l_ij",
+        "site_component",
+        "site_multiplicity",
+        "association_active",
+        "association_energy_over_k_k",
+        "association_volume",
+        "molar_mass_kg_per_mol",
+        "charge_number",
+        "relative_permittivity",
+        "dielectric_ion_suppression_coefficient",
+        "born_diameter_angstrom",
+        "solvation_factor",
+        "ionic_region_relative_permittivity",
+        "electrolyte_model",
+        "schreckenberg_dielectric_volume_m3_per_mol",
+        "schreckenberg_dielectric_temperature_k",
+        "zuber_ion_suppression_coefficient",
+        "rueben_dipole_scaling_debye2",
+        "rueben_polarizability_scaling_angstrom3",
+        "rueben_correlation_integral_parameter",
+        "permittivity_model",
+    )
+    native_parameters = dict(zip(names, _native_arguments(model._model), strict=True))
+    for key in (
+        "temperature_min_k",
+        "temperature_max_k",
+        "ion_mole_fraction_max",
+        "pressure_min_pa",
+        "pressure_max_pa",
+    ):
+        if math.isnan(float(configuration[key])):
+            configuration[key] = None
+    payload = {
+        "schema": "epcsaft-resolved-native-model-v1",
+        "native_parameters": native_parameters,
+        "sdk": configuration,
+    }
+    target = Path(path)
+    with target.open("x", encoding="utf-8") as stream:
+        json.dump(payload, stream, allow_nan=False, separators=(",", ":"), sort_keys=True)
+        stream.write("\n")
 
 
 def _state_magnitude(value: object, unit: str, field: str) -> float:
@@ -706,6 +903,7 @@ class EosResult:
     association: float
     debye_huckel: float
     born: float
+    bulk_relative_permittivity: float | None
     residual_helmholtz: float
     compressibility_factor: float
     pressure: pint.Quantity[float]
@@ -731,4 +929,12 @@ class DensityDiagnostics:
     branch: str
 
 
-__all__ = ("DensityDiagnostics", "EPCSAFT", "EosError", "EosResult", "Phase", "native_sdk")
+__all__ = (
+    "DensityDiagnostics",
+    "EPCSAFT",
+    "EosError",
+    "EosResult",
+    "Phase",
+    "export_native_model",
+    "native_sdk",
+)

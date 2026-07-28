@@ -27,6 +27,8 @@ struct DensityRoot final {
 };
 
 template <typename Evaluate>
+// EqID: density_residual
+// EqExclude: numerical iteration mechanics
 DensityRoot refine_density_root(
     double pressure,
     double bracket_lower,
@@ -53,6 +55,9 @@ DensityRoot refine_density_root(
         if (std::abs(residual) <= pressure_tolerance
             && (bracket_upper - bracket_lower)
                 <= 1.0e-10 * std::max(1.0, midpoint)) {
+            break;
+        }
+        if (std::nextafter(bracket_lower, bracket_upper) >= bracket_upper) {
             break;
         }
         const double slope = state.pressure_density_derivative;
@@ -95,6 +100,8 @@ DensityRoot refine_density_root(
 }
 
 template <typename Evaluate>
+// EqID: mechanical_stability
+// EqExclude: numerical iteration mechanics
 DensityRoot solve_density(
     double pressure,
     double ideal_density,

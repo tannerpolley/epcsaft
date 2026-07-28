@@ -67,6 +67,7 @@ assert ("gross-2001-propane", 1, ("propane",)) in available
 | `gross-2001-propane` | 1 | `propane` | Pure, neutral, nonassociating; 85–523 K. No pressure evidence bound is reported. |
 | `figiel-2025-reference-electrolytes` | 1 | `water`, `methanol`, `ethanol`, `lithium-cation`, `sodium-cation`, `potassium-cation`, `chloride-anion`, `bromide-anion` | Corrected Born SSM+DS at 298.15 K and 1 bar; total ion mole fraction at most 0.38. Reference states require one source-complete cation/anion formula unit. |
 | `figiel-2025-aqueous-iodides` | 1 | `water`, `sodium-cation`, `potassium-cation`, `iodide-anion` | Corrected Born SSM+DS at 298.15 K and 1 bar; total ion mole fraction at most 0.38. Only the source-complete aqueous NaI and KI selections are supported; LiI is absent. |
+| `held-2008-water-self-ionization` | 1 | `water`, `hydronium-cation`, `hydroxide-anion` | Debye--Hückel electrolyte model without a Born term at 298.15 K and 1 bar. The Provider supplies the mechanical state and charge-neutral reference basis, not reaction equilibrium or `K_w`. |
 | `khudaida-2026-figure-2-electrolyte-lle` | 1 | `water`, `ethanol`, `isobutanol`, `sodium-cation`, `chloride-anion` | Exact five-component corrected Born SSM+DS bundle at 293.15 K and 0.1 MPa. The Provider evaluates states but does not solve the reported LLE. |
 | `ascani-2022-case-study-2-electrolyte-lle` | 1 | `water`, `1-butanol`, `sodium-cation`, `potassium-cation`, `chloride-anion` | Exact five-component original-Born bundle at 298.15 K and 1 bar. The Provider evaluates states but does not solve the reported multiphase problem. |
 
@@ -362,6 +363,13 @@ Helmholtz quantities on the `A_res/(nRT)` basis. `compressibility_factor` is
 `log_fugacity_coefficient[i]` is `ln(phi_i)`, all in `model.component_ids`
 order. The Provider returns fugacity coefficients, not component fugacities.
 Pressure, molar density, and residual caloric properties are Pint quantities.
+For ionic states, `EPCSAFT.permittivity_model` identifies the source-named bulk
+dielectric topology. The Figiel SSM+DS model reports
+`"figiel-composition"`, and the original-Born model reports
+`"ascani-mole-fraction"`. Neutral and associating states report `"none"` and
+set `EosResult.bulk_relative_permittivity` to `None`. Ionic results expose the
+dimensionless bulk relative permittivity used by the Provider's
+Debye--Huckel and Born calculations.
 See [the EOS science contract](science/full-provider-eos.md) for the equations,
 units, and reference bases.
 
@@ -388,6 +396,8 @@ state = electrolyte.evaluate(
 assert state.density_diagnostics is not None
 assert state.density_diagnostics.branch == "liquid"
 assert state.debye_huckel != 0.0
+assert electrolyte.permittivity_model == "figiel-composition"
+assert state.bulk_relative_permittivity > 1.0
 
 reference = electrolyte.reference_state(
     temperature=298.15 * u.kelvin,
@@ -407,6 +417,24 @@ single-ion coefficients, stoichiometric mean coefficients on mole-fraction and
 molality scales, and the practical molal osmotic coefficient for a
 single-active-water reference. The osmotic field is `None` for mixed-solvent
 references because no mixed-solvent osmotic standard state is admitted.
+
+`EPCSAFT.permittivity_model` identifies the immutable, source-named topology
+resolved from the parameter records. Current values are
+`figiel-composition`, `ascani-mole-fraction`, `schreckenberg-density`,
+`zuber-ion-specific`, and `rueben-perturbation` for ionic models. Callers do
+not select this value during state evaluation. The latter three topologies are
+available through complete source-bearing `ParameterBundle.from_records(...)`
+inputs; they are not alternate modes silently applied to an installed catalog
+bundle. Mixed or incomplete topology records fail during construction.
+
+`EosResult.bulk_relative_permittivity` is the dimensionless state value used
+by both Debye--Huckel and the bundle-selected Born formulation. Density-based
+Schreckenberg and Rueben models approach one in the zero-density limit. The
+Zuber implementation currently requires exactly one neutral solvent because
+its source mixed-solvent equation requires solvent-volume data not represented
+by the admitted parameter payload. Neutral models report
+`permittivity_model="none"` and `bulk_relative_permittivity=None` rather than a
+synthetic dielectric value.
 
 ## State and root contract
 
@@ -431,6 +459,9 @@ references because no mixed-solvent osmotic standard state is admitted.
   iterations, local mechanical-stability flag, and branch. These diagnostics
   certify the selected density root, not phase completeness or global
   stability.
+- A pressure-specific `phase` request is a branch-identity assertion, not a
+  liquid/vapor hint. If a density-dependent permittivity topology leaves only
+  one stable root, omit `phase` and inspect `branch="single"`.
 
 `log_fugacity_coefficient` is `None` when `Z` is nonfinite or nonpositive.
 `residual_isobaric_heat_capacity` is `None` when the local pressure slope does

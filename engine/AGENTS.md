@@ -62,13 +62,50 @@ runtime dependencies on the lab, migration repository, or sibling sources.
 - Migration serializes Validation writers and dispatches any required distinct
   review after the exact stable subject is available.
 
-The append-only neutral methane/ethane mixture value, gradient, and Hessian
-entry and its further append-only active-`k_ij` entry are local provider
-candidates pending their own review and promotion receipts. The active entry
-accepts one finite trial unlike-pair value and returns derivatives in
-`(n1,n2,V,kij)` without owning fit bounds or scaling. These candidates change
+The append-only neutral nonassociating binary mixture value, gradient, and
+Hessian entry and its further append-only active-`k_ij` and active-`l_ij`
+entries are local provider candidates pending their own review and promotion
+receipts. Gross--Sadowski methane/ethane is the first reference evidence, not a
+mixture allowlist; a caller-provided source-bound model supplies its own exact
+component and topology fingerprints.
+Each active entry accepts one finite trial unlike-pair value and returns
+derivatives in `(n1,n2,V,pair_parameter)` without owning fit bounds or
+scaling. These candidates change
 no runtime authority and admit no association, ions, density solve, phase
 identity, third derivatives, equilibrium, regression targets, or fitting.
+
+The same local candidate tail advertises three scalar pure-component
+capabilities for neutral, nonassociating, constant-diameter models:
+`segment_count`, `segment_diameter`, and `dispersion_energy_over_k`. One
+callback projects the accepted joint pure-parameter Hessian onto
+`(amount, volume, active_parameter)`. It enables one-family-at-a-time
+regression without replacing the accepted joint three-parameter callback or
+moving bounds, target data, Ceres, or fit acceptance into Provider.
+It also advertises scalar association-energy and association-volume
+coordinates only for an exact neutral pure 2B topology with one donor and one
+acceptor site. One separate appended callback exposes the joint
+`(n,V,m,sigma,epsilon/k,epsilon_assoc/k,kappa_assoc)` Hessian with the
+temperature-dependent `d_ij^3` association-strength basis used by Baygi and
+Pahlavanzadeh (2015), while the ordinary EOS and scalar callbacks retain their
+source-owned `sigma_ij^3` basis. This is a model-bound derivative seam, not a
+general association topology, target, fit, or catalog admission.
+The capability set also advertises the already-owned exact first-derivative
+callbacks for current-catalog single-ion Born diameter and NaBr water
+solvation factor. These direct-observable descriptors add no EOS equation,
+target, residual, fit policy, or broader model admission.
+The same exact five-ion water domain exposes one model-bound active
+ionic-region relative permittivity through the existing solvation-Gibbs
+reference sequence. The published value is fixed model input rather than a
+fitted target; the callback adds derivative transport, not catalog authority
+or a shared multi-model fit.
+It also exposes the water component's active relative permittivity through
+that same exact reference path. This is a distinct component coordinate from
+the radial ionic-region value and adds no correlation fitting, target, or
+catalog mutation.
+The append-only tail also exposes the existing infinite-dilution reference
+sequence with exact first derivatives in the three ordered `k_ij` coordinates
+for the source-backed Figiel methanol/K+/Br- and ethanol/Na+/Cl- selections.
+It owns no constructed targets, residuals, bounds, Ceres, or fitted values.
 
 Migration D-024 additionally records local append-only full-electrolyte and
 molar-volume-domain candidates. The phase callback evaluates the complete

@@ -92,6 +92,7 @@ def test_native_model_boundary_is_ordered_strict_and_immutable() -> None:
         "EosError",
         "Phase",
         "native_sdk",
+        "export_native_model",
         "ElectrolyteReference",
         "IonicActivity",
         "TransferFreeEnergy",
@@ -152,6 +153,22 @@ def test_gross_hard_chain_dispersion_and_pressure_goldens(
     ) / (12 * step)
     reconstructed = (1 + density * derivative) * density * GAS_CONSTANT * temperature
     assert result.pressure.to("pascal").magnitude == pytest.approx(reconstructed, rel=2e-7)
+
+
+def test_figiel_result_exposes_bulk_relative_permittivity() -> None:
+    model = EPCSAFT(
+        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
+            ("water", "sodium-cation", "chloride-anion")
+        )
+    )
+    result = model.evaluate(
+        temperature=298.15 * unit_registry.kelvin,
+        molar_density=40.0 * unit_registry.mole / unit_registry.meter**3,
+        mole_fractions=(0.9, 0.05, 0.05),
+    )
+
+    assert model.permittivity_model == "figiel-composition"
+    assert result.bulk_relative_permittivity == pytest.approx(78.09 / (1.0 + 7.01 * 0.1))
 
 
 def test_evaluate_is_permutation_invariant() -> None:

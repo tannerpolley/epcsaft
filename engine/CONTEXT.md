@@ -48,6 +48,19 @@ ionic activity on one explicit electroneutral formula-unit path. Its aqueous
 single-solvent result also reports the practical molal osmotic coefficient
 from the solvent-activity ratio on that pressure-state path.
 
+Migration D-028 binds one additional private Provider candidate for the exact
+ordered water/H3O+/OH- mechanical model of Held, Cameretti, and Sadowski (2008)
+at 298.15 K and 1 bar. The installed record set closes component identity,
+charge, association, water--ion dispersion, excluded ion--ion dispersion,
+constant-water-dielectric Debye--Huckel behavior, and zero Born contribution.
+The append-only SDK tail declares the exact Helmholtz coordinate basis and
+source pressure bounds and returns one neutral formula-unit reference sum plus
+the pure-water reference from the existing native dilution owner. This is not
+a reactive standard-state model: Equilibrium exclusively owns `K_w`, its
+reference conversion, reaction/balance constraints, Ipopt, and certificates.
+The candidate has `authority_effect: none`; no receipt, promotion, release, or
+source-backed nonideal reaction claim follows from its presence here.
+
 Pressure closure accepts exactly one of molar density or pressure. An
 unlabelled pressure state must have one mechanically stable root. A genuine
 multi-root state requires `phase="vapor"` or `phase="liquid"`; a phase hint
@@ -72,14 +85,35 @@ has no phase identity, density root, target residual, Ipopt, Ceres, equilibrium
 result, or fit result. Each consumer remains subject to its own installed-wheel
 gate and promotion receipt.
 
-The local Consumer Maturity Slice 2 prerequisite appends one candidate
-methane/ethane neutral-mixture phase entry to the same capsule and one further
-active-`k_ij` callback. The latter reuses the mixture result and returns the
-same extensive ideal-plus-residual value and exact CppAD gradient/Hessian in
-`(n1,n2,V,kij)`. It accepts any finite trial unlike-pair value; regression owns
-bounds, scaling, targets, and fit acceptance. Neither entry is authoritative
+The local Consumer Maturity Slice 2 prerequisite appends one candidate neutral
+nonassociating binary-mixture phase entry to the same capsule and further
+active-`k_ij` and active-`l_ij` callbacks. Gross--Sadowski methane/ethane is
+the first reference evidence, while a source-bound caller model carries its
+own exact component and topology fingerprints. The same append-only tail adds
+one scalar pure-parameter callback with derivative-ready descriptors for
+`segment_count`, `segment_diameter`, and `dispersion_energy_over_k`. The
+binary callbacks return exact CppAD derivatives in
+`(n1,n2,V,pair_parameter)`; the pure callback projects the existing exact
+joint pure Hessian into `(n,V,active_parameter)`. All accept finite trial
+values while regression owns bounds, scaling, targets, and fit acceptance.
+The scalar pure path supports independent family fits and does not replace
+the accepted joint `(m,sigma,epsilon/k)` workflow. None is authoritative
 until a separate promotion receipt is accepted, and neither adds phase,
 density, equilibrium, or regression ownership.
+For an exact neutral pure 2B model with one donor and one acceptor site, the
+tail also exposes scalar association-energy/volume derivatives and one joint
+seven-coordinate pure-phase Hessian. The joint callback alone uses the
+Baygi--Pahlavanzadeh Eq. 4 temperature-dependent `d_ij^3` basis; the ordinary
+Provider EOS and scalar association callbacks remain on their source-owned
+`sigma_ij^3` basis. The callback supplies derivative transport for the bounded
+Regression reconstruction and does not admit other association topologies,
+targets, fitted values, or catalog persistence.
+The same finite descriptor set now binds the existing first-derivative
+callbacks for current-catalog water single-ion Born diameter and NaBr water
+solvation factor to their exact component identity, direct-observable
+contract, units, fixed 298.15 K domain, topology, and parameter fingerprint.
+This is metadata for callbacks already present in the SDK, not a new
+thermodynamic implementation or a general electrolyte admission.
 
 Migration D-024 records a local append-only full-electrolyte phase-block
 candidate in explicit component amounts and extensive volume. The callback
@@ -152,6 +186,32 @@ corrected-SSM+DS Figiel user bundles with exact applicability may use the
 staged active callbacks. This is Provider transport evidence, not a fit,
 catalog change, scientific acceptance, or authority transfer.
 
+The general Regression integration tail additionally exposes one
+infinite-dilution ion-solvation Gibbs result with exact total fixed-pressure
+derivatives in ordered `(solvent--cation, solvent--anion, cation--anion)`
+`k_ij` coordinates. Admission is limited to the catalog-bound
+methanol/K+/Br- and ethanol/Na+/Cl- selections used by the retained Figiel
+constructed-target ledger. The callback reuses the same active-`k_ij`
+Helmholtz and electrolyte-reference owners; it does not own the equation-19
+target construction, source interpretation, fitting, or catalog updates.
+
+The same integration tail exposes the SSM+DS ionic-region relative
+permittivity as one model-bound active coordinate for each admitted
+current-catalog water single-ion model. It returns the existing x-process
+solvation Gibbs value and its exact total fixed-pressure first derivative
+through the same CppAD, density, fugacity, and reference-sequence owners.
+Figiel reports the catalog value as fixed model input, so this callback proves
+derivative and fitting mechanics only; it does not claim recovery of a
+published fitted value, a shared cross-model parameter, or catalog authority.
+
+The next append-only entry exposes the water component's ordinary
+`relative_permittivity` as a separate active coordinate on those same five
+model identities. Its solvation-Gibbs derivative includes the bulk dielectric,
+Debye--Huckel, Born, fixed-pressure density/fugacity, and reference-sequence
+chains. It must not be confused with the radial
+`ionic_region_relative_permittivity`; neither fitted result persists to the
+catalog.
+
 Project Truss Provider issue `#10` adds a separate append-only installed-SDK
 candidate for charge-neutral reacting standard references. For an admitted
 aqueous phase model with one explicit water reference carrier, it returns a
@@ -165,6 +225,11 @@ exist. The same reference-sequence and pressure-state owners supply the values;
 no single-ion standard, reaction constant, reaction solver, chemistry selector,
 or catalog admission is introduced. The result explicitly reports that `T`,
 `P`, composition, and parameter derivatives are unavailable.
+
+The private Held water-ionization bundle uses that same generic neutral-reference
+tail and the existing fixed-pressure density closure. Consumers obtain its
+pure-water liquid molar volume from the ordinary public pure-water state; no
+second standard-reference callback or density owner is retained.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.

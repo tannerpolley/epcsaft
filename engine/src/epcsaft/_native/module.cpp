@@ -1,5 +1,5 @@
 #include "eos.hpp"
-#include "native_sdk.hpp"
+#include "native_sdk_pybind.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -38,6 +38,10 @@ PYBIND11_MODULE(_core, module) {
         .def_readonly("association", &epcsaft::NativeResult::association)
         .def_readonly("debye_huckel", &epcsaft::NativeResult::debye_huckel)
         .def_readonly("born_ssm_ds", &epcsaft::NativeResult::born_ssm_ds)
+        .def_readonly(
+            "bulk_relative_permittivity",
+            &epcsaft::NativeResult::bulk_relative_permittivity
+        )
         .def_readonly(
             "residual_helmholtz", &epcsaft::NativeResult::residual_helmholtz
         )
@@ -82,6 +86,10 @@ PYBIND11_MODULE(_core, module) {
             "log_fugacity", &epcsaft::NativeReferenceSequence::log_fugacity
         )
         .def_readonly(
+            "pure_solvent_log_fugacity_coefficient",
+            &epcsaft::NativeReferenceSequence::pure_solvent_log_fugacity_coefficient
+        )
+        .def_readonly(
             "reference_molality",
             &epcsaft::NativeReferenceSequence::reference_molality
         )
@@ -112,7 +120,14 @@ PYBIND11_MODULE(_core, module) {
             std::vector<double> born_diameter_angstrom,
             std::vector<double> solvation_factor,
             double ionic_region_relative_permittivity,
-            int electrolyte_model
+            int electrolyte_model,
+            std::vector<double> schreckenberg_dielectric_volume_m3_per_mol,
+            std::vector<double> schreckenberg_dielectric_temperature_k,
+            std::vector<double> zuber_ion_suppression_coefficient,
+            std::vector<double> rueben_dipole_scaling_debye2,
+            std::vector<double> rueben_polarizability_scaling_angstrom3,
+            std::vector<double> rueben_correlation_integral_parameter,
+            int permittivity_model
         ) {
             return epcsaft::NativeModel(epcsaft::NativeParameters{
                 std::move(segment_count),
@@ -136,6 +151,13 @@ PYBIND11_MODULE(_core, module) {
                 std::move(solvation_factor),
                 ionic_region_relative_permittivity,
                 electrolyte_model,
+                std::move(schreckenberg_dielectric_volume_m3_per_mol),
+                std::move(schreckenberg_dielectric_temperature_k),
+                std::move(zuber_ion_suppression_coefficient),
+                std::move(rueben_dipole_scaling_debye2),
+                std::move(rueben_polarizability_scaling_angstrom3),
+                std::move(rueben_correlation_integral_parameter),
+                permittivity_model,
             });
         }))
         .def("evaluate", &epcsaft::NativeModel::evaluate)
@@ -143,7 +165,22 @@ PYBIND11_MODULE(_core, module) {
         .def("reference_composition", &epcsaft::NativeModel::reference_composition)
         .def(
             "electrolyte_reference_sequence",
-            &epcsaft::NativeModel::electrolyte_reference_sequence
+            [](const epcsaft::NativeModel& model,
+               double temperature,
+               double pressure,
+               const std::vector<double>& solvent_fractions,
+               const std::array<std::size_t, 2>& ion_indices,
+               const std::array<int, 2>& stoichiometry,
+               const std::string& phase) {
+                return model.electrolyte_reference_sequence(
+                    temperature,
+                    pressure,
+                    solvent_fractions,
+                    ion_indices,
+                    stoichiometry,
+                    phase
+                );
+            }
         );
 
     module.def(
@@ -158,11 +195,14 @@ PYBIND11_MODULE(_core, module) {
         py::arg("phase_callbacks_admitted") = true,
         py::arg("active_born_admitted") = false,
         py::arg("aqueous_kij_admitted") = false,
+        py::arg("figiel_dielectric_admitted") = false,
         py::arg("pressure_min_pa") = std::numeric_limits<double>::quiet_NaN(),
         py::arg("pressure_max_pa") = std::numeric_limits<double>::quiet_NaN(),
         py::arg("neutral_reference_admitted") = false,
         py::arg("unknown_applicability_admitted") = false,
         py::arg("aqueous_solvation_factor_admitted") = false,
-        py::arg("staged_trial_bundle_admitted") = false
+        py::arg("ion_solvation_kij_admitted") = false,
+        py::arg("staged_trial_bundle_admitted") = false,
+        py::arg("topology_fingerprint") = ""
     );
 }

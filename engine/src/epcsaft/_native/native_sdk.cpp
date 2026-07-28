@@ -4,16 +4,16 @@
 
 #include <epcsaft/native_sdk_v1.h>
 
-#include <pybind11/pybind11.h>
-
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <iterator>
 #include <limits>
 #include <numeric>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -22,6 +22,7 @@
 namespace epcsaft {
 namespace {
 
+// EqExclude: input and domain validation
 bool active_born_model_admitted(
     const std::string& fingerprint,
     const std::vector<std::string>& component_ids,
@@ -84,6 +85,7 @@ bool active_born_model_admitted(
     );
 }
 
+// EqExclude: input and domain validation
 bool aqueous_kij_model_admitted(
     const std::string& fingerprint,
     const std::vector<std::string>& component_ids,
@@ -135,6 +137,59 @@ bool aqueous_kij_model_admitted(
     );
 }
 
+// EqExclude: input and domain validation
+bool figiel_dielectric_model_admitted(
+    const std::vector<std::string>& component_ids,
+    const std::vector<int>& charges
+) {
+    return component_ids.size() == 3
+        && charges == std::vector<int>({0, 1, -1})
+        && (component_ids[0] == "water" || component_ids[0] == "methanol");
+}
+
+// EqExclude: input and domain validation
+bool ion_solvation_kij_model_admitted(
+    const std::string& parameter_fingerprint,
+    const std::string& topology_fingerprint,
+    const std::vector<std::string>& component_ids,
+    const std::vector<int>& charges
+) {
+    struct Admission final {
+        std::array<const char*, 3> component_ids;
+        const char* parameter_fingerprint;
+        const char* topology_fingerprint;
+    };
+    constexpr std::array<Admission, 2> admissions{{
+        {
+            {"methanol", "potassium-cation", "bromide-anion"},
+            "sha256:10146ec44223169b5403b898a650b4f164b5aff1ddc5d65e4023f14b36259a67",
+            "sha256:00d2476a7b107097ff8de62754753515d7b58883cdfc37a2e7cc4727f28bc25a",
+        },
+        {
+            {"ethanol", "sodium-cation", "chloride-anion"},
+            "sha256:e316efb0f2f78a0b5fefa67ed316d66c26ba8d6a800dc8afcdd72a64c66a420f",
+            "sha256:8eae46e94249e09df6c987c968cce14fb5521ee2af234f7fc088875eb650a6d7",
+        },
+    }};
+    return charges == std::vector<int>({0, 1, -1})
+        && std::any_of(
+            admissions.begin(),
+            admissions.end(),
+            [&](const Admission& admission) {
+                return component_ids
+                        == std::vector<std::string>(
+                            admission.component_ids.begin(),
+                            admission.component_ids.end()
+                        )
+                    && parameter_fingerprint
+                        == admission.parameter_fingerprint
+                    && topology_fingerprint
+                        == admission.topology_fingerprint;
+            }
+        );
+}
+
+// EqExclude: input and domain validation
 bool aqueous_solvation_factor_model_admitted(
     const std::string& fingerprint,
     const std::vector<std::string>& component_ids,
@@ -151,6 +206,7 @@ bool aqueous_solvation_factor_model_admitted(
             || fingerprint == sodium_bromide_fingerprint);
 }
 
+// EqExclude: input and domain validation
 bool neutral_reference_model_shape_admitted(
     const std::vector<std::string>& component_ids,
     const std::vector<int>& charges
@@ -172,6 +228,7 @@ bool neutral_reference_model_shape_admitted(
 struct NativeSdkEndpoint final {
     NativeModel model;
     std::string parameter_fingerprint;
+    std::string topology_fingerprint;
     double temperature_min_k;
     double temperature_max_k;
     double pressure_min_pa;
@@ -180,11 +237,44 @@ struct NativeSdkEndpoint final {
     bool phase_callbacks_admitted;
     bool active_born_admitted;
     bool aqueous_kij_admitted;
+    bool figiel_dielectric_admitted;
+    bool ion_solvation_kij_admitted;
     bool aqueous_solvation_factor_admitted;
     bool neutral_reference_admitted;
     std::vector<std::string> component_ids;
     std::vector<const char*> component_id_pointers;
     std::vector<int32_t> component_charges;
+    std::array<epcsaft_native_capability_coordinate_v1, 4>
+        neutral_binary_kij_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 4>
+        neutral_binary_lij_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 3>
+        pure_segment_count_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 3>
+        pure_segment_diameter_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 3>
+        pure_dispersion_energy_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 3>
+        pure_association_energy_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 3>
+        pure_association_volume_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        ion_solvation_born_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        ion_solvation_ionic_permittivity_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        ion_solvation_solvent_permittivity_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        aqueous_solvation_factor_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        aqueous_water_cation_kij_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        aqueous_water_anion_kij_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        aqueous_cation_anion_kij_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        figiel_dielectric_suppression_coordinates;
+    std::vector<epcsaft_native_capability_descriptor_v1> capabilities;
     epcsaft_native_sdk_v1 table;
 
     NativeSdkEndpoint(
@@ -197,13 +287,17 @@ struct NativeSdkEndpoint final {
         bool admit_phase_callbacks,
         bool admit_active_born,
         bool admit_aqueous_kij,
+        bool admit_figiel_dielectric,
+        bool admit_ion_solvation_kij,
         double minimum_pressure,
         double maximum_pressure,
         bool admit_neutral_reference,
-        bool admit_aqueous_solvation_factor
+        bool admit_aqueous_solvation_factor,
+        std::string topology_identity
     )
         : model(source_model),
           parameter_fingerprint(std::move(fingerprint)),
+          topology_fingerprint(std::move(topology_identity)),
           temperature_min_k(minimum_temperature),
           temperature_max_k(maximum_temperature),
           pressure_min_pa(minimum_pressure),
@@ -212,6 +306,8 @@ struct NativeSdkEndpoint final {
           phase_callbacks_admitted(admit_phase_callbacks),
           active_born_admitted(admit_active_born),
           aqueous_kij_admitted(admit_aqueous_kij),
+          figiel_dielectric_admitted(admit_figiel_dielectric),
+          ion_solvation_kij_admitted(admit_ion_solvation_kij),
           aqueous_solvation_factor_admitted(
               admit_aqueous_solvation_factor
           ),
@@ -229,6 +325,489 @@ struct NativeSdkEndpoint final {
               source_model.charge_numbers().begin(),
               source_model.charge_numbers().end()
           ),
+          neutral_binary_kij_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1,
+                  0,
+                  -1,
+                  -1,
+                  "mol",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1,
+                  1,
+                  -1,
+                  -1,
+                  "mol",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_VOLUME_V1,
+                  -1,
+                  -1,
+                  -1,
+                  "m3",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1,
+                  -1,
+                  0,
+                  1,
+                  "dimensionless",
+              },
+          }},
+          neutral_binary_lij_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1,
+                  0,
+                  -1,
+                  -1,
+                  "mol",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1,
+                  1,
+                  -1,
+                  -1,
+                  "mol",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_VOLUME_V1,
+                  -1,
+                  -1,
+                  -1,
+                  "m3",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_LIJ_V1,
+                  -1,
+                  0,
+                  1,
+                  "dimensionless",
+              },
+          }},
+          pure_segment_count_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1,
+                  0,
+                  -1,
+                  -1,
+                  "mol",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_VOLUME_V1,
+                  -1,
+                  -1,
+                  -1,
+                  "m3",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_COUNT_V1,
+                  0,
+                  -1,
+                  -1,
+                  "dimensionless",
+              },
+          }},
+          pure_segment_diameter_coordinates(pure_segment_count_coordinates),
+          pure_dispersion_energy_coordinates(pure_segment_count_coordinates),
+          pure_association_energy_coordinates(pure_segment_count_coordinates),
+          pure_association_volume_coordinates(pure_segment_count_coordinates),
+          ion_solvation_born_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BORN_DIAMETER_V1,
+                  1,
+                  -1,
+                  -1,
+                  "angstrom",
+              },
+          }},
+          ion_solvation_ionic_permittivity_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_IONIC_REGION_RELATIVE_PERMITTIVITY_V1,
+                  -1,
+                  -1,
+                  -1,
+                  "dimensionless",
+              },
+          }},
+          ion_solvation_solvent_permittivity_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_RELATIVE_PERMITTIVITY_V1,
+                  0,
+                  -1,
+                  -1,
+                  "dimensionless",
+              },
+          }},
+          aqueous_solvation_factor_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SOLVATION_FACTOR_V1,
+                  0,
+                  -1,
+                  -1,
+                  "dimensionless",
+              },
+          }},
+          aqueous_water_cation_kij_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1,
+                  -1,
+                  0,
+                  1,
+                  "dimensionless",
+              },
+          }},
+          aqueous_water_anion_kij_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1,
+                  -1,
+                  0,
+                  2,
+                  "dimensionless",
+              },
+          }},
+          aqueous_cation_anion_kij_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1,
+                  -1,
+                  1,
+                  2,
+                  "dimensionless",
+              },
+          }},
+          figiel_dielectric_suppression_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DIELECTRIC_ION_SUPPRESSION_V1,
+                  -1,
+                  -1,
+                  -1,
+                  "dimensionless",
+              },
+          }},
+          capabilities([&] {
+              std::vector<epcsaft_native_capability_descriptor_v1> result;
+              pure_segment_diameter_coordinates[2].kind =
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_DIAMETER_V1;
+              pure_segment_diameter_coordinates[2].unit = "angstrom";
+              pure_dispersion_energy_coordinates[2].kind =
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1;
+              pure_dispersion_energy_coordinates[2].unit = "kelvin";
+              pure_association_energy_coordinates[2].kind =
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_ENERGY_OVER_K_V1;
+              pure_association_energy_coordinates[2].component_index = -1;
+              pure_association_energy_coordinates[2].unit = "kelvin";
+              pure_association_volume_coordinates[2].kind =
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_VOLUME_V1;
+              pure_association_volume_coordinates[2].component_index = -1;
+              pure_association_volume_coordinates[2].unit = "dimensionless";
+              auto descriptor = [&](
+                  uint32_t capability,
+                  uint32_t parameter_family,
+                  uint32_t parameter_identity,
+                  uint32_t model_domain,
+                  std::size_t state_coordinate_count,
+                  const auto& coordinates
+              ) {
+                  epcsaft_native_capability_descriptor_v1 value{};
+                  value.struct_size =
+                      sizeof(epcsaft_native_capability_descriptor_v1);
+                  value.schema_version =
+                      EPCSAFT_NATIVE_CAPABILITY_SCHEMA_VERSION_V1;
+                  value.capability = capability;
+                  value.parameter_family = parameter_family;
+                  value.parameter_identity = parameter_identity;
+                  value.observation_contract =
+                      EPCSAFT_NATIVE_OBSERVATION_FIXED_COMPOSITION_HELMHOLTZ_PHASE_V1;
+                  value.model_domain = model_domain;
+                  value.tensor_layout =
+                      EPCSAFT_NATIVE_TENSOR_LAYOUT_ROW_MAJOR_V1;
+                  value.derivative_order = 2;
+                  value.maturity =
+                      EPCSAFT_NATIVE_CAPABILITY_DERIVATIVE_READY_V1;
+                  value.authority_effect =
+                      EPCSAFT_NATIVE_AUTHORITY_EFFECT_NONE_V1;
+                  value.unsupported_status =
+                      EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1;
+                  value.domain_status = EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1;
+                  value.state_coordinate_count = state_coordinate_count;
+                  value.active_parameter_count = 1;
+                  value.coordinate_count = coordinates.size();
+                  value.coordinates = coordinates.data();
+                  value.component_count = component_ids.size();
+                  value.component_ids = component_id_pointers.data();
+                  value.temperature_min_k = temperature_min_k;
+                  value.temperature_max_k = temperature_max_k;
+                  std::snprintf(
+                      value.parameter_fingerprint,
+                      sizeof(value.parameter_fingerprint),
+                      "%s",
+                      parameter_fingerprint.c_str()
+                  );
+                  std::snprintf(
+                      value.topology_fingerprint,
+                      sizeof(value.topology_fingerprint),
+                      "%s",
+                      topology_fingerprint.c_str()
+                  );
+                  std::snprintf(
+                      value.helmholtz_basis_id,
+                      sizeof(value.helmholtz_basis_id),
+                      "%s",
+                      EPCSAFT_NATIVE_SDK_V1_HELMHOLTZ_BASIS_ID
+                  );
+                  return value;
+              };
+              auto direct_descriptor = [&](
+                  uint32_t capability,
+                  uint32_t parameter_family,
+                  uint32_t observation_contract,
+                  uint32_t model_domain,
+                  const auto& coordinates
+              ) {
+                  auto value = descriptor(
+                      capability,
+                      parameter_family,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
+                      model_domain,
+                      0,
+                      coordinates
+                  );
+                  value.observation_contract = observation_contract;
+                  value.derivative_order = 1;
+                  value.temperature_min_k = 298.15;
+                  value.temperature_max_k = 298.15;
+                  return value;
+              };
+              const bool exact_pure =
+                  phase_callbacks_admitted
+                  && source_model.supports_parameterized_pure_native_sdk_v1()
+                  && component_ids.size() == 1
+                  && component_charges == std::vector<int32_t>({0})
+                  && !topology_fingerprint.empty();
+              if (exact_pure) {
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_PURE_SEGMENT_COUNT_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_COUNT_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_PURE_V1,
+                      2,
+                      pure_segment_count_coordinates
+                  ));
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_PURE_SEGMENT_DIAMETER_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_PURE_V1,
+                      2,
+                      pure_segment_diameter_coordinates
+                  ));
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_PURE_DISPERSION_ENERGY_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_PURE_V1,
+                      2,
+                      pure_dispersion_energy_coordinates
+                  ));
+              }
+              const bool exact_associating_pure =
+                  phase_callbacks_admitted
+                  && source_model
+                      .supports_associating_pure_parameter_native_sdk_v1()
+                  && component_ids.size() == 1
+                  && component_charges == std::vector<int32_t>({0})
+                  && !topology_fingerprint.empty();
+              if (exact_associating_pure) {
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATION_ENERGY_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_ENERGY_OVER_K_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_MODEL_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_PURE_V1,
+                      2,
+                      pure_association_energy_coordinates
+                  ));
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATION_VOLUME_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_VOLUME_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_MODEL_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_PURE_V1,
+                      2,
+                      pure_association_volume_coordinates
+                  ));
+              }
+              const bool exact_neutral_binary =
+                  phase_callbacks_admitted
+                  && source_model.supports_mixture_native_sdk_v1()
+                  && component_ids.size() == 2
+                  && component_charges == std::vector<int32_t>({0, 0})
+                  && !topology_fingerprint.empty();
+              if (exact_neutral_binary) {
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_KIJ_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1,
+                      3,
+                      neutral_binary_kij_coordinates
+                  ));
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_LIJ_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_LIJ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1,
+                      3,
+                      neutral_binary_lij_coordinates
+                  ));
+              }
+              if (active_born_admitted) {
+                  result.push_back(direct_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_BORN_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_BORN_DIAMETER_V1,
+                      EPCSAFT_NATIVE_OBSERVATION_ION_SOLVATION_GIBBS_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_WATER_SINGLE_ION_V1,
+                      ion_solvation_born_coordinates
+                  ));
+                  auto ionic_permittivity = descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_IONIC_REGION_PERMITTIVITY_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_IONIC_REGION_RELATIVE_PERMITTIVITY_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_MODEL_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_WATER_SINGLE_ION_V1,
+                      0,
+                      ion_solvation_ionic_permittivity_coordinates
+                  );
+                  ionic_permittivity.observation_contract =
+                      EPCSAFT_NATIVE_OBSERVATION_ION_SOLVATION_GIBBS_V1;
+                  ionic_permittivity.derivative_order = 1;
+                  ionic_permittivity.temperature_min_k = 298.15;
+                  ionic_permittivity.temperature_max_k = 298.15;
+                  result.push_back(ionic_permittivity);
+                  auto solvent_permittivity = descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_PERMITTIVITY_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_RELATIVE_PERMITTIVITY_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_WATER_SINGLE_ION_V1,
+                      0,
+                      ion_solvation_solvent_permittivity_coordinates
+                  );
+                  solvent_permittivity.observation_contract =
+                      EPCSAFT_NATIVE_OBSERVATION_ION_SOLVATION_GIBBS_V1;
+                  solvent_permittivity.derivative_order = 1;
+                  solvent_permittivity.temperature_min_k = 298.15;
+                  solvent_permittivity.temperature_max_k = 298.15;
+                  result.push_back(solvent_permittivity);
+              }
+              if (aqueous_solvation_factor_admitted) {
+                  result.push_back(direct_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_SOLVATION_FACTOR_MIAC_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_SOLVATION_FACTOR_V1,
+                      EPCSAFT_NATIVE_OBSERVATION_AQUEOUS_MEAN_IONIC_ACTIVITY_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_AQUEOUS_NABR_V1,
+                      aqueous_solvation_factor_coordinates
+                  ));
+              }
+              if (aqueous_kij_admitted) {
+                  const auto aqueous_kij_descriptor = [&](
+                      uint32_t capability,
+                      const auto& coordinates
+                  ) {
+                      auto value = descriptor(
+                          capability,
+                          EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1,
+                          EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1,
+                          EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_AQUEOUS_NABR_V1,
+                          0,
+                          coordinates
+                      );
+                      value.observation_contract =
+                          EPCSAFT_NATIVE_OBSERVATION_AQUEOUS_MEAN_IONIC_ACTIVITY_V1;
+                      value.derivative_order = 1;
+                      value.temperature_min_k = 298.15;
+                      value.temperature_max_k = 298.15;
+                      return value;
+                  };
+                  result.push_back(aqueous_kij_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_WATER_CATION_KIJ_MIAC_V1,
+                      aqueous_water_cation_kij_coordinates
+                  ));
+                  result.push_back(aqueous_kij_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_WATER_ANION_KIJ_MIAC_V1,
+                      aqueous_water_anion_kij_coordinates
+                  ));
+                  result.push_back(aqueous_kij_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_CATION_ANION_KIJ_MIAC_V1,
+                      aqueous_cation_anion_kij_coordinates
+                  ));
+              }
+              if (figiel_dielectric_admitted) {
+                  auto dielectric = descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_FIGIEL_DIELECTRIC_SUPPRESSION_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_DIELECTRIC_ION_SUPPRESSION_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_MODEL_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_DIELECTRIC_V1,
+                      0,
+                      figiel_dielectric_suppression_coordinates
+                  );
+                  dielectric.observation_contract =
+                      EPCSAFT_NATIVE_OBSERVATION_RELATIVE_PERMITTIVITY_RATIO_V1;
+                  dielectric.derivative_order = 1;
+                  dielectric.temperature_min_k = 298.15;
+                  dielectric.temperature_max_k = 298.15;
+                  result.push_back(dielectric);
+              }
+              if (ion_solvation_kij_admitted) {
+                  const auto ion_solvation_kij_descriptor = [&](
+                      uint32_t capability,
+                      const auto& coordinates
+                  ) {
+                      auto value = descriptor(
+                          capability,
+                          EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1,
+                          EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1,
+                          EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_SINGLE_ION_SOLVATION_V1,
+                          0,
+                          coordinates
+                      );
+                      value.observation_contract =
+                          EPCSAFT_NATIVE_OBSERVATION_ION_SOLVATION_GIBBS_V1;
+                      value.derivative_order = 1;
+                      value.temperature_min_k = 298.15;
+                      value.temperature_max_k = 298.15;
+                      return value;
+                  };
+                  result.push_back(ion_solvation_kij_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_CATION_KIJ_V1,
+                      aqueous_water_cation_kij_coordinates
+                  ));
+                  result.push_back(ion_solvation_kij_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_ANION_KIJ_V1,
+                      aqueous_water_anion_kij_coordinates
+                  ));
+                  result.push_back(ion_solvation_kij_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_CATION_ANION_KIJ_V1,
+                      aqueous_cation_anion_kij_coordinates
+                  ));
+              }
+              return result;
+          }()),
           table{
               EPCSAFT_NATIVE_SDK_V1_ABI_VERSION,
               sizeof(epcsaft_native_sdk_v1),
@@ -260,8 +839,427 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_aqueous_miac_solvation_factor,
               &NativeSdkEndpoint::evaluate_aqueous_miac_kij_batch,
               &NativeSdkEndpoint::evaluate_aqueous_miac_solvation_factor_batch,
+              sizeof(epcsaft_native_evaluation_budget_v1),
+              &NativeSdkEndpoint::evaluate_aqueous_miac_kij_batch_bounded,
+              &NativeSdkEndpoint::evaluate_aqueous_miac_solvation_factor_batch_bounded,
+              capabilities.size(),
+              capabilities.empty() ? nullptr : capabilities.data(),
+              &NativeSdkEndpoint::evaluate_mixture_lij,
+              &NativeSdkEndpoint::evaluate_pure_parameter,
+              sizeof(epcsaft_figiel_permittivity_result_v1),
+              &NativeSdkEndpoint::evaluate_figiel_permittivity,
+              sizeof(epcsaft_ion_solvation_kij_result_v1),
+              &NativeSdkEndpoint::evaluate_ion_solvation_kij,
+              sizeof(epcsaft_ion_solvation_ionic_permittivity_result_v1),
+              &NativeSdkEndpoint::evaluate_ion_solvation_ionic_permittivity,
+              sizeof(epcsaft_ion_solvation_solvent_permittivity_result_v1),
+              &NativeSdkEndpoint::evaluate_ion_solvation_solvent_permittivity,
+              sizeof(epcsaft_associating_parameterized_phase_block_result_v1),
+              &NativeSdkEndpoint::evaluate_associating_parameters,
           } {}
 
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_ion_solvation_ionic_permittivity(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        double ionic_region_relative_permittivity,
+        epcsaft_ion_solvation_ionic_permittivity_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_ion_solvation_ionic_permittivity_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const uint32_t result_size = result->struct_size;
+        std::memset(result, 0, sizeof(*result));
+        result->struct_size = result_size;
+        result->solvation_gibbs_j_per_mol =
+            std::numeric_limits<double>::quiet_NaN();
+        result->derivative_j_per_mol =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_molality_mol_per_kg =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_convergence_error =
+            std::numeric_limits<double>::quiet_NaN();
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr
+            || !std::isfinite(temperature_k) || !std::isfinite(pressure_pa)
+            || !std::isfinite(ionic_region_relative_permittivity)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "invalid active ionic-region permittivity arguments"
+            );
+        }
+        const auto& endpoint =
+            *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.active_born_admitted
+            || std::strcmp(
+                endpoint.parameter_fingerprint.c_str(),
+                expected_fingerprint
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "unsupported active ionic-region permittivity model"
+            );
+        }
+        if (temperature_k != 298.15 || pressure_pa != 100000.0
+            || ionic_region_relative_permittivity <= 1.0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "active ionic-region permittivity state is outside the admitted domain"
+            );
+        }
+        try {
+            const auto value =
+                endpoint.model.evaluate_ion_solvation_ionic_permittivity(
+                    temperature_k,
+                    pressure_pa,
+                    ionic_region_relative_permittivity
+                );
+            result->solvation_gibbs_j_per_mol =
+                value.solvation_gibbs_j_per_mol;
+            result->derivative_j_per_mol = value.derivative_j_per_mol;
+            result->reference_molality_mol_per_kg =
+                value.reference_molality_mol_per_kg;
+            result->reference_convergence_error =
+                value.reference_convergence_error;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown active ionic-region permittivity evaluation failure"
+            );
+        }
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_ion_solvation_solvent_permittivity(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        double solvent_relative_permittivity,
+        epcsaft_ion_solvation_solvent_permittivity_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_ion_solvation_solvent_permittivity_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const uint32_t result_size = result->struct_size;
+        std::memset(result, 0, sizeof(*result));
+        result->struct_size = result_size;
+        result->solvation_gibbs_j_per_mol =
+            std::numeric_limits<double>::quiet_NaN();
+        result->derivative_j_per_mol =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_molality_mol_per_kg =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_convergence_error =
+            std::numeric_limits<double>::quiet_NaN();
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr
+            || !std::isfinite(temperature_k) || !std::isfinite(pressure_pa)
+            || !std::isfinite(solvent_relative_permittivity)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "invalid active solvent permittivity arguments"
+            );
+        }
+        const auto& endpoint =
+            *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.active_born_admitted
+            || std::strcmp(
+                endpoint.parameter_fingerprint.c_str(),
+                expected_fingerprint
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "unsupported active solvent permittivity model"
+            );
+        }
+        if (temperature_k != 298.15 || pressure_pa != 100000.0
+            || solvent_relative_permittivity <= 1.0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "active solvent permittivity state is outside the admitted domain"
+            );
+        }
+        try {
+            const auto value =
+                endpoint.model.evaluate_ion_solvation_solvent_permittivity(
+                    temperature_k,
+                    pressure_pa,
+                    solvent_relative_permittivity
+                );
+            result->solvation_gibbs_j_per_mol =
+                value.solvation_gibbs_j_per_mol;
+            result->derivative_j_per_mol = value.derivative_j_per_mol;
+            result->reference_molality_mol_per_kg =
+                value.reference_molality_mol_per_kg;
+            result->reference_convergence_error =
+                value.reference_convergence_error;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown active solvent permittivity evaluation failure"
+            );
+        }
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_ion_solvation_kij(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        size_t active_ion_component_index,
+        const double* k_ij,
+        size_t k_ij_count,
+        epcsaft_ion_solvation_kij_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_ion_solvation_kij_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const uint32_t result_size = result->struct_size;
+        std::memset(result, 0, sizeof(*result));
+        result->struct_size = result_size;
+        result->solvation_gibbs_j_per_mol =
+            std::numeric_limits<double>::quiet_NaN();
+        std::fill(
+            std::begin(result->derivative),
+            std::end(result->derivative),
+            std::numeric_limits<double>::quiet_NaN()
+        );
+        result->reference_molality_mol_per_kg =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_convergence_error =
+            std::numeric_limits<double>::quiet_NaN();
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr
+            || k_ij == nullptr || k_ij_count != 3
+            || !std::isfinite(temperature_k)
+            || !std::isfinite(pressure_pa)
+            || !std::all_of(k_ij, k_ij + k_ij_count, [](double value) {
+                return std::isfinite(value);
+            })) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "invalid active ion-solvation k_ij arguments"
+            );
+        }
+        const auto& endpoint =
+            *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.ion_solvation_kij_admitted
+            || std::strcmp(
+                endpoint.parameter_fingerprint.c_str(),
+                expected_fingerprint
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "unsupported active ion-solvation k_ij model"
+            );
+        }
+        if (temperature_k != 298.15 || pressure_pa != 100000.0
+            || (active_ion_component_index != 1
+                && active_ion_component_index != 2)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "active ion-solvation k_ij state is outside the admitted domain"
+            );
+        }
+        try {
+            const std::array<double, 3> coordinates{
+                k_ij[0], k_ij[1], k_ij[2]
+            };
+            const auto value = endpoint.model.evaluate_ion_solvation_kij(
+                temperature_k,
+                pressure_pa,
+                active_ion_component_index,
+                coordinates
+            );
+            result->solvation_gibbs_j_per_mol =
+                value.solvation_gibbs_j_per_mol;
+            std::copy(
+                value.derivative.begin(),
+                value.derivative.end(),
+                result->derivative
+            );
+            result->reference_molality_mol_per_kg =
+                value.reference_molality_mol_per_kg;
+            result->reference_convergence_error =
+                value.reference_convergence_error;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const detail::DensityDomainError& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what()
+            );
+        } catch (const std::exception& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what()
+            );
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown active ion-solvation k_ij failure"
+            );
+        }
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_figiel_permittivity(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        double total_ion_mole_fraction,
+        double suppression_coefficient,
+        epcsaft_figiel_permittivity_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_figiel_permittivity_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+        result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+        result->bulk_relative_permittivity = nan;
+        result->derivative = nan;
+        result->salt_free_relative_permittivity = nan;
+        result->parameter_fingerprint[0] = '\0';
+        result->error[0] = '\0';
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr
+            || !std::isfinite(temperature_k)
+            || !std::isfinite(pressure_pa)
+            || temperature_k <= 0.0 || pressure_pa <= 0.0
+            || !std::isfinite(total_ion_mole_fraction)
+            || !std::isfinite(suppression_coefficient)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "invalid active Figiel permittivity arguments"
+            );
+        }
+        const auto& endpoint =
+            *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.figiel_dielectric_admitted
+            || std::strcmp(
+                expected_fingerprint,
+                endpoint.parameter_fingerprint.c_str()
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "unsupported active Figiel permittivity model"
+            );
+        }
+        if (temperature_k != 298.15 || pressure_pa != 100000.0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "state is outside the active Figiel permittivity domain"
+            );
+        }
+        try {
+            const auto value = endpoint.model.evaluate_figiel_permittivity(
+                total_ion_mole_fraction,
+                suppression_coefficient
+            );
+            result->bulk_relative_permittivity =
+                value.bulk_relative_permittivity;
+            result->derivative = value.derivative;
+            result->salt_free_relative_permittivity =
+                value.salt_free_relative_permittivity;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            return result->status;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what()
+            );
+        } catch (const std::exception& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what()
+            );
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown active Figiel permittivity failure"
+            );
+        }
+    }
+
+    // EqID: neutral_reference_stoichiometric_basis
     static int evaluate_neutral_reference(
         const void* context,
         const char* expected_fingerprint,
@@ -491,6 +1489,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_aqueous_miac_kij(
         const void* context,
         const char* expected_fingerprint,
@@ -585,6 +1584,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_aqueous_miac_solvation_factor(
         const void* context,
         const char* expected_fingerprint,
@@ -692,7 +1692,8 @@ struct NativeSdkEndpoint final {
         }
     }
 
-    static int evaluate_aqueous_miac_kij_batch(
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_aqueous_miac_kij_batch_impl(
         const void* context,
         const char* expected_fingerprint,
         double temperature_k,
@@ -702,7 +1703,8 @@ struct NativeSdkEndpoint final {
         const double* k_ij,
         size_t k_ij_count,
         epcsaft_aqueous_miac_kij_result_v1* results,
-        size_t result_count
+        size_t result_count,
+        const epcsaft_native_evaluation_budget_v1* budget
     ) noexcept {
         if (results == nullptr || result_count == 0) {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
@@ -789,6 +1791,17 @@ struct NativeSdkEndpoint final {
                 "aqueous active k_ij state is outside the admitted domain"
             );
         }
+        std::optional<NativeEvaluationBudget> bounded_budget;
+        if (budget != nullptr) {
+            if (budget->struct_size
+                != sizeof(epcsaft_native_evaluation_budget_v1)) {
+                return fail(
+                    EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1,
+                    "evaluation budget size does not match"
+                );
+            }
+            bounded_budget.emplace(budget->work_budget, budget->deadline_ns);
+        }
         try {
             const std::array<double, 3> coordinates = {
                 k_ij[0], k_ij[1], k_ij[2]
@@ -799,7 +1812,8 @@ struct NativeSdkEndpoint final {
                 std::vector<double>(
                     molalities, molalities + molality_count
                 ),
-                coordinates
+                coordinates,
+                bounded_budget.has_value() ? &*bounded_budget : nullptr
             );
             if (values.size() != result_count) {
                 throw std::runtime_error(
@@ -831,6 +1845,12 @@ struct NativeSdkEndpoint final {
             return EPCSAFT_NATIVE_STATUS_OK_V1;
         } catch (const detail::DensityDomainError& error) {
             return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const NativeEvaluationCancelled& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_CANCELLED_V1, error.what());
+        } catch (const NativeEvaluationDeadlineExceeded& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DEADLINE_EXCEEDED_V1, error.what()
+            );
         } catch (const std::invalid_argument& error) {
             return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
         } catch (const std::logic_error& error) {
@@ -845,7 +1865,65 @@ struct NativeSdkEndpoint final {
         }
     }
 
-    static int evaluate_aqueous_miac_solvation_factor_batch(
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_aqueous_miac_kij_batch(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        const double* molalities,
+        size_t molality_count,
+        const double* k_ij,
+        size_t k_ij_count,
+        epcsaft_aqueous_miac_kij_result_v1* results,
+        size_t result_count
+    ) noexcept {
+        return evaluate_aqueous_miac_kij_batch_impl(
+            context,
+            expected_fingerprint,
+            temperature_k,
+            pressure_pa,
+            molalities,
+            molality_count,
+            k_ij,
+            k_ij_count,
+            results,
+            result_count,
+            nullptr
+        );
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_aqueous_miac_kij_batch_bounded(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        const double* molalities,
+        size_t molality_count,
+        const double* k_ij,
+        size_t k_ij_count,
+        epcsaft_aqueous_miac_kij_result_v1* results,
+        size_t result_count,
+        const epcsaft_native_evaluation_budget_v1* budget
+    ) noexcept {
+        return evaluate_aqueous_miac_kij_batch_impl(
+            context,
+            expected_fingerprint,
+            temperature_k,
+            pressure_pa,
+            molalities,
+            molality_count,
+            k_ij,
+            k_ij_count,
+            results,
+            result_count,
+            budget
+        );
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_aqueous_miac_solvation_factor_batch_impl(
         const void* context,
         const char* expected_fingerprint,
         double temperature_k,
@@ -854,7 +1932,8 @@ struct NativeSdkEndpoint final {
         size_t molality_count,
         double solvation_factor,
         epcsaft_aqueous_miac_solvation_factor_result_v1* results,
-        size_t result_count
+        size_t result_count,
+        const epcsaft_native_evaluation_budget_v1* budget
     ) noexcept {
         if (results == nullptr || result_count == 0) {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
@@ -935,6 +2014,17 @@ struct NativeSdkEndpoint final {
                 "aqueous active solvation-factor state is outside the admitted domain"
             );
         }
+        std::optional<NativeEvaluationBudget> bounded_budget;
+        if (budget != nullptr) {
+            if (budget->struct_size
+                != sizeof(epcsaft_native_evaluation_budget_v1)) {
+                return fail(
+                    EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1,
+                    "evaluation budget size does not match"
+                );
+            }
+            bounded_budget.emplace(budget->work_budget, budget->deadline_ns);
+        }
         try {
             const auto values =
                 endpoint.model.evaluate_aqueous_miac_solvation_factor_batch(
@@ -943,7 +2033,8 @@ struct NativeSdkEndpoint final {
                     std::vector<double>(
                         molalities, molalities + molality_count
                     ),
-                    solvation_factor
+                    solvation_factor,
+                    bounded_budget.has_value() ? &*bounded_budget : nullptr
                 );
             if (values.size() != result_count) {
                 throw std::runtime_error(
@@ -971,6 +2062,12 @@ struct NativeSdkEndpoint final {
             return EPCSAFT_NATIVE_STATUS_OK_V1;
         } catch (const detail::DensityDomainError& error) {
             return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const NativeEvaluationCancelled& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_CANCELLED_V1, error.what());
+        } catch (const NativeEvaluationDeadlineExceeded& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DEADLINE_EXCEEDED_V1, error.what()
+            );
         } catch (const std::invalid_argument& error) {
             return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
         } catch (const std::logic_error& error) {
@@ -987,6 +2084,60 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_aqueous_miac_solvation_factor_batch(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        const double* molalities,
+        size_t molality_count,
+        double solvation_factor,
+        epcsaft_aqueous_miac_solvation_factor_result_v1* results,
+        size_t result_count
+    ) noexcept {
+        return evaluate_aqueous_miac_solvation_factor_batch_impl(
+            context,
+            expected_fingerprint,
+            temperature_k,
+            pressure_pa,
+            molalities,
+            molality_count,
+            solvation_factor,
+            results,
+            result_count,
+            nullptr
+        );
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_aqueous_miac_solvation_factor_batch_bounded(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        const double* molalities,
+        size_t molality_count,
+        double solvation_factor,
+        epcsaft_aqueous_miac_solvation_factor_result_v1* results,
+        size_t result_count,
+        const epcsaft_native_evaluation_budget_v1* budget
+    ) noexcept {
+        return evaluate_aqueous_miac_solvation_factor_batch_impl(
+            context,
+            expected_fingerprint,
+            temperature_k,
+            pressure_pa,
+            molalities,
+            molality_count,
+            solvation_factor,
+            results,
+            result_count,
+            budget
+        );
+    }
+
+    // EqExclude: transport and buffer mechanics
     static int evaluate_ion_solvation_born(
         const void* context,
         double temperature_k,
@@ -1076,6 +2227,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate(
         const void* context,
         double temperature_k,
@@ -1167,6 +2319,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_parameters(
         const void* context,
         double temperature_k,
@@ -1253,7 +2406,128 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_associating_parameters(
+        const void* context,
+        double temperature_k,
+        double amount_mol,
+        double volume_m3,
+        double segment_count,
+        double segment_diameter_angstrom,
+        double dispersion_energy_over_k,
+        double association_energy_over_k,
+        double association_volume,
+        epcsaft_associating_parameterized_phase_block_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_associating_parameterized_phase_block_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const uint32_t result_size = result->struct_size;
+        std::memset(result, 0, sizeof(*result));
+        result->struct_size = result_size;
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "model context is null"
+            );
+        }
+        const std::array<double, 8> inputs{
+            temperature_k,
+            amount_mol,
+            volume_m3,
+            segment_count,
+            segment_diameter_angstrom,
+            dispersion_energy_over_k,
+            association_energy_over_k,
+            association_volume,
+        };
+        if (!std::all_of(inputs.begin(), inputs.end(), [](double value) {
+                return std::isfinite(value) && value > 0.0;
+            })) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "joint associating phase inputs must be positive and finite"
+            );
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.phase_callbacks_admitted) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "model is not admitted for this phase callback"
+            );
+        }
+        if ((std::isfinite(endpoint.temperature_min_k)
+             && temperature_k < endpoint.temperature_min_k)
+            || (std::isfinite(endpoint.temperature_max_k)
+                && temperature_k > endpoint.temperature_max_k)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "temperature is outside the parameter source domain"
+            );
+        }
+        try {
+            const auto block =
+                endpoint.model
+                    .evaluate_diameter_basis_associating_pure_phase_parameters(
+                    temperature_k,
+                    amount_mol,
+                    volume_m3,
+                    segment_count,
+                    segment_diameter_angstrom,
+                    dispersion_energy_over_k,
+                    association_energy_over_k,
+                    association_volume
+                );
+            result->helmholtz_over_rt_reference_amount =
+                block.helmholtz_over_rt_reference_amount;
+            std::copy(
+                block.gradient.begin(), block.gradient.end(), result->gradient
+            );
+            std::copy(
+                block.hessian.begin(), block.hessian.end(), result->hessian
+            );
+            result->pressure_pa = block.pressure_pa;
+            result->chemical_potential_over_rt =
+                block.chemical_potential_over_rt;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->topology_fingerprint,
+                sizeof(result->topology_fingerprint),
+                "%s",
+                endpoint.topology_fingerprint.c_str()
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown joint associating evaluation failure"
+            );
+        }
+    }
+
     template <typename Evaluator>
+    // EqExclude: transport and buffer mechanics
     static int evaluate_mixture_common(
         const void* context,
         double temperature_k,
@@ -1378,6 +2652,64 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_pure_parameter(
+        const void* context,
+        double temperature_k,
+        double amount_mol,
+        double volume_m3,
+        uint32_t parameter_family,
+        double parameter_value,
+        epcsaft_mixture_phase_block_result_v1* result
+    ) noexcept {
+        std::optional<ActivePureParameter> family;
+        switch (parameter_family) {
+            case EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_COUNT_V1:
+                family = ActivePureParameter::SegmentCount;
+                break;
+            case EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1:
+                family = ActivePureParameter::SegmentDiameter;
+                break;
+            case EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1:
+                family = ActivePureParameter::DispersionEnergyOverK;
+                break;
+            case EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_ENERGY_OVER_K_V1:
+                family = ActivePureParameter::AssociationEnergyOverK;
+                break;
+            case EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_VOLUME_V1:
+                family = ActivePureParameter::AssociationVolume;
+                break;
+            default:
+                break;
+        }
+        const std::array<double, 1> amounts{amount_mol};
+        return evaluate_mixture_common(
+            context,
+            temperature_k,
+            amounts.data(),
+            amounts.size(),
+            volume_m3,
+            2,
+            family.has_value() && std::isfinite(parameter_value),
+            "temperature, amount, volume, and active pure parameter must be "
+            "finite and state coordinates positive",
+            result,
+            [temperature_k, amount_mol, volume_m3, family, parameter_value](
+                const NativeModel& model,
+                const std::vector<double>&
+            ) {
+                return model.evaluate_pure_phase_parameter(
+                    temperature_k,
+                    amount_mol,
+                    volume_m3,
+                    *family,
+                    parameter_value
+                );
+            }
+        );
+    }
+
+    // EqExclude: transport and buffer mechanics
     static int evaluate_mixture(
         const void* context,
         double temperature_k,
@@ -1407,6 +2739,7 @@ struct NativeSdkEndpoint final {
         );
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_mixture_kij(
         const void* context,
         double temperature_k,
@@ -1437,6 +2770,38 @@ struct NativeSdkEndpoint final {
         );
     }
 
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_mixture_lij(
+        const void* context,
+        double temperature_k,
+        const double* amounts_mol,
+        size_t amount_count,
+        double volume_m3,
+        double l_ij,
+        epcsaft_mixture_phase_block_result_v1* result
+    ) noexcept {
+        return evaluate_mixture_common(
+            context,
+            temperature_k,
+            amounts_mol,
+            amount_count,
+            volume_m3,
+            2,
+            std::isfinite(l_ij),
+            "temperature, amounts, volume, and l_ij must be finite and state coordinates positive",
+            result,
+            [temperature_k, volume_m3, l_ij](
+                const NativeModel& model,
+                const std::vector<double>& amounts
+            ) {
+                return model.evaluate_mixture_phase_lij(
+                    temperature_k, amounts, volume_m3, l_ij
+                );
+            }
+        );
+    }
+
+    // EqExclude: transport and buffer mechanics
     static int evaluate_electrolyte(
         const void* context,
         double temperature_k,
@@ -1470,6 +2835,7 @@ struct NativeSdkEndpoint final {
         );
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_molar_volume_bounds(
         const void* context,
         const char* expected_parameter_fingerprint,
@@ -1536,6 +2902,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_packing_fraction(
         const void* context,
         const char* expected_parameter_fingerprint,
@@ -1608,7 +2975,8 @@ struct NativeSdkEndpoint final {
 
 }  // namespace
 
-pybind11::capsule make_native_sdk_v1(
+// EqExclude: transport and buffer mechanics
+const epcsaft_native_sdk_v1* create_native_sdk_v1(
     const NativeModel& model,
     const std::string& parameter_fingerprint,
     double temperature_min_k,
@@ -1618,16 +2986,22 @@ pybind11::capsule make_native_sdk_v1(
     bool phase_callbacks_admitted,
     bool active_born_admitted,
     bool aqueous_kij_admitted,
+    bool figiel_dielectric_admitted,
     double pressure_min_pa,
     double pressure_max_pa,
     bool neutral_reference_admitted,
     bool unknown_applicability_admitted,
     bool aqueous_solvation_factor_admitted,
-    bool staged_trial_bundle_admitted
+    bool ion_solvation_kij_admitted,
+    bool staged_trial_bundle_admitted,
+    const std::string& topology_fingerprint
 ) {
     if (!active_born_admitted && !aqueous_kij_admitted
+        && !figiel_dielectric_admitted
+        && !ion_solvation_kij_admitted
         && !neutral_reference_admitted && !aqueous_solvation_factor_admitted
         && (!model.supports_native_sdk_v1()
+        && !model.supports_associating_pure_parameter_native_sdk_v1()
         && !model.supports_mixture_native_sdk_v1()
         && !model.supports_electrolyte_native_sdk_v1())) {
         throw std::invalid_argument(
@@ -1652,6 +3026,24 @@ pybind11::capsule make_native_sdk_v1(
         )) {
         throw std::invalid_argument("unsupported aqueous active k_ij model identity");
     }
+    if (figiel_dielectric_admitted
+        && !figiel_dielectric_model_admitted(
+            component_ids, model.charge_numbers()
+        )) {
+        throw std::invalid_argument(
+            "unsupported active Figiel dielectric model identity"
+        );
+    }
+    if (ion_solvation_kij_admitted
+        && !ion_solvation_kij_model_admitted(
+            parameter_fingerprint,
+            topology_fingerprint,
+            component_ids, model.charge_numbers()
+        )) {
+        throw std::invalid_argument(
+            "unsupported active ion-solvation k_ij model identity"
+        );
+    }
     if (aqueous_solvation_factor_admitted
         && !aqueous_solvation_factor_model_admitted(
             parameter_fingerprint,
@@ -1672,6 +3064,13 @@ pybind11::capsule make_native_sdk_v1(
     if (parameter_fingerprint.empty()
         || parameter_fingerprint.size() >= EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE) {
         throw std::invalid_argument("invalid parameter fingerprint");
+    }
+    if (!topology_fingerprint.empty()
+        && (topology_fingerprint.size()
+                >= EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE
+            || topology_fingerprint.rfind("sha256:", 0) != 0
+            || topology_fingerprint.size() != 71)) {
+        throw std::invalid_argument("invalid topology fingerprint");
     }
     if (component_ids.size() != model.component_count()
         || std::any_of(
@@ -1712,7 +3111,7 @@ pybind11::capsule make_native_sdk_v1(
             || (!std::isnan(pressure_max_pa)
                 && (!std::isfinite(pressure_max_pa) || pressure_max_pa <= 0.0))
             || (std::isfinite(pressure_min_pa) && std::isfinite(pressure_max_pa)
-                && pressure_min_pa > pressure_max_pa))) {
+            && pressure_min_pa > pressure_max_pa))) {
         throw std::invalid_argument("invalid neutral reference pressure applicability");
     }
     auto* endpoint = new NativeSdkEndpoint(
@@ -1725,26 +3124,22 @@ pybind11::capsule make_native_sdk_v1(
         phase_callbacks_admitted,
         active_born_admitted,
         aqueous_kij_admitted,
+        figiel_dielectric_admitted,
+        ion_solvation_kij_admitted,
         pressure_min_pa,
         pressure_max_pa,
         neutral_reference_admitted,
-        aqueous_solvation_factor_admitted
+        aqueous_solvation_factor_admitted,
+        topology_fingerprint
     );
-    return pybind11::capsule(
-        &endpoint->table,
-        EPCSAFT_NATIVE_SDK_V1_CAPSULE_NAME,
-        [](PyObject* capsule) {
-            void* pointer = PyCapsule_GetPointer(
-                capsule, EPCSAFT_NATIVE_SDK_V1_CAPSULE_NAME
-            );
-            if (pointer == nullptr) {
-                PyErr_Clear();
-                return;
-            }
-            const auto* table = static_cast<const epcsaft_native_sdk_v1*>(pointer);
-            delete static_cast<const NativeSdkEndpoint*>(table->model_context);
-        }
-    );
+    return &endpoint->table;
+}
+
+// EqExclude: transport and buffer mechanics
+void destroy_native_sdk_v1(const epcsaft_native_sdk_v1* sdk) noexcept {
+    if (sdk != nullptr) {
+        delete static_cast<const NativeSdkEndpoint*>(sdk->model_context);
+    }
 }
 
 }  // namespace epcsaft

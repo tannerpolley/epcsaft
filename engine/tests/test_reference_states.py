@@ -18,6 +18,41 @@ def _model(*component_ids: str) -> EPCSAFT:
     return EPCSAFT(bundle.select(component_ids))
 
 
+def _held_water_ionization_model() -> EPCSAFT:
+    bundle = ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1)
+    return EPCSAFT(bundle.select(("water", "hydronium-cation", "hydroxide-anion")))
+
+
+def test_held_water_ionization_reference_uses_the_native_sequence_owner() -> None:
+    model = _held_water_ionization_model()
+
+    reference = model.reference_state(
+        temperature=298.15 * unit_registry.kelvin,
+        pressure=100000.0 * unit_registry.pascal,
+        solvent_mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    pure_water = model.evaluate(
+        temperature=reference.temperature,
+        pressure=reference.pressure,
+        mole_fractions=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+
+    assert reference.ion_component_ids == ("hydronium-cation", "hydroxide-anion")
+    assert reference.formula_stoichiometry == (1, 1)
+    assert reference.reference_molality.to("mole / kilogram").magnitude == 1.0e-12
+    assert 0.0 <= reference.convergence_error <= 5.0e-5
+    assert all(
+        math.isfinite(value)
+        for value in reference.infinite_dilution_log_fugacity_coefficient
+    )
+    assert pure_water.log_fugacity_coefficient is not None
+    assert reference._pure_water_log_fugacity == pytest.approx(
+        pure_water.log_fugacity_coefficient[0], abs=2.0e-12
+    )
+
+
 def test_water_nacl_reference_converges_on_an_electroneutral_path() -> None:
     model = _model("water", "sodium-cation", "chloride-anion")
 
@@ -162,7 +197,12 @@ def test_reference_sequence_algorithm_has_one_native_owner() -> None:
     assert "REFERENCE_CONVERGENCE_TOLERANCE" in native_source
     assert "formula_composition" in native_source
     assert "electrolyte_reference_sequence" in native_source
-    assert eos_source.count("detail::electrolyte_reference_sequence(") == 4
+    assert "REFERENCE_MOLALITIES" not in eos_source
+    assert "REFERENCE_CONVERGENCE_TOLERANCE" not in eos_source
+    # Five public calculations delegate to the one template owner: fixed
+    # reference state, active Born, active ionic permittivity, active
+    # ion-solvation k_ij, and fixed-catalog ion-solvation k_ij.
+    assert eos_source.count("detail::electrolyte_reference_sequence(") == 5
     for delegate in (
         python_source,
         eos_source,
