@@ -2282,11 +2282,41 @@ _Static_assert(
     sizeof(epcsaft_ion_solvation_kij_result_v1) == 288,
     "ion-solvation result size"
 );
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_IONIC_REGION_PERMITTIVITY_V1 == 17u,
+    "ionic-region-permittivity capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_IONIC_REGION_RELATIVE_PERMITTIVITY_V1 == 11u,
+    "ionic-region-permittivity parameter family"
+);
+_Static_assert(
+    offsetof(
+        epcsaft_native_sdk_v1,
+        ion_solvation_ionic_permittivity_result_size
+    ) == 328,
+    "ionic-region-permittivity result-size offset"
+);
+_Static_assert(
+    offsetof(
+        epcsaft_native_sdk_v1,
+        evaluate_ion_solvation_ionic_permittivity
+    ) == 336,
+    "ionic-region-permittivity callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 344, "final table size");
+_Static_assert(
+    sizeof(epcsaft_ion_solvation_ionic_permittivity_result_v1) == 272,
+    "ionic-region-permittivity result size"
+);
 
 int main(void) {
     epcsaft_evaluate_figiel_permittivity_v1 callback = 0;
     epcsaft_evaluate_ion_solvation_kij_v1 ion_callback = 0;
-    return callback != 0 || ion_callback != 0;
+    epcsaft_evaluate_ion_solvation_ionic_permittivity_v1
+        ionic_permittivity_callback = 0;
+    return callback != 0 || ion_callback != 0
+        || ionic_permittivity_callback != 0;
 }
 """
     completed = subprocess.run(
@@ -4467,6 +4497,26 @@ def test_native_sdk_ionic_region_permittivity_is_model_bound_and_exact(
         table, "sha256:" + "0" * 64, 8.0
     )
     assert wrong_fingerprint.status == STATUS_UNSUPPORTED_MODEL
+
+    for invalid_value, expected_status in (
+        (1.0, STATUS_DOMAIN_ERROR),
+        (math.nan, STATUS_INVALID_ARGUMENT),
+    ):
+        invalid = _evaluate_ionic_permittivity(
+            table, model.parameter_fingerprint, invalid_value
+        )
+        assert invalid.status == expected_status
+        assert math.isnan(invalid.solvation_gibbs_j_per_mol)
+        assert math.isnan(invalid.derivative_j_per_mol)
+        assert invalid.error
+
+    neutral = _mixture_model()
+    _, neutral_table = _ion_solvation_ionic_permittivity_table(neutral)
+    unsupported = _evaluate_ionic_permittivity(
+        neutral_table, neutral.parameter_fingerprint, 8.0
+    )
+    assert unsupported.status == STATUS_UNSUPPORTED_MODEL
+    assert unsupported.error
 
 
 @pytest.mark.parametrize(
