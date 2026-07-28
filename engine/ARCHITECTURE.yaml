@@ -89,6 +89,14 @@ native_sdk_candidates:
     coordinate_order: [methane_amount_mol, ethane_amount_mol, volume_m3, k_ij]
     derivative_order: 2
     exclusions: association, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, equilibrium, regression targets, fit bounds, scaling, and fit acceptance
+  neutral_mixture_active_lij_hessian_v1:
+    status: local-candidate-pending-independent-review-and-promotion-receipt
+    scope: >-
+      Model-bound Gross--Sadowski methane/ethane extensive phase value,
+      gradient, Hessian, and pressure with one finite active unlike-pair l_ij.
+    coordinate_order: [methane_amount_mol, ethane_amount_mol, volume_m3, l_ij]
+    derivative_order: 2
+    exclusions: association, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, equilibrium, regression targets, fit bounds, scaling, and fit acceptance
   figiel_water_active_born_solvation_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
@@ -267,6 +275,11 @@ public_surface:
     - capsule: epcsaft.native_sdk.v1
       entry: evaluate_mixture_phase_kij
       coordinate_order: [methane_amount_mol, ethane_amount_mol, volume_m3, k_ij]
+      derivative_order: 2
+      status: local-candidate-pending-independent-review-and-promotion-receipt
+    - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_mixture_phase_lij
+      coordinate_order: [methane_amount_mol, ethane_amount_mol, volume_m3, l_ij]
       derivative_order: 2
       status: local-candidate-pending-independent-review-and-promotion-receipt
     - capsule: epcsaft.native_sdk.v1

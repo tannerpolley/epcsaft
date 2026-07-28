@@ -1896,8 +1896,16 @@ def test_native_sdk_active_lij_matches_fixed_and_directional_oracles(
                 )
 
     step = 2.0e-4
-    _, lower_gradient, _ = shifted(-step)
-    _, upper_gradient, _ = shifted(step)
+    lower, lower_gradient, _ = shifted(-step)
+    upper, upper_gradient, _ = shifted(step)
+    gradient_direction = sum(
+        value * delta for value, delta in zip(gradient, direction)
+    )
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount
+        - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert gradient_direction == pytest.approx(value_difference, rel=3.0e-8)
     for row in range(4):
         hessian_direction = sum(
             hessian[row * 4 + column] * direction[column]
@@ -2188,10 +2196,21 @@ def test_native_sdk_mixture_callback_rejects_malformed_buffers_and_scope() -> No
         assert result.error
 
 
-def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_inputs() -> None:
-    capsule, table = _table(_mixture_model())
+@pytest.mark.parametrize(
+    ("table_factory", "callback_type", "callback_field"),
+    (
+        (_table, EvaluateMixturePhaseKij, "evaluate_mixture_phase_kij"),
+        (_lij_table, EvaluateMixturePhaseLij, "evaluate_mixture_phase_lij"),
+    ),
+)
+def test_native_sdk_active_pair_rejects_malformed_buffers_models_and_nonfinite_inputs(
+    table_factory,
+    callback_type,
+    callback_field: str,
+) -> None:
+    capsule, table = table_factory(_mixture_model())
     assert capsule is not None
-    callback = EvaluateMixturePhaseKij(table.evaluate_mixture_phase_kij)
+    callback = callback_type(getattr(table, callback_field))
     amounts = (ctypes.c_double * 2)(0.4, 0.6)
 
     def call(
@@ -2201,7 +2220,7 @@ def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_in
         amount_count: int = 2,
         temperature_k: float = 220.0,
         volume_m3: float = 1.25e-4,
-        k_ij: float = 0.0,
+        pair_parameter: float = 0.0,
     ) -> int:
         return callback(
             table.model_context,
@@ -2209,7 +2228,7 @@ def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_in
             amount_pointer,
             amount_count,
             volume_m3,
-            k_ij,
+            pair_parameter,
             ctypes.byref(result),
         )
 
@@ -2231,9 +2250,13 @@ def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_in
     result, _, _ = _mixture_result(4)
     malformed.append((result, {"volume_m3": math.inf}, STATUS_INVALID_ARGUMENT))
     result, _, _ = _mixture_result(4)
-    malformed.append((result, {"k_ij": math.nan}, STATUS_INVALID_ARGUMENT))
+    malformed.append(
+        (result, {"pair_parameter": math.nan}, STATUS_INVALID_ARGUMENT)
+    )
     result, _, _ = _mixture_result(4)
-    malformed.append((result, {"k_ij": math.inf}, STATUS_INVALID_ARGUMENT))
+    malformed.append(
+        (result, {"pair_parameter": math.inf}, STATUS_INVALID_ARGUMENT)
+    )
 
     for result, arguments, expected_status in malformed:
         gradient_pointer = ctypes.cast(result.gradient, ctypes.c_void_p).value
@@ -2266,14 +2289,16 @@ def test_native_sdk_active_kij_rejects_malformed_buffers_models_and_nonfinite_in
     assert bytes(guarded_foreign_result)[foreign_size:] == canary
 
     finite_unbounded, _, _ = _mixture_result(4)
-    assert call(finite_unbounded, k_ij=-0.2) == STATUS_OK
+    assert call(finite_unbounded, pair_parameter=-0.2) == STATUS_OK
     assert finite_unbounded.status == STATUS_OK
 
-    pure_capsule, pure_table = _table(_model("gross-2001-methane-ethane", "methane"))
+    pure_capsule, pure_table = table_factory(
+        _model("gross-2001-methane-ethane", "methane")
+    )
     assert pure_capsule is not None
     pure_result, _, _ = _mixture_result(3)
     pure_amount = (ctypes.c_double * 1)(1.0)
-    status = EvaluateMixturePhaseKij(pure_table.evaluate_mixture_phase_kij)(
+    status = callback_type(getattr(pure_table, callback_field))(
         pure_table.model_context,
         190.0,
         pure_amount,

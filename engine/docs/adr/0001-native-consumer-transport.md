@@ -1,7 +1,7 @@
 # ADR 0001: Versioned model-bound capsule for native consumers
 
 Status: accepted pure prefix authority determined by migration promotion
-receipt 0015; append-only neutral-mixture and active-kij entries are local
+receipt 0015; append-only neutral-mixture, active-kij, and active-lij entries are local
 candidates pending independent review and their own promotion receipts; a
 model-bound active-Born solvation entry is design-only pending bounded
 independent review, implementation, evidence, and its own authority decision;
@@ -119,7 +119,9 @@ order fixed by the selected parameter set, and it returns derivatives only
 through order two. One further callback pointer reuses that result structure
 for the exact methane/ethane coordinate order `(n_1,n_2,V,k_ij)`. Its single
 active unlike-pair value is written symmetrically to both off-diagonal pair
-positions before the canonical Helmholtz owner is taped.
+positions before the canonical Helmholtz owner is taped. A final append-only
+pointer applies the same contract to the distinct `l_ij` cross-diameter
+coordinate.
 
 The D-024 candidate appends the full-electrolyte phase callback and two
 model-bound volume-domain callbacks. The unchanged phase callback admits exact
@@ -225,8 +227,9 @@ a nominal result. The parameterized entry additionally rejects nonpositive
 active parameters. The local mixture candidate admits only the two-component
 source-backed Gross--Sadowski methane/ethane model in its bound component order
 and rejects pure, associating, ionic, malformed-buffer, and nonpositive states.
-The active-`k_ij` callback additionally rejects nonfinite trial values but does
-not impose fit bounds or scaling. Its returned fingerprint identifies the
+The active-`k_ij` and active-`l_ij` callbacks additionally reject nonfinite
+trial values but do not impose fit bounds or scaling. Their returned
+fingerprint identifies the
 immutable source model from which the fit problem descends; candidate values
 remain explicit coordinates and never masquerade as a new source record.
 
@@ -282,7 +285,7 @@ value and pressure agreement, centered directional gradient and Hessian
 agreement, component permutation, accepted-prefix offsets, buffer ownership,
 source domain, and unsupported-model rejection. These tests and an isolated
 wheel are candidate evidence only; they do not amend receipt 0015 or authorize
-consumer use. The further active-`k_ij` evidence checks two real
+consumer use. The further active-pair evidence checks two real
 methane/ethane states, fixed-callback parity at the catalog value, the complete
 four-coordinate gradient and Hessian direction, its exact appended offset,
 finite-only trial admission, and binary/neutral/nonassociating scope.
@@ -302,8 +305,8 @@ delegation and result translation only.
 
 - Neutral nonassociating mixture families beyond the exact source-backed
   methane/ethane candidate require separate scope and evidence.
-- Binary-interaction families beyond the exact local methane/ethane active-
-  `k_ij` candidate, association, electrolyte, and other fitted-parameter
+- Binary-interaction families beyond the exact local methane/ethane active
+  `k_ij` and `l_ij` candidates, association, electrolyte, and other fitted-parameter
   families require separate parameterized phase contracts and evidence. They
   are not implied by the pure three-parameter entry or this bounded candidate.
 - The D-023 active-Born solvation candidate does not admit fitted parameters,

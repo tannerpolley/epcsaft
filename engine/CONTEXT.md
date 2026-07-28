@@ -86,11 +86,12 @@ result, or fit result. Each consumer remains subject to its own installed-wheel
 gate and promotion receipt.
 
 The local Consumer Maturity Slice 2 prerequisite appends one candidate
-methane/ethane neutral-mixture phase entry to the same capsule and one further
-active-`k_ij` callback. The latter reuses the mixture result and returns the
-same extensive ideal-plus-residual value and exact CppAD gradient/Hessian in
-`(n1,n2,V,kij)`. It accepts any finite trial unlike-pair value; regression owns
-bounds, scaling, targets, and fit acceptance. Neither entry is authoritative
+methane/ethane neutral-mixture phase entry to the same capsule and further
+active-`k_ij` and active-`l_ij` callbacks. Each reuses the mixture result and
+returns the same extensive ideal-plus-residual value and exact CppAD
+gradient/Hessian in `(n1,n2,V,pair_parameter)`. It accepts any finite trial
+unlike-pair value; regression owns bounds, scaling, targets, and fit
+acceptance. Neither entry is authoritative
 until a separate promotion receipt is accepted, and neither adds phase,
 density, equilibrium, or regression ownership.
 
