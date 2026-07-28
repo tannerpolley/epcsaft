@@ -204,6 +204,12 @@ struct NativeSdkEndpoint final {
         ion_solvation_born_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 1>
         aqueous_solvation_factor_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        aqueous_water_cation_kij_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        aqueous_water_anion_kij_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        aqueous_cation_anion_kij_coordinates;
     std::vector<epcsaft_native_capability_descriptor_v1> capabilities;
     epcsaft_native_sdk_v1 table;
 
@@ -367,6 +373,36 @@ struct NativeSdkEndpoint final {
                   "dimensionless",
               },
           }},
+          aqueous_water_cation_kij_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1,
+                  -1,
+                  0,
+                  1,
+                  "dimensionless",
+              },
+          }},
+          aqueous_water_anion_kij_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1,
+                  -1,
+                  0,
+                  2,
+                  "dimensionless",
+              },
+          }},
+          aqueous_cation_anion_kij_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1,
+                  -1,
+                  1,
+                  2,
+                  "dimensionless",
+              },
+          }},
           capabilities([&] {
               std::vector<epcsaft_native_capability_descriptor_v1> result;
               pure_segment_diameter_coordinates[2].kind =
@@ -525,6 +561,39 @@ struct NativeSdkEndpoint final {
                       EPCSAFT_NATIVE_OBSERVATION_AQUEOUS_MEAN_IONIC_ACTIVITY_V1,
                       EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_AQUEOUS_NABR_V1,
                       aqueous_solvation_factor_coordinates
+                  ));
+              }
+              if (aqueous_kij_admitted) {
+                  const auto aqueous_kij_descriptor = [&](
+                      uint32_t capability,
+                      const auto& coordinates
+                  ) {
+                      auto value = descriptor(
+                          capability,
+                          EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1,
+                          EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1,
+                          EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_AQUEOUS_NABR_V1,
+                          0,
+                          coordinates
+                      );
+                      value.observation_contract =
+                          EPCSAFT_NATIVE_OBSERVATION_AQUEOUS_MEAN_IONIC_ACTIVITY_V1;
+                      value.derivative_order = 1;
+                      value.temperature_min_k = 298.15;
+                      value.temperature_max_k = 298.15;
+                      return value;
+                  };
+                  result.push_back(aqueous_kij_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_WATER_CATION_KIJ_MIAC_V1,
+                      aqueous_water_cation_kij_coordinates
+                  ));
+                  result.push_back(aqueous_kij_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_WATER_ANION_KIJ_MIAC_V1,
+                      aqueous_water_anion_kij_coordinates
+                  ));
+                  result.push_back(aqueous_kij_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_CATION_ANION_KIJ_MIAC_V1,
+                      aqueous_cation_anion_kij_coordinates
                   ));
               }
               return result;

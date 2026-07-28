@@ -1654,6 +1654,61 @@ def test_native_sdk_describes_exact_direct_observable_parameter_contracts(
     assert descriptor.topology_fingerprint.decode().startswith("sha256:")
 
 
+def test_native_sdk_describes_each_aqueous_kij_as_a_scalar_miac_coordinate() -> None:
+    component_ids = ("water", "sodium-cation", "bromide-anion")
+    model = _electrolyte_model(component_ids)
+    _, table = _capability_table(model)
+
+    descriptors = tuple(
+        descriptor
+        for descriptor in table.capabilities[: table.capability_count]
+        if descriptor.capability in (8, 9, 10)
+    )
+
+    assert tuple(descriptor.capability for descriptor in descriptors) == (8, 9, 10)
+    assert tuple(
+        (
+            descriptor.coordinates[0].pair_component_index_a,
+            descriptor.coordinates[0].pair_component_index_b,
+        )
+        for descriptor in descriptors
+    ) == ((0, 1), (0, 2), (1, 2))
+    for descriptor in descriptors:
+        assert (
+            descriptor.schema_version,
+            descriptor.parameter_family,
+            descriptor.parameter_identity,
+            descriptor.observation_contract,
+            descriptor.model_domain,
+            descriptor.tensor_layout,
+            descriptor.derivative_order,
+            descriptor.maturity,
+            descriptor.authority_effect,
+        ) == (1, 1, 1, 3, 4, 1, 1, 1, 0)
+        assert (
+            descriptor.state_coordinate_count,
+            descriptor.active_parameter_count,
+            descriptor.coordinate_count,
+            descriptor.component_count,
+        ) == (0, 1, 1, 3)
+        assert tuple(
+            descriptor.component_ids[index].decode()
+            for index in range(descriptor.component_count)
+        ) == component_ids
+        coordinate = descriptor.coordinates[0]
+        assert (
+            coordinate.kind,
+            coordinate.component_index,
+            coordinate.unit.decode(),
+        ) == (3, -1, "dimensionless")
+        assert (
+            descriptor.temperature_min_k,
+            descriptor.temperature_max_k,
+        ) == (298.15, 298.15)
+        assert descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
+        assert descriptor.topology_fingerprint.decode().startswith("sha256:")
+
+
 def test_native_sdk_scalar_pure_parameter_installed_header_layout() -> None:
     compiler = shutil.which("cc")
     if compiler is None:
