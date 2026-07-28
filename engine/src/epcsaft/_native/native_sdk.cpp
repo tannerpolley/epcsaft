@@ -149,11 +149,44 @@ bool figiel_dielectric_model_admitted(
 
 // EqExclude: input and domain validation
 bool ion_solvation_kij_model_admitted(
+    const std::string& parameter_fingerprint,
+    const std::string& topology_fingerprint,
     const std::vector<std::string>& component_ids,
     const std::vector<int>& charges
 ) {
-    return component_ids.size() == 3
-        && charges == std::vector<int>({0, 1, -1});
+    struct Admission final {
+        std::array<const char*, 3> component_ids;
+        const char* parameter_fingerprint;
+        const char* topology_fingerprint;
+    };
+    constexpr std::array<Admission, 2> admissions{{
+        {
+            {"methanol", "potassium-cation", "bromide-anion"},
+            "sha256:10146ec44223169b5403b898a650b4f164b5aff1ddc5d65e4023f14b36259a67",
+            "sha256:00d2476a7b107097ff8de62754753515d7b58883cdfc37a2e7cc4727f28bc25a",
+        },
+        {
+            {"ethanol", "sodium-cation", "chloride-anion"},
+            "sha256:e316efb0f2f78a0b5fefa67ed316d66c26ba8d6a800dc8afcdd72a64c66a420f",
+            "sha256:8eae46e94249e09df6c987c968cce14fb5521ee2af234f7fc088875eb650a6d7",
+        },
+    }};
+    return charges == std::vector<int>({0, 1, -1})
+        && std::any_of(
+            admissions.begin(),
+            admissions.end(),
+            [&](const Admission& admission) {
+                return component_ids
+                        == std::vector<std::string>(
+                            admission.component_ids.begin(),
+                            admission.component_ids.end()
+                        )
+                    && parameter_fingerprint
+                        == admission.parameter_fingerprint
+                    && topology_fingerprint
+                        == admission.topology_fingerprint;
+            }
+        );
 }
 
 // EqExclude: input and domain validation
@@ -2582,6 +2615,8 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     }
     if (ion_solvation_kij_admitted
         && !ion_solvation_kij_model_admitted(
+            parameter_fingerprint,
+            topology_fingerprint,
             component_ids, model.charge_numbers()
         )) {
         throw std::invalid_argument(

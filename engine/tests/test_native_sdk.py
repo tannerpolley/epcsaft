@@ -2052,6 +2052,66 @@ def test_native_sdk_evaluates_organic_ion_solvation_kij_derivatives() -> None:
     } == {(0, 1), (0, 2), (1, 2)}
 
 
+def test_native_sdk_rejects_forced_organic_ion_solvation_kij_admission() -> None:
+    unsupported = _electrolyte_model(
+        ("water", "sodium-cation", "bromide-anion")
+    )
+    with pytest.raises(
+        ValueError,
+        match="unsupported active ion-solvation k_ij model identity",
+    ):
+        _native_sdk_v1(
+            unsupported._native,
+            unsupported.parameter_fingerprint,
+            298.15,
+            298.15,
+            unsupported.component_ids,
+            0.38,
+            phase_callbacks_admitted=False,
+            ion_solvation_kij_admitted=True,
+            topology_fingerprint=(
+                "sha256:00d2476a7b107097ff8de62754753515d7b58883cdfc37a2e7cc4727f28bc25a"
+            ),
+        )
+
+    admitted = _electrolyte_model(
+        ("methanol", "potassium-cation", "bromide-anion")
+    )
+    with pytest.raises(
+        ValueError,
+        match="unsupported active ion-solvation k_ij model identity",
+    ):
+        _native_sdk_v1(
+            admitted._native,
+            admitted.parameter_fingerprint,
+            298.15,
+            298.15,
+            admitted.component_ids,
+            0.38,
+            phase_callbacks_admitted=False,
+            ion_solvation_kij_admitted=True,
+            topology_fingerprint="sha256:altered",
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="unsupported active ion-solvation k_ij model identity",
+    ):
+        _native_sdk_v1(
+            admitted._native,
+            "sha256:altered",
+            298.15,
+            298.15,
+            admitted.component_ids,
+            0.38,
+            phase_callbacks_admitted=False,
+            ion_solvation_kij_admitted=True,
+            topology_fingerprint=(
+                "sha256:00d2476a7b107097ff8de62754753515d7b58883cdfc37a2e7cc4727f28bc25a"
+            ),
+        )
+
+
 def test_native_sdk_figiel_permittivity_installed_header_layout() -> None:
     compiler = shutil.which("cc")
     assert compiler is not None
