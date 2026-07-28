@@ -279,13 +279,13 @@ def test_sparse_closed_records_correlations_and_error_contract() -> None:
 
 def test_model_parameter_records_are_closed_finite_and_source_backed() -> None:
     ionic_permittivity = ModelParameterRecord(
-        record_id="figiel-ionic-region-permittivity",
+        record_id="ionic-region-permittivity",
         family="ionic_region_relative_permittivity",
         value=8,
         **PROVENANCE,
     )
     suppression = ModelParameterRecord(
-        record_id="figiel-dielectric-suppression",
+        record_id="ion-fraction-suppression",
         family="ion_fraction_suppression_coefficient",
         value=Decimal("7.01"),
         **PROVENANCE,

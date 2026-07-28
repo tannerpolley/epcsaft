@@ -113,13 +113,13 @@ def _parameters(
         singles.extend(
             (
                 _single(
-                    "water-schreckenberg-volume",
+                    "water-dielectric-volume",
                     "water",
                     "dielectric_volume",
                     0.3777 * unit_registry.decimeter**3 / unit_registry.mole,
                 ),
                 _single(
-                    "water-schreckenberg-temperature",
+                    "water-dielectric-temperature",
                     "water",
                     "dielectric_temperature",
                     1403 * unit_registry.kelvin,
@@ -129,33 +129,45 @@ def _parameters(
     elif kind == "ion-specific-suppression":
         singles.extend(
             (
-                _single("sodium-zuber-alpha", "sodium", "ion_specific_suppression_coefficient", 3.62),
-                _single("chloride-zuber-alpha", "chloride", "ion_specific_suppression_coefficient", 6.80),
+                _single(
+                    "sodium-ion-specific-suppression",
+                    "sodium",
+                    "ion_specific_suppression_coefficient",
+                    3.62,
+                ),
+                _single(
+                    "chloride-ion-specific-suppression",
+                    "chloride",
+                    "ion_specific_suppression_coefficient",
+                    6.80,
+                ),
             )
         )
     elif kind == "dipolar-density-perturbation":
-        rueben = {
+        dipolar_parameters = {
             "water": (5.199, 0.0, 0.1276),
             "sodium": (5.407, 0.0, 0.215),
             "chloride": (2.563, 0.0, 0.138),
         }
-        for component_id, (dipole, polarizability, correlation) in rueben.items():
+        for component_id, (dipole, polarizability, correlation) in (
+            dipolar_parameters.items()
+        ):
             singles.extend(
                 (
                     _single(
-                        f"{component_id}-rueben-dipole",
+                        f"{component_id}-dipole-scaling",
                         component_id,
                         "dipole_scaling",
                         dipole * unit_registry.debye**2,
                     ),
                     _single(
-                        f"{component_id}-rueben-polarizability",
+                        f"{component_id}-polarizability-scaling",
                         component_id,
                         "polarizability_scaling",
                         polarizability * unit_registry.angstrom**3,
                     ),
                     _single(
-                        f"{component_id}-rueben-correlation",
+                        f"{component_id}-correlation-integral",
                         component_id,
                         "correlation_integral_parameter",
                         correlation,
