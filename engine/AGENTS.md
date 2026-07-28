@@ -138,3 +138,21 @@ reference-sequence owners and returns only the value and exact total fixed-
 pressure first derivative. Source-complete user-provided staged bundles are
 narrowly admitted to the three existing family callbacks without adding a
 generic parameter overlay or catalog persistence.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked in GitHub Issues for `ePC-SAFT/ePC-SAFT`. See
+`docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the five default triage labels: `needs-triage`, `needs-info`,
+`ready-for-agent`, `ready-for-human`, and `wontfix`. See
+`docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repository with root `CONTEXT.md` and `docs/adr/`.
+See `docs/agents/domain.md`.
