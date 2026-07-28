@@ -1,0 +1,2 @@
+record_id,family,value,unit,source_id,locator,domain_id
+gross-relative-permittivity-formulation,relative_permittivity_formulation,none,,gross-sadowski-2001,"Neutral PC-SAFT formulation without electrolyte relative permittivity",gross-pair-unknown

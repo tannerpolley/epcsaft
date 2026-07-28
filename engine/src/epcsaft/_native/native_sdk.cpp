@@ -41,31 +41,31 @@ bool active_born_model_admitted(
     };
     constexpr Admission admissions[] = {
         {
-            "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+            "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
             "lithium-cation",
             "chloride-anion",
             1,
         },
         {
-            "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+            "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
             "sodium-cation",
             "chloride-anion",
             1,
         },
         {
-            "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+            "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
             "potassium-cation",
             "chloride-anion",
             1,
         },
         {
-            "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+            "sha256:a8383fb8f70a1bb8c258f1662c792cd5507af1d23db71ad4575026b5dcab55ea",
             "chloride-anion",
             "sodium-cation",
             -1,
         },
         {
-            "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9",
+            "sha256:f313c30e9471daed0638ab70ff43eb033ed828724547c4b32857442ed35f1107",
             "bromide-anion",
             "sodium-cation",
             -1,
@@ -103,27 +103,27 @@ bool aqueous_kij_model_admitted(
     };
     constexpr Admission admissions[] = {
         {
-            "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+            "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
             "lithium-cation", "chloride-anion",
         },
         {
-            "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+            "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
             "sodium-cation", "chloride-anion",
         },
         {
-            "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+            "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
             "potassium-cation", "chloride-anion",
         },
         {
-            "sha256:1258d8f76ddb4300d4983e70a2efa107b5cdc468748fe8760a04f82c4de38668",
+            "sha256:19be2cea6620c8a6cd3c965325422bded799d2b39acb240a4c4e858059d6412e",
             "lithium-cation", "bromide-anion",
         },
         {
-            "sha256:b46a48ee5025e15a2d063b6f3ca4de54e29c33d429b94940913a9d225c78456b",
+            "sha256:80f83701040d7d0863c7121b7379b86a9e8bd30c1fa3e4a5651330c41c588131",
             "sodium-cation", "bromide-anion",
         },
         {
-            "sha256:1d498278767a568e2120286f27f98a0b79268c92a68805d85ca30a21f14f3284",
+            "sha256:8ec6c31ada39713132b340a184e0c06b0f9d070892be2aaa721e9aa92015ae31",
             "potassium-cation", "bromide-anion",
         },
     };
@@ -138,7 +138,7 @@ bool aqueous_kij_model_admitted(
 }
 
 // EqExclude: input and domain validation
-bool figiel_dielectric_model_admitted(
+bool ion_fraction_suppression_model_admitted(
     const std::vector<std::string>& component_ids,
     const std::vector<int>& charges
 ) {
@@ -162,13 +162,13 @@ bool ion_solvation_kij_model_admitted(
     constexpr std::array<Admission, 2> admissions{{
         {
             {"methanol", "potassium-cation", "bromide-anion"},
-            "sha256:10146ec44223169b5403b898a650b4f164b5aff1ddc5d65e4023f14b36259a67",
-            "sha256:00d2476a7b107097ff8de62754753515d7b58883cdfc37a2e7cc4727f28bc25a",
+            "sha256:57920a78527ba21924a8f3e3916e40a8b842fae5127c4cfc6ff3e1fade418699",
+            "sha256:a6879554a81191d2210ece2eed240f251a0f45327fa3877978228362bcf80443",
         },
         {
             {"ethanol", "sodium-cation", "chloride-anion"},
-            "sha256:e316efb0f2f78a0b5fefa67ed316d66c26ba8d6a800dc8afcdd72a64c66a420f",
-            "sha256:8eae46e94249e09df6c987c968cce14fb5521ee2af234f7fc088875eb650a6d7",
+            "sha256:02d7e56ffd746f91632c14c9e68c247df454b0db53514499dd26fbeedfb11016",
+            "sha256:7998ddbc59d7059e7ac3ee0810d1b97d1d564264c98dea41b55c6c8192fe2a71",
         },
     }};
     return charges == std::vector<int>({0, 1, -1})
@@ -197,7 +197,7 @@ bool aqueous_solvation_factor_model_admitted(
     bool staged_trial_bundle_admitted
 ) {
     constexpr const char* sodium_bromide_fingerprint =
-        "sha256:b46a48ee5025e15a2d063b6f3ca4de54e29c33d429b94940913a9d225c78456b";
+        "sha256:80f83701040d7d0863c7121b7379b86a9e8bd30c1fa3e4a5651330c41c588131";
     return component_ids == std::vector<std::string>({
                "water", "sodium-cation", "bromide-anion"
            })
@@ -237,7 +237,7 @@ struct NativeSdkEndpoint final {
     bool phase_callbacks_admitted;
     bool active_born_admitted;
     bool aqueous_kij_admitted;
-    bool figiel_dielectric_admitted;
+    bool ion_fraction_suppression_admitted;
     bool ion_solvation_kij_admitted;
     bool aqueous_solvation_factor_admitted;
     bool neutral_reference_admitted;
@@ -273,7 +273,7 @@ struct NativeSdkEndpoint final {
     std::array<epcsaft_native_capability_coordinate_v1, 1>
         aqueous_cation_anion_kij_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 1>
-        figiel_dielectric_suppression_coordinates;
+        ion_fraction_suppression_coordinates;
     std::vector<epcsaft_native_capability_descriptor_v1> capabilities;
     epcsaft_native_sdk_v1 table;
 
@@ -287,7 +287,7 @@ struct NativeSdkEndpoint final {
         bool admit_phase_callbacks,
         bool admit_active_born,
         bool admit_aqueous_kij,
-        bool admit_figiel_dielectric,
+        bool admit_ion_fraction_suppression,
         bool admit_ion_solvation_kij,
         double minimum_pressure,
         double maximum_pressure,
@@ -306,7 +306,7 @@ struct NativeSdkEndpoint final {
           phase_callbacks_admitted(admit_phase_callbacks),
           active_born_admitted(admit_active_born),
           aqueous_kij_admitted(admit_aqueous_kij),
-          figiel_dielectric_admitted(admit_figiel_dielectric),
+          ion_fraction_suppression_admitted(admit_ion_fraction_suppression),
           ion_solvation_kij_admitted(admit_ion_solvation_kij),
           aqueous_solvation_factor_admitted(
               admit_aqueous_solvation_factor
@@ -493,10 +493,10 @@ struct NativeSdkEndpoint final {
                   "dimensionless",
               },
           }},
-          figiel_dielectric_suppression_coordinates{{
+          ion_fraction_suppression_coordinates{{
               {
                   sizeof(epcsaft_native_capability_coordinate_v1),
-                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DIELECTRIC_ION_SUPPRESSION_V1,
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ION_FRACTION_SUPPRESSION_V1,
                   -1,
                   -1,
                   -1,
@@ -683,14 +683,14 @@ struct NativeSdkEndpoint final {
                       EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_BORN_V1,
                       EPCSAFT_NATIVE_PARAMETER_FAMILY_BORN_DIAMETER_V1,
                       EPCSAFT_NATIVE_OBSERVATION_ION_SOLVATION_GIBBS_V1,
-                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_WATER_SINGLE_ION_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_AQUEOUS_SINGLE_ION_V1,
                       ion_solvation_born_coordinates
                   ));
                   auto ionic_permittivity = descriptor(
                       EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_IONIC_REGION_PERMITTIVITY_V1,
                       EPCSAFT_NATIVE_PARAMETER_FAMILY_IONIC_REGION_RELATIVE_PERMITTIVITY_V1,
                       EPCSAFT_NATIVE_PARAMETER_IDENTITY_MODEL_V1,
-                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_WATER_SINGLE_ION_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_AQUEOUS_SINGLE_ION_V1,
                       0,
                       ion_solvation_ionic_permittivity_coordinates
                   );
@@ -704,7 +704,7 @@ struct NativeSdkEndpoint final {
                       EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_PERMITTIVITY_V1,
                       EPCSAFT_NATIVE_PARAMETER_FAMILY_RELATIVE_PERMITTIVITY_V1,
                       EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
-                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_WATER_SINGLE_ION_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_AQUEOUS_SINGLE_ION_V1,
                       0,
                       ion_solvation_solvent_permittivity_coordinates
                   );
@@ -720,7 +720,7 @@ struct NativeSdkEndpoint final {
                       EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_SOLVATION_FACTOR_MIAC_V1,
                       EPCSAFT_NATIVE_PARAMETER_FAMILY_SOLVATION_FACTOR_V1,
                       EPCSAFT_NATIVE_OBSERVATION_AQUEOUS_MEAN_IONIC_ACTIVITY_V1,
-                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_AQUEOUS_NABR_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_AQUEOUS_NABR_V1,
                       aqueous_solvation_factor_coordinates
                   ));
               }
@@ -733,7 +733,7 @@ struct NativeSdkEndpoint final {
                           capability,
                           EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1,
                           EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1,
-                          EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_AQUEOUS_NABR_V1,
+                          EPCSAFT_NATIVE_MODEL_DOMAIN_AQUEOUS_NABR_V1,
                           0,
                           coordinates
                       );
@@ -757,14 +757,14 @@ struct NativeSdkEndpoint final {
                       aqueous_cation_anion_kij_coordinates
                   ));
               }
-              if (figiel_dielectric_admitted) {
+              if (ion_fraction_suppression_admitted) {
                   auto dielectric = descriptor(
-                      EPCSAFT_NATIVE_CAPABILITY_FIGIEL_DIELECTRIC_SUPPRESSION_V1,
-                      EPCSAFT_NATIVE_PARAMETER_FAMILY_DIELECTRIC_ION_SUPPRESSION_V1,
+                      EPCSAFT_NATIVE_CAPABILITY_ION_FRACTION_SUPPRESSION_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_ION_FRACTION_SUPPRESSION_V1,
                       EPCSAFT_NATIVE_PARAMETER_IDENTITY_MODEL_V1,
-                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_DIELECTRIC_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_ION_FRACTION_SUPPRESSION_V1,
                       0,
-                      figiel_dielectric_suppression_coordinates
+                      ion_fraction_suppression_coordinates
                   );
                   dielectric.observation_contract =
                       EPCSAFT_NATIVE_OBSERVATION_RELATIVE_PERMITTIVITY_RATIO_V1;
@@ -782,7 +782,7 @@ struct NativeSdkEndpoint final {
                           capability,
                           EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1,
                           EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1,
-                          EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_SINGLE_ION_SOLVATION_V1,
+                          EPCSAFT_NATIVE_MODEL_DOMAIN_ORGANIC_SINGLE_ION_SOLVATION_V1,
                           0,
                           coordinates
                       );
@@ -846,8 +846,8 @@ struct NativeSdkEndpoint final {
               capabilities.empty() ? nullptr : capabilities.data(),
               &NativeSdkEndpoint::evaluate_mixture_lij,
               &NativeSdkEndpoint::evaluate_pure_parameter,
-              sizeof(epcsaft_figiel_permittivity_result_v1),
-              &NativeSdkEndpoint::evaluate_figiel_permittivity,
+              sizeof(epcsaft_ion_fraction_suppression_result_v1),
+              &NativeSdkEndpoint::evaluate_ion_fraction_suppression,
               sizeof(epcsaft_ion_solvation_kij_result_v1),
               &NativeSdkEndpoint::evaluate_ion_solvation_kij,
               sizeof(epcsaft_ion_solvation_ionic_permittivity_result_v1),
@@ -1167,20 +1167,20 @@ struct NativeSdkEndpoint final {
     }
 
     // EqExclude: transport and buffer mechanics
-    static int evaluate_figiel_permittivity(
+    static int evaluate_ion_fraction_suppression(
         const void* context,
         const char* expected_fingerprint,
         double temperature_k,
         double pressure_pa,
         double total_ion_mole_fraction,
         double suppression_coefficient,
-        epcsaft_figiel_permittivity_result_v1* result
+        epcsaft_ion_fraction_suppression_result_v1* result
     ) noexcept {
         if (result == nullptr) {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
         }
         if (result->struct_size
-            != sizeof(epcsaft_figiel_permittivity_result_v1)) {
+            != sizeof(epcsaft_ion_fraction_suppression_result_v1)) {
             return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
         }
         const double nan = std::numeric_limits<double>::quiet_NaN();
@@ -1203,29 +1203,29 @@ struct NativeSdkEndpoint final {
             || !std::isfinite(suppression_coefficient)) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
-                "invalid active Figiel permittivity arguments"
+                "invalid active ion-fraction suppression arguments"
             );
         }
         const auto& endpoint =
             *static_cast<const NativeSdkEndpoint*>(context);
-        if (!endpoint.figiel_dielectric_admitted
+        if (!endpoint.ion_fraction_suppression_admitted
             || std::strcmp(
                 expected_fingerprint,
                 endpoint.parameter_fingerprint.c_str()
             ) != 0) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
-                "unsupported active Figiel permittivity model"
+                "unsupported active ion-fraction suppression model"
             );
         }
         if (temperature_k != 298.15 || pressure_pa != 100000.0) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
-                "state is outside the active Figiel permittivity domain"
+                "state is outside the active ion-fraction suppression domain"
             );
         }
         try {
-            const auto value = endpoint.model.evaluate_figiel_permittivity(
+            const auto value = endpoint.model.evaluate_ion_fraction_suppression(
                 total_ion_mole_fraction,
                 suppression_coefficient
             );
@@ -1254,7 +1254,7 @@ struct NativeSdkEndpoint final {
         } catch (...) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
-                "unknown active Figiel permittivity failure"
+                "unknown active ion-fraction suppression failure"
             );
         }
     }
@@ -2986,7 +2986,7 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     bool phase_callbacks_admitted,
     bool active_born_admitted,
     bool aqueous_kij_admitted,
-    bool figiel_dielectric_admitted,
+    bool ion_fraction_suppression_admitted,
     double pressure_min_pa,
     double pressure_max_pa,
     bool neutral_reference_admitted,
@@ -2997,7 +2997,7 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     const std::string& topology_fingerprint
 ) {
     if (!active_born_admitted && !aqueous_kij_admitted
-        && !figiel_dielectric_admitted
+        && !ion_fraction_suppression_admitted
         && !ion_solvation_kij_admitted
         && !neutral_reference_admitted && !aqueous_solvation_factor_admitted
         && (!model.supports_native_sdk_v1()
@@ -3026,12 +3026,12 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
         )) {
         throw std::invalid_argument("unsupported aqueous active k_ij model identity");
     }
-    if (figiel_dielectric_admitted
-        && !figiel_dielectric_model_admitted(
+    if (ion_fraction_suppression_admitted
+        && !ion_fraction_suppression_model_admitted(
             component_ids, model.charge_numbers()
         )) {
         throw std::invalid_argument(
-            "unsupported active Figiel dielectric model identity"
+            "unsupported active ion-fraction suppression model identity"
         );
     }
     if (ion_solvation_kij_admitted
@@ -3124,7 +3124,7 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
         phase_callbacks_admitted,
         active_born_admitted,
         aqueous_kij_admitted,
-        figiel_dielectric_admitted,
+        ion_fraction_suppression_admitted,
         ion_solvation_kij_admitted,
         pressure_min_pa,
         pressure_max_pa,

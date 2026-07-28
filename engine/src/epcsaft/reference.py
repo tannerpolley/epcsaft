@@ -226,7 +226,7 @@ def build_reference_state(
     charges = model.charge_number
     if model.topology not in {
         "ionic-ssm-ds",
-        "ionic-held-2008-debye-huckel",
+        "ionic-fully-dissociated-debye-huckel",
     } or len(charges) != len(eos.component_ids):
         raise _eos_error("invalid-reference-state", reason="electrolyte-required")
     cations = tuple(index for index, charge in enumerate(charges) if charge > 0)

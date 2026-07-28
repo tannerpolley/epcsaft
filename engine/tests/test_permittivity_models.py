@@ -67,6 +67,12 @@ def _parameters(
         singles.extend(_base_component("methanol", 0, 0.03204))
     models = [
         ModelParameterRecord(
+            "relative-permittivity-formulation",
+            "relative_permittivity_formulation",
+            kind,
+            **PROVENANCE,
+        ),
+        ModelParameterRecord(
             "ionic-region-permittivity",
             "ionic_region_relative_permittivity",
             8,
@@ -74,7 +80,7 @@ def _parameters(
         )
     ]
     correlations = []
-    if kind in {"figiel-composition", "zuber-ion-specific"}:
+    if kind in {"ion-fraction-suppression", "ion-specific-suppression"}:
         correlations.append(
             ConstantCorrelation(
                 "water-relative-permittivity",
@@ -94,64 +100,76 @@ def _parameters(
                     **PROVENANCE,
                 )
             )
-    if kind == "figiel-composition":
+    if kind == "ion-fraction-suppression":
         models.append(
             ModelParameterRecord(
                 "figiel-suppression",
-                "dielectric_ion_suppression_coefficient",
+                "ion_fraction_suppression_coefficient",
                 7.01,
                 **PROVENANCE,
             )
         )
-    elif kind == "schreckenberg-density":
+    elif kind == "density-volume-temperature":
         singles.extend(
             (
                 _single(
-                    "water-schreckenberg-volume",
+                    "water-dielectric-volume",
                     "water",
-                    "schreckenberg_dielectric_volume",
+                    "dielectric_volume",
                     0.3777 * unit_registry.decimeter**3 / unit_registry.mole,
                 ),
                 _single(
-                    "water-schreckenberg-temperature",
+                    "water-dielectric-temperature",
                     "water",
-                    "schreckenberg_dielectric_temperature",
+                    "dielectric_temperature",
                     1403 * unit_registry.kelvin,
                 ),
             )
         )
-    elif kind == "zuber-ion-specific":
+    elif kind == "ion-specific-suppression":
         singles.extend(
             (
-                _single("sodium-zuber-alpha", "sodium", "zuber_ion_suppression_coefficient", 3.62),
-                _single("chloride-zuber-alpha", "chloride", "zuber_ion_suppression_coefficient", 6.80),
+                _single(
+                    "sodium-ion-specific-suppression",
+                    "sodium",
+                    "ion_specific_suppression_coefficient",
+                    3.62,
+                ),
+                _single(
+                    "chloride-ion-specific-suppression",
+                    "chloride",
+                    "ion_specific_suppression_coefficient",
+                    6.80,
+                ),
             )
         )
-    elif kind == "rueben-perturbation":
-        rueben = {
+    elif kind == "dipolar-density-perturbation":
+        dipolar_parameters = {
             "water": (5.199, 0.0, 0.1276),
             "sodium": (5.407, 0.0, 0.215),
             "chloride": (2.563, 0.0, 0.138),
         }
-        for component_id, (dipole, polarizability, correlation) in rueben.items():
+        for component_id, (dipole, polarizability, correlation) in (
+            dipolar_parameters.items()
+        ):
             singles.extend(
                 (
                     _single(
-                        f"{component_id}-rueben-dipole",
+                        f"{component_id}-dipole-scaling",
                         component_id,
-                        "rueben_dipole_scaling",
+                        "dipole_scaling",
                         dipole * unit_registry.debye**2,
                     ),
                     _single(
-                        f"{component_id}-rueben-polarizability",
+                        f"{component_id}-polarizability-scaling",
                         component_id,
-                        "rueben_polarizability_scaling",
+                        "polarizability_scaling",
                         polarizability * unit_registry.angstrom**3,
                     ),
                     _single(
-                        f"{component_id}-rueben-correlation",
+                        f"{component_id}-correlation-integral",
                         component_id,
-                        "rueben_correlation_integral_parameter",
+                        "correlation_integral_parameter",
                         correlation,
                     ),
                 )
@@ -182,7 +200,11 @@ def _model(kind: str) -> EPCSAFT:
     return EPCSAFT(_parameters(kind))
 
 
-def _rueben_oracle(temperature: float, molar_density: float, fractions: tuple[float, ...]) -> float:
+def _dipolar_perturbation_oracle(
+    temperature: float,
+    molar_density: float,
+    fractions: tuple[float, ...],
+) -> float:
     dipole = (5.199, 5.407, 2.563)
     polarizability = (0.0, 0.0, 0.0)
     correlation = (0.1276, 0.215, 0.138)
@@ -209,13 +231,16 @@ def _rueben_oracle(temperature: float, molar_density: float, fractions: tuple[fl
 @pytest.mark.parametrize(
     ("kind", "expected"),
     (
-        ("figiel-composition", 78.09 / (1.0 + 7.01 * 0.1)),
+        ("ion-fraction-suppression", 78.09 / (1.0 + 7.01 * 0.1)),
         (
-            "schreckenberg-density",
+            "density-volume-temperature",
             1.0 + 55_000.0 * 0.9 * 0.3777e-3 * (1403.0 / 298.15 - 1.0),
         ),
-        ("zuber-ion-specific", 78.09 / (1.0 + 3.62 * 0.05 + 6.80 * 0.05)),
-        ("rueben-perturbation", _rueben_oracle(298.15, 55_000.0, (0.9, 0.05, 0.05))),
+        ("ion-specific-suppression", 78.09 / (1.0 + 3.62 * 0.05 + 6.80 * 0.05)),
+        (
+            "dipolar-density-perturbation",
+            _dipolar_perturbation_oracle(298.15, 55_000.0, (0.9, 0.05, 0.05)),
+        ),
     ),
 )
 def test_bulk_permittivity_matches_independent_source_equation(kind: str, expected: float) -> None:
@@ -226,11 +251,11 @@ def test_bulk_permittivity_matches_independent_source_equation(kind: str, expect
         mole_fractions=(0.9, 0.05, 0.05),
     )
 
-    assert model.permittivity_model == kind
+    assert model.relative_permittivity_formulation == kind
     assert result.bulk_relative_permittivity == pytest.approx(expected, rel=2.0e-12)
 
 
-@pytest.mark.parametrize("kind", ("schreckenberg-density", "rueben-perturbation"))
+@pytest.mark.parametrize("kind", ("density-volume-temperature", "dipolar-density-perturbation"))
 def test_density_models_approach_vacuum_permittivity_at_zero_density(kind: str) -> None:
     model = _model(kind)
     result = model.evaluate(
@@ -245,10 +270,10 @@ def test_density_models_approach_vacuum_permittivity_at_zero_density(kind: str) 
 @pytest.mark.parametrize(
     "kind",
     (
-        "figiel-composition",
-        "schreckenberg-density",
-        "zuber-ion-specific",
-        "rueben-perturbation",
+        "ion-fraction-suppression",
+        "density-volume-temperature",
+        "ion-specific-suppression",
+        "dipolar-density-perturbation",
     ),
 )
 def test_permittivity_density_derivatives_remain_in_common_cppad_helmholtz_owner(
@@ -287,13 +312,13 @@ def test_permittivity_density_derivatives_remain_in_common_cppad_helmholtz_owner
 @pytest.mark.parametrize(
     "kind",
     (
-        "figiel-composition",
-        "schreckenberg-density",
-        "zuber-ion-specific",
-        "rueben-perturbation",
+        "ion-fraction-suppression",
+        "density-volume-temperature",
+        "ion-specific-suppression",
+        "dipolar-density-perturbation",
     ),
 )
-def test_permittivity_model_closes_a_single_pressure_root_with_exact_slope(kind: str) -> None:
+def test_relative_permittivity_formulation_closes_a_single_pressure_root_with_exact_slope(kind: str) -> None:
     model = _model(kind)
     fractions = (0.826112, 0.086944, 0.086944)
     result = model.evaluate(
@@ -329,26 +354,26 @@ def test_permittivity_model_closes_a_single_pressure_root_with_exact_slope(kind:
     )
 
 
-def test_mixed_permittivity_topologies_fail_during_model_resolution() -> None:
+def test_extraneous_formulation_family_fails_during_model_resolution() -> None:
     mixed = _parameters(
-        "schreckenberg-density",
+        "density-volume-temperature",
         extra_models=(
             ModelParameterRecord(
                 "figiel-suppression",
-                "dielectric_ion_suppression_coefficient",
+                "ion_fraction_suppression_coefficient",
                 7.01,
                 **PROVENANCE,
             ),
         ),
     )
 
-    with pytest.raises(ValueError, match="missing-or-mixed-topology"):
+    with pytest.raises(ValueError, match="extraneous-formulation-family"):
         EPCSAFT(mixed)
 
 
-def test_zuber_mixed_solvent_selection_requires_source_volume_data() -> None:
-    with pytest.raises(ValueError, match="zuber-mixed-solvent-volume-data-required"):
-        EPCSAFT(_parameters("zuber-ion-specific", include_second_solvent=True))
+def test_ion_specific_mixed_solvent_selection_requires_source_volume_data() -> None:
+    with pytest.raises(ValueError, match="mixed-solvent-volume-data-required"):
+        EPCSAFT(_parameters("ion-specific-suppression", include_second_solvent=True))
 
 
 def test_neutral_model_reports_permittivity_as_not_applicable() -> None:
@@ -361,5 +386,5 @@ def test_neutral_model_reports_permittivity_as_not_applicable() -> None:
         mole_fractions=(1.0,),
     )
 
-    assert model.permittivity_model == "none"
+    assert model.relative_permittivity_formulation == "none"
     assert result.bulk_relative_permittivity is None

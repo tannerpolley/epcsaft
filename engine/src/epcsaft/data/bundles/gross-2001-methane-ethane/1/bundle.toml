@@ -2,7 +2,7 @@ schema_version = 1
 bundle_id = "gross-2001-methane-ethane"
 bundle_version = 1
 purpose = "installed-catalog"
-files = ["components.csv", "single.csv", "pair.csv"]
+files = ["components.csv", "single.csv", "pair.csv", "model.csv"]
 
 [[sources]]
 source_id = "gross-sadowski-2001"

@@ -124,11 +124,11 @@ never masquerades as a fitted catalog record.
 
 | Active ion | Charge | Source `d_i^Born` [angstrom] | Bound component order | Source fingerprint |
 |---|---:|---:|---|---|
-| `lithium-cation` | +1 | 2.784 | `(water, lithium-cation, chloride-anion)` | `sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c` |
-| `sodium-cation` | +1 | 3.445 | `(water, sodium-cation, chloride-anion)` | `sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d` |
-| `potassium-cation` | +1 | 4.150 | `(water, potassium-cation, chloride-anion)` | `sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4` |
-| `chloride-anion` | -1 | 4.100 | `(water, chloride-anion, sodium-cation)` | `sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4` |
-| `bromide-anion` | -1 | 4.480 | `(water, bromide-anion, sodium-cation)` | `sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9` |
+| `lithium-cation` | +1 | 2.784 | `(water, lithium-cation, chloride-anion)` | `sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a` |
+| `sodium-cation` | +1 | 3.445 | `(water, sodium-cation, chloride-anion)` | `sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf` |
+| `potassium-cation` | +1 | 4.150 | `(water, potassium-cation, chloride-anion)` | `sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b` |
+| `chloride-anion` | -1 | 4.100 | `(water, chloride-anion, sodium-cation)` | `sha256:a8383fb8f70a1bb8c258f1662c792cd5507af1d23db71ad4575026b5dcab55ea` |
+| `bromide-anion` | -1 | 4.480 | `(water, bromide-anion, sodium-cation)` | `sha256:f313c30e9471daed0638ab70ff43eb033ed828724547c4b32857442ed35f1107` |
 
 Admission requires both the exact fingerprint and the structural invariants:
 three components in the listed order, `ionic-ssm-ds` topology, water as the

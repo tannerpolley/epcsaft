@@ -167,7 +167,7 @@ def test_figiel_result_exposes_bulk_relative_permittivity() -> None:
         mole_fractions=(0.9, 0.05, 0.05),
     )
 
-    assert model.permittivity_model == "figiel-composition"
+    assert model.relative_permittivity_formulation == "ion-fraction-suppression"
     assert result.bulk_relative_permittivity == pytest.approx(78.09 / (1.0 + 7.01 * 0.1))
 
 

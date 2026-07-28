@@ -337,7 +337,7 @@ class PureParameterNativeSdkTable(ctypes.Structure):
     )
 
 
-class FigielPermittivityResult(ctypes.Structure):
+class IonFractionSuppressionResult(ctypes.Structure):
     _fields_ = (
         ("struct_size", ctypes.c_uint32),
         ("status", ctypes.c_int32),
@@ -349,10 +349,10 @@ class FigielPermittivityResult(ctypes.Structure):
     )
 
 
-class FigielPermittivityNativeSdkTable(ctypes.Structure):
+class IonFractionSuppressionNativeSdkTable(ctypes.Structure):
     _fields_ = PureParameterNativeSdkTable._fields_ + (
-        ("figiel_permittivity_result_size", ctypes.c_size_t),
-        ("evaluate_figiel_permittivity", ctypes.c_void_p),
+        ("ion_fraction_suppression_result_size", ctypes.c_size_t),
+        ("evaluate_ion_fraction_suppression", ctypes.c_void_p),
     )
 
 
@@ -370,7 +370,7 @@ class IonSolvationKijResult(ctypes.Structure):
 
 
 class IonSolvationKijNativeSdkTable(ctypes.Structure):
-    _fields_ = FigielPermittivityNativeSdkTable._fields_ + (
+    _fields_ = IonFractionSuppressionNativeSdkTable._fields_ + (
         ("ion_solvation_kij_result_size", ctypes.c_size_t),
         ("evaluate_ion_solvation_kij", ctypes.c_void_p),
     )
@@ -488,8 +488,8 @@ ACTIVE_PURE_PARAMETER_PREFIX_SIZE = (
     PureParameterNativeSdkTable.evaluate_pure_phase_parameter.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
-FIGIEL_PERMITTIVITY_PREFIX_SIZE = (
-    FigielPermittivityNativeSdkTable.evaluate_figiel_permittivity.offset
+ION_FRACTION_SUPPRESSION_PREFIX_SIZE = (
+    IonFractionSuppressionNativeSdkTable.evaluate_ion_fraction_suppression.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
 ION_SOLVATION_KIJ_PREFIX_SIZE = (
@@ -680,7 +680,7 @@ EvaluateAqueousMiacSolvationFactor = ctypes.CFUNCTYPE(
     ctypes.POINTER(AqueousMiacSolvationFactorResult),
 )
 
-EvaluateFigielPermittivity = ctypes.CFUNCTYPE(
+EvaluateIonFractionSuppression = ctypes.CFUNCTYPE(
     ctypes.c_int,
     ctypes.c_void_p,
     ctypes.c_char_p,
@@ -688,7 +688,7 @@ EvaluateFigielPermittivity = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.c_double,
-    ctypes.POINTER(FigielPermittivityResult),
+    ctypes.POINTER(IonFractionSuppressionResult),
 )
 
 EvaluateAqueousMiacKijBatch = ctypes.CFUNCTYPE(
@@ -897,9 +897,9 @@ def _capability_table(
     return capsule, table
 
 
-def _figiel_permittivity_table(
+def _ion_fraction_suppression_table(
     model: EPCSAFT,
-) -> tuple[object, FigielPermittivityNativeSdkTable]:
+) -> tuple[object, IonFractionSuppressionNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
     get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
@@ -907,10 +907,10 @@ def _figiel_permittivity_table(
     address = get_pointer(capsule, CAPSULE_NAME)
     assert address
     table = ctypes.cast(
-        address, ctypes.POINTER(FigielPermittivityNativeSdkTable)
+        address, ctypes.POINTER(IonFractionSuppressionNativeSdkTable)
     ).contents
     assert table.table_size >= ctypes.sizeof(
-        FigielPermittivityNativeSdkTable
+        IonFractionSuppressionNativeSdkTable
     )
     return capsule, table
 
@@ -1728,13 +1728,13 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
     assert ctypes.sizeof(PureParameterNativeSdkTable) == 296
     for field_name, _ in PureParameterNativeSdkTable._fields_:
         assert (
-            getattr(FigielPermittivityNativeSdkTable, field_name).offset
+            getattr(IonFractionSuppressionNativeSdkTable, field_name).offset
             == getattr(PureParameterNativeSdkTable, field_name).offset
         )
-    assert FigielPermittivityNativeSdkTable.figiel_permittivity_result_size.offset == 296
-    assert FigielPermittivityNativeSdkTable.evaluate_figiel_permittivity.offset == 304
-    assert FIGIEL_PERMITTIVITY_PREFIX_SIZE == ctypes.sizeof(
-        FigielPermittivityNativeSdkTable
+    assert IonFractionSuppressionNativeSdkTable.ion_fraction_suppression_result_size.offset == 296
+    assert IonFractionSuppressionNativeSdkTable.evaluate_ion_fraction_suppression.offset == 304
+    assert ION_FRACTION_SUPPRESSION_PREFIX_SIZE == ctypes.sizeof(
+        IonFractionSuppressionNativeSdkTable
     ) == 312
 
 
@@ -2084,7 +2084,7 @@ def test_native_sdk_describes_each_aqueous_kij_as_a_scalar_miac_coordinate() -> 
         assert descriptor.topology_fingerprint.decode().startswith("sha256:")
 
 
-def test_native_sdk_describes_figiel_dielectric_suppression_coordinate() -> None:
+def test_native_sdk_describes_ion_fraction_suppression_coordinate() -> None:
     component_ids = ("water", "sodium-cation", "bromide-anion")
     model = _electrolyte_model(component_ids)
     _, table = _capability_table(model)
@@ -2141,13 +2141,13 @@ def test_native_sdk_describes_figiel_dielectric_suppression_coordinate() -> None
     ) == ("methanol", "sodium-cation", "bromide-anion")
 
 
-def test_native_sdk_evaluates_figiel_dielectric_suppression_exact_derivative() -> None:
+def test_native_sdk_evaluates_ion_fraction_suppression_exact_derivative() -> None:
     model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
-    _, table = _figiel_permittivity_table(model)
-    assert table.figiel_permittivity_result_size == ctypes.sizeof(
-        FigielPermittivityResult
+    _, table = _ion_fraction_suppression_table(model)
+    assert table.ion_fraction_suppression_result_size == ctypes.sizeof(
+        IonFractionSuppressionResult
     )
-    callback = EvaluateFigielPermittivity(table.evaluate_figiel_permittivity)
+    callback = EvaluateIonFractionSuppression(table.evaluate_ion_fraction_suppression)
 
     def evaluate(
         coefficient: float,
@@ -2156,9 +2156,9 @@ def test_native_sdk_evaluates_figiel_dielectric_suppression_exact_derivative() -
         temperature: float = 298.15,
         pressure: float = 100000.0,
         mole_fraction: float = 0.1,
-    ) -> FigielPermittivityResult:
-        result = FigielPermittivityResult(
-            struct_size=ctypes.sizeof(FigielPermittivityResult)
+    ) -> IonFractionSuppressionResult:
+        result = IonFractionSuppressionResult(
+            struct_size=ctypes.sizeof(IonFractionSuppressionResult)
         )
         status = callback(
             table.model_context,
@@ -2211,12 +2211,12 @@ def test_native_sdk_evaluates_figiel_dielectric_suppression_exact_derivative() -
     methanol = _electrolyte_model(
         ("methanol", "sodium-cation", "bromide-anion")
     )
-    _, methanol_table = _figiel_permittivity_table(methanol)
-    methanol_result = FigielPermittivityResult(
-        struct_size=ctypes.sizeof(FigielPermittivityResult)
+    _, methanol_table = _ion_fraction_suppression_table(methanol)
+    methanol_result = IonFractionSuppressionResult(
+        struct_size=ctypes.sizeof(IonFractionSuppressionResult)
     )
-    methanol_status = EvaluateFigielPermittivity(
-        methanol_table.evaluate_figiel_permittivity
+    methanol_status = EvaluateIonFractionSuppression(
+        methanol_table.evaluate_ion_fraction_suppression
     )(
         methanol_table.model_context,
         methanol.parameter_fingerprint.encode(),
@@ -2331,7 +2331,7 @@ def test_native_sdk_rejects_forced_organic_ion_solvation_kij_admission() -> None
             phase_callbacks_admitted=False,
             ion_solvation_kij_admitted=True,
             topology_fingerprint=(
-                "sha256:00d2476a7b107097ff8de62754753515d7b58883cdfc37a2e7cc4727f28bc25a"
+                "sha256:a6879554a81191d2210ece2eed240f251a0f45327fa3877978228362bcf80443"
             ),
         )
 
@@ -2368,12 +2368,12 @@ def test_native_sdk_rejects_forced_organic_ion_solvation_kij_admission() -> None
             phase_callbacks_admitted=False,
             ion_solvation_kij_admitted=True,
             topology_fingerprint=(
-                "sha256:00d2476a7b107097ff8de62754753515d7b58883cdfc37a2e7cc4727f28bc25a"
+                "sha256:a6879554a81191d2210ece2eed240f251a0f45327fa3877978228362bcf80443"
             ),
         )
 
 
-def test_native_sdk_figiel_permittivity_installed_header_layout() -> None:
+def test_native_sdk_ion_fraction_suppression_installed_header_layout() -> None:
     compiler = shutil.which("cc")
     assert compiler is not None
     include_root = Path(epcsaft.__file__).parent / "include"
@@ -2382,11 +2382,11 @@ def test_native_sdk_figiel_permittivity_installed_header_layout() -> None:
 #include <epcsaft/native_sdk_v1.h>
 
 _Static_assert(
-    EPCSAFT_NATIVE_CAPABILITY_FIGIEL_DIELECTRIC_SUPPRESSION_V1 == 11u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_FRACTION_SUPPRESSION_V1 == 11u,
     "dielectric capability"
 );
 _Static_assert(
-    EPCSAFT_NATIVE_PARAMETER_FAMILY_DIELECTRIC_ION_SUPPRESSION_V1 == 8u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_ION_FRACTION_SUPPRESSION_V1 == 8u,
     "dielectric parameter family"
 );
 _Static_assert(
@@ -2394,16 +2394,16 @@ _Static_assert(
     "relative-permittivity-ratio observation"
 );
 _Static_assert(
-    offsetof(epcsaft_native_sdk_v1, figiel_permittivity_result_size) == 296,
+    offsetof(epcsaft_native_sdk_v1, ion_fraction_suppression_result_size) == 296,
     "result-size offset"
 );
 _Static_assert(
-    offsetof(epcsaft_native_sdk_v1, evaluate_figiel_permittivity) == 304,
+    offsetof(epcsaft_native_sdk_v1, evaluate_ion_fraction_suppression) == 304,
     "callback offset"
 );
 _Static_assert(sizeof(epcsaft_native_sdk_v1) >= 312, "table prefix size");
 _Static_assert(
-    sizeof(epcsaft_figiel_permittivity_result_v1) == 264,
+    sizeof(epcsaft_ion_fraction_suppression_result_v1) == 264,
     "result size"
 );
 _Static_assert(
@@ -2411,7 +2411,7 @@ _Static_assert(
     "ion-solvation solvent-cation capability"
 );
 _Static_assert(
-    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_SINGLE_ION_SOLVATION_V1 == 6u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_ORGANIC_SINGLE_ION_SOLVATION_V1 == 6u,
     "single-ion-solvation model domain"
 );
 _Static_assert(
@@ -2483,7 +2483,7 @@ _Static_assert(
 );
 
 int main(void) {
-    epcsaft_evaluate_figiel_permittivity_v1 callback = 0;
+    epcsaft_evaluate_ion_fraction_suppression_v1 callback = 0;
     epcsaft_evaluate_ion_solvation_kij_v1 ion_callback = 0;
     epcsaft_evaluate_ion_solvation_ionic_permittivity_v1
         ionic_permittivity_callback = 0;
@@ -3025,14 +3025,14 @@ def test_native_sdk_held_neutral_reference_is_domain_bound_and_permutation_safe(
             "figiel-2025-reference-electrolytes",
             ("water", "sodium-cation", "chloride-anion"),
             "figiel-298-k-1-bar",
-            "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+            "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
             (298.15, 298.15, 0.38),
         ),
         (
             "khudaida-2026-figure-2-electrolyte-lle",
             ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion"),
             "khudaida-293-15-k-0-1-mpa",
-            "sha256:5a59828d86bb29c919513484a26cedaa0f025463aaa7c149ae3d1fbd0eda97ae",
+            "sha256:b43fac77754d9d5cca8b3db2cbe709892a786d97b756084b167ce126ab4c3007",
             (293.15, 293.15, math.nan),
         ),
     ),
@@ -3507,7 +3507,16 @@ def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
         sources=gross_bundle.sources,
         domains=gross.domains,
         components=gross.components,
-        singles=gross.records,
+        singles=tuple(
+            record
+            for record in gross.records
+            if isinstance(record, SingleParameterRecord)
+        ),
+        models=tuple(
+            record
+            for record in gross.records
+            if isinstance(record, ModelParameterRecord)
+        ),
     )
     synthetic_model = EPCSAFT(synthetic.select(("methane",)))
     assert synthetic_model.parameter_fingerprint != model.parameter_fingerprint
@@ -4552,35 +4561,35 @@ def test_native_sdk_header_is_installed_package_data() -> None:
             "lithium-cation",
             "chloride-anion",
             2.784,
-            "sha256:1bb528ebe8f5612757e148608fc55821f9fb03737dbcec6d0bc4fffd0f4cbc4c",
+            "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
             -486200.0,
         ),
         (
             "sodium-cation",
             "chloride-anion",
             3.445,
-            "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d",
+            "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
             -381100.0,
         ),
         (
             "potassium-cation",
             "chloride-anion",
             4.150,
-            "sha256:d29cef0c0f63034436d547d0aafa57934effe06783c8dffd89c94fa85e6940f4",
+            "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
             -309100.0,
         ),
         (
             "chloride-anion",
             "sodium-cation",
             4.100,
-            "sha256:7551f1eee5903b66061cf7520f3bb59b169896ce372f3df3d48aa7ec778c39d4",
+            "sha256:a8383fb8f70a1bb8c258f1662c792cd5507af1d23db71ad4575026b5dcab55ea",
             -314900.0,
         ),
         (
             "bromide-anion",
             "sodium-cation",
             4.480,
-            "sha256:70ae04599dfa8338175e793bac6b9e4dfad37a9b96a568b5484dc87f104ef1a9",
+            "sha256:f313c30e9471daed0638ab70ff43eb033ed828724547c4b32857442ed35f1107",
             -290900.0,
         ),
     ),
@@ -5818,14 +5827,19 @@ def test_native_sdk_staged_figiel_user_bundles_are_narrowly_admitted() -> None:
         .status
         == STATUS_UNSUPPORTED_MODEL
     )
-    spoofed = _figiel_trial_model(
+    provenance_renamed = _figiel_trial_model(
         ("water", "sodium-cation", "bromide-anion"),
         spoof_source_metadata=True,
     )
-    _, spoofed_table = _aqueous_miac_solvation_factor_table(spoofed)
+    _, provenance_renamed_table = _aqueous_miac_solvation_factor_table(
+        provenance_renamed
+    )
     assert _evaluate_aqueous_miac_solvation_factor(
-        spoofed_table, spoofed.parameter_fingerprint, 1.0, 1.4
-    ).status == STATUS_UNSUPPORTED_MODEL
+        provenance_renamed_table,
+        provenance_renamed.parameter_fingerprint,
+        1.0,
+        1.4,
+    ).status == STATUS_OK
     reordered = _figiel_trial_model(("sodium-cation", "water", "bromide-anion"))
     _, reordered_table = _aqueous_miac_solvation_factor_table(reordered)
     assert _evaluate_aqueous_miac_solvation_factor(

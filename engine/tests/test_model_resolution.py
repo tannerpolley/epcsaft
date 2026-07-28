@@ -62,6 +62,15 @@ def _bundle(
     correlations: tuple[ConstantCorrelation, ...] = (),
     models: tuple[ModelParameterRecord, ...] = (),
 ):
+    if not models:
+        models = (
+            ModelParameterRecord(
+                "relative-permittivity-formulation",
+                "relative_permittivity_formulation",
+                "none",
+                **PROVENANCE,
+            ),
+        )
     return ParameterBundle.from_records(
         bundle_id="resolution-fixture",
         bundle_version=1,
@@ -156,6 +165,12 @@ def test_neutral_associating_and_ionic_topologies_resolve_immutably() -> None:
     )
     models = (
         ModelParameterRecord(
+            "relative-permittivity-formulation",
+            "relative_permittivity_formulation",
+            "ion-fraction-suppression",
+            **PROVENANCE,
+        ),
+        ModelParameterRecord(
             "ionic-region-permittivity",
             "ionic_region_relative_permittivity",
             8,
@@ -163,7 +178,7 @@ def test_neutral_associating_and_ionic_topologies_resolve_immutably() -> None:
         ),
         ModelParameterRecord(
             "dielectric-suppression",
-            "dielectric_ion_suppression_coefficient",
+            "ion_fraction_suppression_coefficient",
             7.01,
             **PROVENANCE,
         ),
@@ -182,7 +197,7 @@ def test_neutral_associating_and_ionic_topologies_resolve_immutably() -> None:
     assert ionic_model.topology == "ionic-ssm-ds"
     assert ionic_model.charge_number == (0, 1, -1)
     assert ionic_model.ionic_region_relative_permittivity == 8.0
-    assert ionic_model.dielectric_ion_suppression_coefficient == 7.01
+    assert ionic_model.ion_fraction_suppression_coefficient == 7.01
 
     without_unused_ion_masses = tuple(
         record
@@ -217,7 +232,7 @@ def test_neutral_associating_and_ionic_topologies_resolve_immutably() -> None:
         "solvation_factor",
         "relative_permittivity",
         "ionic_region_relative_permittivity",
-        "dielectric_ion_suppression_coefficient",
+        "ion_fraction_suppression_coefficient",
         "association_energy_over_k",
         "association_volume",
         "k_ij",
@@ -285,6 +300,12 @@ def test_partial_ionic_topologies_are_rejected(removed_family: str) -> None:
     ]
     models = [
         ModelParameterRecord(
+            "relative-permittivity-formulation",
+            "relative_permittivity_formulation",
+            "ion-fraction-suppression",
+            **PROVENANCE,
+        ),
+        ModelParameterRecord(
             "ionic-region-permittivity",
             "ionic_region_relative_permittivity",
             8,
@@ -292,7 +313,7 @@ def test_partial_ionic_topologies_are_rejected(removed_family: str) -> None:
         ),
         ModelParameterRecord(
             "dielectric-suppression",
-            "dielectric_ion_suppression_coefficient",
+            "ion_fraction_suppression_coefficient",
             7.01,
             **PROVENANCE,
         ),
@@ -332,7 +353,7 @@ def test_source_backed_figiel_catalog_resolves_without_unpublished_defaults() ->
     assert model.molar_mass_kg_per_mol == (0.0180153, None, None)
     assert model.k_ij == (0.0, -0.3, -0.3, -0.3, 0.0, 0.8, -0.3, 0.8, 0.0)
     assert model.ionic_region_relative_permittivity == 8.0
-    assert model.dielectric_ion_suppression_coefficient == 7.01
+    assert model.ion_fraction_suppression_coefficient == 7.01
 
 
 def test_source_backed_ascani_catalog_resolves_distinct_topology_and_lij() -> None:
@@ -349,12 +370,12 @@ def test_source_backed_ascani_catalog_resolves_distinct_topology_and_lij() -> No
         )
     )
 
-    assert model.topology == "ionic-ascani-original-born"
+    assert model.topology == "ionic-original-born"
     assert model.charge_number == (0, 0, 1, 1, -1)
     assert model.born_diameter_angstrom == ()
     assert model.solvation_factor == ()
     assert model.ionic_region_relative_permittivity is None
-    assert model.dielectric_ion_suppression_coefficient is None
+    assert model.ion_fraction_suppression_coefficient is None
     assert model.l_ij == (
         0.0,
         -0.0044,
@@ -396,7 +417,7 @@ def test_ascani_neutral_subset_retains_explicit_lij() -> None:
     model = _resolve_model(parameters)
 
     assert parameters.fingerprint == (
-        "sha256:e302721477358bd0240007cdaec972c20c60594a46a0cc821ddaea5e68f3206e"
+        "sha256:5973c16970698f1588e002ca20f2b9aa38e104cbe8d0a6924ac86c4db9d70ded"
     )
     assert model.topology == "associating"
     assert model.k_ij == (0.0, -0.102, -0.102, 0.0)

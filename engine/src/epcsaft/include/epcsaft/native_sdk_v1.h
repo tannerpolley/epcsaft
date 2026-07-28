@@ -248,7 +248,7 @@ typedef int (*epcsaft_evaluate_packing_fraction_v1)(
 );
 
 /*
- * Model-bound Figiel water reference tracer with one active ion Born diameter.
+ * Model-bound aqueous reference tracer with one active ion Born diameter.
  * The value is Delta_solv,x G_i^inf in J/mol and the derivative is its total
  * fixed-(T,P,reference-path) derivative in J/(mol angstrom). A result
  * struct-size mismatch is return-code authoritative and leaves the untrusted
@@ -461,7 +461,7 @@ typedef int (*epcsaft_evaluate_aqueous_miac_solvation_factor_batch_bounded_v1)(
     const epcsaft_native_evaluation_budget_v1* budget
 );
 
-typedef struct epcsaft_figiel_permittivity_result_v1 {
+typedef struct epcsaft_ion_fraction_suppression_result_v1 {
     uint32_t struct_size;
     int32_t status;
     double bulk_relative_permittivity;
@@ -469,16 +469,16 @@ typedef struct epcsaft_figiel_permittivity_result_v1 {
     double salt_free_relative_permittivity;
     char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
-} epcsaft_figiel_permittivity_result_v1;
+} epcsaft_ion_fraction_suppression_result_v1;
 
-typedef int (*epcsaft_evaluate_figiel_permittivity_v1)(
+typedef int (*epcsaft_evaluate_ion_fraction_suppression_v1)(
     const void* model_context,
     const char* expected_parameter_fingerprint,
     double temperature_k,
     double pressure_pa,
     double total_ion_mole_fraction,
-    double dielectric_ion_suppression_coefficient,
-    epcsaft_figiel_permittivity_result_v1* result
+    double ion_fraction_suppression_coefficient,
+    epcsaft_ion_fraction_suppression_result_v1* result
 );
 
 /*
@@ -509,7 +509,7 @@ typedef int (*epcsaft_evaluate_ion_solvation_kij_v1)(
 );
 
 /*
- * Model-bound Figiel water reference tracer with one active SSM+DS ionic-
+ * Model-bound aqueous single-ion reference tracer with one active SSM+DS ionic-
  * region relative permittivity. The value is Delta_solv,x G_i^inf in J/mol
  * and the derivative is its total fixed-(T,P,reference-path) derivative in
  * J/mol per dimensionless permittivity unit.
@@ -573,7 +573,7 @@ enum epcsaft_native_capability_v1 {
     EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_WATER_CATION_KIJ_MIAC_V1 = 8u,
     EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_WATER_ANION_KIJ_MIAC_V1 = 9u,
     EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_CATION_ANION_KIJ_MIAC_V1 = 10u,
-    EPCSAFT_NATIVE_CAPABILITY_FIGIEL_DIELECTRIC_SUPPRESSION_V1 = 11u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_FRACTION_SUPPRESSION_V1 = 11u,
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_CATION_KIJ_V1 = 12u,
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_ANION_KIJ_V1 = 13u,
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_CATION_ANION_KIJ_V1 = 14u,
@@ -591,7 +591,7 @@ enum epcsaft_native_parameter_family_v1 {
     EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1 = 5u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_BORN_DIAMETER_V1 = 6u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_SOLVATION_FACTOR_V1 = 7u,
-    EPCSAFT_NATIVE_PARAMETER_FAMILY_DIELECTRIC_ION_SUPPRESSION_V1 = 8u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_ION_FRACTION_SUPPRESSION_V1 = 8u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_ENERGY_OVER_K_V1 = 9u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_VOLUME_V1 = 10u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_IONIC_REGION_RELATIVE_PERMITTIVITY_V1 = 11u,
@@ -614,10 +614,10 @@ enum epcsaft_native_observation_contract_v1 {
 enum epcsaft_native_model_domain_v1 {
     EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1 = 1u,
     EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_PURE_V1 = 2u,
-    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_WATER_SINGLE_ION_V1 = 3u,
-    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_AQUEOUS_NABR_V1 = 4u,
-    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_DIELECTRIC_V1 = 5u,
-    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_SINGLE_ION_SOLVATION_V1 = 6u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_AQUEOUS_SINGLE_ION_V1 = 3u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_AQUEOUS_NABR_V1 = 4u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_ION_FRACTION_SUPPRESSION_V1 = 5u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_ORGANIC_SINGLE_ION_SOLVATION_V1 = 6u,
     EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_PURE_V1 = 7u
 };
 
@@ -643,7 +643,7 @@ enum epcsaft_native_capability_coordinate_kind_v1 {
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1 = 7u,
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BORN_DIAMETER_V1 = 8u,
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SOLVATION_FACTOR_V1 = 9u,
-    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DIELECTRIC_ION_SUPPRESSION_V1 = 10u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ION_FRACTION_SUPPRESSION_V1 = 10u,
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_ENERGY_OVER_K_V1 = 11u,
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_VOLUME_V1 = 12u,
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_IONIC_REGION_RELATIVE_PERMITTIVITY_V1 = 13u,
@@ -739,8 +739,8 @@ typedef struct epcsaft_native_sdk_v1 {
     const epcsaft_native_capability_descriptor_v1* capabilities;
     epcsaft_evaluate_mixture_phase_lij_v1 evaluate_mixture_phase_lij;
     epcsaft_evaluate_pure_phase_parameter_v1 evaluate_pure_phase_parameter;
-    size_t figiel_permittivity_result_size;
-    epcsaft_evaluate_figiel_permittivity_v1 evaluate_figiel_permittivity;
+    size_t ion_fraction_suppression_result_size;
+    epcsaft_evaluate_ion_fraction_suppression_v1 evaluate_ion_fraction_suppression;
     size_t ion_solvation_kij_result_size;
     epcsaft_evaluate_ion_solvation_kij_v1 evaluate_ion_solvation_kij;
     size_t ion_solvation_ionic_permittivity_result_size;

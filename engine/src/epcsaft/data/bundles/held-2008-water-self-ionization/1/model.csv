@@ -1,2 +1,3 @@
 record_id,family,value,unit,source_id,locator,domain_id
-held-electrolyte-formulation,electrolyte_formulation,held-2008-debye-huckel,,held-cameretti-sadowski-2008,"Eqs. 1-7 and Section 3, fully dissociated Debye-Huckel electrolyte with water-ion dispersion and no ion-ion dispersion",held-water-ionization-298-15-k-1-bar
+held-electrolyte-formulation,electrolyte_formulation,fully-dissociated-debye-huckel,,held-cameretti-sadowski-2008,"Eqs. 1-7 and Section 3, fully dissociated Debye-Huckel electrolyte with water-ion dispersion and no ion-ion dispersion",held-water-ionization-298-15-k-1-bar
+held-relative-permittivity-formulation,relative_permittivity_formulation,solvent-only,,held-cameretti-sadowski-2008,"Eq. 5, solvent relative-permittivity formulation",held-water-ionization-298-15-k-1-bar

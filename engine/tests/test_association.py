@@ -9,6 +9,7 @@ from epcsaft.eos import _native_arguments
 from epcsaft.records import (
     AssociationParameterRecord,
     ComponentRecord,
+    ModelParameterRecord,
     SingleParameterRecord,
     SiteRecord,
     SourceRecord,
@@ -84,6 +85,14 @@ def _pure_2b_model() -> EPCSAFT:
         singles=singles,
         sites=sites,
         associations=associations,
+        models=(
+            ModelParameterRecord(
+                "relative-permittivity-formulation",
+                "relative_permittivity_formulation",
+                "none",
+                **PROVENANCE,
+            ),
+        ),
     ).select((component,))
     return EPCSAFT(parameters)
 
@@ -103,7 +112,7 @@ def test_ascani_lij_enters_dispersion_and_association_cross_diameter() -> None:
     zero_lij = NativeModel(*_native_arguments(zero_lij_model)).evaluate(298.15, 1000.0, fractions)
 
     assert parameters.fingerprint == (
-        "sha256:e302721477358bd0240007cdaec972c20c60594a46a0cc821ddaea5e68f3206e"
+        "sha256:5973c16970698f1588e002ca20f2b9aa38e104cbe8d0a6924ac86c4db9d70ded"
     )
     assert source.dispersion < zero_lij.dispersion
     assert source.association < zero_lij.association

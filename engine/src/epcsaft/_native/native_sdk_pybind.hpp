@@ -19,7 +19,7 @@ pybind11::capsule make_native_sdk_v1(
     bool phase_callbacks_admitted,
     bool active_born_admitted,
     bool aqueous_kij_admitted,
-    bool figiel_dielectric_admitted,
+    bool ion_fraction_suppression_admitted,
     double pressure_min_pa,
     double pressure_max_pa,
     bool neutral_reference_admitted,

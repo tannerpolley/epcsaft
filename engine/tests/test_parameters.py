@@ -97,7 +97,7 @@ def _from_records(
         ),
         ModelParameterRecord(
             "figiel-dielectric-suppression",
-            "dielectric_ion_suppression_coefficient",
+            "ion_fraction_suppression_coefficient",
             Decimal("7.01"),
             **PROVENANCE,
         ),
@@ -175,7 +175,7 @@ def _parsed_records_bundle():
         models=(
             ModelParameterRecord(
                 "figiel-dielectric-suppression",
-                "dielectric_ion_suppression_coefficient",
+                "ion_fraction_suppression_coefficient",
                 Decimal("7.01"),
                 **PROVENANCE,
             ),
@@ -369,7 +369,7 @@ kind = "unknown"
         writer.writerow(
             (
                 "figiel-dielectric-suppression",
-                "dielectric_ion_suppression_coefficient",
+                "ion_fraction_suppression_coefficient",
                 "7.01",
                 "",
                 "source-a",
@@ -596,7 +596,7 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
     )
     missing_model_domain = ModelParameterRecord(
         "missing-model-domain",
-        "dielectric_ion_suppression_coefficient",
+        "ion_fraction_suppression_coefficient",
         Decimal("7.01"),
         source_id="source-a",
         locator="Eq. 11",
@@ -746,7 +746,7 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
     gross = ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
     assert gross.purpose == "installed-catalog"
     assert gross.fingerprint == (
-        "sha256:3755d6d907178e8d8ce3fa6a25c7b7c0d670c9643bcb56ea16ad6555acb98c03"
+        "sha256:49641a26a9f81b614454b83a755df7763ef5f762e13eaaea1600558dc2d54f0b"
     )
     assert {source.source_id: source.doi for source in gross.sources} == {
         "gross-sadowski-2001": "10.1021/ie0003887"
@@ -818,14 +818,14 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
     selected = gross.select(("ethane", "methane"))
     assert selected.component_ids == ("ethane", "methane")
     assert selected.fingerprint == (
-        "sha256:cb0c63530f96d51d5a24f48a2d02ae6567d163abdc373099ce096f7ff0a896f5"
+        "sha256:99ae0ffd9f61aee8c2e0fb718960534a2d0700c1adf5b72c1984517eded21f5b"
     )
 
     fixture_path = Path(__file__).parent / "data" / "bundles" / "figiel-2025-contract" / "1"
     fixture = ParameterBundle.from_path(fixture_path)
     assert fixture.purpose == "package-test-fixture"
     assert fixture.fingerprint == (
-        "sha256:262dee122040a5a4ef2da707ed8b4eb47991a3e04866f6644bcba59bbde1810b"
+        "sha256:3cc8b454266c98d2225727f17944f57dd3e325548d8b621b93ea664803e8d22f"
     )
     assert {source.source_id: source.doi for source in fixture.sources} == {
         "figiel-yu-held-2025": "10.1021/acs.iecr.5c00475",
@@ -906,9 +906,10 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
     ) == [
         "ascani-2022-case-study-2-electrolyte-lle/1/association.csv",
         "ascani-2022-case-study-2-electrolyte-lle/1/bundle.toml",
-        "ascani-2022-case-study-2-electrolyte-lle/1/components.csv",
-        "ascani-2022-case-study-2-electrolyte-lle/1/correlations.toml",
-        "ascani-2022-case-study-2-electrolyte-lle/1/pair.csv",
+            "ascani-2022-case-study-2-electrolyte-lle/1/components.csv",
+            "ascani-2022-case-study-2-electrolyte-lle/1/correlations.toml",
+            "ascani-2022-case-study-2-electrolyte-lle/1/model.csv",
+            "ascani-2022-case-study-2-electrolyte-lle/1/pair.csv",
         "ascani-2022-case-study-2-electrolyte-lle/1/single.csv",
         "ascani-2022-case-study-2-electrolyte-lle/1/sites.csv",
         "figiel-2025-aqueous-iodides/1/association.csv",
@@ -927,13 +928,15 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
         "figiel-2025-reference-electrolytes/1/pair.csv",
         "figiel-2025-reference-electrolytes/1/single.csv",
         "figiel-2025-reference-electrolytes/1/sites.csv",
-        "gross-2001-methane-ethane/1/bundle.toml",
-        "gross-2001-methane-ethane/1/components.csv",
-        "gross-2001-methane-ethane/1/pair.csv",
+            "gross-2001-methane-ethane/1/bundle.toml",
+            "gross-2001-methane-ethane/1/components.csv",
+            "gross-2001-methane-ethane/1/model.csv",
+            "gross-2001-methane-ethane/1/pair.csv",
         "gross-2001-methane-ethane/1/single.csv",
-        "gross-2001-propane/1/bundle.toml",
-        "gross-2001-propane/1/components.csv",
-        "gross-2001-propane/1/single.csv",
+            "gross-2001-propane/1/bundle.toml",
+            "gross-2001-propane/1/components.csv",
+            "gross-2001-propane/1/model.csv",
+            "gross-2001-propane/1/single.csv",
         "held-2008-water-self-ionization/1/association.csv",
         "held-2008-water-self-ionization/1/bundle.toml",
         "held-2008-water-self-ionization/1/components.csv",
@@ -949,8 +952,9 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
         "khudaida-2026-figure-2-electrolyte-lle/1/model.csv",
         "khudaida-2026-figure-2-electrolyte-lle/1/pair.csv",
         "khudaida-2026-figure-2-electrolyte-lle/1/single.csv",
-        "khudaida-2026-figure-2-electrolyte-lle/1/sites.csv",
-    ]
+            "khudaida-2026-figure-2-electrolyte-lle/1/sites.csv",
+            "provenance_names.toml",
+        ]
 
 
 def test_gross_2001_propane_catalog_is_exact() -> None:
@@ -1070,7 +1074,7 @@ def test_figiel_reference_electrolyte_catalog_is_exact_and_sparse() -> None:
 def test_figiel_aqueous_iodide_catalog_is_exact_and_source_complete() -> None:
     bundle = ParameterBundle.from_catalog("figiel-2025-aqueous-iodides", version=1)
     assert bundle.fingerprint == (
-        "sha256:3833b38c72f3de554958cb424285da278fe6444e8d150521cd525bb47f9f0784"
+        "sha256:d1fec8a0c7a44796fb23c0bebbdf9733bfd1776b568e8155b3f4eb120efe3a03"
     )
     source = next(source for source in bundle.sources if source.source_id == "figiel-yu-held-2025")
     assert source.doi == "10.1021/acs.iecr.5c00475"
@@ -1102,8 +1106,8 @@ def test_figiel_aqueous_iodide_catalog_is_exact_and_source_complete() -> None:
     assert pairs[("iodide-anion", "potassium-cation")] == Decimal("0")
 
     fingerprints = {
-        "sodium-cation": "sha256:afdf4e6178125e94395895c57ca6833b7a6679aa7b42bdf7d969d78c90a305ce",
-        "potassium-cation": "sha256:c1032fd48e76a942f1a1fd720f43b6a1e4e53f62a095d79db9643597cb8353eb",
+        "sodium-cation": "sha256:3f33a43a6ff8eb127bb107ed34d22a2c6368b127e08fc1f64456bab592d78784",
+        "potassium-cation": "sha256:5cc92296330a7167964ca76c027ec0f7f1a6dbb75cea92c774d893edbc7727ad",
     }
     for cation, fingerprint in fingerprints.items():
         selected = ("water", cation, "iodide-anion")
@@ -1190,7 +1194,7 @@ def test_khudaida_figure_2_catalog_preserves_the_published_model_tuple() -> None
         for record in bundle.records
         if isinstance(record, ModelParameterRecord)
     }
-    assert model_values["dielectric_ion_suppression_coefficient"] == Decimal("7.01")
+    assert model_values["ion_fraction_suppression_coefficient"] == Decimal("7.01")
     assert model_values["ionic_region_relative_permittivity"] == Decimal("8")
 
     water_sigma = next(
@@ -1211,21 +1215,21 @@ def test_khudaida_figure_2_catalog_preserves_the_published_model_tuple() -> None
 
     figiel = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
     assert figiel.fingerprint == (
-        "sha256:9f017007adbea2c943dc91c4a8df5271a5400392ae89796b74959aac913b920c"
+        "sha256:d56aa57f04f48f1881865fb85daa700b66d3f1bcb75e8a9d7149baedfc925352"
     )
     assert figiel.select(("water", "sodium-cation", "chloride-anion")).fingerprint == (
-        "sha256:7c637771bc9f717b8f47b44bb2a61044c3fe83084dca7c3c16102fba0989912d"
+        "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf"
     )
 
 
 def test_ascani_case_study_2_catalog_preserves_explicit_source_families() -> None:
     bundle = ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1)
     assert bundle.fingerprint == (
-        "sha256:b7a54dab41c61a71803f1d63bf25396188a2a1edc55172d5beddb99c3368c9fd"
+        "sha256:756c71c8d7bd8c66e499eda037644f273c911333e689ca21ce986b7f0102fd25"
     )
     assert bundle.select(
         ("water", "1-butanol", "sodium-cation", "potassium-cation", "chloride-anion")
-    ).fingerprint == ("sha256:f775c7778dd2f6bdb6db42a6132085df18cd6083d181edc338bde44cf6519a03")
+    ).fingerprint == ("sha256:ce50a54621b13538e649e7478aeafcb01e5d6f0fb0f6d53f2328a10063b825c1")
     assert tuple(component.component_id for component in bundle.components) == (
         "1-butanol",
         "chloride-anion",
@@ -1289,7 +1293,7 @@ def test_ascani_case_study_2_catalog_preserves_explicit_source_families() -> Non
 def test_held_2008_water_self_ionization_catalog_is_exact_and_source_complete() -> None:
     bundle = ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1)
     assert bundle.fingerprint == (
-        "sha256:8ea2d7acbc179b82348fa938d081fe8d56f274bfe1f2167d10a507b7711aa1c2"
+        "sha256:ebb6350a0820ff88f10f6179ea75df909773d8dc871020fbf08c3fae0ec067bb"
     )
     source = next(
         source
@@ -1307,7 +1311,7 @@ def test_held_2008_water_self_ionization_catalog_is_exact_and_source_complete() 
         "H3O+",
         "OH-",
     )
-    assert model._model.topology == "ionic-held-2008-debye-huckel"
+    assert model._model.topology == "ionic-fully-dissociated-debye-huckel"
 
     singles = {
         (record.component_id, record.family): record.value
@@ -1330,13 +1334,20 @@ def test_held_2008_water_self_ionization_catalog_is_exact_and_source_complete() 
         for record in parameters.records
         if isinstance(record, ModelParameterRecord)
     }
-    assert model_records == {"electrolyte_formulation": "held-2008-debye-huckel"}
+    assert model_records == {
+        "electrolyte_formulation": "fully-dissociated-debye-huckel",
+        "relative_permittivity_formulation": "solvent-only",
+    }
 
 
 @pytest.mark.parametrize(
     ("filename", "record_id", "missing_family"),
     (
-        ("model.csv", "held-electrolyte-formulation", "electrolyte_formulation"),
+        (
+            "model.csv",
+            "held-relative-permittivity-formulation",
+            "relative_permittivity_formulation",
+        ),
         ("single.csv", "hydronium-segment-diameter", "segment_diameter"),
         ("association.csv", "water-association-energy", "association_energy_over_k"),
         ("pair.csv", "hydronium-hydroxide-kij", "k_ij"),

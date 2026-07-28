@@ -97,7 +97,7 @@ struct NativeAqueousMiacSolvationFactor final {
     double reference_derivative_convergence_error;
 };
 
-struct NativeFigielPermittivity final {
+struct NativeIonFractionSuppression final {
     double bulk_relative_permittivity;
     double derivative;
     double salt_free_relative_permittivity;
@@ -319,9 +319,9 @@ public:
         double solvation_factor,
         NativeEvaluationBudget* budget = nullptr
     ) const;
-    NativeFigielPermittivity evaluate_figiel_permittivity(
+    NativeIonFractionSuppression evaluate_ion_fraction_suppression(
         double total_ion_mole_fraction,
-        double dielectric_ion_suppression_coefficient
+        double ion_fraction_suppression_coefficient
     ) const;
 
 private:

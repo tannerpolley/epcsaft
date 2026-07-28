@@ -2,7 +2,7 @@ schema_version = 1
 bundle_id = "figiel-2025-contract"
 bundle_version = 1
 purpose = "package-test-fixture"
-files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "correlations.toml"]
+files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "model.csv", "correlations.toml"]
 
 [[sources]]
 source_id = "figiel-yu-held-2025"

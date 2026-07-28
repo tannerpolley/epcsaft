@@ -167,6 +167,12 @@ def _all_record_families_bundle() -> ParameterBundle:
                 8.0,
                 **provenance,
             ),
+            ModelParameterRecord(
+                "relative-permittivity-formulation",
+                "relative_permittivity_formulation",
+                "none",
+                **provenance,
+            ),
         ),
     )
 
@@ -224,6 +230,14 @@ def _propane_bundle() -> ParameterBundle:
                 "propane",
                 "dispersion_energy_over_k",
                 208.11 * u.kelvin,
+                **provenance,
+            ),
+        ),
+        models=(
+            ModelParameterRecord(
+                "relative-permittivity-formulation",
+                "relative_permittivity_formulation",
+                "none",
                 **provenance,
             ),
         ),
