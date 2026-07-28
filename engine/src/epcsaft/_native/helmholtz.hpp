@@ -226,7 +226,9 @@ HelmholtzResult<Scalar> residual_helmholtz(
     std::array<Scalar, 4> zeta = {
         Scalar(0.0), Scalar(0.0), Scalar(0.0), Scalar(0.0),
     };
-    for (std::size_t order = 0; order < zeta.size() - 1; ++order) {
+    const std::size_t moment_count =
+        size == 1 ? zeta.size() : zeta.size() - 1;
+    for (std::size_t order = 0; order < moment_count; ++order) {
         Scalar moment = Scalar(0.0);
         for (std::size_t i = 0; i < size; ++i) {
             Scalar power = Scalar(1.0);
@@ -237,9 +239,11 @@ HelmholtzResult<Scalar> residual_helmholtz(
         }
         zeta[order] = (PI / 6.0) * number_density * moment;
     }
-    zeta[3] = packing_fraction_from_geometry(
-        molar_density, mole_fractions, parameters, diameter
-    );
+    if (size != 1) {
+        zeta[3] = packing_fraction_from_geometry(
+            molar_density, mole_fractions, parameters, diameter
+        );
+    }
     if constexpr (std::is_same_v<Scalar, double>) {
         if (zeta[3] >= close_packing_fraction()) {
             throw std::invalid_argument("packing fraction is at or above close packing");

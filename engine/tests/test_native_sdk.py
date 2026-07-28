@@ -1811,6 +1811,17 @@ def test_native_sdk_parameterized_phase_block_has_exact_parameter_derivatives() 
         fixed.chemical_potential_over_rt, rel=2.0e-13
     )
     assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert (
+        center.gradient[2].hex(),
+        center.hessian[3].hex(),
+        center.hessian[8].hex(),
+        center.hessian[13].hex(),
+    ) == (
+        "-0x1.6fdef6ff64731p-3",
+        "-0x1.22470c02f3168p-3",
+        "0x1.17dc4a225752ep+5",
+        "-0x1.247d050916fadp-3",
+    )
 
     step = 2.0e-5
     lower = shifted(-step)
