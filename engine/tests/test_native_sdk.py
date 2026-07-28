@@ -1651,6 +1651,7 @@ def test_native_sdk_describes_exact_direct_observable_parameter_contracts(
         descriptor.temperature_max_k,
     ) == (298.15, 298.15)
     assert descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert descriptor.topology_fingerprint.decode().startswith("sha256:")
 
 
 def test_native_sdk_scalar_pure_parameter_installed_header_layout() -> None:

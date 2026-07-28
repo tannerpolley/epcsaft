@@ -612,29 +612,43 @@ class EPCSAFT:
 def _native_topology_fingerprint(model: EPCSAFT) -> str:
     resolved = model._model
     charges = resolved.charge_number or (0,) * len(resolved.component_ids)
-    if (
-        resolved.topology != "neutral"
-        or len(resolved.component_ids) not in (1, 2)
-        or any(charges)
-        or resolved.site_ids
-        or resolved.association_pairs
-    ):
-        return ""
-    pure = len(resolved.component_ids) == 1
-    payload = {
-        "schema": (
-            "epcsaft-native-neutral-pure-topology-v1"
-            if pure
-            else "epcsaft-native-neutral-binary-topology-v1"
-        ),
-        "component_ids": resolved.component_ids,
-        "topology": resolved.topology,
-        "charge_number": charges,
-        "site_ids": resolved.site_ids,
-        "site_multiplicity": resolved.site_multiplicity,
-        "association_pair_count": len(resolved.association_pairs),
-        "helmholtz_terms": ("ideal", "hard-chain", "dispersion"),
-    }
+    neutral_phase = (
+        resolved.topology == "neutral"
+        and len(resolved.component_ids) in (1, 2)
+        and not any(charges)
+        and not resolved.site_ids
+        and not resolved.association_pairs
+    )
+    if neutral_phase:
+        pure = len(resolved.component_ids) == 1
+        payload = {
+            "schema": (
+                "epcsaft-native-neutral-pure-topology-v1"
+                if pure
+                else "epcsaft-native-neutral-binary-topology-v1"
+            ),
+            "component_ids": resolved.component_ids,
+            "topology": resolved.topology,
+            "charge_number": charges,
+            "site_ids": resolved.site_ids,
+            "site_multiplicity": resolved.site_multiplicity,
+            "association_pair_count": len(resolved.association_pairs),
+            "helmholtz_terms": ("ideal", "hard-chain", "dispersion"),
+        }
+    else:
+        payload = {
+            "schema": "epcsaft-native-model-topology-v1",
+            "component_ids": resolved.component_ids,
+            "topology": resolved.topology,
+            "charge_number": charges,
+            "site_ids": resolved.site_ids,
+            "site_multiplicity": resolved.site_multiplicity,
+            "association_endpoints": tuple(
+                (pair.endpoint_a, pair.endpoint_b)
+                for pair in resolved.association_pairs
+            ),
+            "permittivity_model": resolved.permittivity_model,
+        }
     encoded = json.dumps(
         payload, separators=(",", ":"), sort_keys=True
     ).encode("utf-8")

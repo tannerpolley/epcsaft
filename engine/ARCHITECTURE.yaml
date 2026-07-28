@@ -365,8 +365,8 @@ manifest:
       physical_lines: 675
       capability_delta: strict version-1 persistence for user-provided bundles
     - path: src/epcsaft/eos.py
-      physical_lines: 899
-      capability_delta: pure and binary parameter-topology fingerprints
+      physical_lines: 913
+      capability_delta: model-bound parameter-topology fingerprints
     - path: src/epcsaft/_native/eos.cpp
       physical_lines: 1390
       capability_delta: exact scalar active pure-parameter projection
@@ -380,7 +380,7 @@ manifest:
       physical_lines: 766
       capability_delta: serialized CppAD tape ownership during aqueous batch execution
     - path: tests/test_native_sdk.py
-      physical_lines: 5015
+      physical_lines: 5016
       capability_delta: phase and direct-observable descriptor, derivative, ABI, and fail-closed proof
     - path: tests/test_parameters.py
       physical_lines: 1276
