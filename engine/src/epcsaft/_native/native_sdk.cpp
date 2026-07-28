@@ -176,6 +176,7 @@ bool neutral_reference_model_shape_admitted(
 struct NativeSdkEndpoint final {
     NativeModel model;
     std::string parameter_fingerprint;
+    std::string topology_fingerprint;
     double temperature_min_k;
     double temperature_max_k;
     double pressure_min_pa;
@@ -189,6 +190,9 @@ struct NativeSdkEndpoint final {
     std::vector<std::string> component_ids;
     std::vector<const char*> component_id_pointers;
     std::vector<int32_t> component_charges;
+    std::array<epcsaft_native_capability_coordinate_v1, 4>
+        neutral_binary_kij_coordinates;
+    std::vector<epcsaft_native_capability_descriptor_v1> capabilities;
     epcsaft_native_sdk_v1 table;
 
     NativeSdkEndpoint(
@@ -204,10 +208,12 @@ struct NativeSdkEndpoint final {
         double minimum_pressure,
         double maximum_pressure,
         bool admit_neutral_reference,
-        bool admit_aqueous_solvation_factor
+        bool admit_aqueous_solvation_factor,
+        std::string topology_identity
     )
         : model(source_model),
           parameter_fingerprint(std::move(fingerprint)),
+          topology_fingerprint(std::move(topology_identity)),
           temperature_min_k(minimum_temperature),
           temperature_max_k(maximum_temperature),
           pressure_min_pa(minimum_pressure),
@@ -233,6 +239,106 @@ struct NativeSdkEndpoint final {
               source_model.charge_numbers().begin(),
               source_model.charge_numbers().end()
           ),
+          neutral_binary_kij_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1,
+                  0,
+                  -1,
+                  -1,
+                  "mol",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1,
+                  1,
+                  -1,
+                  -1,
+                  "mol",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_VOLUME_V1,
+                  -1,
+                  -1,
+                  -1,
+                  "m3",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1,
+                  -1,
+                  0,
+                  1,
+                  "dimensionless",
+              },
+          }},
+          capabilities([&] {
+              std::vector<epcsaft_native_capability_descriptor_v1> result;
+              const bool exact_neutral_binary =
+                  phase_callbacks_admitted
+                  && source_model.supports_mixture_native_sdk_v1()
+                  && component_ids.size() == 2
+                  && component_charges == std::vector<int32_t>({0, 0})
+                  && !topology_fingerprint.empty();
+              if (!exact_neutral_binary) {
+                  return result;
+              }
+              epcsaft_native_capability_descriptor_v1 descriptor{};
+              descriptor.struct_size =
+                  sizeof(epcsaft_native_capability_descriptor_v1);
+              descriptor.schema_version =
+                  EPCSAFT_NATIVE_CAPABILITY_SCHEMA_VERSION_V1;
+              descriptor.capability =
+                  EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_KIJ_HELMHOLTZ_V1;
+              descriptor.parameter_family =
+                  EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1;
+              descriptor.parameter_identity =
+                  EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1;
+              descriptor.observation_contract =
+                  EPCSAFT_NATIVE_OBSERVATION_FIXED_COMPOSITION_HELMHOLTZ_PHASE_V1;
+              descriptor.model_domain =
+                  EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1;
+              descriptor.tensor_layout =
+                  EPCSAFT_NATIVE_TENSOR_LAYOUT_ROW_MAJOR_V1;
+              descriptor.derivative_order = 2;
+              descriptor.maturity =
+                  EPCSAFT_NATIVE_CAPABILITY_DERIVATIVE_READY_V1;
+              descriptor.authority_effect =
+                  EPCSAFT_NATIVE_AUTHORITY_EFFECT_NONE_V1;
+              descriptor.unsupported_status =
+                  EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1;
+              descriptor.domain_status = EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1;
+              descriptor.state_coordinate_count = 3;
+              descriptor.active_parameter_count = 1;
+              descriptor.coordinate_count =
+                  neutral_binary_kij_coordinates.size();
+              descriptor.coordinates = neutral_binary_kij_coordinates.data();
+              descriptor.component_count = component_ids.size();
+              descriptor.component_ids = component_id_pointers.data();
+              descriptor.temperature_min_k = temperature_min_k;
+              descriptor.temperature_max_k = temperature_max_k;
+              std::snprintf(
+                  descriptor.parameter_fingerprint,
+                  sizeof(descriptor.parameter_fingerprint),
+                  "%s",
+                  parameter_fingerprint.c_str()
+              );
+              std::snprintf(
+                  descriptor.topology_fingerprint,
+                  sizeof(descriptor.topology_fingerprint),
+                  "%s",
+                  topology_fingerprint.c_str()
+              );
+              std::snprintf(
+                  descriptor.helmholtz_basis_id,
+                  sizeof(descriptor.helmholtz_basis_id),
+                  "%s",
+                  EPCSAFT_NATIVE_SDK_V1_HELMHOLTZ_BASIS_ID
+              );
+              result.push_back(descriptor);
+              return result;
+          }()),
           table{
               EPCSAFT_NATIVE_SDK_V1_ABI_VERSION,
               sizeof(epcsaft_native_sdk_v1),
@@ -267,6 +373,8 @@ struct NativeSdkEndpoint final {
               sizeof(epcsaft_native_evaluation_budget_v1),
               &NativeSdkEndpoint::evaluate_aqueous_miac_kij_batch_bounded,
               &NativeSdkEndpoint::evaluate_aqueous_miac_solvation_factor_batch_bounded,
+              capabilities.size(),
+              capabilities.empty() ? nullptr : capabilities.data(),
           } {}
 
     // EqID: neutral_reference_stoichiometric_basis
@@ -1793,7 +1901,8 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     bool neutral_reference_admitted,
     bool unknown_applicability_admitted,
     bool aqueous_solvation_factor_admitted,
-    bool staged_trial_bundle_admitted
+    bool staged_trial_bundle_admitted,
+    const std::string& topology_fingerprint
 ) {
     if (!active_born_admitted && !aqueous_kij_admitted
         && !neutral_reference_admitted && !aqueous_solvation_factor_admitted
@@ -1842,6 +1951,13 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     if (parameter_fingerprint.empty()
         || parameter_fingerprint.size() >= EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE) {
         throw std::invalid_argument("invalid parameter fingerprint");
+    }
+    if (!topology_fingerprint.empty()
+        && (topology_fingerprint.size()
+                >= EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE
+            || topology_fingerprint.rfind("sha256:", 0) != 0
+            || topology_fingerprint.size() != 71)) {
+        throw std::invalid_argument("invalid topology fingerprint");
     }
     if (component_ids.size() != model.component_count()
         || std::any_of(
@@ -1898,7 +2014,8 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
         pressure_min_pa,
         pressure_max_pa,
         neutral_reference_admitted,
-        aqueous_solvation_factor_admitted
+        aqueous_solvation_factor_admitted,
+        topology_fingerprint
     );
     return &endpoint->table;
 }

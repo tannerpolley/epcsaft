@@ -278,6 +278,53 @@ class AqueousMiacBoundedBatchNativeSdkTable(ctypes.Structure):
     )
 
 
+class NativeCapabilityCoordinate(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("kind", ctypes.c_uint32),
+        ("component_index", ctypes.c_int32),
+        ("pair_component_index_a", ctypes.c_int32),
+        ("pair_component_index_b", ctypes.c_int32),
+        ("unit", ctypes.c_char_p),
+    )
+
+
+class NativeCapabilityDescriptor(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("schema_version", ctypes.c_uint32),
+        ("capability", ctypes.c_uint32),
+        ("parameter_family", ctypes.c_uint32),
+        ("parameter_identity", ctypes.c_uint32),
+        ("observation_contract", ctypes.c_uint32),
+        ("model_domain", ctypes.c_uint32),
+        ("tensor_layout", ctypes.c_uint32),
+        ("derivative_order", ctypes.c_uint32),
+        ("maturity", ctypes.c_uint32),
+        ("authority_effect", ctypes.c_uint32),
+        ("unsupported_status", ctypes.c_int32),
+        ("domain_status", ctypes.c_int32),
+        ("state_coordinate_count", ctypes.c_size_t),
+        ("active_parameter_count", ctypes.c_size_t),
+        ("coordinate_count", ctypes.c_size_t),
+        ("coordinates", ctypes.POINTER(NativeCapabilityCoordinate)),
+        ("component_count", ctypes.c_size_t),
+        ("component_ids", ctypes.POINTER(ctypes.c_char_p)),
+        ("temperature_min_k", ctypes.c_double),
+        ("temperature_max_k", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("topology_fingerprint", ctypes.c_char * 72),
+        ("helmholtz_basis_id", ctypes.c_char * 72),
+    )
+
+
+class CapabilityNativeSdkTable(ctypes.Structure):
+    _fields_ = AqueousMiacBoundedBatchNativeSdkTable._fields_ + (
+        ("capability_count", ctypes.c_size_t),
+        ("capabilities", ctypes.POINTER(NativeCapabilityDescriptor)),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -322,6 +369,9 @@ AQUEOUS_MIAC_BATCH_PREFIX_SIZE = (
 AQUEOUS_MIAC_BOUNDED_BATCH_PREFIX_SIZE = (
     AqueousMiacBoundedBatchNativeSdkTable.evaluate_aqueous_miac_solvation_factor_batch_bounded.offset
     + ctypes.sizeof(ctypes.c_void_p)
+)
+CAPABILITY_PREFIX_SIZE = (
+    CapabilityNativeSdkTable.capabilities.offset + ctypes.sizeof(ctypes.c_void_p)
 )
 
 
@@ -626,6 +676,20 @@ def _table(model: EPCSAFT) -> tuple[object, NativeSdkTable]:
     fixed_table = ctypes.cast(address, ctypes.POINTER(FixedMixtureNativeSdkTable)).contents
     assert fixed_table.table_size >= ACTIVE_KIJ_PREFIX_SIZE
     return capsule, ctypes.cast(address, ctypes.POINTER(NativeSdkTable)).contents
+
+
+def _capability_table(
+    model: EPCSAFT,
+) -> tuple[object, CapabilityNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(CapabilityNativeSdkTable)).contents
+    assert table.table_size >= CAPABILITY_PREFIX_SIZE
+    return capsule, table
 
 
 def _electrolyte_table(
@@ -1213,6 +1277,105 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
     assert ApplicabilityNativeSdkTable.source_temperature_max_k.offset == 136
     assert ApplicabilityNativeSdkTable.total_ion_mole_fraction_max.offset == 144
     assert APPLICABILITY_PREFIX_SIZE == ctypes.sizeof(ApplicabilityNativeSdkTable) == 152
+    for field_name, _ in AqueousMiacBoundedBatchNativeSdkTable._fields_:
+        assert (
+            getattr(CapabilityNativeSdkTable, field_name).offset
+            == getattr(AqueousMiacBoundedBatchNativeSdkTable, field_name).offset
+        )
+    assert AQUEOUS_MIAC_BOUNDED_BATCH_PREFIX_SIZE == 264
+    assert CapabilityNativeSdkTable.capability_count.offset == 264
+    assert CapabilityNativeSdkTable.capabilities.offset == 272
+    assert ctypes.sizeof(CapabilityNativeSdkTable) == 280
+
+
+def test_native_sdk_describes_the_exact_neutral_binary_kij_derivative_contract() -> None:
+    model = _mixture_model()
+    capsule, table = _capability_table(model)
+    assert capsule is not None
+    assert table.capability_count == 1
+    assert table.capabilities
+
+    descriptor = table.capabilities[0]
+    assert descriptor.struct_size == ctypes.sizeof(NativeCapabilityDescriptor)
+    assert (
+        descriptor.schema_version,
+        descriptor.capability,
+        descriptor.parameter_family,
+        descriptor.parameter_identity,
+        descriptor.observation_contract,
+        descriptor.model_domain,
+        descriptor.tensor_layout,
+        descriptor.derivative_order,
+        descriptor.maturity,
+        descriptor.authority_effect,
+    ) == (1, 1, 1, 1, 1, 1, 1, 2, 1, 0)
+    assert descriptor.unsupported_status == STATUS_UNSUPPORTED_MODEL
+    assert descriptor.domain_status == STATUS_DOMAIN_ERROR
+    assert (
+        descriptor.state_coordinate_count,
+        descriptor.active_parameter_count,
+        descriptor.coordinate_count,
+        descriptor.component_count,
+    ) == (3, 1, 4, 2)
+    assert tuple(
+        descriptor.component_ids[index].decode()
+        for index in range(descriptor.component_count)
+    ) == ("methane", "ethane")
+    assert (
+        descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
+    )
+    assert descriptor.topology_fingerprint.decode() == (
+        "sha256:172e3c9dce280763cf785db5d6fc94deeb30a23359346b2222a836077930351a"
+    )
+    assert descriptor.topology_fingerprint != descriptor.parameter_fingerprint
+    assert descriptor.helmholtz_basis_id.decode() == (
+        "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
+    )
+    assert (
+        descriptor.temperature_min_k,
+        descriptor.temperature_max_k,
+    ) == (
+        model._model.temperature_min_k,
+        model._model.temperature_max_k,
+    )
+
+    coordinates = tuple(
+        descriptor.coordinates[index] for index in range(descriptor.coordinate_count)
+    )
+    assert all(
+        coordinate.struct_size == ctypes.sizeof(NativeCapabilityCoordinate)
+        for coordinate in coordinates
+    )
+    assert tuple(coordinate.kind for coordinate in coordinates) == (1, 1, 2, 3)
+    assert tuple(coordinate.unit.decode() for coordinate in coordinates) == (
+        "mol",
+        "mol",
+        "m3",
+        "dimensionless",
+    )
+    assert tuple(coordinate.component_index for coordinate in coordinates) == (
+        0,
+        1,
+        -1,
+        -1,
+    )
+    assert tuple(
+        (coordinate.pair_component_index_a, coordinate.pair_component_index_b)
+        for coordinate in coordinates
+    ) == ((-1, -1), (-1, -1), (-1, -1), (0, 1))
+
+    _, reversed_table = _capability_table(_mixture_model(("ethane", "methane")))
+    assert reversed_table.capability_count == 1
+    assert (
+        reversed_table.capabilities[0].topology_fingerprint
+        != descriptor.topology_fingerprint
+    )
+
+
+def test_native_sdk_does_not_advertise_kij_for_an_unsupported_model_shape() -> None:
+    _, table = _capability_table(_model("gross-2001-methane-ethane", "methane"))
+    assert table.capability_count == 0
+    assert not table.capabilities
 
 
 def test_native_sdk_held_neutral_reference_matches_the_public_owner() -> None:
@@ -3856,7 +4019,7 @@ _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_solvation_f
 _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluation_budget_size) == 240, "budget-size offset");
 _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_kij_batch_bounded) == 248, "bounded kij callback offset");
 _Static_assert(offsetof(epcsaft_native_sdk_v1, evaluate_aqueous_miac_solvation_factor_batch_bounded) == 256, "bounded solvation-factor callback offset");
-_Static_assert(sizeof(epcsaft_native_sdk_v1) == 264, "table size");
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 264, "table prefix size");
 _Static_assert(sizeof(epcsaft_native_evaluation_budget_v1) == 24, "budget size");
 _Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, log_mean_ionic_activity_coefficient_molality) == 8, "value offset");
 _Static_assert(offsetof(epcsaft_aqueous_miac_solvation_factor_result_v1, derivative) == 16, "derivative offset");

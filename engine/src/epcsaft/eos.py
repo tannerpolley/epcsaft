@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
 import math
 from os import PathLike
@@ -608,6 +609,33 @@ class EPCSAFT:
         )
 
 
+def _native_topology_fingerprint(model: EPCSAFT) -> str:
+    resolved = model._model
+    charges = resolved.charge_number or (0,) * len(resolved.component_ids)
+    if (
+        resolved.topology != "neutral"
+        or len(resolved.component_ids) != 2
+        or any(charges)
+        or resolved.site_ids
+        or resolved.association_pairs
+    ):
+        return ""
+    payload = {
+        "schema": "epcsaft-native-neutral-binary-topology-v1",
+        "component_ids": resolved.component_ids,
+        "topology": resolved.topology,
+        "charge_number": charges,
+        "site_ids": resolved.site_ids,
+        "site_multiplicity": resolved.site_multiplicity,
+        "association_pair_count": len(resolved.association_pairs),
+        "helmholtz_terms": ("ideal", "hard-chain", "dispersion"),
+    }
+    encoded = json.dumps(
+        payload, separators=(",", ":"), sort_keys=True
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
 def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
     if type(model) is not EPCSAFT:
         raise _eos_error("unsupported-native-sdk", reason="expected-exact-EPCSAFT-model")
@@ -705,6 +733,7 @@ def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
         "unknown_applicability_admitted": model._parameter_bundle_purpose == "user-provided",
         "aqueous_solvation_factor_admitted": aqueous_solvation_factor_admitted,
         "staged_trial_bundle_admitted": staged_trial_admitted,
+        "topology_fingerprint": _native_topology_fingerprint(model),
     }
 
 

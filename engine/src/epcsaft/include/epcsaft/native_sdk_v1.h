@@ -386,6 +386,90 @@ typedef int (*epcsaft_evaluate_aqueous_miac_solvation_factor_batch_bounded_v1)(
     const epcsaft_native_evaluation_budget_v1* budget
 );
 
+#define EPCSAFT_NATIVE_CAPABILITY_SCHEMA_VERSION_V1 1u
+
+enum epcsaft_native_capability_v1 {
+    EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_KIJ_HELMHOLTZ_V1 = 1u
+};
+
+enum epcsaft_native_parameter_family_v1 {
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1 = 1u
+};
+
+enum epcsaft_native_parameter_identity_v1 {
+    EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1 = 1u
+};
+
+enum epcsaft_native_observation_contract_v1 {
+    EPCSAFT_NATIVE_OBSERVATION_FIXED_COMPOSITION_HELMHOLTZ_PHASE_V1 = 1u
+};
+
+enum epcsaft_native_model_domain_v1 {
+    EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1 = 1u
+};
+
+enum epcsaft_native_tensor_layout_v1 {
+    EPCSAFT_NATIVE_TENSOR_LAYOUT_ROW_MAJOR_V1 = 1u
+};
+
+enum epcsaft_native_capability_maturity_v1 {
+    EPCSAFT_NATIVE_CAPABILITY_DERIVATIVE_READY_V1 = 1u
+};
+
+enum epcsaft_native_authority_effect_v1 {
+    EPCSAFT_NATIVE_AUTHORITY_EFFECT_NONE_V1 = 0u
+};
+
+enum epcsaft_native_capability_coordinate_kind_v1 {
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1 = 1u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_VOLUME_V1 = 2u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1 = 3u
+};
+
+typedef struct epcsaft_native_capability_coordinate_v1 {
+    uint32_t struct_size;
+    uint32_t kind;
+    int32_t component_index;
+    int32_t pair_component_index_a;
+    int32_t pair_component_index_b;
+    const char* unit;
+} epcsaft_native_capability_coordinate_v1;
+
+/*
+ * Immutable model-bound metadata for an exact derivative callback already
+ * present in this table. This is transport evidence only: maturity says which
+ * derivative payload exists, while authority_effect remains NONE. Component
+ * indices refer to the table's exact component order. The unordered pair
+ * identity is therefore independent of that order even though amount
+ * coordinates are ordered.
+ */
+typedef struct epcsaft_native_capability_descriptor_v1 {
+    uint32_t struct_size;
+    uint32_t schema_version;
+    uint32_t capability;
+    uint32_t parameter_family;
+    uint32_t parameter_identity;
+    uint32_t observation_contract;
+    uint32_t model_domain;
+    uint32_t tensor_layout;
+    uint32_t derivative_order;
+    uint32_t maturity;
+    uint32_t authority_effect;
+    int32_t unsupported_status;
+    int32_t domain_status;
+    size_t state_coordinate_count;
+    size_t active_parameter_count;
+    size_t coordinate_count;
+    const epcsaft_native_capability_coordinate_v1* coordinates;
+    size_t component_count;
+    const char* const* component_ids;
+    double temperature_min_k;
+    double temperature_max_k;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char helmholtz_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+} epcsaft_native_capability_descriptor_v1;
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -427,6 +511,8 @@ typedef struct epcsaft_native_sdk_v1 {
         evaluate_aqueous_miac_kij_batch_bounded;
     epcsaft_evaluate_aqueous_miac_solvation_factor_batch_bounded_v1
         evaluate_aqueous_miac_solvation_factor_batch_bounded;
+    size_t capability_count;
+    const epcsaft_native_capability_descriptor_v1* capabilities;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

@@ -24,7 +24,8 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     bool neutral_reference_admitted,
     bool unknown_applicability_admitted,
     bool aqueous_solvation_factor_admitted,
-    bool staged_trial_bundle_admitted
+    bool staged_trial_bundle_admitted,
+    const std::string& topology_fingerprint
 );
 
 void destroy_native_sdk_v1(const epcsaft_native_sdk_v1* sdk) noexcept;

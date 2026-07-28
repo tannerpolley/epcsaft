@@ -22,6 +22,20 @@ The admitted candidate fingerprints are:
 Both fingerprints describe an ordered selection from the same installed
 source bundle. They do not admit synthetic copies or fitted candidates.
 
+The SDK table also appends one immutable capability descriptor for either
+ordered selection. It identifies the callback as derivative-ready for one
+unordered binary `k_ij` on a neutral, nonassociating binary model, while its
+authority effect remains `none`. Pure, associating, ionic, or otherwise
+unsupported model shapes advertise no such descriptor.
+
+The descriptor binds a topology fingerprint separately from the parameter
+fingerprint. Its canonical payload contains the ordered component IDs,
+normalized component charges, resolved topology, site IDs and
+multiplicities, association-pair count, and the fixed ideal, hard-chain, and
+dispersion formulation identifiers. Parameter values and source records are
+not part of this identity. Reordering the components therefore changes the
+topology fingerprint; changing a value without changing topology does not.
+
 ## Thermodynamic function
 
 For ordered positive component amounts `n_i [mol]`, positive phase volume
@@ -91,6 +105,15 @@ the advertised number of gradient and Hessian values, and propagates neither
 exceptions nor ownership across the C boundary. The Hessian layout is row
 major in the documented coordinate order.
 
+The descriptor repeats that exact coordinate contract as four typed records:
+amounts for component indices zero and one in `mol`, volume in `m3`, and the
+unordered pair `(0,1)` `k_ij` in `dimensionless` units. It reports three state
+coordinates, one active parameter, derivative order two, the source
+temperature limits, row-major tensor layout, component mapping, Helmholtz
+basis, and the Provider status codes used for unsupported models and domain
+failures. It defines no data target, fit variable, scale, bound, solver, or
+acceptance policy.
+
 ## Evidence and boundary
 
 Package evidence checks the candidate at `T = 220 K`,
@@ -108,6 +131,9 @@ against centered differences at 220 K and 280 K. At the catalog value
 fixed callback. Negative evidence covers malformed four-coordinate buffers,
 nonfinite trial values and state inputs, pure models, association, and ions;
 a finite negative trial confirms that the provider applies no fit bound.
+The descriptor evidence additionally freezes the append-only table offsets,
+the exact Gross methane/ethane component mapping and topology fingerprint,
+and zero advertised capabilities for an unsupported pure-model shape.
 
 These candidates do not own or admit association, ions, additional mixture
 families, density closure, phase identity, phase discovery, third derivatives,
