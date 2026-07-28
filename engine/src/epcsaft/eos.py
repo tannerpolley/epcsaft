@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
 import math
 from os import PathLike
@@ -36,6 +37,7 @@ _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS = frozenset(
         "sha256:99ae0ffd9f61aee8c2e0fb718960534a2d0700c1adf5b72c1984517eded21f5b",
         "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
         "sha256:a8383fb8f70a1bb8c258f1662c792cd5507af1d23db71ad4575026b5dcab55ea",
+        "sha256:43989e0f0ea5dd268b657122d571779cd9eb04d52f6ffc709bf11bf6892b312a",
     }
 )
 
@@ -596,6 +598,54 @@ class EPCSAFT:
         )
 
 
+def _native_topology_fingerprint(model: EPCSAFT) -> str:
+    resolved = model._model
+    charges = resolved.charge_number or (0,) * len(resolved.component_ids)
+    neutral_phase = (
+        resolved.topology == "neutral"
+        and len(resolved.component_ids) in (1, 2)
+        and not any(charges)
+        and not resolved.site_ids
+        and not resolved.association_pairs
+    )
+    if neutral_phase:
+        pure = len(resolved.component_ids) == 1
+        payload = {
+            "schema": (
+                "epcsaft-native-neutral-pure-topology-v1"
+                if pure
+                else "epcsaft-native-neutral-binary-topology-v1"
+            ),
+            "component_ids": resolved.component_ids,
+            "topology": resolved.topology,
+            "charge_number": charges,
+            "site_ids": resolved.site_ids,
+            "site_multiplicity": resolved.site_multiplicity,
+            "association_pair_count": len(resolved.association_pairs),
+            "helmholtz_terms": ("ideal", "hard-chain", "dispersion"),
+        }
+    else:
+        payload = {
+            "schema": "epcsaft-native-model-topology-v1",
+            "component_ids": resolved.component_ids,
+            "topology": resolved.topology,
+            "charge_number": charges,
+            "site_ids": resolved.site_ids,
+            "site_multiplicity": resolved.site_multiplicity,
+            "association_endpoints": tuple(
+                (pair.endpoint_a, pair.endpoint_b)
+                for pair in resolved.association_pairs
+            ),
+            "relative_permittivity_formulation": (
+                resolved.relative_permittivity_formulation
+            ),
+        }
+    encoded = json.dumps(
+        payload, separators=(",", ":"), sort_keys=True
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
 def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
     if type(model) is not EPCSAFT:
         raise _eos_error("unsupported-native-sdk", reason="expected-exact-EPCSAFT-model")
@@ -626,6 +676,30 @@ def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
             staged_trial_admitted
             and model._component_ids in _STAGED_AQUEOUS_SELECTIONS
         )
+    )
+    ion_fraction_suppression_admitted = (
+        len(model._component_ids) == 3
+        and model._component_ids[0] in ("water", "methanol")
+        and tuple(model._model.charge_number) == (0, 1, -1)
+        and model._model.relative_permittivity_formulation
+        == "ion-fraction-suppression"
+    )
+    ion_solvation_kij_admitted = (
+        model._parameter_bundle_fingerprint
+        == "sha256:d56aa57f04f48f1881865fb85daa700b66d3f1bcb75e8a9d7149baedfc925352"
+        and model._component_ids
+        in {
+            ("methanol", "potassium-cation", "bromide-anion"),
+            ("ethanol", "sodium-cation", "chloride-anion"),
+        }
+        and len(model._component_ids) == 3
+        and tuple(model._model.charge_number) == (0, 1, -1)
+        and model._model.relative_permittivity_formulation
+        == "ion-fraction-suppression"
+        and model._model.temperature_min_k == 298.15
+        and model._model.temperature_max_k == 298.15
+        and model._model.pressure_min_pa == 100000.0
+        and model._model.pressure_max_pa == 100000.0
     )
     aqueous_solvation_factor_admitted = (
         fingerprint
@@ -658,6 +732,8 @@ def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
         not phase_admitted
         and not active_born_admitted
         and not aqueous_kij_admitted
+        and not ion_fraction_suppression_admitted
+        and not ion_solvation_kij_admitted
         and not aqueous_solvation_factor_admitted
         and not neutral_reference_admitted
     ):
@@ -687,12 +763,15 @@ def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
         "phase_callbacks_admitted": phase_admitted,
         "active_born_admitted": active_born_admitted,
         "aqueous_kij_admitted": aqueous_kij_admitted,
+        "ion_fraction_suppression_admitted": ion_fraction_suppression_admitted,
+        "ion_solvation_kij_admitted": ion_solvation_kij_admitted,
         "pressure_min_pa": pressure_minimum,
         "pressure_max_pa": pressure_maximum,
         "neutral_reference_admitted": neutral_reference_admitted,
         "unknown_applicability_admitted": model._parameter_bundle_purpose == "user-provided",
         "aqueous_solvation_factor_admitted": aqueous_solvation_factor_admitted,
         "staged_trial_bundle_admitted": staged_trial_admitted,
+        "topology_fingerprint": _native_topology_fingerprint(model),
     }
 
 

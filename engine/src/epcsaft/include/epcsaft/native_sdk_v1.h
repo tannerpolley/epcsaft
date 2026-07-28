@@ -90,6 +90,55 @@ typedef int (*epcsaft_evaluate_pure_phase_parameters_v1)(
     epcsaft_parameterized_phase_block_result_v1* result
 );
 
+enum epcsaft_associating_parameterized_phase_coordinate_v1 {
+    EPCSAFT_ASSOCIATING_PHASE_AMOUNT_MOL_V1 = 0,
+    EPCSAFT_ASSOCIATING_PHASE_VOLUME_M3_V1 = 1,
+    EPCSAFT_ASSOCIATING_PHASE_SEGMENT_COUNT_V1 = 2,
+    EPCSAFT_ASSOCIATING_PHASE_SEGMENT_DIAMETER_ANGSTROM_V1 = 3,
+    EPCSAFT_ASSOCIATING_PHASE_DISPERSION_ENERGY_OVER_K_V1 = 4,
+    EPCSAFT_ASSOCIATING_PHASE_ENERGY_OVER_K_V1 = 5,
+    EPCSAFT_ASSOCIATING_PHASE_VOLUME_V1 = 6,
+    EPCSAFT_ASSOCIATING_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1 = 7
+};
+
+typedef struct epcsaft_associating_parameterized_phase_block_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double helmholtz_over_rt_reference_amount;
+    double gradient[
+        EPCSAFT_ASSOCIATING_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1
+    ];
+    double hessian[
+        EPCSAFT_ASSOCIATING_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1 *
+        EPCSAFT_ASSOCIATING_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1
+    ];
+    double pressure_pa;
+    double chemical_potential_over_rt;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_associating_parameterized_phase_block_result_v1;
+
+/*
+ * Source-model variant used by Baygi--Pahlavanzadeh 2015 Eq. (4): the
+ * association-strength volume factor is d_ij^3 rather than sigma_ij^3.
+ * The ordinary Provider EOS and scalar association callbacks retain their
+ * source-owned sigma_ij^3 convention. The bound model must be one neutral
+ * pure 2B component with one donor and one acceptor site of unit multiplicity.
+ */
+typedef int (*epcsaft_evaluate_diameter_basis_associating_pure_phase_parameters_v1)(
+    const void* model_context,
+    double temperature_k,
+    double amount_mol,
+    double volume_m3,
+    double segment_count,
+    double segment_diameter_angstrom,
+    double dispersion_energy_over_k,
+    double association_energy_over_k,
+    double association_volume,
+    epcsaft_associating_parameterized_phase_block_result_v1* result
+);
+
 /*
  * A mixture result struct-size mismatch is return-code authoritative. The
  * callbacks return ABI_MISMATCH without writing an untrusted result layout.
@@ -125,6 +174,32 @@ typedef int (*epcsaft_evaluate_mixture_phase_kij_v1)(
     size_t amount_count,
     double volume_m3,
     double k_ij,
+    epcsaft_mixture_phase_block_result_v1* result
+);
+
+typedef int (*epcsaft_evaluate_mixture_phase_lij_v1)(
+    const void* model_context,
+    double temperature_k,
+    const double* amounts_mol,
+    size_t amount_count,
+    double volume_m3,
+    double l_ij,
+    epcsaft_mixture_phase_block_result_v1* result
+);
+
+/*
+ * Evaluates one active pure-component parameter while all other resolved
+ * parameters remain fixed. parameter_family must be one of the scalar pure
+ * families advertised by the bound model. Coordinates are
+ * (amount_mol, volume_m3, active_parameter).
+ */
+typedef int (*epcsaft_evaluate_pure_phase_parameter_v1)(
+    const void* model_context,
+    double temperature_k,
+    double amount_mol,
+    double volume_m3,
+    uint32_t parameter_family,
+    double parameter_value,
     epcsaft_mixture_phase_block_result_v1* result
 );
 
@@ -386,6 +461,239 @@ typedef int (*epcsaft_evaluate_aqueous_miac_solvation_factor_batch_bounded_v1)(
     const epcsaft_native_evaluation_budget_v1* budget
 );
 
+typedef struct epcsaft_ion_fraction_suppression_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double bulk_relative_permittivity;
+    double derivative;
+    double salt_free_relative_permittivity;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_ion_fraction_suppression_result_v1;
+
+typedef int (*epcsaft_evaluate_ion_fraction_suppression_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    double total_ion_mole_fraction,
+    double ion_fraction_suppression_coefficient,
+    epcsaft_ion_fraction_suppression_result_v1* result
+);
+
+/*
+ * Infinite-dilution ion-solvation Gibbs energy and exact fixed-pressure
+ * derivatives with respect to the three pair coordinates in exact component
+ * order: solvent-cation, solvent-anion, cation-anion.
+ */
+typedef struct epcsaft_ion_solvation_kij_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double solvation_gibbs_j_per_mol;
+    double derivative[3];
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_ion_solvation_kij_result_v1;
+
+typedef int (*epcsaft_evaluate_ion_solvation_kij_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    size_t active_ion_component_index,
+    const double* k_ij,
+    size_t k_ij_count,
+    epcsaft_ion_solvation_kij_result_v1* result
+);
+
+/*
+ * Model-bound aqueous single-ion reference tracer with one active SSM+DS ionic-
+ * region relative permittivity. The value is Delta_solv,x G_i^inf in J/mol
+ * and the derivative is its total fixed-(T,P,reference-path) derivative in
+ * J/mol per dimensionless permittivity unit.
+ */
+typedef struct epcsaft_ion_solvation_ionic_permittivity_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double solvation_gibbs_j_per_mol;
+    double derivative_j_per_mol;
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_ion_solvation_ionic_permittivity_result_v1;
+
+typedef int (*epcsaft_evaluate_ion_solvation_ionic_permittivity_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    double ionic_region_relative_permittivity,
+    epcsaft_ion_solvation_ionic_permittivity_result_v1* result
+);
+
+/*
+ * Model-bound water reference tracer with one active solvent relative
+ * permittivity. The value is Delta_solv,x G_i^inf in J/mol and the derivative
+ * is its total fixed-(T,P,reference-path) derivative in J/mol per
+ * dimensionless permittivity unit.
+ */
+typedef struct epcsaft_ion_solvation_solvent_permittivity_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double solvation_gibbs_j_per_mol;
+    double derivative_j_per_mol;
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_ion_solvation_solvent_permittivity_result_v1;
+
+typedef int (*epcsaft_evaluate_ion_solvation_solvent_permittivity_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    double solvent_relative_permittivity,
+    epcsaft_ion_solvation_solvent_permittivity_result_v1* result
+);
+
+#define EPCSAFT_NATIVE_CAPABILITY_SCHEMA_VERSION_V1 1u
+
+enum epcsaft_native_capability_v1 {
+    EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_KIJ_HELMHOLTZ_V1 = 1u,
+    EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_LIJ_HELMHOLTZ_V1 = 2u,
+    EPCSAFT_NATIVE_CAPABILITY_PURE_SEGMENT_COUNT_HELMHOLTZ_V1 = 3u,
+    EPCSAFT_NATIVE_CAPABILITY_PURE_SEGMENT_DIAMETER_HELMHOLTZ_V1 = 4u,
+    EPCSAFT_NATIVE_CAPABILITY_PURE_DISPERSION_ENERGY_HELMHOLTZ_V1 = 5u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_BORN_V1 = 6u,
+    EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_SOLVATION_FACTOR_MIAC_V1 = 7u,
+    EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_WATER_CATION_KIJ_MIAC_V1 = 8u,
+    EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_WATER_ANION_KIJ_MIAC_V1 = 9u,
+    EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_CATION_ANION_KIJ_MIAC_V1 = 10u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_FRACTION_SUPPRESSION_V1 = 11u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_CATION_KIJ_V1 = 12u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_ANION_KIJ_V1 = 13u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_CATION_ANION_KIJ_V1 = 14u,
+    EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATION_ENERGY_HELMHOLTZ_V1 = 15u,
+    EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATION_VOLUME_HELMHOLTZ_V1 = 16u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_IONIC_REGION_PERMITTIVITY_V1 = 17u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_PERMITTIVITY_V1 = 18u
+};
+
+enum epcsaft_native_parameter_family_v1 {
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1 = 1u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_LIJ_V1 = 2u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_COUNT_V1 = 3u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1 = 4u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1 = 5u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_BORN_DIAMETER_V1 = 6u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_SOLVATION_FACTOR_V1 = 7u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_ION_FRACTION_SUPPRESSION_V1 = 8u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_ENERGY_OVER_K_V1 = 9u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_VOLUME_V1 = 10u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_IONIC_REGION_RELATIVE_PERMITTIVITY_V1 = 11u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_RELATIVE_PERMITTIVITY_V1 = 12u
+};
+
+enum epcsaft_native_parameter_identity_v1 {
+    EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1 = 1u,
+    EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1 = 2u,
+    EPCSAFT_NATIVE_PARAMETER_IDENTITY_MODEL_V1 = 3u
+};
+
+enum epcsaft_native_observation_contract_v1 {
+    EPCSAFT_NATIVE_OBSERVATION_FIXED_COMPOSITION_HELMHOLTZ_PHASE_V1 = 1u,
+    EPCSAFT_NATIVE_OBSERVATION_ION_SOLVATION_GIBBS_V1 = 2u,
+    EPCSAFT_NATIVE_OBSERVATION_AQUEOUS_MEAN_IONIC_ACTIVITY_V1 = 3u,
+    EPCSAFT_NATIVE_OBSERVATION_RELATIVE_PERMITTIVITY_RATIO_V1 = 4u
+};
+
+enum epcsaft_native_model_domain_v1 {
+    EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1 = 1u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_PURE_V1 = 2u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_AQUEOUS_SINGLE_ION_V1 = 3u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_AQUEOUS_NABR_V1 = 4u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_ION_FRACTION_SUPPRESSION_V1 = 5u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_ORGANIC_SINGLE_ION_SOLVATION_V1 = 6u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_PURE_V1 = 7u
+};
+
+enum epcsaft_native_tensor_layout_v1 {
+    EPCSAFT_NATIVE_TENSOR_LAYOUT_ROW_MAJOR_V1 = 1u
+};
+
+enum epcsaft_native_capability_maturity_v1 {
+    EPCSAFT_NATIVE_CAPABILITY_DERIVATIVE_READY_V1 = 1u
+};
+
+enum epcsaft_native_authority_effect_v1 {
+    EPCSAFT_NATIVE_AUTHORITY_EFFECT_NONE_V1 = 0u
+};
+
+enum epcsaft_native_capability_coordinate_kind_v1 {
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1 = 1u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_VOLUME_V1 = 2u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1 = 3u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_LIJ_V1 = 4u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_COUNT_V1 = 5u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_DIAMETER_V1 = 6u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1 = 7u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BORN_DIAMETER_V1 = 8u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SOLVATION_FACTOR_V1 = 9u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ION_FRACTION_SUPPRESSION_V1 = 10u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_ENERGY_OVER_K_V1 = 11u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_VOLUME_V1 = 12u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_IONIC_REGION_RELATIVE_PERMITTIVITY_V1 = 13u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_RELATIVE_PERMITTIVITY_V1 = 14u
+};
+
+typedef struct epcsaft_native_capability_coordinate_v1 {
+    uint32_t struct_size;
+    uint32_t kind;
+    int32_t component_index;
+    int32_t pair_component_index_a;
+    int32_t pair_component_index_b;
+    const char* unit;
+} epcsaft_native_capability_coordinate_v1;
+
+/*
+ * Immutable model-bound metadata for an exact derivative callback already
+ * present in this table. This is transport evidence only: maturity says which
+ * derivative payload exists, while authority_effect remains NONE. Component
+ * indices refer to the table's exact component order. The unordered pair
+ * identity is therefore independent of that order even though amount
+ * coordinates are ordered.
+ */
+typedef struct epcsaft_native_capability_descriptor_v1 {
+    uint32_t struct_size;
+    uint32_t schema_version;
+    uint32_t capability;
+    uint32_t parameter_family;
+    uint32_t parameter_identity;
+    uint32_t observation_contract;
+    uint32_t model_domain;
+    uint32_t tensor_layout;
+    uint32_t derivative_order;
+    uint32_t maturity;
+    uint32_t authority_effect;
+    int32_t unsupported_status;
+    int32_t domain_status;
+    size_t state_coordinate_count;
+    size_t active_parameter_count;
+    size_t coordinate_count;
+    const epcsaft_native_capability_coordinate_v1* coordinates;
+    size_t component_count;
+    const char* const* component_ids;
+    double temperature_min_k;
+    double temperature_max_k;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char helmholtz_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+} epcsaft_native_capability_descriptor_v1;
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -427,6 +735,23 @@ typedef struct epcsaft_native_sdk_v1 {
         evaluate_aqueous_miac_kij_batch_bounded;
     epcsaft_evaluate_aqueous_miac_solvation_factor_batch_bounded_v1
         evaluate_aqueous_miac_solvation_factor_batch_bounded;
+    size_t capability_count;
+    const epcsaft_native_capability_descriptor_v1* capabilities;
+    epcsaft_evaluate_mixture_phase_lij_v1 evaluate_mixture_phase_lij;
+    epcsaft_evaluate_pure_phase_parameter_v1 evaluate_pure_phase_parameter;
+    size_t ion_fraction_suppression_result_size;
+    epcsaft_evaluate_ion_fraction_suppression_v1 evaluate_ion_fraction_suppression;
+    size_t ion_solvation_kij_result_size;
+    epcsaft_evaluate_ion_solvation_kij_v1 evaluate_ion_solvation_kij;
+    size_t ion_solvation_ionic_permittivity_result_size;
+    epcsaft_evaluate_ion_solvation_ionic_permittivity_v1
+        evaluate_ion_solvation_ionic_permittivity;
+    size_t ion_solvation_solvent_permittivity_result_size;
+    epcsaft_evaluate_ion_solvation_solvent_permittivity_v1
+        evaluate_ion_solvation_solvent_permittivity;
+    size_t associating_parameterized_result_size;
+    epcsaft_evaluate_diameter_basis_associating_pure_phase_parameters_v1
+        evaluate_diameter_basis_associating_pure_phase_parameters;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

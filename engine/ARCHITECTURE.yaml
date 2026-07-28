@@ -75,20 +75,59 @@ native_sdk_candidates:
   neutral_mixture_phase_hessian_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
-      Source-backed Gross--Sadowski methane/ethane extensive phase value,
+      Source-bound neutral nonassociating binary extensive phase value,
       gradient, Hessian, and pressure diagnostic in ordered component amounts
-      and volume.
+      and volume; Gross--Sadowski methane/ethane is the first reference case.
     coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
     derivative_order: 2
     exclusions: association, electrolyte, density solve, phase identity, parameter derivatives, third derivatives, Ipopt, Ceres, equilibrium, and regression targets
   neutral_mixture_active_kij_hessian_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
-      Model-bound Gross--Sadowski methane/ethane extensive phase value,
+      Model-bound neutral nonassociating binary extensive phase value,
       gradient, Hessian, and pressure with one finite active unlike-pair k_ij.
-    coordinate_order: [methane_amount_mol, ethane_amount_mol, volume_m3, k_ij]
+    coordinate_order: [component_0_amount_mol, component_1_amount_mol, volume_m3, k_ij]
     derivative_order: 2
     exclusions: association, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, equilibrium, regression targets, fit bounds, scaling, and fit acceptance
+  neutral_mixture_active_lij_hessian_v1:
+    status: local-candidate-pending-independent-review-and-promotion-receipt
+    scope: >-
+      Model-bound neutral nonassociating binary extensive phase value,
+      gradient, Hessian, and pressure with one finite active unlike-pair l_ij.
+    coordinate_order: [component_0_amount_mol, component_1_amount_mol, volume_m3, l_ij]
+    derivative_order: 2
+    exclusions: association, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, equilibrium, regression targets, fit bounds, scaling, and fit acceptance
+  neutral_pure_active_scalar_parameter_hessian_v1:
+    status: local-candidate-pending-independent-review-and-promotion-receipt
+    scope: >-
+      Model-bound neutral, nonassociating, constant-diameter pure phase value,
+      gradient, Hessian, and pressure with exactly one active segment count,
+      segment diameter, or dispersion energy over k.
+    coordinate_order: [amount_mol, volume_m3, active_component_parameter]
+    derivative_order: 2
+    parameter_families: [segment_count, segment_diameter, dispersion_energy_over_k]
+    exclusions: joint-parameter replacement, association, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, regression targets, fit bounds, scaling, and fit acceptance
+  neutral_pure_2b_active_scalar_association_hessian_v1:
+    status: local-candidate-pending-independent-review-and-promotion-receipt
+    scope: >-
+      Model-bound neutral pure 2B phase value, gradient, Hessian, and pressure
+      with exactly one active association energy or association volume.
+    coordinate_order: [amount_mol, volume_m3, active_association_parameter]
+    derivative_order: 2
+    parameter_families: [association_energy_over_k, association_volume]
+    association_strength_basis: source-owned-sigma-ij-cubed
+    required_topology: one-component-one-donor-one-acceptor-with-unit-multiplicity
+    exclusions: joint-parameter replacement, other association topologies, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, regression targets, fit bounds, scaling, and fit acceptance
+  baygi_neutral_pure_2b_joint_parameter_hessian_v1:
+    status: local-candidate-pending-independent-review-and-promotion-receipt
+    scope: >-
+      Model-bound neutral pure 2B phase value, gradient, Hessian, and pressure
+      for the Baygi--Pahlavanzadeh Eq. 4 diameter-basis joint parameter block.
+    coordinate_order: [amount_mol, volume_m3, segment_count, segment_diameter_angstrom, dispersion_energy_over_k, association_energy_over_k, association_volume]
+    derivative_order: 2
+    association_strength_basis: temperature-dependent-d-ij-cubed
+    required_topology: one-component-one-donor-one-acceptor-with-unit-multiplicity
+    exclusions: ordinary-EOS-basis-change, other association topologies, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, regression targets, fit bounds, scaling, fitted values, catalog persistence, and authority
   figiel_water_active_born_solvation_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
@@ -97,6 +136,7 @@ native_sdk_candidates:
       to the selected current-catalog ion Born diameter.
     active_coordinate: born_diameter_angstrom
     derivative_order: 1
+    capability_descriptor: component-identity-ion-solvation-gibbs-v1
     required_prefix_size_bytes_64_bit: 168
     current_table_size_bytes_64_bit: 224
     result_size_bytes_64_bit: 272
@@ -136,6 +176,7 @@ native_sdk_candidates:
       active water solvation factor.
     active_coordinate: water_solvation_factor
     derivative_order: 1
+    capability_descriptor: component-identity-aqueous-mean-ionic-activity-v1
     admitted_salt: NaBr
     molality_domain_mol_per_kg: [0.001, 6.0]
     table_size_bytes_64_bit: 224
@@ -149,6 +190,54 @@ native_sdk_candidates:
     density_owner: src/epcsaft/_native/density.hpp
     trial_bundle_admission: exact-source-complete-ordered-figiel-ssm-ds-only
     exclusions: targets, residuals, Ceres, fit results, bounds, scaling, rank claims, catalog persistence, arbitrary solvents or ions, generic parameter overlays, numerical production derivatives, second or third parameter derivatives, and authority
+  figiel_organic_ion_solvation_active_kij_v1:
+    status: local-candidate-no-authority-effect
+    scope: >-
+      Infinite-dilution ion-solvation Gibbs energy at 298.15 K and 1 bar plus
+      exact total fixed-pressure derivatives with respect to the three ordered
+      pair interactions for the source-backed methanol/K+/Br- and
+      ethanol/Na+/Cl- catalog selections.
+    coordinate_order: [solvent_cation_k_ij, solvent_anion_k_ij, cation_anion_k_ij]
+    active_ion_component_indices: [1, 2]
+    derivative_order: 1
+    capability_descriptor: unordered-pair-identity-ion-solvation-gibbs-v1
+    table_size_bytes_64_bit: 328
+    result_size_bytes_64_bit: 288
+    reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
+    derivative_owner: src/epcsaft/_native/derivatives.hpp
+    exclusions: constructed targets, transfer-data interpretation, residuals, scaling, bounds, Ceres, fit results, catalog persistence, numerical production derivatives, second derivatives, prediction, and authority
+  figiel_water_active_ionic_region_permittivity_solvation_v1:
+    status: local-candidate-no-authority-effect
+    scope: >-
+      One model-bound 298.15 K, 1 bar water x-process single-ion solvation
+      Gibbs energy and its exact total fixed-pressure first derivative with
+      respect to the SSM+DS ionic-region relative permittivity.
+    active_coordinate: ionic_region_relative_permittivity
+    derivative_order: 1
+    capability_descriptor: model-identity-ion-solvation-gibbs-v1
+    table_size_bytes_64_bit: 344
+    result_size_bytes_64_bit: 272
+    admitted_active_components: [lithium-cation, sodium-cation, potassium-cation, chloride-anion, bromide-anion]
+    reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
+    derivative_owner: src/epcsaft/_native/derivatives.hpp
+    exclusions: targets, residuals, scaling, bounds, Ceres, fit results, simultaneous cross-model fitting, catalog persistence, numerical production derivatives, second derivatives, prediction, and authority
+  figiel_water_active_solvent_permittivity_solvation_v1:
+    status: local-candidate-no-authority-effect
+    scope: >-
+      One component-bound 298.15 K, 1 bar water x-process single-ion solvation
+      Gibbs energy and its exact total fixed-pressure first derivative with
+      respect to the solvent relative permittivity.
+    active_coordinate: relative_permittivity
+    active_component_index: 0
+    derivative_order: 1
+    capability_descriptor: component-identity-ion-solvation-gibbs-v1
+    table_size_bytes_64_bit: 360
+    result_size_bytes_64_bit: 272
+    admitted_active_component: water
+    admitted_observable_ions: [lithium-cation, sodium-cation, potassium-cation, chloride-anion, bromide-anion]
+    reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
+    derivative_owner: src/epcsaft/_native/derivatives.hpp
+    exclusions: targets, residuals, scaling, bounds, Ceres, fit results, temperature-correlation coefficients, catalog persistence, numerical production derivatives, second derivatives, prediction, and authority
   neutral_reacting_reference_v1:
     status: project-truss-implementation-candidate-no-authority-effect
     scope: >-
@@ -270,6 +359,22 @@ public_surface:
       derivative_order: 2
       status: local-candidate-pending-independent-review-and-promotion-receipt
     - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_mixture_phase_lij
+      coordinate_order: [methane_amount_mol, ethane_amount_mol, volume_m3, l_ij]
+      derivative_order: 2
+      status: local-candidate-pending-independent-review-and-promotion-receipt
+    - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_pure_phase_parameter
+      coordinate_order: [amount_mol, volume_m3, active_component_parameter]
+      parameter_families: [segment_count, segment_diameter, dispersion_energy_over_k]
+      derivative_order: 2
+      status: local-candidate-pending-independent-review-and-promotion-receipt
+    - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_diameter_basis_associating_pure_phase_parameters
+      coordinate_order: [amount_mol, volume_m3, segment_count, segment_diameter_angstrom, dispersion_energy_over_k, association_energy_over_k, association_volume]
+      derivative_order: 2
+      status: local-candidate-pending-independent-review-and-promotion-receipt
+    - capsule: epcsaft.native_sdk.v1
       entry: evaluate_electrolyte_phase
       coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
       derivative_order: 2
@@ -308,6 +413,12 @@ public_surface:
       output_order: [ordered_ln_gamma_pm_m, exact_total_fixed_pressure_derivatives, reference_diagnostics]
       derivative_order: 1
       status: project-truss-implementation-candidate-no-authority-effect
+    - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_ion_solvation_kij
+      input_order: [parameter_fingerprint, temperature_k, pressure_pa, active_ion_component_index, three_active_k_ij]
+      output_order: [ion_solvation_gibbs_j_per_mol, three_exact_total_fixed_pressure_derivatives, reference_diagnostics]
+      derivative_order: 1
+      status: local-candidate-no-authority-effect
 
 manifest:
   tracked_files: 107
@@ -326,33 +437,33 @@ manifest:
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
   oversized_files:
     - path: src/epcsaft/records.py
-      physical_lines: 451
+      physical_lines: 469
       capability_delta: public Literal aliases for parameter authoring
     - path: src/epcsaft/_resolve.py
-      physical_lines: 550
+      physical_lines: 734
     - path: src/epcsaft/_bundle_io.py
-      physical_lines: 675
+      physical_lines: 679
       capability_delta: strict version-1 persistence for user-provided bundles
     - path: src/epcsaft/eos.py
-      physical_lines: 734
-      capability_delta: narrow source-complete Figiel staged trial admission, structured state diagnostics, and self-describing results
+      physical_lines: 940
+      capability_delta: model-bound parameter-topology fingerprints
     - path: src/epcsaft/_native/eos.cpp
-      physical_lines: 1113
-      capability_delta: exact batched active aqueous MIAC values and fixed-pressure derivatives
+      physical_lines: 1682
+      capability_delta: exact scalar active pure-parameter projection
     - path: src/epcsaft/_native/derivatives.hpp
-      physical_lines: 518
+      physical_lines: 717
       capability_delta: bounded CppAD row concurrency with serialized tape ownership
     - path: src/epcsaft/_native/native_sdk.cpp
-      physical_lines: 1750
-      capability_delta: append-only active aqueous MIAC batch transport
+      physical_lines: 3145
+      capability_delta: finite phase and direct-observable parameter capability metadata
     - path: src/epcsaft/_native/phase_block.hpp
-      physical_lines: 766
+      physical_lines: 1284
       capability_delta: serialized CppAD tape ownership during aqueous batch execution
     - path: tests/test_native_sdk.py
-      physical_lines: 3788
-      capability_delta: active aqueous MIAC batch parity, ABI, fail-closed, and concurrency proof
+      physical_lines: 6302
+      capability_delta: phase and direct-observable descriptor, derivative, ABI, and fail-closed proof
     - path: tests/test_parameters.py
-      physical_lines: 1276
+      physical_lines: 1430
       capability_delta: immutable catalog discovery and installed-purpose enforcement
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 

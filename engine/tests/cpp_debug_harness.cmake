@@ -25,6 +25,7 @@ foreach(expected IN ITEMS
     "pressure_pa="
     "helmholtz_over_rt_reference_amount="
     "parameter_fingerprint=sha256:"
+    "capability_count=0"
 )
     string(FIND "${output}" "${expected}" position)
     if(position EQUAL -1)

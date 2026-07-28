@@ -75,14 +75,21 @@ double fixed_pressure_log_fugacity(
         + fugacity_density * density_correction;
 }
 
+enum class ActiveSolvationParameter {
+    BornDiameter,
+    IonicRegionRelativePermittivity,
+    SolventRelativePermittivity,
+};
+
 // EqID: fixed_pressure_total_derivative
-detail::ReferenceObservation active_born_observation(
+detail::ReferenceObservation active_solvation_parameter_observation(
     const NativeModel& model,
     const NativeParameters& parameters,
     double temperature,
     double pressure,
     const std::vector<double>& composition,
-    std::size_t active_component
+    std::size_t active_component,
+    ActiveSolvationParameter active_parameter
 ) {
     const auto state = model.evaluate_pressure(
         temperature, pressure, composition, "liquid"
@@ -100,17 +107,49 @@ detail::ReferenceObservation active_born_observation(
         sigma,
         diameter
     );
-    const auto derivatives = detail::thermodynamic_derivatives_active_born(
-        temperature,
-        state.molar_density,
-        composition,
-        parameters,
-        site_fractions,
-        active_component,
-        parameters.born_diameter_angstrom[active_component]
-    );
-    if (!derivatives.active_born.has_value()) {
-        throw std::runtime_error("active Born derivative is unavailable");
+    const auto derivatives = [&] {
+        if (active_parameter == ActiveSolvationParameter::BornDiameter) {
+            return detail::thermodynamic_derivatives_active_born(
+                temperature,
+                state.molar_density,
+                composition,
+                parameters,
+                site_fractions,
+                active_component,
+                parameters.born_diameter_angstrom[active_component]
+            );
+        }
+        if (active_parameter
+            == ActiveSolvationParameter::IonicRegionRelativePermittivity) {
+            return detail::
+                thermodynamic_derivatives_active_ionic_region_permittivity(
+                    temperature,
+                    state.molar_density,
+                    composition,
+                    parameters,
+                    site_fractions,
+                    parameters.ionic_region_relative_permittivity
+                );
+        }
+        return detail::thermodynamic_derivatives_active_relative_permittivity(
+            temperature,
+            state.molar_density,
+            composition,
+            parameters,
+            site_fractions,
+            active_component,
+            parameters.relative_permittivity[active_component]
+        );
+    }();
+    const std::optional<double>& active_derivative =
+        active_parameter == ActiveSolvationParameter::BornDiameter
+        ? derivatives.active_born
+        : active_parameter
+                == ActiveSolvationParameter::IonicRegionRelativePermittivity
+            ? derivatives.active_ionic_permittivity
+            : derivatives.active_relative_permittivity;
+    if (!active_derivative.has_value()) {
+        throw std::runtime_error("active solvation derivative is unavailable");
     }
     const std::size_t components = composition.size();
     const std::size_t coordinates = 3 + components;
@@ -138,7 +177,7 @@ detail::ReferenceObservation active_born_observation(
             weighted_composition_density += composition[mixture_component]
                 * hessian(2 + mixture_component, 1);
         }
-        const double chemical_potential_diameter = *derivatives.active_born
+        const double chemical_potential_diameter = *active_derivative
             + state.molar_density * hessian(1, active_coordinate)
             + hessian(2 + component, active_coordinate)
             - weighted_composition_diameter;
@@ -163,6 +202,46 @@ detail::ReferenceObservation active_born_observation(
             (*state.log_fugacity_coefficient)[2],
         },
         total_derivative,
+    };
+}
+
+// EqID: infinite_dilution_solvation_energy
+// EqID: fixed_pressure_total_derivative
+NativeIonSolvationIonicPermittivity active_solvation_parameter_reference(
+    NativeParameters active_parameters,
+    double temperature,
+    double pressure,
+    std::size_t active_component,
+    ActiveSolvationParameter active_parameter
+) {
+    const NativeModel active_model(active_parameters);
+    const auto result = detail::electrolyte_reference_sequence(
+        std::vector<double>{1.0, 0.0, 0.0},
+        active_parameters.molar_mass_kg_per_mol,
+        std::array<std::size_t, 2>{1, 2},
+        std::array<int, 2>{1, 1},
+        [&active_model,
+         &active_parameters,
+         temperature,
+         pressure,
+         active_component,
+         active_parameter](const std::vector<double>& composition) {
+            return active_solvation_parameter_observation(
+                active_model,
+                active_parameters,
+                temperature,
+                pressure,
+                composition,
+                active_component,
+                active_parameter
+            );
+        }
+    );
+    return {
+        detail::GAS_CONSTANT * temperature * result.log_fugacity[0],
+        (*result.derivative)[0],
+        result.molality,
+        result.convergence_error,
     };
 }
 
@@ -561,6 +640,19 @@ bool NativeModel::supports_native_sdk_v1() const {
 }
 
 // EqExclude: input and domain validation
+bool NativeModel::supports_parameterized_pure_native_sdk_v1() const {
+    return detail::supports_pure_phase_block(parameters_)
+        && parameters_.sigma_term_component.empty()
+        && parameters_.sigma_term_amplitude.empty()
+        && parameters_.sigma_term_exponent.empty();
+}
+
+// EqExclude: input and domain validation
+bool NativeModel::supports_associating_pure_parameter_native_sdk_v1() const {
+    return detail::supports_associating_pure_phase_block(parameters_);
+}
+
+// EqExclude: input and domain validation
 bool NativeModel::supports_mixture_native_sdk_v1() const {
     return detail::supports_mixture_phase_block(parameters_);
 }
@@ -615,6 +707,106 @@ NativeParameterizedPurePhaseBlock NativeModel::evaluate_pure_phase_parameters(
 }
 
 // EqExclude: transport and buffer mechanics
+NativeAssociatingParameterizedPurePhaseBlock
+NativeModel::evaluate_diameter_basis_associating_pure_phase_parameters(
+    double temperature,
+    double amount,
+    double volume,
+    double segment_count,
+    double segment_diameter_angstrom,
+    double dispersion_energy_over_k,
+    double association_energy_over_k,
+    double association_volume
+) const {
+    return detail::associating_parameterized_pure_phase_block(
+        temperature,
+        amount,
+        volume,
+        segment_count,
+        segment_diameter_angstrom,
+        dispersion_energy_over_k,
+        association_energy_over_k,
+        association_volume,
+        parameters_
+    );
+}
+
+// EqExclude: transport and buffer mechanics
+NativeMixturePhaseBlock NativeModel::evaluate_pure_phase_parameter(
+    double temperature,
+    double amount,
+    double volume,
+    ActivePureParameter family,
+    double parameter_value
+) const {
+    if (family == ActivePureParameter::AssociationEnergyOverK
+        || family == ActivePureParameter::AssociationVolume) {
+        return detail::associating_pure_phase_parameter_block(
+            temperature,
+            amount,
+            volume,
+            parameter_value,
+            family == ActivePureParameter::AssociationEnergyOverK,
+            parameters_
+        );
+    }
+    if (!supports_parameterized_pure_native_sdk_v1()) {
+        throw std::logic_error(
+            "active pure parameters require one neutral nonassociating "
+            "component with constant segment diameter"
+        );
+    }
+    double segment_count = parameters_.segment_count.at(0);
+    double segment_diameter = parameters_.sigma_constant.at(0);
+    double dispersion_energy = parameters_.dispersion_energy_over_k.at(0);
+    std::size_t active_coordinate = 0;
+    switch (family) {
+        case ActivePureParameter::SegmentCount:
+            segment_count = parameter_value;
+            active_coordinate = 2;
+            break;
+        case ActivePureParameter::SegmentDiameter:
+            segment_diameter = parameter_value;
+            active_coordinate = 3;
+            break;
+        case ActivePureParameter::DispersionEnergyOverK:
+            dispersion_energy = parameter_value;
+            active_coordinate = 4;
+            break;
+        case ActivePureParameter::AssociationEnergyOverK:
+        case ActivePureParameter::AssociationVolume:
+            throw std::logic_error("association parameter dispatch failed");
+        default:
+            throw std::invalid_argument("unknown active pure parameter");
+    }
+    const auto full = evaluate_pure_phase_parameters(
+        temperature,
+        amount,
+        volume,
+        segment_count,
+        segment_diameter,
+        dispersion_energy
+    );
+    const std::array<std::size_t, 3> selected{0, 1, active_coordinate};
+    std::vector<double> gradient(3);
+    std::vector<double> hessian(9);
+    for (std::size_t row = 0; row < selected.size(); ++row) {
+        gradient[row] = full.gradient[selected[row]];
+        for (std::size_t column = 0; column < selected.size(); ++column) {
+            hessian[row * selected.size() + column] =
+                full.hessian[selected[row] * full.gradient.size()
+                             + selected[column]];
+        }
+    }
+    return {
+        full.helmholtz_over_rt_reference_amount,
+        std::move(gradient),
+        std::move(hessian),
+        full.pressure_pa,
+    };
+}
+
+// EqExclude: transport and buffer mechanics
 NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase(
     double temperature,
     const std::vector<double>& amounts,
@@ -632,6 +824,18 @@ NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase_kij(
 ) const {
     return detail::mixture_phase_block_kij(
         temperature, amounts, volume, k_ij, parameters_
+    );
+}
+
+// EqExclude: transport and buffer mechanics
+NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase_lij(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double l_ij
+) const {
+    return detail::mixture_phase_block_lij(
+        temperature, amounts, volume, l_ij, parameters_
     );
 }
 
@@ -746,28 +950,156 @@ NativeIonSolvationBorn NativeModel::evaluate_ion_solvation_born(
     }
     NativeParameters active_parameters = parameters_;
     active_parameters.born_diameter_angstrom[1] = born_diameter_angstrom;
+    const auto result = active_solvation_parameter_reference(
+        std::move(active_parameters),
+        temperature,
+        pressure,
+        1,
+        ActiveSolvationParameter::BornDiameter
+    );
+    return {
+        result.solvation_gibbs_j_per_mol,
+        result.derivative_j_per_mol,
+        result.reference_molality_mol_per_kg,
+        result.reference_convergence_error,
+    };
+}
+
+// EqID: infinite_dilution_solvation_energy
+// EqID: fixed_pressure_total_derivative
+NativeIonSolvationIonicPermittivity
+NativeModel::evaluate_ion_solvation_ionic_permittivity(
+    double temperature,
+    double pressure,
+    double ionic_region_relative_permittivity
+) const {
+    if (!std::isfinite(temperature) || !std::isfinite(pressure)
+        || !std::isfinite(ionic_region_relative_permittivity)
+        || temperature <= 0.0 || pressure <= 0.0
+        || ionic_region_relative_permittivity <= 1.0) {
+        throw std::invalid_argument(
+            "invalid active ionic-region permittivity inputs"
+        );
+    }
+    if (parameters_.charge_number.size() != 3
+        || parameters_.charge_number[0] != 0
+        || parameters_.charge_number[1] == 0
+        || parameters_.charge_number[2] == 0
+        || parameters_.charge_number[1] + parameters_.charge_number[2] != 0) {
+        throw std::logic_error(
+            "unsupported active ionic-region permittivity model"
+        );
+    }
+    NativeParameters active_parameters = parameters_;
+    active_parameters.ionic_region_relative_permittivity =
+        ionic_region_relative_permittivity;
+    return active_solvation_parameter_reference(
+        std::move(active_parameters),
+        temperature,
+        pressure,
+        1,
+        ActiveSolvationParameter::IonicRegionRelativePermittivity
+    );
+}
+
+// EqID: infinite_dilution_solvation_energy
+// EqID: fixed_pressure_total_derivative
+NativeIonSolvationIonicPermittivity
+NativeModel::evaluate_ion_solvation_solvent_permittivity(
+    double temperature,
+    double pressure,
+    double solvent_relative_permittivity
+) const {
+    if (!std::isfinite(temperature) || !std::isfinite(pressure)
+        || !std::isfinite(solvent_relative_permittivity)
+        || temperature <= 0.0 || pressure <= 0.0
+        || solvent_relative_permittivity <= 1.0) {
+        throw std::invalid_argument(
+            "invalid active solvent relative-permittivity inputs"
+        );
+    }
+    if (parameters_.charge_number.size() != 3
+        || parameters_.charge_number[0] != 0
+        || parameters_.charge_number[1] == 0
+        || parameters_.charge_number[2] == 0
+        || parameters_.charge_number[1] + parameters_.charge_number[2] != 0
+        || parameters_.relative_permittivity.size() != 3) {
+        throw std::logic_error(
+            "unsupported active solvent relative-permittivity model"
+        );
+    }
+    NativeParameters active_parameters = parameters_;
+    active_parameters.relative_permittivity[0] =
+        solvent_relative_permittivity;
+    return active_solvation_parameter_reference(
+        std::move(active_parameters),
+        temperature,
+        pressure,
+        0,
+        ActiveSolvationParameter::SolventRelativePermittivity
+    );
+}
+
+// EqID: infinite_dilution_solvation_energy
+// EqID: fixed_pressure_total_derivative
+NativeIonSolvationKij NativeModel::evaluate_ion_solvation_kij(
+    double temperature,
+    double pressure,
+    std::size_t active_ion_component,
+    const std::array<double, 3>& k_ij
+) const {
+    if (!std::isfinite(temperature) || !std::isfinite(pressure)
+        || temperature <= 0.0 || pressure <= 0.0
+        || (active_ion_component != 1 && active_ion_component != 2)
+        || !std::all_of(k_ij.begin(), k_ij.end(), [](double value) {
+            return std::isfinite(value);
+        })) {
+        throw std::invalid_argument("invalid active ion-solvation k_ij inputs");
+    }
+    if (parameters_.charge_number.size() != 3
+        || parameters_.charge_number[0] != 0
+        || parameters_.charge_number[1] == 0
+        || parameters_.charge_number[2] == 0
+        || parameters_.charge_number[1] + parameters_.charge_number[2] != 0) {
+        throw std::logic_error("unsupported active ion-solvation k_ij model");
+    }
+    NativeParameters active_parameters = parameters_;
+    active_parameters.k_ij[1] = active_parameters.k_ij[3] = k_ij[0];
+    active_parameters.k_ij[2] = active_parameters.k_ij[6] = k_ij[1];
+    active_parameters.k_ij[5] = active_parameters.k_ij[7] = k_ij[2];
     const NativeModel active_model(active_parameters);
     const auto result = detail::electrolyte_reference_sequence(
         std::vector<double>{1.0, 0.0, 0.0},
         active_parameters.molar_mass_kg_per_mol,
         std::array<std::size_t, 2>{1, 2},
         std::array<int, 2>{1, 1},
-        [&active_model, &active_parameters, temperature, pressure](
+        [&active_model, &active_parameters, temperature, pressure, &k_ij](
             const std::vector<double>& composition
         ) {
-            return active_born_observation(
+            return active_aqueous_kij_observation(
                 active_model,
                 active_parameters,
                 temperature,
                 pressure,
                 composition,
-                1
+                k_ij
             );
         }
     );
+    if (!result.derivative.has_value() || result.derivative->size() != 6) {
+        throw std::runtime_error(
+            "active ion-solvation k_ij derivative is unavailable"
+        );
+    }
+    const std::size_t ion = active_ion_component - 1;
+    std::array<double, 3> derivative{};
+    for (std::size_t active = 0; active < 3; ++active) {
+        derivative[active] = detail::GAS_CONSTANT * temperature
+            * (*result.derivative)[ion * 3 + active];
+    }
     return {
-        detail::GAS_CONSTANT * temperature * result.log_fugacity[0],
-        (*result.derivative)[0],
+        detail::GAS_CONSTANT * temperature * result.log_fugacity[ion],
+        derivative,
         result.molality,
         result.convergence_error,
     };
@@ -922,6 +1254,47 @@ NativeModel::evaluate_aqueous_miac_solvation_factor(
         std::vector<double>{molality},
         solvation_factor
     ).front();
+}
+
+// EqExclude: transport and buffer mechanics
+NativeIonFractionSuppression NativeModel::evaluate_ion_fraction_suppression(
+    double total_ion_mole_fraction,
+    double suppression_coefficient
+) const {
+    if (!std::isfinite(total_ion_mole_fraction)
+        || !std::isfinite(suppression_coefficient)
+        || total_ion_mole_fraction <= 0.0
+        || total_ion_mole_fraction >= 1.0
+        || suppression_coefficient <= 0.0) {
+        throw std::invalid_argument(
+            "invalid active ion-fraction suppression inputs"
+        );
+    }
+    if (parameters_.relative_permittivity_formulation
+            != RELATIVE_PERMITTIVITY_FORMULATION_ION_FRACTION_SUPPRESSION
+        || parameters_.charge_number.size() != 3
+        || parameters_.charge_number[0] != 0
+        || parameters_.charge_number[1] <= 0
+        || parameters_.charge_number[2] >= 0
+        || !(parameters_.relative_permittivity[0] > 0.0)) {
+        throw std::logic_error(
+            "unsupported active ion-fraction suppression model"
+        );
+    }
+    const double salt_free = parameters_.relative_permittivity[0];
+    return {
+        detail::ion_fraction_suppressed_relative_permittivity(
+            salt_free,
+            total_ion_mole_fraction,
+            suppression_coefficient
+        ),
+        detail::ion_fraction_suppressed_relative_permittivity_derivative(
+            salt_free,
+            total_ion_mole_fraction,
+            suppression_coefficient
+        ),
+        salt_free,
+    };
 }
 
 std::vector<NativeAqueousMiacSolvationFactor>

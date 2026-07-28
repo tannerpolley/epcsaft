@@ -49,6 +49,7 @@ struct NativeResult final {
 
 struct NativePurePhaseBlock;
 struct NativeParameterizedPurePhaseBlock;
+struct NativeAssociatingParameterizedPurePhaseBlock;
 struct NativeMixturePhaseBlock;
 struct NativePackingFractionBlock;
 
@@ -62,6 +63,20 @@ struct NativeReferenceSequence final {
 struct NativeIonSolvationBorn final {
     double solvation_gibbs_j_per_mol;
     double derivative_j_per_mol_per_angstrom;
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+};
+
+struct NativeIonSolvationIonicPermittivity final {
+    double solvation_gibbs_j_per_mol;
+    double derivative_j_per_mol;
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+};
+
+struct NativeIonSolvationKij final {
+    double solvation_gibbs_j_per_mol;
+    std::array<double, 3> derivative;
     double reference_molality_mol_per_kg;
     double reference_convergence_error;
 };
@@ -80,6 +95,12 @@ struct NativeAqueousMiacSolvationFactor final {
     double reference_molality_mol_per_kg;
     double reference_convergence_error;
     double reference_derivative_convergence_error;
+};
+
+struct NativeIonFractionSuppression final {
+    double bulk_relative_permittivity;
+    double derivative;
+    double salt_free_relative_permittivity;
 };
 
 class NativeEvaluationCancelled final : public std::runtime_error {
@@ -135,6 +156,14 @@ private:
     const std::uint64_t deadline_ns_;
 };
 
+enum class ActivePureParameter {
+    SegmentCount,
+    SegmentDiameter,
+    DispersionEnergyOverK,
+    AssociationEnergyOverK,
+    AssociationVolume,
+};
+
 class NativeModel final {
 public:
     explicit NativeModel(NativeParameters parameters);
@@ -150,6 +179,8 @@ public:
         const std::string& phase
     ) const;
     bool supports_native_sdk_v1() const;
+    bool supports_parameterized_pure_native_sdk_v1() const;
+    bool supports_associating_pure_parameter_native_sdk_v1() const;
     bool supports_mixture_native_sdk_v1() const;
     bool supports_electrolyte_native_sdk_v1() const;
     std::size_t component_count() const;
@@ -168,6 +199,24 @@ public:
         double segment_diameter_angstrom,
         double dispersion_energy_over_k
     ) const;
+    NativeAssociatingParameterizedPurePhaseBlock
+    evaluate_diameter_basis_associating_pure_phase_parameters(
+        double temperature,
+        double amount,
+        double volume,
+        double segment_count,
+        double segment_diameter_angstrom,
+        double dispersion_energy_over_k,
+        double association_energy_over_k,
+        double association_volume
+    ) const;
+    NativeMixturePhaseBlock evaluate_pure_phase_parameter(
+        double temperature,
+        double amount,
+        double volume,
+        ActivePureParameter family,
+        double parameter_value
+    ) const;
     NativeMixturePhaseBlock evaluate_mixture_phase(
         double temperature,
         const std::vector<double>& amounts,
@@ -178,6 +227,12 @@ public:
         const std::vector<double>& amounts,
         double volume,
         double k_ij
+    ) const;
+    NativeMixturePhaseBlock evaluate_mixture_phase_lij(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume,
+        double l_ij
     ) const;
     NativeMixturePhaseBlock evaluate_electrolyte_phase(
         double temperature,
@@ -218,6 +273,25 @@ public:
         double pressure,
         double born_diameter_angstrom
     ) const;
+    NativeIonSolvationIonicPermittivity
+    evaluate_ion_solvation_ionic_permittivity(
+        double temperature,
+        double pressure,
+        double ionic_region_relative_permittivity
+    ) const;
+    NativeIonSolvationIonicPermittivity
+    evaluate_ion_solvation_solvent_permittivity(
+        double temperature,
+        double pressure,
+        double solvent_relative_permittivity
+    ) const;
+
+    NativeIonSolvationKij evaluate_ion_solvation_kij(
+        double temperature,
+        double pressure,
+        std::size_t active_ion_component,
+        const std::array<double, 3>& k_ij
+    ) const;
     NativeAqueousMiacKij evaluate_aqueous_miac_kij(
         double temperature,
         double pressure,
@@ -244,6 +318,10 @@ public:
         const std::vector<double>& formula_unit_molalities_mol_per_kg,
         double solvation_factor,
         NativeEvaluationBudget* budget = nullptr
+    ) const;
+    NativeIonFractionSuppression evaluate_ion_fraction_suppression(
+        double total_ion_mole_fraction,
+        double ion_fraction_suppression_coefficient
     ) const;
 
 private:

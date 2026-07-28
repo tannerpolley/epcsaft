@@ -102,7 +102,8 @@ int run(int argc, char** argv) {
               << "pressure_pa=" << result.pressure_pa << '\n'
               << "helmholtz_over_rt_reference_amount="
               << result.helmholtz_over_rt_reference_amount << '\n'
-              << "parameter_fingerprint=" << result.parameter_fingerprint << '\n';
+              << "parameter_fingerprint=" << result.parameter_fingerprint << '\n'
+              << "capability_count=" << sdk->capability_count << '\n';
     return 0;
 }
 

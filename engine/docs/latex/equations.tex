@@ -355,6 +355,18 @@ g_{ij}^{hs}=
 \label{eq:association_strength}
 \end{equation}
 
+% EqID: association_strength_diameter_basis
+% Source: \cite{Baygi2015}, Eq.~(4)
+% Status: Source equation
+% Description: Pure-fluid 2B association strength using the temperature-dependent diameter basis.
+% Change note: Used only by the explicit Baygi source-model callback; the ordinary EOS retains the sigma basis.
+\begin{equation}
+\Delta_{AB}^{ij}=g_{ij}^{hs}
+\left[\exp\left(\frac{\epsilon_{AB}^{ij}/k_B}{T}\right)-1\right]
+d_{ij}^3\kappa_{AB}^{ij}.
+\label{eq:association_strength_diameter_basis}
+\end{equation}
+
 % EqID: association_mass_action
 % Source: \cite{Chapman1990}, Eq.~(19)
 % Status: Source equation
@@ -1060,6 +1072,20 @@ k_{11}&\theta\\
 \theta&k_{22}
 \end{bmatrix}.
 \label{eq:active_binary_interaction_mapping}
+\end{equation}
+
+% EqID: active_binary_size_interaction_mapping
+% Source: Provider active-coordinate convention for the symmetric binary pair
+% Status: Implementation convention
+% Description: Map one active unlike-pair l_ij coordinate into the symmetric binary matrix.
+% Change note: Diagonal catalog values remain fixed and k_ij remains unchanged.
+\begin{equation}
+\boldsymbol{l}(\theta)=
+\begin{bmatrix}
+l_{11}&\theta\\
+\theta&l_{22}
+\end{bmatrix}.
+\label{eq:active_binary_size_interaction_mapping}
 \end{equation}
 
 % EqID: pure_active_parameter_mapping
