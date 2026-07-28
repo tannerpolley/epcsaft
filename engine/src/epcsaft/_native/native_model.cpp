@@ -119,6 +119,7 @@ extern "C" epcsaft_native_model_handle_v1* epcsaft_native_model_load_v1(
             sdk.at("neutral_reference_admitted").get<bool>(),
             sdk.at("unknown_applicability_admitted").get<bool>(),
             sdk.at("aqueous_solvation_factor_admitted").get<bool>(),
+            sdk.value("ion_solvation_kij_admitted", false),
             sdk.at("staged_trial_bundle_admitted").get<bool>(),
             sdk.value("topology_fingerprint", std::string{})
         );

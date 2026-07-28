@@ -692,6 +692,22 @@ def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
         and tuple(model._model.charge_number) == (0, 1, -1)
         and model._model.permittivity_model == "figiel-composition"
     )
+    ion_solvation_kij_admitted = (
+        model._parameter_bundle_fingerprint
+        == "sha256:9f017007adbea2c943dc91c4a8df5271a5400392ae89796b74959aac913b920c"
+        and model._component_ids
+        in {
+            ("methanol", "potassium-cation", "bromide-anion"),
+            ("ethanol", "sodium-cation", "chloride-anion"),
+        }
+        and len(model._component_ids) == 3
+        and tuple(model._model.charge_number) == (0, 1, -1)
+        and model._model.permittivity_model == "figiel-composition"
+        and model._model.temperature_min_k == 298.15
+        and model._model.temperature_max_k == 298.15
+        and model._model.pressure_min_pa == 100000.0
+        and model._model.pressure_max_pa == 100000.0
+    )
     aqueous_solvation_factor_admitted = (
         fingerprint
         in _NATIVE_SDK_V1_AQUEOUS_ACTIVE_SOLVATION_FACTOR_FINGERPRINTS
@@ -724,6 +740,7 @@ def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
         and not active_born_admitted
         and not aqueous_kij_admitted
         and not figiel_dielectric_admitted
+        and not ion_solvation_kij_admitted
         and not aqueous_solvation_factor_admitted
         and not neutral_reference_admitted
     ):
@@ -754,6 +771,7 @@ def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
         "active_born_admitted": active_born_admitted,
         "aqueous_kij_admitted": aqueous_kij_admitted,
         "figiel_dielectric_admitted": figiel_dielectric_admitted,
+        "ion_solvation_kij_admitted": ion_solvation_kij_admitted,
         "pressure_min_pa": pressure_minimum,
         "pressure_max_pa": pressure_maximum,
         "neutral_reference_admitted": neutral_reference_admitted,

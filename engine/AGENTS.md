@@ -82,6 +82,10 @@ The capability set also advertises the already-owned exact first-derivative
 callbacks for current-catalog single-ion Born diameter and NaBr water
 solvation factor. These direct-observable descriptors add no EOS equation,
 target, residual, fit policy, or broader model admission.
+The append-only tail also exposes the existing infinite-dilution reference
+sequence with exact first derivatives in the three ordered `k_ij` coordinates
+for the source-backed Figiel methanol/K+/Br- and ethanol/Na+/Cl- selections.
+It owns no constructed targets, residuals, bounds, Ceres, or fitted values.
 
 Migration D-024 additionally records local append-only full-electrolyte and
 molar-volume-domain candidates. The phase callback evaluates the complete

@@ -432,6 +432,33 @@ typedef int (*epcsaft_evaluate_figiel_permittivity_v1)(
     epcsaft_figiel_permittivity_result_v1* result
 );
 
+/*
+ * Infinite-dilution ion-solvation Gibbs energy and exact fixed-pressure
+ * derivatives with respect to the three pair coordinates in exact component
+ * order: solvent-cation, solvent-anion, cation-anion.
+ */
+typedef struct epcsaft_ion_solvation_kij_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double solvation_gibbs_j_per_mol;
+    double derivative[3];
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_ion_solvation_kij_result_v1;
+
+typedef int (*epcsaft_evaluate_ion_solvation_kij_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    size_t active_ion_component_index,
+    const double* k_ij,
+    size_t k_ij_count,
+    epcsaft_ion_solvation_kij_result_v1* result
+);
+
 #define EPCSAFT_NATIVE_CAPABILITY_SCHEMA_VERSION_V1 1u
 
 enum epcsaft_native_capability_v1 {
@@ -445,7 +472,10 @@ enum epcsaft_native_capability_v1 {
     EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_WATER_CATION_KIJ_MIAC_V1 = 8u,
     EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_WATER_ANION_KIJ_MIAC_V1 = 9u,
     EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_CATION_ANION_KIJ_MIAC_V1 = 10u,
-    EPCSAFT_NATIVE_CAPABILITY_FIGIEL_DIELECTRIC_SUPPRESSION_V1 = 11u
+    EPCSAFT_NATIVE_CAPABILITY_FIGIEL_DIELECTRIC_SUPPRESSION_V1 = 11u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_CATION_KIJ_V1 = 12u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_ANION_KIJ_V1 = 13u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_CATION_ANION_KIJ_V1 = 14u
 };
 
 enum epcsaft_native_parameter_family_v1 {
@@ -477,7 +507,8 @@ enum epcsaft_native_model_domain_v1 {
     EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_PURE_V1 = 2u,
     EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_WATER_SINGLE_ION_V1 = 3u,
     EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_AQUEOUS_NABR_V1 = 4u,
-    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_DIELECTRIC_V1 = 5u
+    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_DIELECTRIC_V1 = 5u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_SINGLE_ION_SOLVATION_V1 = 6u
 };
 
 enum epcsaft_native_tensor_layout_v1 {
@@ -596,6 +627,8 @@ typedef struct epcsaft_native_sdk_v1 {
     epcsaft_evaluate_pure_phase_parameter_v1 evaluate_pure_phase_parameter;
     size_t figiel_permittivity_result_size;
     epcsaft_evaluate_figiel_permittivity_v1 evaluate_figiel_permittivity;
+    size_t ion_solvation_kij_result_size;
+    epcsaft_evaluate_ion_solvation_kij_v1 evaluate_ion_solvation_kij;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

@@ -176,6 +176,15 @@ corrected-SSM+DS Figiel user bundles with exact applicability may use the
 staged active callbacks. This is Provider transport evidence, not a fit,
 catalog change, scientific acceptance, or authority transfer.
 
+The general Regression integration tail additionally exposes one
+infinite-dilution ion-solvation Gibbs result with exact total fixed-pressure
+derivatives in ordered `(solvent--cation, solvent--anion, cation--anion)`
+`k_ij` coordinates. Admission is limited to the catalog-bound
+methanol/K+/Br- and ethanol/Na+/Cl- selections used by the retained Figiel
+constructed-target ledger. The callback reuses the same active-`k_ij`
+Helmholtz and electrolyte-reference owners; it does not own the equation-19
+target construction, source interpretation, fitting, or catalog updates.
+
 Project Truss Provider issue `#10` adds a separate append-only installed-SDK
 candidate for charge-neutral reacting standard references. For an admitted
 aqueous phase model with one explicit water reference carrier, it returns a

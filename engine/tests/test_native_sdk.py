@@ -356,6 +356,26 @@ class FigielPermittivityNativeSdkTable(ctypes.Structure):
     )
 
 
+class IonSolvationKijResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("solvation_gibbs_j_per_mol", ctypes.c_double),
+        ("derivative", ctypes.c_double * 3),
+        ("reference_molality_mol_per_kg", ctypes.c_double),
+        ("reference_convergence_error", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class IonSolvationKijNativeSdkTable(ctypes.Structure):
+    _fields_ = FigielPermittivityNativeSdkTable._fields_ + (
+        ("ion_solvation_kij_result_size", ctypes.c_size_t),
+        ("evaluate_ion_solvation_kij", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -416,6 +436,10 @@ FIGIEL_PERMITTIVITY_PREFIX_SIZE = (
     FigielPermittivityNativeSdkTable.evaluate_figiel_permittivity.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
+ION_SOLVATION_KIJ_PREFIX_SIZE = (
+    IonSolvationKijNativeSdkTable.evaluate_ion_solvation_kij.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
 
 
 EvaluatePurePhase = ctypes.CFUNCTYPE(
@@ -425,6 +449,18 @@ EvaluatePurePhase = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(PhaseBlockResult),
+)
+
+EvaluateIonSolvationKij = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_size_t,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.POINTER(IonSolvationKijResult),
 )
 
 EvaluatePurePhaseParameters = ctypes.CFUNCTYPE(
@@ -772,6 +808,22 @@ def _figiel_permittivity_table(
     assert table.table_size >= ctypes.sizeof(
         FigielPermittivityNativeSdkTable
     )
+    return capsule, table
+
+
+def _ion_solvation_kij_table(
+    model: EPCSAFT,
+) -> tuple[object, IonSolvationKijNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(IonSolvationKijNativeSdkTable)
+    ).contents
+    assert table.table_size >= ION_SOLVATION_KIJ_PREFIX_SIZE
     return capsule, table
 
 
@@ -1921,6 +1973,85 @@ def test_native_sdk_evaluates_figiel_dielectric_suppression_exact_derivative() -
     ) == pytest.approx(1.0 / denominator)
 
 
+def test_native_sdk_evaluates_organic_ion_solvation_kij_derivatives() -> None:
+    model = _electrolyte_model(
+        ("methanol", "potassium-cation", "bromide-anion")
+    )
+    _, table = _ion_solvation_kij_table(model)
+    assert table.ion_solvation_kij_result_size == ctypes.sizeof(
+        IonSolvationKijResult
+    )
+    callback = EvaluateIonSolvationKij(table.evaluate_ion_solvation_kij)
+
+    def evaluate(
+        coordinates: tuple[float, float, float],
+        *,
+        active_ion: int = 1,
+    ) -> IonSolvationKijResult:
+        values = (ctypes.c_double * 3)(*coordinates)
+        result = IonSolvationKijResult(
+            struct_size=ctypes.sizeof(IonSolvationKijResult)
+        )
+        status = callback(
+            table.model_context,
+            model.parameter_fingerprint.encode(),
+            298.15,
+            100000.0,
+            active_ion,
+            values,
+            3,
+            ctypes.byref(result),
+        )
+        assert status == result.status
+        return result
+
+    coordinates = (0.32, 0.15, -0.35)
+    result = evaluate(coordinates)
+    assert result.status == STATUS_OK
+    assert math.isfinite(result.solvation_gibbs_j_per_mol)
+    assert all(math.isfinite(value) for value in result.derivative)
+    assert result.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    step = 1.0e-5
+    for active in range(3):
+        low = list(coordinates)
+        high = list(coordinates)
+        low[active] -= step
+        high[active] += step
+        finite_difference = (
+            evaluate(tuple(high)).solvation_gibbs_j_per_mol
+            - evaluate(tuple(low)).solvation_gibbs_j_per_mol
+        ) / (2.0 * step)
+        assert result.derivative[active] == pytest.approx(
+            finite_difference, rel=2.0e-6, abs=1.0e-3
+        )
+
+    _, capability_table = _capability_table(model)
+    matches = tuple(
+        descriptor
+        for descriptor in capability_table.capabilities[
+            : capability_table.capability_count
+        ]
+        if descriptor.capability in (12, 13, 14)
+    )
+    assert len(matches) == 3
+    assert all(
+        descriptor.parameter_family == 1
+        and descriptor.parameter_identity == 1
+        and descriptor.observation_contract == 2
+        and descriptor.model_domain == 6
+        and descriptor.derivative_order == 1
+        for descriptor in matches
+    )
+    assert {
+        (
+            descriptor.coordinates[0].pair_component_index_a,
+            descriptor.coordinates[0].pair_component_index_b,
+        )
+        for descriptor in matches
+    } == {(0, 1), (0, 2), (1, 2)}
+
+
 def test_native_sdk_figiel_permittivity_installed_header_layout() -> None:
     compiler = shutil.which("cc")
     assert compiler is not None
@@ -1954,10 +2085,32 @@ _Static_assert(
     sizeof(epcsaft_figiel_permittivity_result_v1) == 264,
     "result size"
 );
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_CATION_KIJ_V1 == 12u,
+    "ion-solvation solvent-cation capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_SINGLE_ION_SOLVATION_V1 == 6u,
+    "single-ion-solvation model domain"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, ion_solvation_kij_result_size) == 312,
+    "ion-solvation result-size offset"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, evaluate_ion_solvation_kij) == 320,
+    "ion-solvation callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 328, "extended table size");
+_Static_assert(
+    sizeof(epcsaft_ion_solvation_kij_result_v1) == 288,
+    "ion-solvation result size"
+);
 
 int main(void) {
     epcsaft_evaluate_figiel_permittivity_v1 callback = 0;
-    return callback != 0;
+    epcsaft_evaluate_ion_solvation_kij_v1 ion_callback = 0;
+    return callback != 0 || ion_callback != 0;
 }
 """
     completed = subprocess.run(
@@ -3978,8 +4131,9 @@ def test_native_sdk_active_born_preserves_prior_prefix_and_fails_closed() -> Non
 
     iodide_bundle = ParameterBundle.from_catalog("figiel-2025-aqueous-iodides", version=1)
     iodide = EPCSAFT(iodide_bundle.select(("water", "sodium-cation", "iodide-anion")))
-    with pytest.raises(EosError, match="unadmitted-parameter-fingerprint"):
-        native_sdk(iodide)
+    _, iodide_table = _active_born_table(iodide)
+    iodide_result = _evaluate_active_born(iodide_table, 3.4)
+    assert iodide_result.status == STATUS_UNSUPPORTED_MODEL
 
     lithium = _electrolyte_model(("water", "lithium-cation", "chloride-anion"))
     lithium_capsule, lithium_table = _electrolyte_table(lithium)
@@ -4850,13 +5004,32 @@ def test_native_sdk_staged_figiel_user_bundles_are_narrowly_admitted() -> None:
             1.4,
         ).status == STATUS_UNSUPPORTED_MODEL
 
-    with pytest.raises(EosError, match="unsupported-native-sdk"):
-        native_sdk(
-            _figiel_trial_model(
-                ("water", "sodium-cation", "bromide-anion"),
-                purpose="package-test-fixture",
-            )
+    fixture = _figiel_trial_model(
+        ("water", "sodium-cation", "bromide-anion"),
+        purpose="package-test-fixture",
+    )
+    _, fixture_table = _capability_table(fixture)
+    assert {
+        descriptor.capability
+        for descriptor in fixture_table.capabilities[
+            : fixture_table.capability_count
+        ]
+    } == {11}
+    _, fixture_active_table = _aqueous_miac_solvation_factor_table(fixture)
+    assert (
+        _evaluate_active_born(fixture_active_table, 3.4).status
+        == STATUS_UNSUPPORTED_MODEL
+    )
+    assert (
+        _evaluate_aqueous_miac_kij(
+            fixture_active_table,
+            fixture.parameter_fingerprint,
+            1.0,
+            (-0.2, -0.2, 0.2),
         )
+        .status
+        == STATUS_UNSUPPORTED_MODEL
+    )
     spoofed = _figiel_trial_model(
         ("water", "sodium-cation", "bromide-anion"),
         spoof_source_metadata=True,

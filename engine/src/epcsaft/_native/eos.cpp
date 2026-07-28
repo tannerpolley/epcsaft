@@ -854,6 +854,71 @@ NativeIonSolvationBorn NativeModel::evaluate_ion_solvation_born(
     };
 }
 
+// EqID: infinite_dilution_solvation_energy
+// EqID: fixed_pressure_total_derivative
+NativeIonSolvationKij NativeModel::evaluate_ion_solvation_kij(
+    double temperature,
+    double pressure,
+    std::size_t active_ion_component,
+    const std::array<double, 3>& k_ij
+) const {
+    if (!std::isfinite(temperature) || !std::isfinite(pressure)
+        || temperature <= 0.0 || pressure <= 0.0
+        || (active_ion_component != 1 && active_ion_component != 2)
+        || !std::all_of(k_ij.begin(), k_ij.end(), [](double value) {
+            return std::isfinite(value);
+        })) {
+        throw std::invalid_argument("invalid active ion-solvation k_ij inputs");
+    }
+    if (parameters_.charge_number.size() != 3
+        || parameters_.charge_number[0] != 0
+        || parameters_.charge_number[1] == 0
+        || parameters_.charge_number[2] == 0
+        || parameters_.charge_number[1] + parameters_.charge_number[2] != 0) {
+        throw std::logic_error("unsupported active ion-solvation k_ij model");
+    }
+    NativeParameters active_parameters = parameters_;
+    active_parameters.k_ij[1] = active_parameters.k_ij[3] = k_ij[0];
+    active_parameters.k_ij[2] = active_parameters.k_ij[6] = k_ij[1];
+    active_parameters.k_ij[5] = active_parameters.k_ij[7] = k_ij[2];
+    const NativeModel active_model(active_parameters);
+    const auto result = detail::electrolyte_reference_sequence(
+        std::vector<double>{1.0, 0.0, 0.0},
+        active_parameters.molar_mass_kg_per_mol,
+        std::array<std::size_t, 2>{1, 2},
+        std::array<int, 2>{1, 1},
+        [&active_model, &active_parameters, temperature, pressure, &k_ij](
+            const std::vector<double>& composition
+        ) {
+            return active_aqueous_kij_observation(
+                active_model,
+                active_parameters,
+                temperature,
+                pressure,
+                composition,
+                k_ij
+            );
+        }
+    );
+    if (!result.derivative.has_value() || result.derivative->size() != 6) {
+        throw std::runtime_error(
+            "active ion-solvation k_ij derivative is unavailable"
+        );
+    }
+    const std::size_t ion = active_ion_component - 1;
+    std::array<double, 3> derivative{};
+    for (std::size_t active = 0; active < 3; ++active) {
+        derivative[active] = detail::GAS_CONSTANT * temperature
+            * (*result.derivative)[ion * 3 + active];
+    }
+    return {
+        detail::GAS_CONSTANT * temperature * result.log_fugacity[ion],
+        derivative,
+        result.molality,
+        result.convergence_error,
+    };
+}
+
 // EqExclude: transport and buffer mechanics
 NativeAqueousMiacKij NativeModel::evaluate_aqueous_miac_kij(
     double temperature,

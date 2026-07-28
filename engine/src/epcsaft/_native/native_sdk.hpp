@@ -25,6 +25,7 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     bool neutral_reference_admitted,
     bool unknown_applicability_admitted,
     bool aqueous_solvation_factor_admitted,
+    bool ion_solvation_kij_admitted,
     bool staged_trial_bundle_admitted,
     const std::string& topology_fingerprint
 );
