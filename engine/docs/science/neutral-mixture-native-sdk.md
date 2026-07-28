@@ -8,25 +8,27 @@ Authority effect: none
 
 The append-only `evaluate_mixture_phase` entry in `epcsaft.native_sdk.v1`
 evaluates one fixed-temperature, neutral, nonassociating phase for the
-source-backed Gross--Sadowski methane/ethane parameter set. The capsule is
-bound to an immutable model, parameter fingerprint, source temperature domain,
-component count, and component order. One further append-only
-`evaluate_mixture_phase_kij` and `evaluate_mixture_phase_lij` pointers evaluate
+source-bound model supplied by the caller. The capsule is bound to an
+immutable model, parameter fingerprint, topology fingerprint, source
+temperature domain, component count, and component order. One further
+append-only `evaluate_mixture_phase_kij` and `evaluate_mixture_phase_lij` pointers evaluate
 the same phase with one distinct unlike interaction parameter active. A final
 append-only `evaluate_pure_phase_parameter` pointer evaluates a supported pure
 model with exactly one of `m`, `sigma`, or `epsilon/k` active.
 
-The admitted candidate fingerprints are:
+The first reference-evidence fingerprints are:
 
 - methane, ethane: `sha256:307fcb28d535b94782f3e3caf4012c0c8c0dc87ee4239d6c316de56553543286`;
 - ethane, methane: `sha256:cb0c63530f96d51d5a24f48a2d02ae6567d163abdc373099ce096f7ff0a896f5`.
 
 Both fingerprints describe an ordered selection from the same installed
-source bundle. They do not admit synthetic copies or fitted candidates.
+source bundle. Other source-bound caller models carry their own parameter and
+topology fingerprints; transport admission does not make their values
+catalog-backed, predictive, or authoritative.
 
-The SDK table advertises two immutable capability descriptors for either
-ordered selection. They identify the callbacks as derivative-ready for one
-unordered binary `k_ij` and one unordered binary `l_ij` on a neutral,
+The SDK table advertises two immutable capability descriptors for each
+supported ordered model. They identify the callbacks as derivative-ready for
+one unordered binary `k_ij` and one unordered binary `l_ij` on a neutral,
 nonassociating binary model, while their authority effect remains `none`.
 Pure, associating, ionic, or otherwise unsupported model shapes advertise
 neither binary descriptor. A neutral, nonassociating, constant-diameter pure
@@ -165,8 +167,9 @@ agree with the fixed callback. Negative evidence covers malformed four-coordinat
 nonfinite trial values and state inputs, pure models, association, and ions;
 a finite negative trial confirms that the provider applies no fit bound.
 The descriptor evidence additionally freezes the append-only table offsets,
-the exact Gross methane/ethane component mapping and topology fingerprint,
-and zero advertised capabilities for an unsupported pure-model shape.
+the exact Gross methane/ethane reference mapping and topology fingerprint,
+caller-model identity propagation, and zero advertised capabilities for an
+unsupported pure-model shape.
 
 Scalar pure evidence checks each family against the corresponding slice of the
 joint five-coordinate result, contracts its value gradient and Hessian against
@@ -175,9 +178,18 @@ identity, compiles the installed C header layout, and rejects unknown families
 and nonfinite trials. It does not claim that three independent scalar fits are
 equivalent to the accepted joint pure-parameter solve.
 
-These candidates do not own or admit association, ions, additional mixture
-families, density closure, phase identity, phase discovery, third derivatives,
-Ipopt, Ceres, equilibrium residuals, regression targets, fit bounds, scaling,
-or fit acceptance. Implementation and a passing wheel do not transfer
-authority. Separate independent review, a promotion receipt, and each
-consumer's installed-wheel gate remain required.
+For a neutral pure model with exactly one donor and one acceptor site, each
+with unit multiplicity, the scalar callback additionally exposes one active
+association energy or volume on the ordinary source-owned `sigma_ij^3`
+association basis. A separate appended callback returns the joint Hessian in
+`(n,V,m,sigma,epsilon/k,epsilon_assoc/k,kappa_assoc)` using the
+Baygi--Pahlavanzadeh Eq. 4 temperature-dependent `d_ij^3` basis. Directional
+evidence checks every gradient and Hessian coordinate and a direct oracle
+checks that the diameter basis differs from the unchanged ordinary EOS basis.
+
+These candidates do not own or admit other association topologies, ions,
+multicomponent interaction tensors, density closure, phase identity, phase
+discovery, third derivatives, Ipopt, Ceres, equilibrium residuals, regression
+targets, fit bounds, scaling, or fit acceptance. Implementation and a passing
+wheel do not transfer authority. Independent review, a promotion receipt, and
+each consumer's installed-wheel gate remain required.

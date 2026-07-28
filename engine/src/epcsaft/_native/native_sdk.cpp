@@ -1251,6 +1251,11 @@ struct NativeSdkEndpoint final {
             return fail(
                 EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what()
             );
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown active Figiel permittivity failure"
+            );
         }
     }
 

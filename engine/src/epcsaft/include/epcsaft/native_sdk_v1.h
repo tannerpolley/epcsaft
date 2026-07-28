@@ -123,7 +123,8 @@ typedef struct epcsaft_associating_parameterized_phase_block_result_v1 {
  * Source-model variant used by Baygi--Pahlavanzadeh 2015 Eq. (4): the
  * association-strength volume factor is d_ij^3 rather than sigma_ij^3.
  * The ordinary Provider EOS and scalar association callbacks retain their
- * source-owned sigma_ij^3 convention.
+ * source-owned sigma_ij^3 convention. The bound model must be one neutral
+ * pure 2B component with one donor and one acceptor site of unit multiplicity.
  */
 typedef int (*epcsaft_evaluate_diameter_basis_associating_pure_phase_parameters_v1)(
     const void* model_context,

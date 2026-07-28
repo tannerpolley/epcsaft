@@ -80,6 +80,8 @@ inline bool supports_associating_pure_phase_block(
     }
     const auto& active = parameters.association_active;
     return active.size() == 4
+        && parameters.site_multiplicity
+            == std::vector<int>({1, 1})
         && active[0] == 0 && active[1] != 0
         && active[2] != 0 && active[3] == 0
         && parameters.association_energy_over_k[1]
@@ -1017,8 +1019,7 @@ inline NativeParameterizedPurePhaseBlock parameterized_pure_phase_block(
 // EqID: phase_pressure
 // EqID: association_mass_action
 // EqExclude: CppAD-generated derivative machinery
-inline NativeAssociatingParameterizedPurePhaseBlock
-associating_parameterized_pure_phase_block(
+inline NativeAssociatingParameterizedPurePhaseBlock associating_parameterized_pure_phase_block(
     double temperature,
     double amount,
     double volume,

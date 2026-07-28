@@ -85,10 +85,12 @@ has no phase identity, density root, target residual, Ipopt, Ceres, equilibrium
 result, or fit result. Each consumer remains subject to its own installed-wheel
 gate and promotion receipt.
 
-The local Consumer Maturity Slice 2 prerequisite appends one candidate
-methane/ethane neutral-mixture phase entry to the same capsule and further
-active-`k_ij` and active-`l_ij` callbacks. The same append-only tail adds one
-scalar pure-parameter callback with derivative-ready descriptors for
+The local Consumer Maturity Slice 2 prerequisite appends one candidate neutral
+nonassociating binary-mixture phase entry to the same capsule and further
+active-`k_ij` and active-`l_ij` callbacks. Gross--Sadowski methane/ethane is
+the first reference evidence, while a source-bound caller model carries its
+own exact component and topology fingerprints. The same append-only tail adds
+one scalar pure-parameter callback with derivative-ready descriptors for
 `segment_count`, `segment_diameter`, and `dispersion_energy_over_k`. The
 binary callbacks return exact CppAD derivatives in
 `(n1,n2,V,pair_parameter)`; the pure callback projects the existing exact
@@ -98,6 +100,14 @@ The scalar pure path supports independent family fits and does not replace
 the accepted joint `(m,sigma,epsilon/k)` workflow. None is authoritative
 until a separate promotion receipt is accepted, and neither adds phase,
 density, equilibrium, or regression ownership.
+For an exact neutral pure 2B model with one donor and one acceptor site, the
+tail also exposes scalar association-energy/volume derivatives and one joint
+seven-coordinate pure-phase Hessian. The joint callback alone uses the
+Baygi--Pahlavanzadeh Eq. 4 temperature-dependent `d_ij^3` basis; the ordinary
+Provider EOS and scalar association callbacks remain on their source-owned
+`sigma_ij^3` basis. The callback supplies derivative transport for the bounded
+Regression reconstruction and does not admit other association topologies,
+targets, fitted values, or catalog persistence.
 The same finite descriptor set now binds the existing first-derivative
 callbacks for current-catalog water single-ion Born diameter and NaBr water
 solvation factor to their exact component identity, direct-observable

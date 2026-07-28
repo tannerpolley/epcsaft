@@ -75,26 +75,26 @@ native_sdk_candidates:
   neutral_mixture_phase_hessian_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
-      Source-backed Gross--Sadowski methane/ethane extensive phase value,
+      Source-bound neutral nonassociating binary extensive phase value,
       gradient, Hessian, and pressure diagnostic in ordered component amounts
-      and volume.
+      and volume; Gross--Sadowski methane/ethane is the first reference case.
     coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
     derivative_order: 2
     exclusions: association, electrolyte, density solve, phase identity, parameter derivatives, third derivatives, Ipopt, Ceres, equilibrium, and regression targets
   neutral_mixture_active_kij_hessian_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
-      Model-bound Gross--Sadowski methane/ethane extensive phase value,
+      Model-bound neutral nonassociating binary extensive phase value,
       gradient, Hessian, and pressure with one finite active unlike-pair k_ij.
-    coordinate_order: [methane_amount_mol, ethane_amount_mol, volume_m3, k_ij]
+    coordinate_order: [component_0_amount_mol, component_1_amount_mol, volume_m3, k_ij]
     derivative_order: 2
     exclusions: association, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, equilibrium, regression targets, fit bounds, scaling, and fit acceptance
   neutral_mixture_active_lij_hessian_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
-      Model-bound Gross--Sadowski methane/ethane extensive phase value,
+      Model-bound neutral nonassociating binary extensive phase value,
       gradient, Hessian, and pressure with one finite active unlike-pair l_ij.
-    coordinate_order: [methane_amount_mol, ethane_amount_mol, volume_m3, l_ij]
+    coordinate_order: [component_0_amount_mol, component_1_amount_mol, volume_m3, l_ij]
     derivative_order: 2
     exclusions: association, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, equilibrium, regression targets, fit bounds, scaling, and fit acceptance
   neutral_pure_active_scalar_parameter_hessian_v1:
@@ -107,6 +107,27 @@ native_sdk_candidates:
     derivative_order: 2
     parameter_families: [segment_count, segment_diameter, dispersion_energy_over_k]
     exclusions: joint-parameter replacement, association, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, regression targets, fit bounds, scaling, and fit acceptance
+  neutral_pure_2b_active_scalar_association_hessian_v1:
+    status: local-candidate-pending-independent-review-and-promotion-receipt
+    scope: >-
+      Model-bound neutral pure 2B phase value, gradient, Hessian, and pressure
+      with exactly one active association energy or association volume.
+    coordinate_order: [amount_mol, volume_m3, active_association_parameter]
+    derivative_order: 2
+    parameter_families: [association_energy_over_k, association_volume]
+    association_strength_basis: source-owned-sigma-ij-cubed
+    required_topology: one-component-one-donor-one-acceptor-with-unit-multiplicity
+    exclusions: joint-parameter replacement, other association topologies, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, regression targets, fit bounds, scaling, and fit acceptance
+  baygi_neutral_pure_2b_joint_parameter_hessian_v1:
+    status: local-candidate-pending-independent-review-and-promotion-receipt
+    scope: >-
+      Model-bound neutral pure 2B phase value, gradient, Hessian, and pressure
+      for the Baygi--Pahlavanzadeh Eq. 4 diameter-basis joint parameter block.
+    coordinate_order: [amount_mol, volume_m3, segment_count, segment_diameter_angstrom, dispersion_energy_over_k, association_energy_over_k, association_volume]
+    derivative_order: 2
+    association_strength_basis: temperature-dependent-d-ij-cubed
+    required_topology: one-component-one-donor-one-acceptor-with-unit-multiplicity
+    exclusions: ordinary-EOS-basis-change, other association topologies, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, regression targets, fit bounds, scaling, fitted values, catalog persistence, and authority
   figiel_water_active_born_solvation_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
@@ -349,6 +370,11 @@ public_surface:
       derivative_order: 2
       status: local-candidate-pending-independent-review-and-promotion-receipt
     - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_diameter_basis_associating_pure_phase_parameters
+      coordinate_order: [amount_mol, volume_m3, segment_count, segment_diameter_angstrom, dispersion_energy_over_k, association_energy_over_k, association_volume]
+      derivative_order: 2
+      status: local-candidate-pending-independent-review-and-promotion-receipt
+    - capsule: epcsaft.native_sdk.v1
       entry: evaluate_electrolyte_phase
       coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
       derivative_order: 2
@@ -411,33 +437,33 @@ manifest:
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
   oversized_files:
     - path: src/epcsaft/records.py
-      physical_lines: 451
+      physical_lines: 469
       capability_delta: public Literal aliases for parameter authoring
     - path: src/epcsaft/_resolve.py
-      physical_lines: 550
+      physical_lines: 734
     - path: src/epcsaft/_bundle_io.py
-      physical_lines: 675
+      physical_lines: 679
       capability_delta: strict version-1 persistence for user-provided bundles
     - path: src/epcsaft/eos.py
-      physical_lines: 913
+      physical_lines: 940
       capability_delta: model-bound parameter-topology fingerprints
     - path: src/epcsaft/_native/eos.cpp
-      physical_lines: 1390
+      physical_lines: 1682
       capability_delta: exact scalar active pure-parameter projection
     - path: src/epcsaft/_native/derivatives.hpp
-      physical_lines: 518
+      physical_lines: 717
       capability_delta: bounded CppAD row concurrency with serialized tape ownership
     - path: src/epcsaft/_native/native_sdk.cpp
-      physical_lines: 2304
+      physical_lines: 3145
       capability_delta: finite phase and direct-observable parameter capability metadata
     - path: src/epcsaft/_native/phase_block.hpp
-      physical_lines: 766
+      physical_lines: 1284
       capability_delta: serialized CppAD tape ownership during aqueous batch execution
     - path: tests/test_native_sdk.py
-      physical_lines: 5016
+      physical_lines: 6302
       capability_delta: phase and direct-observable descriptor, derivative, ABI, and fail-closed proof
     - path: tests/test_parameters.py
-      physical_lines: 1276
+      physical_lines: 1430
       capability_delta: immutable catalog discovery and installed-purpose enforcement
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 

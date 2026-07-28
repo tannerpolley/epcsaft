@@ -2851,6 +2851,27 @@ def test_native_sdk_joint_associating_parameters_reject_nonassociating_model(
     assert b"2B model" in result.error
 
 
+def test_native_sdk_joint_associating_parameters_require_one_of_each_2b_site(
+) -> None:
+    model = _model("figiel-2025-reference-electrolytes", "ethanol")
+    malformed = NativeModel(
+        *_native_arguments(replace(model._model, site_multiplicity=(2, 1)))
+    )
+    with pytest.raises(
+        ValueError, match="native SDK v1 requires a supported phase-block model"
+    ):
+        _native_sdk_v1(
+            malformed,
+            model.parameter_fingerprint,
+            298.15,
+            298.15,
+            model.component_ids,
+            math.nan,
+            phase_callbacks_admitted=True,
+            topology_fingerprint=f"sha256:{'0' * 64}",
+        )
+
+
 @pytest.mark.parametrize(
     ("family_code", "parameter_value", "expected_status"),
     (

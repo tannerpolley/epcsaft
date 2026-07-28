@@ -73,10 +73,14 @@ std::vector<Scalar> association_delta_values(
                     / (one_minus_eta * one_minus_eta)
                 + 2.0 * reduced_diameter * reduced_diameter * zeta_2 * zeta_2
                     / (one_minus_eta * one_minus_eta * one_minus_eta);
-            const Scalar size_ij = temperature_dependent_size_basis
-                ? Scalar(0.5) * (diameter[i] + diameter[j])
-                : Scalar(0.5) * (sigma[i] + sigma[j])
+            Scalar size_ij;
+            if (temperature_dependent_size_basis) {
+                // EqID: association_strength_diameter_basis
+                size_ij = Scalar(0.5) * (diameter[i] + diameter[j]);
+            } else {
+                size_ij = Scalar(0.5) * (sigma[i] + sigma[j])
                     * (Scalar(1.0) - parameters.l_ij[i * components + j]);
+            }
             // EqID: association_strength
             delta[pair] = contact
                 * (association_exp(

@@ -118,7 +118,7 @@ accepted prefix. The entry uses caller-owned amount, gradient, and Hessian
 buffers. Its model-bound coordinate order is `(n_1,...,n_C,V)`, with component
 order fixed by the selected parameter set, and it returns derivatives only
 through order two. One further callback pointer reuses that result structure
-for the exact methane/ethane coordinate order `(n_1,n_2,V,k_ij)`. Its single
+for the exact bound-model coordinate order `(n_1,n_2,V,k_ij)`. Its single
 active unlike-pair value is written symmetrically to both off-diagonal pair
 positions before the canonical Helmholtz owner is taped. A final append-only
 pointer applies the same contract to the distinct `l_ij` cross-diameter
@@ -134,6 +134,15 @@ descriptor binds the component identity, units, topology and source
 fingerprints, derivative order, and source temperature domain. This projection
 does not replace the joint five-coordinate callback used by accepted
 three-parameter pure-saturation regression.
+
+For an exact neutral pure 2B topology with one donor and one acceptor site of
+unit multiplicity, the same scalar callback also exposes one active association
+energy or association volume using the ordinary source-owned `sigma_ij^3`
+basis. A separate append-only callback returns the seven-coordinate joint
+pure-phase Hessian needed by the bounded Baygi--Pahlavanzadeh reconstruction.
+That source-model callback uses Eq. 4's temperature-dependent `d_ij^3` basis
+without changing the ordinary Provider EOS. Neither callback owns targets,
+bounds, scaling, Ceres, fitted values, or catalog persistence.
 
 The D-024 candidate appends the full-electrolyte phase callback and two
 model-bound volume-domain callbacks. The unchanged phase callback admits exact
@@ -236,9 +245,11 @@ certification, and results.
 The accepted pure entries reject associating, ionic, mixture,
 out-of-source-domain, out-of-EOS-domain, and nonfinite inputs before returning
 a nominal result. The parameterized entry additionally rejects nonpositive
-active parameters. The local mixture candidate admits only the two-component
-source-backed Gross--Sadowski methane/ethane model in its bound component order
-and rejects pure, associating, ionic, malformed-buffer, and nonpositive states.
+active parameters. The local mixture candidate admits only a two-component
+source-bound neutral nonassociating model in its bound component order and
+rejects pure, associating, ionic, malformed-buffer, and nonpositive states.
+Gross--Sadowski methane/ethane is its first reference evidence, not an
+allowlist.
 The active-`k_ij` and active-`l_ij` callbacks additionally reject nonfinite
 trial values but do not impose fit bounds or scaling. Their returned
 fingerprint identifies the
@@ -315,12 +326,14 @@ delegation and result translation only.
 
 ## Deferred extensions
 
-- Neutral nonassociating mixture families beyond the exact source-backed
-  methane/ethane candidate require separate scope and evidence.
-- Binary-interaction families beyond the exact local methane/ethane active
-  `k_ij` and `l_ij` candidates, association, electrolyte, and other fitted-parameter
-  families require separate parameterized phase contracts and evidence. They
-  are not implied by the pure three-parameter entry or this bounded candidate.
+- Neutral nonassociating models with more than two components require separate
+  scope and evidence.
+- Binary-interaction families beyond the active `k_ij` and `l_ij` candidates,
+  association topologies beyond the exact pure
+  2B scalar and Baygi joint candidates, electrolyte, and other
+  fitted-parameter families require separate parameterized phase contracts
+  and evidence. They are not implied by the pure three-parameter entry or this
+  bounded candidate.
 - The D-023 active-Born solvation candidate does not admit fitted parameters,
   additional ions, solvation-factor or dielectric
   parameters, other solvents/states, a generic parameter overlay, or catalog
