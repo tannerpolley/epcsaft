@@ -185,6 +185,15 @@ constructed-target ledger. The callback reuses the same active-`k_ij`
 Helmholtz and electrolyte-reference owners; it does not own the equation-19
 target construction, source interpretation, fitting, or catalog updates.
 
+The same integration tail exposes the SSM+DS ionic-region relative
+permittivity as one model-bound active coordinate for each admitted
+current-catalog water single-ion model. It returns the existing x-process
+solvation Gibbs value and its exact total fixed-pressure first derivative
+through the same CppAD, density, fugacity, and reference-sequence owners.
+Figiel reports the catalog value as fixed model input, so this callback proves
+derivative and fitting mechanics only; it does not claim recovery of a
+published fitted value, a shared cross-model parameter, or catalog authority.
+
 Project Truss Provider issue `#10` adds a separate append-only installed-SDK
 candidate for charge-neutral reacting standard references. For an admitted
 aqueous phase model with one explicit water reference carrier, it returns a

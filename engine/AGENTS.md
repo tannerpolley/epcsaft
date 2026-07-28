@@ -82,6 +82,11 @@ The capability set also advertises the already-owned exact first-derivative
 callbacks for current-catalog single-ion Born diameter and NaBr water
 solvation factor. These direct-observable descriptors add no EOS equation,
 target, residual, fit policy, or broader model admission.
+The same exact five-ion water domain exposes one model-bound active
+ionic-region relative permittivity through the existing solvation-Gibbs
+reference sequence. The published value is fixed model input rather than a
+fitted target; the callback adds derivative transport, not catalog authority
+or a shared multi-model fit.
 The append-only tail also exposes the existing infinite-dilution reference
 sequence with exact first derivatives in the three ordered `k_ij` coordinates
 for the source-backed Figiel methanol/K+/Br- and ethanol/Na+/Cl- selections.

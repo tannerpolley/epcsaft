@@ -66,6 +66,13 @@ struct NativeIonSolvationBorn final {
     double reference_convergence_error;
 };
 
+struct NativeIonSolvationIonicPermittivity final {
+    double solvation_gibbs_j_per_mol;
+    double derivative_j_per_mol;
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+};
+
 struct NativeIonSolvationKij final {
     double solvation_gibbs_j_per_mol;
     std::array<double, 3> derivative;
@@ -253,6 +260,12 @@ public:
         double temperature,
         double pressure,
         double born_diameter_angstrom
+    ) const;
+    NativeIonSolvationIonicPermittivity
+    evaluate_ion_solvation_ionic_permittivity(
+        double temperature,
+        double pressure,
+        double ionic_region_relative_permittivity
     ) const;
 
     NativeIonSolvationKij evaluate_ion_solvation_kij(

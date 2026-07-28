@@ -376,6 +376,26 @@ class IonSolvationKijNativeSdkTable(ctypes.Structure):
     )
 
 
+class IonSolvationIonicPermittivityResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("solvation_gibbs_j_per_mol", ctypes.c_double),
+        ("derivative_j_per_mol", ctypes.c_double),
+        ("reference_molality_mol_per_kg", ctypes.c_double),
+        ("reference_convergence_error", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class IonSolvationIonicPermittivityNativeSdkTable(ctypes.Structure):
+    _fields_ = IonSolvationKijNativeSdkTable._fields_ + (
+        ("ion_solvation_ionic_permittivity_result_size", ctypes.c_size_t),
+        ("evaluate_ion_solvation_ionic_permittivity", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -438,6 +458,10 @@ FIGIEL_PERMITTIVITY_PREFIX_SIZE = (
 )
 ION_SOLVATION_KIJ_PREFIX_SIZE = (
     IonSolvationKijNativeSdkTable.evaluate_ion_solvation_kij.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+ION_SOLVATION_IONIC_PERMITTIVITY_PREFIX_SIZE = (
+    IonSolvationIonicPermittivityNativeSdkTable.evaluate_ion_solvation_ionic_permittivity.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
@@ -542,6 +566,16 @@ EvaluateIonSolvationBorn = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(IonSolvationBornResult),
+)
+
+EvaluateIonSolvationIonicPermittivity = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(IonSolvationIonicPermittivityResult),
 )
 
 EvaluateAqueousMiacKij = ctypes.CFUNCTYPE(
@@ -824,6 +858,22 @@ def _ion_solvation_kij_table(
         address, ctypes.POINTER(IonSolvationKijNativeSdkTable)
     ).contents
     assert table.table_size >= ION_SOLVATION_KIJ_PREFIX_SIZE
+    return capsule, table
+
+
+def _ion_solvation_ionic_permittivity_table(
+    model: EPCSAFT,
+) -> tuple[object, IonSolvationIonicPermittivityNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(IonSolvationIonicPermittivityNativeSdkTable)
+    ).contents
+    assert table.table_size >= ION_SOLVATION_IONIC_PERMITTIVITY_PREFIX_SIZE
     return capsule, table
 
 
@@ -1151,6 +1201,28 @@ def _evaluate_active_born(
         298.15,
         100000.0,
         born_diameter_angstrom,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
+
+
+def _evaluate_ionic_permittivity(
+    table: IonSolvationIonicPermittivityNativeSdkTable,
+    fingerprint: str,
+    ionic_region_relative_permittivity: float,
+) -> IonSolvationIonicPermittivityResult:
+    result = IonSolvationIonicPermittivityResult(
+        struct_size=ctypes.sizeof(IonSolvationIonicPermittivityResult)
+    )
+    status = EvaluateIonSolvationIonicPermittivity(
+        table.evaluate_ion_solvation_ionic_permittivity
+    )(
+        table.model_context,
+        fingerprint.encode(),
+        298.15,
+        100000.0,
+        ionic_region_relative_permittivity,
         ctypes.byref(result),
     )
     assert status == result.status
@@ -4328,6 +4400,73 @@ def test_native_sdk_active_born_preserves_prior_prefix_and_fails_closed() -> Non
     )
     assert phase_result.status == STATUS_UNSUPPORTED_MODEL
     assert phase_result.error
+
+
+@pytest.mark.parametrize(
+    ("active_ion", "counter_ion", "source_diameter"),
+    (
+        ("sodium-cation", "chloride-anion", 3.445),
+        ("bromide-anion", "sodium-cation", 4.480),
+    ),
+)
+def test_native_sdk_ionic_region_permittivity_is_model_bound_and_exact(
+    active_ion: str,
+    counter_ion: str,
+    source_diameter: float,
+) -> None:
+    model = _electrolyte_model(("water", active_ion, counter_ion))
+    _, table = _ion_solvation_ionic_permittivity_table(model)
+    descriptors = {
+        descriptor.capability: descriptor
+        for descriptor in table.capabilities[: table.capability_count]
+    }
+    descriptor = descriptors[17]
+    assert descriptor.parameter_family == 11
+    assert descriptor.parameter_identity == 3
+    assert descriptor.observation_contract == 2
+    assert descriptor.model_domain == 3
+    assert descriptor.derivative_order == 1
+    assert descriptor.coordinate_count == 1
+    assert descriptor.coordinates[0].kind == 13
+    assert descriptor.coordinates[0].unit == b"dimensionless"
+    assert descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    center = _evaluate_ionic_permittivity(table, model.parameter_fingerprint, 8.0)
+    source_born = _evaluate_active_born(
+        table,
+        source_diameter,
+    )
+    assert center.status == STATUS_OK
+    assert center.solvation_gibbs_j_per_mol == pytest.approx(
+        source_born.solvation_gibbs_j_per_mol, abs=2.0e-8
+    )
+    assert center.reference_molality_mol_per_kg == 1.0e-12
+    assert 0.0 <= center.reference_convergence_error <= 5.0e-5
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    estimates = []
+    for step in (2.0e-4, 1.0e-4):
+        upper = _evaluate_ionic_permittivity(
+            table, model.parameter_fingerprint, 8.0 + step
+        )
+        lower = _evaluate_ionic_permittivity(
+            table, model.parameter_fingerprint, 8.0 - step
+        )
+        estimates.append(
+            (upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol)
+            / (2.0 * step)
+        )
+    tolerance = max(
+        1.0e-3,
+        20.0 * abs(estimates[0] - estimates[1]),
+        2.0e-8 * abs(center.derivative_j_per_mol),
+    )
+    assert abs(center.derivative_j_per_mol - estimates[1]) <= tolerance
+
+    wrong_fingerprint = _evaluate_ionic_permittivity(
+        table, "sha256:" + "0" * 64, 8.0
+    )
+    assert wrong_fingerprint.status == STATUS_UNSUPPORTED_MODEL
 
 
 @pytest.mark.parametrize(

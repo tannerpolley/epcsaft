@@ -11,14 +11,20 @@
 
 namespace epcsaft::detail {
 
-template <typename Scalar, typename BornDiameter, typename SolvationFactor>
+template <
+    typename Scalar,
+    typename BornDiameter,
+    typename SolvationFactor,
+    typename IonicPermittivity
+>
 Scalar born_ssm_ds_contribution_impl(
     const Scalar& temperature,
     const std::vector<Scalar>& mole_fractions,
     const NativeParameters& parameters,
     const Scalar& bulk_relative_permittivity,
     BornDiameter born_diameter_angstrom,
-    SolvationFactor solvation_factor
+    SolvationFactor solvation_factor,
+    IonicPermittivity ionic_region_relative_permittivity
 ) {
     bool has_ion = false;
     for (int charge : parameters.charge_number) {
@@ -60,7 +66,7 @@ Scalar born_ssm_ds_contribution_impl(
         // EqID: ssm_ds_radial_work
         radial_work += mole_fractions[component] * charge * charge * (
             (1.0 - 1.0 / bulk_relative_permittivity) / shell_diameter
-            + (1.0 - 1.0 / parameters.ionic_region_relative_permittivity)
+            + (1.0 - 1.0 / ionic_region_relative_permittivity)
                 * (1.0 / born_diameter - 1.0 / shell_diameter)
         );
     }
@@ -88,7 +94,8 @@ Scalar born_ssm_ds_contribution(
         },
         [&parameters](std::size_t component) {
             return Scalar(parameters.solvation_factor[component]);
-        }
+        },
+        Scalar(parameters.ionic_region_relative_permittivity)
     );
 }
 
@@ -173,7 +180,8 @@ Scalar born_ssm_ds_contribution_active(
         },
         [&parameters](std::size_t component) {
             return Scalar(parameters.solvation_factor[component]);
-        }
+        },
+        Scalar(parameters.ionic_region_relative_permittivity)
     );
 }
 
@@ -201,7 +209,32 @@ Scalar born_ssm_ds_contribution_active_solvation_factor(
             return component == active_component
                 ? active_solvation_factor
                 : Scalar(parameters.solvation_factor[component]);
-        }
+        },
+        Scalar(parameters.ionic_region_relative_permittivity)
+    );
+}
+
+template <typename Scalar>
+// EqID: ssm_ds_born_helmholtz
+Scalar born_ssm_ds_contribution_active_ionic_permittivity(
+    const Scalar& temperature,
+    const std::vector<Scalar>& mole_fractions,
+    const NativeParameters& parameters,
+    const Scalar& bulk_relative_permittivity,
+    const Scalar& active_ionic_region_relative_permittivity
+) {
+    return born_ssm_ds_contribution_impl(
+        temperature,
+        mole_fractions,
+        parameters,
+        bulk_relative_permittivity,
+        [&parameters](std::size_t component) {
+            return Scalar(parameters.born_diameter_angstrom[component]);
+        },
+        [&parameters](std::size_t component) {
+            return Scalar(parameters.solvation_factor[component]);
+        },
+        active_ionic_region_relative_permittivity
     );
 }
 

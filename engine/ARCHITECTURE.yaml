@@ -185,6 +185,21 @@ native_sdk_candidates:
     reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
     derivative_owner: src/epcsaft/_native/derivatives.hpp
     exclusions: constructed targets, transfer-data interpretation, residuals, scaling, bounds, Ceres, fit results, catalog persistence, numerical production derivatives, second derivatives, prediction, and authority
+  figiel_water_active_ionic_region_permittivity_solvation_v1:
+    status: local-candidate-no-authority-effect
+    scope: >-
+      One model-bound 298.15 K, 1 bar water x-process single-ion solvation
+      Gibbs energy and its exact total fixed-pressure first derivative with
+      respect to the SSM+DS ionic-region relative permittivity.
+    active_coordinate: ionic_region_relative_permittivity
+    derivative_order: 1
+    capability_descriptor: model-identity-ion-solvation-gibbs-v1
+    table_size_bytes_64_bit: 344
+    result_size_bytes_64_bit: 272
+    admitted_active_components: [lithium-cation, sodium-cation, potassium-cation, chloride-anion, bromide-anion]
+    reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
+    derivative_owner: src/epcsaft/_native/derivatives.hpp
+    exclusions: targets, residuals, scaling, bounds, Ceres, fit results, simultaneous cross-model fitting, catalog persistence, numerical production derivatives, second derivatives, prediction, and authority
   neutral_reacting_reference_v1:
     status: project-truss-implementation-candidate-no-authority-effect
     scope: >-

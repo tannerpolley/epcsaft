@@ -159,6 +159,7 @@ struct ThermodynamicDerivatives final {
     double residual_helmholtz;
     std::optional<double> active_born;
     std::optional<double> active_solvation_factor;
+    std::optional<double> active_ionic_permittivity;
     std::vector<double> active_aqueous_k_ij;
     std::optional<double> active_association_parameter;
     std::vector<double> hessian;
@@ -190,6 +191,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     std::optional<std::size_t> active_born_component,
     double active_born_diameter_angstrom,
     const std::optional<double>& active_solvation_factor,
+    const std::optional<double>& active_ionic_permittivity,
     const std::optional<std::array<double, 3>>& active_aqueous_k_ij,
     const std::optional<double>& active_association_parameter,
     bool active_association_energy
@@ -202,14 +204,20 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         static_cast<std::size_t>(active_born_component.has_value());
     const std::size_t solvation_coordinates =
         static_cast<std::size_t>(active_solvation_factor.has_value());
+    const std::size_t ionic_permittivity_coordinates =
+        static_cast<std::size_t>(active_ionic_permittivity.has_value());
     const std::size_t kij_coordinates = active_aqueous_k_ij.has_value() ? 3 : 0;
     const std::size_t association_coordinates =
         static_cast<std::size_t>(active_association_parameter.has_value());
     const std::size_t coordinates = 2 + components + born_coordinates
-        + solvation_coordinates + kij_coordinates + association_coordinates;
+        + solvation_coordinates + ionic_permittivity_coordinates
+        + kij_coordinates + association_coordinates;
     const std::size_t born_offset = 2 + components;
     const std::size_t solvation_offset = born_offset + born_coordinates;
-    const std::size_t kij_offset = solvation_offset + solvation_coordinates;
+    const std::size_t ionic_permittivity_offset =
+        solvation_offset + solvation_coordinates;
+    const std::size_t kij_offset =
+        ionic_permittivity_offset + ionic_permittivity_coordinates;
     const std::size_t association_offset = kij_offset + kij_coordinates;
     const std::size_t width = coordinates + sites;
 
@@ -224,6 +232,9 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     }
     if (active_solvation_factor.has_value()) {
         independent[solvation_offset] = *active_solvation_factor;
+    }
+    if (active_ionic_permittivity.has_value()) {
+        independent[ionic_permittivity_offset] = *active_ionic_permittivity;
     }
     if (active_aqueous_k_ij.has_value()) {
         for (std::size_t coordinate = 0; coordinate < 3; ++coordinate) {
@@ -279,6 +290,14 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
                 0,
                 independent[solvation_offset]
             )
+            : active_ionic_permittivity.has_value()
+                ? born_ssm_ds_contribution_active_ionic_permittivity(
+                    independent[0],
+                    composition,
+                    parameters,
+                    electrolyte.bulk_relative_permittivity,
+                    independent[ionic_permittivity_offset]
+                )
             : born_contribution(
             independent[0],
             composition,
@@ -342,6 +361,9 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     }
     if (active_solvation_factor.has_value()) {
         point.push_back(*active_solvation_factor);
+    }
+    if (active_ionic_permittivity.has_value()) {
+        point.push_back(*active_ionic_permittivity);
     }
     if (active_aqueous_k_ij.has_value()) {
         point.insert(
@@ -450,6 +472,9 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         active_solvation_factor.has_value()
             ? std::optional<double>(gradient[solvation_offset])
             : std::nullopt,
+        active_ionic_permittivity.has_value()
+            ? std::optional<double>(gradient[ionic_permittivity_offset])
+            : std::nullopt,
         active_aqueous_k_ij.has_value()
             ? std::vector<double>(
                 gradient.begin() + static_cast<std::ptrdiff_t>(kij_offset),
@@ -482,6 +507,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives(
         std::nullopt,
         std::nullopt,
         std::nullopt,
+        std::nullopt,
         false
     );
 }
@@ -504,6 +530,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_born(
         site_fractions,
         active_component,
         active_born_diameter_angstrom,
+        std::nullopt,
         std::nullopt,
         std::nullopt,
         std::nullopt,
@@ -531,6 +558,33 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_solvation_facto
         active_solvation_factor,
         std::nullopt,
         std::nullopt,
+        std::nullopt,
+        false
+    );
+}
+
+// EqExclude: CppAD-generated derivative machinery
+inline ThermodynamicDerivatives
+thermodynamic_derivatives_active_ionic_region_permittivity(
+    double temperature,
+    double molar_density,
+    const std::vector<double>& mole_fractions,
+    const NativeParameters& parameters,
+    const std::vector<double>& site_fractions,
+    double active_ionic_region_relative_permittivity
+) {
+    return thermodynamic_derivatives_impl(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        site_fractions,
+        std::nullopt,
+        0.0,
+        std::nullopt,
+        active_ionic_region_relative_permittivity,
+        std::nullopt,
+        std::nullopt,
         false
     );
 }
@@ -552,6 +606,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_aqueous_kij(
         site_fractions,
         std::nullopt,
         0.0,
+        std::nullopt,
         std::nullopt,
         active_aqueous_k_ij,
         std::nullopt,
@@ -577,6 +632,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_pure_associatio
         site_fractions,
         std::nullopt,
         0.0,
+        std::nullopt,
         std::nullopt,
         std::nullopt,
         active_parameter,

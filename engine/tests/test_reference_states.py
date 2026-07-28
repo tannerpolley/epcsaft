@@ -197,7 +197,9 @@ def test_reference_sequence_algorithm_has_one_native_owner() -> None:
     assert "REFERENCE_CONVERGENCE_TOLERANCE" in native_source
     assert "formula_composition" in native_source
     assert "electrolyte_reference_sequence" in native_source
-    assert eos_source.count("detail::electrolyte_reference_sequence(") == 4
+    assert "REFERENCE_MOLALITIES" not in eos_source
+    assert "REFERENCE_CONVERGENCE_TOLERANCE" not in eos_source
+    assert "detail::electrolyte_reference_sequence(" in eos_source
     for delegate in (
         python_source,
         eos_source,
