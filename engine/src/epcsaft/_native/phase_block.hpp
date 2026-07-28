@@ -32,6 +32,14 @@ struct NativeParameterizedPurePhaseBlock final {
     double chemical_potential_over_rt;
 };
 
+struct NativeAssociatingParameterizedPurePhaseBlock final {
+    double helmholtz_over_rt_reference_amount;
+    std::array<double, 7> gradient;
+    std::array<double, 49> hessian;
+    double pressure_pa;
+    double chemical_potential_over_rt;
+};
+
 struct NativeMixturePhaseBlock final {
     double helmholtz_over_rt_reference_amount;
     std::vector<double> gradient;
@@ -122,6 +130,7 @@ struct PhaseBlockParameters final {
     std::vector<Scalar> l_ij;
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;
+    std::vector<int> association_active;
     std::vector<int> charge_number;
     int electrolyte_model;
 };
@@ -149,6 +158,7 @@ PhaseBlockParameters<Scalar> binary_interaction_parameters(
         phase_block_scalars<Scalar>(parameters.l_ij),
         parameters.site_component,
         parameters.site_multiplicity,
+        parameters.association_active,
         parameters.charge_number,
         parameters.electrolyte_model,
     };
@@ -171,6 +181,7 @@ PhaseBlockParameters<Scalar> binary_size_interaction_parameters(
         {Scalar(parameters.l_ij[0]), l_ij, l_ij, Scalar(parameters.l_ij[3])},
         parameters.site_component,
         parameters.site_multiplicity,
+        parameters.association_active,
         parameters.charge_number,
         parameters.electrolyte_model,
     };
@@ -773,6 +784,7 @@ PhaseBlockParameters<Scalar> pure_phase_parameters(
         {Scalar(0.0)},
         {},
         {},
+        {},
         {0},
         ELECTROLYTE_MODEL_NONE,
     };
@@ -993,6 +1005,269 @@ inline NativeParameterizedPurePhaseBlock parameterized_pure_phase_block(
         );
     }
 
+    return {
+        value,
+        gradient,
+        hessian,
+        -GAS_CONSTANT * temperature * gradient[1],
+        gradient[0],
+    };
+}
+
+// EqID: phase_pressure
+// EqID: association_mass_action
+// EqExclude: CppAD-generated derivative machinery
+inline NativeAssociatingParameterizedPurePhaseBlock
+associating_parameterized_pure_phase_block(
+    double temperature,
+    double amount,
+    double volume,
+    double segment_count,
+    double segment_diameter_angstrom,
+    double dispersion_energy_over_k,
+    double association_energy_over_k,
+    double association_volume,
+    const NativeParameters& base_parameters
+) {
+    if (!supports_associating_pure_phase_block(base_parameters)
+        || !base_parameters.sigma_term_component.empty()) {
+        throw std::logic_error(
+            "joint associating parameters require one neutral constant-diameter 2B model"
+        );
+    }
+    const std::array<double, 8> inputs{
+        temperature,
+        amount,
+        volume,
+        segment_count,
+        segment_diameter_angstrom,
+        dispersion_energy_over_k,
+        association_energy_over_k,
+        association_volume,
+    };
+    if (!std::all_of(inputs.begin(), inputs.end(), [](double item) {
+            return std::isfinite(item) && item > 0.0;
+        })) {
+        throw std::invalid_argument(
+            "joint associating phase inputs must be positive and finite"
+        );
+    }
+
+    NativeParameters value_parameters = base_parameters;
+    value_parameters.segment_count[0] = segment_count;
+    value_parameters.sigma_constant[0] = segment_diameter_angstrom;
+    value_parameters.dispersion_energy_over_k[0] =
+        dispersion_energy_over_k;
+    for (std::size_t pair = 0;
+         pair < value_parameters.association_active.size();
+         ++pair) {
+        if (value_parameters.association_active[pair] != 0) {
+            value_parameters.association_energy_over_k[pair] =
+                association_energy_over_k;
+            value_parameters.association_volume[pair] = association_volume;
+        }
+    }
+    const double density = amount / volume;
+    const std::vector<double> composition{1.0};
+    const auto value_sigma = segment_sigma(temperature, value_parameters);
+    const auto value_diameter = segment_diameter(
+        temperature, value_parameters, value_sigma
+    );
+    const auto site_fractions = solve_site_fractions(
+        temperature,
+        density,
+        composition,
+        value_parameters,
+        value_sigma,
+        value_diameter
+    );
+
+    CppAdSerialGuard cppad_guard;
+    using ADScalar = CppAD::AD<double>;
+    constexpr std::size_t coordinates = 7;
+    const std::size_t sites = site_fractions.size();
+    const std::size_t width = coordinates + sites;
+    std::vector<ADScalar> independent(width);
+    independent[0] = amount;
+    independent[1] = volume;
+    independent[2] = segment_count;
+    independent[3] = segment_diameter_angstrom;
+    independent[4] = dispersion_energy_over_k;
+    independent[5] = association_energy_over_k;
+    independent[6] = association_volume;
+    for (std::size_t site = 0; site < sites; ++site) {
+        independent[coordinates + site] = site_fractions[site];
+    }
+    CppAD::Independent(independent);
+
+    PhaseBlockParameters<ADScalar> parameters{
+        {independent[2]},
+        {independent[3]},
+        {},
+        {},
+        {},
+        {independent[4]},
+        {ADScalar(0.0)},
+        {ADScalar(0.0)},
+        base_parameters.site_component,
+        base_parameters.site_multiplicity,
+        base_parameters.association_active,
+        {0},
+        ELECTROLYTE_MODEL_NONE,
+    };
+    const ADScalar active_density = independent[0] / independent[1];
+    const std::vector<ADScalar> active_composition{ADScalar(1.0)};
+    const std::vector<ADScalar> active_site_fractions(
+        independent.begin() + static_cast<std::ptrdiff_t>(coordinates),
+        independent.end()
+    );
+    const auto sigma = segment_sigma(ADScalar(temperature), parameters);
+    const auto diameter = segment_diameter(
+        ADScalar(temperature), parameters, sigma
+    );
+    const auto contributions = residual_helmholtz(
+        ADScalar(temperature),
+        active_density,
+        active_composition,
+        parameters,
+        sigma,
+        diameter,
+        active_site_fractions,
+        ADScalar(0.0),
+        ADScalar(0.0)
+    );
+    const ADScalar phase = independent[0] * (
+        CppAD::log(active_density) - ADScalar(1.0)
+        + contributions.hard_chain
+        + contributions.dispersion
+        + contributions.association
+    );
+    std::vector<ADScalar> association_energies(
+        base_parameters.association_energy_over_k.begin(),
+        base_parameters.association_energy_over_k.end()
+    );
+    std::vector<ADScalar> association_volumes(
+        base_parameters.association_volume.begin(),
+        base_parameters.association_volume.end()
+    );
+    for (std::size_t pair = 0;
+         pair < base_parameters.association_active.size();
+         ++pair) {
+        if (base_parameters.association_active[pair] != 0) {
+            association_energies[pair] = independent[5];
+            association_volumes[pair] = independent[6];
+        }
+    }
+    const auto delta = association_delta_values(
+        ADScalar(temperature),
+        active_density,
+        active_composition,
+        parameters,
+        sigma,
+        diameter,
+        association_energies,
+        association_volumes
+    );
+    const auto mass_action = association_residuals(
+        active_density,
+        active_composition,
+        parameters,
+        active_site_fractions,
+        delta
+    );
+    std::vector<ADScalar> dependent{phase};
+    dependent.insert(dependent.end(), mass_action.begin(), mass_action.end());
+    CppAD::ADFun<double> function(independent, dependent);
+
+    std::vector<double> point{
+        amount,
+        volume,
+        segment_count,
+        segment_diameter_angstrom,
+        dispersion_energy_over_k,
+        association_energy_over_k,
+        association_volume,
+    };
+    point.insert(point.end(), site_fractions.begin(), site_fractions.end());
+    const auto jacobian = function.Jacobian(point);
+    std::vector<double> association_jacobian(sites * sites);
+    for (std::size_t row = 0; row < sites; ++row) {
+        for (std::size_t column = 0; column < sites; ++column) {
+            association_jacobian[row * sites + column] =
+                jacobian[(1 + row) * width + coordinates + column];
+        }
+    }
+    std::vector<std::vector<double>> site_sensitivity(
+        coordinates, std::vector<double>(sites, 0.0)
+    );
+    for (std::size_t coordinate = 0; coordinate < coordinates; ++coordinate) {
+        std::vector<double> right_hand_side(sites);
+        for (std::size_t row = 0; row < sites; ++row) {
+            right_hand_side[row] =
+                -jacobian[(1 + row) * width + coordinate];
+        }
+        site_sensitivity[coordinate] = solve_linear(
+            association_jacobian, std::move(right_hand_side)
+        );
+    }
+    std::vector<std::vector<double>> directions(
+        coordinates, std::vector<double>(width, 0.0)
+    );
+    for (std::size_t coordinate = 0; coordinate < coordinates; ++coordinate) {
+        directions[coordinate][coordinate] = 1.0;
+        for (std::size_t site = 0; site < sites; ++site) {
+            directions[coordinate][coordinates + site] =
+                site_sensitivity[coordinate][site];
+        }
+    }
+    const auto phase_hessian = function.Hessian(point, 0);
+    std::vector<std::vector<double>> association_hessians(sites);
+    for (std::size_t site = 0; site < sites; ++site) {
+        association_hessians[site] = function.Hessian(point, 1 + site);
+    }
+    std::array<double, coordinates> gradient{};
+    std::array<double, coordinates * coordinates> hessian{};
+    for (std::size_t coordinate = 0; coordinate < coordinates; ++coordinate) {
+        gradient[coordinate] = jacobian[coordinate];
+        for (std::size_t site = 0; site < sites; ++site) {
+            gradient[coordinate] += jacobian[coordinates + site]
+                * site_sensitivity[coordinate][site];
+        }
+    }
+    for (std::size_t left = 0; left < coordinates; ++left) {
+        for (std::size_t right = 0; right < coordinates; ++right) {
+            std::vector<double> right_hand_side(sites);
+            for (std::size_t site = 0; site < sites; ++site) {
+                right_hand_side[site] = -directional_second(
+                    association_hessians[site],
+                    directions[left],
+                    directions[right]
+                );
+            }
+            const auto site_second = solve_linear(
+                association_jacobian, std::move(right_hand_side)
+            );
+            double second = directional_second(
+                phase_hessian, directions[left], directions[right]
+            );
+            for (std::size_t site = 0; site < sites; ++site) {
+                second += jacobian[coordinates + site] * site_second[site];
+            }
+            hessian[left * coordinates + right] = second;
+        }
+    }
+    const double value = function.Forward(0, point)[0];
+    if (!std::isfinite(value)
+        || !std::all_of(gradient.begin(), gradient.end(), [](double item) {
+            return std::isfinite(item);
+        })
+        || !std::all_of(hessian.begin(), hessian.end(), [](double item) {
+            return std::isfinite(item);
+        })) {
+        throw std::runtime_error(
+            "joint associating phase block contains nonfinite values"
+        );
+    }
     return {
         value,
         gradient,

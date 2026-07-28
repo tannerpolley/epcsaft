@@ -854,6 +854,8 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_ion_solvation_ionic_permittivity,
               sizeof(epcsaft_ion_solvation_solvent_permittivity_result_v1),
               &NativeSdkEndpoint::evaluate_ion_solvation_solvent_permittivity,
+              sizeof(epcsaft_associating_parameterized_phase_block_result_v1),
+              &NativeSdkEndpoint::evaluate_associating_parameters,
           } {}
 
     // EqExclude: transport and buffer mechanics
@@ -2395,6 +2397,125 @@ struct NativeSdkEndpoint final {
             return fail(
                 EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
                 "unknown provider evaluation failure"
+            );
+        }
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_associating_parameters(
+        const void* context,
+        double temperature_k,
+        double amount_mol,
+        double volume_m3,
+        double segment_count,
+        double segment_diameter_angstrom,
+        double dispersion_energy_over_k,
+        double association_energy_over_k,
+        double association_volume,
+        epcsaft_associating_parameterized_phase_block_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_associating_parameterized_phase_block_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const uint32_t result_size = result->struct_size;
+        std::memset(result, 0, sizeof(*result));
+        result->struct_size = result_size;
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "model context is null"
+            );
+        }
+        const std::array<double, 8> inputs{
+            temperature_k,
+            amount_mol,
+            volume_m3,
+            segment_count,
+            segment_diameter_angstrom,
+            dispersion_energy_over_k,
+            association_energy_over_k,
+            association_volume,
+        };
+        if (!std::all_of(inputs.begin(), inputs.end(), [](double value) {
+                return std::isfinite(value) && value > 0.0;
+            })) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "joint associating phase inputs must be positive and finite"
+            );
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.phase_callbacks_admitted) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "model is not admitted for this phase callback"
+            );
+        }
+        if ((std::isfinite(endpoint.temperature_min_k)
+             && temperature_k < endpoint.temperature_min_k)
+            || (std::isfinite(endpoint.temperature_max_k)
+                && temperature_k > endpoint.temperature_max_k)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "temperature is outside the parameter source domain"
+            );
+        }
+        try {
+            const auto block =
+                endpoint.model.evaluate_associating_pure_phase_parameters(
+                    temperature_k,
+                    amount_mol,
+                    volume_m3,
+                    segment_count,
+                    segment_diameter_angstrom,
+                    dispersion_energy_over_k,
+                    association_energy_over_k,
+                    association_volume
+                );
+            result->helmholtz_over_rt_reference_amount =
+                block.helmholtz_over_rt_reference_amount;
+            std::copy(
+                block.gradient.begin(), block.gradient.end(), result->gradient
+            );
+            std::copy(
+                block.hessian.begin(), block.hessian.end(), result->hessian
+            );
+            result->pressure_pa = block.pressure_pa;
+            result->chemical_potential_over_rt =
+                block.chemical_potential_over_rt;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->topology_fingerprint,
+                sizeof(result->topology_fingerprint),
+                "%s",
+                endpoint.topology_fingerprint.c_str()
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown joint associating evaluation failure"
             );
         }
     }

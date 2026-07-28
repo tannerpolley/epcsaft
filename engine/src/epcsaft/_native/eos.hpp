@@ -49,6 +49,7 @@ struct NativeResult final {
 
 struct NativePurePhaseBlock;
 struct NativeParameterizedPurePhaseBlock;
+struct NativeAssociatingParameterizedPurePhaseBlock;
 struct NativeMixturePhaseBlock;
 struct NativePackingFractionBlock;
 
@@ -197,6 +198,17 @@ public:
         double segment_count,
         double segment_diameter_angstrom,
         double dispersion_energy_over_k
+    ) const;
+    NativeAssociatingParameterizedPurePhaseBlock
+    evaluate_associating_pure_phase_parameters(
+        double temperature,
+        double amount,
+        double volume,
+        double segment_count,
+        double segment_diameter_angstrom,
+        double dispersion_energy_over_k,
+        double association_energy_over_k,
+        double association_volume
     ) const;
     NativeMixturePhaseBlock evaluate_pure_phase_parameter(
         double temperature,

@@ -90,6 +90,48 @@ typedef int (*epcsaft_evaluate_pure_phase_parameters_v1)(
     epcsaft_parameterized_phase_block_result_v1* result
 );
 
+enum epcsaft_associating_parameterized_phase_coordinate_v1 {
+    EPCSAFT_ASSOCIATING_PHASE_AMOUNT_MOL_V1 = 0,
+    EPCSAFT_ASSOCIATING_PHASE_VOLUME_M3_V1 = 1,
+    EPCSAFT_ASSOCIATING_PHASE_SEGMENT_COUNT_V1 = 2,
+    EPCSAFT_ASSOCIATING_PHASE_SEGMENT_DIAMETER_ANGSTROM_V1 = 3,
+    EPCSAFT_ASSOCIATING_PHASE_DISPERSION_ENERGY_OVER_K_V1 = 4,
+    EPCSAFT_ASSOCIATING_PHASE_ENERGY_OVER_K_V1 = 5,
+    EPCSAFT_ASSOCIATING_PHASE_VOLUME_V1 = 6,
+    EPCSAFT_ASSOCIATING_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1 = 7
+};
+
+typedef struct epcsaft_associating_parameterized_phase_block_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double helmholtz_over_rt_reference_amount;
+    double gradient[
+        EPCSAFT_ASSOCIATING_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1
+    ];
+    double hessian[
+        EPCSAFT_ASSOCIATING_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1 *
+        EPCSAFT_ASSOCIATING_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1
+    ];
+    double pressure_pa;
+    double chemical_potential_over_rt;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_associating_parameterized_phase_block_result_v1;
+
+typedef int (*epcsaft_evaluate_associating_pure_phase_parameters_v1)(
+    const void* model_context,
+    double temperature_k,
+    double amount_mol,
+    double volume_m3,
+    double segment_count,
+    double segment_diameter_angstrom,
+    double dispersion_energy_over_k,
+    double association_energy_over_k,
+    double association_volume,
+    epcsaft_associating_parameterized_phase_block_result_v1* result
+);
+
 /*
  * A mixture result struct-size mismatch is return-code authoritative. The
  * callbacks return ABI_MISMATCH without writing an untrusted result layout.
@@ -700,6 +742,9 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t ion_solvation_solvent_permittivity_result_size;
     epcsaft_evaluate_ion_solvation_solvent_permittivity_v1
         evaluate_ion_solvation_solvent_permittivity;
+    size_t associating_parameterized_result_size;
+    epcsaft_evaluate_associating_pure_phase_parameters_v1
+        evaluate_associating_pure_phase_parameters;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

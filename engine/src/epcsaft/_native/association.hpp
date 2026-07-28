@@ -27,12 +27,12 @@ Scalar association_exp(const Scalar& value) {
     return CppAD::exp(value);
 }
 
-template <typename Scalar>
+template <typename Scalar, typename Parameters>
 std::vector<Scalar> association_delta_values(
     const Scalar& temperature,
     const Scalar& molar_density,
     const std::vector<Scalar>& mole_fractions,
-    const NativeParameters& parameters,
+    const Parameters& parameters,
     const std::vector<Scalar>& sigma,
     const std::vector<Scalar>& diameter,
     const std::vector<Scalar>& association_energy_over_k,
@@ -152,11 +152,11 @@ std::vector<Scalar> association_delta_active_pure_parameter(
     );
 }
 
-template <typename Scalar>
+template <typename Scalar, typename Parameters>
 std::vector<Scalar> association_residuals(
     const Scalar& molar_density,
     const std::vector<Scalar>& mole_fractions,
-    const NativeParameters& parameters,
+    const Parameters& parameters,
     const std::vector<Scalar>& site_fractions,
     const std::vector<Scalar>& delta
 ) {

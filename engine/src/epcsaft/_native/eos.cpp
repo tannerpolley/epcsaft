@@ -707,6 +707,31 @@ NativeParameterizedPurePhaseBlock NativeModel::evaluate_pure_phase_parameters(
 }
 
 // EqExclude: transport and buffer mechanics
+NativeAssociatingParameterizedPurePhaseBlock
+NativeModel::evaluate_associating_pure_phase_parameters(
+    double temperature,
+    double amount,
+    double volume,
+    double segment_count,
+    double segment_diameter_angstrom,
+    double dispersion_energy_over_k,
+    double association_energy_over_k,
+    double association_volume
+) const {
+    return detail::associating_parameterized_pure_phase_block(
+        temperature,
+        amount,
+        volume,
+        segment_count,
+        segment_diameter_angstrom,
+        dispersion_energy_over_k,
+        association_energy_over_k,
+        association_volume,
+        parameters_
+    );
+}
+
+// EqExclude: transport and buffer mechanics
 NativeMixturePhaseBlock NativeModel::evaluate_pure_phase_parameter(
     double temperature,
     double amount,

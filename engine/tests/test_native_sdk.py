@@ -407,6 +407,28 @@ class IonSolvationSolventPermittivityNativeSdkTable(ctypes.Structure):
     )
 
 
+class AssociatingParameterizedPhaseBlockResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("helmholtz_over_rt_reference_amount", ctypes.c_double),
+        ("gradient", ctypes.c_double * 7),
+        ("hessian", ctypes.c_double * 49),
+        ("pressure_pa", ctypes.c_double),
+        ("chemical_potential_over_rt", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("topology_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class AssociatingParameterizedNativeSdkTable(ctypes.Structure):
+    _fields_ = IonSolvationSolventPermittivityNativeSdkTable._fields_ + (
+        ("associating_parameterized_result_size", ctypes.c_size_t),
+        ("evaluate_associating_pure_phase_parameters", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -480,6 +502,11 @@ ION_SOLVATION_SOLVENT_PERMITTIVITY_PREFIX_SIZE = (
     .evaluate_ion_solvation_solvent_permittivity.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
+ASSOCIATING_PARAMETERIZED_PREFIX_SIZE = (
+    AssociatingParameterizedNativeSdkTable
+    .evaluate_associating_pure_phase_parameters.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
 
 
 EvaluatePurePhase = ctypes.CFUNCTYPE(
@@ -513,6 +540,20 @@ EvaluatePurePhaseParameters = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(ParameterizedPhaseBlockResult),
+)
+
+EvaluateAssociatingPurePhaseParameters = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(AssociatingParameterizedPhaseBlockResult),
 )
 
 EvaluateMixturePhase = ctypes.CFUNCTYPE(
@@ -948,6 +989,22 @@ def _pure_parameter_table(
     return capsule, table
 
 
+def _associating_parameterized_table(
+    model: EPCSAFT,
+) -> tuple[object, AssociatingParameterizedNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(AssociatingParameterizedNativeSdkTable)
+    ).contents
+    assert table.table_size >= ASSOCIATING_PARAMETERIZED_PREFIX_SIZE
+    return capsule, table
+
+
 def _electrolyte_table(
     model: EPCSAFT,
 ) -> tuple[object, ElectrolyteNativeSdkTable]:
@@ -1332,6 +1389,26 @@ def _evaluate_parameters(
         segment_count,
         segment_diameter_angstrom,
         dispersion_energy_over_k,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
+
+
+def _evaluate_associating_parameters(
+    table: AssociatingParameterizedNativeSdkTable,
+    temperature_k: float,
+    values: tuple[float, float, float, float, float, float, float],
+) -> AssociatingParameterizedPhaseBlockResult:
+    result = AssociatingParameterizedPhaseBlockResult(
+        struct_size=ctypes.sizeof(AssociatingParameterizedPhaseBlockResult)
+    )
+    status = EvaluateAssociatingPurePhaseParameters(
+        table.evaluate_associating_pure_phase_parameters
+    )(
+        table.model_context,
+        temperature_k,
+        *values,
         ctypes.byref(result),
     )
     assert status == result.status
@@ -2649,6 +2726,90 @@ def test_native_sdk_associating_pure_parameter_callback_has_exact_hessian(
         assert hessian_direction == pytest.approx(
             gradient_difference, rel=2.0e-5, abs=2.0e-8
         )
+
+
+def test_native_sdk_joint_associating_parameters_have_exact_seven_coordinate_hessian(
+) -> None:
+    model = _model("figiel-2025-reference-electrolytes", "ethanol")
+    capsule, table = _associating_parameterized_table(model)
+    assert capsule is not None
+    assert table.associating_parameterized_result_size == ctypes.sizeof(
+        AssociatingParameterizedPhaseBlockResult
+    )
+    assert table.evaluate_associating_pure_phase_parameters
+
+    temperature_k = 298.15
+    point = (1.0, 5.86e-5, 2.3827, 3.1771, 198.24, 2653.4, 0.03238)
+    direction = (1.0e-3, -2.0e-8, 2.0e-4, -1.0e-4, 2.0e-2, 2.0e-1, 2.0e-6)
+
+    def shifted(scale: float) -> AssociatingParameterizedPhaseBlockResult:
+        return _evaluate_associating_parameters(
+            table,
+            temperature_k,
+            tuple(
+                value + scale * delta
+                for value, delta in zip(point, direction, strict=True)
+            ),
+        )
+
+    center = shifted(0.0)
+    assert center.status == STATUS_OK
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert center.topology_fingerprint
+    assert all(math.isfinite(value) for value in center.gradient)
+    assert all(math.isfinite(value) for value in center.hessian)
+    assert center.pressure_pa == pytest.approx(
+        -8.31446261815324 * temperature_k * center.gradient[1], rel=2.0e-13
+    )
+
+    state = model.evaluate(
+        temperature=temperature_k * unit_registry.kelvin,
+        molar_density=(point[0] / point[1])
+        * unit_registry.mole
+        / unit_registry.meter**3,
+        mole_fractions=(1.0,),
+    )
+    assert center.pressure_pa == pytest.approx(
+        state.pressure.to("pascal").magnitude,
+        rel=3.0e-12,
+    )
+
+    step = 1.0e-2
+    lower = shifted(-step)
+    upper = shifted(step)
+    value_direction = sum(
+        value * delta
+        for value, delta in zip(center.gradient, direction, strict=True)
+    )
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount
+        - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert value_direction == pytest.approx(value_difference, rel=2.0e-6)
+    for row in range(7):
+        hessian_direction = sum(
+            center.hessian[row * 7 + column] * direction[column]
+            for column in range(7)
+        )
+        gradient_difference = (
+            upper.gradient[row] - lower.gradient[row]
+        ) / (2.0 * step)
+        assert hessian_direction == pytest.approx(
+            gradient_difference, rel=3.0e-5, abs=2.0e-8
+        )
+
+
+def test_native_sdk_joint_associating_parameters_reject_nonassociating_model(
+) -> None:
+    model = _model("gross-2001-methane-ethane", "methane")
+    _, table = _associating_parameterized_table(model)
+    result = _evaluate_associating_parameters(
+        table,
+        150.0,
+        (1.0, 2.0e-3, 1.0, 3.7039, 150.03, 2500.0, 0.03),
+    )
+    assert result.status == STATUS_UNSUPPORTED_MODEL
+    assert b"2B model" in result.error
 
 
 @pytest.mark.parametrize(
