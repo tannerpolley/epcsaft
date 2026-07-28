@@ -82,6 +82,12 @@ struct NativeAqueousMiacSolvationFactor final {
     double reference_derivative_convergence_error;
 };
 
+struct NativeFigielPermittivity final {
+    double bulk_relative_permittivity;
+    double derivative;
+    double salt_free_relative_permittivity;
+};
+
 class NativeEvaluationCancelled final : public std::runtime_error {
 public:
     NativeEvaluationCancelled()
@@ -264,6 +270,10 @@ public:
         const std::vector<double>& formula_unit_molalities_mol_per_kg,
         double solvation_factor,
         NativeEvaluationBudget* budget = nullptr
+    ) const;
+    NativeFigielPermittivity evaluate_figiel_permittivity(
+        double total_ion_mole_fraction,
+        double dielectric_ion_suppression_coefficient
     ) const;
 
 private:

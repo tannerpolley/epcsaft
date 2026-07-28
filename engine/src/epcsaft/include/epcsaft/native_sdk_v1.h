@@ -412,6 +412,26 @@ typedef int (*epcsaft_evaluate_aqueous_miac_solvation_factor_batch_bounded_v1)(
     const epcsaft_native_evaluation_budget_v1* budget
 );
 
+typedef struct epcsaft_figiel_permittivity_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double bulk_relative_permittivity;
+    double derivative;
+    double salt_free_relative_permittivity;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_figiel_permittivity_result_v1;
+
+typedef int (*epcsaft_evaluate_figiel_permittivity_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    double total_ion_mole_fraction,
+    double dielectric_ion_suppression_coefficient,
+    epcsaft_figiel_permittivity_result_v1* result
+);
+
 #define EPCSAFT_NATIVE_CAPABILITY_SCHEMA_VERSION_V1 1u
 
 enum epcsaft_native_capability_v1 {
@@ -424,7 +444,8 @@ enum epcsaft_native_capability_v1 {
     EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_SOLVATION_FACTOR_MIAC_V1 = 7u,
     EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_WATER_CATION_KIJ_MIAC_V1 = 8u,
     EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_WATER_ANION_KIJ_MIAC_V1 = 9u,
-    EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_CATION_ANION_KIJ_MIAC_V1 = 10u
+    EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_CATION_ANION_KIJ_MIAC_V1 = 10u,
+    EPCSAFT_NATIVE_CAPABILITY_FIGIEL_DIELECTRIC_SUPPRESSION_V1 = 11u
 };
 
 enum epcsaft_native_parameter_family_v1 {
@@ -434,25 +455,29 @@ enum epcsaft_native_parameter_family_v1 {
     EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1 = 4u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1 = 5u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_BORN_DIAMETER_V1 = 6u,
-    EPCSAFT_NATIVE_PARAMETER_FAMILY_SOLVATION_FACTOR_V1 = 7u
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_SOLVATION_FACTOR_V1 = 7u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_DIELECTRIC_ION_SUPPRESSION_V1 = 8u
 };
 
 enum epcsaft_native_parameter_identity_v1 {
     EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1 = 1u,
-    EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1 = 2u
+    EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1 = 2u,
+    EPCSAFT_NATIVE_PARAMETER_IDENTITY_MODEL_V1 = 3u
 };
 
 enum epcsaft_native_observation_contract_v1 {
     EPCSAFT_NATIVE_OBSERVATION_FIXED_COMPOSITION_HELMHOLTZ_PHASE_V1 = 1u,
     EPCSAFT_NATIVE_OBSERVATION_ION_SOLVATION_GIBBS_V1 = 2u,
-    EPCSAFT_NATIVE_OBSERVATION_AQUEOUS_MEAN_IONIC_ACTIVITY_V1 = 3u
+    EPCSAFT_NATIVE_OBSERVATION_AQUEOUS_MEAN_IONIC_ACTIVITY_V1 = 3u,
+    EPCSAFT_NATIVE_OBSERVATION_RELATIVE_PERMITTIVITY_V1 = 4u
 };
 
 enum epcsaft_native_model_domain_v1 {
     EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1 = 1u,
     EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_PURE_V1 = 2u,
     EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_WATER_SINGLE_ION_V1 = 3u,
-    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_AQUEOUS_NABR_V1 = 4u
+    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_AQUEOUS_NABR_V1 = 4u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_DIELECTRIC_V1 = 5u
 };
 
 enum epcsaft_native_tensor_layout_v1 {
@@ -476,7 +501,8 @@ enum epcsaft_native_capability_coordinate_kind_v1 {
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_DIAMETER_V1 = 6u,
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1 = 7u,
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BORN_DIAMETER_V1 = 8u,
-    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SOLVATION_FACTOR_V1 = 9u
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SOLVATION_FACTOR_V1 = 9u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DIELECTRIC_ION_SUPPRESSION_V1 = 10u
 };
 
 typedef struct epcsaft_native_capability_coordinate_v1 {
@@ -568,6 +594,8 @@ typedef struct epcsaft_native_sdk_v1 {
     const epcsaft_native_capability_descriptor_v1* capabilities;
     epcsaft_evaluate_mixture_phase_lij_v1 evaluate_mixture_phase_lij;
     epcsaft_evaluate_pure_phase_parameter_v1 evaluate_pure_phase_parameter;
+    size_t figiel_permittivity_result_size;
+    epcsaft_evaluate_figiel_permittivity_v1 evaluate_figiel_permittivity;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

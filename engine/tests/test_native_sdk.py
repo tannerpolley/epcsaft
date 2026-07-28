@@ -337,6 +337,25 @@ class PureParameterNativeSdkTable(ctypes.Structure):
     )
 
 
+class FigielPermittivityResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("bulk_relative_permittivity", ctypes.c_double),
+        ("derivative", ctypes.c_double),
+        ("salt_free_relative_permittivity", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class FigielPermittivityNativeSdkTable(ctypes.Structure):
+    _fields_ = PureParameterNativeSdkTable._fields_ + (
+        ("figiel_permittivity_result_size", ctypes.c_size_t),
+        ("evaluate_figiel_permittivity", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -391,6 +410,10 @@ ACTIVE_LIJ_PREFIX_SIZE = (
 )
 ACTIVE_PURE_PARAMETER_PREFIX_SIZE = (
     PureParameterNativeSdkTable.evaluate_pure_phase_parameter.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+FIGIEL_PERMITTIVITY_PREFIX_SIZE = (
+    FigielPermittivityNativeSdkTable.evaluate_figiel_permittivity.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
@@ -515,6 +538,17 @@ EvaluateAqueousMiacSolvationFactor = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(AqueousMiacSolvationFactorResult),
+)
+
+EvaluateFigielPermittivity = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(FigielPermittivityResult),
 )
 
 EvaluateAqueousMiacKijBatch = ctypes.CFUNCTYPE(
@@ -720,6 +754,24 @@ def _capability_table(
     assert address
     table = ctypes.cast(address, ctypes.POINTER(CapabilityNativeSdkTable)).contents
     assert table.table_size >= CAPABILITY_PREFIX_SIZE
+    return capsule, table
+
+
+def _figiel_permittivity_table(
+    model: EPCSAFT,
+) -> tuple[object, FigielPermittivityNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(FigielPermittivityNativeSdkTable)
+    ).contents
+    assert table.table_size >= ctypes.sizeof(
+        FigielPermittivityNativeSdkTable
+    )
     return capsule, table
 
 
@@ -1405,6 +1457,16 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
         )
     assert PureParameterNativeSdkTable.evaluate_pure_phase_parameter.offset == 288
     assert ctypes.sizeof(PureParameterNativeSdkTable) == 296
+    for field_name, _ in PureParameterNativeSdkTable._fields_:
+        assert (
+            getattr(FigielPermittivityNativeSdkTable, field_name).offset
+            == getattr(PureParameterNativeSdkTable, field_name).offset
+        )
+    assert FigielPermittivityNativeSdkTable.figiel_permittivity_result_size.offset == 296
+    assert FigielPermittivityNativeSdkTable.evaluate_figiel_permittivity.offset == 304
+    assert FIGIEL_PERMITTIVITY_PREFIX_SIZE == ctypes.sizeof(
+        FigielPermittivityNativeSdkTable
+    ) == 312
 
 
 def test_native_sdk_describes_the_exact_neutral_binary_pair_derivative_contracts() -> None:
@@ -1707,6 +1769,168 @@ def test_native_sdk_describes_each_aqueous_kij_as_a_scalar_miac_coordinate() -> 
         ) == (298.15, 298.15)
         assert descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
         assert descriptor.topology_fingerprint.decode().startswith("sha256:")
+
+
+def test_native_sdk_describes_figiel_dielectric_suppression_coordinate() -> None:
+    component_ids = ("water", "sodium-cation", "bromide-anion")
+    model = _electrolyte_model(component_ids)
+    _, table = _capability_table(model)
+
+    matches = tuple(
+        descriptor
+        for descriptor in table.capabilities[: table.capability_count]
+        if descriptor.capability == 11
+    )
+
+    assert len(matches) == 1
+    descriptor = matches[0]
+    assert (
+        descriptor.schema_version,
+        descriptor.parameter_family,
+        descriptor.parameter_identity,
+        descriptor.observation_contract,
+        descriptor.model_domain,
+        descriptor.tensor_layout,
+        descriptor.derivative_order,
+        descriptor.maturity,
+        descriptor.authority_effect,
+    ) == (1, 8, 3, 4, 5, 1, 1, 1, 0)
+    assert (
+        descriptor.state_coordinate_count,
+        descriptor.active_parameter_count,
+        descriptor.coordinate_count,
+        descriptor.component_count,
+    ) == (0, 1, 1, 3)
+    coordinate = descriptor.coordinates[0]
+    assert (
+        coordinate.kind,
+        coordinate.component_index,
+        coordinate.pair_component_index_a,
+        coordinate.pair_component_index_b,
+        coordinate.unit.decode(),
+    ) == (10, -1, -1, -1, "dimensionless")
+
+
+def test_native_sdk_evaluates_figiel_dielectric_suppression_exact_derivative() -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
+    _, table = _figiel_permittivity_table(model)
+    assert table.figiel_permittivity_result_size == ctypes.sizeof(
+        FigielPermittivityResult
+    )
+    callback = EvaluateFigielPermittivity(table.evaluate_figiel_permittivity)
+
+    def evaluate(
+        coefficient: float,
+        *,
+        fingerprint: bytes | None = None,
+        temperature: float = 298.15,
+        pressure: float = 100000.0,
+        mole_fraction: float = 0.1,
+    ) -> FigielPermittivityResult:
+        result = FigielPermittivityResult(
+            struct_size=ctypes.sizeof(FigielPermittivityResult)
+        )
+        status = callback(
+            table.model_context,
+            fingerprint or model.parameter_fingerprint.encode(),
+            temperature,
+            pressure,
+            mole_fraction,
+            coefficient,
+            ctypes.byref(result),
+        )
+        assert status == result.status
+        return result
+
+    coefficient = 7.01
+    mole_fraction = 0.1
+    salt_free = 78.09
+    denominator = 1.0 + coefficient * mole_fraction
+    result = evaluate(coefficient)
+    assert result.status == STATUS_OK
+    assert result.salt_free_relative_permittivity == salt_free
+    assert result.bulk_relative_permittivity == pytest.approx(
+        salt_free / denominator
+    )
+    assert result.derivative == pytest.approx(
+        -salt_free * mole_fraction / denominator**2
+    )
+    assert result.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert not result.error
+
+    step = 1.0e-5
+    finite_difference = (
+        evaluate(coefficient + step).bulk_relative_permittivity
+        - evaluate(coefficient - step).bulk_relative_permittivity
+    ) / (2.0 * step)
+    assert result.derivative == pytest.approx(finite_difference, rel=2.0e-10)
+
+    for failure, expected in (
+        (evaluate(coefficient, fingerprint=b"sha256:wrong"), STATUS_UNSUPPORTED_MODEL),
+        (evaluate(coefficient, temperature=300.0), STATUS_DOMAIN_ERROR),
+        (evaluate(coefficient, pressure=101325.0), STATUS_DOMAIN_ERROR),
+        (evaluate(coefficient, mole_fraction=-0.1), STATUS_DOMAIN_ERROR),
+        (evaluate(-1.0), STATUS_DOMAIN_ERROR),
+    ):
+        assert failure.status == expected
+        assert math.isnan(failure.bulk_relative_permittivity)
+        assert math.isnan(failure.derivative)
+        assert failure.parameter_fingerprint == b""
+        assert failure.error
+
+
+def test_native_sdk_figiel_permittivity_installed_header_layout() -> None:
+    compiler = shutil.which("cc")
+    assert compiler is not None
+    include_root = Path(epcsaft.__file__).parent / "include"
+    source = r"""
+#include <stddef.h>
+#include <epcsaft/native_sdk_v1.h>
+
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_FIGIEL_DIELECTRIC_SUPPRESSION_V1 == 11u,
+    "dielectric capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_DIELECTRIC_ION_SUPPRESSION_V1 == 8u,
+    "dielectric parameter family"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, figiel_permittivity_result_size) == 296,
+    "result-size offset"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, evaluate_figiel_permittivity) == 304,
+    "callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 312, "table prefix size");
+_Static_assert(
+    sizeof(epcsaft_figiel_permittivity_result_v1) == 264,
+    "result size"
+);
+
+int main(void) {
+    epcsaft_evaluate_figiel_permittivity_v1 callback = 0;
+    return callback != 0;
+}
+"""
+    completed = subprocess.run(
+        (
+            compiler,
+            "-std=c11",
+            "-Werror",
+            f"-I{include_root}",
+            "-x",
+            "c",
+            "-fsyntax-only",
+            "-",
+        ),
+        input=source,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
 
 
 def test_native_sdk_scalar_pure_parameter_installed_header_layout() -> None:

@@ -1005,6 +1005,46 @@ NativeModel::evaluate_aqueous_miac_solvation_factor(
     ).front();
 }
 
+NativeFigielPermittivity NativeModel::evaluate_figiel_permittivity(
+    double total_ion_mole_fraction,
+    double suppression_coefficient
+) const {
+    if (!std::isfinite(total_ion_mole_fraction)
+        || !std::isfinite(suppression_coefficient)
+        || total_ion_mole_fraction <= 0.0
+        || total_ion_mole_fraction >= 1.0
+        || suppression_coefficient <= 0.0) {
+        throw std::invalid_argument(
+            "invalid active Figiel permittivity inputs"
+        );
+    }
+    if (parameters_.permittivity_model
+            != PERMITTIVITY_MODEL_FIGIEL_COMPOSITION
+        || parameters_.charge_number.size() != 3
+        || parameters_.charge_number[0] != 0
+        || parameters_.charge_number[1] <= 0
+        || parameters_.charge_number[2] >= 0
+        || !(parameters_.relative_permittivity[0] > 0.0)) {
+        throw std::logic_error(
+            "unsupported active Figiel permittivity model"
+        );
+    }
+    const double salt_free = parameters_.relative_permittivity[0];
+    return {
+        detail::figiel_bulk_relative_permittivity(
+            salt_free,
+            total_ion_mole_fraction,
+            suppression_coefficient
+        ),
+        detail::figiel_bulk_relative_permittivity_derivative(
+            salt_free,
+            total_ion_mole_fraction,
+            suppression_coefficient
+        ),
+        salt_free,
+    };
+}
+
 std::vector<NativeAqueousMiacSolvationFactor>
 // EqID: mean_ionic_activity_coefficient
 // EqID: molality_activity_conversion

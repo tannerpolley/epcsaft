@@ -53,6 +53,29 @@ struct ElectrolyteResult final {
 };
 
 template <typename Scalar>
+Scalar figiel_bulk_relative_permittivity(
+    const Scalar& salt_free_permittivity,
+    const Scalar& ion_fraction,
+    const Scalar& suppression_coefficient
+) {
+    // EqID: figiel_bulk_permittivity
+    return salt_free_permittivity
+        / (Scalar(1.0) + suppression_coefficient * ion_fraction);
+}
+
+template <typename Scalar>
+Scalar figiel_bulk_relative_permittivity_derivative(
+    const Scalar& salt_free_permittivity,
+    const Scalar& ion_fraction,
+    const Scalar& suppression_coefficient
+) {
+    const Scalar denominator =
+        Scalar(1.0) + suppression_coefficient * ion_fraction;
+    return -salt_free_permittivity * ion_fraction
+        / (denominator * denominator);
+}
+
+template <typename Scalar>
 Scalar bulk_relative_permittivity(
     const Scalar& temperature,
     const Scalar& molar_density,
@@ -141,10 +164,11 @@ Scalar bulk_relative_permittivity(
         return salt_free_permittivity / (Scalar(1.0) + zuber_suppression);
     }
     if (parameters.permittivity_model == PERMITTIVITY_MODEL_FIGIEL_COMPOSITION) {
-        // EqID: figiel_bulk_permittivity
-        return salt_free_permittivity
-            / (Scalar(1.0) + parameters.dielectric_ion_suppression_coefficient
-                * ion_fraction);
+        return figiel_bulk_relative_permittivity(
+            salt_free_permittivity,
+            ion_fraction,
+            Scalar(parameters.dielectric_ion_suppression_coefficient)
+        );
     }
     throw std::invalid_argument("invalid relative permittivity model");
 }

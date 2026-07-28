@@ -210,6 +210,8 @@ struct NativeSdkEndpoint final {
         aqueous_water_anion_kij_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 1>
         aqueous_cation_anion_kij_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        figiel_dielectric_suppression_coordinates;
     std::vector<epcsaft_native_capability_descriptor_v1> capabilities;
     epcsaft_native_sdk_v1 table;
 
@@ -400,6 +402,16 @@ struct NativeSdkEndpoint final {
                   -1,
                   1,
                   2,
+                  "dimensionless",
+              },
+          }},
+          figiel_dielectric_suppression_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DIELECTRIC_ION_SUPPRESSION_V1,
+                  -1,
+                  -1,
+                  -1,
                   "dimensionless",
               },
           }},
@@ -595,6 +607,20 @@ struct NativeSdkEndpoint final {
                       EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_CATION_ANION_KIJ_MIAC_V1,
                       aqueous_cation_anion_kij_coordinates
                   ));
+                  auto dielectric = descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_FIGIEL_DIELECTRIC_SUPPRESSION_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_DIELECTRIC_ION_SUPPRESSION_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_MODEL_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_DIELECTRIC_V1,
+                      0,
+                      figiel_dielectric_suppression_coordinates
+                  );
+                  dielectric.observation_contract =
+                      EPCSAFT_NATIVE_OBSERVATION_RELATIVE_PERMITTIVITY_V1;
+                  dielectric.derivative_order = 1;
+                  dielectric.temperature_min_k = 298.15;
+                  dielectric.temperature_max_k = 298.15;
+                  result.push_back(dielectric);
               }
               return result;
           }()),
@@ -636,7 +662,96 @@ struct NativeSdkEndpoint final {
               capabilities.empty() ? nullptr : capabilities.data(),
               &NativeSdkEndpoint::evaluate_mixture_lij,
               &NativeSdkEndpoint::evaluate_pure_parameter,
+              sizeof(epcsaft_figiel_permittivity_result_v1),
+              &NativeSdkEndpoint::evaluate_figiel_permittivity,
           } {}
+
+    static int evaluate_figiel_permittivity(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        double total_ion_mole_fraction,
+        double suppression_coefficient,
+        epcsaft_figiel_permittivity_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_figiel_permittivity_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+        result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+        result->bulk_relative_permittivity = nan;
+        result->derivative = nan;
+        result->salt_free_relative_permittivity = nan;
+        result->parameter_fingerprint[0] = '\0';
+        result->error[0] = '\0';
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr
+            || !std::isfinite(temperature_k)
+            || !std::isfinite(pressure_pa)
+            || temperature_k <= 0.0 || pressure_pa <= 0.0
+            || !std::isfinite(total_ion_mole_fraction)
+            || !std::isfinite(suppression_coefficient)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "invalid active Figiel permittivity arguments"
+            );
+        }
+        const auto& endpoint =
+            *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.aqueous_kij_admitted
+            || std::strcmp(
+                expected_fingerprint,
+                endpoint.parameter_fingerprint.c_str()
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "unsupported active Figiel permittivity model"
+            );
+        }
+        if (temperature_k != 298.15 || pressure_pa != 100000.0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "state is outside the active Figiel permittivity domain"
+            );
+        }
+        try {
+            const auto value = endpoint.model.evaluate_figiel_permittivity(
+                total_ion_mole_fraction,
+                suppression_coefficient
+            );
+            result->bulk_relative_permittivity =
+                value.bulk_relative_permittivity;
+            result->derivative = value.derivative;
+            result->salt_free_relative_permittivity =
+                value.salt_free_relative_permittivity;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            return result->status;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what()
+            );
+        } catch (const std::exception& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what()
+            );
+        }
+    }
 
     // EqID: neutral_reference_stoichiometric_basis
     static int evaluate_neutral_reference(
