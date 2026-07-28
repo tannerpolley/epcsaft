@@ -138,6 +138,22 @@ typedef int (*epcsaft_evaluate_mixture_phase_lij_v1)(
     epcsaft_mixture_phase_block_result_v1* result
 );
 
+/*
+ * Evaluates one active pure-component parameter while all other resolved
+ * parameters remain fixed. parameter_family must be one of the three scalar
+ * pure families advertised by the bound model. Coordinates are
+ * (amount_mol, volume_m3, active_parameter).
+ */
+typedef int (*epcsaft_evaluate_pure_phase_parameter_v1)(
+    const void* model_context,
+    double temperature_k,
+    double amount_mol,
+    double volume_m3,
+    uint32_t parameter_family,
+    double parameter_value,
+    epcsaft_mixture_phase_block_result_v1* result
+);
+
 #define EPCSAFT_NATIVE_MOLAR_VOLUME_BOUND_COUNT_V1 2u
 
 enum epcsaft_native_molar_volume_bound_v1 {
@@ -400,16 +416,23 @@ typedef int (*epcsaft_evaluate_aqueous_miac_solvation_factor_batch_bounded_v1)(
 
 enum epcsaft_native_capability_v1 {
     EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_KIJ_HELMHOLTZ_V1 = 1u,
-    EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_LIJ_HELMHOLTZ_V1 = 2u
+    EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_LIJ_HELMHOLTZ_V1 = 2u,
+    EPCSAFT_NATIVE_CAPABILITY_PURE_SEGMENT_COUNT_HELMHOLTZ_V1 = 3u,
+    EPCSAFT_NATIVE_CAPABILITY_PURE_SEGMENT_DIAMETER_HELMHOLTZ_V1 = 4u,
+    EPCSAFT_NATIVE_CAPABILITY_PURE_DISPERSION_ENERGY_HELMHOLTZ_V1 = 5u
 };
 
 enum epcsaft_native_parameter_family_v1 {
     EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1 = 1u,
-    EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_LIJ_V1 = 2u
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_LIJ_V1 = 2u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_COUNT_V1 = 3u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1 = 4u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1 = 5u
 };
 
 enum epcsaft_native_parameter_identity_v1 {
-    EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1 = 1u
+    EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1 = 1u,
+    EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1 = 2u
 };
 
 enum epcsaft_native_observation_contract_v1 {
@@ -417,7 +440,8 @@ enum epcsaft_native_observation_contract_v1 {
 };
 
 enum epcsaft_native_model_domain_v1 {
-    EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1 = 1u
+    EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1 = 1u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_PURE_V1 = 2u
 };
 
 enum epcsaft_native_tensor_layout_v1 {
@@ -436,7 +460,10 @@ enum epcsaft_native_capability_coordinate_kind_v1 {
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1 = 1u,
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_VOLUME_V1 = 2u,
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_KIJ_V1 = 3u,
-    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_LIJ_V1 = 4u
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BINARY_INTERACTION_LIJ_V1 = 4u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_COUNT_V1 = 5u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_DIAMETER_V1 = 6u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1 = 7u
 };
 
 typedef struct epcsaft_native_capability_coordinate_v1 {
@@ -527,6 +554,7 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t capability_count;
     const epcsaft_native_capability_descriptor_v1* capabilities;
     epcsaft_evaluate_mixture_phase_lij_v1 evaluate_mixture_phase_lij;
+    epcsaft_evaluate_pure_phase_parameter_v1 evaluate_pure_phase_parameter;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

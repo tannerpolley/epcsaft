@@ -87,11 +87,15 @@ gate and promotion receipt.
 
 The local Consumer Maturity Slice 2 prerequisite appends one candidate
 methane/ethane neutral-mixture phase entry to the same capsule and further
-active-`k_ij` and active-`l_ij` callbacks. Each reuses the mixture result and
-returns the same extensive ideal-plus-residual value and exact CppAD
-gradient/Hessian in `(n1,n2,V,pair_parameter)`. It accepts any finite trial
-unlike-pair value; regression owns bounds, scaling, targets, and fit
-acceptance. Neither entry is authoritative
+active-`k_ij` and active-`l_ij` callbacks. The same append-only tail adds one
+scalar pure-parameter callback with derivative-ready descriptors for
+`segment_count`, `segment_diameter`, and `dispersion_energy_over_k`. The
+binary callbacks return exact CppAD derivatives in
+`(n1,n2,V,pair_parameter)`; the pure callback projects the existing exact
+joint pure Hessian into `(n,V,active_parameter)`. All accept finite trial
+values while regression owns bounds, scaling, targets, and fit acceptance.
+The scalar pure path supports independent family fits and does not replace
+the accepted joint `(m,sigma,epsilon/k)` workflow. None is authoritative
 until a separate promotion receipt is accepted, and neither adds phase,
 density, equilibrium, or regression ownership.
 

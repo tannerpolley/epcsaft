@@ -614,14 +614,19 @@ def _native_topology_fingerprint(model: EPCSAFT) -> str:
     charges = resolved.charge_number or (0,) * len(resolved.component_ids)
     if (
         resolved.topology != "neutral"
-        or len(resolved.component_ids) != 2
+        or len(resolved.component_ids) not in (1, 2)
         or any(charges)
         or resolved.site_ids
         or resolved.association_pairs
     ):
         return ""
+    pure = len(resolved.component_ids) == 1
     payload = {
-        "schema": "epcsaft-native-neutral-binary-topology-v1",
+        "schema": (
+            "epcsaft-native-neutral-pure-topology-v1"
+            if pure
+            else "epcsaft-native-neutral-binary-topology-v1"
+        ),
         "component_ids": resolved.component_ids,
         "topology": resolved.topology,
         "charge_number": charges,

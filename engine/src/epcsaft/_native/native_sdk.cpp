@@ -194,6 +194,12 @@ struct NativeSdkEndpoint final {
         neutral_binary_kij_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 4>
         neutral_binary_lij_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 3>
+        pure_segment_count_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 3>
+        pure_segment_diameter_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 3>
+        pure_dispersion_energy_coordinates;
     std::vector<epcsaft_native_capability_descriptor_v1> capabilities;
     epcsaft_native_sdk_v1 table;
 
@@ -309,78 +315,155 @@ struct NativeSdkEndpoint final {
                   "dimensionless",
               },
           }},
+          pure_segment_count_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1,
+                  0,
+                  -1,
+                  -1,
+                  "mol",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_VOLUME_V1,
+                  -1,
+                  -1,
+                  -1,
+                  "m3",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_COUNT_V1,
+                  0,
+                  -1,
+                  -1,
+                  "dimensionless",
+              },
+          }},
+          pure_segment_diameter_coordinates(pure_segment_count_coordinates),
+          pure_dispersion_energy_coordinates(pure_segment_count_coordinates),
           capabilities([&] {
               std::vector<epcsaft_native_capability_descriptor_v1> result;
+              pure_segment_diameter_coordinates[2].kind =
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_DIAMETER_V1;
+              pure_segment_diameter_coordinates[2].unit = "angstrom";
+              pure_dispersion_energy_coordinates[2].kind =
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1;
+              pure_dispersion_energy_coordinates[2].unit = "kelvin";
+              auto descriptor = [&](
+                  uint32_t capability,
+                  uint32_t parameter_family,
+                  uint32_t parameter_identity,
+                  uint32_t model_domain,
+                  std::size_t state_coordinate_count,
+                  const auto& coordinates
+              ) {
+                  epcsaft_native_capability_descriptor_v1 value{};
+                  value.struct_size =
+                      sizeof(epcsaft_native_capability_descriptor_v1);
+                  value.schema_version =
+                      EPCSAFT_NATIVE_CAPABILITY_SCHEMA_VERSION_V1;
+                  value.capability = capability;
+                  value.parameter_family = parameter_family;
+                  value.parameter_identity = parameter_identity;
+                  value.observation_contract =
+                      EPCSAFT_NATIVE_OBSERVATION_FIXED_COMPOSITION_HELMHOLTZ_PHASE_V1;
+                  value.model_domain = model_domain;
+                  value.tensor_layout =
+                      EPCSAFT_NATIVE_TENSOR_LAYOUT_ROW_MAJOR_V1;
+                  value.derivative_order = 2;
+                  value.maturity =
+                      EPCSAFT_NATIVE_CAPABILITY_DERIVATIVE_READY_V1;
+                  value.authority_effect =
+                      EPCSAFT_NATIVE_AUTHORITY_EFFECT_NONE_V1;
+                  value.unsupported_status =
+                      EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1;
+                  value.domain_status = EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1;
+                  value.state_coordinate_count = state_coordinate_count;
+                  value.active_parameter_count = 1;
+                  value.coordinate_count = coordinates.size();
+                  value.coordinates = coordinates.data();
+                  value.component_count = component_ids.size();
+                  value.component_ids = component_id_pointers.data();
+                  value.temperature_min_k = temperature_min_k;
+                  value.temperature_max_k = temperature_max_k;
+                  std::snprintf(
+                      value.parameter_fingerprint,
+                      sizeof(value.parameter_fingerprint),
+                      "%s",
+                      parameter_fingerprint.c_str()
+                  );
+                  std::snprintf(
+                      value.topology_fingerprint,
+                      sizeof(value.topology_fingerprint),
+                      "%s",
+                      topology_fingerprint.c_str()
+                  );
+                  std::snprintf(
+                      value.helmholtz_basis_id,
+                      sizeof(value.helmholtz_basis_id),
+                      "%s",
+                      EPCSAFT_NATIVE_SDK_V1_HELMHOLTZ_BASIS_ID
+                  );
+                  return value;
+              };
+              const bool exact_pure =
+                  phase_callbacks_admitted
+                  && source_model.supports_parameterized_pure_native_sdk_v1()
+                  && component_ids.size() == 1
+                  && component_charges == std::vector<int32_t>({0})
+                  && !topology_fingerprint.empty();
+              if (exact_pure) {
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_PURE_SEGMENT_COUNT_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_COUNT_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_PURE_V1,
+                      2,
+                      pure_segment_count_coordinates
+                  ));
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_PURE_SEGMENT_DIAMETER_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_PURE_V1,
+                      2,
+                      pure_segment_diameter_coordinates
+                  ));
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_PURE_DISPERSION_ENERGY_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_PURE_V1,
+                      2,
+                      pure_dispersion_energy_coordinates
+                  ));
+              }
               const bool exact_neutral_binary =
                   phase_callbacks_admitted
                   && source_model.supports_mixture_native_sdk_v1()
                   && component_ids.size() == 2
                   && component_charges == std::vector<int32_t>({0, 0})
                   && !topology_fingerprint.empty();
-              if (!exact_neutral_binary) {
-                  return result;
+              if (exact_neutral_binary) {
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_KIJ_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1,
+                      3,
+                      neutral_binary_kij_coordinates
+                  ));
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_LIJ_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_LIJ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1,
+                      3,
+                      neutral_binary_lij_coordinates
+                  ));
               }
-              epcsaft_native_capability_descriptor_v1 descriptor{};
-              descriptor.struct_size =
-                  sizeof(epcsaft_native_capability_descriptor_v1);
-              descriptor.schema_version =
-                  EPCSAFT_NATIVE_CAPABILITY_SCHEMA_VERSION_V1;
-              descriptor.capability =
-                  EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_KIJ_HELMHOLTZ_V1;
-              descriptor.parameter_family =
-                  EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_KIJ_V1;
-              descriptor.parameter_identity =
-                  EPCSAFT_NATIVE_PARAMETER_IDENTITY_UNORDERED_COMPONENT_PAIR_V1;
-              descriptor.observation_contract =
-                  EPCSAFT_NATIVE_OBSERVATION_FIXED_COMPOSITION_HELMHOLTZ_PHASE_V1;
-              descriptor.model_domain =
-                  EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1;
-              descriptor.tensor_layout =
-                  EPCSAFT_NATIVE_TENSOR_LAYOUT_ROW_MAJOR_V1;
-              descriptor.derivative_order = 2;
-              descriptor.maturity =
-                  EPCSAFT_NATIVE_CAPABILITY_DERIVATIVE_READY_V1;
-              descriptor.authority_effect =
-                  EPCSAFT_NATIVE_AUTHORITY_EFFECT_NONE_V1;
-              descriptor.unsupported_status =
-                  EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1;
-              descriptor.domain_status = EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1;
-              descriptor.state_coordinate_count = 3;
-              descriptor.active_parameter_count = 1;
-              descriptor.coordinate_count =
-                  neutral_binary_kij_coordinates.size();
-              descriptor.coordinates = neutral_binary_kij_coordinates.data();
-              descriptor.component_count = component_ids.size();
-              descriptor.component_ids = component_id_pointers.data();
-              descriptor.temperature_min_k = temperature_min_k;
-              descriptor.temperature_max_k = temperature_max_k;
-              std::snprintf(
-                  descriptor.parameter_fingerprint,
-                  sizeof(descriptor.parameter_fingerprint),
-                  "%s",
-                  parameter_fingerprint.c_str()
-              );
-              std::snprintf(
-                  descriptor.topology_fingerprint,
-                  sizeof(descriptor.topology_fingerprint),
-                  "%s",
-                  topology_fingerprint.c_str()
-              );
-              std::snprintf(
-                  descriptor.helmholtz_basis_id,
-                  sizeof(descriptor.helmholtz_basis_id),
-                  "%s",
-                  EPCSAFT_NATIVE_SDK_V1_HELMHOLTZ_BASIS_ID
-              );
-              result.push_back(descriptor);
-              descriptor.capability =
-                  EPCSAFT_NATIVE_CAPABILITY_NEUTRAL_BINARY_LIJ_HELMHOLTZ_V1;
-              descriptor.parameter_family =
-                  EPCSAFT_NATIVE_PARAMETER_FAMILY_BINARY_INTERACTION_LIJ_V1;
-              descriptor.coordinate_count =
-                  neutral_binary_lij_coordinates.size();
-              descriptor.coordinates = neutral_binary_lij_coordinates.data();
-              result.push_back(descriptor);
               return result;
           }()),
           table{
@@ -420,6 +503,7 @@ struct NativeSdkEndpoint final {
               capabilities.size(),
               capabilities.empty() ? nullptr : capabilities.data(),
               &NativeSdkEndpoint::evaluate_mixture_lij,
+              &NativeSdkEndpoint::evaluate_pure_parameter,
           } {}
 
     // EqID: neutral_reference_stoichiometric_basis
@@ -1693,6 +1777,57 @@ struct NativeSdkEndpoint final {
                 "unknown provider evaluation failure"
             );
         }
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_pure_parameter(
+        const void* context,
+        double temperature_k,
+        double amount_mol,
+        double volume_m3,
+        uint32_t parameter_family,
+        double parameter_value,
+        epcsaft_mixture_phase_block_result_v1* result
+    ) noexcept {
+        std::optional<ActivePureParameter> family;
+        switch (parameter_family) {
+            case EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_COUNT_V1:
+                family = ActivePureParameter::SegmentCount;
+                break;
+            case EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1:
+                family = ActivePureParameter::SegmentDiameter;
+                break;
+            case EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1:
+                family = ActivePureParameter::DispersionEnergyOverK;
+                break;
+            default:
+                break;
+        }
+        const std::array<double, 1> amounts{amount_mol};
+        return evaluate_mixture_common(
+            context,
+            temperature_k,
+            amounts.data(),
+            amounts.size(),
+            volume_m3,
+            2,
+            family.has_value() && std::isfinite(parameter_value),
+            "temperature, amount, volume, and active pure parameter must be "
+            "finite and state coordinates positive",
+            result,
+            [temperature_k, amount_mol, volume_m3, family, parameter_value](
+                const NativeModel& model,
+                const std::vector<double>&
+            ) {
+                return model.evaluate_pure_phase_parameter(
+                    temperature_k,
+                    amount_mol,
+                    volume_m3,
+                    *family,
+                    parameter_value
+                );
+            }
+        );
     }
 
     // EqExclude: transport and buffer mechanics

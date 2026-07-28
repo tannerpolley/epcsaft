@@ -1,4 +1,4 @@
-# Neutral Mixture Native SDK Candidates
+# Neutral Parameter Native SDK Candidates
 
 Status: local candidate pending independent review and promotion receipt
 
@@ -12,7 +12,9 @@ source-backed Gross--Sadowski methane/ethane parameter set. The capsule is
 bound to an immutable model, parameter fingerprint, source temperature domain,
 component count, and component order. One further append-only
 `evaluate_mixture_phase_kij` and `evaluate_mixture_phase_lij` pointers evaluate
-the same phase with one distinct unlike interaction parameter active.
+the same phase with one distinct unlike interaction parameter active. A final
+append-only `evaluate_pure_phase_parameter` pointer evaluates a supported pure
+model with exactly one of `m`, `sigma`, or `epsilon/k` active.
 
 The admitted candidate fingerprints are:
 
@@ -27,7 +29,9 @@ ordered selection. They identify the callbacks as derivative-ready for one
 unordered binary `k_ij` and one unordered binary `l_ij` on a neutral,
 nonassociating binary model, while their authority effect remains `none`.
 Pure, associating, ionic, or otherwise unsupported model shapes advertise
-neither descriptor.
+neither binary descriptor. A neutral, nonassociating, constant-diameter pure
+model advertises three component-identity descriptors, one for each scalar
+pure family; it advertises no binary descriptor.
 
 The descriptor binds a topology fingerprint separately from the parameter
 fingerprint. Its canonical payload contains the ordered component IDs,
@@ -77,40 +81,67 @@ The same defining function and CppAD owner supply its value, four-element
 gradient, and 4-by-4 row-major Hessian. The source fingerprint continues to
 identify the immutable catalog model, not the trial coordinate.
 
+For a scalar pure trial `theta`, the callback holds the other two pure
+parameters at their immutable model values and projects the existing exact
+five-coordinate pure result onto
+
+```text
+(n_mol, V_m3, theta)
+```
+
+It returns the same `Phi` and pressure with a three-element gradient and
+3-by-3 row-major Hessian. The family selects `m [dimensionless]`,
+`sigma [angstrom]`, or `epsilon/k [kelvin]`. This path supports independent
+one-family fits only; the existing joint callback remains the owner when all
+three parameters vary in one solve.
+
 ## Native buffer contract
 
 The function table appends `component_count`, `mixture_result_size`, and the
 fixed callback after the accepted pure prefix, then appends the active-`k_ij`
-and active-`l_ij` callback pointers. All three callbacks use the same result structure. A caller
-must:
+and active-`l_ij` callback pointers, capability descriptors, and the scalar
+pure callback. The fixed mixture, active binary, and scalar pure callbacks use
+the same result structure. Every caller must:
 
 - keep the capsule alive for every call;
-- pass exactly `component_count` positive finite amounts;
-- set `coordinate_count = component_count + 1`;
 - own non-null gradient and Hessian buffers with capacities of at least
   `coordinate_count` and `coordinate_count * coordinate_count`;
 - set the exact result `struct_size`; and
 - check both the returned status and result status before consuming outputs.
+
+The fixed mixture callback takes exactly `component_count` positive finite
+amounts and uses `coordinate_count = component_count + 1`.
 
 A result `struct_size` mismatch is the sole return-code-authoritative failure:
 the provider returns `EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1` without writing
 the untrusted result layout. After exact-size acceptance, every failure also
 sets the matching result status and error text.
 
-For either active callback, `coordinate_count` is exactly four and the caller
-provides gradient and Hessian capacities of at least 4 and 16. The provider
+For either active binary callback, the caller passes exactly two positive
+finite amounts, `coordinate_count` is exactly four, and the gradient and
+Hessian capacities are at least 4 and 16. The provider
 accepts any finite requested `k_ij` or `l_ij`; regression owns fit bounds,
 transforms, scaling, targets, and acceptance.
+
+For the scalar pure callback, `coordinate_count` is exactly three and the
+caller passes one positive finite amount and provides capacities of at least
+3 and 9. Unknown family codes and
+nonfinite trial values fail as invalid arguments. Zero or negative `m`,
+`sigma`, or `epsilon/k` fails the Provider's positive EOS domain; regression
+still owns the narrower scientific fit bounds.
 
 The provider preserves the caller's pointers and capacities, copies exactly
 the advertised number of gradient and Hessian values, and propagates neither
 exceptions nor ownership across the C boundary. The Hessian layout is row
 major in the documented coordinate order.
 
-Each descriptor repeats that exact coordinate contract as four typed records:
+Each binary descriptor repeats its exact coordinate contract as four typed records:
 amounts for component indices zero and one in `mol`, volume in `m3`, and the
-unordered pair `(0,1)` `k_ij` or `l_ij` in `dimensionless` units. It reports three state
-coordinates, one active parameter, derivative order two, the source
+unordered pair `(0,1)` `k_ij` or `l_ij` in `dimensionless` units. Each pure
+descriptor has three records: amount in `mol`, volume in `m3`, and the active
+component parameter in its declared unit. Binary descriptors report three
+state coordinates; pure descriptors report two. All report one active
+parameter, derivative order two, the source
 temperature limits, row-major tensor layout, component mapping, Helmholtz
 basis, and the Provider status codes used for unsupported models and domain
 failures. It defines no data target, fit variable, scale, bound, solver, or
@@ -136,6 +167,13 @@ a finite negative trial confirms that the provider applies no fit bound.
 The descriptor evidence additionally freezes the append-only table offsets,
 the exact Gross methane/ethane component mapping and topology fingerprint,
 and zero advertised capabilities for an unsupported pure-model shape.
+
+Scalar pure evidence checks each family against the corresponding slice of the
+joint five-coordinate result, contracts its value gradient and Hessian against
+centered directional differences, freezes descriptor units and component
+identity, compiles the installed C header layout, and rejects unknown families
+and nonfinite trials. It does not claim that three independent scalar fits are
+equivalent to the accepted joint pure-parameter solve.
 
 These candidates do not own or admit association, ions, additional mixture
 families, density closure, phase identity, phase discovery, third derivatives,

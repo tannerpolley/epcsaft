@@ -135,6 +135,12 @@ private:
     const std::uint64_t deadline_ns_;
 };
 
+enum class ActivePureParameter {
+    SegmentCount,
+    SegmentDiameter,
+    DispersionEnergyOverK,
+};
+
 class NativeModel final {
 public:
     explicit NativeModel(NativeParameters parameters);
@@ -150,6 +156,7 @@ public:
         const std::string& phase
     ) const;
     bool supports_native_sdk_v1() const;
+    bool supports_parameterized_pure_native_sdk_v1() const;
     bool supports_mixture_native_sdk_v1() const;
     bool supports_electrolyte_native_sdk_v1() const;
     std::size_t component_count() const;
@@ -167,6 +174,13 @@ public:
         double segment_count,
         double segment_diameter_angstrom,
         double dispersion_energy_over_k
+    ) const;
+    NativeMixturePhaseBlock evaluate_pure_phase_parameter(
+        double temperature,
+        double amount,
+        double volume,
+        ActivePureParameter family,
+        double parameter_value
     ) const;
     NativeMixturePhaseBlock evaluate_mixture_phase(
         double temperature,

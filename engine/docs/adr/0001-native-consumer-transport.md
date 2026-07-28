@@ -1,8 +1,9 @@
 # ADR 0001: Versioned model-bound capsule for native consumers
 
 Status: accepted pure prefix authority determined by migration promotion
-receipt 0015; append-only neutral-mixture, active-kij, and active-lij entries are local
-candidates pending independent review and their own promotion receipts; a
+receipt 0015; append-only neutral-mixture, active-kij, active-lij, and scalar
+pure-parameter entries are local candidates pending independent review and
+their own promotion receipts; a
 model-bound active-Born solvation entry is design-only pending bounded
 independent review, implementation, evidence, and its own authority decision;
 an append-only charge-neutral reference-basis entry is a Project Truss
@@ -122,6 +123,17 @@ active unlike-pair value is written symmetrically to both off-diagonal pair
 positions before the canonical Helmholtz owner is taped. A final append-only
 pointer applies the same contract to the distinct `l_ij` cross-diameter
 coordinate.
+
+One final scalar pure-parameter pointer reuses the mixture-sized result buffer
+for exactly one active component parameter at a time. Its family code selects
+`segment_count`, `segment_diameter`, or `dispersion_energy_over_k`; inactive
+pure parameters retain the immutable model values. It calls the existing
+five-coordinate pure-parameter owner and returns the exact projected value,
+pressure, gradient, and row-major Hessian in `(n,V,active_parameter)`. A
+descriptor binds the component identity, units, topology and source
+fingerprints, derivative order, and source temperature domain. This projection
+does not replace the joint five-coordinate callback used by accepted
+three-parameter pure-saturation regression.
 
 The D-024 candidate appends the full-electrolyte phase callback and two
 model-bound volume-domain callbacks. The unchanged phase callback admits exact

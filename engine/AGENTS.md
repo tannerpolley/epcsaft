@@ -71,6 +71,14 @@ scaling. These candidates change
 no runtime authority and admit no association, ions, density solve, phase
 identity, third derivatives, equilibrium, regression targets, or fitting.
 
+The same local candidate tail advertises three scalar pure-component
+capabilities for neutral, nonassociating, constant-diameter models:
+`segment_count`, `segment_diameter`, and `dispersion_energy_over_k`. One
+callback projects the accepted joint pure-parameter Hessian onto
+`(amount, volume, active_parameter)`. It enables one-family-at-a-time
+regression without replacing the accepted joint three-parameter callback or
+moving bounds, target data, Ceres, or fit acceptance into Provider.
+
 Migration D-024 additionally records local append-only full-electrolyte and
 molar-volume-domain candidates. The phase callback evaluates the complete
 active Helmholtz block in explicit amounts and extensive volume. One domain

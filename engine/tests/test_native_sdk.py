@@ -331,6 +331,12 @@ class LijNativeSdkTable(ctypes.Structure):
     )
 
 
+class PureParameterNativeSdkTable(ctypes.Structure):
+    _fields_ = LijNativeSdkTable._fields_ + (
+        ("evaluate_pure_phase_parameter", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -383,6 +389,10 @@ ACTIVE_LIJ_PREFIX_SIZE = (
     LijNativeSdkTable.evaluate_mixture_phase_lij.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
+ACTIVE_PURE_PARAMETER_PREFIX_SIZE = (
+    PureParameterNativeSdkTable.evaluate_pure_phase_parameter.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
 
 
 EvaluatePurePhase = ctypes.CFUNCTYPE(
@@ -427,6 +437,16 @@ EvaluateMixturePhaseKij = ctypes.CFUNCTYPE(
     ctypes.POINTER(MixturePhaseBlockResult),
 )
 EvaluateMixturePhaseLij = EvaluateMixturePhaseKij
+EvaluatePurePhaseParameter = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_uint32,
+    ctypes.c_double,
+    ctypes.POINTER(MixturePhaseBlockResult),
+)
 
 EvaluateMolarVolumeBounds = ctypes.CFUNCTYPE(
     ctypes.c_int,
@@ -712,6 +732,22 @@ def _lij_table(model: EPCSAFT) -> tuple[object, LijNativeSdkTable]:
     assert address
     table = ctypes.cast(address, ctypes.POINTER(LijNativeSdkTable)).contents
     assert table.table_size >= ACTIVE_LIJ_PREFIX_SIZE
+    return capsule, table
+
+
+def _pure_parameter_table(
+    model: EPCSAFT,
+) -> tuple[object, PureParameterNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address, ctypes.POINTER(PureParameterNativeSdkTable)
+    ).contents
+    assert table.table_size >= ACTIVE_PURE_PARAMETER_PREFIX_SIZE
     return capsule, table
 
 
@@ -1147,6 +1183,28 @@ def _evaluate_mixture_lij(
     return result, tuple(gradient), tuple(hessian)
 
 
+def _evaluate_pure_parameter(
+    table: PureParameterNativeSdkTable,
+    temperature_k: float,
+    amount_mol: float,
+    volume_m3: float,
+    parameter_family: int,
+    parameter_value: float,
+) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+    result, gradient, hessian = _mixture_result(3)
+    status = EvaluatePurePhaseParameter(table.evaluate_pure_phase_parameter)(
+        table.model_context,
+        temperature_k,
+        amount_mol,
+        volume_m3,
+        parameter_family,
+        parameter_value,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result, tuple(gradient), tuple(hessian)
+
+
 def _evaluate_electrolyte(
     table: ElectrolyteNativeSdkTable,
     temperature_k: float,
@@ -1340,6 +1398,13 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
         )
     assert LijNativeSdkTable.evaluate_mixture_phase_lij.offset == 280
     assert ctypes.sizeof(LijNativeSdkTable) == 288
+    for field_name, _ in LijNativeSdkTable._fields_:
+        assert (
+            getattr(PureParameterNativeSdkTable, field_name).offset
+            == getattr(LijNativeSdkTable, field_name).offset
+        )
+    assert PureParameterNativeSdkTable.evaluate_pure_phase_parameter.offset == 288
+    assert ctypes.sizeof(PureParameterNativeSdkTable) == 296
 
 
 def test_native_sdk_describes_the_exact_neutral_binary_pair_derivative_contracts() -> None:
@@ -1462,10 +1527,256 @@ def test_native_sdk_describes_the_exact_neutral_binary_pair_derivative_contracts
     )
 
 
-def test_native_sdk_does_not_advertise_kij_for_an_unsupported_model_shape() -> None:
-    _, table = _capability_table(_model("gross-2001-methane-ethane", "methane"))
-    assert table.capability_count == 0
-    assert not table.capabilities
+def test_native_sdk_describes_exact_scalar_pure_parameter_contracts() -> None:
+    model = _model("gross-2001-methane-ethane", "methane")
+    _, table = _capability_table(model)
+    assert table.capability_count == 3
+    expected = (
+        (3, 3, 5, "dimensionless"),
+        (4, 4, 6, "angstrom"),
+        (5, 5, 7, "kelvin"),
+    )
+    for descriptor, (
+        capability_code,
+        family_code,
+        coordinate_kind,
+        unit,
+    ) in zip(table.capabilities[:3], expected, strict=True):
+        assert (
+            descriptor.schema_version,
+            descriptor.capability,
+            descriptor.parameter_family,
+            descriptor.parameter_identity,
+            descriptor.observation_contract,
+            descriptor.model_domain,
+            descriptor.tensor_layout,
+            descriptor.derivative_order,
+            descriptor.maturity,
+            descriptor.authority_effect,
+        ) == (1, capability_code, family_code, 2, 1, 2, 1, 2, 1, 0)
+        assert (
+            descriptor.state_coordinate_count,
+            descriptor.active_parameter_count,
+            descriptor.coordinate_count,
+            descriptor.component_count,
+        ) == (2, 1, 3, 1)
+        coordinates = tuple(
+            descriptor.coordinates[index]
+            for index in range(descriptor.coordinate_count)
+        )
+        assert tuple(item.kind for item in coordinates) == (
+            1,
+            2,
+            coordinate_kind,
+        )
+        assert tuple(item.unit.decode() for item in coordinates) == (
+            "mol",
+            "m3",
+            unit,
+        )
+        assert coordinates[-1].component_index == 0
+        assert (
+            descriptor.parameter_fingerprint.decode()
+            == model.parameter_fingerprint
+        )
+
+
+def test_native_sdk_scalar_pure_parameter_installed_header_layout() -> None:
+    compiler = shutil.which("cc")
+    if compiler is None:
+        pytest.skip("C compiler is required for the installed-header contract")
+    include_root = Path(epcsaft.__file__).parent / "include"
+    source = r"""
+#include <stddef.h>
+#include <epcsaft/native_sdk_v1.h>
+
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_PURE_SEGMENT_COUNT_HELMHOLTZ_V1 == 3u,
+    "segment-count capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1 == 4u,
+    "segment-diameter family"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1 == 7u,
+    "dispersion-energy coordinate"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, evaluate_pure_phase_parameter) == 288,
+    "pure-parameter callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 296, "table prefix size");
+
+int main(void) {
+    epcsaft_evaluate_pure_phase_parameter_v1 callback = 0;
+    return callback != 0;
+}
+"""
+    completed = subprocess.run(
+        (
+            compiler,
+            "-std=c11",
+            "-Werror",
+            f"-I{include_root}",
+            "-x",
+            "c",
+            "-fsyntax-only",
+            "-",
+        ),
+        input=source,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.parametrize(
+    ("family_code", "parameter_value", "full_coordinate"),
+    (
+        (3, 1.0, 2),
+        (4, 3.7039, 3),
+        (5, 150.03, 4),
+    ),
+)
+def test_native_sdk_scalar_pure_parameter_callback_matches_full_exact_block(
+    family_code: int,
+    parameter_value: float,
+    full_coordinate: int,
+) -> None:
+    model = _model("gross-2001-methane-ethane", "methane")
+    capsule, table = _pure_parameter_table(model)
+    assert capsule is not None
+    temperature_k = 150.0
+    point = (1.0, 2.0e-3, parameter_value)
+    direction = (0.01, -2.0e-5, 0.02)
+
+    def shifted(
+        scale: float,
+    ) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+        values = tuple(
+            value + scale * delta
+            for value, delta in zip(point, direction, strict=True)
+        )
+        return _evaluate_pure_parameter(
+            table,
+            temperature_k,
+            values[0],
+            values[1],
+            family_code,
+            values[2],
+        )
+
+    center, gradient, hessian = shifted(0.0)
+    full = _evaluate_parameters(
+        table,
+        temperature_k,
+        point[0],
+        point[1],
+        parameter_value if family_code == 3 else 1.0,
+        parameter_value if family_code == 4 else 3.7039,
+        parameter_value if family_code == 5 else 150.03,
+    )
+    selected = (0, 1, full_coordinate)
+    assert center.status == STATUS_OK
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        full.helmholtz_over_rt_reference_amount, rel=2.0e-13, abs=2.0e-13
+    )
+    assert center.pressure_pa == pytest.approx(full.pressure_pa, rel=2.0e-13)
+    assert gradient == pytest.approx(tuple(full.gradient[index] for index in selected))
+    assert hessian == pytest.approx(
+        tuple(full.hessian[row * 5 + column] for row in selected for column in selected)
+    )
+
+    step = 2.0e-4
+    lower, lower_gradient, _ = shifted(-step)
+    upper, upper_gradient, _ = shifted(step)
+    value_direction = sum(
+        value * delta for value, delta in zip(gradient, direction, strict=True)
+    )
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount
+        - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert value_direction == pytest.approx(value_difference, rel=3.0e-8)
+    for row in range(3):
+        hessian_direction = sum(
+            hessian[row * 3 + column] * direction[column]
+            for column in range(3)
+        )
+        gradient_difference = (
+            upper_gradient[row] - lower_gradient[row]
+        ) / (2.0 * step)
+        assert hessian_direction == pytest.approx(
+            gradient_difference, rel=3.0e-7
+        )
+
+
+@pytest.mark.parametrize(
+    ("family_code", "parameter_value", "expected_status"),
+    (
+        (999, 1.0, STATUS_INVALID_ARGUMENT),
+        (3, math.nan, STATUS_INVALID_ARGUMENT),
+        (3, 0.0, STATUS_DOMAIN_ERROR),
+    ),
+)
+def test_native_sdk_scalar_pure_parameter_callback_rejects_invalid_inputs(
+    family_code: int,
+    parameter_value: float,
+    expected_status: int,
+) -> None:
+    model = _model("gross-2001-methane-ethane", "methane")
+    capsule, table = _pure_parameter_table(model)
+    assert capsule is not None
+    result, _, _ = _evaluate_pure_parameter(
+        table, 150.0, 1.0, 2.0e-3, family_code, parameter_value
+    )
+    assert result.status == expected_status
+
+
+def test_native_sdk_scalar_pure_parameter_callback_fails_closed_on_malformed_buffers(
+) -> None:
+    model = _model("gross-2001-methane-ethane", "methane")
+    capsule, table = _pure_parameter_table(model)
+    assert capsule is not None
+    callback = EvaluatePurePhaseParameter(table.evaluate_pure_phase_parameter)
+
+    def call(
+        result: MixturePhaseBlockResult,
+        *,
+        context: object = table.model_context,
+        temperature_k: float = 150.0,
+    ) -> int:
+        return callback(
+            context,
+            temperature_k,
+            1.0,
+            2.0e-3,
+            3,
+            1.0,
+            ctypes.byref(result),
+        )
+
+    result, _, _ = _mixture_result(3)
+    result.gradient_capacity = 2
+    assert call(result) == STATUS_INVALID_ARGUMENT
+    assert result.status == STATUS_INVALID_ARGUMENT
+    assert result.error
+
+    result, _, _ = _mixture_result(3)
+    assert call(result, context=None) == STATUS_INVALID_ARGUMENT
+    assert result.status == STATUS_INVALID_ARGUMENT
+    assert result.error
+
+    result, _, _ = _mixture_result(3)
+    assert call(result, temperature_k=0.0) == STATUS_INVALID_ARGUMENT
+    assert result.status == STATUS_INVALID_ARGUMENT
+    assert result.error
+
+    result, _, _ = _mixture_result(3)
+    result.struct_size -= 1
+    assert call(result) == STATUS_ABI_MISMATCH
 
 
 def test_native_sdk_held_neutral_reference_matches_the_public_owner() -> None:

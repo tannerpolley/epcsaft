@@ -561,6 +561,14 @@ bool NativeModel::supports_native_sdk_v1() const {
 }
 
 // EqExclude: input and domain validation
+bool NativeModel::supports_parameterized_pure_native_sdk_v1() const {
+    return detail::supports_pure_phase_block(parameters_)
+        && parameters_.sigma_term_component.empty()
+        && parameters_.sigma_term_amplitude.empty()
+        && parameters_.sigma_term_exponent.empty();
+}
+
+// EqExclude: input and domain validation
 bool NativeModel::supports_mixture_native_sdk_v1() const {
     return detail::supports_mixture_phase_block(parameters_);
 }
@@ -612,6 +620,67 @@ NativeParameterizedPurePhaseBlock NativeModel::evaluate_pure_phase_parameters(
         dispersion_energy_over_k,
         parameters_
     );
+}
+
+// EqExclude: transport and buffer mechanics
+NativeMixturePhaseBlock NativeModel::evaluate_pure_phase_parameter(
+    double temperature,
+    double amount,
+    double volume,
+    ActivePureParameter family,
+    double parameter_value
+) const {
+    if (!supports_parameterized_pure_native_sdk_v1()) {
+        throw std::logic_error(
+            "active pure parameters require one neutral nonassociating "
+            "component with constant segment diameter"
+        );
+    }
+    double segment_count = parameters_.segment_count.at(0);
+    double segment_diameter = parameters_.sigma_constant.at(0);
+    double dispersion_energy = parameters_.dispersion_energy_over_k.at(0);
+    std::size_t active_coordinate = 0;
+    switch (family) {
+        case ActivePureParameter::SegmentCount:
+            segment_count = parameter_value;
+            active_coordinate = 2;
+            break;
+        case ActivePureParameter::SegmentDiameter:
+            segment_diameter = parameter_value;
+            active_coordinate = 3;
+            break;
+        case ActivePureParameter::DispersionEnergyOverK:
+            dispersion_energy = parameter_value;
+            active_coordinate = 4;
+            break;
+        default:
+            throw std::invalid_argument("unknown active pure parameter");
+    }
+    const auto full = evaluate_pure_phase_parameters(
+        temperature,
+        amount,
+        volume,
+        segment_count,
+        segment_diameter,
+        dispersion_energy
+    );
+    const std::array<std::size_t, 3> selected{0, 1, active_coordinate};
+    std::vector<double> gradient(3);
+    std::vector<double> hessian(9);
+    for (std::size_t row = 0; row < selected.size(); ++row) {
+        gradient[row] = full.gradient[selected[row]];
+        for (std::size_t column = 0; column < selected.size(); ++column) {
+            hessian[row * selected.size() + column] =
+                full.hessian[selected[row] * full.gradient.size()
+                             + selected[column]];
+        }
+    }
+    return {
+        full.helmholtz_over_rt_reference_amount,
+        std::move(gradient),
+        std::move(hessian),
+        full.pressure_pa,
+    };
 }
 
 // EqExclude: transport and buffer mechanics
