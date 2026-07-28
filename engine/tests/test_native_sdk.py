@@ -1581,6 +1581,78 @@ def test_native_sdk_describes_exact_scalar_pure_parameter_contracts() -> None:
         )
 
 
+@pytest.mark.parametrize(
+    ("component_ids", "expected"),
+    (
+        (
+            ("water", "sodium-cation", "chloride-anion"),
+            (6, 6, 2, 3, 8, 1),
+        ),
+        (
+            ("water", "sodium-cation", "bromide-anion"),
+            (7, 7, 3, 4, 9, 0),
+        ),
+    ),
+)
+def test_native_sdk_describes_exact_direct_observable_parameter_contracts(
+    component_ids: tuple[str, ...],
+    expected: tuple[int, int, int, int, int, int],
+) -> None:
+    model = _electrolyte_model(component_ids)
+    _, table = _capability_table(model)
+    (
+        capability_code,
+        family_code,
+        observation_code,
+        model_domain_code,
+        coordinate_kind,
+        active_component_index,
+    ) = expected
+    matches = tuple(
+        descriptor
+        for descriptor in table.capabilities[: table.capability_count]
+        if descriptor.capability == capability_code
+    )
+    assert len(matches) == 1
+    descriptor = matches[0]
+    assert (
+        descriptor.schema_version,
+        descriptor.parameter_family,
+        descriptor.parameter_identity,
+        descriptor.observation_contract,
+        descriptor.model_domain,
+        descriptor.tensor_layout,
+        descriptor.derivative_order,
+        descriptor.maturity,
+        descriptor.authority_effect,
+    ) == (1, family_code, 2, observation_code, model_domain_code, 1, 1, 1, 0)
+    assert (
+        descriptor.state_coordinate_count,
+        descriptor.active_parameter_count,
+        descriptor.coordinate_count,
+        descriptor.component_count,
+    ) == (0, 1, 1, 3)
+    assert tuple(
+        descriptor.component_ids[index].decode()
+        for index in range(descriptor.component_count)
+    ) == component_ids
+    coordinate = descriptor.coordinates[0]
+    assert (
+        coordinate.kind,
+        coordinate.component_index,
+        coordinate.pair_component_index_a,
+        coordinate.pair_component_index_b,
+    ) == (coordinate_kind, active_component_index, -1, -1)
+    assert coordinate.unit.decode() == (
+        "angstrom" if coordinate_kind == 8 else "dimensionless"
+    )
+    assert (
+        descriptor.temperature_min_k,
+        descriptor.temperature_max_k,
+    ) == (298.15, 298.15)
+    assert descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+
 def test_native_sdk_scalar_pure_parameter_installed_header_layout() -> None:
     compiler = shutil.which("cc")
     if compiler is None:
@@ -1601,6 +1673,14 @@ _Static_assert(
 _Static_assert(
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1 == 7u,
     "dispersion-energy coordinate"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_BORN_V1 == 6u,
+    "Born direct-observable capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_OBSERVATION_AQUEOUS_MEAN_IONIC_ACTIVITY_V1 == 3u,
+    "aqueous mean-ionic-activity observation"
 );
 _Static_assert(
     offsetof(epcsaft_native_sdk_v1, evaluate_pure_phase_parameter) == 288,

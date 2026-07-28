@@ -78,6 +78,10 @@ callback projects the accepted joint pure-parameter Hessian onto
 `(amount, volume, active_parameter)`. It enables one-family-at-a-time
 regression without replacing the accepted joint three-parameter callback or
 moving bounds, target data, Ceres, or fit acceptance into Provider.
+The capability set also advertises the already-owned exact first-derivative
+callbacks for current-catalog single-ion Born diameter and NaBr water
+solvation factor. These direct-observable descriptors add no EOS equation,
+target, residual, fit policy, or broader model admission.
 
 Migration D-024 additionally records local append-only full-electrolyte and
 molar-volume-domain candidates. The phase callback evaluates the complete

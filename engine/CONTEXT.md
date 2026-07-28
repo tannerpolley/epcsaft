@@ -98,6 +98,12 @@ The scalar pure path supports independent family fits and does not replace
 the accepted joint `(m,sigma,epsilon/k)` workflow. None is authoritative
 until a separate promotion receipt is accepted, and neither adds phase,
 density, equilibrium, or regression ownership.
+The same finite descriptor set now binds the existing first-derivative
+callbacks for current-catalog water single-ion Born diameter and NaBr water
+solvation factor to their exact component identity, direct-observable
+contract, units, fixed 298.15 K domain, topology, and parameter fingerprint.
+This is metadata for callbacks already present in the SDK, not a new
+thermodynamic implementation or a general electrolyte admission.
 
 Migration D-024 records a local append-only full-electrolyte phase-block
 candidate in explicit component amounts and extensive volume. The callback

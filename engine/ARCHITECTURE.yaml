@@ -115,6 +115,7 @@ native_sdk_candidates:
       to the selected current-catalog ion Born diameter.
     active_coordinate: born_diameter_angstrom
     derivative_order: 1
+    capability_descriptor: component-identity-ion-solvation-gibbs-v1
     required_prefix_size_bytes_64_bit: 168
     current_table_size_bytes_64_bit: 224
     result_size_bytes_64_bit: 272
@@ -154,6 +155,7 @@ native_sdk_candidates:
       active water solvation factor.
     active_coordinate: water_solvation_factor
     derivative_order: 1
+    capability_descriptor: component-identity-aqueous-mean-ionic-activity-v1
     admitted_salt: NaBr
     molality_domain_mol_per_kg: [0.001, 6.0]
     table_size_bytes_64_bit: 224
@@ -372,14 +374,14 @@ manifest:
       physical_lines: 518
       capability_delta: bounded CppAD row concurrency with serialized tape ownership
     - path: src/epcsaft/_native/native_sdk.cpp
-      physical_lines: 2241
-      capability_delta: append-only scalar active pure-parameter transport
+      physical_lines: 2304
+      capability_delta: finite phase and direct-observable parameter capability metadata
     - path: src/epcsaft/_native/phase_block.hpp
       physical_lines: 766
       capability_delta: serialized CppAD tape ownership during aqueous batch execution
     - path: tests/test_native_sdk.py
-      physical_lines: 4935
-      capability_delta: scalar active pure-parameter parity, derivative, ABI, and fail-closed proof
+      physical_lines: 5015
+      capability_delta: phase and direct-observable descriptor, derivative, ABI, and fail-closed proof
     - path: tests/test_parameters.py
       physical_lines: 1276
       capability_delta: immutable catalog discovery and installed-purpose enforcement

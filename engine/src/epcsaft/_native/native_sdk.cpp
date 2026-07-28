@@ -200,6 +200,10 @@ struct NativeSdkEndpoint final {
         pure_segment_diameter_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 3>
         pure_dispersion_energy_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        ion_solvation_born_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
+        aqueous_solvation_factor_coordinates;
     std::vector<epcsaft_native_capability_descriptor_v1> capabilities;
     epcsaft_native_sdk_v1 table;
 
@@ -343,6 +347,26 @@ struct NativeSdkEndpoint final {
           }},
           pure_segment_diameter_coordinates(pure_segment_count_coordinates),
           pure_dispersion_energy_coordinates(pure_segment_count_coordinates),
+          ion_solvation_born_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_BORN_DIAMETER_V1,
+                  1,
+                  -1,
+                  -1,
+                  "angstrom",
+              },
+          }},
+          aqueous_solvation_factor_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SOLVATION_FACTOR_V1,
+                  0,
+                  -1,
+                  -1,
+                  "dimensionless",
+              },
+          }},
           capabilities([&] {
               std::vector<epcsaft_native_capability_descriptor_v1> result;
               pure_segment_diameter_coordinates[2].kind =
@@ -408,6 +432,27 @@ struct NativeSdkEndpoint final {
                   );
                   return value;
               };
+              auto direct_descriptor = [&](
+                  uint32_t capability,
+                  uint32_t parameter_family,
+                  uint32_t observation_contract,
+                  uint32_t model_domain,
+                  const auto& coordinates
+              ) {
+                  auto value = descriptor(
+                      capability,
+                      parameter_family,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
+                      model_domain,
+                      0,
+                      coordinates
+                  );
+                  value.observation_contract = observation_contract;
+                  value.derivative_order = 1;
+                  value.temperature_min_k = 298.15;
+                  value.temperature_max_k = 298.15;
+                  return value;
+              };
               const bool exact_pure =
                   phase_callbacks_admitted
                   && source_model.supports_parameterized_pure_native_sdk_v1()
@@ -462,6 +507,24 @@ struct NativeSdkEndpoint final {
                       EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_BINARY_V1,
                       3,
                       neutral_binary_lij_coordinates
+                  ));
+              }
+              if (active_born_admitted) {
+                  result.push_back(direct_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_BORN_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_BORN_DIAMETER_V1,
+                      EPCSAFT_NATIVE_OBSERVATION_ION_SOLVATION_GIBBS_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_WATER_SINGLE_ION_V1,
+                      ion_solvation_born_coordinates
+                  ));
+              }
+              if (aqueous_solvation_factor_admitted) {
+                  result.push_back(direct_descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_AQUEOUS_SOLVATION_FACTOR_MIAC_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_SOLVATION_FACTOR_V1,
+                      EPCSAFT_NATIVE_OBSERVATION_AQUEOUS_MEAN_IONIC_ACTIVITY_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_AQUEOUS_NABR_V1,
+                      aqueous_solvation_factor_coordinates
                   ));
               }
               return result;
