@@ -152,6 +152,8 @@ enum class ActivePureParameter {
     SegmentCount,
     SegmentDiameter,
     DispersionEnergyOverK,
+    AssociationEnergyOverK,
+    AssociationVolume,
 };
 
 class NativeModel final {
@@ -170,6 +172,7 @@ public:
     ) const;
     bool supports_native_sdk_v1() const;
     bool supports_parameterized_pure_native_sdk_v1() const;
+    bool supports_associating_pure_parameter_native_sdk_v1() const;
     bool supports_mixture_native_sdk_v1() const;
     bool supports_electrolyte_native_sdk_v1() const;
     std::size_t component_count() const;

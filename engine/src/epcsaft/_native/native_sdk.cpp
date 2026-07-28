@@ -254,6 +254,10 @@ struct NativeSdkEndpoint final {
         pure_segment_diameter_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 3>
         pure_dispersion_energy_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 3>
+        pure_association_energy_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 3>
+        pure_association_volume_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 1>
         ion_solvation_born_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 1>
@@ -413,6 +417,8 @@ struct NativeSdkEndpoint final {
           }},
           pure_segment_diameter_coordinates(pure_segment_count_coordinates),
           pure_dispersion_energy_coordinates(pure_segment_count_coordinates),
+          pure_association_energy_coordinates(pure_segment_count_coordinates),
+          pure_association_volume_coordinates(pure_segment_count_coordinates),
           ion_solvation_born_coordinates{{
               {
                   sizeof(epcsaft_native_capability_coordinate_v1),
@@ -481,6 +487,12 @@ struct NativeSdkEndpoint final {
               pure_dispersion_energy_coordinates[2].kind =
                   EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1;
               pure_dispersion_energy_coordinates[2].unit = "kelvin";
+              pure_association_energy_coordinates[2].kind =
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_ENERGY_OVER_K_V1;
+              pure_association_energy_coordinates[2].unit = "kelvin";
+              pure_association_volume_coordinates[2].kind =
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_VOLUME_V1;
+              pure_association_volume_coordinates[2].unit = "dimensionless";
               auto descriptor = [&](
                   uint32_t capability,
                   uint32_t parameter_family,
@@ -589,6 +601,31 @@ struct NativeSdkEndpoint final {
                       EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_NONASSOCIATING_PURE_V1,
                       2,
                       pure_dispersion_energy_coordinates
+                  ));
+              }
+              const bool exact_associating_pure =
+                  phase_callbacks_admitted
+                  && source_model
+                      .supports_associating_pure_parameter_native_sdk_v1()
+                  && component_ids.size() == 1
+                  && component_charges == std::vector<int32_t>({0})
+                  && !topology_fingerprint.empty();
+              if (exact_associating_pure) {
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATION_ENERGY_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_ENERGY_OVER_K_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_MODEL_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_PURE_V1,
+                      2,
+                      pure_association_energy_coordinates
+                  ));
+                  result.push_back(descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATION_VOLUME_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_VOLUME_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_MODEL_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_PURE_V1,
+                      2,
+                      pure_association_volume_coordinates
                   ));
               }
               const bool exact_neutral_binary =
@@ -761,6 +798,7 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_ion_solvation_kij,
           } {}
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_ion_solvation_kij(
         const void* context,
         const char* expected_fingerprint,
@@ -878,6 +916,7 @@ struct NativeSdkEndpoint final {
         }
     }
 
+    // EqExclude: transport and buffer mechanics
     static int evaluate_figiel_permittivity(
         const void* context,
         const char* expected_fingerprint,
@@ -2259,6 +2298,12 @@ struct NativeSdkEndpoint final {
             case EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1:
                 family = ActivePureParameter::DispersionEnergyOverK;
                 break;
+            case EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_ENERGY_OVER_K_V1:
+                family = ActivePureParameter::AssociationEnergyOverK;
+                break;
+            case EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_VOLUME_V1:
+                family = ActivePureParameter::AssociationVolume;
+                break;
             default:
                 break;
         }
@@ -2581,6 +2626,7 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
         && !ion_solvation_kij_admitted
         && !neutral_reference_admitted && !aqueous_solvation_factor_admitted
         && (!model.supports_native_sdk_v1()
+        && !model.supports_associating_pure_parameter_native_sdk_v1()
         && !model.supports_mixture_native_sdk_v1()
         && !model.supports_electrolyte_native_sdk_v1())) {
         throw std::invalid_argument(

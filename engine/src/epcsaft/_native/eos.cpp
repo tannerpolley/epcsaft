@@ -569,6 +569,11 @@ bool NativeModel::supports_parameterized_pure_native_sdk_v1() const {
 }
 
 // EqExclude: input and domain validation
+bool NativeModel::supports_associating_pure_parameter_native_sdk_v1() const {
+    return detail::supports_associating_pure_phase_block(parameters_);
+}
+
+// EqExclude: input and domain validation
 bool NativeModel::supports_mixture_native_sdk_v1() const {
     return detail::supports_mixture_phase_block(parameters_);
 }
@@ -630,6 +635,17 @@ NativeMixturePhaseBlock NativeModel::evaluate_pure_phase_parameter(
     ActivePureParameter family,
     double parameter_value
 ) const {
+    if (family == ActivePureParameter::AssociationEnergyOverK
+        || family == ActivePureParameter::AssociationVolume) {
+        return detail::associating_pure_phase_parameter_block(
+            temperature,
+            amount,
+            volume,
+            parameter_value,
+            family == ActivePureParameter::AssociationEnergyOverK,
+            parameters_
+        );
+    }
     if (!supports_parameterized_pure_native_sdk_v1()) {
         throw std::logic_error(
             "active pure parameters require one neutral nonassociating "
@@ -653,6 +669,9 @@ NativeMixturePhaseBlock NativeModel::evaluate_pure_phase_parameter(
             dispersion_energy = parameter_value;
             active_coordinate = 4;
             break;
+        case ActivePureParameter::AssociationEnergyOverK:
+        case ActivePureParameter::AssociationVolume:
+            throw std::logic_error("association parameter dispatch failed");
         default:
             throw std::invalid_argument("unknown active pure parameter");
     }
@@ -1070,6 +1089,7 @@ NativeModel::evaluate_aqueous_miac_solvation_factor(
     ).front();
 }
 
+// EqExclude: transport and buffer mechanics
 NativeFigielPermittivity NativeModel::evaluate_figiel_permittivity(
     double total_ion_mole_fraction,
     double suppression_coefficient

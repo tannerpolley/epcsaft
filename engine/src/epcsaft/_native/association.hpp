@@ -28,13 +28,15 @@ Scalar association_exp(const Scalar& value) {
 }
 
 template <typename Scalar>
-std::vector<Scalar> association_delta(
+std::vector<Scalar> association_delta_values(
     const Scalar& temperature,
     const Scalar& molar_density,
     const std::vector<Scalar>& mole_fractions,
     const NativeParameters& parameters,
     const std::vector<Scalar>& sigma,
-    const std::vector<Scalar>& diameter
+    const std::vector<Scalar>& diameter,
+    const std::vector<Scalar>& association_energy_over_k,
+    const std::vector<Scalar>& association_volume
 ) {
     const std::size_t components = parameters.segment_count.size();
     const std::size_t sites = parameters.site_component.size();
@@ -75,14 +77,79 @@ std::vector<Scalar> association_delta(
             // EqID: association_strength
             delta[pair] = contact
                 * (association_exp(
-                       Scalar(parameters.association_energy_over_k[pair])
-                           / temperature
+                       association_energy_over_k[pair] / temperature
                    ) - Scalar(1.0))
                 * sigma_ij * sigma_ij * sigma_ij
-                * parameters.association_volume[pair];
+                * association_volume[pair];
         }
     }
     return delta;
+}
+
+template <typename Scalar>
+// EqExclude: scalar utility dispatch
+std::vector<Scalar> association_delta(
+    const Scalar& temperature,
+    const Scalar& molar_density,
+    const std::vector<Scalar>& mole_fractions,
+    const NativeParameters& parameters,
+    const std::vector<Scalar>& sigma,
+    const std::vector<Scalar>& diameter
+) {
+    return association_delta_values(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        sigma,
+        diameter,
+        std::vector<Scalar>(
+            parameters.association_energy_over_k.begin(),
+            parameters.association_energy_over_k.end()
+        ),
+        std::vector<Scalar>(
+            parameters.association_volume.begin(),
+            parameters.association_volume.end()
+        )
+    );
+}
+
+template <typename Scalar>
+// EqExclude: scalar utility dispatch
+std::vector<Scalar> association_delta_active_pure_parameter(
+    const Scalar& temperature,
+    const Scalar& molar_density,
+    const std::vector<Scalar>& mole_fractions,
+    const NativeParameters& parameters,
+    const std::vector<Scalar>& sigma,
+    const std::vector<Scalar>& diameter,
+    const Scalar& parameter_value,
+    bool active_energy
+) {
+    std::vector<Scalar> energy(
+        parameters.association_energy_over_k.begin(),
+        parameters.association_energy_over_k.end()
+    );
+    std::vector<Scalar> volume(
+        parameters.association_volume.begin(),
+        parameters.association_volume.end()
+    );
+    auto& active = active_energy ? energy : volume;
+    for (std::size_t pair = 0; pair < parameters.association_active.size(); ++pair) {
+        if (parameters.association_active[pair] != 0) {
+            active[pair] = parameter_value;
+        }
+    }
+    return association_delta_values(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        sigma,
+        diameter,
+        energy,
+        volume
+    );
 }
 
 template <typename Scalar>

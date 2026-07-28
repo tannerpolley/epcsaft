@@ -1695,6 +1695,49 @@ def test_native_sdk_describes_exact_scalar_pure_parameter_contracts() -> None:
         )
 
 
+def test_native_sdk_describes_exact_associating_pure_parameter_contracts() -> None:
+    model = _model("figiel-2025-reference-electrolytes", "ethanol")
+    _, table = _capability_table(model)
+    assert table.capability_count == 2
+    expected = (
+        (15, 9, 11, "kelvin"),
+        (16, 10, 12, "dimensionless"),
+    )
+    for descriptor, (
+        capability_code,
+        family_code,
+        coordinate_kind,
+        unit,
+    ) in zip(table.capabilities[:2], expected, strict=True):
+        assert (
+            descriptor.schema_version,
+            descriptor.capability,
+            descriptor.parameter_family,
+            descriptor.parameter_identity,
+            descriptor.observation_contract,
+            descriptor.model_domain,
+            descriptor.tensor_layout,
+            descriptor.derivative_order,
+            descriptor.maturity,
+            descriptor.authority_effect,
+        ) == (1, capability_code, family_code, 3, 1, 7, 1, 2, 1, 0)
+        coordinates = tuple(
+            descriptor.coordinates[index]
+            for index in range(descriptor.coordinate_count)
+        )
+        assert tuple(item.kind for item in coordinates) == (
+            1,
+            2,
+            coordinate_kind,
+        )
+        assert tuple(item.unit.decode() for item in coordinates) == (
+            "mol",
+            "m3",
+            unit,
+        )
+        assert descriptor.topology_fingerprint
+
+
 @pytest.mark.parametrize(
     ("component_ids", "expected"),
     (
@@ -2333,6 +2376,84 @@ def test_native_sdk_scalar_pure_parameter_callback_matches_full_exact_block(
 
 
 @pytest.mark.parametrize(
+    ("family_code", "parameter_value", "parameter_step"),
+    (
+        (9, 2653.4, 2.0e-3),
+        (10, 0.03238, 2.0e-8),
+    ),
+)
+def test_native_sdk_associating_pure_parameter_callback_has_exact_hessian(
+    family_code: int,
+    parameter_value: float,
+    parameter_step: float,
+) -> None:
+    model = _model("figiel-2025-reference-electrolytes", "ethanol")
+    capsule, table = _pure_parameter_table(model)
+    assert capsule is not None
+    temperature_k = 298.15
+    point = (1.0, 5.86e-5, parameter_value)
+    direction = (1.0e-3, -2.0e-8, parameter_step)
+
+    def shifted(
+        scale: float,
+    ) -> tuple[MixturePhaseBlockResult, tuple[float, ...], tuple[float, ...]]:
+        values = tuple(
+            value + scale * delta
+            for value, delta in zip(point, direction, strict=True)
+        )
+        return _evaluate_pure_parameter(
+            table,
+            temperature_k,
+            values[0],
+            values[1],
+            family_code,
+            values[2],
+        )
+
+    center, gradient, hessian = shifted(0.0)
+    assert center.status == STATUS_OK
+    assert all(math.isfinite(value) for value in gradient)
+    assert all(math.isfinite(value) for value in hessian)
+    assert center.pressure_pa == pytest.approx(
+        -8.31446261815324 * temperature_k * gradient[1], rel=2.0e-13
+    )
+    provider_state = model.evaluate(
+        temperature=temperature_k * unit_registry.kelvin,
+        molar_density=(point[0] / point[1])
+        * unit_registry.mole
+        / unit_registry.meter**3,
+        mole_fractions=(1.0,),
+    )
+    assert center.pressure_pa == pytest.approx(
+        provider_state.pressure.to("pascal").magnitude,
+        rel=3.0e-12,
+    )
+
+    difference_step = 1.0e-2
+    lower, lower_gradient, _ = shifted(-difference_step)
+    upper, upper_gradient, _ = shifted(difference_step)
+    value_direction = sum(
+        value * delta for value, delta in zip(gradient, direction, strict=True)
+    )
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount
+        - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * difference_step)
+    assert value_direction == pytest.approx(value_difference, rel=2.0e-6)
+    for row in range(3):
+        hessian_direction = sum(
+            hessian[row * 3 + column] * direction[column]
+            for column in range(3)
+        )
+        gradient_difference = (
+            upper_gradient[row] - lower_gradient[row]
+        ) / (2.0 * difference_step)
+        assert hessian_direction == pytest.approx(
+            gradient_difference, rel=2.0e-5, abs=2.0e-8
+        )
+
+
+@pytest.mark.parametrize(
     ("family_code", "parameter_value", "expected_status"),
     (
         (999, 1.0, STATUS_INVALID_ARGUMENT),
@@ -2953,7 +3074,7 @@ def test_native_sdk_parameterized_phase_block_has_exact_parameter_derivatives() 
 
 
 def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
-    associating = _model("figiel-2025-reference-electrolytes", "ethanol")
+    associating = _model("figiel-2025-reference-electrolytes", "water")
     with pytest.raises(EosError, match="unsupported-native-sdk"):
         native_sdk(associating)
 

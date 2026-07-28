@@ -64,6 +64,7 @@ Scalar figiel_bulk_relative_permittivity(
 }
 
 template <typename Scalar>
+// EqID: figiel_bulk_permittivity
 Scalar figiel_bulk_relative_permittivity_derivative(
     const Scalar& salt_free_permittivity,
     const Scalar& ion_fraction,

@@ -56,6 +56,31 @@ inline bool supports_pure_phase_block(const NativeParameters& parameters) {
 }
 
 // EqExclude: input and domain validation
+inline bool supports_associating_pure_phase_block(
+    const NativeParameters& parameters
+) {
+    if (parameters.segment_count.size() != 1
+        || parameters.site_component.size() != 2
+        || parameters.charge_number.size() != 1
+        || parameters.charge_number[0] != 0
+        || !std::all_of(
+            parameters.site_component.begin(),
+            parameters.site_component.end(),
+            [](int component) { return component == 0; }
+        )) {
+        return false;
+    }
+    const auto& active = parameters.association_active;
+    return active.size() == 4
+        && active[0] == 0 && active[1] != 0
+        && active[2] != 0 && active[3] == 0
+        && parameters.association_energy_over_k[1]
+            == parameters.association_energy_over_k[2]
+        && parameters.association_volume[1]
+            == parameters.association_volume[2];
+}
+
+// EqExclude: input and domain validation
 inline bool supports_mixture_phase_block(const NativeParameters& parameters) {
     return parameters.segment_count.size() >= 2
         && parameters.site_component.empty()
@@ -560,6 +585,117 @@ inline NativeMixturePhaseBlock electrolyte_phase_block(
         std::move(hessian),
         pressure,
     };
+}
+
+// EqID: phase_pressure
+// EqID: association_mass_action
+// EqExclude: CppAD-generated derivative machinery
+inline NativeMixturePhaseBlock associating_pure_phase_parameter_block(
+    double temperature,
+    double amount,
+    double volume,
+    double parameter_value,
+    bool active_energy,
+    const NativeParameters& parameters
+) {
+    if (!supports_associating_pure_phase_block(parameters)) {
+        throw std::logic_error(
+            "active association parameters require one neutral associating component"
+        );
+    }
+    if (!std::isfinite(temperature) || !std::isfinite(amount)
+        || !std::isfinite(volume) || !std::isfinite(parameter_value)
+        || temperature <= 0.0 || amount <= 0.0 || volume <= 0.0
+        || parameter_value <= 0.0) {
+        throw std::invalid_argument(
+            "association phase inputs must be positive and finite"
+        );
+    }
+
+    NativeParameters value_parameters = parameters;
+    auto& active_values = active_energy
+        ? value_parameters.association_energy_over_k
+        : value_parameters.association_volume;
+    for (std::size_t pair = 0; pair < value_parameters.association_active.size();
+         ++pair) {
+        if (value_parameters.association_active[pair] != 0) {
+            active_values[pair] = parameter_value;
+        }
+    }
+
+    const double density = amount / volume;
+    const std::vector<double> composition{1.0};
+    const auto sigma = segment_sigma(temperature, value_parameters);
+    const auto diameter = segment_diameter(temperature, value_parameters, sigma);
+    const auto site_fractions = solve_site_fractions(
+        temperature,
+        density,
+        composition,
+        value_parameters,
+        sigma,
+        diameter
+    );
+    const auto derivatives =
+        thermodynamic_derivatives_active_pure_association_parameter(
+            temperature,
+            density,
+            composition,
+            parameters,
+            site_fractions,
+            parameter_value,
+            active_energy
+        );
+
+    const std::size_t state_coordinates = 4;
+    const std::size_t parameter_coordinate = 3;
+    const double a = derivatives.residual_helmholtz;
+    const double a_rho = derivatives.density;
+    const double a_parameter = *derivatives.active_association_parameter;
+    const double a_rho_rho =
+        derivatives.hessian[1 * state_coordinates + 1];
+    const double a_rho_parameter =
+        derivatives.hessian[1 * state_coordinates + parameter_coordinate];
+    const double a_parameter_parameter =
+        derivatives.hessian[
+            parameter_coordinate * state_coordinates + parameter_coordinate
+        ];
+
+    std::vector<double> gradient{
+        std::log(density) + a + density * a_rho,
+        -density - density * density * a_rho,
+        amount * a_parameter,
+    };
+    std::vector<double> hessian(9);
+    hessian[0] = 1.0 / amount
+        + (2.0 * a_rho + density * a_rho_rho) / volume;
+    hessian[1] = -1.0 / volume
+        - 2.0 * density * a_rho / volume
+        - density * density * a_rho_rho / volume;
+    hessian[2] = a_parameter + density * a_rho_parameter;
+    hessian[3] = hessian[1];
+    hessian[4] = density / volume
+        * (1.0 + 2.0 * density * a_rho
+           + density * density * a_rho_rho);
+    hessian[5] = -density * density * a_rho_parameter;
+    hessian[6] = hessian[2];
+    hessian[7] = hessian[5];
+    hessian[8] = amount * a_parameter_parameter;
+
+    const double value =
+        amount * (std::log(density) - 1.0 + derivatives.residual_helmholtz);
+    const double pressure = -GAS_CONSTANT * temperature * gradient[1];
+    if (!std::isfinite(value) || !std::isfinite(pressure)
+        || !std::all_of(gradient.begin(), gradient.end(), [](double item) {
+            return std::isfinite(item);
+        })
+        || !std::all_of(hessian.begin(), hessian.end(), [](double item) {
+            return std::isfinite(item);
+        })) {
+        throw std::runtime_error(
+            "active association phase block contains nonfinite values"
+        );
+    }
+    return {value, std::move(gradient), std::move(hessian), pressure};
 }
 
 // EqID: phase_packing_fraction
