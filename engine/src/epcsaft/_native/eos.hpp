@@ -267,6 +267,12 @@ public:
         double pressure,
         double ionic_region_relative_permittivity
     ) const;
+    NativeIonSolvationIonicPermittivity
+    evaluate_ion_solvation_solvent_permittivity(
+        double temperature,
+        double pressure,
+        double solvent_relative_permittivity
+    ) const;
 
     NativeIonSolvationKij evaluate_ion_solvation_kij(
         double temperature,

@@ -81,7 +81,8 @@ Scalar bulk_relative_permittivity(
     const Scalar& temperature,
     const Scalar& molar_density,
     const std::vector<Scalar>& mole_fractions,
-    const NativeParameters& parameters
+    const NativeParameters& parameters,
+    const std::vector<Scalar>* relative_permittivity_override = nullptr
 ) {
     Scalar solvent_mass = Scalar(0.0);
     Scalar dielectric_mass = Scalar(0.0);
@@ -96,6 +97,11 @@ Scalar bulk_relative_permittivity(
 
     const Scalar number_density_angstrom3 =
         molar_density * ELECTROLYTE_AVOGADRO * 1.0e-30;
+    const auto relative_permittivity = [&](std::size_t component) {
+        return relative_permittivity_override == nullptr
+            ? Scalar(parameters.relative_permittivity[component])
+            : (*relative_permittivity_override)[component];
+    };
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const Scalar fraction = mole_fractions[component];
         const int charge = parameters.charge_number[component];
@@ -103,14 +109,14 @@ Scalar bulk_relative_permittivity(
             solvent_fraction += fraction;
             const Scalar mass = fraction * parameters.molar_mass_kg_per_mol[component];
             solvent_mass += mass;
-            dielectric_mass += mass * parameters.relative_permittivity[component];
+            dielectric_mass += mass * relative_permittivity(component);
             schreckenberg_volume += fraction
                 * parameters.schreckenberg_dielectric_volume_m3_per_mol[component];
             schreckenberg_temperature += fraction
                 * parameters.schreckenberg_dielectric_temperature_k[component];
         } else {
             ion_fraction += fraction;
-            ion_dielectric += fraction * parameters.relative_permittivity[component];
+            ion_dielectric += fraction * relative_permittivity(component);
             zuber_suppression += fraction
                 * parameters.zuber_ion_suppression_coefficient[component];
         }
@@ -203,7 +209,8 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     const std::vector<double>& reference_mole_fractions,
     const NativeParameters& parameters,
     const std::vector<Scalar>& diameter,
-    const std::vector<double>& reference_diameter
+    const std::vector<double>& reference_diameter,
+    const std::vector<Scalar>* relative_permittivity_override = nullptr
 ) {
     bool has_ion = false;
     for (int charge : parameters.charge_number) {
@@ -226,7 +233,11 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         }
     }
     const Scalar bulk_permittivity = detail::bulk_relative_permittivity(
-        temperature, molar_density, mole_fractions, parameters
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        relative_permittivity_override
     );
     if constexpr (std::is_same_v<Scalar, double>) {
         if (!(solvent_mass > 0.0) || !std::isfinite(solvent_mass)) {
@@ -249,11 +260,15 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
                 * charge * charge;
         }
     }
-    const double reference_permittivity = detail::bulk_relative_permittivity(
-        reference_temperature,
-        reference_molar_density,
-        reference_mole_fractions,
-        parameters
+    const std::vector<Scalar> reference_fractions(
+        reference_mole_fractions.begin(), reference_mole_fractions.end()
+    );
+    const Scalar reference_permittivity = detail::bulk_relative_permittivity(
+        Scalar(reference_temperature),
+        Scalar(reference_molar_density),
+        reference_fractions,
+        parameters,
+        relative_permittivity_override
     );
     if (reference_charge_square_sum == 0.0) {
         return {bulk_permittivity, Scalar(0.0)};
@@ -264,11 +279,24 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         * ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * charge_square_sum
         / (VACUUM_PERMITTIVITY * bulk_permittivity * BOLTZMANN * temperature)
     );
-    const double reference_kappa = std::sqrt(
+    const Scalar reference_kappa = electrolyte_sqrt(
         reference_molar_density * ELECTROLYTE_AVOGADRO
         * ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * reference_charge_square_sum
         / (VACUUM_PERMITTIVITY * reference_permittivity * BOLTZMANN
             * reference_temperature)
+    );
+    const double reference_permittivity_for_branch =
+        detail::bulk_relative_permittivity(
+            reference_temperature,
+            reference_molar_density,
+            reference_mole_fractions,
+            parameters
+        );
+    const double reference_kappa_for_branch = std::sqrt(
+        reference_molar_density * ELECTROLYTE_AVOGADRO
+        * ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * reference_charge_square_sum
+        / (VACUUM_PERMITTIVITY * reference_permittivity_for_branch
+            * BOLTZMANN * reference_temperature)
     );
     Scalar weighted_chi = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
@@ -280,7 +308,9 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         const Scalar reduced = kappa * diameter_m;
         const Scalar chi = finite_size_chi(
             reduced,
-            reference_kappa * 1.0e-10 * reference_diameter[component] < 1.0e-3
+            reference_kappa_for_branch
+                    * 1.0e-10 * reference_diameter[component]
+                < 1.0e-3
         );
         weighted_chi += mole_fractions[component] * charge * charge * chi;
     }

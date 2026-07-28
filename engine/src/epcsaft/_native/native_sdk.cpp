@@ -263,6 +263,8 @@ struct NativeSdkEndpoint final {
     std::array<epcsaft_native_capability_coordinate_v1, 1>
         ion_solvation_ionic_permittivity_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 1>
+        ion_solvation_solvent_permittivity_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 1>
         aqueous_solvation_factor_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 1>
         aqueous_water_cation_kij_coordinates;
@@ -436,6 +438,16 @@ struct NativeSdkEndpoint final {
                   sizeof(epcsaft_native_capability_coordinate_v1),
                   EPCSAFT_NATIVE_CAPABILITY_COORDINATE_IONIC_REGION_RELATIVE_PERMITTIVITY_V1,
                   -1,
+                  -1,
+                  -1,
+                  "dimensionless",
+              },
+          }},
+          ion_solvation_solvent_permittivity_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_RELATIVE_PERMITTIVITY_V1,
+                  0,
                   -1,
                   -1,
                   "dimensionless",
@@ -688,6 +700,20 @@ struct NativeSdkEndpoint final {
                   ionic_permittivity.temperature_min_k = 298.15;
                   ionic_permittivity.temperature_max_k = 298.15;
                   result.push_back(ionic_permittivity);
+                  auto solvent_permittivity = descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_PERMITTIVITY_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_RELATIVE_PERMITTIVITY_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_FIGIEL_WATER_SINGLE_ION_V1,
+                      0,
+                      ion_solvation_solvent_permittivity_coordinates
+                  );
+                  solvent_permittivity.observation_contract =
+                      EPCSAFT_NATIVE_OBSERVATION_ION_SOLVATION_GIBBS_V1;
+                  solvent_permittivity.derivative_order = 1;
+                  solvent_permittivity.temperature_min_k = 298.15;
+                  solvent_permittivity.temperature_max_k = 298.15;
+                  result.push_back(solvent_permittivity);
               }
               if (aqueous_solvation_factor_admitted) {
                   result.push_back(direct_descriptor(
@@ -826,6 +852,8 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_ion_solvation_kij,
               sizeof(epcsaft_ion_solvation_ionic_permittivity_result_v1),
               &NativeSdkEndpoint::evaluate_ion_solvation_ionic_permittivity,
+              sizeof(epcsaft_ion_solvation_solvent_permittivity_result_v1),
+              &NativeSdkEndpoint::evaluate_ion_solvation_solvent_permittivity,
           } {}
 
     // EqExclude: transport and buffer mechanics
@@ -919,6 +947,101 @@ struct NativeSdkEndpoint final {
             return fail(
                 EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
                 "unknown active ionic-region permittivity evaluation failure"
+            );
+        }
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_ion_solvation_solvent_permittivity(
+        const void* context,
+        const char* expected_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        double solvent_relative_permittivity,
+        epcsaft_ion_solvation_solvent_permittivity_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_ion_solvation_solvent_permittivity_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const uint32_t result_size = result->struct_size;
+        std::memset(result, 0, sizeof(*result));
+        result->struct_size = result_size;
+        result->solvation_gibbs_j_per_mol =
+            std::numeric_limits<double>::quiet_NaN();
+        result->derivative_j_per_mol =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_molality_mol_per_kg =
+            std::numeric_limits<double>::quiet_NaN();
+        result->reference_convergence_error =
+            std::numeric_limits<double>::quiet_NaN();
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr
+            || !std::isfinite(temperature_k) || !std::isfinite(pressure_pa)
+            || !std::isfinite(solvent_relative_permittivity)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "invalid active solvent permittivity arguments"
+            );
+        }
+        const auto& endpoint =
+            *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.active_born_admitted
+            || std::strcmp(
+                endpoint.parameter_fingerprint.c_str(),
+                expected_fingerprint
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "unsupported active solvent permittivity model"
+            );
+        }
+        if (temperature_k != 298.15 || pressure_pa != 100000.0
+            || solvent_relative_permittivity <= 1.0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "active solvent permittivity state is outside the admitted domain"
+            );
+        }
+        try {
+            const auto value =
+                endpoint.model.evaluate_ion_solvation_solvent_permittivity(
+                    temperature_k,
+                    pressure_pa,
+                    solvent_relative_permittivity
+                );
+            result->solvation_gibbs_j_per_mol =
+                value.solvation_gibbs_j_per_mol;
+            result->derivative_j_per_mol = value.derivative_j_per_mol;
+            result->reference_molality_mol_per_kg =
+                value.reference_molality_mol_per_kg;
+            result->reference_convergence_error =
+                value.reference_convergence_error;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown active solvent permittivity evaluation failure"
             );
         }
     }

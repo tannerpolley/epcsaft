@@ -160,6 +160,7 @@ struct ThermodynamicDerivatives final {
     std::optional<double> active_born;
     std::optional<double> active_solvation_factor;
     std::optional<double> active_ionic_permittivity;
+    std::optional<double> active_relative_permittivity;
     std::vector<double> active_aqueous_k_ij;
     std::optional<double> active_association_parameter;
     std::vector<double> hessian;
@@ -192,6 +193,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     double active_born_diameter_angstrom,
     const std::optional<double>& active_solvation_factor,
     const std::optional<double>& active_ionic_permittivity,
+    std::optional<std::size_t> active_relative_permittivity_component,
+    double active_relative_permittivity,
     const std::optional<std::array<double, 3>>& active_aqueous_k_ij,
     const std::optional<double>& active_association_parameter,
     bool active_association_energy
@@ -206,18 +209,25 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         static_cast<std::size_t>(active_solvation_factor.has_value());
     const std::size_t ionic_permittivity_coordinates =
         static_cast<std::size_t>(active_ionic_permittivity.has_value());
+    const std::size_t relative_permittivity_coordinates =
+        static_cast<std::size_t>(
+            active_relative_permittivity_component.has_value()
+        );
     const std::size_t kij_coordinates = active_aqueous_k_ij.has_value() ? 3 : 0;
     const std::size_t association_coordinates =
         static_cast<std::size_t>(active_association_parameter.has_value());
     const std::size_t coordinates = 2 + components + born_coordinates
         + solvation_coordinates + ionic_permittivity_coordinates
-        + kij_coordinates + association_coordinates;
+        + relative_permittivity_coordinates + kij_coordinates
+        + association_coordinates;
     const std::size_t born_offset = 2 + components;
     const std::size_t solvation_offset = born_offset + born_coordinates;
     const std::size_t ionic_permittivity_offset =
         solvation_offset + solvation_coordinates;
-    const std::size_t kij_offset =
+    const std::size_t relative_permittivity_offset =
         ionic_permittivity_offset + ionic_permittivity_coordinates;
+    const std::size_t kij_offset =
+        relative_permittivity_offset + relative_permittivity_coordinates;
     const std::size_t association_offset = kij_offset + kij_coordinates;
     const std::size_t width = coordinates + sites;
 
@@ -235,6 +245,10 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     }
     if (active_ionic_permittivity.has_value()) {
         independent[ionic_permittivity_offset] = *active_ionic_permittivity;
+    }
+    if (active_relative_permittivity_component.has_value()) {
+        independent[relative_permittivity_offset] =
+            active_relative_permittivity;
     }
     if (active_aqueous_k_ij.has_value()) {
         for (std::size_t coordinate = 0; coordinate < 3; ++coordinate) {
@@ -261,6 +275,16 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     const auto reference_diameter = segment_diameter(
         temperature, parameters, reference_sigma
     );
+    std::vector<ADScalar> relative_permittivity_override;
+    if (active_relative_permittivity_component.has_value()) {
+        relative_permittivity_override.assign(
+            parameters.relative_permittivity.begin(),
+            parameters.relative_permittivity.end()
+        );
+        relative_permittivity_override[
+            *active_relative_permittivity_component
+        ] = independent[relative_permittivity_offset];
+    }
     const auto electrolyte = electrolyte_contribution(
         independent[0],
         independent[1],
@@ -270,7 +294,10 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         mole_fractions,
         parameters,
         diameter,
-        reference_diameter
+        reference_diameter,
+        relative_permittivity_override.empty()
+            ? nullptr
+            : &relative_permittivity_override
     );
     const auto born = active_born_component.has_value()
         ? born_ssm_ds_contribution_active(
@@ -364,6 +391,9 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     }
     if (active_ionic_permittivity.has_value()) {
         point.push_back(*active_ionic_permittivity);
+    }
+    if (active_relative_permittivity_component.has_value()) {
+        point.push_back(active_relative_permittivity);
     }
     if (active_aqueous_k_ij.has_value()) {
         point.insert(
@@ -475,6 +505,9 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         active_ionic_permittivity.has_value()
             ? std::optional<double>(gradient[ionic_permittivity_offset])
             : std::nullopt,
+        active_relative_permittivity_component.has_value()
+            ? std::optional<double>(gradient[relative_permittivity_offset])
+            : std::nullopt,
         active_aqueous_k_ij.has_value()
             ? std::vector<double>(
                 gradient.begin() + static_cast<std::ptrdiff_t>(kij_offset),
@@ -507,6 +540,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives(
         std::nullopt,
         std::nullopt,
         std::nullopt,
+        0.0,
+        std::nullopt,
         std::nullopt,
         false
     );
@@ -533,6 +568,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_born(
         std::nullopt,
         std::nullopt,
         std::nullopt,
+        0.0,
+        std::nullopt,
         std::nullopt,
         false
     );
@@ -557,6 +594,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_solvation_facto
         0.0,
         active_solvation_factor,
         std::nullopt,
+        std::nullopt,
+        0.0,
         std::nullopt,
         std::nullopt,
         false
@@ -584,6 +623,37 @@ thermodynamic_derivatives_active_ionic_region_permittivity(
         std::nullopt,
         active_ionic_region_relative_permittivity,
         std::nullopt,
+        0.0,
+        std::nullopt,
+        std::nullopt,
+        false
+    );
+}
+
+// EqExclude: CppAD-generated derivative machinery
+inline ThermodynamicDerivatives
+thermodynamic_derivatives_active_relative_permittivity(
+    double temperature,
+    double molar_density,
+    const std::vector<double>& mole_fractions,
+    const NativeParameters& parameters,
+    const std::vector<double>& site_fractions,
+    std::size_t active_component,
+    double active_relative_permittivity
+) {
+    return thermodynamic_derivatives_impl(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        site_fractions,
+        std::nullopt,
+        0.0,
+        std::nullopt,
+        std::nullopt,
+        active_component,
+        active_relative_permittivity,
+        std::nullopt,
         std::nullopt,
         false
     );
@@ -608,6 +678,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_aqueous_kij(
         0.0,
         std::nullopt,
         std::nullopt,
+        std::nullopt,
+        0.0,
         active_aqueous_k_ij,
         std::nullopt,
         false
@@ -634,6 +706,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_pure_associatio
         0.0,
         std::nullopt,
         std::nullopt,
+        std::nullopt,
+        0.0,
         std::nullopt,
         active_parameter,
         active_energy

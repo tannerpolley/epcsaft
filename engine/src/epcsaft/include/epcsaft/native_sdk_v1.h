@@ -485,6 +485,32 @@ typedef int (*epcsaft_evaluate_ion_solvation_ionic_permittivity_v1)(
     epcsaft_ion_solvation_ionic_permittivity_result_v1* result
 );
 
+/*
+ * Model-bound water reference tracer with one active solvent relative
+ * permittivity. The value is Delta_solv,x G_i^inf in J/mol and the derivative
+ * is its total fixed-(T,P,reference-path) derivative in J/mol per
+ * dimensionless permittivity unit.
+ */
+typedef struct epcsaft_ion_solvation_solvent_permittivity_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    double solvation_gibbs_j_per_mol;
+    double derivative_j_per_mol;
+    double reference_molality_mol_per_kg;
+    double reference_convergence_error;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_ion_solvation_solvent_permittivity_result_v1;
+
+typedef int (*epcsaft_evaluate_ion_solvation_solvent_permittivity_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    double solvent_relative_permittivity,
+    epcsaft_ion_solvation_solvent_permittivity_result_v1* result
+);
+
 #define EPCSAFT_NATIVE_CAPABILITY_SCHEMA_VERSION_V1 1u
 
 enum epcsaft_native_capability_v1 {
@@ -504,7 +530,8 @@ enum epcsaft_native_capability_v1 {
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_CATION_ANION_KIJ_V1 = 14u,
     EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATION_ENERGY_HELMHOLTZ_V1 = 15u,
     EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATION_VOLUME_HELMHOLTZ_V1 = 16u,
-    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_IONIC_REGION_PERMITTIVITY_V1 = 17u
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_IONIC_REGION_PERMITTIVITY_V1 = 17u,
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_PERMITTIVITY_V1 = 18u
 };
 
 enum epcsaft_native_parameter_family_v1 {
@@ -518,7 +545,8 @@ enum epcsaft_native_parameter_family_v1 {
     EPCSAFT_NATIVE_PARAMETER_FAMILY_DIELECTRIC_ION_SUPPRESSION_V1 = 8u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_ENERGY_OVER_K_V1 = 9u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_VOLUME_V1 = 10u,
-    EPCSAFT_NATIVE_PARAMETER_FAMILY_IONIC_REGION_RELATIVE_PERMITTIVITY_V1 = 11u
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_IONIC_REGION_RELATIVE_PERMITTIVITY_V1 = 11u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_RELATIVE_PERMITTIVITY_V1 = 12u
 };
 
 enum epcsaft_native_parameter_identity_v1 {
@@ -569,7 +597,8 @@ enum epcsaft_native_capability_coordinate_kind_v1 {
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DIELECTRIC_ION_SUPPRESSION_V1 = 10u,
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_ENERGY_OVER_K_V1 = 11u,
     EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_VOLUME_V1 = 12u,
-    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_IONIC_REGION_RELATIVE_PERMITTIVITY_V1 = 13u
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_IONIC_REGION_RELATIVE_PERMITTIVITY_V1 = 13u,
+    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_RELATIVE_PERMITTIVITY_V1 = 14u
 };
 
 typedef struct epcsaft_native_capability_coordinate_v1 {
@@ -668,6 +697,9 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t ion_solvation_ionic_permittivity_result_size;
     epcsaft_evaluate_ion_solvation_ionic_permittivity_v1
         evaluate_ion_solvation_ionic_permittivity;
+    size_t ion_solvation_solvent_permittivity_result_size;
+    epcsaft_evaluate_ion_solvation_solvent_permittivity_v1
+        evaluate_ion_solvation_solvent_permittivity;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

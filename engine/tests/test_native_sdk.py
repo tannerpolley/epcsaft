@@ -396,6 +396,17 @@ class IonSolvationIonicPermittivityNativeSdkTable(ctypes.Structure):
     )
 
 
+class IonSolvationSolventPermittivityResult(ctypes.Structure):
+    _fields_ = IonSolvationIonicPermittivityResult._fields_
+
+
+class IonSolvationSolventPermittivityNativeSdkTable(ctypes.Structure):
+    _fields_ = IonSolvationIonicPermittivityNativeSdkTable._fields_ + (
+        ("ion_solvation_solvent_permittivity_result_size", ctypes.c_size_t),
+        ("evaluate_ion_solvation_solvent_permittivity", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -462,6 +473,11 @@ ION_SOLVATION_KIJ_PREFIX_SIZE = (
 )
 ION_SOLVATION_IONIC_PERMITTIVITY_PREFIX_SIZE = (
     IonSolvationIonicPermittivityNativeSdkTable.evaluate_ion_solvation_ionic_permittivity.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+ION_SOLVATION_SOLVENT_PERMITTIVITY_PREFIX_SIZE = (
+    IonSolvationSolventPermittivityNativeSdkTable
+    .evaluate_ion_solvation_solvent_permittivity.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
@@ -576,6 +592,16 @@ EvaluateIonSolvationIonicPermittivity = ctypes.CFUNCTYPE(
     ctypes.c_double,
     ctypes.c_double,
     ctypes.POINTER(IonSolvationIonicPermittivityResult),
+)
+
+EvaluateIonSolvationSolventPermittivity = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(IonSolvationSolventPermittivityResult),
 )
 
 EvaluateAqueousMiacKij = ctypes.CFUNCTYPE(
@@ -874,6 +900,23 @@ def _ion_solvation_ionic_permittivity_table(
         address, ctypes.POINTER(IonSolvationIonicPermittivityNativeSdkTable)
     ).contents
     assert table.table_size >= ION_SOLVATION_IONIC_PERMITTIVITY_PREFIX_SIZE
+    return capsule, table
+
+
+def _ion_solvation_solvent_permittivity_table(
+    model: EPCSAFT,
+) -> tuple[object, IonSolvationSolventPermittivityNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address,
+        ctypes.POINTER(IonSolvationSolventPermittivityNativeSdkTable),
+    ).contents
+    assert table.table_size >= ION_SOLVATION_SOLVENT_PERMITTIVITY_PREFIX_SIZE
     return capsule, table
 
 
@@ -1223,6 +1266,28 @@ def _evaluate_ionic_permittivity(
         298.15,
         100000.0,
         ionic_region_relative_permittivity,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
+
+
+def _evaluate_solvent_permittivity(
+    table: IonSolvationSolventPermittivityNativeSdkTable,
+    fingerprint: str,
+    solvent_relative_permittivity: float,
+) -> IonSolvationSolventPermittivityResult:
+    result = IonSolvationSolventPermittivityResult(
+        struct_size=ctypes.sizeof(IonSolvationSolventPermittivityResult)
+    )
+    status = EvaluateIonSolvationSolventPermittivity(
+        table.evaluate_ion_solvation_solvent_permittivity
+    )(
+        table.model_context,
+        fingerprint.encode(),
+        298.15,
+        100000.0,
+        solvent_relative_permittivity,
         ctypes.byref(result),
     )
     assert status == result.status
@@ -2309,14 +2374,44 @@ _Static_assert(
     sizeof(epcsaft_ion_solvation_ionic_permittivity_result_v1) == 272,
     "ionic-region-permittivity result size"
 );
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_PERMITTIVITY_V1 == 18u,
+    "solvent-permittivity capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_RELATIVE_PERMITTIVITY_V1 == 12u,
+    "solvent-permittivity parameter family"
+);
+_Static_assert(
+    offsetof(
+        epcsaft_native_sdk_v1,
+        ion_solvation_solvent_permittivity_result_size
+    ) == 344,
+    "solvent-permittivity result-size offset"
+);
+_Static_assert(
+    offsetof(
+        epcsaft_native_sdk_v1,
+        evaluate_ion_solvation_solvent_permittivity
+    ) == 352,
+    "solvent-permittivity callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 360, "final table size");
+_Static_assert(
+    sizeof(epcsaft_ion_solvation_solvent_permittivity_result_v1) == 272,
+    "solvent-permittivity result size"
+);
 
 int main(void) {
     epcsaft_evaluate_figiel_permittivity_v1 callback = 0;
     epcsaft_evaluate_ion_solvation_kij_v1 ion_callback = 0;
     epcsaft_evaluate_ion_solvation_ionic_permittivity_v1
         ionic_permittivity_callback = 0;
+    epcsaft_evaluate_ion_solvation_solvent_permittivity_v1
+        solvent_permittivity_callback = 0;
     return callback != 0 || ion_callback != 0
-        || ionic_permittivity_callback != 0;
+        || ionic_permittivity_callback != 0
+        || solvent_permittivity_callback != 0;
 }
 """
     completed = subprocess.run(
@@ -4514,6 +4609,107 @@ def test_native_sdk_ionic_region_permittivity_is_model_bound_and_exact(
     _, neutral_table = _ion_solvation_ionic_permittivity_table(neutral)
     unsupported = _evaluate_ionic_permittivity(
         neutral_table, neutral.parameter_fingerprint, 8.0
+    )
+    assert unsupported.status == STATUS_UNSUPPORTED_MODEL
+    assert unsupported.error
+
+
+@pytest.mark.parametrize(
+    ("active_ion", "counter_ion", "source_diameter"),
+    (
+        ("sodium-cation", "chloride-anion", 3.445),
+        ("bromide-anion", "sodium-cation", 4.480),
+    ),
+)
+def test_native_sdk_solvent_permittivity_is_component_bound_and_exact(
+    active_ion: str,
+    counter_ion: str,
+    source_diameter: float,
+) -> None:
+    model = _electrolyte_model(("water", active_ion, counter_ion))
+    _, table = _ion_solvation_solvent_permittivity_table(model)
+    descriptors = {
+        descriptor.capability: descriptor
+        for descriptor in table.capabilities[: table.capability_count]
+    }
+    descriptor = descriptors[18]
+    assert descriptor.parameter_family == 12
+    assert descriptor.parameter_identity == 2
+    assert descriptor.observation_contract == 2
+    assert descriptor.model_domain == 3
+    assert descriptor.derivative_order == 1
+    assert descriptor.coordinate_count == 1
+    assert descriptor.coordinates[0].kind == 14
+    assert descriptor.coordinates[0].component_index == 0
+    assert descriptor.coordinates[0].unit == b"dimensionless"
+    assert descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    center = _evaluate_solvent_permittivity(
+        table, model.parameter_fingerprint, 78.09
+    )
+    source_born = _evaluate_active_born(table, source_diameter)
+    assert center.status == STATUS_OK
+    assert center.solvation_gibbs_j_per_mol == pytest.approx(
+        source_born.solvation_gibbs_j_per_mol, abs=2.0e-8
+    )
+    assert center.reference_molality_mol_per_kg == 1.0e-12
+    assert 0.0 <= center.reference_convergence_error <= 5.0e-5
+
+    estimates = []
+    for step in (2.0e-3, 1.0e-3):
+        upper = _evaluate_solvent_permittivity(
+            table, model.parameter_fingerprint, 78.09 + step
+        )
+        lower = _evaluate_solvent_permittivity(
+            table, model.parameter_fingerprint, 78.09 - step
+        )
+        estimates.append(
+            (upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol)
+            / (2.0 * step)
+        )
+    tolerance = max(
+        1.0e-3,
+        20.0 * abs(estimates[0] - estimates[1]),
+        2.0e-8 * abs(center.derivative_j_per_mol),
+    )
+    assert abs(center.derivative_j_per_mol - estimates[1]) <= tolerance
+
+    wrong_fingerprint = _evaluate_solvent_permittivity(
+        table, "sha256:" + "0" * 64, 78.09
+    )
+    assert wrong_fingerprint.status == STATUS_UNSUPPORTED_MODEL
+
+    for invalid_value, expected_status in (
+        (1.0, STATUS_DOMAIN_ERROR),
+        (math.nan, STATUS_INVALID_ARGUMENT),
+    ):
+        invalid = _evaluate_solvent_permittivity(
+            table, model.parameter_fingerprint, invalid_value
+        )
+        assert invalid.status == expected_status
+        assert math.isnan(invalid.solvation_gibbs_j_per_mol)
+        assert math.isnan(invalid.derivative_j_per_mol)
+        assert invalid.error
+
+    callback = EvaluateIonSolvationSolventPermittivity(
+        table.evaluate_ion_solvation_solvent_permittivity
+    )
+    assert (
+        callback(
+            table.model_context,
+            model.parameter_fingerprint.encode(),
+            298.15,
+            100000.0,
+            78.09,
+            None,
+        )
+        == STATUS_INVALID_ARGUMENT
+    )
+
+    neutral = _mixture_model()
+    _, neutral_table = _ion_solvation_solvent_permittivity_table(neutral)
+    unsupported = _evaluate_solvent_permittivity(
+        neutral_table, neutral.parameter_fingerprint, 78.09
     )
     assert unsupported.status == STATUS_UNSUPPORTED_MODEL
     assert unsupported.error

@@ -78,6 +78,7 @@ double fixed_pressure_log_fugacity(
 enum class ActiveSolvationParameter {
     BornDiameter,
     IonicRegionRelativePermittivity,
+    SolventRelativePermittivity,
 };
 
 // EqID: fixed_pressure_total_derivative
@@ -106,29 +107,47 @@ detail::ReferenceObservation active_solvation_parameter_observation(
         sigma,
         diameter
     );
-    const auto derivatives =
-        active_parameter == ActiveSolvationParameter::BornDiameter
-        ? detail::thermodynamic_derivatives_active_born(
+    const auto derivatives = [&] {
+        if (active_parameter == ActiveSolvationParameter::BornDiameter) {
+            return detail::thermodynamic_derivatives_active_born(
+                temperature,
+                state.molar_density,
+                composition,
+                parameters,
+                site_fractions,
+                active_component,
+                parameters.born_diameter_angstrom[active_component]
+            );
+        }
+        if (active_parameter
+            == ActiveSolvationParameter::IonicRegionRelativePermittivity) {
+            return detail::
+                thermodynamic_derivatives_active_ionic_region_permittivity(
+                    temperature,
+                    state.molar_density,
+                    composition,
+                    parameters,
+                    site_fractions,
+                    parameters.ionic_region_relative_permittivity
+                );
+        }
+        return detail::thermodynamic_derivatives_active_relative_permittivity(
             temperature,
             state.molar_density,
             composition,
             parameters,
             site_fractions,
             active_component,
-            parameters.born_diameter_angstrom[active_component]
-        )
-        : detail::thermodynamic_derivatives_active_ionic_region_permittivity(
-            temperature,
-            state.molar_density,
-            composition,
-            parameters,
-            site_fractions,
-            parameters.ionic_region_relative_permittivity
+            parameters.relative_permittivity[active_component]
         );
+    }();
     const std::optional<double>& active_derivative =
         active_parameter == ActiveSolvationParameter::BornDiameter
         ? derivatives.active_born
-        : derivatives.active_ionic_permittivity;
+        : active_parameter
+                == ActiveSolvationParameter::IonicRegionRelativePermittivity
+            ? derivatives.active_ionic_permittivity
+            : derivatives.active_relative_permittivity;
     if (!active_derivative.has_value()) {
         throw std::runtime_error("active solvation derivative is unavailable");
     }
@@ -955,6 +974,44 @@ NativeModel::evaluate_ion_solvation_ionic_permittivity(
         pressure,
         1,
         ActiveSolvationParameter::IonicRegionRelativePermittivity
+    );
+}
+
+// EqID: infinite_dilution_solvation_energy
+// EqID: fixed_pressure_total_derivative
+NativeIonSolvationIonicPermittivity
+NativeModel::evaluate_ion_solvation_solvent_permittivity(
+    double temperature,
+    double pressure,
+    double solvent_relative_permittivity
+) const {
+    if (!std::isfinite(temperature) || !std::isfinite(pressure)
+        || !std::isfinite(solvent_relative_permittivity)
+        || temperature <= 0.0 || pressure <= 0.0
+        || solvent_relative_permittivity <= 1.0) {
+        throw std::invalid_argument(
+            "invalid active solvent relative-permittivity inputs"
+        );
+    }
+    if (parameters_.charge_number.size() != 3
+        || parameters_.charge_number[0] != 0
+        || parameters_.charge_number[1] == 0
+        || parameters_.charge_number[2] == 0
+        || parameters_.charge_number[1] + parameters_.charge_number[2] != 0
+        || parameters_.relative_permittivity.size() != 3) {
+        throw std::logic_error(
+            "unsupported active solvent relative-permittivity model"
+        );
+    }
+    NativeParameters active_parameters = parameters_;
+    active_parameters.relative_permittivity[0] =
+        solvent_relative_permittivity;
+    return active_solvation_parameter_reference(
+        std::move(active_parameters),
+        temperature,
+        pressure,
+        0,
+        ActiveSolvationParameter::SolventRelativePermittivity
     );
 }
 

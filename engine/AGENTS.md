@@ -87,6 +87,10 @@ ionic-region relative permittivity through the existing solvation-Gibbs
 reference sequence. The published value is fixed model input rather than a
 fitted target; the callback adds derivative transport, not catalog authority
 or a shared multi-model fit.
+It also exposes the water component's active relative permittivity through
+that same exact reference path. This is a distinct component coordinate from
+the radial ionic-region value and adds no correlation fitting, target, or
+catalog mutation.
 The append-only tail also exposes the existing infinite-dilution reference
 sequence with exact first derivatives in the three ordered `k_ij` coordinates
 for the source-backed Figiel methanol/K+/Br- and ethanol/Na+/Cl- selections.

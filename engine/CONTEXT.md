@@ -194,6 +194,14 @@ Figiel reports the catalog value as fixed model input, so this callback proves
 derivative and fitting mechanics only; it does not claim recovery of a
 published fitted value, a shared cross-model parameter, or catalog authority.
 
+The next append-only entry exposes the water component's ordinary
+`relative_permittivity` as a separate active coordinate on those same five
+model identities. Its solvation-Gibbs derivative includes the bulk dielectric,
+Debye--Huckel, Born, fixed-pressure density/fugacity, and reference-sequence
+chains. It must not be confused with the radial
+`ionic_region_relative_permittivity`; neither fitted result persists to the
+catalog.
+
 Project Truss Provider issue `#10` adds a separate append-only installed-SDK
 candidate for charge-neutral reacting standard references. For an admitted
 aqueous phase model with one explicit water reference carrier, it returns a
