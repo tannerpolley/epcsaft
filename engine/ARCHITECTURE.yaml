@@ -52,6 +52,19 @@ native_sdk_candidates:
     derivative_order: 2
     result_owner: size-gated caller scalar, gradient, and Hessian buffers with return-code status
     exclusions: packing limits, fixed volumes, equilibrium constraints, initialization, search policy, phase identity, density subsystem, compatibility shim, and authority
+  inverse_packing_geometry_hessian_v1:
+    status: local-candidate-pending-independent-review-and-promotion-receipt
+    scope: >-
+      Exact model and topology fingerprints, temperature, positive ordered
+      component amounts, strict log packing fraction, and ordered advertised
+      active component parameters mapped to positive extensive volume and
+      exact first and second derivatives through one Provider CppAD tape.
+    coordinate_order: [component_amounts_mol_in_parameter_order, log_packing_fraction, active_parameters_in_request_order]
+    derivative_order: 2
+    sdk_table_size_bytes_64_bit: 440
+    result_size_bytes_64_bit: 368
+    parameter_descriptor_owner: existing reacting-component capability descriptors
+    exclusions: EOS phase evaluation, ion-fraction admission, density solve, equilibrium constraints, initialization, search policy, phase identity, compatibility shim, and authority
   molar_volume_bounds_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
@@ -390,6 +403,11 @@ public_surface:
       derivative_order: 2
       status: local-candidate-pending-independent-review-and-promotion-receipt
     - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_inverse_packing_geometry
+      coordinate_order: [component_amounts_mol_in_parameter_order, log_packing_fraction, active_parameters_in_request_order]
+      derivative_order: 2
+      status: local-candidate-pending-independent-review-and-promotion-receipt
+    - capsule: epcsaft.native_sdk.v1
       entry: evaluate_neutral_reference
       input_order: [parameter_fingerprint, temperature_k, pressure_pa]
       output_order: [neutral_basis_rows_by_component, log_fugacity_contractions, salt_free_reference_composition]
@@ -429,41 +447,41 @@ manifest:
   installed_data_files: 38
   package_test_files: 14
   optional_native_debug_test_files: 1
-  physical_production_lines: 9732
-  physical_package_test_lines: 7825
+  physical_production_lines: 16938
+  physical_package_test_lines: 13852
   physical_documentation_lines: 4036
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
   oversized_files:
     - path: src/epcsaft/records.py
-      physical_lines: 469
+      physical_lines: 490
       capability_delta: public Literal aliases for parameter authoring
     - path: src/epcsaft/_resolve.py
-      physical_lines: 734
+      physical_lines: 807
     - path: src/epcsaft/_bundle_io.py
-      physical_lines: 679
+      physical_lines: 767
       capability_delta: strict version-1 persistence for user-provided bundles
     - path: src/epcsaft/eos.py
-      physical_lines: 940
+      physical_lines: 1076
       capability_delta: model-bound parameter-topology fingerprints
     - path: src/epcsaft/_native/eos.cpp
-      physical_lines: 1682
+      physical_lines: 1944
       capability_delta: exact scalar active pure-parameter projection
     - path: src/epcsaft/_native/derivatives.hpp
-      physical_lines: 717
+      physical_lines: 806
       capability_delta: bounded CppAD row concurrency with serialized tape ownership
     - path: src/epcsaft/_native/native_sdk.cpp
-      physical_lines: 3145
+      physical_lines: 4408
       capability_delta: finite phase and direct-observable parameter capability metadata
     - path: src/epcsaft/_native/phase_block.hpp
-      physical_lines: 1284
-      capability_delta: serialized CppAD tape ownership during aqueous batch execution
+      physical_lines: 1608
+      capability_delta: serialized CppAD tape ownership and exact inverse packing geometry
     - path: tests/test_native_sdk.py
-      physical_lines: 6302
+      physical_lines: 8166
       capability_delta: phase and direct-observable descriptor, derivative, ABI, and fail-closed proof
     - path: tests/test_parameters.py
-      physical_lines: 1430
+      physical_lines: 1442
       capability_delta: immutable catalog discovery and installed-purpose enforcement
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 

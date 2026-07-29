@@ -843,6 +843,40 @@ typedef int (*epcsaft_evaluate_reacting_phase_parameters_v1)(
     epcsaft_reacting_phase_parameter_result_v1* result
 );
 
+/*
+ * Inverts the Provider packing geometry at eta=exp(log_packing_fraction).
+ * Coordinates are exactly (n_1,...,n_C,log_eta,theta_1,...,theta_P), with
+ * active parameters in request order. The full Hessian is row-major. This
+ * callback owns no phase evaluation, ion-fraction policy, or density solve.
+ */
+typedef struct epcsaft_inverse_packing_geometry_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    size_t coordinate_count;
+    size_t active_parameter_count;
+    size_t gradient_capacity;
+    size_t hessian_capacity;
+    double* gradient;
+    double* hessian;
+    double volume_m3;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_inverse_packing_geometry_result_v1;
+
+typedef int (*epcsaft_evaluate_inverse_packing_geometry_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    const char* expected_topology_fingerprint,
+    double temperature_k,
+    const double* amounts_mol,
+    size_t amount_count,
+    double log_packing_fraction,
+    const epcsaft_active_parameter_request_v1* active_parameters,
+    size_t active_parameter_count,
+    epcsaft_inverse_packing_geometry_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -910,6 +944,9 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t reacting_phase_parameter_result_size;
     epcsaft_evaluate_reacting_phase_parameters_v1
         evaluate_reacting_phase_parameters;
+    size_t inverse_packing_geometry_result_size;
+    epcsaft_evaluate_inverse_packing_geometry_v1
+        evaluate_inverse_packing_geometry;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

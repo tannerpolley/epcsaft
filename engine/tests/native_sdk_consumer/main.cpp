@@ -30,15 +30,18 @@ int main(int argc, char** argv) {
         && sdk->table_size
             >= offsetof(
                    epcsaft_native_sdk_v1,
-                   evaluate_reacting_phase_parameters
+                   evaluate_inverse_packing_geometry
                )
-                + sizeof(sdk->evaluate_reacting_phase_parameters)
+                + sizeof(sdk->evaluate_inverse_packing_geometry)
         && sdk->neutral_reference_derivative_result_size
             == sizeof(epcsaft_neutral_reference_derivative_result_v1)
         && sdk->reacting_phase_parameter_result_size
             == sizeof(epcsaft_reacting_phase_parameter_result_v1)
+        && sdk->inverse_packing_geometry_result_size
+            == sizeof(epcsaft_inverse_packing_geometry_result_v1)
         && sdk->evaluate_neutral_reference_derivatives != nullptr
-        && sdk->evaluate_reacting_phase_parameters != nullptr;
+        && sdk->evaluate_reacting_phase_parameters != nullptr
+        && sdk->evaluate_inverse_packing_geometry != nullptr;
     const epcsaft_native_capability_descriptor_v1* diameter = nullptr;
     const epcsaft_native_capability_descriptor_v1* dispersion = nullptr;
     if (valid) {
@@ -134,6 +137,30 @@ int main(int argc, char** argv) {
             &phase
         )
         : EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+    std::vector<double> inverse_gradient(5);
+    std::vector<double> inverse_hessian(25);
+    epcsaft_inverse_packing_geometry_result_v1 inverse{};
+    inverse.struct_size = sizeof(inverse);
+    inverse.coordinate_count = 5;
+    inverse.active_parameter_count = 1;
+    inverse.gradient_capacity = inverse_gradient.size();
+    inverse.hessian_capacity = inverse_hessian.size();
+    inverse.gradient = inverse_gradient.data();
+    inverse.hessian = inverse_hessian.data();
+    const int inverse_status = valid
+        ? sdk->evaluate_inverse_packing_geometry(
+            sdk->model_context,
+            fingerprint,
+            diameter->topology_fingerprint,
+            298.15,
+            amounts,
+            3,
+            std::log(0.25),
+            &request,
+            1,
+            &inverse
+        )
+        : EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
 
     std::vector<double> basis(6);
     std::vector<double> contractions(2);
@@ -170,8 +197,10 @@ int main(int argc, char** argv) {
         : EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
     valid = valid
         && phase_status == EPCSAFT_NATIVE_STATUS_OK_V1
+        && inverse_status == EPCSAFT_NATIVE_STATUS_OK_V1
         && reference_status == EPCSAFT_NATIVE_STATUS_OK_V1
         && phase.status == EPCSAFT_NATIVE_STATUS_OK_V1
+        && inverse.status == EPCSAFT_NATIVE_STATUS_OK_V1
         && reference.status == EPCSAFT_NATIVE_STATUS_OK_V1
         && reference.derivative_availability
             == (EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_PRESSURE_V1
@@ -180,6 +209,10 @@ int main(int argc, char** argv) {
             == EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_NONE_V1
         && std::strcmp(reference.reference_branch, "liquid") == 0
         && std::isfinite(phase.pressure_pa)
+        && std::isfinite(inverse.volume_m3)
+        && inverse.volume_m3 > 0.0
+        && std::abs(inverse_gradient[3] + inverse.volume_m3)
+            <= 1.0e-14 * inverse.volume_m3
         && std::isfinite(mixed[0])
         && std::all_of(
             packing_state_gradient.begin(),
