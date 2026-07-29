@@ -7165,6 +7165,8 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
 ) -> None:
     artifact = tmp_path / "electrolyte.json"
     export_native_model(_held_water_ionization_model(), artifact)
+    neutral_artifact = tmp_path / "methane-ethane.json"
+    export_native_model(_mixture_model(), neutral_artifact)
     source_dir = Path(__file__).parent / "native_sdk_consumer"
     build_dir = tmp_path / "consumer-build"
     package_dir = Path(native_core.__file__).parent / "cmake"
@@ -7190,7 +7192,11 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
     )
     assert built.returncode == 0, built.stderr
     consumed = subprocess.run(
-        (str(build_dir / "epcsaft_native_sdk_consumer"), str(artifact)),
+        (
+            str(build_dir / "epcsaft_native_sdk_consumer"),
+            str(artifact),
+            str(neutral_artifact),
+        ),
         capture_output=True,
         text=True,
         check=False,
@@ -7628,6 +7634,103 @@ def test_native_sdk_inverse_packing_geometry_matches_forward_geometry_and_deriva
     )
 
 
+def test_native_sdk_inverse_packing_geometry_supports_neutral_binary_without_active_parameters() -> (
+    None
+):
+    model = _mixture_model()
+    capsule, table = _inverse_packing_table(model)
+    capability_capsule, capability_table = _capability_table(model)
+    assert capsule is not None and capability_capsule is not None
+    topology = next(
+        descriptor.topology_fingerprint.decode()
+        for descriptor in (
+            capability_table.capabilities[index]
+            for index in range(capability_table.capability_count)
+        )
+        if descriptor.topology_fingerprint
+    )
+    amounts = (0.4, 0.6)
+    target_eta = 0.2
+    result, gradient, hessian = _evaluate_inverse_packing_geometry(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        math.log(target_eta),
+        (),
+    )
+    assert result.status == STATUS_OK
+    assert result.coordinate_count == 3
+    assert result.active_parameter_count == 0
+    assert result.volume_m3 > 0.0
+
+    _, packing_table = _packing_fraction_table(model)
+    packing_value = ctypes.c_double()
+    packing_gradient = (ctypes.c_double * 3)()
+    packing_hessian = (ctypes.c_double * 9)()
+    packing_status = EvaluatePackingFraction(
+        packing_table.evaluate_packing_fraction
+    )(
+        packing_table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        (ctypes.c_double * 2)(*amounts),
+        2,
+        result.volume_m3,
+        ctypes.byref(packing_value),
+        packing_gradient,
+        3,
+        packing_hessian,
+        9,
+    )
+    assert packing_status == STATUS_OK
+    assert abs(packing_value.value - target_eta) <= math.ulp(target_eta)
+    assert gradient[2] == pytest.approx(-result.volume_m3, rel=2.0e-14)
+    assert hessian[2 * 3 + 2] == pytest.approx(
+        result.volume_m3, rel=2.0e-14
+    )
+    assert sum(amounts[index] * gradient[index] for index in range(2)) == (
+        pytest.approx(result.volume_m3, rel=3.0e-14)
+    )
+
+    direction = (0.05, -0.03, 0.2)
+    step = 1.0e-5
+    shifted = tuple(
+        _evaluate_inverse_packing_geometry(
+            table,
+            model.parameter_fingerprint,
+            topology,
+            tuple(
+                amounts[index] + sign * step * direction[index]
+                for index in range(2)
+            ),
+            math.log(target_eta) + sign * step * direction[2],
+            (),
+        )
+        for sign in (-1.0, 1.0)
+    )
+    lower, upper = shifted
+    observed_value_direction = (
+        upper[0].volume_m3 - lower[0].volume_m3
+    ) / (2.0 * step)
+    assert observed_value_direction == pytest.approx(
+        sum(gradient[index] * direction[index] for index in range(3)),
+        rel=2.0e-8,
+        abs=2.0e-12,
+    )
+    observed_gradient_direction = tuple(
+        (upper[1][row] - lower[1][row]) / (2.0 * step)
+        for row in range(3)
+    )
+    exact_gradient_direction = tuple(
+        sum(hessian[row * 3 + column] * direction[column] for column in range(3))
+        for row in range(3)
+    )
+    assert observed_gradient_direction == pytest.approx(
+        exact_gradient_direction, rel=3.0e-7, abs=3.0e-9
+    )
+
+
 def test_native_sdk_inverse_packing_geometry_fails_closed_for_contract_and_domain() -> (
     None
 ):
@@ -7747,6 +7850,26 @@ def test_native_sdk_inverse_packing_geometry_fails_closed_for_contract_and_domai
     assert malformed.status == 91
     assert tuple(gradient_buffer) == (31.0,) * 5
     assert tuple(hessian_buffer) == (32.0,) * 25
+
+    excessive = InversePackingGeometryResult(
+        struct_size=ctypes.sizeof(InversePackingGeometryResult),
+    )
+    excessive_status = EvaluateInversePackingGeometry(
+        table.evaluate_inverse_packing_geometry
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        topology.encode(),
+        298.15,
+        (ctypes.c_double * 3)(*amounts),
+        3,
+        math.log(0.25),
+        ctypes.pointer(request),
+        7,
+        ctypes.byref(excessive),
+    )
+    assert excessive_status == STATUS_INVALID_ARGUMENT
+    assert excessive.status == STATUS_INVALID_ARGUMENT
 
 
 def test_native_sdk_reacting_phase_parameters_reject_contract_drift_without_writes() -> None:

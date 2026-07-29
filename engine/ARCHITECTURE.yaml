@@ -447,9 +447,9 @@ manifest:
   installed_data_files: 38
   package_test_files: 14
   optional_native_debug_test_files: 1
-  physical_production_lines: 16938
-  physical_package_test_lines: 13852
-  physical_documentation_lines: 4036
+  physical_production_lines: 16997
+  physical_package_test_lines: 14022
+  physical_documentation_lines: 4041
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
@@ -472,13 +472,13 @@ manifest:
       physical_lines: 806
       capability_delta: bounded CppAD row concurrency with serialized tape ownership
     - path: src/epcsaft/_native/native_sdk.cpp
-      physical_lines: 4408
+      physical_lines: 4413
       capability_delta: finite phase and direct-observable parameter capability metadata
     - path: src/epcsaft/_native/phase_block.hpp
-      physical_lines: 1608
+      physical_lines: 1662
       capability_delta: serialized CppAD tape ownership and exact inverse packing geometry
     - path: tests/test_native_sdk.py
-      physical_lines: 8166
+      physical_lines: 8289
       capability_delta: phase and direct-observable descriptor, derivative, ABI, and fail-closed proof
     - path: tests/test_parameters.py
       physical_lines: 1442

@@ -1106,8 +1106,7 @@ struct NativeSdkEndpoint final {
         }
         const auto& endpoint =
             *static_cast<const NativeSdkEndpoint*>(context);
-        if (!endpoint.phase_callbacks_admitted
-            || endpoint.topology_fingerprint.empty()
+        if (endpoint.topology_fingerprint.empty()
             || std::strcmp(
                 expected_fingerprint,
                 endpoint.parameter_fingerprint.c_str()
@@ -1119,6 +1118,12 @@ struct NativeSdkEndpoint final {
             return fail(
                 EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
                 "inverse packing model or topology is not admitted"
+            );
+        }
+        if (request_count > 2 * endpoint.table.component_count) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "inverse packing active parameter count exceeds model maximum"
             );
         }
         const std::size_t coordinate_count =

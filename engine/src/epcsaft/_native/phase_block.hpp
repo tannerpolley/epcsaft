@@ -126,6 +126,42 @@ inline bool supports_electrolyte_phase_block(const NativeParameters& parameters)
         );
 }
 
+// EqExclude: input and domain validation
+inline bool supports_packing_geometry(const NativeParameters& parameters) {
+    const std::size_t components = parameters.segment_count.size();
+    return components != 0
+        && parameters.sigma_constant.size() == components
+        && parameters.dispersion_energy_over_k.size() == components
+        && parameters.charge_number.size() == components
+        && parameters.sigma_term_component.size()
+            == parameters.sigma_term_amplitude.size()
+        && parameters.sigma_term_component.size()
+            == parameters.sigma_term_exponent.size()
+        && std::all_of(
+            parameters.sigma_term_component.begin(),
+            parameters.sigma_term_component.end(),
+            [components](int component) {
+                return component >= 0
+                    && static_cast<std::size_t>(component) < components;
+            }
+        )
+        && std::all_of(
+            parameters.segment_count.begin(),
+            parameters.segment_count.end(),
+            [](double value) { return std::isfinite(value) && value > 0.0; }
+        )
+        && std::all_of(
+            parameters.sigma_constant.begin(),
+            parameters.sigma_constant.end(),
+            [](double value) { return std::isfinite(value) && value > 0.0; }
+        )
+        && std::all_of(
+            parameters.dispersion_energy_over_k.begin(),
+            parameters.dispersion_energy_over_k.end(),
+            [](double value) { return std::isfinite(value) && value > 0.0; }
+        );
+}
+
 template <typename Scalar>
 struct PhaseBlockParameters final {
     std::vector<Scalar> segment_count;
@@ -870,14 +906,28 @@ inline NativePackingFractionBlock packing_fraction_block(
     double ion_mole_fraction_max,
     const NativeParameters& parameters
 ) {
-    if (!supports_electrolyte_phase_block(parameters)) {
+    if (!supports_packing_geometry(parameters)) {
         throw std::logic_error(
-            "packing fraction block requires an ionic associating model"
+            "packing fraction geometry requires compatible component parameters"
         );
     }
-    validate_electrolyte_phase_state(
-        temperature, amounts, volume, ion_mole_fraction_max, parameters
-    );
+    if (std::any_of(
+            parameters.charge_number.begin(),
+            parameters.charge_number.end(),
+            [](int charge) { return charge != 0; }
+        )) {
+        validate_electrolyte_phase_state(
+            temperature,
+            amounts,
+            volume,
+            ion_mole_fraction_max,
+            parameters
+        );
+    } else {
+        validate_mixture_phase_state(
+            temperature, amounts, volume, parameters
+        );
+    }
     const double checked_value = phase_packing_fraction(
         temperature, amounts, volume, parameters
     );
@@ -1014,13 +1064,18 @@ inline NativeInversePackingGeometryBlock inverse_packing_geometry_block(
     const NativeParameters& parameters,
     const std::vector<NativeActiveParameter>& active_parameters
 ) {
-    if (!supports_electrolyte_phase_block(parameters)) {
+    if (!supports_packing_geometry(parameters)) {
         throw std::logic_error(
-            "inverse packing geometry requires an ionic associating model"
+            "inverse packing geometry requires compatible component parameters"
         );
     }
     const NativeParameters value_parameters =
         active_component_parameter_values(parameters, active_parameters);
+    if (!supports_packing_geometry(value_parameters)) {
+        throw std::invalid_argument(
+            "active inverse packing parameters are outside the geometry domain"
+        );
+    }
     if (!std::isfinite(temperature) || temperature <= 0.0
         || amounts.size() != parameters.segment_count.size()
         || !std::all_of(amounts.begin(), amounts.end(), [](double amount) {
@@ -1088,7 +1143,6 @@ inline NativeInversePackingGeometryBlock inverse_packing_geometry_block(
             "inverse packing geometry contains nonfinite values"
         );
     }
-    static_cast<void>(value_parameters);
     return {value, gradient, hessian};
 }
 
