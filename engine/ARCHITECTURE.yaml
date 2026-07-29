@@ -142,7 +142,7 @@ native_sdk_candidates:
     result_size_bytes_64_bit: 272
     admitted_active_components: [lithium-cation, sodium-cation, potassium-cation, chloride-anion, bromide-anion]
     reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
-    public_delegation: EPCSAFT.reference_state -> private epcsaft._core binding -> reference_sequence_owner
+    public_delegation: Mixture.reference -> private epcsaft._core binding -> reference_sequence_owner
     native_delegation: evaluate_ion_solvation_born -> reference_sequence_owner
     public_behavior_change: none
     ownership_check: schedule, composition, convergence, and terminal selection exist only in reference_sequence_owner
@@ -263,16 +263,15 @@ accepted_scope: >-
 
 owners:
   parameter_input:
-    - ParameterBundle
-    - ParameterSet
+    - Parameters
   parameter_persistence: src/epcsaft/_bundle_io.py
   user_provided_native_transport: >-
     Exact persisted user-provided bundles may use generic model-bound phase,
     molar-volume-domain, and packing callbacks; specialized reference and
     active-parameter callbacks retain independent admission.
   resolved_model: src/epcsaft/_resolve.py
-  state_input: EPCSAFT.evaluate
-  result: EosResult
+  state_input: Mixture.state
+  result: State
   equation_kernel: src/epcsaft/_native/helmholtz.hpp
   association: src/epcsaft/_native/association.hpp
   electrolyte: src/epcsaft/_native/electrolyte.hpp
@@ -289,25 +288,26 @@ owners:
 
 public_surface:
   parameter_bundle_purposes: [installed-catalog, package-test-fixture, user-provided]
-  parameter_catalog_discovery: ParameterBundle.catalog
-  parameter_bundle_persistence: [ParameterBundle.to_path, ParameterBundle.from_path]
+  parameter_catalog_resolution: Parameters.from_catalog
+  parameter_bundle_persistence: [Parameters.to_bundle, Parameters.from_bundle]
   result_state_metadata: [component_ids, temperature, mole_fractions, parameter_fingerprint]
   typing: PEP-561 py.typed with Pint quantities, overloads, and public Literal aliases
   exports:
-    - ParameterBundle
-    - ParameterSet
+    - Parameters
     - BundlePurpose
     - ParameterError
     - unit_registry
-    - EPCSAFT
-    - EosResult
+    - Mixture
+    - State
+    - Fugacity
     - DensityDiagnostics
     - EosError
     - Phase
+    - PropertyBasis
     - export_native_model
     - native_sdk
     - ElectrolyteReference
-    - IonicActivity
+    - Activity
     - TransferFreeEnergy
   runtime_dependencies:
     - Pint

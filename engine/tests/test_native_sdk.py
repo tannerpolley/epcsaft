@@ -1,3 +1,4 @@
+from epcsaft.parameters import _ParameterBundle
 import ctypes
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
@@ -12,9 +13,8 @@ import pytest
 
 import epcsaft
 from epcsaft import (
-    EPCSAFT,
+    Mixture,
     EosError,
-    ParameterBundle,
     export_native_model,
     native_sdk,
     unit_registry,
@@ -46,8 +46,8 @@ STATUS_DEADLINE_EXCEEDED = 7
 
 
 def test_resolved_model_artifact_is_native_loadable(tmp_path: Path) -> None:
-    model = EPCSAFT(
-        ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
+    model = Mixture(
+        _ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
             ("methane", "ethane")
         )
     )
@@ -748,13 +748,13 @@ EvaluateAqueousMiacSolvationFactorBatchBounded = ctypes.CFUNCTYPE(
 )
 
 
-def _model(catalog: str, component: str) -> EPCSAFT:
-    return EPCSAFT(ParameterBundle.from_catalog(catalog, version=1).select((component,)))
+def _model(catalog: str, component: str) -> Mixture:
+    return Mixture(_ParameterBundle.from_catalog(catalog, version=1).select((component,)))
 
 
-def _mixture_model(component_ids: tuple[str, str] = ("methane", "ethane")) -> EPCSAFT:
-    parameters = ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
-    return EPCSAFT(parameters.select(component_ids))
+def _mixture_model(component_ids: tuple[str, str] = ("methane", "ethane")) -> Mixture:
+    parameters = _ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
+    return Mixture(parameters.select(component_ids))
 
 
 def _electrolyte_model(
@@ -763,16 +763,16 @@ def _electrolyte_model(
         "sodium-cation",
         "chloride-anion",
     ),
-) -> EPCSAFT:
-    parameters = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
-    return EPCSAFT(parameters.select(component_ids))
+) -> Mixture:
+    parameters = _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
+    return Mixture(parameters.select(component_ids))
 
 
 def _user_provided_copy(
-    bundle: ParameterBundle, *, unknown_applicability: bool = False
-) -> ParameterBundle:
+    bundle: _ParameterBundle, *, unknown_applicability: bool = False
+) -> _ParameterBundle:
     records = bundle.records
-    return ParameterBundle.from_records(
+    return _ParameterBundle.from_records(
         bundle_id=f"user-{bundle.bundle_id}",
         bundle_version=bundle.bundle_version,
         purpose="user-provided",
@@ -806,15 +806,15 @@ def _figiel_trial_model(
     *,
     purpose: str = "user-provided",
     spoof_source_metadata: bool = False,
-) -> EPCSAFT:
-    bundle = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
+) -> Mixture:
+    bundle = _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
     records = tuple(
         replace(record, value=1.4)
         if record.record_id == "water-solvation-factor"
         else record
         for record in bundle.records
     )
-    trial = ParameterBundle.from_records(
+    trial = _ParameterBundle.from_records(
         bundle_id="figiel-staged-trial",
         bundle_version=1,
         purpose=purpose,
@@ -842,7 +842,7 @@ def _figiel_trial_model(
         ),
         models=(record for record in records if isinstance(record, ModelParameterRecord)),
     )
-    return EPCSAFT(trial.select(component_ids))
+    return Mixture(trial.select(component_ids))
 
 
 def _held_water_ionization_model(
@@ -851,22 +851,22 @@ def _held_water_ionization_model(
         "hydronium-cation",
         "hydroxide-anion",
     ),
-) -> EPCSAFT:
-    parameters = ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1)
-    return EPCSAFT(parameters.select(component_ids))
+) -> Mixture:
+    parameters = _ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1)
+    return Mixture(parameters.select(component_ids))
 
 
-def _khudaida_model(component_ids: tuple[str, ...]) -> EPCSAFT:
-    parameters = ParameterBundle.from_catalog("khudaida-2026-figure-2-electrolyte-lle", version=1)
-    return EPCSAFT(parameters.select(component_ids))
+def _khudaida_model(component_ids: tuple[str, ...]) -> Mixture:
+    parameters = _ParameterBundle.from_catalog("khudaida-2026-figure-2-electrolyte-lle", version=1)
+    return Mixture(parameters.select(component_ids))
 
 
-def _ascani_model(component_ids: tuple[str, ...]) -> EPCSAFT:
-    parameters = ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1)
-    return EPCSAFT(parameters.select(component_ids))
+def _ascani_model(component_ids: tuple[str, ...]) -> Mixture:
+    parameters = _ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1)
+    return Mixture(parameters.select(component_ids))
 
 
-def _table(model: EPCSAFT) -> tuple[object, NativeSdkTable]:
+def _table(model: Mixture) -> tuple[object, NativeSdkTable]:
     capsule = native_sdk(model)
     get_name = ctypes.pythonapi.PyCapsule_GetName
     get_name.argtypes = (ctypes.py_object,)
@@ -884,7 +884,7 @@ def _table(model: EPCSAFT) -> tuple[object, NativeSdkTable]:
 
 
 def _capability_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, CapabilityNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -898,7 +898,7 @@ def _capability_table(
 
 
 def _ion_fraction_suppression_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, IonFractionSuppressionNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -916,7 +916,7 @@ def _ion_fraction_suppression_table(
 
 
 def _ion_solvation_kij_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, IonSolvationKijNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -932,7 +932,7 @@ def _ion_solvation_kij_table(
 
 
 def _ion_solvation_ionic_permittivity_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, IonSolvationIonicPermittivityNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -948,7 +948,7 @@ def _ion_solvation_ionic_permittivity_table(
 
 
 def _ion_solvation_solvent_permittivity_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, IonSolvationSolventPermittivityNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -964,7 +964,7 @@ def _ion_solvation_solvent_permittivity_table(
     return capsule, table
 
 
-def _lij_table(model: EPCSAFT) -> tuple[object, LijNativeSdkTable]:
+def _lij_table(model: Mixture) -> tuple[object, LijNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
     get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
@@ -977,7 +977,7 @@ def _lij_table(model: EPCSAFT) -> tuple[object, LijNativeSdkTable]:
 
 
 def _pure_parameter_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, PureParameterNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -993,7 +993,7 @@ def _pure_parameter_table(
 
 
 def _associating_parameterized_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, AssociatingParameterizedNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -1009,7 +1009,7 @@ def _associating_parameterized_table(
 
 
 def _electrolyte_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, ElectrolyteNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -1023,7 +1023,7 @@ def _electrolyte_table(
 
 
 def _volume_bounds_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, VolumeBoundsNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -1037,7 +1037,7 @@ def _volume_bounds_table(
 
 
 def _packing_fraction_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, PackingFractionNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -1051,7 +1051,7 @@ def _packing_fraction_table(
 
 
 def _applicability_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, ApplicabilityNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -1064,7 +1064,7 @@ def _applicability_table(
     return capsule, table
 
 
-def _active_born_table(model: EPCSAFT) -> tuple[object, ActiveBornNativeSdkTable]:
+def _active_born_table(model: Mixture) -> tuple[object, ActiveBornNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
     get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
@@ -1077,7 +1077,7 @@ def _active_born_table(model: EPCSAFT) -> tuple[object, ActiveBornNativeSdkTable
 
 
 def _aqueous_miac_kij_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, AqueousMiacKijNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -1091,7 +1091,7 @@ def _aqueous_miac_kij_table(
 
 
 def _neutral_reference_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, NeutralReferenceNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -1105,7 +1105,7 @@ def _neutral_reference_table(
 
 
 def _aqueous_miac_solvation_factor_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, AqueousMiacSolvationFactorNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -1121,7 +1121,7 @@ def _aqueous_miac_solvation_factor_table(
 
 
 def _aqueous_miac_batch_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, AqueousMiacBatchNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -1137,7 +1137,7 @@ def _aqueous_miac_batch_table(
 
 
 def _aqueous_miac_bounded_batch_table(
-    model: EPCSAFT,
+    model: Mixture,
 ) -> tuple[object, AqueousMiacBoundedBatchNativeSdkTable]:
     capsule = native_sdk(model)
     get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
@@ -1579,12 +1579,12 @@ def test_native_sdk_phase_block_matches_public_thermodynamics(
     assert block.error == b""
     assert block.parameter_fingerprint.decode() == model.parameter_fingerprint
 
-    state = model.evaluate(
-        temperature=temperature_k * unit_registry.kelvin,
-        molar_density=density_mol_m3 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(1.0,),
+    state = model.state(
+        T=temperature_k * unit_registry.kelvin,
+        rho=density_mol_m3 * unit_registry.mole / unit_registry.meter**3,
+        x=(1.0,),
     )
-    expected_helmholtz = amount_mol * (math.log(density_mol_m3) - 1.0 + state.residual_helmholtz)
+    expected_helmholtz = amount_mol * (math.log(density_mol_m3) - 1.0 + state._residual_helmholtz)
     expected_chemical_potential = (
         math.log(density_mol_m3) + state.residual_chemical_potential_over_rt[0]
     )
@@ -2695,12 +2695,12 @@ def test_native_sdk_associating_pure_parameter_callback_has_exact_hessian(
     assert center.pressure_pa == pytest.approx(
         -8.31446261815324 * temperature_k * gradient[1], rel=2.0e-13
     )
-    provider_state = model.evaluate(
-        temperature=temperature_k * unit_registry.kelvin,
-        molar_density=(point[0] / point[1])
+    provider_state = model.state(
+        T=temperature_k * unit_registry.kelvin,
+        rho=(point[0] / point[1])
         * unit_registry.mole
         / unit_registry.meter**3,
-        mole_fractions=(1.0,),
+        x=(1.0,),
     )
     assert center.pressure_pa == pytest.approx(
         provider_state.pressure.to("pascal").magnitude,
@@ -2765,12 +2765,12 @@ def test_native_sdk_joint_associating_parameters_have_exact_seven_coordinate_hes
         -8.31446261815324 * temperature_k * center.gradient[1], rel=2.0e-13
     )
 
-    state = model.evaluate(
-        temperature=temperature_k * unit_registry.kelvin,
-        molar_density=(point[0] / point[1])
+    state = model.state(
+        T=temperature_k * unit_registry.kelvin,
+        rho=(point[0] / point[1])
         * unit_registry.mole
         / unit_registry.meter**3,
-        mole_fractions=(1.0,),
+        x=(1.0,),
     )
     density = point[0] / point[1]
     number_density = density * 6.02214076e-7
@@ -2809,7 +2809,7 @@ def test_native_sdk_joint_associating_parameters_have_exact_seven_coordinate_hes
     assert center.helmholtz_over_rt_reference_amount != pytest.approx(
         math.log(density)
         - 1.0
-        + state.residual_helmholtz,
+        + state._residual_helmholtz,
         rel=1.0e-5,
     )
 
@@ -2945,19 +2945,19 @@ def test_native_sdk_held_neutral_reference_matches_the_public_owner() -> None:
     observed, basis, contractions, composition = _evaluate_neutral_reference(
         table, model.parameter_fingerprint
     )
-    reference = model.reference_state(
-        temperature=298.15 * unit_registry.kelvin,
-        pressure=100000.0 * unit_registry.pascal,
-        solvent_mole_fractions=(1.0, 0.0, 0.0),
+    reference = model.reference(
+        T=298.15 * unit_registry.kelvin,
+        P=100000.0 * unit_registry.pascal,
+        solvent_x=(1.0, 0.0, 0.0),
         phase="liquid",
     )
-    pure_water = model.evaluate(
-        temperature=reference.temperature,
-        pressure=reference.pressure,
-        mole_fractions=(1.0, 0.0, 0.0),
+    pure_water = model.state(
+        T=reference.temperature,
+        P=reference.pressure,
+        x=(1.0, 0.0, 0.0),
         phase="liquid",
     )
-    assert pure_water.log_fugacity_coefficient is not None
+    assert pure_water._log_fugacity_coefficient is not None
 
     assert observed.status == STATUS_OK
     assert observed.temperature_k == 298.15
@@ -2965,7 +2965,7 @@ def test_native_sdk_held_neutral_reference_matches_the_public_owner() -> None:
     assert basis == pytest.approx((1.0, 0.0, 0.0, 0.0, 1.0, 1.0))
     assert contractions == pytest.approx(
         (
-            pure_water.log_fugacity_coefficient[0],
+            pure_water._log_fugacity_coefficient[0],
             math.fsum(reference.infinite_dilution_log_fugacity_coefficient),
         ),
         abs=2.0e-12,
@@ -3005,10 +3005,10 @@ def test_native_sdk_held_neutral_reference_is_domain_bound_and_permutation_safe(
     )
     assert permuted_result.status == STATUS_OK
     assert permuted_basis == pytest.approx((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
-    canonical_reference = model.reference_state(
-        temperature=298.15 * unit_registry.kelvin,
-        pressure=100000.0 * unit_registry.pascal,
-        solvent_mole_fractions=(1.0, 0.0, 0.0),
+    canonical_reference = model.reference(
+        T=298.15 * unit_registry.kelvin,
+        P=100000.0 * unit_registry.pascal,
+        solvent_x=(1.0, 0.0, 0.0),
         phase="liquid",
     )
     assert permuted_contractions[1] == pytest.approx(
@@ -3044,9 +3044,9 @@ def test_native_sdk_applicability_metadata_matches_source_and_resolved_model(
     expected_fingerprint: str,
     expected: tuple[float, float, float],
 ) -> None:
-    bundle = ParameterBundle.from_catalog(catalog, version=1)
+    bundle = _ParameterBundle.from_catalog(catalog, version=1)
     source_domain = next(domain for domain in bundle.domains if domain.domain_id == domain_id)
-    model = EPCSAFT(bundle.select(component_ids))
+    model = Mixture(bundle.select(component_ids))
     capsule, table = _applicability_table(model)
     assert capsule is not None
     assert table.table_size >= APPLICABILITY_PREFIX_SIZE
@@ -3174,13 +3174,13 @@ def test_native_sdk_mixture_phase_block_matches_public_thermodynamics_and_deriva
     total = point[0] + point[1]
     density = total / point[2]
     composition = (point[0] / total, point[1] / total)
-    state = model.evaluate(
-        temperature=temperature_k * unit_registry.kelvin,
-        molar_density=density * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=composition,
+    state = model.state(
+        T=temperature_k * unit_registry.kelvin,
+        rho=density * unit_registry.mole / unit_registry.meter**3,
+        x=composition,
     )
     expected = sum(amount * (math.log(amount / point[2]) - 1.0) for amount in point[:2])
-    expected += total * state.residual_helmholtz
+    expected += total * state._residual_helmholtz
     assert center.helmholtz_over_rt_reference_amount == pytest.approx(
         expected, rel=2.0e-12, abs=2.0e-12
     )
@@ -3498,9 +3498,9 @@ def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
         native_sdk(associating)
 
     model = _model("gross-2001-methane-ethane", "methane")
-    gross_bundle = ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
+    gross_bundle = _ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
     gross = gross_bundle.select(("methane",))
-    synthetic = ParameterBundle.from_records(
+    synthetic = _ParameterBundle.from_records(
         bundle_id="synthetic-gross-copy",
         bundle_version=1,
         purpose="package-test-fixture",
@@ -3518,18 +3518,18 @@ def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
             if isinstance(record, ModelParameterRecord)
         ),
     )
-    synthetic_model = EPCSAFT(synthetic.select(("methane",)))
+    synthetic_model = Mixture(synthetic.select(("methane",)))
     assert synthetic_model.parameter_fingerprint != model.parameter_fingerprint
     with pytest.raises(EosError, match="unadmitted-parameter-fingerprint"):
         native_sdk(synthetic_model)
 
-    class SpoofedEPCSAFT(EPCSAFT):
+    class SpoofedEPCSAFT(Mixture):
         @property
         def parameter_fingerprint(self) -> str:
             return model.parameter_fingerprint
 
     spoofed_model = SpoofedEPCSAFT(synthetic.select(("methane",)))
-    with pytest.raises(EosError, match="expected-exact-EPCSAFT-model"):
+    with pytest.raises(EosError, match="expected-exact-Mixture-model"):
         native_sdk(spoofed_model)
 
     _, table = _table(model)
@@ -3547,13 +3547,13 @@ def test_native_sdk_rejects_unsupported_models_and_invalid_states() -> None:
 def test_native_sdk_unknown_user_bundle_keeps_reference_domain_closed(
     tmp_path: Path,
 ) -> None:
-    installed = ParameterBundle.from_catalog(
+    installed = _ParameterBundle.from_catalog(
         "figiel-2025-reference-electrolytes", version=1
     )
     emitted = tmp_path / "user-electrolyte"
     _user_provided_copy(installed, unknown_applicability=True).to_path(emitted)
-    loaded = ParameterBundle.from_path(emitted)
-    model = EPCSAFT(
+    loaded = _ParameterBundle.from_path(emitted)
+    model = Mixture(
         loaded.select(("water", "sodium-cation", "chloride-anion"))
     )
 
@@ -3809,14 +3809,14 @@ def test_native_sdk_electrolyte_phase_matches_public_state_and_directional_deriv
     total_amount = math.fsum(point[:3])
     density = total_amount / point[3]
     fractions = tuple(amount / total_amount for amount in point[:3])
-    public = model.evaluate(
-        temperature=temperature_k * unit_registry.kelvin,
-        molar_density=density * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=fractions,
+    public = model.state(
+        T=temperature_k * unit_registry.kelvin,
+        rho=density * unit_registry.mole / unit_registry.meter**3,
+        x=fractions,
     )
     expected_value = (
         math.fsum(amount * (math.log(amount / point[3]) - 1.0) for amount in point[:3])
-        + total_amount * public.residual_helmholtz
+        + total_amount * public._residual_helmholtz
     )
     assert center.helmholtz_over_rt_reference_amount == pytest.approx(
         expected_value, rel=3.0e-12, abs=3.0e-12
@@ -3881,14 +3881,14 @@ def test_native_sdk_held_phase_matches_public_state_and_directional_derivatives(
     total_amount = math.fsum(point[:3])
     density = total_amount / point[3]
     fractions = tuple(amount / total_amount for amount in point[:3])
-    public = model.evaluate(
-        temperature=temperature_k * unit_registry.kelvin,
-        molar_density=density * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=fractions,
+    public = model.state(
+        T=temperature_k * unit_registry.kelvin,
+        rho=density * unit_registry.mole / unit_registry.meter**3,
+        x=fractions,
     )
     expected_value = (
         math.fsum(amount * (math.log(amount / point[3]) - 1.0) for amount in point[:3])
-        + total_amount * public.residual_helmholtz
+        + total_amount * public._residual_helmholtz
     )
     assert center.helmholtz_over_rt_reference_amount == pytest.approx(
         expected_value, rel=3.0e-12, abs=3.0e-12
@@ -4006,14 +4006,14 @@ def test_native_sdk_khudaida_five_component_phase_block_and_permutation() -> Non
     total_amount = math.fsum(point[:5])
     density = total_amount / point[5]
     fractions = tuple(amount / total_amount for amount in point[:5])
-    public = model.evaluate(
-        temperature=temperature_k * unit_registry.kelvin,
-        molar_density=density * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=fractions,
+    public = model.state(
+        T=temperature_k * unit_registry.kelvin,
+        rho=density * unit_registry.mole / unit_registry.meter**3,
+        x=fractions,
     )
     expected_value = (
         math.fsum(amount * (math.log(amount / point[5]) - 1.0) for amount in point[:5])
-        + total_amount * public.residual_helmholtz
+        + total_amount * public._residual_helmholtz
     )
     assert center.helmholtz_over_rt_reference_amount == pytest.approx(
         expected_value, rel=4.0e-12, abs=4.0e-12
@@ -4105,14 +4105,14 @@ def test_native_sdk_ascani_phase_block_parity_derivatives_and_permutation() -> N
     total_amount = math.fsum(point[:5])
     density = total_amount / point[5]
     fractions = tuple(amount / total_amount for amount in point[:5])
-    public = model.evaluate(
-        temperature=temperature_k * unit_registry.kelvin,
-        molar_density=density * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=fractions,
+    public = model.state(
+        T=temperature_k * unit_registry.kelvin,
+        rho=density * unit_registry.mole / unit_registry.meter**3,
+        x=fractions,
     )
     expected_value = (
         math.fsum(amount * (math.log(amount / point[5]) - 1.0) for amount in point[:5])
-        + total_amount * public.residual_helmholtz
+        + total_amount * public._residual_helmholtz
     )
     assert center.helmholtz_over_rt_reference_amount == pytest.approx(
         expected_value, rel=5.0e-12, abs=5.0e-12
@@ -4212,7 +4212,7 @@ def test_native_sdk_molar_volume_bounds_match_packing_oracles_and_permutation() 
         return coefficient / eta_max, coefficient / eta_min
 
     def evaluate(
-        model: EPCSAFT,
+        model: Mixture,
         temperature_k: float,
         composition: tuple[float, ...],
     ) -> tuple[object, VolumeBoundsNativeSdkTable, tuple[float, float]]:
@@ -4383,7 +4383,7 @@ def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permuta
     model = _khudaida_model(canonical_ids)
 
     def evaluate(
-        selected_model: EPCSAFT,
+        selected_model: Mixture,
         selected_amounts: tuple[float, ...],
     ) -> tuple[object, PackingFractionNativeSdkTable, float, tuple[float, ...], tuple[float, ...]]:
         capsule, table = _packing_fraction_table(selected_model)
@@ -4611,10 +4611,10 @@ def test_native_sdk_active_born_matches_public_reference_state(
     assert table.evaluate_ion_solvation_born
 
     observed = _evaluate_active_born(table, source_diameter)
-    reference = model.reference_state(
-        temperature=298.15 * unit_registry.kelvin,
-        pressure=1.0 * unit_registry.bar,
-        solvent_mole_fractions=(1.0, 0.0, 0.0),
+    reference = model.reference(
+        T=298.15 * unit_registry.kelvin,
+        P=1.0 * unit_registry.bar,
+        solvent_x=(1.0, 0.0, 0.0),
         phase="liquid",
     )
     active_position = reference.ion_component_ids.index(active_ion)
@@ -4738,8 +4738,8 @@ def test_native_sdk_active_born_preserves_prior_prefix_and_fails_closed() -> Non
     assert status == neutral_result.status == STATUS_UNSUPPORTED_MODEL
     assert neutral_result.error
 
-    iodide_bundle = ParameterBundle.from_catalog("figiel-2025-aqueous-iodides", version=1)
-    iodide = EPCSAFT(iodide_bundle.select(("water", "sodium-cation", "iodide-anion")))
+    iodide_bundle = _ParameterBundle.from_catalog("figiel-2025-aqueous-iodides", version=1)
+    iodide = Mixture(iodide_bundle.select(("water", "sodium-cation", "iodide-anion")))
     _, iodide_table = _active_born_table(iodide)
     iodide_result = _evaluate_active_born(iodide_table, 3.4)
     assert iodide_result.status == STATUS_UNSUPPORTED_MODEL
@@ -4974,12 +4974,12 @@ def test_native_sdk_aqueous_miac_kij_matches_public_reference_state(
     observed = _evaluate_aqueous_miac_kij(
         table, model.parameter_fingerprint, molality, k_ij
     )
-    reference = model.reference_state(
-        temperature=298.15 * unit_registry.kelvin,
-        pressure=1.0 * unit_registry.bar,
-        solvent_mole_fractions=(1.0, 0.0, 0.0),
+    reference = model.reference(
+        T=298.15 * unit_registry.kelvin,
+        P=1.0 * unit_registry.bar,
+        solvent_x=(1.0, 0.0, 0.0),
         phase="liquid",
-    ).at_molality(molality * unit_registry.mole / unit_registry.kilogram)
+    ).state(molality=molality * unit_registry.mole / unit_registry.kilogram)
 
     assert table.table_size >= AQUEOUS_MIAC_KIJ_PREFIX_SIZE == 184
     assert table.aqueous_miac_kij_result_size == ctypes.sizeof(AqueousMiacKijResult) == 296
@@ -4987,13 +4987,13 @@ def test_native_sdk_aqueous_miac_kij_matches_public_reference_state(
     # The derivative callback projects its value from the certified density
     # midpoint to the requested pressure; this bound covers only that correction.
     assert observed.log_mean_ionic_activity_coefficient_molality == pytest.approx(
-        math.log(reference.mean_ionic_activity_coefficient_molality), abs=8.0e-11
+        math.log(reference.activity.mean_molality), abs=8.0e-11
     )
     assert all(math.isfinite(value) for value in observed.derivative)
     assert observed.parameter_fingerprint.decode() == model.parameter_fingerprint
 
 
-def _native_with_aqueous_kij(model: EPCSAFT, k_ij: tuple[float, float, float]) -> NativeModel:
+def _native_with_aqueous_kij(model: Mixture, k_ij: tuple[float, float, float]) -> NativeModel:
     matrix = list(model._model.k_ij)
     matrix[1] = matrix[3] = k_ij[0]
     matrix[2] = matrix[6] = k_ij[1]
@@ -5001,7 +5001,7 @@ def _native_with_aqueous_kij(model: EPCSAFT, k_ij: tuple[float, float, float]) -
     return NativeModel(*_native_arguments(replace(model._model, k_ij=tuple(matrix))))
 
 
-def _aqueous_composition(model: EPCSAFT, molality: float) -> tuple[float, float, float]:
+def _aqueous_composition(model: Mixture, molality: float) -> tuple[float, float, float]:
     solvent_moles = 1.0 / model._model.molar_mass_kg_per_mol[0]
     total_moles = solvent_moles + 2.0 * molality
     return (
@@ -5332,16 +5332,16 @@ def test_native_sdk_aqueous_miac_solvation_factor_matches_public_value_and_exact
     fixed = _evaluate_aqueous_miac_solvation_factor(
         table, model.parameter_fingerprint, 1.0, 1.5
     )
-    reference = model.reference_state(
-        temperature=298.15 * unit_registry.kelvin,
-        pressure=1.0 * unit_registry.bar,
-        solvent_mole_fractions=(1.0, 0.0, 0.0),
+    reference = model.reference(
+        T=298.15 * unit_registry.kelvin,
+        P=1.0 * unit_registry.bar,
+        solvent_x=(1.0, 0.0, 0.0),
         phase="liquid",
     )
-    public = reference.at_molality(1.0 * unit_registry.mole / unit_registry.kilogram)
+    public = reference.state(molality=1.0 * unit_registry.mole / unit_registry.kilogram)
     assert fixed.status == STATUS_OK
     assert fixed.log_mean_ionic_activity_coefficient_molality == pytest.approx(
-        math.log(public.mean_ionic_activity_coefficient_molality), abs=8.0e-11
+        math.log(public.activity.mean_molality), abs=8.0e-11
     )
     assert fixed.reference_molality_mol_per_kg == pytest.approx(
         reference.reference_molality.to("mole / kilogram").magnitude,
@@ -5846,8 +5846,8 @@ def test_native_sdk_staged_figiel_user_bundles_are_narrowly_admitted() -> None:
         reordered_table, reordered.parameter_fingerprint, 1.0, 1.4
     ).status == STATUS_UNSUPPORTED_MODEL
 
-    catalog = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
-    unknown = EPCSAFT(
+    catalog = _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
+    unknown = Mixture(
         _user_provided_copy(catalog, unknown_applicability=True).select(
             ("water", "sodium-cation", "bromide-anion")
         )
@@ -5945,26 +5945,26 @@ def test_native_sdk_neutral_reference_is_complete_and_matches_public_owner() -> 
     result, basis, contractions, reference_composition = _evaluate_neutral_reference(
         table, model.parameter_fingerprint
     )
-    public_reference = model.reference_state(
-        temperature=298.15 * unit_registry.kelvin,
-        pressure=1.0 * unit_registry.bar,
-        solvent_mole_fractions=(1.0, 0.0, 0.0),
+    public_reference = model.reference(
+        T=298.15 * unit_registry.kelvin,
+        P=1.0 * unit_registry.bar,
+        solvent_x=(1.0, 0.0, 0.0),
         phase="liquid",
     )
-    pure_water = model.evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        pressure=1.0 * unit_registry.bar,
-        mole_fractions=(1.0, 0.0, 0.0),
+    pure_water = model.state(
+        T=298.15 * unit_registry.kelvin,
+        P=1.0 * unit_registry.bar,
+        x=(1.0, 0.0, 0.0),
         phase="liquid",
     )
-    assert pure_water.log_fugacity_coefficient is not None
+    assert pure_water._log_fugacity_coefficient is not None
 
     assert result.status == STATUS_OK
     assert tuple(table.component_ids[index].decode() for index in range(3)) == model.component_ids
     assert tuple(table.component_charges[index] for index in range(3)) == (0, 1, -1)
     assert basis == (1.0, 0.0, 0.0, 0.0, 1.0, 1.0)
     assert reference_composition == (1.0, 0.0, 0.0)
-    assert contractions[0] == pytest.approx(pure_water.log_fugacity_coefficient[0], abs=2e-12)
+    assert contractions[0] == pytest.approx(pure_water._log_fugacity_coefficient[0], abs=2e-12)
     assert contractions[1] == pytest.approx(
         math.fsum(public_reference.infinite_dilution_log_fugacity_coefficient),
         abs=2e-12,
@@ -6031,12 +6031,12 @@ def test_native_sdk_neutral_reference_spans_multicomponent_user_model() -> None:
         "potassium-cation",
         "chloride-anion",
     )
-    installed = ParameterBundle.from_catalog(
+    installed = _ParameterBundle.from_catalog(
         "ascani-2022-case-study-2-electrolyte-lle", version=1
     )
     models = (
-        EPCSAFT(installed.select(component_ids)),
-        EPCSAFT(_user_provided_copy(installed).select(component_ids)),
+        Mixture(installed.select(component_ids)),
+        Mixture(_user_provided_copy(installed).select(component_ids)),
     )
     expected_basis = (
         1.0, 0.0, 0.0, 0.0, 0.0,

@@ -20,23 +20,27 @@ generic residual Helmholtz kernel for hard-chain, dispersion, association,
 Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
 chemical potentials, fugacity coefficients when defined, residual caloric
 properties, pressure, and branch diagnostics for pressure-specified states.
-Callers can create `user-provided` bundles through
-`ParameterBundle.from_records(...)`. `to_path(...)` and `from_path(...)`
-persist and reload the strict version-1 schema without a second input
-representation. Callers keep provenance and validity domains explicit. The
-purpose neither promotes values into the installed catalog nor validates their
-scientific quality.
-An exact selected model from a persisted `user-provided` bundle can use the
+The 0.2.0.dev0 Python frontend exposes `Parameters.from_catalog(...)`,
+`Parameters.from_bundle(...)`, `Parameters.from_records(...)`, and
+`Parameters.create_bundle_template(...)`; its template profiles are
+`neutral`, `associating`, `electrolyte`, and `associating-electrolyte`, with
+optional correlations. Callers keep provenance and validity domains explicit.
+The purpose neither promotes values into the installed catalog nor validates
+their scientific quality. The installed catalog is immutable package data and
+its exact IDs and evidence domains are retained in `docs/python-api.md`.
+An exact selected model from a caller-owned bundle can use the
 generic model-bound native phase, volume-domain, and packing callbacks. This
 transport admission does not admit source-specific native reference or active-
 parameter callbacks and does not make caller-owned values predictive.
-`ParameterBundle.catalog()` exposes the immutable installed bundles for
-discovery. State and ionic-activity results repeat their component order, and
-state results retain canonical temperature, composition, and parameter
-fingerprint. Structured state errors preserve the rejected field, reason, and
-applicable units, limits, or tolerances. The distributed Python interface is
-marked with `py.typed` and exposes literal types for phases, purposes, domains,
-and parameter families; runtime validation remains the scientific authority.
+`Mixture(parameters).state(...)` returns immutable `State` values, and
+`Mixture.reference(...).state(molality=...)` attaches an immutable `Activity`
+projection to the resulting state. State and activity results repeat their
+component order, and state results retain canonical temperature, composition,
+and parameter fingerprint. Structured state errors preserve the rejected
+field, reason, and applicable units, limits, or tolerances. The distributed
+Python interface is marked with `py.typed` and exposes literal types for
+phases, purposes, domains, and parameter families; runtime validation remains
+the scientific authority. No compatibility aliases are retained.
 The installed catalogs are Gross--Sadowski methane/ethane and propane records,
 the bounded Figiel--Yu--Held water/methanol/ethanol chloride/bromide source
 bundle, a distinct aqueous Na+/K+/I- source bundle, one distinct Khudaida et al.

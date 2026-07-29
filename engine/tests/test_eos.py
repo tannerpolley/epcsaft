@@ -1,3 +1,4 @@
+from epcsaft.parameters import _ParameterBundle
 from dataclasses import FrozenInstanceError
 import math
 from pathlib import Path
@@ -6,9 +7,9 @@ import pytest
 from pint import UnitRegistry
 
 import epcsaft
-from epcsaft import EosError, ParameterBundle, ParameterError
+from epcsaft import EosError, ParameterError
 from epcsaft import unit_registry
-from epcsaft.eos import EPCSAFT
+from epcsaft.eos import Mixture
 
 
 GOLDENS = (
@@ -49,31 +50,31 @@ AVOGADRO = 6.02214076e23
 GAS_CONSTANT = 8.31446261815324
 
 
-def _model(component_ids: tuple[str, ...] = ("methane", "ethane")) -> EPCSAFT:
-    return EPCSAFT(
-        ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(component_ids)
+def _model(component_ids: tuple[str, ...] = ("methane", "ethane")) -> Mixture:
+    return Mixture(
+        _ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(component_ids)
     )
 
 
 def test_native_model_boundary_is_ordered_strict_and_immutable() -> None:
-    bundle = ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
+    bundle = _ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
     parameters = bundle.select(("methane", "ethane"))
-    model = EPCSAFT(parameters)
+    model = Mixture(parameters)
 
     assert model.component_ids == ("methane", "ethane")
     assert model.parameter_fingerprint == parameters.fingerprint
-    assert EPCSAFT(bundle.select(("ethane", "methane"))).component_ids == (
+    assert Mixture(bundle.select(("ethane", "methane"))).component_ids == (
         "ethane",
         "methane",
     )
     with pytest.raises(FrozenInstanceError):
         model._component_ids = ("ethane", "methane")
 
-    fixture = ParameterBundle.from_path(
+    fixture = _ParameterBundle.from_path(
         Path(__file__).parent / "data/bundles/figiel-2025-contract/1"
     )
     with pytest.raises(ParameterError) as exc_info:
-        EPCSAFT(fixture.select(("water",)))
+        Mixture(fixture.select(("water",)))
     assert exc_info.value.code == "missing-record"
     assert dict(exc_info.value.context) == {
         "component_id": "water",
@@ -81,20 +82,21 @@ def test_native_model_boundary_is_ordered_strict_and_immutable() -> None:
     }
 
     assert epcsaft.__all__ == (
-        "ParameterBundle",
-        "ParameterSet",
+        "Parameters",
         "BundlePurpose",
         "ParameterError",
         "unit_registry",
-        "EPCSAFT",
-        "EosResult",
+        "Mixture",
+        "State",
+        "Fugacity",
         "DensityDiagnostics",
         "EosError",
         "Phase",
+        "PropertyBasis",
         "native_sdk",
         "export_native_model",
         "ElectrolyteReference",
-        "IonicActivity",
+        "Activity",
         "TransferFreeEnergy",
     )
 
@@ -115,13 +117,13 @@ def test_gross_hard_chain_dispersion_and_pressure_goldens(
 ) -> None:
     model = _model()
     foreign = UnitRegistry()
-    result = model.evaluate(
-        temperature=temperature * 1.8 * foreign.degree_Rankine,
-        molar_density=density / 1000 * foreign.kilomole / foreign.meter**3,
-        mole_fractions=fractions,
+    result = model.state(
+        T=temperature * 1.8 * foreign.degree_Rankine,
+        rho=density / 1000 * foreign.kilomole / foreign.meter**3,
+        x=fractions,
     )
 
-    assert isinstance(result, epcsaft.EosResult)
+    assert isinstance(result, epcsaft.State)
     assert result.component_ids == model.component_ids
     assert result.mole_fractions == fractions
     assert result.temperature.to("kelvin").magnitude == pytest.approx(temperature)
@@ -131,7 +133,7 @@ def test_gross_hard_chain_dispersion_and_pressure_goldens(
     assert result.association == 0.0
     assert result.born == 0.0
     assert not hasattr(result, "born_ssm_ds")
-    assert result.residual_helmholtz == pytest.approx(residual, rel=5e-12, abs=5e-13)
+    assert result._residual_helmholtz == pytest.approx(residual, rel=5e-12, abs=5e-13)
     assert result.compressibility_factor == pytest.approx(z, rel=5e-12, abs=5e-13)
     assert result.pressure._REGISTRY is unit_registry
     assert result.pressure.to("pascal").magnitude == pytest.approx(pressure, rel=5e-12, abs=1e-6)
@@ -139,11 +141,11 @@ def test_gross_hard_chain_dispersion_and_pressure_goldens(
     step = density * 1.0e-3
 
     def residual_at(value: float) -> float:
-        return model.evaluate(
-            temperature=temperature * unit_registry.kelvin,
-            molar_density=value * unit_registry.mole / unit_registry.meter**3,
-            mole_fractions=fractions,
-        ).residual_helmholtz
+        return model.state(
+            T=temperature * unit_registry.kelvin,
+            rho=value * unit_registry.mole / unit_registry.meter**3,
+            x=fractions,
+        )._residual_helmholtz
 
     derivative = (
         -residual_at(density + 2 * step)
@@ -156,15 +158,15 @@ def test_gross_hard_chain_dispersion_and_pressure_goldens(
 
 
 def test_figiel_result_exposes_bulk_relative_permittivity() -> None:
-    model = EPCSAFT(
-        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
+    model = Mixture(
+        _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
             ("water", "sodium-cation", "chloride-anion")
         )
     )
-    result = model.evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        molar_density=40.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(0.9, 0.05, 0.05),
+    result = model.state(
+        T=298.15 * unit_registry.kelvin,
+        rho=40.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(0.9, 0.05, 0.05),
     )
 
     assert model.relative_permittivity_formulation == "ion-fraction-suppression"
@@ -173,16 +175,16 @@ def test_figiel_result_exposes_bulk_relative_permittivity() -> None:
 
 def test_evaluate_is_permutation_invariant() -> None:
     state = {
-        "temperature": 250 * unit_registry.kelvin,
-        "molar_density": 8000 * unit_registry.mole / unit_registry.meter**3,
+        "T": 250 * unit_registry.kelvin,
+        "rho": 8000 * unit_registry.mole / unit_registry.meter**3,
     }
-    forward = _model().evaluate(**state, mole_fractions=(0.4, 0.6))
-    reverse = _model(("ethane", "methane")).evaluate(**state, mole_fractions=(0.6, 0.4))
+    forward = _model().state(**state, x=(0.4, 0.6))
+    reverse = _model(("ethane", "methane")).state(**state, x=(0.6, 0.4))
 
     for field in (
         "hard_chain",
         "dispersion",
-        "residual_helmholtz",
+        "_residual_helmholtz",
         "compressibility_factor",
     ):
         assert getattr(reverse, field) == pytest.approx(getattr(forward, field))
@@ -194,42 +196,42 @@ def test_evaluate_is_permutation_invariant() -> None:
 def test_evaluate_rejects_invalid_states_and_has_physical_limits() -> None:
     model = _model()
     valid = {
-        "temperature": 250 * unit_registry.kelvin,
-        "molar_density": 8000 * unit_registry.mole / unit_registry.meter**3,
-        "mole_fractions": (0.4, 0.6),
+        "T": 250 * unit_registry.kelvin,
+        "rho": 8000 * unit_registry.mole / unit_registry.meter**3,
+        "x": (0.4, 0.6),
     }
     invalid_states = (
-        {"temperature": 250.0},
-        {"molar_density": 8000.0},
-        {"temperature": 250 * unit_registry.meter},
-        {"molar_density": 8000 * unit_registry.kelvin},
-        {"temperature": 0 * unit_registry.kelvin},
-        {"temperature": -1 * unit_registry.kelvin},
-        {"temperature": math.nan * unit_registry.kelvin},
-        {"temperature": math.inf * unit_registry.kelvin},
-        {"temperature": 50 * unit_registry.kelvin},
-        {"temperature": 301 * unit_registry.kelvin},
-        {"molar_density": 0 * unit_registry.mole / unit_registry.meter**3},
-        {"molar_density": -1 * unit_registry.mole / unit_registry.meter**3},
-        {"molar_density": math.nan * unit_registry.mole / unit_registry.meter**3},
-        {"molar_density": math.inf * unit_registry.mole / unit_registry.meter**3},
-        {"mole_fractions": (1.0,)},
-        {"mole_fractions": (-0.1, 1.1)},
-        {"mole_fractions": (math.nan, math.nan)},
-        {"mole_fractions": (0.4, 0.600000000002)},
+        {"T": 250.0},
+        {"rho": 8000.0},
+        {"T": 250 * unit_registry.meter},
+        {"rho": 8000 * unit_registry.kelvin},
+        {"T": 0 * unit_registry.kelvin},
+        {"T": -1 * unit_registry.kelvin},
+        {"T": math.nan * unit_registry.kelvin},
+        {"T": math.inf * unit_registry.kelvin},
+        {"T": 50 * unit_registry.kelvin},
+        {"T": 301 * unit_registry.kelvin},
+        {"rho": 0 * unit_registry.mole / unit_registry.meter**3},
+        {"rho": -1 * unit_registry.mole / unit_registry.meter**3},
+        {"rho": math.nan * unit_registry.mole / unit_registry.meter**3},
+        {"rho": math.inf * unit_registry.mole / unit_registry.meter**3},
+        {"x": (1.0,)},
+        {"x": (-0.1, 1.1)},
+        {"x": (math.nan, math.nan)},
+        {"x": (0.4, 0.600000000002)},
     )
     for override in invalid_states:
         state = {**valid, **override}
         with pytest.raises(EosError):
-            model.evaluate(**state)
+            model.state(**state)
 
     low_density = 1.0e-6
-    low = model.evaluate(
-        temperature=250 * unit_registry.kelvin,
-        molar_density=low_density * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(0.4, 0.6),
+    low = model.state(
+        T=250 * unit_registry.kelvin,
+        rho=low_density * unit_registry.mole / unit_registry.meter**3,
+        x=(0.4, 0.6),
     )
-    assert abs(low.residual_helmholtz) < 1.0e-8
+    assert abs(low._residual_helmholtz) < 1.0e-8
     assert abs(low.compressibility_factor - 1.0) < 1.0e-8
     assert low.pressure.to("pascal").magnitude == pytest.approx(
         low_density * GAS_CONSTANT * 250, rel=1.0e-8
@@ -240,12 +242,12 @@ def test_evaluate_rejects_invalid_states_and_has_physical_limits() -> None:
     close_packing = math.pi / (3 * math.sqrt(2))
     close_density = close_packing * 6 / (math.pi * (AVOGADRO / 1.0e30) * diameter**3)
     with pytest.raises(EosError) as exc_info:
-        model.evaluate(
-            temperature=temperature * unit_registry.kelvin,
-            molar_density=(close_density * (1 + 1.0e-12))
+        model.state(
+            T=temperature * unit_registry.kelvin,
+            rho=(close_density * (1 + 1.0e-12))
             * unit_registry.mole
             / unit_registry.meter**3,
-            mole_fractions=(1.0, 0.0),
+            x=(1.0, 0.0),
         )
     assert exc_info.value.code == "evaluation-failed"
     assert exc_info.value.context
@@ -255,17 +257,17 @@ def test_evaluate_rejects_invalid_states_and_has_physical_limits() -> None:
     "override,expected_context",
     (
         (
-            {"temperature": 250.0},
+            {"T": 250.0},
             {
-                "field": "temperature",
+                    "field": "T",
                 "reason": "invalid-unit",
                 "expected_unit": "kelvin",
             },
         ),
         (
-            {"temperature": 50 * unit_registry.kelvin},
+            {"T": 50 * unit_registry.kelvin},
             {
-                "field": "temperature",
+                    "field": "T",
                 "reason": "outside-domain",
                 "value": "50.0",
                 "minimum": "97.0",
@@ -274,9 +276,9 @@ def test_evaluate_rejects_invalid_states_and_has_physical_limits() -> None:
             },
         ),
         (
-            {"mole_fractions": (0.4, 0.61)},
+            {"x": (0.4, 0.61)},
             {
-                "field": "mole_fractions",
+                    "field": "x",
                 "reason": "not-normalized",
                 "value": "1.01",
                 "expected": "1.0",
@@ -284,27 +286,27 @@ def test_evaluate_rejects_invalid_states_and_has_physical_limits() -> None:
             },
         ),
         (
-            {"molar_density": None, "pressure": 1 * unit_registry.meter},
+            {"rho": None, "P": 1 * unit_registry.meter},
             {
-                "field": "pressure",
+                    "field": "P",
                 "reason": "invalid-unit",
                 "expected_unit": "pascal",
             },
         ),
         (
             {
-                "molar_density": -1 * unit_registry.mole / unit_registry.meter**3,
+                "rho": -1 * unit_registry.mole / unit_registry.meter**3,
             },
             {
-                "field": "molar_density",
+                    "field": "rho",
                 "reason": "nonpositive",
                 "value": "-1.0",
             },
         ),
         (
-            {"temperature": float("nan") * unit_registry.kelvin},
+            {"T": float("nan") * unit_registry.kelvin},
             {
-                "field": "temperature",
+                    "field": "T",
                 "reason": "nonfinite",
                 "value": "nan",
             },
@@ -315,14 +317,14 @@ def test_invalid_state_errors_explain_the_rejected_input(
     override: dict[str, object], expected_context: dict[str, str]
 ) -> None:
     state = {
-        "temperature": 250 * unit_registry.kelvin,
-        "molar_density": 8000 * unit_registry.mole / unit_registry.meter**3,
-        "mole_fractions": (0.4, 0.6),
+        "T": 250 * unit_registry.kelvin,
+        "rho": 8000 * unit_registry.mole / unit_registry.meter**3,
+        "x": (0.4, 0.6),
         **override,
     }
 
     with pytest.raises(EosError) as exc_info:
-        _model().evaluate(**state)
+        _model().state(**state)
 
     assert exc_info.value.code == "invalid-state"
     assert dict(exc_info.value.context) == expected_context

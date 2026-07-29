@@ -1,8 +1,9 @@
+from epcsaft.parameters import _ParameterBundle
 import math
 
 import pytest
 
-from epcsaft import EPCSAFT, EosError, ParameterBundle, unit_registry
+from epcsaft import Mixture, EosError, unit_registry
 
 
 ELEMENTARY_CHARGE = 1.602176634e-19
@@ -12,25 +13,25 @@ AVOGADRO = 6.02214076e23
 GAS_CONSTANT = 8.31446261815324
 
 
-def _electrolyte_model() -> EPCSAFT:
-    return EPCSAFT(
-        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
+def _electrolyte_model() -> Mixture:
+    return Mixture(
+        _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
             ("water", "sodium-cation", "chloride-anion")
         )
     )
 
 
-def _ascani_model() -> EPCSAFT:
-    return EPCSAFT(
-        ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1).select(
+def _ascani_model() -> Mixture:
+    return Mixture(
+        _ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1).select(
             ("water", "1-butanol", "sodium-cation", "potassium-cation", "chloride-anion")
         )
     )
 
 
-def _held_water_ionization_model() -> EPCSAFT:
-    return EPCSAFT(
-        ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1).select(
+def _held_water_ionization_model() -> Mixture:
+    return Mixture(
+        _ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1).select(
             ("water", "hydronium-cation", "hydroxide-anion")
         )
     )
@@ -131,10 +132,10 @@ def _ascani_debye_huckel_oracle(temperature: float, density: float) -> float:
 
 
 def test_source_backed_debye_huckel_matches_independent_si_oracle() -> None:
-    result = _electrolyte_model().evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        molar_density=40.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(0.9, 0.05, 0.05),
+    result = _electrolyte_model().state(
+        T=298.15 * unit_registry.kelvin,
+        rho=40.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(0.9, 0.05, 0.05),
     )
 
     assert result.debye_huckel == pytest.approx(
@@ -177,10 +178,10 @@ def test_held_2008_constant_dielectric_debye_huckel_matches_si_oracle() -> None:
         / (12.0 * math.pi * VACUUM_PERMITTIVITY * 78.09 * BOLTZMANN * temperature)
     )
 
-    result = _held_water_ionization_model().evaluate(
-        temperature=temperature * unit_registry.kelvin,
-        molar_density=density * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=fractions,
+    result = _held_water_ionization_model().state(
+        T=temperature * unit_registry.kelvin,
+        rho=density * unit_registry.mole / unit_registry.meter**3,
+        x=fractions,
     )
 
     assert result.debye_huckel == pytest.approx(expected, rel=2.0e-11, abs=2.0e-13)
@@ -191,10 +192,10 @@ def test_held_2008_constant_dielectric_debye_huckel_matches_si_oracle() -> None:
 
 
 def test_ascani_debye_huckel_uses_source_sigma_diameter() -> None:
-    result = _ascani_model().evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        molar_density=40.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(0.72, 0.20, 0.03, 0.01, 0.04),
+    result = _ascani_model().state(
+        T=298.15 * unit_registry.kelvin,
+        rho=40.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(0.72, 0.20, 0.03, 0.01, 0.04),
     )
 
     assert result.debye_huckel == pytest.approx(
@@ -204,10 +205,10 @@ def test_ascani_debye_huckel_uses_source_sigma_diameter() -> None:
 
 
 def test_figiel_ionic_pcsaft_uses_point_88_diameter_and_zero_same_sign_dispersion() -> None:
-    result = _electrolyte_model().evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        molar_density=8000.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(0.8, 0.1, 0.1),
+    result = _electrolyte_model().state(
+        T=298.15 * unit_registry.kelvin,
+        rho=8000.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(0.8, 0.1, 0.1),
     )
 
     # Independently evaluated from Figiel (2025) Eqs. 3--4 and the
@@ -225,11 +226,11 @@ def test_debye_huckel_pressure_uses_cppad_density_derivative() -> None:
     step = density * 2.0e-4
 
     def residual_at(rho: float) -> float:
-        return model.evaluate(
-            temperature=temperature * unit_registry.kelvin,
-            molar_density=rho * unit_registry.mole / unit_registry.meter**3,
-            mole_fractions=fractions,
-        ).residual_helmholtz
+        return model.state(
+            T=temperature * unit_registry.kelvin,
+            rho=rho * unit_registry.mole / unit_registry.meter**3,
+            x=fractions,
+        )._residual_helmholtz
 
     derivative = (
         -residual_at(density + 2.0 * step)
@@ -237,10 +238,10 @@ def test_debye_huckel_pressure_uses_cppad_density_derivative() -> None:
         - 8.0 * residual_at(density - step)
         + residual_at(density - 2.0 * step)
     ) / (12.0 * step)
-    result = model.evaluate(
-        temperature=temperature * unit_registry.kelvin,
-        molar_density=density * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=fractions,
+    result = model.state(
+        T=temperature * unit_registry.kelvin,
+        rho=density * unit_registry.mole / unit_registry.meter**3,
+        x=fractions,
     )
 
     assert result.pressure.to("pascal").magnitude == pytest.approx(
@@ -250,10 +251,10 @@ def test_debye_huckel_pressure_uses_cppad_density_derivative() -> None:
 
 
 def test_ionic_topology_has_exact_zero_charge_reduction() -> None:
-    result = _electrolyte_model().evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        molar_density=40.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(1.0, 0.0, 0.0),
+    result = _electrolyte_model().state(
+        T=298.15 * unit_registry.kelvin,
+        rho=40.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(1.0, 0.0, 0.0),
     )
 
     assert result.debye_huckel == 0.0
@@ -264,10 +265,10 @@ def test_debye_huckel_approaches_zero_from_below_at_infinite_dilution() -> None:
 
     values = []
     for ion_fraction_each in (1.0e-8, 1.0e-12):
-        result = model.evaluate(
-            temperature=298.15 * unit_registry.kelvin,
-            molar_density=40.0 * unit_registry.mole / unit_registry.meter**3,
-            mole_fractions=(
+        result = model.state(
+            T=298.15 * unit_registry.kelvin,
+            rho=40.0 * unit_registry.mole / unit_registry.meter**3,
+            x=(
                 1.0 - 2.0 * ion_fraction_each,
                 ion_fraction_each,
                 ion_fraction_each,
@@ -284,34 +285,34 @@ def test_ionic_states_enforce_charge_balance_and_source_domain() -> None:
     model = _electrolyte_model()
     density = 40.0 * unit_registry.mole / unit_registry.meter**3
     with pytest.raises(EosError):
-        model.evaluate(
-            temperature=298.15 * unit_registry.kelvin,
-            molar_density=density,
-            mole_fractions=(0.9, 0.1, 0.0),
+        model.state(
+            T=298.15 * unit_registry.kelvin,
+            rho=density,
+            x=(0.9, 0.1, 0.0),
         )
     with pytest.raises(EosError):
-        model.evaluate(
-            temperature=300.0 * unit_registry.kelvin,
-            molar_density=density,
-            mole_fractions=(0.9, 0.05, 0.05),
+        model.state(
+            T=300.0 * unit_registry.kelvin,
+            rho=density,
+            x=(0.9, 0.05, 0.05),
         )
     with pytest.raises(EosError):
-        model.evaluate(
-            temperature=298.15 * unit_registry.kelvin,
-            molar_density=density,
-            mole_fractions=(0.6, 0.2, 0.2),
+        model.state(
+            T=298.15 * unit_registry.kelvin,
+            rho=density,
+            x=(0.6, 0.2, 0.2),
         )
 
 
 def test_neutral_topology_has_zero_debye_huckel_contribution() -> None:
-    result = EPCSAFT(
-        ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
+    result = Mixture(
+        _ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
             ("methane", "ethane")
         )
-    ).evaluate(
-        temperature=250.0 * unit_registry.kelvin,
-        molar_density=1000.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(0.4, 0.6),
+    ).state(
+        T=250.0 * unit_registry.kelvin,
+        rho=1000.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(0.4, 0.6),
     )
 
     assert result.debye_huckel == 0.0

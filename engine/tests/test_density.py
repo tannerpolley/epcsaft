@@ -1,20 +1,21 @@
+from epcsaft.parameters import _ParameterBundle
 import pytest
 
-from epcsaft import EPCSAFT, EosError, ParameterBundle, unit_registry
+from epcsaft import Mixture, EosError, unit_registry
 
 
-def _methane() -> EPCSAFT:
-    return EPCSAFT(
-        ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(("methane",))
+def _methane() -> Mixture:
+    return Mixture(
+        _ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(("methane",))
     )
 
 
 def test_pressure_state_returns_one_certified_root_and_diagnostics() -> None:
     model = _methane()
-    result = model.evaluate(
-        temperature=250.0 * unit_registry.kelvin,
-        pressure=10.0 * unit_registry.bar,
-        mole_fractions=(1.0,),
+    result = model.state(
+        T=250.0 * unit_registry.kelvin,
+        P=10.0 * unit_registry.bar,
+        x=(1.0,),
     )
 
     assert result.pressure.to("bar").magnitude == pytest.approx(10.0, abs=1.0e-8)
@@ -33,10 +34,10 @@ def test_pressure_state_returns_one_certified_root_and_diagnostics() -> None:
 
     def pressure_at(value: float) -> float:
         return (
-            model.evaluate(
-                temperature=250.0 * unit_registry.kelvin,
-                molar_density=value * unit_registry.mole / unit_registry.meter**3,
-                mole_fractions=(1.0,),
+            model.state(
+                T=250.0 * unit_registry.kelvin,
+                rho=value * unit_registry.mole / unit_registry.meter**3,
+                x=(1.0,),
             )
             .pressure.to("pascal")
             .magnitude
@@ -51,15 +52,15 @@ def test_pressure_state_returns_one_certified_root_and_diagnostics() -> None:
 def test_three_root_state_requires_an_explicit_branch() -> None:
     model = _methane()
     state = {
-        "temperature": 150.0 * unit_registry.kelvin,
-        "pressure": 10.0 * unit_registry.bar,
-        "mole_fractions": (1.0,),
+        "T": 150.0 * unit_registry.kelvin,
+        "P": 10.0 * unit_registry.bar,
+        "x": (1.0,),
     }
     with pytest.raises(EosError):
-        model.evaluate(**state)
+        model.state(**state)
 
-    vapor = model.evaluate(**state, phase="vapor")
-    liquid = model.evaluate(**state, phase="liquid")
+    vapor = model.state(**state, phase="vapor")
+    liquid = model.state(**state, phase="liquid")
 
     assert vapor.molar_density < liquid.molar_density
     assert vapor.density_diagnostics is not None
@@ -72,10 +73,10 @@ def test_three_root_state_requires_an_explicit_branch() -> None:
 
 def test_phase_request_rejects_a_single_root() -> None:
     with pytest.raises(EosError, match="requested density branch is unavailable"):
-        _methane().evaluate(
-            temperature=250.0 * unit_registry.kelvin,
-            pressure=10.0 * unit_registry.bar,
-            mole_fractions=(1.0,),
+        _methane().state(
+            T=250.0 * unit_registry.kelvin,
+            P=10.0 * unit_registry.bar,
+            x=(1.0,),
             phase="liquid",
         )
 
@@ -83,12 +84,12 @@ def test_phase_request_rejects_a_single_root() -> None:
 def test_root_topology_loss_is_reported_without_branch_relabelling() -> None:
     model = _methane()
     two_root_state = {
-        "temperature": 190.0 * unit_registry.kelvin,
-        "pressure": 45.0 * unit_registry.bar,
-        "mole_fractions": (1.0,),
+        "T": 190.0 * unit_registry.kelvin,
+        "P": 45.0 * unit_registry.bar,
+        "x": (1.0,),
     }
-    vapor = model.evaluate(**two_root_state, phase="vapor")
-    liquid = model.evaluate(**two_root_state, phase="liquid")
+    vapor = model.state(**two_root_state, phase="vapor")
+    liquid = model.state(**two_root_state, phase="liquid")
 
     assert vapor.density_diagnostics is not None
     assert liquid.density_diagnostics is not None
@@ -97,11 +98,11 @@ def test_root_topology_loss_is_reported_without_branch_relabelling() -> None:
     assert vapor.molar_density < liquid.molar_density
 
     one_root_state = {
-        "temperature": 191.0 * unit_registry.kelvin,
-        "pressure": 46.0 * unit_registry.bar,
-        "mole_fractions": (1.0,),
+        "T": 191.0 * unit_registry.kelvin,
+        "P": 46.0 * unit_registry.bar,
+        "x": (1.0,),
     }
-    result = model.evaluate(**one_root_state)
+    result = model.state(**one_root_state)
     assert result.density_diagnostics is not None
     assert result.density_diagnostics.branch == "single"
     assert result.density_diagnostics.stable
@@ -110,46 +111,46 @@ def test_root_topology_loss_is_reported_without_branch_relabelling() -> None:
     ) < 1.0e-3
     for requested_phase in ("vapor", "liquid"):
         with pytest.raises(EosError, match="requested density branch is unavailable"):
-            model.evaluate(**one_root_state, phase=requested_phase)
+            model.state(**one_root_state, phase=requested_phase)
 
 
 def test_density_and_pressure_inputs_are_mutually_exclusive() -> None:
     model = _methane()
     common = {
-        "temperature": 250.0 * unit_registry.kelvin,
-        "mole_fractions": (1.0,),
+        "T": 250.0 * unit_registry.kelvin,
+        "x": (1.0,),
     }
     density = 1000.0 * unit_registry.mole / unit_registry.meter**3
     pressure = 10.0 * unit_registry.bar
 
     with pytest.raises(EosError):
-        model.evaluate(**common)
+        model.state(**common)
     with pytest.raises(EosError):
-        model.evaluate(**common, molar_density=density, pressure=pressure)
+        model.state(**common, rho=density, P=pressure)
     with pytest.raises(EosError):
-        model.evaluate(**common, molar_density=density, phase="vapor")
+        model.state(**common, rho=density, phase="vapor")
     with pytest.raises(EosError):
-        model.evaluate(**common, pressure=pressure, phase="supercritical")
+        model.state(**common, P=pressure, phase="supercritical")
     with pytest.raises(EosError):
-        model.evaluate(**common, pressure=1.0 * unit_registry.meter)
+        model.state(**common, P=1.0 * unit_registry.meter)
     with pytest.raises(EosError):
-        model.evaluate(**common, pressure=-1.0 * unit_registry.bar)
+        model.state(**common, P=-1.0 * unit_registry.bar)
 
-    explicit = model.evaluate(**common, molar_density=density)
+    explicit = model.state(**common, rho=density)
     assert explicit.molar_density == density
     assert explicit.density_diagnostics is None
 
 
 def test_pressure_closure_runs_the_complete_electrolyte_eos() -> None:
-    model = EPCSAFT(
-        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
+    model = Mixture(
+        _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
             ("water", "sodium-cation", "chloride-anion")
         )
     )
-    result = model.evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        pressure=1.0 * unit_registry.bar,
-        mole_fractions=(0.9, 0.05, 0.05),
+    result = model.state(
+        T=298.15 * unit_registry.kelvin,
+        P=1.0 * unit_registry.bar,
+        x=(0.9, 0.05, 0.05),
         phase="liquid",
     )
 
@@ -163,8 +164,8 @@ def test_pressure_closure_runs_the_complete_electrolyte_eos() -> None:
 
 
 def test_ethanol_nabr_density_matches_held_measurement() -> None:
-    model = EPCSAFT(
-        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
+    model = Mixture(
+        _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
             ("ethanol", "sodium-cation", "bromide-anion")
         )
     )
@@ -176,10 +177,10 @@ def test_ethanol_nabr_density_matches_held_measurement() -> None:
         salt_moles / total_moles,
         salt_moles / total_moles,
     )
-    result = model.evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        pressure=1.0 * unit_registry.bar,
-        mole_fractions=mole_fractions,
+    result = model.state(
+        T=298.15 * unit_registry.kelvin,
+        P=1.0 * unit_registry.bar,
+        x=mole_fractions,
         phase="liquid",
     )
     molar_masses = (0.046069, 0.02298, 0.0799)

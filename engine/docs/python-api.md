@@ -1,65 +1,58 @@
 # Python API guide
 
-This guide covers the supported public Python path:
+This guide documents the sole public Python frontend for version
+`0.2.0.dev0`:
 
 ```text
-ParameterBundle -> ParameterSet -> EPCSAFT.evaluate -> EosResult
-                                      |
-                                      -> reference_state -> IonicActivity
+Parameters -> Mixture -> State
+                         |
+                         -> State.fugacity
+                         -> State.activity (reference-created electrolyte states)
 ```
 
-It describes one model and one thermodynamic state at a time. Phase-equilibrium
-discovery, global stability, reactions, regression, and parameter fitting are
-separate capabilities and are not supplied by this package.
+The frontend evaluates one resolved model and one thermodynamic state at a
+time. Phase equilibrium, phase discovery, global stability, reactions,
+regression, and parameter fitting are separate capabilities and are not
+supplied here. There are no compatibility aliases for an earlier frontend.
 
 ## Install and import
 
-`epcsaft` requires Python 3.11 or newer. The project has not been published to a
-package index. Install either a supplied wheel or a source checkout:
+`epcsaft` requires Python 3.11 or newer and is not published to a package
+index. Install a supplied wheel or build the checkout. Source builds require a
+C++17 compiler, CMake 3.20 or newer, and Ninja. Pint is the sole Python runtime
+dependency.
 
 ```console
 python -m venv .venv
 . .venv/bin/activate
-python -m pip install /absolute/path/to/epcsaft-0.1.0.dev0-<platform>.whl
+python -m pip install /absolute/path/to/epcsaft-0.2.0.dev0-<platform>.whl
 ```
 
-To build from a checkout, a C++17 compiler, CMake 3.20 or newer, and Ninja are
-required. The build retrieves the pinned CppAD source declared by CMake.
+The supported import is from `epcsaft`. Private modules are not part of this
+contract.
 
-```console
-git clone https://github.com/ePC-SAFT/ePC-SAFT.git
-cd ePC-SAFT
-python -m venv .venv
-. .venv/bin/activate
-python -m pip install .
-```
+## Parameter resolution
 
-The public import is `epcsaft`; do not import `epcsaft._core` or other private
-modules.
+`Parameters` is immutable. Its selected `component_ids` tuple establishes the
+order for every composition, property, fugacity, and activity result.
+Parameter values remain tied to bundle fingerprints, source records, and
+validity domains; no scientific value is inferred or silently defaulted.
 
-## Installed parameter bundles
+The four parameter entry points are:
 
-There is no mutable catalog registry. Discover the installed, validated bundles
-as an immutable tuple, or load one exact ID and version directly. Each discovered
-bundle exposes immutable `components`, `domains`, `sources`, and `fingerprint`
-records. Catalog loading rejects a manifest whose purpose is not
-`installed-catalog`; placing a caller-owned bundle under package data cannot
-promote it.
+| Entry point | Purpose |
+| --- | --- |
+| `Parameters.from_catalog(bundle_id, components=..., version=None)` | Load one installed catalog bundle and select an explicit component order. Omitted `version` selects the greatest installed integer version for the exact ID. |
+| `Parameters.from_bundle(path, components=...)` | Load one strict version-1 bundle directory and select an explicit component order. |
+| `Parameters.from_records(...)` | Build one immutable caller-owned bundle from typed records. Use `purpose="user-provided"` for caller-owned values. |
+| `Parameters.create_bundle_template(path, components=..., profile=..., correlations=False)` | Create a non-overwriting authoring skeleton for a `neutral`, `associating`, `electrolyte`, or `associating-electrolyte` profile. |
 
-```python
-from epcsaft import ParameterBundle
+### Installed catalog
 
-catalog = ParameterBundle.catalog()
-available = tuple(
-    (
-        bundle.bundle_id,
-        bundle.bundle_version,
-        tuple(component.component_id for component in bundle.components),
-    )
-    for bundle in catalog
-)
-assert ("gross-2001-propane", 1, ("propane",)) in available
-```
+The catalog is immutable package data, not a mutable registry. The following
+table is the installed source-backed catalog for this frontend. Its temperature,
+pressure, topology, and ion-fraction entries are evidence domains, not promises
+of extrapolation.
 
 | Bundle ID | Version | Exact component IDs | Source evidence domain and topology limits |
 | --- | ---: | --- | --- |
@@ -67,478 +60,297 @@ assert ("gross-2001-propane", 1, ("propane",)) in available
 | `gross-2001-propane` | 1 | `propane` | Pure, neutral, nonassociating; 85–523 K. No pressure evidence bound is reported. |
 | `figiel-2025-reference-electrolytes` | 1 | `water`, `methanol`, `ethanol`, `lithium-cation`, `sodium-cation`, `potassium-cation`, `chloride-anion`, `bromide-anion` | Corrected Born SSM+DS at 298.15 K and 1 bar; total ion mole fraction at most 0.38. Reference states require one source-complete cation/anion formula unit. |
 | `figiel-2025-aqueous-iodides` | 1 | `water`, `sodium-cation`, `potassium-cation`, `iodide-anion` | Corrected Born SSM+DS at 298.15 K and 1 bar; total ion mole fraction at most 0.38. Only the source-complete aqueous NaI and KI selections are supported; LiI is absent. |
-| `held-2008-water-self-ionization` | 1 | `water`, `hydronium-cation`, `hydroxide-anion` | Debye--Hückel electrolyte model without a Born term at 298.15 K and 1 bar. The Provider supplies the mechanical state and charge-neutral reference basis, not reaction equilibrium or `K_w`. |
+| `held-2008-water-self-ionization` | 1 | `water`, `hydronium-cation`, `hydroxide-anion` | Debye–Hückel electrolyte model without a Born term at 298.15 K and 1 bar. The Provider supplies the mechanical state and charge-neutral reference basis, not reaction equilibrium or `K_w`. |
 | `khudaida-2026-figure-2-electrolyte-lle` | 1 | `water`, `ethanol`, `isobutanol`, `sodium-cation`, `chloride-anion` | Exact five-component corrected Born SSM+DS bundle at 293.15 K and 0.1 MPa. The Provider evaluates states but does not solve the reported LLE. |
 | `ascani-2022-case-study-2-electrolyte-lle` | 1 | `water`, `1-butanol`, `sodium-cation`, `potassium-cation`, `chloride-anion` | Exact five-component original-Born bundle at 298.15 K and 1 bar. The Provider evaluates states but does not solve the reported multiphase problem. |
 
-The table records scientific evidence bounds, not a promise of extrapolation.
-Resolved temperature intersections and electrolyte ion-fraction caps are
-checked during evaluation. Pressure bounds remain source metadata and are not
-currently a runtime rejection check, so callers must keep pressure within the
-reported evidence domain. A component appearing in a bundle does not imply
-that every possible subset is parameter-complete; `EPCSAFT(...)` fails closed
-when a selected topology lacks required source records.
+Load an exact installed selection as follows:
 
-`ParameterBundle.components` exposes the bundle's canonical component order.
-`select(...)` accepts exact component IDs, not names or aliases, and its tuple
-defines all later component and composition ordering. The bundle fingerprint
-identifies its source records; the selected-set fingerprint additionally binds
-the requested component order.
+```python
+from epcsaft import Mixture, Parameters, unit_registry as u
 
-## User-provided parameter bundles
-
-Use the same immutable, fingerprinted lifecycle for caller-owned parameters and
-the installed catalog. Construct caller-owned bundles with typed records and
-`purpose="user-provided"`, save them with `to_path(...)`, and reload them later
-with `from_path(...)`. `EPCSAFT` still receives an ordered `ParameterSet`, not a
-bundle directly:
-
-```text
-typed inputs -> ParameterBundle -> to_path/from_path -> ParameterSet -> EPCSAFT
+parameters = Parameters.from_catalog(
+    "gross-2001-methane-ethane",
+    components=("methane", "ethane"),
+    version=1,
+)
+mixture = Mixture(parameters)
+assert mixture.component_ids == ("methane", "ethane")
 ```
 
-Copy and adapt this complete pure-propane template. The values reproduce the
-Gross and Sadowski (2001) propane row to keep the example executable. For your
-own values, identify the actual source, locator, use basis, and validity domain.
+The `components` argument is required for catalog and bundle loading. IDs are
+exact, lowercase identifiers; component names and aliases are not alternate
+selection routes. A selected subset is accepted only when its complete source
+records define a valid topology. Missing unlike-pair, site, charge,
+permittivity, Born, or association records fail closed during construction.
+
+### Caller-owned bundles
+
+`Parameters.from_records(...)` accepts typed records from `epcsaft.records`.
+Every scientific record must point to a source and a validity domain present in
+the same bundle. Use neutral, associating, or electrolyte records according to
+the complete selected topology; do not rely on a hidden physical default.
+
+This compact pure-component example shows the required provenance shape without
+using a catalog value:
 
 ```python
 from decimal import Decimal
-from pathlib import Path
 
-from epcsaft import EPCSAFT, ParameterBundle, unit_registry as u
+from epcsaft import Parameters, unit_registry as u
 from epcsaft.records import (
     ComponentRecord,
-    ModelParameterRecord,
     SingleParameterRecord,
     SourceRecord,
     ValidityDomain,
 )
 
-source_id = "gross-sadowski-2001"
-domain_id = "propane-fit-range"
+source_id = "source-1"
+domain_id = "domain-1"
 provenance = {
     "source_id": source_id,
-    "locator": "Table 2, propane row",
+    "locator": "table-1",
     "domain_id": domain_id,
 }
 
-bundle = ParameterBundle.from_records(
-    bundle_id="my-propane-model",
+parameters = Parameters.from_records(
+    bundle_id="user-neutral",
     bundle_version=1,
     purpose="user-provided",
-    sources=(
-        SourceRecord(
-            source_id=source_id,
-            citation=(
-                "Gross, J.; Sadowski, G. PC-SAFT: An Equation of State Based "
-                "on a Perturbation Theory for Chain Molecules. Ind. Eng. Chem. "
-                "Res. 2001, 40, 1244-1260."
-            ),
-            doi="10.1021/ie0003887",
-            use_basis="user-provided model input",
-        ),
-    ),
+    sources=(SourceRecord(source_id, "source citation", "model input"),),
     domains=(
         ValidityDomain(
-            domain_id=domain_id,
-            kind="fit-range",
-            temperature_min=Decimal("85") * u.kelvin,
-            temperature_max=Decimal("523") * u.kelvin,
+            domain_id,
+            "fit-range",
+            temperature_min=250 * u.kelvin,
+            temperature_max=350 * u.kelvin,
         ),
     ),
-    components=(
-        ComponentRecord(
-            component_id="propane",
-            name="propane",
-            cas="74-98-6",
-            formula="C3H8",
-        ),
-    ),
+    components=(ComponentRecord("sample"),),
     singles=(
         SingleParameterRecord(
-            "propane-molar-mass",
-            "propane",
-            "molar_mass",
-            Decimal("0.044096") * u.kilogram / u.mole,
-            **provenance,
+            "sample-segment-count", "sample", "segment_count", Decimal("1.5"), **provenance
         ),
         SingleParameterRecord(
-            "propane-segment-count",
-            "propane",
-            "segment_count",
-            Decimal("2.0020"),
-            **provenance,
-        ),
-        SingleParameterRecord(
-            "propane-segment-diameter",
-            "propane",
+            "sample-segment-diameter",
+            "sample",
             "segment_diameter",
-            Decimal("3.6184") * u.angstrom,
+            Decimal("3.5") * u.angstrom,
             **provenance,
         ),
         SingleParameterRecord(
-            "propane-dispersion-energy",
-            "propane",
+            "sample-dispersion-energy",
+            "sample",
             "dispersion_energy_over_k",
-            Decimal("208.11") * u.kelvin,
-            **provenance,
-        ),
-    ),
-    models=(
-        ModelParameterRecord(
-            "relative-permittivity-formulation",
-            "relative_permittivity_formulation",
-            "none",
+            Decimal("200") * u.kelvin,
             **provenance,
         ),
     ),
 )
+```
 
-bundle_path = Path("my-propane-model")
-bundle.to_path(bundle_path)  # Refuses to overwrite an existing path.
+`Parameters.create_bundle_template(...)` creates the strict directory shape
+without overwriting an existing path:
 
-reloaded = ParameterBundle.from_path(bundle_path)
-model = EPCSAFT(reloaded.select(("propane",)))
-state = model.evaluate(
-    temperature=300 * u.kelvin,
-    pressure=1 * u.bar,
-    mole_fractions=(1.0,),
+```python
+from epcsaft import Parameters
+
+Parameters.create_bundle_template(
+    "user-bundle",
+    components=("sample",),
+    profile="neutral",
+)
+# Populate the generated files with source-complete records, then load them:
+parameters = Parameters.from_bundle("user-bundle", components=("sample",))
+```
+
+`from_bundle` validates the manifest, exact file inventory, record types, units,
+provenance references, topology completeness, and canonical fingerprint. A
+caller-owned bundle remains caller-owned; loading it does not mutate the
+installed catalog or turn its values into a validated literature model.
+
+## Mixture and state evaluation
+
+Construct a mixture only from resolved parameters:
+
+```python
+mixture = Mixture(parameters)
+```
+
+The state entry point has two routes:
+
+```python
+direct = mixture.state(
+    T=250 * u.kelvin,
+    rho=8_000 * u.mole / u.meter**3,
+    x=(0.4, 0.6),
+)
+
+closed = mixture.state(
+    T=250 * u.kelvin,
+    P=10 * u.bar,
+    x=(0.4, 0.6),
     phase="vapor",
 )
 ```
 
-`to_path(...)` writes the strict version-1 directory schema atomically. For the
-example above, the reusable on-disk template is:
+`T`, `P`, and `rho` must be Pint quantities with the corresponding dimensions.
+Supply exactly one of `P` and `rho`; `phase` is invalid on the direct-density
+route and is optional on pressure closure. `x` is a finite, nonnegative,
+normalized sequence in `mixture.component_ids` order. The normalization
+tolerance is `1e-12`.
 
-```text
-my-propane-model/
-├── bundle.toml
-├── components.csv
-├── model.csv
-└── single.csv
-```
+For ionic models, `x` must also satisfy electroneutrality within `1e-12` and
+the selected bundle's ion-fraction limit. The resolved model's generic bundle-defined
+relative-permittivity formulation is a parameter capability, not a caller
+selected mode.
 
-`bundle.toml`:
+An explicit density call evaluates the requested mathematical state. It does
+not certify mechanical stability or global phase stability. A pressure call
+solves density closure and returns diagnostics containing the selected bracket,
+pressure residual, `dP/drho`, iteration count, local mechanical-stability flag,
+and branch. With `phase=None`, pressure closure succeeds only when one
+mechanically stable root is available. A genuine multi-root state requires
+`phase="vapor"` or `phase="liquid"`; a phase label never relabels a lone root.
 
-```toml
-schema_version = 1
-bundle_id = "my-propane-model"
-bundle_version = 1
-purpose = "user-provided"
-files = ["components.csv", "model.csv", "single.csv"]
+Every `State` retains the canonical temperature, ordered composition,
+component IDs, parameter fingerprint, pressure, molar density, compressibility
+factor, contribution values, and nullable diagnostics. The scientific equations,
+reference bases, and derivative authority are defined in
+[the full-provider EOS contract](science/full-provider-eos.md).
 
-[[sources]]
-source_id = "gross-sadowski-2001"
-citation = "Gross, J.; Sadowski, G. PC-SAFT. Ind. Eng. Chem. Res. 2001, 40, 1244-1260."
-use_basis = "user-provided model input"
-doi = "10.1021/ie0003887"
+## Residual properties and fugacity
 
-[[domains]]
-domain_id = "propane-fit-range"
-kind = "fit-range"
-temperature_min = "85"
-temperature_max = "523"
-temperature_unit = "kelvin"
-```
+The residual methods are immutable projections of one evaluated state:
 
-`components.csv`:
-
-```csv
-component_id,name,cas,formula,aliases
-propane,propane,74-98-6,C3H8,
-```
-
-`model.csv`:
-
-```csv
-record_id,family,value,unit,source_id,locator,domain_id
-relative-permittivity-formulation,relative_permittivity_formulation,none,,gross-sadowski-2001,"Table 2, propane row",propane-fit-range
-```
-
-`single.csv`:
-
-```csv
-record_id,component_id,family,value,unit,source_id,locator,domain_id
-propane-molar-mass,propane,molar_mass,0.044096,kilogram / mole,gross-sadowski-2001,"Table 2, propane row",propane-fit-range
-propane-segment-count,propane,segment_count,2.002,,gross-sadowski-2001,"Table 2, propane row",propane-fit-range
-propane-segment-diameter,propane,segment_diameter,3.6184,angstrom,gross-sadowski-2001,"Table 2, propane row",propane-fit-range
-propane-dispersion-energy,propane,dispersion_energy_over_k,208.11,kelvin,gross-sadowski-2001,"Table 2, propane row",propane-fit-range
-```
-
-The `files` inventory is exact: do not place extra files inside the bundle
-directory. Multicomponent neutral models require an explicit `k_ij` record for
-every selected unlike pair, including a sourced zero. Association and ionic
-models likewise require their complete site, cross-parameter, charge,
-permittivity, and Born-model records. Missing records fail closed during
-`EPCSAFT(...)` construction. The `user-provided` purpose records provenance.
-You remain responsible for the scientific quality and fitted domain of
-caller-supplied values.
-
-`native_sdk(model)` accepts an exact selected model reloaded from a
-`user-provided` bundle for the generic model-bound phase, molar-volume-domain,
-and packing callbacks. Source-specific reference and active-parameter callbacks
-retain their separate catalog admission and return unsupported status for an
-otherwise executable caller-owned model. Native transport does not validate or
-promote caller-owned parameters.
-
-## Parameter authoring schema
-
-Every parameter record carries `source_id`, a source locator, and `domain_id`.
-The referenced source and domain must be present in the same bundle. Identifiers
-use lowercase letters, digits, and single hyphens; component aliases are metadata
-and are never accepted in `select(...)`.
-
-The family annotations are public `Literal` types in `epcsaft.records`, so IDEs
-and static type checkers can identify misspelled families before runtime.
-
-| Record class | Allowed family | Canonical value unit |
+| Method | Default `basis="molar"` | `basis="reduced"` |
 | --- | --- | --- |
-| `SingleParameterRecord` | `molar_mass` | `kilogram / mole` |
-| `SingleParameterRecord` | `segment_count` | dimensionless |
-| `SingleParameterRecord` or correlation | `segment_diameter` | `angstrom` |
-| `SingleParameterRecord` | `dispersion_energy_over_k` | `kelvin` |
-| `SingleParameterRecord` | `charge_number` | exact integer |
-| `SingleParameterRecord` or constant correlation | `relative_permittivity` | dimensionless |
-| `SingleParameterRecord` | `born_diameter` | `angstrom` |
-| `SingleParameterRecord` or constant correlation | `solvation_factor` | dimensionless |
-| `PairParameterRecord` | `k_ij`, `l_ij` | dimensionless |
-| `AssociationParameterRecord` | `association_energy_over_k` | `kelvin` |
-| `AssociationParameterRecord` | `association_volume` | dimensionless |
-| `ModelParameterRecord` | `ionic_region_relative_permittivity` | dimensionless |
-| `ModelParameterRecord` | `ion_fraction_suppression_coefficient` | dimensionless |
+| `State.ares()` | residual molar Helmholtz energy, J/mol | `Ares/(nRT)` |
+| `State.ures()` | residual molar internal energy, J/mol | `Ures/(nRT)` |
+| `State.hres()` | residual molar enthalpy, J/mol | `Hres/(nRT)` |
+| `State.gres()` | residual molar Gibbs energy, J/mol | `Gres/(nRT)` |
+| `State.sres()` | residual molar entropy, J/(mol K) | `Sres/(nR)` |
+| `State.cvres()` | residual molar `C_V`, J/(mol K) | `C_V^res/R` |
+| `State.cpres()` | residual molar `C_P`, J/(mol K), or `None` | `C_P^res/R`, or `None` |
 
-`ConstantCorrelation` supports `segment_diameter`, `relative_permittivity`, and
-`solvation_factor`. `ConstantPlusSumOfExponentialsCorrelation` is limited to
-`segment_diameter`; its constant and amplitudes use angstrom and every exponent
-coefficient uses `1 / kelvin`.
-
-Model construction applies these topology requirements through the same resolver
-used for evaluation:
-
-| Topology | Complete selected-set requirements |
-| --- | --- |
-| Neutral | Every component has `segment_count`, `segment_diameter`, and `dispersion_energy_over_k`; every unlike pair has an explicit `k_ij`, including a sourced zero. `molar_mass` is retained when supplied but is not required for a neutral EOS state. |
-| Associating | All neutral requirements, plus `SiteRecord` entries. Every declared site participates in at least one site pair, and each active pair has both `association_energy_over_k` and `association_volume`. |
-| Corrected Born SSM+DS | Every component has the three PC-SAFT families and an explicit `charge_number`, including zero for solvents. Every required unlike pair has `k_ij`; same-sign ion pairs are structurally not applicable. Neutral components have `molar_mass` and `relative_permittivity`; ionic components have `born_diameter`; all components have `solvation_factor`. The bundle has both model-level dielectric families. |
-| Original Born | Every component has the three PC-SAFT families, `charge_number`, and `relative_permittivity`. Every required unlike pair has `k_ij`, and every unlike pair has `l_ij`. Do not combine this schema with corrected-Born diameter, solvation-factor, or model-level dielectric records. |
-
-`ParameterBundle.from_records(...)` validates record types, identifiers,
-provenance references, site references, and duplicate semantic ownership.
-`EPCSAFT(bundle.select(...))` then validates the complete selected topology. A
-`ParameterError` identifies the missing component, pair, site, or family; it
-never fills a scientific value implicitly.
-
-## Neutral state example
-
-This example inspects the bundle, selects an explicit order, and evaluates the
-same composition by direct density and by pressure closure.
+The reduced basis returns plain floats. The molar basis returns Pint quantities.
+`cpres()` is nullable when the local pressure slope does not support the
+constant-pressure transformation.
 
 ```python
-import math
-
-from epcsaft import EPCSAFT, ParameterBundle, unit_registry as u
-
-bundle = ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
-assert tuple(component.component_id for component in bundle.components) == (
-    "ethane",
-    "methane",
-)
-
-parameters = bundle.select(("methane", "ethane"))
-model = EPCSAFT(parameters)
-assert model.component_ids == ("methane", "ethane")
-assert model.parameter_fingerprint == parameters.fingerprint
-
-direct = model.evaluate(
-    temperature=250 * u.kelvin,
-    molar_density=8000 * u.mole / u.meter**3,
-    mole_fractions=(0.4, 0.6),
-)
-assert direct.density_diagnostics is None
-assert direct.component_ids == model.component_ids
-assert direct.mole_fractions == (0.4, 0.6)
-assert direct.temperature.to("kelvin").magnitude == 250
-assert direct.parameter_fingerprint == parameters.fingerprint
-assert math.isfinite(direct.residual_helmholtz)
-assert direct.log_fugacity_coefficient is not None
-
-closed = model.evaluate(
-    temperature=250 * u.kelvin,
-    pressure=10 * u.bar,
-    mole_fractions=(0.4, 0.6),
-)
-assert abs(closed.pressure.to("bar").magnitude - 10.0) < 1e-8
-assert closed.density_diagnostics is not None
-assert closed.density_diagnostics.branch == "single"
+ares = closed.ares()
+reduced_ares = closed.ares(basis="reduced")
+entropy = closed.sres()
+assert ares.to("joule / mole").magnitude == reduced_ares * 8.31446261815324 * 250
+assert entropy.dimensionality == (u.joule / u.mole / u.kelvin).dimensionality
 ```
 
-Every `EosResult` echoes the canonical temperature, ordered mole fractions,
-component IDs, and parameter fingerprint that produced it. `residual_helmholtz`
-and each contribution are dimensionless molar residual
-Helmholtz quantities on the `A_res/(nRT)` basis. `compressibility_factor` is
-`Z`; `residual_chemical_potential_over_rt[i]` is `mu_i_res/(RT)`; and
-`log_fugacity_coefficient[i]` is `ln(phi_i)`, all in `model.component_ids`
-order. The Provider returns fugacity coefficients, not component fugacities.
-Pressure, molar density, and residual caloric properties are Pint quantities.
-For ionic states, `EPCSAFT.relative_permittivity_formulation` identifies the source-named bulk
-dielectric topology. The Figiel SSM+DS model reports
-`"ion-fraction-suppression"`, and the original-Born model reports
-`"component-permittivity-mixing"`. Neutral and associating states report `"none"` and
-set `EosResult.bulk_relative_permittivity` to `None`. Ionic results expose the
-dimensionless bulk relative permittivity used by the Provider's
-Debye--Huckel and Born calculations.
-See [the EOS science contract](science/full-provider-eos.md) for the equations,
-units, and reference bases.
+`State.fugacity` is either `None` or an immutable `Fugacity` projection with:
 
-## Aqueous electrolyte example
-
-Ionic mole fractions must be electroneutral. For a formula-unit molality path,
-build the pressure reference once and reuse it across concentrations.
+- `component_ids`: the mixture component order;
+- `ln_coefficient`: `ln(phi_i)` in that order;
+- `coefficient`: `phi_i` in that order; and
+- `value`: component fugacities `x_i phi_i P` as Pint pressure quantities.
 
 ```python
-import math
-
-from epcsaft import EPCSAFT, ParameterBundle, unit_registry as u
-
-bundle = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
-parameters = bundle.select(("water", "sodium-cation", "chloride-anion"))
-electrolyte = EPCSAFT(parameters)
-
-state = electrolyte.evaluate(
-    temperature=298.15 * u.kelvin,
-    pressure=1 * u.bar,
-    mole_fractions=(0.90, 0.05, 0.05),
-    phase="liquid",
-)
-assert state.density_diagnostics is not None
-assert state.density_diagnostics.branch == "liquid"
-assert state.debye_huckel != 0.0
-assert electrolyte.relative_permittivity_formulation == "ion-fraction-suppression"
-assert state.bulk_relative_permittivity > 1.0
-
-reference = electrolyte.reference_state(
-    temperature=298.15 * u.kelvin,
-    pressure=1 * u.bar,
-    solvent_mole_fractions=(1.0, 0.0, 0.0),
-    phase="liquid",
-)
-activity = reference.at_molality(1 * u.mole / u.kilogram)
-assert activity.component_ids == electrolyte.component_ids
-assert activity.ion_component_ids == ("sodium-cation", "chloride-anion")
-assert math.isfinite(activity.mean_ionic_activity_coefficient_molality)
-assert activity.practical_osmotic_coefficient_molality is not None
+fugacity = closed.fugacity
+if fugacity is not None:
+    assert fugacity.component_ids == closed.component_ids
+    assert len(fugacity.value) == len(closed.component_ids)
 ```
 
-`IonicActivity` reports formula-unit molality, the generated composition,
-single-ion coefficients, stoichiometric mean coefficients on mole-fraction and
-molality scales, and the practical molal osmotic coefficient for a
-single-active-water reference. The osmotic field is `None` for mixed-solvent
-references because no mixed-solvent osmotic standard state is admitted.
+## Electrolyte reference and activity
 
-`EPCSAFT.relative_permittivity_formulation` identifies the immutable, source-named topology
-resolved from the parameter records. Current values are
-`ion-fraction-suppression`, `component-permittivity-mixing`, `density-volume-temperature`,
-`ion-specific-suppression`, and `dipolar-density-perturbation` for ionic models. Callers do
-not select this value during state evaluation. The latter three topologies are
-available through complete source-bearing `ParameterBundle.from_records(...)`
-inputs; they are not alternate modes silently applied to an installed catalog
-bundle. Mixed or incomplete topology records fail during construction.
-
-`EosResult.bulk_relative_permittivity` is the dimensionless state value used
-by both Debye--Huckel and the bundle-selected Born formulation. Density-based
-Schreckenberg and Rueben models approach one in the zero-density limit. The
-Zuber implementation currently requires exactly one neutral solvent because
-its source mixed-solvent equation requires solvent-volume data not represented
-by the admitted parameter payload. Neutral models report
-`relative_permittivity_formulation="none"` and `bulk_relative_permittivity=None` rather than a
-synthetic dielectric value.
-
-## State and root contract
-
-- `temperature`, `molar_density`, and `pressure` are Pint quantities.
-  Dimensionless Python numbers are rejected for dimensioned inputs.
-- `mole_fractions` and `solvent_mole_fractions` are finite, nonnegative,
-  dimensionless numbers in the selected component order. Their sum must differ
-  from one by no more than `1e-12`.
-- Ionic states must satisfy `abs(sum(x_i * z_i)) <= 1e-12`. The Figiel bundles
-  also require total ionic mole fraction at most 0.38 (with the same `1e-12`
-  numerical allowance).
-- Supply exactly one of `molar_density` or `pressure`. `phase` is invalid with
-  direct density.
-- A direct-density call evaluates the requested mathematical state and returns
-  `density_diagnostics=None`; it does not certify mechanical stability or
-  global phase stability.
-- For pressure closure, `phase=None` succeeds only when one mechanically stable
-  root is available. A multi-root state requires `phase="vapor"` or
-  `phase="liquid"`. Conversely, a phase-specific request is rejected if that
-  branch is unavailable; a phase label never relabels a lone root.
-- Pressure results include the selected bracket, pressure residual, `dP/drho`,
-  iterations, local mechanical-stability flag, and branch. These diagnostics
-  certify the selected density root, not phase completeness or global
-  stability.
-- A pressure-specific `phase` request is a branch-identity assertion, not a
-  liquid/vapor hint. If a density-dependent permittivity topology leaves only
-  one stable root, omit `phase` and inspect `branch="single"`.
-
-`log_fugacity_coefficient` is `None` when `Z` is nonfinite or nonpositive.
-`residual_isobaric_heat_capacity` is `None` when the local pressure slope does
-not support the constant-pressure transformation. Always check nullable fields
-before using them.
-
-## Stable errors
-
-Parameter loading and selection raise `ParameterError`; state, density, and
-reference evaluation raise `EosError`. Both derive from `ValueError` and expose
-immutable `code` and `context` properties. Branch on those properties rather
-than parsing the human-readable exception string.
+`Mixture.reference(T, P, solvent_x, phase="liquid")` builds the explicit
+liquid reference sequence for one source-complete cation/anion formula unit.
+`solvent_x` is normalized in the full mixture component order and is zero for
+ionic components. Only the liquid phase is admitted by this reference path.
 
 ```python
-from epcsaft import EPCSAFT, EosError, ParameterBundle, ParameterError, unit_registry as u
+from epcsaft import Mixture, Parameters, unit_registry as u
 
-try:
-    ParameterBundle.from_catalog("not-installed", version=1)
-except ParameterError as error:
-    assert error.code == "missing-record"
-    assert error.context == (("field", "catalog"), ("value", "not-installed/1"))
-
-model = EPCSAFT(
-    ParameterBundle.from_catalog("gross-2001-propane", version=1).select(("propane",))
-)
-try:
-    model.evaluate(
-        temperature=250,  # missing Pint units
-        pressure=10 * u.bar,
-        mole_fractions=(1.0,),
+electrolyte = Mixture(
+    Parameters.from_catalog(
+        "figiel-2025-reference-electrolytes",
+        components=("water", "sodium-cation", "chloride-anion"),
     )
-except EosError as error:
-    assert error.code == "invalid-state"
-    assert dict(error.context) == {
-        "field": "temperature",
-        "reason": "invalid-unit",
-        "expected_unit": "kelvin",
-    }
+)
+reference = electrolyte.reference(
+    T=298.15 * u.kelvin,
+    P=1 * u.bar,
+    solvent_x=(1.0, 0.0, 0.0),
+    phase="liquid",
+)
+state = reference.state(molality=0.1 * u.mole / u.kilogram)
+
+assert state.activity is not None
+assert state.activity.ion_component_ids == (
+    "sodium-cation",
+    "chloride-anion",
+)
 ```
 
-Common `ParameterError.code` values include `missing-record`,
-`invalid-selection`, `invalid-schema`, `invalid-unit`, and `invalid-domain`.
-Common `EosError.code` values include `invalid-state`, `evaluation-failed`,
-`invalid-reference-state`, and `reference-state-failed`. Domain violations use
-`invalid-state` with a `field`, machine-readable `reason`, rejected value when
-appropriate, and the applicable unit, range, expected count, normalization
-tolerance, charge-balance tolerance, or ionic-fraction limit. Native SDK errors
-are a separate consumer contract and are not part of normal Python state
-evaluation.
+`reference.state(molality=...)` evaluates the generated electroneutral
+composition at the reference temperature, pressure, and phase. The returned
+`State.activity` contains:
 
-## Static typing
+- `formula_unit_molality` and generated `mole_fractions`;
+- `single_ion` coefficients in `ion_component_ids` order;
+- `mean_mole_fraction` and `mean_molality`; and
+- `osmotic_coefficient`, which is available on the single-water path and is
+  `None` when no admitted mixed-solvent osmotic standard exists.
 
-The wheel includes the PEP 561 `py.typed` marker. State quantities are typed as
-Pint quantities, pressure- and density-specified calls have separate overloads,
-electrolyte reference construction accepts only the literal phase `"liquid"`,
-and `Phase`, `BundlePurpose`, `DomainKind`, and parameter-family `Literal`
-aliases are public. Runtime validation remains authoritative for dimensionality,
-normalization, domains, and source completeness.
+The reference object also retains the source-bound infinite-dilution sequence,
+`reference_molality`, convergence error, and solvation free-energy projection.
+These are reference-state results, not reaction constants, species-equilibrium
+results, fitted parameters, or catalog mutations.
 
-Solver convergence means only that the requested numerical state was found.
-It does not establish numerical sensitivity, literature agreement, phase
-equilibrium, or global stability. The native consumer boundary is documented
-separately in [ADR 0001](adr/0001-native-consumer-transport.md).
+## Stable errors and typing
+
+Parameter loading raises `ParameterError`; state, density, and reference
+evaluation raise `EosError`. Both derive from `ValueError` and expose immutable
+`code` and `context` properties. Branch on those machine-readable properties
+instead of parsing exception text.
+
+```python
+from epcsaft import ParameterError, Parameters
+
+try:
+    Parameters.from_catalog("not-installed", components=("sample",))
+except ParameterError:
+    pass
+```
+
+The wheel includes the PEP 561 `py.typed` marker. Runtime validation remains
+the scientific authority for dimensions, normalization, domains, source
+completeness, density-root selection, and reference-state applicability.
+
+## Scientific authority and retained history
+
+CppAD is the sole nonlinear production derivative authority. Native C++ owns
+the hard-chain, dispersion, association, Debye--Huckel, Born SSM+DS, and
+density equations; Python validates inputs and presents typed results. The
+provider owns state/property evaluation and density closure, not phase
+equilibrium, discovery, regression, Ceres, cross-package validation, or
+reaction/species equilibrium.
+
+Accepted receipt `promotion-0012-provider-full-candidate` governs the exact
+full-provider scope. It transfers production authority but does not publish a
+package release or broaden capability. Migration receipt
+`promotion-0015-provider-native-sdk-v1` is the sole authority record for the
+ADR 0001 native capsule; this guide does not transfer that authority. Each
+native consumer requires its own cross-wheel gate.
+
+The append-only neutral-mixture, active-pair, scalar pure-parameter,
+association, full-electrolyte, molar-volume-domain, packing, active-solvation,
+active-permittivity, and active-reference entries remain bounded provider
+candidates unless their own receipts say otherwise. They own no targets,
+bounds, Ceres, fit acceptance, phase identity, equilibrium, or catalog writes.
+Gross--Sadowski methane/ethane is first reference evidence, not a mixture
+allowlist. The private Held water-ionization candidate retains
+`authority_effect: none`; Equilibrium owns `K_w`, reaction conversion,
+constraints, Ipopt, and certificates.
+
+The [native consumer ADR](adr/0001-native-consumer-transport.md), [0.2
+frontend ADR](adr/0002-python-frontend-v0.2.md), and [0.2 migration
+record](migration-0.2.md) preserve the transport and migration history.

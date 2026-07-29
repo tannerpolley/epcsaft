@@ -1,8 +1,9 @@
+from epcsaft.parameters import _ParameterBundle
 from decimal import Decimal, localcontext
 
 import pytest
 
-from epcsaft import EPCSAFT, ParameterBundle, unit_registry
+from epcsaft import Mixture, unit_registry
 
 
 ELEMENTARY_CHARGE = 1.602176634e-19
@@ -10,17 +11,17 @@ VACUUM_PERMITTIVITY = 8.8541878128e-12
 BOLTZMANN = 1.380649e-23
 
 
-def _model() -> EPCSAFT:
-    return EPCSAFT(
-        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
+def _model() -> Mixture:
+    return Mixture(
+        _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
             ("water", "sodium-cation", "chloride-anion")
         )
     )
 
 
-def _ascani_model() -> EPCSAFT:
-    return EPCSAFT(
-        ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1).select(
+def _ascani_model() -> Mixture:
+    return Mixture(
+        _ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1).select(
             ("water", "1-butanol", "sodium-cation", "potassium-cation", "chloride-anion")
         )
     )
@@ -75,15 +76,15 @@ def _born_oracle(temperature: float) -> float:
 
 
 def test_corrected_born_ssm_ds_matches_independent_two_region_oracle() -> None:
-    result = _model().evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        molar_density=40000.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(0.999998, 0.000001, 0.000001),
+    result = _model().state(
+        T=298.15 * unit_registry.kelvin,
+        rho=40000.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(0.999998, 0.000001, 0.000001),
     )
 
     assert result.born == pytest.approx(_born_oracle(298.15), rel=2.0e-12, abs=2.0e-12)
     assert result.born < 0.0
-    assert result.residual_helmholtz == pytest.approx(
+    assert result._residual_helmholtz == pytest.approx(
         result.hard_chain
         + result.dispersion
         + result.association
@@ -95,21 +96,21 @@ def test_corrected_born_ssm_ds_matches_independent_two_region_oracle() -> None:
 def test_born_has_zero_ion_reduction_and_no_density_dependence() -> None:
     model = _model()
     state = {
-        "temperature": 298.15 * unit_registry.kelvin,
-        "mole_fractions": (0.9, 0.05, 0.05),
+        "T": 298.15 * unit_registry.kelvin,
+        "x": (0.9, 0.05, 0.05),
     }
-    dilute = model.evaluate(
+    dilute = model.state(
         **state,
-        molar_density=20.0 * unit_registry.mole / unit_registry.meter**3,
+        rho=20.0 * unit_registry.mole / unit_registry.meter**3,
     )
-    dense = model.evaluate(
+    dense = model.state(
         **state,
-        molar_density=80.0 * unit_registry.mole / unit_registry.meter**3,
+        rho=80.0 * unit_registry.mole / unit_registry.meter**3,
     )
-    solvent = model.evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        molar_density=40.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(1.0, 0.0, 0.0),
+    solvent = model.state(
+        T=298.15 * unit_registry.kelvin,
+        rho=40.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(1.0, 0.0, 0.0),
     )
 
     assert dilute.born == pytest.approx(dense.born, abs=1.0e-13)
@@ -117,14 +118,14 @@ def test_born_has_zero_ion_reduction_and_no_density_dependence() -> None:
 
 
 def test_neutral_topology_has_zero_born_contribution() -> None:
-    result = EPCSAFT(
-        ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
+    result = Mixture(
+        _ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
             ("methane", "ethane")
         )
-    ).evaluate(
-        temperature=250.0 * unit_registry.kelvin,
-        molar_density=1000.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(0.4, 0.6),
+    ).state(
+        T=250.0 * unit_registry.kelvin,
+        rho=1000.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(0.4, 0.6),
     )
 
     assert result.born == 0.0
@@ -181,10 +182,10 @@ def test_ascani_original_born_and_combined_dielectric_match_independent_oracle()
             )
         )
 
-    result = _ascani_model().evaluate(
-        temperature=float(temperature) * unit_registry.kelvin,
-        molar_density=1000.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=tuple(float(value) for value in fractions),
+    result = _ascani_model().state(
+        T=float(temperature) * unit_registry.kelvin,
+        rho=1000.0 * unit_registry.mole / unit_registry.meter**3,
+        x=tuple(float(value) for value in fractions),
     )
     assert result.born == pytest.approx(float(expected), rel=3.0e-12)
     assert result.born < 0.0

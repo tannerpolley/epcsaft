@@ -1,9 +1,10 @@
+from epcsaft.parameters import _ParameterBundle
 from dataclasses import replace
 import math
 
 import pytest
 
-from epcsaft import EPCSAFT, ParameterBundle, unit_registry
+from epcsaft import Mixture, unit_registry
 from epcsaft._core import NativeModel
 from epcsaft.eos import _native_arguments
 from epcsaft.records import (
@@ -26,7 +27,7 @@ PROVENANCE = {
 }
 
 
-def _pure_2b_model() -> EPCSAFT:
+def _pure_2b_model() -> Mixture:
     component = "water"
     singles = (
         SingleParameterRecord("water-m", component, "segment_count", 1.0, **PROVENANCE),
@@ -69,7 +70,7 @@ def _pure_2b_model() -> EPCSAFT:
             ("water-ab-volume", "association_volume", 0.03),
         )
     )
-    parameters = ParameterBundle.from_records(
+    parameters = _ParameterBundle.from_records(
         bundle_id="association-oracle",
         bundle_version=1,
         purpose="package-test-fixture",
@@ -94,19 +95,19 @@ def _pure_2b_model() -> EPCSAFT:
             ),
         ),
     ).select((component,))
-    return EPCSAFT(parameters)
+    return Mixture(parameters)
 
 
 def test_ascani_lij_enters_dispersion_and_association_cross_diameter() -> None:
-    parameters = ParameterBundle.from_catalog(
+    parameters = _ParameterBundle.from_catalog(
         "ascani-2022-case-study-2-electrolyte-lle", version=1
     ).select(("water", "1-butanol"))
-    model = EPCSAFT(parameters)
+    model = Mixture(parameters)
     fractions = (0.75, 0.25)
-    source = model.evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        molar_density=1000.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=fractions,
+    source = model.state(
+        T=298.15 * unit_registry.kelvin,
+        rho=1000.0 * unit_registry.mole / unit_registry.meter**3,
+        x=fractions,
     )
     zero_lij_model = replace(model._model, l_ij=(0.0,) * 4)
     zero_lij = NativeModel(*_native_arguments(zero_lij_model)).evaluate(298.15, 1000.0, fractions)
@@ -135,17 +136,17 @@ def _pure_2b_association(temperature: float, molar_density: float) -> float:
 
 def test_pure_2b_association_matches_independent_closed_form() -> None:
     model = _pure_2b_model()
-    result = model.evaluate(
-        temperature=300.0 * unit_registry.kelvin,
-        molar_density=10000.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(1.0,),
+    result = model.state(
+        T=300.0 * unit_registry.kelvin,
+        rho=10000.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(1.0,),
     )
 
     assert result.association == pytest.approx(
         _pure_2b_association(300.0, 10000.0), rel=2.0e-11, abs=2.0e-12
     )
     assert result.association < 0.0
-    assert result.residual_helmholtz == pytest.approx(
+    assert result._residual_helmholtz == pytest.approx(
         result.hard_chain + result.dispersion + result.association
     )
 
@@ -157,11 +158,11 @@ def test_association_pressure_uses_total_density_derivative() -> None:
     step = density * 2.0e-4
 
     def residual_at(rho: float) -> float:
-        return model.evaluate(
-            temperature=temperature * unit_registry.kelvin,
-            molar_density=rho * unit_registry.mole / unit_registry.meter**3,
-            mole_fractions=(1.0,),
-        ).residual_helmholtz
+        return model.state(
+            T=temperature * unit_registry.kelvin,
+            rho=rho * unit_registry.mole / unit_registry.meter**3,
+            x=(1.0,),
+        )._residual_helmholtz
 
     derivative = (
         -residual_at(density + 2.0 * step)
@@ -169,10 +170,10 @@ def test_association_pressure_uses_total_density_derivative() -> None:
         - 8.0 * residual_at(density - step)
         + residual_at(density - 2.0 * step)
     ) / (12.0 * step)
-    result = model.evaluate(
-        temperature=temperature * unit_registry.kelvin,
-        molar_density=density * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(1.0,),
+    result = model.state(
+        T=temperature * unit_registry.kelvin,
+        rho=density * unit_registry.mole / unit_registry.meter**3,
+        x=(1.0,),
     )
     expected = (1.0 + density * derivative) * density * GAS_CONSTANT * temperature
 
@@ -180,10 +181,10 @@ def test_association_pressure_uses_total_density_derivative() -> None:
 
 
 def test_association_has_the_correct_zero_density_limit() -> None:
-    result = _pure_2b_model().evaluate(
-        temperature=300.0 * unit_registry.kelvin,
-        molar_density=1.0e-8 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(1.0,),
+    result = _pure_2b_model().state(
+        T=300.0 * unit_registry.kelvin,
+        rho=1.0e-8 * unit_registry.mole / unit_registry.meter**3,
+        x=(1.0,),
     )
 
     assert abs(result.association) < 1.0e-8
@@ -196,11 +197,11 @@ def test_association_temperature_derivative_enters_residual_energy() -> None:
     step = temperature * 2.0e-4
 
     def residual_at(value: float) -> float:
-        return model.evaluate(
-            temperature=value * unit_registry.kelvin,
-            molar_density=density * unit_registry.mole / unit_registry.meter**3,
-            mole_fractions=(1.0,),
-        ).residual_helmholtz
+        return model.state(
+            T=value * unit_registry.kelvin,
+            rho=density * unit_registry.mole / unit_registry.meter**3,
+            x=(1.0,),
+        )._residual_helmholtz
 
     derivative = (
         -residual_at(temperature + 2.0 * step)
@@ -208,28 +209,28 @@ def test_association_temperature_derivative_enters_residual_energy() -> None:
         - 8.0 * residual_at(temperature - step)
         + residual_at(temperature - 2.0 * step)
     ) / (12.0 * step)
-    result = model.evaluate(
-        temperature=temperature * unit_registry.kelvin,
-        molar_density=density * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(1.0,),
+    result = model.state(
+        T=temperature * unit_registry.kelvin,
+        rho=density * unit_registry.mole / unit_registry.meter**3,
+        x=(1.0,),
     )
 
-    assert result.residual_internal_energy.to("joule / mole").magnitude == (
+    assert result._residual_internal_energy.to("joule / mole").magnitude == (
         pytest.approx(-GAS_CONSTANT * temperature**2 * derivative, rel=2.0e-6)
     )
 
 
 def test_neutral_solvent_selection_does_not_activate_ionic_topology() -> None:
-    model = EPCSAFT(
-        ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
+    model = Mixture(
+        _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1).select(
             ("ethanol",)
         )
     )
 
-    result = model.evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        molar_density=17000.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(1.0,),
+    result = model.state(
+        T=298.15 * unit_registry.kelvin,
+        rho=17000.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(1.0,),
     )
 
     assert result.association < 0.0

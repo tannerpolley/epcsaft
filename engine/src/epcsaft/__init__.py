@@ -1,30 +1,33 @@
 from .eos import (
     DensityDiagnostics,
-    EPCSAFT,
     EosError,
-    EosResult,
+    Fugacity,
+    Mixture,
     Phase,
+    PropertyBasis,
+    State,
     export_native_model,
     native_sdk,
 )
-from .parameters import BundlePurpose, ParameterBundle, ParameterSet
-from .reference import ElectrolyteReference, IonicActivity, TransferFreeEnergy
+from .parameters import BundlePurpose, Parameters
+from .reference import Activity, ElectrolyteReference, TransferFreeEnergy
 from .units import ParameterError, unit_registry
 
 __all__ = (
-    "ParameterBundle",
-    "ParameterSet",
+    "Parameters",
     "BundlePurpose",
     "ParameterError",
     "unit_registry",
-    "EPCSAFT",
-    "EosResult",
+    "Mixture",
+    "State",
+    "Fugacity",
     "DensityDiagnostics",
     "EosError",
     "Phase",
+    "PropertyBasis",
     "native_sdk",
     "export_native_model",
     "ElectrolyteReference",
-    "IonicActivity",
+    "Activity",
     "TransferFreeEnergy",
 )

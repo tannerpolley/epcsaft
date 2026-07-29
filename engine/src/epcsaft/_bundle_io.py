@@ -92,6 +92,31 @@ _COLUMNS = {
     ),
 }
 
+_TEMPLATE_FILES = {
+    "neutral": ("components.csv", "model.csv", "single.csv"),
+    "associating": (
+        "association.csv",
+        "components.csv",
+        "model.csv",
+        "single.csv",
+        "sites.csv",
+    ),
+    "electrolyte": (
+        "components.csv",
+        "model.csv",
+        "pair.csv",
+        "single.csv",
+    ),
+    "associating-electrolyte": (
+        "association.csv",
+        "components.csv",
+        "model.csv",
+        "pair.csv",
+        "single.csv",
+        "sites.csv",
+    ),
+}
+
 
 def _exact_keys(value: object, required: set[str], optional: set[str] = set()) -> dict:
     if (
@@ -420,6 +445,66 @@ def _load_path(path: str | PathLike[str]) -> dict[str, object]:
     if "correlations.toml" in files:
         result["correlations"] = _correlations(root / "correlations.toml")
     return result
+
+
+def _create_template(
+    path: str | PathLike[str],
+    *,
+    components: tuple[str, ...],
+    profile: str,
+    correlations: bool,
+) -> None:
+    """Create one non-overwriting authoring skeleton for the strict bundle schema."""
+    if profile not in _TEMPLATE_FILES:
+        raise _error("invalid-value", field="profile", value=profile)
+    try:
+        root = Path(path)
+    except TypeError as exc:
+        raise _error("invalid-value", field="path", value=path) from exc
+    if root.exists():
+        raise _error("invalid-value", field="path", value="already-exists")
+    if not components or len(components) != len(set(components)):
+        raise _error("invalid-selection", field="components", value=components)
+
+    files = list(_TEMPLATE_FILES[profile])
+    if correlations:
+        files.append("correlations.toml")
+    files.sort()
+    root.parent.mkdir(parents=True, exist_ok=True)
+    with TemporaryDirectory(prefix=f".{root.name}.", dir=root.parent) as temporary:
+        staging = Path(temporary) / root.name
+        staging.mkdir()
+        manifest = (
+            "schema_version = 1\n"
+            'bundle_id = "replace-with-bundle-id"\n'
+            "bundle_version = 1\n"
+            'purpose = "user-provided"\n'
+            f"files = [{', '.join(_toml_string(name) for name in files)}]\n\n"
+            "[[sources]]\n"
+            'source_id = "replace-with-source-id"\n'
+            'citation = "replace with complete citation"\n'
+            'use_basis = "replace with parameter use basis"\n\n'
+            "[[domains]]\n"
+            'domain_id = "replace-with-domain-id"\n'
+            'kind = "replace-with-domain-kind"\n'
+        )
+        (staging / "bundle.toml").write_text(manifest, encoding="utf-8")
+        _write_csv(
+            staging,
+            "components.csv",
+            [(component, "", "", "", "") for component in components],
+        )
+        for name in files:
+            if name == "components.csv":
+                continue
+            if name == "correlations.toml":
+                (staging / name).write_text(
+                    "# Add one or more [[correlations]] records.\n",
+                    encoding="utf-8",
+                )
+            else:
+                _write_csv(staging, name, [])
+        staging.replace(root)
 
 
 def _number_text(value: object) -> str:
