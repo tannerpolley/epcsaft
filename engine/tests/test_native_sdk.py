@@ -552,6 +552,30 @@ class ReactingSensitivityNativeSdkTable(ctypes.Structure):
     )
 
 
+class InversePackingGeometryResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("coordinate_count", ctypes.c_size_t),
+        ("active_parameter_count", ctypes.c_size_t),
+        ("gradient_capacity", ctypes.c_size_t),
+        ("hessian_capacity", ctypes.c_size_t),
+        ("gradient", ctypes.POINTER(ctypes.c_double)),
+        ("hessian", ctypes.POINTER(ctypes.c_double)),
+        ("volume_m3", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("topology_fingerprint", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class InversePackingNativeSdkTable(ctypes.Structure):
+    _fields_ = ReactingSensitivityNativeSdkTable._fields_ + (
+        ("inverse_packing_geometry_result_size", ctypes.c_size_t),
+        ("evaluate_inverse_packing_geometry", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -640,6 +664,10 @@ NEUTRAL_REFERENCE_DERIVATIVE_PREFIX_SIZE = (
 )
 REACTING_SENSITIVITY_PREFIX_SIZE = (
     ReactingSensitivityNativeSdkTable.evaluate_reacting_phase_parameters.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+INVERSE_PACKING_PREFIX_SIZE = (
+    InversePackingNativeSdkTable.evaluate_inverse_packing_geometry.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
@@ -748,6 +776,19 @@ EvaluateReactingPhaseParameters = ctypes.CFUNCTYPE(
     ctypes.POINTER(ActiveParameterRequest),
     ctypes.c_size_t,
     ctypes.POINTER(ReactingPhaseParameterResult),
+)
+EvaluateInversePackingGeometry = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.c_double,
+    ctypes.POINTER(ActiveParameterRequest),
+    ctypes.c_size_t,
+    ctypes.POINTER(InversePackingGeometryResult),
 )
 EvaluatePurePhaseParameter = ctypes.CFUNCTYPE(
     ctypes.c_int,
@@ -1278,6 +1319,25 @@ def _reacting_sensitivity_table(
     return capsule, table
 
 
+def _inverse_packing_table(
+    model: Mixture,
+) -> tuple[object, InversePackingNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    prefix = ctypes.cast(
+        address, ctypes.POINTER(ReactingSensitivityNativeSdkTable)
+    ).contents
+    assert prefix.table_size >= INVERSE_PACKING_PREFIX_SIZE
+    table = ctypes.cast(
+        address, ctypes.POINTER(InversePackingNativeSdkTable)
+    ).contents
+    return capsule, table
+
+
 def _volume_bounds_table(
     model: Mixture,
 ) -> tuple[object, VolumeBoundsNativeSdkTable]:
@@ -1716,6 +1776,71 @@ def _evaluate_reacting_phase_parameters(
         tuple(pressure),
         tuple(chemical),
     )
+
+
+def _evaluate_inverse_packing_geometry(
+    table: InversePackingNativeSdkTable,
+    fingerprint: str,
+    topology_fingerprint: str,
+    amounts: tuple[float, ...],
+    log_packing_fraction: float,
+    requests: tuple[ActiveParameterRequest, ...],
+    *,
+    gradient_capacity: int | None = None,
+    hessian_capacity: int | None = None,
+    provide_gradient: bool = True,
+    provide_hessian: bool = True,
+) -> tuple[
+    InversePackingGeometryResult,
+    tuple[float, ...],
+    tuple[float, ...],
+]:
+    coordinate_count = len(amounts) + 1 + len(requests)
+    amounts_buffer = (ctypes.c_double * len(amounts))(*amounts)
+    request_buffer = (
+        (ActiveParameterRequest * len(requests))(*requests)
+        if requests
+        else None
+    )
+    gradient = (ctypes.c_double * coordinate_count)(
+        *(31.0 for _ in range(coordinate_count))
+    )
+    hessian = (ctypes.c_double * (coordinate_count * coordinate_count))(
+        *(32.0 for _ in range(coordinate_count * coordinate_count))
+    )
+    result = InversePackingGeometryResult(
+        struct_size=ctypes.sizeof(InversePackingGeometryResult),
+        coordinate_count=coordinate_count,
+        active_parameter_count=len(requests),
+        gradient_capacity=(
+            coordinate_count
+            if gradient_capacity is None
+            else gradient_capacity
+        ),
+        hessian_capacity=(
+            coordinate_count * coordinate_count
+            if hessian_capacity is None
+            else hessian_capacity
+        ),
+        gradient=gradient if provide_gradient else None,
+        hessian=hessian if provide_hessian else None,
+    )
+    status = EvaluateInversePackingGeometry(
+        table.evaluate_inverse_packing_geometry
+    )(
+        table.model_context,
+        fingerprint.encode(),
+        topology_fingerprint.encode(),
+        298.15,
+        amounts_buffer,
+        len(amounts),
+        log_packing_fraction,
+        request_buffer,
+        len(requests),
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result, tuple(gradient), tuple(hessian)
 
 
 def _evaluate_aqueous_miac_kij(
@@ -6944,11 +7069,19 @@ _Static_assert(
     offsetof(epcsaft_native_sdk_v1, reacting_phase_parameter_result_size) == 408,
     "reacting-phase result-size offset"
 );
-_Static_assert(
-    offsetof(epcsaft_native_sdk_v1, evaluate_reacting_phase_parameters) == 416,
-    "reacting-phase callback offset"
-);
-_Static_assert(sizeof(epcsaft_native_sdk_v1) == 424, "extended table size");
+    _Static_assert(
+        offsetof(epcsaft_native_sdk_v1, evaluate_reacting_phase_parameters) == 416,
+        "reacting-phase callback offset"
+    );
+    _Static_assert(
+        offsetof(epcsaft_native_sdk_v1, inverse_packing_geometry_result_size) == 424,
+        "inverse-packing result-size offset"
+    );
+    _Static_assert(
+        offsetof(epcsaft_native_sdk_v1, evaluate_inverse_packing_geometry) == 432,
+        "inverse-packing callback offset"
+    );
+    _Static_assert(sizeof(epcsaft_native_sdk_v1) == 440, "extended table size");
 _Static_assert(
     EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1 == 4u,
     "typed diameter family"
@@ -7032,6 +7165,8 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
 ) -> None:
     artifact = tmp_path / "electrolyte.json"
     export_native_model(_held_water_ionization_model(), artifact)
+    neutral_artifact = tmp_path / "methane-ethane.json"
+    export_native_model(_mixture_model(), neutral_artifact)
     source_dir = Path(__file__).parent / "native_sdk_consumer"
     build_dir = tmp_path / "consumer-build"
     package_dir = Path(native_core.__file__).parent / "cmake"
@@ -7057,7 +7192,11 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
     )
     assert built.returncode == 0, built.stderr
     consumed = subprocess.run(
-        (str(build_dir / "epcsaft_native_sdk_consumer"), str(artifact)),
+        (
+            str(build_dir / "epcsaft_native_sdk_consumer"),
+            str(artifact),
+            str(neutral_artifact),
+        ),
         capture_output=True,
         text=True,
         check=False,
@@ -7307,6 +7446,450 @@ def test_native_sdk_reacting_phase_parameter_columns_match_fixed_topology_oracle
             assert volume_bounds[bound * 2 + parameter] == pytest.approx(
                 numerical_bound, rel=2.0e-6, abs=2.0e-12
             )
+
+
+def test_native_sdk_inverse_packing_geometry_matches_forward_geometry_and_derivatives() -> (
+    None
+):
+    model = _electrolyte_model()
+    capsule, table = _inverse_packing_table(model)
+    capability_capsule, capability_table = _capability_table(model)
+
+    assert capsule is not None and capability_capsule is not None
+    assert table.inverse_packing_geometry_result_size == ctypes.sizeof(
+        InversePackingGeometryResult
+    )
+    assert table.evaluate_inverse_packing_geometry
+    descriptors = tuple(
+        capability_table.capabilities[index]
+        for index in range(capability_table.capability_count)
+        if capability_table.capabilities[index].capability in (19, 20)
+    )
+    topology_fingerprints = {
+        descriptor.topology_fingerprint.decode() for descriptor in descriptors
+    }
+    assert len(topology_fingerprints) == 1
+    topology = topology_fingerprints.pop()
+    amounts = (0.98, 0.01, 0.01)
+    target_eta = 0.25
+
+    ordinary, ordinary_gradient, ordinary_hessian = (
+        _evaluate_inverse_packing_geometry(
+            table,
+            model.parameter_fingerprint,
+            topology,
+            amounts,
+            math.log(target_eta),
+            (),
+        )
+    )
+    assert ordinary.status == STATUS_OK
+    assert ordinary.coordinate_count == 4
+    assert ordinary.active_parameter_count == 0
+    assert ordinary.volume_m3 > 0.0
+    assert all(math.isfinite(value) for value in ordinary_gradient)
+    assert all(math.isfinite(value) for value in ordinary_hessian)
+    geometry_only, _, _ = _evaluate_inverse_packing_geometry(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        (0.1, 0.45, 0.45),
+        math.log(target_eta),
+        (),
+    )
+    assert geometry_only.status == STATUS_OK
+    _, packing_table = _packing_fraction_table(model)
+    packing_value = ctypes.c_double()
+    packing_gradient = (ctypes.c_double * 4)()
+    packing_hessian = (ctypes.c_double * 16)()
+    packing_status = EvaluatePackingFraction(
+        packing_table.evaluate_packing_fraction
+    )(
+        packing_table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        (ctypes.c_double * 3)(*amounts),
+        3,
+        ordinary.volume_m3,
+        ctypes.byref(packing_value),
+        packing_gradient,
+        4,
+        packing_hessian,
+        16,
+    )
+    assert packing_status == STATUS_OK
+    assert abs(packing_value.value - target_eta) <= math.ulp(target_eta)
+
+    sigma = float(model._model.segment_diameter[1].value.to("angstrom").magnitude)
+    epsilon = float(model._model.dispersion_energy_over_k[1])
+    requests = (
+        _active_request(4, 1, sigma + 0.01, b"angstrom"),
+        _active_request(5, 1, epsilon + 1.0, b"kelvin"),
+    )
+    result, gradient, hessian = _evaluate_inverse_packing_geometry(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        math.log(target_eta),
+        requests,
+    )
+    assert result.status == STATUS_OK
+    assert result.coordinate_count == 6
+    assert result.active_parameter_count == 2
+    assert result.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert result.topology_fingerprint.decode() == topology
+    assert result.volume_m3 > 0.0
+    assert gradient[3] == pytest.approx(-result.volume_m3, rel=2.0e-14)
+    assert hessian[3 * 6 + 3] == pytest.approx(result.volume_m3, rel=2.0e-14)
+    assert sum(amounts[index] * gradient[index] for index in range(3)) == pytest.approx(
+        result.volume_m3, rel=3.0e-14
+    )
+    reacting_capsule, reacting_table = _reacting_sensitivity_table(model)
+    assert reacting_capsule is not None
+    forward = _evaluate_reacting_phase_parameters(
+        reacting_table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        result.volume_m3,
+        requests,
+    )
+    assert abs(forward[0].packing_fraction - target_eta) <= math.ulp(target_eta)
+
+    direction = (0.2, -0.004, 0.003, 0.1, 0.02, 2.0)
+    step = 1.0e-5
+    shifted = []
+    for sign in (-1.0, 1.0):
+        shifted_amounts = tuple(
+            amounts[index] + sign * step * direction[index]
+            for index in range(3)
+        )
+        shifted_requests = (
+            _active_request(
+                4,
+                1,
+                requests[0].value + sign * step * direction[4],
+                b"angstrom",
+            ),
+            _active_request(
+                5,
+                1,
+                requests[1].value + sign * step * direction[5],
+                b"kelvin",
+            ),
+        )
+        shifted.append(
+            _evaluate_inverse_packing_geometry(
+                table,
+                model.parameter_fingerprint,
+                topology,
+                shifted_amounts,
+                math.log(target_eta) + sign * step * direction[3],
+                shifted_requests,
+            )
+        )
+    lower, upper = shifted
+    numerical_value_direction = (
+        upper[0].volume_m3 - lower[0].volume_m3
+    ) / (2.0 * step)
+    assert numerical_value_direction == pytest.approx(
+        sum(gradient[index] * direction[index] for index in range(6)),
+        rel=2.0e-8,
+        abs=2.0e-12,
+    )
+    numerical_gradient_direction = tuple(
+        (upper[1][row] - lower[1][row]) / (2.0 * step)
+        for row in range(6)
+    )
+    exact_gradient_direction = tuple(
+        sum(hessian[row * 6 + column] * direction[column] for column in range(6))
+        for row in range(6)
+    )
+    assert numerical_gradient_direction == pytest.approx(
+        exact_gradient_direction, rel=3.0e-7, abs=3.0e-9
+    )
+
+    reversed_result, reversed_gradient, reversed_hessian = (
+        _evaluate_inverse_packing_geometry(
+            table,
+            model.parameter_fingerprint,
+            topology,
+            amounts,
+            math.log(target_eta),
+            tuple(reversed(requests)),
+        )
+    )
+    permutation = (0, 1, 2, 3, 5, 4)
+    assert reversed_result.volume_m3 == result.volume_m3
+    assert reversed_gradient == pytest.approx(
+        tuple(gradient[index] for index in permutation)
+    )
+    assert reversed_hessian == pytest.approx(
+        tuple(
+            hessian[row * 6 + column]
+            for row in permutation
+            for column in permutation
+        )
+    )
+
+
+@pytest.mark.parametrize("component_ids", [("methane",), ("methane", "ethane")])
+def test_native_sdk_inverse_packing_geometry_supports_neutral_models_without_active_parameters(
+    component_ids: tuple[str, ...],
+) -> None:
+    model = (
+        _model("gross-2001-methane-ethane", "methane")
+        if len(component_ids) == 1
+        else _mixture_model()
+    )
+    capsule, table = _inverse_packing_table(model)
+    capability_capsule, capability_table = _capability_table(model)
+    assert capsule is not None and capability_capsule is not None
+    topology = next(
+        descriptor.topology_fingerprint.decode()
+        for descriptor in (
+            capability_table.capabilities[index]
+            for index in range(capability_table.capability_count)
+        )
+        if descriptor.topology_fingerprint
+    )
+    amounts = (1.0,) if len(component_ids) == 1 else (0.4, 0.6)
+    target_eta = 0.2
+    result, gradient, hessian = _evaluate_inverse_packing_geometry(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        math.log(target_eta),
+        (),
+    )
+    assert result.status == STATUS_OK
+    coordinate_count = len(amounts) + 1
+    assert result.coordinate_count == coordinate_count
+    assert result.active_parameter_count == 0
+    assert result.volume_m3 > 0.0
+
+    _, packing_table = _packing_fraction_table(model)
+    packing_value = ctypes.c_double()
+    packing_gradient = (ctypes.c_double * coordinate_count)()
+    packing_hessian = (ctypes.c_double * (coordinate_count * coordinate_count))()
+    packing_status = EvaluatePackingFraction(
+        packing_table.evaluate_packing_fraction
+    )(
+        packing_table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        (ctypes.c_double * len(amounts))(*amounts),
+        len(amounts),
+        result.volume_m3,
+        ctypes.byref(packing_value),
+        packing_gradient,
+        coordinate_count,
+        packing_hessian,
+        coordinate_count * coordinate_count,
+    )
+    assert packing_status == STATUS_OK
+    assert abs(packing_value.value - target_eta) <= math.ulp(target_eta)
+    log_eta_coordinate = len(amounts)
+    assert gradient[log_eta_coordinate] == pytest.approx(
+        -result.volume_m3, rel=2.0e-14
+    )
+    assert hessian[
+        log_eta_coordinate * coordinate_count + log_eta_coordinate
+    ] == pytest.approx(
+        result.volume_m3, rel=2.0e-14
+    )
+    assert sum(
+        amounts[index] * gradient[index] for index in range(len(amounts))
+    ) == (
+        pytest.approx(result.volume_m3, rel=3.0e-14)
+    )
+
+    direction = (0.05, 0.2) if len(amounts) == 1 else (0.05, -0.03, 0.2)
+    step = 1.0e-5
+    shifted = tuple(
+        _evaluate_inverse_packing_geometry(
+            table,
+            model.parameter_fingerprint,
+            topology,
+            tuple(
+                amounts[index] + sign * step * direction[index]
+                for index in range(len(amounts))
+            ),
+            math.log(target_eta)
+            + sign * step * direction[log_eta_coordinate],
+            (),
+        )
+        for sign in (-1.0, 1.0)
+    )
+    lower, upper = shifted
+    observed_value_direction = (
+        upper[0].volume_m3 - lower[0].volume_m3
+    ) / (2.0 * step)
+    assert observed_value_direction == pytest.approx(
+        sum(
+            gradient[index] * direction[index]
+            for index in range(coordinate_count)
+        ),
+        rel=2.0e-8,
+        abs=2.0e-12,
+    )
+    observed_gradient_direction = tuple(
+        (upper[1][row] - lower[1][row]) / (2.0 * step)
+        for row in range(coordinate_count)
+    )
+    exact_gradient_direction = tuple(
+        sum(
+            hessian[row * coordinate_count + column] * direction[column]
+            for column in range(coordinate_count)
+        )
+        for row in range(coordinate_count)
+    )
+    assert observed_gradient_direction == pytest.approx(
+        exact_gradient_direction, rel=3.0e-7, abs=3.0e-9
+    )
+
+
+def test_native_sdk_inverse_packing_geometry_fails_closed_for_contract_and_domain() -> (
+    None
+):
+    model = _electrolyte_model()
+    inverse_capsule, table = _inverse_packing_table(model)
+    capability_capsule, capability_table = _capability_table(model)
+    assert inverse_capsule is not None and capability_capsule is not None
+    descriptor = next(
+        capability_table.capabilities[index]
+        for index in range(capability_table.capability_count)
+        if capability_table.capabilities[index].capability == 19
+    )
+    topology = descriptor.topology_fingerprint.decode()
+    sigma = float(model._model.segment_diameter[1].value.to("angstrom").magnitude)
+    request = _active_request(4, 1, sigma, b"angstrom")
+    amounts = (0.98, 0.01, 0.01)
+
+    for fingerprint, topology_fingerprint, trial_amounts, log_eta, requests in (
+        (
+            "sha256:wrong",
+            topology,
+            amounts,
+            math.log(0.25),
+            (request,),
+        ),
+        (
+            model.parameter_fingerprint,
+            "sha256:wrong",
+            amounts,
+            math.log(0.25),
+            (request,),
+        ),
+        (
+            model.parameter_fingerprint,
+            topology,
+            (0.98, 0.0, 0.02),
+            math.log(0.25),
+            (request,),
+        ),
+        (
+            model.parameter_fingerprint,
+            topology,
+            amounts,
+            float("-inf"),
+            (request,),
+        ),
+        (
+            model.parameter_fingerprint,
+            topology,
+            amounts,
+            math.log(math.pi / (3.0 * math.sqrt(2.0)) * 1.001),
+            (request,),
+        ),
+        (
+            model.parameter_fingerprint,
+            topology,
+            amounts,
+            math.log(0.25),
+            (_active_request(4, 1, -1.0, b"angstrom"),),
+        ),
+    ):
+        result, gradient, hessian = _evaluate_inverse_packing_geometry(
+            table,
+            fingerprint,
+            topology_fingerprint,
+            trial_amounts,
+            log_eta,
+            requests,
+        )
+        assert result.status != STATUS_OK
+        assert not math.isfinite(result.volume_m3)
+        assert result.parameter_fingerprint == b""
+        assert result.topology_fingerprint == b""
+        assert gradient == (31.0,) * len(gradient)
+        assert hessian == (32.0,) * len(hessian)
+
+    result, gradient, hessian = _evaluate_inverse_packing_geometry(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        math.log(0.25),
+        (request,),
+        gradient_capacity=4,
+    )
+    assert result.status == STATUS_ABI_MISMATCH
+    assert gradient == (31.0,) * 5
+    assert hessian == (32.0,) * 25
+
+    gradient_buffer = (ctypes.c_double * 5)(*(31.0 for _ in range(5)))
+    hessian_buffer = (ctypes.c_double * 25)(*(32.0 for _ in range(25)))
+    malformed = InversePackingGeometryResult(
+        struct_size=ctypes.sizeof(InversePackingGeometryResult) - 1,
+        status=91,
+        coordinate_count=5,
+        active_parameter_count=1,
+        gradient_capacity=5,
+        hessian_capacity=25,
+        gradient=gradient_buffer,
+        hessian=hessian_buffer,
+    )
+    status = EvaluateInversePackingGeometry(
+        table.evaluate_inverse_packing_geometry
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        topology.encode(),
+        298.15,
+        (ctypes.c_double * 3)(*amounts),
+        3,
+        math.log(0.25),
+        ctypes.pointer(request),
+        1,
+        ctypes.byref(malformed),
+    )
+    assert status == STATUS_ABI_MISMATCH
+    assert malformed.status == 91
+    assert tuple(gradient_buffer) == (31.0,) * 5
+    assert tuple(hessian_buffer) == (32.0,) * 25
+
+    excessive = InversePackingGeometryResult(
+        struct_size=ctypes.sizeof(InversePackingGeometryResult),
+    )
+    excessive_status = EvaluateInversePackingGeometry(
+        table.evaluate_inverse_packing_geometry
+    )(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        topology.encode(),
+        298.15,
+        (ctypes.c_double * 3)(*amounts),
+        3,
+        math.log(0.25),
+        ctypes.pointer(request),
+        7,
+        ctypes.byref(excessive),
+    )
+    assert excessive_status == STATUS_INVALID_ARGUMENT
+    assert excessive.status == STATUS_INVALID_ARGUMENT
 
 
 def test_native_sdk_reacting_phase_parameters_reject_contract_drift_without_writes() -> None:

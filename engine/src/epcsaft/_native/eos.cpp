@@ -927,6 +927,23 @@ NativePackingFractionBlock NativeModel::evaluate_packing_fraction_parameters(
     );
 }
 
+// EqExclude: transport and buffer mechanics
+NativeInversePackingGeometryBlock
+NativeModel::evaluate_inverse_packing_geometry(
+    double temperature,
+    const std::vector<double>& amounts,
+    double log_packing_fraction,
+    const std::vector<NativeActiveParameter>& active_parameters
+) const {
+    return detail::inverse_packing_geometry_block(
+        temperature,
+        amounts,
+        log_packing_fraction,
+        parameters_,
+        active_parameters
+    );
+}
+
 // EqID: packing_volume_bounds
 NativeMolarVolumeBoundsParameterBlock
 NativeModel::molar_volume_bounds_parameters(

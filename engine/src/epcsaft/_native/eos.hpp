@@ -54,6 +54,7 @@ struct NativeParameterizedPurePhaseBlock;
 struct NativeAssociatingParameterizedPurePhaseBlock;
 struct NativeMixturePhaseBlock;
 struct NativePackingFractionBlock;
+struct NativeInversePackingGeometryBlock;
 
 struct NativeReferenceSequence final {
     std::array<double, 2> log_fugacity;
@@ -307,6 +308,12 @@ public:
         const std::vector<double>& amounts,
         double volume,
         double ion_mole_fraction_max,
+        const std::vector<NativeActiveParameter>& active_parameters
+    ) const;
+    NativeInversePackingGeometryBlock evaluate_inverse_packing_geometry(
+        double temperature,
+        const std::vector<double>& amounts,
+        double log_packing_fraction,
         const std::vector<NativeActiveParameter>& active_parameters
     ) const;
     NativeMolarVolumeBoundsParameterBlock molar_volume_bounds_parameters(

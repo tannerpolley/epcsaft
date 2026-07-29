@@ -931,6 +931,8 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_neutral_reference_derivatives,
               sizeof(epcsaft_reacting_phase_parameter_result_v1),
               &NativeSdkEndpoint::evaluate_reacting_phase_parameters,
+              sizeof(epcsaft_inverse_packing_geometry_result_v1),
+              &NativeSdkEndpoint::evaluate_inverse_packing_geometry,
           } {}
 
     // EqExclude: transport and buffer mechanics
@@ -1061,6 +1063,164 @@ struct NativeSdkEndpoint final {
             });
         }
         return result;
+    }
+
+    // EqID: phase_packing_fraction
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_inverse_packing_geometry(
+        const void* context,
+        const char* expected_fingerprint,
+        const char* expected_topology_fingerprint,
+        double temperature_k,
+        const double* amounts_mol,
+        size_t amount_count,
+        double log_packing_fraction,
+        const epcsaft_active_parameter_request_v1* requests,
+        size_t request_count,
+        epcsaft_inverse_packing_geometry_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_inverse_packing_geometry_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+        result->volume_m3 = std::numeric_limits<double>::quiet_NaN();
+        result->parameter_fingerprint[0] = '\0';
+        result->topology_fingerprint[0] = '\0';
+        result->error[0] = '\0';
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr
+            || expected_topology_fingerprint == nullptr
+            || amounts_mol == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "inverse packing required pointer is null"
+            );
+        }
+        const auto& endpoint =
+            *static_cast<const NativeSdkEndpoint*>(context);
+        if (endpoint.topology_fingerprint.empty()
+            || std::strcmp(
+                expected_fingerprint,
+                endpoint.parameter_fingerprint.c_str()
+            ) != 0
+            || std::strcmp(
+                expected_topology_fingerprint,
+                endpoint.topology_fingerprint.c_str()
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "inverse packing model or topology is not admitted"
+            );
+        }
+        if (request_count > 2 * endpoint.table.component_count) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "inverse packing active parameter count exceeds model maximum"
+            );
+        }
+        const std::size_t coordinate_count =
+            endpoint.table.component_count + 1 + request_count;
+        if (amount_count != endpoint.table.component_count
+            || result->coordinate_count != coordinate_count
+            || result->active_parameter_count != request_count
+            || result->gradient_capacity != coordinate_count
+            || result->hessian_capacity
+                != coordinate_count * coordinate_count
+            || result->gradient == nullptr || result->hessian == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1,
+                "inverse packing shape or capacity does not match"
+            );
+        }
+        if (!std::isfinite(temperature_k) || temperature_k <= 0.0
+            || !std::all_of(
+                amounts_mol,
+                amounts_mol + amount_count,
+                [](double amount) {
+                    return std::isfinite(amount) && amount > 0.0;
+                }
+            )
+            || !std::isfinite(log_packing_fraction)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "inverse packing state is invalid"
+            );
+        }
+        const double packing_fraction = std::exp(log_packing_fraction);
+        if (!std::isfinite(packing_fraction) || packing_fraction <= 0.0
+            || packing_fraction >= detail::close_packing_fraction()) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "inverse packing fraction is outside the model domain"
+            );
+        }
+        if ((std::isfinite(endpoint.temperature_min_k)
+             && temperature_k < endpoint.temperature_min_k)
+            || (std::isfinite(endpoint.temperature_max_k)
+                && temperature_k > endpoint.temperature_max_k)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "temperature is outside the parameter source domain"
+            );
+        }
+
+        try {
+            const auto parameters =
+                active_parameters(endpoint, requests, request_count);
+            const std::vector<double> amounts(
+                amounts_mol, amounts_mol + amount_count
+            );
+            const auto block =
+                endpoint.model.evaluate_inverse_packing_geometry(
+                    temperature_k,
+                    amounts,
+                    log_packing_fraction,
+                    parameters
+                );
+            std::copy(
+                block.gradient.begin(),
+                block.gradient.end(),
+                result->gradient
+            );
+            std::copy(
+                block.hessian.begin(),
+                block.hessian.end(),
+                result->hessian
+            );
+            result->volume_m3 = block.volume_m3;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->topology_fingerprint,
+                sizeof(result->topology_fingerprint),
+                "%s",
+                endpoint.topology_fingerprint.c_str()
+            );
+            return result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown inverse packing evaluation failure"
+            );
+        }
     }
 
     // EqID: neutral_reference_stoichiometric_basis
