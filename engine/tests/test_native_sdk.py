@@ -7634,10 +7634,15 @@ def test_native_sdk_inverse_packing_geometry_matches_forward_geometry_and_deriva
     )
 
 
-def test_native_sdk_inverse_packing_geometry_supports_neutral_binary_without_active_parameters() -> (
-    None
-):
-    model = _mixture_model()
+@pytest.mark.parametrize("component_ids", [("methane",), ("methane", "ethane")])
+def test_native_sdk_inverse_packing_geometry_supports_neutral_models_without_active_parameters(
+    component_ids: tuple[str, ...],
+) -> None:
+    model = (
+        _model("gross-2001-methane-ethane", "methane")
+        if len(component_ids) == 1
+        else _mixture_model()
+    )
     capsule, table = _inverse_packing_table(model)
     capability_capsule, capability_table = _capability_table(model)
     assert capsule is not None and capability_capsule is not None
@@ -7649,7 +7654,7 @@ def test_native_sdk_inverse_packing_geometry_supports_neutral_binary_without_act
         )
         if descriptor.topology_fingerprint
     )
-    amounts = (0.4, 0.6)
+    amounts = (1.0,) if len(component_ids) == 1 else (0.4, 0.6)
     target_eta = 0.2
     result, gradient, hessian = _evaluate_inverse_packing_geometry(
         table,
@@ -7660,40 +7665,48 @@ def test_native_sdk_inverse_packing_geometry_supports_neutral_binary_without_act
         (),
     )
     assert result.status == STATUS_OK
-    assert result.coordinate_count == 3
+    coordinate_count = len(amounts) + 1
+    assert result.coordinate_count == coordinate_count
     assert result.active_parameter_count == 0
     assert result.volume_m3 > 0.0
 
     _, packing_table = _packing_fraction_table(model)
     packing_value = ctypes.c_double()
-    packing_gradient = (ctypes.c_double * 3)()
-    packing_hessian = (ctypes.c_double * 9)()
+    packing_gradient = (ctypes.c_double * coordinate_count)()
+    packing_hessian = (ctypes.c_double * (coordinate_count * coordinate_count))()
     packing_status = EvaluatePackingFraction(
         packing_table.evaluate_packing_fraction
     )(
         packing_table.model_context,
         model.parameter_fingerprint.encode(),
         298.15,
-        (ctypes.c_double * 2)(*amounts),
-        2,
+        (ctypes.c_double * len(amounts))(*amounts),
+        len(amounts),
         result.volume_m3,
         ctypes.byref(packing_value),
         packing_gradient,
-        3,
+        coordinate_count,
         packing_hessian,
-        9,
+        coordinate_count * coordinate_count,
     )
     assert packing_status == STATUS_OK
     assert abs(packing_value.value - target_eta) <= math.ulp(target_eta)
-    assert gradient[2] == pytest.approx(-result.volume_m3, rel=2.0e-14)
-    assert hessian[2 * 3 + 2] == pytest.approx(
+    log_eta_coordinate = len(amounts)
+    assert gradient[log_eta_coordinate] == pytest.approx(
+        -result.volume_m3, rel=2.0e-14
+    )
+    assert hessian[
+        log_eta_coordinate * coordinate_count + log_eta_coordinate
+    ] == pytest.approx(
         result.volume_m3, rel=2.0e-14
     )
-    assert sum(amounts[index] * gradient[index] for index in range(2)) == (
+    assert sum(
+        amounts[index] * gradient[index] for index in range(len(amounts))
+    ) == (
         pytest.approx(result.volume_m3, rel=3.0e-14)
     )
 
-    direction = (0.05, -0.03, 0.2)
+    direction = (0.05, 0.2) if len(amounts) == 1 else (0.05, -0.03, 0.2)
     step = 1.0e-5
     shifted = tuple(
         _evaluate_inverse_packing_geometry(
@@ -7702,9 +7715,10 @@ def test_native_sdk_inverse_packing_geometry_supports_neutral_binary_without_act
             topology,
             tuple(
                 amounts[index] + sign * step * direction[index]
-                for index in range(2)
+                for index in range(len(amounts))
             ),
-            math.log(target_eta) + sign * step * direction[2],
+            math.log(target_eta)
+            + sign * step * direction[log_eta_coordinate],
             (),
         )
         for sign in (-1.0, 1.0)
@@ -7714,17 +7728,23 @@ def test_native_sdk_inverse_packing_geometry_supports_neutral_binary_without_act
         upper[0].volume_m3 - lower[0].volume_m3
     ) / (2.0 * step)
     assert observed_value_direction == pytest.approx(
-        sum(gradient[index] * direction[index] for index in range(3)),
+        sum(
+            gradient[index] * direction[index]
+            for index in range(coordinate_count)
+        ),
         rel=2.0e-8,
         abs=2.0e-12,
     )
     observed_gradient_direction = tuple(
         (upper[1][row] - lower[1][row]) / (2.0 * step)
-        for row in range(3)
+        for row in range(coordinate_count)
     )
     exact_gradient_direction = tuple(
-        sum(hessian[row * 3 + column] * direction[column] for column in range(3))
-        for row in range(3)
+        sum(
+            hessian[row * coordinate_count + column] * direction[column]
+            for column in range(coordinate_count)
+        )
+        for row in range(coordinate_count)
     )
     assert observed_gradient_direction == pytest.approx(
         exact_gradient_direction, rel=3.0e-7, abs=3.0e-9

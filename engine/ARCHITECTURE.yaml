@@ -448,7 +448,7 @@ manifest:
   package_test_files: 14
   optional_native_debug_test_files: 1
   physical_production_lines: 16997
-  physical_package_test_lines: 14022
+  physical_package_test_lines: 14042
   physical_documentation_lines: 4041
   measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
@@ -478,7 +478,7 @@ manifest:
       physical_lines: 1662
       capability_delta: serialized CppAD tape ownership and exact inverse packing geometry
     - path: tests/test_native_sdk.py
-      physical_lines: 8289
+      physical_lines: 8309
       capability_delta: phase and direct-observable descriptor, derivative, ABI, and fail-closed proof
     - path: tests/test_parameters.py
       physical_lines: 1442
