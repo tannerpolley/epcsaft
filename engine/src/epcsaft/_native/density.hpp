@@ -24,7 +24,38 @@ struct DensityRoot final {
     std::size_t iterations;
     bool stable;
     std::string branch;
+    std::size_t stable_root_count;
+    std::size_t selected_stable_root_index;
 };
+
+struct DensityRootIdentity final {
+    double molar_density;
+    std::size_t stable_root_count;
+    std::size_t selected_stable_root_index;
+    std::string branch;
+};
+
+// EqExclude: input and domain validation
+inline bool same_continuous_density_root(
+    const DensityRootIdentity& previous,
+    const DensityRootIdentity& current,
+    double maximum_relative_density_step
+) {
+    if (!std::isfinite(previous.molar_density)
+        || !std::isfinite(current.molar_density)
+        || previous.molar_density <= 0.0 || current.molar_density <= 0.0
+        || !std::isfinite(maximum_relative_density_step)
+        || maximum_relative_density_step <= 0.0) {
+        return false;
+    }
+    return previous.branch == current.branch
+        && previous.stable_root_count == current.stable_root_count
+        && previous.selected_stable_root_index
+            == current.selected_stable_root_index
+        && std::abs(current.molar_density - previous.molar_density)
+                / std::max(1.0, previous.molar_density)
+            <= maximum_relative_density_step;
+}
 
 template <typename Evaluate>
 // EqID: density_residual
@@ -96,6 +127,8 @@ DensityRoot refine_density_root(
         iteration + 1,
         false,
         "",
+        0,
+        0,
     };
 }
 
@@ -173,6 +206,8 @@ DensityRoot solve_density(
             throw DensityDomainError("requested density branch is unavailable");
         }
         stable.front().branch = "single";
+        stable.front().stable_root_count = 1;
+        stable.front().selected_stable_root_index = 0;
         return stable.front();
     }
     if (phase.empty()) {
@@ -180,9 +215,13 @@ DensityRoot solve_density(
     }
     if (phase == "vapor") {
         stable.front().branch = "vapor";
+        stable.front().stable_root_count = stable.size();
+        stable.front().selected_stable_root_index = 0;
         return stable.front();
     }
     stable.back().branch = "liquid";
+    stable.back().stable_root_count = stable.size();
+    stable.back().selected_stable_root_index = stable.size() - 1;
     return stable.back();
 }
 

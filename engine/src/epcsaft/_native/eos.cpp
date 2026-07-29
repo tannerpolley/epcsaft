@@ -634,6 +634,22 @@ NativeModel::NativeModel(NativeParameters parameters)
     }
 }
 
+// EqExclude: transport and buffer mechanics
+bool NativeModel::has_temperature_independent_segment_diameter(
+    std::size_t component
+) const {
+    if (component >= parameters_.sigma_constant.size()) {
+        throw std::out_of_range("segment-diameter component is out of range");
+    }
+    return std::none_of(
+        parameters_.sigma_term_component.begin(),
+        parameters_.sigma_term_component.end(),
+        [component](int term_component) {
+            return term_component == static_cast<int>(component);
+        }
+    );
+}
+
 // EqExclude: input and domain validation
 bool NativeModel::supports_native_sdk_v1() const {
     return detail::supports_pure_phase_block(parameters_);
@@ -852,6 +868,24 @@ NativeMixturePhaseBlock NativeModel::evaluate_electrolyte_phase(
 }
 
 // EqExclude: transport and buffer mechanics
+NativeMixturePhaseBlock NativeModel::evaluate_reacting_phase_parameters(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double ion_mole_fraction_max,
+    const std::vector<NativeActiveParameter>& active_parameters
+) const {
+    return detail::electrolyte_phase_block_active_parameters(
+        temperature,
+        amounts,
+        volume,
+        ion_mole_fraction_max,
+        parameters_,
+        active_parameters
+    );
+}
+
+// EqExclude: transport and buffer mechanics
 double NativeModel::evaluate_electrolyte_phase_value(
     double temperature,
     const std::vector<double>& amounts,
@@ -873,6 +907,203 @@ NativePackingFractionBlock NativeModel::evaluate_packing_fraction(
     return detail::packing_fraction_block(
         temperature, amounts, volume, ion_mole_fraction_max, parameters_
     );
+}
+
+// EqExclude: transport and buffer mechanics
+NativePackingFractionBlock NativeModel::evaluate_packing_fraction_parameters(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    double ion_mole_fraction_max,
+    const std::vector<NativeActiveParameter>& active_parameters
+) const {
+    return detail::packing_fraction_block_active_parameters(
+        temperature,
+        amounts,
+        volume,
+        ion_mole_fraction_max,
+        parameters_,
+        active_parameters
+    );
+}
+
+// EqID: packing_volume_bounds
+NativeMolarVolumeBoundsParameterBlock
+NativeModel::molar_volume_bounds_parameters(
+    double temperature,
+    const std::vector<double>& mole_fractions,
+    double packing_fraction_min,
+    double packing_fraction_max,
+    double ion_mole_fraction_max,
+    const std::vector<NativeActiveParameter>& active_parameters
+) const {
+    const NativeParameters active_values =
+        detail::active_component_parameter_values(
+            parameters_, active_parameters
+        );
+    const auto bounds = NativeModel(active_values).molar_volume_bounds(
+        temperature,
+        mole_fractions,
+        packing_fraction_min,
+        packing_fraction_max,
+        ion_mole_fraction_max
+    );
+    const auto coefficient =
+        detail::packing_fraction_block_active_parameters(
+            temperature,
+            mole_fractions,
+            1.0,
+            ion_mole_fraction_max,
+            parameters_,
+            active_parameters
+        );
+    const std::size_t parameter_offset = mole_fractions.size() + 1;
+    std::vector<double> derivatives(2 * active_parameters.size());
+    for (std::size_t parameter = 0;
+         parameter < active_parameters.size();
+         ++parameter) {
+        const double coefficient_derivative =
+            coefficient.gradient[parameter_offset + parameter];
+        derivatives[parameter] =
+            coefficient_derivative / packing_fraction_max;
+        derivatives[active_parameters.size() + parameter] =
+            coefficient_derivative / packing_fraction_min;
+    }
+    return {bounds, std::move(derivatives)};
+}
+
+// EqID: fixed_pressure_total_derivative
+NativeFugacityDerivativeBlock NativeModel::evaluate_fugacity_derivatives(
+    double temperature,
+    double pressure,
+    const std::vector<double>& composition,
+    const std::string& phase,
+    const std::vector<NativeActiveParameter>& active_parameters
+) const {
+    const NativeParameters active_values =
+        detail::active_component_parameter_values(
+            parameters_, active_parameters
+        );
+    const NativeModel active_model(active_values);
+    const auto state = active_model.evaluate_pressure(
+        temperature, pressure, composition, phase
+    );
+    if (!state.log_fugacity_coefficient.has_value()
+        || !state.density_diagnostics.has_value()) {
+        throw std::runtime_error(
+            "fixed-pressure fugacity diagnostics are unavailable"
+        );
+    }
+    const auto sigma = detail::segment_sigma(temperature, active_values);
+    const auto diameter =
+        detail::segment_diameter(temperature, active_values, sigma);
+    const auto site_fractions = detail::solve_site_fractions(
+        temperature,
+        state.molar_density,
+        composition,
+        active_values,
+        sigma,
+        diameter
+    );
+    const auto derivatives = detail::thermodynamic_derivatives_active_components(
+        temperature,
+        state.molar_density,
+        composition,
+        active_values,
+        site_fractions,
+        active_parameters
+    );
+    const std::size_t components = composition.size();
+    const std::size_t parameter_count = active_parameters.size();
+    const std::size_t coordinates = 2 + components + parameter_count;
+    const std::size_t parameter_offset = 2 + components;
+    const auto hessian = [&derivatives, coordinates](
+        std::size_t row, std::size_t column
+    ) {
+        return derivatives.hessian[row * coordinates + column];
+    };
+    std::vector<double> values(components);
+    std::vector<double> pressure_derivatives(components);
+    std::vector<double> parameter_derivatives(
+        components * parameter_count
+    );
+    for (std::size_t component = 0; component < components; ++component) {
+        const double fugacity_density = log_fugacity_density(
+            state, derivatives, composition, component, coordinates
+        );
+        values[component] = fixed_pressure_log_fugacity(
+            state, pressure, component, fugacity_density
+        );
+        pressure_derivatives[component] =
+            fugacity_density / state.pressure_density_derivative;
+        for (std::size_t parameter = 0;
+             parameter < parameter_count;
+             ++parameter) {
+            const std::size_t active = parameter_offset + parameter;
+            double weighted_composition = 0.0;
+            for (std::size_t mixture_component = 0;
+                 mixture_component < components;
+                 ++mixture_component) {
+                weighted_composition += composition[mixture_component]
+                    * hessian(2 + mixture_component, active);
+            }
+            const double pressure_parameter =
+                state.molar_density * state.molar_density
+                * detail::GAS_CONSTANT * temperature * hessian(1, active);
+            const double density_parameter =
+                -pressure_parameter / state.pressure_density_derivative;
+            const double chemical_potential_parameter =
+                derivatives.active_component_parameters[parameter]
+                + state.molar_density * hessian(1, active)
+                + hessian(2 + component, active)
+                - weighted_composition;
+            const double log_fugacity_parameter =
+                chemical_potential_parameter
+                - state.molar_density * hessian(1, active)
+                    / state.compressibility_factor;
+            parameter_derivatives[
+                component * parameter_count + parameter
+            ] = log_fugacity_parameter
+                + fugacity_density * density_parameter;
+        }
+    }
+    const auto& diagnostics = *state.density_diagnostics;
+    const double condition = std::abs(
+        pressure
+        / (state.molar_density * diagnostics.pressure_density_derivative)
+    );
+    if (!std::all_of(values.begin(), values.end(), [](double item) {
+            return std::isfinite(item);
+        })
+        || !std::all_of(
+            pressure_derivatives.begin(),
+            pressure_derivatives.end(),
+            [](double item) { return std::isfinite(item); }
+        )
+        || !std::all_of(
+            parameter_derivatives.begin(),
+            parameter_derivatives.end(),
+            [](double item) { return std::isfinite(item); }
+        )
+        || !std::isfinite(condition)) {
+        throw std::runtime_error(
+            "fixed-pressure fugacity derivative block is nonfinite"
+        );
+    }
+    return {
+        std::move(values),
+        std::move(pressure_derivatives),
+        std::move(parameter_derivatives),
+        state.molar_density,
+        diagnostics.pressure_residual,
+        diagnostics.pressure_density_derivative,
+        condition,
+        diagnostics.branch,
+        diagnostics.bracket_lower,
+        diagnostics.bracket_upper,
+        diagnostics.stable_root_count,
+        diagnostics.selected_stable_root_index,
+    };
 }
 
 // EqID: formula_unit_composition
@@ -1687,6 +1918,8 @@ NativeResult NativeModel::evaluate_pressure(
         root.iterations,
         root.stable,
         root.branch,
+        root.stable_root_count,
+        root.selected_stable_root_index,
     };
     return result;
 }

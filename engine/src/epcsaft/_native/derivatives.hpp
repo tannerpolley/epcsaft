@@ -163,6 +163,7 @@ struct ThermodynamicDerivatives final {
     std::optional<double> active_relative_permittivity;
     std::vector<double> active_aqueous_k_ij;
     std::optional<double> active_association_parameter;
+    std::vector<double> active_component_parameters;
     std::vector<double> hessian;
 };
 
@@ -197,7 +198,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     double active_relative_permittivity,
     const std::optional<std::array<double, 3>>& active_aqueous_k_ij,
     const std::optional<double>& active_association_parameter,
-    bool active_association_energy
+    bool active_association_energy,
+    const std::vector<NativeActiveParameter>& active_component_parameters = {}
 ) {
     CppAdSerialGuard cppad_guard;
     using ADScalar = CppAD::AD<double>;
@@ -216,10 +218,12 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     const std::size_t kij_coordinates = active_aqueous_k_ij.has_value() ? 3 : 0;
     const std::size_t association_coordinates =
         static_cast<std::size_t>(active_association_parameter.has_value());
+    const std::size_t component_parameter_coordinates =
+        active_component_parameters.size();
     const std::size_t coordinates = 2 + components + born_coordinates
         + solvation_coordinates + ionic_permittivity_coordinates
         + relative_permittivity_coordinates + kij_coordinates
-        + association_coordinates;
+        + association_coordinates + component_parameter_coordinates;
     const std::size_t born_offset = 2 + components;
     const std::size_t solvation_offset = born_offset + born_coordinates;
     const std::size_t ionic_permittivity_offset =
@@ -229,6 +233,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     const std::size_t kij_offset =
         relative_permittivity_offset + relative_permittivity_coordinates;
     const std::size_t association_offset = kij_offset + kij_coordinates;
+    const std::size_t component_parameter_offset =
+        association_offset + association_coordinates;
     const std::size_t width = coordinates + sites;
 
     std::vector<ADScalar> independent(width);
@@ -258,6 +264,12 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     if (active_association_parameter.has_value()) {
         independent[association_offset] = *active_association_parameter;
     }
+    for (std::size_t coordinate = 0;
+         coordinate < component_parameter_coordinates;
+         ++coordinate) {
+        independent[component_parameter_offset + coordinate] =
+            active_component_parameters[coordinate].value;
+    }
     for (std::size_t site = 0; site < sites; ++site) {
         independent[coordinates + site] = site_fractions[site];
     }
@@ -269,11 +281,47 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     const std::vector<ADScalar> fractions(
         independent.begin() + coordinates, independent.end()
     );
-    const auto sigma = segment_sigma(independent[0], parameters);
-    const auto diameter = segment_diameter(independent[0], parameters, sigma);
-    const auto reference_sigma = segment_sigma(temperature, parameters);
+    auto sigma = segment_sigma(independent[0], parameters);
+    std::vector<ADScalar> active_dispersion_energy(
+        parameters.dispersion_energy_over_k.begin(),
+        parameters.dispersion_energy_over_k.end()
+    );
+    for (std::size_t coordinate = 0;
+         coordinate < component_parameter_coordinates;
+         ++coordinate) {
+        const auto& parameter = active_component_parameters[coordinate];
+        if (parameter.family == ActiveComponentParameter::SegmentDiameter) {
+            sigma[parameter.component] +=
+                independent[component_parameter_offset + coordinate]
+                - parameters.sigma_constant[parameter.component];
+        } else {
+            active_dispersion_energy[parameter.component] =
+                independent[component_parameter_offset + coordinate];
+        }
+    }
+    const auto diameter = segment_diameter(
+        independent[0], parameters, sigma, &active_dispersion_energy
+    );
+    auto reference_sigma = segment_sigma(ADScalar(temperature), parameters);
+    for (std::size_t coordinate = 0;
+         coordinate < component_parameter_coordinates;
+         ++coordinate) {
+        const auto& parameter = active_component_parameters[coordinate];
+        if (parameter.family == ActiveComponentParameter::SegmentDiameter) {
+            reference_sigma[parameter.component] +=
+                independent[component_parameter_offset + coordinate]
+                - parameters.sigma_constant[parameter.component];
+        }
+    }
     const auto reference_diameter = segment_diameter(
-        temperature, parameters, reference_sigma
+        ADScalar(temperature),
+        parameters,
+        reference_sigma,
+        &active_dispersion_energy
+    );
+    const auto branch_reference_sigma = segment_sigma(temperature, parameters);
+    const auto branch_reference_diameter = segment_diameter(
+        temperature, parameters, branch_reference_sigma
     );
     std::vector<ADScalar> relative_permittivity_override;
     if (active_relative_permittivity_component.has_value()) {
@@ -297,7 +345,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         reference_diameter,
         relative_permittivity_override.empty()
             ? nullptr
-            : &relative_permittivity_override
+            : &relative_permittivity_override,
+        &branch_reference_diameter
     );
     const auto born = active_born_component.has_value()
         ? born_ssm_ds_contribution_active(
@@ -349,7 +398,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         fractions,
         electrolyte.debye_huckel,
         born,
-        active_k_values
+        active_k_values,
+        &active_dispersion_energy
     );
     const auto delta = active_association_parameter.has_value()
         ? association_delta_active_pure_parameter(
@@ -402,6 +452,9 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     }
     if (active_association_parameter.has_value()) {
         point.push_back(*active_association_parameter);
+    }
+    for (const auto& parameter : active_component_parameters) {
+        point.push_back(parameter.value);
     }
     point.insert(point.end(), site_fractions.begin(), site_fractions.end());
     const auto jacobian = function.Jacobian(point);
@@ -517,6 +570,14 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         active_association_parameter.has_value()
             ? std::optional<double>(gradient[association_offset])
             : std::nullopt,
+        std::vector<double>(
+            gradient.begin()
+                + static_cast<std::ptrdiff_t>(component_parameter_offset),
+            gradient.begin()
+                + static_cast<std::ptrdiff_t>(
+                    component_parameter_offset + component_parameter_coordinates
+                )
+        ),
         std::move(reduced_hessian),
     };
 }
@@ -711,6 +772,34 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_pure_associatio
         std::nullopt,
         active_parameter,
         active_energy
+    );
+}
+
+// EqExclude: CppAD-generated derivative machinery
+inline ThermodynamicDerivatives thermodynamic_derivatives_active_components(
+    double temperature,
+    double molar_density,
+    const std::vector<double>& mole_fractions,
+    const NativeParameters& parameters,
+    const std::vector<double>& site_fractions,
+    const std::vector<NativeActiveParameter>& active_parameters
+) {
+    return thermodynamic_derivatives_impl(
+        temperature,
+        molar_density,
+        mole_fractions,
+        parameters,
+        site_fractions,
+        std::nullopt,
+        0.0,
+        std::nullopt,
+        std::nullopt,
+        std::nullopt,
+        0.0,
+        std::nullopt,
+        std::nullopt,
+        false,
+        active_parameters
     );
 }
 

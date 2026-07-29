@@ -1,5 +1,6 @@
 #include "native_sdk.hpp"
 #include "density.hpp"
+#include "electrolyte_reference.hpp"
 #include "phase_block.hpp"
 
 #include <epcsaft/native_sdk_v1.h>
@@ -274,6 +275,8 @@ struct NativeSdkEndpoint final {
         aqueous_cation_anion_kij_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 1>
         ion_fraction_suppression_coordinates;
+    std::vector<std::array<epcsaft_native_capability_coordinate_v1, 1>>
+        reacting_parameter_coordinates;
     std::vector<epcsaft_native_capability_descriptor_v1> capabilities;
     epcsaft_native_sdk_v1 table;
 
@@ -503,6 +506,37 @@ struct NativeSdkEndpoint final {
                   "dimensionless",
               },
           }},
+          reacting_parameter_coordinates([&] {
+              std::vector<
+                  std::array<epcsaft_native_capability_coordinate_v1, 1>
+              > coordinates;
+              coordinates.reserve(component_ids.size() * 2);
+              for (std::size_t component = 0;
+                   component < component_ids.size();
+                   ++component) {
+                  coordinates.push_back({{
+                      {
+                          sizeof(epcsaft_native_capability_coordinate_v1),
+                          EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_DIAMETER_V1,
+                          static_cast<int32_t>(component),
+                          -1,
+                          -1,
+                          "angstrom",
+                      },
+                  }});
+                  coordinates.push_back({{
+                      {
+                          sizeof(epcsaft_native_capability_coordinate_v1),
+                          EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1,
+                          static_cast<int32_t>(component),
+                          -1,
+                          -1,
+                          "kelvin",
+                      },
+                  }});
+              }
+              return coordinates;
+          }()),
           capabilities([&] {
               std::vector<epcsaft_native_capability_descriptor_v1> result;
               pure_segment_diameter_coordinates[2].kind =
@@ -806,6 +840,41 @@ struct NativeSdkEndpoint final {
                       aqueous_cation_anion_kij_coordinates
                   ));
               }
+              if (phase_callbacks_admitted
+                  && source_model.supports_electrolyte_native_sdk_v1()
+                  && !topology_fingerprint.empty()) {
+                  for (std::size_t component = 0;
+                       component < component_ids.size();
+                       ++component) {
+                      if (
+                          source_model
+                              .has_temperature_independent_segment_diameter(
+                                  component
+                              )
+                      ) {
+                          const auto& diameter =
+                              reacting_parameter_coordinates[2 * component];
+                          result.push_back(descriptor(
+                              EPCSAFT_NATIVE_CAPABILITY_REACTING_COMPONENT_DIAMETER_HELMHOLTZ_V1,
+                              EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1,
+                              EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
+                              EPCSAFT_NATIVE_MODEL_DOMAIN_REACTING_ELECTROLYTE_PHASE_V1,
+                              component_ids.size() + 1,
+                              diameter
+                          ));
+                      }
+                      const auto& energy =
+                          reacting_parameter_coordinates[2 * component + 1];
+                      result.push_back(descriptor(
+                          EPCSAFT_NATIVE_CAPABILITY_REACTING_COMPONENT_DISPERSION_HELMHOLTZ_V1,
+                          EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1,
+                          EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1,
+                          EPCSAFT_NATIVE_MODEL_DOMAIN_REACTING_ELECTROLYTE_PHASE_V1,
+                          component_ids.size() + 1,
+                          energy
+                      ));
+                  }
+              }
               return result;
           }()),
           table{
@@ -858,7 +927,923 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_associating_parameters,
               sizeof(epcsaft_electrolyte_phase_value_result_v1),
               &NativeSdkEndpoint::evaluate_electrolyte_value,
+              sizeof(epcsaft_neutral_reference_derivative_result_v1),
+              &NativeSdkEndpoint::evaluate_neutral_reference_derivatives,
+              sizeof(epcsaft_reacting_phase_parameter_result_v1),
+              &NativeSdkEndpoint::evaluate_reacting_phase_parameters,
           } {}
+
+    // EqExclude: transport and buffer mechanics
+    static std::vector<NativeActiveParameter> active_parameters(
+        const NativeSdkEndpoint& endpoint,
+        const epcsaft_active_parameter_request_v1* requests,
+        std::size_t request_count
+    ) {
+        if (request_count == 0) {
+            return {};
+        }
+        if (requests == nullptr) {
+            throw std::invalid_argument(
+                "active parameter request pointer is null"
+            );
+        }
+        std::vector<NativeActiveParameter> result;
+        result.reserve(request_count);
+        for (std::size_t index = 0; index < request_count; ++index) {
+            const auto& request = requests[index];
+            if (request.struct_size
+                    != sizeof(epcsaft_active_parameter_request_v1)
+                || request.parameter_identity
+                    != EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT_V1
+                || request.component_index < 0
+                || static_cast<std::size_t>(request.component_index)
+                    >= endpoint.component_ids.size()
+                || request.pair_component_index_a != -1
+                || request.pair_component_index_b != -1
+                || request.unit == nullptr || !std::isfinite(request.value)
+                || request.value <= 0.0) {
+                throw std::invalid_argument(
+                    "active parameter request is malformed"
+                );
+            }
+            ActiveComponentParameter family;
+            const char* expected_unit = nullptr;
+            uint32_t expected_capability = 0;
+            uint32_t expected_coordinate_kind = 0;
+            if (request.parameter_family
+                == EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1) {
+                family = ActiveComponentParameter::SegmentDiameter;
+                expected_unit = "angstrom";
+                expected_capability =
+                    EPCSAFT_NATIVE_CAPABILITY_REACTING_COMPONENT_DIAMETER_HELMHOLTZ_V1;
+                expected_coordinate_kind =
+                    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_DIAMETER_V1;
+            } else if (
+                request.parameter_family
+                == EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1
+            ) {
+                family = ActiveComponentParameter::DispersionEnergyOverK;
+                expected_unit = "kelvin";
+                expected_capability =
+                    EPCSAFT_NATIVE_CAPABILITY_REACTING_COMPONENT_DISPERSION_HELMHOLTZ_V1;
+                expected_coordinate_kind =
+                    EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1;
+            } else {
+                throw std::logic_error(
+                    "active parameter family is not advertised"
+                );
+            }
+            if (std::strcmp(request.unit, expected_unit) != 0) {
+                throw std::invalid_argument(
+                    "active parameter unit does not match its descriptor"
+                );
+            }
+            const bool advertised = std::any_of(
+                endpoint.capabilities.begin(),
+                endpoint.capabilities.end(),
+                [&](const epcsaft_native_capability_descriptor_v1& descriptor) {
+                    if (descriptor.capability != expected_capability
+                        || descriptor.parameter_family
+                            != request.parameter_family
+                        || descriptor.parameter_identity
+                            != request.parameter_identity
+                        || descriptor.model_domain
+                            != EPCSAFT_NATIVE_MODEL_DOMAIN_REACTING_ELECTROLYTE_PHASE_V1
+                        || descriptor.active_parameter_count != 1
+                        || descriptor.coordinate_count != 1
+                        || descriptor.coordinates == nullptr
+                        || std::strcmp(
+                            descriptor.parameter_fingerprint,
+                            endpoint.parameter_fingerprint.c_str()
+                        ) != 0
+                        || std::strcmp(
+                            descriptor.topology_fingerprint,
+                            endpoint.topology_fingerprint.c_str()
+                        ) != 0) {
+                        return false;
+                    }
+                    const auto& coordinate = descriptor.coordinates[0];
+                    return coordinate.kind == expected_coordinate_kind
+                        && coordinate.component_index
+                            == request.component_index
+                        && coordinate.pair_component_index_a
+                            == request.pair_component_index_a
+                        && coordinate.pair_component_index_b
+                            == request.pair_component_index_b
+                        && coordinate.unit != nullptr
+                        && std::strcmp(coordinate.unit, request.unit) == 0;
+                }
+            );
+            if (!advertised) {
+                throw std::logic_error(
+                    "active parameter request is not advertised by this model"
+                );
+            }
+            if (std::any_of(
+                    result.begin(),
+                    result.end(),
+                    [&](const NativeActiveParameter& item) {
+                        return item.family == family
+                            && item.component
+                                == static_cast<std::size_t>(
+                                    request.component_index
+                                );
+                    }
+                )) {
+                throw std::invalid_argument(
+                    "active parameter request is duplicated"
+                );
+            }
+            result.push_back({
+                family,
+                static_cast<std::size_t>(request.component_index),
+                request.value,
+            });
+        }
+        return result;
+    }
+
+    // EqID: neutral_reference_stoichiometric_basis
+    // EqID: fixed_pressure_total_derivative
+    static int evaluate_neutral_reference_derivatives(
+        const void* context,
+        const char* expected_fingerprint,
+        const char* expected_topology_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        const epcsaft_active_parameter_request_v1* requests,
+        size_t request_count,
+        epcsaft_neutral_reference_derivative_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_neutral_reference_derivative_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+        result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+        result->derivative_availability =
+            EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_NONE_V1;
+        result->source_pressure_min_pa = nan;
+        result->source_pressure_max_pa = nan;
+        result->maximum_root_residual_pa = nan;
+        result->minimum_pressure_density_derivative_pa_m3_per_mol = nan;
+        result->maximum_density_condition_number = nan;
+        result->reference_derivative_convergence_error = nan;
+        result->maximum_relative_root_bracket_width = nan;
+        result->maximum_relative_root_density_step = nan;
+        result->stable_root_count = 0;
+        result->selected_stable_root_index = 0;
+        result->reference_branch[0] = '\0';
+        result->parameter_fingerprint[0] = '\0';
+        result->topology_fingerprint[0] = '\0';
+        result->helmholtz_basis_id[0] = '\0';
+        result->error[0] = '\0';
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            result->value.status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr
+            || expected_topology_fingerprint == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "neutral-reference derivative required pointer is null"
+            );
+        }
+        const auto& endpoint =
+            *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.neutral_reference_admitted
+            || endpoint.topology_fingerprint.empty()
+            || std::strcmp(
+                expected_fingerprint,
+                endpoint.parameter_fingerprint.c_str()
+            ) != 0
+            || std::strcmp(
+                expected_topology_fingerprint,
+                endpoint.topology_fingerprint.c_str()
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "neutral-reference derivative model identity is unsupported"
+            );
+        }
+        if (!std::isfinite(temperature_k) || temperature_k <= 0.0
+            || !std::isfinite(pressure_pa) || pressure_pa <= 0.0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "temperature and pressure must be positive and finite"
+            );
+        }
+        if (temperature_k < endpoint.temperature_min_k
+            || temperature_k > endpoint.temperature_max_k
+            || pressure_pa < endpoint.pressure_min_pa
+            || pressure_pa > endpoint.pressure_max_pa) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "neutral-reference derivative state is outside the source domain"
+            );
+        }
+        const std::size_t component_count = endpoint.component_ids.size();
+        const std::size_t row_count = component_count - 1;
+        auto& value = result->value;
+        if (value.struct_size != sizeof(epcsaft_neutral_reference_result_v1)
+            || value.component_count != component_count
+            || value.neutral_basis_row_count != row_count
+            || value.neutral_basis_capacity != row_count * component_count
+            || value.contraction_capacity != row_count
+            || value.reference_composition_capacity != component_count
+            || value.neutral_basis == nullptr
+            || value.log_fugacity_contractions == nullptr
+            || value.reference_composition == nullptr
+            || result->active_parameter_count != request_count
+            || result->pressure_derivative_capacity != row_count
+            || result->parameter_derivative_capacity
+                != row_count * request_count
+            || result->pressure_derivatives_per_pa == nullptr
+            || (request_count != 0
+                && result->parameter_derivatives == nullptr)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1,
+                "neutral-reference derivative buffers do not match immutable dimensions"
+            );
+        }
+        try {
+            const auto parameters = active_parameters(
+                endpoint, requests, request_count
+            );
+            std::size_t solvent = component_count;
+            std::vector<std::size_t> cations;
+            std::vector<std::size_t> anions;
+            for (std::size_t component = 0;
+                 component < component_count;
+                 ++component) {
+                if (endpoint.component_ids[component] == "water"
+                    && endpoint.component_charges[component] == 0) {
+                    solvent = component;
+                } else if (endpoint.component_charges[component] > 0) {
+                    cations.push_back(component);
+                } else if (endpoint.component_charges[component] < 0) {
+                    anions.push_back(component);
+                }
+            }
+            if (solvent == component_count || cations.empty()
+                || anions.empty()) {
+                throw std::logic_error(
+                    "neutral-reference derivative topology is incomplete"
+                );
+            }
+            std::vector<double> reference_composition(component_count, 0.0);
+            reference_composition[solvent] = 1.0;
+            std::vector<double> basis(row_count * component_count, 0.0);
+            std::vector<double> contractions(row_count);
+            std::vector<double> pressure_derivatives(row_count);
+            std::vector<double> parameter_derivatives(
+                row_count * request_count
+            );
+            double maximum_root_residual = 0.0;
+            double minimum_slope = std::numeric_limits<double>::infinity();
+            double maximum_condition = 0.0;
+            double maximum_relative_bracket_width = 0.0;
+            double maximum_relative_density_step = 0.0;
+            std::string reference_branch;
+            auto observe = [&](
+                const std::vector<double>& composition,
+                std::optional<detail::DensityRootIdentity>& previous_root
+            ) {
+                auto observation = endpoint.model.evaluate_fugacity_derivatives(
+                    temperature_k,
+                    pressure_pa,
+                    composition,
+                    "liquid",
+                    parameters
+                );
+                maximum_root_residual = std::max(
+                    maximum_root_residual,
+                    std::abs(observation.root_residual_pa)
+                );
+                minimum_slope = std::min(
+                    minimum_slope,
+                    observation.pressure_density_derivative_pa_m3_per_mol
+                );
+                maximum_condition = std::max(
+                    maximum_condition,
+                    observation.density_condition_number
+                );
+                const double relative_bracket_width =
+                    (observation.bracket_upper_mol_per_m3
+                     - observation.bracket_lower_mol_per_m3)
+                    / std::max(
+                        1.0,
+                        0.5
+                            * (observation.bracket_upper_mol_per_m3
+                               + observation.bracket_lower_mol_per_m3)
+                    );
+                maximum_relative_bracket_width = std::max(
+                    maximum_relative_bracket_width,
+                    relative_bracket_width
+                );
+                if (previous_root.has_value()) {
+                    const double relative_density_step = std::abs(
+                        observation.molar_density_mol_per_m3
+                        - previous_root->molar_density
+                    ) / std::max(1.0, previous_root->molar_density);
+                    maximum_relative_density_step = std::max(
+                        maximum_relative_density_step,
+                        relative_density_step
+                    );
+                }
+                const detail::DensityRootIdentity root{
+                    observation.molar_density_mol_per_m3,
+                    observation.stable_root_count,
+                    observation.selected_stable_root_index,
+                    observation.branch,
+                };
+                if (previous_root.has_value()
+                    && !detail::same_continuous_density_root(
+                        *previous_root, root, 1.0e-3
+                    )) {
+                    throw detail::DensityDomainError(
+                        "neutral-reference density root is discontinuous"
+                    );
+                }
+                previous_root = root;
+                reference_branch = observation.branch;
+                return observation;
+            };
+            std::optional<detail::DensityRootIdentity> pure_root;
+            const auto pure = observe(reference_composition, pure_root);
+            std::size_t row = 0;
+            for (std::size_t component = 0;
+                 component < component_count;
+                 ++component) {
+                if (endpoint.component_charges[component] != 0) {
+                    continue;
+                }
+                basis[row * component_count + component] = 1.0;
+                contractions[row] =
+                    pure.log_fugacity_coefficient[component];
+                pressure_derivatives[row] =
+                    pure.pressure_derivative_per_pa[component];
+                for (std::size_t parameter = 0;
+                     parameter < request_count;
+                     ++parameter) {
+                    parameter_derivatives[
+                        row * request_count + parameter
+                    ] = pure.parameter_derivatives[
+                        component * request_count + parameter
+                    ];
+                }
+                ++row;
+            }
+            double reference_molality = nan;
+            double reference_convergence_error = 0.0;
+            double derivative_convergence_error = 0.0;
+            auto append_pair = [&](std::size_t cation, std::size_t anion) {
+                std::optional<detail::DensityRootIdentity> sequence_root =
+                    pure_root;
+                const int divisor = std::gcd(
+                    std::abs(endpoint.component_charges[cation]),
+                    std::abs(endpoint.component_charges[anion])
+                );
+                const std::array<int, 2> stoichiometry{
+                    std::abs(endpoint.component_charges[anion]) / divisor,
+                    std::abs(endpoint.component_charges[cation]) / divisor,
+                };
+                const auto sequence = detail::electrolyte_reference_sequence(
+                    reference_composition,
+                    endpoint.model.molar_masses_kg_per_mol(),
+                    std::array<std::size_t, 2>{cation, anion},
+                    stoichiometry,
+                    [&](const std::vector<double>& composition) {
+                        const auto observation = observe(
+                            composition, sequence_root
+                        );
+                        std::vector<double> derivatives(
+                            2 * (1 + request_count)
+                        );
+                        for (std::size_t ion = 0; ion < 2; ++ion) {
+                            const std::size_t component =
+                                ion == 0 ? cation : anion;
+                            derivatives[ion * (1 + request_count)] =
+                                observation.pressure_derivative_per_pa[
+                                    component
+                                ];
+                            for (std::size_t parameter = 0;
+                                 parameter < request_count;
+                                 ++parameter) {
+                                derivatives[
+                                    ion * (1 + request_count) + 1 + parameter
+                                ] = observation.parameter_derivatives[
+                                    component * request_count + parameter
+                                ];
+                            }
+                        }
+                        return detail::ReferenceObservation{
+                            {
+                                observation.log_fugacity_coefficient[cation],
+                                observation.log_fugacity_coefficient[anion],
+                            },
+                            std::move(derivatives),
+                        };
+                    }
+                );
+                if (!sequence.derivative.has_value()
+                    || !sequence.derivative_convergence_error.has_value()) {
+                    throw std::runtime_error(
+                        "neutral-reference derivative limit is unavailable"
+                    );
+                }
+                basis[row * component_count + cation] = stoichiometry[0];
+                basis[row * component_count + anion] = stoichiometry[1];
+                contractions[row] =
+                    stoichiometry[0] * sequence.log_fugacity[0]
+                    + stoichiometry[1] * sequence.log_fugacity[1];
+                pressure_derivatives[row] =
+                    stoichiometry[0] * (*sequence.derivative)[0]
+                    + stoichiometry[1]
+                        * (*sequence.derivative)[1 + request_count];
+                for (std::size_t parameter = 0;
+                     parameter < request_count;
+                     ++parameter) {
+                    parameter_derivatives[
+                        row * request_count + parameter
+                    ] = stoichiometry[0]
+                            * (*sequence.derivative)[1 + parameter]
+                        + stoichiometry[1]
+                            * (*sequence.derivative)[
+                                2 + request_count + parameter
+                            ];
+                }
+                reference_molality = sequence.molality;
+                reference_convergence_error = std::max(
+                    reference_convergence_error, sequence.convergence_error
+                );
+                derivative_convergence_error = std::max(
+                    derivative_convergence_error,
+                    *sequence.derivative_convergence_error
+                );
+                ++row;
+            };
+            for (std::size_t anion : anions) {
+                append_pair(cations.front(), anion);
+            }
+            for (std::size_t index = 1; index < cations.size(); ++index) {
+                append_pair(cations[index], anions.front());
+            }
+            if (row != row_count || !std::isfinite(minimum_slope)
+                || minimum_slope <= 0.0 || !std::isfinite(maximum_condition)
+                || maximum_condition > 1.0e10
+                || !std::isfinite(maximum_relative_bracket_width)
+                || maximum_relative_bracket_width > 1.0e-8
+                || !std::isfinite(maximum_relative_density_step)
+                || !pure_root.has_value()
+                || reference_branch.empty()) {
+                throw detail::DensityDomainError(
+                    "neutral-reference derivative path is ill-conditioned"
+                );
+            }
+            const auto finite_values = [](const std::vector<double>& values) {
+                return std::all_of(
+                    values.begin(), values.end(), [](double item) {
+                        return std::isfinite(item);
+                    }
+                );
+            };
+            if (!finite_values(basis) || !finite_values(contractions)
+                || !finite_values(pressure_derivatives)
+                || !finite_values(parameter_derivatives)
+                || !std::isfinite(reference_molality)
+                || !std::isfinite(reference_convergence_error)
+                || !std::isfinite(derivative_convergence_error)) {
+                throw std::runtime_error(
+                    "neutral-reference derivative result is nonfinite"
+                );
+            }
+            std::copy(basis.begin(), basis.end(), value.neutral_basis);
+            std::copy(
+                contractions.begin(),
+                contractions.end(),
+                value.log_fugacity_contractions
+            );
+            std::copy(
+                reference_composition.begin(),
+                reference_composition.end(),
+                value.reference_composition
+            );
+            std::copy(
+                pressure_derivatives.begin(),
+                pressure_derivatives.end(),
+                result->pressure_derivatives_per_pa
+            );
+            std::copy(
+                parameter_derivatives.begin(),
+                parameter_derivatives.end(),
+                result->parameter_derivatives
+            );
+            value.derivative_availability =
+                EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_NONE_V1;
+            value.temperature_k = temperature_k;
+            value.pressure_pa = pressure_pa;
+            value.solvent_molar_mass_kg_per_mol =
+                endpoint.model.molar_masses_kg_per_mol()[solvent];
+            value.reference_amount_mol = 1.0;
+            value.reference_number_density_mol_per_m3 = 1.0;
+            value.reference_molality_mol_per_kg = reference_molality;
+            value.reference_convergence_error = reference_convergence_error;
+            value.error[0] = '\0';
+            std::snprintf(
+                value.parameter_fingerprint,
+                sizeof(value.parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            std::snprintf(
+                value.helmholtz_basis_id,
+                sizeof(value.helmholtz_basis_id),
+                "%s",
+                EPCSAFT_NATIVE_HELMHOLTZ_BASIS_ID_V1
+            );
+            value.status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            result->derivative_availability =
+                EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_PRESSURE_V1
+                | (request_count == 0
+                       ? EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_NONE_V1
+                       : EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_PARAMETERS_V1);
+            result->maximum_root_residual_pa = maximum_root_residual;
+            result->source_pressure_min_pa = endpoint.pressure_min_pa;
+            result->source_pressure_max_pa = endpoint.pressure_max_pa;
+            result->minimum_pressure_density_derivative_pa_m3_per_mol =
+                minimum_slope;
+            result->maximum_density_condition_number = maximum_condition;
+            result->reference_derivative_convergence_error =
+                derivative_convergence_error;
+            result->maximum_relative_root_bracket_width =
+                maximum_relative_bracket_width;
+            result->maximum_relative_root_density_step =
+                maximum_relative_density_step;
+            result->stable_root_count = pure_root->stable_root_count;
+            result->selected_stable_root_index =
+                pure_root->selected_stable_root_index;
+            std::snprintf(
+                result->reference_branch,
+                sizeof(result->reference_branch),
+                "%s",
+                reference_branch.c_str()
+            );
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->topology_fingerprint,
+                sizeof(result->topology_fingerprint),
+                "%s",
+                endpoint.topology_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->helmholtz_basis_id,
+                sizeof(result->helmholtz_basis_id),
+                "%s",
+                EPCSAFT_NATIVE_HELMHOLTZ_BASIS_ID_V1
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const detail::DensityDomainError& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what()
+            );
+        } catch (const std::exception& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what()
+            );
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown neutral-reference derivative failure"
+            );
+        }
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_reacting_phase_parameters(
+        const void* context,
+        const char* expected_fingerprint,
+        const char* expected_topology_fingerprint,
+        double temperature_k,
+        const double* amounts_mol,
+        size_t amount_count,
+        double volume_m3,
+        double packing_fraction_min,
+        double packing_fraction_max,
+        const epcsaft_active_parameter_request_v1* requests,
+        size_t request_count,
+        epcsaft_reacting_phase_parameter_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_reacting_phase_parameter_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+        result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+        result->helmholtz_over_rt_reference_amount = nan;
+        result->pressure_pa = nan;
+        result->packing_fraction = nan;
+        std::fill(
+            std::begin(result->molar_volume_bounds_m3_per_mol),
+            std::end(result->molar_volume_bounds_m3_per_mol),
+            nan
+        );
+        result->parameter_fingerprint[0] = '\0';
+        result->topology_fingerprint[0] = '\0';
+        result->helmholtz_basis_id[0] = '\0';
+        result->error[0] = '\0';
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr
+            || expected_topology_fingerprint == nullptr
+            || amounts_mol == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "reacting phase required pointer is null"
+            );
+        }
+        const auto& endpoint =
+            *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.phase_callbacks_admitted
+            || !endpoint.model.supports_electrolyte_native_sdk_v1()
+            || endpoint.topology_fingerprint.empty()
+            || std::strcmp(
+                expected_fingerprint,
+                endpoint.parameter_fingerprint.c_str()
+            ) != 0
+            || std::strcmp(
+                expected_topology_fingerprint,
+                endpoint.topology_fingerprint.c_str()
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "reacting phase model identity is unsupported"
+            );
+        }
+        if (!std::isfinite(temperature_k)
+            || temperature_k < endpoint.temperature_min_k
+            || temperature_k > endpoint.temperature_max_k) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "reacting phase temperature is outside the source domain"
+            );
+        }
+        const std::size_t state_count = endpoint.component_ids.size() + 1;
+        if (amount_count != endpoint.component_ids.size()
+            || result->state_coordinate_count != state_count
+            || result->active_parameter_count != request_count
+            || result->state_gradient_capacity != state_count
+            || result->state_hessian_capacity != state_count * state_count
+            || result->parameter_gradient_capacity != request_count
+            || result->state_parameter_capacity != state_count * request_count
+            || result->packing_parameter_capacity != request_count
+            || result->molar_volume_bound_parameter_capacity
+                != EPCSAFT_NATIVE_MOLAR_VOLUME_BOUND_COUNT_V1 * request_count
+            || result->pressure_parameter_capacity != request_count
+            || result->chemical_potential_parameter_capacity
+                != endpoint.component_ids.size() * request_count
+            || result->state_gradient == nullptr
+            || result->state_hessian == nullptr
+            || result->parameter_gradient == nullptr
+            || result->state_parameter_derivatives == nullptr
+            || result->packing_parameter_derivatives == nullptr
+            || result->molar_volume_bound_parameter_derivatives_m3_per_mol
+                == nullptr
+            || result->pressure_parameter_derivatives_pa == nullptr
+            || result->chemical_potential_parameter_derivatives_over_rt
+                == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1,
+                "reacting phase buffers do not match immutable dimensions"
+            );
+        }
+        try {
+            const auto parameters = active_parameters(
+                endpoint, requests, request_count
+            );
+            const std::vector<double> amounts(
+                amounts_mol, amounts_mol + amount_count
+            );
+            double total_amount = 0.0;
+            for (const double amount : amounts) {
+                total_amount += amount;
+            }
+            std::vector<double> composition(amount_count);
+            for (std::size_t component = 0;
+                 component < amount_count;
+                 ++component) {
+                composition[component] = amounts[component] / total_amount;
+            }
+            const auto phase = endpoint.model.evaluate_reacting_phase_parameters(
+                temperature_k,
+                amounts,
+                volume_m3,
+                endpoint.ion_mole_fraction_max,
+                parameters
+            );
+            const auto packing =
+                endpoint.model.evaluate_packing_fraction_parameters(
+                    temperature_k,
+                    amounts,
+                    volume_m3,
+                    endpoint.ion_mole_fraction_max,
+                    parameters
+                );
+            const auto volume_bounds =
+                endpoint.model.molar_volume_bounds_parameters(
+                    temperature_k,
+                    composition,
+                    packing_fraction_min,
+                    packing_fraction_max,
+                    endpoint.ion_mole_fraction_max,
+                    parameters
+                );
+            const std::size_t joint_count = state_count + request_count;
+            if (phase.gradient.size() != joint_count
+                || phase.hessian.size() != joint_count * joint_count
+                || packing.gradient.size() != joint_count) {
+                throw std::runtime_error(
+                    "reacting phase tensor dimensions changed"
+                );
+            }
+            std::vector<double> state_gradient(state_count);
+            std::vector<double> state_hessian(state_count * state_count);
+            std::vector<double> parameter_gradient(request_count);
+            std::vector<double> mixed(state_count * request_count);
+            std::vector<double> packing_parameter(request_count);
+            std::vector<double> pressure_parameter(request_count);
+            std::vector<double> chemical_parameter(
+                amount_count * request_count
+            );
+            for (std::size_t state = 0; state < state_count; ++state) {
+                state_gradient[state] = phase.gradient[state];
+                for (std::size_t other = 0; other < state_count; ++other) {
+                    state_hessian[state * state_count + other] =
+                        phase.hessian[state * joint_count + other];
+                }
+                for (std::size_t parameter = 0;
+                     parameter < request_count;
+                     ++parameter) {
+                    mixed[state * request_count + parameter] =
+                        phase.hessian[
+                            state * joint_count + state_count + parameter
+                        ];
+                }
+            }
+            for (std::size_t parameter = 0;
+                 parameter < request_count;
+                 ++parameter) {
+                parameter_gradient[parameter] =
+                    phase.gradient[state_count + parameter];
+                packing_parameter[parameter] =
+                    packing.gradient[state_count + parameter];
+                pressure_parameter[parameter] =
+                    -detail::GAS_CONSTANT * temperature_k
+                    * mixed[
+                        (state_count - 1) * request_count + parameter
+                    ];
+                for (std::size_t component = 0;
+                     component < amount_count;
+                     ++component) {
+                    chemical_parameter[
+                        component * request_count + parameter
+                    ] = mixed[component * request_count + parameter];
+                }
+            }
+            const auto finite_values = [](const std::vector<double>& values) {
+                return std::all_of(
+                    values.begin(), values.end(), [](double value) {
+                        return std::isfinite(value);
+                    }
+                );
+            };
+            if (!finite_values(state_gradient)
+                || !finite_values(state_hessian)
+                || !finite_values(parameter_gradient)
+                || !finite_values(mixed)
+                || !finite_values(packing_parameter)
+                || !finite_values(
+                    volume_bounds.parameter_derivatives_m3_per_mol
+                )
+                || !finite_values(pressure_parameter)
+                || !finite_values(chemical_parameter)
+                || !std::isfinite(phase.helmholtz_over_rt_reference_amount)
+                || !std::isfinite(phase.pressure_pa)
+                || !std::isfinite(packing.packing_fraction)) {
+                throw std::runtime_error(
+                    "reacting phase result contains nonfinite values"
+                );
+            }
+            std::copy(
+                state_gradient.begin(),
+                state_gradient.end(),
+                result->state_gradient
+            );
+            std::copy(
+                state_hessian.begin(),
+                state_hessian.end(),
+                result->state_hessian
+            );
+            std::copy(
+                parameter_gradient.begin(),
+                parameter_gradient.end(),
+                result->parameter_gradient
+            );
+            std::copy(
+                mixed.begin(),
+                mixed.end(),
+                result->state_parameter_derivatives
+            );
+            std::copy(
+                packing_parameter.begin(),
+                packing_parameter.end(),
+                result->packing_parameter_derivatives
+            );
+            std::copy(
+                volume_bounds.parameter_derivatives_m3_per_mol.begin(),
+                volume_bounds.parameter_derivatives_m3_per_mol.end(),
+                result
+                    ->molar_volume_bound_parameter_derivatives_m3_per_mol
+            );
+            std::copy(
+                pressure_parameter.begin(),
+                pressure_parameter.end(),
+                result->pressure_parameter_derivatives_pa
+            );
+            std::copy(
+                chemical_parameter.begin(),
+                chemical_parameter.end(),
+                result->chemical_potential_parameter_derivatives_over_rt
+            );
+            result->helmholtz_over_rt_reference_amount =
+                phase.helmholtz_over_rt_reference_amount;
+            result->pressure_pa = phase.pressure_pa;
+            result->packing_fraction = packing.packing_fraction;
+            std::copy(
+                volume_bounds.bounds_m3_per_mol.begin(),
+                volume_bounds.bounds_m3_per_mol.end(),
+                result->molar_volume_bounds_m3_per_mol
+            );
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->topology_fingerprint,
+                sizeof(result->topology_fingerprint),
+                "%s",
+                endpoint.topology_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->helmholtz_basis_id,
+                sizeof(result->helmholtz_basis_id),
+                "%s",
+                EPCSAFT_NATIVE_HELMHOLTZ_BASIS_ID_V1
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const detail::DensityDomainError& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what()
+            );
+        } catch (const std::exception& error) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what()
+            );
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown reacting phase parameter failure"
+            );
+        }
+    }
 
     // EqExclude: transport and buffer mechanics
     static int evaluate_ion_solvation_ionic_permittivity(
