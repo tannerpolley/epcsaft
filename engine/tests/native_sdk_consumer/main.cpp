@@ -1,6 +1,7 @@
 #include <epcsaft/native_model_v1.h>
 #include <epcsaft/native_sdk_v1.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -180,8 +181,16 @@ int main(int argc, char** argv) {
         && std::strcmp(reference.reference_branch, "liquid") == 0
         && std::isfinite(phase.pressure_pa)
         && std::isfinite(mixed[0])
-        && std::isfinite(packing_state_gradient[0])
-        && std::isfinite(packing_state_hessian[0])
+        && std::all_of(
+            packing_state_gradient.begin(),
+            packing_state_gradient.end(),
+            [](double value) { return std::isfinite(value); }
+        )
+        && std::all_of(
+            packing_state_hessian.begin(),
+            packing_state_hessian.end(),
+            [](double value) { return std::isfinite(value); }
+        )
         && std::isfinite(pressure_derivatives[0])
         && std::isfinite(parameter_derivatives[0]);
     std::cout << "component_count=" << (sdk == nullptr ? 0 : sdk->component_count)

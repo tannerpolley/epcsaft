@@ -1602,6 +1602,8 @@ def _evaluate_reacting_phase_parameters(
     temperature_k: float = 298.15,
     packing_state_gradient_capacity: int | None = None,
     packing_state_hessian_capacity: int | None = None,
+    provide_packing_state_gradient: bool = True,
+    provide_packing_state_hessian: bool = True,
 ) -> tuple[
     ReactingPhaseParameterResult,
     tuple[float, ...],
@@ -1679,8 +1681,12 @@ def _evaluate_reacting_phase_parameters(
             if packing_state_hessian_capacity is None
             else packing_state_hessian_capacity
         ),
-        packing_state_gradient=packing_state_gradient,
-        packing_state_hessian=packing_state_hessian,
+        packing_state_gradient=(
+            packing_state_gradient if provide_packing_state_gradient else None
+        ),
+        packing_state_hessian=(
+            packing_state_hessian if provide_packing_state_hessian else None
+        ),
     )
     status = EvaluateReactingPhaseParameters(table.evaluate_reacting_phase_parameters)(
         table.model_context,
@@ -7066,6 +7072,9 @@ def test_native_sdk_reacting_phase_parameter_columns_match_fixed_topology_oracle
     sensitivity_capsule, table = _reacting_sensitivity_table(model)
     capability_capsule, capability_table = _capability_table(model)
     assert sensitivity_capsule is not None and capability_capsule is not None
+    assert table.reacting_phase_parameter_result_size == ctypes.sizeof(
+        ReactingPhaseParameterResult
+    )
     descriptors = tuple(
         capability_table.capabilities[index]
         for index in range(capability_table.capability_count)
@@ -7186,6 +7195,8 @@ def test_native_sdk_reacting_phase_parameter_columns_match_fixed_topology_oracle
         MixturePhaseBlockResult,
         tuple[float, ...],
         float,
+        tuple[float, ...],
+        tuple[float, ...],
         tuple[float, float],
     ]:
         trial = _component_parameter_trial_model(
@@ -7236,7 +7247,32 @@ def test_native_sdk_reacting_phase_parameter_columns_match_fixed_topology_oracle
             2,
         )
         assert bounds_status == STATUS_OK
-        return phase, gradient, packing_value.value, tuple(bounds)
+        return (
+            phase,
+            gradient,
+            packing_value.value,
+            tuple(packing_gradient),
+            tuple(packing_hessian),
+            tuple(bounds),
+        )
+
+    noncatalog_sigma = sigma + 0.01
+    active_trial = _evaluate_reacting_phase_parameters(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        volume,
+        (_active_request(4, 1, noncatalog_sigma, b"angstrom"),),
+    )
+    ordinary_active_trial = ordinary_trial(
+        "segment_diameter",
+        noncatalog_sigma,
+        "angstrom",
+    )
+    assert active_trial[0].packing_fraction == ordinary_active_trial[2]
+    assert active_trial[6] == ordinary_active_trial[3]
+    assert active_trial[7] == ordinary_active_trial[4]
 
     for parameter, step in ((0, 2.0e-5), (1, 2.0e-3)):
         shifted = []
@@ -7266,7 +7302,7 @@ def test_native_sdk_reacting_phase_parameter_columns_match_fixed_topology_oracle
         assert packing[parameter] == pytest.approx(numerical_packing, rel=2.0e-6, abs=2.0e-10)
         for bound in range(2):
             numerical_bound = (
-                upper[3][bound] - lower[3][bound]
+                upper[5][bound] - lower[5][bound]
             ) / (2.0 * step)
             assert volume_bounds[bound * 2 + parameter] == pytest.approx(
                 numerical_bound, rel=2.0e-6, abs=2.0e-12
@@ -7400,6 +7436,23 @@ def test_native_sdk_reacting_phase_parameters_reject_contract_drift_without_writ
         assert capacity_failure[0].status == STATUS_ABI_MISMATCH
         assert capacity_failure[6] == (29.0,) * 4
         assert capacity_failure[7] == (30.0,) * 16
+
+    for pointer_override in (
+        {"provide_packing_state_gradient": False},
+        {"provide_packing_state_hessian": False},
+    ):
+        pointer_failure = _evaluate_reacting_phase_parameters(
+            table,
+            model.parameter_fingerprint,
+            topology,
+            amounts,
+            2.5e-5,
+            (request,),
+            **pointer_override,
+        )
+        assert pointer_failure[0].status == STATUS_ABI_MISMATCH
+        assert pointer_failure[6] == (29.0,) * 4
+        assert pointer_failure[7] == (30.0,) * 16
 
     callback = EvaluateReactingPhaseParameters(table.evaluate_reacting_phase_parameters)
     amounts_buffer = (ctypes.c_double * 3)(*amounts)
