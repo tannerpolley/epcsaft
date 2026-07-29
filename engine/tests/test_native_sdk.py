@@ -12,6 +12,7 @@ import time
 import pytest
 
 import epcsaft
+import epcsaft._core as native_core
 from epcsaft import (
     Mixture,
     EosError,
@@ -449,6 +450,108 @@ class ElectrolytePhaseValueNativeSdkTable(ctypes.Structure):
     )
 
 
+class ActiveParameterRequest(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("parameter_family", ctypes.c_uint32),
+        ("parameter_identity", ctypes.c_uint32),
+        ("component_index", ctypes.c_int32),
+        ("pair_component_index_a", ctypes.c_int32),
+        ("pair_component_index_b", ctypes.c_int32),
+        ("value", ctypes.c_double),
+        ("unit", ctypes.c_char_p),
+    )
+
+
+class NeutralReferenceDerivativeResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("value", NeutralReferenceResult),
+        ("active_parameter_count", ctypes.c_size_t),
+        ("pressure_derivative_capacity", ctypes.c_size_t),
+        ("parameter_derivative_capacity", ctypes.c_size_t),
+        ("pressure_derivatives_per_pa", ctypes.POINTER(ctypes.c_double)),
+        ("parameter_derivatives", ctypes.POINTER(ctypes.c_double)),
+        ("derivative_availability", ctypes.c_uint32),
+        ("source_pressure_min_pa", ctypes.c_double),
+        ("source_pressure_max_pa", ctypes.c_double),
+        ("maximum_root_residual_pa", ctypes.c_double),
+        (
+            "minimum_pressure_density_derivative_pa_m3_per_mol",
+            ctypes.c_double,
+        ),
+        ("maximum_density_condition_number", ctypes.c_double),
+        ("reference_derivative_convergence_error", ctypes.c_double),
+        ("maximum_relative_root_bracket_width", ctypes.c_double),
+        ("maximum_relative_root_density_step", ctypes.c_double),
+        ("stable_root_count", ctypes.c_size_t),
+        ("selected_stable_root_index", ctypes.c_size_t),
+        ("reference_branch", ctypes.c_char * 16),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("topology_fingerprint", ctypes.c_char * 72),
+        ("helmholtz_basis_id", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class NeutralReferenceDerivativeNativeSdkTable(ctypes.Structure):
+    _fields_ = ElectrolytePhaseValueNativeSdkTable._fields_ + (
+        ("neutral_reference_derivative_result_size", ctypes.c_size_t),
+        ("evaluate_neutral_reference_derivatives", ctypes.c_void_p),
+    )
+
+
+class ReactingPhaseParameterResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("state_coordinate_count", ctypes.c_size_t),
+        ("active_parameter_count", ctypes.c_size_t),
+        ("state_gradient_capacity", ctypes.c_size_t),
+        ("state_hessian_capacity", ctypes.c_size_t),
+        ("parameter_gradient_capacity", ctypes.c_size_t),
+        ("state_parameter_capacity", ctypes.c_size_t),
+        ("packing_parameter_capacity", ctypes.c_size_t),
+        ("molar_volume_bound_parameter_capacity", ctypes.c_size_t),
+        ("pressure_parameter_capacity", ctypes.c_size_t),
+        ("chemical_potential_parameter_capacity", ctypes.c_size_t),
+        ("state_gradient", ctypes.POINTER(ctypes.c_double)),
+        ("state_hessian", ctypes.POINTER(ctypes.c_double)),
+        ("parameter_gradient", ctypes.POINTER(ctypes.c_double)),
+        ("state_parameter_derivatives", ctypes.POINTER(ctypes.c_double)),
+        ("packing_parameter_derivatives", ctypes.POINTER(ctypes.c_double)),
+        (
+            "molar_volume_bound_parameter_derivatives_m3_per_mol",
+            ctypes.POINTER(ctypes.c_double),
+        ),
+        ("pressure_parameter_derivatives_pa", ctypes.POINTER(ctypes.c_double)),
+        (
+            "chemical_potential_parameter_derivatives_over_rt",
+            ctypes.POINTER(ctypes.c_double),
+        ),
+        ("helmholtz_over_rt_reference_amount", ctypes.c_double),
+        ("pressure_pa", ctypes.c_double),
+        ("packing_fraction", ctypes.c_double),
+        ("molar_volume_bounds_m3_per_mol", ctypes.c_double * 2),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("topology_fingerprint", ctypes.c_char * 72),
+        ("helmholtz_basis_id", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+        ("packing_state_gradient_capacity", ctypes.c_size_t),
+        ("packing_state_hessian_capacity", ctypes.c_size_t),
+        ("packing_state_gradient", ctypes.POINTER(ctypes.c_double)),
+        ("packing_state_hessian", ctypes.POINTER(ctypes.c_double)),
+    )
+
+
+class ReactingSensitivityNativeSdkTable(ctypes.Structure):
+    _fields_ = NeutralReferenceDerivativeNativeSdkTable._fields_ + (
+        ("reacting_phase_parameter_result_size", ctypes.c_size_t),
+        ("evaluate_reacting_phase_parameters", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -531,6 +634,14 @@ ELECTROLYTE_PHASE_VALUE_PREFIX_SIZE = (
     ElectrolytePhaseValueNativeSdkTable.evaluate_electrolyte_phase_value.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
+NEUTRAL_REFERENCE_DERIVATIVE_PREFIX_SIZE = (
+    NeutralReferenceDerivativeNativeSdkTable.evaluate_neutral_reference_derivatives.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+REACTING_SENSITIVITY_PREFIX_SIZE = (
+    ReactingSensitivityNativeSdkTable.evaluate_reacting_phase_parameters.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
 
 
 EvaluatePurePhase = ctypes.CFUNCTYPE(
@@ -609,6 +720,34 @@ EvaluateElectrolytePhaseValue = ctypes.CFUNCTYPE(
     ctypes.c_size_t,
     ctypes.c_double,
     ctypes.POINTER(ElectrolytePhaseValueResult),
+)
+
+EvaluateNeutralReferenceDerivatives = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ActiveParameterRequest),
+    ctypes.c_size_t,
+    ctypes.POINTER(NeutralReferenceDerivativeResult),
+)
+
+EvaluateReactingPhaseParameters = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(ActiveParameterRequest),
+    ctypes.c_size_t,
+    ctypes.POINTER(ReactingPhaseParameterResult),
 )
 EvaluatePurePhaseParameter = ctypes.CFUNCTYPE(
     ctypes.c_int,
@@ -788,7 +927,7 @@ def _mixture_model(component_ids: tuple[str, str] = ("methane", "ethane")) -> Mi
 
 
 def _electrolyte_model(
-    component_ids: tuple[str, str, str] = (
+    component_ids: tuple[str, ...] = (
         "water",
         "sodium-cation",
         "chloride-anion",
@@ -796,6 +935,63 @@ def _electrolyte_model(
 ) -> Mixture:
     parameters = _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
     return Mixture(parameters.select(component_ids))
+
+
+def _component_parameter_trial_model(
+    bundle_id: str,
+    component_ids: tuple[str, ...],
+    component_id: str,
+    family: str,
+    value: float,
+    unit: str,
+) -> Mixture:
+    bundle = _ParameterBundle.from_catalog(bundle_id, version=1)
+    replaced = 0
+    records = []
+    for record in bundle.records:
+        if (
+            isinstance(record, SingleParameterRecord)
+            and record.component_id == component_id
+            and record.family == family
+        ):
+            record = replace(record, value=value * unit_registry(unit))
+            replaced += 1
+        records.append(record)
+    assert replaced == 1
+    trial = _ParameterBundle.from_records(
+        bundle_id=f"test-trial-{bundle_id}",
+        bundle_version=1,
+        purpose="user-provided",
+        sources=bundle.sources,
+        domains=bundle.domains,
+        components=bundle.components,
+        singles=(
+            record
+            for record in records
+            if isinstance(record, SingleParameterRecord)
+        ),
+        pairs=(
+            record for record in records if isinstance(record, PairParameterRecord)
+        ),
+        sites=(record for record in records if isinstance(record, SiteRecord)),
+        associations=(
+            record
+            for record in records
+            if isinstance(record, AssociationParameterRecord)
+        ),
+        correlations=(
+            record
+            for record in records
+            if isinstance(
+                record,
+                (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation),
+            )
+        ),
+        models=(
+            record for record in records if isinstance(record, ModelParameterRecord)
+        ),
+    )
+    return Mixture(trial.select(component_ids))
 
 
 def _user_provided_copy(
@@ -1068,6 +1264,20 @@ def _electrolyte_value_table(
     return capsule, table
 
 
+def _reacting_sensitivity_table(
+    model: Mixture,
+) -> tuple[object, ReactingSensitivityNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(ReactingSensitivityNativeSdkTable)).contents
+    assert table.table_size >= REACTING_SENSITIVITY_PREFIX_SIZE
+    return capsule, table
+
+
 def _volume_bounds_table(
     model: Mixture,
 ) -> tuple[object, VolumeBoundsNativeSdkTable]:
@@ -1286,6 +1496,226 @@ def _evaluate_neutral_reference(
     )
     assert status == result.status
     return result, tuple(basis), tuple(contractions), tuple(reference_composition)
+
+
+def _active_request(
+    family: int,
+    component: int,
+    value: float,
+    unit: bytes,
+) -> ActiveParameterRequest:
+    return ActiveParameterRequest(
+        struct_size=ctypes.sizeof(ActiveParameterRequest),
+        parameter_family=family,
+        parameter_identity=2,
+        component_index=component,
+        pair_component_index_a=-1,
+        pair_component_index_b=-1,
+        value=value,
+        unit=unit,
+    )
+
+
+def _evaluate_neutral_reference_derivatives(
+    table: ReactingSensitivityNativeSdkTable,
+    fingerprint: str,
+    topology_fingerprint: str,
+    requests: tuple[ActiveParameterRequest, ...],
+    *,
+    temperature_k: float = 298.15,
+    pressure_pa: float = 100000.0,
+) -> tuple[
+    NeutralReferenceDerivativeResult,
+    tuple[float, ...],
+    tuple[float, ...],
+    tuple[float, ...],
+    tuple[float, ...],
+    tuple[float, ...],
+]:
+    component_count = table.component_count
+    row_count = table.neutral_reference_basis_row_count
+    basis = (ctypes.c_double * (component_count * row_count))(
+        *(11.0 for _ in range(component_count * row_count))
+    )
+    contractions = (ctypes.c_double * row_count)(
+        *(12.0 for _ in range(row_count))
+    )
+    composition = (ctypes.c_double * component_count)(
+        *(13.0 for _ in range(component_count))
+    )
+    pressure_derivatives = (ctypes.c_double * row_count)(
+        *(14.0 for _ in range(row_count))
+    )
+    parameter_derivatives = (ctypes.c_double * (row_count * len(requests)))(
+        *(15.0 for _ in range(row_count * len(requests)))
+    )
+    request_buffer = (ActiveParameterRequest * len(requests))(*requests)
+    value = NeutralReferenceResult(
+        struct_size=ctypes.sizeof(NeutralReferenceResult),
+        component_count=component_count,
+        neutral_basis_row_count=row_count,
+        neutral_basis_capacity=component_count * row_count,
+        contraction_capacity=row_count,
+        reference_composition_capacity=component_count,
+        neutral_basis=basis,
+        log_fugacity_contractions=contractions,
+        reference_composition=composition,
+    )
+    result = NeutralReferenceDerivativeResult(
+        struct_size=ctypes.sizeof(NeutralReferenceDerivativeResult),
+        value=value,
+        active_parameter_count=len(requests),
+        pressure_derivative_capacity=row_count,
+        parameter_derivative_capacity=row_count * len(requests),
+        pressure_derivatives_per_pa=pressure_derivatives,
+        parameter_derivatives=(parameter_derivatives if requests else None),
+    )
+    status = EvaluateNeutralReferenceDerivatives(table.evaluate_neutral_reference_derivatives)(
+        table.model_context,
+        fingerprint.encode(),
+        topology_fingerprint.encode(),
+        temperature_k,
+        pressure_pa,
+        request_buffer,
+        len(requests),
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return (
+        result,
+        tuple(basis),
+        tuple(contractions),
+        tuple(composition),
+        tuple(pressure_derivatives),
+        tuple(parameter_derivatives),
+    )
+
+
+def _evaluate_reacting_phase_parameters(
+    table: ReactingSensitivityNativeSdkTable,
+    fingerprint: str,
+    topology_fingerprint: str,
+    amounts: tuple[float, ...],
+    volume_m3: float,
+    requests: tuple[ActiveParameterRequest, ...],
+    *,
+    temperature_k: float = 298.15,
+    packing_state_gradient_capacity: int | None = None,
+    packing_state_hessian_capacity: int | None = None,
+    provide_packing_state_gradient: bool = True,
+    provide_packing_state_hessian: bool = True,
+) -> tuple[
+    ReactingPhaseParameterResult,
+    tuple[float, ...],
+    tuple[float, ...],
+    tuple[float, ...],
+    tuple[float, ...],
+    tuple[float, ...],
+    tuple[float, ...],
+    tuple[float, ...],
+    tuple[float, ...],
+    tuple[float, ...],
+    tuple[float, ...],
+]:
+    state_count = len(amounts) + 1
+    parameter_count = len(requests)
+    amounts_buffer = (ctypes.c_double * len(amounts))(*amounts)
+    request_buffer = (ActiveParameterRequest * parameter_count)(*requests)
+    state_gradient = (ctypes.c_double * state_count)(
+        *(21.0 for _ in range(state_count))
+    )
+    state_hessian = (ctypes.c_double * (state_count * state_count))(
+        *(22.0 for _ in range(state_count * state_count))
+    )
+    parameter_gradient = (ctypes.c_double * parameter_count)(
+        *(23.0 for _ in range(parameter_count))
+    )
+    mixed = (ctypes.c_double * (state_count * parameter_count))(
+        *(24.0 for _ in range(state_count * parameter_count))
+    )
+    packing = (ctypes.c_double * parameter_count)(
+        *(25.0 for _ in range(parameter_count))
+    )
+    packing_state_gradient = (ctypes.c_double * state_count)(
+        *(29.0 for _ in range(state_count))
+    )
+    packing_state_hessian = (ctypes.c_double * (state_count * state_count))(
+        *(30.0 for _ in range(state_count * state_count))
+    )
+    volume_bounds = (ctypes.c_double * (2 * parameter_count))(
+        *(26.0 for _ in range(2 * parameter_count))
+    )
+    pressure = (ctypes.c_double * parameter_count)(
+        *(27.0 for _ in range(parameter_count))
+    )
+    chemical = (ctypes.c_double * (len(amounts) * parameter_count))(
+        *(28.0 for _ in range(len(amounts) * parameter_count))
+    )
+    result = ReactingPhaseParameterResult(
+        struct_size=ctypes.sizeof(ReactingPhaseParameterResult),
+        state_coordinate_count=state_count,
+        active_parameter_count=parameter_count,
+        state_gradient_capacity=state_count,
+        state_hessian_capacity=state_count * state_count,
+        parameter_gradient_capacity=parameter_count,
+        state_parameter_capacity=state_count * parameter_count,
+        packing_parameter_capacity=parameter_count,
+        molar_volume_bound_parameter_capacity=2 * parameter_count,
+        pressure_parameter_capacity=parameter_count,
+        chemical_potential_parameter_capacity=len(amounts) * parameter_count,
+        state_gradient=state_gradient,
+        state_hessian=state_hessian,
+        parameter_gradient=parameter_gradient,
+        state_parameter_derivatives=mixed,
+        packing_parameter_derivatives=packing,
+        molar_volume_bound_parameter_derivatives_m3_per_mol=volume_bounds,
+        pressure_parameter_derivatives_pa=pressure,
+        chemical_potential_parameter_derivatives_over_rt=chemical,
+        packing_state_gradient_capacity=(
+            state_count
+            if packing_state_gradient_capacity is None
+            else packing_state_gradient_capacity
+        ),
+        packing_state_hessian_capacity=(
+            state_count * state_count
+            if packing_state_hessian_capacity is None
+            else packing_state_hessian_capacity
+        ),
+        packing_state_gradient=(
+            packing_state_gradient if provide_packing_state_gradient else None
+        ),
+        packing_state_hessian=(
+            packing_state_hessian if provide_packing_state_hessian else None
+        ),
+    )
+    status = EvaluateReactingPhaseParameters(table.evaluate_reacting_phase_parameters)(
+        table.model_context,
+        fingerprint.encode(),
+        topology_fingerprint.encode(),
+        temperature_k,
+        amounts_buffer,
+        len(amounts),
+        volume_m3,
+        0.01,
+        0.5,
+        request_buffer,
+        parameter_count,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return (
+        result,
+        tuple(state_gradient),
+        tuple(state_hessian),
+        tuple(parameter_gradient),
+        tuple(mixed),
+        tuple(packing),
+        tuple(packing_state_gradient),
+        tuple(packing_state_hessian),
+        tuple(volume_bounds),
+        tuple(pressure),
+        tuple(chemical),
+    )
 
 
 def _evaluate_aqueous_miac_kij(
@@ -2546,7 +2976,7 @@ _Static_assert(
     offsetof(epcsaft_native_sdk_v1, evaluate_electrolyte_phase_value) == 384,
     "electrolyte-value callback offset"
 );
-_Static_assert(sizeof(epcsaft_native_sdk_v1) == 392, "final table size");
+_Static_assert(sizeof(epcsaft_native_sdk_v1) >= 392, "accepted table prefix size");
 _Static_assert(
     sizeof(epcsaft_electrolyte_phase_value_result_v1) == 248,
     "electrolyte-value result size"
@@ -6492,3 +6922,805 @@ int main() {
     assert compiled.returncode == 0, compiled.stderr
     executed = subprocess.run((str(output),), capture_output=True, text=True, check=False)
     assert executed.returncode == 0, executed.stderr
+
+
+def test_native_sdk_reacting_sensitivity_tail_is_append_only_in_installed_header() -> None:
+    compiler = shutil.which("cc")
+    assert compiler is not None
+    include_root = Path(epcsaft.__file__).parent / "include"
+    source = r"""
+#include <stddef.h>
+#include "epcsaft/native_sdk_v1.h"
+
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, neutral_reference_derivative_result_size) == 392,
+    "neutral-reference derivative result-size offset"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, evaluate_neutral_reference_derivatives) == 400,
+    "neutral-reference derivative callback offset"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, reacting_phase_parameter_result_size) == 408,
+    "reacting-phase result-size offset"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, evaluate_reacting_phase_parameters) == 416,
+    "reacting-phase callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) == 424, "extended table size");
+_Static_assert(
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1 == 4u,
+    "typed diameter family"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1 == 5u,
+    "typed dispersion-energy family"
+);
+int main(void) { return 0; }
+"""
+    completed = subprocess.run(
+        (compiler, "-std=c11", f"-I{include_root}", "-x", "c", "-fsyntax-only", "-"),
+        input=source,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_native_density_root_identity_rejects_topology_and_location_drift(
+    tmp_path: Path,
+) -> None:
+    compiler = shutil.which("c++")
+    assert compiler is not None
+    native_root = Path(__file__).parents[1] / "src" / "epcsaft" / "_native"
+    source = r"""
+#include "density.hpp"
+
+int main() {
+    using epcsaft::detail::DensityRootIdentity;
+    using epcsaft::detail::same_continuous_density_root;
+    const DensityRootIdentity base{1000.0, 3, 2, "liquid"};
+    if (!same_continuous_density_root(
+            base, DensityRootIdentity{1000.5, 3, 2, "liquid"}, 1.0e-3
+        )) return 1;
+    if (same_continuous_density_root(
+            base, DensityRootIdentity{1000.0, 2, 1, "liquid"}, 1.0e-3
+        )) return 2;
+    if (same_continuous_density_root(
+            base, DensityRootIdentity{1000.0, 3, 1, "liquid"}, 1.0e-3
+        )) return 3;
+    if (same_continuous_density_root(
+            base, DensityRootIdentity{1000.0, 3, 2, "vapor"}, 1.0e-3
+        )) return 4;
+    if (same_continuous_density_root(
+            base, DensityRootIdentity{1010.0, 3, 2, "liquid"}, 1.0e-3
+        )) return 5;
+    return 0;
+}
+"""
+    executable = tmp_path / "root-identity"
+    compiled = subprocess.run(
+        (
+            compiler,
+            "-std=c++17",
+            f"-I{native_root}",
+            "-x",
+            "c++",
+            "-",
+            "-o",
+            str(executable),
+        ),
+        input=source,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert compiled.returncode == 0, compiled.stderr
+    executed = subprocess.run(
+        (str(executable),),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert executed.returncode == 0, executed.stderr
+
+
+def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
+    tmp_path: Path,
+) -> None:
+    artifact = tmp_path / "electrolyte.json"
+    export_native_model(_held_water_ionization_model(), artifact)
+    source_dir = Path(__file__).parent / "native_sdk_consumer"
+    build_dir = tmp_path / "consumer-build"
+    package_dir = Path(native_core.__file__).parent / "cmake"
+    configured = subprocess.run(
+        (
+            "cmake",
+            "-S",
+            str(source_dir),
+            "-B",
+            str(build_dir),
+            f"-Depcsaft_DIR={package_dir}",
+        ),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert configured.returncode == 0, configured.stderr
+    built = subprocess.run(
+        ("cmake", "--build", str(build_dir), "--parallel"),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert built.returncode == 0, built.stderr
+    consumed = subprocess.run(
+        (str(build_dir / "epcsaft_native_sdk_consumer"), str(artifact)),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert consumed.returncode == 0, consumed.stderr
+    assert "component_count=3" in consumed.stdout
+    assert "reference_branch=liquid" in consumed.stdout
+
+
+def test_native_sdk_reacting_phase_parameter_columns_match_fixed_topology_oracles() -> None:
+    model = _electrolyte_model()
+    sensitivity_capsule, table = _reacting_sensitivity_table(model)
+    capability_capsule, capability_table = _capability_table(model)
+    assert sensitivity_capsule is not None and capability_capsule is not None
+    assert table.reacting_phase_parameter_result_size == ctypes.sizeof(
+        ReactingPhaseParameterResult
+    )
+    descriptors = tuple(
+        capability_table.capabilities[index]
+        for index in range(capability_table.capability_count)
+        if capability_table.capabilities[index].capability in (19, 20)
+    )
+    assert tuple(
+        (
+            descriptor.capability,
+            descriptor.parameter_family,
+            descriptor.coordinates[0].component_index,
+            descriptor.coordinates[0].unit.decode(),
+        )
+        for descriptor in descriptors
+    ) == (
+        (20, 5, 0, "kelvin"),
+        (19, 4, 1, "angstrom"),
+        (20, 5, 1, "kelvin"),
+        (19, 4, 2, "angstrom"),
+        (20, 5, 2, "kelvin"),
+    )
+    topology = descriptors[0].topology_fingerprint.decode()
+    sigma = float(model._model.segment_diameter[1].value.to("angstrom").magnitude)
+    epsilon = float(model._model.dispersion_energy_over_k[1])
+    requests = (
+        _active_request(4, 1, sigma, b"angstrom"),
+        _active_request(5, 1, epsilon, b"kelvin"),
+    )
+    amounts = (0.98, 0.01, 0.01)
+    volume = 2.5e-5
+    (
+        center,
+        state_gradient,
+        returned_state_hessian,
+        parameter_gradient,
+        mixed,
+        packing,
+        packing_state_gradient,
+        packing_state_hessian,
+        volume_bounds,
+        pressure,
+        chemical,
+    ) = (
+        _evaluate_reacting_phase_parameters(
+            table,
+            model.parameter_fingerprint,
+            topology,
+            amounts,
+            volume,
+            requests,
+        )
+    )
+    assert center.status == STATUS_OK
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert center.topology_fingerprint.decode() == topology
+    assert center.helmholtz_basis_id
+
+    _, ordinary_table = _electrolyte_table(model)
+    ordinary, ordinary_gradient, ordinary_hessian = _evaluate_electrolyte(
+        ordinary_table, 298.15, amounts, volume
+    )
+    state_hessian = tuple(center.state_hessian[index] for index in range(16))
+    assert returned_state_hessian == state_hessian
+    assert len(parameter_gradient) == 2
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        ordinary.helmholtz_over_rt_reference_amount, rel=3.0e-13
+    )
+    assert state_gradient == pytest.approx(ordinary_gradient, rel=3.0e-12)
+    assert state_hessian == pytest.approx(ordinary_hessian, rel=3.0e-11)
+    _, packing_table = _packing_fraction_table(model)
+    ordinary_packing = ctypes.c_double()
+    ordinary_packing_gradient = (ctypes.c_double * 4)()
+    ordinary_packing_hessian = (ctypes.c_double * 16)()
+    packing_status = EvaluatePackingFraction(
+        packing_table.evaluate_packing_fraction
+    )(
+        packing_table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        (ctypes.c_double * 3)(*amounts),
+        3,
+        volume,
+        ctypes.byref(ordinary_packing),
+        ordinary_packing_gradient,
+        4,
+        ordinary_packing_hessian,
+        16,
+    )
+    assert packing_status == STATUS_OK
+    assert center.packing_fraction == ordinary_packing.value
+    assert packing_state_gradient == tuple(ordinary_packing_gradient)
+    assert packing_state_hessian == tuple(ordinary_packing_hessian)
+    assert all(math.isfinite(value) for value in packing_state_gradient)
+    assert all(math.isfinite(value) for value in packing_state_hessian)
+    assert chemical == pytest.approx(mixed[:6])
+    assert pressure == pytest.approx(
+        tuple(-8.31446261815324 * 298.15 * mixed[3 * 2 + parameter] for parameter in range(2))
+    )
+    reordered = _evaluate_reacting_phase_parameters(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        volume,
+        tuple(reversed(requests)),
+    )
+    reordered_mixed = reordered[4]
+    assert reordered_mixed == pytest.approx(
+        tuple(mixed[row * 2 + parameter] for row in range(4) for parameter in (1, 0))
+    )
+    assert reordered[6] == packing_state_gradient
+    assert reordered[7] == packing_state_hessian
+
+    def ordinary_trial(
+        family: str,
+        value: float,
+        unit: str,
+    ) -> tuple[
+        MixturePhaseBlockResult,
+        tuple[float, ...],
+        float,
+        tuple[float, ...],
+        tuple[float, ...],
+        tuple[float, float],
+    ]:
+        trial = _component_parameter_trial_model(
+            "figiel-2025-reference-electrolytes",
+            ("water", "sodium-cation", "chloride-anion"),
+            "sodium-cation",
+            family,
+            value,
+            unit,
+        )
+        _, phase_table = _electrolyte_table(trial)
+        phase, gradient, _ = _evaluate_electrolyte(
+            phase_table, 298.15, amounts, volume
+        )
+        _, packing_table = _packing_fraction_table(trial)
+        packing_value = ctypes.c_double()
+        packing_gradient = (ctypes.c_double * 4)()
+        packing_hessian = (ctypes.c_double * 16)()
+        packing_status = EvaluatePackingFraction(
+            packing_table.evaluate_packing_fraction
+        )(
+            packing_table.model_context,
+            trial.parameter_fingerprint.encode(),
+            298.15,
+            (ctypes.c_double * 3)(*amounts),
+            3,
+            volume,
+            ctypes.byref(packing_value),
+            packing_gradient,
+            4,
+            packing_hessian,
+            16,
+        )
+        assert packing_status == STATUS_OK
+        _, bounds_table = _volume_bounds_table(trial)
+        bounds = (ctypes.c_double * 2)()
+        bounds_status = EvaluateMolarVolumeBounds(
+            bounds_table.evaluate_molar_volume_bounds
+        )(
+            bounds_table.model_context,
+            trial.parameter_fingerprint.encode(),
+            298.15,
+            (ctypes.c_double * 3)(*amounts),
+            3,
+            0.01,
+            0.5,
+            bounds,
+            2,
+        )
+        assert bounds_status == STATUS_OK
+        return (
+            phase,
+            gradient,
+            packing_value.value,
+            tuple(packing_gradient),
+            tuple(packing_hessian),
+            tuple(bounds),
+        )
+
+    noncatalog_sigma = sigma + 0.01
+    active_trial = _evaluate_reacting_phase_parameters(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        volume,
+        (_active_request(4, 1, noncatalog_sigma, b"angstrom"),),
+    )
+    ordinary_active_trial = ordinary_trial(
+        "segment_diameter",
+        noncatalog_sigma,
+        "angstrom",
+    )
+    assert active_trial[0].packing_fraction == ordinary_active_trial[2]
+    assert active_trial[6] == ordinary_active_trial[3]
+    assert active_trial[7] == ordinary_active_trial[4]
+
+    for parameter, step in ((0, 2.0e-5), (1, 2.0e-3)):
+        shifted = []
+        family = (
+            "segment_diameter"
+            if parameter == 0
+            else "dispersion_energy_over_k"
+        )
+        unit = "angstrom" if parameter == 0 else "kelvin"
+        for sign in (-1.0, 1.0):
+            shifted.append(
+                ordinary_trial(
+                    family,
+                    requests[parameter].value + sign * step,
+                    unit,
+                )
+            )
+        lower, upper = shifted
+        for state in range(4):
+            numerical = (upper[1][state] - lower[1][state]) / (2.0 * step)
+            assert mixed[state * 2 + parameter] == pytest.approx(numerical, rel=2.0e-6, abs=2.0e-6)
+        numerical_pressure = (upper[0].pressure_pa - lower[0].pressure_pa) / (2.0 * step)
+        assert center.pressure_parameter_derivatives_pa[parameter] == pytest.approx(
+            numerical_pressure, rel=2.0e-6, abs=2.0e-3
+        )
+        numerical_packing = (upper[2] - lower[2]) / (2.0 * step)
+        assert packing[parameter] == pytest.approx(numerical_packing, rel=2.0e-6, abs=2.0e-10)
+        for bound in range(2):
+            numerical_bound = (
+                upper[5][bound] - lower[5][bound]
+            ) / (2.0 * step)
+            assert volume_bounds[bound * 2 + parameter] == pytest.approx(
+                numerical_bound, rel=2.0e-6, abs=2.0e-12
+            )
+
+
+def test_native_sdk_reacting_phase_parameters_reject_contract_drift_without_writes() -> None:
+    model = _electrolyte_model()
+    capsule, table = _reacting_sensitivity_table(model)
+    capability_capsule, capability_table = _capability_table(model)
+    assert capsule is not None and capability_capsule is not None
+    descriptor = next(
+        capability_table.capabilities[index]
+        for index in range(capability_table.capability_count)
+        if capability_table.capabilities[index].capability == 19
+        and capability_table.capabilities[index].coordinates[0].component_index == 1
+    )
+    topology = descriptor.topology_fingerprint.decode()
+    sigma = float(model._model.segment_diameter[1].value.to("angstrom").magnitude)
+    request = _active_request(4, 1, sigma, b"angstrom")
+    amounts = (0.98, 0.01, 0.01)
+
+    for fingerprint, topology_fingerprint in (
+        ("sha256:wrong-parameter-set", topology),
+        (model.parameter_fingerprint, "sha256:wrong-topology"),
+    ):
+        (
+            result,
+            gradient,
+            hessian,
+            parameter_gradient,
+            mixed,
+            packing,
+            packing_state_gradient,
+            packing_state_hessian,
+            volume_bounds,
+            pressure_columns,
+            chemical_columns,
+        ) = _evaluate_reacting_phase_parameters(
+            table,
+            fingerprint,
+            topology_fingerprint,
+            amounts,
+            2.5e-5,
+            (request,),
+        )
+        assert result.status == STATUS_UNSUPPORTED_MODEL
+        assert result.parameter_fingerprint == b""
+        assert gradient == (21.0,) * 4
+        assert hessian == (22.0,) * 16
+        assert parameter_gradient == (23.0,)
+        assert mixed == (24.0,) * 4
+        assert packing == (25.0,)
+        assert packing_state_gradient == (29.0,) * 4
+        assert packing_state_hessian == (30.0,) * 16
+        assert volume_bounds == (26.0,) * 2
+        assert pressure_columns == (27.0,)
+        assert chemical_columns == (28.0,) * 3
+
+    unsupported = _active_request(999, 1, sigma, b"angstrom")
+    result, *_ = _evaluate_reacting_phase_parameters(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        2.5e-5,
+        (unsupported,),
+    )
+    assert result.status == STATUS_UNSUPPORTED_MODEL
+
+    unadvertised = _active_request(4, 0, 2.7927, b"angstrom")
+    result, *_ = _evaluate_reacting_phase_parameters(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        2.5e-5,
+        (unadvertised,),
+    )
+    assert result.status == STATUS_UNSUPPORTED_MODEL
+
+    duplicate = (
+        request,
+        _active_request(4, 1, sigma, b"angstrom"),
+    )
+    result, *_ = _evaluate_reacting_phase_parameters(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        2.5e-5,
+        duplicate,
+    )
+    assert result.status == STATUS_DOMAIN_ERROR
+
+    nonfinite = _active_request(4, 1, math.nan, b"angstrom")
+    result, *_ = _evaluate_reacting_phase_parameters(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        2.5e-5,
+        (nonfinite,),
+    )
+    assert result.status == STATUS_DOMAIN_ERROR
+    assert math.isnan(result.helmholtz_over_rt_reference_amount)
+
+    outside_domain, *_ = _evaluate_reacting_phase_parameters(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        amounts,
+        1.0e-6,
+        (request,),
+    )
+    assert outside_domain.status == STATUS_DOMAIN_ERROR
+
+    for capacity_override in (
+        {"packing_state_gradient_capacity": 3},
+        {"packing_state_hessian_capacity": 15},
+    ):
+        capacity_failure = _evaluate_reacting_phase_parameters(
+            table,
+            model.parameter_fingerprint,
+            topology,
+            amounts,
+            2.5e-5,
+            (request,),
+            **capacity_override,
+        )
+        assert capacity_failure[0].status == STATUS_ABI_MISMATCH
+        assert capacity_failure[6] == (29.0,) * 4
+        assert capacity_failure[7] == (30.0,) * 16
+
+    for pointer_override in (
+        {"provide_packing_state_gradient": False},
+        {"provide_packing_state_hessian": False},
+    ):
+        pointer_failure = _evaluate_reacting_phase_parameters(
+            table,
+            model.parameter_fingerprint,
+            topology,
+            amounts,
+            2.5e-5,
+            (request,),
+            **pointer_override,
+        )
+        assert pointer_failure[0].status == STATUS_ABI_MISMATCH
+        assert pointer_failure[6] == (29.0,) * 4
+        assert pointer_failure[7] == (30.0,) * 16
+
+    callback = EvaluateReactingPhaseParameters(table.evaluate_reacting_phase_parameters)
+    amounts_buffer = (ctypes.c_double * 3)(*amounts)
+    request_buffer = (ActiveParameterRequest * 1)(request)
+    abi_result = ReactingPhaseParameterResult(
+        struct_size=ctypes.sizeof(ReactingPhaseParameterResult) - 1,
+        status=12345,
+    )
+    status = callback(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        topology.encode(),
+        298.15,
+        amounts_buffer,
+        3,
+        2.5e-5,
+        0.01,
+        0.5,
+        request_buffer,
+        1,
+        ctypes.byref(abi_result),
+    )
+    assert status == STATUS_ABI_MISMATCH
+    assert abi_result.status == 12345
+
+
+def test_native_sdk_neutral_reference_derivatives_are_exact_and_fail_closed() -> None:
+    model = _held_water_ionization_model()
+    sensitivity_capsule, table = _reacting_sensitivity_table(model)
+    capability_capsule, capability_table = _capability_table(model)
+    assert sensitivity_capsule is not None and capability_capsule is not None
+    descriptor = next(
+        capability_table.capabilities[index]
+        for index in range(capability_table.capability_count)
+        if capability_table.capabilities[index].capability == 19
+        and capability_table.capabilities[index].coordinates[0].component_index == 1
+    )
+    topology = descriptor.topology_fingerprint.decode()
+    sigma = float(model._model.segment_diameter[1].value.to("angstrom").magnitude)
+    epsilon = float(model._model.dispersion_energy_over_k[1])
+    requests = (
+        _active_request(4, 1, sigma, b"angstrom"),
+        _active_request(5, 1, epsilon, b"kelvin"),
+    )
+    (
+        result,
+        _,
+        contractions,
+        _,
+        pressure_derivatives,
+        parameter_derivatives,
+    ) = (
+        _evaluate_neutral_reference_derivatives(
+            table,
+            model.parameter_fingerprint,
+            topology,
+            requests,
+        )
+    )
+    assert result.status == result.value.status == STATUS_OK
+    assert result.value.derivative_availability == 0
+    assert result.derivative_availability == 10
+    assert result.reference_branch == b"liquid"
+    assert result.source_pressure_min_pa == 100000.0
+    assert result.source_pressure_max_pa == 100000.0
+    assert result.maximum_root_residual_pa <= 2.0e-5
+    assert result.minimum_pressure_density_derivative_pa_m3_per_mol > 0.0
+    assert math.isfinite(result.maximum_density_condition_number)
+    assert math.isfinite(result.reference_derivative_convergence_error)
+    assert result.maximum_relative_root_bracket_width <= 1.0e-8
+    assert result.maximum_relative_root_density_step <= 1.0e-3
+    assert result.stable_root_count >= 2
+    assert result.selected_stable_root_index < result.stable_root_count
+
+    def contractions_at_pressure(pressure_pa: float) -> tuple[float, float]:
+        composition = (1.0, 0.0, 0.0)
+        pure = model._native.evaluate_pressure(298.15, pressure_pa, composition, "liquid")
+        sequence = model._native.electrolyte_reference_sequence(
+            298.15,
+            pressure_pa,
+            composition,
+            (1, 2),
+            (1, 1),
+            "liquid",
+        )
+        return (
+            pure.log_fugacity_coefficient[0],
+            math.fsum(sequence.log_fugacity),
+        )
+
+    pressure_step = 5.0
+    lower_pressure = contractions_at_pressure(100000.0 - pressure_step)
+    upper_pressure = contractions_at_pressure(100000.0 + pressure_step)
+    for row in range(2):
+        numerical = (upper_pressure[row] - lower_pressure[row]) / (2.0 * pressure_step)
+        assert pressure_derivatives[row] == pytest.approx(numerical, rel=3.0e-6, abs=3.0e-12)
+
+    for parameter, step in ((0, 2.0e-5), (1, 2.0e-3)):
+        shifted_contractions = []
+        family = (
+            "segment_diameter"
+            if parameter == 0
+            else "dispersion_energy_over_k"
+        )
+        unit = "angstrom" if parameter == 0 else "kelvin"
+        for sign in (-1.0, 1.0):
+            trial = _component_parameter_trial_model(
+                "held-2008-water-self-ionization",
+                ("water", "hydronium-cation", "hydroxide-anion"),
+                "hydronium-cation",
+                family,
+                requests[parameter].value + sign * step,
+                unit,
+            )
+            _, trial_table = _neutral_reference_table(trial)
+            shifted_contractions.append(
+                _evaluate_neutral_reference(
+                    trial_table,
+                    trial.parameter_fingerprint,
+                )[2]
+            )
+        for row in range(2):
+            numerical = (shifted_contractions[1][row] - shifted_contractions[0][row]) / (2.0 * step)
+            assert parameter_derivatives[row * 2 + parameter] == pytest.approx(
+                numerical, rel=4.0e-6, abs=4.0e-8
+            )
+    assert -2.0 * contractions[0] + contractions[1] == pytest.approx(
+        -2.0 * result.value.log_fugacity_contractions[0] + result.value.log_fugacity_contractions[1]
+    )
+
+    pressure_only, *_ = _evaluate_neutral_reference_derivatives(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        (),
+    )
+    assert pressure_only.status == STATUS_OK
+    assert pressure_only.derivative_availability == 2
+
+    malformed = _active_request(4, 1, sigma, b"nanometer")
+    failure, *_ = _evaluate_neutral_reference_derivatives(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        (malformed,),
+    )
+    assert failure.status == STATUS_DOMAIN_ERROR
+    assert failure.derivative_availability == 0
+    assert failure.parameter_fingerprint == b""
+
+
+def test_native_sdk_neutral_reference_derivatives_reject_identity_domain_and_abi_drift() -> None:
+    model = _held_water_ionization_model()
+    capsule, table = _reacting_sensitivity_table(model)
+    capability_capsule, capability_table = _capability_table(model)
+    assert capsule is not None and capability_capsule is not None
+    descriptor = next(
+        capability_table.capabilities[index]
+        for index in range(capability_table.capability_count)
+        if capability_table.capabilities[index].capability == 19
+        and capability_table.capabilities[index].coordinates[0].component_index == 1
+    )
+    topology = descriptor.topology_fingerprint.decode()
+    sigma = float(model._model.segment_diameter[1].value.to("angstrom").magnitude)
+    request = _active_request(4, 1, sigma, b"angstrom")
+
+    for fingerprint, topology_fingerprint in (
+        ("sha256:wrong-parameter-set", topology),
+        (model.parameter_fingerprint, "sha256:wrong-topology"),
+    ):
+        (
+            result,
+            basis,
+            contractions,
+            composition,
+            pressure_columns,
+            parameter_columns,
+        ) = (
+            _evaluate_neutral_reference_derivatives(
+                table,
+                fingerprint,
+                topology_fingerprint,
+                (request,),
+            )
+        )
+        assert result.status == STATUS_UNSUPPORTED_MODEL
+        assert result.derivative_availability == 0
+        assert result.parameter_fingerprint == b""
+        assert basis == (11.0,) * 6
+        assert contractions == (12.0, 12.0)
+        assert composition == (13.0,) * 3
+        assert pressure_columns == (14.0, 14.0)
+        assert parameter_columns == (15.0, 15.0)
+
+    outside_domain, *_ = _evaluate_neutral_reference_derivatives(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        (request,),
+        temperature_k=400.0,
+    )
+    assert outside_domain.status == STATUS_DOMAIN_ERROR
+    assert outside_domain.derivative_availability == 0
+
+    duplicate = (
+        request,
+        _active_request(4, 1, sigma, b"angstrom"),
+    )
+    duplicated, *_ = _evaluate_neutral_reference_derivatives(
+        table,
+        model.parameter_fingerprint,
+        topology,
+        duplicate,
+    )
+    assert duplicated.status == STATUS_DOMAIN_ERROR
+
+    callback = EvaluateNeutralReferenceDerivatives(table.evaluate_neutral_reference_derivatives)
+    request_buffer = (ActiveParameterRequest * 1)(request)
+    abi_result = NeutralReferenceDerivativeResult(
+        struct_size=ctypes.sizeof(NeutralReferenceDerivativeResult) - 1,
+        status=12345,
+    )
+    status = callback(
+        table.model_context,
+        model.parameter_fingerprint.encode(),
+        topology.encode(),
+        298.15,
+        100000.0,
+        request_buffer,
+        1,
+        ctypes.byref(abi_result),
+    )
+    assert status == STATUS_ABI_MISMATCH
+    assert abi_result.status == 12345
+
+
+def test_native_sdk_neutral_reference_root_continuity_resets_for_each_ion_pair() -> None:
+    component_ids = (
+        "water",
+        "sodium-cation",
+        "potassium-cation",
+        "chloride-anion",
+    )
+    bundle = _ParameterBundle.from_catalog(
+        "figiel-2025-reference-electrolytes", version=1
+    )
+    model = Mixture(
+        _user_provided_copy(bundle).select(component_ids)
+    )
+    capsule, table = _reacting_sensitivity_table(model)
+    capability_capsule, capability_table = _capability_table(model)
+    assert capsule is not None and capability_capsule is not None
+    descriptor = next(
+        capability_table.capabilities[index]
+        for index in range(capability_table.capability_count)
+        if capability_table.capabilities[index].capability == 19
+        and capability_table.capabilities[index].coordinates[0].component_index
+        == 1
+    )
+    sigma = float(
+        model._model.segment_diameter[1].value.to("angstrom").magnitude
+    )
+    result, *_ = _evaluate_neutral_reference_derivatives(
+        table,
+        model.parameter_fingerprint,
+        descriptor.topology_fingerprint.decode(),
+        (_active_request(4, 1, sigma, b"angstrom"),),
+    )
+    assert result.status == STATUS_OK
+    assert result.value.neutral_basis_row_count == 3
+    assert result.maximum_relative_root_density_step <= 1.0e-3
