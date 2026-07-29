@@ -3,7 +3,7 @@ from itertools import combinations
 
 import pytest
 
-from epcsaft import EPCSAFT, ParameterBundle, unit_registry
+from epcsaft import Mixture, _ParameterBundle, unit_registry
 from epcsaft.records import (
     ComponentRecord,
     ConstantCorrelation,
@@ -50,7 +50,7 @@ def _parameters(
     *,
     extra_models: tuple[ModelParameterRecord, ...] = (),
     include_second_solvent: bool = False,
-) -> ParameterBundle:
+) -> _ParameterBundle:
     component_ids = (
         ("water", "methanol", "sodium", "chloride")
         if include_second_solvent
@@ -182,7 +182,7 @@ def _parameters(
         PairParameterRecord(f"{a}-{b}-kij", a, b, "k_ij", 0, **PROVENANCE)
         for a, b in combinations(component_ids, 2)
     )
-    return ParameterBundle.from_records(
+    return _ParameterBundle.from_records(
         bundle_id="permittivity-model-fixture",
         bundle_version=1,
         purpose="package-test-fixture",
@@ -196,8 +196,8 @@ def _parameters(
     ).select(component_ids)
 
 
-def _model(kind: str) -> EPCSAFT:
-    return EPCSAFT(_parameters(kind))
+def _model(kind: str) -> Mixture:
+    return Mixture(_parameters(kind))
 
 
 def _dipolar_perturbation_oracle(
@@ -245,10 +245,10 @@ def _dipolar_perturbation_oracle(
 )
 def test_bulk_permittivity_matches_independent_source_equation(kind: str, expected: float) -> None:
     model = _model(kind)
-    result = model.evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        molar_density=55_000 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(0.9, 0.05, 0.05),
+    result = model.state(
+        T=298.15 * unit_registry.kelvin,
+        rho=55_000 * unit_registry.mole / unit_registry.meter**3,
+        x=(0.9, 0.05, 0.05),
     )
 
     assert model.relative_permittivity_formulation == kind
@@ -258,10 +258,10 @@ def test_bulk_permittivity_matches_independent_source_equation(kind: str, expect
 @pytest.mark.parametrize("kind", ("density-volume-temperature", "dipolar-density-perturbation"))
 def test_density_models_approach_vacuum_permittivity_at_zero_density(kind: str) -> None:
     model = _model(kind)
-    result = model.evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        molar_density=1.0e-9 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(1.0 - 2.0e-12, 1.0e-12, 1.0e-12),
+    result = model.state(
+        T=298.15 * unit_registry.kelvin,
+        rho=1.0e-9 * unit_registry.mole / unit_registry.meter**3,
+        x=(1.0 - 2.0e-12, 1.0e-12, 1.0e-12),
     )
 
     assert result.bulk_relative_permittivity == pytest.approx(1.0, abs=2.0e-12)
@@ -285,11 +285,11 @@ def test_permittivity_density_derivatives_remain_in_common_cppad_helmholtz_owner
     step = density * 2.0e-4
 
     def residual_at(rho: float) -> float:
-        return model.evaluate(
-            temperature=temperature * unit_registry.kelvin,
-            molar_density=rho * unit_registry.mole / unit_registry.meter**3,
-            mole_fractions=(0.9, 0.05, 0.05),
-        ).residual_helmholtz
+        return model.state(
+            T=temperature * unit_registry.kelvin,
+            rho=rho * unit_registry.mole / unit_registry.meter**3,
+            x=(0.9, 0.05, 0.05),
+        )._residual_helmholtz
 
     derivative = (
         -residual_at(density + 2.0 * step)
@@ -297,10 +297,10 @@ def test_permittivity_density_derivatives_remain_in_common_cppad_helmholtz_owner
         - 8.0 * residual_at(density - step)
         + residual_at(density - 2.0 * step)
     ) / (12.0 * step)
-    result = model.evaluate(
-        temperature=temperature * unit_registry.kelvin,
-        molar_density=density * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(0.9, 0.05, 0.05),
+    result = model.state(
+        T=temperature * unit_registry.kelvin,
+        rho=density * unit_registry.mole / unit_registry.meter**3,
+        x=(0.9, 0.05, 0.05),
     )
 
     assert result.pressure.to("pascal").magnitude == pytest.approx(
@@ -321,10 +321,10 @@ def test_permittivity_density_derivatives_remain_in_common_cppad_helmholtz_owner
 def test_relative_permittivity_formulation_closes_a_single_pressure_root_with_exact_slope(kind: str) -> None:
     model = _model(kind)
     fractions = (0.826112, 0.086944, 0.086944)
-    result = model.evaluate(
-        temperature=298.15 * unit_registry.kelvin,
-        pressure=2508.0 * unit_registry.pascal,
-        mole_fractions=fractions,
+    result = model.state(
+        T=298.15 * unit_registry.kelvin,
+        P=2508.0 * unit_registry.pascal,
+        x=fractions,
     )
 
     assert result.density_diagnostics is not None
@@ -336,10 +336,10 @@ def test_relative_permittivity_formulation_closes_a_single_pressure_root_with_ex
 
     def pressure_at(rho: float) -> float:
         return (
-            model.evaluate(
-                temperature=298.15 * unit_registry.kelvin,
-                molar_density=rho * unit_registry.mole / unit_registry.meter**3,
-                mole_fractions=fractions,
+            model.state(
+                T=298.15 * unit_registry.kelvin,
+                rho=rho * unit_registry.mole / unit_registry.meter**3,
+                x=fractions,
             )
             .pressure.to("pascal")
             .magnitude
@@ -368,22 +368,22 @@ def test_extraneous_formulation_family_fails_during_model_resolution() -> None:
     )
 
     with pytest.raises(ValueError, match="extraneous-formulation-family"):
-        EPCSAFT(mixed)
+        Mixture(mixed)
 
 
 def test_ion_specific_mixed_solvent_selection_requires_source_volume_data() -> None:
     with pytest.raises(ValueError, match="mixed-solvent-volume-data-required"):
-        EPCSAFT(_parameters("ion-specific-suppression", include_second_solvent=True))
+        Mixture(_parameters("ion-specific-suppression", include_second_solvent=True))
 
 
 def test_neutral_model_reports_permittivity_as_not_applicable() -> None:
-    model = EPCSAFT(
-        ParameterBundle.from_catalog("gross-2001-propane", version=1).select(("propane",))
+    model = Mixture(
+        _ParameterBundle.from_catalog("gross-2001-propane", version=1).select(("propane",))
     )
-    result = model.evaluate(
-        temperature=250.0 * unit_registry.kelvin,
-        molar_density=1000.0 * unit_registry.mole / unit_registry.meter**3,
-        mole_fractions=(1.0,),
+    result = model.state(
+        T=250.0 * unit_registry.kelvin,
+        rho=1000.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(1.0,),
     )
 
     assert model.relative_permittivity_formulation == "none"

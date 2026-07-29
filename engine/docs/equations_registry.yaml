@@ -181,8 +181,8 @@ equations:
     tex_line: 881
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 208
-        comment_line: 252
+        line: 217
+        comment_line: 261
         symbol: "build_reference_state"
   - eqid: "close_packing_fraction"
     section: "Density and packing"
@@ -793,8 +793,8 @@ equations:
         comment_line: 1043
         symbol: "evaluate_ion_solvation_kij"
       - file: "src/epcsaft/reference.py"
-        line: 82
-        comment_line: 85
+        line: 83
+        comment_line: 86
         symbol: "solvation_free_energy"
   - eqid: "ion_fraction_suppressed_bulk_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
@@ -901,9 +901,9 @@ equations:
         comment_line: 1301
         symbol: "evaluate_aqueous_miac_solvation_factor_batch"
       - file: "src/epcsaft/reference.py"
-        line: 96
-        comment_line: 133
-        symbol: "at_molality"
+        line: 97
+        comment_line: 135
+        symbol: "state"
   - eqid: "mean_segment_count"
     section: "Density and packing"
     subsection: ""
@@ -973,9 +973,9 @@ equations:
         comment_line: 1302
         symbol: "evaluate_aqueous_miac_solvation_factor_batch"
       - file: "src/epcsaft/reference.py"
-        line: 96
-        comment_line: 150
-        symbol: "at_molality"
+        line: 97
+        comment_line: 152
+        symbol: "state"
   - eqid: "neutral_reference_stoichiometric_basis"
     section: "Native phase coordinates"
     subsection: "Association"
@@ -1277,9 +1277,9 @@ equations:
     tex_line: 962
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 96
-        comment_line: 159
-        symbol: "at_molality"
+        line: 97
+        comment_line: 161
+        symbol: "state"
   - eqid: "pressure"
     section: "Thermodynamic properties"
     subsection: "Association"
@@ -1525,9 +1525,9 @@ equations:
     tex_line: 927
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 96
-        comment_line: 130
-        symbol: "at_molality"
+        line: 97
+        comment_line: 132
+        symbol: "state"
   - eqid: "ssm_ds_born_helmholtz"
     section: "Born solvation relations"
     subsection: "Association"
@@ -1589,8 +1589,8 @@ equations:
     tex_line: 987
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 176
-        comment_line: 193
+        line: 185
+        comment_line: 202
         symbol: "transfer_to"
 source_exclusions:
   - file: "src/epcsaft/_native/association.hpp"

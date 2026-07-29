@@ -13,7 +13,7 @@ import pint
 from ._core import NativeModel as _NativeModel
 from ._core import native_sdk_v1 as _native_sdk_v1
 from ._resolve import _ResolvedModel, _resolve_model
-from .parameters import BundlePurpose, ParameterSet
+from .parameters import BundlePurpose, Parameters
 from .records import (
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
@@ -22,10 +22,12 @@ from .records import (
 from .units import ParameterError, _error, _quantity, unit_registry
 
 if TYPE_CHECKING:
-    from .reference import ElectrolyteReference
+    from .reference import Activity, ElectrolyteReference
 
 
 Phase: TypeAlias = Literal["vapor", "liquid"]
+PropertyBasis: TypeAlias = Literal["molar", "reduced"]
+_MOLAR_GAS_CONSTANT = 8.31446261815324
 
 
 _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS = frozenset(
@@ -308,7 +310,7 @@ def _native_arguments(
 
 
 def _staged_aqueous_trial_bundle_admitted(
-    parameters: ParameterSet, model: _ResolvedModel
+    parameters: Parameters, model: _ResolvedModel
 ) -> bool:
     admitted_component_order = (
         model.component_ids in _STAGED_AQUEOUS_SELECTIONS
@@ -339,7 +341,7 @@ def _staged_aqueous_trial_bundle_admitted(
 
 
 @dataclass(frozen=True, slots=True, init=False)
-class EPCSAFT:
+class Mixture:
     _component_ids: tuple[str, ...]
     _parameter_fingerprint: str
     _parameter_bundle_purpose: BundlePurpose
@@ -348,7 +350,7 @@ class EPCSAFT:
     _model: _ResolvedModel
     _native: _NativeModel
 
-    def __init__(self, parameters: ParameterSet) -> None:
+    def __init__(self, parameters: Parameters) -> None:
         model = _resolve_model(parameters)
         native_arguments = _native_arguments(model)
         object.__setattr__(self, "_component_ids", parameters.component_ids)
@@ -377,72 +379,72 @@ class EPCSAFT:
         return self._parameter_fingerprint
 
     @overload
-    def evaluate(
+    def state(
         self,
         *,
-        temperature: pint.Quantity[Any],
-        molar_density: pint.Quantity[Any],
-        pressure: None = None,
-        mole_fractions: Iterable[SupportsFloat],
+        T: pint.Quantity[Any],
+        rho: pint.Quantity[Any],
+        P: None = None,
+        x: Iterable[SupportsFloat],
         phase: None = None,
-    ) -> EosResult: ...
+    ) -> State: ...
 
     @overload
-    def evaluate(
+    def state(
         self,
         *,
-        temperature: pint.Quantity[Any],
-        molar_density: None = None,
-        pressure: pint.Quantity[Any],
-        mole_fractions: Iterable[SupportsFloat],
+        T: pint.Quantity[Any],
+        rho: None = None,
+        P: pint.Quantity[Any],
+        x: Iterable[SupportsFloat],
         phase: Phase | None = None,
-    ) -> EosResult: ...
+    ) -> State: ...
 
-    def evaluate(
+    def state(
         self,
         *,
-        temperature: object,
-        molar_density: object | None = None,
-        pressure: object | None = None,
-        mole_fractions: object,
+        T: object,
+        rho: object | None = None,
+        P: object | None = None,
+        x: object,
         phase: str | None = None,
-    ) -> EosResult:
-        """Evaluate one ordered composition at explicit density or specified pressure.
+    ) -> State:
+        """Create one immutable state at explicit density or specified pressure.
 
         Dimensioned inputs must be Pint quantities. Supply exactly one of
-        ``molar_density`` and ``pressure``; ``phase`` is only valid for pressure
+        ``rho`` and ``P``; ``phase`` is only valid for pressure
         closure. Invalid states and failed density/EOS evaluations raise ``EosError``.
         """
-        if (molar_density is None) == (pressure is None):
+        if (rho is None) == (P is None):
             raise _eos_error("invalid-state", reason="specify-exactly-one-of-density-or-pressure")
         if phase not in (None, "vapor", "liquid"):
             raise _eos_error("invalid-state", field="phase")
-        if molar_density is not None and phase is not None:
+        if rho is not None and phase is not None:
             raise _eos_error("invalid-state", field="phase")
-        temperature_k = _state_magnitude(temperature, "kelvin", "temperature")
+        temperature_k = _state_magnitude(T, "kelvin", "T")
         try:
-            fractions = tuple(float(value) for value in mole_fractions)  # type: ignore[union-attr]
+            fractions = tuple(float(value) for value in x)  # type: ignore[union-attr]
         except (TypeError, ValueError) as exc:
             raise _eos_error(
-                "invalid-state", field="mole_fractions", reason="not-numeric-sequence"
+                "invalid-state", field="x", reason="not-numeric-sequence"
             ) from exc
         if len(fractions) != len(self._component_ids):
             raise _eos_error(
                 "invalid-state",
-                field="mole_fractions",
+                field="x",
                 reason="component-count",
                 value=len(fractions),
                 expected=len(self._component_ids),
             )
         if any(not math.isfinite(value) for value in fractions):
-            raise _eos_error("invalid-state", field="mole_fractions", reason="nonfinite")
+            raise _eos_error("invalid-state", field="x", reason="nonfinite")
         if any(value < 0.0 for value in fractions):
-            raise _eos_error("invalid-state", field="mole_fractions", reason="negative")
+            raise _eos_error("invalid-state", field="x", reason="negative")
         fraction_sum = math.fsum(fractions)
         if abs(fraction_sum - 1.0) > 1.0e-12:
             raise _eos_error(
                 "invalid-state",
-                field="mole_fractions",
+                field="x",
                 reason="not-normalized",
                 value=fraction_sum,
                 expected=1.0,
@@ -457,7 +459,7 @@ class EPCSAFT:
             and temperature_k > self._model.temperature_max_k
         ):
             context: dict[str, object] = {
-                "field": "temperature",
+                "field": "T",
                 "reason": "outside-domain",
                 "value": temperature_k,
             }
@@ -480,7 +482,7 @@ class EPCSAFT:
             ):
                 raise _eos_error(
                     "invalid-state",
-                    field="mole_fractions",
+                    field="x",
                     reason="ion-fraction-limit",
                     value=ion_fraction,
                     maximum=self._model.ion_mole_fraction_max,
@@ -498,16 +500,16 @@ class EPCSAFT:
                     tolerance=1.0e-12,
                 )
 
-        if molar_density is not None:
+        if rho is not None:
             density_molar = _state_magnitude(
-                molar_density, "mole / meter ** 3", "molar_density"
+                rho, "mole / meter ** 3", "rho"
             )
             try:
                 native = self._native.evaluate(temperature_k, density_molar, fractions)
             except (RuntimeError, ValueError) as exc:
                 raise _eos_error("evaluation-failed", reason=str(exc)) from exc
         else:
-            pressure_pa = _state_magnitude(pressure, "pascal", "pressure")
+            pressure_pa = _state_magnitude(P, "pascal", "P")
             try:
                 native = self._native.evaluate_pressure(
                     temperature_k, pressure_pa, fractions, phase or ""
@@ -515,7 +517,7 @@ class EPCSAFT:
             except (RuntimeError, ValueError) as exc:
                 raise _eos_error("evaluation-failed", reason=str(exc)) from exc
         diagnostics = native.density_diagnostics
-        return EosResult(
+        return State(
             component_ids=self._component_ids,
             temperature=temperature_k * unit_registry.kelvin,
             mole_fractions=fractions,
@@ -528,26 +530,26 @@ class EPCSAFT:
             bulk_relative_permittivity=None
             if self._model.relative_permittivity_formulation == "none"
             else native.bulk_relative_permittivity,
-            residual_helmholtz=native.residual_helmholtz,
+            _residual_helmholtz=native.residual_helmholtz,
             compressibility_factor=native.compressibility_factor,
             pressure=native.pressure * unit_registry.pascal,
             residual_chemical_potential_over_rt=tuple(native.residual_chemical_potential_over_rt),
-            log_fugacity_coefficient=None
+            _log_fugacity_coefficient=None
             if native.log_fugacity_coefficient is None
             else tuple(native.log_fugacity_coefficient),
-            residual_entropy=native.residual_entropy
+            _residual_entropy=native.residual_entropy
             * unit_registry.joule
             / unit_registry.mole
             / unit_registry.kelvin,
-            residual_internal_energy=native.residual_internal_energy
+            _residual_internal_energy=native.residual_internal_energy
             * unit_registry.joule
             / unit_registry.mole,
-            residual_enthalpy=native.residual_enthalpy * unit_registry.joule / unit_registry.mole,
-            residual_isochoric_heat_capacity=native.residual_isochoric_heat_capacity
+            _residual_enthalpy=native.residual_enthalpy * unit_registry.joule / unit_registry.mole,
+            _residual_isochoric_heat_capacity=native.residual_isochoric_heat_capacity
             * unit_registry.joule
             / unit_registry.mole
             / unit_registry.kelvin,
-            residual_isobaric_heat_capacity=None
+            _residual_isobaric_heat_capacity=None
             if native.residual_isobaric_heat_capacity is None
             else native.residual_isobaric_heat_capacity
             * unit_registry.joule
@@ -574,12 +576,12 @@ class EPCSAFT:
             ),
         )
 
-    def reference_state(
+    def reference(
         self,
         *,
-        temperature: object,
-        pressure: object,
-        solvent_mole_fractions: object,
+        T: object,
+        P: object,
+        solvent_x: object,
         phase: Literal["liquid"],
     ) -> ElectrolyteReference:
         """Build one liquid electrolyte reference on the selected component order.
@@ -591,14 +593,14 @@ class EPCSAFT:
 
         return build_reference_state(
             self,
-            temperature=temperature,
-            pressure=pressure,
-            solvent_mole_fractions=solvent_mole_fractions,
+            temperature=T,
+            pressure=P,
+            solvent_mole_fractions=solvent_x,
             phase=phase,
         )
 
 
-def _native_topology_fingerprint(model: EPCSAFT) -> str:
+def _native_topology_fingerprint(model: Mixture) -> str:
     resolved = model._model
     charges = resolved.charge_number or (0,) * len(resolved.component_ids)
     neutral_phase = (
@@ -646,9 +648,9 @@ def _native_topology_fingerprint(model: EPCSAFT) -> str:
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
-def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
-    if type(model) is not EPCSAFT:
-        raise _eos_error("unsupported-native-sdk", reason="expected-exact-EPCSAFT-model")
+def _native_sdk_configuration(model: Mixture) -> dict[str, object]:
+    if type(model) is not Mixture:
+        raise _eos_error("unsupported-native-sdk", reason="expected-exact-Mixture-model")
     fingerprint = model._parameter_fingerprint
     bundle_selection = _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS.get(
         model._parameter_bundle_fingerprint
@@ -775,7 +777,7 @@ def _native_sdk_configuration(model: EPCSAFT) -> dict[str, object]:
     }
 
 
-def native_sdk(model: EPCSAFT) -> object:
+def native_sdk(model: Mixture) -> object:
     """Return the model-bound version-1 native provider capsule."""
     configuration = _native_sdk_configuration(model)
     try:
@@ -784,7 +786,7 @@ def native_sdk(model: EPCSAFT) -> object:
         raise _eos_error("unsupported-native-sdk", reason=str(exc)) from exc
 
 
-def export_native_model(model: EPCSAFT, path: str | PathLike[str]) -> None:
+def export_native_model(model: Mixture, path: str | PathLike[str]) -> None:
     """Write one immutable resolved-model artifact for the installed native SDK."""
     configuration = _native_sdk_configuration(model)
     names = (
@@ -883,7 +885,23 @@ def _state_magnitude(value: object, unit: str, field: str) -> float:
 
 
 @dataclass(frozen=True, slots=True)
-class EosResult:
+class Fugacity:
+    """Immutable component fugacity projections in the mixture component order."""
+
+    component_ids: tuple[str, ...]
+    ln_coefficient: tuple[float, ...]
+    coefficient: tuple[float, ...]
+    value: tuple[pint.Quantity[float], ...]
+
+
+def _basis(value: str) -> PropertyBasis:
+    if value not in ("molar", "reduced"):
+        raise _eos_error("invalid-property-basis", value=value)
+    return value  # type: ignore[return-value]
+
+
+@dataclass(frozen=True, slots=True)
+class State:
     """Immutable properties plus the resolved state and parameter identity."""
 
     component_ids: tuple[str, ...]
@@ -896,18 +914,142 @@ class EosResult:
     debye_huckel: float
     born: float
     bulk_relative_permittivity: float | None
-    residual_helmholtz: float
+    _residual_helmholtz: float
     compressibility_factor: float
     pressure: pint.Quantity[float]
     residual_chemical_potential_over_rt: tuple[float, ...]
-    log_fugacity_coefficient: tuple[float, ...] | None
-    residual_entropy: pint.Quantity[float]
-    residual_internal_energy: pint.Quantity[float]
-    residual_enthalpy: pint.Quantity[float]
-    residual_isochoric_heat_capacity: pint.Quantity[float]
-    residual_isobaric_heat_capacity: pint.Quantity[float] | None
+    _log_fugacity_coefficient: tuple[float, ...] | None
+    _residual_entropy: pint.Quantity[float]
+    _residual_internal_energy: pint.Quantity[float]
+    _residual_enthalpy: pint.Quantity[float]
+    _residual_isochoric_heat_capacity: pint.Quantity[float]
+    _residual_isobaric_heat_capacity: pint.Quantity[float] | None
     molar_density: pint.Quantity[float]
     density_diagnostics: DensityDiagnostics | None
+    _activity: Activity | None = None
+
+    def _rt(self) -> pint.Quantity[float]:
+        return (
+            _MOLAR_GAS_CONSTANT
+            * self.temperature.to("kelvin").magnitude
+            * unit_registry.joule
+            / unit_registry.mole
+        )
+
+    def ares(
+        self, *, basis: PropertyBasis = "molar"
+    ) -> pint.Quantity[float] | float:
+        """Residual molar Helmholtz energy, or its dimensionless ``Ares/(nRT)``."""
+        return (
+            self._residual_helmholtz * self._rt()
+            if _basis(basis) == "molar"
+            else self._residual_helmholtz
+        )
+
+    def ures(
+        self, *, basis: PropertyBasis = "molar"
+    ) -> pint.Quantity[float] | float:
+        """Residual molar internal energy, or its dimensionless ``Ures/(nRT)``."""
+        return (
+            self._residual_internal_energy
+            if _basis(basis) == "molar"
+            else (self._residual_internal_energy / self._rt()).to("").magnitude
+        )
+
+    def hres(
+        self, *, basis: PropertyBasis = "molar"
+    ) -> pint.Quantity[float] | float:
+        """Residual molar enthalpy, or its dimensionless ``Hres/(nRT)``."""
+        return (
+            self._residual_enthalpy
+            if _basis(basis) == "molar"
+            else (self._residual_enthalpy / self._rt()).to("").magnitude
+        )
+
+    def gres(
+        self, *, basis: PropertyBasis = "molar"
+    ) -> pint.Quantity[float] | float:
+        """Residual molar Gibbs energy from the exact chemical-potential projection."""
+        reduced = math.fsum(
+            fraction * chemical_potential
+            for fraction, chemical_potential in zip(
+                self.mole_fractions,
+                self.residual_chemical_potential_over_rt,
+                strict=True,
+            )
+        )
+        return reduced * self._rt() if _basis(basis) == "molar" else reduced
+
+    def sres(
+        self, *, basis: PropertyBasis = "molar"
+    ) -> pint.Quantity[float] | float:
+        """Residual molar entropy, or its dimensionless ``Sres/(nR)``."""
+        return (
+            self._residual_entropy
+            if _basis(basis) == "molar"
+            else (
+                self._residual_entropy
+                / (_MOLAR_GAS_CONSTANT * unit_registry.joule / unit_registry.mole / unit_registry.kelvin)
+            )
+            .to("")
+            .magnitude
+        )
+
+    def cvres(
+        self, *, basis: PropertyBasis = "molar"
+    ) -> pint.Quantity[float] | float:
+        """Residual molar isochoric heat capacity, or its dimensionless value over R."""
+        return (
+            self._residual_isochoric_heat_capacity
+            if _basis(basis) == "molar"
+            else (
+                self._residual_isochoric_heat_capacity
+                / (_MOLAR_GAS_CONSTANT * unit_registry.joule / unit_registry.mole / unit_registry.kelvin)
+            )
+            .to("")
+            .magnitude
+        )
+
+    def cpres(
+        self, *, basis: PropertyBasis = "molar"
+    ) -> pint.Quantity[float] | float | None:
+        """Residual molar isobaric heat capacity, or its dimensionless value over R."""
+        if self._residual_isobaric_heat_capacity is None:
+            return None
+        return (
+            self._residual_isobaric_heat_capacity
+            if _basis(basis) == "molar"
+            else (
+                self._residual_isobaric_heat_capacity
+                / (_MOLAR_GAS_CONSTANT * unit_registry.joule / unit_registry.mole / unit_registry.kelvin)
+            )
+            .to("")
+            .magnitude
+        )
+
+    @property
+    def fugacity(self) -> Fugacity | None:
+        """Component fugacity coefficients and fugacities, when defined."""
+        if self._log_fugacity_coefficient is None:
+            return None
+        coefficients = tuple(math.exp(value) for value in self._log_fugacity_coefficient)
+        values = tuple(
+            fraction * coefficient * self.pressure
+            for fraction, coefficient in zip(
+                self.mole_fractions, coefficients, strict=True
+            )
+        )
+        return Fugacity(
+            component_ids=self.component_ids,
+            ln_coefficient=self._log_fugacity_coefficient,
+            coefficient=coefficients,
+            value=values,
+        )
+
+    @property
+    def activity(self) -> Activity | None:
+        """Electrolyte activity projections, present only for reference-created states."""
+        return self._activity
 
 
 @dataclass(frozen=True, slots=True)
@@ -923,10 +1065,12 @@ class DensityDiagnostics:
 
 __all__ = (
     "DensityDiagnostics",
-    "EPCSAFT",
     "EosError",
-    "EosResult",
+    "Fugacity",
+    "Mixture",
     "Phase",
+    "PropertyBasis",
+    "State",
     "export_native_model",
     "native_sdk",
 )

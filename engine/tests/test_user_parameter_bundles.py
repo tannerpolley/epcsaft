@@ -5,7 +5,7 @@ from typing import Literal
 
 import pytest
 
-from epcsaft import EPCSAFT, ParameterBundle, ParameterError, unit_registry as u
+from epcsaft import Mixture, _ParameterBundle, ParameterError, unit_registry as u
 from epcsaft.records import (
     AssociationParameterRecord,
     ComponentRecord,
@@ -21,8 +21,8 @@ from epcsaft.records import (
 )
 
 
-def _metadata(*, purpose: Literal["package-test-fixture", "user-provided"]) -> ParameterBundle:
-    return ParameterBundle.from_records(
+def _metadata(*, purpose: Literal["package-test-fixture", "user-provided"]) -> _ParameterBundle:
+    return _ParameterBundle.from_records(
         bundle_id="user-propane",
         bundle_version=1,
         purpose=purpose,
@@ -46,13 +46,13 @@ def test_user_provided_bundle_purpose_is_fingerprinted() -> None:
     assert user_bundle.fingerprint != fixture_bundle.fingerprint
 
 
-def _all_record_families_bundle() -> ParameterBundle:
+def _all_record_families_bundle() -> _ParameterBundle:
     provenance = {
         "source_id": "user-source",
         "locator": "User parameter worksheet",
         "domain_id": "user-domain",
     }
-    return ParameterBundle.from_records(
+    return _ParameterBundle.from_records(
         bundle_id="user-all-records",
         bundle_version=1,
         purpose="user-provided",
@@ -177,13 +177,13 @@ def _all_record_families_bundle() -> ParameterBundle:
     )
 
 
-def _propane_bundle() -> ParameterBundle:
+def _propane_bundle() -> _ParameterBundle:
     provenance = {
         "source_id": "user-source",
         "locator": "User parameter worksheet, propane row",
         "domain_id": "propane-domain",
     }
-    return ParameterBundle.from_records(
+    return _ParameterBundle.from_records(
         bundle_id="user-propane",
         bundle_version=1,
         purpose="user-provided",
@@ -249,7 +249,7 @@ def test_user_bundle_round_trip_preserves_every_record_form(tmp_path: Path) -> N
     target = tmp_path / "user-bundle"
 
     bundle.to_path(target)
-    loaded = ParameterBundle.from_path(target)
+    loaded = _ParameterBundle.from_path(target)
 
     assert loaded.fingerprint == bundle.fingerprint
     assert {type(record) for record in loaded.records} == {
@@ -277,18 +277,18 @@ def test_reloaded_user_bundle_evaluates_a_state(tmp_path: Path) -> None:
     target = tmp_path / "user-propane"
     _propane_bundle().to_path(target)
 
-    loaded = ParameterBundle.from_path(target)
-    model = EPCSAFT(loaded.select(("propane",)))
-    state = model.evaluate(
-        temperature=300 * u.kelvin,
-        pressure=1 * u.bar,
-        mole_fractions=(1.0,),
+    loaded = _ParameterBundle.from_path(target)
+    model = Mixture(loaded.select(("propane",)))
+    state = model.state(
+        T=300 * u.kelvin,
+        P=1 * u.bar,
+        x=(1.0,),
         phase="vapor",
     )
 
     assert model.component_ids == ("propane",)
     assert math.isclose(state.pressure.to("bar").magnitude, 1.0, rel_tol=1e-12)
-    assert math.isfinite(state.residual_helmholtz)
+    assert math.isfinite(state._residual_helmholtz)
 
 
 def test_to_path_refuses_to_overwrite_an_existing_path(tmp_path: Path) -> None:

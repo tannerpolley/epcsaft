@@ -9,7 +9,7 @@ import pytest
 from pint import UnitRegistry
 
 import epcsaft
-from epcsaft import BundlePurpose, ParameterBundle, ParameterError, ParameterSet, unit_registry
+from epcsaft import BundlePurpose, _ParameterBundle, ParameterError, Parameters, unit_registry
 from epcsaft._canonical import _bundle_json
 from epcsaft.records import (
     AssociationParameterRecord,
@@ -104,7 +104,7 @@ def _from_records(
     ]
     if reverse:
         models.reverse()
-    return ParameterBundle.from_records(
+    return _ParameterBundle.from_records(
         bundle_id="test-bundle",
         bundle_version=1,
         purpose=purpose,
@@ -160,7 +160,7 @@ def _advanced_records():
 def _parsed_records_bundle():
     source, domain, components, singles, pair = _bundle_records()
     water, sites, association, correlations = _advanced_records()
-    return ParameterBundle.from_records(
+    return _ParameterBundle.from_records(
         bundle_id="test-bundle",
         bundle_version=1,
         purpose="package-test-fixture",
@@ -432,7 +432,7 @@ def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
     equivalent = _from_records(foreign, reverse=True)
     changed_model = _from_records(ionic_permittivity=Decimal("9"))
 
-    assert isinstance(bundle, ParameterBundle)
+    assert isinstance(bundle, _ParameterBundle)
     assert tuple(component.component_id for component in bundle.components) == (
         "ethane",
         "methane",
@@ -455,7 +455,7 @@ def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
 
     selected = bundle.select(("ethane", "methane"))
     reverse_selected = bundle.select(("methane", "ethane"))
-    assert isinstance(selected, ParameterSet)
+    assert isinstance(selected, Parameters)
     assert selected.component_ids == ("ethane", "methane")
     assert (
         tuple(component.component_id for component in selected.components) == selected.component_ids
@@ -466,7 +466,7 @@ def test_record_lifecycle_order_and_canonical_fingerprints() -> None:
     with pytest.raises(FrozenInstanceError):
         selected.component_ids = ("methane",)
 
-    golden = ParameterBundle.from_records(
+    golden = _ParameterBundle.from_records(
         bundle_id="golden-bundle",
         bundle_version=1,
         purpose="package-test-fixture",
@@ -493,7 +493,7 @@ def test_one_strict_path_parser_preserves_sparse_zero_and_matches_records(
 ) -> None:
     bundle_path = tmp_path / "bundle"
     _write_bundle(bundle_path)
-    parsed = ParameterBundle.from_path(bundle_path)
+    parsed = _ParameterBundle.from_path(bundle_path)
     expected = _parsed_records_bundle()
 
     assert parsed.fingerprint == expected.fingerprint
@@ -515,29 +515,29 @@ def test_one_strict_path_parser_preserves_sparse_zero_and_matches_records(
 
     bad_columns = tmp_path / "bad-columns"
     _write_bundle(bad_columns, component_columns=COMPONENT_COLUMNS + ("extra",))
-    assert _error_code(lambda: ParameterBundle.from_path(bad_columns)) == "invalid-schema"
+    assert _error_code(lambda: _ParameterBundle.from_path(bad_columns)) == "invalid-schema"
 
     bad_model_columns = tmp_path / "bad-model-columns"
     _write_bundle(bad_model_columns, model_columns=MODEL_COLUMNS + ("extra",))
-    assert _error_code(lambda: ParameterBundle.from_path(bad_model_columns)) == "invalid-schema"
+    assert _error_code(lambda: _ParameterBundle.from_path(bad_model_columns)) == "invalid-schema"
 
     bad_inventory = tmp_path / "bad-inventory"
     _write_bundle(bad_inventory, extra_file=True)
-    assert _error_code(lambda: ParameterBundle.from_path(bad_inventory)) == "invalid-schema"
+    assert _error_code(lambda: _ParameterBundle.from_path(bad_inventory)) == "invalid-schema"
 
     duplicate_pair = tmp_path / "duplicate-pair"
     _write_bundle(duplicate_pair, duplicate_pair=True)
-    assert _error_code(lambda: ParameterBundle.from_path(duplicate_pair)) == "duplicate-record"
+    assert _error_code(lambda: _ParameterBundle.from_path(duplicate_pair)) == "duplicate-record"
 
     bad_correlation = tmp_path / "bad-correlation"
     _write_bundle(bad_correlation, bad_correlation=True)
-    assert _error_code(lambda: ParameterBundle.from_path(bad_correlation)) == "invalid-correlation"
+    assert _error_code(lambda: _ParameterBundle.from_path(bad_correlation)) == "invalid-correlation"
 
     catalog_mismatch = tmp_path / "catalog-mismatch"
     _write_bundle(catalog_mismatch)
     assert (
         _error_code(
-            lambda: ParameterBundle._from_catalog_path("requested-bundle", 1, catalog_mismatch)
+            lambda: _ParameterBundle._from_catalog_path("requested-bundle", 1, catalog_mismatch)
         )
         == "invalid-schema"
     )
@@ -605,7 +605,7 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
     assert _error_code(lambda: bundle.select((["not-a-string"],))) == "invalid-selection"
     assert (
         _error_code(
-            lambda: ParameterBundle.from_records(
+            lambda: _ParameterBundle.from_records(
                 bundle_id="test-bundle",
                 bundle_version=1,
                 purpose="package-test-fixture",
@@ -619,7 +619,7 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
     )
     assert (
         _error_code(
-            lambda: ParameterBundle.from_records(
+            lambda: _ParameterBundle.from_records(
                 bundle_id="test-bundle",
                 bundle_version=1,
                 purpose="package-test-fixture",
@@ -633,9 +633,9 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
     )
 
     codes = {
-        _error_code(lambda: ParameterBundle.from_path(bad_schema)),
+        _error_code(lambda: _ParameterBundle.from_path(bad_schema)),
         _error_code(
-            lambda: ParameterBundle.from_records(
+            lambda: _ParameterBundle.from_records(
                 bundle_id="Bad-ID",
                 bundle_version=1,
                 purpose="package-test-fixture",
@@ -645,7 +645,7 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
             )
         ),
         _error_code(
-            lambda: ParameterBundle.from_records(
+            lambda: _ParameterBundle.from_records(
                 bundle_id="test-bundle",
                 bundle_version=1,
                 purpose="model-activation",
@@ -657,7 +657,7 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
         _error_code(invalid_unit_record),
         _error_code(invalid_correlation),
         _error_code(
-            lambda: ParameterBundle.from_records(
+            lambda: _ParameterBundle.from_records(
                 bundle_id="test-bundle",
                 bundle_version=1,
                 purpose="package-test-fixture",
@@ -668,7 +668,7 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
             )
         ),
         _error_code(
-            lambda: ParameterBundle.from_records(
+            lambda: _ParameterBundle.from_records(
                 bundle_id="test-bundle",
                 bundle_version=1,
                 purpose="package-test-fixture",
@@ -679,7 +679,7 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
             )
         ),
         _error_code(
-            lambda: ParameterBundle.from_records(
+            lambda: _ParameterBundle.from_records(
                 bundle_id="test-bundle",
                 bundle_version=1,
                 purpose="package-test-fixture",
@@ -690,7 +690,7 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
                 pairs=(pair, pair),
             )
         ),
-        _error_code(lambda: ParameterBundle.from_catalog("missing-catalog", version=1)),
+        _error_code(lambda: _ParameterBundle.from_catalog("missing-catalog", version=1)),
         _error_code(lambda: bundle.select(("CH4",))),
     }
     assert codes == {
@@ -708,7 +708,7 @@ def test_all_stable_errors_are_package_generated(tmp_path: Path) -> None:
 
 
 def test_catalog_discovery_returns_sorted_immutable_bundles() -> None:
-    catalog = ParameterBundle.catalog()
+    catalog = _ParameterBundle.catalog()
 
     assert isinstance(catalog, tuple)
     assert tuple((bundle.bundle_id, bundle.bundle_version) for bundle in catalog) == tuple(
@@ -733,7 +733,7 @@ def test_catalog_loading_rejects_a_non_catalog_bundle(tmp_path: Path) -> None:
     bundle.to_path(path)
 
     with pytest.raises(ParameterError) as exc_info:
-        ParameterBundle._from_catalog_path("test-bundle", 1, path)
+        _ParameterBundle._from_catalog_path("test-bundle", 1, path)
 
     assert exc_info.value.code == "invalid-schema"
     assert dict(exc_info.value.context) == {
@@ -743,7 +743,7 @@ def test_catalog_loading_rejects_a_non_catalog_bundle(tmp_path: Path) -> None:
 
 
 def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
-    gross = ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
+    gross = _ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1)
     assert gross.purpose == "installed-catalog"
     assert gross.fingerprint == (
         "sha256:49641a26a9f81b614454b83a755df7763ef5f762e13eaaea1600558dc2d54f0b"
@@ -822,7 +822,7 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
     )
 
     fixture_path = Path(__file__).parent / "data" / "bundles" / "figiel-2025-contract" / "1"
-    fixture = ParameterBundle.from_path(fixture_path)
+    fixture = _ParameterBundle.from_path(fixture_path)
     assert fixture.purpose == "package-test-fixture"
     assert fixture.fingerprint == (
         "sha256:3cc8b454266c98d2225727f17944f57dd3e325548d8b621b93ea664803e8d22f"
@@ -897,7 +897,7 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
     }
 
     assert (
-        _error_code(lambda: ParameterBundle.from_catalog("figiel-2025-contract", version=1))
+        _error_code(lambda: _ParameterBundle.from_catalog("figiel-2025-contract", version=1))
         == "missing-record"
     )
     catalog = Path(epcsaft.__file__).parent / "data" / "bundles"
@@ -958,7 +958,7 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
 
 
 def test_gross_2001_propane_catalog_is_exact() -> None:
-    bundle = ParameterBundle.from_catalog("gross-2001-propane", version=1)
+    bundle = _ParameterBundle.from_catalog("gross-2001-propane", version=1)
     parameters = bundle.select(("propane",))
     values = {
         record.family: record.value
@@ -970,11 +970,11 @@ def test_gross_2001_propane_catalog_is_exact() -> None:
     assert values["segment_count"] == Decimal("2.0020")
     assert values["segment_diameter"].to("angstrom").magnitude == Decimal("3.6184")
     assert values["dispersion_energy_over_k"].to("kelvin").magnitude == Decimal("208.11")
-    assert epcsaft.EPCSAFT(parameters).component_ids == ("propane",)
+    assert epcsaft.Mixture(parameters).component_ids == ("propane",)
 
 
 def test_figiel_reference_electrolyte_catalog_is_exact_and_sparse() -> None:
-    bundle = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
+    bundle = _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
     assert bundle.purpose == "installed-catalog"
     assert {component.component_id for component in bundle.components} == {
         "bromide-anion",
@@ -1062,17 +1062,17 @@ def test_figiel_reference_electrolyte_catalog_is_exact_and_sparse() -> None:
         ("potassium-cation", "bromide-anion"),
     ):
         selected = ("water", cation, anion)
-        assert epcsaft.EPCSAFT(bundle.select(selected)).component_ids == selected
+        assert epcsaft.Mixture(bundle.select(selected)).component_ids == selected
 
     methanol_nabr = ("methanol", "sodium-cation", "bromide-anion")
-    assert epcsaft.EPCSAFT(bundle.select(methanol_nabr)).component_ids == methanol_nabr
+    assert epcsaft.Mixture(bundle.select(methanol_nabr)).component_ids == methanol_nabr
 
     ethanol_nacl = ("water", "ethanol", "sodium-cation", "chloride-anion")
-    assert epcsaft.EPCSAFT(bundle.select(ethanol_nacl)).component_ids == ethanol_nacl
+    assert epcsaft.Mixture(bundle.select(ethanol_nacl)).component_ids == ethanol_nacl
 
 
 def test_figiel_aqueous_iodide_catalog_is_exact_and_source_complete() -> None:
-    bundle = ParameterBundle.from_catalog("figiel-2025-aqueous-iodides", version=1)
+    bundle = _ParameterBundle.from_catalog("figiel-2025-aqueous-iodides", version=1)
     assert bundle.fingerprint == (
         "sha256:d1fec8a0c7a44796fb23c0bebbdf9733bfd1776b568e8155b3f4eb120efe3a03"
     )
@@ -1113,7 +1113,7 @@ def test_figiel_aqueous_iodide_catalog_is_exact_and_source_complete() -> None:
         selected = ("water", cation, "iodide-anion")
         parameters = bundle.select(selected)
         assert parameters.fingerprint == fingerprint
-        assert epcsaft.EPCSAFT(parameters).component_ids == selected
+        assert epcsaft.Mixture(parameters).component_ids == selected
     assert (
         _error_code(lambda: bundle.select(("water", "lithium-cation", "iodide-anion")))
         == "invalid-selection"
@@ -1121,7 +1121,7 @@ def test_figiel_aqueous_iodide_catalog_is_exact_and_source_complete() -> None:
 
 
 def test_khudaida_figure_2_catalog_preserves_the_published_model_tuple() -> None:
-    bundle = ParameterBundle.from_catalog("khudaida-2026-figure-2-electrolyte-lle", version=1)
+    bundle = _ParameterBundle.from_catalog("khudaida-2026-figure-2-electrolyte-lle", version=1)
     assert bundle.purpose == "installed-catalog"
     assert {component.component_id for component in bundle.components} == {
         "water",
@@ -1213,7 +1213,7 @@ def test_khudaida_figure_2_catalog_preserves_the_published_model_tuple() -> None
         (Decimal("-1.417"), Decimal("-0.01146")),
     )
 
-    figiel = ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
+    figiel = _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
     assert figiel.fingerprint == (
         "sha256:d56aa57f04f48f1881865fb85daa700b66d3f1bcb75e8a9d7149baedfc925352"
     )
@@ -1223,7 +1223,7 @@ def test_khudaida_figure_2_catalog_preserves_the_published_model_tuple() -> None
 
 
 def test_ascani_case_study_2_catalog_preserves_explicit_source_families() -> None:
-    bundle = ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1)
+    bundle = _ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1)
     assert bundle.fingerprint == (
         "sha256:756c71c8d7bd8c66e499eda037644f273c911333e689ca21ce986b7f0102fd25"
     )
@@ -1291,7 +1291,7 @@ def test_ascani_case_study_2_catalog_preserves_explicit_source_families() -> Non
 
 
 def test_held_2008_water_self_ionization_catalog_is_exact_and_source_complete() -> None:
-    bundle = ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1)
+    bundle = _ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1)
     assert bundle.fingerprint == (
         "sha256:ebb6350a0820ff88f10f6179ea75df909773d8dc871020fbf08c3fae0ec067bb"
     )
@@ -1303,7 +1303,7 @@ def test_held_2008_water_self_ionization_catalog_is_exact_and_source_complete() 
     assert source.doi == "10.1016/j.fluid.2008.06.010"
     selected = ("water", "hydronium-cation", "hydroxide-anion")
     parameters = bundle.select(selected)
-    model = epcsaft.EPCSAFT(parameters)
+    model = epcsaft.Mixture(parameters)
 
     assert parameters.component_ids == selected
     assert tuple(component.formula for component in parameters.components) == (
@@ -1379,9 +1379,9 @@ def test_held_2008_catalog_fails_closed_on_missing_source_family(
         with path.open("w", encoding="utf-8", newline="") as stream:
             csv.writer(stream).writerows(row for row in rows if not row or row[0] != record_id)
 
-    bundle = ParameterBundle.from_path(mutated)
+    bundle = _ParameterBundle.from_path(mutated)
     with pytest.raises(ParameterError) as exc_info:
-        epcsaft.EPCSAFT(bundle.select(("water", "hydronium-cation", "hydroxide-anion")))
+        epcsaft.Mixture(bundle.select(("water", "hydronium-cation", "hydroxide-anion")))
 
     assert exc_info.value.code == "missing-record"
     assert ("family", missing_family) in exc_info.value.context
@@ -1413,9 +1413,9 @@ def test_held_2008_catalog_rejects_dispersion_rule_mutation(
         writer.writeheader()
         writer.writerows(rows)
 
-    bundle = ParameterBundle.from_path(mutated)
+    bundle = _ParameterBundle.from_path(mutated)
     with pytest.raises(ParameterError) as exc_info:
-        epcsaft.EPCSAFT(bundle.select(("water", "hydronium-cation", "hydroxide-anion")))
+        epcsaft.Mixture(bundle.select(("water", "hydronium-cation", "hydroxide-anion")))
 
     assert exc_info.value.code == "invalid-value"
     assert ("family", "k_ij") in exc_info.value.context

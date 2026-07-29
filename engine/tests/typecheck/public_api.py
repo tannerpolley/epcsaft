@@ -4,7 +4,7 @@ from typing import assert_type
 
 import pint
 
-from epcsaft import EPCSAFT, EosResult, ParameterBundle
+from epcsaft import Mixture, Parameters, State
 from epcsaft.parameters import BundlePurpose
 from epcsaft.records import (
     AssociationParameterFamily,
@@ -17,64 +17,65 @@ from epcsaft.records import (
 
 
 def check_public_types(
-    model: EPCSAFT,
+    model: Mixture,
+    parameters: Parameters,
     temperature: pint.Quantity[float],
     pressure: pint.Quantity[float],
     molar_density: pint.Quantity[float],
 ) -> None:
-    assert_type(ParameterBundle.catalog(), tuple[ParameterBundle, ...])
+    assert_type(parameters.component_ids, tuple[str, ...])
     assert_type(
-        model.evaluate(
-            temperature=temperature,
-            pressure=pressure,
-            mole_fractions=(1.0,),
+        model.state(
+            T=temperature,
+            P=pressure,
+            x=(1.0,),
             phase="vapor",
         ),
-        EosResult,
+        State,
     )
     assert_type(
-        model.evaluate(
-            temperature=temperature,
-            molar_density=molar_density,
-            mole_fractions=(1.0,),
+        model.state(
+            T=temperature,
+            rho=molar_density,
+            x=(1.0,),
         ),
-        EosResult,
+        State,
     )
-    result = model.evaluate(
-        temperature=temperature,
-        pressure=pressure,
-        mole_fractions=(1.0,),
+    result = model.state(
+        T=temperature,
+        P=pressure,
+        x=(1.0,),
     )
     assert_type(result.component_ids, tuple[str, ...])
     assert_type(result.mole_fractions, tuple[float, ...])
     assert_type(result.parameter_fingerprint, str)
 
-    model.evaluate(  # type: ignore[call-overload]
-        temperature=temperature,
-        mole_fractions=(1.0,),
+    model.state(  # type: ignore[call-overload]
+        T=temperature,
+        x=(1.0,),
     )
-    model.evaluate(  # type: ignore[call-overload]
-        temperature=temperature,
-        pressure=pressure,
-        molar_density=molar_density,
-        mole_fractions=(1.0,),
+    model.state(  # type: ignore[call-overload]
+        T=temperature,
+        P=pressure,
+        rho=molar_density,
+        x=(1.0,),
     )
-    model.evaluate(  # type: ignore[call-overload]
-        temperature=temperature,
-        molar_density=molar_density,
-        mole_fractions=(1.0,),
+    model.state(  # type: ignore[call-overload]
+        T=temperature,
+        rho=molar_density,
+        x=(1.0,),
         phase="liquid",
     )
-    model.evaluate(  # type: ignore[call-overload]
-        temperature=temperature,
-        pressure=pressure,
-        mole_fractions=(1.0,),
+    model.state(  # type: ignore[call-overload]
+        T=temperature,
+        P=pressure,
+        x=(1.0,),
         phase="solid",
     )
-    model.reference_state(
-        temperature=temperature,
-        pressure=pressure,
-        solvent_mole_fractions=(1.0,),
+    model.reference(
+        T=temperature,
+        P=pressure,
+        solvent_x=(1.0,),
         phase="liquid",
     )
     purpose: BundlePurpose = "user-provided"

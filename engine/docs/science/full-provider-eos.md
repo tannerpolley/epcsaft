@@ -85,7 +85,7 @@ rho_m d/d(rho_m) = rho_N d/d(rho_N) = rho_hat d/d(rho_hat)
 holds because the conversions are constant.
 
 `a^r = A^r/(nRT)` is the dimensionless molar residual Helmholtz energy. Mole
-fractions are ordered by `ParameterSet.component_ids` and satisfy `x_i >= 0`
+fractions are ordered by `Parameters.component_ids` and satisfy `x_i >= 0`
 and `sum_i x_i = 1`. Ordinary ionic states also satisfy
 `sum_i x_i z_i = 0` within the declared state tolerance.
 
@@ -342,8 +342,8 @@ All three records are required for every selected component. The equation gives
 The selected `epsilon_r,bulk` is evaluated once by the scalar-generic native
 owner and is consumed unchanged by both Debye--Huckel and the selected Born
 equation. Temperature, density, composition, and parameter dependence therefore
-remain inside the common CppAD tape. `EPCSAFT.relative_permittivity_formulation` reports the
-source-named topology and `EosResult.bulk_relative_permittivity` reports the
+remain inside the common CppAD tape. `Mixture.relative_permittivity_formulation` reports the
+generic bundle-defined formulation and `State.bulk_relative_permittivity` reports the
 evaluated state value.
 
 The bounded comparison uses Perdomo2025 Table 3 at `T=298.15 K` and
@@ -520,7 +520,7 @@ SSM and DS are disabled for this bundle: there is no fitted Born diameter,
 solvation factor, shell, or radial dielectric input. The internal equation
 selection follows the mutually exclusive resolved source schema and immutable
 bundle fingerprint. It is not a caller-selectable Born mode or a literature
-`solvation_factor`. `EosResult.born` carries whichever Born equation the
+`solvation_factor`. `State.born` carries whichever Born equation the
 immutable bundle selects; no second result owner is created.
 
 ## 8. Common derivatives and state properties
@@ -642,7 +642,7 @@ source model rather than the mutable trial point.
 
 ## 10. Electrolyte reference states
 
-`EPCSAFT.reference_state` holds a salt-free solvent mole composition fixed and
+`Mixture.reference` holds a salt-free solvent mole composition fixed and
 dilutes one cation/anion formula unit along an exactly electroneutral path. It
 evaluates the complete EOS at formula-unit molalities `10^-6`, `10^-8`,
 `10^-10`, and `10^-12 mol kg^-1`. The limiting ion log fugacities are accepted
@@ -672,7 +672,7 @@ gamma_pm^*,m = gamma_pm^*,x /
 These are Figiel2025 Eqs. (17), (19), and (20)--(22). `M_solvent`
 is calculated from the explicitly supplied salt-free solvent mole fractions
 and source-backed solvent molar masses. The reference module calls
-`EPCSAFT.evaluate`; it owns no Helmholtz or derivative equation. Single-ion
+`Mixture.state`; it owns no Helmholtz or derivative equation. Single-ion
 values are path-defined model quantities. The stoichiometric MIAC is the
 literature comparison quantity.
 
@@ -792,7 +792,7 @@ convergence does not expand that evidence.
 
 The Schreckenberg, Zuber, and Rueben parameter families are source-named
 implementation capabilities, not installed catalog defaults. A custom
-`ParameterBundle.from_records(...)` selection must provide one complete
+`Parameters.from_records(...)` selection must provide one complete
 topology. Zuber currently requires one neutral solvent because the Provider has
 no source-backed mixed-solvent volume-fraction payload. Rueben requires its
 three parameters for every selected component. No new topology broadens the

@@ -2,7 +2,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from epcsaft import ParameterBundle, ParameterError, unit_registry
+from epcsaft import _ParameterBundle, ParameterError, unit_registry
 from epcsaft._resolve import _resolve_model
 from epcsaft.records import (
     AssociationParameterRecord,
@@ -71,7 +71,7 @@ def _bundle(
                 **PROVENANCE,
             ),
         )
-    return ParameterBundle.from_records(
+    return _ParameterBundle.from_records(
         bundle_id="resolution-fixture",
         bundle_version=1,
         purpose="package-test-fixture",
@@ -88,7 +88,7 @@ def _bundle(
 
 
 def test_neutral_associating_and_ionic_topologies_resolve_immutably() -> None:
-    neutral = ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
+    neutral = _ParameterBundle.from_catalog("gross-2001-methane-ethane", version=1).select(
         ("methane", "ethane")
     )
     neutral_model = _resolve_model(neutral)
@@ -343,7 +343,7 @@ def test_partial_ionic_topologies_are_rejected(removed_family: str) -> None:
 
 
 def test_source_backed_figiel_catalog_resolves_without_unpublished_defaults() -> None:
-    parameters = ParameterBundle.from_catalog(
+    parameters = _ParameterBundle.from_catalog(
         "figiel-2025-reference-electrolytes", version=1
     ).select(("water", "sodium-cation", "chloride-anion"))
     model = _resolve_model(parameters)
@@ -365,7 +365,7 @@ def test_source_backed_ascani_catalog_resolves_distinct_topology_and_lij() -> No
         "chloride-anion",
     )
     model = _resolve_model(
-        ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1).select(
+        _ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1).select(
             component_ids
         )
     )
@@ -411,7 +411,7 @@ def test_source_backed_ascani_catalog_resolves_distinct_topology_and_lij() -> No
 
 
 def test_ascani_neutral_subset_retains_explicit_lij() -> None:
-    parameters = ParameterBundle.from_catalog(
+    parameters = _ParameterBundle.from_catalog(
         "ascani-2022-case-study-2-electrolyte-lle", version=1
     ).select(("water", "1-butanol"))
     model = _resolve_model(parameters)
@@ -425,7 +425,7 @@ def test_ascani_neutral_subset_retains_explicit_lij() -> None:
 
 
 def test_ascani_topology_rejects_missing_explicit_lij() -> None:
-    bundle = ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1)
+    bundle = _ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1)
     parameters = bundle.select(
         ("water", "1-butanol", "sodium-cation", "potassium-cation", "chloride-anion")
     )
@@ -441,12 +441,12 @@ def test_ascani_topology_rejects_missing_explicit_lij() -> None:
 
 
 def test_ionic_resolver_rejects_mixed_figiel_and_ascani_source_schemas() -> None:
-    parameters = ParameterBundle.from_catalog(
+    parameters = _ParameterBundle.from_catalog(
         "ascani-2022-case-study-2-electrolyte-lle", version=1
     ).select(("water", "1-butanol", "sodium-cation", "potassium-cation", "chloride-anion"))
     figiel_model = next(
         record
-        for record in ParameterBundle.from_catalog(
+        for record in _ParameterBundle.from_catalog(
             "figiel-2025-reference-electrolytes", version=1
         ).records
         if getattr(record, "family", "") == "ionic_region_relative_permittivity"

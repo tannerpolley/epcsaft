@@ -199,7 +199,7 @@ $$
 - Change note: Shared by the public reference-state owner and native neutral basis.
 - LaTeX: `docs/latex/equations.tex:881`
 - Implementation:
-  - `src/epcsaft/reference.py:208` (`build_reference_state`)
+  - `src/epcsaft/reference.py:217` (`build_reference_state`)
 
 $$
 g=\gcd(|z_+|,|z_-|),
@@ -846,7 +846,7 @@ $$
   - `src/epcsaft/_native/eos.cpp:971` (`evaluate_ion_solvation_ionic_permittivity`)
   - `src/epcsaft/_native/eos.cpp:1008` (`evaluate_ion_solvation_solvent_permittivity`)
   - `src/epcsaft/_native/eos.cpp:1045` (`evaluate_ion_solvation_kij`)
-  - `src/epcsaft/reference.py:82` (`solvation_free_energy`)
+  - `src/epcsaft/reference.py:83` (`solvation_free_energy`)
 
 $$
 \Delta G_{i,\mathrm{solv}}^\infty
@@ -958,7 +958,7 @@ $$
 - Implementation:
   - `src/epcsaft/_native/eos.cpp:1124` (`evaluate_aqueous_miac_kij_batch`)
   - `src/epcsaft/_native/eos.cpp:1304` (`evaluate_aqueous_miac_solvation_factor_batch`)
-  - `src/epcsaft/reference.py:96` (`at_molality`)
+  - `src/epcsaft/reference.py:97` (`state`)
 
 $$
 \ln\gamma_\pm^{(x)}
@@ -1030,7 +1030,7 @@ $$
 - Implementation:
   - `src/epcsaft/_native/eos.cpp:1124` (`evaluate_aqueous_miac_kij_batch`)
   - `src/epcsaft/_native/eos.cpp:1304` (`evaluate_aqueous_miac_solvation_factor_batch`)
-  - `src/epcsaft/reference.py:96` (`at_molality`)
+  - `src/epcsaft/reference.py:97` (`state`)
 
 $$
 \gamma_\pm^{(m)}=
@@ -1324,7 +1324,7 @@ $$
 - Change note: Defined only for the admitted single-active-solvent aqueous path.
 - LaTeX: `docs/latex/equations.tex:962`
 - Implementation:
-  - `src/epcsaft/reference.py:96` (`at_molality`)
+  - `src/epcsaft/reference.py:97` (`state`)
 
 $$
 \Phi=
@@ -1585,7 +1585,7 @@ $$
 - Change note: Exposes the exponential of the finite-minus-reference log fugacity.
 - LaTeX: `docs/latex/equations.tex:927`
 - Implementation:
-  - `src/epcsaft/reference.py:96` (`at_molality`)
+  - `src/epcsaft/reference.py:97` (`state`)
 
 $$
 \gamma_i^{(x)}=
@@ -1646,7 +1646,7 @@ $$
 - Change note: Source and target must share temperature, pressure, phase, ions, and stoichiometry.
 - LaTeX: `docs/latex/equations.tex:987`
 - Implementation:
-  - `src/epcsaft/reference.py:176` (`transfer_to`)
+  - `src/epcsaft/reference.py:185` (`transfer_to`)
 
 $$
 \Delta G_{i,\mathrm{tr}}^{A\rightarrow B}

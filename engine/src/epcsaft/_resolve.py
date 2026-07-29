@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from itertools import combinations
 from typing import Literal
 
-from .parameters import ParameterSet
+from .parameters import Parameters
 from .records import (
     AssociationParameterRecord,
     ConstantCorrelation,
@@ -219,7 +219,7 @@ def _association(
 
 
 def _domain_limits(
-    parameters: ParameterSet,
+    parameters: Parameters,
 ) -> tuple[float | None, float | None, float | None, float | None, float | None]:
     domain_by_id = {domain.domain_id: domain for domain in parameters.domains}
     active_domains = tuple(
@@ -276,9 +276,9 @@ def _domain_limits(
     )
 
 
-def _resolve_model(parameters: ParameterSet) -> _ResolvedModel:
-    if not isinstance(parameters, ParameterSet):
-        raise _error("invalid-value", field="parameters", expected="ParameterSet")
+def _resolve_model(parameters: Parameters) -> _ResolvedModel:
+    if not isinstance(parameters, Parameters):
+        raise _error("invalid-value", field="parameters", expected="Parameters")
 
     singles = {
         (record.component_id, record.family): record

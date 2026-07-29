@@ -5,7 +5,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Iterable, Literal, Sequence, TypeAlias, get_args
 
-from ._bundle_io import _dump_path, _load_path
+from ._bundle_io import _create_template, _dump_path, _load_path
 from ._canonical import _bundle_fingerprint, _provenance_fingerprint, _set_fingerprint
 from .records import (
     AssociationParameterRecord,
@@ -154,7 +154,7 @@ def _record_components(record: object) -> tuple[str, ...]:
 
 
 @dataclass(frozen=True, slots=True, init=False)
-class ParameterBundle:
+class _ParameterBundle:
     bundle_id: str
     bundle_version: int
     purpose: BundlePurpose
@@ -165,10 +165,10 @@ class ParameterBundle:
     fingerprint: str
 
     def __init__(self) -> None:
-        raise TypeError("use ParameterBundle.from_catalog, from_path, or from_records")
+        raise TypeError("use Parameters.from_catalog, from_bundle, or from_records")
 
     @classmethod
-    def from_catalog(cls, bundle_id: str, *, version: int) -> ParameterBundle:
+    def from_catalog(cls, bundle_id: str, *, version: int) -> _ParameterBundle:
         """Load an immutable installed bundle by its exact ID and version.
 
         Missing identities and malformed installed records raise ``ParameterError``.
@@ -182,7 +182,7 @@ class ParameterBundle:
         return cls._from_catalog_path(bundle_id, version, path)
 
     @classmethod
-    def catalog(cls) -> tuple[ParameterBundle, ...]:
+    def catalog(cls) -> tuple[_ParameterBundle, ...]:
         """Return every installed catalog bundle in stable identity order.
 
         The returned tuple and each bundle are immutable. Catalog discovery performs
@@ -222,7 +222,7 @@ class ParameterBundle:
         bundle_id: str,
         version: int,
         path: str | PathLike[str],
-    ) -> ParameterBundle:
+    ) -> _ParameterBundle:
         bundle = cls.from_path(path)
         if bundle.bundle_id != bundle_id or bundle.bundle_version != version:
             raise _error(
@@ -239,7 +239,7 @@ class ParameterBundle:
         return bundle
 
     @classmethod
-    def from_path(cls, path: str | PathLike[str]) -> ParameterBundle:
+    def from_path(cls, path: str | PathLike[str]) -> _ParameterBundle:
         """Load and validate one bundle directory in the strict version-1 schema.
 
         The directory inventory must exactly match its manifest. Scientific records
@@ -263,12 +263,12 @@ class ParameterBundle:
         associations: Iterable[AssociationParameterRecord] = (),
         correlations: Iterable[CorrelationRecord] = (),
         models: Iterable[ModelParameterRecord] = (),
-    ) -> ParameterBundle:
+    ) -> _ParameterBundle:
         """Create an immutable bundle from explicit typed parameter records.
 
         Use ``purpose="user-provided"`` for caller-owned inputs. Every scientific
         value retains its source and validity-domain reference; no physical value is
-        inferred. Persist the result with :meth:`ParameterBundle.to_path`.
+        inferred.
         """
         bundle_id = _identifier(bundle_id, field="bundle_id")
         bundle_version = _version(bundle_version)
@@ -320,11 +320,11 @@ class ParameterBundle:
         """Persist this bundle in the strict version-1 directory schema.
 
         The target must not already exist. A failed write leaves no target directory.
-        Reload the saved bundle with :meth:`ParameterBundle.from_path`.
+        Reload the saved bundle with :meth:`Parameters.from_bundle`.
         """
         _dump_path(self, path)
 
-    def select(self, component_ids: Sequence[str]) -> ParameterSet:
+    def select(self, component_ids: Sequence[str]) -> Parameters:
         """Select exact component IDs in the order used by every state and result.
 
         The returned set has an order-sensitive fingerprint. Unknown or duplicate IDs
@@ -348,7 +348,7 @@ class ParameterBundle:
             for record in self.records
             if all(component_id in requested for component_id in _record_components(record))
         )
-        return ParameterSet._create(
+        return Parameters._create(
             bundle=self,
             component_ids=requested,
             components=tuple(component_map[component_id] for component_id in requested),
@@ -357,7 +357,7 @@ class ParameterBundle:
 
 
 @dataclass(frozen=True, slots=True, init=False)
-class ParameterSet:
+class Parameters:
     bundle_id: str
     bundle_version: int
     bundle_purpose: BundlePurpose
@@ -368,19 +368,144 @@ class ParameterSet:
     records: tuple
     fingerprint: str
     _source_domain_fingerprint: str
+    _bundle: _ParameterBundle
 
     def __init__(self) -> None:
-        raise TypeError("use ParameterBundle.select")
+        raise TypeError("use Parameters.from_catalog, from_bundle, or from_records")
+
+    @classmethod
+    def from_catalog(
+        cls,
+        bundle_id: str,
+        *,
+        components: Sequence[str],
+        version: int | None = None,
+    ) -> Parameters:
+        """Resolve one immutable installed parameter selection.
+
+        Omitting ``version`` selects the greatest installed integer version for the
+        exact bundle ID. Pass a version to pin a reproducible catalog identity.
+        """
+        bundle_id = _identifier(bundle_id, field="bundle_id")
+        if version is None:
+            root = Path(__file__).with_name("data") / "bundles" / bundle_id
+            if not root.is_dir():
+                raise _error("missing-record", field="catalog", value=bundle_id)
+            versions: list[int] = []
+            for entry in root.iterdir():
+                if not entry.is_dir():
+                    continue
+                try:
+                    candidate = int(entry.name)
+                except ValueError as exc:
+                    raise _error(
+                        "invalid-schema", field="catalog-version", value=entry.name
+                    ) from exc
+                if candidate <= 0 or str(candidate) != entry.name:
+                    raise _error(
+                        "invalid-schema", field="catalog-version", value=entry.name
+                    )
+                versions.append(candidate)
+            if not versions:
+                raise _error("missing-record", field="catalog", value=bundle_id)
+            version = max(versions)
+        return _ParameterBundle.from_catalog(bundle_id, version=version).select(components)
+
+    @classmethod
+    def from_bundle(
+        cls,
+        path: str | PathLike[str],
+        *,
+        components: Sequence[str],
+    ) -> Parameters:
+        """Load the strict manifest-plus-table bundle schema and select components."""
+        return _ParameterBundle.from_path(path).select(components)
+
+    @classmethod
+    def from_records(
+        cls,
+        *,
+        bundle_id: str,
+        bundle_version: int,
+        purpose: BundlePurpose,
+        sources: Iterable[SourceRecord],
+        domains: Iterable[ValidityDomain],
+        components: Iterable[ComponentRecord],
+        selected_components: Sequence[str] | None = None,
+        singles: Iterable[SingleParameterRecord] = (),
+        pairs: Iterable[PairParameterRecord] = (),
+        sites: Iterable[SiteRecord] = (),
+        associations: Iterable[AssociationParameterRecord] = (),
+        correlations: Iterable[CorrelationRecord] = (),
+        models: Iterable[ModelParameterRecord] = (),
+    ) -> Parameters:
+        """Build one immutable selected parameter set from typed in-memory records."""
+        component_records = tuple(components)
+        selection = (
+            tuple(record.component_id for record in component_records)
+            if selected_components is None
+            else selected_components
+        )
+        bundle = _ParameterBundle.from_records(
+            bundle_id=bundle_id,
+            bundle_version=bundle_version,
+            purpose=purpose,
+            sources=sources,
+            domains=domains,
+            components=component_records,
+            singles=singles,
+            pairs=pairs,
+            sites=sites,
+            associations=associations,
+            correlations=correlations,
+            models=models,
+        )
+        return bundle.select(selection)
+
+    @staticmethod
+    def create_bundle_template(
+        path: str | PathLike[str],
+        *,
+        components: Sequence[str],
+        profile: Literal[
+            "neutral",
+            "associating",
+            "electrolyte",
+            "associating-electrolyte",
+        ],
+        correlations: bool = False,
+    ) -> None:
+        """Create a strict non-overwriting parameter-bundle authoring skeleton."""
+        if isinstance(components, str):
+            raise _error("invalid-selection", field="components", value="string")
+        try:
+            component_ids = tuple(
+                _identifier(component, field="component_id") for component in components
+            )
+        except TypeError as exc:
+            raise _error("invalid-selection", field="components", value="not-sequence") from exc
+        if type(correlations) is not bool:
+            raise _error("invalid-value", field="correlations", value=correlations)
+        _create_template(
+            path,
+            components=component_ids,
+            profile=profile,
+            correlations=correlations,
+        )
+
+    def to_bundle(self, path: str | PathLike[str]) -> None:
+        """Persist the immutable source bundle using the strict directory schema."""
+        self._bundle.to_path(path)
 
     @classmethod
     def _create(
         cls,
         *,
-        bundle: ParameterBundle,
+        bundle: _ParameterBundle,
         component_ids: tuple[str, ...],
         components: tuple[ComponentRecord, ...],
         records: tuple,
-    ) -> ParameterSet:
+    ) -> Parameters:
         instance = object.__new__(cls)
         object.__setattr__(instance, "bundle_id", bundle.bundle_id)
         object.__setattr__(instance, "bundle_version", bundle.bundle_version)
@@ -409,7 +534,8 @@ class ParameterSet:
                 tuple(record.record_id for record in records),
             ),
         )
+        object.__setattr__(instance, "_bundle", bundle)
         return instance
 
 
-__all__ = ("BundlePurpose", "ParameterBundle", "ParameterSet")
+__all__ = ("BundlePurpose", "Parameters")
