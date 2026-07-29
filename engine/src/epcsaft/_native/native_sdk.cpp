@@ -1618,6 +1618,9 @@ struct NativeSdkEndpoint final {
             || result->parameter_gradient_capacity != request_count
             || result->state_parameter_capacity != state_count * request_count
             || result->packing_parameter_capacity != request_count
+            || result->packing_state_gradient_capacity != state_count
+            || result->packing_state_hessian_capacity
+                != state_count * state_count
             || result->molar_volume_bound_parameter_capacity
                 != EPCSAFT_NATIVE_MOLAR_VOLUME_BOUND_COUNT_V1 * request_count
             || result->pressure_parameter_capacity != request_count
@@ -1628,6 +1631,8 @@ struct NativeSdkEndpoint final {
             || result->parameter_gradient == nullptr
             || result->state_parameter_derivatives == nullptr
             || result->packing_parameter_derivatives == nullptr
+            || result->packing_state_gradient == nullptr
+            || result->packing_state_hessian == nullptr
             || result->molar_volume_bound_parameter_derivatives_m3_per_mol
                 == nullptr
             || result->pressure_parameter_derivatives_pa == nullptr
@@ -1682,7 +1687,8 @@ struct NativeSdkEndpoint final {
             const std::size_t joint_count = state_count + request_count;
             if (phase.gradient.size() != joint_count
                 || phase.hessian.size() != joint_count * joint_count
-                || packing.gradient.size() != joint_count) {
+                || packing.gradient.size() != joint_count
+                || packing.hessian.size() != joint_count * joint_count) {
                 throw std::runtime_error(
                     "reacting phase tensor dimensions changed"
                 );
@@ -1692,15 +1698,22 @@ struct NativeSdkEndpoint final {
             std::vector<double> parameter_gradient(request_count);
             std::vector<double> mixed(state_count * request_count);
             std::vector<double> packing_parameter(request_count);
+            std::vector<double> packing_state_gradient(state_count);
+            std::vector<double> packing_state_hessian(
+                state_count * state_count
+            );
             std::vector<double> pressure_parameter(request_count);
             std::vector<double> chemical_parameter(
                 amount_count * request_count
             );
             for (std::size_t state = 0; state < state_count; ++state) {
                 state_gradient[state] = phase.gradient[state];
+                packing_state_gradient[state] = packing.gradient[state];
                 for (std::size_t other = 0; other < state_count; ++other) {
                     state_hessian[state * state_count + other] =
                         phase.hessian[state * joint_count + other];
+                    packing_state_hessian[state * state_count + other] =
+                        packing.hessian[state * joint_count + other];
                 }
                 for (std::size_t parameter = 0;
                      parameter < request_count;
@@ -1743,6 +1756,8 @@ struct NativeSdkEndpoint final {
                 || !finite_values(parameter_gradient)
                 || !finite_values(mixed)
                 || !finite_values(packing_parameter)
+                || !finite_values(packing_state_gradient)
+                || !finite_values(packing_state_hessian)
                 || !finite_values(
                     volume_bounds.parameter_derivatives_m3_per_mol
                 )
@@ -1779,6 +1794,16 @@ struct NativeSdkEndpoint final {
                 packing_parameter.begin(),
                 packing_parameter.end(),
                 result->packing_parameter_derivatives
+            );
+            std::copy(
+                packing_state_gradient.begin(),
+                packing_state_gradient.end(),
+                result->packing_state_gradient
+            );
+            std::copy(
+                packing_state_hessian.begin(),
+                packing_state_hessian.end(),
+                result->packing_state_hessian
             );
             std::copy(
                 volume_bounds.parameter_derivatives_m3_per_mol.begin(),

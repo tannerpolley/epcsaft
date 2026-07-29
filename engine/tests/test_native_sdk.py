@@ -538,6 +538,10 @@ class ReactingPhaseParameterResult(ctypes.Structure):
         ("topology_fingerprint", ctypes.c_char * 72),
         ("helmholtz_basis_id", ctypes.c_char * 72),
         ("error", ctypes.c_char * 160),
+        ("packing_state_gradient_capacity", ctypes.c_size_t),
+        ("packing_state_hessian_capacity", ctypes.c_size_t),
+        ("packing_state_gradient", ctypes.POINTER(ctypes.c_double)),
+        ("packing_state_hessian", ctypes.POINTER(ctypes.c_double)),
     )
 
 
@@ -1596,8 +1600,12 @@ def _evaluate_reacting_phase_parameters(
     requests: tuple[ActiveParameterRequest, ...],
     *,
     temperature_k: float = 298.15,
+    packing_state_gradient_capacity: int | None = None,
+    packing_state_hessian_capacity: int | None = None,
 ) -> tuple[
     ReactingPhaseParameterResult,
+    tuple[float, ...],
+    tuple[float, ...],
     tuple[float, ...],
     tuple[float, ...],
     tuple[float, ...],
@@ -1625,6 +1633,12 @@ def _evaluate_reacting_phase_parameters(
     )
     packing = (ctypes.c_double * parameter_count)(
         *(25.0 for _ in range(parameter_count))
+    )
+    packing_state_gradient = (ctypes.c_double * state_count)(
+        *(29.0 for _ in range(state_count))
+    )
+    packing_state_hessian = (ctypes.c_double * (state_count * state_count))(
+        *(30.0 for _ in range(state_count * state_count))
     )
     volume_bounds = (ctypes.c_double * (2 * parameter_count))(
         *(26.0 for _ in range(2 * parameter_count))
@@ -1655,6 +1669,18 @@ def _evaluate_reacting_phase_parameters(
         molar_volume_bound_parameter_derivatives_m3_per_mol=volume_bounds,
         pressure_parameter_derivatives_pa=pressure,
         chemical_potential_parameter_derivatives_over_rt=chemical,
+        packing_state_gradient_capacity=(
+            state_count
+            if packing_state_gradient_capacity is None
+            else packing_state_gradient_capacity
+        ),
+        packing_state_hessian_capacity=(
+            state_count * state_count
+            if packing_state_hessian_capacity is None
+            else packing_state_hessian_capacity
+        ),
+        packing_state_gradient=packing_state_gradient,
+        packing_state_hessian=packing_state_hessian,
     )
     status = EvaluateReactingPhaseParameters(table.evaluate_reacting_phase_parameters)(
         table.model_context,
@@ -1678,6 +1704,8 @@ def _evaluate_reacting_phase_parameters(
         tuple(parameter_gradient),
         tuple(mixed),
         tuple(packing),
+        tuple(packing_state_gradient),
+        tuple(packing_state_hessian),
         tuple(volume_bounds),
         tuple(pressure),
         tuple(chemical),
@@ -7074,6 +7102,8 @@ def test_native_sdk_reacting_phase_parameter_columns_match_fixed_topology_oracle
         parameter_gradient,
         mixed,
         packing,
+        packing_state_gradient,
+        packing_state_hessian,
         volume_bounds,
         pressure,
         chemical,
@@ -7104,6 +7134,31 @@ def test_native_sdk_reacting_phase_parameter_columns_match_fixed_topology_oracle
     )
     assert state_gradient == pytest.approx(ordinary_gradient, rel=3.0e-12)
     assert state_hessian == pytest.approx(ordinary_hessian, rel=3.0e-11)
+    _, packing_table = _packing_fraction_table(model)
+    ordinary_packing = ctypes.c_double()
+    ordinary_packing_gradient = (ctypes.c_double * 4)()
+    ordinary_packing_hessian = (ctypes.c_double * 16)()
+    packing_status = EvaluatePackingFraction(
+        packing_table.evaluate_packing_fraction
+    )(
+        packing_table.model_context,
+        model.parameter_fingerprint.encode(),
+        298.15,
+        (ctypes.c_double * 3)(*amounts),
+        3,
+        volume,
+        ctypes.byref(ordinary_packing),
+        ordinary_packing_gradient,
+        4,
+        ordinary_packing_hessian,
+        16,
+    )
+    assert packing_status == STATUS_OK
+    assert center.packing_fraction == ordinary_packing.value
+    assert packing_state_gradient == tuple(ordinary_packing_gradient)
+    assert packing_state_hessian == tuple(ordinary_packing_hessian)
+    assert all(math.isfinite(value) for value in packing_state_gradient)
+    assert all(math.isfinite(value) for value in packing_state_hessian)
     assert chemical == pytest.approx(mixed[:6])
     assert pressure == pytest.approx(
         tuple(-8.31446261815324 * 298.15 * mixed[3 * 2 + parameter] for parameter in range(2))
@@ -7120,6 +7175,8 @@ def test_native_sdk_reacting_phase_parameter_columns_match_fixed_topology_oracle
     assert reordered_mixed == pytest.approx(
         tuple(mixed[row * 2 + parameter] for row in range(4) for parameter in (1, 0))
     )
+    assert reordered[6] == packing_state_gradient
+    assert reordered[7] == packing_state_hessian
 
     def ordinary_trial(
         family: str,
@@ -7243,6 +7300,8 @@ def test_native_sdk_reacting_phase_parameters_reject_contract_drift_without_writ
             parameter_gradient,
             mixed,
             packing,
+            packing_state_gradient,
+            packing_state_hessian,
             volume_bounds,
             pressure_columns,
             chemical_columns,
@@ -7261,6 +7320,8 @@ def test_native_sdk_reacting_phase_parameters_reject_contract_drift_without_writ
         assert parameter_gradient == (23.0,)
         assert mixed == (24.0,) * 4
         assert packing == (25.0,)
+        assert packing_state_gradient == (29.0,) * 4
+        assert packing_state_hessian == (30.0,) * 16
         assert volume_bounds == (26.0,) * 2
         assert pressure_columns == (27.0,)
         assert chemical_columns == (28.0,) * 3
@@ -7322,6 +7383,23 @@ def test_native_sdk_reacting_phase_parameters_reject_contract_drift_without_writ
         (request,),
     )
     assert outside_domain.status == STATUS_DOMAIN_ERROR
+
+    for capacity_override in (
+        {"packing_state_gradient_capacity": 3},
+        {"packing_state_hessian_capacity": 15},
+    ):
+        capacity_failure = _evaluate_reacting_phase_parameters(
+            table,
+            model.parameter_fingerprint,
+            topology,
+            amounts,
+            2.5e-5,
+            (request,),
+            **capacity_override,
+        )
+        assert capacity_failure[0].status == STATUS_ABI_MISMATCH
+        assert capacity_failure[6] == (29.0,) * 4
+        assert capacity_failure[7] == (30.0,) * 16
 
     callback = EvaluateReactingPhaseParameters(table.evaluate_reacting_phase_parameters)
     amounts_buffer = (ctypes.c_double * 3)(*amounts)

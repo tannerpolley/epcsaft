@@ -785,7 +785,9 @@ typedef int (*epcsaft_evaluate_neutral_reference_derivatives_v1)(
  * (n_1,...,n_C,V); parameter order is exactly the request order. The mixed
  * block is row-major [state_coordinate][requested_parameter]. The pressure
  * and chemical-potential parameter partials are exact projections of that
- * same block. Packing partials use the same Provider packing geometry.
+ * same block. Packing values, state derivatives, and parameter partials use
+ * the same Provider packing geometry. The packing state Hessian is row-major
+ * [state_coordinate][state_coordinate].
  * Molar-volume bounds use explicit caller-owned packing limits; their
  * parameter derivatives are row-major [lower_then_upper][parameter].
  */
@@ -820,6 +822,10 @@ typedef struct epcsaft_reacting_phase_parameter_result_v1 {
     char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
     char helmholtz_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+    size_t packing_state_gradient_capacity;
+    size_t packing_state_hessian_capacity;
+    double* packing_state_gradient;
+    double* packing_state_hessian;
 } epcsaft_reacting_phase_parameter_result_v1;
 
 typedef int (*epcsaft_evaluate_reacting_phase_parameters_v1)(

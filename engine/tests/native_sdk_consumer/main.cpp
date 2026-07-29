@@ -86,6 +86,8 @@ int main(int argc, char** argv) {
     std::vector<double> parameter_gradient(1);
     std::vector<double> mixed(4);
     std::vector<double> packing_parameter(1);
+    std::vector<double> packing_state_gradient(4);
+    std::vector<double> packing_state_hessian(16);
     std::vector<double> volume_bound_parameter(2);
     std::vector<double> pressure_parameter(1);
     std::vector<double> chemical_parameter(3);
@@ -111,6 +113,10 @@ int main(int argc, char** argv) {
         pressure_parameter.data(),
         chemical_parameter.data(),
     };
+    phase.packing_state_gradient_capacity = packing_state_gradient.size();
+    phase.packing_state_hessian_capacity = packing_state_hessian.size();
+    phase.packing_state_gradient = packing_state_gradient.data();
+    phase.packing_state_hessian = packing_state_hessian.data();
     const int phase_status = valid
         ? sdk->evaluate_reacting_phase_parameters(
             sdk->model_context,
@@ -174,6 +180,8 @@ int main(int argc, char** argv) {
         && std::strcmp(reference.reference_branch, "liquid") == 0
         && std::isfinite(phase.pressure_pa)
         && std::isfinite(mixed[0])
+        && std::isfinite(packing_state_gradient[0])
+        && std::isfinite(packing_state_hessian[0])
         && std::isfinite(pressure_derivatives[0])
         && std::isfinite(parameter_derivatives[0]);
     std::cout << "component_count=" << (sdk == nullptr ? 0 : sdk->component_count)
