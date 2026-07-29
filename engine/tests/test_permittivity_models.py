@@ -1,9 +1,10 @@
+from epcsaft.parameters import _ParameterBundle
 import math
 from itertools import combinations
 
 import pytest
 
-from epcsaft import Mixture, _ParameterBundle, unit_registry
+from epcsaft import Mixture, unit_registry
 from epcsaft.records import (
     ComponentRecord,
     ConstantCorrelation,

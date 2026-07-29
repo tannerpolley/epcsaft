@@ -299,13 +299,15 @@ public_surface:
     - unit_registry
     - Mixture
     - State
+    - Fugacity
     - DensityDiagnostics
     - EosError
     - Phase
+    - PropertyBasis
     - export_native_model
     - native_sdk
     - ElectrolyteReference
-    - IonicActivity
+    - Activity
     - TransferFreeEnergy
   runtime_dependencies:
     - Pint

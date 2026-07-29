@@ -1,8 +1,9 @@
+from epcsaft.parameters import _ParameterBundle
 from dataclasses import FrozenInstanceError
 
 import pytest
 
-from epcsaft import _ParameterBundle, ParameterError, unit_registry
+from epcsaft import ParameterError, unit_registry
 from epcsaft._resolve import _resolve_model
 from epcsaft.records import (
     AssociationParameterRecord,

@@ -1,8 +1,9 @@
+from epcsaft.parameters import _ParameterBundle
 import math
 
 import pytest
 
-from epcsaft import Mixture, _ParameterBundle, unit_registry
+from epcsaft import Mixture, unit_registry
 
 
 GAS_CONSTANT = 8.31446261815324

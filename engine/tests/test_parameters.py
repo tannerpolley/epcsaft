@@ -1,3 +1,4 @@
+from epcsaft.parameters import _ParameterBundle
 import csv
 from dataclasses import FrozenInstanceError
 from decimal import Decimal
@@ -9,7 +10,7 @@ import pytest
 from pint import UnitRegistry
 
 import epcsaft
-from epcsaft import BundlePurpose, _ParameterBundle, ParameterError, Parameters, unit_registry
+from epcsaft import BundlePurpose, ParameterError, Parameters, unit_registry
 from epcsaft._canonical import _bundle_json
 from epcsaft.records import (
     AssociationParameterRecord,

@@ -1,9 +1,10 @@
+from epcsaft.parameters import _ParameterBundle
 from dataclasses import replace
 import math
 
 import pytest
 
-from epcsaft import Mixture, _ParameterBundle, unit_registry
+from epcsaft import Mixture, unit_registry
 from epcsaft._core import NativeModel
 from epcsaft.eos import _native_arguments
 from epcsaft.records import (

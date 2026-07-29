@@ -1,3 +1,4 @@
+from epcsaft.parameters import _ParameterBundle
 import ctypes
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
@@ -14,7 +15,6 @@ import epcsaft
 from epcsaft import (
     Mixture,
     EosError,
-    _ParameterBundle,
     export_native_model,
     native_sdk,
     unit_registry,

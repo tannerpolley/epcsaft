@@ -1,3 +1,4 @@
+from epcsaft.parameters import _ParameterBundle
 from dataclasses import FrozenInstanceError
 import math
 from pathlib import Path
@@ -6,7 +7,7 @@ import pytest
 from pint import UnitRegistry
 
 import epcsaft
-from epcsaft import EosError, _ParameterBundle, ParameterError
+from epcsaft import EosError, ParameterError
 from epcsaft import unit_registry
 from epcsaft.eos import Mixture
 

@@ -1,6 +1,7 @@
+from epcsaft.parameters import _ParameterBundle
 import pytest
 
-from epcsaft import Mixture, EosError, _ParameterBundle, unit_registry
+from epcsaft import Mixture, EosError, unit_registry
 
 
 def _methane() -> Mixture:

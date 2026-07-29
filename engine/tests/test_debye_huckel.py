@@ -1,8 +1,9 @@
+from epcsaft.parameters import _ParameterBundle
 import math
 
 import pytest
 
-from epcsaft import Mixture, EosError, _ParameterBundle, unit_registry
+from epcsaft import Mixture, EosError, unit_registry
 
 
 ELEMENTARY_CHARGE = 1.602176634e-19

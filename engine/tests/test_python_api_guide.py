@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from epcsaft.parameters import _ParameterBundle
+
 import inspect
 from pathlib import Path
 import re
 
 import epcsaft
-from epcsaft import Mixture, Parameters, State, _ParameterBundle
+from epcsaft import Mixture, Parameters, State
 
 
 ROOT = Path(__file__).parents[1]

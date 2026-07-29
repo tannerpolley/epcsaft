@@ -1,8 +1,9 @@
+from epcsaft.parameters import _ParameterBundle
 from decimal import Decimal, localcontext
 
 import pytest
 
-from epcsaft import Mixture, _ParameterBundle, unit_registry
+from epcsaft import Mixture, unit_registry
 
 
 ELEMENTARY_CHARGE = 1.602176634e-19

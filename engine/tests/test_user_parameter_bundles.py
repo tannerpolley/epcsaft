@@ -1,3 +1,4 @@
+from epcsaft.parameters import _ParameterBundle
 import math
 from decimal import Decimal
 from pathlib import Path
@@ -5,7 +6,7 @@ from typing import Literal
 
 import pytest
 
-from epcsaft import Mixture, _ParameterBundle, ParameterError, unit_registry as u
+from epcsaft import Mixture, ParameterError, unit_registry as u
 from epcsaft.records import (
     AssociationParameterRecord,
     ComponentRecord,

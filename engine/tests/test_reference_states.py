@@ -1,3 +1,4 @@
+from epcsaft.parameters import _ParameterBundle
 import math
 from pathlib import Path
 
@@ -7,7 +8,6 @@ from epcsaft import (
     Mixture,
     ElectrolyteReference,
     Activity,
-    _ParameterBundle,
     TransferFreeEnergy,
     unit_registry,
 )
