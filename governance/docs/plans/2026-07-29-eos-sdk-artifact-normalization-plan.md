@@ -20,6 +20,10 @@ Coordinate one ecosystem migration that:
 - preserves the Python distribution and import identity `epcsaft`;
 - removes legacy role terminology from live Python, C, C++, serialized,
   command-line, status, documentation, tracker, and worktree contracts;
+- limits the installed EOS parameter catalog to an explicit allowlist of
+  model-defining PC-SAFT and ePC-SAFT reference parameterizations;
+- relocates case-study, fitted, alternative, and paper-reproduction parameter
+  bundles to their accountable Validation campaigns;
 - normalizes native SDK ownership and consumer checks;
 - makes wheel and installed-environment identity reproducible;
 - classifies and preserves scientific evidence artifacts without treating
@@ -56,9 +60,15 @@ The migration is complete only when all of the following are true:
     unrelated sibling packages.
 11. Cross-repository worktrees are owned by the repository being changed and
     implement the approved access matrix.
-12. Package, installed-wheel, cross-package, scientific, negative-space, and
+12. The EOS distribution contains only allowlisted model-defining reference
+    parameterizations; every other retained parameter bundle is evidence data
+    in an accountable Validation campaign and enters EOS only through a public
+    parameter-input contract.
+13. Validation parameter bundles are never imported by production packages,
+    exposed as a production catalog, or treated as runtime authority.
+14. Package, installed-wheel, cross-package, scientific, negative-space, and
     historical-evidence checks pass.
-13. GitHub repository identity, redirects, branch protection, issues, pull
+15. GitHub repository identity, redirects, branch protection, issues, pull
     requests, milestones, and organization Project references are verified
     after the rename.
 
@@ -129,6 +139,49 @@ The refresh gate must confirm or amend this line before edits begin.
 Experimental builds do not require a new package version for every commit, but
 they must be stored at immutable commit- and hash-addressed paths. A path
 already consumed by another environment or campaign must never be overwritten.
+
+### 3.5 Parameter-bundle ownership
+
+EOS owns generic parameter schemas, validation, resolution, and evaluation. It
+may ship only parameterizations admitted by an explicit, reviewed allowlist of
+model-defining PC-SAFT or ePC-SAFT references. The allowlist is based on a
+source's architectural role, not merely on publication in a paper. Initial
+classification examples selected by the user are Gross and Sadowski (2001)
+and Figiel et al. (2025); the migration inventory must verify the exact records
+and editions before admission.
+
+Validation owns parameter values used for:
+
+- a substance-specific or application-specific case study;
+- a literature reproduction or comparison campaign;
+- a regression candidate, fitted result, sensitivity study, or alternative
+  parameterization;
+- a rejected, superseded, or non-admission result; or
+- any published parameter set not admitted to the model-defining allowlist.
+
+Such values are test and evidence data. They must be source-traceable,
+hash-bound, scoped to a campaign, and supplied through EOS's public
+parameter-input API. They must not be installed as an EOS catalog entry,
+imported by Equilibrium or Regression as package data, or promoted into a
+Validation runtime catalog.
+
+Regression may own a transient or committed fit result while it is being
+produced and diagnosed. Durable cross-package or literature acceptance
+evidence, including the exact accepted candidate values, belongs to the
+accountable Validation campaign. Promotion to the EOS catalog requires a
+separate Organization decision that adds the source and exact records to the
+model-defining allowlist; successful validation alone is insufficient.
+
+The just-landed Crespo et al. DEEA subject is preserved as an exact migration
+input. Its generic ordinary-`sigma^3 kappa` EOS and SDK capability remains an
+EOS responsibility, while its substance-specific DEEA catalog bundle is
+scheduled for relocation into its Validation campaign. Existing commits,
+wheels, and receipts remain historical evidence and are not rewritten.
+
+Implementation is tracked by EOS issue
+[`ePC-SAFT/ePC-SAFT#48`](https://github.com/ePC-SAFT/ePC-SAFT/issues/48)
+and Validation issue
+[`ePC-SAFT/ePC-SAFT-validation#9`](https://github.com/ePC-SAFT/ePC-SAFT-validation/issues/9).
 
 ## 4. Current audit snapshot
 
@@ -232,6 +285,7 @@ baseline.
 
 - A new live API or SDK field extends the rename and compatibility map.
 - A new wheel extends the artifact ledger.
+- A new or changed parameter bundle extends the parameter-ownership ledger.
 - A new accepted receipt extends the immutable historical allowlist.
 - A new current document joins the live purge.
 - A superseded experiment receives an evidence disposition before removal.
@@ -285,6 +339,8 @@ Capture:
 - public APIs and serialized contracts;
 - all native SDK declarations, sizes, fields, callbacks, and consumers;
 - package metadata, CMake exports, build floors, and dependency constraints;
+- every installed and campaign-local parameter bundle, its source, exact
+  records, consumers, and proposed ownership class;
 - all wheel paths, hashes, embedded headers, and producing commits;
 - all environment distributions, origins, native modules, and headers; and
 - a fresh case-insensitive terminology inventory.
@@ -301,6 +357,7 @@ implementation.
    - breaking API treatment with no aliases;
    - cross-repository access;
    - artifact identity and retention;
+   - the model-defining parameter allowlist and Validation evidence boundary;
    - SDK transport ownership; and
    - the exact GitHub cutover protocol.
 3. Update every repository's doctrine pointer.
@@ -384,6 +441,16 @@ Prepare a reviewed symbol and path map. Expected changes include:
 - Migration's living controls; and
 - Organization policy and manuscript sources.
 
+Prepare a parallel parameter-bundle disposition map with one row per bundle:
+
+- exact source and record hash;
+- current repository and consumers;
+- model-defining allowlist decision;
+- target EOS catalog entry or Validation campaign;
+- Regression provenance when fitted;
+- receipt and artifact references; and
+- migration action with replay test.
+
 Apply the migration in this order:
 
 1. Organization doctrine and Migration controls;
@@ -400,21 +467,30 @@ Do not add aliases or dual-read compatibility.
 
 1. Keep `epcsaft.native_sdk.v1` when append-only ABI compatibility remains
    proven.
-2. Rename live legacy-role source identifiers and metadata without needless
+2. Retain generic parameter parsing, validation, resolution, and evaluation in
+   EOS.
+3. Generate the EOS installed catalog from the reviewed model-defining
+   allowlist only.
+4. Move non-allowlisted bundles, beginning with the Crespo DEEA case, into
+   accountable Validation campaigns without changing their scientific bytes
+   or provenance.
+5. Make every migrated campaign construct or load public parameter inputs
+   explicitly; no production package may import Validation data.
+6. Rename live legacy-role source identifiers and metadata without needless
    binary-layout changes.
-3. Make EOS the sole owner of its public headers, capsule contract,
+7. Make EOS the sole owner of its public headers, capsule contract,
    capability vocabulary, and transport metadata.
-4. Adopt or supersede an ADR for the standalone native-model transport.
-5. Export:
+8. Adopt or supersede an ADR for the standalone native-model transport.
+9. Export:
    - `epcsaft::headers` as an interface target for capsule consumers; and
    - `epcsaft::native_model` for the standalone native-model implementation.
-6. Stop Equilibrium linking the implementation archive merely to obtain
+10. Stop Equilibrium linking the implementation archive merely to obtain
    declarations.
-7. Centralize Regression's EOS capsule validation in one C++ owner.
-8. Keep the Regression evaluator capsule private unless another package must
+11. Centralize Regression's EOS capsule validation in one C++ owner.
+12. Keep the Regression evaluator capsule private unless another package must
    produce it. If it crosses a package boundary, move the declaration to its
    producer and assign a contract version.
-9. Align or justify Python, CMake, scikit-build-core, pybind11, and C++ floors.
+13. Align or justify Python, CMake, scikit-build-core, pybind11, and C++ floors.
 
 ### Phase 7: Coordinated package line and immutable wheels
 
@@ -469,7 +545,8 @@ Run the narrowest checks first, then broaden:
 11. artifact-ledger completeness;
 12. worktree ownership and access enforcement;
 13. historical receipt replay; and
-14. terminology negative-space checks.
+14. parameter-catalog allowlist and ownership negative-space checks; and
+15. terminology negative-space checks.
 
 Terminology verification requires:
 
@@ -478,6 +555,17 @@ Terminology verification requires:
 - no old-term public alias;
 - no old-term current filename or worktree label; and
 - no old-term open tracker title, label, milestone, or Project field.
+
+Parameter-ownership verification requires:
+
+- every EOS catalog record to map to an approved model-defining allowlist
+  entry;
+- every non-allowlisted retained bundle to map to one accountable Validation
+  campaign;
+- no Validation parameter bundle to be imported by a production package;
+- installed-wheel tests to prove EOS functions with explicit campaign
+  parameters; and
+- exact pre-migration bundle bytes and provenance to remain reachable.
 
 ### Phase 10: Independent review
 
@@ -554,6 +642,9 @@ Stop the affected phase when:
 - a dirty path lacks an owner or disposition;
 - a source/header/wheel/installed identity differs unexpectedly;
 - an accepted receipt would require rewriting;
+- a parameter source cannot be classified reproducibly as model-defining or
+  campaign evidence;
+- a Validation bundle is required as a production runtime dependency;
 - the historical allowlist expands without review;
 - a consumer needs a second EOS implementation or sibling source;
 - a build requires a mutable cross-repository `dist/` path;
