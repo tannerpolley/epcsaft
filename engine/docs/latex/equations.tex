@@ -9,8 +9,8 @@
 
 \addbibresource{references.bib}
 
-\title{Provider Equation Documentation Mirror}
-\author{ePC-SAFT Provider}
+\title{EOS Equation Documentation Mirror}
+\author{ePC-SAFT EOS}
 \date{2026-07-24}
 
 \begin{document}
@@ -18,7 +18,7 @@
 
 \section{Scope and authority}
 
-This document mirrors the current Provider implementation. It is not a runtime
+This document mirrors the current EOS implementation. It is not a runtime
 input and does not override \texttt{docs/science/full-provider-eos.md}. The
 legacy catalogue at commit
 \texttt{7920e56dbb0fc1fb418bae44e67ef50f334b75cd}, Git blob
@@ -38,7 +38,7 @@ $\widehat{\rho}$ denotes the corresponding number density in
 % Source: \cite{Gross2001}, unit conversion used by Appendix A
 % Status: Exact derivation
 % Description: Convert molar density to molecular number density on the angstrom basis.
-% Change note: Uses the current Provider Avogadro constant and angstrom conversion.
+% Change note: Uses the current EOS Avogadro constant and angstrom conversion.
 \begin{equation}
 \widehat{\rho}=\rho_m\,N_A\,10^{-30}.
 \label{eq:angstrom_number_density}
@@ -47,7 +47,7 @@ $\widehat{\rho}$ denotes the corresponding number density in
 \section{Parameter setup}
 
 % EqID: segment_sigma_correlation
-% Source: Source-receipted component correlation represented by the Provider parameter schema
+% Source: Source-receipted component correlation represented by the EOS parameter schema
 % Status: Bounded empirical relation
 % Description: Evaluate a component segment-size correlation from its constant and exponential terms.
 % Change note: Mirrors the general sparse correlation implemented by segment_sigma.
@@ -148,7 +148,7 @@ d_i=\sigma_i,\qquad z_i\ne0,\quad
 % Source: \cite{Gross2001}, Eq.~(A.8) at n=3
 % Status: Source equation
 % Description: Packing fraction from molar density and segment geometry.
-% Change note: Shared by Helmholtz evaluation and Provider domain owners.
+% Change note: Shared by Helmholtz evaluation and EOS domain owners.
 \begin{equation}
 \eta=\zeta_3
 =\frac{\pi}{6}\rho_mN_A10^{-30}\sum_i x_i m_i d_i^3.
@@ -158,7 +158,7 @@ d_i=\sigma_i,\qquad z_i\ne0,\quad
 % EqID: close_packing_fraction
 % Source: Geometric close packing of equal spheres
 % Status: Exact derivation
-% Description: Provider hard upper packing-domain boundary.
+% Description: EOS hard upper packing-domain boundary.
 % Change note: Mirrors close_packing_fraction without introducing solver policy.
 \begin{equation}
 \eta_{\mathrm{cp}}=\frac{\pi}{3\sqrt{2}}.
@@ -371,7 +371,7 @@ d_{ij}^3\kappa_{AB}^{ij}.
 % Source: \cite{Chapman1990}, Eq.~(19)
 % Status: Source equation
 % Description: Association site-fraction mass-action equation with explicit multiplicity.
-% Change note: Written in the zero-residual form used by the Provider.
+% Change note: Written in the zero-residual form used by the EOS.
 \begin{equation}
 F_A=X_A\left[
 1+\widehat{\rho}\sum_B x_{i(B)}\,\nu_B\,X_B\Delta_{AB}
@@ -396,7 +396,7 @@ a^{assoc}=\sum_A x_{i(A)}\nu_A
 % Source: \cite{Gross2001}, PC-SAFT residual decomposition, extended by the admitted electrolyte terms
 % Status: Implementation convention
 % Description: Sum of every active residual Helmholtz contribution.
-% Change note: Mirrors the single Provider Helmholtz owner and its contribution result.
+% Change note: Mirrors the single EOS Helmholtz owner and its contribution result.
 \begin{equation}
 a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}.
 \label{eq:residual_helmholtz}
@@ -534,7 +534,7 @@ c_v^r=R\left(-2Ta_T-T^2a_{TT}\right).
 \end{equation}
 
 % EqID: fixed_pressure_fugacity_correction
-% Source: Provider Newton correction using Eq.~\eqref{eq:pressure_density_derivative}
+% Source: EOS Newton correction using Eq.~\eqref{eq:pressure_density_derivative}
 % Status: Implementation convention
 % Description: Correct a converged-state log fugacity for its bounded pressure residual.
 % Change note: Documents the exact arithmetic used by the reference observation owner.
@@ -587,7 +587,7 @@ F(\rho_m;T,\boldsymbol{x},P^\star)
 % Source: Exact inversion of Eqs.~\eqref{eq:packing_fraction_coefficient} and \eqref{eq:close_packing_fraction}
 % Status: Exact derivation
 % Description: Model-specific density boundary implied by close packing.
-% Change note: Reuses the sole Provider packing geometry owner.
+% Change note: Reuses the sole EOS packing geometry owner.
 \begin{equation}
 \rho_{\max}=\frac{\eta_{\mathrm{cp}}}{c_\eta(T,\boldsymbol{x})}.
 \label{eq:density_upper_bound}
@@ -611,7 +611,7 @@ P_\rho>10^{-10}\frac{P^\star}{\rho_{\mathrm{ideal}}}
 The independent coordinates taped by the common nonlinear owner are
 $(T,\rho_m,\boldsymbol{x})$, optional active model coordinates, and association
 site fractions. CppAD differentiates the defining Helmholtz and mass-action
-relations. The Provider then applies the implicit association solves and exact
+relations. The EOS then applies the implicit association solves and exact
 property transformations above. No analytical nonlinear gradient or Hessian
 catalogue is maintained beside CppAD.
 
@@ -740,7 +740,7 @@ S_z=\sum_{i\in\mathcal{I}}x_i z_i^2.
 % Source: \cite{Bulow2019}, Debye screening definition associated with Eq.~(2)
 % Status: Source equation
 % Description: SI Debye screening parameter for the resolved bulk dielectric.
-% Change note: Uses molar density and the current Provider physical constants.
+% Change note: Uses molar density and the current EOS physical constants.
 \begin{equation}
 \kappa=
 \sqrt{\frac{\rho_mN_Ae^2S_z}
@@ -785,7 +785,7 @@ a^{DH}=
 % Source: \cite{Figiel2025}, SSM+DS solvation-factor mixing rule
 % Status: Source equation
 % Description: Mole-fraction-weighted mixture solvation factor.
-% Change note: Retains the explicit fraction normalization used by the Provider.
+% Change note: Retains the explicit fraction normalization used by the EOS.
 \begin{equation}
 f_{\mathrm{mix}}=
 \frac{\sum_kx_kf_k}{\sum_kx_k}.
@@ -856,7 +856,7 @@ W_{\mathrm{original}}.
 \end{equation}
 
 % EqID: born_model_selection
-% Source: Provider model-bound routing of \cite{Figiel2026Correction} and \cite{AscaniHeld2021}
+% Source: EOS model-bound routing of \cite{Figiel2026Correction} and \cite{AscaniHeld2021}
 % Status: Implementation convention
 % Description: Select the source-consistent Born contribution from immutable model identity.
 % Change note: Documents routing without adding a public selector or case branch.
@@ -906,7 +906,7 @@ n_{\mathrm{tot}}&=n_s^{(0)}+m(\nu_++\nu_-),
 \end{equation}
 
 % EqID: reference_molality_sequence
-% Source: Provider convergence sequence for the \cite{Figiel2025} infinite-dilution reference
+% Source: EOS convergence sequence for the \cite{Figiel2025} infinite-dilution reference
 % Status: Implementation convention
 % Description: Fixed four-molality sequence and terminal fugacity selection.
 % Change note: One internal owner constructs composition, adjudicates convergence, and selects the terminal observation.
@@ -971,7 +971,7 @@ n_{\mathrm{tot}}&=n_s^{(0)}+m(\nu_++\nu_-),
 % EqID: infinite_dilution_solvation_energy
 % Source: \cite{Figiel2025}, infinite-dilution fugacity-to-solvation-energy relation
 % Status: Source equation
-% Description: Single-ion infinite-dilution solvation Gibbs energy on the Provider reference convention.
+% Description: Single-ion infinite-dilution solvation Gibbs energy on the EOS reference convention.
 % Change note: Uses the terminal reference-sequence log fugacity.
 \begin{equation}
 \Delta G_{i,\mathrm{solv}}^\infty
@@ -1052,7 +1052,7 @@ P=-RTn_{\mathrm{ref}}
 % Source: Exact inversion of eta=c_eta/V_m
 % Status: Exact derivation
 % Description: Molar-volume interval corresponding to caller-owned packing-fraction limits.
-% Change note: The Provider owns c_eta while the caller owns eta_min and eta_max.
+% Change note: The EOS owns c_eta while the caller owns eta_min and eta_max.
 \begin{equation}
 V_{m,\min}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\max}},
 \qquad
@@ -1061,7 +1061,7 @@ V_{m,\max}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\min}}.
 \end{equation}
 
 % EqID: active_binary_interaction_mapping
-% Source: Provider active-coordinate convention for the symmetric binary pair
+% Source: EOS active-coordinate convention for the symmetric binary pair
 % Status: Implementation convention
 % Description: Map one active unlike-pair k_ij coordinate into the symmetric binary matrix.
 % Change note: Diagonal catalog values remain fixed.
@@ -1075,7 +1075,7 @@ k_{11}&\theta\\
 \end{equation}
 
 % EqID: active_binary_size_interaction_mapping
-% Source: Provider active-coordinate convention for the symmetric binary pair
+% Source: EOS active-coordinate convention for the symmetric binary pair
 % Status: Implementation convention
 % Description: Map one active unlike-pair l_ij coordinate into the symmetric binary matrix.
 % Change note: Diagonal catalog values remain fixed and k_ij remains unchanged.
@@ -1089,7 +1089,7 @@ l_{11}&\theta\\
 \end{equation}
 
 % EqID: pure_active_parameter_mapping
-% Source: Provider parameterized pure-phase coordinate convention
+% Source: EOS parameterized pure-phase coordinate convention
 % Status: Implementation convention
 % Description: Construct the pure nonassociating model from active m, sigma, and epsilon-over-k coordinates.
 % Change note: No generic mutable parameter overlay is introduced.
@@ -1121,7 +1121,7 @@ l_{11}&\theta\\
 % Source: Exact second-order multivariable chain rule
 % Status: Exact derivation
 % Description: Transform state Helmholtz Hessians into explicit amount-volume coordinates.
-% Change note: CppAD supplies state Hessians; the Provider applies this exact coordinate transformation.
+% Change note: CppAD supplies state Hessians; the EOS applies this exact coordinate transformation.
 \begin{equation}
 \frac{\partial^2(na^r)}{\partial q_\alpha\partial q_\beta}
 =n_\alpha a^r_{y_p}y_{p,\beta}

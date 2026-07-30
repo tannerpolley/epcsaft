@@ -1,5 +1,5 @@
 version: 2
-status: accepted-provider-with-receipt-controlled-native-sdk-local-phase-block-active-born-aqueous-kij-active-solvation-factor-neutral-reference-and-private-water-ionization-implementation-candidates
+status: accepted-eos-with-receipt-controlled-native-sdk-local-phase-block-active-born-aqueous-kij-active-solvation-factor-neutral-reference-and-private-water-ionization-implementation-candidates
 
 authority:
   effective_receipt: promotion-0012-provider-full-candidate
@@ -47,7 +47,7 @@ native_sdk_candidates:
     scope: >-
       Exact model fingerprint, temperature, positive ordered component amounts,
       and extensive volume mapped to packing fraction and exact first and second
-      derivatives through the Provider CppAD and packing owners.
+      derivatives through the EOS CppAD and packing owners.
     coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
     derivative_order: 2
     result_owner: size-gated caller scalar, gradient, and Hessian buffers with return-code status
@@ -58,7 +58,7 @@ native_sdk_candidates:
       Exact model and topology fingerprints, temperature, positive ordered
       component amounts, strict log packing fraction, and ordered advertised
       active component parameters mapped to positive extensive volume and
-      exact first and second derivatives through one Provider CppAD tape.
+      exact first and second derivatives through one EOS CppAD tape.
     coordinate_order: [component_amounts_mol_in_parameter_order, log_packing_fraction, active_parameters_in_request_order]
     derivative_order: 2
     sdk_table_size_bytes_64_bit: 440
@@ -70,7 +70,7 @@ native_sdk_candidates:
     scope: >-
       Exact model fingerprint, temperature, and ordered normalized composition
       mapped from caller-owned packing-fraction limits to lower and upper molar
-      volumes through the Provider packing owner.
+      volumes through the EOS packing owner.
     inputs: [parameter_fingerprint, temperature_k, mole_fractions_in_parameter_order, packing_fraction_min, packing_fraction_max]
     output: [molar_volume_lower_m3_per_mol, molar_volume_upper_m3_per_mol]
     result_owner: size-gated caller double buffer with return-code status
@@ -458,7 +458,7 @@ manifest:
   physical_production_lines: 16997
   physical_package_test_lines: 14042
   physical_documentation_lines: 4041
-  measurement: wc -l over tracked provider Python, C++, public C headers, package tests, and governing documentation
+  measurement: wc -l over tracked EOS Python, C++, public C headers, package tests, and governing documentation
   tracked_generated_files: 0
   generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
   oversized_files:
@@ -500,7 +500,7 @@ excluded:
   - ideal-gas and total caloric properties
   - multi-salt and alternate-convention reference-state workflows
   - authoritative mixture, associating, electrolyte, and reactive native phase blocks; the exact local methane/ethane and full-electrolyte candidates remain receipt-pending, while the aqueous active-k_ij MIAC seam and Held water-ionization model remain local implementation candidates
-  - reaction equilibrium, equilibrium constants, and reactive standard-state transformations in Provider
+  - reaction equilibrium, equilibrium constants, and reactive standard-state transformations in EOS
   - alternate derivative backends
   - compatibility interfaces
   - release and workflow machinery

@@ -1,6 +1,6 @@
-# ePC-SAFT Provider
+# ePC-SAFT EOS
 
-`epcsaft` is a compact, source-traceable thermodynamic provider. The
+`epcsaft` is a compact, source-traceable equation-of-state package. The
 0.2.0.dev0 Python frontend has one public state/property path:
 
 ```text
@@ -90,7 +90,7 @@ scientific contract](docs/science/full-provider-eos.md). The implementation
 remains executable authority; generated Markdown and LaTeX views are
 synchronized documentation mirrors.
 
-The provider evaluates one state at a time. It does not perform phase
+EOS evaluates one state at a time. It does not perform phase
 equilibrium or phase discovery, reaction/species equilibrium, regression,
 parameter fitting, ideal-gas caloric calculations, or multi-salt reference
 paths. Solver convergence is not a claim of global phase stability or
@@ -117,7 +117,8 @@ The private Held et al. water/H3O+/OH- candidate records at 298.15 K and 1 bar
 remain non-authoritative and carry no reactive-equilibrium claim.
 
 The accepted authority receipt `promotion-0012-provider-full-candidate`
-promotes the stated provider scope to `ePC-SAFT/ePC-SAFT`. It is a
+promotes the stated EOS scope. The receipt identifier is retained as
+historical evidence. It is a
 production-authority decision, not a package release and not a claim beyond
 the recorded capability boundaries.
 
@@ -125,11 +126,11 @@ the recorded capability boundaries.
 
 The installed native SDK is a separate, narrow consumer boundary. Its accepted
 transport is documented in [ADR 0001](docs/adr/0001-native-consumer-transport.md)
-and its authority is determined only by migration receipt
+and its authority is determined only by the historical Migration receipt
 `promotion-0015-provider-native-sdk-v1`; this Python frontend documentation
 does not transfer that authority. The capsule evaluates one stateless phase
-block at a time and exposes no Provider C++ implementation types or EOS
-equations. Consumers retain phase identity, equilibrium constraints, solver
+block at a time and exposes no EOS implementation types or equations. Consumers
+retain phase identity, equilibrium constraints, solver
 policy, targets, bounds, scaling, and fit acceptance.
 
 The fixed SDK prefix owns pure, nonassociating phase values and CppAD
@@ -141,7 +142,8 @@ still requires its own installed-wheel gate and promotion receipt.
 The local append-only neutral binary-mixture, active-`k_ij`, active-`l_ij`,
 scalar pure-parameter, association, full-electrolyte, volume-domain, packing,
 active-Born-diameter, active-permittivity, active-solvation-factor, and
-active-reference candidates remain bounded evidence or migration records. They
+active-reference candidates remain bounded evidence or historical Migration
+records. They
 do not add Python aliases, catalog authority, equilibrium, regression target
 ownership, fitting policy, or broader model admission. Gross--Sadowski
 methane/ethane is first reference evidence, not a mixture allowlist.

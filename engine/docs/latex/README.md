@@ -1,7 +1,7 @@
-# Provider equation mirror
+# EOS equation mirror
 
 `equations.tex` is the exhaustive human-readable mirror of mathematical
-relations executed by the current Provider. Runtime C++ and Python remain the
+relations executed by the current EOS. Runtime C++ and Python remain the
 equation owners, and `docs/science/full-provider-eos.md` remains the normative
 scientific contract.
 

@@ -61,9 +61,9 @@ of extrapolation.
 | `gross-2001-propane` | 1 | `propane` | Pure, neutral, nonassociating; 85–523 K. No pressure evidence bound is reported. |
 | `figiel-2025-reference-electrolytes` | 1 | `water`, `methanol`, `ethanol`, `lithium-cation`, `sodium-cation`, `potassium-cation`, `chloride-anion`, `bromide-anion` | Corrected Born SSM+DS at 298.15 K and 1 bar; total ion mole fraction at most 0.38. Reference states require one source-complete cation/anion formula unit. |
 | `figiel-2025-aqueous-iodides` | 1 | `water`, `sodium-cation`, `potassium-cation`, `iodide-anion` | Corrected Born SSM+DS at 298.15 K and 1 bar; total ion mole fraction at most 0.38. Only the source-complete aqueous NaI and KI selections are supported; LiI is absent. |
-| `held-2008-water-self-ionization` | 1 | `water`, `hydronium-cation`, `hydroxide-anion` | Debye–Hückel electrolyte model without a Born term at 298.15 K and 1 bar. The Provider supplies the mechanical state and charge-neutral reference basis, not reaction equilibrium or `K_w`. |
-| `khudaida-2026-figure-2-electrolyte-lle` | 1 | `water`, `ethanol`, `isobutanol`, `sodium-cation`, `chloride-anion` | Exact five-component corrected Born SSM+DS bundle at 293.15 K and 0.1 MPa. The Provider evaluates states but does not solve the reported LLE. |
-| `ascani-2022-case-study-2-electrolyte-lle` | 1 | `water`, `1-butanol`, `sodium-cation`, `potassium-cation`, `chloride-anion` | Exact five-component original-Born bundle at 298.15 K and 1 bar. The Provider evaluates states but does not solve the reported multiphase problem. |
+| `held-2008-water-self-ionization` | 1 | `water`, `hydronium-cation`, `hydroxide-anion` | Debye–Hückel electrolyte model without a Born term at 298.15 K and 1 bar. EOS supplies the mechanical state and charge-neutral reference basis, not reaction equilibrium or `K_w`. |
+| `khudaida-2026-figure-2-electrolyte-lle` | 1 | `water`, `ethanol`, `isobutanol`, `sodium-cation`, `chloride-anion` | Exact five-component corrected Born SSM+DS bundle at 293.15 K and 0.1 MPa. EOS evaluates states but does not solve the reported LLE. |
+| `ascani-2022-case-study-2-electrolyte-lle` | 1 | `water`, `1-butanol`, `sodium-cation`, `potassium-cation`, `chloride-anion` | Exact five-component original-Born bundle at 298.15 K and 1 bar. EOS evaluates states but does not solve the reported multiphase problem. |
 
 Load an exact installed selection as follows:
 
@@ -218,7 +218,7 @@ Every `State` retains the canonical temperature, ordered composition,
 component IDs, parameter fingerprint, pressure, molar density, compressibility
 factor, contribution values, and nullable diagnostics. The scientific equations,
 reference bases, and derivative authority are defined in
-[the full-provider EOS contract](science/full-provider-eos.md).
+[the full EOS contract](science/full-provider-eos.md).
 
 ## Residual properties and fugacity
 
@@ -331,20 +331,20 @@ completeness, density-root selection, and reference-state applicability.
 CppAD is the sole nonlinear production derivative authority. Native C++ owns
 the hard-chain, dispersion, association, Debye--Huckel, Born SSM+DS, and
 density equations; Python validates inputs and presents typed results. The
-provider owns state/property evaluation and density closure, not phase
+EOS owns state/property evaluation and density closure, not phase
 equilibrium, discovery, regression, Ceres, cross-package validation, or
 reaction/species equilibrium.
 
 Accepted receipt `promotion-0012-provider-full-candidate` governs the exact
-full-provider scope. It transfers production authority but does not publish a
-package release or broaden capability. Migration receipt
+full-EOS scope. It transfers production authority but does not publish a
+package release or broaden capability. Historical Migration receipt
 `promotion-0015-provider-native-sdk-v1` is the sole authority record for the
 ADR 0001 native capsule; this guide does not transfer that authority. Each
 native consumer requires its own cross-wheel gate.
 
 The append-only neutral-mixture, active-pair, scalar pure-parameter,
 association, full-electrolyte, molar-volume-domain, packing, active-solvation,
-active-permittivity, and active-reference entries remain bounded provider
+active-permittivity, and active-reference entries remain bounded EOS
 candidates unless their own receipts say otherwise. They own no targets,
 bounds, Ceres, fit acceptance, phase identity, equilibrium, or catalog writes.
 Gross--Sadowski methane/ethane is first reference evidence, not a mixture

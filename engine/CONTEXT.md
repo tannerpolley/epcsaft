@@ -1,21 +1,25 @@
-# Provider Repository Context
+# EOS Repository Context
 
-This clean repository is the production home for ePC-SAFT provider code. Its
+This repository is the production home for the `epcsaft` equation-of-state
+package. Its
 optimization objective is minimum maintained surface subject to source-backed,
 reproducible thermodynamic results.
 
-`governance_doctrine_revision: 4`
+`governance_doctrine_revision: 5`
 
-Canonical local doctrine: `../ePC-SAFT-organization/GOVERNANCE.md`.
+Canonical doctrine:
+`../ePC-SAFT-management/GOVERNANCE.md`. During the local checkout transition,
+`../ePC-SAFT-organization/GOVERNANCE.md` is the accepted Management alias.
 
-Provider owns both its package evidence and execution of assigned installed-
+EOS owns both its package evidence and execution of assigned installed-
 artifact campaigns in the sibling Validation repository. The task remains based
 here; Validation remains the durable black-box evidence home and has no resident
-worker. Migration serializes exact campaign subjects and dispatches a separate
-reviewer only when required. This execution model does not change scientific
-admission or runtime authority.
+worker. Management serializes exact campaign subjects and dispatches a separate
+reviewer only when required. EOS accesses Validation through Validation's
+target-owned `.worktrees/eos-access` checkout. This execution model does not
+change scientific admission or runtime authority.
 
-The accepted provider contains one typed parameter lifecycle and one scalar-
+The accepted EOS contains one typed parameter lifecycle and one scalar-
 generic residual Helmholtz kernel for hard-chain, dispersion, association,
 Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
 chemical potentials, fugacity coefficients when defined, residual caloric
@@ -53,7 +57,8 @@ ionic activity on one explicit electroneutral formula-unit path. Its aqueous
 single-solvent result also reports the practical molal osmotic coefficient
 from the solvent-activity ratio on that pressure-state path.
 
-Migration D-028 binds one additional private Provider candidate for the exact
+Historical Migration decision D-028 binds one additional private EOS candidate
+for the exact
 ordered water/H3O+/OH- mechanical model of Held, Cameretti, and Sadowski (2008)
 at 298.15 K and 1 bar. The installed record set closes component identity,
 charge, association, water--ion dispersion, excluded ion--ion dispersion,
@@ -72,14 +77,15 @@ multi-root state requires `phase="vapor"` or `phase="liquid"`; a phase hint
 never renames a lone root.
 
 Accepted authority receipt `promotion-0012-provider-full-candidate` promotes
-this exact provider scope to `ePC-SAFT/ePC-SAFT`. Its immutable installed-wheel
+this exact EOS scope. Its immutable installed-wheel
 proof includes 64 package tests and direct-data campaigns owned by
 `ePC-SAFT-validation`. This is a production-authority decision, not a package
 release or a claim beyond the recorded capability boundaries.
 
 Phase equilibrium, phase discovery/global stability, reaction and species
 equilibrium, multi-salt reference paths, regression, and ideal-gas caloric data
-remain outside this repository's current capability. Migration receipt
+remain outside this repository's current capability. Historical Migration
+receipt
 `promotion-0015-provider-native-sdk-v1` alone determines authority for the ADR
 0001 model-bound capsule; this documentation does not transfer it. The fixed
 prefix evaluates pure, nonassociating phase Helmholtz values and CppAD
@@ -110,7 +116,7 @@ tail also exposes scalar association-energy/volume derivatives and two
 distinct joint seven-coordinate pure-phase Hessians. The original joint
 callback uses the Baygi--Pahlavanzadeh Eq. 4 temperature-dependent `d_ij^3`
 basis. The appended ordinary callback and its exact typed descriptor use the
-Gross--Sadowski `sigma_ij^3 kappa` basis owned by the public Provider EOS. The
+Gross--Sadowski `sigma_ij^3 kappa` basis owned by the public EOS. The
 callbacks supply derivative transport for bounded Regression reconstructions
 and do not admit other association topologies, targets, fitted values, or
 catalog persistence.
@@ -121,9 +127,9 @@ contract, units, fixed 298.15 K domain, topology, and parameter fingerprint.
 This is metadata for callbacks already present in the SDK, not a new
 thermodynamic implementation or a general electrolyte admission.
 
-Migration D-024 records a local append-only full-electrolyte phase-block
+Historical Migration decision D-024 records a local append-only full-electrolyte phase-block
 candidate in explicit component amounts and extensive volume. The callback
-uses the sole Provider Helmholtz and association owners for every active
+uses the sole EOS Helmholtz and association owners for every active
 ideal, hard-chain, dispersion, association, Debye--Huckel, and model-bound Born
 contribution. It admits exact immutable Figiel selections, the distinct
 Khudaida bundle, and the distinct Ascani original-Born bundle and returns value,
@@ -131,7 +137,7 @@ gradient, Hessian, pressure,
 fingerprint, component order, and charges. It adds no phase discovery,
 equilibrium, trace-species policy, fitting, or authority.
 
-The D-024 volume-domain tails share one Provider packing owner with pressure
+The D-024 volume-domain tails share one EOS packing owner with pressure
 closure. The value convenience accepts the exact model fingerprint,
 temperature, ordered normalized composition, and caller-owned packing-fraction
 interval, returning the corresponding lower and upper molar volumes in
@@ -145,7 +151,7 @@ only: ion-fraction admission, phase Helmholtz evaluation, inner roots, limits,
 constraint construction, search variables, initialization, and acceptance
 remain outside this callback.
 
-Migration D-023 additionally records a local implementation candidate for one
+Historical Migration decision D-023 additionally records a local implementation candidate for one
 model-bound active-Born-diameter evaluation of the existing 298.15 K,
 1 bar water single-ion x-process solvation reference. It is limited to exact
 current-catalog Li+, Na+, K+, Cl-, and Br- model selections and returns
@@ -160,7 +166,7 @@ native reference-sequence owner. The public Python path delegates through
 the existing `_core` module with unchanged behavior, and the callback
 calls the same owner directly; neither path may duplicate the algorithm.
 
-Project Truss Provider leaves `ePC-SAFT/ePC-SAFT#1` and `#2` record the
+Historical Project Truss EOS leaves `ePC-SAFT/ePC-SAFT#1` and `#2` record the
 next Figiel family. One model-bound
 callback evaluates `ln(gamma_pm^m)` for the exact six current-catalog aqueous
 alkali-halide models while accepting only the three local trial interactions
@@ -169,12 +175,13 @@ total fixed-pressure first derivative from the existing Helmholtz,
 association, density, and reference-sequence owners. The contract and evidence
 gate live in
 `docs/designs/2026-07-21-aqueous-active-kij-miac-native-sdk-design.md`.
-Project Truss issue `ePC-SAFT/ePC-SAFT#29` appends typed batch tails for this
+Historical Project Truss issue `ePC-SAFT/ePC-SAFT#29` appends typed batch tails
+for this
 callback and the NaBr active-solvation-factor callback. A batch preserves row
 order and exact scalar results while constructing the active model and
 derivative reference sequence once per salt and parameter vector; the exact
 catalog solvation-factor coordinate retains one additional batch-level
-public-value parity sequence. Provider owns the
+public-value parity sequence. EOS owns the
 bounded CppAD row concurrency; Regression must reject a scalar-only artifact
 instead of entering an unbounded per-row fit. This throughput transport changes
 no equation, derivative order, admission boundary, fitted value, or authority.
@@ -185,7 +192,7 @@ downstream fit exists. Bounded independent subagent review changes sequencing
 only; it does not transfer runtime, catalog, regression, scientific,
 promotion, or publication authority.
 
-Project Truss Provider issue `#22` adds the one missing staged-recovery seam:
+Historical Project Truss EOS issue `#22` adds the one missing staged-recovery seam:
 an append-only NaBr `ln(gamma_pm^m)` value plus exact total fixed-pressure
 first derivative with respect to active `f_water`. The implementation tapes
 that coordinate in the existing CppAD Born owner and reuses the existing
@@ -194,7 +201,7 @@ contract is
 `docs/designs/2026-07-22-aqueous-active-solvation-factor-native-sdk-design.md`.
 Installed NaBr remains fingerprint-bound; only source-complete, ordered,
 corrected-SSM+DS Figiel user bundles with exact applicability may use the
-staged active callbacks. This is Provider transport evidence, not a fit,
+staged active callbacks. This is EOS transport evidence, not a fit,
 catalog change, scientific acceptance, or authority transfer.
 
 The general Regression integration tail additionally exposes one
@@ -223,7 +230,7 @@ chains. It must not be confused with the radial
 `ionic_region_relative_permittivity`; neither fitted result persists to the
 catalog.
 
-Project Truss Provider issue `#10` adds a separate append-only installed-SDK
+Historical Project Truss EOS issue `#10` adds a separate append-only installed-SDK
 candidate for charge-neutral reacting standard references. For an admitted
 aqueous phase model with one explicit water reference carrier, it returns a
 complete neutral stoichiometric basis and gauge-invariant reference

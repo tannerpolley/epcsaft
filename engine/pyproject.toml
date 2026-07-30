@@ -5,7 +5,7 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "epcsaft"
 version = "0.2.0.dev0"
-description = "Source-traceable ePC-SAFT thermodynamic provider"
+description = "Source-traceable ePC-SAFT equation-of-state package"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
