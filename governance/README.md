@@ -1,15 +1,34 @@
-# ePC-SAFT Organization Policy Home
+# ePC-SAFT Management
 
-Repository role: organization_policy
+Repository role: `management_control_plane`
 
-GitHub home: `ePC-SAFT/.github`
+GitHub home: `ePC-SAFT/ePC-SAFT-management`
 
-Status: canonical doctrine home at GitHub.
+Status: canonical ecosystem doctrine and management home.
 
-Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 4. This repository
-owns permanent ecosystem policy and shared organization conventions; it owns
-no package behavior, scientific capability, migration sequence, or validation
-evidence.
+Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 5 and
+[manifests/management.json](manifests/management.json) for the repository and
+access topology.
 
-Runtime authority changes only through accepted promotion receipts. Pushes,
-publication changes, and other external writes remain separately gated.
+Management owns:
+
+- permanent ecosystem doctrine;
+- repository roles and naming;
+- cross-repository worktree access;
+- coordinated project and external-operation sequencing;
+- artifact, environment, parameter, and retained-draft ledgers; and
+- reusable synchronization and preflight policy.
+
+It owns no package runtime, scientific solver, regression target, Validation
+campaign, or Lab experiment.
+
+Run the local snapshot and consistency check with:
+
+```bash
+python3 tools/management_preflight.py snapshot
+python3 tools/management_preflight.py check
+```
+
+The former `tannerpolley/ePC-SAFT-migration` repository is archived historical
+evidence. The public `ePC-SAFT/.github` repository is intentionally thin and
+links here for current authority.

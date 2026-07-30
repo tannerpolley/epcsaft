@@ -1,23 +1,50 @@
-# Organization Policy Repository Agent Contract
+# Management Control-Plane Agent Contract
 
-Read `GOVERNANCE.md` before planning, reviewing, or changing any ePC-SAFT
-repository. Doctrine revision 4 is the canonical ecosystem policy.
+Read `GOVERNANCE.md` and `manifests/management.json` before planning,
+reviewing, or changing any ePC-SAFT repository. Doctrine revision 5 is the
+canonical ecosystem policy.
 
 ## Agent role
 
-This repository owns organization profile, shared community files, reusable
-workflow policy, and Project conventions. Package-local behavior, tests,
-builds, releases, and capabilities stay with their package repository.
+Management owns doctrine, repository topology, project coordination,
+cross-repository access policy, external-operation sequencing, reusable
+workflow policy, and the machine-readable ecosystem, artifact, environment,
+parameter, and draft ledgers.
 
-The Organization agent may define shared Validation policy but does not run
-scientific campaigns or coordinate individual package assignments. Under D-015
-and Migration D-027, Validation is the evidence repository, the accountable
-package agent remains based in Provider, Equilibrium, or Regression and may
-perform its own assigned campaign there, and Migration serializes writers and
-review gates. No permanent Validation agent is part of the ecosystem topology.
+Package-local behavior, tests, builds, releases, capabilities, and scientific
+evidence remain with their owning repositories. Management may coordinate
+work in those repositories but does not become a runtime, solver, regression,
+Validation, or Lab owner.
+
+Validation is the evidence repository, not a standing agent. The accountable
+EOS, Equilibrium, or Regression task performs each assigned campaign there
+through a target-owned access worktree. Management serializes writers and
+records exact subjects.
+
+The former `tannerpolley/ePC-SAFT-migration` repository is historical evidence
+only. It owns no active plan, queue, gate, decision, or authority.
+
+## Control records
+
+- `GOVERNANCE.md`: permanent doctrine.
+- `CONTEXT.md`: current role and vocabulary.
+- `manifests/management.json`: repository and access source of truth.
+- `manifests/drafts.json`: retained branch and pull-request dispositions.
+- `.management-state/`: ignored, reproducible local snapshots of ecosystem,
+  artifact, environment, and parameter state.
+- `tools/management_preflight.py`: snapshot and consistency check.
+- `docs/plans/`: approved cross-repository execution plans.
+
+Do not duplicate these records in package repositories. Package policy should
+link to Management and contain only local constraints.
 
 ## External boundaries
 
-Doctrine revision 4 is canonical locally and at `ePC-SAFT/.github`. Do not
-create or change remotes, push, mutate organization settings, or add live
-workflows or templates without a separately approved external-write plan.
+Remote creation, rename, archive, settings, issue, Project, release, and
+publication changes require an explicit user-approved operation plan. The
+current Management transition is approved by the user on 2026-07-29.
+
+Before each Git mutation, verify the attached checkout, branch, and command
+directory agree. Preserve historical commits, receipts, and unresolved draft
+subjects. Never force-push, rewrite accepted evidence, or delete an
+unregistered worktree or artifact.

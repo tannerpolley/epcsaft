@@ -2,11 +2,12 @@
 
 -
 
-## Ownership
+## Management ownership
 
-- Owning repository:
+- Affected repositories:
 - Related issue (full URL or `None`):
 - Authority or capability impact (`none` or exact receipt/record):
+- Manifest or plan updated:
 
 ## Evidence
 
@@ -19,3 +20,4 @@
 - [ ] It introduces no duplicate runtime owner or forbidden dependency.
 - [ ] Capability and scientific claims match executable evidence.
 - [ ] Public behavior and governance pointers are updated when changed.
+- [ ] Worktree, artifact, environment, and draft state remain synchronized.

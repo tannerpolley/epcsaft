@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "records": [
+    {
+      "repository": "ePC-SAFT/ePC-SAFT-validation",
+      "pull_request": 7,
+      "branch": "codex/equilibrium-integration-khudaida-wip",
+      "commit": "0764b0c",
+      "lifecycle": "preservation-draft",
+      "owner_issue": "https://github.com/ePC-SAFT/ePC-SAFT-validation/issues/2",
+      "reason": "Incomplete digitized-feed Khudaida rerun does not replay the revised campaign."
+    },
+    {
+      "repository": "ePC-SAFT/ePC-SAFT-validation",
+      "pull_request": 11,
+      "branch": "codex/perdomo-figure3-validation",
+      "commit": "0cfcc5d78cf5590852da01d34f9b65ef2c197d3c",
+      "lifecycle": "preservation-draft",
+      "owner_issue": "https://github.com/ePC-SAFT/ePC-SAFT-validation/issues/10",
+      "reason": "Incomplete non-replayable Figure 3 run with mixed unavailable artifact subjects."
+    },
+    {
+      "repository": "ePC-SAFT/ePC-SAFT-validation",
+      "pull_request": 12,
+      "branch": "codex/regression-integration",
+      "commit": "b052954d034c65a22b28fdf5455b565454baad53",
+      "lifecycle": "preservation-draft",
+      "owner_issue": "https://github.com/ePC-SAFT/ePC-SAFT-validation/issues/9",
+      "reason": "DEEA, MAPA, and Gross-Sadowski drafts lack replayable exact Regression artifacts or current supported contracts."
+    }
+  ]
+}
