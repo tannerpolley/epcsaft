@@ -17,7 +17,13 @@
       "commit": "0cfcc5d78cf5590852da01d34f9b65ef2c197d3c",
       "lifecycle": "preservation-draft",
       "owner_issue": "https://github.com/ePC-SAFT/ePC-SAFT-validation/issues/10",
-      "reason": "Incomplete non-replayable Figure 3 run with mixed unavailable artifact subjects."
+      "reason": "Incomplete non-replayable Figure 3 run with mixed unavailable artifact subjects.",
+      "retired_worktree_bundle": {
+        "path": "artifacts/worktree-retirement/perdomo-figure3-validation-untracked-0cfcc5d.tar.zst",
+        "sha256": "84b6a4b1d4899d6ec730895b40cd3e836cc15f5b23f40f2af0a24bd7d55c69f7",
+        "bytes": 13235344,
+        "entries": 131
+      }
     },
     {
       "repository": "ePC-SAFT/ePC-SAFT-validation",

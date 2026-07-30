@@ -1,0 +1,1175 @@
+{
+  "alias_count": 107,
+  "object_count": 106,
+  "objects": [
+    {
+      "aliases": [
+        "provider-slice-1/3c8de29/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 200873,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/0055843d389a5b5f7eebefcb6f4bb2b22c797eee159249ecf4c738b035a30330/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "0055843d389a5b5f7eebefcb6f4bb2b22c797eee159249ecf4c738b035a30330",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/7cadaad/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 772739,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/0388ed5d5c1327ca2bef819d96e9a8633b0a77d2a8d70c8fab8bc9630eb48470/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "0388ed5d5c1327ca2bef819d96e9a8633b0a77d2a8d70c8fab8bc9630eb48470",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-provider-frontend-v0.2/1213ddc/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 3424071,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/040bc759e52b4be2e707f1da5da4271c517418f1f0ca62401f0e1ef3292b8a99/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "current",
+      "sha256": "040bc759e52b4be2e707f1da5da4271c517418f1f0ca62401f0e1ef3292b8a99",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/b108b3b/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 308946,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/0536d79330c9d0ba719284da5a2a5ee06e730f912e6befba1a649e1ac7e32274/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "0536d79330c9d0ba719284da5a2a5ee06e730f912e6befba1a649e1ac7e32274",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/23a509e/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 309140,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/090a5b072659e8835661742b3846ad0c77ca85ae5ae2f66d5577040f0fbe4f33/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "090a5b072659e8835661742b3846ad0c77ca85ae5ae2f66d5577040f0fbe4f33",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-figiel-staged-aqueous-v1/74a9f11/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 209042,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/09d413ad4c112f2649c19c1c18b2a31a0ddf10bfcf3aaee09ecf5586cc8f12aa/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "09d413ad4c112f2649c19c1c18b2a31a0ddf10bfcf3aaee09ecf5586cc8f12aa",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-figiel-aqueous-kij-v1/846c367/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 227709,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/0fe3ddfe6a31993c7859609d2bdc13cb6b69bd037b276671cbee2b1ded32a365/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "0fe3ddfe6a31993c7859609d2bdc13cb6b69bd037b276671cbee2b1ded32a365",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-chemical-grepe-private-v1/7888276/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 3319122,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/10b2ffd04f8e6f7fb5fdf176e3128cfae32da9cb97e43464dde606db6b86eadc/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "10b2ffd04f8e6f7fb5fdf176e3128cfae32da9cb97e43464dde606db6b86eadc",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-aqueous-miac-batch-sdk-v1/72a7729/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 385079,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/128e7f8843db005c11f6d5f48e925b3b1dc74531c3b91f4ae24b6f8193a4abf9/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "128e7f8843db005c11f6d5f48e925b3b1dc74531c3b91f4ae24b6f8193a4abf9",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-neutral-mixture-sdk-v1/25e5972/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 285824,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/17c6735ee117469b13b76b6a669d0b4430071c8eaebdf1e405baefc9adcb838b/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "17c6735ee117469b13b76b6a669d0b4430071c8eaebdf1e405baefc9adcb838b",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/3f9c35f/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 306182,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/17e442098af93f4c66bfed9170d9a56d94ba3b5f1da5ac92b8cffe2ad642311b/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "17e442098af93f4c66bfed9170d9a56d94ba3b5f1da5ac92b8cffe2ad642311b",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-water-self-ionization-reference-v1/4efb934/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 352346,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/1927f6cb8926489d3ca1ff88c529f181bc0d237b00c98a8112df68f2315eb4ee/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "1927f6cb8926489d3ca1ff88c529f181bc0d237b00c98a8112df68f2315eb4ee",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-aqueous-miac-cancellation-v1/8af6e54/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 390954,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/1d77a46aca369269fd97b32a722e8b548617a4ae840e07645040a138f63863db/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "1d77a46aca369269fd97b32a722e8b548617a4ae840e07645040a138f63863db",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-regression-evaluator-v1/e9237ad/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 3523861,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/20fb08cae0ee464b05f96cc2d5cc93b50cc65367ea4dbd82c35eb9d68b4b69be/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "20fb08cae0ee464b05f96cc2d5cc93b50cc65367ea4dbd82c35eb9d68b4b69be",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-figiel-born-tracer-v1/4eb122d/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 165798,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/2210b172d60141c27dec4cc7a92c9cce812bbeda75018d81f5fcef7b15e287e5/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "2210b172d60141c27dec4cc7a92c9cce812bbeda75018d81f5fcef7b15e287e5",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-native-sdk-v1/62a7c94/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 314709,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/2aefd50f7aa418c6af6676a9964f030d1be70b4c0c0694f03f8943482eb4dce6/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "2aefd50f7aa418c6af6676a9964f030d1be70b4c0c0694f03f8943482eb4dce6",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/d7f0774/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 306890,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/2af34f13d32b3784d5d70fed130faec56849a28b2798b6c677e6aa01c4088d25/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "2af34f13d32b3784d5d70fed130faec56849a28b2798b6c677e6aa01c4088d25",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/1d9dd0e/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 314062,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/2cd055a159b1cb21c929a3c1b9a7bbb873d6240dea87a2e431a7c5a6c66522c1/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "2cd055a159b1cb21c929a3c1b9a7bbb873d6240dea87a2e431a7c5a6c66522c1",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/49fc3c5/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 746704,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/2d423ca11f49786e874390aec8019491f401d6bb761ab6277fda03cd1bf84034/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "2d423ca11f49786e874390aec8019491f401d6bb761ab6277fda03cd1bf84034",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-water-self-ionization-private-v1/c15feea/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 559687,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/312518efaecb1a5372e53da465dbe30682e87d3458bcb60d725e4ae0aff1f914/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "312518efaecb1a5372e53da465dbe30682e87d3458bcb60d725e4ae0aff1f914",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-pure-saturation-v1/aab87eb/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 140686,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/32b815fc00241516f13574594af3cf631f8fe30629bbec45ac3828d9357d705f/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "32b815fc00241516f13574594af3cf631f8fe30629bbec45ac3828d9357d705f",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/97d7b37/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 342170,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/358b210d66bb6dfec690207d3efd3c33fe96763786bb69d82fde1e7017342bd8/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "358b210d66bb6dfec690207d3efd3c33fe96763786bb69d82fde1e7017342bd8",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/49ad485/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 738913,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/36c20612e8630e84588177fc505950d05f2b7f0e8a7531eaa3078742c2052b12/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "36c20612e8630e84588177fc505950d05f2b7f0e8a7531eaa3078742c2052b12",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-slice-1/595e746/epcsaft-0.1.0.dev0-cp312-cp312-linux_x86_64.whl"
+      ],
+      "bytes": 200828,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/388dc777dd9b5a4f4df4410f2ecd7742dcc555b5a9bc535713554b74bfbb23ef/epcsaft-0.1.0.dev0-cp312-cp312-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "388dc777dd9b5a4f4df4410f2ecd7742dcc555b5a9bc535713554b74bfbb23ef",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/da7a44c/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 291642,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/3a59d2233fec51f949a7784937b54f7f66beae2476fa8e33976672a480b67137/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "3a59d2233fec51f949a7784937b54f7f66beae2476fa8e33976672a480b67137",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-water-self-ionization-reference-v1/d7ae457/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 352083,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/3b209f695f5248a6e71b3d51f53663b23ee7cb3767ac08d3a67b73ecccfa2844/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "3b209f695f5248a6e71b3d51f53663b23ee7cb3767ac08d3a67b73ecccfa2844",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/06d21af/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 353982,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/3bacac6818708091629a79ce9a7a320a07f87093f0697508060aa1aee7368cb6/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "3bacac6818708091629a79ce9a7a320a07f87093f0697508060aa1aee7368cb6",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-user-bundle-v1/5c4cd54/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 360947,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/3bd36c7bdf946a11eadf407dbfc0262ced73fbd80e8431478a104b835fc55f4a/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "3bd36c7bdf946a11eadf407dbfc0262ced73fbd80e8431478a104b835fc55f4a",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-perdomo-figure1a-v1/efc4c6c/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 3279697,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/3c0ba0e0accdd3996a015e51dc745160b8d008bf0d769ddc1ac4749182defb14/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "3c0ba0e0accdd3996a015e51dc745160b8d008bf0d769ddc1ac4749182defb14",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-negative-curvature-recovery-v1/88f4f68/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 3552716,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/3eb2d0797e8ff4504cfac6a90d1cfe2de7457cbdb310532220f2b758d4731c8a/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "3eb2d0797e8ff4504cfac6a90d1cfe2de7457cbdb310532220f2b758d4731c8a",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-held2-reference-root-hardening-v1/8a71648/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 459051,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/41192aa4ab1821a0546ba100352dfd9254c67884d26511ea1504205647aa08d4/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "41192aa4ab1821a0546ba100352dfd9254c67884d26511ea1504205647aa08d4",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/6c4fb58/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 315105,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/43a80c363ad086e0dc03296badeefbf03f7ce7a3879cd2cfa9afc80ead3fe181/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "43a80c363ad086e0dc03296badeefbf03f7ce7a3879cd2cfa9afc80ead3fe181",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-reactive-sensitivity-sdk-v1/f2a5b14/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 857063,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/48ba5e6da577f02fc41c090f8c6532054269be39b4912276f89addaf4b5a8d7c/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "48ba5e6da577f02fc41c090f8c6532054269be39b4912276f89addaf4b5a8d7c",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-python-frontend-v0.2/14fa374/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 797336,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/48f3a75c9fc16ba71616aa703b526f41c2dcf89a7e00eebe23f75fcb8fa24594/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "current",
+      "sha256": "48f3a75c9fc16ba71616aa703b526f41c2dcf89a7e00eebe23f75fcb8fa24594",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/c4523ef/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 291380,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/4ccc8caa8ee35ca15b2c5bc555abad7b91c1b5e38c2aaeb92b11016f5c1dfff2/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "4ccc8caa8ee35ca15b2c5bc555abad7b91c1b5e38c2aaeb92b11016f5c1dfff2",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-reactive-sensitivity-sdk-v1/d88e9af/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 850009,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/4cee10a9158576307cda93f611b6ade3a7cf8819df44f83efe8cbc61ab038789/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "4cee10a9158576307cda93f611b6ade3a7cf8819df44f83efe8cbc61ab038789",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/c9ada20/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 756223,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/51ae3607e5179f0d060263f3f4ca92d63b0bd64d9ae34fdf6ac96bea5a80455c/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "51ae3607e5179f0d060263f3f4ca92d63b0bd64d9ae34fdf6ac96bea5a80455c",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-water-self-ionization-private-v1/770ee8d/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 561879,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/52c66db982d553c498c0ad198cbf56b8c8bb6c46a3be2322b7e537ed219ff38c/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "52c66db982d553c498c0ad198cbf56b8c8bb6c46a3be2322b7e537ed219ff38c",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/3e0a449/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 308688,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/52dfb72778e9ebfc974146f14c9f7e7cc54d4534e84947a833a7124518e79822/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "52dfb72778e9ebfc974146f14c9f7e7cc54d4534e84947a833a7124518e79822",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-general-neutral-reference/e6ef5fa/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 362475,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/550327d75f0218d58b80a603038fc19a3a51bee1e57a08223530e48a2895d8d9/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "550327d75f0218d58b80a603038fc19a3a51bee1e57a08223530e48a2895d8d9",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/65f3755/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 734760,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/56b7f078db6cc3f67ece6a0d2d8a193fa0a125fbb9da93c5e77681525de9a1f4/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "56b7f078db6cc3f67ece6a0d2d8a193fa0a125fbb9da93c5e77681525de9a1f4",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/6ba60e9/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 764220,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/5a4da3ffe31432d210d589a76f8d8e3004b3af12a42cdec6060ce8a8380d567a/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "5a4da3ffe31432d210d589a76f8d8e3004b3af12a42cdec6060ce8a8380d567a",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-negative-curvature-recovery-v1/63a9819/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 3547716,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/5cd992b38098500447deea852dd17b9e766e31aff356be8cd45c37cb76ece97b/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "5cd992b38098500447deea852dd17b9e766e31aff356be8cd45c37cb76ece97b",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-general-parameter-sdk-v1/1e571ab/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 730380,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/6536edc63adaa13c5c6c67c185d82c9ae232048e99dc3dc3be502708eea4410f/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "6536edc63adaa13c5c6c67c185d82c9ae232048e99dc3dc3be502708eea4410f",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-reactive-sensitivity-sdk-v1/033f283/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 849538,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/667a86258f979697a87b315f23ab2583dfb39f7b1e4aa6f837280a897a316b93/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "667a86258f979697a87b315f23ab2583dfb39f7b1e4aa6f837280a897a316b93",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/d61e5d0/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 352739,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/6704f92b5c840a1ae62756f0730b29abcdae727488784a99f5df7587f4fe0b8d/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "6704f92b5c840a1ae62756f0730b29abcdae727488784a99f5df7587f4fe0b8d",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-figiel-staged-aqueous-v1/be51bfe/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 1114486,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/67439f691f5f8002e87ce8de223853a08a926f1a37bd158ae86524e511a545ad/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "67439f691f5f8002e87ce8de223853a08a926f1a37bd158ae86524e511a545ad",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/f1eaa44/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 861386,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/6b02e36c8b6c090d44e6933909214a68ecfb5913d04e0cdc59547ffa794dde25/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "6b02e36c8b6c090d44e6933909214a68ecfb5913d04e0cdc59547ffa794dde25",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-native-sdk-v1/177890a/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 315137,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/6d228d2f4c54913643d565ac069d4bf3ab2c94150018e8216425b59bad5ae5ad/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "6d228d2f4c54913643d565ac069d4bf3ab2c94150018e8216425b59bad5ae5ad",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-regression-evaluator-v1/b41401e/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 3523395,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/6e1fd989616851df7885e4260cfeac5976b4b113760f5fa376b47baa05cde522/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "6e1fd989616851df7885e4260cfeac5976b4b113760f5fa376b47baa05cde522",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-reactive-sensitivity-sdk-v1/93688dd/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 850010,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/7a0829aac4f9a38524e699adcbf482959bca3fd4c3203473f3398f31bcef6340/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "7a0829aac4f9a38524e699adcbf482959bca3fd4c3203473f3398f31bcef6340",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-general-neutral-reference/8eadbc5/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 362475,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/7c2759c0ccb8bbd80ccd3105472ceb4181b0387f64d8a710e184fbe99e810818/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "7c2759c0ccb8bbd80ccd3105472ceb4181b0387f64d8a710e184fbe99e810818",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/836dd2c/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 298751,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/853f986f60a77a705cea0513b3e4466ce1900f63c32222f45fb70f388d7c4fd5/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "853f986f60a77a705cea0513b3e4466ce1900f63c32222f45fb70f388d7c4fd5",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-chemical-sensitivity-v1/ab2086a/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 3486846,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/874d737d8fe219066b8257d3be847e1a3d9a15cf6056f56b4a0e82b08cd501aa/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "874d737d8fe219066b8257d3be847e1a3d9a15cf6056f56b4a0e82b08cd501aa",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-active-solvation-factor-sdk-v1/238ff2f/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 369873,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/88b1b0ebda2212499cb0e270f8ee57e336c3c6ea833292cbcb57ecf2045cd029/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "88b1b0ebda2212499cb0e270f8ee57e336c3c6ea833292cbcb57ecf2045cd029",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/621adbf/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 750495,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/8c942e9177bec1502345b5193642460166d27fcee840663a18d19d7ea3d823e2/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "8c942e9177bec1502345b5193642460166d27fcee840663a18d19d7ea3d823e2",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-neutral-held-v1/8318e75/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 261599,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/8ecd70e0192b76b3a107629201c3e8bf34f2d945ca7c8192f824a0df7c9dde12/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "8ecd70e0192b76b3a107629201c3e8bf34f2d945ca7c8192f824a0df7c9dde12",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-native-sdk-v1/af0280a/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 313999,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/9448a49b65ef472c80e8b44889e1873642847852e1952115de003e5c34a5bdf6/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "9448a49b65ef472c80e8b44889e1873642847852e1952115de003e5c34a5bdf6",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-active-kij-sdk-v1/45d5764/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 290711,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/95d2292b052ab74657931f2dec97c3ea4160d9b17812956515c7195a853e6c5b/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "95d2292b052ab74657931f2dec97c3ea4160d9b17812956515c7195a853e6c5b",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/53b0b74/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 319575,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/961156a641435e33746a65d07d97e07a40243e0cfdf870932bd79961783afa96/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "961156a641435e33746a65d07d97e07a40243e0cfdf870932bd79961783afa96",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/90ff151/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 307945,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/96b5cd92f118b947d16075a0fb67e35acf94b4895b98d0755e49090f5cac9bbd/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "96b5cd92f118b947d16075a0fb67e35acf94b4895b98d0755e49090f5cac9bbd",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/c0e7828/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 735901,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/9982ac1b2316cfdd48ea21ac82b0227efd6fb8c249cc533144d9347176c12683/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "9982ac1b2316cfdd48ea21ac82b0227efd6fb8c249cc533144d9347176c12683",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-perdomo-figure1a-v1/efc4c6c/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 730516,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/9b05f4d202424f3db570dfaa80210e5aa54c9ee3586a4cbef4309f5881648d08/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "9b05f4d202424f3db570dfaa80210e5aa54c9ee3586a4cbef4309f5881648d08",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/86983ff/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 733902,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/9df62965f55876104585504f0f9170fefffbbaa9e94b23f90ac1da582cf5cb4c/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "9df62965f55876104585504f0f9170fefffbbaa9e94b23f90ac1da582cf5cb4c",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-held2-perdomo-table3-v1/2d4cfcb/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+        "provider-native-sdk-v1/25d0889/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 314407,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/9e4da0d7ba7896bcd2ec096400553d935e0516c61f1bd9f41f2370ab68ab36ea/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "9e4da0d7ba7896bcd2ec096400553d935e0516c61f1bd9f41f2370ab68ab36ea",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-neutral-two-phase-tp-flash-v1/e16f1e0/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 161797,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/9f3adbc6f5539ae14cbff15b14a9eccf289ce238b316f78a81a25c1b91b3cc49/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "9f3adbc6f5539ae14cbff15b14a9eccf289ce238b316f78a81a25c1b91b3cc49",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-chemical-diagnostic/4c5acb3/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 559706,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/a11500a76182772d561e4292541683e8e2f693dcd03d40af96b2d1dc58e9ceab/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "a11500a76182772d561e4292541683e8e2f693dcd03d40af96b2d1dc58e9ceab",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-khudaida-figure2-candidate-v1/28f05c3/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 3281957,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/a46c6dc7c3529f44d751a24a53c3847d1159c19ebadb9c50454e2edb6fb0dcb0/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "a46c6dc7c3529f44d751a24a53c3847d1159c19ebadb9c50454e2edb6fb0dcb0",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-pure-saturation-v1/faba1f9/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 128691,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/a7f119253dd3fd41b609105916b8184cbe24b64e67e37873426d22e43501f490/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "a7f119253dd3fd41b609105916b8184cbe24b64e67e37873426d22e43501f490",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/6e43c6c/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 358238,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/a8b6376193301673429a8d8b648896b6881c6f693ca4d8fc3f6a9d2d16f3b39c/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "a8b6376193301673429a8d8b648896b6881c6f693ca4d8fc3f6a9d2d16f3b39c",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/7c71da6/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 793589,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/ac331c511fafbdbe472d82d9eae812f79e23484a4a8104e8e9263aee48987dd0/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "ac331c511fafbdbe472d82d9eae812f79e23484a4a8104e8e9263aee48987dd0",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/33bb8e3/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 764219,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/acedeabc3eac59a75ab0658368dca2db4351a10583f5b7e17ae98aa6c35ad6be/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "acedeabc3eac59a75ab0658368dca2db4351a10583f5b7e17ae98aa6c35ad6be",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/43ebe47/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 342219,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/b3a632ee2b60554d3e8be0f3d297d307055f5ef69a9541c2590b31d1db3a1338/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "b3a632ee2b60554d3e8be0f3d297d307055f5ef69a9541c2590b31d1db3a1338",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-figiel-born-tracer-v1/51c8d22/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 165807,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/b9da5af59f4e4c2e2ce392cf1dd6af9cd20d89a4e0dd0ae6bcec17e24d862feb/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "b9da5af59f4e4c2e2ce392cf1dd6af9cd20d89a4e0dd0ae6bcec17e24d862feb",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/2d1816c/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 734841,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/bc40a9ac2c217afe163cf0bed36159e8f3387d6a1bd09a24665b4a952d84a8d3/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "bc40a9ac2c217afe163cf0bed36159e8f3387d6a1bd09a24665b4a952d84a8d3",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-user-bundle-v1/b4499ed/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 360521,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/bd3ab8e5b38ac781be381325d39bdf84e0bd9c64b58a0c43506213fd62d20a23/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "bd3ab8e5b38ac781be381325d39bdf84e0bd9c64b58a0c43506213fd62d20a23",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-neutral-held-v1/549162a/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 258033,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/be50837d73facbf0f2cb02cc3cfa7568f820b317b7b3984780ec1d992dbce76c/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "be50837d73facbf0f2cb02cc3cfa7568f820b317b7b3984780ec1d992dbce76c",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-regression-evaluator-v1/3f61ed6/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 3524250,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/bf671e341c94fe8149070010a5fe6fb23a966059701ea478203c416ac730ca0c/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "bf671e341c94fe8149070010a5fe6fb23a966059701ea478203c416ac730ca0c",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-provider-frontend-v0.2/f6982a8/epcsaft_regression-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 302697,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/c03dc63304c228df0f9f0e288e5fae3b744ca3e1486089b94b3c8a52e8dd8b38/epcsaft_regression-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "current",
+      "sha256": "c03dc63304c228df0f9f0e288e5fae3b744ca3e1486089b94b3c8a52e8dd8b38",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-active-solvation-factor-sdk-v1/0bb78c7/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 369831,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/c06d755decc51175a242810c994d79b2e35414008ccf733dc90c5750ec8c91b6/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "c06d755decc51175a242810c994d79b2e35414008ccf733dc90c5750ec8c91b6",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-negative-curvature-recovery-v1/d594d7c/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 3546442,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/c16b02701d1e086e9fee61949a9c6357fc6a2d5b26ebeffda3cb6b2c4d0749fa/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "c16b02701d1e086e9fee61949a9c6357fc6a2d5b26ebeffda3cb6b2c4d0749fa",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/907b077/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 333775,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/c327b9a176e54bfc79b625cca7f0c87f2a62fc7d87059826e40c9d70e214f0cd/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "c327b9a176e54bfc79b625cca7f0c87f2a62fc7d87059826e40c9d70e214f0cd",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-deea-ordinary-sigma-sdk-v1/ceffbec2d897/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 865366,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/ceffbec2d8975fe105461f0af4fb6601a4e2e1b65fd2f6cbf47a877edfef99cb/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "current",
+      "sha256": "ceffbec2d8975fe105461f0af4fb6601a4e2e1b65fd2f6cbf47a877edfef99cb",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/e063f32/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 738916,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/d090fa92d86ea91ab40df24aa96fc18c1821eaf636e9a03e01346a6bef8e31bd/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "d090fa92d86ea91ab40df24aa96fc18c1821eaf636e9a03e01346a6bef8e31bd",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/58d2b67/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 310251,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/d2e536956a4c4a998186b7abc1ea4fd4630f7917d5906b6f6c5c73a75333dc3b/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "d2e536956a4c4a998186b7abc1ea4fd4630f7917d5906b6f6c5c73a75333dc3b",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-user-bundle-v1/fdef44b/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 360662,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/d8d6e1f8a7e92733115216609ebba0fe89c680be01667a9fbd073a632c935582/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "d8d6e1f8a7e92733115216609ebba0fe89c680be01667a9fbd073a632c935582",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/8ae37db/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 352956,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/d984d5b68d97d5a40b8d4d729d8ceff5aa0e274222ca548d6fdf82162869537f/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "d984d5b68d97d5a40b8d4d729d8ceff5aa0e274222ca548d6fdf82162869537f",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-held2-public-dispatch-v1/ef6fe36/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 448760,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/da37682dc06d278cc0c7e9333d61604c81209727cc99b1b91c9682d2aa82e5c7/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "da37682dc06d278cc0c7e9333d61604c81209727cc99b1b91c9682d2aa82e5c7",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-chemical-diagnostic/931bd2c/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 559913,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/e0db383a444775cee6ffafdc5ee70043cc581f3415a919069412fd5ef707bc95/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "e0db383a444775cee6ffafdc5ee70043cc581f3415a919069412fd5ef707bc95",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-deea-ordinary-sigma-sdk-v1/e48008e624bd/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 801005,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/e48008e624bdfe195d8370553763a1a64ba597f2796449e1102c6146178ed547/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "e48008e624bdfe195d8370553763a1a64ba597f2796449e1102c6146178ed547",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-pure-saturation-v1/50a488b/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 135089,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/e4bf7ec673a9e6f5b70ce1ef39d9f28a73c709cf38974019c09790cc4f9bfa49/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "e4bf7ec673a9e6f5b70ce1ef39d9f28a73c709cf38974019c09790cc4f9bfa49",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/02a03a4/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 272211,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/e83f4b108d2df73888f7768f99f1c54b01ad86541b55afc1e43bbef2e1fb8f93/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "e83f4b108d2df73888f7768f99f1c54b01ad86541b55afc1e43bbef2e1fb8f93",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-pure-saturation-v1/c724cc0/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 137394,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/ea94a8dc4e938260621835bd30060ae9a12ff7e673f71789570a24f2ba930b1f/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "ea94a8dc4e938260621835bd30060ae9a12ff7e673f71789570a24f2ba930b1f",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/29ed592/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 738464,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/eacaf644dc2d3ed3b9536eca34a59bb2647e79f21d03a59928b97e500dc0d65d/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "eacaf644dc2d3ed3b9536eca34a59bb2647e79f21d03a59928b97e500dc0d65d",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-aqueous-miac-batch-sdk-v1/fa766e5/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 388546,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/ee9842889a82251d5d7b501d30d235b63c727cfcd15419f3c5970730870e5286/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "ee9842889a82251d5d7b501d30d235b63c727cfcd15419f3c5970730870e5286",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/e9ce5a6/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 310273,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/efc3b421ad94f4448ffce630528911363cc5be7565de2a5fca0e7787a6e68f2d/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "efc3b421ad94f4448ffce630528911363cc5be7565de2a5fca0e7787a6e68f2d",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/28bd998/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 354668,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/f1d9cab1f9624a7739d322aea948035d73f3a4ff7dbb789432607e77608e223e/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "f1d9cab1f9624a7739d322aea948035d73f3a4ff7dbb789432607e77608e223e",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/8816c3c/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 291428,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/f2a8f757eb56b7b1c21676245d40ced5f58b95b3ff233b9c6a233b9061365adc/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "f2a8f757eb56b7b1c21676245d40ced5f58b95b3ff233b9c6a233b9061365adc",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/77a94c2/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 308970,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/f3d9f1a728a6e4b6e2f9cc2f0286d5d8ecbad46ababbc0201f59ab7b205f0b06/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "f3d9f1a728a6e4b6e2f9cc2f0286d5d8ecbad46ababbc0201f59ab7b205f0b06",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-general-parameter-sdk-v1/5d90651/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 726862,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/f5c06ee9e5dbe29bcca881378355672057283a69e59e3ec8561c0d1378c60d14/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "f5c06ee9e5dbe29bcca881378355672057283a69e59e3ec8561c0d1378c60d14",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-methane-saturation-v1/d9ca761/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 132015,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/f832af6d5df0af4c05bfedd3cc7a4b616f9e443a8e1e193b9d51584f9f7f55ba/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "f832af6d5df0af4c05bfedd3cc7a4b616f9e443a8e1e193b9d51584f9f7f55ba",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "regression-general-parameter-v1/410e0bd/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 306111,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/f86eb61b2ea7270dbc7acfe39ecbc76e6b9d265e7a3299e7c10c0ecdcff11776/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "f86eb61b2ea7270dbc7acfe39ecbc76e6b9d265e7a3299e7c10c0ecdcff11776",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/4b10cb8/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 279490,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/f92f79c8d6f614660e5c201b7061c9b02b5cd1a25a4ed8c8fee0b59adaabf2bf/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "f92f79c8d6f614660e5c201b7061c9b02b5cd1a25a4ed8c8fee0b59adaabf2bf",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "provider-native-sdk-v1/a4d8a0e/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 756242,
+      "distribution": "epcsaft",
+      "object": "objects/sha256/fb15c90b14221ed818c4288cb94257746ce66173e35271ce17ad6b320620e28d/epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "fb15c90b14221ed818c4288cb94257746ce66173e35271ce17ad6b320620e28d",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-held2-perdomo-table3-v1/2d4cfcb/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 434383,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/ff34db9643b79dad9df0095c190d55f98e02f4fc268e073ec83594669b277831/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "ff34db9643b79dad9df0095c190d55f98e02f4fc268e073ec83594669b277831",
+      "version": "0.1.0.dev0"
+    },
+    {
+      "aliases": [
+        "equilibrium-held2-public-dispatch-v1/d9174e4/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 448761,
+      "distribution": "epcsaft-equilibrium",
+      "object": "objects/sha256/ff4fd843b13167d6de2b3e52f3afc53a76b80205bd013c5184d076db4b3bf9dd/epcsaft_equilibrium-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "retained-evidence",
+      "sha256": "ff4fd843b13167d6de2b3e52f3afc53a76b80205bd013c5184d076db4b3bf9dd",
+      "version": "0.1.0.dev0"
+    }
+  ],
+  "policy": "ePC-SAFT/ePC-SAFT-management:manifests/artifact-store-policy.json",
+  "schema_version": 1
+}

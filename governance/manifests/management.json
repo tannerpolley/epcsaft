@@ -108,41 +108,11 @@
       ]
     }
   },
-  "persistent_worktrees": [
-    {
-      "target": "eos",
-      "accessor": "equilibrium",
-      "relative_path": ".worktrees/equilibrium-access"
-    },
-    {
-      "target": "eos",
-      "accessor": "regression",
-      "relative_path": ".worktrees/regression-access"
-    },
-    {
-      "target": "equilibrium",
-      "accessor": "regression",
-      "relative_path": ".worktrees/regression-access"
-    },
-    {
-      "target": "regression",
-      "accessor": "equilibrium",
-      "relative_path": ".worktrees/equilibrium-access"
-    },
-    {
-      "target": "validation",
-      "accessor": "eos",
-      "relative_path": ".worktrees/eos-access"
-    },
-    {
-      "target": "validation",
-      "accessor": "equilibrium",
-      "relative_path": ".worktrees/equilibrium-access"
-    },
-    {
-      "target": "validation",
-      "accessor": "regression",
-      "relative_path": ".worktrees/regression-access"
-    }
-  ]
+  "worktree_policy": {
+    "lifecycle": "ephemeral",
+    "creation": "on-demand-in-target-repository",
+    "retirement": "after-merge-or-recorded-preservation",
+    "persistent_slots": false
+  },
+  "persistent_worktrees": []
 }

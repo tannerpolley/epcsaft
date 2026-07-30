@@ -19,6 +19,10 @@ Management owns:
 - artifact, environment, parameter, and retained-draft ledgers; and
 - reusable synchronization and preflight policy.
 
+Artifact layout and admission rules are documented in
+[docs/artifact-store.md](docs/artifact-store.md). Cross-repository consumers
+install only full-SHA-256 objects; repository `dist/` wheels are rejected.
+
 It owns no package runtime, scientific solver, regression target, Validation
 campaign, or Lab experiment.
 

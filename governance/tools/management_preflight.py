@@ -129,17 +129,34 @@ def artifact_state(config: dict[str, Any]) -> dict[str, Any]:
     project_root = Path(config["project_root"])
     candidates: set[Path] = set()
     artifact_root = Path(config["artifact_root"])
+    retention_by_path: dict[str, str] = {}
+    index_path = artifact_root / "index.json"
+    if index_path.exists():
+        index = load_json(index_path)
+        for item in index.get("objects", []):
+            for alias in item.get("aliases", []):
+                retention_by_path[
+                    (Path("artifacts") / alias).as_posix()
+                ] = item["retention"]
     if artifact_root.exists():
-        candidates.update(artifact_root.rglob("*.whl"))
+        candidates.update(
+            path
+            for path in artifact_root.rglob("*.whl")
+            if artifact_root / "objects" not in path.parents
+        )
     for record in config["repositories"].values():
         local = Path(record["local_path"])
         if local.exists():
             candidates.update((local / "dist").glob("*.whl"))
-    wheels = [
-        wheel_metadata(path, project_root)
-        for path in sorted(candidates)
-        if path.is_file()
-    ]
+    wheels = []
+    for path in sorted(candidates):
+        if not path.is_file():
+            continue
+        metadata = wheel_metadata(path, project_root)
+        metadata["retention"] = retention_by_path.get(
+            metadata["path"], "unclassified"
+        )
+        wheels.append(metadata)
     return {
         "schema_version": 1,
         "project_root": str(project_root),
@@ -257,6 +274,13 @@ def validate_config(config: dict[str, Any]) -> list[str]:
             errors.append(f"forbidden worktree route {accessor}->{target}")
         if not str(item.get("relative_path", "")).endswith("-access"):
             errors.append(f"persistent worktree must end in -access: {item}")
+    worktree_policy = config.get("worktree_policy", {})
+    if worktree_policy.get("lifecycle") != "ephemeral":
+        errors.append("worktree lifecycle must be ephemeral")
+    if worktree_policy.get("persistent_slots") is not False:
+        errors.append("persistent worktree slots must be disabled")
+    if config.get("persistent_worktrees") != []:
+        errors.append("persistent worktree inventory must be empty")
     for name, record in repositories.items():
         if record.get("codex_environment") != ".codex/environments/environment.toml":
             errors.append(f"{name} must declare the standard Codex environment path")
@@ -297,6 +321,17 @@ def check(config: dict[str, Any], strict: bool) -> list[str]:
         ]
         if unknown:
             errors.append(f"{len(unknown)} wheel artifacts remain unclassified")
+    artifact_check = subprocess.run(
+        [sys.executable, str(ROOT / "tools" / "artifact_store.py"), "check"],
+        capture_output=True,
+        text=True,
+    )
+    if artifact_check.returncode:
+        errors.extend(
+            line.removeprefix("ERROR: ")
+            for line in artifact_check.stdout.splitlines()
+            if line.startswith("ERROR: ")
+        )
     return errors
 
 
