@@ -1,6 +1,8 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "store_directory": "artifacts",
+  "active_alias_directory": "active",
+  "archive_directory": "archive",
   "index": "index.json",
   "object_directory": "objects/sha256",
   "allowed_retention": [
@@ -11,15 +13,37 @@
     "superseded-replay",
     "retained-evidence"
   ],
-  "current_subjects": {
-    "eos-python-frontend-v0.2": "48f3a75c9fc16ba71616aa703b526f41c2dcf89a7e00eebe23f75fcb8fa24594",
-    "eos-deea-ordinary-sigma-sdk-v1": "ceffbec2d8975fe105461f0af4fb6601a4e2e1b65fd2f6cbf47a877edfef99cb",
-    "equilibrium-python-frontend-v0.2": "040bc759e52b4be2e707f1da5da4271c517418f1f0ca62401f0e1ef3292b8a99",
-    "regression-python-frontend-v0.2": "c03dc63304c228df0f9f0e288e5fae3b744ca3e1486089b94b3c8a52e8dd8b38"
+  "active_distributions": {
+    "epcsaft": {
+      "repository": "ePC-SAFT/ePC-SAFT-eos",
+      "source_commit": "24ab1bdfb3a1558eb87815e9c3b5d97fbe6a025d",
+      "version": "0.2.0.dev0",
+      "sha256": "66b7ea8fb29e0a268b555cbdf401c3502517c088669a4157e8f64ab985b59ce9"
+    },
+    "epcsaft-equilibrium": {
+      "repository": "ePC-SAFT/ePC-SAFT-equilibrium",
+      "source_commit": "13b171b0a8fbff5b2ee6d97d3c0ad21c7868d30b",
+      "version": "0.2.0.dev0",
+      "sha256": "1482778b113df890931de692262c291111b979bb4762f85a7e352dbd2d5b0266"
+    },
+    "epcsaft-regression": {
+      "repository": "ePC-SAFT/ePC-SAFT-regression",
+      "source_commit": "fc42629253125ad327150473872994d7944545ad",
+      "version": "0.2.0.dev0",
+      "sha256": "779c9346e47e6fba109d7147f6177c42bb84b5c105b705fd1311b75f40e0d409"
+    }
+  },
+  "historical_archive": {
+    "path": "archive/legacy-sdk-wheels-20260730.tar.zst",
+    "sha256": "abae711cd2f9d52a14d172832acffdbf1404eb4fa5839b55f57e51c3def84f77",
+    "alias_count": 107,
+    "object_count": 106
   },
   "rules": {
     "mutable_repository_dist_wheels": "forbidden",
     "cross_repository_install": "object-path-and-sha256-only",
+    "one_active_wheel_per_distribution": "required",
+    "historical_wheels": "compressed-archive-only",
     "unknown_alias": "fail-check",
     "unknown_retention": "fail-check",
     "object_mutation": "forbidden",

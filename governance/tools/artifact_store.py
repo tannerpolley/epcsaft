@@ -52,7 +52,7 @@ def paths() -> tuple[Path, Path, dict[str, Any]]:
     return project_root, artifact_root, policy
 
 
-def aliases(artifact_root: Path) -> list[Path]:
+def all_wheels(artifact_root: Path) -> list[Path]:
     object_root = artifact_root / "objects"
     return sorted(
         path
@@ -61,10 +61,22 @@ def aliases(artifact_root: Path) -> list[Path]:
     )
 
 
+def active_subjects(policy: dict[str, Any]) -> dict[str, str]:
+    return {
+        distribution: subject["sha256"]
+        for distribution, subject in policy["active_distributions"].items()
+    }
+
+
+def aliases(artifact_root: Path, policy: dict[str, Any]) -> list[Path]:
+    active_root = artifact_root / policy["active_alias_directory"]
+    return [path for path in all_wheels(artifact_root) if active_root in path.parents]
+
+
 def build_index(artifact_root: Path, policy: dict[str, Any]) -> dict[str, Any]:
-    current = set(policy["current_subjects"].values())
+    current = set(active_subjects(policy).values())
     grouped: dict[str, list[Path]] = {}
-    for path in aliases(artifact_root):
+    for path in aliases(artifact_root, policy):
         digest = sha256(path)
         grouped.setdefault(digest, []).append(path)
 
@@ -90,8 +102,9 @@ def build_index(artifact_root: Path, policy: dict[str, Any]) -> dict[str, Any]:
             }
         )
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "policy": "ePC-SAFT/ePC-SAFT-management:manifests/artifact-store-policy.json",
+        "active_alias_directory": policy["active_alias_directory"],
         "object_count": len(objects),
         "alias_count": sum(len(item["aliases"]) for item in objects),
         "objects": objects,
@@ -146,6 +159,13 @@ def check() -> list[str]:
         errors.append("artifact index is stale; run artifact_store.py normalize")
     if tracked != expected:
         errors.append("tracked artifact index is stale; run artifact_store.py normalize")
+    active_root = artifact_root / policy["active_alias_directory"]
+    archive_root = artifact_root / policy["archive_directory"]
+    for wheel in all_wheels(artifact_root):
+        if archive_root in wheel.parents:
+            errors.append(f"historical wheel is not compressed into the archive: {wheel}")
+        elif active_root not in wheel.parents:
+            errors.append(f"wheel outside the active channel: {wheel}")
     allowed = set(policy["allowed_retention"])
     for item in recorded.get("objects", []):
         if item.get("retention") not in allowed:
@@ -159,11 +179,48 @@ def check() -> list[str]:
         if artifact_root in wheel.parents or ".venv" in wheel.parts:
             continue
         errors.append(f"mutable repository dist wheel is forbidden: {wheel}")
-    current = set(policy["current_subjects"].values())
+    subjects = active_subjects(policy)
+    current = set(subjects.values())
     indexed = {item["sha256"] for item in recorded.get("objects", [])}
     missing_current = sorted(current - indexed)
     if missing_current:
         errors.append(f"missing current artifact subjects: {missing_current}")
+    by_distribution = {
+        item.get("distribution", ""): item
+        for item in recorded.get("objects", [])
+        if item.get("distribution")
+    }
+    if set(by_distribution) != set(subjects):
+        errors.append(
+            "active channel must contain exactly one wheel for each distribution: "
+            f"expected {sorted(subjects)}, found {sorted(by_distribution)}"
+        )
+    for distribution, subject in subjects.items():
+        item = by_distribution.get(distribution)
+        if item is None:
+            continue
+        if item.get("sha256") != subject:
+            errors.append(
+                f"active subject hash mismatch for {distribution}: "
+                f"{item.get('sha256')} != {subject}"
+            )
+        expected_version = policy["active_distributions"][distribution].get("version")
+        if expected_version and item.get("version") != expected_version:
+            errors.append(
+                f"active subject version mismatch for {distribution}: "
+                f"{item.get('version')} != {expected_version}"
+            )
+        if len(item.get("aliases", [])) != 1:
+            errors.append(f"active distribution has multiple aliases: {distribution}")
+    archive_manifest = ROOT / "manifests" / "artifact-archive.json"
+    if not archive_manifest.exists():
+        errors.append(f"missing historical archive manifest: {archive_manifest}")
+    historical = policy.get("historical_archive", {})
+    archive_path = artifact_root / historical.get("path", "")
+    if not archive_path.is_file():
+        errors.append(f"missing historical wheel archive: {archive_path}")
+    elif historical.get("sha256") and sha256(archive_path) != historical["sha256"]:
+        errors.append(f"historical wheel archive hash mismatch: {archive_path}")
     return errors
 
 

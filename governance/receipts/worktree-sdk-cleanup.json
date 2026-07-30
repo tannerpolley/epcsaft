@@ -1,6 +1,6 @@
 {
-  "schema_version": 1,
-  "performed_on": "2026-07-29",
+  "schema_version": 2,
+  "performed_on": "2026-07-30",
   "worktrees": {
     "removed": 19,
     "remaining_linked_worktrees": 0,
@@ -34,11 +34,24 @@
     }
   },
   "artifacts": {
-    "alias_count": 107,
-    "object_count": 106,
+    "active_alias_count": 3,
+    "active_object_count": 3,
+    "active_distributions": [
+      "epcsaft",
+      "epcsaft-equilibrium",
+      "epcsaft-regression"
+    ],
     "object_layout": "artifacts/objects/sha256/<full-sha256>/<wheel-name>.whl",
+    "active_alias_layout": "artifacts/active/<distribution>/<wheel-name>.whl",
+    "historical_archive": {
+      "path": "artifacts/archive/legacy-sdk-wheels-20260730.tar.zst",
+      "sha256": "abae711cd2f9d52a14d172832acffdbf1404eb4fa5839b55f57e51c3def84f77",
+      "alias_count": 107,
+      "object_count": 106,
+      "status": "compressed historical evidence; not an install source"
+    },
     "mutable_dist_wheels_moved_to_trash": 2,
-    "legacy_evidence_aliases_preserved": true,
+    "legacy_wheels_removed_from_live_aliases": true,
     "external_index": "artifacts/index.json",
     "tracked_index": "manifests/artifacts.json",
     "policy": "manifests/artifact-store-policy.json"

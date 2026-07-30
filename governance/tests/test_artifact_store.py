@@ -15,7 +15,7 @@ MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
 
-def test_current_subjects_use_full_sha256_identities() -> None:
+def test_active_channel_has_one_full_sha256_subject_per_distribution() -> None:
     policy = json.loads(
         (ROOT / "manifests" / "artifact-store-policy.json").read_text(
             encoding="utf-8"
@@ -23,7 +23,14 @@ def test_current_subjects_use_full_sha256_identities() -> None:
     )
     assert policy["rules"]["mutable_repository_dist_wheels"] == "forbidden"
     assert policy["rules"]["cross_repository_install"] == "object-path-and-sha256-only"
+    assert set(policy["active_distributions"]) == {
+        "epcsaft",
+        "epcsaft-equilibrium",
+        "epcsaft-regression",
+    }
     assert all(
         len(digest) == 64 and set(digest) <= set("0123456789abcdef")
-        for digest in policy["current_subjects"].values()
+        for subject in policy["active_distributions"].values()
+        for digest in [subject["sha256"]]
     )
+    assert policy["rules"]["one_active_wheel_per_distribution"] == "required"

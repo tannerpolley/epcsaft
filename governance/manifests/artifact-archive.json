@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "archive": "archive/legacy-sdk-wheels-20260730.tar.zst",
+  "archive_sha256": "abae711cd2f9d52a14d172832acffdbf1404eb4fa5839b55f57e51c3def84f77",
+  "created_on": "2026-07-30",
+  "purpose": "Preserve superseded wheel bytes and their pre-cleanup indexes without presenting them as installable SDKs.",
+  "legacy_alias_count": 107,
+  "legacy_object_count": 106,
+  "active_alias_count": 3,
+  "active_object_count": 3,
+  "contents": [
+    "index.json",
+    "tracked-artifacts.json",
+    "legacy-sdk-archive-manifest.json",
+    "wheels/<historical-alias-path>"
+  ]
+}
