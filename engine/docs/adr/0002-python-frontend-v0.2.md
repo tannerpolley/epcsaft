@@ -7,11 +7,11 @@
 
 ## Context
 
-The provider implementation now has one typed parameter lifecycle and one
+The EOS implementation now has one typed parameter lifecycle and one
 state/property lifecycle. The active documentation must expose that lifecycle
 directly and must not preserve a second facade through aliases or duplicate
 result representations. The frontend remains a Python presentation layer over
-the Provider's native Helmholtz and density owners.
+the EOS's native Helmholtz and density owners.
 
 ## Decision
 
@@ -67,7 +67,7 @@ CppAD remains the sole nonlinear production derivative authority. Native C++
 continues to own the hard-chain, dispersion, association, Debye--Huckel, Born
 SSM+DS, and density equations. Phase equilibrium, discovery, regression, Ceres,
 cross-package validation, and reaction/species equilibrium remain outside the
-Provider.
+EOS.
 
 The native consumer boundary remains governed by ADR 0001 and
 `promotion-0015-provider-native-sdk-v1`. This decision does not broaden that
@@ -83,7 +83,7 @@ boundary or grant authority to local append-only candidates.
 ## Evidence and references
 
 The installed catalog table and source/evidence limits remain in
-`docs/python-api.md`. Historical provider capability, migration, and authority
+`docs/python-api.md`. Historical EOS capability, migration, and authority
 statements remain in `CONTEXT.md`, the README, ADR 0001, and the accepted
 promotion receipts. The full scientific equation owner is
 `docs/science/full-provider-eos.md`.

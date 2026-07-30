@@ -1,7 +1,7 @@
 # Issue tracker: GitHub
 
 Issues and PRDs for this repo live as GitHub issues in
-`ePC-SAFT/ePC-SAFT`. Use the `gh` CLI for all operations.
+`ePC-SAFT/ePC-SAFT-eos`. Use the `gh` CLI for all operations.
 
 ## Conventions
 

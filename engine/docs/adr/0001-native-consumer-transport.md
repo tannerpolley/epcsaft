@@ -14,10 +14,10 @@ Date: 2026-07-17
 
 ## Context
 
-The equilibrium package needs exact provider derivatives inside native solver
+The equilibrium package needs exact EOS derivatives inside native solver
 callbacks. Python remains the orchestration boundary but is not called from an
-Ipopt hot loop. Cross-repository builds may consume only an installed provider
-artifact; they may not compile provider sources, link private C++ symbols, or
+Ipopt hot loop. Cross-repository builds may consume only an installed EOS
+artifact; they may not compile EOS sources, link private C++ symbols, or
 copy the EOS kernel. A public C++ ABI would add a larger compatibility promise
 than the first consumer requires.
 
@@ -47,7 +47,7 @@ and vapor-like.
 
 ## Thermodynamic contract
 
-The provider evaluates one phase at a time. It receives positive finite
+The EOS evaluates one phase at a time. It receives positive finite
 temperature `T [K]`, amount `n [mol]`, and volume `V [m^3]`; density is the
 explicit identity `rho_m = n/V [mol m^-3]`. No density root, phase label,
 continuation state, or implicit density sensitivity enters this contract.
@@ -64,12 +64,12 @@ n_hat   = n/n_ref
 ```
 
 The logarithmic term is the complete fixed-temperature ideal density term and
-`a^r` is the provider's residual molar Helmholtz owner. The reference adds only
+`a^r` is the EOS's residual molar Helmholtz owner. The reference adds only
 a species-linear constant, which cancels between phases and under nonreactive
 material balances. It is not an absolute reactive standard-state convention
 and does not add ideal-gas caloric data.
 
-With numerical coordinates ordered as `(n_mol, V_m3)`, the provider returns
+With numerical coordinates ordered as `(n_mol, V_m3)`, the EOS returns
 `Phi`, its gradient, symmetric Hessian, and symmetric third-order tensor. The
 same derivatives provide the diagnostics
 
@@ -94,10 +94,10 @@ partial(mu/RT)/partial(q_j)   = Phi_(n,q_j).
 
 These identities provide exact Jacobian columns for a regression-owned
 residual without assigning target definitions, weights, bounds, nuisance
-variables, Ceres, or fit acceptance to the provider.
+variables, Ceres, or fit acceptance to the EOS.
 The regression problem and receipt must retain the exact trial parameter tuple,
 units, transforms/scales, bounds, and immutable source fingerprint; the source
-fingerprint returned by the provider never identifies a fitted candidate as a
+fingerprint returned by the EOS never identifies a fitted candidate as a
 new source-backed parameter record.
 
 ## Native boundary
@@ -107,7 +107,7 @@ CPython capsule named `epcsaft.native_sdk.v1`. Its pointer addresses a
 size-tagged pure-C function table containing:
 
 - ABI version, table size, and result-structure size;
-- one opaque immutable provider model context; and
+- one opaque immutable EOS model context; and
 - one fixed-parameter pure-phase evaluation function; and
 - one additive pure-phase evaluation function with active `m`, `sigma`, and
   `epsilon/k` coordinates.
@@ -141,7 +141,7 @@ energy or association volume using the ordinary source-owned `sigma_ij^3`
 basis. A separate append-only callback returns the seven-coordinate joint
 pure-phase Hessian needed by the bounded Baygi--Pahlavanzadeh reconstruction.
 That source-model callback uses Eq. 4's temperature-dependent `d_ij^3` basis
-without changing the ordinary Provider EOS. A further append-only callback
+without changing the ordinary EOS EOS. A further append-only callback
 returns the same coordinate tensor on the ordinary Gross--Sadowski
 `sigma_ij^3 kappa` basis, reusing the same CppAD and implicit-site owner. Its
 distinct capability code and seven typed coordinates prevent consumers from
@@ -164,10 +164,10 @@ eta        = K_eta rho_m
 v_m        = K_eta/eta
 ```
 
-from the same Provider packing owner used by pressure closure. Given
+from the same EOS packing owner used by pressure closure. Given
 `0 < eta_min < eta_max < pi/(3 sqrt(2))`, it writes
 `[K_eta/eta_max, K_eta/eta_min]` in `m^3/mol`. Packing limits are explicit
-caller inputs; the Provider does not own Perdomo initialization or solver
+caller inputs; the EOS does not own Perdomo initialization or solver
 policy. The callback uses a size-gated two-double caller buffer and no new
 result structure. A bound-count mismatch returns `ABI_MISMATCH` without a
 write; all failures are return-code authoritative because there is no second
@@ -198,7 +198,7 @@ evidence gate are specified in
 records the implementation shape but no authority for that tail.
 
 The former Python-owned four-molality algorithm is refactored behind one
-private Provider-native owner,
+private EOS-native owner,
 `epcsaft::detail::electrolyte_reference_sequence` in
 `src/epcsaft/_native/electrolyte_reference.hpp`. It alone owns electroneutral
 composition construction, the exact schedule, convergence adjudication, and
@@ -225,7 +225,7 @@ Helmholtz basis. The existing exact Figiel selections preserve their admission;
 full phase-admitted catalog and authenticated `user-provided` models use the
 same topology rule. An unknown caller-owned domain may transport the table but
 cannot evaluate a reference value. Equivalent reaction bases and species
-permutations require only consumer-side linear algebra; the Provider assigns
+permutations require only consumer-side linear algebra; the EOS assigns
 no absolute single-ion reference. Derivative availability is an explicit zero
 bit mask: this v1 entry returns no temperature, pressure, composition, or
 parameter derivatives. The existing reference-sequence and fixed-pressure EOS
@@ -234,14 +234,14 @@ owners remain the only numerical owners.
 The capsule owns the model context. A consumer keeps a Python reference to the
 capsule for as long as it calls the table; ordinary `Py_INCREF`/`Py_DECREF`
 provides retention, so a second native lifetime protocol is unnecessary. The
-provider wheel installs the declaration-only C header
+EOS wheel installs the declaration-only C header
 `epcsaft/include/epcsaft/native_sdk_v1.h`. The header contains no equations,
 templates, implementation source, CMake fragments, C++ standard-library types,
 exceptions, Eigen objects, or pybind11 objects.
 
-A single immutable provider model is evaluated independently for every phase
+A single immutable EOS model is evaluated independently for every phase
 state. Equilibrium may call the same capsule for liquid-like and vapor-like
-`(n,V)` points, but the provider never constructs liquid, vapor, phase, or
+`(n,V)` points, but the EOS never constructs liquid, vapor, phase, or
 mixture-solver objects. The equilibrium package owns phase count, ordering,
 variables, constraints, Ipopt assembly, initialization, continuation,
 certification, and results.
@@ -271,7 +271,7 @@ and fit policy remain outside the contract.
 
 Consumers import the capsule through the public Python function and compile
 only against the installed declaration header. They do not import
-`epcsaft._core`, private headers, provider source paths, or native object
+`epcsaft._core`, private headers, EOS source paths, or native object
 layouts. A consumer accepts only the exact capsule major name and verifies the
 advertised result size before calling an entry. It checks `table_size` against
 the minimum prefix needed for that entry before reading appended fields; it
@@ -283,34 +283,34 @@ rule requires a new capsule major version.
 
 ## Admission gate
 
-The provider-side evidence requires:
+The EOS-side evidence requires:
 
 - isolated installed-wheel availability with no sibling source import;
 - exact capsule name, ABI version, table/result sizes, lifetime, and failure
   behavior;
-- provider artifact hash, exact admitted parameter fingerprints, and rejection
+- EOS artifact hash, exact admitted parameter fingerprints, and rejection
   of synthetic or structurally similar unadmitted models;
-- thermodynamic agreement of `P` and `mu/(RT)` with the public provider state;
+- thermodynamic agreement of `P` and `mu/(RT)` with the public EOS state;
 - directional gradient, Hessian-vector, and third-tensor contraction checks
   against an independent numerical oracle;
 - fixed/parameterized value agreement at the source methane parameters and
   independent five-coordinate gradient and Hessian-vector checks;
 - ordinary-sigma joint 2B value, pressure, and chemical-potential parity with
-  the public DEEA Provider state plus centered checks of all five parameter
+  the public DEEA EOS state plus centered checks of all five parameter
   gradient columns and Hessian columns;
 - methane, ethane, and propane in-domain coverage; and
-- absence of provider implementation sources from the provider wheel.
+- absence of EOS implementation sources from the EOS wheel.
 
-Those provider tests pass for the fixed prefix and append-only parameterized
-tail. Migration receipt `promotion-0015-provider-native-sdk-v1` is the sole
+Those EOS tests pass for the fixed prefix and append-only parameterized
+tail. Historical Migration receipt `promotion-0015-provider-native-sdk-v1` is the sole
 authority record; this ADR does not transfer authority. Each consumer gate must
-build its wheel against the installed provider wheel, verify capsule/header
-compatibility, and prove that no provider source or duplicate EOS symbol enters
+build its wheel against the installed EOS wheel, verify capsule/header
+compatibility, and prove that no EOS source or duplicate EOS symbol enters
 the consumer artifact. Equilibrium implementation, regression target/Ceres
 implementation, cross-wheel evidence, and promotion remain separate bounded
 slices and receipts.
 
-The local mixture candidate adds provider-owned checks for explicit-density
+The local mixture candidate adds EOS-owned checks for explicit-density
 value and pressure agreement, centered directional gradient and Hessian
 agreement, component permutation, accepted-prefix offsets, buffer ownership,
 source domain, and unsupported-model rejection. These tests and an isolated
@@ -355,9 +355,9 @@ delegation and result translation only.
 
 ## Rejected alternatives
 
-- Separate liquid and vapor provider models: duplicates one EOS identity and
+- Separate liquid and vapor EOS models: duplicates one EOS identity and
   assigns phase meaning to the wrong owner.
-- Source/CMake SDK: creates a second compiled owner of provider equations.
+- Source/CMake SDK: creates a second compiled owner of EOS equations.
 - Public shared-library or C++ ABI: broader platform and compatibility burden
   than the admitted consumer needs.
 - Private pybind imports or native object layouts: unversioned and bypass the

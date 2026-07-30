@@ -1,13 +1,13 @@
-# Full Provider EOS Scientific Specification
+# Full EOS EOS Scientific Specification
 
-Status: scientific equation authority for the accepted full-provider scope;
+Status: scientific equation authority for the accepted full-EOS scope;
 native-SDK authority is determined separately by migration promotion receipt
 0015
 
-Design: `../designs/2026-07-16-full-provider-eos-design.md`
+Design: `../designs/2026-07-16-full-EOS-eos-design.md`
 
 This file owns the scientific equations and conventions consumed by the clean
-provider. The [checked Provider equation mirror](../equations.md) maps those
+EOS. The [checked EOS equation mirror](../equations.md) maps those
 relations to their current C++ and Python owners and provides synchronized
 Markdown and LaTeX views. Runtime source remains executable authority; the
 mirror does not create a second equation implementation.
@@ -66,7 +66,7 @@ For the three retained methane/ethane neutral anchors, the clean and archived
 kernels agree within `5e-7` relative at identical `T`, `rho_m`, `x`, and
 parameters. The remaining systematic difference is the archive's
 `N_A = 6.022140857e23 mol^-1` versus the exact SI value
-`6.02214076e23 mol^-1` used by the clean provider. The clean goldens retain the
+`6.02214076e23 mol^-1` used by the clean EOS. The clean goldens retain the
 exact SI value rather than preserving an obsolete constant for bitwise parity.
 Association, Debye--Huckel, Born, property, and density tests additionally use
 closed-form, thermodynamic-identity, finite-difference, or branch oracles that
@@ -74,7 +74,7 @@ do not call the archived runtime.
 
 ## 2. Symbols, bases, and units
 
-The provider uses absolute temperature `T [K]`, molar density
+The EOS uses absolute temperature `T [K]`, molar density
 `rho_m [mol m^-3]`, SI number density `rho_N = N_A rho_m [m^-3]`, and the
 Angstrom-basis number density `rho_hat = rho_N / 10^30 [A^-3]`. The identity
 
@@ -135,7 +135,7 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Residual caloric properties | temperature and density derivatives of the common `a^r` owner | source equation and exact derivation | Gross2001 Eqs. (A.46)-(A.50) plus identities below | `_native/derivatives.hpp` |
 | Density closure | `rho_m R T Z(T,rho_m,x) - P_spec = 0` | exact derivation | pressure identity | `_native/density.hpp` |
 
-The provider does not implement the lab catalogue's handwritten nonlinear
+The EOS does not implement the lab catalogue's handwritten nonlinear
 composition, density, or temperature derivative formulas. CppAD differentiates
 the defining equations in this registry. Independent numerical formulas may
 exist only in tests.
@@ -233,7 +233,7 @@ X_qr = -H_X^-1 [H_qr + H_qX X_r + H_Xr X_q + H_XX[X_q,X_r]].
 ```
 
 CppAD supplies every displayed partial of the defining `H`; the code performs
-the linear solves. The provider rejects `X` outside `(0,1]`, a nonfinite
+the linear solves. The EOS rejects `X` outside `(0,1]`, a nonfinite
 residual, failed convergence, or an ill-conditioned association Jacobian.
 
 ## 6. Bulk dielectric and Debye-Huckel
@@ -347,7 +347,7 @@ generic bundle-defined formulation and `State.bulk_relative_permittivity` report
 evaluated state value.
 
 The bounded comparison uses Perdomo2025 Table 3 at `T=298.15 K` and
-`P=2508 Pa`, with explicit-species compositions in Provider order
+`P=2508 Pa`, with explicit-species compositions in EOS order
 `(water,Na+,Cl-)`:
 
 ```text
@@ -384,7 +384,7 @@ root and electrostatic results are:
 | Schreckenberg density | 59466.9217 | 1.001419 | 69.7591 | -0.154498 | -24.8146 | -170.8193 | -0.0177 |
 | Rueben perturbation | 59456.7965 | 1.000323 | 74.7311 | -0.142058 | -24.8321 | -170.6547 | -0.0231 |
 
-Here the reported phase-equilibrium diagnostic is evaluated from Provider
+Here the reported phase-equilibrium diagnostic is evaluated from EOS
 fugacity coefficients,
 
 ```text
@@ -403,12 +403,12 @@ solvation rather than solvent phase equality.
 
 As a liquid-property cross-check at `298.15 K`, `1 bar`, and `1 mol kg^-1`
 aqueous NaCl, HamerWu1972 Table 16 reports `gamma_+/-=0.657`. With all other
-Figiel parameters unchanged, the Provider returns `0.70721` for Figiel,
+Figiel parameters unchanged, the EOS returns `0.70721` for Figiel,
 `0.66422` for Zuber, and `0.55220` for Rueben. Their corresponding practical
 osmotic diagnostics are `0.97101`, `0.94640`, and `0.87190`; no acceptance claim
 is assigned to those three osmotic numbers here. The Schreckenberg reference
 sequence fails closed because its requested liquid branch becomes a lone
-stable root during the dilution schedule, and the Provider correctly refuses
+stable root during the dilution schedule, and the EOS correctly refuses
 to relabel a single root as a requested phase. That is an unresolved
 reference-path/topology interaction, not a fitted-property result.
 
@@ -456,7 +456,7 @@ a^DH = -kappa e^2/(12 pi epsilon_0 epsilon_r,bulk k_B T)
        sum_(i in ions) x_i z_i^2 chi_i.
 ```
 
-When `sum_i x_i z_i^2 = 0`, the provider defines `kappa = 0` and `a^DH = 0`
+When `sum_i x_i z_i^2 = 0`, the EOS defines `kappa = 0` and `a^DH = 0`
 without evaluating `chi_i`; this is the exact neutral limit. The fitted Born
 diameter is used only in the Born term. CppAD differentiates the defining
 relations above on the positive-ionic-strength branch; the lab
@@ -492,7 +492,7 @@ contradicts all of the following evidence in the same source:
 
 Figiel2026Correction confirms that the original Eq. (7) omitted one bracket
 and incorrectly named the second dielectric constant `epsilon_r,bulk` instead
-of `epsilon_r,ion`. The clean provider implements the corrected primary-source
+of `epsilon_r,ion`. The clean EOS implements the corrected primary-source
 equation:
 
 ```text
@@ -546,7 +546,7 @@ mu_i^r/(RT) = a^r + (Z-1) + a_xi - sum_j x_j a_xj
 ln(phi_i)   = mu_i^r/(RT) - ln Z.
 ```
 
-The provider reports the total chemical potential and fugacity coefficient.
+The EOS reports the total chemical potential and fugacity coefficient.
 It does not publish the lab's nonunique contribution allocation of `ln Z`.
 
 The exact residual caloric identities at the state density are
@@ -565,7 +565,7 @@ c_p^r/R = c_v^r/R
           + [Z + T Z_T]^2/[Z + rho_m Z_rho] - 1.
 ```
 
-The `-1` removes the ideal-gas `c_p-c_v = R` contribution. The provider also
+The `-1` removes the ideal-gas `c_p-c_v = R` contribution. The EOS also
 reports the same-density residual entropy
 
 ```text
@@ -628,7 +628,7 @@ d(mu/RT)/dq_j = Phi_(n,q_j).
 
 The regression package may lift each observed state's two phase volumes and
 assemble its own pressure, potential, and density residuals without copying an
-EOS equation or differentiating a density solver. The provider does not own
+EOS equation or differentiating a density solver. The EOS does not own
 target data, residual scaling, parameter bounds, Ceres, identifiability, or fit
 acceptance. Mixture, association, electrolyte, and binary-interaction active
 parameters remain outside this version-1 parameterized block.
@@ -637,7 +637,7 @@ The first regression formulation fixes each phase amount at `1 mol`, uses
 volume as the only row-local phase coordinate, and must reject coalesced or
 mechanically unstable candidate phases. Its immutable receipt retains the
 actual parameter tuple, units, transforms/scales, bounds, and source
-fingerprint; the provider's returned fingerprint continues to identify the
+fingerprint; the EOS's returned fingerprint continues to identify the
 source model rather than the mutable trial point.
 
 ## 10. Electrolyte reference states
@@ -716,7 +716,7 @@ Each neutral contraction uses that component's infinite-dilution fugacity
 coefficient in the reported pure-water composition at the same `T,P`; every
 ionic formula-unit contraction uses the terminal values from its canonical
 four-molality reference sequence. Any caller-owned charge-neutral row `nu` is
-represented as `nu = alpha B`, so its gauge-invariant Provider reference is
+represented as `nu = alpha B`, so its gauge-invariant EOS reference is
 `alpha c`. No individual ionic reference is exposed. In particular, the
 original ordered `(water, H3O+, OH-)` case retains
 
@@ -742,7 +742,7 @@ The private Held water-ionization candidate is admitted through this same
 generic basis at exactly `298.15 K` and `100000 Pa`; it does not retain a
 case-specific standard-reference callback. The ordinary public pure-water state
 supplies any liquid molar-volume initialization through the same fixed-pressure
-density owner. Provider does not supply `K_w` or transform an external activity
+density owner. EOS does not supply `K_w` or transform an external activity
 convention into this mechanical basis.
 
 ## 11. Density closure
@@ -793,7 +793,7 @@ convergence does not expand that evidence.
 The Schreckenberg, Zuber, and Rueben parameter families are source-named
 implementation capabilities, not installed catalog defaults. A custom
 `Parameters.from_records(...)` selection must provide one complete
-topology. Zuber currently requires one neutral solvent because the Provider has
+topology. Zuber currently requires one neutral solvent because the EOS has
 no source-backed mixed-solvent volume-fraction payload. Rueben requires its
 three parameters for every selected component. No new topology broadens the
 temperature, pressure, composition, or fitted-parameter evidence of an
@@ -850,4 +850,4 @@ rather than a flag in this model.
 The private Held mechanical/reference candidate does not change those
 exclusions. Reaction stoichiometry, `K_w`, mixed-standard-state conversion,
 conservation constraints, Ipopt, KKT and physical certificates, globality, and
-predictive adjudication remain outside Provider and require their own authority.
+predictive adjudication remain outside EOS and require their own authority.
