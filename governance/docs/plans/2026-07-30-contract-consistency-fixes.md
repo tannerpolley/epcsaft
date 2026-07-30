@@ -1,7 +1,7 @@
 # Ecosystem contract consistency fixes
 
-Status: local feature commits complete; remote publication and merge remain
-pending package-agent branch reconciliation.
+Status: the fix commits were fast-forwarded to each affected repository's
+`origin/main` on 2026-07-30; local package-checkout reconciliation remains.
 
 This bounded pass corrected the control-plane and workflow findings that could
 be fixed without rewriting active package branches:
@@ -33,9 +33,10 @@ be fixed without rewriting active package branches:
 | Validation | `codex/validation-contract-consistency` | `243edfb` | `.worktrees/codex-validation-contract-consistency` |
 | Lab | `codex/lab-contract-consistency` | `7c31cbf`, `9c32ed7` | `.worktrees/codex-lab-contract-consistency` |
 
-These branches are intentionally unpushed. Retain their worktrees until the
-owning package agent cherry-picks or merges the commits, or until Management
-records an explicit preservation decision.
+The commits above are now published on their repositories' `main` branches.
+The local feature branches and worktrees remain only as preservation handles
+until the dirty package checkouts reconcile with their updated `origin/main`,
+or until Management records an explicit cleanup decision.
 
 The earlier Equilibrium branch `codex/equilibrium-contract-consistency`
 (`21bb72f`) is a superseded copy based on the pre-completion package head; the
