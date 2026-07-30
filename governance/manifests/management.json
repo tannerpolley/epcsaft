@@ -7,8 +7,8 @@
   "historical_migration": {
     "repository": "tannerpolley/ePC-SAFT-migration",
     "repository_id": "R_kgDOTZ9_pg",
-    "terminal_commit": null,
-    "status": "retirement_pending"
+    "terminal_commit": "61e3b745b7b4e0e17f41362703f8adc09cd3b3f2",
+    "status": "archived"
   },
   "repositories": {
     "management": {

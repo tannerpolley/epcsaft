@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-29",
+  "operation": "management-control-plane-transition",
+  "management_repository": {
+    "full_name": "ePC-SAFT/ePC-SAFT-management",
+    "repository_id": "R_kgDOTZ9l2w",
+    "source_name": "ePC-SAFT/.github",
+    "baseline_pull_request": "https://github.com/ePC-SAFT/ePC-SAFT-management/pull/4",
+    "baseline_merge_commit": "0ca848ec7bb2cf9c59179730938b9d7f327deef5",
+    "default_branch": "main",
+    "visibility": "public",
+    "branch_protection": {
+      "enforce_admins": true,
+      "allow_force_pushes": false,
+      "allow_deletions": false
+    }
+  },
+  "organization_profile_repository": {
+    "full_name": "ePC-SAFT/.github",
+    "repository_id": "R_kgDOTn1yzA",
+    "initial_commit": "3aaaf678fcb74820422e744bbee95848408d4513",
+    "default_branch": "main",
+    "visibility": "public",
+    "branch_protection": {
+      "enforce_admins": true,
+      "allow_force_pushes": false,
+      "allow_deletions": false
+    }
+  },
+  "historical_migration_repository": {
+    "full_name": "tannerpolley/ePC-SAFT-migration",
+    "repository_id": "R_kgDOTZ9_pg",
+    "retirement_pull_request": "https://github.com/tannerpolley/ePC-SAFT-migration/pull/2",
+    "terminal_commit": "61e3b745b7b4e0e17f41362703f8adc09cd3b3f2",
+    "closed_issue": "https://github.com/tannerpolley/ePC-SAFT-migration/issues/1",
+    "archived": true
+  },
+  "eos_repository": {
+    "full_name": "ePC-SAFT/ePC-SAFT-eos",
+    "source_name": "ePC-SAFT/ePC-SAFT",
+    "repository_id": "R_kgDOTZ9m0Q",
+    "sync_pull_request": "https://github.com/ePC-SAFT/ePC-SAFT-eos/pull/50",
+    "sync_merge_commit": "24ab1bdfb3a1558eb87815e9c3b5d97fbe6a025d",
+    "distribution": "epcsaft",
+    "import": "epcsaft",
+    "branch_protection": {
+      "enforce_admins": true,
+      "allow_force_pushes": false,
+      "allow_deletions": false
+    }
+  },
+  "repository_syncs": {
+    "equilibrium": {
+      "pull_request": "https://github.com/ePC-SAFT/ePC-SAFT-equilibrium/pull/91",
+      "merge_commit": "973ae12dba39732a3a7cc67df4b545e65bbc05e4"
+    },
+    "regression": {
+      "pull_request": "https://github.com/ePC-SAFT/ePC-SAFT-regression/pull/30",
+      "merge_commit": "4821bbe972b50cdf9f0ce099e5fb7cbbab134985"
+    },
+    "validation": {
+      "pull_request": "https://github.com/ePC-SAFT/ePC-SAFT-validation/pull/13",
+      "merge_commit": "3be7324d2fc33b81a1026867e150290fd109a98d"
+    },
+    "lab": {
+      "pull_request": "https://github.com/ePC-SAFT/ePC-SAFT-lab/pull/4",
+      "merge_commit": "5d87575f876b19aabc43caa8361f13e1a1f68907"
+    }
+  },
+  "follow_up_issues": {
+    "artifact_store": "https://github.com/ePC-SAFT/ePC-SAFT-management/issues/5",
+    "eos_sdk_identity": "https://github.com/ePC-SAFT/ePC-SAFT-eos/issues/49",
+    "parameter_catalog": "https://github.com/ePC-SAFT/ePC-SAFT-eos/issues/48"
+  }
+}
