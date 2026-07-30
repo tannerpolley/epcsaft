@@ -258,6 +258,8 @@ struct NativeSdkEndpoint final {
         pure_association_energy_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 3>
         pure_association_volume_coordinates;
+    std::array<epcsaft_native_capability_coordinate_v1, 7>
+        pure_associating_joint_sigma_basis_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 1>
         ion_solvation_born_coordinates;
     std::array<epcsaft_native_capability_coordinate_v1, 1>
@@ -423,6 +425,64 @@ struct NativeSdkEndpoint final {
           pure_dispersion_energy_coordinates(pure_segment_count_coordinates),
           pure_association_energy_coordinates(pure_segment_count_coordinates),
           pure_association_volume_coordinates(pure_segment_count_coordinates),
+          pure_associating_joint_sigma_basis_coordinates{{
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_AMOUNT_V1,
+                  0,
+                  -1,
+                  -1,
+                  "mol",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_VOLUME_V1,
+                  -1,
+                  -1,
+                  -1,
+                  "m3",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_COUNT_V1,
+                  0,
+                  -1,
+                  -1,
+                  "dimensionless",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_SEGMENT_DIAMETER_V1,
+                  0,
+                  -1,
+                  -1,
+                  "angstrom",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_DISPERSION_ENERGY_OVER_K_V1,
+                  0,
+                  -1,
+                  -1,
+                  "kelvin",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_ENERGY_OVER_K_V1,
+                  -1,
+                  -1,
+                  -1,
+                  "kelvin",
+              },
+              {
+                  sizeof(epcsaft_native_capability_coordinate_v1),
+                  EPCSAFT_NATIVE_CAPABILITY_COORDINATE_ASSOCIATION_VOLUME_V1,
+                  -1,
+                  -1,
+                  -1,
+                  "dimensionless",
+              },
+          }},
           ion_solvation_born_coordinates{{
               {
                   sizeof(epcsaft_native_capability_coordinate_v1),
@@ -653,6 +713,16 @@ struct NativeSdkEndpoint final {
                       2,
                       pure_association_volume_coordinates
                   ));
+                  auto joint_sigma_basis = descriptor(
+                      EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATING_JOINT_SIGMA_BASIS_HELMHOLTZ_V1,
+                      EPCSAFT_NATIVE_PARAMETER_FAMILY_PURE_ASSOCIATING_JOINT_V1,
+                      EPCSAFT_NATIVE_PARAMETER_IDENTITY_MODEL_V1,
+                      EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_PURE_V1,
+                      2,
+                      pure_associating_joint_sigma_basis_coordinates
+                  );
+                  joint_sigma_basis.active_parameter_count = 5;
+                  result.push_back(joint_sigma_basis);
               }
               const bool exact_neutral_binary =
                   phase_callbacks_admitted
@@ -855,9 +925,10 @@ struct NativeSdkEndpoint final {
               sizeof(epcsaft_ion_solvation_solvent_permittivity_result_v1),
               &NativeSdkEndpoint::evaluate_ion_solvation_solvent_permittivity,
               sizeof(epcsaft_associating_parameterized_phase_block_result_v1),
-              &NativeSdkEndpoint::evaluate_associating_parameters,
+              &NativeSdkEndpoint::evaluate_diameter_basis_associating_parameters,
               sizeof(epcsaft_electrolyte_phase_value_result_v1),
               &NativeSdkEndpoint::evaluate_electrolyte_value,
+              &NativeSdkEndpoint::evaluate_sigma_basis_associating_parameters,
           } {}
 
     // EqExclude: transport and buffer mechanics
@@ -2419,6 +2490,7 @@ struct NativeSdkEndpoint final {
         double dispersion_energy_over_k,
         double association_energy_over_k,
         double association_volume,
+        bool temperature_dependent_size_basis,
         epcsaft_associating_parameterized_phase_block_result_v1* result
     ) noexcept {
         if (result == nullptr) {
@@ -2477,18 +2549,29 @@ struct NativeSdkEndpoint final {
             );
         }
         try {
-            const auto block =
-                endpoint.model
-                    .evaluate_diameter_basis_associating_pure_phase_parameters(
-                    temperature_k,
-                    amount_mol,
-                    volume_m3,
-                    segment_count,
-                    segment_diameter_angstrom,
-                    dispersion_energy_over_k,
-                    association_energy_over_k,
-                    association_volume
-                );
+            const auto block = temperature_dependent_size_basis
+                ? endpoint.model
+                      .evaluate_diameter_basis_associating_pure_phase_parameters(
+                          temperature_k,
+                          amount_mol,
+                          volume_m3,
+                          segment_count,
+                          segment_diameter_angstrom,
+                          dispersion_energy_over_k,
+                          association_energy_over_k,
+                          association_volume
+                      )
+                : endpoint.model
+                      .evaluate_sigma_basis_associating_pure_phase_parameters(
+                          temperature_k,
+                          amount_mol,
+                          volume_m3,
+                          segment_count,
+                          segment_diameter_angstrom,
+                          dispersion_energy_over_k,
+                          association_energy_over_k,
+                          association_volume
+                      );
             result->helmholtz_over_rt_reference_amount =
                 block.helmholtz_over_rt_reference_amount;
             std::copy(
@@ -2526,6 +2609,62 @@ struct NativeSdkEndpoint final {
                 "unknown joint associating evaluation failure"
             );
         }
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_diameter_basis_associating_parameters(
+        const void* context,
+        double temperature_k,
+        double amount_mol,
+        double volume_m3,
+        double segment_count,
+        double segment_diameter_angstrom,
+        double dispersion_energy_over_k,
+        double association_energy_over_k,
+        double association_volume,
+        epcsaft_associating_parameterized_phase_block_result_v1* result
+    ) noexcept {
+        return evaluate_associating_parameters(
+            context,
+            temperature_k,
+            amount_mol,
+            volume_m3,
+            segment_count,
+            segment_diameter_angstrom,
+            dispersion_energy_over_k,
+            association_energy_over_k,
+            association_volume,
+            true,
+            result
+        );
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_sigma_basis_associating_parameters(
+        const void* context,
+        double temperature_k,
+        double amount_mol,
+        double volume_m3,
+        double segment_count,
+        double segment_diameter_angstrom,
+        double dispersion_energy_over_k,
+        double association_energy_over_k,
+        double association_volume,
+        epcsaft_associating_parameterized_phase_block_result_v1* result
+    ) noexcept {
+        return evaluate_associating_parameters(
+            context,
+            temperature_k,
+            amount_mol,
+            volume_m3,
+            segment_count,
+            segment_diameter_angstrom,
+            dispersion_energy_over_k,
+            association_energy_over_k,
+            association_volume,
+            false,
+            result
+        );
     }
 
     template <typename Evaluator>

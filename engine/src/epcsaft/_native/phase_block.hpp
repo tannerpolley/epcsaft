@@ -1028,6 +1028,7 @@ inline NativeAssociatingParameterizedPurePhaseBlock associating_parameterized_pu
     double dispersion_energy_over_k,
     double association_energy_over_k,
     double association_volume,
+    bool temperature_dependent_size_basis,
     const NativeParameters& base_parameters
 ) {
     if (!supports_associating_pure_phase_block(base_parameters)
@@ -1081,7 +1082,7 @@ inline NativeAssociatingParameterizedPurePhaseBlock associating_parameterized_pu
         value_parameters,
         value_sigma,
         value_diameter,
-        true
+        temperature_dependent_size_basis
     );
 
     CppAdSerialGuard cppad_guard;
@@ -1169,7 +1170,7 @@ inline NativeAssociatingParameterizedPurePhaseBlock associating_parameterized_pu
         diameter,
         association_energies,
         association_volumes,
-        true
+        temperature_dependent_size_basis
     );
     const auto mass_action = association_residuals(
         active_density,

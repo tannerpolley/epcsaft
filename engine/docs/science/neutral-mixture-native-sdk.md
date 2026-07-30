@@ -14,7 +14,10 @@ temperature domain, component count, and component order. One further
 append-only `evaluate_mixture_phase_kij` and `evaluate_mixture_phase_lij` pointers evaluate
 the same phase with one distinct unlike interaction parameter active. A final
 append-only `evaluate_pure_phase_parameter` pointer evaluates a supported pure
-model with exactly one of `m`, `sigma`, or `epsilon/k` active.
+model with exactly one of `m`, `sigma`, or `epsilon/k` active. Exact neutral
+pure 2B models additionally expose separate joint callbacks for the
+Baygi--Pahlavanzadeh `d_ij^3` and ordinary Gross--Sadowski `sigma_ij^3`
+association-strength bases.
 
 The first reference-evidence fingerprints are:
 
@@ -33,7 +36,11 @@ nonassociating binary model, while their authority effect remains `none`.
 Pure, associating, ionic, or otherwise unsupported model shapes advertise
 neither binary descriptor. A neutral, nonassociating, constant-diameter pure
 model advertises three component-identity descriptors, one for each scalar
-pure family; it advertises no binary descriptor.
+pure family; it advertises no binary descriptor. An exact neutral pure 2B
+model advertises the two scalar association descriptors and one distinct
+joint ordinary-sigma descriptor with five active parameters. The diameter-
+basis callback remains separately named and is not represented by that
+ordinary-sigma capability.
 
 The descriptor binds a topology fingerprint separately from the parameter
 fingerprint. Its canonical payload contains the ordered component IDs,
@@ -186,6 +193,13 @@ association basis. A separate appended callback returns the joint Hessian in
 Baygi--Pahlavanzadeh Eq. 4 temperature-dependent `d_ij^3` basis. Directional
 evidence checks every gradient and Hessian coordinate and a direct oracle
 checks that the diameter basis differs from the unchanged ordinary EOS basis.
+A further appended callback returns the same tensor on the ordinary
+`sigma_ij^3 kappa` basis. DEEA catalog evidence checks its value, pressure, and
+chemical potential against the public Provider state at the installed
+parameters, then checks the gradient and every Hessian column needed by the
+five active fit coordinates with centered differences. Capability 19,
+parameter family 13, and the exact seven typed coordinates identify this
+ordinary-basis tensor without a runtime basis selector.
 
 These candidates do not own or admit other association topologies, ions,
 multicomponent interaction tensors, density closure, phase identity, phase

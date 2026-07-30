@@ -41,9 +41,10 @@ field, reason, and applicable units, limits, or tolerances. The distributed
 Python interface is marked with `py.typed` and exposes literal types for
 phases, purposes, domains, and parameter families; runtime validation remains
 the scientific authority. No compatibility aliases are retained.
-The installed catalogs are Gross--Sadowski methane/ethane and propane records,
-the bounded Figiel--Yu--Held water/methanol/ethanol chloride/bromide source
-bundle, a distinct aqueous Na+/K+/I- source bundle, one distinct Khudaida et al.
+The installed catalogs are Crespo et al. neutral 2B DEEA records,
+Gross--Sadowski methane/ethane and propane records, the bounded
+Figiel--Yu--Held water/methanol/ethanol chloride/bromide source bundle, a
+distinct aqueous Na+/K+/I- source bundle, one distinct Khudaida et al.
 water/ethanol/isobutanol/Na+/Cl- bundle at 293.15 K, and one distinct Ascani et
 al. original-Born water/1-butanol/Na+/K+/Cl- bundle at 298.15 K. One reference-state
 module owns x-process
@@ -105,13 +106,14 @@ the accepted joint `(m,sigma,epsilon/k)` workflow. None is authoritative
 until a separate promotion receipt is accepted, and neither adds phase,
 density, equilibrium, or regression ownership.
 For an exact neutral pure 2B model with one donor and one acceptor site, the
-tail also exposes scalar association-energy/volume derivatives and one joint
-seven-coordinate pure-phase Hessian. The joint callback alone uses the
-Baygi--Pahlavanzadeh Eq. 4 temperature-dependent `d_ij^3` basis; the ordinary
-Provider EOS and scalar association callbacks remain on their source-owned
-`sigma_ij^3` basis. The callback supplies derivative transport for the bounded
-Regression reconstruction and does not admit other association topologies,
-targets, fitted values, or catalog persistence.
+tail also exposes scalar association-energy/volume derivatives and two
+distinct joint seven-coordinate pure-phase Hessians. The original joint
+callback uses the Baygi--Pahlavanzadeh Eq. 4 temperature-dependent `d_ij^3`
+basis. The appended ordinary callback and its exact typed descriptor use the
+Gross--Sadowski `sigma_ij^3 kappa` basis owned by the public Provider EOS. The
+callbacks supply derivative transport for bounded Regression reconstructions
+and do not admit other association topologies, targets, fitted values, or
+catalog persistence.
 The same finite descriptor set now binds the existing first-derivative
 callbacks for current-catalog water single-ion Born diameter and NaBr water
 solvation factor to their exact component identity, direct-observable

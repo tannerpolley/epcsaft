@@ -1,6 +1,9 @@
 tokens = [
     "ascani",
     "cameretti",
+    "carvalho",
+    "coutinho",
+    "crespo",
     "figiel",
     "gross",
     "held",
@@ -9,6 +12,7 @@ tokens = [
     "rueben",
     "sadowski",
     "schreckenberg",
+    "silva",
     "yu",
     "zuber",
 ]
