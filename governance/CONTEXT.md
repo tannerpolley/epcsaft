@@ -18,6 +18,10 @@ Management owns current repository topology, worktree access, exact-subject
 coordination, artifact and environment inventories, parameter-bundle
 ownership, draft disposition, and external-operation receipts.
 
+`manifests/parameter-ownership.json` is the machine-readable parameter
+disposition map; its inventory phase keeps package-owned relocations explicit
+until the owning EOS and Validation tasks execute them.
+
 `tannerpolley/ePC-SAFT-migration` is a completed historical control repository.
 Its Git history preserves legacy-to-clean-package cutover designs and receipts;
 it supplies no current authority or workflow.

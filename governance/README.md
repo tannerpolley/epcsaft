@@ -23,6 +23,10 @@ Artifact layout and admission rules are documented in
 [docs/artifact-store.md](docs/artifact-store.md). Cross-repository consumers
 install only full-SHA-256 objects; repository `dist/` wheels are rejected.
 
+Parameter-bundle ownership and the pending package-rooted dispositions are
+tracked in
+[manifests/parameter-ownership.json](manifests/parameter-ownership.json).
+
 It owns no package runtime, scientific solver, regression target, Validation
 campaign, or Lab experiment.
 

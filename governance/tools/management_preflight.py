@@ -11,11 +11,23 @@ import zipfile
 from email.parser import Parser
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote, urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "manifests" / "management.json"
 GENERATED = ROOT / ".management-state"
+ARTIFACT_POLICY_PATH = ROOT / "manifests" / "artifact-store-policy.json"
+
+ALLOWED_ENVIRONMENT_DISTRIBUTIONS: dict[str, set[str]] = {
+    "management": set(),
+    "github": set(),
+    "eos": {"epcsaft"},
+    "equilibrium": {"epcsaft", "epcsaft_equilibrium"},
+    "regression": {"epcsaft", "epcsaft_regression"},
+    "validation": set(),
+    "lab": set(),
+}
 
 
 def load_json(path: Path) -> Any:
@@ -178,19 +190,26 @@ def bundle_hash(directory: Path) -> str:
 
 def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
     records: list[dict[str, Any]] = []
+    parameter_policy = load_json(parameter_policy_path(config))
+    parameter_entries = {
+        entry["bundle_id"]: entry for entry in parameter_policy.get("bundles", [])
+    }
     eos = Path(config["repositories"]["eos"]["local_path"])
     eos_bundles = eos / "src" / "epcsaft" / "data" / "bundles"
     if eos_bundles.exists():
         for manifest in sorted(eos_bundles.glob("*/*/bundle.toml")):
             data = tomllib.loads(manifest.read_text(encoding="utf-8"))
             directory = manifest.parent
+            bundle_id = data.get("bundle_id", directory.parent.name)
+            policy = parameter_entries.get(bundle_id, {})
             records.append(
                 {
                     "repository": "eos",
                     "path": str(directory.relative_to(eos)),
-                    "bundle_id": data.get("bundle", {}).get("id", directory.parent.name),
+                    "bundle_id": bundle_id,
                     "sha256": bundle_hash(directory),
-                    "ownership": "allowlist_review",
+                    "ownership": policy.get("owner", "unclassified"),
+                    "disposition": policy.get("disposition", "unclassified"),
                 }
             )
     validation = Path(config["repositories"]["validation"]["local_path"])
@@ -211,40 +230,128 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
     return {"schema_version": 1, "records": records}
 
 
+def normalized_distribution_name(name: str) -> str:
+    return name.lower().replace("-", "_")
+
+
+def environment_distributions(environment: Path) -> list[dict[str, Any]]:
+    distributions: list[dict[str, Any]] = []
+    if not environment.exists():
+        return distributions
+    for metadata in sorted(
+        environment.glob("lib/python*/site-packages/*.dist-info/METADATA")
+    ):
+        message = Parser().parsestr(
+            metadata.read_text(encoding="utf-8", errors="replace")
+        )
+        distribution = message.get("Name", "")
+        if "pcsaft" not in normalized_distribution_name(distribution):
+            continue
+        direct_url_path = metadata.parent / "direct_url.json"
+        direct_url = load_json(direct_url_path) if direct_url_path.exists() else None
+        distributions.append(
+            {
+                "name": distribution,
+                "version": message.get("Version", ""),
+                "direct_url": direct_url,
+            }
+        )
+    return distributions
+
+
 def environment_state(config: dict[str, Any]) -> dict[str, Any]:
     environments: list[dict[str, Any]] = []
     for name, record in sorted(config["repositories"].items()):
         root = Path(record["local_path"])
         environment = root / ".venv"
-        distributions: list[dict[str, Any]] = []
-        if environment.exists():
-            for metadata in sorted(environment.glob("lib/python*/site-packages/*.dist-info/METADATA")):
-                message = Parser().parsestr(
-                    metadata.read_text(encoding="utf-8", errors="replace")
-                )
-                distribution = message.get("Name", "")
-                if "pcsaft" not in distribution.lower().replace("-", ""):
-                    continue
-                direct_url_path = metadata.parent / "direct_url.json"
-                direct_url = (
-                    load_json(direct_url_path) if direct_url_path.exists() else None
-                )
-                distributions.append(
-                    {
-                        "name": distribution,
-                        "version": message.get("Version", ""),
-                        "direct_url": direct_url,
-                    }
-                )
         environments.append(
             {
                 "repository": name,
                 "path": str(environment),
                 "present": environment.exists(),
-                "distributions": distributions,
+                "distributions": environment_distributions(environment),
             }
         )
     return {"schema_version": 1, "environments": environments}
+
+
+def environment_policy_errors(config: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    artifact_policy = load_json(ARTIFACT_POLICY_PATH)
+    active_eos_sha = artifact_policy["active_distributions"]["epcsaft"]["sha256"]
+    for name, record in sorted(config["repositories"].items()):
+        environment = Path(record["local_path"]) / ".venv"
+        allowed = ALLOWED_ENVIRONMENT_DISTRIBUTIONS.get(name, set())
+        for distribution in environment_distributions(environment):
+            normalized = normalized_distribution_name(distribution["name"])
+            if normalized not in allowed:
+                errors.append(
+                    f"{name} environment contains forbidden distribution "
+                    f"{distribution['name']}"
+                )
+                continue
+            if name not in {"equilibrium", "regression"} or normalized != "epcsaft":
+                continue
+            direct_url = distribution.get("direct_url")
+            url = direct_url.get("url", "") if isinstance(direct_url, dict) else ""
+            expected_marker = f"/artifacts/objects/sha256/{active_eos_sha}/"
+            if not url.startswith("file://") or expected_marker not in url:
+                errors.append(
+                    f"{name} must install epcsaft from the active SHA-256 object "
+                    f"{active_eos_sha}, found {url or 'no direct_url'}"
+                )
+                continue
+            object_path = Path(unquote(urlparse(url).path))
+            if not object_path.is_file():
+                errors.append(
+                    f"{name} epcsaft direct_url does not exist: {object_path}"
+                )
+            elif sha256(object_path) != active_eos_sha:
+                errors.append(
+                    f"{name} epcsaft direct_url hash does not match active object "
+                    f"{active_eos_sha}: {object_path}"
+                )
+    return errors
+
+
+def parameter_policy_path(config: dict[str, Any]) -> Path:
+    relative = config.get("parameter_ownership", "manifests/parameter-ownership.json")
+    return ROOT / relative
+
+
+def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
+    path = parameter_policy_path(config)
+    if not path.exists():
+        return [f"missing parameter ownership manifest {path.relative_to(ROOT)}"]
+    policy = load_json(path)
+    entries = policy.get("bundles")
+    if not isinstance(entries, list):
+        return ["parameter ownership manifest bundles must be an array"]
+    by_id: dict[str, dict[str, Any]] = {}
+    errors: list[str] = []
+    for entry in entries:
+        bundle_id = entry.get("bundle_id")
+        if not isinstance(bundle_id, str) or not bundle_id:
+            errors.append("parameter ownership entries require bundle_id")
+            continue
+        if bundle_id in by_id:
+            errors.append(f"duplicate parameter ownership entry: {bundle_id}")
+        by_id[bundle_id] = entry
+        if entry.get("owner") not in {"eos", "validation"}:
+            errors.append(f"invalid parameter owner for {bundle_id}")
+        if entry.get("disposition") not in {"approved_eos", "relocate_to_validation"}:
+            errors.append(f"invalid parameter disposition for {bundle_id}")
+    eos = Path(config["repositories"]["eos"]["local_path"])
+    eos_bundles = eos / "src" / "epcsaft" / "data" / "bundles"
+    discovered: set[str] = set()
+    if eos_bundles.exists():
+        for manifest in eos_bundles.glob("*/*/bundle.toml"):
+            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+            discovered.add(data.get("bundle_id", manifest.parent.parent.name))
+    missing = sorted(discovered.difference(by_id))
+    if missing:
+        errors.append(f"unregistered EOS parameter bundles: {missing}")
+    return errors
 
 
 def validate_config(config: dict[str, Any]) -> list[str]:
@@ -284,6 +391,10 @@ def validate_config(config: dict[str, Any]) -> list[str]:
     for name, record in repositories.items():
         if record.get("codex_environment") != ".codex/environments/environment.toml":
             errors.append(f"{name} must declare the standard Codex environment path")
+    if config.get("parameter_ownership") != "manifests/parameter-ownership.json":
+        errors.append(
+            "parameter ownership manifest must be manifests/parameter-ownership.json"
+        )
     return errors
 
 
@@ -303,6 +414,8 @@ def snapshot(config: dict[str, Any]) -> None:
 
 def check(config: dict[str, Any], strict: bool) -> list[str]:
     errors = validate_config(config)
+    errors.extend(parameter_policy_errors(config))
+    errors.extend(environment_policy_errors(config))
     for name in (
         "ecosystem-state.json",
         "artifact-ledger.json",

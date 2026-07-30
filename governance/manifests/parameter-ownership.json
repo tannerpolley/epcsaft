@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "enforcement": "inventory",
+  "policy": {
+    "eos": "Only model-defining PC-SAFT or ePC-SAFT reference parameterizations may be admitted to the installed EOS catalog.",
+    "validation": "Case-specific, derived, fitted, campaign, or otherwise noncanonical parameter bundles belong to Validation evidence and must not become production-package data."
+  },
+  "bundles": [
+    {
+      "bundle_id": "ascani-2022-case-study-2-electrolyte-lle",
+      "owner": "validation",
+      "disposition": "relocate_to_validation",
+      "reason": "Case-study packet with application-specific solvent, ion, dielectric, and cross-association values."
+    },
+    {
+      "bundle_id": "crespo-2021-deea",
+      "owner": "validation",
+      "disposition": "relocate_to_validation",
+      "reason": "Substance-specific fitted DEEA case with no model-defining catalog role."
+    },
+    {
+      "bundle_id": "figiel-2025-aqueous-iodides",
+      "owner": "eos",
+      "disposition": "approved_eos",
+      "reason": "Canonical ePC-SAFT 2025 aqueous-ion reference packet named by the project policy."
+    },
+    {
+      "bundle_id": "figiel-2025-reference-electrolytes",
+      "owner": "eos",
+      "disposition": "approved_eos",
+      "reason": "Canonical ePC-SAFT 2025 reference parameterization for the supported electrolyte model."
+    },
+    {
+      "bundle_id": "gross-2001-methane-ethane",
+      "owner": "eos",
+      "disposition": "approved_eos",
+      "reason": "Canonical PC-SAFT Gross--Sadowski 2001 reference parameterization."
+    },
+    {
+      "bundle_id": "gross-2001-propane",
+      "owner": "eos",
+      "disposition": "approved_eos",
+      "reason": "Canonical PC-SAFT Gross--Sadowski 2001 reference parameterization."
+    },
+    {
+      "bundle_id": "held-2008-water-self-ionization",
+      "owner": "eos",
+      "disposition": "approved_eos",
+      "reason": "Canonical aqueous electrolyte reference parameterization from Held--Cameretti--Sadowski 2008."
+    },
+    {
+      "bundle_id": "khudaida-2026-figure-2-electrolyte-lle",
+      "owner": "validation",
+      "disposition": "relocate_to_validation",
+      "reason": "Figure-specific electrolyte-LLE application packet with case-study interaction and dielectric values."
+    }
+  ]
+}

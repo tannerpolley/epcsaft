@@ -49,3 +49,50 @@ def test_every_active_repository_declares_a_codex_environment() -> None:
         record["codex_environment"] == ".codex/environments/environment.toml"
         for record in config["repositories"].values()
     )
+
+
+def test_parameter_ownership_manifest_covers_current_eos_catalog() -> None:
+    config = json.loads(
+        (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
+    )
+    assert MODULE.parameter_policy_errors(config) == []
+
+
+def test_environment_policy_rejects_forbidden_package(tmp_path: Path) -> None:
+    site_packages = tmp_path / "eos" / ".venv" / "lib" / "python3.13" / "site-packages"
+    metadata = site_packages / "epcsaft-regression-0.2.0.dist-info"
+    metadata.mkdir(parents=True)
+    (metadata / "METADATA").write_text(
+        "Name: epcsaft-regression\nVersion: 0.2.0.dev0\n",
+        encoding="utf-8",
+    )
+    config = {"repositories": {"eos": {"local_path": str(tmp_path / "eos")}}}
+    errors = MODULE.environment_policy_errors(config)
+    assert errors == ["eos environment contains forbidden distribution epcsaft-regression"]
+
+
+def test_environment_policy_rejects_mutable_consumer_eos_install(tmp_path: Path) -> None:
+    site_packages = (
+        tmp_path
+        / "equilibrium"
+        / ".venv"
+        / "lib"
+        / "python3.13"
+        / "site-packages"
+    )
+    metadata = site_packages / "epcsaft-0.2.0.dev0.dist-info"
+    metadata.mkdir(parents=True)
+    (metadata / "METADATA").write_text(
+        "Name: epcsaft\nVersion: 0.2.0.dev0\n",
+        encoding="utf-8",
+    )
+    (metadata / "direct_url.json").write_text(
+        '{"url":"file:///tmp/repository/dist/epcsaft.whl"}\n',
+        encoding="utf-8",
+    )
+    config = {
+        "repositories": {"equilibrium": {"local_path": str(tmp_path / "equilibrium")}}
+    }
+    errors = MODULE.environment_policy_errors(config)
+    assert len(errors) == 1
+    assert "must install epcsaft from the active SHA-256 object" in errors[0]
