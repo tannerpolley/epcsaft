@@ -43,6 +43,12 @@
       "reason": "Canonical PC-SAFT Gross--Sadowski 2001 reference parameterization."
     },
     {
+      "bundle_id": "gross-sadowski-2001",
+      "owner": "eos",
+      "disposition": "approved_eos",
+      "reason": "Canonical PC-SAFT Gross--Sadowski 2001 source-complete reference catalog."
+    },
+    {
       "bundle_id": "held-2008-water-self-ionization",
       "owner": "eos",
       "disposition": "approved_eos",
