@@ -63,7 +63,7 @@ of extrapolation.
 | `figiel-yu-held-2025` | 1 | `water`, `methanol`, `ethanol`, `hydrogen-cation`, `lithium-cation`, `sodium-cation`, `potassium-cation`, `vanadyl-cation`, `vanadium-iii-cation`, `chloride-anion`, `bromide-anion`, `iodide-anion`, `sulfate-anion` | Source-complete corrected Born SSM+DS parameterization from Tables 1–5 at 298.15 K and 1 bar, with total ion mole fraction at most 0.38. Every printed `k_ij`, including explicit zeroes, is present; blank cells are absent and incomplete selections fail closed. Unlike-solvent 2B association records are evaluated once from the Gross–Sadowski 2002 combining rules without a binary correction parameter. |
 | `figiel-2025-reference-electrolytes` | 1 | `water`, `methanol`, `ethanol`, `lithium-cation`, `sodium-cation`, `potassium-cation`, `chloride-anion`, `bromide-anion` | Corrected Born SSM+DS at 298.15 K and 1 bar; total ion mole fraction at most 0.38. Reference states require one source-complete cation/anion formula unit. |
 | `figiel-2025-aqueous-iodides` | 1 | `water`, `sodium-cation`, `potassium-cation`, `iodide-anion` | Corrected Born SSM+DS at 298.15 K and 1 bar; total ion mole fraction at most 0.38. Only the source-complete aqueous NaI and KI selections are supported; LiI is absent. |
-| `held-2008-water-self-ionization` | 1 | `water`, `hydronium-cation`, `hydroxide-anion` | Debye–Hückel electrolyte model without a Born term at 298.15 K and 1 bar. EOS supplies the mechanical state and charge-neutral reference basis, not reaction equilibrium or `K_w`. |
+| `held-cameretti-sadowski-2008` | 1 | `water`, `hydronium-cation`, `lithium-cation`, `sodium-cation`, `potassium-cation`, `rubidium-cation`, `cesium-cation`, `ammonium-cation`, `choline-cation`, `magnesium-cation`, `calcium-cation`, `strontium-cation`, `barium-cation`, `cobalt-cation`, `copper-cation`, `iron-cation`, `chromium-iii-cation`, `fluoride-anion`, `chloride-anion`, `bromide-anion`, `iodide-anion`, `hydroxide-anion`, `thiocyanate-anion`, `perchlorate-anion`, `chlorate-anion`, `dihydrogen-phosphate-anion`, `bromate-anion`, `nitrate-anion`, `sulfate-anion`, `hydrogen-phosphate-anion` | Source-complete Held–Cameretti–Sadowski 2008 fully dissociated Debye–Hückel electrolyte model: water plus all 29 Table 2 ions, concentration-independent solvent dielectric, explicit water-ion `k_ij = 0`, excluded ion-ion dispersion, and no Born term, ion pairing, or reaction equilibrium. The package reference domain is 298.15 K and 1 bar. |
 | `ascani-2022-case-study-2-electrolyte-lle` | 1 | `water`, `1-butanol`, `sodium-cation`, `potassium-cation`, `chloride-anion` | Exact five-component original-Born bundle at 298.15 K and 1 bar. EOS evaluates states but does not solve the reported multiphase problem. |
 
 The two narrower `figiel-2025-*` bundle IDs remain available during the
@@ -354,7 +354,7 @@ active-permittivity, and active-reference entries remain bounded EOS
 candidates unless their own receipts say otherwise. They own no targets,
 bounds, Ceres, fit acceptance, phase identity, equilibrium, or catalog writes.
 Gross--Sadowski methane/ethane is first reference evidence, not a mixture
-allowlist. The private Held water-ionization candidate retains
+allowlist. The Held source-complete aqueous-electrolyte candidate retains
 `authority_effect: none`; Equilibrium owns `K_w`, reaction conversion,
 constraints, Ipopt, and certificates.
 

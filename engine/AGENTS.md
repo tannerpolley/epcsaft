@@ -71,3 +71,23 @@ Issues and PRDs are tracked in GitHub Issues for
 
 This is a single-context repository with root `CONTEXT.md`, `ARCHITECTURE.yaml`,
 and `docs/adr/`.
+
+## Agent skills
+
+<!-- project-truss:setup:start -->
+### Project Truss
+
+Use `project-truss:setup` once, then `project-truss:start` to begin or resume Matt-first engineering work. All six Project Truss skills are callable; Start normally invokes the relevant Matt disciplines and routes each stage until verified closeout.
+
+### Issue tracker
+
+Project Truss uses GitHub-native root and leaf issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Matt triage roles map to descriptive labels only. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Read the configured domain context and ADRs. See `docs/agents/domain.md`.
+<!-- project-truss:setup:end -->

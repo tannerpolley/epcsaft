@@ -1,0 +1,3 @@
+record_id,family,value,unit,source_id,locator,domain_id
+held-electrolyte-formulation,electrolyte_formulation,fully-dissociated-debye-huckel,,held-cameretti-sadowski-2008,"Eqs. (1)-(7) and Sections 2-3, strong electrolytes fully dissociated with Debye-Huckel ion term, water-ion dispersion, and no ion-ion dispersion",held-aqueous-electrolyte-298-15-k-1-bar
+held-relative-permittivity-formulation,relative_permittivity_formulation,solvent-only,,held-cameretti-sadowski-2008,"Eq. (2), concentration-independent water dielectric in a uniform continuum",held-aqueous-electrolyte-298-15-k-1-bar

@@ -11,8 +11,8 @@ coefficients = [
   { amplitude = -1.41700, exponent_coefficient = -0.01146 },
 ]
 source_id = "held-cameretti-sadowski-2008"
-locator = "Table 1 and Eq. 7, water segment-diameter correlation"
-domain_id = "held-water-ionization-298-15-k-1-bar"
+locator = "Table 1 and Eq. (7), water temperature-dependent segment-diameter correlation"
+domain_id = "held-aqueous-electrolyte-298-15-k-1-bar"
 
 [[correlations]]
 record_id = "water-relative-permittivity"
@@ -22,5 +22,5 @@ form = "constant"
 constant = 78.09
 output_unit = "dimensionless"
 source_id = "figiel-yu-held-2025"
-locator = "Table 1, water row, dielectric constant; Held 2008 Eq. 2 uses a concentration-independent water dielectric"
-domain_id = "held-water-ionization-298-15-k-1-bar"
+locator = "Table 1, water dielectric constant; Held 2008 Eq. (2) uses a concentration-independent solvent dielectric"
+domain_id = "held-aqueous-electrolyte-298-15-k-1-bar"

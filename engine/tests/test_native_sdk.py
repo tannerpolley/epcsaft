@@ -1130,7 +1130,7 @@ def _held_water_ionization_model(
         "hydroxide-anion",
     ),
 ) -> Mixture:
-    parameters = _ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1)
+    parameters = _ParameterBundle.from_catalog("held-cameretti-sadowski-2008", version=1)
     return Mixture(parameters.select(component_ids))
 
 
@@ -8271,7 +8271,7 @@ def test_native_sdk_neutral_reference_derivatives_are_exact_and_fail_closed() ->
         unit = "angstrom" if parameter == 0 else "kelvin"
         for sign in (-1.0, 1.0):
             trial = _component_parameter_trial_model(
-                "held-2008-water-self-ionization",
+                "held-cameretti-sadowski-2008",
                 ("water", "hydronium-cation", "hydroxide-anion"),
                 "hydronium-cation",
                 family,

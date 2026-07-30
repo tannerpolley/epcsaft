@@ -26,6 +26,14 @@ bool positive_finite(const std::vector<double>& values) {
 }
 
 // EqExclude: input and domain validation
+// Explicit zero dispersion is a valid source parameter for ions.
+bool nonnegative_finite(const std::vector<double>& values) {
+    return std::all_of(values.begin(), values.end(), [](double value) {
+        return std::isfinite(value) && value >= 0.0;
+    });
+}
+
+// EqExclude: input and domain validation
 bool finite(const std::vector<double>& values) {
     return std::all_of(values.begin(), values.end(), [](double value) {
         return std::isfinite(value);
@@ -476,7 +484,7 @@ NativeModel::NativeModel(NativeParameters parameters)
     }
     if (!positive_finite(parameters_.segment_count) ||
         !positive_finite(parameters_.sigma_constant) ||
-        !positive_finite(parameters_.dispersion_energy_over_k) ||
+        !nonnegative_finite(parameters_.dispersion_energy_over_k) ||
         !finite(parameters_.k_ij) ||
         !finite(parameters_.l_ij) ||
         !finite(parameters_.sigma_term_amplitude) ||

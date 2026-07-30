@@ -71,7 +71,9 @@ The installed catalogs are Crespo et al. neutral 2B DEEA records, the
 source-complete 78-species Gross--Sadowski 2001 bundle, and the source-complete
 13-species Figiel--Yu--Held 2025 corrected-Born bundle containing every
 reported water, methanol, ethanol, H+, Li+, Na+, K+, VO2+, V3+, Cl-, Br-, I-,
-and SO4(2-) parameter from Tables 1--5. Distinct narrower Figiel chloride/
+and SO4(2-) parameter from Tables 1--5, and the source-complete 30-species
+Held--Cameretti--Sadowski 2008 fully dissociated aqueous-electrolyte bundle
+containing water and every Table 2 ion. Distinct narrower Figiel chloride/
 bromide and aqueous-iodide IDs, and one Ascani et al. original-Born
 water/1-butanol/Na+/K+/Cl- bundle at 298.15 K remain during the governed
 transition. The old Gross--Sadowski and narrower Figiel IDs remain only until
@@ -81,8 +83,8 @@ ionic activity on one explicit electroneutral formula-unit path. Its aqueous
 single-solvent result also reports the practical molal osmotic coefficient
 from the solvent-activity ratio on that pressure-state path.
 
-Historical Migration decision D-028 binds one additional private EOS candidate
-for the exact
+Historical Migration decision D-028 binds one additional private native
+reference candidate for the exact
 ordered water/H3O+/OH- mechanical model of Held, Cameretti, and Sadowski (2008)
 at 298.15 K and 1 bar. The installed record set closes component identity,
 charge, association, water--ion dispersion, excluded ion--ion dispersion,
@@ -269,10 +271,11 @@ no single-ion standard, reaction constant, reaction solver, chemistry selector,
 or catalog admission is introduced. The result explicitly reports that `T`,
 `P`, composition, and parameter derivatives are unavailable.
 
-The private Held water-ionization bundle uses that same generic neutral-reference
-tail and the existing fixed-pressure density closure. Consumers obtain its
-pure-water liquid molar volume from the ordinary public pure-water state; no
-second standard-reference callback or density owner is retained.
+The Held source-complete aqueous-electrolyte bundle uses that same generic
+neutral-reference tail and the existing fixed-pressure density closure.
+Consumers obtain its pure-water liquid molar volume from the ordinary public
+pure-water state; no second standard-reference callback or density owner is
+retained.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.

@@ -95,7 +95,7 @@ _NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS = {
         for cation in ("lithium-cation", "sodium-cation", "potassium-cation")
         for anion in ("chloride-anion", "bromide-anion")
     ),
-    "sha256:ebb6350a0820ff88f10f6179ea75df909773d8dc871020fbf08c3fae0ec067bb": (
+    "sha256:c6386c6c84e012574a0d45e0342c0b9325a5f35a043fa8d84ad2b1b2002cea29": (
         frozenset(
             {
                 frozenset(
@@ -114,7 +114,7 @@ _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
     "sha256:e04e4799b7f3729e989e031feaf6e2a87c97f031bcd538d1bb09781f714ce65c": frozenset(
         {"diethylethanolamine"}
     ),
-    "sha256:ebb6350a0820ff88f10f6179ea75df909773d8dc871020fbf08c3fae0ec067bb": frozenset(
+    "sha256:c6386c6c84e012574a0d45e0342c0b9325a5f35a043fa8d84ad2b1b2002cea29": frozenset(
         {
             "water",
             "hydronium-cation",

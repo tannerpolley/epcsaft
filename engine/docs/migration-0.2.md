@@ -63,5 +63,5 @@ Accepted receipt `promotion-0012-provider-full-candidate` still governs the
 full-provider scope. Migration receipt `promotion-0015-provider-native-sdk-v1`
 alone determines authority for the ADR 0001 capsule; this migration does not
 transfer it. Local append-only native candidates remain bounded evidence until
-their own review and promotion receipts, and the private Held water-ionization
-candidate retains `authority_effect: none`.
+their own review and promotion receipts, and the Held source-complete aqueous
+reference candidate retains `authority_effect: none`.

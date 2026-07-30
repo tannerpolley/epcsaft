@@ -19,7 +19,7 @@ def _model(*component_ids: str) -> Mixture:
 
 
 def _held_water_ionization_model() -> Mixture:
-    bundle = _ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1)
+    bundle = _ParameterBundle.from_catalog("held-cameretti-sadowski-2008", version=1)
     return Mixture(bundle.select(("water", "hydronium-cation", "hydroxide-anion")))
 
 
