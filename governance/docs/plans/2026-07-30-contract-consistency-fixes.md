@@ -1,7 +1,7 @@
 # Ecosystem contract consistency fixes
 
 Status: local feature commits complete; remote publication and merge remain
-pending the package agents' active work.
+pending package-agent branch reconciliation.
 
 This bounded pass corrected the control-plane and workflow findings that could
 be fixed without rewriting active package branches:
@@ -26,15 +26,20 @@ be fixed without rewriting active package branches:
 
 | Repository | Branch | Commit | Worktree |
 | --- | --- | --- | --- |
-| Management | `codex/ecosystem-contract-consistency` | `453b35f` plus this handoff record | attached checkout |
+| Management | `codex/ecosystem-contract-consistency` | `453b35f`, `41ab9a0`, `d98e719` plus this handoff record | attached checkout |
 | EOS | `codex/eos-contract-consistency` | `a8d618f` | `.worktrees/codex-eos-contract-consistency` |
-| Equilibrium | `codex/equilibrium-contract-consistency` | `21bb72f` | `.worktrees/codex-equilibrium-contract-consistency` |
+| Equilibrium | `codex/equilibrium-contract-consistency-v2` | `2d24ae4` | `.worktrees/codex-equilibrium-contract-consistency-v2` |
+| Regression | `codex/regression-contract-consistency` | `5aaf79f` | `.worktrees/codex-regression-contract-consistency` |
 | Validation | `codex/validation-contract-consistency` | `243edfb` | `.worktrees/codex-validation-contract-consistency` |
 | Lab | `codex/lab-contract-consistency` | `7c31cbf`, `9c32ed7` | `.worktrees/codex-lab-contract-consistency` |
 
 These branches are intentionally unpushed. Retain their worktrees until the
 owning package agent cherry-picks or merges the commits, or until Management
 records an explicit preservation decision.
+
+The earlier Equilibrium branch `codex/equilibrium-contract-consistency`
+(`21bb72f`) is a superseded copy based on the pre-completion package head; the
+`-v2` branch above is the applicable follow-up.
 
 ## Deferred package-owned work
 
@@ -45,8 +50,9 @@ package-rooted transfer; this pass does not silently remove runtime data from
 EOS or rewrite scientific evidence. The active Validation channel likewise
 needs a new package-rooted campaign before any result can be called current.
 
-The dirty Equilibrium and Regression primary checkouts were not modified.
-Their active branches remain the source of truth for their in-flight changes.
+The Equilibrium and Regression primary checkouts were not modified. Their
+completed agent changes, including any still-uncommitted files, remain the
+source of truth until their owners reconcile these follow-up commits.
 
 ## Verification
 
