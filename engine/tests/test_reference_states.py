@@ -23,6 +23,11 @@ def _held_water_ionization_model() -> Mixture:
     return Mixture(bundle.select(("water", "hydronium-cation", "hydroxide-anion")))
 
 
+def _complete_figiel_model(*component_ids: str) -> Mixture:
+    bundle = _ParameterBundle.from_catalog("figiel-yu-held-2025", version=1)
+    return Mixture(bundle.select(component_ids))
+
+
 def test_held_water_ionization_reference_uses_the_native_sequence_owner() -> None:
     model = _held_water_ionization_model()
 
@@ -77,6 +82,46 @@ def test_water_nacl_reference_converges_on_an_electroneutral_path() -> None:
     assert reference.infinite_dilution_log_fugacity_coefficient == pytest.approx(
         (-154.0679654864907, -127.07688974125972),
         abs=2.0e-12,
+    )
+
+
+@pytest.mark.parametrize(
+    ("component_ids", "formula_stoichiometry", "expected_fugacity"),
+    (
+        (
+            ("water", "sodium-cation", "chloride-anion"),
+            (1, 1),
+            (-154.0679654864907, -127.07688974125972),
+        ),
+        (
+            ("water", "vanadyl-cation", "sulfate-anion"),
+            (1, 1),
+            (-764.3223147448763, -428.621875065341),
+        ),
+        (
+            ("water", "vanadium-iii-cation", "chloride-anion"),
+            (1, 3),
+            (-1695.2481418518055, -127.07688884960587),
+        ),
+    ),
+)
+def test_complete_figiel_reference_supports_univalent_and_multivalent_formula_units(
+    component_ids: tuple[str, str, str],
+    formula_stoichiometry: tuple[int, int],
+    expected_fugacity: tuple[float, float],
+) -> None:
+    reference = _complete_figiel_model(*component_ids).reference(
+        T=298.15 * unit_registry.kelvin,
+        P=1.0 * unit_registry.bar,
+        solvent_x=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+
+    assert reference.formula_stoichiometry == formula_stoichiometry
+    assert reference.convergence_error <= 5.0e-5
+    assert reference.infinite_dilution_log_fugacity_coefficient == pytest.approx(
+        expected_fugacity,
+        abs=5.0e-12,
     )
 
 

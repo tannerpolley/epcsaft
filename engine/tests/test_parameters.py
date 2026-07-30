@@ -801,6 +801,7 @@ def test_catalog_discovery_returns_sorted_immutable_bundles() -> None:
         "crespo-2021-deea",
         "figiel-2025-aqueous-iodides",
         "figiel-2025-reference-electrolytes",
+        "figiel-yu-held-2025",
         "gross-2001-methane-ethane",
         "gross-2001-propane",
         "gross-sadowski-2001",
@@ -974,6 +975,320 @@ def test_gross_sadowski_2001_catalog_is_source_complete() -> None:
         rel=1e-13,
         abs=1e-12,
     )
+
+
+def test_figiel_yu_held_2025_catalog_is_source_complete() -> None:
+    bundle = _ParameterBundle.from_catalog("figiel-yu-held-2025", version=1)
+    expected_components = {
+        "water",
+        "methanol",
+        "ethanol",
+        "hydrogen-cation",
+        "lithium-cation",
+        "sodium-cation",
+        "potassium-cation",
+        "vanadyl-cation",
+        "vanadium-iii-cation",
+        "chloride-anion",
+        "bromide-anion",
+        "iodide-anion",
+        "sulfate-anion",
+    }
+    components = {component.component_id: component for component in bundle.components}
+    assert set(components) == expected_components
+    assert len(bundle.components) == 13
+    observed_formulas = {
+        component_id: components[component_id].formula
+        for component_id in expected_components
+    }
+    assert observed_formulas == {
+        "water": "H2O",
+        "methanol": "CH4O",
+        "ethanol": "C2H6O",
+        "hydrogen-cation": "H+",
+        "lithium-cation": "Li+",
+        "sodium-cation": "Na+",
+        "potassium-cation": "K+",
+        "vanadyl-cation": "VO2+",
+        "vanadium-iii-cation": "V3+",
+        "chloride-anion": "Cl-",
+        "bromide-anion": "Br-",
+        "iodide-anion": "I-",
+        "sulfate-anion": "SO4^2-",
+    }
+
+    singles = {
+        (record.component_id, record.family): record
+        for record in bundle.records
+        if isinstance(record, SingleParameterRecord)
+    }
+    expected_ions = {
+        "hydrogen-cation": ("3.4654", "500.00", "1.218", 1),
+        "lithium-cation": ("2.8449", "360.00", "2.784", 1),
+        "sodium-cation": ("2.8232", "230.00", "3.445", 1),
+        "potassium-cation": ("3.3417", "200.00", "4.150", 1),
+        "vanadyl-cation": ("3.4638", "1488.28", "2.930", 2),
+        "vanadium-iii-cation": ("3.1401", "1415.66", "2.940", 3),
+        "chloride-anion": ("2.7560", "170.00", "4.100", -1),
+        "bromide-anion": ("3.0707", "190.00", "4.480", -1),
+        "iodide-anion": ("3.6672", "200.00", "4.985", -1),
+        "sulfate-anion": ("2.6491", "80.00", "4.953", -2),
+    }
+    for component_id, (diameter, energy, born, charge) in expected_ions.items():
+        assert singles[(component_id, "segment_count")].value == Decimal("1")
+        assert singles[(component_id, "segment_diameter")].value.to(
+            "angstrom"
+        ).magnitude == Decimal(diameter)
+        assert singles[(component_id, "dispersion_energy_over_k")].value.to(
+            "kelvin"
+        ).magnitude == Decimal(energy)
+        assert singles[(component_id, "born_diameter")].value.to(
+            "angstrom"
+        ).magnitude == Decimal(born)
+        assert singles[(component_id, "charge_number")].value == charge
+        assert singles[(component_id, "solvation_factor")].value == Decimal("1")
+        assert all(
+            singles[(component_id, family)].source_id == "figiel-yu-held-2025"
+            for family in {
+                "segment_count",
+                "segment_diameter",
+                "dispersion_energy_over_k",
+                "born_diameter",
+                "charge_number",
+                "solvation_factor",
+            }
+        )
+
+    expected_solvents = {
+        "water": ("18.0153", "1.2047", "353.95", "1.5"),
+        "methanol": ("32.042", "1.5255", "188.90", "1.4"),
+        "ethanol": ("46.069", "2.3827", "198.24", "1.6"),
+    }
+    for component_id, (mass, segments, energy, solvation) in expected_solvents.items():
+        assert singles[(component_id, "molar_mass")].value.to(
+            "gram / mole"
+        ).magnitude == Decimal(mass)
+        assert singles[(component_id, "segment_count")].value == Decimal(segments)
+        assert singles[(component_id, "dispersion_energy_over_k")].value.to(
+            "kelvin"
+        ).magnitude == Decimal(energy)
+        assert singles[(component_id, "charge_number")].value == 0
+        assert singles[(component_id, "solvation_factor")].value == Decimal(solvation)
+
+    pair_records = {
+        frozenset((record.component_id_a, record.component_id_b)): record
+        for record in bundle.records
+        if isinstance(record, PairParameterRecord)
+    }
+    pairs = {key: record.value for key, record in pair_records.items()}
+    assert pairs == {
+        frozenset(("hydrogen-cation", "chloride-anion")): Decimal("-0.9"),
+        frozenset(("lithium-cation", "chloride-anion")): Decimal("0.8"),
+        frozenset(("sodium-cation", "chloride-anion")): Decimal("0.8"),
+        frozenset(("potassium-cation", "chloride-anion")): Decimal("0"),
+        frozenset(("vanadium-iii-cation", "chloride-anion")): Decimal("1"),
+        frozenset(("hydrogen-cation", "bromide-anion")): Decimal("-0.7"),
+        frozenset(("lithium-cation", "bromide-anion")): Decimal("0.5"),
+        frozenset(("sodium-cation", "bromide-anion")): Decimal("0.65"),
+        frozenset(("potassium-cation", "bromide-anion")): Decimal("-0.35"),
+        frozenset(("sodium-cation", "iodide-anion")): Decimal("0.45"),
+        frozenset(("potassium-cation", "iodide-anion")): Decimal("0"),
+        frozenset(("lithium-cation", "sulfate-anion")): Decimal("0.8"),
+        frozenset(("sodium-cation", "sulfate-anion")): Decimal("0.7"),
+        frozenset(("potassium-cation", "sulfate-anion")): Decimal("-0.6"),
+        frozenset(("vanadyl-cation", "sulfate-anion")): Decimal("0"),
+        frozenset(("water", "chloride-anion")): Decimal("-0.3"),
+        frozenset(("methanol", "chloride-anion")): Decimal("0.5"),
+        frozenset(("ethanol", "chloride-anion")): Decimal("0.8"),
+        frozenset(("water", "bromide-anion")): Decimal("-0.3"),
+        frozenset(("methanol", "bromide-anion")): Decimal("0.15"),
+        frozenset(("ethanol", "bromide-anion")): Decimal("0"),
+        frozenset(("water", "iodide-anion")): Decimal("-0.05"),
+        frozenset(("methanol", "iodide-anion")): Decimal("0.37"),
+        frozenset(("ethanol", "iodide-anion")): Decimal("0.18"),
+        frozenset(("water", "sulfate-anion")): Decimal("-0.1"),
+        frozenset(("water", "hydrogen-cation")): Decimal("0"),
+        frozenset(("methanol", "hydrogen-cation")): Decimal("-0.3"),
+        frozenset(("ethanol", "hydrogen-cation")): Decimal("-0.6"),
+        frozenset(("water", "lithium-cation")): Decimal("-0.4"),
+        frozenset(("methanol", "lithium-cation")): Decimal("-0.9"),
+        frozenset(("ethanol", "lithium-cation")): Decimal("-0.8"),
+        frozenset(("water", "sodium-cation")): Decimal("-0.3"),
+        frozenset(("methanol", "sodium-cation")): Decimal("-0.25"),
+        frozenset(("ethanol", "sodium-cation")): Decimal("0.05"),
+        frozenset(("water", "potassium-cation")): Decimal("-0.1"),
+        frozenset(("methanol", "potassium-cation")): Decimal("0.32"),
+        frozenset(("ethanol", "potassium-cation")): Decimal("0.53"),
+        frozenset(("water", "vanadyl-cation")): Decimal("-0.08"),
+        frozenset(("water", "vanadium-iii-cation")): Decimal("-0.3"),
+        frozenset(("water", "methanol")): Decimal("-0.0878"),
+        frozenset(("water", "ethanol")): Decimal("-0.0617"),
+    }
+    assert len(pairs) == 41
+    assert all(record.source_id == "figiel-yu-held-2025" for record in pair_records.values())
+    assert all(
+        record.locator.startswith(("Table 4,", "Table 5,"))
+        for record in pair_records.values()
+    )
+    for blank_pair in (
+        ("hydrogen-cation", "iodide-anion"),
+        ("vanadyl-cation", "chloride-anion"),
+        ("vanadium-iii-cation", "sulfate-anion"),
+        ("methanol", "sulfate-anion"),
+    ):
+        assert frozenset(blank_pair) not in pairs
+
+    associations = {
+        (
+            record.component_id_a,
+            record.site_id_a,
+            record.component_id_b,
+            record.site_id_b,
+            record.family,
+        ): record.value
+        for record in bundle.records
+        if isinstance(record, AssociationParameterRecord)
+    }
+    assert len(associations) == 18
+    assert associations[
+        ("methanol", "b", "water", "a", "association_energy_over_k")
+    ].to("kelvin").magnitude == Decimal("2662.6")
+    assert associations[
+        ("ethanol", "b", "methanol", "a", "association_volume")
+    ] == Decimal("0.03374752517428578")
+    association_records = [
+        record
+        for record in bundle.records
+        if isinstance(record, AssociationParameterRecord)
+    ]
+    assert sum(record.source_id == "figiel-yu-held-2025" for record in association_records) == 6
+    assert sum(record.source_id == "gross-sadowski-2002" for record in association_records) == 12
+
+    correlations = {
+        (record.component_id, record.family): record
+        for record in bundle.records
+        if isinstance(
+            record,
+            (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation),
+        )
+    }
+    assert set(correlations) == {
+        (component_id, family)
+        for component_id in ("water", "methanol", "ethanol")
+        for family in ("segment_diameter", "relative_permittivity")
+    }
+    assert correlations[("methanol", "segment_diameter")].constant.to(
+        "angstrom"
+    ).magnitude == Decimal("3.2300")
+    assert correlations[("ethanol", "segment_diameter")].constant.to(
+        "angstrom"
+    ).magnitude == Decimal("3.1771")
+    assert correlations[("water", "relative_permittivity")].constant == Decimal(
+        "78.09"
+    )
+    assert correlations[("methanol", "relative_permittivity")].constant == Decimal(
+        "33.05"
+    )
+    assert correlations[("ethanol", "relative_permittivity")].constant == Decimal(
+        "24.88"
+    )
+    water_sigma = correlations[("water", "segment_diameter")]
+    assert isinstance(water_sigma, ConstantPlusSumOfExponentialsCorrelation)
+    assert water_sigma.constant.to("angstrom").magnitude == Decimal("2.7927")
+    assert tuple(
+        (
+            term.amplitude.to("angstrom").magnitude,
+            term.exponent_coefficient.to("1 / kelvin").magnitude,
+        )
+        for term in water_sigma.terms
+    ) == (
+        (Decimal("10.11"), Decimal("-0.01775")),
+        (Decimal("-1.417"), Decimal("-0.01146")),
+    )
+
+    models = {
+        record.family: record.value
+        for record in bundle.records
+        if isinstance(record, ModelParameterRecord)
+    }
+    assert models == {
+        "ionic_region_relative_permittivity": Decimal("8"),
+        "ion_fraction_suppression_coefficient": Decimal("7.01"),
+        "relative_permittivity_formulation": "ion-fraction-suppression",
+    }
+
+    domain = next(domain for domain in bundle.domains if domain.domain_id == "figiel-298-k-1-bar")
+    assert domain.temperature_min.to("kelvin").magnitude == Decimal("298.15")
+    assert domain.temperature_max.to("kelvin").magnitude == Decimal("298.15")
+    assert domain.pressure_min.to("bar").magnitude == Decimal("1")
+    assert domain.pressure_max.to("bar").magnitude == Decimal("1")
+    assert domain.ion_mole_fraction_max == Decimal("0.38")
+    assert {source.source_id: source.doi for source in bundle.sources}[
+        "figiel-yu-held-2025"
+    ] == "10.1021/acs.iecr.5c00475"
+    sources = {source.source_id: source for source in bundle.sources}
+    assert (
+        "a3c940895c530f72f47f22f8c0f4796b5ad37918a4edd274f85497c6dd81ad1f"
+        in sources["figiel-yu-held-2025"].use_basis
+    )
+    assert (
+        "005b38ed566ec3c09b87e1ca3a9dd6eeafc9ba75e1a30b9322291d770bb93895"
+        in sources["figiel-yu-held-2025"].use_basis
+    )
+    assert sources["gross-sadowski-2002"].doi == "10.1021/ie010954d"
+    assert bundle.fingerprint == (
+        "sha256:0c5f7b2ddeae9ca25357f269e1a2b135ace74eae7eb28c1c262fa1419ca487a6"
+    )
+
+    selections = {
+        ("water", "sodium-cation", "chloride-anion"): (
+            "sha256:10279776fc2a7515bbb79404a2da7356994e11861ef28a55d67abb00509408e3",
+            (0.90, 0.05, 0.05),
+        ),
+        ("water", "vanadyl-cation", "sulfate-anion"): (
+            "sha256:56a36f633eb5b47cd188eae864e16c26352b12fe28b5ddf2540e065195bd89ec",
+            (0.96, 0.02, 0.02),
+        ),
+        ("water", "vanadium-iii-cation", "chloride-anion"): (
+            "sha256:47f73ac9ec45616269024ec2fb1ffe82f4ba8f7b83dc984612651917d410aad6",
+            (0.96, 0.01, 0.03),
+        ),
+    }
+    for component_ids, (fingerprint, mole_fractions) in selections.items():
+        parameters = bundle.select(component_ids)
+        assert parameters.fingerprint == fingerprint
+        state = epcsaft.Mixture(parameters).state(
+            T=298.15 * unit_registry.kelvin,
+            P=1 * unit_registry.bar,
+            x=mole_fractions,
+            phase="liquid",
+        )
+        assert state.ares().check("[energy] / [substance]")
+
+    forward = epcsaft.Mixture(
+        bundle.select(("water", "vanadium-iii-cation", "chloride-anion"))
+    ).state(
+        T=298.15 * unit_registry.kelvin,
+        rho=1000 * unit_registry.mole / unit_registry.meter**3,
+        x=(0.96, 0.01, 0.03),
+    )
+    reverse = epcsaft.Mixture(
+        bundle.select(("chloride-anion", "vanadium-iii-cation", "water"))
+    ).state(
+        T=298.15 * unit_registry.kelvin,
+        rho=1000 * unit_registry.mole / unit_registry.meter**3,
+        x=(0.03, 0.01, 0.96),
+    )
+    assert forward.ares().to("joule / mole").magnitude == pytest.approx(
+        reverse.ares().to("joule / mole").magnitude,
+        rel=1e-13,
+        abs=1e-12,
+    )
+    with pytest.raises(ParameterError) as exc_info:
+        epcsaft.Mixture(
+            bundle.select(("water", "hydrogen-cation", "iodide-anion"))
+        )
+    assert exc_info.value.code == "missing-record"
 
 
 def test_catalog_loading_rejects_a_non_catalog_bundle(tmp_path: Path) -> None:
@@ -1183,6 +1498,14 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
         "figiel-2025-reference-electrolytes/1/pair.csv",
         "figiel-2025-reference-electrolytes/1/single.csv",
         "figiel-2025-reference-electrolytes/1/sites.csv",
+        "figiel-yu-held-2025/1/association.csv",
+        "figiel-yu-held-2025/1/bundle.toml",
+        "figiel-yu-held-2025/1/components.csv",
+        "figiel-yu-held-2025/1/correlations.toml",
+        "figiel-yu-held-2025/1/model.csv",
+        "figiel-yu-held-2025/1/pair.csv",
+        "figiel-yu-held-2025/1/single.csv",
+        "figiel-yu-held-2025/1/sites.csv",
         "gross-2001-methane-ethane/1/bundle.toml",
         "gross-2001-methane-ethane/1/components.csv",
         "gross-2001-methane-ethane/1/model.csv",

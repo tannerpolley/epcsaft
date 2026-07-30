@@ -200,11 +200,12 @@ cross-association combining equation. Every allowed site pair therefore has
 both an energy and volume record; an omitted unlike-site pair is inactive,
 not inferred. String schemes and inferred donor/acceptor pairs are forbidden.
 
-The bounded 298.15 K water--ethanol selection stores both donor--acceptor
-cross pairs explicitly. Their energy and volume values are evaluated once
-from the Gross2002 cross-association equations using the Figiel2025 Table 2
-pure-solvent records and `k_hb = 0`. The runtime still performs no implicit
-combining or default insertion.
+The source-complete bounded 298.15 K Figiel2025 bundle stores both
+donor--acceptor cross directions explicitly for water--methanol,
+water--ethanol, and methanol--ethanol. Their energy and volume values are
+evaluated once from the Gross2002 cross-association equations using the
+Figiel2025 Table 2 pure-solvent records and no binary correction parameter.
+The runtime still performs no implicit combining or default insertion.
 
 The Ascani2022 water--1-butanol selection likewise stores both cross directions
 explicitly. Their energy is the SI Eq. S6 arithmetic mean multiplied by

@@ -68,12 +68,14 @@ Python interface is marked with `py.typed` and exposes literal types for
 phases, purposes, domains, and parameter families; runtime validation remains
 the scientific authority. No compatibility aliases are retained.
 The installed catalogs are Crespo et al. neutral 2B DEEA records, the
-source-complete 78-species Gross--Sadowski 2001 bundle, the bounded
-Figiel--Yu--Held water/methanol/ethanol chloride/bromide source bundle, a
-distinct aqueous Na+/K+/I- source bundle, and one distinct Ascani et al.
-original-Born water/1-butanol/Na+/K+/Cl- bundle at 298.15 K. The old
-Gross--Sadowski methane/ethane and propane IDs remain only until the governed
-catalog cutover removes them without aliases. One reference-state module owns x-process
+source-complete 78-species Gross--Sadowski 2001 bundle, and the source-complete
+13-species Figiel--Yu--Held 2025 corrected-Born bundle containing every
+reported water, methanol, ethanol, H+, Li+, Na+, K+, VO2+, V3+, Cl-, Br-, I-,
+and SO4(2-) parameter from Tables 1--5. Distinct narrower Figiel chloride/
+bromide and aqueous-iodide IDs, and one Ascani et al. original-Born
+water/1-butanol/Na+/K+/Cl- bundle at 298.15 K remain during the governed
+transition. The old Gross--Sadowski and narrower Figiel IDs remain only until
+the governed catalog cutover removes them without aliases. One reference-state module owns x-process
 infinite-dilution solvation and transfer plus single-ion and stoichiometric mean
 ionic activity on one explicit electroneutral formula-unit path. Its aqueous
 single-solvent result also reports the practical molal osmotic coefficient
