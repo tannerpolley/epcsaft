@@ -42,4 +42,11 @@ if repo_root not in module_root.parents:
     raise SystemExit(f"epcsaft is not installed from this worktree: {module_root}")
 if metadata.version("epcsaft") != "0.2.0.dev0":
     raise SystemExit(f"unexpected epcsaft version: {metadata.version('epcsaft')}")
+
+for forbidden in ("epcsaft-equilibrium", "epcsaft-regression"):
+    try:
+        metadata.distribution(forbidden)
+    except metadata.PackageNotFoundError:
+        continue
+    raise SystemExit(f"forbidden sibling distribution is installed: {forbidden}")
 PY

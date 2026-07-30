@@ -10,14 +10,17 @@ reproducible thermodynamic results.
 Canonical doctrine:
 `../ePC-SAFT-management/GOVERNANCE.md`. During the local checkout transition,
 `../ePC-SAFT-organization/GOVERNANCE.md` is the accepted Management alias.
+The local Management manifest is
+`../ePC-SAFT-organization/manifests/management.json` during that transition.
 
 EOS owns both its package evidence and execution of assigned installed-
 artifact campaigns in the sibling Validation repository. The task remains based
 here; Validation remains the durable black-box evidence home and has no resident
 worker. Management serializes exact campaign subjects and dispatches a separate
-reviewer only when required. EOS accesses Validation through Validation's
-target-owned `.worktrees/eos-access` checkout. This execution model does not
-change scientific admission or runtime authority.
+reviewer only when required. EOS accesses Validation through a target-owned
+worktree created on demand for the assigned campaign; its task-specific path
+and branch remain owned by Validation. This execution model does not change
+scientific admission or runtime authority.
 
 The accepted EOS contains one typed parameter lifecycle and one scalar-
 generic residual Helmholtz kernel for hard-chain, dispersion, association,

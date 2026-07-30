@@ -4,9 +4,8 @@ Repository Profile: scientific-computing
 
 Before work, read doctrine revision 5 at
 `../ePC-SAFT-management/GOVERNANCE.md` and its machine-readable topology at
-`../ePC-SAFT-management/manifests/management.json`. During the local path
-transition, `../ePC-SAFT-organization/` is the accepted Management checkout
-alias. Published doctrine lives at
+`../ePC-SAFT-management/manifests/management.json`. During the local checkout
+transition, resolve both files from `../ePC-SAFT-organization/`. Published doctrine lives at
 `https://github.com/ePC-SAFT/ePC-SAFT-management/blob/main/GOVERNANCE.md`.
 Local policy may narrow that doctrine but must not contradict it.
 
@@ -45,8 +44,8 @@ trees.
   implementation, parameters, EOS/state/property behavior, derivatives,
   density closure, and the native SDK.
 - Management may assign this task a bounded campaign in the sibling Validation
-  repository through Validation's target-owned `.worktrees/eos-access`
-  checkout.
+  repository through a target-owned Validation worktree created on demand under
+  Validation's `.worktrees/` directory for a task-specific branch and path.
 - Validation work must use exact immutable installed public artifacts. It must
   not import this source checkout, use private seams, copy EOS equations, or
   add production implementation to Validation.
