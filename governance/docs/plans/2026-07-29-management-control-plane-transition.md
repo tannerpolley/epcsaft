@@ -51,8 +51,8 @@ control logic.
    - parameter-bundle ownership.
 6. One preflight command validates those records against local Git state and
    immutable artifact bytes.
-7. Persistent worktrees are target-owned access slots; feature worktrees are
-   temporary and carry an explicit lifecycle state.
+7. Worktrees are target-owned, created on demand, and retired after merge or
+   recorded preservation; no persistent access slots remain.
 8. Historical or blocked drafts remain reachable and are never confused with
    accepted evidence.
 9. The former Migration repository has a terminal retirement commit, its open
@@ -78,20 +78,12 @@ Lab         -> Lab only
 Access means permission to create a task branch in a target-owned worktree. It
 does not transfer runtime or evidence ownership.
 
-## Persistent target-owned worktrees
+## Target-owned worktrees
 
-```text
-ePC-SAFT-eos/.worktrees/equilibrium-access
-ePC-SAFT-eos/.worktrees/regression-access
-ePC-SAFT-equilibrium/.worktrees/regression-access
-ePC-SAFT-regression/.worktrees/equilibrium-access
-ePC-SAFT-validation/.worktrees/eos-access
-ePC-SAFT-validation/.worktrees/equilibrium-access
-ePC-SAFT-validation/.worktrees/regression-access
-```
-
-Management work uses an ordinary feature worktree in the target repository.
-Validation has no outbound slot and no resident agent.
+Management and authorized package tasks create an ordinary feature worktree in
+the target repository only when work begins. The worktree is removed after its
+branch merges or after uncommitted evidence is captured in a manifest-backed
+retirement bundle. Validation has no outbound access and no resident agent.
 
 ## Artifact and environment contract
 

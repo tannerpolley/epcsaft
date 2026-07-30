@@ -32,15 +32,13 @@ def test_validation_cannot_gain_outbound_access() -> None:
     )
 
 
-def test_persistent_worktrees_are_target_owned_access_slots() -> None:
+def test_worktrees_are_ephemeral_and_have_no_persistent_slots() -> None:
     config = json.loads(
         (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
     )
-    assert all(
-        item["relative_path"].startswith(".worktrees/")
-        and item["relative_path"].endswith("-access")
-        for item in config["persistent_worktrees"]
-    )
+    assert config["persistent_worktrees"] == []
+    assert config["worktree_policy"]["lifecycle"] == "ephemeral"
+    assert config["worktree_policy"]["persistent_slots"] is False
 
 
 def test_every_active_repository_declares_a_codex_environment() -> None:

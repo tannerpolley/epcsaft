@@ -14,7 +14,13 @@ platform = "linux"
 [[actions]]
 name = "Check"
 icon = "test"
-command = ".venv/bin/python tools/management_preflight.py check"
+command = ".venv/bin/python tools/management_preflight.py check && .venv/bin/python tools/artifact_store.py check"
+platform = "linux"
+
+[[actions]]
+name = "Normalize artifacts"
+icon = "refresh"
+command = ".venv/bin/python tools/artifact_store.py normalize"
 platform = "linux"
 
 [[actions]]

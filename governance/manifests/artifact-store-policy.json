@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "store_directory": "artifacts",
+  "index": "index.json",
+  "object_directory": "objects/sha256",
+  "allowed_retention": [
+    "current",
+    "accepted-receipt-bound",
+    "failed-or-non-admission-evidence",
+    "stable-non-production",
+    "superseded-replay",
+    "retained-evidence"
+  ],
+  "current_subjects": {
+    "eos-python-frontend-v0.2": "48f3a75c9fc16ba71616aa703b526f41c2dcf89a7e00eebe23f75fcb8fa24594",
+    "eos-deea-ordinary-sigma-sdk-v1": "ceffbec2d8975fe105461f0af4fb6601a4e2e1b65fd2f6cbf47a877edfef99cb",
+    "equilibrium-python-frontend-v0.2": "040bc759e52b4be2e707f1da5da4271c517418f1f0ca62401f0e1ef3292b8a99",
+    "regression-python-frontend-v0.2": "c03dc63304c228df0f9f0e288e5fae3b744ca3e1486089b94b3c8a52e8dd8b38"
+  },
+  "rules": {
+    "mutable_repository_dist_wheels": "forbidden",
+    "cross_repository_install": "object-path-and-sha256-only",
+    "unknown_alias": "fail-check",
+    "unknown_retention": "fail-check",
+    "object_mutation": "forbidden",
+    "legacy_alias_removal": "requires-recorded-disposition"
+  }
+}
