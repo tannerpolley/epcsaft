@@ -1,0 +1,30 @@
+record_id,component_id_a,component_id_b,family,value,unit,source_id,locator,domain_id
+methane-butane-kij,methane,butane,k_ij,0.022,,gross-sadowski-2001,"Table 4, methane-butane row, PC-SAFT k_ij and T range columns",table-4-methane-butane-range
+methane-pentane-kij,methane,pentane,k_ij,0.024,,gross-sadowski-2001,"Table 4, methane-pentane row, PC-SAFT k_ij and T range columns",table-4-methane-pentane-range
+methane-hexane-kij,methane,hexane,k_ij,0.021,,gross-sadowski-2001,"Table 4, methane-hexane row, PC-SAFT k_ij and T range columns",table-4-methane-hexane-range
+methane-heptane-kij,methane,heptane,k_ij,0.016,,gross-sadowski-2001,"Table 4, methane-heptane row, PC-SAFT k_ij and T range columns",table-4-methane-heptane-range
+methane-decane-kij,methane,decane,k_ij,0.056,,gross-sadowski-2001,"Table 4, methane-decane row, PC-SAFT k_ij and T range columns",table-4-methane-decane-range
+methane-isobutane-kij,methane,isobutane,k_ij,0.028,,gross-sadowski-2001,"Table 4, methane-isobutane row, PC-SAFT k_ij and T range columns",table-4-methane-isobutane-range
+methane-cyclohexane-kij,methane,cyclohexane,k_ij,0.045,,gross-sadowski-2001,"Table 4, methane-cyclohexane row, PC-SAFT k_ij and T range columns",table-4-methane-cyclohexane-range
+methane-benzene-kij,methane,benzene,k_ij,0.037,,gross-sadowski-2001,"Table 4, methane-benzene row, PC-SAFT k_ij and T range columns",table-4-methane-benzene-range
+methane-toluene-kij,methane,toluene,k_ij,0.052,,gross-sadowski-2001,"Table 4, methane-toluene row, PC-SAFT k_ij and T range columns",table-4-methane-toluene-range
+methane-m-xylene-kij,methane,m-xylene,k_ij,0.045,,gross-sadowski-2001,"Table 4, methane-m-xylene row, PC-SAFT k_ij and T range columns",table-4-methane-m-xylene-range
+methane-tetralin-kij,methane,tetralin,k_ij,0.075,,gross-sadowski-2001,"Table 4, methane-tetralin row, PC-SAFT k_ij and T range columns",table-4-methane-tetralin-range
+nitrogen-ethylene-kij,nitrogen,ethylene,k_ij,0.075,,gross-sadowski-2001,"Table 4, nitrogen-ethylene row, PC-SAFT k_ij and T range columns",table-4-nitrogen-ethylene-range
+nitrogen-hexane-kij,nitrogen,hexane,k_ij,0.119,,gross-sadowski-2001,"Table 4, nitrogen-hexane row, PC-SAFT k_ij and T range columns",table-4-nitrogen-hexane-range
+ethylene-heptane-kij,ethylene,heptane,k_ij,0.018,,gross-sadowski-2001,"Table 4, ethylene-heptane row, PC-SAFT k_ij and T range columns",table-4-ethylene-heptane-range
+ethylene-propylene-kij,ethylene,propylene,k_ij,-0.001,,gross-sadowski-2001,"Table 4, ethylene-propylene row, PC-SAFT k_ij and T range columns",table-4-ethylene-propylene-range
+propane-butane-kij,propane,butane,k_ij,0.003,,gross-sadowski-2001,"Table 4, propane-butane row, PC-SAFT k_ij and T range columns",table-4-propane-butane-range
+propylene-isobutane-kij,propylene,isobutane,k_ij,-0.006,,gross-sadowski-2001,"Table 4, propylene-isobutane row, PC-SAFT k_ij and T range columns",table-4-propylene-isobutane-range
+pentane-heptane-kij,pentane,heptane,k_ij,0.011,,gross-sadowski-2001,"Table 4, pentane-heptane row, PC-SAFT k_ij and T range columns",table-4-pentane-heptane-range
+carbon-dioxide-methane-kij,carbon-dioxide,methane,k_ij,0.065,,gross-sadowski-2001,"Table 4, carbon-dioxide-methane row, PC-SAFT k_ij and T range columns",table-4-carbon-dioxide-methane-range
+carbon-dioxide-propane-kij,carbon-dioxide,propane,k_ij,0.109,,gross-sadowski-2001,"Table 4, carbon-dioxide-propane row, PC-SAFT k_ij and T range columns",table-4-carbon-dioxide-propane-range
+carbon-dioxide-butane-kij,carbon-dioxide,butane,k_ij,0.120,,gross-sadowski-2001,"Table 4, carbon-dioxide-butane row, PC-SAFT k_ij and T range columns",table-4-carbon-dioxide-butane-range
+carbon-dioxide-pentane-kij,carbon-dioxide,pentane,k_ij,0.143,,gross-sadowski-2001,"Table 4, carbon-dioxide-pentane row, PC-SAFT k_ij and T range columns",table-4-carbon-dioxide-pentane-range
+carbon-dioxide-heptane-kij,carbon-dioxide,heptane,k_ij,0.129,,gross-sadowski-2001,"Table 4, carbon-dioxide-heptane row, PC-SAFT k_ij and T range columns",table-4-carbon-dioxide-heptane-range
+carbon-dioxide-methylcyclohexane-kij,carbon-dioxide,methylcyclohexane,k_ij,0.144,,gross-sadowski-2001,"Table 4, carbon-dioxide-methylcyclohexane row, PC-SAFT k_ij and T range columns",table-4-carbon-dioxide-methylcyclohexane-range
+methane-ethane-kij,methane,ethane,k_ij,0,,gross-sadowski-2001,"p. 1254, paragraph beginning ""Results for a ternary system of CO2-methane-ethane"", statement ""one can safely assume a kij equal to 0""",gross-pair-unknown
+carbon-dioxide-ethane-kij,carbon-dioxide,ethane,k_ij,0.095,,gross-sadowski-2001,"p. 1254, CO2-methane-ethane ternary-system paragraph, fitted at 250 and 270 K",carbon-dioxide-ethane-250-270-k
+carbon-dioxide-decane-kij,carbon-dioxide,decane,k_ij,0.128,,gross-sadowski-2001,"Figure 12 caption, PC-SAFT k_ij for n-decane-CO2",gross-pair-unknown
+carbon-dioxide-cyclohexane-kij,carbon-dioxide,cyclohexane,k_ij,0.13,,gross-sadowski-2001,"Figure 13 caption, PC-SAFT k_ij for cyclohexane-CO2",gross-pair-unknown
+1-chlorobutane-hexane-kij,1-chlorobutane,hexane,k_ij,0.017,,gross-sadowski-2001,"Figure 15 caption, PC-SAFT k_ij fitted to the 0.944 bar vapor-liquid isobar",chlorobutane-hexane-0-944-bar

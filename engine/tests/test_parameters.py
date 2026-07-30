@@ -43,6 +43,87 @@ MODEL_COLUMNS = (
     "domain_id",
 )
 
+GROSS_SADOWSKI_2001_TABLE_2 = """\
+methane|methane|16.043|1.0000|3.7039|150.03|97|300
+ethane|ethane|30.07|1.6069|3.5206|191.42|90|305
+propane|propane|44.096|2.0020|3.6184|208.11|85|523
+butane|butane|58.123|2.3316|3.7086|222.88|135|573
+pentane|pentane|72.146|2.6896|3.7729|231.20|143|469
+hexane|hexane|86.177|3.0576|3.7983|236.77|177|503
+heptane|heptane|100.203|3.4831|3.8049|238.40|182|623
+octane|octane|114.231|3.8176|3.8373|242.78|216|569
+nonane|nonane|128.25|4.2079|3.8448|244.51|219|595
+decane|decane|142.285|4.6627|3.8384|243.87|243|617
+undecane|undecane|156.312|4.9082|3.8893|248.82|247|639
+dodecane|dodecane|170.338|5.3060|3.8959|249.21|263|658
+tridecane|tridecane|184.365|5.6877|3.9143|249.78|267|675
+tetradecane|tetradecane|198.392|5.9002|3.9396|254.21|279|693
+pentadecane|pentadecane|212.419|6.2855|3.9531|254.14|283|708
+hexadecane|hexadecane|226.446|6.6485|3.9552|254.70|291|723
+heptadecane|heptadecane|240.473|6.9809|3.9675|255.65|295|736
+octadecane|octadecane|254.5|7.3271|3.9668|256.20|301|747
+nonadecane|nonadecane|268.527|7.7175|3.9721|256.00|305|758
+eicosane|eicosane|282.553|7.9849|3.9869|257.75|309|775
+isobutane|isobutane|58.123|2.2616|3.7574|216.53|113|407
+isopentane|isopentane|72.15|2.5620|3.8296|230.75|113|460
+neopentane|neopentane|72.15|2.3543|3.9550|225.69|256|433
+2-methylpentane|2-methylpentane|86.177|2.9317|3.8535|235.58|119|498
+2-2-dimethylbutane|2,2-dimethylbutane|86.177|2.6008|4.0042|243.51|174|488
+2-3-dimethylbutane|2,3-dimethylbutane|86.177|2.6853|3.9545|246.07|145|500
+3-methylpentane|3-methylpentane|86.177|2.8852|3.8605|240.48|110|504
+2-methylhexane|2-methylhexane|100.204|3.3478|3.8612|237.42|154|530
+cyclopentane|cyclopentane|70.13|2.3655|3.7114|265.83|193|503
+cyclohexane|cyclohexane|84.147|2.5303|3.8499|278.11|279|553
+methylcyclopentane|methylcyclopentane|84.156|2.6130|3.8253|265.12|183|532
+methylcyclohexane|methylcyclohexane|98.182|2.6637|3.9993|282.33|203|572
+ethylcyclopentane|ethylcyclopentane|98.182|2.9062|3.8873|270.50|134|569
+ethylcyclohexane|ethylcyclohexane|112.215|2.8256|4.1039|294.04|263|609
+ethylene|ethylene|28.05|1.5930|3.4450|176.47|104|400
+propylene|propylene|42.081|1.9597|3.5356|207.19|87|364
+1-butene|1-butene|56.107|2.2864|3.6431|222.00|87|419
+1-pentene|1-pentene|70.134|2.6006|3.7399|231.99|108|464
+1-hexene|1-hexene|84.616|2.9853|3.7753|236.81|133|504
+1-octene|1-octene|112.215|3.7424|3.8133|243.02|171|567
+cyclopentene|cyclopentene|68.114|2.2934|3.6668|267.76|223|393
+benzene|benzene|78.114|2.4653|3.6478|287.35|278|562
+toluene|toluene|92.141|2.8149|3.7169|285.69|178|594
+ethylbenzene|ethylbenzene|106.167|3.0799|3.7974|287.35|178|617
+m-xylene|m-xylene|106.167|3.1861|3.7563|283.98|225|619
+o-xylene|o-xylene|106.167|3.1362|3.7600|291.05|248|630
+p-xylene|p-xylene|106.167|3.1723|3.7781|283.77|286|616
+n-propyl-benzene|n-propyl benzene|120.194|3.3438|3.8438|288.13|173|638
+tetralin|tetralin|132.205|3.3131|3.8750|325.07|237|720
+n-butylbenzene|n-butylbenzene|134.221|3.7662|3.8727|283.07|185|660
+biphenyl|biphenyl|154.211|3.8877|3.8151|327.42|342|773
+carbon-monoxide|carbon monoxide|28.01|1.3097|3.2507|92.15|80|133
+nitrogen|nitrogen|28.01|1.2053|3.3130|90.96|63|126
+argon|argon|39.948|0.9285|3.4784|122.23|84|151
+carbon-dioxide|carbon dioxide|44.01|2.0729|2.7852|169.21|216|304
+sulfur-dioxide|sulfur dioxide|64.065|2.8611|2.6826|205.35|198|431
+chlorine|chlorine|70.905|1.5514|3.3672|265.67|172|417
+carbon-disulfide|carbon disulfide|76.143|1.6919|3.6172|334.82|200|552
+methyl-chloride|methyl chloride|50.488|1.9297|3.2293|240.56|175|416
+chloroethane|chloroethane|64.514|2.2638|3.4160|245.43|134|460
+2-chloropropane|2-chloropropane|78.541|2.4151|3.6184|251.47|156|489
+1-chlorobutane|1-chlorobutane|92.568|2.8585|3.6424|258.66|150|537
+chlorobenzene|chlorobenzene|112.558|2.6485|3.7533|315.04|228|632
+bromobenzene|bromobenzene|157.01|2.6456|3.8360|334.37|242|670
+dimethyl-ether|dimethyl ether|46.069|2.3071|3.2528|211.06|200|400
+diethyl-ether|diethyl ether|74.123|2.9686|3.5147|220.09|240|467
+methyl-n-propyl-ether|methyl-n-propyl ether|74.123|3.0087|3.4569|222.73|220|476
+methyl-methanoate|methyl methanoate|60.053|2.6784|3.0875|242.63|174|487
+ethyl-methanoate|ethyl methanoate|74.079|2.8876|3.3109|246.47|193|508
+n-propyl-methanoate|n-propyl methanoate|88.106|3.2088|3.4168|246.46|270|538
+ethyl-ethanoate|ethyl ethanoate|88.106|3.5375|3.3079|230.80|189|523
+n-propyl-ethanoate|n-propyl ethanoate|102.133|3.7861|3.4227|235.76|290|549
+n-butyl-ethanoate|n-butyl ethanoate|116.16|3.9808|3.5427|242.52|199|579
+isopropyl-ethanoate|isopropyl ethanoate|102.133|3.6084|3.4818|231.91|199|532
+methyl-propanoate|methyl propanoate|88.106|3.4793|3.3142|234.96|185|530
+ethyl-propanoate|ethyl propanoate|102.133|3.8371|3.4031|232.78|199|546
+n-propyl-propanoate|n-propyl propanoate|116.16|4.1155|3.4875|235.60|220|568
+methyl-butanoate|methyl butanoate|102.133|3.6758|3.4437|240.62|187|554
+"""
+
 
 def _bundle_records(registry: UnitRegistry = unit_registry, *, reverse: bool = False):
     source = SourceRecord("source-a", "Source A", "package-test evidence")
@@ -722,10 +803,177 @@ def test_catalog_discovery_returns_sorted_immutable_bundles() -> None:
         "figiel-2025-reference-electrolytes",
         "gross-2001-methane-ethane",
         "gross-2001-propane",
+        "gross-sadowski-2001",
         "held-2008-water-self-ionization",
     }
     assert all(bundle.purpose == "installed-catalog" for bundle in catalog)
     assert all(bundle.components and bundle.domains and bundle.sources for bundle in catalog)
+
+
+def test_gross_sadowski_2001_catalog_is_source_complete() -> None:
+    bundle = _ParameterBundle.from_catalog("gross-sadowski-2001", version=1)
+    expected_table = {
+        component_id: (
+            name,
+            Decimal(molar_mass),
+            Decimal(segment_count),
+            Decimal(segment_diameter),
+            Decimal(dispersion_energy),
+            Decimal(temperature_min),
+            Decimal(temperature_max),
+        )
+        for (
+            component_id,
+            name,
+            molar_mass,
+            segment_count,
+            segment_diameter,
+            dispersion_energy,
+            temperature_min,
+            temperature_max,
+        ) in (line.split("|") for line in GROSS_SADOWSKI_2001_TABLE_2.splitlines())
+    }
+    assert len(expected_table) == 78
+    components = {component.component_id: component for component in bundle.components}
+    assert set(components) == set(expected_table)
+    assert len(bundle.components) == 78
+    singles = {
+        (record.component_id, record.family): record
+        for record in bundle.records
+        if isinstance(record, SingleParameterRecord)
+    }
+    assert set(singles) == {
+        (component_id, family)
+        for component_id in expected_table
+        for family in {
+            "molar_mass",
+            "segment_count",
+            "segment_diameter",
+            "dispersion_energy_over_k",
+        }
+    }
+    domains = {domain.domain_id: domain for domain in bundle.domains}
+    assert {domain_id for domain_id in domains if domain_id.endswith("-fit-range")} == {
+        f"{component_id}-fit-range" for component_id in expected_table
+    }
+    for component_id, (
+        name,
+        molar_mass,
+        segment_count,
+        segment_diameter,
+        dispersion_energy,
+        temperature_min,
+        temperature_max,
+    ) in expected_table.items():
+        assert components[component_id].name == name
+        expected_values = {
+            "molar_mass": (molar_mass / Decimal("1000"), "kilogram / mole"),
+            "segment_count": (segment_count, "dimensionless"),
+            "segment_diameter": (segment_diameter, "angstrom"),
+            "dispersion_energy_over_k": (dispersion_energy, "kelvin"),
+        }
+        for family, (magnitude, unit) in expected_values.items():
+            record = singles[(component_id, family)]
+            if unit == "dimensionless":
+                assert record.value == magnitude
+            else:
+                assert record.value.to(unit).magnitude == magnitude
+            assert record.source_id == "gross-sadowski-2001"
+            assert record.locator.startswith(f"Table 2, {name} row")
+            assert record.domain_id == f"{component_id}-fit-range"
+        domain = domains[f"{component_id}-fit-range"]
+        assert domain.temperature_min.to("kelvin").magnitude == temperature_min
+        assert domain.temperature_max.to("kelvin").magnitude == temperature_max
+
+    pairs = {
+        frozenset((record.component_id_a, record.component_id_b)): record.value
+        for record in bundle.records
+        if isinstance(record, PairParameterRecord)
+    }
+    assert pairs == {
+        frozenset(("methane", "butane")): Decimal("0.022"),
+        frozenset(("methane", "pentane")): Decimal("0.024"),
+        frozenset(("methane", "hexane")): Decimal("0.021"),
+        frozenset(("methane", "heptane")): Decimal("0.016"),
+        frozenset(("methane", "decane")): Decimal("0.056"),
+        frozenset(("methane", "isobutane")): Decimal("0.028"),
+        frozenset(("methane", "cyclohexane")): Decimal("0.045"),
+        frozenset(("methane", "benzene")): Decimal("0.037"),
+        frozenset(("methane", "toluene")): Decimal("0.052"),
+        frozenset(("methane", "m-xylene")): Decimal("0.045"),
+        frozenset(("methane", "tetralin")): Decimal("0.075"),
+        frozenset(("nitrogen", "ethylene")): Decimal("0.075"),
+        frozenset(("nitrogen", "hexane")): Decimal("0.119"),
+        frozenset(("ethylene", "heptane")): Decimal("0.018"),
+        frozenset(("ethylene", "propylene")): Decimal("-0.001"),
+        frozenset(("propane", "butane")): Decimal("0.003"),
+        frozenset(("propylene", "isobutane")): Decimal("-0.006"),
+        frozenset(("pentane", "heptane")): Decimal("0.011"),
+        frozenset(("carbon-dioxide", "methane")): Decimal("0.065"),
+        frozenset(("carbon-dioxide", "propane")): Decimal("0.109"),
+        frozenset(("carbon-dioxide", "butane")): Decimal("0.120"),
+        frozenset(("carbon-dioxide", "pentane")): Decimal("0.143"),
+        frozenset(("carbon-dioxide", "heptane")): Decimal("0.129"),
+        frozenset(("carbon-dioxide", "methylcyclohexane")): Decimal("0.144"),
+        frozenset(("methane", "ethane")): Decimal("0"),
+        frozenset(("carbon-dioxide", "ethane")): Decimal("0.095"),
+        frozenset(("carbon-dioxide", "decane")): Decimal("0.128"),
+        frozenset(("carbon-dioxide", "cyclohexane")): Decimal("0.13"),
+        frozenset(("1-chlorobutane", "hexane")): Decimal("0.017"),
+    }
+    assert {source.source_id: source.doi for source in bundle.sources} == {
+        "gross-sadowski-2001": "10.1021/ie0003887"
+    }
+    assert bundle.fingerprint == (
+        "sha256:c038241875a0d4c55218589b3f73453eeef927bb831bda703a9edebed7e8c19e"
+    )
+
+    pure = Parameters.from_catalog(
+        "gross-sadowski-2001",
+        components=("eicosane",),
+        version=1,
+    )
+    assert pure.fingerprint == (
+        "sha256:3d65b05330ea05fe2180a8efc7da51dc0254970325404b9c64d605135846f6cd"
+    )
+    pure_state = epcsaft.Mixture(pure).state(
+        T=400 * unit_registry.kelvin,
+        rho=100 * unit_registry.mole / unit_registry.meter**3,
+        x=(1.0,),
+    )
+    assert pure_state.ares().check("[energy] / [substance]")
+
+    forward = Parameters.from_catalog(
+        "gross-sadowski-2001",
+        components=("carbon-dioxide", "cyclohexane"),
+        version=1,
+    )
+    reverse = Parameters.from_catalog(
+        "gross-sadowski-2001",
+        components=("cyclohexane", "carbon-dioxide"),
+        version=1,
+    )
+    assert forward.fingerprint == (
+        "sha256:cc7445a5965e17091df613bf980733f6718cfa247d4ba95c6c97c8a3f1935217"
+    )
+    assert reverse.fingerprint == (
+        "sha256:2de8e86ea87c2da0e261c0fe0d51596eb98830c87d7b2801bb2de579b7e59f4c"
+    )
+    forward_state = epcsaft.Mixture(forward).state(
+        T=298.15 * unit_registry.kelvin,
+        rho=100 * unit_registry.mole / unit_registry.meter**3,
+        x=(0.4, 0.6),
+    )
+    reverse_state = epcsaft.Mixture(reverse).state(
+        T=298.15 * unit_registry.kelvin,
+        rho=100 * unit_registry.mole / unit_registry.meter**3,
+        x=(0.6, 0.4),
+    )
+    assert forward_state.ares().to("joule / mole").magnitude == pytest.approx(
+        reverse_state.ares().to("joule / mole").magnitude,
+        rel=1e-13,
+        abs=1e-12,
+    )
 
 
 def test_catalog_loading_rejects_a_non_catalog_bundle(tmp_path: Path) -> None:
@@ -907,10 +1155,10 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
     ) == [
         "ascani-2022-case-study-2-electrolyte-lle/1/association.csv",
         "ascani-2022-case-study-2-electrolyte-lle/1/bundle.toml",
-            "ascani-2022-case-study-2-electrolyte-lle/1/components.csv",
-            "ascani-2022-case-study-2-electrolyte-lle/1/correlations.toml",
-            "ascani-2022-case-study-2-electrolyte-lle/1/model.csv",
-            "ascani-2022-case-study-2-electrolyte-lle/1/pair.csv",
+        "ascani-2022-case-study-2-electrolyte-lle/1/components.csv",
+        "ascani-2022-case-study-2-electrolyte-lle/1/correlations.toml",
+        "ascani-2022-case-study-2-electrolyte-lle/1/model.csv",
+        "ascani-2022-case-study-2-electrolyte-lle/1/pair.csv",
         "ascani-2022-case-study-2-electrolyte-lle/1/single.csv",
         "ascani-2022-case-study-2-electrolyte-lle/1/sites.csv",
         "crespo-2021-deea/1/association.csv",
@@ -935,15 +1183,20 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
         "figiel-2025-reference-electrolytes/1/pair.csv",
         "figiel-2025-reference-electrolytes/1/single.csv",
         "figiel-2025-reference-electrolytes/1/sites.csv",
-            "gross-2001-methane-ethane/1/bundle.toml",
-            "gross-2001-methane-ethane/1/components.csv",
-            "gross-2001-methane-ethane/1/model.csv",
-            "gross-2001-methane-ethane/1/pair.csv",
+        "gross-2001-methane-ethane/1/bundle.toml",
+        "gross-2001-methane-ethane/1/components.csv",
+        "gross-2001-methane-ethane/1/model.csv",
+        "gross-2001-methane-ethane/1/pair.csv",
         "gross-2001-methane-ethane/1/single.csv",
-            "gross-2001-propane/1/bundle.toml",
-            "gross-2001-propane/1/components.csv",
-            "gross-2001-propane/1/model.csv",
-            "gross-2001-propane/1/single.csv",
+        "gross-2001-propane/1/bundle.toml",
+        "gross-2001-propane/1/components.csv",
+        "gross-2001-propane/1/model.csv",
+        "gross-2001-propane/1/single.csv",
+        "gross-sadowski-2001/1/bundle.toml",
+        "gross-sadowski-2001/1/components.csv",
+        "gross-sadowski-2001/1/model.csv",
+        "gross-sadowski-2001/1/pair.csv",
+        "gross-sadowski-2001/1/single.csv",
         "held-2008-water-self-ionization/1/association.csv",
         "held-2008-water-self-ionization/1/bundle.toml",
         "held-2008-water-self-ionization/1/components.csv",
@@ -1287,9 +1540,7 @@ def test_held_2008_water_self_ionization_catalog_is_exact_and_source_complete() 
         "sha256:ebb6350a0820ff88f10f6179ea75df909773d8dc871020fbf08c3fae0ec067bb"
     )
     source = next(
-        source
-        for source in bundle.sources
-        if source.source_id == "held-cameretti-sadowski-2008"
+        source for source in bundle.sources if source.source_id == "held-cameretti-sadowski-2008"
     )
     assert source.doi == "10.1016/j.fluid.2008.06.010"
     selected = ("water", "hydronium-cation", "hydroxide-anion")
