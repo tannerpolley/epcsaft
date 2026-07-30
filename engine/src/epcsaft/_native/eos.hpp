@@ -23,6 +23,8 @@ struct NativeDensityDiagnostics final {
     std::size_t iterations;
     bool stable;
     std::string branch;
+    std::size_t stable_root_count;
+    std::size_t selected_stable_root_index;
 };
 
 struct NativeResult final {
@@ -52,6 +54,7 @@ struct NativeParameterizedPurePhaseBlock;
 struct NativeAssociatingParameterizedPurePhaseBlock;
 struct NativeMixturePhaseBlock;
 struct NativePackingFractionBlock;
+struct NativeInversePackingGeometryBlock;
 
 struct NativeReferenceSequence final {
     std::array<double, 2> log_fugacity;
@@ -164,6 +167,37 @@ enum class ActivePureParameter {
     AssociationVolume,
 };
 
+enum class ActiveComponentParameter {
+    SegmentDiameter,
+    DispersionEnergyOverK,
+};
+
+struct NativeActiveParameter final {
+    ActiveComponentParameter family;
+    std::size_t component;
+    double value;
+};
+
+struct NativeFugacityDerivativeBlock final {
+    std::vector<double> log_fugacity_coefficient;
+    std::vector<double> pressure_derivative_per_pa;
+    std::vector<double> parameter_derivatives;
+    double molar_density_mol_per_m3;
+    double root_residual_pa;
+    double pressure_density_derivative_pa_m3_per_mol;
+    double density_condition_number;
+    std::string branch;
+    double bracket_lower_mol_per_m3;
+    double bracket_upper_mol_per_m3;
+    std::size_t stable_root_count;
+    std::size_t selected_stable_root_index;
+};
+
+struct NativeMolarVolumeBoundsParameterBlock final {
+    std::array<double, 2> bounds_m3_per_mol;
+    std::vector<double> parameter_derivatives_m3_per_mol;
+};
+
 class NativeModel final {
 public:
     explicit NativeModel(NativeParameters parameters);
@@ -185,6 +219,9 @@ public:
     bool supports_electrolyte_native_sdk_v1() const;
     std::size_t component_count() const;
     const std::vector<int>& charge_numbers() const;
+    bool has_temperature_independent_segment_diameter(
+        std::size_t component
+    ) const;
     const std::vector<double>& molar_masses_kg_per_mol() const;
     NativePurePhaseBlock evaluate_pure_phase(
         double temperature,
@@ -251,6 +288,13 @@ public:
         double volume,
         double ion_mole_fraction_max
     ) const;
+    NativeMixturePhaseBlock evaluate_reacting_phase_parameters(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume,
+        double ion_mole_fraction_max,
+        const std::vector<NativeActiveParameter>& active_parameters
+    ) const;
     double evaluate_electrolyte_phase_value(
         double temperature,
         const std::vector<double>& amounts,
@@ -269,6 +313,34 @@ public:
         const std::vector<double>& amounts,
         double volume,
         double ion_mole_fraction_max
+    ) const;
+    NativePackingFractionBlock evaluate_packing_fraction_parameters(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume,
+        double ion_mole_fraction_max,
+        const std::vector<NativeActiveParameter>& active_parameters
+    ) const;
+    NativeInversePackingGeometryBlock evaluate_inverse_packing_geometry(
+        double temperature,
+        const std::vector<double>& amounts,
+        double log_packing_fraction,
+        const std::vector<NativeActiveParameter>& active_parameters
+    ) const;
+    NativeMolarVolumeBoundsParameterBlock molar_volume_bounds_parameters(
+        double temperature,
+        const std::vector<double>& mole_fractions,
+        double packing_fraction_min,
+        double packing_fraction_max,
+        double ion_mole_fraction_max,
+        const std::vector<NativeActiveParameter>& active_parameters
+    ) const;
+    NativeFugacityDerivativeBlock evaluate_fugacity_derivatives(
+        double temperature,
+        double pressure,
+        const std::vector<double>& composition,
+        const std::string& phase,
+        const std::vector<NativeActiveParameter>& active_parameters
     ) const;
     std::vector<double> reference_composition(
         const std::vector<double>& solvent_fractions,

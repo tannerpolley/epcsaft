@@ -137,8 +137,13 @@ temperature, ordered normalized composition, and caller-owned packing-fraction
 interval, returning the corresponding lower and upper molar volumes in
 `m^3/mol`. The derivative tail accepts positive ordered amounts and extensive
 volume and returns packing fraction plus exact CppAD gradient/Hessian in
-`(n_1,...,n_C,V)`. Perdomo limits, constraint construction, search variables,
-initialization, and acceptance remain Equilibrium-owned.
+`(n_1,...,n_C,V)`. The append-only inverse geometry tail accepts a strict
+`log(eta)` coordinate and ordered advertised active component parameters, then
+returns positive extensive volume and its exact CppAD gradient/Hessian in
+`(n_1,...,n_C,log(eta),theta_1,...,theta_P)`. It evaluates packing geometry
+only: ion-fraction admission, phase Helmholtz evaluation, inner roots, limits,
+constraint construction, search variables, initialization, and acceptance
+remain outside this callback.
 
 Migration D-023 additionally records a local implementation candidate for one
 model-bound active-Born-diameter evaluation of the existing 298.15 K,

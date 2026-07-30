@@ -30,7 +30,15 @@ PYBIND11_MODULE(_core, module) {
             "iterations", &epcsaft::NativeDensityDiagnostics::iterations
         )
         .def_readonly("stable", &epcsaft::NativeDensityDiagnostics::stable)
-        .def_readonly("branch", &epcsaft::NativeDensityDiagnostics::branch);
+        .def_readonly("branch", &epcsaft::NativeDensityDiagnostics::branch)
+        .def_readonly(
+            "stable_root_count",
+            &epcsaft::NativeDensityDiagnostics::stable_root_count
+        )
+        .def_readonly(
+            "selected_stable_root_index",
+            &epcsaft::NativeDensityDiagnostics::selected_stable_root_index
+        );
 
     py::class_<epcsaft::NativeResult>(module, "NativeResult")
         .def_readonly("hard_chain", &epcsaft::NativeResult::hard_chain)

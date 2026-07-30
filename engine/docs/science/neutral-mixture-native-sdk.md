@@ -197,7 +197,7 @@ A further appended callback returns the same tensor on the ordinary
 `sigma_ij^3 kappa` basis. DEEA catalog evidence checks its value, pressure, and
 chemical potential against the public Provider state at the installed
 parameters, then checks the gradient and every Hessian column needed by the
-five active fit coordinates with centered differences. Capability 19,
+five active fit coordinates with centered differences. Capability 21,
 parameter family 13, and the exact seven typed coordinates identify this
 ordinary-basis tensor without a runtime basis selector.
 

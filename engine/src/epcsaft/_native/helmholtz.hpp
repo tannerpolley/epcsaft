@@ -113,14 +113,18 @@ template <typename Scalar, typename Parameters>
 std::vector<Scalar> segment_diameter(
     const Scalar& temperature,
     const Parameters& parameters,
-    const std::vector<Scalar>& sigma
+    const std::vector<Scalar>& sigma,
+    const std::vector<Scalar>* dispersion_energy_override = nullptr
 ) {
     std::vector<Scalar> diameter(sigma.size());
     for (std::size_t component = 0; component < sigma.size(); ++component) {
         diameter[component] = parameters.charge_number[component] == 0
             ? sigma[component] *
                 (Scalar(1.0) - Scalar(0.12) * scalar_exp(
-                    Scalar(-3.0 * parameters.dispersion_energy_over_k[component])
+                    Scalar(-3.0)
+                        * (dispersion_energy_override == nullptr
+                               ? Scalar(parameters.dispersion_energy_over_k[component])
+                               : (*dispersion_energy_override)[component])
                         / temperature
                 ))
             : Scalar(
@@ -211,7 +215,8 @@ HelmholtzResult<Scalar> residual_helmholtz(
     const std::vector<Scalar>& site_fraction,
     const Scalar& debye_huckel,
     const Scalar& born_ssm_ds,
-    const std::vector<Scalar>& active_aqueous_k_ij = {}
+    const std::vector<Scalar>& active_aqueous_k_ij = {},
+    const std::vector<Scalar>* dispersion_energy_override = nullptr
 ) {
     const std::size_t size = parameters.segment_count.size();
     // EqID: angstrom_number_density
@@ -325,13 +330,17 @@ HelmholtzResult<Scalar> residual_helmholtz(
             }
             // EqID: cross_dispersion_energy
             // EqID: same_sign_ionic_dispersion
+            const Scalar epsilon_i = dispersion_energy_override == nullptr
+                ? Scalar(parameters.dispersion_energy_over_k[i])
+                : (*dispersion_energy_override)[i];
+            const Scalar epsilon_j = dispersion_energy_override == nullptr
+                ? Scalar(parameters.dispersion_energy_over_k[j])
+                : (*dispersion_energy_override)[j];
             const Scalar epsilon_ij =
                 parameters.charge_number[i] * parameters.charge_number[j] > 0
                 ? Scalar(0.0)
-                : scalar_sqrt(
-                    parameters.dispersion_energy_over_k[i] *
-                    parameters.dispersion_energy_over_k[j]
-                ) * (Scalar(1.0) - k_ij);
+                : scalar_sqrt(epsilon_i * epsilon_j)
+                    * (Scalar(1.0) - k_ij);
             const Scalar weight = mole_fractions[i] * mole_fractions[j] *
                 parameters.segment_count[i] * parameters.segment_count[j] *
                 sigma_ij * sigma_ij * sigma_ij;

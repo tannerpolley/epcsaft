@@ -600,7 +600,9 @@ enum epcsaft_native_capability_v1 {
     EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATION_VOLUME_HELMHOLTZ_V1 = 16u,
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_IONIC_REGION_PERMITTIVITY_V1 = 17u,
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_PERMITTIVITY_V1 = 18u,
-    EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATING_JOINT_SIGMA_BASIS_HELMHOLTZ_V1 = 19u
+    EPCSAFT_NATIVE_CAPABILITY_REACTING_COMPONENT_DIAMETER_HELMHOLTZ_V1 = 19u,
+    EPCSAFT_NATIVE_CAPABILITY_REACTING_COMPONENT_DISPERSION_HELMHOLTZ_V1 = 20u,
+    EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATING_JOINT_SIGMA_BASIS_HELMHOLTZ_V1 = 21u
 };
 
 enum epcsaft_native_parameter_family_v1 {
@@ -639,7 +641,8 @@ enum epcsaft_native_model_domain_v1 {
     EPCSAFT_NATIVE_MODEL_DOMAIN_AQUEOUS_NABR_V1 = 4u,
     EPCSAFT_NATIVE_MODEL_DOMAIN_ION_FRACTION_SUPPRESSION_V1 = 5u,
     EPCSAFT_NATIVE_MODEL_DOMAIN_ORGANIC_SINGLE_ION_SOLVATION_V1 = 6u,
-    EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_PURE_V1 = 7u
+    EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_PURE_V1 = 7u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_REACTING_ELECTROLYTE_PHASE_V1 = 8u
 };
 
 enum epcsaft_native_tensor_layout_v1 {
@@ -732,6 +735,169 @@ typedef int (*epcsaft_evaluate_electrolyte_phase_value_v1)(
     epcsaft_electrolyte_phase_value_result_v1* result
 );
 
+/*
+ * One caller-supplied value for an immutable Provider-advertised active
+ * coordinate. The family, identity, component/pair indices, and unit must
+ * exactly match one bound capability descriptor. Unused indices are -1.
+ */
+typedef struct epcsaft_active_parameter_request_v1 {
+    uint32_t struct_size;
+    uint32_t parameter_family;
+    uint32_t parameter_identity;
+    int32_t component_index;
+    int32_t pair_component_index_a;
+    int32_t pair_component_index_b;
+    double value;
+    const char* unit;
+} epcsaft_active_parameter_request_v1;
+
+#define EPCSAFT_NATIVE_REFERENCE_BRANCH_SIZE_V1 16u
+
+/*
+ * Atomic extension of the existing neutral-reference value contract. The
+ * nested value record preserves the original v1 meaning, including its
+ * derivative_availability=NONE payload. This outer record advertises only
+ * derivatives actually written by this appended callback. Pressure
+ * derivatives are ordered by neutral-basis row. Parameter derivatives are
+ * row-major [basis_row][requested_parameter]. The result carries the
+ * immutable pressure applicability interval and selected stable-root
+ * topology shared by every reference-sequence evaluation.
+ */
+typedef struct epcsaft_neutral_reference_derivative_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    epcsaft_neutral_reference_result_v1 value;
+    size_t active_parameter_count;
+    size_t pressure_derivative_capacity;
+    size_t parameter_derivative_capacity;
+    double* pressure_derivatives_per_pa;
+    double* parameter_derivatives;
+    uint32_t derivative_availability;
+    double source_pressure_min_pa;
+    double source_pressure_max_pa;
+    double maximum_root_residual_pa;
+    double minimum_pressure_density_derivative_pa_m3_per_mol;
+    double maximum_density_condition_number;
+    double reference_derivative_convergence_error;
+    double maximum_relative_root_bracket_width;
+    double maximum_relative_root_density_step;
+    size_t stable_root_count;
+    size_t selected_stable_root_index;
+    char reference_branch[EPCSAFT_NATIVE_REFERENCE_BRANCH_SIZE_V1];
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char helmholtz_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_neutral_reference_derivative_result_v1;
+
+typedef int (*epcsaft_evaluate_neutral_reference_derivatives_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    const char* expected_topology_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    const epcsaft_active_parameter_request_v1* active_parameters,
+    size_t active_parameter_count,
+    epcsaft_neutral_reference_derivative_result_v1* result
+);
+
+/*
+ * Exact explicit-(T,n,V) reacting-phase block. State order is
+ * (n_1,...,n_C,V); parameter order is exactly the request order. The mixed
+ * block is row-major [state_coordinate][requested_parameter]. The pressure
+ * and chemical-potential parameter partials are exact projections of that
+ * same block. Packing values, state derivatives, and parameter partials use
+ * the same Provider packing geometry. The packing state Hessian is row-major
+ * [state_coordinate][state_coordinate].
+ * Molar-volume bounds use explicit caller-owned packing limits; their
+ * parameter derivatives are row-major [lower_then_upper][parameter].
+ */
+typedef struct epcsaft_reacting_phase_parameter_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    size_t state_coordinate_count;
+    size_t active_parameter_count;
+    size_t state_gradient_capacity;
+    size_t state_hessian_capacity;
+    size_t parameter_gradient_capacity;
+    size_t state_parameter_capacity;
+    size_t packing_parameter_capacity;
+    size_t molar_volume_bound_parameter_capacity;
+    size_t pressure_parameter_capacity;
+    size_t chemical_potential_parameter_capacity;
+    double* state_gradient;
+    double* state_hessian;
+    double* parameter_gradient;
+    double* state_parameter_derivatives;
+    double* packing_parameter_derivatives;
+    double* molar_volume_bound_parameter_derivatives_m3_per_mol;
+    double* pressure_parameter_derivatives_pa;
+    double* chemical_potential_parameter_derivatives_over_rt;
+    double helmholtz_over_rt_reference_amount;
+    double pressure_pa;
+    double packing_fraction;
+    double molar_volume_bounds_m3_per_mol[
+        EPCSAFT_NATIVE_MOLAR_VOLUME_BOUND_COUNT_V1
+    ];
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char helmholtz_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+    size_t packing_state_gradient_capacity;
+    size_t packing_state_hessian_capacity;
+    double* packing_state_gradient;
+    double* packing_state_hessian;
+} epcsaft_reacting_phase_parameter_result_v1;
+
+typedef int (*epcsaft_evaluate_reacting_phase_parameters_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    const char* expected_topology_fingerprint,
+    double temperature_k,
+    const double* amounts_mol,
+    size_t amount_count,
+    double volume_m3,
+    double packing_fraction_min,
+    double packing_fraction_max,
+    const epcsaft_active_parameter_request_v1* active_parameters,
+    size_t active_parameter_count,
+    epcsaft_reacting_phase_parameter_result_v1* result
+);
+
+/*
+ * Inverts the Provider packing geometry at eta=exp(log_packing_fraction).
+ * Coordinates are exactly (n_1,...,n_C,log_eta,theta_1,...,theta_P), with
+ * active parameters in request order. The full Hessian is row-major. This
+ * callback owns no phase evaluation, ion-fraction policy, or density solve.
+ */
+typedef struct epcsaft_inverse_packing_geometry_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    size_t coordinate_count;
+    size_t active_parameter_count;
+    size_t gradient_capacity;
+    size_t hessian_capacity;
+    double* gradient;
+    double* hessian;
+    double volume_m3;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_inverse_packing_geometry_result_v1;
+
+typedef int (*epcsaft_evaluate_inverse_packing_geometry_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    const char* expected_topology_fingerprint,
+    double temperature_k,
+    const double* amounts_mol,
+    size_t amount_count,
+    double log_packing_fraction,
+    const epcsaft_active_parameter_request_v1* active_parameters,
+    size_t active_parameter_count,
+    epcsaft_inverse_packing_geometry_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -793,6 +959,15 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t electrolyte_phase_value_result_size;
     epcsaft_evaluate_electrolyte_phase_value_v1
         evaluate_electrolyte_phase_value;
+    size_t neutral_reference_derivative_result_size;
+    epcsaft_evaluate_neutral_reference_derivatives_v1
+        evaluate_neutral_reference_derivatives;
+    size_t reacting_phase_parameter_result_size;
+    epcsaft_evaluate_reacting_phase_parameters_v1
+        evaluate_reacting_phase_parameters;
+    size_t inverse_packing_geometry_result_size;
+    epcsaft_evaluate_inverse_packing_geometry_v1
+        evaluate_inverse_packing_geometry;
     epcsaft_evaluate_sigma_basis_associating_pure_phase_parameters_v1
         evaluate_sigma_basis_associating_pure_phase_parameters;
 } epcsaft_native_sdk_v1;
