@@ -1,28 +1,32 @@
-# Organization Policy Repository Context
+# Management Control-Plane Context
 
-`GOVERNANCE.md` revision 4 is the canonical local ecosystem doctrine.
+`GOVERNANCE.md` revision 5 is the canonical ecosystem doctrine.
 
 `governance_source_of_truth: true`
 
-`published_to_github: true`
+`management_source_of_truth: true`
 
 `runtime_source_of_truth: false`
 
-During the active migration, `../ePC-SAFT-migration/MIGRATION.md` owns program
-sequencing and its accepted receipts record per-slice authority transfers.
-Receipts `promotion-0012-provider-full-candidate` and
-`promotion-0015-provider-native-sdk-v1` assign their provider scopes to
-`ePC-SAFT/ePC-SAFT`; `promotion-0018-equilibrium-pure-saturation-v1` assigns
-its equilibrium scope to `ePC-SAFT/ePC-SAFT-equilibrium`; and
-`promotion-0020-regression-methane-saturation-v1` assigns its regression scope
-to `ePC-SAFT/ePC-SAFT-regression`. Unpromoted work is non-production; neither
-the lab nor the legacy archive supplies fallback runtime authority.
+GitHub home: `ePC-SAFT/ePC-SAFT-management`.
+
+The public `ePC-SAFT/.github` repository is a thin organization profile and
+community-default surface. It links to Management but owns no independent
+doctrine, project state, or execution plan.
+
+Management owns current repository topology, worktree access, exact-subject
+coordination, artifact and environment inventories, parameter-bundle
+ownership, draft disposition, and external-operation receipts.
+
+`tannerpolley/ePC-SAFT-migration` is a completed historical control repository.
+Its Git history preserves legacy-to-clean-package cutover designs and receipts;
+it supplies no current authority or workflow.
 
 `ePC-SAFT/ePC-SAFT-lab` is the permanent non-production experiment and
 provenance home. The adjacent local `ePC-SAFT-legacy` container and archived
 `tannerpolley/ePC-SAFT-legacy-monorepo` preserve historical code and tracker
-state outside the authority topology.
+state outside the active authority topology.
 
-Consumer Maturity Slice 2 is migration-owned program context, not permanent
-organization policy. Exact local and remote commit identities are captured at
-each execution gate rather than frozen in this long-lived context file.
+Repository identity and Python identity are independent. The EOS GitHub
+repository is `ePC-SAFT/ePC-SAFT-eos`; its distribution and import remain
+`epcsaft`.

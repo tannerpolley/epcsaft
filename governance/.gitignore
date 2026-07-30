@@ -11,3 +11,5 @@ dist/
 *.egg-info/
 .idea/
 .vscode/
+docs/latex/builds/
+.management-state/

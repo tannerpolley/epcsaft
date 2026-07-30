@@ -2,7 +2,7 @@
 
 Status: planned; execution blocked on ecosystem quiescence
 
-Plan owner: Organization policy, with Migration controlling execution
+Plan owner: Management
 
 Created: 2026-07-29
 
@@ -12,7 +12,7 @@ Target doctrine: revision 5
 
 ## 1. Goal
 
-Coordinate one ecosystem migration that:
+Coordinate one ecosystem normalization that:
 
 - canonizes **EOS** as the repository role and removes the legacy `Provider`
   role label from every live authoritative surface;
@@ -36,7 +36,7 @@ cleanup, publication, or a GitHub rename by itself.
 
 ## 2. Success contract
 
-The migration is complete only when all of the following are true:
+The normalization is complete only when all of the following are true:
 
 1. The repository is named `ePC-SAFT/ePC-SAFT-eos`, while its distribution and
    import remain `epcsaft`.
@@ -147,7 +147,7 @@ may ship only parameterizations admitted by an explicit, reviewed allowlist of
 model-defining PC-SAFT or ePC-SAFT references. The allowlist is based on a
 source's architectural role, not merely on publication in a paper. Initial
 classification examples selected by the user are Gross and Sadowski (2001)
-and Figiel et al. (2025); the migration inventory must verify the exact records
+and Figiel et al. (2025); the Management inventory must verify the exact records
 and editions before admission.
 
 Validation owns parameter values used for:
@@ -169,10 +169,10 @@ Regression may own a transient or committed fit result while it is being
 produced and diagnosed. Durable cross-package or literature acceptance
 evidence, including the exact accepted candidate values, belongs to the
 accountable Validation campaign. Promotion to the EOS catalog requires a
-separate Organization decision that adds the source and exact records to the
+separate Management decision that adds the source and exact records to the
 model-defining allowlist; successful validation alone is insufficient.
 
-The just-landed Crespo et al. DEEA subject is preserved as an exact migration
+The just-landed Crespo et al. DEEA subject is preserved as an exact transition
 input. Its generic ordinary-`sigma^3 kappa` EOS and SDK capability remains an
 EOS responsibility, while its substance-specific DEEA catalog bundle is
 scheduled for relocation into its Validation campaign. Existing commits,
@@ -297,9 +297,9 @@ version of this plan.
 
 ## 6. Execution ownership and concurrency
 
-- Migration owns sequencing, exact-subject binding, the landing register,
+- Management owns sequencing, exact-subject binding, the landing register,
   artifact ledger, external-write gates, and state receipts.
-- Organization owns doctrine and shared policy.
+- Management owns doctrine and shared policy.
 - EOS owns its runtime, package, parameters, native SDK, headers, build
   metadata, and assigned Validation campaigns.
 - Equilibrium and Regression remain top operational agents and may work across
@@ -307,7 +307,7 @@ version of this plan.
 - Validation is an evidence home with no resident agent and no outbound
   access.
 - EOS may work in its own repository and Validation only.
-- One primary Equilibrium or Regression executor owns migration writes one
+- One primary Equilibrium or Regression executor owns coordinated writes one
   repository at a time.
 - A distinct reviewer acts only on stable commits.
 - No two writers mutate the same repository or artifact subject concurrently.
@@ -351,7 +351,7 @@ implementation.
 ### Phase 2: Governance and decisions
 
 1. Adopt Doctrine revision 5.
-2. Add Organization and Migration decisions for:
+2. Add Management decisions for:
    - EOS vocabulary and repository identity;
    - the historical evidence boundary;
    - breaking API treatment with no aliases;
@@ -365,7 +365,7 @@ implementation.
 Exit gate:
 
 - user approval binds the exact doctrine amendment;
-- Migration records the implementation and external-write gates; and
+- Management records the implementation and external-write gates; and
 - no runtime or remote change has occurred.
 
 ### Phase 3: Worktree topology
@@ -423,7 +423,7 @@ Retention classes are:
 
 Do not move or delete artifacts in this phase.
 
-### Phase 5: Live terminology and API migration
+### Phase 5: Live terminology and API normalization
 
 Prepare a reviewed symbol and path map. Expected changes include:
 
@@ -438,8 +438,8 @@ Prepare a reviewed symbol and path map. Expected changes include:
 - current package documentation;
 - active Validation documentation;
 - active Lab material;
-- Migration's living controls; and
-- Organization policy and manuscript sources.
+- Management's living controls; and
+- Management policy and manuscript sources.
 
 Prepare a parallel parameter-bundle disposition map with one row per bundle:
 
@@ -449,17 +449,17 @@ Prepare a parallel parameter-bundle disposition map with one row per bundle:
 - target EOS catalog entry or Validation campaign;
 - Regression provenance when fitted;
 - receipt and artifact references; and
-- migration action with replay test.
+- normalization action with replay test.
 
-Apply the migration in this order:
+Apply the normalization in this order:
 
-1. Organization doctrine and Migration controls;
+1. Management doctrine and controls;
 2. EOS;
 3. Equilibrium;
 4. Regression;
 5. Validation;
 6. active Lab material; and
-7. remaining Organization documentation and manuscript files.
+7. remaining Management documentation and manuscript files.
 
 Do not add aliases or dual-read compatibility.
 
@@ -565,13 +565,13 @@ Parameter-ownership verification requires:
 - no Validation parameter bundle to be imported by a production package;
 - installed-wheel tests to prove EOS functions with explicit campaign
   parameters; and
-- exact pre-migration bundle bytes and provenance to remain reachable.
+- exact pre-normalization bundle bytes and provenance to remain reachable.
 
 ### Phase 10: Independent review
 
 A reviewer distinct from the implementation writer checks:
 
-- completeness of the API and path migration;
+- completeness of the API and path normalization;
 - binary and source compatibility claims;
 - artifact and environment identity;
 - evidence preservation;
@@ -611,13 +611,13 @@ old repository name.
 
 Publish in dependency and authority order:
 
-1. Organization and Migration authority;
+1. Management authority;
 2. EOS;
 3. Equilibrium and Regression;
 4. Validation;
 5. active Lab cleanup;
-6. remaining Organization documentation; and
-7. Migration state records.
+6. remaining Management documentation; and
+7. Management state records.
 
 Only after every commit is reachable and verified:
 
