@@ -140,6 +140,25 @@ typedef int (*epcsaft_evaluate_diameter_basis_associating_pure_phase_parameters_
 );
 
 /*
+ * Ordinary PC-SAFT association convention used by the Provider EOS: the
+ * association-strength volume factor is sigma_ij^3 times kappa. The bound
+ * model must be one neutral pure 2B component with one donor and one acceptor
+ * site of unit multiplicity.
+ */
+typedef int (*epcsaft_evaluate_sigma_basis_associating_pure_phase_parameters_v1)(
+    const void* model_context,
+    double temperature_k,
+    double amount_mol,
+    double volume_m3,
+    double segment_count,
+    double segment_diameter_angstrom,
+    double dispersion_energy_over_k,
+    double association_energy_over_k,
+    double association_volume,
+    epcsaft_associating_parameterized_phase_block_result_v1* result
+);
+
+/*
  * A mixture result struct-size mismatch is return-code authoritative. The
  * callbacks return ABI_MISMATCH without writing an untrusted result layout.
  * After exact-size acceptance, failures also set result status and error.
@@ -582,7 +601,8 @@ enum epcsaft_native_capability_v1 {
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_IONIC_REGION_PERMITTIVITY_V1 = 17u,
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_PERMITTIVITY_V1 = 18u,
     EPCSAFT_NATIVE_CAPABILITY_REACTING_COMPONENT_DIAMETER_HELMHOLTZ_V1 = 19u,
-    EPCSAFT_NATIVE_CAPABILITY_REACTING_COMPONENT_DISPERSION_HELMHOLTZ_V1 = 20u
+    EPCSAFT_NATIVE_CAPABILITY_REACTING_COMPONENT_DISPERSION_HELMHOLTZ_V1 = 20u,
+    EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATING_JOINT_SIGMA_BASIS_HELMHOLTZ_V1 = 21u
 };
 
 enum epcsaft_native_parameter_family_v1 {
@@ -597,7 +617,8 @@ enum epcsaft_native_parameter_family_v1 {
     EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_ENERGY_OVER_K_V1 = 9u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_VOLUME_V1 = 10u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_IONIC_REGION_RELATIVE_PERMITTIVITY_V1 = 11u,
-    EPCSAFT_NATIVE_PARAMETER_FAMILY_RELATIVE_PERMITTIVITY_V1 = 12u
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_RELATIVE_PERMITTIVITY_V1 = 12u,
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_PURE_ASSOCIATING_JOINT_V1 = 13u
 };
 
 enum epcsaft_native_parameter_identity_v1 {
@@ -947,6 +968,8 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t inverse_packing_geometry_result_size;
     epcsaft_evaluate_inverse_packing_geometry_v1
         evaluate_inverse_packing_geometry;
+    epcsaft_evaluate_sigma_basis_associating_pure_phase_parameters_v1
+        evaluate_sigma_basis_associating_pure_phase_parameters;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

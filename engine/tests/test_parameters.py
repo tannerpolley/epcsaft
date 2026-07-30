@@ -717,6 +717,7 @@ def test_catalog_discovery_returns_sorted_immutable_bundles() -> None:
     )
     assert {bundle.bundle_id for bundle in catalog} == {
         "ascani-2022-case-study-2-electrolyte-lle",
+        "crespo-2021-deea",
         "figiel-2025-aqueous-iodides",
             "figiel-2025-reference-electrolytes",
             "gross-2001-methane-ethane",
@@ -913,6 +914,12 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
             "ascani-2022-case-study-2-electrolyte-lle/1/pair.csv",
         "ascani-2022-case-study-2-electrolyte-lle/1/single.csv",
         "ascani-2022-case-study-2-electrolyte-lle/1/sites.csv",
+        "crespo-2021-deea/1/association.csv",
+        "crespo-2021-deea/1/bundle.toml",
+        "crespo-2021-deea/1/components.csv",
+        "crespo-2021-deea/1/model.csv",
+        "crespo-2021-deea/1/single.csv",
+        "crespo-2021-deea/1/sites.csv",
         "figiel-2025-aqueous-iodides/1/association.csv",
         "figiel-2025-aqueous-iodides/1/bundle.toml",
         "figiel-2025-aqueous-iodides/1/components.csv",
@@ -956,6 +963,100 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
             "khudaida-2026-figure-2-electrolyte-lle/1/sites.csv",
             "provenance_names.toml",
         ]
+
+
+def test_crespo_2021_deea_catalog_is_exact_and_source_complete() -> None:
+    bundle = _ParameterBundle.from_catalog("crespo-2021-deea", version=1)
+    assert bundle.fingerprint == (
+        "sha256:e04e4799b7f3729e989e031feaf6e2a87c97f031bcd538d1bb09781f714ce65c"
+    )
+    assert bundle.purpose == "installed-catalog"
+    assert tuple((source.source_id, source.doi, source.use_basis) for source in bundle.sources) == (
+        (
+            "crespo-et-al-2021",
+            "10.1016/j.fluid.2021.113277",
+            (
+                "Table 3 neutral DEEA PC-SAFT parameters and 2B association topology; "
+                "kappa_HB is used in the cited PC-SAFT sigma^3*kappa association-strength "
+                "convention; c_i is excluded as the PIL volume correction"
+            ),
+        ),
+    )
+    assert tuple((domain.domain_id, domain.kind) for domain in bundle.domains) == (
+        ("crespo-deea-fit-domain-unreported", "unknown"),
+    )
+    assert tuple(
+        (component.component_id, component.name, component.aliases)
+        for component in bundle.components
+    ) == (
+        (
+            "diethylethanolamine",
+            "N,N-diethylethanolamine",
+            ("2-(diethylamino)ethanol", "DEEA"),
+        ),
+    )
+
+    parameters = epcsaft.Parameters.from_catalog(
+        "crespo-2021-deea",
+        components=("diethylethanolamine",),
+        version=1,
+    )
+    assert parameters.bundle_fingerprint == bundle.fingerprint
+    assert epcsaft.Mixture(parameters)._model.topology == "associating"
+    assert {record.record_id for record in parameters.records} == {
+        "crespo-relative-permittivity-formulation",
+        "deea-association-energy",
+        "deea-association-volume",
+        "deea-dispersion-energy",
+        "deea-molar-mass",
+        "deea-segment-count",
+        "deea-segment-diameter",
+        "deea-site-a",
+        "deea-site-b",
+    }
+    assert {
+        (record.site_id, record.site_class, record.multiplicity)
+        for record in parameters.records
+        if isinstance(record, SiteRecord)
+    } == {("a", "a", 1), ("b", "b", 1)}
+
+    singles = {
+        record.family: record
+        for record in parameters.records
+        if isinstance(record, SingleParameterRecord)
+    }
+    assert singles["molar_mass"].value.to("gram / mole").magnitude == Decimal("117.19")
+    assert singles["segment_count"].value == Decimal("3.844")
+    assert singles["segment_diameter"].value.to("angstrom").magnitude == Decimal("3.6406")
+    assert singles["dispersion_energy_over_k"].value.to("kelvin").magnitude == Decimal("248.55")
+
+    associations = {
+        record.family: record
+        for record in parameters.records
+        if isinstance(record, AssociationParameterRecord)
+    }
+    assert {
+        (
+            record.component_id_a,
+            record.site_id_a,
+            record.component_id_b,
+            record.site_id_b,
+        )
+        for record in associations.values()
+    } == {("diethylethanolamine", "a", "diethylethanolamine", "b")}
+    assert associations["association_energy_over_k"].value.to("kelvin").magnitude == Decimal(
+        "2033.2"
+    )
+    assert associations["association_volume"].value == Decimal("0.02412")
+    assert {
+        record.family: record.value
+        for record in parameters.records
+        if isinstance(record, ModelParameterRecord)
+    } == {"relative_permittivity_formulation": "none"}
+    assert all(record.source_id == "crespo-et-al-2021" for record in parameters.records)
+    assert all(
+        record.domain_id == "crespo-deea-fit-domain-unreported" for record in parameters.records
+    )
 
 
 def test_gross_2001_propane_catalog_is_exact() -> None:

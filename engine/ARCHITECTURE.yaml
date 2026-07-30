@@ -388,6 +388,14 @@ public_surface:
       derivative_order: 2
       status: local-candidate-pending-independent-review-and-promotion-receipt
     - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_sigma_basis_associating_pure_phase_parameters
+      capability: pure-associating-joint-sigma-basis-helmholtz-v1
+      association_strength_basis: sigma_ij_cubed_times_kappa
+      coordinate_order: [amount_mol, volume_m3, segment_count, segment_diameter_angstrom, dispersion_energy_over_k, association_energy_over_k, association_volume]
+      active_parameter_count: 5
+      derivative_order: 2
+      status: local-candidate-pending-independent-review-and-promotion-receipt
+    - capsule: epcsaft.native_sdk.v1
       entry: evaluate_electrolyte_phase
       coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]
       derivative_order: 2

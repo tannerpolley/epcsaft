@@ -247,6 +247,17 @@ public:
         double association_energy_over_k,
         double association_volume
     ) const;
+    NativeAssociatingParameterizedPurePhaseBlock
+    evaluate_sigma_basis_associating_pure_phase_parameters(
+        double temperature,
+        double amount,
+        double volume,
+        double segment_count,
+        double segment_diameter_angstrom,
+        double dispersion_energy_over_k,
+        double association_energy_over_k,
+        double association_volume
+    ) const;
     NativeMixturePhaseBlock evaluate_pure_phase_parameter(
         double temperature,
         double amount,

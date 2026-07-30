@@ -103,6 +103,8 @@ never renames a lone root.
 
 The installed catalog evidence is:
 
+- Crespo et al. neutral 2B PC-SAFT records for pure DEEA, with the separate
+  PIL volume correction excluded;
 - Gross--Sadowski methane/ethane and pure-propane neutral PC-SAFT records;
 - the bounded Figiel--Yu--Held water/methanol/ethanol chloride/bromide source
   bundle and a distinct aqueous Na+/K+/I- source bundle;

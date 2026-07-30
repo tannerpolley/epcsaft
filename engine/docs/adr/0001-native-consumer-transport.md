@@ -141,8 +141,12 @@ energy or association volume using the ordinary source-owned `sigma_ij^3`
 basis. A separate append-only callback returns the seven-coordinate joint
 pure-phase Hessian needed by the bounded Baygi--Pahlavanzadeh reconstruction.
 That source-model callback uses Eq. 4's temperature-dependent `d_ij^3` basis
-without changing the ordinary Provider EOS. Neither callback owns targets,
-bounds, scaling, Ceres, fitted values, or catalog persistence.
+without changing the ordinary Provider EOS. A further append-only callback
+returns the same coordinate tensor on the ordinary Gross--Sadowski
+`sigma_ij^3 kappa` basis, reusing the same CppAD and implicit-site owner. Its
+distinct capability code and seven typed coordinates prevent consumers from
+confusing the two bases. None of these callbacks owns targets, bounds, scaling,
+Ceres, fitted values, or catalog persistence.
 
 The D-024 candidate appends the full-electrolyte phase callback and two
 model-bound volume-domain callbacks. The unchanged phase callback admits exact
@@ -291,6 +295,9 @@ The provider-side evidence requires:
   against an independent numerical oracle;
 - fixed/parameterized value agreement at the source methane parameters and
   independent five-coordinate gradient and Hessian-vector checks;
+- ordinary-sigma joint 2B value, pressure, and chemical-potential parity with
+  the public DEEA Provider state plus centered checks of all five parameter
+  gradient columns and Hessian columns;
 - methane, ethane, and propane in-domain coverage; and
 - absence of provider implementation sources from the provider wheel.
 

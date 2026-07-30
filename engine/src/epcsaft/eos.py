@@ -108,6 +108,9 @@ _NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS = {
 }
 
 _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
+    "sha256:e04e4799b7f3729e989e031feaf6e2a87c97f031bcd538d1bb09781f714ce65c": frozenset(
+        {"diethylethanolamine"}
+    ),
     "sha256:ebb6350a0820ff88f10f6179ea75df909773d8dc871020fbf08c3fae0ec067bb": frozenset(
         {
             "water",

@@ -576,6 +576,12 @@ class InversePackingNativeSdkTable(ctypes.Structure):
     )
 
 
+class SigmaBasisAssociatingParameterizedNativeSdkTable(ctypes.Structure):
+    _fields_ = InversePackingNativeSdkTable._fields_ + (
+        ("evaluate_sigma_basis_associating_pure_phase_parameters", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -668,6 +674,11 @@ REACTING_SENSITIVITY_PREFIX_SIZE = (
 )
 INVERSE_PACKING_PREFIX_SIZE = (
     InversePackingNativeSdkTable.evaluate_inverse_packing_geometry.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+SIGMA_BASIS_ASSOCIATING_PARAMETERIZED_PREFIX_SIZE = (
+    SigmaBasisAssociatingParameterizedNativeSdkTable
+    .evaluate_sigma_basis_associating_pure_phase_parameters.offset
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
@@ -1272,6 +1283,23 @@ def _associating_parameterized_table(
         address, ctypes.POINTER(AssociatingParameterizedNativeSdkTable)
     ).contents
     assert table.table_size >= ASSOCIATING_PARAMETERIZED_PREFIX_SIZE
+    return capsule, table
+
+
+def _sigma_basis_associating_parameterized_table(
+    model: Mixture,
+) -> tuple[object, SigmaBasisAssociatingParameterizedNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(
+        address,
+        ctypes.POINTER(SigmaBasisAssociatingParameterizedNativeSdkTable),
+    ).contents
+    assert table.table_size >= SIGMA_BASIS_ASSOCIATING_PARAMETERIZED_PREFIX_SIZE
     return capsule, table
 
 
@@ -2019,6 +2047,26 @@ def _evaluate_associating_parameters(
     return result
 
 
+def _evaluate_sigma_basis_associating_parameters(
+    table: SigmaBasisAssociatingParameterizedNativeSdkTable,
+    temperature_k: float,
+    values: tuple[float, float, float, float, float, float, float],
+) -> AssociatingParameterizedPhaseBlockResult:
+    result = AssociatingParameterizedPhaseBlockResult(
+        struct_size=ctypes.sizeof(AssociatingParameterizedPhaseBlockResult)
+    )
+    status = EvaluateAssociatingPurePhaseParameters(
+        table.evaluate_sigma_basis_associating_pure_phase_parameters
+    )(
+        table.model_context,
+        temperature_k,
+        *values,
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result
+
+
 def _mixture_result(coordinate_count: int) -> tuple[MixturePhaseBlockResult, object, object]:
     gradient = (ctypes.c_double * coordinate_count)()
     hessian = (ctypes.c_double * (coordinate_count * coordinate_count))()
@@ -2516,7 +2564,7 @@ def test_native_sdk_describes_exact_scalar_pure_parameter_contracts() -> None:
 def test_native_sdk_describes_exact_associating_pure_parameter_contracts() -> None:
     model = _model("figiel-2025-reference-electrolytes", "ethanol")
     _, table = _capability_table(model)
-    assert table.capability_count == 2
+    assert table.capability_count == 3
     expected = (
         (15, 9, 11, "kelvin"),
         (16, 10, 12, "dimensionless"),
@@ -2555,6 +2603,49 @@ def test_native_sdk_describes_exact_associating_pure_parameter_contracts() -> No
         )
         assert coordinates[-1].component_index == -1
         assert descriptor.topology_fingerprint
+
+    joint = table.capabilities[2]
+    assert (
+        joint.schema_version,
+        joint.capability,
+        joint.parameter_family,
+        joint.parameter_identity,
+        joint.observation_contract,
+        joint.model_domain,
+        joint.tensor_layout,
+        joint.derivative_order,
+        joint.maturity,
+        joint.authority_effect,
+    ) == (1, 21, 13, 3, 1, 7, 1, 2, 1, 0)
+    assert (
+        joint.state_coordinate_count,
+        joint.active_parameter_count,
+        joint.coordinate_count,
+        joint.component_count,
+    ) == (2, 5, 7, 1)
+    joint_coordinates = tuple(
+        joint.coordinates[index] for index in range(joint.coordinate_count)
+    )
+    assert tuple(item.kind for item in joint_coordinates) == (
+        1,
+        2,
+        5,
+        6,
+        7,
+        11,
+        12,
+    )
+    assert tuple(item.unit.decode() for item in joint_coordinates) == (
+        "mol",
+        "m3",
+        "dimensionless",
+        "angstrom",
+        "kelvin",
+        "kelvin",
+        "dimensionless",
+    )
+    assert joint.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert joint.topology_fingerprint
 
 
 @pytest.mark.parametrize(
@@ -3101,7 +3192,24 @@ _Static_assert(
     offsetof(epcsaft_native_sdk_v1, evaluate_electrolyte_phase_value) == 384,
     "electrolyte-value callback offset"
 );
+_Static_assert(
+    EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATING_JOINT_SIGMA_BASIS_HELMHOLTZ_V1
+        == 21u,
+    "joint sigma-basis capability"
+);
+_Static_assert(
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_PURE_ASSOCIATING_JOINT_V1 == 13u,
+    "joint associating parameter family"
+);
+_Static_assert(
+    offsetof(
+        epcsaft_native_sdk_v1,
+        evaluate_sigma_basis_associating_pure_phase_parameters
+    ) == 440,
+    "joint sigma-basis callback offset"
+);
 _Static_assert(sizeof(epcsaft_native_sdk_v1) >= 392, "accepted table prefix size");
+_Static_assert(sizeof(epcsaft_native_sdk_v1) == 448, "final table size");
 _Static_assert(
     sizeof(epcsaft_electrolyte_phase_value_result_v1) == 248,
     "electrolyte-value result size"
@@ -3114,9 +3222,12 @@ int main(void) {
         ionic_permittivity_callback = 0;
     epcsaft_evaluate_ion_solvation_solvent_permittivity_v1
         solvent_permittivity_callback = 0;
+    epcsaft_evaluate_sigma_basis_associating_pure_phase_parameters_v1
+        sigma_basis_callback = 0;
     return callback != 0 || ion_callback != 0
         || ionic_permittivity_callback != 0
-        || solvent_permittivity_callback != 0;
+        || solvent_permittivity_callback != 0
+        || sigma_basis_callback != 0;
 }
 """
     completed = subprocess.run(
@@ -3461,6 +3572,88 @@ def test_native_sdk_joint_associating_parameters_have_exact_seven_coordinate_hes
         assert hessian_direction == pytest.approx(
             gradient_difference, rel=3.0e-5, abs=2.0e-8
         )
+
+
+def test_native_sdk_sigma_basis_joint_associating_parameters_match_public_deea_and_derivatives(
+) -> None:
+    model = _model("crespo-2021-deea", "diethylethanolamine")
+    capsule, table = _sigma_basis_associating_parameterized_table(model)
+    assert capsule is not None
+    assert table.evaluate_sigma_basis_associating_pure_phase_parameters
+
+    temperature_k = 298.15
+    density_mol_m3 = 7500.0
+    point = (
+        1.0,
+        1.0 / density_mol_m3,
+        3.844,
+        3.6406,
+        248.55,
+        2033.2,
+        0.02412,
+    )
+    center = _evaluate_sigma_basis_associating_parameters(
+        table, temperature_k, point
+    )
+    assert center.status == STATUS_OK
+    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert center.topology_fingerprint
+
+    state = model.state(
+        T=temperature_k * unit_registry.kelvin,
+        rho=density_mol_m3
+        * unit_registry.mole
+        / unit_registry.meter**3,
+        x=(1.0,),
+    )
+    expected_helmholtz = math.log(density_mol_m3) - 1.0 + state._residual_helmholtz
+    expected_chemical_potential = (
+        math.log(density_mol_m3)
+        + state.residual_chemical_potential_over_rt[0]
+    )
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected_helmholtz, rel=2.0e-12, abs=2.0e-12
+    )
+    assert center.pressure_pa == pytest.approx(
+        state.pressure.to("pascal").magnitude, rel=2.0e-11, abs=1.0e-5
+    )
+    assert center.chemical_potential_over_rt == pytest.approx(
+        expected_chemical_potential, rel=2.0e-11, abs=2.0e-11
+    )
+    diameter_basis = _evaluate_associating_parameters(
+        table, temperature_k, point
+    )
+    assert center.helmholtz_over_rt_reference_amount != pytest.approx(
+        diameter_basis.helmholtz_over_rt_reference_amount,
+        rel=1.0e-7,
+    )
+
+    parameter_steps = (2.0e-5, 2.0e-5, 2.0e-3, 2.0e-2, 2.0e-7)
+    for parameter_coordinate, step in enumerate(parameter_steps, start=2):
+        lower_point = list(point)
+        upper_point = list(point)
+        lower_point[parameter_coordinate] -= step
+        upper_point[parameter_coordinate] += step
+        lower = _evaluate_sigma_basis_associating_parameters(
+            table, temperature_k, tuple(lower_point)
+        )
+        upper = _evaluate_sigma_basis_associating_parameters(
+            table, temperature_k, tuple(upper_point)
+        )
+        value_difference = (
+            upper.helmholtz_over_rt_reference_amount
+            - lower.helmholtz_over_rt_reference_amount
+        ) / (2.0 * step)
+        assert center.gradient[parameter_coordinate] == pytest.approx(
+            value_difference, rel=3.0e-6, abs=2.0e-8
+        )
+        for row in range(7):
+            gradient_difference = (
+                upper.gradient[row] - lower.gradient[row]
+            ) / (2.0 * step)
+            assert center.hessian[row * 7 + parameter_coordinate] == pytest.approx(
+                gradient_difference, rel=6.0e-5, abs=2.0e-7
+            )
 
 
 def test_native_sdk_joint_associating_parameters_reject_nonassociating_model(
@@ -7081,7 +7274,7 @@ _Static_assert(
         offsetof(epcsaft_native_sdk_v1, evaluate_inverse_packing_geometry) == 432,
         "inverse-packing callback offset"
     );
-    _Static_assert(sizeof(epcsaft_native_sdk_v1) == 440, "extended table size");
+    _Static_assert(sizeof(epcsaft_native_sdk_v1) == 448, "extended table size");
 _Static_assert(
     EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1 == 4u,
     "typed diameter family"

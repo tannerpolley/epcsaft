@@ -56,6 +56,7 @@ of extrapolation.
 
 | Bundle ID | Version | Exact component IDs | Source evidence domain and topology limits |
 | --- | ---: | --- | --- |
+| `crespo-2021-deea` | 1 | `diethylethanolamine` | Pure neutral 2B PC-SAFT parameters fitted to liquid-density and vapor-pressure data. The source does not report a consolidated temperature or pressure fit domain. Its Table 3 `κᴴᴮ = 0.02412` is stored as the dimensionless PC-SAFT association-volume parameter multiplying `σ³`; the separate PIL volume correction `cᵢ = 7.50` is not part of this bundle. |
 | `gross-2001-methane-ethane` | 1 | `methane`, `ethane` | Neutral, nonassociating. Methane: 97–300 K; ethane: 90–305 K. A mixed selection uses the intersection. No pressure evidence bound is reported. |
 | `gross-2001-propane` | 1 | `propane` | Pure, neutral, nonassociating; 85–523 K. No pressure evidence bound is reported. |
 | `figiel-2025-reference-electrolytes` | 1 | `water`, `methanol`, `ethanol`, `lithium-cation`, `sodium-cation`, `potassium-cation`, `chloride-anion`, `bromide-anion` | Corrected Born SSM+DS at 298.15 K and 1 bar; total ion mole fraction at most 0.38. Reference states require one source-complete cation/anion formula unit. |
