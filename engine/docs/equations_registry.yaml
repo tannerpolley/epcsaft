@@ -101,8 +101,8 @@ equations:
         comment_line: 784
         symbol: "associating_pure_phase_parameter_block"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 1394
-        comment_line: 1392
+        line: 1393
+        comment_line: 1391
         symbol: "associating_parameterized_pure_phase_block"
   - eqid: "association_strength"
     section: "Contribution intermediates"
@@ -1157,8 +1157,8 @@ equations:
         comment_line: 720
         symbol: "electrolyte_phase_block_impl"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 1168
-        comment_line: 1193
+        line: 1167
+        comment_line: 1192
         symbol: "pure_phase_helmholtz_over_rt_reference_amount"
   - eqid: "phase_molar_density"
     section: "Native phase coordinates"
@@ -1181,8 +1181,8 @@ equations:
         comment_line: 583
         symbol: "electrolyte_phase_block_impl"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 1168
-        comment_line: 1174
+        line: 1167
+        comment_line: 1173
         symbol: "pure_phase_helmholtz_over_rt_reference_amount"
   - eqid: "phase_mole_fraction"
     section: "Native phase coordinates"
@@ -1229,12 +1229,12 @@ equations:
         comment_line: 894
         symbol: "packing_fraction_block"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 967
-        comment_line: 965
+        line: 966
+        comment_line: 964
         symbol: "packing_fraction_block_active_parameters"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 1054
-        comment_line: 1052
+        line: 1053
+        comment_line: 1051
         symbol: "inverse_packing_geometry_block"
   - eqid: "phase_pressure"
     section: "Native phase coordinates"
@@ -1261,16 +1261,16 @@ equations:
         comment_line: 783
         symbol: "associating_pure_phase_parameter_block"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 1214
-        comment_line: 1212
+        line: 1213
+        comment_line: 1211
         symbol: "pure_phase_block"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 1299
-        comment_line: 1297
+        line: 1298
+        comment_line: 1296
         symbol: "parameterized_pure_phase_block"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 1394
-        comment_line: 1391
+        line: 1393
+        comment_line: 1390
         symbol: "associating_parameterized_pure_phase_block"
   - eqid: "phase_total_amount"
     section: "Native phase coordinates"
@@ -1353,8 +1353,8 @@ equations:
     tex_line: 1096
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 1145
-        comment_line: 1144
+        line: 1144
+        comment_line: 1143
         symbol: "pure_phase_parameters"
   - eqid: "reference_molality_sequence"
     section: "Electrolyte reference states and reported activities"
@@ -2090,27 +2090,27 @@ source_exclusions:
     symbol: "packing_fraction_block"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 967
+    line: 966
     symbol: "packing_fraction_block_active_parameters"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 1054
+    line: 1053
     symbol: "inverse_packing_geometry_block"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 1198
+    line: 1197
     symbol: "cubic_directional_derivative"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 1214
+    line: 1213
     symbol: "pure_phase_block"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 1299
+    line: 1298
     symbol: "parameterized_pure_phase_block"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 1394
+    line: 1393
     symbol: "associating_parameterized_pure_phase_block"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/reference.py"

@@ -4715,7 +4715,7 @@ def test_native_sdk_electrolyte_phase_keeps_constraint_trial_states_evaluable() 
     assert all(math.isfinite(value) for value in gradient)
     assert all(math.isfinite(value) for value in hessian)
 
-    rejected_packing = ctypes.c_double()
+    trial_packing = ctypes.c_double()
     assert (
         packing_callback(
             packing_table.model_context,
@@ -4724,14 +4724,17 @@ def test_native_sdk_electrolyte_phase_keeps_constraint_trial_states_evaluable() 
             (ctypes.c_double * 3)(*amounts),
             3,
             trial_volume,
-            ctypes.byref(rejected_packing),
+            ctypes.byref(trial_packing),
             reference_gradient,
             4,
             reference_hessian,
             16,
         )
-        == STATUS_DOMAIN_ERROR
+        == STATUS_OK
     )
+    assert trial_packing.value == pytest.approx(0.75, rel=2.0e-15)
+    assert all(math.isfinite(value) for value in reference_gradient)
+    assert all(math.isfinite(value) for value in reference_hessian)
 
 
 @pytest.mark.parametrize(
@@ -5402,7 +5405,7 @@ def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permuta
     )
 
 
-def test_native_sdk_packing_fraction_fails_closed_for_abi_model_and_domain_errors() -> None:
+def test_native_sdk_packing_fraction_fails_closed_for_abi_model_and_input_errors() -> None:
     model = _electrolyte_model()
     capsule, table = _packing_fraction_table(model)
     assert capsule is not None
@@ -5463,7 +5466,7 @@ def test_native_sdk_packing_fraction_fails_closed_for_abi_model_and_domain_error
     assert_untouched()
     assert call(volume_m3=math.nan) == STATUS_INVALID_ARGUMENT
     assert_untouched()
-    assert call(volume_m3=1.0e-6) == STATUS_DOMAIN_ERROR
+    assert call(volume_m3=0.0) == STATUS_INVALID_ARGUMENT
     assert_untouched()
 
 
