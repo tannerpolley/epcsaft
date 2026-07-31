@@ -18,6 +18,9 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "manifests" / "management.json"
 GENERATED = ROOT / ".management-state"
 ARTIFACT_POLICY_PATH = ROOT / "manifests" / "artifact-store-policy.json"
+OPERATION_RECEIPT_SCHEMA_PATH = (
+    ROOT / "manifests" / "operation-receipt-envelope-v1.json"
+)
 
 ALLOWED_ENVIRONMENT_DISTRIBUTIONS: dict[str, set[str]] = {
     "management": set(),
@@ -61,6 +64,22 @@ def sha256(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def json_sha256(value: Any) -> str:
+    payload = json.dumps(value, sort_keys=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
+    return hashlib.sha256(payload).hexdigest()
+
+
+def git_blob_sha256(root: Path, commit: str, path: str) -> str:
+    completed = subprocess.run(
+        ["git", "-C", str(root), "show", f"{commit}:{path}"],
+        check=True,
+        capture_output=True,
+    )
+    return hashlib.sha256(completed.stdout).hexdigest()
 
 
 def repository_state(name: str, record: dict[str, Any]) -> dict[str, Any]:
@@ -189,6 +208,15 @@ def bundle_hash(directory: Path) -> str:
     return digest.hexdigest()
 
 
+def ownership_projection(policy: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "storage_owner": policy.get("storage_owner", "unclassified"),
+        "runtime_owner": policy.get("runtime_owner"),
+        "evidence_owner": policy.get("evidence_owner"),
+        "disposition": policy.get("disposition", "unclassified"),
+    }
+
+
 def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
     records: list[dict[str, Any]] = []
     parameter_policy = load_json(parameter_policy_path(config))
@@ -211,10 +239,7 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
                     "path": str(directory.relative_to(data_root)),
                     "bundle_id": bundle_id,
                     "sha256": bundle_hash(directory),
-                    "storage_owner": policy.get("storage_owner", "unclassified"),
-                    "runtime_owner": policy.get("runtime_owner"),
-                    "evidence_owner": policy.get("evidence_owner"),
-                    "disposition": policy.get("disposition", "unclassified"),
+                    **ownership_projection(policy),
                 }
             )
     eos = Path(config["repositories"]["eos"]["local_path"])
@@ -231,12 +256,28 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
                     "path": str(directory.relative_to(eos)),
                     "bundle_id": bundle_id,
                     "sha256": bundle_hash(directory),
-                    "storage_owner": policy.get(
-                        "storage_owner", "unclassified"
-                    ),
-                    "runtime_owner": policy.get("runtime_owner"),
-                    "evidence_owner": policy.get("evidence_owner"),
-                    "disposition": policy.get("disposition", "unclassified"),
+                    **ownership_projection(policy),
+                }
+            )
+    validation = Path(config["repositories"]["validation"]["local_path"])
+    if validation.exists():
+        for manifest in sorted(validation.rglob("bundle.toml")):
+            if ".git" in manifest.parts or ".worktrees" in manifest.parts:
+                continue
+            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+            directory = manifest.parent
+            bundle_id = data.get(
+                "bundle_id", data.get("packet_id", directory.parent.name)
+            )
+            policy = parameter_entries.get(bundle_id, {})
+            records.append(
+                {
+                    "repository": "validation",
+                    "path": str(directory.relative_to(validation)),
+                    "bundle_id": bundle_id,
+                    "sha256": bundle_hash(directory),
+                    "migration_state": "legacy_copy_pending_disposition",
+                    **ownership_projection(policy),
                 }
             )
     return {"schema_version": 2, "records": records}
@@ -377,6 +418,64 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
     return errors
 
 
+def operation_receipt_errors(config: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if not OPERATION_RECEIPT_SCHEMA_PATH.exists():
+        return ["missing operation receipt envelope schema"]
+    schema = load_json(OPERATION_RECEIPT_SCHEMA_PATH)
+    schema_hash = sha256(OPERATION_RECEIPT_SCHEMA_PATH)
+    sequences: list[int] = []
+    for relative in config.get("operation_receipts", []):
+        path = ROOT / relative
+        if not path.exists():
+            errors.append(f"missing operation receipt {relative}")
+            continue
+        receipt = load_json(path)
+        envelope = receipt.get("envelope")
+        if not isinstance(envelope, dict):
+            errors.append(f"operation receipt {relative} requires envelope")
+            continue
+        missing = [
+            field
+            for field in schema["required_envelope_fields"]
+            if field not in envelope
+        ]
+        if missing:
+            errors.append(
+                f"operation receipt {relative} missing envelope fields: {missing}"
+            )
+            continue
+        declared_schema = envelope["schema"]
+        if declared_schema.get("path") != str(
+            OPERATION_RECEIPT_SCHEMA_PATH.relative_to(ROOT)
+        ) or declared_schema.get("sha256") != schema_hash:
+            errors.append(f"operation receipt {relative} has invalid schema identity")
+        subject_hash = json_sha256(envelope["subject"])
+        if envelope["subject_sha256"] != subject_hash:
+            errors.append(f"operation receipt {relative} has invalid subject hash")
+        approval = envelope["user_approval"]
+        if approval.get("subject_sha256") != subject_hash:
+            errors.append(
+                f"operation receipt {relative} approval is not bound to its subject"
+            )
+        validator = envelope["validator"]
+        try:
+            actual_validator_hash = git_blob_sha256(
+                ROOT, validator["commit"], validator["path"]
+            )
+        except (KeyError, subprocess.CalledProcessError):
+            errors.append(f"operation receipt {relative} has invalid validator identity")
+        else:
+            if validator.get("sha256") != actual_validator_hash:
+                errors.append(
+                    f"operation receipt {relative} has invalid validator hash"
+                )
+        sequences.append(envelope["sequence"])
+    if sequences != sorted(set(sequences)):
+        errors.append("operation receipt sequences must be unique and monotonic")
+    return errors
+
+
 def validate_config(config: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     repositories = config.get("repositories")
@@ -444,6 +543,8 @@ def validate_config(config: dict[str, Any]) -> list[str]:
         errors.append(
             "parameter ownership manifest must be manifests/parameter-ownership.json"
         )
+    if not isinstance(config.get("operation_receipts"), list):
+        errors.append("operation receipts must be an array")
     return errors
 
 
@@ -464,6 +565,7 @@ def snapshot(config: dict[str, Any]) -> None:
 def check(config: dict[str, Any], strict: bool) -> list[str]:
     errors = validate_config(config)
     errors.extend(parameter_policy_errors(config))
+    errors.extend(operation_receipt_errors(config))
     errors.extend(environment_policy_errors(config))
     for name in (
         "ecosystem-state.json",

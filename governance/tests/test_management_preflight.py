@@ -69,6 +69,13 @@ def test_parameter_ownership_manifest_covers_current_eos_catalog() -> None:
     assert MODULE.parameter_policy_errors(config) == []
 
 
+def test_configured_operation_receipts_use_the_canonical_envelope() -> None:
+    config = json.loads(
+        (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
+    )
+    assert MODULE.operation_receipt_errors(config) == []
+
+
 def test_parameter_packets_separate_storage_runtime_and_evidence_owners() -> None:
     policy = json.loads(
         (ROOT / "manifests" / "parameter-ownership.json").read_text(
@@ -87,6 +94,20 @@ def test_parameter_packets_separate_storage_runtime_and_evidence_owners() -> Non
     assert {
         entry["disposition"] for entry in policy["bundles"]
     } <= {"relocate_to_data", "sync_to_eos_runtime"}
+
+
+def test_parameter_ledger_retains_legacy_validation_copies_until_migration() -> None:
+    config = json.loads(
+        (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
+    )
+    records = MODULE.parameter_state(config)["records"]
+    assert any(
+        record["repository"] == "validation"
+        and record["bundle_id"] == "khudaida-2026-figure-2-electrolyte-lle"
+        and record["disposition"] == "relocate_to_data"
+        and record["migration_state"] == "legacy_copy_pending_disposition"
+        for record in records
+    )
 
 
 def test_environment_policy_rejects_forbidden_package(tmp_path: Path) -> None:

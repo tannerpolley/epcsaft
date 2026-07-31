@@ -1,24 +1,84 @@
 {
-  "schema_version": 1,
-  "captured_at": "2026-07-31",
-  "operation": "create-canonical-scientific-data-repository",
-  "authorization": {
-    "source": "explicit user request",
-    "requested_repository": "ePC-SAFT/ePC-SAFT-data",
-    "visibility": "public"
+  "envelope": {
+    "schema": {
+      "path": "manifests/operation-receipt-envelope-v1.json",
+      "sha256": "2468d88038bb4e50752c89df0fb039e87f3411fe1bd88f12fe68969c705c34a3"
+    },
+    "sequence": 1,
+    "subject": {
+      "operation": "create-public-repository",
+      "repository": "ePC-SAFT/ePC-SAFT-data",
+      "visibility": "public",
+      "default_branch": "main",
+      "doctrine_revision": 6,
+      "phase": "authorization-preflight"
+    },
+    "subject_sha256": "873fc0e66497bafac785ad9185d3f9f5e5f6704ed4fb72a53a0a904167385f4f",
+    "validator": {
+      "repository": "ePC-SAFT/ePC-SAFT-management",
+      "commit": "45f325c17e1cb1e0fc7134873ec9d945031b4fe8",
+      "path": "tools/management_preflight.py",
+      "sha256": "6891bd742158cccc9a9a099370242d6f43a66b54fcb40361752c35cc822cfa58"
+    },
+    "command": "gh repo view ePC-SAFT/ePC-SAFT-data --json id,nameWithOwner,visibility,defaultBranchRef",
+    "environment": {
+      "captured_at": "2026-07-31",
+      "timezone": "America/Denver",
+      "platform": "linux",
+      "github_cli": "gh version 2.96.0 (2026-07-02)"
+    },
+    "artifacts": [],
+    "producer": {
+      "kind": "codex-task",
+      "repository": "ePC-SAFT/ePC-SAFT-management",
+      "issue": 10
+    },
+    "reviewer": {
+      "kind": "independent-agent",
+      "id": "019fb8d5-0c38-7433-92c4-be32e0b0878f",
+      "outcome": "initial-envelope-finding-remediated"
+    },
+    "failed_outcomes": [
+      {
+        "stage": "standards-review",
+        "outcome": "rejected",
+        "reason": "The initial preflight record omitted the doctrine-required receipt envelope."
+      }
+    ],
+    "supersedes": null,
+    "revoked_by": null,
+    "user_approval": {
+      "source": "explicit Codex task request on 2026-07-31",
+      "subject_sha256": "873fc0e66497bafac785ad9185d3f9f5e5f6704ed4fb72a53a0a904167385f4f"
+    }
   },
-  "preconditions": [
-    "Doctrine revision 6 is merged before repository creation.",
-    "The ePC-SAFT/ePC-SAFT-data namespace is unoccupied.",
-    "The initial repository contains only the minimal packet contract and admitted packet content.",
-    "No package imports from or fetches the Data repository at runtime."
-  ],
-  "expected_postconditions": [
-    "The repository is public with main as its default branch.",
-    "Management records the repository identity and exact initial commit.",
-    "Canonical packets are self-contained under packets/<packet-id>/<version>/.",
-    "EOS runtime copies and Validation evidence pin immutable Data inputs."
-  ],
-  "reversibility": "Repository contents are reversible through Git. Repository deletion is not authorized; an erroneous creation must stop for user direction.",
-  "recovery_owner": "ePC-SAFT/ePC-SAFT-management"
+  "record": {
+    "status": "authorized_pending",
+    "namespace_lookup": {
+      "available": true,
+      "exit_code": 1,
+      "result": "GitHub could not resolve ePC-SAFT/ePC-SAFT-data because it does not exist."
+    },
+    "preconditions": [
+      "Doctrine revision 6 is merged before repository creation.",
+      "The ePC-SAFT/ePC-SAFT-data namespace remains unoccupied at mutation time.",
+      "The initial repository contains only the minimal packet contract and admitted packet content.",
+      "No package imports from or fetches the Data repository at runtime."
+    ],
+    "expected_postconditions": [
+      "The repository is public with main as its default branch.",
+      "Management records the repository identity and exact initial commit in a later operation-state receipt.",
+      "Canonical packets are self-contained under packets/<packet-id>/<version>/.",
+      "EOS runtime copies and Validation evidence pin immutable Data inputs."
+    ],
+    "retry": "Repeat the namespace lookup once immediately before creation; stop if the namespace is occupied.",
+    "stop_conditions": [
+      "Doctrine revision 6 is not merged.",
+      "The namespace resolves to an existing repository.",
+      "The requested organization, visibility, or default branch differs from the approved subject."
+    ],
+    "reversibility": "Repository contents are reversible through Git. Repository deletion is not authorized; an erroneous creation stops for user direction.",
+    "irreversible_effects": [],
+    "recovery_owner": "ePC-SAFT/ePC-SAFT-management"
+  }
 }

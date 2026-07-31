@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "schema_id": "epcsaft-management-operation-receipt-envelope",
+  "required_envelope_fields": [
+    "schema",
+    "sequence",
+    "subject",
+    "subject_sha256",
+    "validator",
+    "command",
+    "environment",
+    "artifacts",
+    "producer",
+    "reviewer",
+    "failed_outcomes",
+    "supersedes",
+    "revoked_by",
+    "user_approval"
+  ]
+}
