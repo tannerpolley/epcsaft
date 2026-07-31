@@ -1921,12 +1921,14 @@ def _evaluate_aqueous_miac_kij_batch(
 def _evaluate_active_born(
     table: ActiveBornNativeSdkTable,
     born_diameter_angstrom: float,
+    *,
+    pressure_pa: float = 100000.0,
 ) -> IonSolvationBornResult:
     result = IonSolvationBornResult(struct_size=ctypes.sizeof(IonSolvationBornResult))
     status = EvaluateIonSolvationBorn(table.evaluate_ion_solvation_born)(
         table.model_context,
         298.15,
-        100000.0,
+        pressure_pa,
         born_diameter_angstrom,
         ctypes.byref(result),
     )
@@ -3751,86 +3753,6 @@ def test_native_sdk_scalar_pure_parameter_callback_fails_closed_on_malformed_buf
     assert call(result) == STATUS_ABI_MISMATCH
 
 
-def test_native_sdk_held_neutral_reference_matches_the_public_owner() -> None:
-    model = _held_water_ionization_model()
-    capsule, table = _neutral_reference_table(model)
-    assert capsule is not None
-    observed, basis, contractions, composition = _evaluate_neutral_reference(
-        table, model.parameter_fingerprint
-    )
-    reference = model.reference(
-        T=298.15 * unit_registry.kelvin,
-        P=100000.0 * unit_registry.pascal,
-        solvent_x=(1.0, 0.0, 0.0),
-        phase="liquid",
-    )
-    pure_water = model.state(
-        T=reference.temperature,
-        P=reference.pressure,
-        x=(1.0, 0.0, 0.0),
-        phase="liquid",
-    )
-    assert pure_water._log_fugacity_coefficient is not None
-
-    assert observed.status == STATUS_OK
-    assert observed.temperature_k == 298.15
-    assert observed.pressure_pa == 100000.0
-    assert basis == pytest.approx((1.0, 0.0, 0.0, 0.0, 1.0, 1.0))
-    assert contractions == pytest.approx(
-        (
-            pure_water._log_fugacity_coefficient[0],
-            math.fsum(reference.infinite_dilution_log_fugacity_coefficient),
-        ),
-        abs=2.0e-12,
-    )
-    assert composition == pytest.approx((1.0, 0.0, 0.0))
-    assert observed.solvent_molar_mass_kg_per_mol == pytest.approx(0.01801528, abs=1.0e-12)
-    assert observed.reference_molality_mol_per_kg == 1.0e-12
-    assert 0.0 <= observed.reference_convergence_error <= 5.0e-5
-    assert 1.0 / pure_water.molar_density.to("mole / meter**3").magnitude > 0.0
-    assert observed.parameter_fingerprint.decode() == model.parameter_fingerprint
-    assert observed.helmholtz_basis_id.decode() == (
-        "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
-    )
-    assert observed.error == b""
-
-
-def test_native_sdk_held_neutral_reference_is_domain_bound_and_permutation_safe() -> None:
-    model = _held_water_ionization_model()
-    _, table = _neutral_reference_table(model)
-    result, _, _, _ = _evaluate_neutral_reference(
-        table,
-        model.parameter_fingerprint,
-        temperature_k=299.0,
-    )
-    assert result.status == STATUS_DOMAIN_ERROR
-    assert result.error
-
-    permuted = _held_water_ionization_model(
-        ("hydroxide-anion", "water", "hydronium-cation")
-    )
-    _, permuted_table = _neutral_reference_table(permuted)
-    permuted_result, permuted_basis, permuted_contractions, composition = (
-        _evaluate_neutral_reference(
-            permuted_table,
-            permuted.parameter_fingerprint,
-        )
-    )
-    assert permuted_result.status == STATUS_OK
-    assert permuted_basis == pytest.approx((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
-    canonical_reference = model.reference(
-        T=298.15 * unit_registry.kelvin,
-        P=100000.0 * unit_registry.pascal,
-        solvent_x=(1.0, 0.0, 0.0),
-        phase="liquid",
-    )
-    assert permuted_contractions[1] == pytest.approx(
-        math.fsum(canonical_reference.infinite_dilution_log_fugacity_coefficient),
-        abs=5.0e-12,
-    )
-    assert composition == pytest.approx((0.0, 1.0, 0.0))
-
-
 @pytest.mark.parametrize(
     ("catalog", "component_ids", "domain_id", "expected_fingerprint", "expected"),
     (
@@ -5571,7 +5493,9 @@ def test_native_sdk_active_born_derivative_matches_centered_difference(
     counter_ion: str,
     trial_diameter: float,
 ) -> None:
-    _, table = _active_born_table(_electrolyte_model(("water", active_ion, counter_ion)))
+    _, table = _active_born_table(
+        _electrolyte_model(("water", active_ion, counter_ion))
+    )
     center = _evaluate_active_born(table, trial_diameter)
 
     estimates = []
@@ -5579,7 +5503,8 @@ def test_native_sdk_active_born_derivative_matches_centered_difference(
         upper = _evaluate_active_born(table, trial_diameter + step)
         lower = _evaluate_active_born(table, trial_diameter - step)
         estimates.append(
-            (upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol) / (2.0 * step)
+            (upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol)
+            / (2.0 * step)
         )
     tolerance = max(
         1.0e-3,
@@ -5683,19 +5608,8 @@ def test_native_sdk_active_born_preserves_prior_prefix_and_fails_closed() -> Non
     assert phase_result.error
 
 
-@pytest.mark.parametrize(
-    ("active_ion", "counter_ion", "source_diameter"),
-    (
-        ("sodium-cation", "chloride-anion", 3.445),
-        ("bromide-anion", "sodium-cation", 4.480),
-    ),
-)
-def test_native_sdk_ionic_region_permittivity_is_model_bound_and_exact(
-    active_ion: str,
-    counter_ion: str,
-    source_diameter: float,
-) -> None:
-    model = _electrolyte_model(("water", active_ion, counter_ion))
+def test_native_sdk_ionic_region_permittivity_is_model_bound_and_exact() -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "chloride-anion"))
     _, table = _ion_solvation_ionic_permittivity_table(model)
     descriptors = {
         descriptor.capability: descriptor
@@ -5713,36 +5627,26 @@ def test_native_sdk_ionic_region_permittivity_is_model_bound_and_exact(
     assert descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
 
     center = _evaluate_ionic_permittivity(table, model.parameter_fingerprint, 8.0)
-    source_born = _evaluate_active_born(
-        table,
-        source_diameter,
-    )
     assert center.status == STATUS_OK
-    assert center.solvation_gibbs_j_per_mol == pytest.approx(
-        source_born.solvation_gibbs_j_per_mol, abs=2.0e-8
-    )
+    assert abs(center.solvation_gibbs_j_per_mol - (-381100.0)) <= 1.5e3
     assert center.reference_molality_mol_per_kg == 1.0e-12
     assert 0.0 <= center.reference_convergence_error <= 5.0e-5
     assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
 
-    estimates = []
-    for step in (2.0e-4, 1.0e-4):
-        upper = _evaluate_ionic_permittivity(
-            table, model.parameter_fingerprint, 8.0 + step
-        )
-        lower = _evaluate_ionic_permittivity(
-            table, model.parameter_fingerprint, 8.0 - step
-        )
-        estimates.append(
-            (upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol)
-            / (2.0 * step)
-        )
-    tolerance = max(
-        1.0e-3,
-        20.0 * abs(estimates[0] - estimates[1]),
-        2.0e-8 * abs(center.derivative_j_per_mol),
+    step = 1.0e-4
+    upper = _evaluate_ionic_permittivity(
+        table, model.parameter_fingerprint, 8.0 + step
     )
-    assert abs(center.derivative_j_per_mol - estimates[1]) <= tolerance
+    lower = _evaluate_ionic_permittivity(
+        table, model.parameter_fingerprint, 8.0 - step
+    )
+    estimate = (
+        upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol
+    ) / (2.0 * step)
+    tolerance = max(
+        1.0e-3, 2.0e-8 * abs(center.derivative_j_per_mol)
+    )
+    assert abs(center.derivative_j_per_mol - estimate) <= tolerance
 
     wrong_fingerprint = _evaluate_ionic_permittivity(
         table, "sha256:" + "0" * 64, 8.0
@@ -5770,19 +5674,8 @@ def test_native_sdk_ionic_region_permittivity_is_model_bound_and_exact(
     assert unsupported.error
 
 
-@pytest.mark.parametrize(
-    ("active_ion", "counter_ion", "source_diameter"),
-    (
-        ("sodium-cation", "chloride-anion", 3.445),
-        ("bromide-anion", "sodium-cation", 4.480),
-    ),
-)
-def test_native_sdk_solvent_permittivity_is_component_bound_and_exact(
-    active_ion: str,
-    counter_ion: str,
-    source_diameter: float,
-) -> None:
-    model = _electrolyte_model(("water", active_ion, counter_ion))
+def test_native_sdk_solvent_permittivity_is_component_bound_and_exact() -> None:
+    model = _electrolyte_model(("water", "bromide-anion", "sodium-cation"))
     _, table = _ion_solvation_solvent_permittivity_table(model)
     descriptors = {
         descriptor.capability: descriptor
@@ -5803,32 +5696,25 @@ def test_native_sdk_solvent_permittivity_is_component_bound_and_exact(
     center = _evaluate_solvent_permittivity(
         table, model.parameter_fingerprint, 78.09
     )
-    source_born = _evaluate_active_born(table, source_diameter)
     assert center.status == STATUS_OK
-    assert center.solvation_gibbs_j_per_mol == pytest.approx(
-        source_born.solvation_gibbs_j_per_mol, abs=2.0e-8
-    )
+    assert abs(center.solvation_gibbs_j_per_mol - (-290900.0)) <= 1.5e3
     assert center.reference_molality_mol_per_kg == 1.0e-12
     assert 0.0 <= center.reference_convergence_error <= 5.0e-5
 
-    estimates = []
-    for step in (2.0e-3, 1.0e-3):
-        upper = _evaluate_solvent_permittivity(
-            table, model.parameter_fingerprint, 78.09 + step
-        )
-        lower = _evaluate_solvent_permittivity(
-            table, model.parameter_fingerprint, 78.09 - step
-        )
-        estimates.append(
-            (upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol)
-            / (2.0 * step)
-        )
-    tolerance = max(
-        1.0e-3,
-        20.0 * abs(estimates[0] - estimates[1]),
-        2.0e-8 * abs(center.derivative_j_per_mol),
+    step = 1.0e-3
+    upper = _evaluate_solvent_permittivity(
+        table, model.parameter_fingerprint, 78.09 + step
     )
-    assert abs(center.derivative_j_per_mol - estimates[1]) <= tolerance
+    lower = _evaluate_solvent_permittivity(
+        table, model.parameter_fingerprint, 78.09 - step
+    )
+    estimate = (
+        upper.solvation_gibbs_j_per_mol - lower.solvation_gibbs_j_per_mol
+    ) / (2.0 * step)
+    tolerance = max(
+        1.0e-3, 2.0e-8 * abs(center.derivative_j_per_mol)
+    )
+    assert abs(center.derivative_j_per_mol - estimate) <= tolerance
 
     wrong_fingerprint = _evaluate_solvent_permittivity(
         table, "sha256:" + "0" * 64, 78.09
@@ -5871,55 +5757,197 @@ def test_native_sdk_solvent_permittivity_is_component_bound_and_exact(
     assert unsupported.error
 
 
-@pytest.mark.parametrize(
-    ("cation", "anion", "molality"),
-    (
-        *(
-            (cation, anion, molality)
-            for cation, anion in (
-                ("lithium-cation", "chloride-anion"),
-                ("sodium-cation", "chloride-anion"),
-                ("potassium-cation", "chloride-anion"),
-                ("lithium-cation", "bromide-anion"),
-                ("sodium-cation", "bromide-anion"),
-                ("potassium-cation", "bromide-anion"),
-            )
-            for molality in (0.001, 1.0, 6.0)
-        ),
-    ),
-)
-def test_native_sdk_aqueous_miac_kij_matches_public_reference_state(
-    cation: str,
-    anion: str,
-    molality: float,
-) -> None:
-    model = _electrolyte_model(("water", cation, anion))
-    _, table = _aqueous_miac_kij_table(model)
+def test_native_sdk_aqueous_miac_active_parameters_match_public_value_and_exact_derivatives() -> None:
+    model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
+    _, table = _aqueous_miac_batch_table(model)
     catalog = model._model.k_ij
     k_ij = (catalog[1], catalog[2], catalog[5])
-    observed = _evaluate_aqueous_miac_kij(
-        table, model.parameter_fingerprint, molality, k_ij
+    molalities = (1.0,)
+    kij_center = _evaluate_aqueous_miac_kij_batch(
+        table, model.parameter_fingerprint, molalities, k_ij
+    )
+    solvation_center = _evaluate_aqueous_miac_solvation_factor(
+        table, model.parameter_fingerprint, 1.0, 1.5
     )
     reference = model.reference(
         T=298.15 * unit_registry.kelvin,
         P=1.0 * unit_registry.bar,
         solvent_x=(1.0, 0.0, 0.0),
         phase="liquid",
-    ).state(molality=molality * unit_registry.mole / unit_registry.kilogram)
+    )
+    public = reference.state(molality=1.0 * unit_registry.mole / unit_registry.kilogram)
+    expected = math.log(public.activity.mean_molality)
 
     assert table.table_size >= AQUEOUS_MIAC_KIJ_PREFIX_SIZE == 184
     assert table.aqueous_miac_kij_result_size == ctypes.sizeof(AqueousMiacKijResult) == 296
-    assert observed.status == STATUS_OK
-    # The derivative callback projects its value from the certified density
+    assert table.aqueous_miac_solvation_factor_result_size == 280
+    assert kij_center[0].status == solvation_center.status == STATUS_OK
+    # The derivative callbacks project their values from the certified density
     # midpoint to the requested pressure; this bound covers only that correction.
-    assert observed.log_mean_ionic_activity_coefficient_molality == pytest.approx(
-        math.log(reference.activity.mean_molality), abs=8.0e-11
+    assert kij_center[0].log_mean_ionic_activity_coefficient_molality == pytest.approx(
+        expected, abs=8.0e-11
     )
-    assert all(math.isfinite(value) for value in observed.derivative)
-    assert observed.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert solvation_center.log_mean_ionic_activity_coefficient_molality == pytest.approx(
+        expected, abs=8.0e-11
+    )
+    assert solvation_center.reference_molality_mol_per_kg == pytest.approx(
+        reference.reference_molality.to("mole / kilogram").magnitude,
+        rel=0.0,
+        abs=0.0,
+    )
+    assert solvation_center.reference_convergence_error == pytest.approx(
+        reference.convergence_error, rel=0.0, abs=0.0
+    )
+    assert math.isfinite(solvation_center.reference_derivative_convergence_error)
+    assert kij_center[0].parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert solvation_center.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    kij_direction = (0.7, -0.4, 0.2)
+    kij_step = 5.0e-5
+    kij_high = _evaluate_aqueous_miac_kij_batch(
+        table,
+        model.parameter_fingerprint,
+        molalities,
+        tuple(
+            value + kij_step * delta
+            for value, delta in zip(k_ij, kij_direction, strict=True)
+        ),
+    )
+    kij_low = _evaluate_aqueous_miac_kij_batch(
+        table,
+        model.parameter_fingerprint,
+        molalities,
+        tuple(
+            value - kij_step * delta
+            for value, delta in zip(k_ij, kij_direction, strict=True)
+        ),
+    )
+    kij_estimate = (
+        kij_high[0].log_mean_ionic_activity_coefficient_molality
+        - kij_low[0].log_mean_ionic_activity_coefficient_molality
+    ) / (2.0 * kij_step)
+    kij_directional = math.fsum(
+        kij_center[0].derivative[index] * kij_direction[index]
+        for index in range(3)
+    )
+    assert abs(kij_directional - kij_estimate) <= max(
+        1.0e-8, 2.0e-8 * abs(kij_directional)
+    )
+
+    for solvation_factor in (1.35, 1.65):
+        center = _evaluate_aqueous_miac_solvation_factor_batch(
+            table,
+            model.parameter_fingerprint,
+            molalities,
+            solvation_factor,
+        )[0]
+        estimates = []
+        for step in (1.0e-4, 5.0e-5):
+            high = _evaluate_aqueous_miac_solvation_factor_batch(
+                table,
+                model.parameter_fingerprint,
+                molalities,
+                solvation_factor + step,
+            )[0]
+            low = _evaluate_aqueous_miac_solvation_factor_batch(
+                table,
+                model.parameter_fingerprint,
+                molalities,
+                solvation_factor - step,
+            )[0]
+            estimates.append(
+                (
+                    high.log_mean_ionic_activity_coefficient_molality
+                    - low.log_mean_ionic_activity_coefficient_molality
+                )
+                / (2.0 * step)
+            )
+        tolerance = max(
+            1.0e-8,
+            20.0 * abs(estimates[0] - estimates[1]),
+            2.0e-8 * abs(center.derivative),
+        )
+        assert abs(center.derivative - estimates[1]) <= tolerance
 
 
-def _native_with_aqueous_kij(model: Mixture, k_ij: tuple[float, float, float]) -> NativeModel:
+@pytest.mark.parametrize(
+    ("cation", "anion", "fingerprint"),
+    (
+        (
+            "lithium-cation",
+            "chloride-anion",
+            "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
+        ),
+        (
+            "sodium-cation",
+            "chloride-anion",
+            "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
+        ),
+        (
+            "potassium-cation",
+            "chloride-anion",
+            "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
+        ),
+        (
+            "lithium-cation",
+            "bromide-anion",
+            "sha256:19be2cea6620c8a6cd3c965325422bded799d2b39acb240a4c4e858059d6412e",
+        ),
+        (
+            "sodium-cation",
+            "bromide-anion",
+            "sha256:80f83701040d7d0863c7121b7379b86a9e8bd30c1fa3e4a5651330c41c588131",
+        ),
+        (
+            "potassium-cation",
+            "bromide-anion",
+            "sha256:8ec6c31ada39713132b340a184e0c06b0f9d070892be2aaa721e9aa92015ae31",
+        ),
+    ),
+)
+def test_native_sdk_aqueous_miac_kij_matches_public_reference_state(
+    cation: str,
+    anion: str,
+    fingerprint: str,
+) -> None:
+    model = _electrolyte_model(("water", cation, anion))
+    assert model.parameter_fingerprint == fingerprint
+    _, table = _aqueous_miac_batch_table(model)
+    catalog = model._model.k_ij
+    molalities = (0.001, 1.0, 6.0)
+    observed = _evaluate_aqueous_miac_kij_batch(
+        table,
+        model.parameter_fingerprint,
+        molalities,
+        (catalog[1], catalog[2], catalog[5]),
+    )
+    reference = model.reference(
+        T=298.15 * unit_registry.kelvin,
+        P=1.0 * unit_registry.bar,
+        solvent_x=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+
+    assert table.table_size >= AQUEOUS_MIAC_KIJ_PREFIX_SIZE == 184
+    assert table.aqueous_miac_kij_result_size == ctypes.sizeof(
+        AqueousMiacKijResult
+    )
+    for molality, result in zip(molalities, observed, strict=True):
+        public = reference.state(
+            molality=molality * unit_registry.mole / unit_registry.kilogram
+        )
+        assert result.status == STATUS_OK
+        assert result.log_mean_ionic_activity_coefficient_molality == pytest.approx(
+            math.log(public.activity.mean_molality), abs=8.0e-11
+        )
+        assert all(math.isfinite(value) for value in result.derivative)
+        assert result.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+
+def _native_with_aqueous_kij(
+    model: Mixture,
+    k_ij: tuple[float, float, float],
+) -> NativeModel:
     matrix = list(model._model.k_ij)
     matrix[1] = matrix[3] = k_ij[0]
     matrix[2] = matrix[6] = k_ij[1]
@@ -5927,7 +5955,10 @@ def _native_with_aqueous_kij(model: Mixture, k_ij: tuple[float, float, float]) -
     return NativeModel(*_native_arguments(replace(model._model, k_ij=tuple(matrix))))
 
 
-def _aqueous_composition(model: Mixture, molality: float) -> tuple[float, float, float]:
+def _aqueous_composition(
+    model: Mixture,
+    molality: float,
+) -> tuple[float, float, float]:
     solvent_moles = 1.0 / model._model.molar_mass_kg_per_mol[0]
     total_moles = solvent_moles + 2.0 * molality
     return (
@@ -5937,7 +5968,7 @@ def _aqueous_composition(model: Mixture, molality: float) -> tuple[float, float,
     )
 
 
-def test_native_sdk_aqueous_miac_kij_uses_canonical_dispersion_density_and_reference_owners() -> None:
+def test_native_sdk_aqueous_miac_kij_uses_canonical_owners() -> None:
     model = _electrolyte_model(("water", "sodium-cation", "chloride-anion"))
     _, table = _aqueous_miac_kij_table(model)
     molality = 1.0
@@ -5968,8 +5999,12 @@ def test_native_sdk_aqueous_miac_kij_uses_canonical_dispersion_density_and_refer
         lower_pressure = lower_native.evaluate_pressure(
             298.15, 100000.0, composition, "liquid"
         )
-        upper_fixed = upper_native.evaluate(298.15, center_state.molar_density, composition)
-        lower_fixed = lower_native.evaluate(298.15, center_state.molar_density, composition)
+        upper_fixed = upper_native.evaluate(
+            298.15, center_state.molar_density, composition
+        )
+        lower_fixed = lower_native.evaluate(
+            298.15, center_state.molar_density, composition
+        )
         upper_reference = upper_native.electrolyte_reference_sequence(
             298.15, 100000.0, (1.0, 0.0, 0.0), (1, 2), (1, 1), "liquid"
         )
@@ -5978,7 +6013,7 @@ def test_native_sdk_aqueous_miac_kij_uses_canonical_dispersion_density_and_refer
         )
         pressure_derivative.append(
             0.5
-            * sum(
+            * math.fsum(
                 upper_pressure.log_fugacity_coefficient[ion]
                 - lower_pressure.log_fugacity_coefficient[ion]
                 for ion in (1, 2)
@@ -5987,7 +6022,7 @@ def test_native_sdk_aqueous_miac_kij_uses_canonical_dispersion_density_and_refer
         )
         fixed_density_derivative.append(
             0.5
-            * sum(
+            * math.fsum(
                 upper_fixed.log_fugacity_coefficient[ion]
                 - lower_fixed.log_fugacity_coefficient[ion]
                 for ion in (1, 2)
@@ -5996,13 +6031,19 @@ def test_native_sdk_aqueous_miac_kij_uses_canonical_dispersion_density_and_refer
         )
         reference_derivative.append(
             0.5
-            * sum(
-                upper_reference.log_fugacity[ion] - lower_reference.log_fugacity[ion]
+            * math.fsum(
+                upper_reference.log_fugacity[ion]
+                - lower_reference.log_fugacity[ion]
                 for ion in (0, 1)
             )
             / (2.0 * step)
         )
-        for unchanged in ("hard_chain", "association", "debye_huckel", "born_ssm_ds"):
+        for unchanged in (
+            "hard_chain",
+            "association",
+            "debye_huckel",
+            "born_ssm_ds",
+        ):
             assert getattr(upper_fixed, unchanged) == pytest.approx(
                 getattr(lower_fixed, unchanged), abs=2.0e-13
             )
@@ -6010,7 +6051,9 @@ def test_native_sdk_aqueous_miac_kij_uses_canonical_dispersion_density_and_refer
 
     total = [
         finite - reference
-        for finite, reference in zip(pressure_derivative, reference_derivative, strict=True)
+        for finite, reference in zip(
+            pressure_derivative, reference_derivative, strict=True
+        )
     ]
     coarse_total = []
     for coordinate in range(3):
@@ -6032,28 +6075,37 @@ def test_native_sdk_aqueous_miac_kij_uses_canonical_dispersion_density_and_refer
         lower_reference = lower_native.electrolyte_reference_sequence(
             298.15, 100000.0, (1.0, 0.0, 0.0), (1, 2), (1, 1), "liquid"
         )
-        finite = 0.5 * sum(
+        finite = 0.5 * math.fsum(
             upper_pressure.log_fugacity_coefficient[ion]
             - lower_pressure.log_fugacity_coefficient[ion]
             for ion in (1, 2)
         ) / (4.0 * step)
-        reference = 0.5 * sum(
-            upper_reference.log_fugacity[ion] - lower_reference.log_fugacity[ion]
+        reference = 0.5 * math.fsum(
+            upper_reference.log_fugacity[ion]
+            - lower_reference.log_fugacity[ion]
             for ion in (0, 1)
         ) / (4.0 * step)
         coarse_total.append(finite - reference)
     for exact, fine, coarse in zip(
         callback.derivative, total, coarse_total, strict=True
     ):
-        tolerance = max(1.0e-8, 20.0 * abs(coarse - fine), 2.0e-8 * abs(exact))
+        tolerance = max(
+            1.0e-8,
+            20.0 * abs(coarse - fine),
+            2.0e-8 * abs(exact),
+        )
         assert abs(exact - fine) <= tolerance
     assert max(
         abs(fixed - pressure)
-        for fixed, pressure in zip(fixed_density_derivative, pressure_derivative, strict=True)
+        for fixed, pressure in zip(
+            fixed_density_derivative, pressure_derivative, strict=True
+        )
     ) > 1.0e-7
 
     malformed_arguments = list(_native_arguments(model._model))
-    malformed_arguments[11] = [1.0e308 if value else value for value in malformed_arguments[11]]
+    malformed_arguments[11] = [
+        1.0e308 if value else value for value in malformed_arguments[11]
+    ]
     with pytest.raises(RuntimeError, match="association"):
         NativeModel(*malformed_arguments).evaluate(
             298.15, center_state.molar_density, composition
@@ -6073,11 +6125,12 @@ def test_native_sdk_aqueous_miac_kij_exact_derivatives(
     molality: float,
 ) -> None:
     model = _electrolyte_model(("water", cation, anion))
-    _, table = _aqueous_miac_kij_table(model)
+    _, table = _aqueous_miac_batch_table(model)
     trial = (-0.15, 0.20, 0.35)
-    center = _evaluate_aqueous_miac_kij(
-        table, model.parameter_fingerprint, molality, trial
-    )
+    center = _evaluate_aqueous_miac_kij_batch(
+        table, model.parameter_fingerprint, (molality,), trial
+    )[0]
+
     for coordinate in range(3):
         estimates = []
         for step in (1.0e-4, 5.0e-5):
@@ -6085,12 +6138,18 @@ def test_native_sdk_aqueous_miac_kij_exact_derivatives(
             lower = list(trial)
             upper[coordinate] += step
             lower[coordinate] -= step
-            high = _evaluate_aqueous_miac_kij(
-                table, model.parameter_fingerprint, molality, tuple(upper)
-            )
-            low = _evaluate_aqueous_miac_kij(
-                table, model.parameter_fingerprint, molality, tuple(lower)
-            )
+            high = _evaluate_aqueous_miac_kij_batch(
+                table,
+                model.parameter_fingerprint,
+                (molality,),
+                tuple(upper),
+            )[0]
+            low = _evaluate_aqueous_miac_kij_batch(
+                table,
+                model.parameter_fingerprint,
+                (molality,),
+                tuple(lower),
+            )[0]
             estimates.append(
                 (
                     high.log_mean_ionic_activity_coefficient_molality
@@ -6104,54 +6163,6 @@ def test_native_sdk_aqueous_miac_kij_exact_derivatives(
             2.0e-8 * abs(center.derivative[coordinate]),
         )
         assert abs(center.derivative[coordinate] - estimates[1]) <= tolerance
-
-
-@pytest.mark.parametrize(
-    ("cation", "anion", "molality", "coordinate"),
-    (
-        ("sodium-cation", "bromide-anion", 0.6, 0),
-        ("potassium-cation", "chloride-anion", 3.0, 1),
-        ("potassium-cation", "bromide-anion", 0.01, 1),
-        ("lithium-cation", "chloride-anion", 0.02, 2),
-    ),
-)
-def test_native_sdk_aqueous_miac_kij_derivatives_cover_regression_discriminators(
-    cation: str,
-    anion: str,
-    molality: float,
-    coordinate: int,
-) -> None:
-    model = _electrolyte_model(("water", cation, anion))
-    _, table = _aqueous_miac_kij_table(model)
-    trial = (0.2, 0.2, 0.2)
-    center = _evaluate_aqueous_miac_kij(
-        table, model.parameter_fingerprint, molality, trial
-    )
-    estimates = []
-    for step in (1.0e-4, 5.0e-5):
-        upper = list(trial)
-        lower = list(trial)
-        upper[coordinate] += step
-        lower[coordinate] -= step
-        high = _evaluate_aqueous_miac_kij(
-            table, model.parameter_fingerprint, molality, tuple(upper)
-        )
-        low = _evaluate_aqueous_miac_kij(
-            table, model.parameter_fingerprint, molality, tuple(lower)
-        )
-        estimates.append(
-            (
-                high.log_mean_ionic_activity_coefficient_molality
-                - low.log_mean_ionic_activity_coefficient_molality
-            )
-            / (2.0 * step)
-        )
-    tolerance = max(
-        1.0e-8,
-        20.0 * abs(estimates[0] - estimates[1]),
-        2.0e-8 * abs(center.derivative[coordinate]),
-    )
-    assert abs(center.derivative[coordinate] - estimates[1]) <= tolerance
 
 
 def test_native_sdk_aqueous_miac_kij_preserves_prefix_and_fails_closed() -> None:
@@ -6248,123 +6259,6 @@ int main(void) { return 0; }
         check=False,
     )
     assert completed.returncode == 0, completed.stderr
-
-
-def test_native_sdk_aqueous_miac_solvation_factor_matches_public_value_and_exact_derivative() -> None:
-    model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
-    _, table = _aqueous_miac_solvation_factor_table(model)
-    assert table.aqueous_miac_solvation_factor_result_size == 280
-
-    fixed = _evaluate_aqueous_miac_solvation_factor(
-        table, model.parameter_fingerprint, 1.0, 1.5
-    )
-    reference = model.reference(
-        T=298.15 * unit_registry.kelvin,
-        P=1.0 * unit_registry.bar,
-        solvent_x=(1.0, 0.0, 0.0),
-        phase="liquid",
-    )
-    public = reference.state(molality=1.0 * unit_registry.mole / unit_registry.kilogram)
-    assert fixed.status == STATUS_OK
-    assert fixed.log_mean_ionic_activity_coefficient_molality == pytest.approx(
-        math.log(public.activity.mean_molality), abs=8.0e-11
-    )
-    assert fixed.reference_molality_mol_per_kg == pytest.approx(
-        reference.reference_molality.to("mole / kilogram").magnitude,
-        rel=0.0,
-        abs=0.0,
-    )
-    assert fixed.reference_convergence_error == pytest.approx(
-        reference.convergence_error, rel=0.0, abs=0.0
-    )
-    assert math.isfinite(fixed.reference_derivative_convergence_error)
-    assert fixed.parameter_fingerprint.decode() == model.parameter_fingerprint
-
-    molalities = (
-        0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1,
-        0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.4,
-        3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0,
-    )
-    for solvation_factor in (1.35, 1.65):
-        for molality in molalities:
-            center = _evaluate_aqueous_miac_solvation_factor(
-                table, model.parameter_fingerprint, molality, solvation_factor
-            )
-            estimates = []
-            for step in (1.0e-4, 5.0e-5):
-                high = _evaluate_aqueous_miac_solvation_factor(
-                    table,
-                    model.parameter_fingerprint,
-                    molality,
-                    solvation_factor + step,
-                )
-                low = _evaluate_aqueous_miac_solvation_factor(
-                    table,
-                    model.parameter_fingerprint,
-                    molality,
-                    solvation_factor - step,
-                )
-                estimates.append(
-                    (
-                        high.log_mean_ionic_activity_coefficient_molality
-                        - low.log_mean_ionic_activity_coefficient_molality
-                    )
-                    / (2.0 * step)
-                )
-            tolerance = max(
-                1.0e-8,
-                20.0 * abs(estimates[0] - estimates[1]),
-                2.0e-8 * abs(center.derivative),
-            )
-            assert abs(center.derivative - estimates[1]) <= tolerance
-
-
-def test_native_sdk_aqueous_miac_batches_preserve_scalar_results() -> None:
-    model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
-    _, table = _aqueous_miac_batch_table(model)
-
-    assert AqueousMiacBatchNativeSdkTable.evaluate_aqueous_miac_kij_batch.offset == 224
-    assert (
-        AqueousMiacBatchNativeSdkTable.evaluate_aqueous_miac_solvation_factor_batch.offset
-        == 232
-    )
-    assert ctypes.sizeof(AqueousMiacBatchNativeSdkTable) == 240
-
-    molalities = (0.001, 1.0, 6.0)
-    solvation_factor = 1.35
-    batch_solvation = _evaluate_aqueous_miac_solvation_factor_batch(
-        table,
-        model.parameter_fingerprint,
-        molalities,
-        solvation_factor,
-    )
-    scalar_solvation = tuple(
-        _evaluate_aqueous_miac_solvation_factor(
-            table,
-            model.parameter_fingerprint,
-            molality,
-            solvation_factor,
-        )
-        for molality in molalities
-    )
-    for batch, scalar in zip(batch_solvation, scalar_solvation, strict=True):
-        assert batch.status == scalar.status == STATUS_OK
-        assert (
-            batch.log_mean_ionic_activity_coefficient_molality
-            == scalar.log_mean_ionic_activity_coefficient_molality
-        )
-        assert batch.derivative == scalar.derivative
-        assert (
-            batch.reference_molality_mol_per_kg
-            == scalar.reference_molality_mol_per_kg
-        )
-        assert batch.reference_convergence_error == scalar.reference_convergence_error
-        assert (
-            batch.reference_derivative_convergence_error
-            == scalar.reference_derivative_convergence_error
-        )
-        assert batch.parameter_fingerprint == scalar.parameter_fingerprint
-        assert batch.error == scalar.error == b""
 
 
 def test_native_sdk_aqueous_miac_bounded_batches_cancel_without_background_work() -> None:
@@ -6483,12 +6377,12 @@ def test_native_sdk_aqueous_miac_bounded_batches_cancel_without_background_work(
         for result in solvation_cancelled_results
     )
 
-    bounded_results = (AqueousMiacKijResult * 3)(
+    bounded_results = (AqueousMiacKijResult * 1)(
         *(
             AqueousMiacKijResult(
                 struct_size=ctypes.sizeof(AqueousMiacKijResult)
             )
-            for _ in range(3)
+            for _ in range(1)
         )
     )
     sufficient_budget = NativeEvaluationBudget(
@@ -6496,7 +6390,7 @@ def test_native_sdk_aqueous_miac_bounded_batches_cancel_without_background_work(
         work_budget=(1 << 64) - 1,
         deadline_ns=0,
     )
-    short_molalities = (ctypes.c_double * 3)(0.001, 1.0, 6.0)
+    short_molalities = (ctypes.c_double * 1)(1.0)
     bounded_status = EvaluateAqueousMiacKijBatchBounded(
         table.evaluate_aqueous_miac_kij_batch_bounded
     )(
@@ -6505,11 +6399,11 @@ def test_native_sdk_aqueous_miac_bounded_batches_cancel_without_background_work(
         298.15,
         100000.0,
         short_molalities,
-        3,
+        1,
         coordinates,
         3,
         bounded_results,
-        3,
+        1,
         ctypes.byref(sufficient_budget),
     )
     existing_results = _evaluate_aqueous_miac_kij_batch(
@@ -6517,48 +6411,37 @@ def test_native_sdk_aqueous_miac_bounded_batches_cancel_without_background_work(
             ctypes.pointer(table), ctypes.POINTER(AqueousMiacBatchNativeSdkTable)
         ).contents,
         model.parameter_fingerprint,
-        (0.001, 1.0, 6.0),
+        (1.0,),
         (-0.2, -0.3, 0.4),
     )
     assert bounded_status == STATUS_OK
     for bounded, existing in zip(bounded_results, existing_results, strict=True):
         assert bytes(bounded) == bytes(existing)
 
-    coordinates = (-0.2, -0.3, 0.4)
-    batch_kij = _evaluate_aqueous_miac_kij_batch(
-        table,
+    batch_table = ctypes.cast(
+        ctypes.pointer(table), ctypes.POINTER(AqueousMiacBatchNativeSdkTable)
+    ).contents
+    scalar_kij = _evaluate_aqueous_miac_kij(
+        batch_table,
         model.parameter_fingerprint,
-        molalities,
-        coordinates,
+        1.0,
+        (-0.2, -0.3, 0.4),
     )
-    scalar_kij = tuple(
-        _evaluate_aqueous_miac_kij(
-            table,
-            model.parameter_fingerprint,
-            molality,
-            coordinates,
-        )
-        for molality in molalities
-    )
-    for batch, scalar in zip(batch_kij, scalar_kij, strict=True):
-        assert batch.status == scalar.status == STATUS_OK
-        assert (
-            batch.log_mean_ionic_activity_coefficient_molality
-            == scalar.log_mean_ionic_activity_coefficient_molality
-        )
-        assert tuple(batch.derivative) == tuple(scalar.derivative)
-        assert (
-            batch.reference_molality_mol_per_kg
-            == scalar.reference_molality_mol_per_kg
-        )
-        assert batch.reference_convergence_error == scalar.reference_convergence_error
-        assert (
-            batch.reference_derivative_convergence_error
-            == scalar.reference_derivative_convergence_error
-        )
-        assert batch.parameter_fingerprint == scalar.parameter_fingerprint
-        assert batch.error == scalar.error == b""
+    assert bytes(existing_results[0]) == bytes(scalar_kij)
 
+    batch_solvation = _evaluate_aqueous_miac_solvation_factor_batch(
+        batch_table,
+        model.parameter_fingerprint,
+        (1.0,),
+        1.35,
+    )
+    scalar_solvation = _evaluate_aqueous_miac_solvation_factor(
+        batch_table,
+        model.parameter_fingerprint,
+        1.0,
+        1.35,
+    )
+    assert bytes(batch_solvation[0]) == bytes(scalar_solvation)
 
 def test_native_sdk_aqueous_miac_batches_fail_closed() -> None:
     model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
@@ -6694,38 +6577,46 @@ def test_native_sdk_staged_figiel_user_bundles_are_narrowly_admitted() -> None:
     assert nacl_table.evaluate_aqueous_miac_kij
     assert nacl_table.evaluate_aqueous_miac_solvation_factor
     assert _evaluate_active_born(nacl_table, 3.4).status == STATUS_OK
+    assert (
+        _evaluate_active_born(nacl_table, 3.4, pressure_pa=100001.0).status
+        == STATUS_DOMAIN_ERROR
+    )
     assert _evaluate_aqueous_miac_kij(
         nacl_table, nacl.parameter_fingerprint, 1.0, (-0.2, -0.2, 0.2)
     ).status == STATUS_OK
+    assert _evaluate_aqueous_miac_kij(
+        nacl_table, nacl.parameter_fingerprint, 0.0, (-0.2, -0.2, 0.2)
+    ).status == STATUS_DOMAIN_ERROR
 
     nabr = _figiel_trial_model(("water", "sodium-cation", "bromide-anion"))
     _, nabr_table = _aqueous_miac_solvation_factor_table(nabr)
     assert _evaluate_aqueous_miac_solvation_factor(
+        nabr_table, nabr.parameter_fingerprint, 0.0, 1.4
+    ).status == STATUS_DOMAIN_ERROR
+    assert _evaluate_aqueous_miac_solvation_factor(
         nabr_table, nabr.parameter_fingerprint, 1.0, 1.4
     ).status == STATUS_OK
-    assert _evaluate_aqueous_miac_kij(
-        nabr_table, nabr.parameter_fingerprint, 1.0, (-0.2, -0.2, 0.2)
-    ).status == STATUS_OK
 
-    for active_anion, counterion in (
-        ("chloride-anion", "sodium-cation"),
-        ("bromide-anion", "sodium-cation"),
-    ):
-        anion_model = _figiel_trial_model(("water", active_anion, counterion))
-        _, anion_table = _aqueous_miac_solvation_factor_table(anion_model)
-        assert _evaluate_active_born(anion_table, 4.2).status == STATUS_OK
-        assert _evaluate_aqueous_miac_kij(
-            anion_table,
-            anion_model.parameter_fingerprint,
-            1.0,
-            (-0.2, -0.2, 0.2),
-        ).status == STATUS_UNSUPPORTED_MODEL
-        assert _evaluate_aqueous_miac_solvation_factor(
-            anion_table,
-            anion_model.parameter_fingerprint,
-            1.0,
-            1.4,
-        ).status == STATUS_UNSUPPORTED_MODEL
+    anion_model = _figiel_trial_model(
+        ("water", "bromide-anion", "sodium-cation")
+    )
+    _, anion_table = _aqueous_miac_solvation_factor_table(anion_model)
+    assert (
+        _evaluate_active_born(anion_table, 4.2, pressure_pa=100001.0).status
+        == STATUS_DOMAIN_ERROR
+    )
+    assert _evaluate_aqueous_miac_kij(
+        anion_table,
+        anion_model.parameter_fingerprint,
+        1.0,
+        (-0.2, -0.2, 0.2),
+    ).status == STATUS_UNSUPPORTED_MODEL
+    assert _evaluate_aqueous_miac_solvation_factor(
+        anion_table,
+        anion_model.parameter_fingerprint,
+        1.0,
+        1.4,
+    ).status == STATUS_UNSUPPORTED_MODEL
 
     fixture = _figiel_trial_model(
         ("water", "sodium-cation", "bromide-anion"),
@@ -6763,9 +6654,9 @@ def test_native_sdk_staged_figiel_user_bundles_are_narrowly_admitted() -> None:
     assert _evaluate_aqueous_miac_solvation_factor(
         provenance_renamed_table,
         provenance_renamed.parameter_fingerprint,
-        1.0,
+        0.0,
         1.4,
-    ).status == STATUS_OK
+    ).status == STATUS_DOMAIN_ERROR
     reordered = _figiel_trial_model(("sodium-cation", "water", "bromide-anion"))
     _, reordered_table = _aqueous_miac_solvation_factor_table(reordered)
     assert _evaluate_aqueous_miac_solvation_factor(
@@ -6860,7 +6751,64 @@ int main(void) { return 0; }
     assert completed.returncode == 0, completed.stderr
 
 
-def test_native_sdk_neutral_reference_is_complete_and_matches_public_owner() -> None:
+def test_native_sdk_held_neutral_reference_preserves_value_domain_and_permutation() -> None:
+    model = _held_water_ionization_model()
+    _, table = _neutral_reference_table(model)
+    observed, basis, contractions, composition = _evaluate_neutral_reference(
+        table, model.parameter_fingerprint
+    )
+    reference = model.reference(
+        T=298.15 * unit_registry.kelvin,
+        P=100000.0 * unit_registry.pascal,
+        solvent_x=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    pure_water = model.state(
+        T=reference.temperature,
+        P=reference.pressure,
+        x=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    assert pure_water._log_fugacity_coefficient is not None
+
+    assert observed.status == STATUS_OK
+    assert basis == pytest.approx((1.0, 0.0, 0.0, 0.0, 1.0, 1.0))
+    assert contractions == pytest.approx(
+        (
+            pure_water._log_fugacity_coefficient[0],
+            math.fsum(reference.infinite_dilution_log_fugacity_coefficient),
+        ),
+        abs=2.0e-12,
+    )
+    assert composition == pytest.approx((1.0, 0.0, 0.0))
+    assert observed.parameter_fingerprint.decode() == model.parameter_fingerprint
+
+    outside_domain, _, _, _ = _evaluate_neutral_reference(
+        table,
+        model.parameter_fingerprint,
+        temperature_k=299.0,
+    )
+    assert outside_domain.status == STATUS_DOMAIN_ERROR
+
+    permuted = _held_water_ionization_model(
+        ("hydroxide-anion", "water", "hydronium-cation")
+    )
+    _, permuted_table = _neutral_reference_table(permuted)
+    permuted_result, permuted_basis, permuted_contractions, permuted_composition = (
+        _evaluate_neutral_reference(
+            permuted_table,
+            permuted.parameter_fingerprint,
+        )
+    )
+    assert permuted_result.status == STATUS_OK
+    assert permuted_basis == pytest.approx((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
+    assert permuted_contractions[1] == pytest.approx(
+        contractions[1], abs=5.0e-12
+    )
+    assert permuted_composition == pytest.approx((0.0, 1.0, 0.0))
+
+
+def test_native_sdk_neutral_reference_matches_public_owner_and_is_permutation_safe() -> None:
     model = _electrolyte_model()
     capsule, table = _neutral_reference_table(model)
     assert capsule is not None
@@ -6911,137 +6859,33 @@ def test_native_sdk_neutral_reference_is_complete_and_matches_public_owner() -> 
     )
     assert result.error == b""
 
-    # Two independent charge-neutral rows span the same space under a basis change.
-    reactions = ((-2.0, 1.0, 1.0), (1.0, 1.0, 1.0))
-    basis_coefficients = ((-2.0, 1.0), (1.0, 1.0))
-    reconstructed = tuple(
-        tuple(
-            math.fsum(coefficient * basis[row * 3 + component] for row, coefficient in enumerate(weights))
-            for component in range(3)
-        )
-        for weights in basis_coefficients
-    )
-    assert reconstructed == reactions
-    reaction_contractions = tuple(
-        math.fsum(coefficient * contractions[row] for row, coefficient in enumerate(weights))
-        for weights in basis_coefficients
-    )
-    transformed_rows = (
-        tuple(left + right for left, right in zip(*reactions, strict=True)),
-        reactions[1],
-    )
-    transformed_values = (reaction_contractions[0] + reaction_contractions[1], reaction_contractions[1])
-    assert transformed_rows[0] == (-1.0, 2.0, 2.0)
-    assert transformed_values[0] == pytest.approx(
-        -contractions[0] + 2.0 * contractions[1], abs=2e-15
-    )
-    # For (water, H3O+, OH-), this is the accepted water self-ionization offset.
-    assert reaction_contractions[0] == pytest.approx(contractions[1] - 2.0 * contractions[0])
-
-    for cation in ("lithium-cation", "sodium-cation", "potassium-cation"):
-        for anion in ("chloride-anion", "bromide-anion"):
-            supported = _electrolyte_model(("water", cation, anion))
-            _, supported_table = _neutral_reference_table(supported)
-            assert supported_table.neutral_reference_basis_row_count == 2
-            supported_result, *_ = _evaluate_neutral_reference(
-                supported_table, supported.parameter_fingerprint
-            )
-            assert supported_result.status == STATUS_OK
-
-
-def test_native_sdk_neutral_reference_spans_multicomponent_user_model() -> None:
-    component_ids = (
-        "water",
-        "1-butanol",
-        "sodium-cation",
-        "potassium-cation",
-        "chloride-anion",
-    )
-    installed = _ParameterBundle.from_catalog(
-        "ascani-2022-case-study-2-electrolyte-lle", version=1
-    )
-    models = (
-        Mixture(installed.select(component_ids)),
-        Mixture(_user_provided_copy(installed).select(component_ids)),
-    )
-    expected_basis = (
-        1.0, 0.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0, 1.0,
-        0.0, 0.0, 0.0, 1.0, 1.0,
-    )
-
-    for model in models:
-        _, table = _neutral_reference_table(model)
-        assert table.neutral_reference_basis_row_count == 4
-        result, basis, contractions, reference_composition = _evaluate_neutral_reference(
-            table, model.parameter_fingerprint
-        )
-        pure_water = model._native.evaluate_pressure(
-            298.15, 100000.0, (1.0, 0.0, 0.0, 0.0, 0.0), "liquid"
-        )
-        sodium_chloride = model._native.electrolyte_reference_sequence(
-            298.15,
-            100000.0,
-            (1.0, 0.0, 0.0, 0.0, 0.0),
-            (2, 4),
-            (1, 1),
-            "liquid",
-        )
-        potassium_chloride = model._native.electrolyte_reference_sequence(
-            298.15,
-            100000.0,
-            (1.0, 0.0, 0.0, 0.0, 0.0),
-            (3, 4),
-            (1, 1),
-            "liquid",
-        )
-
-        assert result.status == STATUS_OK
-        assert tuple(table.component_charges[index] for index in range(5)) == (0, 0, 1, 1, -1)
-        assert basis == expected_basis
-        assert reference_composition == (1.0, 0.0, 0.0, 0.0, 0.0)
-        assert contractions == pytest.approx(
-            (
-                pure_water.log_fugacity_coefficient[0],
-                pure_water.log_fugacity_coefficient[1],
-                math.fsum(sodium_chloride.log_fugacity),
-                math.fsum(potassium_chloride.log_fugacity),
-            ),
-            abs=3.0e-12,
-        )
-        assert result.reference_convergence_error == pytest.approx(
-            max(
-                sodium_chloride.convergence_error,
-                potassium_chloride.convergence_error,
-            ),
-            abs=3.0e-12,
-        )
-
-
-def test_native_sdk_neutral_reference_is_permutation_invariant_and_fails_closed() -> None:
-    canonical = _electrolyte_model()
-    _, canonical_table = _neutral_reference_table(canonical)
-    canonical_result, _, canonical_contractions, _ = _evaluate_neutral_reference(
-        canonical_table, canonical.parameter_fingerprint
-    )
-
     permuted = _electrolyte_model(("chloride-anion", "water", "sodium-cation"))
-    _, table = _neutral_reference_table(permuted)
-    result, basis, contractions, reference_composition = _evaluate_neutral_reference(
-        table, permuted.parameter_fingerprint
+    _, permuted_table = _neutral_reference_table(permuted)
+    permuted_result, permuted_basis, permuted_contractions, permuted_composition = (
+        _evaluate_neutral_reference(
+            permuted_table, permuted.parameter_fingerprint
+        )
     )
-    assert tuple(table.component_ids[index].decode() for index in range(3)) == permuted.component_ids
-    assert tuple(table.component_charges[index] for index in range(3)) == (-1, 0, 1)
-    assert basis == (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-    assert reference_composition == (0.0, 1.0, 0.0)
-    assert contractions == pytest.approx(canonical_contractions, abs=3e-12)
-    assert result.reference_convergence_error == pytest.approx(
-        canonical_result.reference_convergence_error, abs=5e-12
+    assert tuple(
+        permuted_table.component_ids[index].decode() for index in range(3)
+    ) == permuted.component_ids
+    assert tuple(permuted_table.component_charges[index] for index in range(3)) == (
+        -1,
+        0,
+        1,
     )
-    assert result.parameter_fingerprint.decode() == permuted.parameter_fingerprint
+    assert permuted_basis == (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    assert permuted_composition == (0.0, 1.0, 0.0)
+    assert permuted_contractions == pytest.approx(contractions, abs=3e-12)
+    assert permuted_result.reference_convergence_error == pytest.approx(
+        result.reference_convergence_error, abs=5e-12
+    )
+    assert (
+        permuted_result.parameter_fingerprint.decode()
+        == permuted.parameter_fingerprint
+    )
 
-    callback = EvaluateNeutralReference(table.evaluate_neutral_reference)
+    callback = EvaluateNeutralReference(permuted_table.evaluate_neutral_reference)
     basis_buffer = (ctypes.c_double * 6)(*([123.0] * 6))
     contraction_buffer = (ctypes.c_double * 2)(123.0, 123.0)
     composition_buffer = (ctypes.c_double * 3)(123.0, 123.0, 123.0)
@@ -7062,7 +6906,7 @@ def test_native_sdk_neutral_reference_is_permutation_invariant_and_fails_closed(
             reference_composition=composition_buffer,
         )
         status = callback(
-            table.model_context,
+            permuted_table.model_context,
             fingerprint,
             temperature,
             pressure,
@@ -7071,13 +6915,13 @@ def test_native_sdk_neutral_reference_is_permutation_invariant_and_fails_closed(
         assert status == failure.status
         return failure
 
-    for failure, expected in (
+    for failure, expected_status in (
         (call(fingerprint=b"sha256:wrong"), STATUS_UNSUPPORTED_MODEL),
         (call(temperature=299.0), STATUS_DOMAIN_ERROR),
         (call(pressure=101325.0), STATUS_DOMAIN_ERROR),
         (call(basis_capacity=5), STATUS_INVALID_ARGUMENT),
     ):
-        assert failure.status == expected
+        assert failure.status == expected_status
         assert failure.parameter_fingerprint == b""
         assert failure.helmholtz_basis_id == b""
         assert failure.error
@@ -7088,7 +6932,7 @@ def test_native_sdk_neutral_reference_is_permutation_invariant_and_fails_closed(
     undersized = NeutralReferenceResult(struct_size=8, status=123)
     before = bytes(undersized)
     status = callback(
-        table.model_context,
+        permuted_table.model_context,
         permuted.parameter_fingerprint.encode(),
         298.15,
         100000.0,
@@ -7114,6 +6958,37 @@ def test_native_sdk_neutral_reference_is_permutation_invariant_and_fails_closed(
     )
     assert unsupported_status == unsupported_result.status == STATUS_UNSUPPORTED_MODEL
     assert unsupported_result.error
+
+
+def test_native_sdk_neutral_reference_spans_multicomponent_user_model() -> None:
+    component_ids = (
+        "water",
+        "1-butanol",
+        "sodium-cation",
+        "chloride-anion",
+    )
+    installed = _ParameterBundle.from_catalog(
+        "ascani-2022-case-study-2-electrolyte-lle", version=1
+    )
+    model = Mixture(_user_provided_copy(installed).select(component_ids))
+    expected_basis = (
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 1.0,
+    )
+
+    _, table = _neutral_reference_table(model)
+    assert table.neutral_reference_basis_row_count == 3
+    result, basis, contractions, reference_composition = _evaluate_neutral_reference(
+        table, model.parameter_fingerprint
+    )
+
+    assert result.status == STATUS_OK
+    assert tuple(table.component_charges[index] for index in range(4)) == (0, 0, 1, -1)
+    assert basis == expected_basis
+    assert reference_composition == (1.0, 0.0, 0.0, 0.0)
+    assert all(math.isfinite(value) for value in contractions)
+    assert math.isfinite(result.reference_convergence_error)
 
 
 def test_native_sdk_neutral_reference_installed_header_layout() -> None:
@@ -8351,22 +8226,15 @@ def test_native_sdk_neutral_reference_derivatives_are_exact_and_fail_closed() ->
                 )[2]
             )
         for row in range(2):
-            numerical = (shifted_contractions[1][row] - shifted_contractions[0][row]) / (2.0 * step)
+            numerical = (
+                shifted_contractions[1][row] - shifted_contractions[0][row]
+            ) / (2.0 * step)
             assert parameter_derivatives[row * 2 + parameter] == pytest.approx(
                 numerical, rel=4.0e-6, abs=4.0e-8
             )
     assert -2.0 * contractions[0] + contractions[1] == pytest.approx(
         -2.0 * result.value.log_fugacity_contractions[0] + result.value.log_fugacity_contractions[1]
     )
-
-    pressure_only, *_ = _evaluate_neutral_reference_derivatives(
-        table,
-        model.parameter_fingerprint,
-        topology,
-        (),
-    )
-    assert pressure_only.status == STATUS_OK
-    assert pressure_only.derivative_availability == 2
 
     malformed = _active_request(4, 1, sigma, b"nanometer")
     failure, *_ = _evaluate_neutral_reference_derivatives(

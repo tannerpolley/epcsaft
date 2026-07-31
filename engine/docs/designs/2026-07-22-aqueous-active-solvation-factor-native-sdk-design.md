@@ -68,7 +68,9 @@ transport for user bundles remains independently available and unchanged.
 
 ## Evidence gate
 
-At `f_water=1.35` and `1.65`, all 21 audited NaBr molalities are checked against
+Historical acceptance evidence checks all 21 audited NaBr molalities at
+`f_water=1.35` and `1.65`. The compact Provider regression gate retains both
+factor values at one interior molality and compares the exact derivative with
 centered callback values at steps `1e-4` and `5e-5` using
 
 ```text

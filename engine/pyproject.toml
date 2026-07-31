@@ -13,6 +13,7 @@ dependencies = ["Pint>=0.25.3"]
 
 [tool.scikit-build]
 minimum-version = "0.12"
+build-dir = "build/{wheel_tag}"
 wheel.packages = ["src/epcsaft"]
 wheel.exclude = ["epcsaft/_native/**"]
 cmake.source-dir = "."

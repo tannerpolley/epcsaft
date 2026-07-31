@@ -359,10 +359,15 @@ Provider-owned CppAD concurrency; scalar callbacks delegate to the same
 calculation owner with a one-row array.
 
 The consumer must require the 240-byte tail and may not fall back to scalar
-row calls. Installed evidence must establish bitwise scalar/batch parity over
-the frozen 21-row and 164-row inputs and a bounded Stage-C throughput result.
-This amendment changes transport cost only: equations, rows, derivatives,
-diagnostics, bounds, targets, fit policy, and authority remain unchanged.
+row calls. Installed regression evidence establishes bitwise scalar/batch
+parity for one interior row of each callback, because each scalar callback is
+a value-independent one-row delegate to the same batch calculation owner. The
+frozen 21-row and 164-row repetitions remain historical acceptance evidence;
+repeating every row through the scalar delegate does not add an independent
+equation, routing, or ownership claim. The regression suite retains bounded
+Stage-C cancellation and throughput evidence. This amendment changes
+transport cost only: equations, rows, derivatives, diagnostics, bounds,
+targets, fit policy, and authority remain unchanged.
 
 ## Cooperative evaluation-budget tail
 
