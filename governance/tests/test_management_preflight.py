@@ -206,6 +206,20 @@ def test_repository_preflight_receipt_enforces_namespace_and_authorization() -> 
     )
     assert "operation receipt missing-approval.json requires approval source" in errors
 
+    receipt = deepcopy(original)
+    receipt["envelope"]["subject"]["repository"] = "example/unapproved"
+    receipt["envelope"]["subject"]["visibility"] = "private"
+    receipt["envelope"]["subject"]["default_branch"] = "feature"
+    subject_hash = MODULE.json_sha256(receipt["envelope"]["subject"])
+    receipt["envelope"]["subject_sha256"] = subject_hash
+    receipt["envelope"]["user_approval"]["source"] = "x"
+    receipt["envelope"]["user_approval"]["subject_sha256"] = subject_hash
+    errors = MODULE.validate_operation_receipt(
+        "unapproved-subject.json", receipt, schema, schema_hash
+    )
+    assert "operation receipt unapproved-subject.json does not match approved operation" in errors
+    assert "operation receipt unapproved-subject.json has invalid approval provenance" in errors
+
 
 def test_parameter_packets_separate_storage_runtime_and_evidence_owners() -> None:
     policy = json.loads(
@@ -254,6 +268,16 @@ def test_discovered_eos_runtime_copy_requires_runtime_ownership(
         "admitted EOS catalog packet gross-sadowski-2001 requires EOS runtime ownership"
         in MODULE.parameter_policy_errors(config)
     )
+
+
+def test_declared_eos_catalog_copies_must_exist(tmp_path: Path) -> None:
+    config = json.loads(
+        (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
+    )
+    config["repositories"]["eos"]["local_path"] = str(tmp_path / "empty-eos")
+    (tmp_path / "empty-eos").mkdir()
+    errors = MODULE.parameter_policy_errors(config)
+    assert any(error.startswith("declared EOS catalog packets are missing:") for error in errors)
 
 
 def test_parameter_ledger_retains_legacy_validation_copies_until_migration() -> None:

@@ -7,6 +7,7 @@
     },
     "sequence": 1,
     "subject": {
+      "authorization_id": "data-repository-creation-2026-07-31",
       "operation": "create-public-repository",
       "repository": "ePC-SAFT/ePC-SAFT-data",
       "visibility": "public",
@@ -15,7 +16,7 @@
       "phase": "authorization-preflight",
       "record_sha256": "91b7c32491e89bdce59e8bb61350764fa09a4a42e92bb9dee643c7108d2d776d"
     },
-    "subject_sha256": "e5cf4db4331108e366c27dba7499abda9e6951deadc7697a9dc113d042bd9c31",
+    "subject_sha256": "118be5eb3c977883fb31353cd731d86fdb76285a7bc1ec826f075948ba836958",
     "validator": {
       "repository": "ePC-SAFT/ePC-SAFT-management",
       "commit": "8b3bc6e3ae64abf1cf46b0e69519f2ad1a529b28",
@@ -57,7 +58,7 @@
     "revoked_by": null,
     "user_approval": {
       "source": "explicit Codex task request on 2026-07-31",
-      "subject_sha256": "e5cf4db4331108e366c27dba7499abda9e6951deadc7697a9dc113d042bd9c31"
+      "subject_sha256": "118be5eb3c977883fb31353cd731d86fdb76285a7bc1ec826f075948ba836958"
     }
   },
   "record": {

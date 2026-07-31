@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "operations": {
+    "data-repository-creation-2026-07-31": {
+      "subject": {
+        "operation": "create-public-repository",
+        "repository": "ePC-SAFT/ePC-SAFT-data",
+        "visibility": "public",
+        "default_branch": "main",
+        "doctrine_revision": 6,
+        "phase": "authorization-preflight"
+      },
+      "approval_source": "explicit Codex task request on 2026-07-31"
+    }
+  }
+}

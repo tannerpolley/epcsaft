@@ -21,6 +21,7 @@ ARTIFACT_POLICY_PATH = ROOT / "manifests" / "artifact-store-policy.json"
 OPERATION_RECEIPT_SCHEMA_PATH = (
     ROOT / "manifests" / "operation-receipt-envelope-v1.json"
 )
+APPROVED_OPERATIONS_PATH = ROOT / "manifests" / "approved-operations.json"
 
 ALLOWED_ENVIRONMENT_DISTRIBUTIONS: dict[str, set[str]] = {
     "management": set(),
@@ -213,6 +214,7 @@ def ownership_projection(policy: dict[str, Any]) -> dict[str, Any]:
         "storage_owner": policy.get("storage_owner", "unclassified"),
         "runtime_owner": policy.get("runtime_owner"),
         "evidence_owner": policy.get("evidence_owner"),
+        "catalog_presence": policy.get("catalog_presence", "unclassified"),
         "disposition": policy.get("disposition", "unclassified"),
     }
 
@@ -444,6 +446,16 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
     missing = sorted(discovered.difference(by_id))
     if missing:
         errors.append(f"unregistered EOS parameter bundles: {missing}")
+    eos_discovered = set(discovered)
+    expected_eos = {
+        bundle_id
+        for bundle_id, entry in by_id.items()
+        if entry.get("catalog_presence")
+        in {"admitted_runtime_copy", "legacy_copy_pending_removal"}
+    }
+    missing_eos = sorted(expected_eos.difference(eos_discovered))
+    if missing_eos:
+        errors.append(f"declared EOS catalog packets are missing: {missing_eos}")
     data_root = Path(config["repositories"]["data"]["local_path"])
     packets = data_root / "packets"
     if packets.exists():
@@ -535,6 +547,21 @@ def validate_operation_receipt(
         )
     if not isinstance(approval.get("source"), str) or not approval["source"].strip():
         errors.append(f"operation receipt {relative} requires approval source")
+    approved_operations = load_json(APPROVED_OPERATIONS_PATH)["operations"]
+    authorization_id = subject.get("authorization_id")
+    approved = approved_operations.get(authorization_id)
+    if not isinstance(approved, dict):
+        errors.append(f"operation receipt {relative} does not match approved operation")
+    else:
+        approved_subject = approved["subject"]
+        if any(subject.get(key) != value for key, value in approved_subject.items()):
+            errors.append(
+                f"operation receipt {relative} does not match approved operation"
+            )
+        if approval.get("source") != approved["approval_source"]:
+            errors.append(
+                f"operation receipt {relative} has invalid approval provenance"
+            )
     producer_identity = (
         envelope["producer"].get("kind"),
         envelope["producer"].get("id"),
@@ -692,6 +719,8 @@ def validate_config(config: dict[str, Any]) -> list[str]:
         errors.append(
             "parameter ownership manifest must be manifests/parameter-ownership.json"
         )
+    if config.get("approved_operations") != "manifests/approved-operations.json":
+        errors.append("approved operations must be manifests/approved-operations.json")
     if not isinstance(config.get("operation_receipts"), list):
         errors.append("operation receipts must be an array")
     return errors
