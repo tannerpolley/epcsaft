@@ -85,6 +85,54 @@ def _valid_hex(value: Any, length: int) -> bool:
     )
 
 
+def _safe_bundle_member(value: Any) -> PurePosixPath | None:
+    if not _nonempty_string(value):
+        return None
+    path = PurePosixPath(value)
+    if not path.parts or path.is_absolute() or ".." in path.parts:
+        return None
+    return path
+
+
+def _validate_parameter_bundle(
+    packet_root: Path,
+    relative: PurePosixPath,
+    expected_paths: set[PurePosixPath],
+    prefix: str,
+) -> list[str]:
+    path = packet_root / Path(*relative.parts)
+    try:
+        data = tomllib.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
+        return [f"{prefix}: cannot read parameter bundle {relative}: {exc}"]
+    errors: list[str] = []
+    if data.get("schema_version") != 1:
+        errors.append(f"{prefix}: parameter bundle requires schema_version 1")
+    for field in ("bundle_id", "purpose"):
+        if not _nonempty_string(data.get(field)):
+            errors.append(f"{prefix}: parameter bundle requires {field}")
+    if not isinstance(data.get("bundle_version"), int):
+        errors.append(f"{prefix}: parameter bundle requires integer bundle_version")
+    files = data.get("files")
+    if not isinstance(files, list) or not files:
+        return errors + [f"{prefix}: parameter bundle requires files"]
+    declared: set[PurePosixPath] = set()
+    for index, value in enumerate(files):
+        member = _safe_bundle_member(value)
+        retained = (
+            None
+            if member is None
+            else PurePosixPath(relative.parent, member)
+        )
+        if retained is None or retained in declared:
+            errors.append(f"{prefix}: parameter bundle file {index} is invalid")
+            continue
+        declared.add(retained)
+    if declared != expected_paths:
+        errors.append(f"{prefix}: parameter bundle file set is incomplete")
+    return errors
+
+
 def _validate_migration_provenance(
     packet_root: Path,
     relative: PurePosixPath,
@@ -211,6 +259,8 @@ def validate_packet(manifest: Path) -> list[str]:
         domain_ids.add(domain_id)
 
     listed: set[PurePosixPath] = set()
+    parameter_bundle_files: set[PurePosixPath] = set()
+    parameter_payloads: set[PurePosixPath] = set()
     provenance_files: set[PurePosixPath] = set()
     provenance_inputs: set[PurePosixPath] = set()
     for index, record in enumerate(files):
@@ -232,6 +282,11 @@ def validate_packet(manifest: Path) -> list[str]:
             provenance_files.add(relative)
         else:
             provenance_inputs.add(relative)
+            if role == "parameters":
+                if relative.name == "bundle.toml":
+                    parameter_bundle_files.add(relative)
+                else:
+                    parameter_payloads.add(relative)
         for field in ("media_type", "units_basis"):
             if not _nonempty_string(record.get(field)):
                 errors.append(f"{prefix}: {relative} requires {field}")
@@ -284,6 +339,19 @@ def validate_packet(manifest: Path) -> list[str]:
     ]
     if unlisted_symlinks:
         errors.append(f"{prefix}: unlisted symlinks: {sorted(unlisted_symlinks)}")
+    for relative in parameter_bundle_files:
+        errors.extend(
+            _validate_parameter_bundle(
+                packet_root,
+                relative,
+                {
+                    path
+                    for path in parameter_payloads
+                    if path.parent == relative.parent
+                },
+                prefix,
+            )
+        )
     for relative in provenance_files:
         errors.extend(
             _validate_migration_provenance(

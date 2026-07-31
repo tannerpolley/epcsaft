@@ -57,6 +57,46 @@ class PacketValidationTests(unittest.TestCase):
         manifest.write_text(_manifest(_sha256(payload)), encoding="utf-8")
         return temporary, manifest, data
 
+    def make_parameter_bundle_packet(
+        self,
+    ) -> tuple[tempfile.TemporaryDirectory[str], Path, Path]:
+        temporary, manifest, _ = self.make_packet()
+        parameters = manifest.parent / "parameters"
+        parameters.mkdir()
+        component_payload = b"component_id,name\nwater,Water\n"
+        (parameters / "components.csv").write_bytes(component_payload)
+        bundle_payload = b'''schema_version = 1
+bundle_id = "example-bundle"
+bundle_version = 1
+purpose = "user-provided"
+files = ["components.csv"]
+'''
+        bundle = parameters / "bundle.toml"
+        bundle.write_bytes(bundle_payload)
+        manifest.write_text(
+            manifest.read_text(encoding="utf-8")
+            + f'''\n[[files]]
+path = "parameters/bundle.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "{_sha256(bundle_payload)}"
+source_refs = ["fixture"]
+domain_refs = ["fixture-domain"]
+units_basis = "Bundle metadata are non-numeric identifiers."
+
+[[files]]
+path = "parameters/components.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "{_sha256(component_payload)}"
+source_refs = ["fixture"]
+domain_refs = ["fixture-domain"]
+units_basis = "Identity metadata are non-numeric."
+''',
+            encoding="utf-8",
+        )
+        return temporary, manifest, bundle
+
     def test_valid_packet_passes(self) -> None:
         temporary, manifest, _ = self.make_packet()
         self.addCleanup(temporary.cleanup)
@@ -117,6 +157,27 @@ units_basis = "Repository metadata are non-numeric identifiers."
                         for error in validate_packet(manifest)
                     )
                 )
+
+    def test_parameter_bundle_file_set_is_exact(self) -> None:
+        temporary, manifest, bundle = self.make_parameter_bundle_packet()
+        self.addCleanup(temporary.cleanup)
+        self.assertEqual(validate_packet(manifest), [])
+
+        original = bundle.read_bytes()
+        changed = original.replace(b'"components.csv"', b'"missing.csv"')
+        bundle.write_bytes(changed)
+        manifest.write_text(
+            manifest.read_text(encoding="utf-8").replace(
+                _sha256(original), _sha256(changed)
+            ),
+            encoding="utf-8",
+        )
+        self.assertTrue(
+            any(
+                "parameter bundle file set is incomplete" in error
+                for error in validate_packet(manifest)
+            )
+        )
 
     def test_unsafe_path_fails(self) -> None:
         temporary, manifest, _ = self.make_packet()
