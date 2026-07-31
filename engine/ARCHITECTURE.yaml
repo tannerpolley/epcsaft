@@ -300,6 +300,7 @@ owners:
 
 public_surface:
   parameter_dictionary_resolution: Parameters.from_dictionary
+  mixture_dictionary_construction: Mixture.from_dictionary
   parameter_bundle_persistence: [Parameters.to_bundle, Parameters.from_bundle]
   result_state_metadata: [component_ids, temperature, mole_fractions, parameter_fingerprint]
   typing: PEP-561 py.typed with Pint quantities, overloads, and public Literal aliases
@@ -453,8 +454,8 @@ manifest:
   package_test_files: 12
   optional_native_debug_test_files: 1
   physical_production_lines: 17244
-  physical_package_test_lines: 4746
-  physical_documentation_lines: 11215
+  physical_package_test_lines: 4856
+  physical_documentation_lines: 11221
   measurement: wc -l over tracked EOS Python, C++, public C headers, executable package-test sources, and all docs plus README and CONTEXT
   tracked_generated_files: 2
   generated_file_policy: Equation registry views are deterministic and tracked; build outputs and campaign artifacts remain untracked, and generated authority is forbidden.

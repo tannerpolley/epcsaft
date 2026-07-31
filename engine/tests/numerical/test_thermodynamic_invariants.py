@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from epcsaft import Mixture, Parameters, unit_registry as u
+from epcsaft import Activity, Mixture, Parameters, TransferFreeEnergy, unit_registry as u
 
 from tests._raw_cases import (
     AQUEOUS_ELECTROLYTE,
@@ -21,6 +21,25 @@ BOLTZMANN = 1.380649e-23
 ELEMENTARY_CHARGE = 1.602176634e-19
 GAS_CONSTANT = 8.31446261815324
 VACUUM_PERMITTIVITY = 8.8541878128e-12
+
+
+def _first_derivative(function, value: float, step: float) -> float:
+    return (
+        -function(value + 2.0 * step)
+        + 8.0 * function(value + step)
+        - 8.0 * function(value - step)
+        + function(value - 2.0 * step)
+    ) / (12.0 * step)
+
+
+def _second_derivative(function, value: float, step: float) -> float:
+    return (
+        -function(value + 2.0 * step)
+        + 16.0 * function(value + step)
+        - 30.0 * function(value)
+        + 16.0 * function(value - step)
+        - function(value - 2.0 * step)
+    ) / (12.0 * step * step)
 
 
 def _state(mapping, *, x, density=1000.0, temperature=298.15):
@@ -280,14 +299,105 @@ def test_residual_chemical_potentials__match_total_amount_derivatives() -> None:
             )
             return total * perturbed.ares(basis="reduced")
 
-        derivative = (
-            -total_helmholtz(2.0 * step)
-            + 8.0 * total_helmholtz(step)
-            - 8.0 * total_helmholtz(-step)
-            + total_helmholtz(-2.0 * step)
-        ) / (12.0 * step)
-        expected.append(derivative)
+        expected.append(_first_derivative(total_helmholtz, 0.0, step))
 
     assert state.residual_chemical_potential_over_rt == pytest.approx(
         expected, rel=2.0e-7, abs=2.0e-8
     )
+    assert state.fugacity is not None
+    assert state.fugacity.ln_coefficient == pytest.approx(
+        tuple(value - math.log(state.compressibility_factor) for value in expected),
+        rel=2.0e-7,
+        abs=2.0e-8,
+    )
+
+
+def test_residual_caloric_properties__follow_helmholtz_identities() -> None:
+    temperature = 250.0
+    density = 1000.0
+    fractions = (0.4, 0.6)
+    state = _state(NEUTRAL_BINARY, x=fractions, density=density, temperature=temperature)
+
+    def helmholtz_at(value: float) -> float:
+        return _state(NEUTRAL_BINARY, x=fractions, density=density, temperature=value).ares(
+            basis="reduced"
+        )
+
+    temperature_step = temperature * 2.0e-4
+    a_t = _first_derivative(helmholtz_at, temperature, temperature_step)
+    a_tt = _second_derivative(helmholtz_at, temperature, temperature_step)
+
+    def z_at_temperature(value: float) -> float:
+        return _state(
+            NEUTRAL_BINARY, x=fractions, density=density, temperature=value
+        ).compressibility_factor
+
+    def z_at_density(value: float) -> float:
+        return _state(
+            NEUTRAL_BINARY, x=fractions, density=value, temperature=temperature
+        ).compressibility_factor
+
+    z = state.compressibility_factor
+    z_t = _first_derivative(z_at_temperature, temperature, temperature_step)
+    z_rho = _first_derivative(z_at_density, density, density * 2.0e-4)
+    cv = -2.0 * temperature * a_t - temperature**2 * a_tt
+    expected = {
+        "ures": -temperature * a_t,
+        "hres": -temperature * a_t + z - 1.0,
+        "sres": -state.ares(basis="reduced") - temperature * a_t,
+        "cvres": cv,
+        "cpres": cv + (z + temperature * z_t) ** 2 / (z + density * z_rho) - 1.0,
+    }
+
+    for method, value in expected.items():
+        assert getattr(state, method)(basis="reduced") == pytest.approx(
+            value, rel=3.0e-5, abs=3.0e-5
+        )
+
+
+def test_electrolyte_reference__matches_public_projection_identities() -> None:
+    model = Mixture.from_dictionary(AQUEOUS_ELECTROLYTE)
+    reference = model.reference(
+        T=298.15 * u.kelvin,
+        P=1.0 * u.bar,
+        solvent_x=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+    state = reference.state(molality=0.1 * u.mole / u.kilogram)
+    finite = model.state(
+        T=reference.temperature,
+        P=reference.pressure,
+        x=state.mole_fractions,
+        phase="liquid",
+    )
+
+    assert isinstance(state.activity, Activity)
+    assert finite.fugacity is not None
+    log_activity = tuple(
+        finite.fugacity.ln_coefficient[index] - infinite
+        for index, infinite in zip(
+            (1, 2),
+            reference.infinite_dilution_log_fugacity_coefficient,
+            strict=True,
+        )
+    )
+    assert state.activity.single_ion == pytest.approx(
+        tuple(math.exp(value) for value in log_activity)
+    )
+    assert state.activity.mean_mole_fraction == pytest.approx(
+        math.exp(math.fsum(log_activity) / 2.0)
+    )
+    assert state.activity.osmotic_coefficient is not None
+    assert math.isfinite(state.activity.osmotic_coefficient)
+
+    scale = GAS_CONSTANT * 298.15
+    assert tuple(
+        value.to("joule / mole").magnitude for value in reference.solvation_free_energy
+    ) == pytest.approx(
+        tuple(
+            scale * value for value in reference.infinite_dilution_log_fugacity_coefficient
+        )
+    )
+    identity = reference.transfer_to(reference)
+    assert isinstance(identity, TransferFreeEnergy)
+    assert tuple(value.to("joule / mole").magnitude for value in identity.values) == (0.0, 0.0)

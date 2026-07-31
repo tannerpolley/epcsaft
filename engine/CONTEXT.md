@@ -5,13 +5,12 @@ package. Its
 optimization objective is minimum maintained surface subject to source-backed,
 reproducible thermodynamic results.
 
-`governance_doctrine_revision: 6`
+`governance_doctrine_revision: 7`
 
 Canonical doctrine:
-`../ePC-SAFT-management/GOVERNANCE.md`. During the local checkout transition,
-`../ePC-SAFT-organization/GOVERNANCE.md` is the accepted Management alias.
-The local Management manifest is
-`../ePC-SAFT-organization/manifests/management.json` during that transition.
+`../ePC-SAFT-governance/GOVERNANCE.md`.
+The Governance topology manifest is
+`../ePC-SAFT-governance/manifests/management.json`.
 
 ## Parameter and evidence boundary
 
@@ -35,7 +34,8 @@ Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
 chemical potentials, fugacity coefficients when defined, residual caloric
 properties, pressure, and branch diagnostics for pressure-specified states.
 The 0.2.0.dev0 Python frontend exposes `Parameters.from_dictionary(...)`,
-`Parameters.from_bundle(...)`, and `Parameters.create_bundle_template(...)`.
+`Parameters.from_bundle(...)`, `Parameters.create_bundle_template(...)`, and
+the convenience constructor `Mixture.from_dictionary(...)`.
 The dictionary route uses a strict fixed-unit, versioned schema; the bundle
 route loads an explicit caller-supplied path. Neither route imports, fetches, or
 discovers Data. Native SDK capabilities are admitted from resolved topology,

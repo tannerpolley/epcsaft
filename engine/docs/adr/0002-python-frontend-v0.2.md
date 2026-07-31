@@ -28,7 +28,9 @@ Parameters -> Mixture -> State
 
 ADR 0003 replaces this ADR's original parameter-construction decision. The
 active routes are `Parameters.from_dictionary(...)`,
-`Parameters.from_bundle(...)`, and bundle-template creation.
+`Parameters.from_bundle(...)`, bundle-template creation, and the
+`Mixture.from_dictionary(...)` convenience constructor over that same strict
+dictionary loader.
 
 The selected component order is the order for every state, property, fugacity,
 and activity result. There is no mutable catalog registry, hidden physical
