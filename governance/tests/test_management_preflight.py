@@ -134,6 +134,29 @@ def test_operation_receipt_rejects_wrong_schema_version() -> None:
     assert "operation receipt wrong-schema.json has invalid schema identity" in errors
 
 
+def test_operation_receipt_rejects_malformed_nested_fields_without_crashing() -> None:
+    original = json.loads(
+        (ROOT / "receipts" / "data-repository-creation-preflight.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    schema = json.loads(MODULE.OPERATION_RECEIPT_SCHEMA_PATH.read_text())
+    schema_hash = MODULE.sha256(MODULE.OPERATION_RECEIPT_SCHEMA_PATH)
+    for field in ("schema", "subject", "validator", "user_approval"):
+        receipt = deepcopy(original)
+        receipt["envelope"][field] = None
+        errors = MODULE.validate_operation_receipt(
+            f"malformed-{field}.json", receipt, schema, schema_hash
+        )
+        assert errors
+    receipt = deepcopy(original)
+    receipt["record"]["observations"] = [None]
+    errors = MODULE.validate_operation_receipt(
+        "malformed-observation.json", receipt, schema, schema_hash
+    )
+    assert errors
+
+
 def test_parameter_packets_separate_storage_runtime_and_evidence_owners() -> None:
     policy = json.loads(
         (ROOT / "manifests" / "parameter-ownership.json").read_text(
@@ -159,12 +182,17 @@ def test_parameter_ledger_retains_legacy_validation_copies_until_migration() -> 
         (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
     )
     records = MODULE.parameter_state(config)["records"]
-    assert any(
-        record["repository"] == "validation"
-        and record["bundle_id"] == "khudaida-2026-figure-2-electrolyte-lle"
-        and record["disposition"] == "relocate_to_data"
+    legacy_records = [
+        record for record in records if record["repository"] == "validation"
+    ]
+    assert {record["bundle_id"] for record in legacy_records} == {
+        "figiel-2025-validation-parameters",
+        "khudaida-2026-figure-2-electrolyte-lle",
+    }
+    assert all(
+        record["disposition"] == "relocate_to_data"
         and record["migration_state"] == "legacy_copy_pending_disposition"
-        for record in records
+        for record in legacy_records
     )
 
 

@@ -40,6 +40,14 @@
       "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
     },
     {
+      "bundle_id": "figiel-2025-validation-parameters",
+      "storage_owner": "data",
+      "runtime_owner": null,
+      "evidence_owner": "validation",
+      "disposition": "relocate_to_data",
+      "reason": "Reusable source-derived Validation packet; generated campaign evidence remains in Validation."
+    },
+    {
       "bundle_id": "figiel-yu-held-2025",
       "storage_owner": "data",
       "runtime_owner": "eos",

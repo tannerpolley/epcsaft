@@ -415,6 +415,26 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
     missing = sorted(discovered.difference(by_id))
     if missing:
         errors.append(f"unregistered EOS parameter bundles: {missing}")
+    data_root = Path(config["repositories"]["data"]["local_path"])
+    packets = data_root / "packets"
+    if packets.exists():
+        for manifest in packets.glob("*/*/packet.toml"):
+            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+            discovered.add(
+                data.get("packet_id", data.get("bundle_id", manifest.parent.parent.name))
+            )
+    validation = Path(config["repositories"]["validation"]["local_path"])
+    if validation.exists():
+        for manifest in validation.rglob("bundle.toml"):
+            if ".git" in manifest.parts or ".worktrees" in manifest.parts:
+                continue
+            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+            discovered.add(
+                data.get("bundle_id", data.get("packet_id", manifest.parent.parent.name))
+            )
+    missing = sorted(discovered.difference(by_id))
+    if missing:
+        errors.append(f"unregistered scientific parameter packets: {missing}")
     return errors
 
 
@@ -449,6 +469,21 @@ def validate_operation_receipt(
         )
     if missing or missing_record:
         return errors
+    nested_objects = (
+        "schema",
+        "subject",
+        "validator",
+        "producer",
+        "reviewer",
+        "user_approval",
+    )
+    invalid_objects = [
+        field for field in nested_objects if not isinstance(envelope[field], dict)
+    ]
+    if invalid_objects:
+        return [
+            f"operation receipt {relative} requires object fields: {invalid_objects}"
+        ]
     declared_schema = envelope["schema"]
     expected_schema_path = str(OPERATION_RECEIPT_SCHEMA_PATH.relative_to(ROOT))
     if (
@@ -486,7 +521,10 @@ def validate_operation_receipt(
     observations = record["observations"]
     if not isinstance(observations, list) or not observations:
         errors.append(f"operation receipt {relative} requires observations")
-    elif any(item.get("outcome") != "pass" for item in observations):
+    elif any(
+        not isinstance(item, dict) or item.get("outcome") != "pass"
+        for item in observations
+    ):
         errors.append(f"operation receipt {relative} has a failed observation")
     return errors
 
