@@ -116,9 +116,9 @@ basis. The appended ordinary callback and its exact typed descriptor use the
 Gross--Sadowski `sigma_ij^3 kappa` basis owned by the public EOS. The
 callbacks supply derivative transport for bounded Regression reconstructions
 and do not admit other association topologies, targets, fitted values, or
-catalog persistence.
+parameter persistence.
 The same finite descriptor set now binds the existing first-derivative
-callbacks for current-catalog water single-ion Born diameter and NaBr water
+callbacks for resolved water single-ion Born diameter and NaBr water
 solvation factor to their exact component identity, direct-observable
 contract, units, fixed 298.15 K domain, topology, and parameter fingerprint.
 This is metadata for callbacks already present in the SDK, not a new
@@ -152,9 +152,9 @@ remain outside this callback.
 Historical Migration decision D-023 additionally records a local implementation candidate for one
 model-bound active-Born-diameter evaluation of the existing 298.15 K,
 1 bar water single-ion x-process solvation reference. It is limited to exact
-current-catalog Li+, Na+, K+, Cl-, and Br- model selections and returns
+explicitly supplied Li+, Na+, K+, Cl-, and Br- model selections and returns
 only the scalar solvation Gibbs energy and its first derivative. It does not
-authorize targets, Ceres, fit policy, catalog persistence, other
+authorize targets, Ceres, fit policy, parameter persistence, other
 electrolyte parameters, or broader species. The exact conditional contract and
 evidence gate live in
 `docs/designs/2026-07-20-active-born-solvation-native-sdk-design.md`.
@@ -166,7 +166,7 @@ calls the same owner directly; neither path may duplicate the algorithm.
 
 Historical Project Truss EOS leaves `ePC-SAFT/ePC-SAFT#1` and `#2` record the
 next Figiel family. One model-bound
-callback evaluates `ln(gamma_pm^m)` for the exact six current-catalog aqueous
+callback evaluates `ln(gamma_pm^m)` for the exact six source-defined aqueous
 alkali-halide models while accepting only the three local trial interactions
 `(water--cation, water--anion, cation--anion)`. It returns the value and exact
 total fixed-pressure first derivative from the existing Helmholtz,
@@ -178,7 +178,7 @@ for this
 callback and the NaBr active-solvation-factor callback. A batch preserves row
 order and exact scalar results while constructing the active model and
 derivative reference sequence once per salt and parameter vector; the exact
-catalog solvation-factor coordinate retains one additional batch-level
+baseline solvation-factor coordinate retains one additional batch-level
 public-value parity sequence. EOS owns the
 bounded CppAD row concurrency; Regression must reject a scalar-only artifact
 instead of entering an unbounded per-row fit. This throughput transport changes
@@ -187,7 +187,7 @@ Current status is
 `PROVIDER_AQUEOUS_ACTIVE_KIJ_IMPLEMENTATION_CANDIDATE_PASSED_LOCAL_GATES_INDEPENDENT_REVIEW_PENDING`;
 the callback is a local implementation candidate and no retained artifact or
 downstream fit exists. Bounded independent subagent review changes sequencing
-only; it does not transfer runtime, catalog, regression, scientific,
+only; it does not transfer runtime, parameter persistence, regression, scientific,
 promotion, or publication authority.
 
 Historical Project Truss EOS issue `#22` adds the one missing staged-recovery seam:
@@ -197,36 +197,36 @@ that coordinate in the existing CppAD Born owner and reuses the existing
 association, density, fugacity, and electrolyte reference sequence. Its exact
 contract is
 `docs/designs/2026-07-22-aqueous-active-solvation-factor-native-sdk-design.md`.
-Installed NaBr remains fingerprint-bound; only source-complete, ordered,
-corrected-SSM+DS Figiel user bundles with exact applicability may use the
-staged active callbacks. This is EOS transport evidence, not a fit,
-catalog change, scientific acceptance, or authority transfer.
+NaBr callback calls remain fingerprint-bound to their resolved model; ordered,
+corrected-SSM+DS inputs with exact applicability may use the staged active
+callbacks. This is EOS transport evidence, not a fit, parameter mutation,
+scientific acceptance, or authority transfer.
 
 The general Regression integration tail additionally exposes one
 infinite-dilution ion-solvation Gibbs result with exact total fixed-pressure
 derivatives in ordered `(solvent--cation, solvent--anion, cation--anion)`
-`k_ij` coordinates. Admission is limited to the catalog-bound
+`k_ij` coordinates. Admission is limited to the explicitly supplied
 methanol/K+/Br- and ethanol/Na+/Cl- selections used by the retained Figiel
 constructed-target ledger. The callback reuses the same active-`k_ij`
 Helmholtz and electrolyte-reference owners; it does not own the equation-19
-target construction, source interpretation, fitting, or catalog updates.
+target construction, source interpretation, fitting, or parameter updates.
 
 The same integration tail exposes the SSM+DS ionic-region relative
 permittivity as one model-bound active coordinate for each admitted
-current-catalog water single-ion model. It returns the existing x-process
+resolved water single-ion model. It returns the existing x-process
 solvation Gibbs value and its exact total fixed-pressure first derivative
 through the same CppAD, density, fugacity, and reference-sequence owners.
-Figiel reports the catalog value as fixed model input, so this callback proves
+Figiel reports the baseline value as fixed model input, so this callback proves
 derivative and fitting mechanics only; it does not claim recovery of a
-published fitted value, a shared cross-model parameter, or catalog authority.
+published fitted value, a shared cross-model parameter, or parameter authority.
 
 The next append-only entry exposes the water component's ordinary
 `relative_permittivity` as a separate active coordinate on those same five
 model identities. Its solvation-Gibbs derivative includes the bulk dielectric,
 Debye--Huckel, Born, fixed-pressure density/fugacity, and reference-sequence
 chains. It must not be confused with the radial
-`ionic_region_relative_permittivity`; neither fitted result persists to the
-catalog.
+`ionic_region_relative_permittivity`; neither fitted result mutates the
+caller-owned parameter input.
 
 Historical Project Truss EOS issue `#10` adds a separate append-only installed-SDK
 candidate for charge-neutral reacting standard references. For an admitted
@@ -234,15 +234,15 @@ aqueous phase model with one explicit water reference carrier, it returns a
 complete neutral stoichiometric basis and gauge-invariant reference
 log-fugacity contractions for any number of neutral components, cations, and
 anions. The exact current Figiel selections retain their existing admission;
-full admitted catalog and authenticated `user-provided` phase models can use
+explicit phase models satisfying the admitted topology can use
 the same tail. Unknown caller-owned applicability transports the dimensions
 but fails value evaluation until finite source temperature and pressure bounds
 exist. The same reference-sequence and pressure-state owners supply the values;
 no single-ion standard, reaction constant, reaction solver, chemistry selector,
-or catalog admission is introduced. The result explicitly reports that `T`,
+or source-identity admission is introduced. The result explicitly reports that `T`,
 `P`, composition, and parameter derivatives are unavailable.
 
-The Held source-complete aqueous-electrolyte bundle uses that same generic
+An explicit Held aqueous-electrolyte record set uses that same generic
 neutral-reference tail and the existing fixed-pressure density closure.
 Consumers obtain its pure-water liquid molar volume from the ordinary public
 pure-water state; no second standard-reference callback or density owner is

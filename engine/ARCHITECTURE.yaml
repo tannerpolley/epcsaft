@@ -30,7 +30,7 @@ native_sdk_candidates:
       reference from the sole native reference-sequence owner.
     ordered_components: [water, hydronium-cation, hydroxide-anion]
     ordered_charges: [0, 1, -1]
-    parameter_bundle: held-cameretti-sadowski-2008@1
+    parameter_source: explicit-caller-input
     parameter_fingerprint: sha256:30d506776fb22f8f1931baadb4942b58bf2c57dd8e95236959827095732c2c61
     helmholtz_basis_id: A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3
     source_state: {temperature_k: 298.15, pressure_pa: 100000.0}
@@ -140,13 +140,13 @@ native_sdk_candidates:
     derivative_order: 2
     association_strength_basis: temperature-dependent-d-ij-cubed
     required_topology: one-component-one-donor-one-acceptor-with-unit-multiplicity
-    exclusions: ordinary-EOS-basis-change, other association topologies, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, regression targets, fit bounds, scaling, fitted values, catalog persistence, and authority
+    exclusions: ordinary-EOS-basis-change, other association topologies, electrolyte, density solve, phase identity, third derivatives, Ipopt, Ceres, regression targets, fit bounds, scaling, fitted values, parameter persistence, and authority
   figiel_water_active_born_solvation_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
       One model-bound 298.15 K, 1 bar water x-process single-ion solvation
       Gibbs energy and its first total fixed-pressure derivative with respect
-      to the selected current-catalog ion Born diameter.
+      to the selected resolved-model ion Born diameter.
     active_coordinate: born_diameter_angstrom
     derivative_order: 1
     capability_descriptor: component-identity-ion-solvation-gibbs-v1
@@ -159,7 +159,7 @@ native_sdk_candidates:
     native_delegation: evaluate_ion_solvation_born -> reference_sequence_owner
     public_behavior_change: none
     ownership_check: schedule, composition, convergence, and terminal selection exist only in reference_sequence_owner
-    exclusions: targets, residuals, scaling, bounds, Ceres, fit results, catalog persistence, other solvents or states, other ions, solvation-factor or dielectric parameters, generic parameter overlays, second derivatives, and authority
+    exclusions: targets, residuals, scaling, bounds, Ceres, fit results, parameter persistence, other solvents or states, other ions, solvation-factor or dielectric parameters, generic parameter overlays, second derivatives, and authority
   figiel_aqueous_active_kij_miac_v1:
     status: local-implementation-candidate-pending-independent-subagent-review
     scope: >-
@@ -180,7 +180,7 @@ native_sdk_candidates:
     derivative_owner: src/epcsaft/_native/derivatives.hpp
     density_owner: src/epcsaft/_native/density.hpp
     public_behavior_change: append-only-local-native-sdk-callback-candidate
-    exclusions: targets, residuals, scaling, bounds, Ceres, fit results, rank claims, catalog persistence, organic solvents, expanded ions, generic parameter overlays, numerical production derivatives, third derivatives, and authority
+    exclusions: targets, residuals, scaling, bounds, Ceres, fit results, rank claims, parameter persistence, organic solvents, expanded ions, generic parameter overlays, numerical production derivatives, third derivatives, and authority
   figiel_aqueous_active_solvation_factor_miac_v1:
     status: project-truss-implementation-candidate-no-authority-effect
     scope: >-
@@ -195,21 +195,21 @@ native_sdk_candidates:
     table_size_bytes_64_bit: 224
     batch_table_size_bytes_64_bit: 240
     batch_entry: evaluate_aqueous_miac_solvation_factor_batch
-    batch_semantics: one active model and one derivative reference sequence per ordered molality vector, plus one catalog-value parity sequence only at the exact catalog coordinate
+    batch_semantics: one active model and one derivative reference sequence per ordered molality vector, plus one baseline-value parity sequence only at the resolved input coordinate
     result_size_bytes_64_bit: 280
     reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
     equation_owner: src/epcsaft/_native/born.hpp
     derivative_owner: src/epcsaft/_native/derivatives.hpp
     density_owner: src/epcsaft/_native/density.hpp
-    trial_bundle_admission: exact-source-complete-ordered-figiel-ssm-ds-only
-    exclusions: targets, residuals, Ceres, fit results, bounds, scaling, rank claims, catalog persistence, arbitrary solvents or ions, generic parameter overlays, numerical production derivatives, second or third parameter derivatives, and authority
+    trial_input_admission: exact-source-complete-ordered-figiel-ssm-ds-only
+    exclusions: targets, residuals, Ceres, fit results, bounds, scaling, rank claims, parameter persistence, arbitrary solvents or ions, generic parameter overlays, numerical production derivatives, second or third parameter derivatives, and authority
   figiel_organic_ion_solvation_active_kij_v1:
     status: local-candidate-no-authority-effect
     scope: >-
       Infinite-dilution ion-solvation Gibbs energy at 298.15 K and 1 bar plus
       exact total fixed-pressure derivatives with respect to the three ordered
       pair interactions for the source-backed methanol/K+/Br- and
-      ethanol/Na+/Cl- catalog selections.
+      ethanol/Na+/Cl- source selections.
     coordinate_order: [solvent_cation_k_ij, solvent_anion_k_ij, cation_anion_k_ij]
     active_ion_component_indices: [1, 2]
     derivative_order: 1
@@ -218,7 +218,7 @@ native_sdk_candidates:
     result_size_bytes_64_bit: 288
     reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
     derivative_owner: src/epcsaft/_native/derivatives.hpp
-    exclusions: constructed targets, transfer-data interpretation, residuals, scaling, bounds, Ceres, fit results, catalog persistence, numerical production derivatives, second derivatives, prediction, and authority
+    exclusions: constructed targets, transfer-data interpretation, residuals, scaling, bounds, Ceres, fit results, parameter persistence, numerical production derivatives, second derivatives, prediction, and authority
   figiel_water_active_ionic_region_permittivity_solvation_v1:
     status: local-candidate-no-authority-effect
     scope: >-
@@ -233,7 +233,7 @@ native_sdk_candidates:
     admitted_active_components: [lithium-cation, sodium-cation, potassium-cation, chloride-anion, bromide-anion]
     reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
     derivative_owner: src/epcsaft/_native/derivatives.hpp
-    exclusions: targets, residuals, scaling, bounds, Ceres, fit results, simultaneous cross-model fitting, catalog persistence, numerical production derivatives, second derivatives, prediction, and authority
+    exclusions: targets, residuals, scaling, bounds, Ceres, fit results, simultaneous cross-model fitting, parameter persistence, numerical production derivatives, second derivatives, prediction, and authority
   figiel_water_active_solvent_permittivity_solvation_v1:
     status: local-candidate-no-authority-effect
     scope: >-
@@ -250,7 +250,7 @@ native_sdk_candidates:
     admitted_observable_ions: [lithium-cation, sodium-cation, potassium-cation, chloride-anion, bromide-anion]
     reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
     derivative_owner: src/epcsaft/_native/derivatives.hpp
-    exclusions: targets, residuals, scaling, bounds, Ceres, fit results, temperature-correlation coefficients, catalog persistence, numerical production derivatives, second derivatives, prediction, and authority
+    exclusions: targets, residuals, scaling, bounds, Ceres, fit results, temperature-correlation coefficients, parameter persistence, numerical production derivatives, second derivatives, prediction, and authority
   neutral_reacting_reference_v1:
     status: project-truss-implementation-candidate-no-authority-effect
     scope: >-
@@ -444,20 +444,20 @@ public_surface:
       status: local-candidate-no-authority-effect
 
 manifest:
-  tracked_files: 107
-  production_python_files: 9
-  native_source_files: 14
+  tracked_files: 92
+  production_python_files: 10
+  native_source_files: 17
   optional_native_debug_source_files: 1
-  public_native_headers: 1
-  installed_data_files: 38
-  package_test_files: 14
+  public_native_headers: 2
+  installed_data_files: 1
+  package_test_files: 12
   optional_native_debug_test_files: 1
-  physical_production_lines: 16997
-  physical_package_test_lines: 14042
-  physical_documentation_lines: 4041
-  measurement: wc -l over tracked EOS Python, C++, public C headers, package tests, and governing documentation
-  tracked_generated_files: 0
-  generated_file_policy: Build outputs and campaign artifacts remain untracked; generated authority is forbidden.
+  physical_production_lines: 17244
+  physical_package_test_lines: 4746
+  physical_documentation_lines: 11215
+  measurement: wc -l over tracked EOS Python, C++, public C headers, executable package-test sources, and all docs plus README and CONTEXT
+  tracked_generated_files: 2
+  generated_file_policy: Equation registry views are deterministic and tracked; build outputs and campaign artifacts remain untracked, and generated authority is forbidden.
   oversized_files:
     - path: src/epcsaft/records.py
       physical_lines: 490
@@ -466,28 +466,31 @@ manifest:
       physical_lines: 807
     - path: src/epcsaft/_bundle_io.py
       physical_lines: 767
-      capability_delta: strict version-1 persistence for user-provided bundles
+      capability_delta: strict version-1 persistence for explicit external bundles
+    - path: src/epcsaft/_dictionary_io.py
+      physical_lines: 491
+      capability_delta: strict fixed-unit dictionary parsing into the sole resolved-record lifecycle
     - path: src/epcsaft/eos.py
-      physical_lines: 1076
+      physical_lines: 877
       capability_delta: model-bound parameter-topology fingerprints
     - path: src/epcsaft/_native/eos.cpp
-      physical_lines: 1944
+      physical_lines: 1979
       capability_delta: exact scalar active pure-parameter projection
     - path: src/epcsaft/_native/derivatives.hpp
       physical_lines: 806
       capability_delta: bounded CppAD row concurrency with serialized tape ownership
     - path: src/epcsaft/_native/native_sdk.cpp
-      physical_lines: 4413
+      physical_lines: 4402
       capability_delta: finite phase and direct-observable parameter capability metadata
     - path: src/epcsaft/_native/phase_block.hpp
-      physical_lines: 1662
+      physical_lines: 1656
       capability_delta: serialized CppAD tape ownership and exact inverse packing geometry
-    - path: tests/test_native_sdk.py
-      physical_lines: 8309
-      capability_delta: phase and direct-observable descriptor, derivative, ABI, and fail-closed proof
-    - path: tests/test_parameters.py
-      physical_lines: 1442
-      capability_delta: immutable catalog discovery and installed-purpose enforcement
+    - path: tests/sdk/_support.py
+      physical_lines: 1408
+      capability_delta: shared ctypes ABI declarations and model factories for SDK evidence
+    - path: tests/sdk/test_callbacks.py
+      physical_lines: 1426
+      capability_delta: phase and direct-observable derivative and fail-closed proof
   oversized_file_policy: Do not grow these files without a named capability delta; split only when it clarifies ownership without increasing public surface.
 
 excluded:

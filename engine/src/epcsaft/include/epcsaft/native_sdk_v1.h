@@ -417,7 +417,7 @@ typedef int (*epcsaft_evaluate_aqueous_miac_solvation_factor_v1)(
  * results are caller-owned arrays with identical nonzero counts. Provider
  * evaluates the active model and derivative reference sequence once, then
  * returns one ordinary scalar result record per molality in input order. The
- * exact catalog solvation-factor coordinate retains its existing value-parity
+ * exact baseline solvation-factor coordinate retains its existing value-parity
  * reference sequence once per batch.
  */
 typedef int (*epcsaft_evaluate_aqueous_miac_kij_batch_v1)(

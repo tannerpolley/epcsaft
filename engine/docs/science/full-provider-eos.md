@@ -109,7 +109,7 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Segment diameter | `d_i(T) = sigma_i [1 - 0.12 exp(-3(u_i/k_B)/T)]` | source equation | Gross2001 Eq. (A.6) | `_native/helmholtz.hpp` |
 | Figiel ionic segment diameter | `d_i = 0.88 sigma_i` | source equation | Figiel2025 Eqs. (3), (4) | `_native/helmholtz.hpp` |
 | Held water-ionization formulation | water and ion hard-chain/dispersion plus association and Debye--Huckel; `a^Born = 0` | source equation and explicit absence | Held2008 Eqs. (1)--(7), Sections 2--3 | `_native/helmholtz.hpp`, `_native/electrolyte.hpp` |
-| Held ion--ion dispersion | `k_(H3O+,OH-) = 1`; water--ion `k_ij = 0` | source equation | Held2008 Eqs. (5), (6) and Section 3 | installed Held bundle and `_native/helmholtz.hpp` |
+| Held ion--ion dispersion | `k_(H3O+,OH-) = 1`; water--ion `k_ij = 0` | source equation | Held2008 Eqs. (5), (6) and Section 3 | explicit Held record set and `_native/helmholtz.hpp` |
 | Ascani ionic segment diameter | `d_i = sigma_i` in hard-chain, Debye--Huckel, and Born terms | source equation | AscaniHeld2021 model description following Eq. (10) | `_native/helmholtz.hpp` |
 | Cross diameter | `sigma_ij = (sigma_i + sigma_j)(1-l_ij)/2` | source equation | Ascani2022SI Eq. (S4) | `_native/helmholtz.hpp`, `_native/association.hpp` |
 | Mixture moments | `zeta_n = (pi/6) rho_hat sum_i x_i m_i d_i^n`, `n=0..3` | source equation | Gross2001 Eq. (A.8) | `_native/helmholtz.hpp` |
@@ -365,7 +365,7 @@ are about `-2.08e8` to `-2.16e8 Pa` across the four topologies. Comparisons of
 chemical potentials therefore use each topology's own pressure-certified
 root, not the retained foreign-EOS liquid volume.
 
-The diagnostic changes only the permittivity records on the installed
+The diagnostic changes only the permittivity records on the explicit
 Figiel2025 ePC-SAFT/SSM+DS parameter base. Its immutable fingerprints are:
 
 ```text
@@ -415,7 +415,7 @@ reference-path/topology interaction, not a fitted-property result.
 
 Since the retained ePC-SAFT ion, Born, and interaction parameters were not
 fitted with the density topologies, this is equation and topology evidence,
-not VLE validation or authority to change a catalog default. The next
+not VLE validation or authority to change a caller-owned default. The next
 scientific step is a Regression-owned sensitivity/refit study with liquid
 dielectric-decrement, density, MIAC, and osmotic anchors before cross-package
 equilibrium validation. The density-based topology is worth pursuing; changing
@@ -730,7 +730,7 @@ The result binds the ordered components and charges already advertised by the
 model table, parameter fingerprint, exact source-domain `T,P`, pure-water
 reference composition, water molar mass, the worst formula-unit convergence
 diagnostic, and the Helmholtz basis `A/(RT n_ref)` with `n_ref = 1 mol` and
-`rho_ref = 1 mol m^-3`. Existing exact catalog admissions remain intact. A full
+`rho_ref = 1 mol m^-3`. Existing exact model admissions remain intact. A full
 phase-admitted `user-provided` model may expose the same reference topology,
 but unknown source applicability fails value evaluation and its caller-owned
 provenance is not promoted by transport. This is not a simultaneous multi-salt

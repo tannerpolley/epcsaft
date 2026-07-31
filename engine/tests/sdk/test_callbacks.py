@@ -903,8 +903,8 @@ def test_native_sdk_aqueous_miac_active_parameters_match_public_value_and_exact_
 ):
     model = _electrolyte_model(("water", "sodium-cation", "bromide-anion"))
     _, table = _aqueous_miac_batch_table(model)
-    catalog = model._model.k_ij
-    k_ij = (catalog[1], catalog[2], catalog[5])
+    pair_values = model._model.k_ij
+    k_ij = (pair_values[1], pair_values[2], pair_values[5])
     molalities = (1.0,)
     kij_center = _evaluate_aqueous_miac_kij_batch(
         table, model.parameter_fingerprint, molalities, k_ij

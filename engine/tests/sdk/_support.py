@@ -22,7 +22,6 @@ import epcsaft._core as native_core
 
 from epcsaft import (
     Mixture,
-    EosError,
     Parameters,
     export_native_model,
     native_sdk,
@@ -31,7 +30,7 @@ from epcsaft import (
 
 from tests._raw_cases import ASSOCIATING_PURE, electrolyte, neutral_binary, neutral_pure
 
-from epcsaft._core import NativeModel, native_sdk_v1 as _native_sdk_v1
+from epcsaft._core import native_sdk_v1 as _native_sdk_v1
 
 CAPSULE_NAME = b"epcsaft.native_sdk.v1"
 
