@@ -28,6 +28,19 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def packet_fingerprint(packet_root: Path) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(item for item in packet_root.rglob("*") if item.is_file()):
+        relative = path.relative_to(packet_root).as_posix().encode("utf-8")
+        digest.update(len(relative).to_bytes(8, "big"))
+        digest.update(relative)
+        digest.update(path.stat().st_size.to_bytes(8, "big"))
+        with path.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+    return digest.hexdigest()
+
+
 def _nonempty_string(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
@@ -62,6 +75,64 @@ def _valid_refs(value: Any, known: set[str]) -> bool:
         and all(_nonempty_string(item) for item in value)
         and set(value) <= known
     )
+
+
+def _valid_hex(value: Any, length: int) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == length
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
+def _validate_migration_provenance(
+    packet_root: Path,
+    relative: PurePosixPath,
+    expected_paths: set[PurePosixPath],
+    prefix: str,
+) -> list[str]:
+    path = packet_root / Path(*relative.parts)
+    try:
+        data = tomllib.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
+        return [f"{prefix}: cannot read migration provenance {relative}: {exc}"]
+    if data.get("provenance_kind") != "repository-migration-v1":
+        return [f"{prefix}: unsupported provenance_kind for {relative}"]
+    errors: list[str] = []
+    for field in ("origin_repository", "copy_mode", "source_bundle_manifest_path"):
+        if not _nonempty_string(data.get(field)):
+            errors.append(f"{prefix}: migration provenance requires {field}")
+    for field in ("origin_commit", "origin_tree"):
+        if not _valid_hex(data.get(field), 40):
+            errors.append(f"{prefix}: migration provenance has invalid {field}")
+    if not _valid_hex(data.get("source_bundle_manifest_sha256"), SHA256_LENGTH):
+        errors.append(
+            f"{prefix}: migration provenance has invalid source manifest hash"
+        )
+    records = data.get("files")
+    if not isinstance(records, list) or not records:
+        return errors + [f"{prefix}: migration provenance requires files"]
+    mapped: set[PurePosixPath] = set()
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            errors.append(f"{prefix}: provenance file {index} must be a table")
+            continue
+        retained = _safe_relative_path(record.get("retained_path"))
+        if retained is None or retained in mapped:
+            errors.append(f"{prefix}: provenance file {index} has invalid retained_path")
+            continue
+        mapped.add(retained)
+        if not _nonempty_string(record.get("origin_path")):
+            errors.append(f"{prefix}: provenance file {index} requires origin_path")
+        declared_hash = record.get("sha256")
+        target = packet_root / Path(*retained.parts)
+        if not _valid_hex(declared_hash, SHA256_LENGTH):
+            errors.append(f"{prefix}: provenance file {retained} has invalid sha256")
+        elif not target.is_file() or sha256(target) != declared_hash:
+            errors.append(f"{prefix}: provenance hash mismatch for {retained}")
+    if mapped != expected_paths:
+        errors.append(f"{prefix}: migration provenance file set is incomplete")
+    return errors
 
 
 def validate_packet(manifest: Path) -> list[str]:
@@ -140,6 +211,8 @@ def validate_packet(manifest: Path) -> list[str]:
         domain_ids.add(domain_id)
 
     listed: set[PurePosixPath] = set()
+    provenance_files: set[PurePosixPath] = set()
+    provenance_inputs: set[PurePosixPath] = set()
     for index, record in enumerate(files):
         if not isinstance(record, dict):
             errors.append(f"{prefix}: file {index} must be a table")
@@ -152,8 +225,13 @@ def validate_packet(manifest: Path) -> list[str]:
             errors.append(f"{prefix}: duplicate file path {relative}")
             continue
         listed.add(relative)
-        if record.get("role") not in ALLOWED_ROLES:
+        role = record.get("role")
+        if role not in ALLOWED_ROLES:
             errors.append(f"{prefix}: {relative} has invalid role")
+        elif role == "provenance":
+            provenance_files.add(relative)
+        else:
+            provenance_inputs.add(relative)
         for field in ("media_type", "units_basis"):
             if not _nonempty_string(record.get(field)):
                 errors.append(f"{prefix}: {relative} requires {field}")
@@ -206,6 +284,15 @@ def validate_packet(manifest: Path) -> list[str]:
     ]
     if unlisted_symlinks:
         errors.append(f"{prefix}: unlisted symlinks: {sorted(unlisted_symlinks)}")
+    for relative in provenance_files:
+        errors.extend(
+            _validate_migration_provenance(
+                packet_root,
+                relative,
+                provenance_inputs,
+                prefix,
+            )
+        )
     return errors
 
 
@@ -257,6 +344,9 @@ def main() -> int:
             print(f"ERROR: {error}")
         return 1
     print("packet_validation: clean")
+    for manifest in sorted((ROOT / "packets").glob("*/*/packet.toml")):
+        relative = manifest.parent.relative_to(ROOT / "packets")
+        print(f"packet {relative} sha256:{packet_fingerprint(manifest.parent)}")
     return 0
 
 
