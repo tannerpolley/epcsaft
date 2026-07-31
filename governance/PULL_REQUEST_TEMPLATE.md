@@ -2,7 +2,7 @@
 
 -
 
-## Management ownership
+## Governance ownership
 
 - Affected repositories:
 - Related issue (full URL or `None`):

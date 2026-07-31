@@ -2,11 +2,15 @@
 
 Status: canonical
 
-Doctrine revision: 6
+Doctrine revision: 7
 
 Approved: 2026-07-31
 
-Owner: `ePC-SAFT/ePC-SAFT-management`
+Owner: `ePC-SAFT/ePC-SAFT-governance`
+
+The durable Git-tracked authority repository is Governance. The non-Git
+`ePC-SAFT-project` parent hosts the Management coordination task and has no
+separate repository or governance authority.
 
 This document is the permanent architecture and governance authority for the
 ePC-SAFT repository ecosystem. `MUST`, `MUST NOT`, `SHOULD`, and `MAY` are
@@ -57,8 +61,8 @@ doctrine does not transfer any scientific implementation or capability.
 
 | Home | Sole ecosystem role | Must not own |
 |---|---|---|
-| `ePC-SAFT/ePC-SAFT-management` | Doctrine, repository topology, Project coordination, access policy, manifests, ledgers, synchronization checks, and external-operation receipts | Package source, package tests, scientific capabilities, or releases |
-| `ePC-SAFT/.github` | Organization profile and GitHub-recognized community defaults linking to Management | Independent doctrine, project state, package source, or scientific capability |
+| `ePC-SAFT/ePC-SAFT-governance` | Doctrine, repository topology, governance policy, manifests, ledgers, synchronization checks, and external-operation receipts | Package source, package tests, scientific capabilities, or releases |
+| `ePC-SAFT/.github` | Organization profile and GitHub-recognized community defaults linking to Governance | Independent doctrine, project state, package source, or scientific capability |
 | `ePC-SAFT/ePC-SAFT-data` | Canonical reusable scientific packets: parameter bundles, source-derived datasets, normalized observations, provenance, units, domains, hashes, and license or use bases | Runtime algorithms, generated validation results, package artifacts, full papers, or exploratory and rejected material |
 | `ePC-SAFT/ePC-SAFT-eos` | `epcsaft` EOS: resolved inputs, allowlisted reference parameters, EOS/state/property evaluation, density closure, CppAD substrate, and public SDK | Ipopt equilibrium, Ceres regression, or cross-package validation campaigns |
 | `ePC-SAFT/ePC-SAFT-equilibrium` | `epcsaft-equilibrium`: equilibrium formulations, phase discovery, local NLPs, Ipopt, certification, and equilibrium results | EOS implementation, Ceres, or regression targets |
@@ -84,8 +88,9 @@ Repository ownership and task residence are distinct. Validation is the
 durable evidence home, not a standing agent or implementation team. EOS,
 Equilibrium, or Regression remains accountable for its capability and performs
 the assigned black-box campaign in the Validation repository from a task rooted
-in its own package repository. Management sequences exact subjects and
-prevents concurrent writers; it does not maintain a waiting Validation worker.
+in its own package repository. The Management coordination task sequences
+exact subjects under Governance policy and prevents concurrent writers; it
+does not maintain a waiting Validation worker.
 
 The completed `tannerpolley/ePC-SAFT-migration` repository is historical
 evidence outside the active topology. It owns no current plan, queue, gate,
@@ -123,7 +128,7 @@ ePC-SAFT-data ----------> ePC-SAFT-regression  pinned fitting input
 No installed package may import from or fetch Data at runtime. EOS wheels must
 contain their admitted runtime subset. Validation and Regression campaigns
 must materialize declared packets before execution and remain replayable from
-an immutable Data commit. Wheels and SDK objects remain in Management's
+an immutable Data commit. Wheels and SDK objects remain in Governance's
 artifact store; Data does not replace it.
 
 Cross-repository builds MUST use installed artifacts. They MUST NOT use sibling
@@ -347,7 +352,7 @@ and configuration in the same checkpoint. Empty skeletons are not baselines.
 
 ## 10. GitHub, issues, and releases
 
-Production and Management repositories are public. They may remain
+Production and Governance repositories are public. They may remain
 unreleased until a separate release decision exists. Versions are independent;
 the historical `epcsaft` distribution identity remains reserved, but no 1.0 or
 release workflow is implied by this doctrine.
@@ -357,9 +362,10 @@ Project may aggregate them. Cross-repository references MUST use full URLs or
 stable node identifiers, never ambiguous number-only references.
 
 The public `.github` repository owns only the organization profile and
-GitHub-recognized community defaults. Management owns reusable workflow policy
-and project coordination. Package repositories still own their caller
-workflows, package checks, build matrices, and releases.
+GitHub-recognized community defaults. Governance owns reusable workflow policy;
+the Management coordination task executes project coordination. Package
+repositories still own their caller workflows, package checks, build matrices,
+and releases.
 
 `main` MUST reject force pushes and deletion. Normal changes use review and
 required evidence when those checks exist. A direct-main or administrator
@@ -370,13 +376,13 @@ Remote creation, repository rename or transfer, issue transfer, Project
 mutation, publication, and release remain explicit external-write gates. This
 doctrine authorizes none of them by itself.
 
-Before any repository rename, transfer, or old-name reuse, Management
-MUST perform an operation-specific read-only preflight, capture immutable
-machine-readable exports for metadata at risk, inventory Actions and reusable
-workflow references, and record redirect behavior, namespace-reuse
-eligibility, metadata restoration, and every accepted loss. A sacrificial
-rehearsal is required only when the preflight cannot establish the behavior or
-rollback boundary. Each mutation requires a cutover record stating
+Before any repository rename, transfer, or old-name reuse, the Management
+coordination task MUST perform an operation-specific read-only preflight,
+capture immutable machine-readable exports for metadata at risk, inventory
+Actions and reusable workflow references, and record redirect behavior,
+namespace-reuse eligibility, metadata restoration, and every accepted loss. A
+sacrificial rehearsal is required only when the preflight cannot establish the
+behavior or rollback boundary. Each mutation requires a cutover record stating
 preconditions, exact request, expected postconditions, retry and stop behavior,
 reversibility, irreversible effects, and recovery owner, followed by a state
 record proving the result.
@@ -391,6 +397,12 @@ small caller workflow in each package repository.
 Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
+
+Revision 7 records the user-approved rename of the durable control-plane
+repository from `ePC-SAFT/ePC-SAFT-management` to
+`ePC-SAFT/ePC-SAFT-governance`. D-017 remains unchanged as the historical
+decision that established the former identity; historical plans and receipts
+retain their original names.
 
 ## Decision Ledger
 
@@ -417,3 +429,4 @@ authority changes only through accepted promotion receipts.
 | D-019 Codex worktree environments | User-approved setup requirement | Track a worktree-relative Codex local environment in every active repository; setup must be idempotent and must not consume mutable sibling build output | Makes new Codex worktrees reproducible | No | Management and repository owners |
 | D-020 Ephemeral worktrees and immutable artifacts | User-approved 2026-07-29 cleanup | Create target-owned worktrees only on demand and retire them after merge or recorded preservation; install cross-repository wheels only through the SHA-256 object store and reject mutable repository `dist/` wheels | Prevents stale checkout and SDK accumulation | No | Management and repository owners |
 | D-021 Canonical scientific Data home | User-approved 2026-07-31 repository and ownership amendment | Create public `ePC-SAFT/ePC-SAFT-data` for reusable self-contained scientific packets; separate Data storage ownership from EOS runtime-subset ownership and Validation evidence ownership; allow read-only packet flow to EOS, Validation, Regression, and Lab while forbidding runtime repository dependencies | Removes ambiguous parameter ownership and keeps canonical inputs distinct from runtime copies, generated evidence, artifacts, and exploratory provenance | No | Management, Data, and consuming repository owners |
+| D-022 Governance repository identity | User-approved 2026-07-31 repository rename | Use `ePC-SAFT/ePC-SAFT-governance` as the durable Git-tracked authority repository; keep Management as the non-Git coordination task in the `ePC-SAFT-project` parent; preserve former names in historical plans and receipts | Separates current repository authority from coordination context without rewriting accepted evidence | No | Governance and Management |

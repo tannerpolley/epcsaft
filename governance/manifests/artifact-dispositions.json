@@ -22,7 +22,7 @@
       "sha256": "9f61f6835b2435a3d9649f6f27ebae107a46e6bafc107b263e50681033342370",
       "distribution": "epcsaft",
       "retention": "superseded-replay",
-      "reason": "Superseded EOS native-SDK candidate retained for exact replay; the active installable subject is the Management SHA-256 object."
+      "reason": "Superseded EOS native-SDK candidate retained for exact replay; the active installable subject is the Governance SHA-256 object."
     }
   ]
 }

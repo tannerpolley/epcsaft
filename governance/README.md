@@ -1,16 +1,18 @@
-# ePC-SAFT Management
+# ePC-SAFT Governance
 
-Repository role: `management_control_plane`
+Repository role: `governance_control_plane`
 
-GitHub home: `ePC-SAFT/ePC-SAFT-management`
+GitHub home: `ePC-SAFT/ePC-SAFT-governance`
 
-Status: canonical ecosystem doctrine and management home.
+Local checkout: `ePC-SAFT-governance`.
 
-Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 6 and
+Status: canonical ecosystem doctrine and governance home.
+
+Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 7 and
 [manifests/management.json](manifests/management.json) for the repository and
 access topology.
 
-Management owns:
+Governance owns:
 
 - permanent ecosystem doctrine;
 - repository roles and naming;
@@ -18,6 +20,10 @@ Management owns:
 - coordinated project and external-operation sequencing;
 - artifact, environment, scientific-packet ownership, and retained-draft ledgers; and
 - reusable synchronization and preflight policy.
+
+The non-Git parent project hosts the Management coordination task. It may
+sequence work against these records but is not a repository or authority
+source.
 
 Artifact layout and admission rules are documented in
 [docs/artifact-store.md](docs/artifact-store.md). Cross-repository consumers

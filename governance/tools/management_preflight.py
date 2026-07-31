@@ -27,7 +27,7 @@ DATA_REPOSITORY = "ePC-SAFT/ePC-SAFT-data"
 DATA_PACKET_LOCKS_RELATIVE = "manifests/data-packet-locks.json"
 
 ALLOWED_ENVIRONMENT_DISTRIBUTIONS: dict[str, set[str]] = {
-    "management": set(),
+    "governance": set(),
     "github": set(),
     "data": set(),
     "eos": {"epcsaft"},
@@ -823,7 +823,7 @@ def validate_config(config: dict[str, Any]) -> list[str]:
     if not isinstance(repositories, dict):
         return ["repositories must be an object"]
     required = {
-        "management",
+        "governance",
         "github",
         "data",
         "eos",
@@ -850,7 +850,7 @@ def validate_config(config: dict[str, Any]) -> list[str]:
     if lab_access != {"lab", "data"}:
         errors.append("Lab outbound access must be Lab and Data only")
     expected_top = {
-        "management",
+        "governance",
         "data",
         "eos",
         "equilibrium",
@@ -858,7 +858,7 @@ def validate_config(config: dict[str, Any]) -> list[str]:
         "validation",
         "lab",
     }
-    for owner in ("management", "equilibrium", "regression"):
+    for owner in ("governance", "equilibrium", "regression"):
         if set(repositories.get(owner, {}).get("outbound_access", [])) != expected_top:
             errors.append(f"{owner} must have full operational repository access")
     for item in config.get("persistent_worktrees", []):

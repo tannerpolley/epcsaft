@@ -1,6 +1,6 @@
 # Artifact Store
 
-Management owns the project-root `artifacts/` store policy. Package
+Governance owns the project-root `artifacts/` store policy. Package
 repositories own builds, but no consumer may install another repository's
 mutable `dist/` output.
 
@@ -49,8 +49,8 @@ The check fails when:
 - the retention policy or index is stale.
 
 Normalization intentionally updates the tracked index. Commit that diff
-through Management review; an artifact-store mutation without a corresponding
-Management change is invalid.
+through Governance review; an artifact-store mutation without a corresponding
+Governance change is invalid.
 
 New wheels must be built in disposable staging, verified, copied into the
 single active alias for their distribution, normalized, and then consumed

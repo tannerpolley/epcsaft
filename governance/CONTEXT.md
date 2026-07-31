@@ -1,22 +1,31 @@
-# Management Control-Plane Context
+# ePC-SAFT Governance Repository Context
 
-`GOVERNANCE.md` revision 6 is the canonical ecosystem doctrine.
+`GOVERNANCE.md` revision 7 is the canonical ecosystem doctrine.
 
 `governance_source_of_truth: true`
 
-`management_source_of_truth: true`
+`management_source_of_truth: false`
+
+`coordination_project: management`
+
+The non-Git `ePC-SAFT-project` parent hosts the Management coordination task.
+Governance is the durable Git-tracked authority repository; Management is not
+a second repository or source of truth.
 
 `runtime_source_of_truth: false`
 
-GitHub home: `ePC-SAFT/ePC-SAFT-management`.
+GitHub home: `ePC-SAFT/ePC-SAFT-governance`.
+
+Local checkout: `ePC-SAFT-governance`.
 
 The public `ePC-SAFT/.github` repository is a thin organization profile and
-community-default surface. It links to Management but owns no independent
+community-default surface. It links to Governance but owns no independent
 doctrine, project state, or execution plan.
 
-Management owns current repository topology, worktree access, exact-subject
-coordination, artifact and environment inventories, scientific-packet
-ownership policy, draft disposition, and external-operation receipts.
+Governance owns current repository topology, worktree access, artifact and
+environment inventories, scientific-packet ownership policy, draft disposition,
+and external-operation receipts. The Management coordination task handles
+exact-subject sequencing within those records.
 
 `manifests/parameter-ownership.json` is the machine-readable parameter
 disposition map. It separates canonical Data storage, admitted EOS runtime

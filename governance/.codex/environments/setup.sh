@@ -15,5 +15,4 @@ if [[ ! -x .venv/bin/python ]]; then
     uv venv --python 3.13 .venv
 fi
 
-uv pip install --python .venv/bin/python pytest
 .venv/bin/python tools/management_preflight.py check
