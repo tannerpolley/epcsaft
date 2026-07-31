@@ -22,14 +22,25 @@ def test_management_configuration_is_valid() -> None:
     assert MODULE.validate_config(config) == []
 
 
-def test_validation_cannot_gain_outbound_access() -> None:
+def test_validation_can_read_data_but_cannot_gain_runtime_access() -> None:
     config = json.loads(
         (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
     )
     config["repositories"]["validation"]["outbound_access"].append("eos")
-    assert "Validation outbound access must be Validation only" in MODULE.validate_config(
-        config
+    assert (
+        "Validation outbound access must be Validation and Data only"
+        in MODULE.validate_config(config)
     )
+
+
+def test_data_repository_is_registered_as_a_self_contained_asset_store() -> None:
+    config = json.loads(
+        (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
+    )
+    data = config["repositories"]["data"]
+    assert data["github"] == "ePC-SAFT/ePC-SAFT-data"
+    assert data["role"] == "scientific_asset"
+    assert data["outbound_access"] == ["data"]
 
 
 def test_worktrees_are_ephemeral_and_have_no_persistent_slots() -> None:
@@ -56,6 +67,26 @@ def test_parameter_ownership_manifest_covers_current_eos_catalog() -> None:
         (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
     )
     assert MODULE.parameter_policy_errors(config) == []
+
+
+def test_parameter_packets_separate_storage_runtime_and_evidence_owners() -> None:
+    policy = json.loads(
+        (ROOT / "manifests" / "parameter-ownership.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert policy["schema_version"] == 2
+    assert all(entry["storage_owner"] == "data" for entry in policy["bundles"])
+    assert all(
+        entry["runtime_owner"] in {"eos", None} for entry in policy["bundles"]
+    )
+    assert all(
+        entry["evidence_owner"] in {"validation", None}
+        for entry in policy["bundles"]
+    )
+    assert {
+        entry["disposition"] for entry in policy["bundles"]
+    } <= {"relocate_to_data", "sync_to_eos_runtime"}
 
 
 def test_environment_policy_rejects_forbidden_package(tmp_path: Path) -> None:

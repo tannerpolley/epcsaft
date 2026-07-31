@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 5
+Doctrine revision: 6
 
-Approved: 2026-07-29
+Approved: 2026-07-31
 
 Owner: `ePC-SAFT/ePC-SAFT-management`
 
@@ -59,13 +59,15 @@ doctrine does not transfer any scientific implementation or capability.
 |---|---|---|
 | `ePC-SAFT/ePC-SAFT-management` | Doctrine, repository topology, Project coordination, access policy, manifests, ledgers, synchronization checks, and external-operation receipts | Package source, package tests, scientific capabilities, or releases |
 | `ePC-SAFT/.github` | Organization profile and GitHub-recognized community defaults linking to Management | Independent doctrine, project state, package source, or scientific capability |
+| `ePC-SAFT/ePC-SAFT-data` | Canonical reusable scientific packets: parameter bundles, source-derived datasets, normalized observations, provenance, units, domains, hashes, and license or use bases | Runtime algorithms, generated validation results, package artifacts, full papers, or exploratory and rejected material |
 | `ePC-SAFT/ePC-SAFT-eos` | `epcsaft` EOS: resolved inputs, allowlisted reference parameters, EOS/state/property evaluation, density closure, CppAD substrate, and public SDK | Ipopt equilibrium, Ceres regression, or cross-package validation campaigns |
 | `ePC-SAFT/ePC-SAFT-equilibrium` | `epcsaft-equilibrium`: equilibrium formulations, phase discovery, local NLPs, Ipopt, certification, and equilibrium results | EOS implementation, Ceres, or regression targets |
 | `ePC-SAFT/ePC-SAFT-regression` | `epcsaft-regression`: target contracts, parameter fitting, Ceres, fit diagnostics, and regression results | EOS implementation, Ipopt, or equilibrium dispatch |
 | `ePC-SAFT/ePC-SAFT-validation` | Installed-artifact, cross-package, and literature acceptance evidence authored by the accountable package task | Production algorithms, private package imports, a paper archive, or a permanent execution owner |
 | `ePC-SAFT/ePC-SAFT-lab` | Non-production experiments, manufactured and independent reference oracles, broad provenance, source indexes, and rejected alternatives | Production distributions or releases, runtime authority, admission receipts, or dependencies consumed by production or validation repositories |
 
-One concept has one runtime owner. A capability without an accepted production
+One concept has one runtime owner. Canonical scientific storage does not confer
+runtime authority. A capability without an accepted production
 owner is non-production; no lab or legacy copy supplies transitional runtime
 authority. The lab MAY investigate such a capability, but production and
 validation repositories MUST NOT depend on it. Promotion distills a clean,
@@ -89,6 +91,13 @@ The completed `tannerpolley/ePC-SAFT-migration` repository is historical
 evidence outside the active topology. It owns no current plan, queue, gate,
 decision, or authority.
 
+Data is a read-only scientific-input home, not a service or runtime dependency.
+Lab may submit reviewed packets to Data. EOS may copy or generate an admitted
+runtime-catalog subset from a pinned Data release. Validation and Regression
+may consume packets from exact Data commits for campaigns and declared fitting
+inputs. The consuming package or campaign remains self-contained and records
+the Data commit, packet path, and packet fingerprint.
+
 ## 4. Dependency direction
 
 The only production dependency edges are:
@@ -101,6 +110,21 @@ ePC-SAFT-validation -----> installed artifacts from admitted repositories
 
 EOS depends on neither extension. The extensions do not depend on
 each other. No production or validation repository depends on the lab.
+
+Scientific packet flow is separate from production dependency direction:
+
+```text
+ePC-SAFT-lab -----------> ePC-SAFT-data   reviewed packet submission
+ePC-SAFT-data ----------> ePC-SAFT-eos    pinned admitted runtime subset
+ePC-SAFT-data ----------> ePC-SAFT-validation  pinned campaign input
+ePC-SAFT-data ----------> ePC-SAFT-regression  pinned fitting input
+```
+
+No installed package may import from or fetch Data at runtime. EOS wheels must
+contain their admitted runtime subset. Validation and Regression campaigns
+must materialize declared packets before execution and remain replayable from
+an immutable Data commit. Wheels and SDK objects remain in Management's
+artifact store; Data does not replace it.
 
 Cross-repository builds MUST use installed artifacts. They MUST NOT use sibling
 source paths, compile another repository's implementation sources, copy an
@@ -252,10 +276,19 @@ quality, phase completeness, or globality. Those require package-owned
 white-box receipts and formulation-specific independent certificates.
 
 Every retained scientific dataset needs a source, transformation record,
-units, license or use basis, and tolerance rationale. Production repositories
-retain only compact owned data. Full papers, broad extraction corpora, failed
-experiments, and exploratory notebooks belong in the lab. Retained literature
-campaign plots belong in validation evidence, not in every package test.
+units, domain, content hash, license or use basis, and tolerance rationale.
+Reusable reviewed scientific bytes belong in Data. Each packet is
+self-contained under `packets/<packet-id>/<version>/`, has `packet.toml`, and
+may have `parameters/`, `observations/`, `sources/`, and `provenance/` content
+when that content exists. Empty placeholder directories are forbidden.
+
+EOS retains only a compact, admitted, self-contained runtime copy generated or
+copied from a pinned Data release. Validation retains campaign definitions,
+generated results, plots, and receipts that reference exact Data inputs; it
+does not become the canonical owner of those inputs. Full papers, broad
+extraction corpora, failed experiments, and exploratory notebooks belong in
+the lab. Retained literature campaign plots belong in validation evidence, not
+in every package test.
 
 ## 8. Promotion and unique authority
 
@@ -380,6 +413,7 @@ authority changes only through accepted promotion receipts.
 | D-015 Package-rooted validation execution | User-approved workflow amendment | Keep Validation as the evidence repository while the accountable EOS, Equilibrium, or Regression task performs its own bounded installed-artifact campaign there; dispatch review only for a stable subject and keep no resident Validation worker | Removes permanent waiting tasks without weakening public-artifact, source, claim, or receipt boundaries | No | Package, Validation-evidence, and Management owners |
 | D-016 Lab and legacy separation | User-approved 2026-07-22 repository cutover | Give `ePC-SAFT/ePC-SAFT-lab` fresh history and a permanent non-production experimental role; retain the old monorepo and related projects under `ePC-SAFT-legacy` with no authority | Separates active research from historical code and removes fallback runtime authority from both lab and legacy | No | Management and Lab |
 | D-017 Management control plane | User-approved 2026-07-29 topology decision | Rename the current authority repository to `ePC-SAFT-management`, keep `.github` thin, retire Migration, and centralize doctrine, manifests, ledgers, access, synchronization, and external-operation receipts in Management | Removes temporary coordination authority and duplicated project state | No | Management |
-| D-018 Repository access | User-approved hierarchy | Equilibrium and Regression may work in every operational repository; EOS may work only in EOS and Validation; Validation and Lab have no outbound access; every worktree is target-owned | Makes task residence explicit without transferring ownership | No | Management |
+| D-018 Repository access | User-approved hierarchy, superseded by D-021 | Equilibrium and Regression may work in every operational repository; EOS may work only in EOS and Validation; Validation and Lab have no outbound access; every worktree is target-owned | Preserved as the pre-Data access policy | No | Management |
 | D-019 Codex worktree environments | User-approved setup requirement | Track a worktree-relative Codex local environment in every active repository; setup must be idempotent and must not consume mutable sibling build output | Makes new Codex worktrees reproducible | No | Management and repository owners |
 | D-020 Ephemeral worktrees and immutable artifacts | User-approved 2026-07-29 cleanup | Create target-owned worktrees only on demand and retire them after merge or recorded preservation; install cross-repository wheels only through the SHA-256 object store and reject mutable repository `dist/` wheels | Prevents stale checkout and SDK accumulation | No | Management and repository owners |
+| D-021 Canonical scientific Data home | User-approved 2026-07-31 repository and ownership amendment | Create public `ePC-SAFT/ePC-SAFT-data` for reusable self-contained scientific packets; separate Data storage ownership from EOS runtime-subset ownership and Validation evidence ownership; allow read-only packet flow to EOS, Validation, Regression, and Lab while forbidding runtime repository dependencies | Removes ambiguous parameter ownership and keeps canonical inputs distinct from runtime copies, generated evidence, artifacts, and exploratory provenance | No | Management, Data, and consuming repository owners |

@@ -22,6 +22,7 @@ ARTIFACT_POLICY_PATH = ROOT / "manifests" / "artifact-store-policy.json"
 ALLOWED_ENVIRONMENT_DISTRIBUTIONS: dict[str, set[str]] = {
     "management": set(),
     "github": set(),
+    "data": set(),
     "eos": {"epcsaft"},
     "equilibrium": {"epcsaft", "epcsaft_equilibrium"},
     "regression": {"epcsaft", "epcsaft_regression"},
@@ -194,6 +195,28 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
     parameter_entries = {
         entry["bundle_id"]: entry for entry in parameter_policy.get("bundles", [])
     }
+    data_root = Path(config["repositories"]["data"]["local_path"])
+    packets = data_root / "packets"
+    if packets.exists():
+        for manifest in sorted(packets.glob("*/*/packet.toml")):
+            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+            directory = manifest.parent
+            bundle_id = data.get(
+                "packet_id", data.get("bundle_id", directory.parent.name)
+            )
+            policy = parameter_entries.get(bundle_id, {})
+            records.append(
+                {
+                    "repository": "data",
+                    "path": str(directory.relative_to(data_root)),
+                    "bundle_id": bundle_id,
+                    "sha256": bundle_hash(directory),
+                    "storage_owner": policy.get("storage_owner", "unclassified"),
+                    "runtime_owner": policy.get("runtime_owner"),
+                    "evidence_owner": policy.get("evidence_owner"),
+                    "disposition": policy.get("disposition", "unclassified"),
+                }
+            )
     eos = Path(config["repositories"]["eos"]["local_path"])
     eos_bundles = eos / "src" / "epcsaft" / "data" / "bundles"
     if eos_bundles.exists():
@@ -208,26 +231,15 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
                     "path": str(directory.relative_to(eos)),
                     "bundle_id": bundle_id,
                     "sha256": bundle_hash(directory),
-                    "ownership": policy.get("owner", "unclassified"),
+                    "storage_owner": policy.get(
+                        "storage_owner", "unclassified"
+                    ),
+                    "runtime_owner": policy.get("runtime_owner"),
+                    "evidence_owner": policy.get("evidence_owner"),
                     "disposition": policy.get("disposition", "unclassified"),
                 }
             )
-    validation = Path(config["repositories"]["validation"]["local_path"])
-    if validation.exists():
-        for manifest in sorted(validation.rglob("bundle.toml")):
-            if ".git" in manifest.parts or ".worktrees" in manifest.parts:
-                continue
-            directory = manifest.parent
-            records.append(
-                {
-                    "repository": "validation",
-                    "path": str(directory.relative_to(validation)),
-                    "bundle_id": directory.name,
-                    "sha256": bundle_hash(directory),
-                    "ownership": "campaign_evidence",
-                }
-            )
-    return {"schema_version": 1, "records": records}
+    return {"schema_version": 2, "records": records}
 
 
 def normalized_distribution_name(name: str) -> str:
@@ -324,6 +336,8 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
     if not path.exists():
         return [f"missing parameter ownership manifest {path.relative_to(ROOT)}"]
     policy = load_json(path)
+    if policy.get("schema_version") != 2:
+        return ["parameter ownership manifest schema_version must be 2"]
     entries = policy.get("bundles")
     if not isinstance(entries, list):
         return ["parameter ownership manifest bundles must be an array"]
@@ -337,10 +351,19 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
         if bundle_id in by_id:
             errors.append(f"duplicate parameter ownership entry: {bundle_id}")
         by_id[bundle_id] = entry
-        if entry.get("owner") not in {"eos", "validation"}:
-            errors.append(f"invalid parameter owner for {bundle_id}")
-        if entry.get("disposition") not in {"approved_eos", "relocate_to_validation"}:
+        if entry.get("storage_owner") != "data":
+            errors.append(f"parameter storage owner must be Data for {bundle_id}")
+        if entry.get("runtime_owner") not in {"eos", None}:
+            errors.append(f"invalid parameter runtime owner for {bundle_id}")
+        if entry.get("evidence_owner") not in {"validation", None}:
+            errors.append(f"invalid parameter evidence owner for {bundle_id}")
+        disposition = entry.get("disposition")
+        if disposition not in {"sync_to_eos_runtime", "relocate_to_data"}:
             errors.append(f"invalid parameter disposition for {bundle_id}")
+        elif disposition == "sync_to_eos_runtime" and entry.get("runtime_owner") != "eos":
+            errors.append(f"EOS runtime sync requires EOS runtime ownership for {bundle_id}")
+        elif disposition == "relocate_to_data" and entry.get("runtime_owner") is not None:
+            errors.append(f"Data relocation cannot retain runtime ownership for {bundle_id}")
     eos = Path(config["repositories"]["eos"]["local_path"])
     eos_bundles = eos / "src" / "epcsaft" / "data" / "bundles"
     discovered: set[str] = set()
@@ -359,17 +382,43 @@ def validate_config(config: dict[str, Any]) -> list[str]:
     repositories = config.get("repositories")
     if not isinstance(repositories, dict):
         return ["repositories must be an object"]
-    required = {"management", "github", "eos", "equilibrium", "regression", "validation", "lab"}
+    required = {
+        "management",
+        "github",
+        "data",
+        "eos",
+        "equilibrium",
+        "regression",
+        "validation",
+        "lab",
+    }
     missing = required.difference(repositories)
     if missing:
         errors.append(f"missing repositories: {sorted(missing)}")
-    if repositories.get("validation", {}).get("outbound_access") != ["validation"]:
-        errors.append("Validation outbound access must be Validation only")
+    validation_access = set(
+        repositories.get("validation", {}).get("outbound_access", [])
+    )
+    if validation_access != {"validation", "data"}:
+        errors.append("Validation outbound access must be Validation and Data only")
+    data_access = repositories.get("data", {}).get("outbound_access")
+    if data_access != ["data"]:
+        errors.append("Data outbound access must be Data only")
     eos_access = set(repositories.get("eos", {}).get("outbound_access", []))
-    if eos_access != {"eos", "validation"}:
-        errors.append("EOS outbound access must be EOS and Validation only")
-    expected_top = {"management", "eos", "equilibrium", "regression", "validation", "lab"}
-    for owner in ("equilibrium", "regression"):
+    if eos_access != {"eos", "data", "validation"}:
+        errors.append("EOS outbound access must be EOS, Data, and Validation only")
+    lab_access = set(repositories.get("lab", {}).get("outbound_access", []))
+    if lab_access != {"lab", "data"}:
+        errors.append("Lab outbound access must be Lab and Data only")
+    expected_top = {
+        "management",
+        "data",
+        "eos",
+        "equilibrium",
+        "regression",
+        "validation",
+        "lab",
+    }
+    for owner in ("management", "equilibrium", "regression"):
         if set(repositories.get(owner, {}).get("outbound_access", [])) != expected_top:
             errors.append(f"{owner} must have full operational repository access")
     for item in config.get("persistent_worktrees", []):

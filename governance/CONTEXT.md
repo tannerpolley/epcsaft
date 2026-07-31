@@ -1,6 +1,6 @@
 # Management Control-Plane Context
 
-`GOVERNANCE.md` revision 5 is the canonical ecosystem doctrine.
+`GOVERNANCE.md` revision 6 is the canonical ecosystem doctrine.
 
 `governance_source_of_truth: true`
 
@@ -15,12 +15,17 @@ community-default surface. It links to Management but owns no independent
 doctrine, project state, or execution plan.
 
 Management owns current repository topology, worktree access, exact-subject
-coordination, artifact and environment inventories, parameter-bundle
-ownership, draft disposition, and external-operation receipts.
+coordination, artifact and environment inventories, scientific-packet
+ownership policy, draft disposition, and external-operation receipts.
 
 `manifests/parameter-ownership.json` is the machine-readable parameter
-disposition map; its inventory phase keeps package-owned relocations explicit
-until the owning EOS and Validation tasks execute them.
+disposition map. It separates canonical Data storage, admitted EOS runtime
+copies, and Validation evidence. Pending relocations remain explicit until the
+owning repository tasks execute them.
+
+`ePC-SAFT/ePC-SAFT-data` is the canonical store for reusable scientific packets.
+It is neither a runtime dependency nor the artifact store. Consumers pin an
+immutable Data commit and remain self-contained.
 
 `tannerpolley/ePC-SAFT-migration` is a completed historical control repository.
 Its Git history preserves legacy-to-clean-package cutover designs and receipts;

@@ -1,64 +1,91 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "enforcement": "inventory",
   "policy": {
-    "eos": "Only model-defining PC-SAFT or ePC-SAFT reference parameterizations may be admitted to the installed EOS catalog.",
-    "validation": "Case-specific, derived, fitted, campaign, or otherwise noncanonical parameter bundles belong to Validation evidence and must not become production-package data."
+    "storage": "Reusable scientific parameter packets are canonical only in ePC-SAFT-data.",
+    "runtime": "EOS may ship only an admitted, self-contained runtime subset generated or copied from an immutable Data packet release.",
+    "evidence": "Validation owns generated campaign evidence and pins exact Data commits; it does not own canonical parameter bytes."
   },
   "bundles": [
     {
       "bundle_id": "ascani-2022-case-study-2-electrolyte-lle",
-      "owner": "validation",
-      "disposition": "relocate_to_validation",
-      "reason": "Case-study packet with application-specific solvent, ion, dielectric, and cross-association values."
+      "storage_owner": "data",
+      "runtime_owner": null,
+      "evidence_owner": "validation",
+      "disposition": "relocate_to_data",
+      "reason": "Reusable source-derived case-study packet; not an admitted EOS runtime catalog entry."
     },
     {
       "bundle_id": "crespo-2021-deea",
-      "owner": "validation",
-      "disposition": "relocate_to_validation",
-      "reason": "Substance-specific fitted DEEA case with no model-defining catalog role."
+      "storage_owner": "data",
+      "runtime_owner": null,
+      "evidence_owner": "validation",
+      "disposition": "relocate_to_data",
+      "reason": "Reusable fitted parameter packet; not an admitted EOS runtime catalog entry."
     },
     {
       "bundle_id": "figiel-2025-aqueous-iodides",
-      "owner": "eos",
-      "disposition": "approved_eos",
-      "reason": "Canonical ePC-SAFT 2025 aqueous-ion reference packet named by the project policy."
+      "storage_owner": "data",
+      "runtime_owner": "eos",
+      "evidence_owner": null,
+      "disposition": "sync_to_eos_runtime",
+      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
     },
     {
       "bundle_id": "figiel-2025-reference-electrolytes",
-      "owner": "eos",
-      "disposition": "approved_eos",
-      "reason": "Canonical ePC-SAFT 2025 reference parameterization for the supported electrolyte model."
+      "storage_owner": "data",
+      "runtime_owner": "eos",
+      "evidence_owner": null,
+      "disposition": "sync_to_eos_runtime",
+      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
+    },
+    {
+      "bundle_id": "figiel-yu-held-2025",
+      "storage_owner": "data",
+      "runtime_owner": "eos",
+      "evidence_owner": null,
+      "disposition": "sync_to_eos_runtime",
+      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
     },
     {
       "bundle_id": "gross-2001-methane-ethane",
-      "owner": "eos",
-      "disposition": "approved_eos",
-      "reason": "Canonical PC-SAFT Gross--Sadowski 2001 reference parameterization."
+      "storage_owner": "data",
+      "runtime_owner": "eos",
+      "evidence_owner": null,
+      "disposition": "sync_to_eos_runtime",
+      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
     },
     {
       "bundle_id": "gross-2001-propane",
-      "owner": "eos",
-      "disposition": "approved_eos",
-      "reason": "Canonical PC-SAFT Gross--Sadowski 2001 reference parameterization."
+      "storage_owner": "data",
+      "runtime_owner": "eos",
+      "evidence_owner": null,
+      "disposition": "sync_to_eos_runtime",
+      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
     },
     {
       "bundle_id": "gross-sadowski-2001",
-      "owner": "eos",
-      "disposition": "approved_eos",
-      "reason": "Canonical PC-SAFT Gross--Sadowski 2001 source-complete reference catalog."
+      "storage_owner": "data",
+      "runtime_owner": "eos",
+      "evidence_owner": null,
+      "disposition": "sync_to_eos_runtime",
+      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
     },
     {
-      "bundle_id": "held-2008-water-self-ionization",
-      "owner": "eos",
-      "disposition": "approved_eos",
-      "reason": "Canonical aqueous electrolyte reference parameterization from Held--Cameretti--Sadowski 2008."
+      "bundle_id": "held-cameretti-sadowski-2008",
+      "storage_owner": "data",
+      "runtime_owner": "eos",
+      "evidence_owner": "validation",
+      "disposition": "sync_to_eos_runtime",
+      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy and literature validation evidence."
     },
     {
       "bundle_id": "khudaida-2026-figure-2-electrolyte-lle",
-      "owner": "validation",
-      "disposition": "relocate_to_validation",
-      "reason": "Figure-specific electrolyte-LLE application packet with case-study interaction and dielectric values."
+      "storage_owner": "data",
+      "runtime_owner": null,
+      "evidence_owner": "validation",
+      "disposition": "relocate_to_data",
+      "reason": "Reusable source-derived Figure 2 packet; Validation retains only generated campaign evidence."
     }
   ]
 }

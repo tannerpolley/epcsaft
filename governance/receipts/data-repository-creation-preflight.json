@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-07-31",
+  "operation": "create-canonical-scientific-data-repository",
+  "authorization": {
+    "source": "explicit user request",
+    "requested_repository": "ePC-SAFT/ePC-SAFT-data",
+    "visibility": "public"
+  },
+  "preconditions": [
+    "Doctrine revision 6 is merged before repository creation.",
+    "The ePC-SAFT/ePC-SAFT-data namespace is unoccupied.",
+    "The initial repository contains only the minimal packet contract and admitted packet content.",
+    "No package imports from or fetches the Data repository at runtime."
+  ],
+  "expected_postconditions": [
+    "The repository is public with main as its default branch.",
+    "Management records the repository identity and exact initial commit.",
+    "Canonical packets are self-contained under packets/<packet-id>/<version>/.",
+    "EOS runtime copies and Validation evidence pin immutable Data inputs."
+  ],
+  "reversibility": "Repository contents are reversible through Git. Repository deletion is not authorized; an erroneous creation must stop for user direction.",
+  "recovery_owner": "ePC-SAFT/ePC-SAFT-management"
+}
