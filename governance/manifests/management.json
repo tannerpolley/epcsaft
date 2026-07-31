@@ -5,9 +5,7 @@
   "project_root": "~/Workspaces/Engineering/ePC-SAFT-project",
   "artifact_root": "~/Workspaces/Engineering/ePC-SAFT-project/artifacts",
   "parameter_ownership": "manifests/parameter-ownership.json",
-  "operation_receipts": [
-    "receipts/data-repository-creation-preflight.json"
-  ],
+  "operation_receipts": [],
   "historical_migration": {
     "repository": "tannerpolley/ePC-SAFT-migration",
     "repository_id": "R_kgDOTZ9_pg",

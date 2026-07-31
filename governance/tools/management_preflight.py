@@ -418,6 +418,79 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
     return errors
 
 
+def validate_operation_receipt(
+    relative: str,
+    receipt: dict[str, Any],
+    schema: dict[str, Any],
+    schema_hash: str,
+) -> list[str]:
+    errors: list[str] = []
+    envelope = receipt.get("envelope")
+    record = receipt.get("record")
+    if not isinstance(envelope, dict):
+        return [f"operation receipt {relative} requires envelope"]
+    if not isinstance(record, dict):
+        return [f"operation receipt {relative} requires record"]
+    missing = [
+        field
+        for field in schema["required_envelope_fields"]
+        if field not in envelope
+    ]
+    missing_record = [
+        field for field in schema["required_record_fields"] if field not in record
+    ]
+    if missing:
+        errors.append(
+            f"operation receipt {relative} missing envelope fields: {missing}"
+        )
+    if missing_record:
+        errors.append(
+            f"operation receipt {relative} missing record fields: {missing_record}"
+        )
+    if missing or missing_record:
+        return errors
+    declared_schema = envelope["schema"]
+    expected_schema_path = str(OPERATION_RECEIPT_SCHEMA_PATH.relative_to(ROOT))
+    if (
+        declared_schema.get("path") != expected_schema_path
+        or declared_schema.get("version") != schema["schema_version"]
+        or declared_schema.get("sha256") != schema_hash
+    ):
+        errors.append(f"operation receipt {relative} has invalid schema identity")
+    record_hash = json_sha256(record)
+    subject = envelope["subject"]
+    if subject.get("record_sha256") != record_hash:
+        errors.append(f"operation receipt {relative} subject does not bind its record")
+    subject_hash = json_sha256(subject)
+    if envelope["subject_sha256"] != subject_hash:
+        errors.append(f"operation receipt {relative} has invalid subject hash")
+    approval = envelope["user_approval"]
+    if approval.get("subject_sha256") != subject_hash:
+        errors.append(
+            f"operation receipt {relative} approval is not bound to its subject"
+        )
+    if envelope["producer"] == envelope["reviewer"]:
+        errors.append(f"operation receipt {relative} producer and reviewer must differ")
+    validator = envelope["validator"]
+    try:
+        actual_validator_hash = git_blob_sha256(
+            ROOT, validator["commit"], validator["path"]
+        )
+    except (KeyError, subprocess.CalledProcessError):
+        errors.append(f"operation receipt {relative} has invalid validator identity")
+    else:
+        if validator.get("sha256") != actual_validator_hash:
+            errors.append(f"operation receipt {relative} has invalid validator hash")
+    if record["status"] not in schema["allowed_record_statuses"]:
+        errors.append(f"operation receipt {relative} has invalid record status")
+    observations = record["observations"]
+    if not isinstance(observations, list) or not observations:
+        errors.append(f"operation receipt {relative} requires observations")
+    elif any(item.get("outcome") != "pass" for item in observations):
+        errors.append(f"operation receipt {relative} has a failed observation")
+    return errors
+
+
 def operation_receipt_errors(config: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     if not OPERATION_RECEIPT_SCHEMA_PATH.exists():
@@ -431,46 +504,12 @@ def operation_receipt_errors(config: dict[str, Any]) -> list[str]:
             errors.append(f"missing operation receipt {relative}")
             continue
         receipt = load_json(path)
+        errors.extend(
+            validate_operation_receipt(relative, receipt, schema, schema_hash)
+        )
         envelope = receipt.get("envelope")
-        if not isinstance(envelope, dict):
-            errors.append(f"operation receipt {relative} requires envelope")
-            continue
-        missing = [
-            field
-            for field in schema["required_envelope_fields"]
-            if field not in envelope
-        ]
-        if missing:
-            errors.append(
-                f"operation receipt {relative} missing envelope fields: {missing}"
-            )
-            continue
-        declared_schema = envelope["schema"]
-        if declared_schema.get("path") != str(
-            OPERATION_RECEIPT_SCHEMA_PATH.relative_to(ROOT)
-        ) or declared_schema.get("sha256") != schema_hash:
-            errors.append(f"operation receipt {relative} has invalid schema identity")
-        subject_hash = json_sha256(envelope["subject"])
-        if envelope["subject_sha256"] != subject_hash:
-            errors.append(f"operation receipt {relative} has invalid subject hash")
-        approval = envelope["user_approval"]
-        if approval.get("subject_sha256") != subject_hash:
-            errors.append(
-                f"operation receipt {relative} approval is not bound to its subject"
-            )
-        validator = envelope["validator"]
-        try:
-            actual_validator_hash = git_blob_sha256(
-                ROOT, validator["commit"], validator["path"]
-            )
-        except (KeyError, subprocess.CalledProcessError):
-            errors.append(f"operation receipt {relative} has invalid validator identity")
-        else:
-            if validator.get("sha256") != actual_validator_hash:
-                errors.append(
-                    f"operation receipt {relative} has invalid validator hash"
-                )
-        sequences.append(envelope["sequence"])
+        if isinstance(envelope, dict) and isinstance(envelope.get("sequence"), int):
+            sequences.append(envelope["sequence"])
     if sequences != sorted(set(sequences)):
         errors.append("operation receipt sequences must be unique and monotonic")
     return errors

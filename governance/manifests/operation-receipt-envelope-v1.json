@@ -16,5 +16,20 @@
     "supersedes",
     "revoked_by",
     "user_approval"
+  ],
+  "required_record_fields": [
+    "status",
+    "observations",
+    "preconditions",
+    "expected_postconditions",
+    "retry",
+    "stop_conditions",
+    "reversibility",
+    "irreversible_effects",
+    "recovery_owner"
+  ],
+  "allowed_record_statuses": [
+    "authorized_pending",
+    "completed"
   ]
 }
