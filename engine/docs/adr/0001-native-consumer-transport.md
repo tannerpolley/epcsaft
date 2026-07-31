@@ -170,7 +170,10 @@ from the same EOS packing owner used by pressure closure. Given
 `0 < eta_min < eta_max < pi/(3 sqrt(2))`, it writes
 `[K_eta/eta_max, K_eta/eta_min]` in `m^3/mol`. Packing limits are explicit
 caller inputs; the EOS does not own Perdomo initialization or solver
-policy. The callback uses a size-gated two-double caller buffer and no new
+policy. The phase objective remains evaluable at finite constrained-optimizer
+trial points outside that accepted packing interval; the packing and
+molar-volume callbacks remain the authoritative fail-closed domain contracts.
+The callback uses a size-gated two-double caller buffer and no new
 result structure. A bound-count mismatch returns `ABI_MISMATCH` without a
 write; all failures are return-code authoritative because there is no second
 status/error payload owner.
