@@ -5,7 +5,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.validate_packets import validate_packet, validate_repository
+from tools.validate_packets import (
+    packet_fingerprint,
+    validate_packet,
+    validate_repository,
+)
 
 
 def _sha256(payload: bytes) -> str:
@@ -58,6 +62,26 @@ class PacketValidationTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.assertEqual(validate_packet(manifest), [])
 
+    def test_packet_fingerprint_is_stable_and_content_bound(self) -> None:
+        temporary, manifest, data = self.make_packet()
+        self.addCleanup(temporary.cleanup)
+        first = packet_fingerprint(manifest.parent)
+        self.assertEqual(first, packet_fingerprint(manifest.parent))
+        data.write_bytes(b"changed\n")
+        self.assertNotEqual(first, packet_fingerprint(manifest.parent))
+
+    def test_packet_fingerprint_uses_unambiguous_length_framing(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            one = root / "one"
+            two = root / "two"
+            one.mkdir()
+            two.mkdir()
+            (one / "a").write_bytes(b"x\x00b\x00y")
+            (two / "a").write_bytes(b"x")
+            (two / "b").write_bytes(b"y")
+            self.assertNotEqual(packet_fingerprint(one), packet_fingerprint(two))
+
     def test_hash_mismatch_fails(self) -> None:
         temporary, manifest, data = self.make_packet()
         self.addCleanup(temporary.cleanup)
@@ -65,6 +89,34 @@ class PacketValidationTests(unittest.TestCase):
         self.assertTrue(
             any("hash mismatch" in error for error in validate_packet(manifest))
         )
+
+    def test_provenance_kind_is_required_and_supported(self) -> None:
+        for payload in (b"schema_version = 1\n", b'provenance_kind = "unknown-v1"\n'):
+            with self.subTest(payload=payload):
+                temporary, manifest, _ = self.make_packet()
+                self.addCleanup(temporary.cleanup)
+                provenance = manifest.parent / "provenance" / "origin.toml"
+                provenance.parent.mkdir()
+                provenance.write_bytes(payload)
+                manifest.write_text(
+                    manifest.read_text(encoding="utf-8")
+                    + f'''\n[[files]]
+path = "provenance/origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "{_sha256(payload)}"
+source_refs = ["fixture"]
+domain_refs = ["fixture-domain"]
+units_basis = "Repository metadata are non-numeric identifiers."
+''',
+                    encoding="utf-8",
+                )
+                self.assertTrue(
+                    any(
+                        "unsupported provenance_kind" in error
+                        for error in validate_packet(manifest)
+                    )
+                )
 
     def test_unsafe_path_fails(self) -> None:
         temporary, manifest, _ = self.make_packet()

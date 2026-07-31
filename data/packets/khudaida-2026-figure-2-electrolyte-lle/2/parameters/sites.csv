@@ -1,0 +1,7 @@
+record_id,component_id,site_id,site_class,multiplicity,source_id,locator,domain_id
+water-site-a,water,a,a,1,khudaida-et-al-2026,"Table 5, water 2B association scheme expanded as one A site",khudaida-293-15-k-0-1-mpa
+water-site-b,water,b,b,1,khudaida-et-al-2026,"Table 5, water 2B association scheme expanded as one B site",khudaida-293-15-k-0-1-mpa
+ethanol-site-a,ethanol,a,a,1,khudaida-et-al-2026,"Table 5, ethanol 2B association scheme expanded as one A site",khudaida-293-15-k-0-1-mpa
+ethanol-site-b,ethanol,b,b,1,khudaida-et-al-2026,"Table 5, ethanol 2B association scheme expanded as one B site",khudaida-293-15-k-0-1-mpa
+isobutanol-site-a,isobutanol,a,a,1,khudaida-et-al-2026,"Table 5, isobutanol 2B association scheme expanded as one A site",khudaida-293-15-k-0-1-mpa
+isobutanol-site-b,isobutanol,b,b,1,khudaida-et-al-2026,"Table 5, isobutanol 2B association scheme expanded as one B site",khudaida-293-15-k-0-1-mpa

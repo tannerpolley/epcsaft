@@ -1,0 +1,11 @@
+record_id,component_id_a,component_id_b,family,value,unit,source_id,locator,domain_id
+water-ethanol-kij,water,ethanol,k_ij,-0.06167,,khudaida-et-al-2026,"Table 7, ethanol/water row, cited ref 39",khudaida-293-15-k-0-1-mpa
+water-isobutanol-kij,water,isobutanol,k_ij,-0.0071,,khudaida-et-al-2026,"Table 7, water/isobutanol row, cited ref 34",khudaida-293-15-k-0-1-mpa
+water-sodium-kij,water,sodium-cation,k_ij,-0.3,,khudaida-et-al-2026,"Table 7, water/Na+ row, cited ref 31",khudaida-293-15-k-0-1-mpa
+water-chloride-kij,water,chloride-anion,k_ij,-0.3,,khudaida-et-al-2026,"Table 7, water/Cl- row, cited ref 31",khudaida-293-15-k-0-1-mpa
+ethanol-isobutanol-kij,ethanol,isobutanol,k_ij,0.00154,,khudaida-et-al-2026,"Table 7, ethanol/isobutanol row, cited ref 19",khudaida-293-15-k-0-1-mpa
+ethanol-sodium-kij,ethanol,sodium-cation,k_ij,0.05,,khudaida-et-al-2026,"Table 7, ethanol/Na+ row, cited ref 31",khudaida-293-15-k-0-1-mpa
+ethanol-chloride-kij,ethanol,chloride-anion,k_ij,0.8,,khudaida-et-al-2026,"Table 7, ethanol/Cl- row, cited ref 31",khudaida-293-15-k-0-1-mpa
+isobutanol-sodium-kij,isobutanol,sodium-cation,k_ij,0,,khudaida-et-al-2026,"Table 7, published isobutanol/Na+ zero cell; no cited origin supplied",khudaida-293-15-k-0-1-mpa
+isobutanol-chloride-kij,isobutanol,chloride-anion,k_ij,0,,khudaida-et-al-2026,"Table 7, published isobutanol/Cl- zero cell; no cited origin supplied",khudaida-293-15-k-0-1-mpa
+sodium-chloride-kij,sodium-cation,chloride-anion,k_ij,0.317,,khudaida-et-al-2026,"Table 7, Na+/Cl- row, cited ref 30",khudaida-293-15-k-0-1-mpa
