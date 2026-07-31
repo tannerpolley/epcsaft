@@ -1,0 +1,25 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+water-molar-mass,water,molar_mass,18.01528,gram / mole,nist-srd-69-water,"Water molecular weight",ascani-case-study-2-298-15-k-1-bar
+water-segment-count,water,segment_count,1.2047,,ascani-et-al-2022,"Supporting Information Table S1, water row",ascani-case-study-2-298-15-k-1-bar
+water-dispersion-energy,water,dispersion_energy_over_k,353.95,kelvin,ascani-et-al-2022,"Supporting Information Table S1, water row",ascani-case-study-2-298-15-k-1-bar
+water-charge,water,charge_number,0,,ascani-et-al-2022,"Main paper Case Study 2 identifies water as neutral solvent",ascani-case-study-2-298-15-k-1-bar
+butanol-molar-mass,1-butanol,molar_mass,74.1216,gram / mole,nist-srd-69-1-butanol,"1-Butanol molecular weight",ascani-case-study-2-298-15-k-1-bar
+butanol-segment-count,1-butanol,segment_count,2.7510,,ascani-et-al-2022,"Supporting Information Table S1, 1-butanol row",ascani-case-study-2-298-15-k-1-bar
+butanol-segment-diameter,1-butanol,segment_diameter,3.6139,angstrom,ascani-et-al-2022,"Supporting Information Table S1, 1-butanol row",ascani-case-study-2-298-15-k-1-bar
+butanol-dispersion-energy,1-butanol,dispersion_energy_over_k,259.59,kelvin,ascani-et-al-2022,"Supporting Information Table S1, 1-butanol row",ascani-case-study-2-298-15-k-1-bar
+butanol-charge,1-butanol,charge_number,0,,ascani-et-al-2022,"Main paper Case Study 2 identifies 1-butanol as neutral solvent",ascani-case-study-2-298-15-k-1-bar
+sodium-segment-count,sodium-cation,segment_count,1,,ascani-et-al-2022,"Supporting Information Table S2, Na+ row",ascani-case-study-2-298-15-k-1-bar
+sodium-segment-diameter,sodium-cation,segment_diameter,2.8232,angstrom,ascani-et-al-2022,"Supporting Information Table S2, Na+ row",ascani-case-study-2-298-15-k-1-bar
+sodium-dispersion-energy,sodium-cation,dispersion_energy_over_k,230.00,kelvin,ascani-et-al-2022,"Supporting Information Table S2, Na+ row",ascani-case-study-2-298-15-k-1-bar
+sodium-charge,sodium-cation,charge_number,+1,,ascani-et-al-2022,"Supporting Information Table S2, Na+ identity",ascani-case-study-2-298-15-k-1-bar
+sodium-relative-permittivity,sodium-cation,relative_permittivity,8,,ascani-held-2021,"Table 5, alkali-halide relative permittivity used in Eq. 13",ascani-case-study-2-298-15-k-1-bar
+potassium-segment-count,potassium-cation,segment_count,1,,ascani-et-al-2022,"Supporting Information Table S2, K+ row",ascani-case-study-2-298-15-k-1-bar
+potassium-segment-diameter,potassium-cation,segment_diameter,3.3417,angstrom,ascani-et-al-2022,"Supporting Information Table S2, K+ row",ascani-case-study-2-298-15-k-1-bar
+potassium-dispersion-energy,potassium-cation,dispersion_energy_over_k,200.00,kelvin,ascani-et-al-2022,"Supporting Information Table S2, K+ row",ascani-case-study-2-298-15-k-1-bar
+potassium-charge,potassium-cation,charge_number,+1,,ascani-et-al-2022,"Supporting Information Table S2, K+ identity",ascani-case-study-2-298-15-k-1-bar
+potassium-relative-permittivity,potassium-cation,relative_permittivity,8,,ascani-held-2021,"Table 5, alkali-halide relative permittivity used in Eq. 13",ascani-case-study-2-298-15-k-1-bar
+chloride-segment-count,chloride-anion,segment_count,1,,ascani-et-al-2022,"Supporting Information Table S2, Cl- row",ascani-case-study-2-298-15-k-1-bar
+chloride-segment-diameter,chloride-anion,segment_diameter,2.7560,angstrom,ascani-et-al-2022,"Supporting Information Table S2, Cl- row",ascani-case-study-2-298-15-k-1-bar
+chloride-dispersion-energy,chloride-anion,dispersion_energy_over_k,170.00,kelvin,ascani-et-al-2022,"Supporting Information Table S2, Cl- row",ascani-case-study-2-298-15-k-1-bar
+chloride-charge,chloride-anion,charge_number,-1,,ascani-et-al-2022,"Supporting Information Table S2, Cl- identity",ascani-case-study-2-298-15-k-1-bar
+chloride-relative-permittivity,chloride-anion,relative_permittivity,8,,ascani-held-2021,"Table 5, alkali-halide relative permittivity used in Eq. 13",ascani-case-study-2-298-15-k-1-bar

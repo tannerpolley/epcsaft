@@ -1,0 +1,909 @@
+schema_version = 2
+packet_id = "gross-sadowski-2001"
+packet_version = "1"
+title = "gross-sadowski-2001 source parameter packet"
+description = "Reusable parameter packet for gross-sadowski-2001, copied byte-for-byte from the admitted EOS source bundle and retained with source/domain metadata."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "The packet preserves source values byte-for-byte and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "gross-sadowski-2001"
+citation = "Gross, J.; Sadowski, G. PC-SAFT: An Equation of State Based on a Perturbation Theory for Chain Molecules. Industrial & Engineering Chemistry Research 2001, 40, 1244-1260."
+doi = "10.1021/ie0003887"
+use_basis = "source-complete installed parameter catalog"
+
+[[domains]]
+domain_id = "methane-fit-range"
+kind = "fit-range"
+temperature_min = 97
+temperature_max = 300
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain methane-fit-range (temperature 97–300 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "ethane-fit-range"
+kind = "fit-range"
+temperature_min = 90
+temperature_max = 305
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain ethane-fit-range (temperature 90–305 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "propane-fit-range"
+kind = "fit-range"
+temperature_min = 85
+temperature_max = 523
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain propane-fit-range (temperature 85–523 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "butane-fit-range"
+kind = "fit-range"
+temperature_min = 135
+temperature_max = 573
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain butane-fit-range (temperature 135–573 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "pentane-fit-range"
+kind = "fit-range"
+temperature_min = 143
+temperature_max = 469
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain pentane-fit-range (temperature 143–469 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "hexane-fit-range"
+kind = "fit-range"
+temperature_min = 177
+temperature_max = 503
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain hexane-fit-range (temperature 177–503 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "heptane-fit-range"
+kind = "fit-range"
+temperature_min = 182
+temperature_max = 623
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain heptane-fit-range (temperature 182–623 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "octane-fit-range"
+kind = "fit-range"
+temperature_min = 216
+temperature_max = 569
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain octane-fit-range (temperature 216–569 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "nonane-fit-range"
+kind = "fit-range"
+temperature_min = 219
+temperature_max = 595
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain nonane-fit-range (temperature 219–595 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "decane-fit-range"
+kind = "fit-range"
+temperature_min = 243
+temperature_max = 617
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain decane-fit-range (temperature 243–617 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "undecane-fit-range"
+kind = "fit-range"
+temperature_min = 247
+temperature_max = 639
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain undecane-fit-range (temperature 247–639 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "dodecane-fit-range"
+kind = "fit-range"
+temperature_min = 263
+temperature_max = 658
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain dodecane-fit-range (temperature 263–658 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "tridecane-fit-range"
+kind = "fit-range"
+temperature_min = 267
+temperature_max = 675
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain tridecane-fit-range (temperature 267–675 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "tetradecane-fit-range"
+kind = "fit-range"
+temperature_min = 279
+temperature_max = 693
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain tetradecane-fit-range (temperature 279–693 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "pentadecane-fit-range"
+kind = "fit-range"
+temperature_min = 283
+temperature_max = 708
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain pentadecane-fit-range (temperature 283–708 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "hexadecane-fit-range"
+kind = "fit-range"
+temperature_min = 291
+temperature_max = 723
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain hexadecane-fit-range (temperature 291–723 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "heptadecane-fit-range"
+kind = "fit-range"
+temperature_min = 295
+temperature_max = 736
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain heptadecane-fit-range (temperature 295–736 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "octadecane-fit-range"
+kind = "fit-range"
+temperature_min = 301
+temperature_max = 747
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain octadecane-fit-range (temperature 301–747 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "nonadecane-fit-range"
+kind = "fit-range"
+temperature_min = 305
+temperature_max = 758
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain nonadecane-fit-range (temperature 305–758 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "eicosane-fit-range"
+kind = "fit-range"
+temperature_min = 309
+temperature_max = 775
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain eicosane-fit-range (temperature 309–775 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "isobutane-fit-range"
+kind = "fit-range"
+temperature_min = 113
+temperature_max = 407
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain isobutane-fit-range (temperature 113–407 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "isopentane-fit-range"
+kind = "fit-range"
+temperature_min = 113
+temperature_max = 460
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain isopentane-fit-range (temperature 113–460 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "neopentane-fit-range"
+kind = "fit-range"
+temperature_min = 256
+temperature_max = 433
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain neopentane-fit-range (temperature 256–433 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "2-methylpentane-fit-range"
+kind = "fit-range"
+temperature_min = 119
+temperature_max = 498
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain 2-methylpentane-fit-range (temperature 119–498 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "2-2-dimethylbutane-fit-range"
+kind = "fit-range"
+temperature_min = 174
+temperature_max = 488
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain 2-2-dimethylbutane-fit-range (temperature 174–488 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "2-3-dimethylbutane-fit-range"
+kind = "fit-range"
+temperature_min = 145
+temperature_max = 500
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain 2-3-dimethylbutane-fit-range (temperature 145–500 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "3-methylpentane-fit-range"
+kind = "fit-range"
+temperature_min = 110
+temperature_max = 504
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain 3-methylpentane-fit-range (temperature 110–504 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "2-methylhexane-fit-range"
+kind = "fit-range"
+temperature_min = 154
+temperature_max = 530
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain 2-methylhexane-fit-range (temperature 154–530 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "cyclopentane-fit-range"
+kind = "fit-range"
+temperature_min = 193
+temperature_max = 503
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain cyclopentane-fit-range (temperature 193–503 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "cyclohexane-fit-range"
+kind = "fit-range"
+temperature_min = 279
+temperature_max = 553
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain cyclohexane-fit-range (temperature 279–553 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "methylcyclopentane-fit-range"
+kind = "fit-range"
+temperature_min = 183
+temperature_max = 532
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain methylcyclopentane-fit-range (temperature 183–532 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "methylcyclohexane-fit-range"
+kind = "fit-range"
+temperature_min = 203
+temperature_max = 572
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain methylcyclohexane-fit-range (temperature 203–572 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "ethylcyclopentane-fit-range"
+kind = "fit-range"
+temperature_min = 134
+temperature_max = 569
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain ethylcyclopentane-fit-range (temperature 134–569 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "ethylcyclohexane-fit-range"
+kind = "fit-range"
+temperature_min = 263
+temperature_max = 609
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain ethylcyclohexane-fit-range (temperature 263–609 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "ethylene-fit-range"
+kind = "fit-range"
+temperature_min = 104
+temperature_max = 400
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain ethylene-fit-range (temperature 104–400 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "propylene-fit-range"
+kind = "fit-range"
+temperature_min = 87
+temperature_max = 364
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain propylene-fit-range (temperature 87–364 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "1-butene-fit-range"
+kind = "fit-range"
+temperature_min = 87
+temperature_max = 419
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain 1-butene-fit-range (temperature 87–419 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "1-pentene-fit-range"
+kind = "fit-range"
+temperature_min = 108
+temperature_max = 464
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain 1-pentene-fit-range (temperature 108–464 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "1-hexene-fit-range"
+kind = "fit-range"
+temperature_min = 133
+temperature_max = 504
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain 1-hexene-fit-range (temperature 133–504 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "1-octene-fit-range"
+kind = "fit-range"
+temperature_min = 171
+temperature_max = 567
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain 1-octene-fit-range (temperature 171–567 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "cyclopentene-fit-range"
+kind = "fit-range"
+temperature_min = 223
+temperature_max = 393
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain cyclopentene-fit-range (temperature 223–393 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "benzene-fit-range"
+kind = "fit-range"
+temperature_min = 278
+temperature_max = 562
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain benzene-fit-range (temperature 278–562 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "toluene-fit-range"
+kind = "fit-range"
+temperature_min = 178
+temperature_max = 594
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain toluene-fit-range (temperature 178–594 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "ethylbenzene-fit-range"
+kind = "fit-range"
+temperature_min = 178
+temperature_max = 617
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain ethylbenzene-fit-range (temperature 178–617 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "m-xylene-fit-range"
+kind = "fit-range"
+temperature_min = 225
+temperature_max = 619
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain m-xylene-fit-range (temperature 225–619 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "o-xylene-fit-range"
+kind = "fit-range"
+temperature_min = 248
+temperature_max = 630
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain o-xylene-fit-range (temperature 248–630 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "p-xylene-fit-range"
+kind = "fit-range"
+temperature_min = 286
+temperature_max = 616
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain p-xylene-fit-range (temperature 286–616 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "n-propyl-benzene-fit-range"
+kind = "fit-range"
+temperature_min = 173
+temperature_max = 638
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain n-propyl-benzene-fit-range (temperature 173–638 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "tetralin-fit-range"
+kind = "fit-range"
+temperature_min = 237
+temperature_max = 720
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain tetralin-fit-range (temperature 237–720 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "n-butylbenzene-fit-range"
+kind = "fit-range"
+temperature_min = 185
+temperature_max = 660
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain n-butylbenzene-fit-range (temperature 185–660 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "biphenyl-fit-range"
+kind = "fit-range"
+temperature_min = 342
+temperature_max = 773
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain biphenyl-fit-range (temperature 342–773 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "carbon-monoxide-fit-range"
+kind = "fit-range"
+temperature_min = 80
+temperature_max = 133
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain carbon-monoxide-fit-range (temperature 80–133 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "nitrogen-fit-range"
+kind = "fit-range"
+temperature_min = 63
+temperature_max = 126
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain nitrogen-fit-range (temperature 63–126 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "argon-fit-range"
+kind = "fit-range"
+temperature_min = 84
+temperature_max = 151
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain argon-fit-range (temperature 84–151 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "carbon-dioxide-fit-range"
+kind = "fit-range"
+temperature_min = 216
+temperature_max = 304
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain carbon-dioxide-fit-range (temperature 216–304 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "sulfur-dioxide-fit-range"
+kind = "fit-range"
+temperature_min = 198
+temperature_max = 431
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain sulfur-dioxide-fit-range (temperature 198–431 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "chlorine-fit-range"
+kind = "fit-range"
+temperature_min = 172
+temperature_max = 417
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain chlorine-fit-range (temperature 172–417 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "carbon-disulfide-fit-range"
+kind = "fit-range"
+temperature_min = 200
+temperature_max = 552
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain carbon-disulfide-fit-range (temperature 200–552 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "methyl-chloride-fit-range"
+kind = "fit-range"
+temperature_min = 175
+temperature_max = 416
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain methyl-chloride-fit-range (temperature 175–416 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "chloroethane-fit-range"
+kind = "fit-range"
+temperature_min = 134
+temperature_max = 460
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain chloroethane-fit-range (temperature 134–460 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "2-chloropropane-fit-range"
+kind = "fit-range"
+temperature_min = 156
+temperature_max = 489
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain 2-chloropropane-fit-range (temperature 156–489 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "1-chlorobutane-fit-range"
+kind = "fit-range"
+temperature_min = 150
+temperature_max = 537
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain 1-chlorobutane-fit-range (temperature 150–537 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "chlorobenzene-fit-range"
+kind = "fit-range"
+temperature_min = 228
+temperature_max = 632
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain chlorobenzene-fit-range (temperature 228–632 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "bromobenzene-fit-range"
+kind = "fit-range"
+temperature_min = 242
+temperature_max = 670
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain bromobenzene-fit-range (temperature 242–670 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "dimethyl-ether-fit-range"
+kind = "fit-range"
+temperature_min = 200
+temperature_max = 400
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain dimethyl-ether-fit-range (temperature 200–400 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "diethyl-ether-fit-range"
+kind = "fit-range"
+temperature_min = 240
+temperature_max = 467
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain diethyl-ether-fit-range (temperature 240–467 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "methyl-n-propyl-ether-fit-range"
+kind = "fit-range"
+temperature_min = 220
+temperature_max = 476
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain methyl-n-propyl-ether-fit-range (temperature 220–476 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "methyl-methanoate-fit-range"
+kind = "fit-range"
+temperature_min = 174
+temperature_max = 487
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain methyl-methanoate-fit-range (temperature 174–487 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "ethyl-methanoate-fit-range"
+kind = "fit-range"
+temperature_min = 193
+temperature_max = 508
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain ethyl-methanoate-fit-range (temperature 193–508 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "n-propyl-methanoate-fit-range"
+kind = "fit-range"
+temperature_min = 270
+temperature_max = 538
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain n-propyl-methanoate-fit-range (temperature 270–538 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "ethyl-ethanoate-fit-range"
+kind = "fit-range"
+temperature_min = 189
+temperature_max = 523
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain ethyl-ethanoate-fit-range (temperature 189–523 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "n-propyl-ethanoate-fit-range"
+kind = "fit-range"
+temperature_min = 290
+temperature_max = 549
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain n-propyl-ethanoate-fit-range (temperature 290–549 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "n-butyl-ethanoate-fit-range"
+kind = "fit-range"
+temperature_min = 199
+temperature_max = 579
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain n-butyl-ethanoate-fit-range (temperature 199–579 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "isopropyl-ethanoate-fit-range"
+kind = "fit-range"
+temperature_min = 199
+temperature_max = 532
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain isopropyl-ethanoate-fit-range (temperature 199–532 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "methyl-propanoate-fit-range"
+kind = "fit-range"
+temperature_min = 185
+temperature_max = 530
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain methyl-propanoate-fit-range (temperature 185–530 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "ethyl-propanoate-fit-range"
+kind = "fit-range"
+temperature_min = 199
+temperature_max = 546
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain ethyl-propanoate-fit-range (temperature 199–546 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "n-propyl-propanoate-fit-range"
+kind = "fit-range"
+temperature_min = 220
+temperature_max = 568
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain n-propyl-propanoate-fit-range (temperature 220–568 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "methyl-butanoate-fit-range"
+kind = "fit-range"
+temperature_min = 187
+temperature_max = 554
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain methyl-butanoate-fit-range (temperature 187–554 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-methane-butane-range"
+kind = "fit-range"
+temperature_min = 294.15
+temperature_max = 394.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-methane-butane-range (temperature 294.15–394.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-methane-pentane-range"
+kind = "fit-range"
+temperature_min = 344.15
+temperature_max = 444.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-methane-pentane-range (temperature 344.15–444.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-methane-hexane-range"
+kind = "fit-range"
+temperature_min = 273.16
+temperature_max = 411.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-methane-hexane-range (temperature 273.16–411.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-methane-heptane-range"
+kind = "fit-range"
+temperature_min = 277.15
+temperature_max = 511.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-methane-heptane-range (temperature 277.15–511.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-methane-decane-range"
+kind = "fit-range"
+temperature_min = 423.15
+temperature_max = 583.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-methane-decane-range (temperature 423.15–583.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-methane-isobutane-range"
+kind = "fit-range"
+temperature_min = 311.15
+temperature_max = 377.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-methane-isobutane-range (temperature 311.15–377.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-methane-cyclohexane-range"
+kind = "fit-range"
+temperature_min = 294.15
+temperature_max = 444.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-methane-cyclohexane-range (temperature 294.15–444.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-methane-benzene-range"
+kind = "fit-range"
+temperature_min = 421.15
+temperature_max = 501.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-methane-benzene-range (temperature 421.15–501.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-methane-toluene-range"
+kind = "fit-range"
+temperature_min = 422.15
+temperature_max = 543.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-methane-toluene-range (temperature 422.15–543.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-methane-m-xylene-range"
+kind = "fit-range"
+temperature_min = 461.15
+temperature_max = 582.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-methane-m-xylene-range (temperature 461.15–582.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-methane-tetralin-range"
+kind = "fit-range"
+temperature_min = 462.15
+temperature_max = 664.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-methane-tetralin-range (temperature 462.15–664.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-nitrogen-ethylene-range"
+kind = "fit-range"
+temperature_min = 260.15
+temperature_max = 266.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-nitrogen-ethylene-range (temperature 260.15–266.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-nitrogen-hexane-range"
+kind = "fit-range"
+temperature_min = 311.15
+temperature_max = 444.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-nitrogen-hexane-range (temperature 311.15–444.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-ethylene-heptane-range"
+kind = "fit-range"
+temperature_min = 333.15
+temperature_max = 516.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-ethylene-heptane-range (temperature 333.15–516.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-ethylene-propylene-range"
+kind = "fit-range"
+temperature_min = 283.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-ethylene-propylene-range (temperature 283.15–298.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-propane-butane-range"
+kind = "fit-range"
+temperature_min = 333.15
+temperature_max = 413.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-propane-butane-range (temperature 333.15–413.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-propylene-isobutane-range"
+kind = "fit-range"
+temperature_min = 315.15
+temperature_max = 397.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-propylene-isobutane-range (temperature 315.15–397.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-pentane-heptane-range"
+kind = "fit-range"
+temperature_min = 404.15
+temperature_max = 522.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-pentane-heptane-range (temperature 404.15–522.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-carbon-dioxide-methane-range"
+kind = "fit-range"
+temperature_min = 230.15
+temperature_max = 270.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-carbon-dioxide-methane-range (temperature 230.15–270.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-carbon-dioxide-propane-range"
+kind = "fit-range"
+temperature_min = 240.15
+temperature_max = 330.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-carbon-dioxide-propane-range (temperature 240.15–330.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-carbon-dioxide-butane-range"
+kind = "fit-range"
+temperature_min = 228.15
+temperature_max = 418.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-carbon-dioxide-butane-range (temperature 228.15–418.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-carbon-dioxide-pentane-range"
+kind = "fit-range"
+temperature_min = 277.15
+temperature_max = 377.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-carbon-dioxide-pentane-range (temperature 277.15–377.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-carbon-dioxide-heptane-range"
+kind = "fit-range"
+temperature_min = 310.15
+temperature_max = 477.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-carbon-dioxide-heptane-range (temperature 310.15–477.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "table-4-carbon-dioxide-methylcyclohexane-range"
+kind = "fit-range"
+temperature_min = 338.15
+temperature_max = 477.15
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain table-4-carbon-dioxide-methylcyclohexane-range (temperature 338.15–477.15 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "carbon-dioxide-ethane-250-270-k"
+kind = "fit-range"
+temperature_min = 250
+temperature_max = 270
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain carbon-dioxide-ethane-250-270-k (temperature 250–270 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "chlorobutane-hexane-0-944-bar"
+kind = "reported-conditions"
+pressure_min = 0.944
+pressure_max = 0.944
+pressure_unit = "bar"
+description = "Source-defined reported-conditions domain chlorobutane-hexane-0-944-bar (pressure 0.944–0.944 bar); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "gross-pair-unknown"
+kind = "unknown"
+description = "Source-defined domain gross-pair-unknown has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[domains]]
+domain_id = "gross-formulation-domain"
+kind = "unknown"
+description = "Source-defined domain gross-formulation-domain has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[files]]
+path = "parameters/bundle.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "b722fad31f6157ab2cd5fae9c54bbbfcbd996eda64503e108a71ac8d2b7ec26f"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "propane-fit-range", "butane-fit-range", "pentane-fit-range", "hexane-fit-range", "heptane-fit-range", "octane-fit-range", "nonane-fit-range", "decane-fit-range", "undecane-fit-range", "dodecane-fit-range", "tridecane-fit-range", "tetradecane-fit-range", "pentadecane-fit-range", "hexadecane-fit-range", "heptadecane-fit-range", "octadecane-fit-range", "nonadecane-fit-range", "eicosane-fit-range", "isobutane-fit-range", "isopentane-fit-range", "neopentane-fit-range", "2-methylpentane-fit-range", "2-2-dimethylbutane-fit-range", "2-3-dimethylbutane-fit-range", "3-methylpentane-fit-range", "2-methylhexane-fit-range", "cyclopentane-fit-range", "cyclohexane-fit-range", "methylcyclopentane-fit-range", "methylcyclohexane-fit-range", "ethylcyclopentane-fit-range", "ethylcyclohexane-fit-range", "ethylene-fit-range", "propylene-fit-range", "1-butene-fit-range", "1-pentene-fit-range", "1-hexene-fit-range", "1-octene-fit-range", "cyclopentene-fit-range", "benzene-fit-range", "toluene-fit-range", "ethylbenzene-fit-range", "m-xylene-fit-range", "o-xylene-fit-range", "p-xylene-fit-range", "n-propyl-benzene-fit-range", "tetralin-fit-range", "n-butylbenzene-fit-range", "biphenyl-fit-range", "carbon-monoxide-fit-range", "nitrogen-fit-range", "argon-fit-range", "carbon-dioxide-fit-range", "sulfur-dioxide-fit-range", "chlorine-fit-range", "carbon-disulfide-fit-range", "methyl-chloride-fit-range", "chloroethane-fit-range", "2-chloropropane-fit-range", "1-chlorobutane-fit-range", "chlorobenzene-fit-range", "bromobenzene-fit-range", "dimethyl-ether-fit-range", "diethyl-ether-fit-range", "methyl-n-propyl-ether-fit-range", "methyl-methanoate-fit-range", "ethyl-methanoate-fit-range", "n-propyl-methanoate-fit-range", "ethyl-ethanoate-fit-range", "n-propyl-ethanoate-fit-range", "n-butyl-ethanoate-fit-range", "isopropyl-ethanoate-fit-range", "methyl-propanoate-fit-range", "ethyl-propanoate-fit-range", "n-propyl-propanoate-fit-range", "methyl-butanoate-fit-range", "table-4-methane-butane-range", "table-4-methane-pentane-range", "table-4-methane-hexane-range", "table-4-methane-heptane-range", "table-4-methane-decane-range", "table-4-methane-isobutane-range", "table-4-methane-cyclohexane-range", "table-4-methane-benzene-range", "table-4-methane-toluene-range", "table-4-methane-m-xylene-range", "table-4-methane-tetralin-range", "table-4-nitrogen-ethylene-range", "table-4-nitrogen-hexane-range", "table-4-ethylene-heptane-range", "table-4-ethylene-propylene-range", "table-4-propane-butane-range", "table-4-propylene-isobutane-range", "table-4-pentane-heptane-range", "table-4-carbon-dioxide-methane-range", "table-4-carbon-dioxide-propane-range", "table-4-carbon-dioxide-butane-range", "table-4-carbon-dioxide-pentane-range", "table-4-carbon-dioxide-heptane-range", "table-4-carbon-dioxide-methylcyclohexane-range", "carbon-dioxide-ethane-250-270-k", "chlorobutane-hexane-0-944-bar", "gross-pair-unknown", "gross-formulation-domain"]
+units_basis = "Bundle identity, file membership, and source metadata are non-numeric identifiers."
+
+[[files]]
+path = "parameters/components.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "7187870d02d743267476c5aca11daa99b6261fe248f1bb15054882a01a029a7a"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "propane-fit-range", "butane-fit-range", "pentane-fit-range", "hexane-fit-range", "heptane-fit-range", "octane-fit-range", "nonane-fit-range", "decane-fit-range", "undecane-fit-range", "dodecane-fit-range", "tridecane-fit-range", "tetradecane-fit-range", "pentadecane-fit-range", "hexadecane-fit-range", "heptadecane-fit-range", "octadecane-fit-range", "nonadecane-fit-range", "eicosane-fit-range", "isobutane-fit-range", "isopentane-fit-range", "neopentane-fit-range", "2-methylpentane-fit-range", "2-2-dimethylbutane-fit-range", "2-3-dimethylbutane-fit-range", "3-methylpentane-fit-range", "2-methylhexane-fit-range", "cyclopentane-fit-range", "cyclohexane-fit-range", "methylcyclopentane-fit-range", "methylcyclohexane-fit-range", "ethylcyclopentane-fit-range", "ethylcyclohexane-fit-range", "ethylene-fit-range", "propylene-fit-range", "1-butene-fit-range", "1-pentene-fit-range", "1-hexene-fit-range", "1-octene-fit-range", "cyclopentene-fit-range", "benzene-fit-range", "toluene-fit-range", "ethylbenzene-fit-range", "m-xylene-fit-range", "o-xylene-fit-range", "p-xylene-fit-range", "n-propyl-benzene-fit-range", "tetralin-fit-range", "n-butylbenzene-fit-range", "biphenyl-fit-range", "carbon-monoxide-fit-range", "nitrogen-fit-range", "argon-fit-range", "carbon-dioxide-fit-range", "sulfur-dioxide-fit-range", "chlorine-fit-range", "carbon-disulfide-fit-range", "methyl-chloride-fit-range", "chloroethane-fit-range", "2-chloropropane-fit-range", "1-chlorobutane-fit-range", "chlorobenzene-fit-range", "bromobenzene-fit-range", "dimethyl-ether-fit-range", "diethyl-ether-fit-range", "methyl-n-propyl-ether-fit-range", "methyl-methanoate-fit-range", "ethyl-methanoate-fit-range", "n-propyl-methanoate-fit-range", "ethyl-ethanoate-fit-range", "n-propyl-ethanoate-fit-range", "n-butyl-ethanoate-fit-range", "isopropyl-ethanoate-fit-range", "methyl-propanoate-fit-range", "ethyl-propanoate-fit-range", "n-propyl-propanoate-fit-range", "methyl-butanoate-fit-range", "table-4-methane-butane-range", "table-4-methane-pentane-range", "table-4-methane-hexane-range", "table-4-methane-heptane-range", "table-4-methane-decane-range", "table-4-methane-isobutane-range", "table-4-methane-cyclohexane-range", "table-4-methane-benzene-range", "table-4-methane-toluene-range", "table-4-methane-m-xylene-range", "table-4-methane-tetralin-range", "table-4-nitrogen-ethylene-range", "table-4-nitrogen-hexane-range", "table-4-ethylene-heptane-range", "table-4-ethylene-propylene-range", "table-4-propane-butane-range", "table-4-propylene-isobutane-range", "table-4-pentane-heptane-range", "table-4-carbon-dioxide-methane-range", "table-4-carbon-dioxide-propane-range", "table-4-carbon-dioxide-butane-range", "table-4-carbon-dioxide-pentane-range", "table-4-carbon-dioxide-heptane-range", "table-4-carbon-dioxide-methylcyclohexane-range", "carbon-dioxide-ethane-250-270-k", "chlorobutane-hexane-0-944-bar", "gross-pair-unknown", "gross-formulation-domain"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/single.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "63f193f425bdaac0d90a3cf7b431ece8471c16cbdef46e844603ba39d3215b06"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "propane-fit-range", "butane-fit-range", "pentane-fit-range", "hexane-fit-range", "heptane-fit-range", "octane-fit-range", "nonane-fit-range", "decane-fit-range", "undecane-fit-range", "dodecane-fit-range", "tridecane-fit-range", "tetradecane-fit-range", "pentadecane-fit-range", "hexadecane-fit-range", "heptadecane-fit-range", "octadecane-fit-range", "nonadecane-fit-range", "eicosane-fit-range", "isobutane-fit-range", "isopentane-fit-range", "neopentane-fit-range", "2-methylpentane-fit-range", "2-2-dimethylbutane-fit-range", "2-3-dimethylbutane-fit-range", "3-methylpentane-fit-range", "2-methylhexane-fit-range", "cyclopentane-fit-range", "cyclohexane-fit-range", "methylcyclopentane-fit-range", "methylcyclohexane-fit-range", "ethylcyclopentane-fit-range", "ethylcyclohexane-fit-range", "ethylene-fit-range", "propylene-fit-range", "1-butene-fit-range", "1-pentene-fit-range", "1-hexene-fit-range", "1-octene-fit-range", "cyclopentene-fit-range", "benzene-fit-range", "toluene-fit-range", "ethylbenzene-fit-range", "m-xylene-fit-range", "o-xylene-fit-range", "p-xylene-fit-range", "n-propyl-benzene-fit-range", "tetralin-fit-range", "n-butylbenzene-fit-range", "biphenyl-fit-range", "carbon-monoxide-fit-range", "nitrogen-fit-range", "argon-fit-range", "carbon-dioxide-fit-range", "sulfur-dioxide-fit-range", "chlorine-fit-range", "carbon-disulfide-fit-range", "methyl-chloride-fit-range", "chloroethane-fit-range", "2-chloropropane-fit-range", "1-chlorobutane-fit-range", "chlorobenzene-fit-range", "bromobenzene-fit-range", "dimethyl-ether-fit-range", "diethyl-ether-fit-range", "methyl-n-propyl-ether-fit-range", "methyl-methanoate-fit-range", "ethyl-methanoate-fit-range", "n-propyl-methanoate-fit-range", "ethyl-ethanoate-fit-range", "n-propyl-ethanoate-fit-range", "n-butyl-ethanoate-fit-range", "isopropyl-ethanoate-fit-range", "methyl-propanoate-fit-range", "ethyl-propanoate-fit-range", "n-propyl-propanoate-fit-range", "methyl-butanoate-fit-range", "table-4-methane-butane-range", "table-4-methane-pentane-range", "table-4-methane-hexane-range", "table-4-methane-heptane-range", "table-4-methane-decane-range", "table-4-methane-isobutane-range", "table-4-methane-cyclohexane-range", "table-4-methane-benzene-range", "table-4-methane-toluene-range", "table-4-methane-m-xylene-range", "table-4-methane-tetralin-range", "table-4-nitrogen-ethylene-range", "table-4-nitrogen-hexane-range", "table-4-ethylene-heptane-range", "table-4-ethylene-propylene-range", "table-4-propane-butane-range", "table-4-propylene-isobutane-range", "table-4-pentane-heptane-range", "table-4-carbon-dioxide-methane-range", "table-4-carbon-dioxide-propane-range", "table-4-carbon-dioxide-butane-range", "table-4-carbon-dioxide-pentane-range", "table-4-carbon-dioxide-heptane-range", "table-4-carbon-dioxide-methylcyclohexane-range", "carbon-dioxide-ethane-250-270-k", "chlorobutane-hexane-0-944-bar", "gross-pair-unknown", "gross-formulation-domain"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/pair.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "11e56a648b121c0fc051c2592a75c9c3f711443b2e16cb5ce58e0acf21953e1e"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "propane-fit-range", "butane-fit-range", "pentane-fit-range", "hexane-fit-range", "heptane-fit-range", "octane-fit-range", "nonane-fit-range", "decane-fit-range", "undecane-fit-range", "dodecane-fit-range", "tridecane-fit-range", "tetradecane-fit-range", "pentadecane-fit-range", "hexadecane-fit-range", "heptadecane-fit-range", "octadecane-fit-range", "nonadecane-fit-range", "eicosane-fit-range", "isobutane-fit-range", "isopentane-fit-range", "neopentane-fit-range", "2-methylpentane-fit-range", "2-2-dimethylbutane-fit-range", "2-3-dimethylbutane-fit-range", "3-methylpentane-fit-range", "2-methylhexane-fit-range", "cyclopentane-fit-range", "cyclohexane-fit-range", "methylcyclopentane-fit-range", "methylcyclohexane-fit-range", "ethylcyclopentane-fit-range", "ethylcyclohexane-fit-range", "ethylene-fit-range", "propylene-fit-range", "1-butene-fit-range", "1-pentene-fit-range", "1-hexene-fit-range", "1-octene-fit-range", "cyclopentene-fit-range", "benzene-fit-range", "toluene-fit-range", "ethylbenzene-fit-range", "m-xylene-fit-range", "o-xylene-fit-range", "p-xylene-fit-range", "n-propyl-benzene-fit-range", "tetralin-fit-range", "n-butylbenzene-fit-range", "biphenyl-fit-range", "carbon-monoxide-fit-range", "nitrogen-fit-range", "argon-fit-range", "carbon-dioxide-fit-range", "sulfur-dioxide-fit-range", "chlorine-fit-range", "carbon-disulfide-fit-range", "methyl-chloride-fit-range", "chloroethane-fit-range", "2-chloropropane-fit-range", "1-chlorobutane-fit-range", "chlorobenzene-fit-range", "bromobenzene-fit-range", "dimethyl-ether-fit-range", "diethyl-ether-fit-range", "methyl-n-propyl-ether-fit-range", "methyl-methanoate-fit-range", "ethyl-methanoate-fit-range", "n-propyl-methanoate-fit-range", "ethyl-ethanoate-fit-range", "n-propyl-ethanoate-fit-range", "n-butyl-ethanoate-fit-range", "isopropyl-ethanoate-fit-range", "methyl-propanoate-fit-range", "ethyl-propanoate-fit-range", "n-propyl-propanoate-fit-range", "methyl-butanoate-fit-range", "table-4-methane-butane-range", "table-4-methane-pentane-range", "table-4-methane-hexane-range", "table-4-methane-heptane-range", "table-4-methane-decane-range", "table-4-methane-isobutane-range", "table-4-methane-cyclohexane-range", "table-4-methane-benzene-range", "table-4-methane-toluene-range", "table-4-methane-m-xylene-range", "table-4-methane-tetralin-range", "table-4-nitrogen-ethylene-range", "table-4-nitrogen-hexane-range", "table-4-ethylene-heptane-range", "table-4-ethylene-propylene-range", "table-4-propane-butane-range", "table-4-propylene-isobutane-range", "table-4-pentane-heptane-range", "table-4-carbon-dioxide-methane-range", "table-4-carbon-dioxide-propane-range", "table-4-carbon-dioxide-butane-range", "table-4-carbon-dioxide-pentane-range", "table-4-carbon-dioxide-heptane-range", "table-4-carbon-dioxide-methylcyclohexane-range", "carbon-dioxide-ethane-250-270-k", "chlorobutane-hexane-0-944-bar", "gross-pair-unknown", "gross-formulation-domain"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/model.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "aaf72afb01e9c33043a216d0ce56bf9b31a6ec9c9e9fce2f1f73b1fec3896039"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "propane-fit-range", "butane-fit-range", "pentane-fit-range", "hexane-fit-range", "heptane-fit-range", "octane-fit-range", "nonane-fit-range", "decane-fit-range", "undecane-fit-range", "dodecane-fit-range", "tridecane-fit-range", "tetradecane-fit-range", "pentadecane-fit-range", "hexadecane-fit-range", "heptadecane-fit-range", "octadecane-fit-range", "nonadecane-fit-range", "eicosane-fit-range", "isobutane-fit-range", "isopentane-fit-range", "neopentane-fit-range", "2-methylpentane-fit-range", "2-2-dimethylbutane-fit-range", "2-3-dimethylbutane-fit-range", "3-methylpentane-fit-range", "2-methylhexane-fit-range", "cyclopentane-fit-range", "cyclohexane-fit-range", "methylcyclopentane-fit-range", "methylcyclohexane-fit-range", "ethylcyclopentane-fit-range", "ethylcyclohexane-fit-range", "ethylene-fit-range", "propylene-fit-range", "1-butene-fit-range", "1-pentene-fit-range", "1-hexene-fit-range", "1-octene-fit-range", "cyclopentene-fit-range", "benzene-fit-range", "toluene-fit-range", "ethylbenzene-fit-range", "m-xylene-fit-range", "o-xylene-fit-range", "p-xylene-fit-range", "n-propyl-benzene-fit-range", "tetralin-fit-range", "n-butylbenzene-fit-range", "biphenyl-fit-range", "carbon-monoxide-fit-range", "nitrogen-fit-range", "argon-fit-range", "carbon-dioxide-fit-range", "sulfur-dioxide-fit-range", "chlorine-fit-range", "carbon-disulfide-fit-range", "methyl-chloride-fit-range", "chloroethane-fit-range", "2-chloropropane-fit-range", "1-chlorobutane-fit-range", "chlorobenzene-fit-range", "bromobenzene-fit-range", "dimethyl-ether-fit-range", "diethyl-ether-fit-range", "methyl-n-propyl-ether-fit-range", "methyl-methanoate-fit-range", "ethyl-methanoate-fit-range", "n-propyl-methanoate-fit-range", "ethyl-ethanoate-fit-range", "n-propyl-ethanoate-fit-range", "n-butyl-ethanoate-fit-range", "isopropyl-ethanoate-fit-range", "methyl-propanoate-fit-range", "ethyl-propanoate-fit-range", "n-propyl-propanoate-fit-range", "methyl-butanoate-fit-range", "table-4-methane-butane-range", "table-4-methane-pentane-range", "table-4-methane-hexane-range", "table-4-methane-heptane-range", "table-4-methane-decane-range", "table-4-methane-isobutane-range", "table-4-methane-cyclohexane-range", "table-4-methane-benzene-range", "table-4-methane-toluene-range", "table-4-methane-m-xylene-range", "table-4-methane-tetralin-range", "table-4-nitrogen-ethylene-range", "table-4-nitrogen-hexane-range", "table-4-ethylene-heptane-range", "table-4-ethylene-propylene-range", "table-4-propane-butane-range", "table-4-propylene-isobutane-range", "table-4-pentane-heptane-range", "table-4-carbon-dioxide-methane-range", "table-4-carbon-dioxide-propane-range", "table-4-carbon-dioxide-butane-range", "table-4-carbon-dioxide-pentane-range", "table-4-carbon-dioxide-heptane-range", "table-4-carbon-dioxide-methylcyclohexane-range", "carbon-dioxide-ethane-250-270-k", "chlorobutane-hexane-0-944-bar", "gross-pair-unknown", "gross-formulation-domain"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "86ad7e149672085744ba4dd92e2a77ea7e0201a87a9fe6b7b6ebe2c46e8ae0eb"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "propane-fit-range", "butane-fit-range", "pentane-fit-range", "hexane-fit-range", "heptane-fit-range", "octane-fit-range", "nonane-fit-range", "decane-fit-range", "undecane-fit-range", "dodecane-fit-range", "tridecane-fit-range", "tetradecane-fit-range", "pentadecane-fit-range", "hexadecane-fit-range", "heptadecane-fit-range", "octadecane-fit-range", "nonadecane-fit-range", "eicosane-fit-range", "isobutane-fit-range", "isopentane-fit-range", "neopentane-fit-range", "2-methylpentane-fit-range", "2-2-dimethylbutane-fit-range", "2-3-dimethylbutane-fit-range", "3-methylpentane-fit-range", "2-methylhexane-fit-range", "cyclopentane-fit-range", "cyclohexane-fit-range", "methylcyclopentane-fit-range", "methylcyclohexane-fit-range", "ethylcyclopentane-fit-range", "ethylcyclohexane-fit-range", "ethylene-fit-range", "propylene-fit-range", "1-butene-fit-range", "1-pentene-fit-range", "1-hexene-fit-range", "1-octene-fit-range", "cyclopentene-fit-range", "benzene-fit-range", "toluene-fit-range", "ethylbenzene-fit-range", "m-xylene-fit-range", "o-xylene-fit-range", "p-xylene-fit-range", "n-propyl-benzene-fit-range", "tetralin-fit-range", "n-butylbenzene-fit-range", "biphenyl-fit-range", "carbon-monoxide-fit-range", "nitrogen-fit-range", "argon-fit-range", "carbon-dioxide-fit-range", "sulfur-dioxide-fit-range", "chlorine-fit-range", "carbon-disulfide-fit-range", "methyl-chloride-fit-range", "chloroethane-fit-range", "2-chloropropane-fit-range", "1-chlorobutane-fit-range", "chlorobenzene-fit-range", "bromobenzene-fit-range", "dimethyl-ether-fit-range", "diethyl-ether-fit-range", "methyl-n-propyl-ether-fit-range", "methyl-methanoate-fit-range", "ethyl-methanoate-fit-range", "n-propyl-methanoate-fit-range", "ethyl-ethanoate-fit-range", "n-propyl-ethanoate-fit-range", "n-butyl-ethanoate-fit-range", "isopropyl-ethanoate-fit-range", "methyl-propanoate-fit-range", "ethyl-propanoate-fit-range", "n-propyl-propanoate-fit-range", "methyl-butanoate-fit-range", "table-4-methane-butane-range", "table-4-methane-pentane-range", "table-4-methane-hexane-range", "table-4-methane-heptane-range", "table-4-methane-decane-range", "table-4-methane-isobutane-range", "table-4-methane-cyclohexane-range", "table-4-methane-benzene-range", "table-4-methane-toluene-range", "table-4-methane-m-xylene-range", "table-4-methane-tetralin-range", "table-4-nitrogen-ethylene-range", "table-4-nitrogen-hexane-range", "table-4-ethylene-heptane-range", "table-4-ethylene-propylene-range", "table-4-propane-butane-range", "table-4-propylene-isobutane-range", "table-4-pentane-heptane-range", "table-4-carbon-dioxide-methane-range", "table-4-carbon-dioxide-propane-range", "table-4-carbon-dioxide-butane-range", "table-4-carbon-dioxide-pentane-range", "table-4-carbon-dioxide-heptane-range", "table-4-carbon-dioxide-methylcyclohexane-range", "carbon-dioxide-ethane-250-270-k", "chlorobutane-hexane-0-944-bar", "gross-pair-unknown", "gross-formulation-domain"]
+units_basis = "Origin repository, commit, tree, path, and hash metadata are non-numeric identifiers."

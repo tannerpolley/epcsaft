@@ -1,0 +1,6 @@
+record_id,component_id_a,component_id_b,family,value,unit,source_id,locator,domain_id
+water-sodium-kij,water,sodium-cation,k_ij,-0.3,,figiel-yu-held-2025,"Table 5, Na+ row, water column",figiel-298-k-1-bar
+water-potassium-kij,water,potassium-cation,k_ij,-0.1,,figiel-yu-held-2025,"Table 5, K+ row, water column",figiel-298-k-1-bar
+water-iodide-kij,water,iodide-anion,k_ij,-0.05,,figiel-yu-held-2025,"Table 5, I- row, water column; fitted in this work",figiel-298-k-1-bar
+sodium-iodide-kij,sodium-cation,iodide-anion,k_ij,0.45,,figiel-yu-held-2025,"Table 4, I- row, Na+ column; fitted in this work",figiel-298-k-1-bar
+potassium-iodide-kij,potassium-cation,iodide-anion,k_ij,0,,figiel-yu-held-2025,"Table 4, I- row, K+ column; explicit fitted zero",figiel-298-k-1-bar

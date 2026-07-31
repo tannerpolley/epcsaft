@@ -1,0 +1,48 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-eos"
+origin_commit = "e5cd64697d3fb33890f42e87b8779ddda4b52c6a"
+origin_tree = "7de4e53f5d81422039d621536053a66a3840d0f9"
+copy_mode = "byte-for-byte"
+scope = "Reusable parameter packet only; generated campaign results, scripts, receipts, plots, and full paper content remain in the origin repository."
+source_bundle_manifest_path = "src/epcsaft/data/bundles/figiel-yu-held-2025/1/bundle.toml"
+source_bundle_manifest_sha256 = "bace628d366310dccb9329779218be56602e56db294dda2bc468fef4fd94f0c5"
+
+[[files]]
+retained_path = "parameters/bundle.toml"
+origin_path = "src/epcsaft/data/bundles/figiel-yu-held-2025/1/bundle.toml"
+sha256 = "bace628d366310dccb9329779218be56602e56db294dda2bc468fef4fd94f0c5"
+
+[[files]]
+retained_path = "parameters/components.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-yu-held-2025/1/components.csv"
+sha256 = "d225a917affa50e0f2b18616398cef7755fd10d9b5f618b0fce9915d8181bb11"
+
+[[files]]
+retained_path = "parameters/single.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-yu-held-2025/1/single.csv"
+sha256 = "5a3f4aa0fae30fb3ca768ebb6f92e063d7be68fce6ec2a08fb6c1d6410148d46"
+
+[[files]]
+retained_path = "parameters/pair.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-yu-held-2025/1/pair.csv"
+sha256 = "f9c27292f9d19b245ed1311a3e8f2bada68e33928c0bf76c8bd33fba22a64536"
+
+[[files]]
+retained_path = "parameters/sites.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-yu-held-2025/1/sites.csv"
+sha256 = "b6e378eb4c4727221d0baee7b4b35411f868521153d29e5493996515acc82726"
+
+[[files]]
+retained_path = "parameters/association.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-yu-held-2025/1/association.csv"
+sha256 = "9750cc3a7490b5576ece45b1daa46851ac0528c0aefae94d8a84fd11f844e2cc"
+
+[[files]]
+retained_path = "parameters/model.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-yu-held-2025/1/model.csv"
+sha256 = "ce1f9d985725f86ca8d2f4e2f9f786c4e942e1d32f207bc1b20957311102525e"
+
+[[files]]
+retained_path = "parameters/correlations.toml"
+origin_path = "src/epcsaft/data/bundles/figiel-yu-held-2025/1/correlations.toml"
+sha256 = "dc939a7d6fbcea980f60fbe1ea41e8a54631cd2ee80d6de2622bb9eedd17193c"

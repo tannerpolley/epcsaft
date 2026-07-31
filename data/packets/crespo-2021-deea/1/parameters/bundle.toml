@@ -1,0 +1,15 @@
+schema_version = 1
+bundle_id = "crespo-2021-deea"
+bundle_version = 1
+purpose = "installed-catalog"
+files = ["components.csv", "single.csv", "sites.csv", "association.csv", "model.csv"]
+
+[[sources]]
+source_id = "crespo-et-al-2021"
+citation = "Crespo, E. A.; Silva, L. P.; Carvalho, P. J.; Coutinho, J. A. P. The Excess Volumes of Protic Ionic Liquids and Its Significance to Their Thermodynamic Modelling. Fluid Phase Equilibria 2021, 113277."
+doi = "10.1016/j.fluid.2021.113277"
+use_basis = "Table 3 neutral DEEA PC-SAFT parameters and 2B association topology; kappa_HB is used in the cited PC-SAFT sigma^3*kappa association-strength convention; c_i is excluded as the PIL volume correction"
+
+[[domains]]
+domain_id = "crespo-deea-fit-domain-unreported"
+kind = "unknown"

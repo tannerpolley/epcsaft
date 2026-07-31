@@ -1,0 +1,48 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-eos"
+origin_commit = "e5cd64697d3fb33890f42e87b8779ddda4b52c6a"
+origin_tree = "7de4e53f5d81422039d621536053a66a3840d0f9"
+copy_mode = "byte-for-byte"
+scope = "Reusable parameter packet only; generated campaign results, scripts, receipts, plots, and full paper content remain in the origin repository."
+source_bundle_manifest_path = "src/epcsaft/data/bundles/ascani-2022-case-study-2-electrolyte-lle/1/bundle.toml"
+source_bundle_manifest_sha256 = "58871f4776ca44b00992d452a09d01386d5c70973fba310fd9dffc8b5a90e844"
+
+[[files]]
+retained_path = "parameters/bundle.toml"
+origin_path = "src/epcsaft/data/bundles/ascani-2022-case-study-2-electrolyte-lle/1/bundle.toml"
+sha256 = "58871f4776ca44b00992d452a09d01386d5c70973fba310fd9dffc8b5a90e844"
+
+[[files]]
+retained_path = "parameters/components.csv"
+origin_path = "src/epcsaft/data/bundles/ascani-2022-case-study-2-electrolyte-lle/1/components.csv"
+sha256 = "b4607016ba90d8f4b2808a8d17f915ad36d62e195c2657bbe1ca2badadf38cb8"
+
+[[files]]
+retained_path = "parameters/single.csv"
+origin_path = "src/epcsaft/data/bundles/ascani-2022-case-study-2-electrolyte-lle/1/single.csv"
+sha256 = "81deac89b36b6fc7a004e67266fc70b6ad43bb4a311a20dc83c34a55ee807910"
+
+[[files]]
+retained_path = "parameters/pair.csv"
+origin_path = "src/epcsaft/data/bundles/ascani-2022-case-study-2-electrolyte-lle/1/pair.csv"
+sha256 = "2cd61331c87abf381d11f92aed703f0653ec48a6e6ed9b1c2303cd5c81952180"
+
+[[files]]
+retained_path = "parameters/sites.csv"
+origin_path = "src/epcsaft/data/bundles/ascani-2022-case-study-2-electrolyte-lle/1/sites.csv"
+sha256 = "c0ba8972e18e129ebf0fe7cf4dcd0384f6372397cde98e37ec6df027b10a175f"
+
+[[files]]
+retained_path = "parameters/association.csv"
+origin_path = "src/epcsaft/data/bundles/ascani-2022-case-study-2-electrolyte-lle/1/association.csv"
+sha256 = "584a9295fcbe3b03b5b422fa0669d2d7f1ab4fab19bf0053740728f2cd42ac01"
+
+[[files]]
+retained_path = "parameters/model.csv"
+origin_path = "src/epcsaft/data/bundles/ascani-2022-case-study-2-electrolyte-lle/1/model.csv"
+sha256 = "dafedb7bb95f8d6846655352137240a50752f6ff6d6866fc7d075635b092b94e"
+
+[[files]]
+retained_path = "parameters/correlations.toml"
+origin_path = "src/epcsaft/data/bundles/ascani-2022-case-study-2-electrolyte-lle/1/correlations.toml"
+sha256 = "7b16cffb850bd28d02c4513772ea865ec6494a043a5455ebf2511864bee9d8ac"

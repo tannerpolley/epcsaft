@@ -1,0 +1,5 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+propane-molar-mass,propane,molar_mass,0.044096,kg / mol,gross-sadowski-2001,"Table 2, propane row, M_i and T range columns",propane-fit-range
+propane-segment-count,propane,segment_count,2.0020,,gross-sadowski-2001,"Table 2, propane row, m_i^seg and T range columns",propane-fit-range
+propane-segment-diameter,propane,segment_diameter,3.6184,angstrom,gross-sadowski-2001,"Table 2, propane row, sigma_i and T range columns",propane-fit-range
+propane-dispersion-energy,propane,dispersion_energy_over_k,208.11,kelvin,gross-sadowski-2001,"Table 2, propane row, u_i/k_B and T range columns",propane-fit-range

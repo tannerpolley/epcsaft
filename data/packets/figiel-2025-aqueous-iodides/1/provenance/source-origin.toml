@@ -1,0 +1,48 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-eos"
+origin_commit = "e5cd64697d3fb33890f42e87b8779ddda4b52c6a"
+origin_tree = "7de4e53f5d81422039d621536053a66a3840d0f9"
+copy_mode = "byte-for-byte"
+scope = "Reusable parameter packet only; generated campaign results, scripts, receipts, plots, and full paper content remain in the origin repository."
+source_bundle_manifest_path = "src/epcsaft/data/bundles/figiel-2025-aqueous-iodides/1/bundle.toml"
+source_bundle_manifest_sha256 = "489f01bc0405bc790c60914143539cc74021e4fbc295f730def9437e5b278df3"
+
+[[files]]
+retained_path = "parameters/bundle.toml"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-aqueous-iodides/1/bundle.toml"
+sha256 = "489f01bc0405bc790c60914143539cc74021e4fbc295f730def9437e5b278df3"
+
+[[files]]
+retained_path = "parameters/components.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-aqueous-iodides/1/components.csv"
+sha256 = "d3b806247632be44c2b677b2f08d873f5f88a439bc94519eb93e40a5cd9a583f"
+
+[[files]]
+retained_path = "parameters/single.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-aqueous-iodides/1/single.csv"
+sha256 = "0210788ace7fc4f8eb0063553026e12f96e3bb2045851a0f2c0ad5606b2e7a96"
+
+[[files]]
+retained_path = "parameters/pair.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-aqueous-iodides/1/pair.csv"
+sha256 = "536e84357c4e9ff032f20be07f01385fdf367d8e8c89e2330d5e913db05b6a64"
+
+[[files]]
+retained_path = "parameters/sites.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-aqueous-iodides/1/sites.csv"
+sha256 = "055986a059fde29e46ede801b67ad9c80388b0345ff63d09cadb67da38c5c29b"
+
+[[files]]
+retained_path = "parameters/association.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-aqueous-iodides/1/association.csv"
+sha256 = "b331bad69383b8a4b310332adf508569807fffa7ccd0d5edbbcb4aac4ed63f68"
+
+[[files]]
+retained_path = "parameters/model.csv"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-aqueous-iodides/1/model.csv"
+sha256 = "ce1f9d985725f86ca8d2f4e2f9f786c4e942e1d32f207bc1b20957311102525e"
+
+[[files]]
+retained_path = "parameters/correlations.toml"
+origin_path = "src/epcsaft/data/bundles/figiel-2025-aqueous-iodides/1/correlations.toml"
+sha256 = "0c241c0492e06212efe013fc03e3cc2d827e5aa072d212edc62f2ac0176a3f4a"

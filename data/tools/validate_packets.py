@@ -18,6 +18,10 @@ ALLOWED_ROLES = {
     "schema",
 }
 SHA256_LENGTH = 64
+SUPPORTED_PACKET_SCHEMA_VERSIONS = {1, 2}
+LEGACY_SCHEMA1_PACKET_VERSIONS = {
+    "khudaida-2026-figure-2-electrolyte-lle": {"2", "3"},
+}
 
 
 def sha256(path: Path) -> str:
@@ -206,8 +210,20 @@ def validate_packet(manifest: Path) -> list[str]:
     except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
         return [f"{prefix}: cannot read packet.toml: {exc}"]
 
-    if data.get("schema_version") != 1:
-        errors.append(f"{prefix}: schema_version must be 1")
+    schema_version = data.get("schema_version")
+    if schema_version not in SUPPORTED_PACKET_SCHEMA_VERSIONS:
+        errors.append(
+            f"{prefix}: schema_version must be one of "
+            f"{sorted(SUPPORTED_PACKET_SCHEMA_VERSIONS)}"
+        )
+    elif schema_version == 1 and packet_root.parent.name not in LEGACY_SCHEMA1_PACKET_VERSIONS:
+        errors.append(
+            f"{prefix}: schema_version 1 is reserved for accepted historical packets"
+        )
+    elif schema_version == 1 and packet_root.name not in LEGACY_SCHEMA1_PACKET_VERSIONS[packet_root.parent.name]:
+        errors.append(
+            f"{prefix}: schema_version 1 is not accepted for this packet version"
+        )
     if data.get("packet_id") != packet_root.parent.name:
         errors.append(f"{prefix}: packet_id must match its directory")
     if str(data.get("packet_version", "")) != packet_root.name:
@@ -215,6 +231,10 @@ def validate_packet(manifest: Path) -> list[str]:
     for field in ("title", "description", "license_or_use_basis"):
         if not _nonempty_string(data.get(field)):
             errors.append(f"{prefix}: {field} is required")
+    if schema_version == 2 and not _nonempty_string(data.get("tolerance_rationale")):
+        errors.append(
+            f"{prefix}: tolerance_rationale is required for schema_version 2"
+        )
 
     sources = data.get("sources")
     domains = data.get("domains")

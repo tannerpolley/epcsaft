@@ -1,0 +1,24 @@
+record_id,component_id_a,component_id_b,family,value,unit,source_id,locator,domain_id
+water-methanol-kij,water,methanol,k_ij,-0.0878,,figiel-yu-held-2025,"Table 5, methanol row, water column",figiel-298-k-1-bar
+water-ethanol-kij,water,ethanol,k_ij,-0.0617,,figiel-yu-held-2025,"Table 5, ethanol row, water column",figiel-298-k-1-bar
+water-lithium-kij,water,lithium-cation,k_ij,-0.4,,figiel-yu-held-2025,"Table 5, Li+ row, water column",figiel-298-k-1-bar
+water-sodium-kij,water,sodium-cation,k_ij,-0.3,,figiel-yu-held-2025,"Table 5, Na+ row, water column",figiel-298-k-1-bar
+water-potassium-kij,water,potassium-cation,k_ij,-0.1,,figiel-yu-held-2025,"Table 5, K+ row, water column",figiel-298-k-1-bar
+water-chloride-kij,water,chloride-anion,k_ij,-0.3,,figiel-yu-held-2025,"Table 5, Cl- row, water column",figiel-298-k-1-bar
+water-bromide-kij,water,bromide-anion,k_ij,-0.3,,figiel-yu-held-2025,"Table 5, Br- row, water column",figiel-298-k-1-bar
+methanol-lithium-kij,methanol,lithium-cation,k_ij,-0.9,,figiel-yu-held-2025,"Table 5, Li+ row, methanol column",figiel-298-k-1-bar
+methanol-sodium-kij,methanol,sodium-cation,k_ij,-0.25,,figiel-yu-held-2025,"Table 5, Na+ row, methanol column",figiel-298-k-1-bar
+methanol-potassium-kij,methanol,potassium-cation,k_ij,0.32,,figiel-yu-held-2025,"Table 5, K+ row, methanol column",figiel-298-k-1-bar
+methanol-chloride-kij,methanol,chloride-anion,k_ij,0.5,,figiel-yu-held-2025,"Table 5, Cl- row, methanol column",figiel-298-k-1-bar
+methanol-bromide-kij,methanol,bromide-anion,k_ij,0.15,,figiel-yu-held-2025,"Table 5, Br- row, methanol column",figiel-298-k-1-bar
+ethanol-lithium-kij,ethanol,lithium-cation,k_ij,-0.8,,figiel-yu-held-2025,"Table 5, Li+ row, ethanol column",figiel-298-k-1-bar
+ethanol-sodium-kij,ethanol,sodium-cation,k_ij,0.05,,figiel-yu-held-2025,"Table 5, Na+ row, ethanol column",figiel-298-k-1-bar
+ethanol-potassium-kij,ethanol,potassium-cation,k_ij,0.53,,figiel-yu-held-2025,"Table 5, K+ row, ethanol column",figiel-298-k-1-bar
+ethanol-chloride-kij,ethanol,chloride-anion,k_ij,0.8,,figiel-yu-held-2025,"Table 5, Cl- row, ethanol column",figiel-298-k-1-bar
+ethanol-bromide-kij,ethanol,bromide-anion,k_ij,0,,figiel-yu-held-2025,"Table 5, Br- row, ethanol column",figiel-298-k-1-bar
+lithium-chloride-kij,lithium-cation,chloride-anion,k_ij,0.8,,figiel-yu-held-2025,"Table 4, Cl- row, Li+ column",figiel-298-k-1-bar
+sodium-chloride-kij,sodium-cation,chloride-anion,k_ij,0.8,,figiel-yu-held-2025,"Table 4, Cl- row, Na+ column",figiel-298-k-1-bar
+potassium-chloride-kij,potassium-cation,chloride-anion,k_ij,0,,figiel-yu-held-2025,"Table 4, Cl- row, K+ column",figiel-298-k-1-bar
+lithium-bromide-kij,lithium-cation,bromide-anion,k_ij,0.5,,figiel-yu-held-2025,"Table 4, Br- row, Li+ column",figiel-298-k-1-bar
+sodium-bromide-kij,sodium-cation,bromide-anion,k_ij,0.65,,figiel-yu-held-2025,"Table 4, Br- row, Na+ column",figiel-298-k-1-bar
+potassium-bromide-kij,potassium-cation,bromide-anion,k_ij,-0.35,,figiel-yu-held-2025,"Table 4, Br- row, K+ column",figiel-298-k-1-bar

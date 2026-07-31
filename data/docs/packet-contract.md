@@ -2,7 +2,7 @@
 
 Status: canonical
 
-Version: 1
+Version: 2
 
 ## Purpose
 
@@ -25,11 +25,15 @@ in Validation.
 
 `packet.toml` requires:
 
-- `schema_version = 1`;
+- `schema_version = 2` for current packets. Schema version 1 is retained for
+  accepted historical packets and does not gain fields retroactively;
 - `packet_id`, matching the packet directory;
 - `packet_version`, matching the version directory;
 - a short `title` and `description`;
 - `license_or_use_basis`, including any redistribution restriction;
+- `tolerance_rationale`, explaining the retained source uncertainty or stating
+  explicitly why no numerical acceptance tolerance is claimed. This field is
+  required for schema version 2 packets;
 - one or more `[[sources]]` entries with `source_id`, `citation`, and
   `use_basis`;
 - one or more `[[domains]]` entries with `domain_id` and `description`; and
@@ -53,6 +57,26 @@ semantic or source change should normally create a new packet version.
 ## Consumer lock
 
 A consumer records the Data repository, immutable commit, packet path, packet
-ID and version, and a fingerprint over the complete packet directory. EOS
-runtime copies must be self-contained. Validation and Regression materialize
-the packet before execution. Runtime fetching is forbidden.
+ID and version, and a fingerprint over the complete packet directory. The
+smallest lock record is:
+
+```toml
+data_repository = "ePC-SAFT/ePC-SAFT-data"
+data_commit = "<40-hex-commit>"
+packet_path = "packets/<packet-id>/<version>"
+packet_id = "<packet-id>"
+packet_version = "<version>"
+packet_fingerprint = "<64-hex-fingerprint>"
+materialization = "byte-for-byte"
+```
+
+The fingerprint is the raw 64-hex `packet_fingerprint` value emitted after
+`packet` by `python3 tools/validate_packets.py` (the CLI also prints the
+display-only `sha256:` prefix) for the pinned commit. A consumer may add
+its campaign or runtime purpose and the exact materialization destination, but
+must not omit the immutable commit or fingerprint. `materialization` is
+`byte-for-byte` for Validation or Regression packet materialization,
+`subset-copy` for a self-contained admitted EOS subset copied from the packet,
+or `subset-generated` when EOS generates an admitted self-contained subset.
+EOS runtime copies must be self-contained. Validation and Regression
+materialize the packet before execution. Runtime fetching is forbidden.

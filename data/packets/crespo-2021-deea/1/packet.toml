@@ -1,0 +1,81 @@
+schema_version = 2
+packet_id = "crespo-2021-deea"
+packet_version = "1"
+title = "crespo-2021-deea source parameter packet"
+description = "Reusable parameter packet for crespo-2021-deea, copied byte-for-byte from the admitted EOS source bundle and retained with source/domain metadata."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "The packet preserves source values byte-for-byte and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "crespo-et-al-2021"
+citation = "Crespo, E. A.; Silva, L. P.; Carvalho, P. J.; Coutinho, J. A. P. The Excess Volumes of Protic Ionic Liquids and Its Significance to Their Thermodynamic Modelling. Fluid Phase Equilibria 2021, 113277."
+doi = "10.1016/j.fluid.2021.113277"
+use_basis = "Table 3 neutral DEEA PC-SAFT parameters and 2B association topology; kappa_HB is used in the cited PC-SAFT sigma^3*kappa association-strength convention; c_i is excluded as the PIL volume correction"
+
+[[domains]]
+domain_id = "crespo-deea-fit-domain-unreported"
+kind = "unknown"
+description = "Source-defined domain crespo-deea-fit-domain-unreported has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[files]]
+path = "parameters/bundle.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "4df6ebe59da6f42b3e443297fe0de3d9c60ba4b6c67938e9214dd0f7d6cc8a47"
+source_refs = ["crespo-et-al-2021"]
+domain_refs = ["crespo-deea-fit-domain-unreported"]
+units_basis = "Bundle identity, file membership, and source metadata are non-numeric identifiers."
+
+[[files]]
+path = "parameters/components.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "583400eaad85e00c78f4c1c191eb291b545740c03aa6fef03afed43352cd62da"
+source_refs = ["crespo-et-al-2021"]
+domain_refs = ["crespo-deea-fit-domain-unreported"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/single.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "06307513e911e2b1ae2c7e72754e0321b184ce8f6838fbe4c7eed7ed94e7af93"
+source_refs = ["crespo-et-al-2021"]
+domain_refs = ["crespo-deea-fit-domain-unreported"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/sites.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "a3a81de464bd107699f50b98a4da32a2a1ae63b9cc1eeb2fb3eedc1a960dd008"
+source_refs = ["crespo-et-al-2021"]
+domain_refs = ["crespo-deea-fit-domain-unreported"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/association.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "6a723961728b2e3b5e0d916f96fa3592dca082bc079c20c336d76bd321f4eace"
+source_refs = ["crespo-et-al-2021"]
+domain_refs = ["crespo-deea-fit-domain-unreported"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/model.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "bb8626ba803319f1e1b29e8887402e640233b536be6902138c9555a64f70bc4c"
+source_refs = ["crespo-et-al-2021"]
+domain_refs = ["crespo-deea-fit-domain-unreported"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "d6e63b481bda174c2f6ddbea60593ccfe7be0914b7642805ac3d25957ea06e0e"
+source_refs = ["crespo-et-al-2021"]
+domain_refs = ["crespo-deea-fit-domain-unreported"]
+units_basis = "Origin repository, commit, tree, path, and hash metadata are non-numeric identifiers."
