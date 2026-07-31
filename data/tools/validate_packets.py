@@ -1,0 +1,264 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import hashlib
+import sys
+import tomllib
+from pathlib import Path, PurePosixPath
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+ALLOWED_ROOTS = {"parameters", "observations", "sources", "provenance"}
+ALLOWED_ROLES = {
+    "parameters",
+    "observations",
+    "source",
+    "provenance",
+    "schema",
+}
+SHA256_LENGTH = 64
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _nonempty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _safe_relative_path(value: Any) -> PurePosixPath | None:
+    if not _nonempty_string(value):
+        return None
+    path = PurePosixPath(value)
+    if (
+        not path.parts
+        or path.is_absolute()
+        or ".." in path.parts
+        or path.parts[0] not in ALLOWED_ROOTS
+    ):
+        return None
+    return path
+
+
+def _contains_symlink(packet_root: Path, relative: PurePosixPath) -> bool:
+    current = packet_root
+    for part in relative.parts:
+        current /= part
+        if current.is_symlink():
+            return True
+    return False
+
+
+def _valid_refs(value: Any, known: set[str]) -> bool:
+    return (
+        isinstance(value, list)
+        and bool(value)
+        and all(_nonempty_string(item) for item in value)
+        and set(value) <= known
+    )
+
+
+def validate_packet(manifest: Path) -> list[str]:
+    packet_root = manifest.parent
+    prefix = (
+        str(packet_root.relative_to(ROOT))
+        if packet_root.is_relative_to(ROOT)
+        else str(packet_root)
+    )
+    errors: list[str] = []
+    if any(
+        path.is_symlink()
+        for path in (
+            manifest,
+            packet_root,
+            packet_root.parent,
+            packet_root.parent.parent,
+        )
+    ):
+        return [f"{prefix}: packet path and manifest must not be symlinks"]
+    try:
+        data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
+        return [f"{prefix}: cannot read packet.toml: {exc}"]
+
+    if data.get("schema_version") != 1:
+        errors.append(f"{prefix}: schema_version must be 1")
+    if data.get("packet_id") != packet_root.parent.name:
+        errors.append(f"{prefix}: packet_id must match its directory")
+    if str(data.get("packet_version", "")) != packet_root.name:
+        errors.append(f"{prefix}: packet_version must match its directory")
+    for field in ("title", "description", "license_or_use_basis"):
+        if not _nonempty_string(data.get(field)):
+            errors.append(f"{prefix}: {field} is required")
+
+    sources = data.get("sources")
+    domains = data.get("domains")
+    files = data.get("files")
+    if not isinstance(sources, list) or not sources:
+        errors.append(f"{prefix}: at least one source is required")
+        sources = []
+    if not isinstance(domains, list) or not domains:
+        errors.append(f"{prefix}: at least one domain is required")
+        domains = []
+    if not isinstance(files, list) or not files:
+        errors.append(f"{prefix}: at least one file is required")
+        files = []
+
+    source_ids: set[str] = set()
+    for index, source in enumerate(sources):
+        if not isinstance(source, dict):
+            errors.append(f"{prefix}: source {index} must be a table")
+            continue
+        if not all(
+            _nonempty_string(source.get(field))
+            for field in ("source_id", "citation", "use_basis")
+        ):
+            errors.append(f"{prefix}: source {index} is incomplete")
+            continue
+        source_id = source["source_id"]
+        if source_id in source_ids:
+            errors.append(f"{prefix}: duplicate source_id {source_id}")
+        source_ids.add(source_id)
+
+    domain_ids: set[str] = set()
+    for index, domain in enumerate(domains):
+        if not isinstance(domain, dict) or not all(
+            _nonempty_string(domain.get(field))
+            for field in ("domain_id", "description")
+        ):
+            errors.append(f"{prefix}: domain {index} is incomplete")
+            continue
+        domain_id = domain["domain_id"]
+        if domain_id in domain_ids:
+            errors.append(f"{prefix}: duplicate domain_id {domain_id}")
+        domain_ids.add(domain_id)
+
+    listed: set[PurePosixPath] = set()
+    for index, record in enumerate(files):
+        if not isinstance(record, dict):
+            errors.append(f"{prefix}: file {index} must be a table")
+            continue
+        relative = _safe_relative_path(record.get("path"))
+        if relative is None:
+            errors.append(f"{prefix}: file {index} has unsafe path")
+            continue
+        if relative in listed:
+            errors.append(f"{prefix}: duplicate file path {relative}")
+            continue
+        listed.add(relative)
+        if record.get("role") not in ALLOWED_ROLES:
+            errors.append(f"{prefix}: {relative} has invalid role")
+        for field in ("media_type", "units_basis"):
+            if not _nonempty_string(record.get(field)):
+                errors.append(f"{prefix}: {relative} requires {field}")
+        declared_hash = record.get("sha256")
+        if (
+            not isinstance(declared_hash, str)
+            or len(declared_hash) != SHA256_LENGTH
+            or any(
+                character not in "0123456789abcdef"
+                for character in declared_hash
+            )
+        ):
+            errors.append(f"{prefix}: {relative} has invalid sha256")
+        target = packet_root / Path(*relative.parts)
+        if not target.is_file() or _contains_symlink(packet_root, relative):
+            errors.append(f"{prefix}: listed file is missing or a symlink: {relative}")
+        elif declared_hash != sha256(target):
+            errors.append(f"{prefix}: hash mismatch for {relative}")
+        source_refs = record.get("source_refs")
+        domain_refs = record.get("domain_refs")
+        if not _valid_refs(source_refs, source_ids):
+            errors.append(f"{prefix}: {relative} has invalid source_refs")
+        if not _valid_refs(domain_refs, domain_ids):
+            errors.append(f"{prefix}: {relative} has invalid domain_refs")
+
+    actual = {
+        PurePosixPath(path.relative_to(packet_root).as_posix())
+        for path in packet_root.rglob("*")
+        if path.is_file() and path != manifest
+    }
+    if actual != listed:
+        unlisted = sorted(str(path) for path in actual - listed)
+        missing = sorted(str(path) for path in listed - actual)
+        if unlisted:
+            errors.append(f"{prefix}: unlisted files: {unlisted}")
+        if missing:
+            errors.append(f"{prefix}: manifest-only files: {missing}")
+    empty_directories = [
+        path.relative_to(packet_root).as_posix()
+        for path in packet_root.rglob("*")
+        if path.is_dir() and not path.is_symlink() and not any(path.iterdir())
+    ]
+    if empty_directories:
+        errors.append(f"{prefix}: empty directory: {sorted(empty_directories)}")
+    unlisted_symlinks = [
+        path.relative_to(packet_root).as_posix()
+        for path in packet_root.rglob("*")
+        if path.is_symlink()
+        and PurePosixPath(path.relative_to(packet_root).as_posix()) not in listed
+    ]
+    if unlisted_symlinks:
+        errors.append(f"{prefix}: unlisted symlinks: {sorted(unlisted_symlinks)}")
+    return errors
+
+
+def validate_repository(root: Path = ROOT) -> list[str]:
+    packets = root / "packets"
+    if not packets.exists():
+        return []
+    manifests = sorted(packets.glob("*/*/packet.toml"))
+    errors: list[str] = []
+    empty_packet_directories = [
+        path.relative_to(root).as_posix()
+        for path in packets.iterdir()
+        if path.is_dir() and not path.is_symlink() and not any(path.iterdir())
+    ]
+    if empty_packet_directories:
+        errors.append(
+            "packets: empty packet directory: "
+            f"{sorted(empty_packet_directories)}"
+        )
+    version_directories = [
+        path for path in packets.glob("*/*") if path.is_dir() or path.is_symlink()
+    ]
+    for directory in version_directories:
+        if not (directory / "packet.toml").is_file():
+            errors.append(
+                f"{directory.relative_to(root)}: missing packet.toml"
+            )
+    for manifest in manifests:
+        errors.extend(validate_packet(manifest))
+    stray = [
+        path
+        for path in packets.rglob("*")
+        if path.is_file()
+        and not any(
+            manifest.parent in path.parents or path == manifest
+            for manifest in manifests
+        )
+    ]
+    if stray:
+        relative = [str(path.relative_to(root)) for path in stray]
+        errors.append(f"packets: files outside a packet version: {relative}")
+    return errors
+
+
+def main() -> int:
+    errors = validate_repository()
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}")
+        return 1
+    print("packet_validation: clean")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
