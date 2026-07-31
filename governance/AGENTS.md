@@ -1,7 +1,7 @@
 # Management Control-Plane Agent Contract
 
 Read `GOVERNANCE.md` and `manifests/management.json` before planning,
-reviewing, or changing any ePC-SAFT repository. Doctrine revision 5 is the
+reviewing, or changing any ePC-SAFT repository. Doctrine revision 6 is the
 canonical ecosystem policy.
 
 ## Agent role
@@ -9,7 +9,7 @@ canonical ecosystem policy.
 Management owns doctrine, repository topology, project coordination,
 cross-repository access policy, external-operation sequencing, reusable
 workflow policy, and the machine-readable ecosystem, artifact, environment,
-parameter, and draft ledgers.
+scientific-packet ownership, and draft ledgers.
 
 Package-local behavior, tests, builds, releases, capabilities, and scientific
 evidence remain with their owning repositories. Management may coordinate
@@ -42,9 +42,30 @@ link to Management and contain only local constraints.
 
 Remote creation, rename, archive, settings, issue, Project, release, and
 publication changes require an explicit user-approved operation plan. The
-current Management transition is approved by the user on 2026-07-29.
+Data-repository creation is approved by the user on 2026-07-31 and recorded in
+`receipts/data-repository-creation-preflight.json`.
 
 Before each Git mutation, verify the attached checkout, branch, and command
 directory agree. Preserve historical commits, receipts, and unresolved draft
 subjects. Never force-push, rewrite accepted evidence, or delete an
 unregistered worktree or artifact.
+
+## Agent skills
+
+<!-- project-truss:setup:start -->
+### Project Truss
+
+Use `project-truss:setup` once, then `project-truss:start` to begin or resume Matt-first engineering work. All six Project Truss skills are callable; Start normally invokes the relevant Matt disciplines and routes each stage until verified closeout.
+
+### Issue tracker
+
+Project Truss uses GitHub-native root and leaf issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Matt triage roles map to descriptive labels only. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Read the configured domain context and ADRs. See `docs/agents/domain.md`.
+<!-- project-truss:setup:end -->

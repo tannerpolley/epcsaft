@@ -18,10 +18,15 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "manifests" / "management.json"
 GENERATED = ROOT / ".management-state"
 ARTIFACT_POLICY_PATH = ROOT / "manifests" / "artifact-store-policy.json"
+OPERATION_RECEIPT_SCHEMA_PATH = (
+    ROOT / "manifests" / "operation-receipt-envelope-v1.json"
+)
+APPROVED_OPERATIONS_PATH = ROOT / "manifests" / "approved-operations.json"
 
 ALLOWED_ENVIRONMENT_DISTRIBUTIONS: dict[str, set[str]] = {
     "management": set(),
     "github": set(),
+    "data": set(),
     "eos": {"epcsaft"},
     "equilibrium": {"epcsaft", "epcsaft_equilibrium"},
     "regression": {"epcsaft", "epcsaft_regression"},
@@ -60,6 +65,22 @@ def sha256(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def json_sha256(value: Any) -> str:
+    payload = json.dumps(value, sort_keys=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
+    return hashlib.sha256(payload).hexdigest()
+
+
+def git_blob_sha256(root: Path, commit: str, path: str) -> str:
+    completed = subprocess.run(
+        ["git", "-C", str(root), "show", f"{commit}:{path}"],
+        check=True,
+        capture_output=True,
+    )
+    return hashlib.sha256(completed.stdout).hexdigest()
 
 
 def repository_state(name: str, record: dict[str, Any]) -> dict[str, Any]:
@@ -188,12 +209,41 @@ def bundle_hash(directory: Path) -> str:
     return digest.hexdigest()
 
 
+def ownership_projection(policy: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "storage_owner": policy.get("storage_owner", "unclassified"),
+        "runtime_owner": policy.get("runtime_owner"),
+        "evidence_owner": policy.get("evidence_owner"),
+        "catalog_presence": policy.get("catalog_presence", "unclassified"),
+        "disposition": policy.get("disposition", "unclassified"),
+    }
+
+
 def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
     records: list[dict[str, Any]] = []
     parameter_policy = load_json(parameter_policy_path(config))
     parameter_entries = {
         entry["bundle_id"]: entry for entry in parameter_policy.get("bundles", [])
     }
+    data_root = Path(config["repositories"]["data"]["local_path"])
+    packets = data_root / "packets"
+    if packets.exists():
+        for manifest in sorted(packets.glob("*/*/packet.toml")):
+            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+            directory = manifest.parent
+            bundle_id = data.get(
+                "packet_id", data.get("bundle_id", directory.parent.name)
+            )
+            policy = parameter_entries.get(bundle_id, {})
+            records.append(
+                {
+                    "repository": "data",
+                    "path": str(directory.relative_to(data_root)),
+                    "bundle_id": bundle_id,
+                    "sha256": bundle_hash(directory),
+                    **ownership_projection(policy),
+                }
+            )
     eos = Path(config["repositories"]["eos"]["local_path"])
     eos_bundles = eos / "src" / "epcsaft" / "data" / "bundles"
     if eos_bundles.exists():
@@ -208,8 +258,7 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
                     "path": str(directory.relative_to(eos)),
                     "bundle_id": bundle_id,
                     "sha256": bundle_hash(directory),
-                    "ownership": policy.get("owner", "unclassified"),
-                    "disposition": policy.get("disposition", "unclassified"),
+                    **ownership_projection(policy),
                 }
             )
     validation = Path(config["repositories"]["validation"]["local_path"])
@@ -217,17 +266,23 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
         for manifest in sorted(validation.rglob("bundle.toml")):
             if ".git" in manifest.parts or ".worktrees" in manifest.parts:
                 continue
+            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
             directory = manifest.parent
+            bundle_id = data.get(
+                "bundle_id", data.get("packet_id", directory.parent.name)
+            )
+            policy = parameter_entries.get(bundle_id, {})
             records.append(
                 {
                     "repository": "validation",
                     "path": str(directory.relative_to(validation)),
-                    "bundle_id": directory.name,
+                    "bundle_id": bundle_id,
                     "sha256": bundle_hash(directory),
-                    "ownership": "campaign_evidence",
+                    "migration_state": "legacy_copy_pending_disposition",
+                    **ownership_projection(policy),
                 }
             )
-    return {"schema_version": 1, "records": records}
+    return {"schema_version": 2, "records": records}
 
 
 def normalized_distribution_name(name: str) -> str:
@@ -324,6 +379,8 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
     if not path.exists():
         return [f"missing parameter ownership manifest {path.relative_to(ROOT)}"]
     policy = load_json(path)
+    if policy.get("schema_version") != 2:
+        return ["parameter ownership manifest schema_version must be 2"]
     entries = policy.get("bundles")
     if not isinstance(entries, list):
         return ["parameter ownership manifest bundles must be an array"]
@@ -337,20 +394,267 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
         if bundle_id in by_id:
             errors.append(f"duplicate parameter ownership entry: {bundle_id}")
         by_id[bundle_id] = entry
-        if entry.get("owner") not in {"eos", "validation"}:
-            errors.append(f"invalid parameter owner for {bundle_id}")
-        if entry.get("disposition") not in {"approved_eos", "relocate_to_validation"}:
+        if entry.get("storage_owner") != "data":
+            errors.append(f"parameter storage owner must be Data for {bundle_id}")
+        if entry.get("runtime_owner") not in {"eos", None}:
+            errors.append(f"invalid parameter runtime owner for {bundle_id}")
+        if entry.get("evidence_owner") not in {"validation", None}:
+            errors.append(f"invalid parameter evidence owner for {bundle_id}")
+        catalog_presence = entry.get("catalog_presence")
+        if catalog_presence not in {
+            "admitted_runtime_copy",
+            "legacy_copy_pending_removal",
+            "absent",
+        }:
+            errors.append(f"invalid EOS catalog presence for {bundle_id}")
+        disposition = entry.get("disposition")
+        if disposition not in {"sync_to_eos_runtime", "relocate_to_data"}:
             errors.append(f"invalid parameter disposition for {bundle_id}")
+        elif disposition == "sync_to_eos_runtime" and entry.get("runtime_owner") != "eos":
+            errors.append(f"EOS runtime sync requires EOS runtime ownership for {bundle_id}")
+        elif disposition == "relocate_to_data" and entry.get("runtime_owner") is not None:
+            errors.append(f"Data relocation cannot retain runtime ownership for {bundle_id}")
+        if catalog_presence == "admitted_runtime_copy" and (
+            entry.get("runtime_owner") != "eos"
+            or disposition != "sync_to_eos_runtime"
+        ):
+            errors.append(
+                f"admitted EOS catalog packet {bundle_id} requires EOS runtime ownership"
+            )
+        if catalog_presence == "legacy_copy_pending_removal" and (
+            entry.get("runtime_owner") is not None
+            or disposition != "relocate_to_data"
+        ):
+            errors.append(
+                f"legacy EOS catalog packet {bundle_id} must remain pending Data relocation"
+            )
+        if catalog_presence == "absent" and entry.get("runtime_owner") is not None:
+            errors.append(f"absent EOS catalog packet {bundle_id} cannot own runtime")
     eos = Path(config["repositories"]["eos"]["local_path"])
     eos_bundles = eos / "src" / "epcsaft" / "data" / "bundles"
     discovered: set[str] = set()
     if eos_bundles.exists():
         for manifest in eos_bundles.glob("*/*/bundle.toml"):
             data = tomllib.loads(manifest.read_text(encoding="utf-8"))
-            discovered.add(data.get("bundle_id", manifest.parent.parent.name))
+            bundle_id = data.get("bundle_id", manifest.parent.parent.name)
+            discovered.add(bundle_id)
+            entry = by_id.get(bundle_id)
+            if entry and entry.get("catalog_presence") == "absent":
+                errors.append(
+                    f"EOS catalog contains packet declared absent: {bundle_id}"
+                )
     missing = sorted(discovered.difference(by_id))
     if missing:
         errors.append(f"unregistered EOS parameter bundles: {missing}")
+    eos_discovered = set(discovered)
+    expected_eos = {
+        bundle_id
+        for bundle_id, entry in by_id.items()
+        if entry.get("catalog_presence")
+        in {"admitted_runtime_copy", "legacy_copy_pending_removal"}
+    }
+    missing_eos = sorted(expected_eos.difference(eos_discovered))
+    if missing_eos:
+        errors.append(f"declared EOS catalog packets are missing: {missing_eos}")
+    data_root = Path(config["repositories"]["data"]["local_path"])
+    packets = data_root / "packets"
+    if packets.exists():
+        for manifest in packets.glob("*/*/packet.toml"):
+            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+            discovered.add(
+                data.get("packet_id", data.get("bundle_id", manifest.parent.parent.name))
+            )
+    validation = Path(config["repositories"]["validation"]["local_path"])
+    if validation.exists():
+        for manifest in validation.rglob("bundle.toml"):
+            if ".git" in manifest.parts or ".worktrees" in manifest.parts:
+                continue
+            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+            discovered.add(
+                data.get("bundle_id", data.get("packet_id", manifest.parent.parent.name))
+            )
+    missing = sorted(discovered.difference(by_id))
+    if missing:
+        errors.append(f"unregistered scientific parameter packets: {missing}")
+    return errors
+
+
+def validate_operation_receipt(
+    relative: str,
+    receipt: dict[str, Any],
+    schema: dict[str, Any],
+    schema_hash: str,
+) -> list[str]:
+    errors: list[str] = []
+    envelope = receipt.get("envelope")
+    record = receipt.get("record")
+    if not isinstance(envelope, dict):
+        return [f"operation receipt {relative} requires envelope"]
+    if not isinstance(record, dict):
+        return [f"operation receipt {relative} requires record"]
+    missing = [
+        field
+        for field in schema["required_envelope_fields"]
+        if field not in envelope
+    ]
+    missing_record = [
+        field for field in schema["required_record_fields"] if field not in record
+    ]
+    if missing:
+        errors.append(
+            f"operation receipt {relative} missing envelope fields: {missing}"
+        )
+    if missing_record:
+        errors.append(
+            f"operation receipt {relative} missing record fields: {missing_record}"
+        )
+    if missing or missing_record:
+        return errors
+    nested_objects = (
+        "schema",
+        "subject",
+        "validator",
+        "producer",
+        "reviewer",
+        "user_approval",
+    )
+    invalid_objects = [
+        field for field in nested_objects if not isinstance(envelope[field], dict)
+    ]
+    if invalid_objects:
+        return [
+            f"operation receipt {relative} requires object fields: {invalid_objects}"
+        ]
+    declared_schema = envelope["schema"]
+    expected_schema_path = str(OPERATION_RECEIPT_SCHEMA_PATH.relative_to(ROOT))
+    if (
+        declared_schema.get("path") != expected_schema_path
+        or declared_schema.get("version") != schema["schema_version"]
+        or declared_schema.get("sha256") != schema_hash
+    ):
+        errors.append(f"operation receipt {relative} has invalid schema identity")
+    record_hash = json_sha256(record)
+    subject = envelope["subject"]
+    if subject.get("record_sha256") != record_hash:
+        errors.append(f"operation receipt {relative} subject does not bind its record")
+    subject_hash = json_sha256(subject)
+    if envelope["subject_sha256"] != subject_hash:
+        errors.append(f"operation receipt {relative} has invalid subject hash")
+    approval = envelope["user_approval"]
+    if approval.get("subject_sha256") != subject_hash:
+        errors.append(
+            f"operation receipt {relative} approval is not bound to its subject"
+        )
+    if not isinstance(approval.get("source"), str) or not approval["source"].strip():
+        errors.append(f"operation receipt {relative} requires approval source")
+    approved_operations = load_json(APPROVED_OPERATIONS_PATH)["operations"]
+    authorization_id = subject.get("authorization_id")
+    approved = approved_operations.get(authorization_id)
+    if not isinstance(approved, dict):
+        errors.append(f"operation receipt {relative} does not match approved operation")
+    else:
+        approved_subject = approved["subject"]
+        allowed_subject_fields = set(approved_subject) | {
+            "authorization_id",
+            "record_sha256",
+        }
+        if set(subject) != allowed_subject_fields or any(
+            subject.get(key) != value for key, value in approved_subject.items()
+        ):
+            errors.append(
+                f"operation receipt {relative} does not match approved operation"
+            )
+        if approval.get("source") != approved["approval_source"]:
+            errors.append(
+                f"operation receipt {relative} has invalid approval provenance"
+            )
+    producer_identity = (
+        envelope["producer"].get("kind"),
+        envelope["producer"].get("id"),
+    )
+    reviewer_identity = (
+        envelope["reviewer"].get("kind"),
+        envelope["reviewer"].get("id"),
+    )
+    if None in producer_identity or None in reviewer_identity:
+        errors.append(f"operation receipt {relative} requires producer and reviewer identities")
+    elif producer_identity == reviewer_identity:
+        errors.append(f"operation receipt {relative} producer and reviewer must differ")
+    validator = envelope["validator"]
+    try:
+        actual_validator_hash = git_blob_sha256(
+            ROOT, validator["commit"], validator["path"]
+        )
+    except (KeyError, subprocess.CalledProcessError):
+        errors.append(f"operation receipt {relative} has invalid validator identity")
+    else:
+        if validator.get("sha256") != actual_validator_hash:
+            errors.append(f"operation receipt {relative} has invalid validator hash")
+    if record["status"] not in schema["allowed_record_statuses"]:
+        errors.append(f"operation receipt {relative} has invalid record status")
+    for field in ("preconditions", "expected_postconditions", "stop_conditions"):
+        if not isinstance(record[field], list) or not record[field]:
+            errors.append(f"operation receipt {relative} requires nonempty {field}")
+    if not isinstance(record["recovery_owner"], str) or not record[
+        "recovery_owner"
+    ].strip():
+        errors.append(f"operation receipt {relative} requires recovery owner")
+    observations = record["observations"]
+    if not isinstance(observations, list) or not observations:
+        errors.append(f"operation receipt {relative} requires observations")
+    elif any(
+        not isinstance(item, dict) or item.get("outcome") != "pass"
+        for item in observations
+    ):
+        errors.append(f"operation receipt {relative} has a failed observation")
+    if (
+        subject.get("operation") == "create-public-repository"
+        and subject.get("phase") == "authorization-preflight"
+    ):
+        expected_command = (
+            f"gh repo view {subject.get('repository')} "
+            "--json id,nameWithOwner,visibility,defaultBranchRef"
+        )
+        if envelope["command"] != expected_command:
+            errors.append(
+                f"operation receipt {relative} has invalid namespace lookup command"
+            )
+        namespace_proven = any(
+            isinstance(item, dict)
+            and item.get("name") == "target_namespace_absent"
+            and item.get("command_exit_code") == 1
+            and item.get("outcome") == "pass"
+            and "could not resolve" in str(item.get("observed", "")).lower()
+            for item in observations
+        )
+        if not namespace_proven:
+            errors.append(
+                f"operation receipt {relative} does not prove an available namespace"
+            )
+    return errors
+
+
+def operation_receipt_errors(config: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if not OPERATION_RECEIPT_SCHEMA_PATH.exists():
+        return ["missing operation receipt envelope schema"]
+    schema = load_json(OPERATION_RECEIPT_SCHEMA_PATH)
+    schema_hash = sha256(OPERATION_RECEIPT_SCHEMA_PATH)
+    sequences: list[int] = []
+    for relative in config.get("operation_receipts", []):
+        path = ROOT / relative
+        if not path.exists():
+            errors.append(f"missing operation receipt {relative}")
+            continue
+        receipt = load_json(path)
+        errors.extend(
+            validate_operation_receipt(relative, receipt, schema, schema_hash)
+        )
+        envelope = receipt.get("envelope")
+        if isinstance(envelope, dict) and isinstance(envelope.get("sequence"), int):
+            sequences.append(envelope["sequence"])
+    if sequences != sorted(set(sequences)):
+        errors.append("operation receipt sequences must be unique and monotonic")
     return errors
 
 
@@ -359,17 +663,43 @@ def validate_config(config: dict[str, Any]) -> list[str]:
     repositories = config.get("repositories")
     if not isinstance(repositories, dict):
         return ["repositories must be an object"]
-    required = {"management", "github", "eos", "equilibrium", "regression", "validation", "lab"}
+    required = {
+        "management",
+        "github",
+        "data",
+        "eos",
+        "equilibrium",
+        "regression",
+        "validation",
+        "lab",
+    }
     missing = required.difference(repositories)
     if missing:
         errors.append(f"missing repositories: {sorted(missing)}")
-    if repositories.get("validation", {}).get("outbound_access") != ["validation"]:
-        errors.append("Validation outbound access must be Validation only")
+    validation_access = set(
+        repositories.get("validation", {}).get("outbound_access", [])
+    )
+    if validation_access != {"validation", "data"}:
+        errors.append("Validation outbound access must be Validation and Data only")
+    data_access = repositories.get("data", {}).get("outbound_access")
+    if data_access != ["data"]:
+        errors.append("Data outbound access must be Data only")
     eos_access = set(repositories.get("eos", {}).get("outbound_access", []))
-    if eos_access != {"eos", "validation"}:
-        errors.append("EOS outbound access must be EOS and Validation only")
-    expected_top = {"management", "eos", "equilibrium", "regression", "validation", "lab"}
-    for owner in ("equilibrium", "regression"):
+    if eos_access != {"eos", "data", "validation"}:
+        errors.append("EOS outbound access must be EOS, Data, and Validation only")
+    lab_access = set(repositories.get("lab", {}).get("outbound_access", []))
+    if lab_access != {"lab", "data"}:
+        errors.append("Lab outbound access must be Lab and Data only")
+    expected_top = {
+        "management",
+        "data",
+        "eos",
+        "equilibrium",
+        "regression",
+        "validation",
+        "lab",
+    }
+    for owner in ("management", "equilibrium", "regression"):
         if set(repositories.get(owner, {}).get("outbound_access", [])) != expected_top:
             errors.append(f"{owner} must have full operational repository access")
     for item in config.get("persistent_worktrees", []):
@@ -395,6 +725,10 @@ def validate_config(config: dict[str, Any]) -> list[str]:
         errors.append(
             "parameter ownership manifest must be manifests/parameter-ownership.json"
         )
+    if config.get("approved_operations") != "manifests/approved-operations.json":
+        errors.append("approved operations must be manifests/approved-operations.json")
+    if not isinstance(config.get("operation_receipts"), list):
+        errors.append("operation receipts must be an array")
     return errors
 
 
@@ -415,6 +749,7 @@ def snapshot(config: dict[str, Any]) -> None:
 def check(config: dict[str, Any], strict: bool) -> list[str]:
     errors = validate_config(config)
     errors.extend(parameter_policy_errors(config))
+    errors.extend(operation_receipt_errors(config))
     errors.extend(environment_policy_errors(config))
     for name in (
         "ecosystem-state.json",

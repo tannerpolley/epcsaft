@@ -6,7 +6,7 @@ GitHub home: `ePC-SAFT/ePC-SAFT-management`
 
 Status: canonical ecosystem doctrine and management home.
 
-Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 5 and
+Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 6 and
 [manifests/management.json](manifests/management.json) for the repository and
 access topology.
 
@@ -16,15 +16,15 @@ Management owns:
 - repository roles and naming;
 - cross-repository worktree access;
 - coordinated project and external-operation sequencing;
-- artifact, environment, parameter, and retained-draft ledgers; and
+- artifact, environment, scientific-packet ownership, and retained-draft ledgers; and
 - reusable synchronization and preflight policy.
 
 Artifact layout and admission rules are documented in
 [docs/artifact-store.md](docs/artifact-store.md). Cross-repository consumers
 install only full-SHA-256 objects; repository `dist/` wheels are rejected.
 
-Parameter-bundle ownership and the pending package-rooted dispositions are
-tracked in
+Scientific-packet storage, runtime-copy, evidence, and pending disposition
+ownership are tracked in
 [manifests/parameter-ownership.json](manifests/parameter-ownership.json).
 
 It owns no package runtime, scientific solver, regression target, Validation

@@ -1,10 +1,14 @@
 {
   "schema_version": 1,
-  "doctrine_revision": 5,
+  "doctrine_revision": 6,
   "control_plane": "management",
   "project_root": "~/Workspaces/Engineering/ePC-SAFT-project",
   "artifact_root": "~/Workspaces/Engineering/ePC-SAFT-project/artifacts",
   "parameter_ownership": "manifests/parameter-ownership.json",
+  "approved_operations": "manifests/approved-operations.json",
+  "operation_receipts": [
+    "receipts/data-repository-creation-preflight.json"
+  ],
   "historical_migration": {
     "repository": "tannerpolley/ePC-SAFT-migration",
     "repository_id": "R_kgDOTZ9_pg",
@@ -27,6 +31,7 @@
         "eos",
         "equilibrium",
         "regression",
+        "data",
         "validation",
         "lab"
       ]
@@ -39,6 +44,16 @@
       "codex_environment": ".codex/environments/environment.toml",
       "outbound_access": [
         "github"
+      ]
+    },
+    "data": {
+      "github": "ePC-SAFT/ePC-SAFT-data",
+      "local_path": "~/Workspaces/Engineering/ePC-SAFT-project/ePC-SAFT-data",
+      "default_branch": "main",
+      "role": "scientific_asset",
+      "codex_environment": ".codex/environments/environment.toml",
+      "outbound_access": [
+        "data"
       ]
     },
     "eos": {
@@ -55,6 +70,7 @@
       "codex_environment": ".codex/environments/environment.toml",
       "outbound_access": [
         "eos",
+        "data",
         "validation"
       ]
     },
@@ -69,6 +85,7 @@
         "eos",
         "equilibrium",
         "regression",
+        "data",
         "validation",
         "lab"
       ]
@@ -84,6 +101,7 @@
         "eos",
         "equilibrium",
         "regression",
+        "data",
         "validation",
         "lab"
       ]
@@ -95,7 +113,8 @@
       "role": "evidence",
       "codex_environment": ".codex/environments/environment.toml",
       "outbound_access": [
-        "validation"
+        "validation",
+        "data"
       ]
     },
     "lab": {
@@ -105,7 +124,8 @@
       "role": "experiment",
       "codex_environment": ".codex/environments/environment.toml",
       "outbound_access": [
-        "lab"
+        "lab",
+        "data"
       ]
     }
   },
