@@ -719,12 +719,11 @@ def test_catalog_discovery_returns_sorted_immutable_bundles() -> None:
         "ascani-2022-case-study-2-electrolyte-lle",
         "crespo-2021-deea",
         "figiel-2025-aqueous-iodides",
-            "figiel-2025-reference-electrolytes",
-            "gross-2001-methane-ethane",
-            "gross-2001-propane",
-            "held-2008-water-self-ionization",
-            "khudaida-2026-figure-2-electrolyte-lle",
-        }
+        "figiel-2025-reference-electrolytes",
+        "gross-2001-methane-ethane",
+        "gross-2001-propane",
+        "held-2008-water-self-ionization",
+    }
     assert all(bundle.purpose == "installed-catalog" for bundle in catalog)
     assert all(bundle.components and bundle.domains and bundle.sources for bundle in catalog)
 
@@ -953,16 +952,8 @@ def test_source_backed_catalog_and_disconnected_contract_fixture() -> None:
         "held-2008-water-self-ionization/1/pair.csv",
         "held-2008-water-self-ionization/1/single.csv",
         "held-2008-water-self-ionization/1/sites.csv",
-        "khudaida-2026-figure-2-electrolyte-lle/1/association.csv",
-        "khudaida-2026-figure-2-electrolyte-lle/1/bundle.toml",
-        "khudaida-2026-figure-2-electrolyte-lle/1/components.csv",
-        "khudaida-2026-figure-2-electrolyte-lle/1/correlations.toml",
-        "khudaida-2026-figure-2-electrolyte-lle/1/model.csv",
-        "khudaida-2026-figure-2-electrolyte-lle/1/pair.csv",
-        "khudaida-2026-figure-2-electrolyte-lle/1/single.csv",
-            "khudaida-2026-figure-2-electrolyte-lle/1/sites.csv",
-            "provenance_names.toml",
-        ]
+        "provenance_names.toml",
+    ]
 
 
 def test_crespo_2021_deea_catalog_is_exact_and_source_complete() -> None:
@@ -1219,108 +1210,6 @@ def test_figiel_aqueous_iodide_catalog_is_exact_and_source_complete() -> None:
     assert (
         _error_code(lambda: bundle.select(("water", "lithium-cation", "iodide-anion")))
         == "invalid-selection"
-    )
-
-
-def test_khudaida_figure_2_catalog_preserves_the_published_model_tuple() -> None:
-    bundle = _ParameterBundle.from_catalog("khudaida-2026-figure-2-electrolyte-lle", version=1)
-    assert bundle.purpose == "installed-catalog"
-    assert {component.component_id for component in bundle.components} == {
-        "water",
-        "ethanol",
-        "isobutanol",
-        "sodium-cation",
-        "chloride-anion",
-    }
-
-    values = {
-        (record.component_id, record.family): record.value
-        for record in bundle.records
-        if isinstance(record, SingleParameterRecord)
-    }
-    assert values[("isobutanol", "segment_count")] == Decimal("2.8440")
-    assert values[("isobutanol", "segment_diameter")].magnitude == Decimal("3.5561")
-    assert values[("isobutanol", "dispersion_energy_over_k")].magnitude == Decimal("257.13")
-    assert values[("sodium-cation", "born_diameter")].magnitude == Decimal("3.445")
-    assert values[("chloride-anion", "born_diameter")].magnitude == Decimal("4.100")
-
-    pair_records = [record for record in bundle.records if isinstance(record, PairParameterRecord)]
-    assert len(pair_records) == 10
-    pairs = {
-        frozenset((record.component_id_a, record.component_id_b)): record.value
-        for record in pair_records
-    }
-    assert pairs == {
-        frozenset(("water", "ethanol")): Decimal("-0.06167"),
-        frozenset(("water", "isobutanol")): Decimal("-0.0071"),
-        frozenset(("water", "sodium-cation")): Decimal("-0.3"),
-        frozenset(("water", "chloride-anion")): Decimal("-0.3"),
-        frozenset(("ethanol", "isobutanol")): Decimal("0.00154"),
-        frozenset(("ethanol", "sodium-cation")): Decimal("0.05"),
-        frozenset(("ethanol", "chloride-anion")): Decimal("0.8"),
-        frozenset(("isobutanol", "sodium-cation")): Decimal("0"),
-        frozenset(("isobutanol", "chloride-anion")): Decimal("0"),
-        frozenset(("sodium-cation", "chloride-anion")): Decimal("0.317"),
-    }
-
-    association_records = [
-        record for record in bundle.records if isinstance(record, AssociationParameterRecord)
-    ]
-    assert len(association_records) == 18
-    associations = {
-        (
-            record.component_id_a,
-            record.site_id_a,
-            record.component_id_b,
-            record.site_id_b,
-            record.family,
-        ): record.value
-        for record in association_records
-    }
-    assert len(associations) == 18
-    assert associations[
-        ("isobutanol", "b", "water", "a", "association_energy_over_k")
-    ].magnitude == Decimal("2470.0")
-    assert associations[("isobutanol", "b", "water", "a", "association_volume")] == Decimal(
-        "0.01299623825352431"
-    )
-    assert associations[
-        ("ethanol", "a", "isobutanol", "b", "association_energy_over_k")
-    ].magnitude == Decimal("2583.85")
-    assert associations[("ethanol", "a", "isobutanol", "b", "association_volume")] == Decimal(
-        "0.01119849133244554"
-    )
-
-    model_values = {
-        record.family: record.value
-        for record in bundle.records
-        if isinstance(record, ModelParameterRecord)
-    }
-    assert model_values["ion_fraction_suppression_coefficient"] == Decimal("7.01")
-    assert model_values["ionic_region_relative_permittivity"] == Decimal("8")
-
-    water_sigma = next(
-        record
-        for record in bundle.records
-        if isinstance(record, ConstantPlusSumOfExponentialsCorrelation)
-        and record.component_id == "water"
-        and record.family == "segment_diameter"
-    )
-    assert water_sigma.constant.magnitude == Decimal("2.7927")
-    assert tuple(
-        (term.amplitude.magnitude, term.exponent_coefficient.magnitude)
-        for term in water_sigma.terms
-    ) == (
-        (Decimal("10.11"), Decimal("-0.01775")),
-        (Decimal("-1.417"), Decimal("-0.01146")),
-    )
-
-    figiel = _ParameterBundle.from_catalog("figiel-2025-reference-electrolytes", version=1)
-    assert figiel.fingerprint == (
-        "sha256:d56aa57f04f48f1881865fb85daa700b66d3f1bcb75e8a9d7149baedfc925352"
-    )
-    assert figiel.select(("water", "sodium-cation", "chloride-anion")).fingerprint == (
-        "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf"
     )
 
 

@@ -1134,11 +1134,6 @@ def _held_water_ionization_model(
     return Mixture(parameters.select(component_ids))
 
 
-def _khudaida_model(component_ids: tuple[str, ...]) -> Mixture:
-    parameters = _ParameterBundle.from_catalog("khudaida-2026-figure-2-electrolyte-lle", version=1)
-    return Mixture(parameters.select(component_ids))
-
-
 def _ascani_model(component_ids: tuple[str, ...]) -> Mixture:
     parameters = _ParameterBundle.from_catalog("ascani-2022-case-study-2-electrolyte-lle", version=1)
     return Mixture(parameters.select(component_ids))
@@ -3846,13 +3841,6 @@ def test_native_sdk_held_neutral_reference_is_domain_bound_and_permutation_safe(
             "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
             (298.15, 298.15, 0.38),
         ),
-        (
-            "khudaida-2026-figure-2-electrolyte-lle",
-            ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion"),
-            "khudaida-293-15-k-0-1-mpa",
-            "sha256:b43fac77754d9d5cca8b3db2cbe709892a786d97b756084b167ce126ab4c3007",
-            (293.15, 293.15, math.nan),
-        ),
     ),
 )
 def test_native_sdk_applicability_metadata_matches_source_and_resolved_model(
@@ -4909,106 +4897,6 @@ def test_native_sdk_electrolyte_phase_value_rejects_invalid_and_unsupported_inpu
     assert unsupported.error
 
 
-def test_native_sdk_khudaida_five_component_phase_block_and_permutation() -> None:
-    component_ids = (
-        "water",
-        "ethanol",
-        "isobutanol",
-        "sodium-cation",
-        "chloride-anion",
-    )
-    model = _khudaida_model(component_ids)
-    capsule, table = _electrolyte_table(model)
-    assert capsule is not None
-    assert table.component_count == 5
-    assert tuple(table.component_ids[index].decode() for index in range(5)) == component_ids
-    assert tuple(table.component_charges[index] for index in range(5)) == (0, 0, 0, 1, -1)
-
-    temperature_k = 293.15
-    point = (0.65905, 0.05095, 0.27015, 0.01985, 0.01985, 1.0e-3)
-    center, gradient, hessian = _evaluate_electrolyte(table, temperature_k, point[:5], point[5])
-    assert center.status == STATUS_OK
-    assert center.parameter_fingerprint.decode() == model.parameter_fingerprint
-    total_amount = math.fsum(point[:5])
-    density = total_amount / point[5]
-    fractions = tuple(amount / total_amount for amount in point[:5])
-    public = model.state(
-        T=temperature_k * unit_registry.kelvin,
-        rho=density * unit_registry.mole / unit_registry.meter**3,
-        x=fractions,
-    )
-    expected_value = (
-        math.fsum(amount * (math.log(amount / point[5]) - 1.0) for amount in point[:5])
-        + total_amount * public._residual_helmholtz
-    )
-    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
-        expected_value, rel=4.0e-12, abs=4.0e-12
-    )
-    assert center.pressure_pa == pytest.approx(
-        public.pressure.to("pascal").magnitude, rel=4.0e-11, abs=2.0e-5
-    )
-    assert center.pressure_pa == pytest.approx(
-        -8.31446261815324 * temperature_k * gradient[-1], rel=4.0e-13
-    )
-
-    direction = (0.01, -0.004, -0.003, -0.001, -0.001, 2.0e-5)
-    step = 2.0e-4
-
-    def shifted(scale: float):
-        state = tuple(value + scale * delta for value, delta in zip(point, direction, strict=True))
-        return _evaluate_electrolyte(table, temperature_k, state[:5], state[5])
-
-    lower, lower_gradient, _ = shifted(-step)
-    upper, upper_gradient, _ = shifted(step)
-    value_difference = (
-        upper.helmholtz_over_rt_reference_amount - lower.helmholtz_over_rt_reference_amount
-    ) / (2.0 * step)
-    assert math.fsum(
-        left * right for left, right in zip(gradient, direction, strict=True)
-    ) == pytest.approx(value_difference, rel=3.0e-7, abs=3.0e-8)
-    for row in range(6):
-        hessian_direction = math.fsum(
-            hessian[row * 6 + column] * direction[column] for column in range(6)
-        )
-        gradient_difference = (upper_gradient[row] - lower_gradient[row]) / (2.0 * step)
-        assert hessian_direction == pytest.approx(gradient_difference, rel=4.0e-6, abs=4.0e-6)
-
-    permuted_ids = (
-        "chloride-anion",
-        "isobutanol",
-        "water",
-        "sodium-cation",
-        "ethanol",
-    )
-    permuted_model = _khudaida_model(permuted_ids)
-    permuted_capsule, permuted_table = _electrolyte_table(permuted_model)
-    assert permuted_capsule is not None
-    permutation = (4, 2, 0, 3, 1, 5)
-    permuted_result, permuted_gradient, permuted_hessian = _evaluate_electrolyte(
-        permuted_table,
-        temperature_k,
-        tuple(point[index] for index in permutation[:-1]),
-        point[-1],
-    )
-    assert tuple(permuted_table.component_charges[index] for index in range(5)) == (
-        -1,
-        0,
-        0,
-        1,
-        0,
-    )
-    assert permuted_result.helmholtz_over_rt_reference_amount == pytest.approx(
-        center.helmholtz_over_rt_reference_amount, rel=5.0e-13
-    )
-    assert permuted_result.pressure_pa == pytest.approx(center.pressure_pa, rel=5.0e-13)
-    assert permuted_gradient == pytest.approx(tuple(gradient[index] for index in permutation))
-    assert permuted_hessian == pytest.approx(
-        tuple(hessian[row * 6 + column] for row in permutation for column in permutation)
-    )
-    with pytest.raises(EosError, match="unadmitted-parameter-fingerprint"):
-        native_sdk(_khudaida_model(("water", "isobutanol", "sodium-cation", "chloride-anion")))
-
-
 def test_native_sdk_ascani_phase_block_parity_derivatives_and_permutation() -> None:
     component_ids = (
         "water",
@@ -5159,43 +5047,6 @@ def test_native_sdk_molar_volume_bounds_match_packing_oracles_and_permutation() 
         assert status == STATUS_OK
         return capsule, table, tuple(bounds)
 
-    canonical_ids = (
-        "water",
-        "ethanol",
-        "isobutanol",
-        "sodium-cation",
-        "chloride-anion",
-    )
-    amounts = (0.65905, 0.05095, 0.27015, 0.01985, 0.01985)
-    total = math.fsum(amounts)
-    composition = tuple(amount / total for amount in amounts)
-    model = _khudaida_model(canonical_ids)
-    capsule, table, bounds = evaluate(model, 293.15, composition)
-    assert capsule is not None
-    assert table.table_size >= ctypes.sizeof(VolumeBoundsNativeSdkTable) == 120
-    water_sigma = 2.7927 + 10.11 * math.exp(-0.01775 * 293.15) - 1.417 * math.exp(-0.01146 * 293.15)
-    expected = oracle(
-        293.15,
-        composition,
-        (1.2047, 2.3827, 2.8440, 1.0, 1.0),
-        (water_sigma, 3.1771, 3.5561, 2.8232, 2.7560),
-        (353.95, 198.24, 257.13, 230.0, 170.0),
-        (0, 0, 0, 1, -1),
-    )
-    assert bounds == pytest.approx(expected, rel=2.0e-15)
-    assert tuple(table.component_ids[index].decode() for index in range(5)) == canonical_ids
-
-    permutation = (4, 2, 0, 3, 1)
-    permuted_ids = tuple(canonical_ids[index] for index in permutation)
-    permuted_model = _khudaida_model(permuted_ids)
-    permuted_capsule, _, permuted_bounds = evaluate(
-        permuted_model,
-        293.15,
-        tuple(composition[index] for index in permutation),
-    )
-    assert permuted_capsule is not None
-    assert permuted_bounds == pytest.approx(bounds, rel=2.0e-15)
-
     figiel = _electrolyte_model()
     figiel_capsule, _, figiel_bounds = evaluate(figiel, 298.15, (0.98, 0.01, 0.01))
     assert figiel_capsule is not None
@@ -5247,18 +5098,18 @@ def test_native_sdk_molar_volume_bounds_match_packing_oracles_and_permutation() 
 
 
 def test_native_sdk_molar_volume_bounds_reject_abi_fingerprint_and_domain_errors() -> None:
-    model = _khudaida_model(("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion"))
+    model = _electrolyte_model()
     capsule, table = _volume_bounds_table(model)
     assert capsule is not None
     callback = EvaluateMolarVolumeBounds(table.evaluate_molar_volume_bounds)
-    composition = (ctypes.c_double * 5)(0.64, 0.08, 0.24, 0.02, 0.02)
+    composition = (ctypes.c_double * 3)(0.98, 0.01, 0.01)
 
     def call(
         *,
         fingerprint: bytes | None = model.parameter_fingerprint.encode(),
-        temperature_k: float = 293.15,
+        temperature_k: float = 298.15,
         values: object = composition,
-        count: int = 5,
+        count: int = 3,
         eta_min: float = 1.0e-6,
         eta_max: float = 0.74,
         bounds: object,
@@ -5285,7 +5136,7 @@ def test_native_sdk_molar_volume_bounds_reject_abi_fingerprint_and_domain_errors
     assert (
         call(
             bounds=guarded,
-            values=(ctypes.c_double * 5)(0.64, 0.08, 0.24, 0.03, 0.01),
+            values=(ctypes.c_double * 3)(0.96, 0.03, 0.01),
         )
         == STATUS_DOMAIN_ERROR
     )
@@ -5298,15 +5149,13 @@ def test_native_sdk_molar_volume_bounds_reject_abi_fingerprint_and_domain_errors
 def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permutation() -> None:
     canonical_ids = (
         "water",
-        "ethanol",
-        "isobutanol",
         "sodium-cation",
         "chloride-anion",
     )
-    temperature_k = 293.15
-    amounts = (0.65905, 0.05095, 0.27015, 0.01985, 0.01985)
+    temperature_k = 298.15
+    amounts = (0.98, 0.01, 0.01)
     volume_m3 = 1.0e-3
-    model = _khudaida_model(canonical_ids)
+    model = _electrolyte_model(canonical_ids)
 
     def evaluate(
         selected_model: Mixture,
@@ -5347,15 +5196,15 @@ def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permuta
     diameters = tuple(
         0.88 * sigma if charge else sigma * (1.0 - 0.12 * math.exp(-3.0 * energy / temperature_k))
         for sigma, energy, charge in zip(
-            (water_sigma, 3.1771, 3.5561, 2.8232, 2.7560),
-            (353.95, 198.24, 257.13, 230.0, 170.0),
-            (0, 0, 0, 1, -1),
+            (water_sigma, 2.8232, 2.7560),
+            (353.95, 230.0, 170.0),
+            (0, 1, -1),
             strict=True,
         )
     )
     weights = tuple(
         math.pi / 6.0 * 6.02214076e23 / 1.0e30 * segments * diameter**3
-        for segments, diameter in zip((1.2047, 2.3827, 2.8440, 1.0, 1.0), diameters, strict=True)
+        for segments, diameter in zip((1.2047, 1.0, 1.0), diameters, strict=True)
     )
     expected_value = (
         math.fsum(amount * weight for amount, weight in zip(amounts, weights, strict=True))
@@ -5364,17 +5213,18 @@ def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permuta
     expected_gradient = tuple(weight / volume_m3 for weight in weights) + (
         -expected_value / volume_m3,
     )
-    coordinates = 6
+    coordinates = len(weights) + 1
     expected_hessian = [0.0] * (coordinates * coordinates)
+    volume_index = coordinates - 1
     for component, weight in enumerate(weights):
-        expected_hessian[component * coordinates + 5] = -weight / volume_m3**2
-        expected_hessian[5 * coordinates + component] = -weight / volume_m3**2
-    expected_hessian[5 * coordinates + 5] = 2.0 * expected_value / volume_m3**2
+        expected_hessian[component * coordinates + volume_index] = -weight / volume_m3**2
+        expected_hessian[volume_index * coordinates + component] = -weight / volume_m3**2
+    expected_hessian[volume_index * coordinates + volume_index] = 2.0 * expected_value / volume_m3**2
     assert value == pytest.approx(expected_value, rel=2.0e-15)
     assert gradient == pytest.approx(expected_gradient, rel=2.0e-15, abs=1.0e-15)
     assert hessian == pytest.approx(expected_hessian, rel=3.0e-15, abs=1.0e-14)
 
-    direction = (0.01, -0.002, 0.004, 0.0005, 0.0005, 2.0e-6)
+    direction = (0.01, -0.002, -0.004, 2.0e-6)
     directional_gradient = math.fsum(
         left * right for left, right in zip(gradient, direction, strict=True)
     )
@@ -5392,8 +5242,10 @@ def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permuta
         )
         assert actual == pytest.approx(expected, rel=3.0e-15, abs=1.0e-14)
 
-    permutation = (4, 2, 0, 3, 1, 5)
-    permuted_model = _khudaida_model(tuple(canonical_ids[index] for index in permutation[:-1]))
+    permutation = (0, 2, 1, 3)
+    permuted_model = _electrolyte_model(
+        tuple(canonical_ids[index] for index in permutation[:-1])
+    )
     permuted_capsule, _, permuted_value, permuted_gradient, permuted_hessian = evaluate(
         permuted_model, tuple(amounts[index] for index in permutation[:-1])
     )
@@ -5406,24 +5258,24 @@ def test_native_sdk_packing_fraction_matches_independent_derivatives_and_permuta
 
 
 def test_native_sdk_packing_fraction_fails_closed_for_abi_model_and_domain_errors() -> None:
-    model = _khudaida_model(("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion"))
+    model = _electrolyte_model()
     capsule, table = _packing_fraction_table(model)
     assert capsule is not None
     callback = EvaluatePackingFraction(table.evaluate_packing_fraction)
-    amounts = (ctypes.c_double * 5)(0.64, 0.08, 0.24, 0.02, 0.02)
+    amounts = (ctypes.c_double * 3)(0.98, 0.01, 0.01)
     value = ctypes.c_double(11.0)
-    gradient = (ctypes.c_double * 6)(*(12.0 for _ in range(6)))
-    hessian = (ctypes.c_double * 36)(*(13.0 for _ in range(36)))
+    gradient = (ctypes.c_double * 4)(*(12.0 for _ in range(4)))
+    hessian = (ctypes.c_double * 16)(*(13.0 for _ in range(16)))
 
     def call(
         *,
         fingerprint: bytes | None = model.parameter_fingerprint.encode(),
-        temperature_k: float = 293.15,
+        temperature_k: float = 298.15,
         amount_values: object = amounts,
-        amount_count: int = 5,
+        amount_count: int = 3,
         volume_m3: float = 1.0e-3,
-        gradient_capacity: int = 6,
-        hessian_capacity: int = 36,
+        gradient_capacity: int = 4,
+        hessian_capacity: int = 16,
     ) -> int:
         return callback(
             table.model_context,
@@ -5441,12 +5293,12 @@ def test_native_sdk_packing_fraction_fails_closed_for_abi_model_and_domain_error
 
     def assert_untouched() -> None:
         assert value.value == 11.0
-        assert tuple(gradient) == (12.0,) * 6
-        assert tuple(hessian) == (13.0,) * 36
+        assert tuple(gradient) == (12.0,) * 4
+        assert tuple(hessian) == (13.0,) * 16
 
-    assert call(gradient_capacity=5) == STATUS_ABI_MISMATCH
+    assert call(gradient_capacity=3) == STATUS_ABI_MISMATCH
     assert_untouched()
-    assert call(hessian_capacity=35) == STATUS_ABI_MISMATCH
+    assert call(hessian_capacity=15) == STATUS_ABI_MISMATCH
     assert_untouched()
     assert call(fingerprint=b"sha256:wrong") == STATUS_UNSUPPORTED_MODEL
     assert_untouched()
@@ -5456,11 +5308,11 @@ def test_native_sdk_packing_fraction_fails_closed_for_abi_model_and_domain_error
     assert_untouched()
     assert call(amount_count=4) == STATUS_INVALID_ARGUMENT
     assert_untouched()
-    assert call(amount_values=(ctypes.c_double * 5)(0.64, 0.08, 0.24, 0.0, 0.0)) == (
+    assert call(amount_values=(ctypes.c_double * 3)(0.98, 0.01, 0.0)) == (
         STATUS_INVALID_ARGUMENT
     )
     assert_untouched()
-    assert call(amount_values=(ctypes.c_double * 5)(0.64, 0.08, 0.24, 0.03, 0.01)) == (
+    assert call(amount_values=(ctypes.c_double * 3)(0.96, 0.03, 0.01)) == (
         STATUS_DOMAIN_ERROR
     )
     assert_untouched()
