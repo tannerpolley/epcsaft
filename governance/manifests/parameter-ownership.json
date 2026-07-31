@@ -12,6 +12,7 @@
       "storage_owner": "data",
       "runtime_owner": null,
       "evidence_owner": "validation",
+      "catalog_presence": "legacy_copy_pending_removal",
       "disposition": "relocate_to_data",
       "reason": "Reusable source-derived case-study packet; not an admitted EOS runtime catalog entry."
     },
@@ -20,6 +21,7 @@
       "storage_owner": "data",
       "runtime_owner": null,
       "evidence_owner": "validation",
+      "catalog_presence": "legacy_copy_pending_removal",
       "disposition": "relocate_to_data",
       "reason": "Reusable fitted parameter packet; not an admitted EOS runtime catalog entry."
     },
@@ -28,6 +30,7 @@
       "storage_owner": "data",
       "runtime_owner": "eos",
       "evidence_owner": null,
+      "catalog_presence": "admitted_runtime_copy",
       "disposition": "sync_to_eos_runtime",
       "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
     },
@@ -36,6 +39,7 @@
       "storage_owner": "data",
       "runtime_owner": "eos",
       "evidence_owner": null,
+      "catalog_presence": "admitted_runtime_copy",
       "disposition": "sync_to_eos_runtime",
       "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
     },
@@ -44,6 +48,7 @@
       "storage_owner": "data",
       "runtime_owner": null,
       "evidence_owner": "validation",
+      "catalog_presence": "absent",
       "disposition": "relocate_to_data",
       "reason": "Reusable source-derived Validation packet; generated campaign evidence remains in Validation."
     },
@@ -52,6 +57,7 @@
       "storage_owner": "data",
       "runtime_owner": "eos",
       "evidence_owner": null,
+      "catalog_presence": "admitted_runtime_copy",
       "disposition": "sync_to_eos_runtime",
       "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
     },
@@ -60,6 +66,7 @@
       "storage_owner": "data",
       "runtime_owner": "eos",
       "evidence_owner": null,
+      "catalog_presence": "admitted_runtime_copy",
       "disposition": "sync_to_eos_runtime",
       "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
     },
@@ -68,6 +75,7 @@
       "storage_owner": "data",
       "runtime_owner": "eos",
       "evidence_owner": null,
+      "catalog_presence": "admitted_runtime_copy",
       "disposition": "sync_to_eos_runtime",
       "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
     },
@@ -76,6 +84,7 @@
       "storage_owner": "data",
       "runtime_owner": "eos",
       "evidence_owner": null,
+      "catalog_presence": "admitted_runtime_copy",
       "disposition": "sync_to_eos_runtime",
       "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
     },
@@ -84,6 +93,7 @@
       "storage_owner": "data",
       "runtime_owner": "eos",
       "evidence_owner": "validation",
+      "catalog_presence": "admitted_runtime_copy",
       "disposition": "sync_to_eos_runtime",
       "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy and literature validation evidence."
     },
@@ -92,6 +102,7 @@
       "storage_owner": "data",
       "runtime_owner": null,
       "evidence_owner": "validation",
+      "catalog_presence": "absent",
       "disposition": "relocate_to_data",
       "reason": "Reusable source-derived Figure 2 packet; Validation retains only generated campaign evidence."
     }

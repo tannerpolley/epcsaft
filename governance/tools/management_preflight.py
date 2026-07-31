@@ -398,6 +398,13 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
             errors.append(f"invalid parameter runtime owner for {bundle_id}")
         if entry.get("evidence_owner") not in {"validation", None}:
             errors.append(f"invalid parameter evidence owner for {bundle_id}")
+        catalog_presence = entry.get("catalog_presence")
+        if catalog_presence not in {
+            "admitted_runtime_copy",
+            "legacy_copy_pending_removal",
+            "absent",
+        }:
+            errors.append(f"invalid EOS catalog presence for {bundle_id}")
         disposition = entry.get("disposition")
         if disposition not in {"sync_to_eos_runtime", "relocate_to_data"}:
             errors.append(f"invalid parameter disposition for {bundle_id}")
@@ -405,13 +412,35 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
             errors.append(f"EOS runtime sync requires EOS runtime ownership for {bundle_id}")
         elif disposition == "relocate_to_data" and entry.get("runtime_owner") is not None:
             errors.append(f"Data relocation cannot retain runtime ownership for {bundle_id}")
+        if catalog_presence == "admitted_runtime_copy" and (
+            entry.get("runtime_owner") != "eos"
+            or disposition != "sync_to_eos_runtime"
+        ):
+            errors.append(
+                f"admitted EOS catalog packet {bundle_id} requires EOS runtime ownership"
+            )
+        if catalog_presence == "legacy_copy_pending_removal" and (
+            entry.get("runtime_owner") is not None
+            or disposition != "relocate_to_data"
+        ):
+            errors.append(
+                f"legacy EOS catalog packet {bundle_id} must remain pending Data relocation"
+            )
+        if catalog_presence == "absent" and entry.get("runtime_owner") is not None:
+            errors.append(f"absent EOS catalog packet {bundle_id} cannot own runtime")
     eos = Path(config["repositories"]["eos"]["local_path"])
     eos_bundles = eos / "src" / "epcsaft" / "data" / "bundles"
     discovered: set[str] = set()
     if eos_bundles.exists():
         for manifest in eos_bundles.glob("*/*/bundle.toml"):
             data = tomllib.loads(manifest.read_text(encoding="utf-8"))
-            discovered.add(data.get("bundle_id", manifest.parent.parent.name))
+            bundle_id = data.get("bundle_id", manifest.parent.parent.name)
+            discovered.add(bundle_id)
+            entry = by_id.get(bundle_id)
+            if entry and entry.get("catalog_presence") == "absent":
+                errors.append(
+                    f"EOS catalog contains packet declared absent: {bundle_id}"
+                )
     missing = sorted(discovered.difference(by_id))
     if missing:
         errors.append(f"unregistered EOS parameter bundles: {missing}")
@@ -504,7 +533,19 @@ def validate_operation_receipt(
         errors.append(
             f"operation receipt {relative} approval is not bound to its subject"
         )
-    if envelope["producer"] == envelope["reviewer"]:
+    if not isinstance(approval.get("source"), str) or not approval["source"].strip():
+        errors.append(f"operation receipt {relative} requires approval source")
+    producer_identity = (
+        envelope["producer"].get("kind"),
+        envelope["producer"].get("id"),
+    )
+    reviewer_identity = (
+        envelope["reviewer"].get("kind"),
+        envelope["reviewer"].get("id"),
+    )
+    if None in producer_identity or None in reviewer_identity:
+        errors.append(f"operation receipt {relative} requires producer and reviewer identities")
+    elif producer_identity == reviewer_identity:
         errors.append(f"operation receipt {relative} producer and reviewer must differ")
     validator = envelope["validator"]
     try:
@@ -518,6 +559,13 @@ def validate_operation_receipt(
             errors.append(f"operation receipt {relative} has invalid validator hash")
     if record["status"] not in schema["allowed_record_statuses"]:
         errors.append(f"operation receipt {relative} has invalid record status")
+    for field in ("preconditions", "expected_postconditions", "stop_conditions"):
+        if not isinstance(record[field], list) or not record[field]:
+            errors.append(f"operation receipt {relative} requires nonempty {field}")
+    if not isinstance(record["recovery_owner"], str) or not record[
+        "recovery_owner"
+    ].strip():
+        errors.append(f"operation receipt {relative} requires recovery owner")
     observations = record["observations"]
     if not isinstance(observations, list) or not observations:
         errors.append(f"operation receipt {relative} requires observations")
@@ -526,6 +574,30 @@ def validate_operation_receipt(
         for item in observations
     ):
         errors.append(f"operation receipt {relative} has a failed observation")
+    if (
+        subject.get("operation") == "create-public-repository"
+        and subject.get("phase") == "authorization-preflight"
+    ):
+        expected_command = (
+            f"gh repo view {subject.get('repository')} "
+            "--json id,nameWithOwner,visibility,defaultBranchRef"
+        )
+        if envelope["command"] != expected_command:
+            errors.append(
+                f"operation receipt {relative} has invalid namespace lookup command"
+            )
+        namespace_proven = any(
+            isinstance(item, dict)
+            and item.get("name") == "target_namespace_absent"
+            and item.get("command_exit_code") == 1
+            and item.get("outcome") == "pass"
+            and "could not resolve" in str(item.get("observed", "")).lower()
+            for item in observations
+        )
+        if not namespace_proven:
+            errors.append(
+                f"operation receipt {relative} does not prove an available namespace"
+            )
     return errors
 
 
