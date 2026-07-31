@@ -4672,6 +4672,68 @@ def test_native_sdk_electrolyte_phase_matches_public_state_and_directional_deriv
     )
 
 
+def test_native_sdk_electrolyte_phase_keeps_constraint_trial_states_evaluable() -> None:
+    model = _electrolyte_model()
+    amounts = (0.98, 0.01, 0.01)
+    reference_volume = 1.0e-3
+    packing_capsule, packing_table = _packing_fraction_table(model)
+    reference_packing = ctypes.c_double()
+    reference_gradient = (ctypes.c_double * 4)()
+    reference_hessian = (ctypes.c_double * 16)()
+    packing_callback = EvaluatePackingFraction(
+        packing_table.evaluate_packing_fraction
+    )
+    assert (
+        packing_callback(
+            packing_table.model_context,
+            model.parameter_fingerprint.encode(),
+            298.15,
+            (ctypes.c_double * 3)(*amounts),
+            3,
+            reference_volume,
+            ctypes.byref(reference_packing),
+            reference_gradient,
+            4,
+            reference_hessian,
+            16,
+        )
+        == STATUS_OK
+    )
+
+    trial_volume = reference_volume * reference_packing.value / 0.75
+    phase_capsule, phase_table = _electrolyte_table(model)
+    assert packing_capsule is not None and phase_capsule is not None
+    phase, gradient, hessian = _evaluate_electrolyte(
+        phase_table,
+        298.15,
+        amounts,
+        trial_volume,
+    )
+
+    assert phase.status == STATUS_OK
+    assert math.isfinite(phase.helmholtz_over_rt_reference_amount)
+    assert all(math.isfinite(value) for value in gradient)
+    assert all(math.isfinite(value) for value in hessian)
+
+    rejected_packing = ctypes.c_double()
+    assert (
+        packing_callback(
+            packing_table.model_context,
+            model.parameter_fingerprint.encode(),
+            298.15,
+            (ctypes.c_double * 3)(*amounts),
+            3,
+            trial_volume,
+            ctypes.byref(rejected_packing),
+            reference_gradient,
+            4,
+            reference_hessian,
+            16,
+        )
+        == STATUS_DOMAIN_ERROR
+    )
+
+
 @pytest.mark.parametrize(
     ("component_ids", "point", "direction"),
     (

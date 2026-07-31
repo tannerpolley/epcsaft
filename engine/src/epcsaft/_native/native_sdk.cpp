@@ -1891,13 +1891,6 @@ struct NativeSdkEndpoint final {
                  ++component) {
                 composition[component] = amounts[component] / total_amount;
             }
-            const auto phase = endpoint.model.evaluate_reacting_phase_parameters(
-                temperature_k,
-                amounts,
-                volume_m3,
-                endpoint.ion_mole_fraction_max,
-                parameters
-            );
             const auto packing =
                 endpoint.model.evaluate_packing_fraction_parameters(
                     temperature_k,
@@ -1906,6 +1899,13 @@ struct NativeSdkEndpoint final {
                     endpoint.ion_mole_fraction_max,
                     parameters
                 );
+            const auto phase = endpoint.model.evaluate_reacting_phase_parameters(
+                temperature_k,
+                amounts,
+                volume_m3,
+                endpoint.ion_mole_fraction_max,
+                parameters
+            );
             const auto volume_bounds =
                 endpoint.model.molar_volume_bounds_parameters(
                     temperature_k,

@@ -565,15 +565,9 @@ inline NativeMixturePhaseBlock electrolyte_phase_block_impl(
     validate_electrolyte_phase_state(
         temperature, amounts, volume, ion_mole_fraction_max, value_parameters
     );
-    const double checked_packing_fraction = phase_packing_fraction(
-        temperature, amounts, volume, value_parameters
-    );
-    if (!std::isfinite(checked_packing_fraction)
-        || checked_packing_fraction >= close_packing_fraction()) {
-        throw std::invalid_argument(
-            "packing fraction is outside the model domain"
-        );
-    }
+    // Keep the analytic phase objective available to constrained-optimizer
+    // trial points. Packing admissibility is owned by the separate packing
+    // and molar-volume-bound callbacks.
 
     const std::size_t components = amounts.size();
     const std::size_t parameter_count = active_parameters.size();
