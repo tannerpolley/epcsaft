@@ -106,7 +106,7 @@ $$
 - Implementation:
   - `src/epcsaft/_native/association.hpp:163` (`association_residuals`)
   - `src/epcsaft/_native/phase_block.hpp:786` (`associating_pure_phase_parameter_block`)
-  - `src/epcsaft/_native/phase_block.hpp:1394` (`associating_parameterized_pure_phase_block`)
+  - `src/epcsaft/_native/phase_block.hpp:1393` (`associating_parameterized_pure_phase_block`)
 
 $$
 F_A=X_A\left[
@@ -1215,7 +1215,7 @@ $$
 - Implementation:
   - `src/epcsaft/_native/phase_block.hpp:235` (`mixture_phase_helmholtz_over_rt_reference_amount`)
   - `src/epcsaft/_native/phase_block.hpp:550` (`electrolyte_phase_block_impl`)
-  - `src/epcsaft/_native/phase_block.hpp:1168` (`pure_phase_helmholtz_over_rt_reference_amount`)
+  - `src/epcsaft/_native/phase_block.hpp:1167` (`pure_phase_helmholtz_over_rt_reference_amount`)
 
 $$
 \Phi\equiv\frac{A}{RTn_{\mathrm{ref}}}
@@ -1238,7 +1238,7 @@ $$
 - Implementation:
   - `src/epcsaft/_native/phase_block.hpp:235` (`mixture_phase_helmholtz_over_rt_reference_amount`)
   - `src/epcsaft/_native/phase_block.hpp:550` (`electrolyte_phase_block_impl`)
-  - `src/epcsaft/_native/phase_block.hpp:1168` (`pure_phase_helmholtz_over_rt_reference_amount`)
+  - `src/epcsaft/_native/phase_block.hpp:1167` (`pure_phase_helmholtz_over_rt_reference_amount`)
 
 $$
 \rho_m=\frac{n}{V}.
@@ -1273,8 +1273,8 @@ $$
 - Implementation:
   - `src/epcsaft/_native/helmholtz.hpp:185` (`phase_packing_fraction`)
   - `src/epcsaft/_native/phase_block.hpp:896` (`packing_fraction_block`)
-  - `src/epcsaft/_native/phase_block.hpp:967` (`packing_fraction_block_active_parameters`)
-  - `src/epcsaft/_native/phase_block.hpp:1054` (`inverse_packing_geometry_block`)
+  - `src/epcsaft/_native/phase_block.hpp:966` (`packing_fraction_block_active_parameters`)
+  - `src/epcsaft/_native/phase_block.hpp:1053` (`inverse_packing_geometry_block`)
   - `src/epcsaft/_native/native_sdk.cpp:1141` (`evaluate_inverse_packing_geometry`)
 
 $$
@@ -1295,9 +1295,9 @@ $$
   - `src/epcsaft/_native/phase_block.hpp:326` (`differentiated_mixture_phase_block`)
   - `src/epcsaft/_native/phase_block.hpp:550` (`electrolyte_phase_block_impl`)
   - `src/epcsaft/_native/phase_block.hpp:786` (`associating_pure_phase_parameter_block`)
-  - `src/epcsaft/_native/phase_block.hpp:1214` (`pure_phase_block`)
-  - `src/epcsaft/_native/phase_block.hpp:1299` (`parameterized_pure_phase_block`)
-  - `src/epcsaft/_native/phase_block.hpp:1394` (`associating_parameterized_pure_phase_block`)
+  - `src/epcsaft/_native/phase_block.hpp:1213` (`pure_phase_block`)
+  - `src/epcsaft/_native/phase_block.hpp:1298` (`parameterized_pure_phase_block`)
+  - `src/epcsaft/_native/phase_block.hpp:1393` (`associating_parameterized_pure_phase_block`)
 
 $$
 P=-RTn_{\mathrm{ref}}
@@ -1386,7 +1386,7 @@ $$
 - Change note: No generic mutable parameter overlay is introduced.
 - LaTeX: `docs/latex/equations.tex:1096`
 - Implementation:
-  - `src/epcsaft/_native/phase_block.hpp:1145` (`pure_phase_parameters`)
+  - `src/epcsaft/_native/phase_block.hpp:1144` (`pure_phase_parameters`)
 
 $$
 \boldsymbol{\theta}_{\mathrm{pure}}
@@ -1780,10 +1780,10 @@ $$
 - `src/epcsaft/_native/phase_block.hpp:760` (`electrolyte_phase_block_active_parameters`): transport and buffer mechanics
 - `src/epcsaft/_native/phase_block.hpp:786` (`associating_pure_phase_parameter_block`): CppAD-generated derivative machinery
 - `src/epcsaft/_native/phase_block.hpp:896` (`packing_fraction_block`): CppAD-generated derivative machinery
-- `src/epcsaft/_native/phase_block.hpp:967` (`packing_fraction_block_active_parameters`): CppAD-generated derivative machinery
-- `src/epcsaft/_native/phase_block.hpp:1054` (`inverse_packing_geometry_block`): CppAD-generated derivative machinery
-- `src/epcsaft/_native/phase_block.hpp:1198` (`cubic_directional_derivative`): CppAD-generated derivative machinery
-- `src/epcsaft/_native/phase_block.hpp:1214` (`pure_phase_block`): CppAD-generated derivative machinery
-- `src/epcsaft/_native/phase_block.hpp:1299` (`parameterized_pure_phase_block`): CppAD-generated derivative machinery
-- `src/epcsaft/_native/phase_block.hpp:1394` (`associating_parameterized_pure_phase_block`): CppAD-generated derivative machinery
+- `src/epcsaft/_native/phase_block.hpp:966` (`packing_fraction_block_active_parameters`): CppAD-generated derivative machinery
+- `src/epcsaft/_native/phase_block.hpp:1053` (`inverse_packing_geometry_block`): CppAD-generated derivative machinery
+- `src/epcsaft/_native/phase_block.hpp:1197` (`cubic_directional_derivative`): CppAD-generated derivative machinery
+- `src/epcsaft/_native/phase_block.hpp:1213` (`pure_phase_block`): CppAD-generated derivative machinery
+- `src/epcsaft/_native/phase_block.hpp:1298` (`parameterized_pure_phase_block`): CppAD-generated derivative machinery
+- `src/epcsaft/_native/phase_block.hpp:1393` (`associating_parameterized_pure_phase_block`): CppAD-generated derivative machinery
 - `src/epcsaft/reference.py:21` (`_log_fugacity`): transport and buffer mechanics

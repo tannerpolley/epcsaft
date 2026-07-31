@@ -170,9 +170,10 @@ from the same EOS packing owner used by pressure closure. Given
 `0 < eta_min < eta_max < pi/(3 sqrt(2))`, it writes
 `[K_eta/eta_max, K_eta/eta_min]` in `m^3/mol`. Packing limits are explicit
 caller inputs; the EOS does not own Perdomo initialization or solver
-policy. The phase objective remains evaluable at finite constrained-optimizer
-trial points outside that accepted packing interval; the packing and
-molar-volume callbacks remain the authoritative fail-closed domain contracts.
+policy. The phase objective and packing derivative callback remain evaluable at
+finite positive-volume constrained-optimizer trial points outside that accepted
+packing interval. The molar-volume callback and consumer-owned constraints and
+final-state gates remain the authoritative fail-closed physical contracts.
 The callback uses a size-gated two-double caller buffer and no new
 result structure. A bound-count mismatch returns `ABI_MISMATCH` without a
 write; all failures are return-code authoritative because there is no second
@@ -188,9 +189,11 @@ in coordinate order `(n_1,...,n_C,V)`. It returns the dimensionless value,
 gradient, and row-major Hessian through exact-size caller buffers. CppAD is the
 production derivative authority. Buffer-size mismatch returns `ABI_MISMATCH`;
 fingerprint, model, source-temperature, positive-state, electroneutrality,
-ion-fraction, and close-packing checks fail before any output write. The
+ion-fraction, and nonfinite-geometry checks fail before any output write. A
+finite value above physical close packing is still returned because the
 callback owns no packing limits or equilibrium constraint: Equilibrium supplies
-Perdomo's limits and consumes the value and derivatives in its NLP.
+the limits, consumes the value and derivatives in its NLP, and rejects an
+infeasible final state.
 
 D-023 identifies a local candidate electrolyte tail for the first Figiel
 regression tracer. Its minimum contract is one model-bound callback for the

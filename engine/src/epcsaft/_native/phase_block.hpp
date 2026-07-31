@@ -925,8 +925,7 @@ inline NativePackingFractionBlock packing_fraction_block(
     const double checked_value = phase_packing_fraction(
         temperature, amounts, volume, parameters
     );
-    if (!std::isfinite(checked_value)
-        || checked_value >= close_packing_fraction()) {
+    if (!std::isfinite(checked_value)) {
         throw std::invalid_argument("packing fraction is outside the model domain");
     }
 
