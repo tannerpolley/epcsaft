@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import tomllib
 import unittest
 from pathlib import Path
@@ -9,20 +10,55 @@ from tools.validate_packets import packet_fingerprint, validate_packet
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKET = (
+PACKET_ROOT = (
     ROOT
     / "packets"
     / "khudaida-2026-figure-2-electrolyte-lle"
-    / "2"
 )
+PACKET_V2 = PACKET_ROOT / "2"
+PACKET = PACKET_ROOT / "3"
 
 
 class KhudaidaPacketTests(unittest.TestCase):
     def test_packet_is_valid_and_fingerprint_is_stable(self) -> None:
+        self.assertEqual(validate_packet(PACKET_V2 / "packet.toml"), [])
+        self.assertEqual(
+            packet_fingerprint(PACKET_V2),
+            "ed173d78fcaeca527c89a49af1f34c6880fdc642fc1c08c2d395f131991e53af",
+        )
         self.assertEqual(validate_packet(PACKET / "packet.toml"), [])
         self.assertEqual(
             packet_fingerprint(PACKET),
-            "ed173d78fcaeca527c89a49af1f34c6880fdc642fc1c08c2d395f131991e53af",
+            "73c48ac9fb97f06185bd78d27ceaa7ffe6308abe9feee34b15eadff31cc985eb",
+        )
+
+    def test_version_three_adds_only_materialization_metadata(self) -> None:
+        version_two = tomllib.loads(
+            (PACKET_V2 / "packet.toml").read_text(encoding="utf-8")
+        )
+        for record in version_two["files"]:
+            if record["role"] != "provenance":
+                relative = Path(record["path"])
+                self.assertEqual(
+                    (PACKET_V2 / relative).read_bytes(),
+                    (PACKET / relative).read_bytes(),
+                )
+
+        bundle_path = PACKET / "parameters" / "bundle.toml"
+        self.assertEqual(
+            hashlib.sha256(bundle_path.read_bytes()).hexdigest(),
+            "f5d0fb91d5d6fe4837411a0d27d1e53000685b4062ecd7d6398db6e2377b1fa2",
+        )
+        bundle = tomllib.loads(bundle_path.read_text(encoding="utf-8"))
+        self.assertEqual(bundle["bundle_id"], "khudaida-2026-figure-2-electrolyte-lle")
+        self.assertEqual(bundle["bundle_version"], 2)
+        self.assertEqual(
+            set(bundle["files"]),
+            {
+                path.name
+                for path in (PACKET / "parameters").iterdir()
+                if path.name != "bundle.toml"
+            },
         )
 
     def test_packet_retains_all_eight_normalized_feeds(self) -> None:
