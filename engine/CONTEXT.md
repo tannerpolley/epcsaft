@@ -13,6 +13,25 @@ Canonical doctrine:
 The local Management manifest is
 `../ePC-SAFT-organization/manifests/management.json` during that transition.
 
+## Language
+
+**Canonical progression source**:
+A model-defining PC-SAFT or ePC-SAFT paper admitted by the reviewed
+`ePC-SAFT Progression` source list. Membership makes its parameters eligible
+for catalog review; it does not automatically admit a runtime bundle.
+_Avoid_: any published paper, case-study source
+
+**Source-complete catalog bundle**:
+One immutable installed parameter bundle containing every model-table species
+and every applicable pure, pair, topology, correlation, model, provenance, and
+validity record needed to reproduce the source-defined selections.
+_Avoid_: convenience bundle, exercised subset
+
+**Validation campaign bundle**:
+An explicit, hash-bound parameter input retained with a Validation campaign for
+replay or qualification without becoming an EOS runtime default.
+_Avoid_: Validation catalog, fallback catalog
+
 EOS owns both its package evidence and execution of assigned installed-
 artifact campaigns in the sibling Validation repository. The task remains based
 here; Validation remains the durable black-box evidence home and has no resident
@@ -48,19 +67,24 @@ field, reason, and applicable units, limits, or tolerances. The distributed
 Python interface is marked with `py.typed` and exposes literal types for
 phases, purposes, domains, and parameter families; runtime validation remains
 the scientific authority. No compatibility aliases are retained.
-The installed catalogs are Crespo et al. neutral 2B DEEA records,
-Gross--Sadowski methane/ethane and propane records, the bounded
-Figiel--Yu--Held water/methanol/ethanol chloride/bromide source bundle, a
-distinct aqueous Na+/K+/I- source bundle, and one distinct Ascani et al.
-original-Born water/1-butanol/Na+/K+/Cl- bundle at 298.15 K. One reference-state
-module owns x-process
+The installed catalogs are Crespo et al. neutral 2B DEEA records, the
+source-complete 78-species Gross--Sadowski 2001 bundle, and the source-complete
+13-species Figiel--Yu--Held 2025 corrected-Born bundle containing every
+reported water, methanol, ethanol, H+, Li+, Na+, K+, VO2+, V3+, Cl-, Br-, I-,
+and SO4(2-) parameter from Tables 1--5, and the source-complete 30-species
+Held--Cameretti--Sadowski 2008 fully dissociated aqueous-electrolyte bundle
+containing water and every Table 2 ion. Distinct narrower Figiel chloride/
+bromide and aqueous-iodide IDs, and one Ascani et al. original-Born
+water/1-butanol/Na+/K+/Cl- bundle at 298.15 K remain during the governed
+transition. The old Gross--Sadowski and narrower Figiel IDs remain only until
+the governed catalog cutover removes them without aliases. One reference-state module owns x-process
 infinite-dilution solvation and transfer plus single-ion and stoichiometric mean
 ionic activity on one explicit electroneutral formula-unit path. Its aqueous
 single-solvent result also reports the practical molal osmotic coefficient
 from the solvent-activity ratio on that pressure-state path.
 
-Historical Migration decision D-028 binds one additional private EOS candidate
-for the exact
+Historical Migration decision D-028 binds one additional private native
+reference candidate for the exact
 ordered water/H3O+/OH- mechanical model of Held, Cameretti, and Sadowski (2008)
 at 298.15 K and 1 bar. The installed record set closes component identity,
 charge, association, water--ion dispersion, excluded ion--ion dispersion,
@@ -247,10 +271,11 @@ no single-ion standard, reaction constant, reaction solver, chemistry selector,
 or catalog admission is introduced. The result explicitly reports that `T`,
 `P`, composition, and parameter derivatives are unavailable.
 
-The private Held water-ionization bundle uses that same generic neutral-reference
-tail and the existing fixed-pressure density closure. Consumers obtain its
-pure-water liquid molar volume from the ordinary public pure-water state; no
-second standard-reference callback or density owner is retained.
+The Held source-complete aqueous-electrolyte bundle uses that same generic
+neutral-reference tail and the existing fixed-pressure density closure.
+Consumers obtain its pure-water liquid molar volume from the ordinary public
+pure-water state; no second standard-reference callback or density owner is
+retained.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`.

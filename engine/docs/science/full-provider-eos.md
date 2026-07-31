@@ -33,7 +33,7 @@ It does not override this bounded specification or the current implementation.
 | Yang2024 | Yang, Kontogeorgis, and de Hemptinne, *Fluid Phase Equilibria* 2024, 583, 114103, DOI `10.1016/j.fluid.2024.114103` | Schreckenberg/Uematsu--Frank density-and-temperature dielectric model, Eqs. (1a), (2a), and (2b), and solvent parameters |
 | Rueben2024 | Rueben et al., *J. Chem. Eng. Data* 2024, DOI `10.1021/acs.jced.4c00347` | Partial-density perturbation-theory dielectric model, Eqs. (4)--(6), and PT2 ion parameters |
 | Perdomo2025 | Perdomo et al., *Comput. Chem. Eng.* 2025, 194, 108977, DOI `10.1016/j.compchemeng.2024.108977` | Read-only NaCl--water vapor/liquid endpoint diagnostic; not an ePC-SAFT parameter source |
-| Held2008 | Held, Cameretti, and Sadowski, *Fluid Phase Equilibria* 2008, 270, 87-96, DOI `10.1016/j.fluid.2008.06.010` | Private water/H3O+/OH- candidate parameters and fully dissociated water-electrolyte formulation at the reported 298.15 K, 1 bar state |
+| Held2008 | Held, Cameretti, and Sadowski, *Fluid Phase Equilibria* 2008, 270, 87-96, DOI `10.1016/j.fluid.2008.06.010` | Source-complete water plus all 29 Table 2 ion parameters and fully dissociated water-electrolyte formulation; package reference domain 298.15 K and 1 bar |
 | Ascani2022 | Ascani, Sadowski, and Held, *J. Chem. Eng. Data* 2022, 67, 1972-1984, DOI `10.1021/acs.jced.1c00866` | Case Study 2 component, association, `k_ij`, `l_ij`, and `k_ij^hb` records at 298.15 K |
 | AscaniHeld2021 | Ascani and Held, *Z. Anorg. Allg. Chem.* 2021, 647, 1305-1314, DOI `10.1002/zaac.202100032` | Original Born equation and combined solvent-mass/ion-mole dielectric rule |
 | HamerWu1972 | Hamer and Wu, *J. Phys. Chem. Ref. Data* 1972, 1, 1047-1100, DOI `10.1063/1.3253108`; official NIST PDF SHA-256 `8399084b29b4db4ce35ab47ed679446dbedb9bf1686f99f43fce7b2073ee4beb` | Practical molal osmotic-coefficient definition and aqueous NaCl comparison value |
@@ -200,11 +200,12 @@ cross-association combining equation. Every allowed site pair therefore has
 both an energy and volume record; an omitted unlike-site pair is inactive,
 not inferred. String schemes and inferred donor/acceptor pairs are forbidden.
 
-The bounded 298.15 K water--ethanol selection stores both donor--acceptor
-cross pairs explicitly. Their energy and volume values are evaluated once
-from the Gross2002 cross-association equations using the Figiel2025 Table 2
-pure-solvent records and `k_hb = 0`. The runtime still performs no implicit
-combining or default insertion.
+The source-complete bounded 298.15 K Figiel2025 bundle stores both
+donor--acceptor cross directions explicitly for water--methanol,
+water--ethanol, and methanol--ethanol. Their energy and volume values are
+evaluated once from the Gross2002 cross-association equations using the
+Figiel2025 Table 2 pure-solvent records and no binary correction parameter.
+The runtime still performs no implicit combining or default insertion.
 
 The Ascani2022 water--1-butanol selection likewise stores both cross directions
 explicitly. Their energy is the SI Eq. S6 arithmetic mean multiplied by
@@ -738,8 +739,8 @@ pressure, composition, and parameter derivatives are explicitly unavailable.
 Reaction constants, source standard-state conversions, gauges, constraints,
 and equilibrium remain consumer-owned.
 
-The private Held water-ionization candidate is admitted through this same
-generic basis at exactly `298.15 K` and `100000 Pa`; it does not retain a
+The Held source-complete aqueous-electrolyte bundle is admitted through this
+same generic basis at exactly `298.15 K` and `100000 Pa`; it does not retain a
 case-specific standard-reference callback. The ordinary public pure-water state
 supplies any liquid molar-volume initialization through the same fixed-pressure
 density owner. EOS does not supply `K_w` or transform an external activity
@@ -809,13 +810,14 @@ energy and volume while preserving the distinct `k_ij_hb` provenance. Its
 combined dielectric and original-Born equations do not alter the Figiel
 SSM+DS bundles or their fingerprints.
 
-The private Held2008 candidate is a separate exact selection of water,
-`H3O+`, and `OH-` at `T = 298.15 K` and `p = 1 bar`. It requires explicit
-water--ion `k_ij = 0` and ion--ion `k_ij = 1`, so no ion--ion dispersion is
-silently introduced. It uses the source's fully dissociated Debye--Huckel
-formulation with concentration-independent water permittivity and has no Born
-term. Evaluation or the standard-reference callback outside the recorded SDK
-state is not source-backed, and the callback fails closed outside that state.
+The Held2008 bundle is a source-complete selection of water plus all 29 Table 2
+ions at `T = 298.15 K` and `p = 1 bar`. It requires explicit water--ion
+`k_ij = 0` and ion--ion `k_ij = 1`, so no ion--ion dispersion is silently
+introduced. It uses the source's fully dissociated Debye--Huckel formulation
+with concentration-independent water permittivity and has no Born term,
+ion-pairing, or reaction-equilibrium behavior. Evaluation or the
+standard-reference callback outside the recorded source state is not
+source-backed, and the callback fails closed outside that state.
 
 Topology is determined by the selected components, not by unrelated records
 remaining in their source bundle. A selection containing no nonzero charge is
@@ -847,7 +849,7 @@ authority; this specification does not admit a consumer or fitted model.
 Adding any other exclusion requires a new source-backed capability design
 rather than a flag in this model.
 
-The private Held mechanical/reference candidate does not change those
+The Held source-complete mechanical/reference candidate does not change those
 exclusions. Reaction stoichiometry, `K_w`, mixed-standard-state conversion,
 conservation constraints, Ipopt, KKT and physical certificates, globality, and
 predictive adjudication remain outside EOS and require their own authority.

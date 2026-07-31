@@ -1130,7 +1130,7 @@ def _held_water_ionization_model(
         "hydroxide-anion",
     ),
 ) -> Mixture:
-    parameters = _ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1)
+    parameters = _ParameterBundle.from_catalog("held-cameretti-sadowski-2008", version=1)
     return Mixture(parameters.select(component_ids))
 
 
@@ -4672,6 +4672,89 @@ def test_native_sdk_electrolyte_phase_matches_public_state_and_directional_deriv
     )
 
 
+@pytest.mark.parametrize(
+    ("component_ids", "point", "direction"),
+    (
+        (
+            ("water", "vanadyl-cation", "sulfate-anion"),
+            (0.96, 0.02, 0.02, 1.0e-3),
+            (0.02, -0.003, -0.003, 2.0e-5),
+        ),
+        (
+            ("water", "vanadium-iii-cation", "chloride-anion"),
+            (0.96, 0.01, 0.03, 1.0e-3),
+            (0.02, -0.001, -0.003, 2.0e-5),
+        ),
+    ),
+)
+def test_native_sdk_complete_figiel_multivalent_phase_matches_public_derivatives(
+    component_ids: tuple[str, str, str],
+    point: tuple[float, float, float, float],
+    direction: tuple[float, float, float, float],
+) -> None:
+    bundle = _ParameterBundle.from_catalog("figiel-yu-held-2025", version=1)
+    model = Mixture(bundle.select(component_ids))
+    capsule, table = _electrolyte_table(model)
+    assert capsule is not None
+    assert tuple(table.component_charges[index] for index in range(3)) == tuple(
+        model._model.charge_number
+    )
+
+    center, gradient, hessian = _evaluate_electrolyte(
+        table,
+        298.15,
+        point[:3],
+        point[3],
+    )
+    assert center.status == STATUS_OK
+    total_amount = math.fsum(point[:3])
+    public = model.state(
+        T=298.15 * unit_registry.kelvin,
+        rho=(total_amount / point[3]) * unit_registry.mole / unit_registry.meter**3,
+        x=tuple(amount / total_amount for amount in point[:3]),
+    )
+    expected_value = (
+        math.fsum(amount * (math.log(amount / point[3]) - 1.0) for amount in point[:3])
+        + total_amount * public._residual_helmholtz
+    )
+    assert center.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected_value,
+        rel=3.0e-12,
+        abs=3.0e-12,
+    )
+
+    step = 2.0e-4
+
+    def shifted(scale: float):
+        state = tuple(
+            value + scale * delta
+            for value, delta in zip(point, direction, strict=True)
+        )
+        return _evaluate_electrolyte(table, 298.15, state[:3], state[3])
+
+    lower, lower_gradient, _ = shifted(-step)
+    upper, upper_gradient, _ = shifted(step)
+    value_difference = (
+        upper.helmholtz_over_rt_reference_amount
+        - lower.helmholtz_over_rt_reference_amount
+    ) / (2.0 * step)
+    assert math.fsum(
+        left * right for left, right in zip(gradient, direction, strict=True)
+    ) == pytest.approx(value_difference, rel=3.0e-7, abs=3.0e-8)
+    for row in range(4):
+        hessian_direction = math.fsum(
+            hessian[row * 4 + column] * direction[column] for column in range(4)
+        )
+        gradient_difference = (upper_gradient[row] - lower_gradient[row]) / (
+            2.0 * step
+        )
+        assert hessian_direction == pytest.approx(
+            gradient_difference,
+            rel=3.0e-6,
+            abs=3.0e-6,
+        )
+
+
 def test_native_sdk_held_phase_matches_public_state_and_directional_derivatives() -> None:
     model = _held_water_ionization_model()
     capsule, table = _electrolyte_table(model)
@@ -8188,7 +8271,7 @@ def test_native_sdk_neutral_reference_derivatives_are_exact_and_fail_closed() ->
         unit = "angstrom" if parameter == 0 else "kelvin"
         for sign in (-1.0, 1.0):
             trial = _component_parameter_trial_model(
-                "held-2008-water-self-ionization",
+                "held-cameretti-sadowski-2008",
                 ("water", "hydronium-cation", "hydroxide-anion"),
                 "hydronium-cation",
                 family,

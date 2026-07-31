@@ -535,19 +535,15 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
                 family="relative_permittivity_formulation",
                 reason="incompatible-electrolyte-topology",
             )
-        fully_dissociated_charges = {
-            "water": 0,
-            "hydronium-cation": 1,
-            "hydroxide-anion": -1,
-        }
-        if set(component_ids) != set(fully_dissociated_charges) or any(
-            charge != fully_dissociated_charges[component_id]
-            for component_id, charge in zip(component_ids, charges, strict=True)
-        ):
+        neutral_components = tuple(
+            component_id for component_id, charge in zip(component_ids, charges, strict=True)
+            if charge == 0
+        )
+        if len(neutral_components) != 1:
             raise _error(
                 "invalid-value",
                 family="electrolyte_formulation",
-                reason="component-charge-contract",
+                reason="exactly-one-neutral-solvent-required",
             )
         fully_dissociated_k_ij = tuple(value for value in k_ij if value is not None)
         if len(fully_dissociated_k_ij) != len(k_ij):

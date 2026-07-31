@@ -111,8 +111,10 @@ The installed catalog evidence is:
 - the distinct Ascani et al. original-Born water/1-butanol/Na+/K+/Cl- bundle at
   298.15 K.
 
-The private Held et al. water/H3O+/OH- candidate records at 298.15 K and 1 bar
-remain non-authoritative and carry no reactive-equilibrium claim.
+The Held et al. source-complete aqueous-electrolyte bundle records water and
+all 29 Table 2 ions at the reported 298.15 K and 1 bar reference conditions.
+It remains non-authoritative for reaction equilibrium and carries no `K_w`,
+ion-pairing, or Born-term claim.
 
 The accepted authority receipt `promotion-0012-provider-full-candidate`
 promotes the stated EOS scope. The receipt identifier is retained as
@@ -146,10 +148,9 @@ do not add Python aliases, catalog authority, equilibrium, regression target
 ownership, fitting policy, or broader model admission. Gross--Sadowski
 methane/ethane is first reference evidence, not a mixture allowlist.
 
-`authority_effect: none` remains the status of the private Held
-water-ionization candidate. Equilibrium exclusively owns `K_w`, reactive
-standard-state conversion, reaction and balance constraints, Ipopt, and
-certificates.
+`authority_effect: none` remains the status of the Held aqueous reference
+candidate. Equilibrium exclusively owns `K_w`, reactive standard-state
+conversion, reaction and balance constraints, Ipopt, and certificates.
 
 The architecture and cost ratchet are recorded in `ARCHITECTURE.yaml`; the
 scientific equation owner is `docs/science/full-provider-eos.md`. The complete

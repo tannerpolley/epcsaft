@@ -229,8 +229,8 @@ equations:
     tex_line: 417
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1791
-        comment_line: 1851
+        line: 1799
+        comment_line: 1859
         symbol: "evaluate"
   - eqid: "corrected_born_ionic_segment_diameter"
     section: "Parameter setup"
@@ -389,8 +389,8 @@ equations:
     tex_line: 591
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1927
-        comment_line: 1939
+        line: 1935
+        comment_line: 1947
         symbol: "evaluate_pressure"
   - eqid: "dipolar_correlation_integral"
     section: "Electrolyte dielectric and Debye--Huckel relations"
@@ -621,8 +621,8 @@ equations:
     tex_line: 541
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 65
-        comment_line: 71
+        line: 73
+        comment_line: 79
         symbol: "fixed_pressure_log_fugacity"
   - eqid: "fixed_pressure_total_derivative"
     section: "Thermodynamic properties"
@@ -637,48 +637,48 @@ equations:
     tex_line: 555
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 85
-        comment_line: 84
+        line: 93
+        comment_line: 92
         symbol: "active_solvation_parameter_observation"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 210
-        comment_line: 209
+        line: 218
+        comment_line: 217
         symbol: "active_solvation_parameter_reference"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 249
-        comment_line: 248
+        line: 257
+        comment_line: 256
         symbol: "active_aqueous_kij_observation"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 337
-        comment_line: 336
+        line: 345
+        comment_line: 344
         symbol: "active_solvation_factor_observation"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1020
-        comment_line: 1019
+        line: 1028
+        comment_line: 1027
         symbol: "evaluate_fugacity_derivatives"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1221
-        comment_line: 1220
+        line: 1229
+        comment_line: 1228
         symbol: "evaluate_ion_solvation_born"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1258
-        comment_line: 1256
+        line: 1266
+        comment_line: 1264
         symbol: "evaluate_ion_solvation_ionic_permittivity"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1295
-        comment_line: 1293
+        line: 1303
+        comment_line: 1301
         symbol: "evaluate_ion_solvation_solvent_permittivity"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1332
-        comment_line: 1331
+        line: 1340
+        comment_line: 1339
         symbol: "evaluate_ion_solvation_kij"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1411
-        comment_line: 1410
+        line: 1419
+        comment_line: 1418
         symbol: "evaluate_aqueous_miac_kij_batch"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1591
-        comment_line: 1590
+        line: 1599
+        comment_line: 1598
         symbol: "evaluate_aqueous_miac_solvation_factor_batch"
       - file: "src/epcsaft/_native/native_sdk.cpp"
         line: 1299
@@ -701,8 +701,8 @@ equations:
         comment_line: 40
         symbol: "formula_composition"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1154
-        comment_line: 1153
+        line: 1162
+        comment_line: 1161
         symbol: "reference_composition"
   - eqid: "hard_chain_helmholtz"
     section: "Contribution intermediates"
@@ -765,8 +765,8 @@ equations:
     tex_line: 581
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1927
-        comment_line: 1948
+        line: 1935
+        comment_line: 1956
         symbol: "evaluate_pressure"
   - eqid: "infinite_dilution_solvation_energy"
     section: "Electrolyte reference states and reported activities"
@@ -781,24 +781,24 @@ equations:
     tex_line: 976
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 210
-        comment_line: 208
+        line: 218
+        comment_line: 216
         symbol: "active_solvation_parameter_reference"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1221
-        comment_line: 1219
+        line: 1229
+        comment_line: 1227
         symbol: "evaluate_ion_solvation_born"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1258
-        comment_line: 1255
+        line: 1266
+        comment_line: 1263
         symbol: "evaluate_ion_solvation_ionic_permittivity"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1295
-        comment_line: 1292
+        line: 1303
+        comment_line: 1300
         symbol: "evaluate_ion_solvation_solvent_permittivity"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1332
-        comment_line: 1330
+        line: 1340
+        comment_line: 1338
         symbol: "evaluate_ion_solvation_kij"
       - file: "src/epcsaft/reference.py"
         line: 83
@@ -869,8 +869,8 @@ equations:
     tex_line: 463
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1791
-        comment_line: 1869
+        line: 1799
+        comment_line: 1877
         symbol: "evaluate"
   - eqid: "log_fugacity_density_derivative"
     section: "Thermodynamic properties"
@@ -885,8 +885,8 @@ equations:
     tex_line: 525
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 35
-        comment_line: 42
+        line: 43
+        comment_line: 50
         symbol: "log_fugacity_density"
   - eqid: "mean_ionic_activity_coefficient"
     section: "Electrolyte reference states and reported activities"
@@ -901,12 +901,12 @@ equations:
     tex_line: 938
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1411
-        comment_line: 1408
+        line: 1419
+        comment_line: 1416
         symbol: "evaluate_aqueous_miac_kij_batch"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1591
-        comment_line: 1588
+        line: 1599
+        comment_line: 1596
         symbol: "evaluate_aqueous_miac_solvation_factor_batch"
       - file: "src/epcsaft/reference.py"
         line: 97
@@ -973,12 +973,12 @@ equations:
     tex_line: 950
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1411
-        comment_line: 1409
+        line: 1419
+        comment_line: 1417
         symbol: "evaluate_aqueous_miac_kij_batch"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1591
-        comment_line: 1589
+        line: 1599
+        comment_line: 1597
         symbol: "evaluate_aqueous_miac_solvation_factor_batch"
       - file: "src/epcsaft/reference.py"
         line: 97
@@ -1129,12 +1129,12 @@ equations:
     tex_line: 1056
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 976
-        comment_line: 974
+        line: 984
+        comment_line: 982
         symbol: "molar_volume_bounds_parameters"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1730
-        comment_line: 1729
+        line: 1738
+        comment_line: 1737
         symbol: "molar_volume_bounds"
   - eqid: "phase_dimensionless_helmholtz"
     section: "Native phase coordinates"
@@ -1321,8 +1321,8 @@ equations:
     tex_line: 429
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1791
-        comment_line: 1904
+        line: 1799
+        comment_line: 1912
         symbol: "evaluate"
   - eqid: "pressure_density_derivative"
     section: "Thermodynamic properties"
@@ -1337,8 +1337,8 @@ equations:
     tex_line: 439
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1791
-        comment_line: 1921
+        line: 1799
+        comment_line: 1929
         symbol: "evaluate"
   - eqid: "pure_active_parameter_mapping"
     section: "Native phase coordinates"
@@ -1373,8 +1373,8 @@ equations:
         comment_line: 88
         symbol: "electrolyte_reference_sequence"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1170
-        comment_line: 1169
+        line: 1178
+        comment_line: 1177
         symbol: "electrolyte_reference_sequence"
   - eqid: "residual_chemical_potential"
     section: "Thermodynamic properties"
@@ -1389,8 +1389,8 @@ equations:
     tex_line: 452
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1791
-        comment_line: 1864
+        line: 1799
+        comment_line: 1872
         symbol: "evaluate"
   - eqid: "residual_enthalpy"
     section: "Thermodynamic properties"
@@ -1405,8 +1405,8 @@ equations:
     tex_line: 493
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1791
-        comment_line: 1914
+        line: 1799
+        comment_line: 1922
         symbol: "evaluate"
   - eqid: "residual_entropy"
     section: "Thermodynamic properties"
@@ -1421,8 +1421,8 @@ equations:
     tex_line: 473
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1791
-        comment_line: 1908
+        line: 1799
+        comment_line: 1916
         symbol: "evaluate"
   - eqid: "residual_heat_capacity_cp"
     section: "Thermodynamic properties"
@@ -1437,8 +1437,8 @@ equations:
     tex_line: 513
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1791
-        comment_line: 1885
+        line: 1799
+        comment_line: 1893
         symbol: "evaluate"
   - eqid: "residual_heat_capacity_cv"
     section: "Thermodynamic properties"
@@ -1453,8 +1453,8 @@ equations:
     tex_line: 503
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1791
-        comment_line: 1917
+        line: 1799
+        comment_line: 1925
         symbol: "evaluate"
   - eqid: "residual_helmholtz"
     section: "Residual Helmholtz energy"
@@ -1485,8 +1485,8 @@ equations:
     tex_line: 483
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1791
-        comment_line: 1911
+        line: 1799
+        comment_line: 1919
         symbol: "evaluate"
   - eqid: "salt_free_solvent_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
@@ -1730,119 +1730,123 @@ source_exclusions:
     symbol: "positive_finite"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 29
+    line: 30
+    symbol: "nonnegative_finite"
+    reason: "input and domain validation"
+  - file: "src/epcsaft/_native/eos.cpp"
+    line: 37
     symbol: "finite"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 417
+    line: 425
     symbol: "single_solvent_log_fugacity"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 449
+    line: 457
     symbol: "NativeModel"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 638
+    line: 646
     symbol: "has_temperature_independent_segment_diameter"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 654
+    line: 662
     symbol: "supports_native_sdk_v1"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 659
+    line: 667
     symbol: "supports_parameterized_pure_native_sdk_v1"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 667
+    line: 675
     symbol: "supports_associating_pure_parameter_native_sdk_v1"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 672
+    line: 680
     symbol: "supports_mixture_native_sdk_v1"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 677
+    line: 685
     symbol: "supports_electrolyte_native_sdk_v1"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 682
+    line: 690
     symbol: "component_count"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 687
+    line: 695
     symbol: "charge_numbers"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 692
+    line: 700
     symbol: "molar_masses_kg_per_mol"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 697
+    line: 705
     symbol: "evaluate_pure_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 706
+    line: 714
     symbol: "evaluate_pure_phase_parameters"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 727
+    line: 735
     symbol: "evaluate_diameter_basis_associating_pure_phase_parameters"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 753
+    line: 761
     symbol: "evaluate_sigma_basis_associating_pure_phase_parameters"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 778
+    line: 786
     symbol: "evaluate_pure_phase_parameter"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 853
+    line: 861
     symbol: "evaluate_mixture_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 862
+    line: 870
     symbol: "evaluate_mixture_phase_kij"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 874
+    line: 882
     symbol: "evaluate_mixture_phase_lij"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 886
+    line: 894
     symbol: "evaluate_electrolyte_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 898
+    line: 906
     symbol: "evaluate_reacting_phase_parameters"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 916
+    line: 924
     symbol: "evaluate_electrolyte_phase_value"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 928
+    line: 936
     symbol: "evaluate_packing_fraction"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 940
+    line: 948
     symbol: "evaluate_packing_fraction_parameters"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 959
+    line: 967
     symbol: "evaluate_inverse_packing_geometry"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1396
+    line: 1404
     symbol: "evaluate_aqueous_miac_kij"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1532
+    line: 1540
     symbol: "evaluate_aqueous_miac_solvation_factor"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1547
+    line: 1555
     symbol: "evaluate_ion_fraction_suppression"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/helmholtz.hpp"

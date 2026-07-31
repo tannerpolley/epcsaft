@@ -40,6 +40,9 @@ _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS = frozenset(
         "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
         "sha256:a8383fb8f70a1bb8c258f1662c792cd5507af1d23db71ad4575026b5dcab55ea",
         "sha256:43989e0f0ea5dd268b657122d571779cd9eb04d52f6ffc709bf11bf6892b312a",
+        "sha256:10279776fc2a7515bbb79404a2da7356994e11861ef28a55d67abb00509408e3",
+        "sha256:56a36f633eb5b47cd188eae864e16c26352b12fe28b5ddf2540e065195bd89ec",
+        "sha256:47f73ac9ec45616269024ec2fb1ffe82f4ba8f7b83dc984612651917d410aad6",
     }
 )
 
@@ -92,7 +95,7 @@ _NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS = {
         for cation in ("lithium-cation", "sodium-cation", "potassium-cation")
         for anion in ("chloride-anion", "bromide-anion")
     ),
-    "sha256:ebb6350a0820ff88f10f6179ea75df909773d8dc871020fbf08c3fae0ec067bb": (
+    "sha256:c6386c6c84e012574a0d45e0342c0b9325a5f35a043fa8d84ad2b1b2002cea29": (
         frozenset(
             {
                 frozenset(
@@ -111,7 +114,7 @@ _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
     "sha256:e04e4799b7f3729e989e031feaf6e2a87c97f031bcd538d1bb09781f714ce65c": frozenset(
         {"diethylethanolamine"}
     ),
-    "sha256:ebb6350a0820ff88f10f6179ea75df909773d8dc871020fbf08c3fae0ec067bb": frozenset(
+    "sha256:c6386c6c84e012574a0d45e0342c0b9325a5f35a043fa8d84ad2b1b2002cea29": frozenset(
         {
             "water",
             "hydronium-cation",

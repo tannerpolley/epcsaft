@@ -30,8 +30,8 @@ native_sdk_candidates:
       reference from the sole native reference-sequence owner.
     ordered_components: [water, hydronium-cation, hydroxide-anion]
     ordered_charges: [0, 1, -1]
-    parameter_bundle: held-2008-water-self-ionization@1
-    parameter_fingerprint: sha256:cc40aeb2902bfc9a7be46ceb066cfdb41c5cd5d1024fe119be3d559b75f8a256
+    parameter_bundle: held-cameretti-sadowski-2008@1
+    parameter_fingerprint: sha256:30d506776fb22f8f1931baadb4942b58bf2c57dd8e95236959827095732c2c61
     helmholtz_basis_id: A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3
     source_state: {temperature_k: 298.15, pressure_pa: 100000.0}
     formulation: fully-dissociated-debye-huckel

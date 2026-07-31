@@ -31,7 +31,7 @@ def _ascani_model() -> Mixture:
 
 def _held_water_ionization_model() -> Mixture:
     return Mixture(
-        _ParameterBundle.from_catalog("held-2008-water-self-ionization", version=1).select(
+        _ParameterBundle.from_catalog("held-cameretti-sadowski-2008", version=1).select(
             ("water", "hydronium-cation", "hydroxide-anion")
         )
     )
