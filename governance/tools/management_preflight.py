@@ -554,7 +554,13 @@ def validate_operation_receipt(
         errors.append(f"operation receipt {relative} does not match approved operation")
     else:
         approved_subject = approved["subject"]
-        if any(subject.get(key) != value for key, value in approved_subject.items()):
+        allowed_subject_fields = set(approved_subject) | {
+            "authorization_id",
+            "record_sha256",
+        }
+        if set(subject) != allowed_subject_fields or any(
+            subject.get(key) != value for key, value in approved_subject.items()
+        ):
             errors.append(
                 f"operation receipt {relative} does not match approved operation"
             )
