@@ -148,10 +148,12 @@ distinct capability code and seven typed coordinates prevent consumers from
 confusing the two bases. None of these callbacks owns targets, bounds, scaling,
 Ceres, fitted values, or catalog persistence.
 
-The D-024 candidate appends the full-electrolyte phase callback and two
-model-bound volume-domain callbacks. The unchanged phase callback admits exact
-immutable Figiel and Khudaida corrected-SSM+DS selections and the distinct
-Ascani original-Born water/1-butanol/Na+/K+/Cl- selection. The Ascani source
+The historical D-024 candidate appended the full-electrolyte phase callback and
+two model-bound volume-domain callbacks. Its unchanged phase callback recorded
+exact immutable Figiel and Khudaida corrected-SSM+DS selections and the
+distinct Ascani original-Born water/1-butanol/Na+/K+/Cl- selection. The
+Khudaida selection is now retired and remains provenance only; it is not a
+current catalog or SDK admission. The Ascani source
 schema supplies explicit fixed `l_ij` cross-diameter records and precomputed
 source-bound cross-association records; these are immutable model data, not an
 active parameter ABI family. No callback, result structure, or table field is

@@ -78,7 +78,7 @@ native_sdk_candidates:
   full_electrolyte_phase_hessian_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
-      Exact immutable Figiel, Khudaida, and Ascani electrolyte selections evaluated as
+      Exact immutable Figiel and Ascani electrolyte selections evaluated as
       complete ideal-plus-residual phase Helmholtz blocks with pressure in
       ordered positive component amounts and extensive volume.
     coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]

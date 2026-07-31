@@ -51,9 +51,8 @@ the scientific authority. No compatibility aliases are retained.
 The installed catalogs are Crespo et al. neutral 2B DEEA records,
 Gross--Sadowski methane/ethane and propane records, the bounded
 Figiel--Yu--Held water/methanol/ethanol chloride/bromide source bundle, a
-distinct aqueous Na+/K+/I- source bundle, one distinct Khudaida et al.
-water/ethanol/isobutanol/Na+/Cl- bundle at 293.15 K, and one distinct Ascani et
-al. original-Born water/1-butanol/Na+/K+/Cl- bundle at 298.15 K. One reference-state
+distinct aqueous Na+/K+/I- source bundle, and one distinct Ascani et al.
+original-Born water/1-butanol/Na+/K+/Cl- bundle at 298.15 K. One reference-state
 module owns x-process
 infinite-dilution solvation and transfer plus single-ion and stoichiometric mean
 ionic activity on one explicit electroneutral formula-unit path. Its aqueous
@@ -134,8 +133,9 @@ Historical Migration decision D-024 records a local append-only full-electrolyte
 candidate in explicit component amounts and extensive volume. The callback
 uses the sole EOS Helmholtz and association owners for every active
 ideal, hard-chain, dispersion, association, Debye--Huckel, and model-bound Born
-contribution. It admits exact immutable Figiel selections, the distinct
-Khudaida bundle, and the distinct Ascani original-Born bundle and returns value,
+contribution. Its historical candidate record included exact immutable Figiel
+selections, the now-retired Khudaida bundle, and the distinct Ascani original-Born
+bundle and returns value,
 gradient, Hessian, pressure,
 fingerprint, component order, and charges. It adds no phase discovery,
 equilibrium, trace-species policy, fitting, or authority.

@@ -108,8 +108,6 @@ The installed catalog evidence is:
 - Gross--Sadowski methane/ethane and pure-propane neutral PC-SAFT records;
 - the bounded Figiel--Yu--Held water/methanol/ethanol chloride/bromide source
   bundle and a distinct aqueous Na+/K+/I- source bundle;
-- the distinct Khudaida et al. water/ethanol/isobutanol/Na+/Cl- bundle at
-  293.15 K; and
 - the distinct Ascani et al. original-Born water/1-butanol/Na+/K+/Cl- bundle at
   298.15 K.
 

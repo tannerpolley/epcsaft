@@ -118,15 +118,6 @@ _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
             "hydroxide-anion",
         }
     ),
-    "sha256:c675d388fb17ca0c1d875afada046527749fc30ae60dce89f7bc2554d939f406": frozenset(
-        {
-            "water",
-            "ethanol",
-            "isobutanol",
-            "sodium-cation",
-            "chloride-anion",
-        }
-    ),
     "sha256:756c71c8d7bd8c66e499eda037644f273c911333e689ca21ce986b7f0102fd25": frozenset(
         {
             "water",
