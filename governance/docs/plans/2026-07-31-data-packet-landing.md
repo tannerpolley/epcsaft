@@ -36,7 +36,7 @@ campaign owner.
 
 - `python3 tools/validate_packets.py` is clean on the merged Data commit.
 - The Data packet/unit test suite passes (22 tests).
-- Management tests pass (19 tests using the repository's `.venv`).
+- Management tests pass (21 tests using the repository's `.venv`).
 - Management's full preflight remains sensitive to unrelated local wheel and
   environment drift; those findings stay with the existing artifact cleanup
   work and do not alter the Data lock.
