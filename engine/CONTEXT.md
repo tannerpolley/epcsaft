@@ -5,32 +5,19 @@ package. Its
 optimization objective is minimum maintained surface subject to source-backed,
 reproducible thermodynamic results.
 
-`governance_doctrine_revision: 5`
+`governance_doctrine_revision: 7`
 
 Canonical doctrine:
-`../ePC-SAFT-management/GOVERNANCE.md`. During the local checkout transition,
-`../ePC-SAFT-organization/GOVERNANCE.md` is the accepted Management alias.
-The local Management manifest is
-`../ePC-SAFT-organization/manifests/management.json` during that transition.
+`../ePC-SAFT-governance/GOVERNANCE.md`.
+The Governance topology manifest is
+`../ePC-SAFT-governance/manifests/management.json`.
 
-## Language
+## Parameter and evidence boundary
 
-**Canonical progression source**:
-A model-defining PC-SAFT or ePC-SAFT paper admitted by the reviewed
-`ePC-SAFT Progression` source list. Membership makes its parameters eligible
-for catalog review; it does not automatically admit a runtime bundle.
-_Avoid_: any published paper, case-study source
-
-**Source-complete catalog bundle**:
-One immutable installed parameter bundle containing every model-table species
-and every applicable pure, pair, topology, correlation, model, provenance, and
-validity record needed to reproduce the source-defined selections.
-_Avoid_: convenience bundle, exercised subset
-
-**Validation campaign bundle**:
-An explicit, hash-bound parameter input retained with a Validation campaign for
-replay or qualification without becoming an EOS runtime default.
-_Avoid_: Validation catalog, fallback catalog
+Reusable parameter bundles and reusable raw or organized property datasets are
+owned by `ePC-SAFT-data`. Paper-, table-, and figure-specific campaign extracts
+may remain in Validation when they are evidence for one campaign rather than a
+reusable scientific packet. EOS ships neither category as runtime package data.
 
 EOS owns both its package evidence and execution of assigned installed-
 artifact campaigns in the sibling Validation repository. The task remains based
@@ -46,38 +33,22 @@ generic residual Helmholtz kernel for hard-chain, dispersion, association,
 Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
 chemical potentials, fugacity coefficients when defined, residual caloric
 properties, pressure, and branch diagnostics for pressure-specified states.
-The 0.2.0.dev0 Python frontend exposes `Parameters.from_catalog(...)`,
-`Parameters.from_bundle(...)`, `Parameters.from_records(...)`, and
-`Parameters.create_bundle_template(...)`; its template profiles are
-`neutral`, `associating`, `electrolyte`, and `associating-electrolyte`, with
-optional correlations. Callers keep provenance and validity domains explicit.
-The purpose neither promotes values into the installed catalog nor validates
-their scientific quality. The installed catalog is immutable package data and
-its exact IDs and evidence domains are retained in `docs/python-api.md`.
-An exact selected model from a caller-owned bundle can use the
-generic model-bound native phase, volume-domain, and packing callbacks. This
-transport admission does not admit source-specific native reference or active-
-parameter callbacks and does not make caller-owned values predictive.
+The 0.2.0.dev0 Python frontend exposes `Parameters.from_dictionary(...)`,
+`Parameters.from_bundle(...)`, `Parameters.create_bundle_template(...)`, and
+the convenience constructor `Mixture.from_dictionary(...)`.
+The dictionary route uses a strict fixed-unit, versioned schema; the bundle
+route loads an explicit caller-supplied path. Neither route imports, fetches, or
+discovers Data. Native SDK capabilities are admitted from resolved topology,
+required fields, component order, and declared validity, never paper identity.
 `Mixture(parameters).state(...)` returns immutable `State` values, and
 `Mixture.reference(...).state(molality=...)` attaches an immutable `Activity`
 projection to the resulting state. State and activity results repeat their
 component order, and state results retain canonical temperature, composition,
 and parameter fingerprint. Structured state errors preserve the rejected
 field, reason, and applicable units, limits, or tolerances. The distributed
-Python interface is marked with `py.typed` and exposes literal types for
-phases, purposes, domains, and parameter families; runtime validation remains
-the scientific authority. No compatibility aliases are retained.
-The installed catalogs are Crespo et al. neutral 2B DEEA records, the
-source-complete 78-species Gross--Sadowski 2001 bundle, and the source-complete
-13-species Figiel--Yu--Held 2025 corrected-Born bundle containing every
-reported water, methanol, ethanol, H+, Li+, Na+, K+, VO2+, V3+, Cl-, Br-, I-,
-and SO4(2-) parameter from Tables 1--5, and the source-complete 30-species
-Held--Cameretti--Sadowski 2008 fully dissociated aqueous-electrolyte bundle
-containing water and every Table 2 ion. Distinct narrower Figiel chloride/
-bromide and aqueous-iodide IDs, and one Ascani et al. original-Born
-water/1-butanol/Na+/K+/Cl- bundle at 298.15 K remain during the governed
-transition. The old Gross--Sadowski and narrower Figiel IDs remain only until
-the governed catalog cutover removes them without aliases. One reference-state module owns x-process
+Python interface is marked with `py.typed`; runtime validation remains the
+scientific authority. No catalog API or compatibility alias is retained. One
+reference-state module owns x-process
 infinite-dilution solvation and transfer plus single-ion and stoichiometric mean
 ionic activity on one explicit electroneutral formula-unit path. Its aqueous
 single-solvent result also reports the practical molal osmotic coefficient
@@ -86,7 +57,7 @@ from the solvent-activity ratio on that pressure-state path.
 Historical Migration decision D-028 binds one additional private native
 reference candidate for the exact
 ordered water/H3O+/OH- mechanical model of Held, Cameretti, and Sadowski (2008)
-at 298.15 K and 1 bar. The installed record set closes component identity,
+at 298.15 K and 1 bar. The explicit record set closes component identity,
 charge, association, water--ion dispersion, excluded ion--ion dispersion,
 constant-water-dielectric Debye--Huckel behavior, and zero Born contribution.
 The append-only SDK tail declares the exact Helmholtz coordinate basis and
@@ -145,9 +116,9 @@ basis. The appended ordinary callback and its exact typed descriptor use the
 Gross--Sadowski `sigma_ij^3 kappa` basis owned by the public EOS. The
 callbacks supply derivative transport for bounded Regression reconstructions
 and do not admit other association topologies, targets, fitted values, or
-catalog persistence.
+parameter persistence.
 The same finite descriptor set now binds the existing first-derivative
-callbacks for current-catalog water single-ion Born diameter and NaBr water
+callbacks for resolved water single-ion Born diameter and NaBr water
 solvation factor to their exact component identity, direct-observable
 contract, units, fixed 298.15 K domain, topology, and parameter fingerprint.
 This is metadata for callbacks already present in the SDK, not a new
@@ -181,9 +152,9 @@ remain outside this callback.
 Historical Migration decision D-023 additionally records a local implementation candidate for one
 model-bound active-Born-diameter evaluation of the existing 298.15 K,
 1 bar water single-ion x-process solvation reference. It is limited to exact
-current-catalog Li+, Na+, K+, Cl-, and Br- model selections and returns
+explicitly supplied Li+, Na+, K+, Cl-, and Br- model selections and returns
 only the scalar solvation Gibbs energy and its first derivative. It does not
-authorize targets, Ceres, fit policy, catalog persistence, other
+authorize targets, Ceres, fit policy, parameter persistence, other
 electrolyte parameters, or broader species. The exact conditional contract and
 evidence gate live in
 `docs/designs/2026-07-20-active-born-solvation-native-sdk-design.md`.
@@ -195,7 +166,7 @@ calls the same owner directly; neither path may duplicate the algorithm.
 
 Historical Project Truss EOS leaves `ePC-SAFT/ePC-SAFT#1` and `#2` record the
 next Figiel family. One model-bound
-callback evaluates `ln(gamma_pm^m)` for the exact six current-catalog aqueous
+callback evaluates `ln(gamma_pm^m)` for the exact six source-defined aqueous
 alkali-halide models while accepting only the three local trial interactions
 `(water--cation, water--anion, cation--anion)`. It returns the value and exact
 total fixed-pressure first derivative from the existing Helmholtz,
@@ -207,7 +178,7 @@ for this
 callback and the NaBr active-solvation-factor callback. A batch preserves row
 order and exact scalar results while constructing the active model and
 derivative reference sequence once per salt and parameter vector; the exact
-catalog solvation-factor coordinate retains one additional batch-level
+baseline solvation-factor coordinate retains one additional batch-level
 public-value parity sequence. EOS owns the
 bounded CppAD row concurrency; Regression must reject a scalar-only artifact
 instead of entering an unbounded per-row fit. This throughput transport changes
@@ -216,7 +187,7 @@ Current status is
 `PROVIDER_AQUEOUS_ACTIVE_KIJ_IMPLEMENTATION_CANDIDATE_PASSED_LOCAL_GATES_INDEPENDENT_REVIEW_PENDING`;
 the callback is a local implementation candidate and no retained artifact or
 downstream fit exists. Bounded independent subagent review changes sequencing
-only; it does not transfer runtime, catalog, regression, scientific,
+only; it does not transfer runtime, parameter persistence, regression, scientific,
 promotion, or publication authority.
 
 Historical Project Truss EOS issue `#22` adds the one missing staged-recovery seam:
@@ -226,36 +197,36 @@ that coordinate in the existing CppAD Born owner and reuses the existing
 association, density, fugacity, and electrolyte reference sequence. Its exact
 contract is
 `docs/designs/2026-07-22-aqueous-active-solvation-factor-native-sdk-design.md`.
-Installed NaBr remains fingerprint-bound; only source-complete, ordered,
-corrected-SSM+DS Figiel user bundles with exact applicability may use the
-staged active callbacks. This is EOS transport evidence, not a fit,
-catalog change, scientific acceptance, or authority transfer.
+NaBr callback calls remain fingerprint-bound to their resolved model; ordered,
+corrected-SSM+DS inputs with exact applicability may use the staged active
+callbacks. This is EOS transport evidence, not a fit, parameter mutation,
+scientific acceptance, or authority transfer.
 
 The general Regression integration tail additionally exposes one
 infinite-dilution ion-solvation Gibbs result with exact total fixed-pressure
 derivatives in ordered `(solvent--cation, solvent--anion, cation--anion)`
-`k_ij` coordinates. Admission is limited to the catalog-bound
+`k_ij` coordinates. Admission is limited to the explicitly supplied
 methanol/K+/Br- and ethanol/Na+/Cl- selections used by the retained Figiel
 constructed-target ledger. The callback reuses the same active-`k_ij`
 Helmholtz and electrolyte-reference owners; it does not own the equation-19
-target construction, source interpretation, fitting, or catalog updates.
+target construction, source interpretation, fitting, or parameter updates.
 
 The same integration tail exposes the SSM+DS ionic-region relative
 permittivity as one model-bound active coordinate for each admitted
-current-catalog water single-ion model. It returns the existing x-process
+resolved water single-ion model. It returns the existing x-process
 solvation Gibbs value and its exact total fixed-pressure first derivative
 through the same CppAD, density, fugacity, and reference-sequence owners.
-Figiel reports the catalog value as fixed model input, so this callback proves
+Figiel reports the baseline value as fixed model input, so this callback proves
 derivative and fitting mechanics only; it does not claim recovery of a
-published fitted value, a shared cross-model parameter, or catalog authority.
+published fitted value, a shared cross-model parameter, or parameter authority.
 
 The next append-only entry exposes the water component's ordinary
 `relative_permittivity` as a separate active coordinate on those same five
 model identities. Its solvation-Gibbs derivative includes the bulk dielectric,
 Debye--Huckel, Born, fixed-pressure density/fugacity, and reference-sequence
 chains. It must not be confused with the radial
-`ionic_region_relative_permittivity`; neither fitted result persists to the
-catalog.
+`ionic_region_relative_permittivity`; neither fitted result mutates the
+caller-owned parameter input.
 
 Historical Project Truss EOS issue `#10` adds a separate append-only installed-SDK
 candidate for charge-neutral reacting standard references. For an admitted
@@ -263,15 +234,15 @@ aqueous phase model with one explicit water reference carrier, it returns a
 complete neutral stoichiometric basis and gauge-invariant reference
 log-fugacity contractions for any number of neutral components, cations, and
 anions. The exact current Figiel selections retain their existing admission;
-full admitted catalog and authenticated `user-provided` phase models can use
+explicit phase models satisfying the admitted topology can use
 the same tail. Unknown caller-owned applicability transports the dimensions
 but fails value evaluation until finite source temperature and pressure bounds
 exist. The same reference-sequence and pressure-state owners supply the values;
 no single-ion standard, reaction constant, reaction solver, chemistry selector,
-or catalog admission is introduced. The result explicitly reports that `T`,
+or source-identity admission is introduced. The result explicitly reports that `T`,
 `P`, composition, and parameter derivatives are unavailable.
 
-The Held source-complete aqueous-electrolyte bundle uses that same generic
+An explicit Held aqueous-electrolyte record set uses that same generic
 neutral-reference tail and the existing fixed-pressure density closure.
 Consumers obtain its pure-water liquid molar volume from the ordinary public
 pure-water state; no second standard-reference callback or density owner is

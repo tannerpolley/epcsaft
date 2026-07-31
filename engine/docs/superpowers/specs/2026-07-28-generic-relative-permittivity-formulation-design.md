@@ -1,8 +1,12 @@
 # Generic Relative-Permittivity Formulation Design
 
-Status: approved design; implementation not started
+Status: implemented; parameter-catalog portions superseded by ADR 0003
 
 Approved: 2026-07-28
+
+The generic formulation naming and routing described here are implemented.
+Its installed-catalog migration and provenance-scanner steps are historical;
+EOS now accepts explicit caller parameters under ADR 0003.
 
 Doctrine: `../ePC-SAFT-organization/GOVERNANCE.md`, revision 4
 

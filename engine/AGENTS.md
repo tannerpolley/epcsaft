@@ -2,11 +2,10 @@
 
 Repository Profile: scientific-computing
 
-Before work, read doctrine revision 5 at
-`../ePC-SAFT-management/GOVERNANCE.md` and its machine-readable topology at
-`../ePC-SAFT-management/manifests/management.json`. During the local checkout
-transition, resolve both files from `../ePC-SAFT-organization/`. Published doctrine lives at
-`https://github.com/ePC-SAFT/ePC-SAFT-management/blob/main/GOVERNANCE.md`.
+Before work, read doctrine revision 7 at
+`../ePC-SAFT-governance/GOVERNANCE.md` and its machine-readable topology at
+`../ePC-SAFT-governance/manifests/management.json`. Published doctrine lives at
+`https://github.com/ePC-SAFT/ePC-SAFT-governance/blob/main/GOVERNANCE.md`.
 Local policy may narrow that doctrine but must not contradict it.
 
 This repository owns one state/property lifecycle:

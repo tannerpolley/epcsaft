@@ -24,10 +24,10 @@ The first reference-evidence fingerprints are:
 - methane, ethane: `sha256:3a840001adcb8b82f44e48307ad61e566f6a65d9b82d8312299a439dbce09195`;
 - ethane, methane: `sha256:99ae0ffd9f61aee8c2e0fb718960534a2d0700c1adf5b72c1984517eded21f5b`.
 
-Both fingerprints describe an ordered selection from the same installed
-source bundle. Other source-bound caller models carry their own parameter and
-topology fingerprints; transport admission does not make their values
-catalog-backed, predictive, or authoritative.
+Both fingerprints describe an ordered selection from the same source packet.
+Other source-bound caller models carry their own parameter and topology
+fingerprints; transport admission does not make their values predictive or
+authoritative.
 
 The SDK table advertises two immutable capability descriptors for each
 supported ordered model. They identify the callbacks as derivative-ready for
@@ -88,7 +88,7 @@ requested unlike `k_ij` or `l_ij` pair and is assigned symmetrically to matrix
 positions `(1,2)` and `(2,1)`; diagonal values remain those of the bound model.
 The same defining function and CppAD owner supply its value, four-element
 gradient, and 4-by-4 row-major Hessian. The source fingerprint continues to
-identify the immutable catalog model, not the trial coordinate.
+identify the immutable resolved model, not the trial coordinate.
 
 For a scalar pure trial `theta`, the callback holds the other two pure
 parameters at their immutable model values and projects the existing exact
@@ -168,7 +168,7 @@ mismatch, and pure/mixture scope separation. Accepted-prefix field offsets are
 unchanged.
 
 Active-pair evidence contracts all four gradient and Hessian coordinates
-against centered differences at 220 K and 280 K. At the catalog value
+against centered differences at 220 K and 280 K. At the resolved baseline value
 `k_ij = 0` or `l_ij = 0`, value, pressure, state gradient, and state Hessian
 agree with the fixed callback. Negative evidence covers malformed four-coordinate buffers,
 nonfinite trial values and state inputs, pure models, association, and ions;
@@ -194,8 +194,8 @@ Baygi--Pahlavanzadeh Eq. 4 temperature-dependent `d_ij^3` basis. Directional
 evidence checks every gradient and Hessian coordinate and a direct oracle
 checks that the diameter basis differs from the unchanged ordinary EOS basis.
 A further appended callback returns the same tensor on the ordinary
-`sigma_ij^3 kappa` basis. DEEA catalog evidence checks its value, pressure, and
-chemical potential against the public Provider state at the installed
+`sigma_ij^3 kappa` basis. DEEA source evidence checks its value, pressure, and
+chemical potential against the public Provider state at the resolved
 parameters, then checks the gradient and every Hessian column needed by the
 five active fit coordinates with centered differences. Capability 21,
 parameter family 13, and the exact seven typed coordinates identify this

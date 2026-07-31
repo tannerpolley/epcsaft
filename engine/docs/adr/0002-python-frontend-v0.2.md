@@ -1,6 +1,6 @@
 # ADR 0002: Python frontend v0.2
 
-- Status: accepted for the `0.2.0.dev0` frontend scope
+- Status: superseded by ADR 0003 for parameter construction
 - Date: 2026-07-28
 - Supersedes: the pre-0.2 Python walkthrough and naming surface
 - Does not supersede: ADR 0001 or any promotion receipt
@@ -26,16 +26,11 @@ Parameters -> Mixture -> State
 
 ### Parameter entry points
 
-- `Parameters.from_catalog(bundle_id, components=..., version=None)` loads an
-  immutable installed selection. Omitting `version` selects the greatest
-  installed integer version for the exact bundle ID.
-- `Parameters.from_bundle(path, components=...)` loads and selects an exact
-  strict version-1 bundle directory.
-- `Parameters.from_records(...)` builds an immutable caller-owned selection
-  from typed records with explicit source and validity-domain references.
-- `Parameters.create_bundle_template(...)` creates a non-overwriting authoring
-  skeleton. Profiles are `neutral`, `associating`, `electrolyte`, and
-  `associating-electrolyte`; `correlations` is optional.
+ADR 0003 replaces this ADR's original parameter-construction decision. The
+active routes are `Parameters.from_dictionary(...)`,
+`Parameters.from_bundle(...)`, bundle-template creation, and the
+`Mixture.from_dictionary(...)` convenience constructor over that same strict
+dictionary loader.
 
 The selected component order is the order for every state, property, fugacity,
 and activity result. There is no mutable catalog registry, hidden physical
@@ -59,7 +54,7 @@ one-formula-unit reference contract.
 
 The README and Python API guide can be copied as frontend documentation without
 translating names or selecting a backend. Existing scientific bounds, source
-provenance, catalog IDs, result ordering, structured errors, density-root
+provenance, result ordering, structured errors, density-root
 diagnostics, and residual property bases remain explicit.
 
 The change is intentionally not a package release or a scientific promotion.
@@ -82,8 +77,7 @@ boundary or grant authority to local append-only candidates.
 
 ## Evidence and references
 
-The installed catalog table and source/evidence limits remain in
-`docs/python-api.md`. Historical EOS capability, migration, and authority
-statements remain in `CONTEXT.md`, the README, ADR 0001, and the accepted
-promotion receipts. The full scientific equation owner is
+The active parameter boundary is ADR 0003. Historical EOS capability,
+migration, and authority statements remain in `CONTEXT.md`, ADR 0001, and the
+accepted promotion receipts. The full scientific equation owner is
 `docs/science/full-provider-eos.md`.

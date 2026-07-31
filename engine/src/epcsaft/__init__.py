@@ -9,13 +9,12 @@ from .eos import (
     export_native_model,
     native_sdk,
 )
-from .parameters import BundlePurpose, Parameters
+from .parameters import Parameters
 from .reference import Activity, ElectrolyteReference, TransferFreeEnergy
 from .units import ParameterError, unit_registry
 
 __all__ = (
     "Parameters",
-    "BundlePurpose",
     "ParameterError",
     "unit_registry",
     "Mixture",

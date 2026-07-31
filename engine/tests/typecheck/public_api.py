@@ -5,7 +5,6 @@ from typing import assert_type
 import pint
 
 from epcsaft import Mixture, Parameters, State
-from epcsaft.parameters import BundlePurpose
 from epcsaft.records import (
     AssociationParameterFamily,
     CorrelationFamily,
@@ -23,6 +22,42 @@ def check_public_types(
     pressure: pint.Quantity[float],
     molar_density: pint.Quantity[float],
 ) -> None:
+    assert_type(
+        Parameters.from_dictionary(
+            {
+                "schema": "epcsaft.parameters",
+                "schema_version": 1,
+                "components": ("sample",),
+                "parameters": {
+                    "m": (1.0,),
+                    "s": (3.0,),
+                    "e": (200.0,),
+                    "k_ij": ((0.0,),),
+                },
+                "options": {"permittivity_model": "none"},
+                "validity": {"kind": "unknown"},
+            }
+        ),
+        Parameters,
+    )
+    assert_type(
+        Mixture.from_dictionary(
+            {
+                "schema": "epcsaft.parameters",
+                "schema_version": 1,
+                "components": ("sample",),
+                "parameters": {
+                    "m": (1.0,),
+                    "s": (3.0,),
+                    "e": (200.0,),
+                    "k_ij": ((0.0,),),
+                },
+                "options": {"permittivity_model": "none"},
+                "validity": {"kind": "unknown"},
+            }
+        ),
+        Mixture,
+    )
     assert_type(parameters.component_ids, tuple[str, ...])
     assert_type(
         model.state(
@@ -78,14 +113,12 @@ def check_public_types(
         solvent_x=(1.0,),
         phase="liquid",
     )
-    purpose: BundlePurpose = "user-provided"
     domain_kind: DomainKind = "fit-range"
     single: SingleParameterFamily = "segment_count"
     pair: PairParameterFamily = "k_ij"
     association: AssociationParameterFamily = "association_volume"
     model_family: ModelParameterFamily = "ionic_region_relative_permittivity"
     correlation: CorrelationFamily = "relative_permittivity"
-    assert_type(purpose, BundlePurpose)
     assert_type(domain_kind, DomainKind)
     assert_type(single, SingleParameterFamily)
     assert_type(pair, PairParameterFamily)

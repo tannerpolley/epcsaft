@@ -12,6 +12,10 @@ consumer gates separate
 
 Date: 2026-07-17
 
+Parameter-catalog language in this historical transport decision is superseded
+by ADR 0003. Current admission uses resolved topology, required fields,
+component order, and applicability from explicit caller input.
+
 ## Context
 
 The equilibrium package needs exact EOS derivatives inside native solver

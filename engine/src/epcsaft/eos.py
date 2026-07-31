@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 import hashlib
 import json
@@ -13,7 +14,7 @@ import pint
 from ._core import NativeModel as _NativeModel
 from ._core import native_sdk_v1 as _native_sdk_v1
 from ._resolve import _ResolvedModel, _resolve_model
-from .parameters import BundlePurpose, Parameters
+from .parameters import Parameters
 from .records import (
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
@@ -28,109 +29,6 @@ if TYPE_CHECKING:
 Phase: TypeAlias = Literal["vapor", "liquid"]
 PropertyBasis: TypeAlias = Literal["molar", "reduced"]
 _MOLAR_GAS_CONSTANT = 8.31446261815324
-
-
-_NATIVE_SDK_V1_PARAMETER_FINGERPRINTS = frozenset(
-    {
-        "sha256:905e7a6e22eb1073347575bf833d5aa059d9ccf562e4408cb186d74f580ba36f",
-        "sha256:b81f32e44adb46080dfa91026c6428045e04a219900305767672d0547f9a9fb9",
-        "sha256:1194db349d0608c89419e70c56ccec9ada2ae0884dd8e64e519e9560e7e8ae42",
-        "sha256:3a840001adcb8b82f44e48307ad61e566f6a65d9b82d8312299a439dbce09195",
-        "sha256:99ae0ffd9f61aee8c2e0fb718960534a2d0700c1adf5b72c1984517eded21f5b",
-        "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
-        "sha256:a8383fb8f70a1bb8c258f1662c792cd5507af1d23db71ad4575026b5dcab55ea",
-        "sha256:43989e0f0ea5dd268b657122d571779cd9eb04d52f6ffc709bf11bf6892b312a",
-        "sha256:10279776fc2a7515bbb79404a2da7356994e11861ef28a55d67abb00509408e3",
-        "sha256:56a36f633eb5b47cd188eae864e16c26352b12fe28b5ddf2540e065195bd89ec",
-        "sha256:47f73ac9ec45616269024ec2fb1ffe82f4ba8f7b83dc984612651917d410aad6",
-    }
-)
-
-_NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS = frozenset(
-    {
-        "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
-        "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
-        "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
-        "sha256:a8383fb8f70a1bb8c258f1662c792cd5507af1d23db71ad4575026b5dcab55ea",
-        "sha256:f313c30e9471daed0638ab70ff43eb033ed828724547c4b32857442ed35f1107",
-    }
-)
-
-_NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS = frozenset(
-    {
-        "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
-        "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
-        "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
-        "sha256:19be2cea6620c8a6cd3c965325422bded799d2b39acb240a4c4e858059d6412e",
-        "sha256:80f83701040d7d0863c7121b7379b86a9e8bd30c1fa3e4a5651330c41c588131",
-        "sha256:8ec6c31ada39713132b340a184e0c06b0f9d070892be2aaa721e9aa92015ae31",
-    }
-)
-
-_NATIVE_SDK_V1_AQUEOUS_ACTIVE_SOLVATION_FACTOR_FINGERPRINTS = frozenset(
-    {
-        "sha256:80f83701040d7d0863c7121b7379b86a9e8bd30c1fa3e4a5651330c41c588131",
-    }
-)
-
-_STAGED_AQUEOUS_SELECTIONS = frozenset(
-    ("water", cation, anion)
-    for cation in ("lithium-cation", "sodium-cation", "potassium-cation")
-    for anion in ("chloride-anion", "bromide-anion")
-)
-
-_STAGED_ACTIVE_BORN_SELECTIONS = frozenset(
-    {
-        ("water", "lithium-cation", "chloride-anion"),
-        ("water", "sodium-cation", "chloride-anion"),
-        ("water", "potassium-cation", "chloride-anion"),
-        ("water", "chloride-anion", "sodium-cation"),
-        ("water", "bromide-anion", "sodium-cation"),
-    }
-)
-
-_NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS = {
-    "sha256:d56aa57f04f48f1881865fb85daa700b66d3f1bcb75e8a9d7149baedfc925352": frozenset(
-        frozenset(("water", cation, anion))
-        for cation in ("lithium-cation", "sodium-cation", "potassium-cation")
-        for anion in ("chloride-anion", "bromide-anion")
-    ),
-    "sha256:c6386c6c84e012574a0d45e0342c0b9325a5f35a043fa8d84ad2b1b2002cea29": (
-        frozenset(
-            {
-                frozenset(
-                    {
-                        "water",
-                        "hydronium-cation",
-                        "hydroxide-anion",
-                    }
-                )
-            }
-        )
-    ),
-}
-
-_NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS = {
-    "sha256:e04e4799b7f3729e989e031feaf6e2a87c97f031bcd538d1bb09781f714ce65c": frozenset(
-        {"diethylethanolamine"}
-    ),
-    "sha256:c6386c6c84e012574a0d45e0342c0b9325a5f35a043fa8d84ad2b1b2002cea29": frozenset(
-        {
-            "water",
-            "hydronium-cation",
-            "hydroxide-anion",
-        }
-    ),
-    "sha256:756c71c8d7bd8c66e499eda037644f273c911333e689ca21ce986b7f0102fd25": frozenset(
-        {
-            "water",
-            "1-butanol",
-            "sodium-cation",
-            "potassium-cation",
-            "chloride-anion",
-        }
-    ),
-}
 
 
 def _magnitude(
@@ -292,48 +190,13 @@ def _native_arguments(
         solvation_factor,
         ionic_permittivity,
         electrolyte_model,
-        list(model.dielectric_volume_m3_per_mol)
-        or [0.0] * components,
-        list(model.dielectric_temperature_k)
-        or [0.0] * components,
+        list(model.dielectric_volume_m3_per_mol) or [0.0] * components,
+        list(model.dielectric_temperature_k) or [0.0] * components,
         list(model.ion_specific_suppression_coefficient) or [0.0] * components,
         list(model.dipole_scaling_debye2) or [0.0] * components,
-        list(model.polarizability_scaling_angstrom3)
-        or [0.0] * components,
-        list(model.correlation_integral_parameter)
-        or [0.0] * components,
+        list(model.polarizability_scaling_angstrom3) or [0.0] * components,
+        list(model.correlation_integral_parameter) or [0.0] * components,
         relative_permittivity_formulation_codes[model.relative_permittivity_formulation],
-    )
-
-
-def _staged_aqueous_trial_bundle_admitted(
-    parameters: Parameters, model: _ResolvedModel
-) -> bool:
-    admitted_component_order = (
-        model.component_ids in _STAGED_AQUEOUS_SELECTIONS
-        and model.charge_number == (0, 1, -1)
-    ) or (
-        model.component_ids in _STAGED_ACTIVE_BORN_SELECTIONS
-        and model.charge_number == (0, -1, 1)
-    )
-    if (
-        parameters.bundle_purpose != "user-provided"
-        or model.topology != "ionic-ssm-ds"
-        or model.relative_permittivity_formulation
-        != "ion-fraction-suppression"
-        or not admitted_component_order
-        or model.temperature_min_k != 298.15
-        or model.temperature_max_k != 298.15
-        or model.pressure_min_pa != 100000.0
-        or model.pressure_max_pa != 100000.0
-        or model.ion_mole_fraction_max != 0.38
-    ):
-        return False
-    return (
-        model.ionic_region_relative_permittivity is not None
-        and model.ion_fraction_suppression_coefficient is not None
-        and len(model.born_diameter_angstrom) == len(model.component_ids)
-        and len(model.solvation_factor) == len(model.component_ids)
     )
 
 
@@ -341,9 +204,6 @@ def _staged_aqueous_trial_bundle_admitted(
 class Mixture:
     _component_ids: tuple[str, ...]
     _parameter_fingerprint: str
-    _parameter_bundle_purpose: BundlePurpose
-    _parameter_bundle_fingerprint: str
-    _staged_aqueous_trial_bundle_admitted: bool
     _model: _ResolvedModel
     _native: _NativeModel
 
@@ -352,15 +212,13 @@ class Mixture:
         native_arguments = _native_arguments(model)
         object.__setattr__(self, "_component_ids", parameters.component_ids)
         object.__setattr__(self, "_parameter_fingerprint", parameters.fingerprint)
-        object.__setattr__(self, "_parameter_bundle_purpose", parameters.bundle_purpose)
-        object.__setattr__(self, "_parameter_bundle_fingerprint", parameters.bundle_fingerprint)
-        object.__setattr__(
-            self,
-            "_staged_aqueous_trial_bundle_admitted",
-            _staged_aqueous_trial_bundle_admitted(parameters, model),
-        )
         object.__setattr__(self, "_model", model)
         object.__setattr__(self, "_native", _NativeModel(*native_arguments))
+
+    @classmethod
+    def from_dictionary(cls, mapping: Mapping[str, object]) -> Mixture:
+        """Construct a mixture from the strict fixed-unit parameter dictionary."""
+        return cls(Parameters.from_dictionary(mapping))
 
     @property
     def component_ids(self) -> tuple[str, ...]:
@@ -422,9 +280,7 @@ class Mixture:
         try:
             fractions = tuple(float(value) for value in x)  # type: ignore[union-attr]
         except (TypeError, ValueError) as exc:
-            raise _eos_error(
-                "invalid-state", field="x", reason="not-numeric-sequence"
-            ) from exc
+            raise _eos_error("invalid-state", field="x", reason="not-numeric-sequence") from exc
         if len(fractions) != len(self._component_ids):
             raise _eos_error(
                 "invalid-state",
@@ -498,9 +354,7 @@ class Mixture:
                 )
 
         if rho is not None:
-            density_molar = _state_magnitude(
-                rho, "mole / meter ** 3", "rho"
-            )
+            density_molar = _state_magnitude(rho, "mole / meter ** 3", "rho")
             try:
                 native = self._native.evaluate(temperature_k, density_molar, fractions)
             except (RuntimeError, ValueError) as exc:
@@ -632,16 +486,11 @@ def _native_topology_fingerprint(model: Mixture) -> str:
             "site_ids": resolved.site_ids,
             "site_multiplicity": resolved.site_multiplicity,
             "association_endpoints": tuple(
-                (pair.endpoint_a, pair.endpoint_b)
-                for pair in resolved.association_pairs
+                (pair.endpoint_a, pair.endpoint_b) for pair in resolved.association_pairs
             ),
-            "relative_permittivity_formulation": (
-                resolved.relative_permittivity_formulation
-            ),
+            "relative_permittivity_formulation": (resolved.relative_permittivity_formulation),
         }
-    encoded = json.dumps(
-        payload, separators=(",", ":"), sort_keys=True
-    ).encode("utf-8")
+    encoded = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
@@ -649,109 +498,66 @@ def _native_sdk_configuration(model: Mixture) -> dict[str, object]:
     if type(model) is not Mixture:
         raise _eos_error("unsupported-native-sdk", reason="expected-exact-Mixture-model")
     fingerprint = model._parameter_fingerprint
-    bundle_selection = _NATIVE_SDK_V1_PARAMETER_BUNDLE_SELECTIONS.get(
-        model._parameter_bundle_fingerprint
-    )
-    phase_admitted = (
-        model._parameter_bundle_purpose == "user-provided"
-        or fingerprint in _NATIVE_SDK_V1_PARAMETER_FINGERPRINTS
-        or (
-            bundle_selection is not None
-            and len(model._component_ids) == len(bundle_selection)
-            and frozenset(model._component_ids) == bundle_selection
-        )
-    )
-    staged_trial_admitted = model._staged_aqueous_trial_bundle_admitted
-    active_born_admitted = (
-        fingerprint in _NATIVE_SDK_V1_ACTIVE_BORN_FINGERPRINTS
-        or (
-            staged_trial_admitted
-            and model._component_ids in _STAGED_ACTIVE_BORN_SELECTIONS
-        )
-    )
-    aqueous_kij_admitted = (
-        fingerprint in _NATIVE_SDK_V1_AQUEOUS_ACTIVE_KIJ_FINGERPRINTS
-        or (
-            staged_trial_admitted
-            and model._component_ids in _STAGED_AQUEOUS_SELECTIONS
-        )
-    )
-    ion_fraction_suppression_admitted = (
-        len(model._component_ids) == 3
-        and model._component_ids[0] in ("water", "methanol")
-        and tuple(model._model.charge_number) == (0, 1, -1)
-        and model._model.relative_permittivity_formulation
-        == "ion-fraction-suppression"
-    )
-    ion_solvation_kij_admitted = (
-        model._parameter_bundle_fingerprint
-        == "sha256:d56aa57f04f48f1881865fb85daa700b66d3f1bcb75e8a9d7149baedfc925352"
-        and model._component_ids
-        in {
-            ("methanol", "potassium-cation", "bromide-anion"),
-            ("ethanol", "sodium-cation", "chloride-anion"),
-        }
+    resolved = model._model
+    charges = tuple(resolved.charge_number)
+    corrected_triplet = (
+        resolved.topology == "ionic-ssm-ds"
         and len(model._component_ids) == 3
-        and tuple(model._model.charge_number) == (0, 1, -1)
-        and model._model.relative_permittivity_formulation
-        == "ion-fraction-suppression"
-        and model._model.temperature_min_k == 298.15
-        and model._model.temperature_max_k == 298.15
-        and model._model.pressure_min_pa == 100000.0
-        and model._model.pressure_max_pa == 100000.0
+        and charges[0] == 0
+        and charges[1] != 0
+        and charges[2] == -charges[1]
     )
+    ordered_electrolyte_triplet = corrected_triplet and charges == (0, 1, -1)
+    fixed_reference_conditions = (
+        resolved.temperature_min_k == resolved.temperature_max_k == 298.15
+        and resolved.pressure_min_pa == resolved.pressure_max_pa == 100000.0
+    )
+    complete_reference_domain = all(
+        value is not None
+        for value in (
+            resolved.temperature_min_k,
+            resolved.temperature_max_k,
+            resolved.pressure_min_pa,
+            resolved.pressure_max_pa,
+        )
+    )
+    phase_admitted = True
+    active_born_admitted = corrected_triplet and fixed_reference_conditions
+    aqueous_kij_admitted = ordered_electrolyte_triplet and fixed_reference_conditions
+    ion_fraction_suppression_admitted = (
+        ordered_electrolyte_triplet
+        and fixed_reference_conditions
+        and resolved.relative_permittivity_formulation == "ion-fraction-suppression"
+    )
+    ion_solvation_kij_admitted = ordered_electrolyte_triplet and fixed_reference_conditions
     aqueous_solvation_factor_admitted = (
-        fingerprint
-        in _NATIVE_SDK_V1_AQUEOUS_ACTIVE_SOLVATION_FACTOR_FINGERPRINTS
-        or (
-            staged_trial_admitted
-            and model._component_ids
-            == ("water", "sodium-cation", "bromide-anion")
-        )
+        ordered_electrolyte_triplet
+        and fixed_reference_conditions
+        and resolved.ion_mole_fraction_max is not None
     )
-    catalog_neutral_reference_admitted = frozenset(model._component_ids) in (
-        _NATIVE_SDK_V1_NEUTRAL_REFERENCE_SELECTIONS.get(
-            model._parameter_bundle_fingerprint, frozenset()
-        )
+    neutral_reference_admitted = (
+        complete_reference_domain
+        and len(charges) == len(model._component_ids)
+        and sum(charge == 0 for charge in charges) == 1
+        and any(charge > 0 for charge in charges)
+        and any(charge < 0 for charge in charges)
     )
-    neutral_reference_admitted = catalog_neutral_reference_admitted or (
-        phase_admitted
-        and len(model._model.charge_number) == len(model._component_ids)
-        and sum(
-            component_id == "water" and charge == 0
-            for component_id, charge in zip(
-                model._component_ids, model._model.charge_number, strict=True
-            )
-        )
-        == 1
-        and any(charge > 0 for charge in model._model.charge_number)
-        and any(charge < 0 for charge in model._model.charge_number)
-    )
-    if (
-        not phase_admitted
-        and not active_born_admitted
-        and not aqueous_kij_admitted
-        and not ion_fraction_suppression_admitted
-        and not ion_solvation_kij_admitted
-        and not aqueous_solvation_factor_admitted
-        and not neutral_reference_admitted
-    ):
-        raise _eos_error(
-            "unsupported-native-sdk",
-            reason="unadmitted-parameter-fingerprint",
-        )
-    minimum = math.nan if model._model.temperature_min_k is None else model._model.temperature_min_k
-    maximum = math.nan if model._model.temperature_max_k is None else model._model.temperature_max_k
-    pressure_minimum = (
-        math.nan if model._model.pressure_min_pa is None else model._model.pressure_min_pa
-    )
-    pressure_maximum = (
-        math.nan if model._model.pressure_max_pa is None else model._model.pressure_max_pa
-    )
+    minimum = math.nan if resolved.temperature_min_k is None else resolved.temperature_min_k
+    maximum = math.nan if resolved.temperature_max_k is None else resolved.temperature_max_k
+    pressure_minimum = math.nan if resolved.pressure_min_pa is None else resolved.pressure_min_pa
+    pressure_maximum = math.nan if resolved.pressure_max_pa is None else resolved.pressure_max_pa
     maximum_ion_fraction = (
-        math.nan
-        if model._model.ion_mole_fraction_max is None
-        else model._model.ion_mole_fraction_max
+        math.nan if resolved.ion_mole_fraction_max is None else resolved.ion_mole_fraction_max
+    )
+    unknown_applicability = all(
+        value is None
+        for value in (
+            resolved.temperature_min_k,
+            resolved.temperature_max_k,
+            resolved.pressure_min_pa,
+            resolved.pressure_max_pa,
+            resolved.ion_mole_fraction_max,
+        )
     )
     return {
         "parameter_fingerprint": fingerprint,
@@ -767,9 +573,8 @@ def _native_sdk_configuration(model: Mixture) -> dict[str, object]:
         "pressure_min_pa": pressure_minimum,
         "pressure_max_pa": pressure_maximum,
         "neutral_reference_admitted": neutral_reference_admitted,
-        "unknown_applicability_admitted": model._parameter_bundle_purpose == "user-provided",
+        "unknown_applicability_admitted": unknown_applicability,
         "aqueous_solvation_factor_admitted": aqueous_solvation_factor_admitted,
-        "staged_trial_bundle_admitted": staged_trial_admitted,
         "topology_fingerprint": _native_topology_fingerprint(model),
     }
 
@@ -933,9 +738,7 @@ class State:
             / unit_registry.mole
         )
 
-    def ares(
-        self, *, basis: PropertyBasis = "molar"
-    ) -> pint.Quantity[float] | float:
+    def ares(self, *, basis: PropertyBasis = "molar") -> pint.Quantity[float] | float:
         """Residual molar Helmholtz energy, or its dimensionless ``Ares/(nRT)``."""
         return (
             self._residual_helmholtz * self._rt()
@@ -943,9 +746,7 @@ class State:
             else self._residual_helmholtz
         )
 
-    def ures(
-        self, *, basis: PropertyBasis = "molar"
-    ) -> pint.Quantity[float] | float:
+    def ures(self, *, basis: PropertyBasis = "molar") -> pint.Quantity[float] | float:
         """Residual molar internal energy, or its dimensionless ``Ures/(nRT)``."""
         return (
             self._residual_internal_energy
@@ -953,9 +754,7 @@ class State:
             else (self._residual_internal_energy / self._rt()).to("").magnitude
         )
 
-    def hres(
-        self, *, basis: PropertyBasis = "molar"
-    ) -> pint.Quantity[float] | float:
+    def hres(self, *, basis: PropertyBasis = "molar") -> pint.Quantity[float] | float:
         """Residual molar enthalpy, or its dimensionless ``Hres/(nRT)``."""
         return (
             self._residual_enthalpy
@@ -963,9 +762,7 @@ class State:
             else (self._residual_enthalpy / self._rt()).to("").magnitude
         )
 
-    def gres(
-        self, *, basis: PropertyBasis = "molar"
-    ) -> pint.Quantity[float] | float:
+    def gres(self, *, basis: PropertyBasis = "molar") -> pint.Quantity[float] | float:
         """Residual molar Gibbs energy from the exact chemical-potential projection."""
         reduced = math.fsum(
             fraction * chemical_potential
@@ -977,39 +774,43 @@ class State:
         )
         return reduced * self._rt() if _basis(basis) == "molar" else reduced
 
-    def sres(
-        self, *, basis: PropertyBasis = "molar"
-    ) -> pint.Quantity[float] | float:
+    def sres(self, *, basis: PropertyBasis = "molar") -> pint.Quantity[float] | float:
         """Residual molar entropy, or its dimensionless ``Sres/(nR)``."""
         return (
             self._residual_entropy
             if _basis(basis) == "molar"
             else (
                 self._residual_entropy
-                / (_MOLAR_GAS_CONSTANT * unit_registry.joule / unit_registry.mole / unit_registry.kelvin)
+                / (
+                    _MOLAR_GAS_CONSTANT
+                    * unit_registry.joule
+                    / unit_registry.mole
+                    / unit_registry.kelvin
+                )
             )
             .to("")
             .magnitude
         )
 
-    def cvres(
-        self, *, basis: PropertyBasis = "molar"
-    ) -> pint.Quantity[float] | float:
+    def cvres(self, *, basis: PropertyBasis = "molar") -> pint.Quantity[float] | float:
         """Residual molar isochoric heat capacity, or its dimensionless value over R."""
         return (
             self._residual_isochoric_heat_capacity
             if _basis(basis) == "molar"
             else (
                 self._residual_isochoric_heat_capacity
-                / (_MOLAR_GAS_CONSTANT * unit_registry.joule / unit_registry.mole / unit_registry.kelvin)
+                / (
+                    _MOLAR_GAS_CONSTANT
+                    * unit_registry.joule
+                    / unit_registry.mole
+                    / unit_registry.kelvin
+                )
             )
             .to("")
             .magnitude
         )
 
-    def cpres(
-        self, *, basis: PropertyBasis = "molar"
-    ) -> pint.Quantity[float] | float | None:
+    def cpres(self, *, basis: PropertyBasis = "molar") -> pint.Quantity[float] | float | None:
         """Residual molar isobaric heat capacity, or its dimensionless value over R."""
         if self._residual_isobaric_heat_capacity is None:
             return None
@@ -1018,7 +819,12 @@ class State:
             if _basis(basis) == "molar"
             else (
                 self._residual_isobaric_heat_capacity
-                / (_MOLAR_GAS_CONSTANT * unit_registry.joule / unit_registry.mole / unit_registry.kelvin)
+                / (
+                    _MOLAR_GAS_CONSTANT
+                    * unit_registry.joule
+                    / unit_registry.mole
+                    / unit_registry.kelvin
+                )
             )
             .to("")
             .magnitude
@@ -1032,9 +838,7 @@ class State:
         coefficients = tuple(math.exp(value) for value in self._log_fugacity_coefficient)
         values = tuple(
             fraction * coefficient * self.pressure
-            for fraction, coefficient in zip(
-                self.mole_fractions, coefficients, strict=True
-            )
+            for fraction, coefficient in zip(self.mole_fractions, coefficients, strict=True)
         )
         return Fugacity(
             component_ids=self.component_ids,
