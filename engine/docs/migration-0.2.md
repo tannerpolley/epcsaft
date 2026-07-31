@@ -1,67 +1,25 @@
-# Python frontend migration: 0.2.0.dev0
+# Python frontend migration: explicit parameters
 
-This record aligns the active Python documentation with the v0.2 frontend. It
-is not a package release, catalog update, scientific promotion, or native
-consumer authority transfer.
+The installed EOS parameter catalog and public typed-record constructor were
+removed in `0.2.0.dev0`. This is a hard cutover with no compatibility alias.
 
-The canonical path is:
-
-```text
-Parameters -> Mixture -> State
-```
-
-This is a breaking replacement:
-
-| Pre-0.2 call | 0.2 call |
+| Removed call | Replacement |
 | --- | --- |
-| `ParameterBundle.from_catalog(...).select(components)` | `Parameters.from_catalog(..., components=components)` |
-| `ParameterBundle.from_path(...).select(components)` | `Parameters.from_bundle(..., components=components)` |
-| `ParameterBundle.from_records(...).select(components)` | `Parameters.from_records(..., selected_components=components)` |
-| `EPCSAFT(parameters)` | `Mixture(parameters)` |
-| `model.evaluate(temperature=..., pressure=... or molar_density=..., mole_fractions=...)` | `mixture.state(T=..., P=... or rho=..., x=...)` |
-| `EosResult` | `State` |
-| `model.reference_state(...)` | `mixture.reference(...)` |
-| `reference.at_molality(value)` | `reference.state(molality=value)` |
+| `Parameters.from_catalog(...)` | Materialize the desired Data packet, then call `Parameters.from_bundle(path)`; or pass compact values to `Parameters.from_dictionary(mapping)`. |
+| `Parameters.from_records(...)` | `Parameters.from_dictionary(mapping)` |
+| implicit installed bundle lookup | explicit caller-owned path |
 
-The pre-0.2 names are not exported and have no aliases.
+The dictionary route requires schema version 1, ordered components, parallel
+vectors, square pair matrices, options, and explicit validity. It accepts the
+documented abbreviation or descriptive spelling for each field but rejects
+both together. See [the Python API guide](python-api.md).
 
-Resolve parameters with `Parameters.from_catalog(...)`,
-`Parameters.from_bundle(...)`, `Parameters.from_records(...)`, or
-`Parameters.create_bundle_template(...)`. Template profiles are `neutral`,
-`associating`, `electrolyte`, and `associating-electrolyte`; `correlations` is
-optional.
+Reusable source-traceable packets now live in ePC-SAFT-data. EOS does not import
+that package or locate a sibling checkout, so deployment remains a single
+installed EOS artifact plus whatever explicit parameter material the caller
+chooses to provide.
 
-Evaluate one state with `Mixture(parameters).state(T=..., P=..., x=...,
-phase=...)` or `Mixture(parameters).state(T=..., rho=..., x=...)`. Read
-residual properties through `State.ares`, `ures`, `hres`, `gres`, `sres`,
-`cvres`, and `cpres`, using the molar basis by default or
-`basis="reduced"`. Read component fugacity through `State.fugacity`.
-
-For the admitted electrolyte path, build
-`Mixture.reference(T, P, solvent_x, phase="liquid")`, call
-`reference.state(molality=...)`, and read `State.activity`.
-
-The selected component order remains the order for every composition and
-result. Pint quantities remain required for dimensional inputs. Supply exactly
-one of `P` and `rho`; use `phase` only with pressure closure. Source,
-validity-domain, topology, and parameter fingerprints remain part of scientific
-input identity. Branch on structured error `code` and `context` rather than
-exception wording.
-
-No compatibility aliases, mutable registries, hidden defaults, or alternate
-equation owners are introduced by this migration. The pre-0.2 facade is
-historical evidence only and is not a compatibility layer in `0.2.0.dev0`.
-
-The catalog table and its evidence domains remain in `docs/python-api.md`.
-CppAD remains the sole nonlinear production derivative authority; native C++
-continues to own the hard-chain, dispersion, association, Debye--Huckel, Born
-SSM+DS, and density equations. Provider ownership and the boundaries on phase
-equilibrium, discovery, regression, Ceres, cross-package validation, and
-reaction/species equilibrium are unchanged.
-
-Accepted receipt `promotion-0012-provider-full-candidate` still governs the
-full-provider scope. Migration receipt `promotion-0015-provider-native-sdk-v1`
-alone determines authority for the ADR 0001 capsule; this migration does not
-transfer it. Local append-only native candidates remain bounded evidence until
-their own review and promotion receipts, and the Held source-complete aqueous
-reference candidate retains `authority_effect: none`.
+`Parameters -> Mixture -> State` and the property API are otherwise unchanged.
+Parameter fingerprints now identify normalized scientific inputs rather than
+bundle provenance. SDK admission likewise uses resolved topology, fields,
+order, and validity rather than catalog allowlists.

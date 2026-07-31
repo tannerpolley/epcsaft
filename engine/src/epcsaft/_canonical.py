@@ -68,6 +68,38 @@ def _domain(record: ValidityDomain) -> dict[str, object]:
     return result
 
 
+def _resolved_validity(domains: tuple[ValidityDomain, ...]) -> dict[str, object]:
+    result: dict[str, object] = {"kinds": sorted({domain.kind for domain in domains})}
+    for minimum, maximum, unit in (
+        ("temperature_min", "temperature_max", "kelvin"),
+        ("pressure_min", "pressure_max", "pascal"),
+    ):
+        minima = tuple(
+            value for domain in domains if (value := getattr(domain, minimum)) is not None
+        )
+        maxima = tuple(
+            value for domain in domains if (value := getattr(domain, maximum)) is not None
+        )
+        if minima:
+            result[minimum] = _quantity(
+                max(minima, key=lambda value: value.to(unit).magnitude),
+                unit,  # type: ignore[attr-defined]
+            )
+        if maxima:
+            result[maximum] = _quantity(
+                min(maxima, key=lambda value: value.to(unit).magnitude),
+                unit,  # type: ignore[attr-defined]
+            )
+    ion_maxima = tuple(
+        domain.ion_mole_fraction_max
+        for domain in domains
+        if domain.ion_mole_fraction_max is not None
+    )
+    if ion_maxima:
+        result["ion_mole_fraction_max"] = _decimal(min(ion_maxima))
+    return result
+
+
 def _component(record: ComponentRecord) -> dict[str, object]:
     result: dict[str, object] = {
         "component_id": record.component_id,
@@ -257,19 +289,37 @@ def _provenance_fingerprint(
     )
 
 
-def _set_fingerprint(
-    bundle_fingerprint: str,
+def _parameter_fingerprint(
     component_ids: tuple[str, ...],
-    record_ids: tuple[str, ...],
+    records: tuple[object, ...],
+    domains: tuple[ValidityDomain, ...],
 ) -> str:
+    domain_by_id = {domain.domain_id: domain for domain in domains}
+    scientific_records = []
+    for record in records:
+        projection = _record(record)
+        for field in ("record_id", "source_id", "locator", "domain_id"):
+            del projection[field]
+        if projection["type"] == "correlation" and projection["form"] == "constant":
+            projection = {
+                "type": "single",
+                "component_id": projection["component_id"],
+                "family": projection["family"],
+                "value": projection["constant"],
+            }
+        scientific_records.append(projection)
+    selected_domains = tuple(
+        domain_by_id[domain_id]
+        for domain_id in sorted({record.domain_id for record in records})  # type: ignore[attr-defined]
+    )
     return _fingerprint_json(
         _json(
             {
                 "tag": _TAG,
                 "parameter_set": {
-                    "bundle_fingerprint": bundle_fingerprint,
                     "component_ids": list(component_ids),
-                    "record_ids": list(record_ids),
+                    "records": sorted(scientific_records, key=_json),
+                    "validity": _resolved_validity(selected_domains),
                 },
             }
         )

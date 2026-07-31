@@ -5,7 +5,7 @@ package. Its
 optimization objective is minimum maintained surface subject to source-backed,
 reproducible thermodynamic results.
 
-`governance_doctrine_revision: 5`
+`governance_doctrine_revision: 6`
 
 Canonical doctrine:
 `../ePC-SAFT-management/GOVERNANCE.md`. During the local checkout transition,
@@ -13,24 +13,12 @@ Canonical doctrine:
 The local Management manifest is
 `../ePC-SAFT-organization/manifests/management.json` during that transition.
 
-## Language
+## Parameter and evidence boundary
 
-**Canonical progression source**:
-A model-defining PC-SAFT or ePC-SAFT paper admitted by the reviewed
-`ePC-SAFT Progression` source list. Membership makes its parameters eligible
-for catalog review; it does not automatically admit a runtime bundle.
-_Avoid_: any published paper, case-study source
-
-**Source-complete catalog bundle**:
-One immutable installed parameter bundle containing every model-table species
-and every applicable pure, pair, topology, correlation, model, provenance, and
-validity record needed to reproduce the source-defined selections.
-_Avoid_: convenience bundle, exercised subset
-
-**Validation campaign bundle**:
-An explicit, hash-bound parameter input retained with a Validation campaign for
-replay or qualification without becoming an EOS runtime default.
-_Avoid_: Validation catalog, fallback catalog
+Reusable parameter bundles and reusable raw or organized property datasets are
+owned by `ePC-SAFT-data`. Paper-, table-, and figure-specific campaign extracts
+may remain in Validation when they are evidence for one campaign rather than a
+reusable scientific packet. EOS ships neither category as runtime package data.
 
 EOS owns both its package evidence and execution of assigned installed-
 artifact campaigns in the sibling Validation repository. The task remains based
@@ -46,38 +34,21 @@ generic residual Helmholtz kernel for hard-chain, dispersion, association,
 Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
 chemical potentials, fugacity coefficients when defined, residual caloric
 properties, pressure, and branch diagnostics for pressure-specified states.
-The 0.2.0.dev0 Python frontend exposes `Parameters.from_catalog(...)`,
-`Parameters.from_bundle(...)`, `Parameters.from_records(...)`, and
-`Parameters.create_bundle_template(...)`; its template profiles are
-`neutral`, `associating`, `electrolyte`, and `associating-electrolyte`, with
-optional correlations. Callers keep provenance and validity domains explicit.
-The purpose neither promotes values into the installed catalog nor validates
-their scientific quality. The installed catalog is immutable package data and
-its exact IDs and evidence domains are retained in `docs/python-api.md`.
-An exact selected model from a caller-owned bundle can use the
-generic model-bound native phase, volume-domain, and packing callbacks. This
-transport admission does not admit source-specific native reference or active-
-parameter callbacks and does not make caller-owned values predictive.
+The 0.2.0.dev0 Python frontend exposes `Parameters.from_dictionary(...)`,
+`Parameters.from_bundle(...)`, and `Parameters.create_bundle_template(...)`.
+The dictionary route uses a strict fixed-unit, versioned schema; the bundle
+route loads an explicit caller-supplied path. Neither route imports, fetches, or
+discovers Data. Native SDK capabilities are admitted from resolved topology,
+required fields, component order, and declared validity, never paper identity.
 `Mixture(parameters).state(...)` returns immutable `State` values, and
 `Mixture.reference(...).state(molality=...)` attaches an immutable `Activity`
 projection to the resulting state. State and activity results repeat their
 component order, and state results retain canonical temperature, composition,
 and parameter fingerprint. Structured state errors preserve the rejected
 field, reason, and applicable units, limits, or tolerances. The distributed
-Python interface is marked with `py.typed` and exposes literal types for
-phases, purposes, domains, and parameter families; runtime validation remains
-the scientific authority. No compatibility aliases are retained.
-The installed catalogs are Crespo et al. neutral 2B DEEA records, the
-source-complete 78-species Gross--Sadowski 2001 bundle, and the source-complete
-13-species Figiel--Yu--Held 2025 corrected-Born bundle containing every
-reported water, methanol, ethanol, H+, Li+, Na+, K+, VO2+, V3+, Cl-, Br-, I-,
-and SO4(2-) parameter from Tables 1--5, and the source-complete 30-species
-Held--Cameretti--Sadowski 2008 fully dissociated aqueous-electrolyte bundle
-containing water and every Table 2 ion. Distinct narrower Figiel chloride/
-bromide and aqueous-iodide IDs, and one Ascani et al. original-Born
-water/1-butanol/Na+/K+/Cl- bundle at 298.15 K remain during the governed
-transition. The old Gross--Sadowski and narrower Figiel IDs remain only until
-the governed catalog cutover removes them without aliases. One reference-state module owns x-process
+Python interface is marked with `py.typed`; runtime validation remains the
+scientific authority. No catalog API or compatibility alias is retained. One
+reference-state module owns x-process
 infinite-dilution solvation and transfer plus single-ion and stoichiometric mean
 ionic activity on one explicit electroneutral formula-unit path. Its aqueous
 single-solvent result also reports the practical molal osmotic coefficient
@@ -86,7 +57,7 @@ from the solvent-activity ratio on that pressure-state path.
 Historical Migration decision D-028 binds one additional private native
 reference candidate for the exact
 ordered water/H3O+/OH- mechanical model of Held, Cameretti, and Sadowski (2008)
-at 298.15 K and 1 bar. The installed record set closes component identity,
+at 298.15 K and 1 bar. The explicit record set closes component identity,
 charge, association, water--ion dispersion, excluded ion--ion dispersion,
 constant-water-dielectric Debye--Huckel behavior, and zero Born contribution.
 The append-only SDK tail declares the exact Helmholtz coordinate basis and

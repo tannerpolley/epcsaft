@@ -278,10 +278,9 @@ owners:
   parameter_input:
     - Parameters
   parameter_persistence: src/epcsaft/_bundle_io.py
-  user_provided_native_transport: >-
-    Exact persisted user-provided bundles may use generic model-bound phase,
-    molar-volume-domain, and packing callbacks; specialized reference and
-    active-parameter callbacks retain independent admission.
+  explicit_native_transport: >-
+    Dictionary and external-bundle parameters use topology-, order-, field-,
+    and validity-based native capability admission without source allowlists.
   resolved_model: src/epcsaft/_resolve.py
   state_input: Mixture.state
   result: State
@@ -297,17 +296,15 @@ owners:
   native_model_declaration: src/epcsaft/include/epcsaft/native_model_v1.h
   density_closure: src/epcsaft/_native/density.hpp
   electrolyte_reference: src/epcsaft/reference.py
-  installed_parameter_data: src/epcsaft/data/bundles
+  reusable_parameter_data: ePC-SAFT/ePC-SAFT-data
 
 public_surface:
-  parameter_bundle_purposes: [installed-catalog, package-test-fixture, user-provided]
-  parameter_catalog_resolution: Parameters.from_catalog
+  parameter_dictionary_resolution: Parameters.from_dictionary
   parameter_bundle_persistence: [Parameters.to_bundle, Parameters.from_bundle]
   result_state_metadata: [component_ids, temperature, mole_fractions, parameter_fingerprint]
   typing: PEP-561 py.typed with Pint quantities, overloads, and public Literal aliases
   exports:
     - Parameters
-    - BundlePurpose
     - ParameterError
     - unit_registry
     - Mixture

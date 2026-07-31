@@ -23,7 +23,6 @@ pybind11::capsule make_native_sdk_v1(
     bool unknown_applicability_admitted,
     bool aqueous_solvation_factor_admitted,
     bool ion_solvation_kij_admitted,
-    bool staged_trial_bundle_admitted,
     const std::string& topology_fingerprint
 ) {
     const epcsaft_native_sdk_v1* sdk = create_native_sdk_v1(
@@ -43,7 +42,6 @@ pybind11::capsule make_native_sdk_v1(
         unknown_applicability_admitted,
         aqueous_solvation_factor_admitted,
         ion_solvation_kij_admitted,
-        staged_trial_bundle_admitted,
         topology_fingerprint
     );
     return pybind11::capsule(

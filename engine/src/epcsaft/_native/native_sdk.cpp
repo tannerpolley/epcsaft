@@ -25,117 +25,20 @@ namespace {
 
 // EqExclude: input and domain validation
 bool active_born_model_admitted(
-    const std::string& fingerprint,
     const std::vector<std::string>& component_ids,
-    const std::vector<int>& charges,
-    bool staged_trial_bundle_admitted
+    const std::vector<int>& charges
 ) {
-    if (component_ids.size() != 3 || charges.size() != 3
-        || component_ids[0] != "water" || charges[0] != 0) {
-        return false;
-    }
-    struct Admission final {
-        const char* fingerprint;
-        const char* active_ion;
-        const char* counter_ion;
-        int active_charge;
-    };
-    constexpr Admission admissions[] = {
-        {
-            "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
-            "lithium-cation",
-            "chloride-anion",
-            1,
-        },
-        {
-            "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
-            "sodium-cation",
-            "chloride-anion",
-            1,
-        },
-        {
-            "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
-            "potassium-cation",
-            "chloride-anion",
-            1,
-        },
-        {
-            "sha256:a8383fb8f70a1bb8c258f1662c792cd5507af1d23db71ad4575026b5dcab55ea",
-            "chloride-anion",
-            "sodium-cation",
-            -1,
-        },
-        {
-            "sha256:f313c30e9471daed0638ab70ff43eb033ed828724547c4b32857442ed35f1107",
-            "bromide-anion",
-            "sodium-cation",
-            -1,
-        },
-    };
-    return std::any_of(
-        std::begin(admissions),
-        std::end(admissions),
-        [&](const Admission& admission) {
-            return component_ids[1] == admission.active_ion
-                && component_ids[2] == admission.counter_ion
-                && charges[1] == admission.active_charge
-                && charges[2] == -admission.active_charge
-                && (staged_trial_bundle_admitted
-                    || fingerprint == admission.fingerprint);
-        }
-    );
+    return component_ids.size() == 3 && charges.size() == 3
+        && charges[0] == 0 && charges[1] != 0 && charges[2] == -charges[1];
 }
 
 // EqExclude: input and domain validation
 bool aqueous_kij_model_admitted(
-    const std::string& fingerprint,
     const std::vector<std::string>& component_ids,
-    const std::vector<int>& charges,
-    bool staged_trial_bundle_admitted
+    const std::vector<int>& charges
 ) {
-    if (component_ids.size() != 3 || charges != std::vector<int>({0, 1, -1})
-        || component_ids[0] != "water") {
-        return false;
-    }
-    struct Admission final {
-        const char* fingerprint;
-        const char* cation;
-        const char* anion;
-    };
-    constexpr Admission admissions[] = {
-        {
-            "sha256:dbed1c05a92d922369b9b631e89fe10add759e7c8d004ea53bc0a0c90d2d6f4a",
-            "lithium-cation", "chloride-anion",
-        },
-        {
-            "sha256:d01bc3e64f19293902c00d9cc52060fccc3945ce736f0cd3e2f756be226cf5bf",
-            "sodium-cation", "chloride-anion",
-        },
-        {
-            "sha256:05f2db21ad51a27e7b7b8fca267e8a38eb663145c980eae6bee7dce02700af5b",
-            "potassium-cation", "chloride-anion",
-        },
-        {
-            "sha256:19be2cea6620c8a6cd3c965325422bded799d2b39acb240a4c4e858059d6412e",
-            "lithium-cation", "bromide-anion",
-        },
-        {
-            "sha256:80f83701040d7d0863c7121b7379b86a9e8bd30c1fa3e4a5651330c41c588131",
-            "sodium-cation", "bromide-anion",
-        },
-        {
-            "sha256:8ec6c31ada39713132b340a184e0c06b0f9d070892be2aaa721e9aa92015ae31",
-            "potassium-cation", "bromide-anion",
-        },
-    };
-    return std::any_of(
-        std::begin(admissions), std::end(admissions), [&](const Admission& item) {
-            return component_ids[1] == item.cation
-                && component_ids[2] == item.anion
-                && (staged_trial_bundle_admitted
-                    || fingerprint == item.fingerprint);
-        }
-    );
+    return component_ids.size() == 3
+        && charges == std::vector<int>({0, 1, -1});
 }
 
 // EqExclude: input and domain validation
@@ -144,67 +47,25 @@ bool ion_fraction_suppression_model_admitted(
     const std::vector<int>& charges
 ) {
     return component_ids.size() == 3
-        && charges == std::vector<int>({0, 1, -1})
-        && (component_ids[0] == "water" || component_ids[0] == "methanol");
+        && charges == std::vector<int>({0, 1, -1});
 }
 
 // EqExclude: input and domain validation
 bool ion_solvation_kij_model_admitted(
-    const std::string& parameter_fingerprint,
-    const std::string& topology_fingerprint,
     const std::vector<std::string>& component_ids,
     const std::vector<int>& charges
 ) {
-    struct Admission final {
-        std::array<const char*, 3> component_ids;
-        const char* parameter_fingerprint;
-        const char* topology_fingerprint;
-    };
-    constexpr std::array<Admission, 2> admissions{{
-        {
-            {"methanol", "potassium-cation", "bromide-anion"},
-            "sha256:57920a78527ba21924a8f3e3916e40a8b842fae5127c4cfc6ff3e1fade418699",
-            "sha256:a6879554a81191d2210ece2eed240f251a0f45327fa3877978228362bcf80443",
-        },
-        {
-            {"ethanol", "sodium-cation", "chloride-anion"},
-            "sha256:02d7e56ffd746f91632c14c9e68c247df454b0db53514499dd26fbeedfb11016",
-            "sha256:7998ddbc59d7059e7ac3ee0810d1b97d1d564264c98dea41b55c6c8192fe2a71",
-        },
-    }};
-    return charges == std::vector<int>({0, 1, -1})
-        && std::any_of(
-            admissions.begin(),
-            admissions.end(),
-            [&](const Admission& admission) {
-                return component_ids
-                        == std::vector<std::string>(
-                            admission.component_ids.begin(),
-                            admission.component_ids.end()
-                        )
-                    && parameter_fingerprint
-                        == admission.parameter_fingerprint
-                    && topology_fingerprint
-                        == admission.topology_fingerprint;
-            }
-        );
+    return component_ids.size() == 3
+        && charges == std::vector<int>({0, 1, -1});
 }
 
 // EqExclude: input and domain validation
 bool aqueous_solvation_factor_model_admitted(
-    const std::string& fingerprint,
     const std::vector<std::string>& component_ids,
-    const std::vector<int>& charges,
-    bool staged_trial_bundle_admitted
+    const std::vector<int>& charges
 ) {
-    constexpr const char* sodium_bromide_fingerprint =
-        "sha256:80f83701040d7d0863c7121b7379b86a9e8bd30c1fa3e4a5651330c41c588131";
-    return component_ids == std::vector<std::string>({
-               "water", "sodium-cation", "bromide-anion"
-           })
-        && charges == std::vector<int>({0, 1, -1})
-        && (staged_trial_bundle_admitted
-            || fingerprint == sodium_bromide_fingerprint);
+    return component_ids.size() == 3
+        && charges == std::vector<int>({0, 1, -1});
 }
 
 // EqExclude: input and domain validation
@@ -215,15 +76,15 @@ bool neutral_reference_model_shape_admitted(
     if (component_ids.size() != charges.size()) {
         return false;
     }
-    std::size_t water_count = 0;
+    std::size_t neutral_count = 0;
     std::size_t cation_count = 0;
     std::size_t anion_count = 0;
     for (std::size_t component = 0; component < component_ids.size(); ++component) {
-        water_count += component_ids[component] == "water" && charges[component] == 0;
+        neutral_count += charges[component] == 0;
         cation_count += charges[component] > 0;
         anion_count += charges[component] < 0;
     }
-    return water_count == 1 && cation_count > 0 && anion_count > 0;
+    return neutral_count == 1 && cation_count > 0 && anion_count > 0;
 }
 
 struct NativeSdkEndpoint final {
@@ -1412,8 +1273,7 @@ struct NativeSdkEndpoint final {
             for (std::size_t component = 0;
                  component < component_count;
                  ++component) {
-                if (endpoint.component_ids[component] == "water"
-                    && endpoint.component_charges[component] == 0) {
+                if (endpoint.component_charges[component] == 0) {
                     solvent = component;
                 } else if (endpoint.component_charges[component] > 0) {
                     cations.push_back(component);
@@ -2591,8 +2451,7 @@ struct NativeSdkEndpoint final {
             std::vector<std::size_t> cations;
             std::vector<std::size_t> anions;
             for (std::size_t component = 0; component < component_count; ++component) {
-                if (endpoint.component_ids[component] == "water"
-                    && endpoint.component_charges[component] == 0) {
+                if (endpoint.component_charges[component] == 0) {
                     solvent = component;
                 }
                 if (endpoint.component_charges[component] > 0) {
@@ -4400,7 +4259,6 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     bool unknown_applicability_admitted,
     bool aqueous_solvation_factor_admitted,
     bool ion_solvation_kij_admitted,
-    bool staged_trial_bundle_admitted,
     const std::string& topology_fingerprint
 ) {
     if (!active_born_admitted && !aqueous_kij_admitted
@@ -4417,19 +4275,15 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     }
     if (active_born_admitted
         && !active_born_model_admitted(
-            parameter_fingerprint,
             component_ids,
-            model.charge_numbers(),
-            staged_trial_bundle_admitted
+            model.charge_numbers()
         )) {
         throw std::invalid_argument("unsupported active Born model identity");
     }
     if (aqueous_kij_admitted
         && !aqueous_kij_model_admitted(
-            parameter_fingerprint,
             component_ids,
-            model.charge_numbers(),
-            staged_trial_bundle_admitted
+            model.charge_numbers()
         )) {
         throw std::invalid_argument("unsupported aqueous active k_ij model identity");
     }
@@ -4443,8 +4297,6 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     }
     if (ion_solvation_kij_admitted
         && !ion_solvation_kij_model_admitted(
-            parameter_fingerprint,
-            topology_fingerprint,
             component_ids, model.charge_numbers()
         )) {
         throw std::invalid_argument(
@@ -4453,10 +4305,8 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     }
     if (aqueous_solvation_factor_admitted
         && !aqueous_solvation_factor_model_admitted(
-            parameter_fingerprint,
             component_ids,
-            model.charge_numbers(),
-            staged_trial_bundle_admitted
+            model.charge_numbers()
         )) {
         throw std::invalid_argument(
             "unsupported aqueous active solvation-factor model identity"

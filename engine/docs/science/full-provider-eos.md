@@ -792,8 +792,8 @@ solvent, temperature, component topology, or larger ion fraction. Solver
 convergence does not expand that evidence.
 
 The Schreckenberg, Zuber, and Rueben parameter families are source-named
-implementation capabilities, not installed catalog defaults. A custom
-`Parameters.from_records(...)` selection must provide one complete
+implementation capabilities, not runtime defaults. A custom
+`Parameters.from_dictionary(...)` selection must provide one complete
 topology. Zuber currently requires one neutral solvent because the EOS has
 no source-backed mixed-solvent volume-fraction payload. Rueben requires its
 three parameters for every selected component. No new topology broadens the
