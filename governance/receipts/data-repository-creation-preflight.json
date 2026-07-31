@@ -19,9 +19,9 @@
     "subject_sha256": "118be5eb3c977883fb31353cd731d86fdb76285a7bc1ec826f075948ba836958",
     "validator": {
       "repository": "ePC-SAFT/ePC-SAFT-management",
-      "commit": "1775567bb6653db49cdfb95b966d5fd494983acb",
+      "commit": "d5231c89e60d1f39cc2f8d10d5882a46e9316bbf",
       "path": "tools/management_preflight.py",
-      "sha256": "6e545604536417e5fe6e63cd0015bced66f87987f239ab5bf869b725e3345a16"
+      "sha256": "78af654ca8e961ea82d86a73d6d618d69918ccbf0928980dd1054fd9d5108172"
     },
     "command": "gh repo view ePC-SAFT/ePC-SAFT-data --json id,nameWithOwner,visibility,defaultBranchRef",
     "environment": {
