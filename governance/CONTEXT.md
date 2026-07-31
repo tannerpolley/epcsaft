@@ -23,6 +23,11 @@ disposition map. It separates canonical Data storage, admitted EOS runtime
 copies, and Validation evidence. Pending relocations remain explicit until the
 owning repository tasks execute them.
 
+`manifests/data-packet-locks.json` pins each reusable bundle to the merged
+Data commit, packet path, version, and canonical packet fingerprint. It is a
+control-plane lock, not a runtime dependency; EOS, Validation, and Regression
+add their own materialization records when their owning tasks are ready.
+
 `ePC-SAFT/ePC-SAFT-data` is the canonical store for reusable scientific packets.
 It is neither a runtime dependency nor the artifact store. Consumers pin an
 immutable Data commit and remain self-contained.

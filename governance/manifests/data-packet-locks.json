@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "data_repository": "ePC-SAFT/ePC-SAFT-data",
+  "data_commit": "cc197d686e03f79403e50db4200f227543912e82",
+  "packets": [
+    {
+      "packet_id": "ascani-2022-case-study-2-electrolyte-lle",
+      "packet_version": "1",
+      "packet_path": "packets/ascani-2022-case-study-2-electrolyte-lle/1",
+      "packet_fingerprint": "7d01b793359d60c978a978f354bf85b439b7f560ce20572ee062a1d0539e3203",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "crespo-2021-deea",
+      "packet_version": "1",
+      "packet_path": "packets/crespo-2021-deea/1",
+      "packet_fingerprint": "64b63aa6938926cbc77b93b75eee69b05c2460825d7cba007e40fdd7898680a7",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-aqueous-iodides",
+      "packet_version": "1",
+      "packet_path": "packets/figiel-2025-aqueous-iodides/1",
+      "packet_fingerprint": "f44f9d208ee2a72d755b1e3a929017f03f98dcff5d249ee322ab26e0e2fbf81a",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-reference-electrolytes",
+      "packet_version": "1",
+      "packet_path": "packets/figiel-2025-reference-electrolytes/1",
+      "packet_fingerprint": "5ea86c44f67ded4c309e17f396b9414cfadcb2b0f00b2ac41f8c48c047af42e5",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-2025-validation-parameters",
+      "packet_version": "1",
+      "packet_path": "packets/figiel-2025-validation-parameters/1",
+      "packet_fingerprint": "373f3e74858eba2dc32a244d0da2eb62c24c35f3cb784b5dc7b66f8168feccc2",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-yu-held-2025",
+      "packet_version": "1",
+      "packet_path": "packets/figiel-yu-held-2025/1",
+      "packet_fingerprint": "caac02d8f8855583f769a01092aa3868a25097a2989f6e3672461ebde4e7f347",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-2001-methane-ethane",
+      "packet_version": "1",
+      "packet_path": "packets/gross-2001-methane-ethane/1",
+      "packet_fingerprint": "4b20a82c7ed8f34ec9a60ab547014b78064c3331ce636c49d32c10bfb7298ca7",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-2001-propane",
+      "packet_version": "1",
+      "packet_path": "packets/gross-2001-propane/1",
+      "packet_fingerprint": "b039bdf6b9622019c46c1cb7342c6c88b64714b8ac64f2dc3d7f413e1b5a720a",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-sadowski-2001",
+      "packet_version": "1",
+      "packet_path": "packets/gross-sadowski-2001/1",
+      "packet_fingerprint": "a138aaee4ccde627dad82f6a25b48467cc0849af3018c3a8db97a32b9654b548",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "held-cameretti-sadowski-2008",
+      "packet_version": "1",
+      "packet_path": "packets/held-cameretti-sadowski-2008/1",
+      "packet_fingerprint": "6850a420751cc323f2700450aef8b900af95aa388b6acb003b1d8eaad04e8dbb",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
+      "packet_version": "3",
+      "packet_path": "packets/khudaida-2026-figure-2-electrolyte-lle/3",
+      "packet_fingerprint": "73c48ac9fb97f06185bd78d27ceaa7ffe6308abe9feee34b15eadff31cc985eb",
+      "materialization": "byte-for-byte"
+    }
+  ]
+}

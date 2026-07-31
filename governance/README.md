@@ -26,6 +26,10 @@ install only full-SHA-256 objects; repository `dist/` wheels are rejected.
 Scientific-packet storage, runtime-copy, evidence, and pending disposition
 ownership are tracked in
 [manifests/parameter-ownership.json](manifests/parameter-ownership.json).
+Immutable Data packet commits and fingerprints are tracked in
+[manifests/data-packet-locks.json](manifests/data-packet-locks.json); package
+repositories add their own materialization locks when their owning tasks are
+ready.
 
 It owns no package runtime, scientific solver, regression target, Validation
 campaign, or Lab experiment.

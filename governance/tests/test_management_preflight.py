@@ -70,6 +70,37 @@ def test_parameter_ownership_manifest_covers_current_eos_catalog() -> None:
     assert MODULE.parameter_policy_errors(config) == []
 
 
+def test_data_packet_locks_bind_the_merged_data_commit_and_fingerprints() -> None:
+    config = json.loads(
+        (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
+    )
+    policy = json.loads(
+        (ROOT / "manifests" / "parameter-ownership.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    entries = {entry["bundle_id"]: entry for entry in policy["bundles"]}
+    assert MODULE.data_packet_lock_errors(config, entries) == []
+    locks = MODULE.load_data_packet_locks(config)
+    assert locks["data_commit"] == "cc197d686e03f79403e50db4200f227543912e82"
+    assert {packet["packet_id"] for packet in locks["packets"]} == set(entries)
+
+
+def test_parameter_ledger_labels_legacy_hash_and_carries_data_lock() -> None:
+    config = json.loads(
+        (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
+    )
+    records = MODULE.parameter_state(config)["records"]
+    data_records = [record for record in records if record["repository"] == "data"]
+    assert data_records
+    assert all(
+        record["sha256_algorithm"] == "management-bundle-hash-v1"
+        and record["data_lock"]["data_repository"] == "ePC-SAFT/ePC-SAFT-data"
+        and len(record["data_lock"]["packet_fingerprint"]) == 64
+        for record in data_records
+    )
+
+
 def test_configured_operation_receipts_use_the_canonical_envelope() -> None:
     config = json.loads(
         (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")

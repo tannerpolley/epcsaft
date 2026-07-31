@@ -22,6 +22,8 @@ OPERATION_RECEIPT_SCHEMA_PATH = (
     ROOT / "manifests" / "operation-receipt-envelope-v1.json"
 )
 APPROVED_OPERATIONS_PATH = ROOT / "manifests" / "approved-operations.json"
+DATA_REPOSITORY = "ePC-SAFT/ePC-SAFT-data"
+DATA_PACKET_LOCKS_RELATIVE = "manifests/data-packet-locks.json"
 
 ALLOWED_ENVIRONMENT_DISTRIBUTIONS: dict[str, set[str]] = {
     "management": set(),
@@ -209,6 +211,123 @@ def bundle_hash(directory: Path) -> str:
     return digest.hexdigest()
 
 
+def packet_fingerprint(directory: Path) -> str:
+    """Match the canonical Data packet fingerprint algorithm."""
+    digest = hashlib.sha256()
+    for path in sorted(item for item in directory.rglob("*") if item.is_file()):
+        relative = path.relative_to(directory).as_posix().encode("utf-8")
+        digest.update(len(relative).to_bytes(8, "big"))
+        digest.update(relative)
+        digest.update(path.stat().st_size.to_bytes(8, "big"))
+        with path.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+    return digest.hexdigest()
+
+
+def _valid_hex(value: Any, length: int) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == length
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
+def data_packet_lock_path(config: dict[str, Any]) -> Path:
+    relative = config.get("data_packet_locks", DATA_PACKET_LOCKS_RELATIVE)
+    return ROOT / relative
+
+
+def load_data_packet_locks(config: dict[str, Any]) -> dict[str, Any]:
+    path = data_packet_lock_path(config)
+    if not path.exists():
+        return {"schema_version": 1, "packets": []}
+    return load_json(path)
+
+
+def data_packet_lock_errors(
+    config: dict[str, Any],
+    parameter_entries: dict[str, dict[str, Any]],
+) -> list[str]:
+    path = data_packet_lock_path(config)
+    if not path.exists():
+        return [f"missing Data packet lock manifest {path.relative_to(ROOT)}"]
+    locks = load_data_packet_locks(config)
+    errors: list[str] = []
+    if locks.get("schema_version") != 1:
+        errors.append("Data packet lock manifest schema_version must be 1")
+    if locks.get("data_repository") != DATA_REPOSITORY:
+        errors.append("Data packet lock manifest must name ePC-SAFT/ePC-SAFT-data")
+    data_commit = locks.get("data_commit")
+    if not _valid_hex(data_commit, 40):
+        errors.append("Data packet lock manifest requires a 40-hex data_commit")
+    packets = locks.get("packets")
+    if not isinstance(packets, list) or not packets:
+        return errors + ["Data packet lock manifest packets must be a non-empty array"]
+
+    by_id: dict[str, dict[str, Any]] = {}
+    for packet in packets:
+        if not isinstance(packet, dict):
+            errors.append("Data packet lock entries must be objects")
+            continue
+        packet_id = packet.get("packet_id")
+        packet_version = packet.get("packet_version")
+        packet_path = packet.get("packet_path")
+        if not isinstance(packet_id, str) or not packet_id:
+            errors.append("Data packet locks require packet_id")
+            continue
+        if packet_id in by_id:
+            errors.append(f"duplicate Data packet lock: {packet_id}")
+        by_id[packet_id] = packet
+        if not isinstance(packet_version, str) or not packet_version:
+            errors.append(f"Data packet lock requires packet_version for {packet_id}")
+        expected_path = f"packets/{packet_id}/{packet_version}"
+        if packet_path != expected_path:
+            errors.append(f"Data packet lock path does not match {packet_id}")
+        if not _valid_hex(packet.get("packet_fingerprint"), 64):
+            errors.append(f"Data packet lock has invalid fingerprint for {packet_id}")
+        if packet.get("materialization") != "byte-for-byte":
+            errors.append(
+                f"canonical Data packet lock must be byte-for-byte for {packet_id}"
+            )
+
+    expected_ids = set(parameter_entries)
+    if set(by_id) != expected_ids:
+        errors.append(
+            "Data packet locks must cover exactly the parameter ownership entries: "
+            f"missing={sorted(expected_ids - set(by_id))}, "
+            f"unexpected={sorted(set(by_id) - expected_ids)}"
+        )
+
+    data_root = Path(config["repositories"]["data"]["local_path"])
+    if data_root.exists() and _valid_hex(data_commit, 40):
+        try:
+            actual_commit = run_git(data_root, "rev-parse", "HEAD")
+        except (OSError, subprocess.CalledProcessError) as exc:
+            errors.append(f"cannot inspect Data repository for packet locks: {exc}")
+        else:
+            if actual_commit != data_commit:
+                errors.append(
+                    "Data checkout does not match the locked commit: "
+                    f"{actual_commit} != {data_commit}"
+                )
+        for packet_id, packet in by_id.items():
+            packet_path = packet.get("packet_path")
+            if not isinstance(packet_path, str):
+                continue
+            directory = data_root / packet_path
+            if not directory.is_dir():
+                errors.append(f"locked Data packet is missing: {packet_path}")
+            elif _valid_hex(packet.get("packet_fingerprint"), 64):
+                actual_fingerprint = packet_fingerprint(directory)
+                if actual_fingerprint != packet["packet_fingerprint"]:
+                    errors.append(
+                        f"Data packet fingerprint mismatch for {packet_id}: "
+                        f"{actual_fingerprint} != {packet['packet_fingerprint']}"
+                    )
+    return errors
+
+
 def ownership_projection(policy: dict[str, Any]) -> dict[str, Any]:
     return {
         "storage_owner": policy.get("storage_owner", "unclassified"),
@@ -225,6 +344,33 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
     parameter_entries = {
         entry["bundle_id"]: entry for entry in parameter_policy.get("bundles", [])
     }
+    packet_locks = load_data_packet_locks(config)
+    packet_locks_by_id = {
+        packet["packet_id"]: packet
+        for packet in packet_locks.get("packets", [])
+        if isinstance(packet, dict) and isinstance(packet.get("packet_id"), str)
+    }
+
+    def record_hashes(directory: Path) -> dict[str, str]:
+        return {
+            "sha256": bundle_hash(directory),
+            "sha256_algorithm": "management-bundle-hash-v1",
+        }
+
+    def data_lock_projection(bundle_id: str) -> dict[str, Any]:
+        packet = packet_locks_by_id.get(bundle_id)
+        if packet is None:
+            return {}
+        return {
+            "data_repository": packet_locks.get("data_repository"),
+            "data_commit": packet_locks.get("data_commit"),
+            "packet_id": packet.get("packet_id"),
+            "packet_version": packet.get("packet_version"),
+            "packet_path": packet.get("packet_path"),
+            "packet_fingerprint": packet.get("packet_fingerprint"),
+            "materialization": packet.get("materialization"),
+        }
+
     data_root = Path(config["repositories"]["data"]["local_path"])
     packets = data_root / "packets"
     if packets.exists():
@@ -240,7 +386,8 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
                     "repository": "data",
                     "path": str(directory.relative_to(data_root)),
                     "bundle_id": bundle_id,
-                    "sha256": bundle_hash(directory),
+                    **record_hashes(directory),
+                    "data_lock": data_lock_projection(bundle_id),
                     **ownership_projection(policy),
                 }
             )
@@ -257,7 +404,8 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
                     "repository": "eos",
                     "path": str(directory.relative_to(eos)),
                     "bundle_id": bundle_id,
-                    "sha256": bundle_hash(directory),
+                    **record_hashes(directory),
+                    "data_lock": data_lock_projection(bundle_id),
                     **ownership_projection(policy),
                 }
             )
@@ -277,7 +425,8 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
                     "repository": "validation",
                     "path": str(directory.relative_to(validation)),
                     "bundle_id": bundle_id,
-                    "sha256": bundle_hash(directory),
+                    **record_hashes(directory),
+                    "data_lock": data_lock_projection(bundle_id),
                     "migration_state": "legacy_copy_pending_disposition",
                     **ownership_projection(policy),
                 }
@@ -430,6 +579,7 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
             )
         if catalog_presence == "absent" and entry.get("runtime_owner") is not None:
             errors.append(f"absent EOS catalog packet {bundle_id} cannot own runtime")
+    errors.extend(data_packet_lock_errors(config, by_id))
     eos = Path(config["repositories"]["eos"]["local_path"])
     eos_bundles = eos / "src" / "epcsaft" / "data" / "bundles"
     discovered: set[str] = set()
@@ -724,6 +874,10 @@ def validate_config(config: dict[str, Any]) -> list[str]:
     if config.get("parameter_ownership") != "manifests/parameter-ownership.json":
         errors.append(
             "parameter ownership manifest must be manifests/parameter-ownership.json"
+        )
+    if config.get("data_packet_locks") != DATA_PACKET_LOCKS_RELATIVE:
+        errors.append(
+            "Data packet locks must be manifests/data-packet-locks.json"
         )
     if config.get("approved_operations") != "manifests/approved-operations.json":
         errors.append("approved operations must be manifests/approved-operations.json")

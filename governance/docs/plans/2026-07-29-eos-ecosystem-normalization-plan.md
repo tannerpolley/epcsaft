@@ -2,6 +2,11 @@
 
 Status: planned; execution blocked on ecosystem quiescence
 
+The parameter-storage and repository-topology portions of this historical
+plan are superseded by Governance revision 6 and
+`docs/plans/2026-07-31-data-packet-landing.md`. Keep this file as planning
+evidence; current packet ownership and locks live in Management and Data.
+
 Plan owner: Management
 
 Created: 2026-07-29
