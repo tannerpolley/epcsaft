@@ -357,9 +357,14 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
             "sha256_algorithm": "management-bundle-hash-v1",
         }
 
-    def data_lock_projection(bundle_id: str) -> dict[str, Any]:
+    def data_lock_projection(
+        bundle_id: str,
+        packet_path: str | None = None,
+    ) -> dict[str, Any]:
         packet = packet_locks_by_id.get(bundle_id)
-        if packet is None:
+        if packet is None or (
+            packet_path is not None and packet.get("packet_path") != packet_path
+        ):
             return {}
         return {
             "data_repository": packet_locks.get("data_repository"),
@@ -387,7 +392,10 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
                     "path": str(directory.relative_to(data_root)),
                     "bundle_id": bundle_id,
                     **record_hashes(directory),
-                    "data_lock": data_lock_projection(bundle_id),
+                    "data_lock": data_lock_projection(
+                        bundle_id,
+                        str(directory.relative_to(data_root)),
+                    ),
                     **ownership_projection(policy),
                 }
             )

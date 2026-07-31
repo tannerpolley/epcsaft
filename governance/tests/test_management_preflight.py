@@ -92,13 +92,15 @@ def test_parameter_ledger_labels_legacy_hash_and_carries_data_lock() -> None:
     )
     records = MODULE.parameter_state(config)["records"]
     data_records = [record for record in records if record["repository"] == "data"]
-    assert data_records
+    active_data_records = [record for record in data_records if record["data_lock"]]
+    assert active_data_records
     assert all(
         record["sha256_algorithm"] == "management-bundle-hash-v1"
         and record["data_lock"]["data_repository"] == "ePC-SAFT/ePC-SAFT-data"
         and len(record["data_lock"]["packet_fingerprint"]) == 64
-        for record in data_records
+        for record in active_data_records
     )
+    assert any(not record["data_lock"] for record in data_records)
 
 
 def test_configured_operation_receipts_use_the_canonical_envelope() -> None:
