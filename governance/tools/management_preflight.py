@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "manifests" / "management.json"
 GENERATED = ROOT / ".management-state"
 ARTIFACT_POLICY_PATH = ROOT / "manifests" / "artifact-store-policy.json"
+ARTIFACT_DISPOSITIONS_RELATIVE = "manifests/artifact-dispositions.json"
 OPERATION_RECEIPT_SCHEMA_PATH = (
     ROOT / "manifests" / "operation-receipt-envelope-v1.json"
 )
@@ -886,6 +887,10 @@ def validate_config(config: dict[str, Any]) -> list[str]:
     if config.get("data_packet_locks") != DATA_PACKET_LOCKS_RELATIVE:
         errors.append(
             "Data packet locks must be manifests/data-packet-locks.json"
+        )
+    if config.get("artifact_dispositions") != ARTIFACT_DISPOSITIONS_RELATIVE:
+        errors.append(
+            "artifact dispositions must be manifests/artifact-dispositions.json"
         )
     if config.get("approved_operations") != "manifests/approved-operations.json":
         errors.append("approved operations must be manifests/approved-operations.json")

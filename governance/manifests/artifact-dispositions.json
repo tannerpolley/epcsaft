@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "purpose": "Retain non-active candidate wheels as compressed evidence without leaving installable aliases.",
+  "archives": [
+    {
+      "path": "archive/candidate-wheel-dispositions-20260731.tar.zst",
+      "sha256": "2b649c5f3fb1535fae15ec2a9b0bca023f25f39e927171f3721110402a1ccdbc",
+      "bytes": 4491414,
+      "entries": 2
+    }
+  ],
+  "dispositions": [
+    {
+      "archive_member": "wheels/equilibrium-khudaida-figure2-candidate-v1/f696288/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "4f2e0bb534072f628239202dc0ae854c1d50a07989dd8b825eb3e2bd86339970",
+      "distribution": "epcsaft-equilibrium",
+      "retention": "failed-or-non-admission-evidence",
+      "reason": "Khudaida Figure 2 candidate wheel retained for diagnostic replay; it is not an admitted active SDK subject."
+    },
+    {
+      "archive_member": "wheels/eos-native-sdk-candidate-v1/50cf2c2/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "9f61f6835b2435a3d9649f6f27ebae107a46e6bafc107b263e50681033342370",
+      "distribution": "epcsaft",
+      "retention": "superseded-replay",
+      "reason": "Superseded EOS native-SDK candidate retained for exact replay; the active installable subject is the Management SHA-256 object."
+    }
+  ]
+}

@@ -22,6 +22,8 @@ Management owns:
 Artifact layout and admission rules are documented in
 [docs/artifact-store.md](docs/artifact-store.md). Cross-repository consumers
 install only full-SHA-256 objects; repository `dist/` wheels are rejected.
+Non-active candidate wheel retention is recorded in
+[manifests/artifact-dispositions.json](manifests/artifact-dispositions.json).
 
 Scientific-packet storage, runtime-copy, evidence, and pending disposition
 ownership are tracked in

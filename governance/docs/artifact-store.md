@@ -12,6 +12,7 @@ artifacts/
   index.json
   objects/sha256/<full-sha256>/<wheel-name>.whl
   archive/legacy-sdk-wheels-20260730.tar.zst
+  archive/candidate-wheel-dispositions-20260731.tar.zst
 ```
 
 `active/` is the only live SDK channel. It contains exactly one immutable
@@ -25,6 +26,9 @@ Superseded wheels are not alternate SDKs. They are retained, when needed for
 scientific provenance, only inside the compressed archive recorded by
 `manifests/artifact-archive.json`. The archive includes the pre-cleanup
 indexes and a path/hash manifest, but is not an installation source.
+Later candidate dispositions use a separate compressed archive and are
+recorded in `manifests/artifact-dispositions.json`; those archives are also
+never installation sources.
 
 Normalize after intentionally adding a wheel:
 

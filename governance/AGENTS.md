@@ -29,6 +29,8 @@ only. It owns no active plan, queue, gate, decision, or authority.
 - `GOVERNANCE.md`: permanent doctrine.
 - `CONTEXT.md`: current role and vocabulary.
 - `manifests/management.json`: repository and access source of truth.
+- `manifests/artifact-dispositions.json`: compressed-retention records for
+  non-active candidate wheels.
 - `manifests/data-packet-locks.json`: immutable Data packet commit and
   fingerprint locks for the parameter ownership inventory.
 - `manifests/drafts.json`: retained branch and pull-request dispositions.

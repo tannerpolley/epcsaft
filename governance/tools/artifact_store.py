@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANAGEMENT = ROOT / "manifests" / "management.json"
 POLICY = ROOT / "manifests" / "artifact-store-policy.json"
 TRACKED_INDEX = ROOT / "manifests" / "artifacts.json"
+DISPOSITIONS = ROOT / "manifests" / "artifact-dispositions.json"
 
 
 def load_json(path: Path) -> Any:
@@ -66,6 +67,47 @@ def active_subjects(policy: dict[str, Any]) -> dict[str, str]:
         distribution: subject["sha256"]
         for distribution, subject in policy["active_distributions"].items()
     }
+
+
+def disposition_errors(artifact_root: Path, policy: dict[str, Any]) -> list[str]:
+    if not DISPOSITIONS.exists():
+        return [f"missing artifact disposition manifest: {DISPOSITIONS}"]
+    manifest = load_json(DISPOSITIONS)
+    if manifest.get("schema_version") != 1:
+        return ["artifact disposition manifest schema_version must be 1"]
+    allowed = set(policy["allowed_retention"])
+    errors: list[str] = []
+    archives = manifest.get("archives")
+    if not isinstance(archives, list) or not archives:
+        errors.append("artifact disposition manifest archives must be non-empty")
+    else:
+        for archive in archives:
+            if not isinstance(archive, dict):
+                errors.append("artifact disposition archive entries must be objects")
+                continue
+            relative = archive.get("path")
+            path = artifact_root / relative if isinstance(relative, str) else None
+            if path is None or not path.is_file():
+                errors.append(f"missing supplemental artifact archive: {relative}")
+            elif archive.get("sha256") != sha256(path):
+                errors.append(f"supplemental artifact archive hash mismatch: {path}")
+            if not isinstance(archive.get("entries"), int) or archive["entries"] < 1:
+                errors.append(f"invalid supplemental archive entry count: {relative}")
+    dispositions = manifest.get("dispositions")
+    if not isinstance(dispositions, list) or not dispositions:
+        errors.append("artifact disposition manifest dispositions must be non-empty")
+    else:
+        for item in dispositions:
+            if not isinstance(item, dict):
+                errors.append("artifact disposition entries must be objects")
+                continue
+            if not isinstance(item.get("archive_member"), str) or not item["archive_member"].startswith("wheels/"):
+                errors.append("artifact disposition entries require archive_member under wheels/")
+            if not isinstance(item.get("sha256"), str) or len(item["sha256"]) != 64:
+                errors.append("artifact disposition entries require a 64-hex sha256")
+            if item.get("retention") not in allowed:
+                errors.append(f"invalid artifact disposition retention: {item.get('retention')}")
+    return errors
 
 
 def aliases(artifact_root: Path, policy: dict[str, Any]) -> list[Path]:
@@ -155,6 +197,7 @@ def check() -> list[str]:
     tracked = load_json(TRACKED_INDEX)
     expected = build_index(artifact_root, policy)
     errors: list[str] = []
+    errors.extend(disposition_errors(artifact_root, policy))
     if recorded != expected:
         errors.append("artifact index is stale; run artifact_store.py normalize")
     if tracked != expected:

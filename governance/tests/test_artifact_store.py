@@ -34,3 +34,18 @@ def test_active_channel_has_one_full_sha256_subject_per_distribution() -> None:
         for digest in [subject["sha256"]]
     )
     assert policy["rules"]["one_active_wheel_per_distribution"] == "required"
+
+
+def test_candidate_wheels_have_a_compressed_disposition_record() -> None:
+    management = json.loads(
+        (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
+    )
+    errors = MODULE.disposition_errors(
+        Path(management["artifact_root"]),
+        json.loads(
+            (ROOT / "manifests" / "artifact-store-policy.json").read_text(
+                encoding="utf-8"
+            )
+        ),
+    )
+    assert errors == []

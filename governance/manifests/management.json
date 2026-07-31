@@ -4,6 +4,7 @@
   "control_plane": "management",
   "project_root": "~/Workspaces/Engineering/ePC-SAFT-project",
   "artifact_root": "~/Workspaces/Engineering/ePC-SAFT-project/artifacts",
+  "artifact_dispositions": "manifests/artifact-dispositions.json",
   "parameter_ownership": "manifests/parameter-ownership.json",
   "data_packet_locks": "manifests/data-packet-locks.json",
   "approved_operations": "manifests/approved-operations.json",
