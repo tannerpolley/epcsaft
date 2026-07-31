@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+from copy import deepcopy
 from pathlib import Path
 
 
@@ -74,6 +75,63 @@ def test_configured_operation_receipts_use_the_canonical_envelope() -> None:
         (ROOT / "manifests" / "management.json").read_text(encoding="utf-8")
     )
     assert MODULE.operation_receipt_errors(config) == []
+
+
+def test_operation_receipt_rejects_record_tampering() -> None:
+    receipt = json.loads(
+        (ROOT / "receipts" / "data-repository-creation-preflight.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    receipt["record"]["observations"][0]["outcome"] = "fail"
+    schema = json.loads(MODULE.OPERATION_RECEIPT_SCHEMA_PATH.read_text())
+    errors = MODULE.validate_operation_receipt(
+        "tampered.json",
+        receipt,
+        schema,
+        MODULE.sha256(MODULE.OPERATION_RECEIPT_SCHEMA_PATH),
+    )
+    assert "operation receipt tampered.json subject does not bind its record" in errors
+    assert "operation receipt tampered.json has a failed observation" in errors
+
+
+def test_operation_receipt_rejects_same_producer_and_reviewer() -> None:
+    receipt = json.loads(
+        (ROOT / "receipts" / "data-repository-creation-preflight.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    receipt["envelope"]["reviewer"] = deepcopy(
+        receipt["envelope"]["producer"]
+    )
+    schema = json.loads(MODULE.OPERATION_RECEIPT_SCHEMA_PATH.read_text())
+    errors = MODULE.validate_operation_receipt(
+        "self-reviewed.json",
+        receipt,
+        schema,
+        MODULE.sha256(MODULE.OPERATION_RECEIPT_SCHEMA_PATH),
+    )
+    assert (
+        "operation receipt self-reviewed.json producer and reviewer must differ"
+        in errors
+    )
+
+
+def test_operation_receipt_rejects_wrong_schema_version() -> None:
+    receipt = json.loads(
+        (ROOT / "receipts" / "data-repository-creation-preflight.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    receipt["envelope"]["schema"]["version"] = 2
+    schema = json.loads(MODULE.OPERATION_RECEIPT_SCHEMA_PATH.read_text())
+    errors = MODULE.validate_operation_receipt(
+        "wrong-schema.json",
+        receipt,
+        schema,
+        MODULE.sha256(MODULE.OPERATION_RECEIPT_SCHEMA_PATH),
+    )
+    assert "operation receipt wrong-schema.json has invalid schema identity" in errors
 
 
 def test_parameter_packets_separate_storage_runtime_and_evidence_owners() -> None:

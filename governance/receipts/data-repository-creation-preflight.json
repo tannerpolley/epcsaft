@@ -1,0 +1,96 @@
+{
+  "envelope": {
+    "schema": {
+      "path": "manifests/operation-receipt-envelope-v1.json",
+      "version": 1,
+      "sha256": "7cc1cbf4b92aaa54a4f7856bab5de4f1d8d2855c63566e5ecfe9660fb6f2061e"
+    },
+    "sequence": 1,
+    "subject": {
+      "operation": "create-public-repository",
+      "repository": "ePC-SAFT/ePC-SAFT-data",
+      "visibility": "public",
+      "default_branch": "main",
+      "doctrine_revision": 6,
+      "phase": "authorization-preflight",
+      "record_sha256": "91b7c32491e89bdce59e8bb61350764fa09a4a42e92bb9dee643c7108d2d776d"
+    },
+    "subject_sha256": "e5cf4db4331108e366c27dba7499abda9e6951deadc7697a9dc113d042bd9c31",
+    "validator": {
+      "repository": "ePC-SAFT/ePC-SAFT-management",
+      "commit": "8b3bc6e3ae64abf1cf46b0e69519f2ad1a529b28",
+      "path": "tools/management_preflight.py",
+      "sha256": "ef422b1c4f35a6cecae25b61f2d6db2197cc4c51e9924caeb7a38c26e64831ac"
+    },
+    "command": "gh repo view ePC-SAFT/ePC-SAFT-data --json id,nameWithOwner,visibility,defaultBranchRef",
+    "environment": {
+      "captured_at": "2026-07-31",
+      "timezone": "America/Denver",
+      "platform": "linux",
+      "github_cli": "gh version 2.96.0 (2026-07-02)"
+    },
+    "artifacts": [],
+    "producer": {
+      "kind": "codex-task",
+      "id": "data-repository-doctrine-task",
+      "repository": "ePC-SAFT/ePC-SAFT-management",
+      "issue": 10
+    },
+    "reviewer": {
+      "kind": "independent-agent",
+      "id": "019fb8de-d3ba-7940-93ab-35eb75d2a974",
+      "outcome": "receipt-integrity-findings-remediated"
+    },
+    "failed_outcomes": [
+      {
+        "stage": "standards-review",
+        "outcome": "rejected",
+        "reason": "The initial preflight record omitted the doctrine-required receipt envelope."
+      },
+      {
+        "stage": "spec-review",
+        "outcome": "rejected",
+        "reason": "The first envelope did not bind its record and referenced a validator that predated envelope validation."
+      }
+    ],
+    "supersedes": null,
+    "revoked_by": null,
+    "user_approval": {
+      "source": "explicit Codex task request on 2026-07-31",
+      "subject_sha256": "e5cf4db4331108e366c27dba7499abda9e6951deadc7697a9dc113d042bd9c31"
+    }
+  },
+  "record": {
+    "status": "authorized_pending",
+    "observations": [
+      {
+        "name": "target_namespace_absent",
+        "expected": "GitHub reports that ePC-SAFT/ePC-SAFT-data does not exist.",
+        "observed": "GitHub could not resolve ePC-SAFT/ePC-SAFT-data.",
+        "command_exit_code": 1,
+        "outcome": "pass"
+      }
+    ],
+    "preconditions": [
+      "Doctrine revision 6 is merged before repository creation.",
+      "The ePC-SAFT/ePC-SAFT-data namespace remains unoccupied at mutation time.",
+      "The initial repository contains only the minimal packet contract and admitted packet content.",
+      "No package imports from or fetches the Data repository at runtime."
+    ],
+    "expected_postconditions": [
+      "The repository is public with main as its default branch.",
+      "Management records the repository identity and exact initial commit in a later operation-state receipt.",
+      "Canonical packets are self-contained under packets/<packet-id>/<version>/.",
+      "EOS runtime copies and Validation evidence pin immutable Data inputs."
+    ],
+    "retry": "Repeat the namespace lookup once immediately before creation; stop if the namespace is occupied.",
+    "stop_conditions": [
+      "Doctrine revision 6 is not merged.",
+      "The namespace resolves to an existing repository.",
+      "The requested organization, visibility, or default branch differs from the approved subject."
+    ],
+    "reversibility": "Repository contents are reversible through Git. Repository deletion is not authorized; an erroneous creation stops for user direction.",
+    "irreversible_effects": [],
+    "recovery_owner": "ePC-SAFT/ePC-SAFT-management"
+  }
+}
