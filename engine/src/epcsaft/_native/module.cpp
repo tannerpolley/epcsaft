@@ -210,6 +210,8 @@ PYBIND11_MODULE(_core, module) {
         py::arg("unknown_applicability_admitted") = false,
         py::arg("aqueous_solvation_factor_admitted") = false,
         py::arg("ion_solvation_kij_admitted") = false,
-        py::arg("topology_fingerprint") = ""
+        py::arg("topology_fingerprint") = "",
+        py::arg("site_ids") = std::vector<std::string>{},
+        py::arg("artifact_fingerprint") = ""
     );
 }

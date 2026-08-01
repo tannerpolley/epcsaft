@@ -76,7 +76,9 @@ See [the Python API guide](docs/python-api.md) for the complete dictionary
 schema, units, aliases, bundle route, errors, and property API. The SDK headers
 are installed under `epcsaft/include/epcsaft`; native capability admission uses
 resolved topology, required fields, component order, and validity—not source or
-bundle fingerprints.
+bundle fingerprints. Neutral associating pure models expose one generic
+descriptor-driven fixed-topology callback for ordered active-parameter subsets;
+no scalar or 2B-specific association callback is retained.
 
 ## Scientific boundary
 

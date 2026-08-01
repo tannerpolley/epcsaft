@@ -26,7 +26,9 @@ pybind11::capsule make_native_sdk_v1(
     bool unknown_applicability_admitted,
     bool aqueous_solvation_factor_admitted,
     bool ion_solvation_kij_admitted,
-    const std::string& topology_fingerprint
+    const std::string& topology_fingerprint,
+    const std::vector<std::string>& site_ids,
+    const std::string& artifact_fingerprint
 );
 
 }  // namespace epcsaft

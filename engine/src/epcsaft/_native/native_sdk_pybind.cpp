@@ -23,7 +23,9 @@ pybind11::capsule make_native_sdk_v1(
     bool unknown_applicability_admitted,
     bool aqueous_solvation_factor_admitted,
     bool ion_solvation_kij_admitted,
-    const std::string& topology_fingerprint
+    const std::string& topology_fingerprint,
+    const std::vector<std::string>& site_ids,
+    const std::string& artifact_fingerprint
 ) {
     const epcsaft_native_sdk_v1* sdk = create_native_sdk_v1(
         model,
@@ -42,7 +44,9 @@ pybind11::capsule make_native_sdk_v1(
         unknown_applicability_admitted,
         aqueous_solvation_factor_admitted,
         ion_solvation_kij_admitted,
-        topology_fingerprint
+        topology_fingerprint,
+        site_ids,
+        artifact_fingerprint
     );
     return pybind11::capsule(
         const_cast<epcsaft_native_sdk_v1*>(sdk),

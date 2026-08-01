@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <vector>
@@ -89,8 +90,115 @@ bool neutral_inverse_packing_is_available(const char* path) {
     return valid;
 }
 
+bool fixed_topology_association_is_available(
+    const char* path,
+    const char* expected_artifact_fingerprint
+) {
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
+    epcsaft_native_model_handle_v1* model =
+        epcsaft_native_model_load_v1(path, error, sizeof(error));
+    if (model == nullptr) {
+        std::cerr << error << '\n';
+        return false;
+    }
+    const epcsaft_native_sdk_v1* sdk = epcsaft_native_model_sdk_v1(model);
+    const char* fingerprint = epcsaft_native_model_fingerprint_v1(model);
+    const auto* descriptor =
+        sdk == nullptr ? nullptr : sdk->fixed_topology_association;
+    bool valid = sdk != nullptr && fingerprint != nullptr
+        && sdk->table_size == sizeof(epcsaft_native_sdk_v1)
+        && sdk->fixed_topology_association_result_size
+            == sizeof(epcsaft_fixed_topology_phase_result_v1)
+        && descriptor != nullptr
+        && sdk->evaluate_fixed_topology_association != nullptr
+        && descriptor->schema_version
+            == EPCSAFT_FIXED_TOPOLOGY_ASSOCIATION_SCHEMA_VERSION_V1
+        && descriptor->site_count == 3 && descriptor->slot_count == 7
+        && std::strcmp(
+            descriptor->artifact_fingerprint,
+            expected_artifact_fingerprint
+        ) == 0;
+    const double values[] = {
+        1.4, 3.2, 220.0, 2400.0, 0.03, 1800.0, 0.025,
+    };
+    std::vector<epcsaft_fixed_topology_parameter_request_v1> requests;
+    if (valid) {
+        requests.reserve(descriptor->slot_count);
+        for (std::size_t index = 0; index < descriptor->slot_count; ++index) {
+            const auto& slot = descriptor->slots[index];
+            requests.push_back({
+                sizeof(epcsaft_fixed_topology_parameter_request_v1),
+                slot.parameter_family,
+                slot.component_index,
+                slot.site_index_a,
+                slot.site_index_b,
+                slot.unit,
+                values[index],
+            });
+        }
+    }
+    const std::size_t coordinate_count = 2 + requests.size();
+    std::vector<double> gradient(coordinate_count);
+    std::vector<double> hessian(coordinate_count * coordinate_count);
+    epcsaft_fixed_topology_phase_result_v1 result{};
+    result.struct_size = sizeof(result);
+    result.coordinate_count = coordinate_count;
+    result.active_parameter_count = requests.size();
+    result.gradient_capacity = gradient.size();
+    result.hessian_capacity = hessian.size();
+    result.gradient = gradient.data();
+    result.hessian = hessian.data();
+    const int status = valid
+        ? sdk->evaluate_fixed_topology_association(
+            sdk->model_context,
+            fingerprint,
+            descriptor->topology_fingerprint,
+            expected_artifact_fingerprint,
+            300.0,
+            1.0,
+            1.0 / 6000.0,
+            requests.data(),
+            requests.size(),
+            &result
+        )
+        : EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+    valid = valid && status == EPCSAFT_NATIVE_STATUS_OK_V1
+        && result.status == EPCSAFT_NATIVE_STATUS_OK_V1
+        && std::strcmp(
+            result.artifact_fingerprint,
+            descriptor->artifact_fingerprint
+        ) == 0
+        && std::all_of(
+            gradient.begin(), gradient.end(),
+            [](double value) { return std::isfinite(value); }
+        )
+        && std::all_of(
+            hessian.begin(), hessian.end(),
+            [](double value) { return std::isfinite(value); }
+        );
+    if (valid) {
+        std::cout << std::setprecision(17)
+                  << "association_value="
+                  << result.helmholtz_over_rt_reference_amount << '\n';
+        const auto print_vector = [](const char* label, const auto& values) {
+            std::cout << label << '=';
+            for (std::size_t index = 0; index < values.size(); ++index) {
+                if (index != 0) {
+                    std::cout << ',';
+                }
+                std::cout << values[index];
+            }
+            std::cout << '\n';
+        };
+        print_vector("association_gradient", gradient);
+        print_vector("association_hessian", hessian);
+    }
+    epcsaft_native_model_destroy_v1(model);
+    return valid;
+}
+
 int main(int argc, char** argv) {
-    if (argc != 3) {
+    if (argc != 6) {
         return 2;
     }
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
@@ -306,7 +414,9 @@ int main(int argc, char** argv) {
         )
         && std::isfinite(pressure_derivatives[0])
         && std::isfinite(parameter_derivatives[0])
-        && neutral_inverse_packing_is_available(argv[2]);
+        && neutral_inverse_packing_is_available(argv[2])
+        && fixed_topology_association_is_available(argv[3], argv[5])
+        && !fixed_topology_association_is_available(argv[4], argv[5]);
     std::cout << "component_count=" << (sdk == nullptr ? 0 : sdk->component_count)
               << '\n'
               << "phase_pressure_pa=" << phase.pressure_pa << '\n'

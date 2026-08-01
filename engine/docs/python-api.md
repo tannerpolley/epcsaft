@@ -125,6 +125,15 @@ exact component order, and declared applicability. Parameter and topology
 fingerprints remain deterministic handshake values, but paper, packet, and
 bundle membership never admit or reject an endpoint.
 
+For an admitted neutral associating pure model, the installed header exposes
+one `fixed_topology_association` descriptor and callback. The descriptor lists
+the immutable site graph and typed active slots; callers may request any
+nonempty ordered subset and receive the exact value, gradient, and row-major
+Hessian in `(amount, volume, requested slots...)`. Parameter, topology, and
+installed-artifact fingerprints are mandatory fail-closed identities. There
+are no scalar association callbacks, 2B-specific entry points, or alternate
+association-basis selector.
+
 Future polar equation support will retain independently parameterized dipole,
 quadrupole, and dipole–quadrupole inputs while reporting one aggregate
 `ares_polar` contribution.

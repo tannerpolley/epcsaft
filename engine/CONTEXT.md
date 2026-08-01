@@ -108,15 +108,19 @@ The scalar pure path supports independent family fits and does not replace
 the accepted joint `(m,sigma,epsilon/k)` workflow. None is authoritative
 until a separate promotion receipt is accepted, and neither adds phase,
 density, equilibrium, or regression ownership.
-For an exact neutral pure 2B model with one donor and one acceptor site, the
-tail also exposes scalar association-energy/volume derivatives and two
-distinct joint seven-coordinate pure-phase Hessians. The original joint
-callback uses the Baygi--Pahlavanzadeh Eq. 4 temperature-dependent `d_ij^3`
-basis. The appended ordinary callback and its exact typed descriptor use the
-Gross--Sadowski `sigma_ij^3 kappa` basis owned by the public EOS. The
-callbacks supply derivative transport for bounded Regression reconstructions
-and do not admit other association topologies, targets, fitted values, or
-parameter persistence.
+The append-only fixed-topology association candidate exposes the ordinary
+`sigma_ij^3 kappa` mechanics without adding topology selection. Its model-
+bound descriptor publishes component and site identities, positive site
+multiplicities, allowed continuous slots, parameter/topology/artifact
+fingerprints, temperature domain, basis, derivative order, and tensor layout.
+A caller may activate any nonempty ordered subset of the advertised `m`,
+`sigma`, `epsilon/k`, site-pair association-energy, and site-pair
+association-volume slots. The callback returns exact value, gradient, and
+complete row-major Hessian coordinates in `(n,V,requested slots...)` with
+exact caller-owned capacities. Unknown, duplicate, malformed, nonfinite,
+nonpositive, or fingerprint-mismatched requests fail closed. It adds no scalar
+association callback, 2B-specific path, fitted values, topology inference,
+regression policy, parameter persistence, or production authority.
 The same finite descriptor set now binds the existing first-derivative
 callbacks for resolved water single-ion Born diameter and NaBr water
 solvation factor to their exact component identity, direct-observable
