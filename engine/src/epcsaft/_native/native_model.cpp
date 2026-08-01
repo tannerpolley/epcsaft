@@ -30,7 +30,6 @@ double optional_limit(const Json& object, const char* name) {
         ? std::numeric_limits<double>::quiet_NaN()
         : value.get<double>();
 }
-
 void copy_error(const std::string& message, char* error, std::size_t capacity) {
     if (error == nullptr || capacity == 0) {
         return;
@@ -120,7 +119,9 @@ extern "C" epcsaft_native_model_handle_v1* epcsaft_native_model_load_v1(
             sdk.at("unknown_applicability_admitted").get<bool>(),
             sdk.at("aqueous_solvation_factor_admitted").get<bool>(),
             sdk.value("ion_solvation_kij_admitted", false),
-            sdk.value("topology_fingerprint", std::string{})
+            sdk.value("topology_fingerprint", std::string{}),
+            sdk.value("site_ids", std::vector<std::string>{}),
+            sdk.value("artifact_fingerprint", std::string{})
         );
         return new epcsaft_native_model_handle_v1{table, fingerprint};
     } catch (const std::exception& exception) {

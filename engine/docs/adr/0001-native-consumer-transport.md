@@ -3,7 +3,8 @@
 Status: accepted pure prefix authority determined by migration promotion
 receipt 0015; append-only neutral-mixture, active-kij, active-lij, and scalar
 pure-parameter entries are local candidates pending independent review and
-their own promotion receipts; a
+their own promotion receipts; a generic pure fixed-topology association entry
+is an issue-61 implementation candidate with no authority effect; a
 model-bound active-Born solvation entry is design-only pending bounded
 independent review, implementation, evidence, and its own authority decision;
 an append-only charge-neutral reference-basis entry is a Project Truss
@@ -139,18 +140,20 @@ fingerprints, derivative order, and source temperature domain. This projection
 does not replace the joint five-coordinate callback used by accepted
 three-parameter pure-saturation regression.
 
-For an exact neutral pure 2B topology with one donor and one acceptor site of
-unit multiplicity, the same scalar callback also exposes one active association
-energy or association volume using the ordinary source-owned `sigma_ij^3`
-basis. A separate append-only callback returns the seven-coordinate joint
-pure-phase Hessian needed by the bounded Baygi--Pahlavanzadeh reconstruction.
-That source-model callback uses Eq. 4's temperature-dependent `d_ij^3` basis
-without changing the ordinary EOS EOS. A further append-only callback
-returns the same coordinate tensor on the ordinary Gross--Sadowski
-`sigma_ij^3 kappa` basis, reusing the same CppAD and implicit-site owner. Its
-distinct capability code and seven typed coordinates prevent consumers from
-confusing the two bases. None of these callbacks owns targets, bounds, scaling,
-Ceres, fitted values, or catalog persistence.
+The issue-61 candidate appends one variable-width pure fixed-topology
+association callback and descriptor. The descriptor binds exact component and
+site order, site multiplicities, typed allowed slots, parameter, topology, and
+installed-artifact fingerprints, temperature domain, ordinary
+`sigma_ij^3 kappa` basis, per-slot open physical bounds, derivative order,
+and row-major tensor layout. Its slots comprise `m`, `sigma`, `epsilon/k`,
+and one association-energy and association-volume coordinate for each
+canonical allowed site pair. A caller supplies any nonempty ordered subset and
+exact-size gradient and Hessian buffers; output coordinates are
+`(n,V,requested slots...)`. Unknown, duplicated, noncanonical, malformed,
+nonfinite, nonpositive, or fingerprint-mismatched requests fail closed. EOS
+retains the allowed-bond graph, inactive values, implicit site-fraction solve,
+and exact first and second derivatives. No scalar association callback,
+alternate basis, 2B wrapper, or compatibility path remains.
 
 The historical D-024 candidate appended the full-electrolyte phase callback and
 two model-bound volume-domain callbacks. Its unchanged phase callback recorded
@@ -307,9 +310,11 @@ The EOS-side evidence requires:
   against an independent numerical oracle;
 - fixed/parameterized value agreement at the source methane parameters and
   independent five-coordinate gradient and Hessian-vector checks;
-- ordinary-sigma joint 2B value, pressure, and chemical-potential parity with
-  the public DEEA EOS state plus centered checks of all five parameter
-  gradient columns and Hessian columns;
+- fixed-topology 2B descriptor parity and a non-2B three-site, two-bond case
+  whose value, every gradient entry, and every Hessian entry are checked
+  against independently rebuilt public-model finite differences;
+- arbitrary ordered subsets, nonunit multiplicity, exact ABI capacities,
+  failed inner solves, and parameter/topology/artifact identity rejection;
 - methane, ethane, and propane in-domain coverage; and
 - absence of EOS implementation sources from the EOS wheel.
 
@@ -348,11 +353,10 @@ delegation and result translation only.
 - Neutral nonassociating models with more than two components require separate
   scope and evidence.
 - Binary-interaction families beyond the active `k_ij` and `l_ij` candidates,
-  association topologies beyond the exact pure
-  2B scalar and Baygi joint candidates, electrolyte, and other
-  fitted-parameter families require separate parameterized phase contracts
-  and evidence. They are not implied by the pure three-parameter entry or this
-  bounded candidate.
+  cross-association observations, topology selection, electrolyte, and other
+  fitted-parameter families require separate contracts and evidence. The
+  issue-61 entry varies continuous coordinates only inside one immutable,
+  EOS-advertised neutral pure topology.
 - The D-023 active-Born solvation candidate does not admit fitted parameters,
   additional ions, solvation-factor or dielectric
   parameters, other solvents/states, a generic parameter overlay, or catalog

@@ -32,10 +32,25 @@ struct NativeParameterizedPurePhaseBlock final {
     double chemical_potential_over_rt;
 };
 
-struct NativeAssociatingParameterizedPurePhaseBlock final {
+enum class NativeFixedTopologyParameterKind {
+    SegmentCount,
+    SegmentDiameter,
+    DispersionEnergyOverK,
+    AssociationEnergyOverK,
+    AssociationVolume,
+};
+
+struct NativeFixedTopologyParameter final {
+    NativeFixedTopologyParameterKind kind;
+    std::size_t site_a;
+    std::size_t site_b;
+    double value;
+};
+
+struct NativeFixedTopologyPhaseBlock final {
     double helmholtz_over_rt_reference_amount;
-    std::array<double, 7> gradient;
-    std::array<double, 49> hessian;
+    std::vector<double> gradient;
+    std::vector<double> hessian;
     double pressure_pa;
     double chemical_potential_over_rt;
 };
@@ -70,30 +85,50 @@ inline bool supports_pure_phase_block(const NativeParameters& parameters) {
 }
 
 // EqExclude: input and domain validation
-inline bool supports_associating_pure_phase_block(
+inline bool supports_fixed_topology_associating_pure_phase_block(
     const NativeParameters& parameters
 ) {
-    if (parameters.segment_count.size() != 1
-        || parameters.site_component.size() != 2
-        || parameters.charge_number.size() != 1
-        || parameters.charge_number[0] != 0
-        || !std::all_of(
+    const std::size_t sites = parameters.site_component.size();
+    if (!(parameters.segment_count.size() == 1
+        && parameters.charge_number.size() == 1
+        && parameters.charge_number[0] == 0
+        && sites > 0
+        && parameters.site_multiplicity.size() == sites
+        && parameters.association_active.size() == sites * sites
+        && parameters.association_energy_over_k.size() == sites * sites
+        && parameters.association_volume.size() == sites * sites
+        && std::all_of(
             parameters.site_component.begin(),
             parameters.site_component.end(),
             [](int component) { return component == 0; }
-        )) {
+        )
+        && std::all_of(
+            parameters.site_multiplicity.begin(),
+            parameters.site_multiplicity.end(),
+            [](int multiplicity) { return multiplicity > 0; }
+        )
+        && std::any_of(
+            parameters.association_active.begin(),
+            parameters.association_active.end(),
+            [](int active) { return active != 0; }
+        ))) {
         return false;
     }
-    const auto& active = parameters.association_active;
-    return active.size() == 4
-        && parameters.site_multiplicity
-            == std::vector<int>({1, 1})
-        && active[0] == 0 && active[1] != 0
-        && active[2] != 0 && active[3] == 0
-        && parameters.association_energy_over_k[1]
-            == parameters.association_energy_over_k[2]
-        && parameters.association_volume[1]
-            == parameters.association_volume[2];
+    for (std::size_t left = 0; left < sites; ++left) {
+        for (std::size_t right = left; right < sites; ++right) {
+            const std::size_t forward = left * sites + right;
+            const std::size_t reverse = right * sites + left;
+            if (parameters.association_active[forward]
+                    != parameters.association_active[reverse]
+                || parameters.association_energy_over_k[forward]
+                    != parameters.association_energy_over_k[reverse]
+                || parameters.association_volume[forward]
+                    != parameters.association_volume[reverse]) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 // EqExclude: input and domain validation
@@ -783,114 +818,6 @@ inline NativeMixturePhaseBlock electrolyte_phase_block_active_parameters(
 // EqID: phase_pressure
 // EqID: association_mass_action
 // EqExclude: CppAD-generated derivative machinery
-inline NativeMixturePhaseBlock associating_pure_phase_parameter_block(
-    double temperature,
-    double amount,
-    double volume,
-    double parameter_value,
-    bool active_energy,
-    const NativeParameters& parameters
-) {
-    if (!supports_associating_pure_phase_block(parameters)) {
-        throw std::logic_error(
-            "active association parameters require one neutral associating component"
-        );
-    }
-    if (!std::isfinite(temperature) || !std::isfinite(amount)
-        || !std::isfinite(volume) || !std::isfinite(parameter_value)
-        || temperature <= 0.0 || amount <= 0.0 || volume <= 0.0
-        || parameter_value <= 0.0) {
-        throw std::invalid_argument(
-            "association phase inputs must be positive and finite"
-        );
-    }
-
-    NativeParameters value_parameters = parameters;
-    auto& active_values = active_energy
-        ? value_parameters.association_energy_over_k
-        : value_parameters.association_volume;
-    for (std::size_t pair = 0; pair < value_parameters.association_active.size();
-         ++pair) {
-        if (value_parameters.association_active[pair] != 0) {
-            active_values[pair] = parameter_value;
-        }
-    }
-
-    const double density = amount / volume;
-    const std::vector<double> composition{1.0};
-    const auto sigma = segment_sigma(temperature, value_parameters);
-    const auto diameter = segment_diameter(temperature, value_parameters, sigma);
-    const auto site_fractions = solve_site_fractions(
-        temperature,
-        density,
-        composition,
-        value_parameters,
-        sigma,
-        diameter
-    );
-    const auto derivatives =
-        thermodynamic_derivatives_active_pure_association_parameter(
-            temperature,
-            density,
-            composition,
-            parameters,
-            site_fractions,
-            parameter_value,
-            active_energy
-        );
-
-    const std::size_t state_coordinates = 4;
-    const std::size_t parameter_coordinate = 3;
-    const double a = derivatives.residual_helmholtz;
-    const double a_rho = derivatives.density;
-    const double a_parameter = *derivatives.active_association_parameter;
-    const double a_rho_rho =
-        derivatives.hessian[1 * state_coordinates + 1];
-    const double a_rho_parameter =
-        derivatives.hessian[1 * state_coordinates + parameter_coordinate];
-    const double a_parameter_parameter =
-        derivatives.hessian[
-            parameter_coordinate * state_coordinates + parameter_coordinate
-        ];
-
-    std::vector<double> gradient{
-        std::log(density) + a + density * a_rho,
-        -density - density * density * a_rho,
-        amount * a_parameter,
-    };
-    std::vector<double> hessian(9);
-    hessian[0] = 1.0 / amount
-        + (2.0 * a_rho + density * a_rho_rho) / volume;
-    hessian[1] = -1.0 / volume
-        - 2.0 * density * a_rho / volume
-        - density * density * a_rho_rho / volume;
-    hessian[2] = a_parameter + density * a_rho_parameter;
-    hessian[3] = hessian[1];
-    hessian[4] = density / volume
-        * (1.0 + 2.0 * density * a_rho
-           + density * density * a_rho_rho);
-    hessian[5] = -density * density * a_rho_parameter;
-    hessian[6] = hessian[2];
-    hessian[7] = hessian[5];
-    hessian[8] = amount * a_parameter_parameter;
-
-    const double value =
-        amount * (std::log(density) - 1.0 + derivatives.residual_helmholtz);
-    const double pressure = -GAS_CONSTANT * temperature * gradient[1];
-    if (!std::isfinite(value) || !std::isfinite(pressure)
-        || !std::all_of(gradient.begin(), gradient.end(), [](double item) {
-            return std::isfinite(item);
-        })
-        || !std::all_of(hessian.begin(), hessian.end(), [](double item) {
-            return std::isfinite(item);
-        })) {
-        throw std::runtime_error(
-            "active association phase block contains nonfinite values"
-        );
-    }
-    return {value, std::move(gradient), std::move(hessian), pressure};
-}
-
 // EqID: phase_packing_fraction
 // EqExclude: CppAD-generated derivative machinery
 inline NativePackingFractionBlock packing_fraction_block(
@@ -1390,56 +1317,89 @@ inline NativeParameterizedPurePhaseBlock parameterized_pure_phase_block(
 // EqID: phase_pressure
 // EqID: association_mass_action
 // EqExclude: CppAD-generated derivative machinery
-inline NativeAssociatingParameterizedPurePhaseBlock associating_parameterized_pure_phase_block(
+inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_block(
     double temperature,
     double amount,
     double volume,
-    double segment_count,
-    double segment_diameter_angstrom,
-    double dispersion_energy_over_k,
-    double association_energy_over_k,
-    double association_volume,
-    bool temperature_dependent_size_basis,
+    const std::vector<NativeFixedTopologyParameter>& active_parameters,
     const NativeParameters& base_parameters
 ) {
-    if (!supports_associating_pure_phase_block(base_parameters)
+    if (!supports_fixed_topology_associating_pure_phase_block(base_parameters)
         || !base_parameters.sigma_term_component.empty()) {
         throw std::logic_error(
-            "joint associating parameters require one neutral constant-diameter 2B model"
+            "fixed-topology association parameters require one neutral pure "
+            "constant-diameter associating model"
         );
     }
-    const std::array<double, 8> inputs{
-        temperature,
-        amount,
-        volume,
-        segment_count,
-        segment_diameter_angstrom,
-        dispersion_energy_over_k,
-        association_energy_over_k,
-        association_volume,
-    };
-    if (!std::all_of(inputs.begin(), inputs.end(), [](double item) {
-            return std::isfinite(item) && item > 0.0;
-        })) {
+    if (!std::isfinite(temperature) || temperature <= 0.0
+        || !std::isfinite(amount) || amount <= 0.0
+        || !std::isfinite(volume) || volume <= 0.0
+        || active_parameters.empty()) {
         throw std::invalid_argument(
-            "joint associating phase inputs must be positive and finite"
+            "fixed-topology phase state and active block must be positive and finite"
         );
+    }
+    const std::size_t sites = base_parameters.site_component.size();
+    NativeParameters value_parameters = base_parameters;
+    std::vector<std::pair<NativeFixedTopologyParameterKind, std::size_t>>
+        identities;
+    identities.reserve(active_parameters.size());
+    for (const auto& parameter : active_parameters) {
+        if (!std::isfinite(parameter.value) || parameter.value <= 0.0) {
+            throw std::invalid_argument(
+                "fixed-topology active values must be positive and finite"
+            );
+        }
+        std::size_t identity = 0;
+        switch (parameter.kind) {
+            case NativeFixedTopologyParameterKind::SegmentCount:
+                value_parameters.segment_count[0] = parameter.value;
+                break;
+            case NativeFixedTopologyParameterKind::SegmentDiameter:
+                value_parameters.sigma_constant[0] = parameter.value;
+                break;
+            case NativeFixedTopologyParameterKind::DispersionEnergyOverK:
+                value_parameters.dispersion_energy_over_k[0] = parameter.value;
+                break;
+            case NativeFixedTopologyParameterKind::AssociationEnergyOverK:
+            case NativeFixedTopologyParameterKind::AssociationVolume: {
+                if (parameter.site_a > parameter.site_b
+                    || parameter.site_b >= sites) {
+                    throw std::invalid_argument(
+                        "association endpoints must be canonical model site indices"
+                    );
+                }
+                const std::size_t forward =
+                    parameter.site_a * sites + parameter.site_b;
+                const std::size_t reverse =
+                    parameter.site_b * sites + parameter.site_a;
+                if (base_parameters.association_active[forward] == 0
+                    || base_parameters.association_active[reverse] == 0) {
+                    throw std::invalid_argument(
+                        "association endpoint pair is not active in the fixed topology"
+                    );
+                }
+                identity = forward;
+                auto& values =
+                    parameter.kind
+                        == NativeFixedTopologyParameterKind::AssociationEnergyOverK
+                    ? value_parameters.association_energy_over_k
+                    : value_parameters.association_volume;
+                values[forward] = parameter.value;
+                values[reverse] = parameter.value;
+                break;
+            }
+        }
+        const auto key = std::pair{parameter.kind, identity};
+        if (std::find(identities.begin(), identities.end(), key)
+            != identities.end()) {
+            throw std::invalid_argument(
+                "fixed-topology active parameter is duplicated"
+            );
+        }
+        identities.push_back(key);
     }
 
-    NativeParameters value_parameters = base_parameters;
-    value_parameters.segment_count[0] = segment_count;
-    value_parameters.sigma_constant[0] = segment_diameter_angstrom;
-    value_parameters.dispersion_energy_over_k[0] =
-        dispersion_energy_over_k;
-    for (std::size_t pair = 0;
-         pair < value_parameters.association_active.size();
-         ++pair) {
-        if (value_parameters.association_active[pair] != 0) {
-            value_parameters.association_energy_over_k[pair] =
-                association_energy_over_k;
-            value_parameters.association_volume[pair] = association_volume;
-        }
-    }
     const double density = amount / volume;
     const std::vector<double> composition{1.0};
     const auto value_sigma = segment_sigma(temperature, value_parameters);
@@ -1452,43 +1412,80 @@ inline NativeAssociatingParameterizedPurePhaseBlock associating_parameterized_pu
         composition,
         value_parameters,
         value_sigma,
-        value_diameter,
-        temperature_dependent_size_basis
+        value_diameter
     );
 
     CppAdSerialGuard cppad_guard;
     using ADScalar = CppAD::AD<double>;
-    constexpr std::size_t coordinates = 7;
-    const std::size_t sites = site_fractions.size();
+    const std::size_t coordinates = 2 + active_parameters.size();
     const std::size_t width = coordinates + sites;
     std::vector<ADScalar> independent(width);
     independent[0] = amount;
     independent[1] = volume;
-    independent[2] = segment_count;
-    independent[3] = segment_diameter_angstrom;
-    independent[4] = dispersion_energy_over_k;
-    independent[5] = association_energy_over_k;
-    independent[6] = association_volume;
+    for (std::size_t index = 0; index < active_parameters.size(); ++index) {
+        independent[2 + index] = active_parameters[index].value;
+    }
     for (std::size_t site = 0; site < sites; ++site) {
         independent[coordinates + site] = site_fractions[site];
     }
     CppAD::Independent(independent);
 
     PhaseBlockParameters<ADScalar> parameters{
-        {independent[2]},
-        {independent[3]},
-        {},
-        {},
-        {},
-        {independent[4]},
-        {ADScalar(0.0)},
-        {ADScalar(0.0)},
+        phase_block_scalars<ADScalar>(base_parameters.segment_count),
+        phase_block_scalars<ADScalar>(base_parameters.sigma_constant),
+        base_parameters.sigma_term_component,
+        phase_block_scalars<ADScalar>(base_parameters.sigma_term_amplitude),
+        phase_block_scalars<ADScalar>(base_parameters.sigma_term_exponent),
+        phase_block_scalars<ADScalar>(
+            base_parameters.dispersion_energy_over_k
+        ),
+        phase_block_scalars<ADScalar>(base_parameters.k_ij),
+        phase_block_scalars<ADScalar>(base_parameters.l_ij),
         base_parameters.site_component,
         base_parameters.site_multiplicity,
         base_parameters.association_active,
-        {0},
-        ELECTROLYTE_MODEL_NONE,
+        base_parameters.charge_number,
+        base_parameters.electrolyte_model,
     };
+    std::vector<ADScalar> association_energies(
+        base_parameters.association_energy_over_k.begin(),
+        base_parameters.association_energy_over_k.end()
+    );
+    std::vector<ADScalar> association_volumes(
+        base_parameters.association_volume.begin(),
+        base_parameters.association_volume.end()
+    );
+    for (std::size_t index = 0; index < active_parameters.size(); ++index) {
+        const auto& parameter = active_parameters[index];
+        const ADScalar& active = independent[2 + index];
+        switch (parameter.kind) {
+            case NativeFixedTopologyParameterKind::SegmentCount:
+                parameters.segment_count[0] = active;
+                break;
+            case NativeFixedTopologyParameterKind::SegmentDiameter:
+                parameters.sigma_constant[0] = active;
+                break;
+            case NativeFixedTopologyParameterKind::DispersionEnergyOverK:
+                parameters.dispersion_energy_over_k[0] = active;
+                break;
+            case NativeFixedTopologyParameterKind::AssociationEnergyOverK:
+            case NativeFixedTopologyParameterKind::AssociationVolume: {
+                const std::size_t forward =
+                    parameter.site_a * sites + parameter.site_b;
+                const std::size_t reverse =
+                    parameter.site_b * sites + parameter.site_a;
+                auto& values =
+                    parameter.kind
+                        == NativeFixedTopologyParameterKind::AssociationEnergyOverK
+                    ? association_energies
+                    : association_volumes;
+                values[forward] = active;
+                values[reverse] = active;
+                break;
+            }
+        }
+    }
+
     const ADScalar active_density = independent[0] / independent[1];
     const std::vector<ADScalar> active_composition{ADScalar(1.0)};
     const std::vector<ADScalar> active_site_fractions(
@@ -1516,22 +1513,6 @@ inline NativeAssociatingParameterizedPurePhaseBlock associating_parameterized_pu
         + contributions.dispersion
         + contributions.association
     );
-    std::vector<ADScalar> association_energies(
-        base_parameters.association_energy_over_k.begin(),
-        base_parameters.association_energy_over_k.end()
-    );
-    std::vector<ADScalar> association_volumes(
-        base_parameters.association_volume.begin(),
-        base_parameters.association_volume.end()
-    );
-    for (std::size_t pair = 0;
-         pair < base_parameters.association_active.size();
-         ++pair) {
-        if (base_parameters.association_active[pair] != 0) {
-            association_energies[pair] = independent[5];
-            association_volumes[pair] = independent[6];
-        }
-    }
     const auto delta = association_delta_values(
         ADScalar(temperature),
         active_density,
@@ -1540,8 +1521,7 @@ inline NativeAssociatingParameterizedPurePhaseBlock associating_parameterized_pu
         sigma,
         diameter,
         association_energies,
-        association_volumes,
-        temperature_dependent_size_basis
+        association_volumes
     );
     const auto mass_action = association_residuals(
         active_density,
@@ -1554,15 +1534,10 @@ inline NativeAssociatingParameterizedPurePhaseBlock associating_parameterized_pu
     dependent.insert(dependent.end(), mass_action.begin(), mass_action.end());
     CppAD::ADFun<double> function(independent, dependent);
 
-    std::vector<double> point{
-        amount,
-        volume,
-        segment_count,
-        segment_diameter_angstrom,
-        dispersion_energy_over_k,
-        association_energy_over_k,
-        association_volume,
-    };
+    std::vector<double> point{amount, volume};
+    for (const auto& parameter : active_parameters) {
+        point.push_back(parameter.value);
+    }
     point.insert(point.end(), site_fractions.begin(), site_fractions.end());
     const auto jacobian = function.Jacobian(point);
     std::vector<double> association_jacobian(sites * sites);
@@ -1600,8 +1575,8 @@ inline NativeAssociatingParameterizedPurePhaseBlock associating_parameterized_pu
     for (std::size_t site = 0; site < sites; ++site) {
         association_hessians[site] = function.Hessian(point, 1 + site);
     }
-    std::array<double, coordinates> gradient{};
-    std::array<double, coordinates * coordinates> hessian{};
+    std::vector<double> gradient(coordinates);
+    std::vector<double> hessian(coordinates * coordinates);
     for (std::size_t coordinate = 0; coordinate < coordinates; ++coordinate) {
         gradient[coordinate] = jacobian[coordinate];
         for (std::size_t site = 0; site < sites; ++site) {
@@ -1640,7 +1615,7 @@ inline NativeAssociatingParameterizedPurePhaseBlock associating_parameterized_pu
             return std::isfinite(item);
         })) {
         throw std::runtime_error(
-            "joint associating phase block contains nonfinite values"
+            "fixed-topology phase block contains nonfinite values"
         );
     }
     return {

@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from dataclasses import dataclass
 import hashlib
 import json
 import math
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+from functools import lru_cache
 from os import PathLike
 from pathlib import Path
-from typing import Any, TYPE_CHECKING, Iterable, Literal, SupportsFloat, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Literal, SupportsFloat, TypeAlias, overload
 
 import pint
 
-from ._core import NativeModel as _NativeModel
-from ._core import native_sdk_v1 as _native_sdk_v1
+from . import _core as _native_core
 from ._resolve import _ResolvedModel, _resolve_model
 from .parameters import Parameters
 from .records import (
@@ -29,6 +29,22 @@ if TYPE_CHECKING:
 Phase: TypeAlias = Literal["vapor", "liquid"]
 PropertyBasis: TypeAlias = Literal["molar", "reduced"]
 _MOLAR_GAS_CONSTANT = 8.31446261815324
+_NativeModel = _native_core.NativeModel
+_native_sdk_v1 = _native_core.native_sdk_v1
+
+
+@lru_cache(maxsize=1)
+def _python_native_artifact_fingerprint() -> str:
+    return _file_fingerprint(Path(_native_core.__file__))
+
+
+@lru_cache(maxsize=1)
+def _static_native_artifact_fingerprint() -> str:
+    return _file_fingerprint(Path(_native_core.__file__).parent / "lib" / "libepcsaft_native_sdk.a")
+
+
+def _file_fingerprint(path: Path) -> str:
+    return f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
 
 
 def _magnitude(
@@ -494,7 +510,10 @@ def _native_topology_fingerprint(model: Mixture) -> str:
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
-def _native_sdk_configuration(model: Mixture) -> dict[str, object]:
+def _native_sdk_configuration(
+    model: Mixture,
+    artifact_fingerprint: str,
+) -> dict[str, object]:
     if type(model) is not Mixture:
         raise _eos_error("unsupported-native-sdk", reason="expected-exact-Mixture-model")
     fingerprint = model._parameter_fingerprint
@@ -564,6 +583,7 @@ def _native_sdk_configuration(model: Mixture) -> dict[str, object]:
         "temperature_min_k": minimum,
         "temperature_max_k": maximum,
         "component_ids": model._component_ids,
+        "site_ids": tuple(site_id for _, site_id in model._model.site_ids),
         "ion_mole_fraction_max": maximum_ion_fraction,
         "phase_callbacks_admitted": phase_admitted,
         "active_born_admitted": active_born_admitted,
@@ -576,12 +596,13 @@ def _native_sdk_configuration(model: Mixture) -> dict[str, object]:
         "unknown_applicability_admitted": unknown_applicability,
         "aqueous_solvation_factor_admitted": aqueous_solvation_factor_admitted,
         "topology_fingerprint": _native_topology_fingerprint(model),
+        "artifact_fingerprint": artifact_fingerprint,
     }
 
 
 def native_sdk(model: Mixture) -> object:
     """Return the model-bound version-1 native provider capsule."""
-    configuration = _native_sdk_configuration(model)
+    configuration = _native_sdk_configuration(model, _python_native_artifact_fingerprint())
     try:
         return _native_sdk_v1(model._native, **configuration)
     except (RuntimeError, ValueError) as exc:
@@ -590,7 +611,7 @@ def native_sdk(model: Mixture) -> object:
 
 def export_native_model(model: Mixture, path: str | PathLike[str]) -> None:
     """Write one immutable resolved-model artifact for the installed native SDK."""
-    configuration = _native_sdk_configuration(model)
+    configuration = _native_sdk_configuration(model, _static_native_artifact_fingerprint())
     names = (
         "segment_count",
         "sigma_constant_angstrom",

@@ -51,7 +51,8 @@ struct NativeResult final {
 
 struct NativePurePhaseBlock;
 struct NativeParameterizedPurePhaseBlock;
-struct NativeAssociatingParameterizedPurePhaseBlock;
+struct NativeFixedTopologyParameter;
+struct NativeFixedTopologyPhaseBlock;
 struct NativeMixturePhaseBlock;
 struct NativePackingFractionBlock;
 struct NativeInversePackingGeometryBlock;
@@ -163,8 +164,6 @@ enum class ActivePureParameter {
     SegmentCount,
     SegmentDiameter,
     DispersionEnergyOverK,
-    AssociationEnergyOverK,
-    AssociationVolume,
 };
 
 enum class ActiveComponentParameter {
@@ -214,11 +213,14 @@ public:
     ) const;
     bool supports_native_sdk_v1() const;
     bool supports_parameterized_pure_native_sdk_v1() const;
-    bool supports_associating_pure_parameter_native_sdk_v1() const;
+    bool supports_fixed_topology_association_native_sdk_v1() const;
     bool supports_mixture_native_sdk_v1() const;
     bool supports_electrolyte_native_sdk_v1() const;
     std::size_t component_count() const;
     const std::vector<int>& charge_numbers() const;
+    const std::vector<int>& site_components() const;
+    const std::vector<int>& site_multiplicities() const;
+    const std::vector<int>& association_active_pairs() const;
     bool has_temperature_independent_segment_diameter(
         std::size_t component
     ) const;
@@ -236,27 +238,11 @@ public:
         double segment_diameter_angstrom,
         double dispersion_energy_over_k
     ) const;
-    NativeAssociatingParameterizedPurePhaseBlock
-    evaluate_diameter_basis_associating_pure_phase_parameters(
+    NativeFixedTopologyPhaseBlock evaluate_fixed_topology_association(
         double temperature,
         double amount,
         double volume,
-        double segment_count,
-        double segment_diameter_angstrom,
-        double dispersion_energy_over_k,
-        double association_energy_over_k,
-        double association_volume
-    ) const;
-    NativeAssociatingParameterizedPurePhaseBlock
-    evaluate_sigma_basis_associating_pure_phase_parameters(
-        double temperature,
-        double amount,
-        double volume,
-        double segment_count,
-        double segment_diameter_angstrom,
-        double dispersion_energy_over_k,
-        double association_energy_over_k,
-        double association_volume
+        const std::vector<NativeFixedTopologyParameter>& active_parameters
     ) const;
     NativeMixturePhaseBlock evaluate_pure_phase_parameter(
         double temperature,

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import json
+
 from ._support import *
 
 
@@ -20,6 +23,32 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
     export_native_model(_held_water_ionization_model(), artifact)
     neutral_artifact = tmp_path / "methane-ethane.json"
     export_native_model(_mixture_model(), neutral_artifact)
+    association_artifact = tmp_path / "associating-non-2b.json"
+    export_native_model(
+        Mixture.from_dictionary(three_site_association_case()),
+        association_artifact,
+    )
+    static_library = (
+        Path(native_core.__file__).parent / "lib" / "libepcsaft_native_sdk.a"
+    )
+    expected_artifact_fingerprint = (
+        f"sha256:{hashlib.sha256(static_library.read_bytes()).hexdigest()}"
+    )
+    association_document = json.loads(
+        association_artifact.read_text(encoding="utf-8")
+    )
+    assert (
+        association_document["sdk"]["artifact_fingerprint"]
+        == expected_artifact_fingerprint
+    )
+    tampered_artifact = tmp_path / "associating-tampered.json"
+    association_document["sdk"]["artifact_fingerprint"] = (
+        f"sha256:{'f' * 64}"
+    )
+    tampered_artifact.write_text(
+        json.dumps(association_document, separators=(",", ":"), sort_keys=True),
+        encoding="utf-8",
+    )
     source_dir = Path(__file__).parents[1] / "native_sdk_consumer"
     build_dir = tmp_path / "consumer-build"
     package_dir = Path(native_core.__file__).parent / "cmake"
@@ -49,6 +78,9 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
             str(build_dir / "epcsaft_native_sdk_consumer"),
             str(artifact),
             str(neutral_artifact),
+            str(association_artifact),
+            str(tampered_artifact),
+            expected_artifact_fingerprint,
         ),
         capture_output=True,
         text=True,

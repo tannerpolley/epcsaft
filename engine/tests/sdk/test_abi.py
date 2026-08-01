@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from epcsaft.eos import _native_sdk_configuration
+from epcsaft.eos import (
+    _native_sdk_configuration,
+    _python_native_artifact_fingerprint,
+)
 
 from tests._raw_cases import AQUEOUS_ELECTROLYTE
 
@@ -95,6 +98,47 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
     )
 
 
+def test_native_sdk_header_exposes_only_generic_fixed_topology_association() -> None:
+    compiler = shutil.which("cc")
+    assert compiler is not None
+    include_root = Path(__file__).parents[2] / "src" / "epcsaft" / "include"
+    source = r"""
+#include <stddef.h>
+#include <epcsaft/native_sdk_v1.h>
+
+_Static_assert(
+    sizeof(epcsaft_fixed_topology_parameter_request_v1) == 40,
+    "fixed-topology request ABI"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, fixed_topology_association_result_size) == 448,
+    "fixed-topology result-size offset"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, fixed_topology_association) == 456,
+    "fixed-topology descriptor offset"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, evaluate_fixed_topology_association) == 464,
+    "fixed-topology callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) == 472, "generic SDK table size");
+
+int main(void) {
+    epcsaft_evaluate_fixed_topology_association_v1 callback = 0;
+    return callback != 0;
+}
+"""
+    completed = subprocess.run(
+        (compiler, "-std=c11", f"-I{include_root}", "-x", "c", "-fsyntax-only", "-"),
+        input=source,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
 @pytest.mark.parametrize(
     ("temperature_min_k", "temperature_max_k", "ion_mole_fraction_max"),
     (
@@ -128,7 +172,10 @@ def test_native_sdk_generic_phase__does_not_admit_fixed_callbacks_without_domain
     mapping = deepcopy(AQUEOUS_ELECTROLYTE)
     mapping["validity"] = {"kind": "unknown"}
 
-    configuration = _native_sdk_configuration(Mixture.from_dictionary(mapping))
+    configuration = _native_sdk_configuration(
+        Mixture.from_dictionary(mapping),
+        _python_native_artifact_fingerprint(),
+    )
 
     assert configuration["phase_callbacks_admitted"] is True
     for name in (

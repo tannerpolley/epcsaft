@@ -672,8 +672,10 @@ bool NativeModel::supports_parameterized_pure_native_sdk_v1() const {
 }
 
 // EqExclude: input and domain validation
-bool NativeModel::supports_associating_pure_parameter_native_sdk_v1() const {
-    return detail::supports_associating_pure_phase_block(parameters_);
+bool NativeModel::supports_fixed_topology_association_native_sdk_v1() const {
+    return detail::supports_fixed_topology_associating_pure_phase_block(
+        parameters_
+    ) && parameters_.sigma_term_component.empty();
 }
 
 // EqExclude: input and domain validation
@@ -694,6 +696,21 @@ std::size_t NativeModel::component_count() const {
 // EqExclude: serialization
 const std::vector<int>& NativeModel::charge_numbers() const {
     return parameters_.charge_number;
+}
+
+// EqExclude: serialization
+const std::vector<int>& NativeModel::site_components() const {
+    return parameters_.site_component;
+}
+
+// EqExclude: serialization
+const std::vector<int>& NativeModel::site_multiplicities() const {
+    return parameters_.site_multiplicity;
+}
+
+// EqExclude: serialization
+const std::vector<int>& NativeModel::association_active_pairs() const {
+    return parameters_.association_active;
 }
 
 // EqExclude: serialization
@@ -731,53 +748,17 @@ NativeParameterizedPurePhaseBlock NativeModel::evaluate_pure_phase_parameters(
 }
 
 // EqExclude: transport and buffer mechanics
-NativeAssociatingParameterizedPurePhaseBlock
-NativeModel::evaluate_diameter_basis_associating_pure_phase_parameters(
+NativeFixedTopologyPhaseBlock NativeModel::evaluate_fixed_topology_association(
     double temperature,
     double amount,
     double volume,
-    double segment_count,
-    double segment_diameter_angstrom,
-    double dispersion_energy_over_k,
-    double association_energy_over_k,
-    double association_volume
+    const std::vector<NativeFixedTopologyParameter>& active_parameters
 ) const {
-    return detail::associating_parameterized_pure_phase_block(
+    return detail::fixed_topology_parameterized_pure_phase_block(
         temperature,
         amount,
         volume,
-        segment_count,
-        segment_diameter_angstrom,
-        dispersion_energy_over_k,
-        association_energy_over_k,
-        association_volume,
-        true,
-        parameters_
-    );
-}
-
-// EqExclude: transport and buffer mechanics
-NativeAssociatingParameterizedPurePhaseBlock
-NativeModel::evaluate_sigma_basis_associating_pure_phase_parameters(
-    double temperature,
-    double amount,
-    double volume,
-    double segment_count,
-    double segment_diameter_angstrom,
-    double dispersion_energy_over_k,
-    double association_energy_over_k,
-    double association_volume
-) const {
-    return detail::associating_parameterized_pure_phase_block(
-        temperature,
-        amount,
-        volume,
-        segment_count,
-        segment_diameter_angstrom,
-        dispersion_energy_over_k,
-        association_energy_over_k,
-        association_volume,
-        false,
+        active_parameters,
         parameters_
     );
 }
@@ -790,17 +771,6 @@ NativeMixturePhaseBlock NativeModel::evaluate_pure_phase_parameter(
     ActivePureParameter family,
     double parameter_value
 ) const {
-    if (family == ActivePureParameter::AssociationEnergyOverK
-        || family == ActivePureParameter::AssociationVolume) {
-        return detail::associating_pure_phase_parameter_block(
-            temperature,
-            amount,
-            volume,
-            parameter_value,
-            family == ActivePureParameter::AssociationEnergyOverK,
-            parameters_
-        );
-    }
     if (!supports_parameterized_pure_native_sdk_v1()) {
         throw std::logic_error(
             "active pure parameters require one neutral nonassociating "
@@ -824,9 +794,6 @@ NativeMixturePhaseBlock NativeModel::evaluate_pure_phase_parameter(
             dispersion_energy = parameter_value;
             active_coordinate = 4;
             break;
-        case ActivePureParameter::AssociationEnergyOverK:
-        case ActivePureParameter::AssociationVolume:
-            throw std::logic_error("association parameter dispatch failed");
         default:
             throw std::invalid_argument("unknown active pure parameter");
     }

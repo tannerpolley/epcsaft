@@ -19,6 +19,7 @@ import pytest
 import epcsaft
 
 import epcsaft._core as native_core
+from epcsaft._core import native_sdk_v1 as _native_sdk_v1
 
 from epcsaft import (
     Mixture,
@@ -30,7 +31,63 @@ from epcsaft import (
 
 from tests._raw_cases import ASSOCIATING_PURE, electrolyte, neutral_binary, neutral_pure
 
-from epcsaft._core import native_sdk_v1 as _native_sdk_v1
+
+def three_site_association_case(
+    values: tuple[float, float, float, float, float, float, float] = (
+        1.4,
+        3.2,
+        220.0,
+        2400.0,
+        0.030,
+        1800.0,
+        0.025,
+    ),
+    *,
+    site_order: tuple[str, str, str] = ("a", "b", "c"),
+    multiplicities: tuple[int, int, int] = (1, 1, 2),
+) -> dict[str, object]:
+    segment_count, diameter, dispersion, energy_ab, volume_ab, energy_ac, volume_ac = values
+    multiplicity = dict(zip(("a", "b", "c"), multiplicities, strict=True))
+    return {
+        "schema": "epcsaft.parameters",
+        "schema_version": 1,
+        "components": ("three-site-fluid",),
+        "parameters": {
+            "m": (segment_count,),
+            "s": (diameter,),
+            "e": (dispersion,),
+            "k_ij": ((0.0,),),
+            "sites": tuple(
+                {
+                    "component_id": "three-site-fluid",
+                    "site_id": site_id,
+                    "site_class": "generic",
+                    "multiplicity": multiplicity[site_id],
+                }
+                for site_id in site_order
+            ),
+            "association": (
+                {
+                    "component_id_a": "three-site-fluid",
+                    "site_id_a": "a",
+                    "component_id_b": "three-site-fluid",
+                    "site_id_b": "b",
+                    "association_energy_over_k": energy_ab,
+                    "association_volume": volume_ab,
+                },
+                {
+                    "component_id_a": "three-site-fluid",
+                    "site_id_a": "a",
+                    "component_id_b": "three-site-fluid",
+                    "site_id_b": "c",
+                    "association_energy_over_k": energy_ac,
+                    "association_volume": volume_ac,
+                },
+            ),
+        },
+        "options": {"permittivity_model": "none"},
+        "validity": {"kind": "unknown"},
+    }
 
 CAPSULE_NAME = b"epcsaft.native_sdk.v1"
 
@@ -43,6 +100,8 @@ STATUS_INVALID_ARGUMENT = 1
 STATUS_UNSUPPORTED_MODEL = 2
 
 STATUS_DOMAIN_ERROR = 3
+
+STATUS_EVALUATION_ERROR = 4
 
 STATUS_ABI_MISMATCH = 5
 
@@ -366,18 +425,15 @@ class IonSolvationSolventPermittivityNativeSdkTable(ctypes.Structure):
     )
 
 
-class AssociatingParameterizedNativeSdkTable(ctypes.Structure):
+class ReservedAssociationNativeSdkTable(ctypes.Structure):
     _fields_ = IonSolvationSolventPermittivityNativeSdkTable._fields_ + (
-        ("associating_parameterized_result_size", ctypes.c_size_t),
-        (
-            "evaluate_diameter_basis_associating_pure_phase_parameters",
-            ctypes.c_void_p,
-        ),
+        ("reserved_abi_size_0", ctypes.c_size_t),
+        ("reserved_abi_slot_1", ctypes.c_void_p),
     )
 
 
 class ElectrolytePhaseValueNativeSdkTable(ctypes.Structure):
-    _fields_ = AssociatingParameterizedNativeSdkTable._fields_ + (
+    _fields_ = ReservedAssociationNativeSdkTable._fields_ + (
         ("electrolyte_phase_value_result_size", ctypes.c_size_t),
         ("evaluate_electrolyte_phase_value", ctypes.c_void_p),
     )
@@ -477,6 +533,98 @@ class InversePackingNativeSdkTable(ctypes.Structure):
     )
 
 
+class FixedTopologyParameterSlot(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("parameter_family", ctypes.c_uint32),
+        ("component_index", ctypes.c_int32),
+        ("site_index_a", ctypes.c_int32),
+        ("site_index_b", ctypes.c_int32),
+        ("endpoint_component_index_a", ctypes.c_int32),
+        ("endpoint_component_index_b", ctypes.c_int32),
+        ("parameter_id", ctypes.c_char_p),
+        ("unit", ctypes.c_char_p),
+        ("lower_bound_exclusive", ctypes.c_double),
+        ("upper_bound_exclusive", ctypes.c_double),
+    )
+
+
+class FixedTopologyAssociationDescriptor(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("schema_version", ctypes.c_uint32),
+        ("observation_contract", ctypes.c_uint32),
+        ("model_domain", ctypes.c_uint32),
+        ("tensor_layout", ctypes.c_uint32),
+        ("derivative_order", ctypes.c_uint32),
+        ("maturity", ctypes.c_uint32),
+        ("authority_effect", ctypes.c_uint32),
+        ("unsupported_status", ctypes.c_int32),
+        ("domain_status", ctypes.c_int32),
+        ("state_coordinate_count", ctypes.c_size_t),
+        ("slot_count", ctypes.c_size_t),
+        ("slots", ctypes.POINTER(FixedTopologyParameterSlot)),
+        ("component_count", ctypes.c_size_t),
+        ("component_ids", ctypes.POINTER(ctypes.c_char_p)),
+        ("site_count", ctypes.c_size_t),
+        ("site_ids", ctypes.POINTER(ctypes.c_char_p)),
+        ("site_component_indices", ctypes.POINTER(ctypes.c_int32)),
+        ("site_multiplicities", ctypes.POINTER(ctypes.c_int32)),
+        ("temperature_min_k", ctypes.c_double),
+        ("temperature_max_k", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("topology_fingerprint", ctypes.c_char * 72),
+        ("artifact_fingerprint", ctypes.c_char * 72),
+        ("helmholtz_basis_id", ctypes.c_char * 72),
+        ("association_basis_id", ctypes.c_char * 72),
+    )
+
+
+class FixedTopologyParameterRequest(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("parameter_family", ctypes.c_uint32),
+        ("component_index", ctypes.c_int32),
+        ("site_index_a", ctypes.c_int32),
+        ("site_index_b", ctypes.c_int32),
+        ("unit", ctypes.c_char_p),
+        ("value", ctypes.c_double),
+    )
+
+
+class FixedTopologyPhaseResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("coordinate_count", ctypes.c_size_t),
+        ("active_parameter_count", ctypes.c_size_t),
+        ("gradient_capacity", ctypes.c_size_t),
+        ("hessian_capacity", ctypes.c_size_t),
+        ("gradient", ctypes.POINTER(ctypes.c_double)),
+        ("hessian", ctypes.POINTER(ctypes.c_double)),
+        ("helmholtz_over_rt_reference_amount", ctypes.c_double),
+        ("pressure_pa", ctypes.c_double),
+        ("chemical_potential_over_rt", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("topology_fingerprint", ctypes.c_char * 72),
+        ("artifact_fingerprint", ctypes.c_char * 72),
+        ("helmholtz_basis_id", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class FixedTopologyNativeSdkTable(ctypes.Structure):
+    _fields_ = InversePackingNativeSdkTable._fields_ + (
+        ("reserved_abi_slot_2", ctypes.c_void_p),
+        ("fixed_topology_association_result_size", ctypes.c_size_t),
+        (
+            "fixed_topology_association",
+            ctypes.POINTER(FixedTopologyAssociationDescriptor),
+        ),
+        ("evaluate_fixed_topology_association", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -551,6 +699,11 @@ INVERSE_PACKING_PREFIX_SIZE = (
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
+FIXED_TOPOLOGY_ASSOCIATION_PREFIX_SIZE = (
+    FixedTopologyNativeSdkTable.evaluate_fixed_topology_association.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+
 EvaluatePurePhase = ctypes.CFUNCTYPE(
     ctypes.c_int,
     ctypes.c_void_p,
@@ -611,6 +764,20 @@ EvaluateInversePackingGeometry = ctypes.CFUNCTYPE(
     ctypes.POINTER(ActiveParameterRequest),
     ctypes.c_size_t,
     ctypes.POINTER(InversePackingGeometryResult),
+)
+
+EvaluateFixedTopologyAssociation = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.c_double,
+    ctypes.POINTER(FixedTopologyParameterRequest),
+    ctypes.c_size_t,
+    ctypes.POINTER(FixedTopologyPhaseResult),
 )
 
 EvaluatePackingFraction = ctypes.CFUNCTYPE(
@@ -871,6 +1038,20 @@ def _inverse_packing_table(
     prefix = ctypes.cast(address, ctypes.POINTER(ReactingSensitivityNativeSdkTable)).contents
     assert prefix.table_size >= INVERSE_PACKING_PREFIX_SIZE
     table = ctypes.cast(address, ctypes.POINTER(InversePackingNativeSdkTable)).contents
+    return capsule, table
+
+
+def _fixed_topology_table(
+    model: Mixture,
+) -> tuple[object, FixedTopologyNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(FixedTopologyNativeSdkTable)).contents
+    assert table.table_size >= FIXED_TOPOLOGY_ASSOCIATION_PREFIX_SIZE
     return capsule, table
 
 
@@ -1207,6 +1388,67 @@ def _evaluate_inverse_packing_geometry(
         len(amounts),
         log_packing_fraction,
         request_buffer,
+        len(requests),
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result, tuple(gradient), tuple(hessian)
+
+
+def _fixed_topology_requests(
+    slots: tuple[FixedTopologyParameterSlot, ...],
+    values: tuple[float, ...],
+) -> tuple[FixedTopologyParameterRequest, ...]:
+    return tuple(
+        FixedTopologyParameterRequest(
+            struct_size=ctypes.sizeof(FixedTopologyParameterRequest),
+            parameter_family=slot.parameter_family,
+            component_index=slot.component_index,
+            site_index_a=slot.site_index_a,
+            site_index_b=slot.site_index_b,
+            unit=slot.unit,
+            value=value,
+        )
+        for slot, value in zip(slots, values, strict=True)
+    )
+
+
+def _evaluate_fixed_topology(
+    table: FixedTopologyNativeSdkTable,
+    fingerprint: str,
+    topology_fingerprint: str,
+    temperature_k: float,
+    amount_mol: float,
+    volume_m3: float,
+    requests: tuple[FixedTopologyParameterRequest, ...],
+    *,
+    expected_artifact_fingerprint: str | None = None,
+) -> tuple[FixedTopologyPhaseResult, tuple[float, ...], tuple[float, ...]]:
+    coordinate_count = 2 + len(requests)
+    gradient = (ctypes.c_double * coordinate_count)()
+    hessian = (ctypes.c_double * (coordinate_count * coordinate_count))()
+    request_array = (FixedTopologyParameterRequest * len(requests))(*requests)
+    result = FixedTopologyPhaseResult(
+        struct_size=ctypes.sizeof(FixedTopologyPhaseResult),
+        coordinate_count=coordinate_count,
+        active_parameter_count=len(requests),
+        gradient_capacity=coordinate_count,
+        hessian_capacity=coordinate_count * coordinate_count,
+        gradient=gradient,
+        hessian=hessian,
+    )
+    status = EvaluateFixedTopologyAssociation(table.evaluate_fixed_topology_association)(
+        table.model_context,
+        fingerprint.encode(),
+        topology_fingerprint.encode(),
+        (
+            expected_artifact_fingerprint
+            or table.fixed_topology_association.contents.artifact_fingerprint.decode()
+        ).encode(),
+        temperature_k,
+        amount_mol,
+        volume_m3,
+        request_array,
         len(requests),
         ctypes.byref(result),
     )

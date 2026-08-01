@@ -90,74 +90,6 @@ typedef int (*epcsaft_evaluate_pure_phase_parameters_v1)(
     epcsaft_parameterized_phase_block_result_v1* result
 );
 
-enum epcsaft_associating_parameterized_phase_coordinate_v1 {
-    EPCSAFT_ASSOCIATING_PHASE_AMOUNT_MOL_V1 = 0,
-    EPCSAFT_ASSOCIATING_PHASE_VOLUME_M3_V1 = 1,
-    EPCSAFT_ASSOCIATING_PHASE_SEGMENT_COUNT_V1 = 2,
-    EPCSAFT_ASSOCIATING_PHASE_SEGMENT_DIAMETER_ANGSTROM_V1 = 3,
-    EPCSAFT_ASSOCIATING_PHASE_DISPERSION_ENERGY_OVER_K_V1 = 4,
-    EPCSAFT_ASSOCIATING_PHASE_ENERGY_OVER_K_V1 = 5,
-    EPCSAFT_ASSOCIATING_PHASE_VOLUME_V1 = 6,
-    EPCSAFT_ASSOCIATING_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1 = 7
-};
-
-typedef struct epcsaft_associating_parameterized_phase_block_result_v1 {
-    uint32_t struct_size;
-    int32_t status;
-    double helmholtz_over_rt_reference_amount;
-    double gradient[
-        EPCSAFT_ASSOCIATING_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1
-    ];
-    double hessian[
-        EPCSAFT_ASSOCIATING_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1 *
-        EPCSAFT_ASSOCIATING_PHASE_PARAMETERIZED_COORDINATE_COUNT_V1
-    ];
-    double pressure_pa;
-    double chemical_potential_over_rt;
-    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
-    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
-    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
-} epcsaft_associating_parameterized_phase_block_result_v1;
-
-/*
- * Source-model variant used by Baygi--Pahlavanzadeh 2015 Eq. (4): the
- * association-strength volume factor is d_ij^3 rather than sigma_ij^3.
- * The ordinary Provider EOS and scalar association callbacks retain their
- * source-owned sigma_ij^3 convention. The bound model must be one neutral
- * pure 2B component with one donor and one acceptor site of unit multiplicity.
- */
-typedef int (*epcsaft_evaluate_diameter_basis_associating_pure_phase_parameters_v1)(
-    const void* model_context,
-    double temperature_k,
-    double amount_mol,
-    double volume_m3,
-    double segment_count,
-    double segment_diameter_angstrom,
-    double dispersion_energy_over_k,
-    double association_energy_over_k,
-    double association_volume,
-    epcsaft_associating_parameterized_phase_block_result_v1* result
-);
-
-/*
- * Ordinary PC-SAFT association convention used by the Provider EOS: the
- * association-strength volume factor is sigma_ij^3 times kappa. The bound
- * model must be one neutral pure 2B component with one donor and one acceptor
- * site of unit multiplicity.
- */
-typedef int (*epcsaft_evaluate_sigma_basis_associating_pure_phase_parameters_v1)(
-    const void* model_context,
-    double temperature_k,
-    double amount_mol,
-    double volume_m3,
-    double segment_count,
-    double segment_diameter_angstrom,
-    double dispersion_energy_over_k,
-    double association_energy_over_k,
-    double association_volume,
-    epcsaft_associating_parameterized_phase_block_result_v1* result
-);
-
 /*
  * A mixture result struct-size mismatch is return-code authoritative. The
  * callbacks return ABI_MISMATCH without writing an untrusted result layout.
@@ -596,13 +528,10 @@ enum epcsaft_native_capability_v1 {
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_CATION_KIJ_V1 = 12u,
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_ANION_KIJ_V1 = 13u,
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_CATION_ANION_KIJ_V1 = 14u,
-    EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATION_ENERGY_HELMHOLTZ_V1 = 15u,
-    EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATION_VOLUME_HELMHOLTZ_V1 = 16u,
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_IONIC_REGION_PERMITTIVITY_V1 = 17u,
     EPCSAFT_NATIVE_CAPABILITY_ION_SOLVATION_SOLVENT_PERMITTIVITY_V1 = 18u,
     EPCSAFT_NATIVE_CAPABILITY_REACTING_COMPONENT_DIAMETER_HELMHOLTZ_V1 = 19u,
-    EPCSAFT_NATIVE_CAPABILITY_REACTING_COMPONENT_DISPERSION_HELMHOLTZ_V1 = 20u,
-    EPCSAFT_NATIVE_CAPABILITY_PURE_ASSOCIATING_JOINT_SIGMA_BASIS_HELMHOLTZ_V1 = 21u
+    EPCSAFT_NATIVE_CAPABILITY_REACTING_COMPONENT_DISPERSION_HELMHOLTZ_V1 = 20u
 };
 
 enum epcsaft_native_parameter_family_v1 {
@@ -617,8 +546,7 @@ enum epcsaft_native_parameter_family_v1 {
     EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_ENERGY_OVER_K_V1 = 9u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_VOLUME_V1 = 10u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_IONIC_REGION_RELATIVE_PERMITTIVITY_V1 = 11u,
-    EPCSAFT_NATIVE_PARAMETER_FAMILY_RELATIVE_PERMITTIVITY_V1 = 12u,
-    EPCSAFT_NATIVE_PARAMETER_FAMILY_PURE_ASSOCIATING_JOINT_V1 = 13u
+    EPCSAFT_NATIVE_PARAMETER_FAMILY_RELATIVE_PERMITTIVITY_V1 = 12u
 };
 
 enum epcsaft_native_parameter_identity_v1 {
@@ -898,6 +826,113 @@ typedef int (*epcsaft_evaluate_inverse_packing_geometry_v1)(
     epcsaft_inverse_packing_geometry_result_v1* result
 );
 
+/*
+ * One finite active coordinate advertised by the bound fixed association
+ * topology. Component parameters use component_index and set both site
+ * indices to -1. Association parameters use canonical site_index_a <=
+ * site_index_b; their component endpoints are repeated for auditability.
+ * parameter_id and unit are immutable strings owned by the capsule.
+ */
+typedef struct epcsaft_fixed_topology_parameter_slot_v1 {
+    uint32_t struct_size;
+    uint32_t parameter_family;
+    int32_t component_index;
+    int32_t site_index_a;
+    int32_t site_index_b;
+    int32_t endpoint_component_index_a;
+    int32_t endpoint_component_index_b;
+    const char* parameter_id;
+    const char* unit;
+    double lower_bound_exclusive;
+    double upper_bound_exclusive;
+} epcsaft_fixed_topology_parameter_slot_v1;
+
+typedef struct epcsaft_fixed_topology_parameter_request_v1 {
+    uint32_t struct_size;
+    uint32_t parameter_family;
+    int32_t component_index;
+    int32_t site_index_a;
+    int32_t site_index_b;
+    const char* unit;
+    double value;
+} epcsaft_fixed_topology_parameter_request_v1;
+
+#define EPCSAFT_FIXED_TOPOLOGY_ASSOCIATION_SCHEMA_VERSION_V1 1u
+
+/*
+ * Model-bound descriptor for the ordinary sigma_ij^3*kappa association
+ * basis. The allowed-bond graph is exactly the set of association endpoint
+ * pairs represented by the advertised energy/volume slots. Site and
+ * component order are immutable and covered by topology_fingerprint.
+ * artifact_fingerprint identifies the installed native binary that owns the
+ * callback implementation.
+ */
+typedef struct epcsaft_fixed_topology_association_descriptor_v1 {
+    uint32_t struct_size;
+    uint32_t schema_version;
+    uint32_t observation_contract;
+    uint32_t model_domain;
+    uint32_t tensor_layout;
+    uint32_t derivative_order;
+    uint32_t maturity;
+    uint32_t authority_effect;
+    int32_t unsupported_status;
+    int32_t domain_status;
+    size_t state_coordinate_count;
+    size_t slot_count;
+    const epcsaft_fixed_topology_parameter_slot_v1* slots;
+    size_t component_count;
+    const char* const* component_ids;
+    size_t site_count;
+    const char* const* site_ids;
+    const int32_t* site_component_indices;
+    const int32_t* site_multiplicities;
+    double temperature_min_k;
+    double temperature_max_k;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char artifact_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char helmholtz_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char association_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+} epcsaft_fixed_topology_association_descriptor_v1;
+
+/*
+ * Coordinate order is (amount_mol, volume_m3, requested parameters...). The
+ * gradient and full row-major Hessian use that exact order. Caller capacities
+ * must equal coordinate_count and coordinate_count^2 respectively.
+ */
+typedef struct epcsaft_fixed_topology_phase_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    size_t coordinate_count;
+    size_t active_parameter_count;
+    size_t gradient_capacity;
+    size_t hessian_capacity;
+    double* gradient;
+    double* hessian;
+    double helmholtz_over_rt_reference_amount;
+    double pressure_pa;
+    double chemical_potential_over_rt;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char artifact_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char helmholtz_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_fixed_topology_phase_result_v1;
+
+typedef int (*epcsaft_evaluate_fixed_topology_association_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    const char* expected_topology_fingerprint,
+    const char* expected_artifact_fingerprint,
+    double temperature_k,
+    double amount_mol,
+    double volume_m3,
+    const epcsaft_fixed_topology_parameter_request_v1* active_parameters,
+    size_t active_parameter_count,
+    epcsaft_fixed_topology_phase_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -953,9 +988,9 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t ion_solvation_solvent_permittivity_result_size;
     epcsaft_evaluate_ion_solvation_solvent_permittivity_v1
         evaluate_ion_solvation_solvent_permittivity;
-    size_t associating_parameterized_result_size;
-    epcsaft_evaluate_diameter_basis_associating_pure_phase_parameters_v1
-        evaluate_diameter_basis_associating_pure_phase_parameters;
+    /* Null padding preserves unrelated v1 field offsets; it has no API. */
+    size_t reserved_abi_size_0;
+    void (*reserved_abi_slot_1)(void);
     size_t electrolyte_phase_value_result_size;
     epcsaft_evaluate_electrolyte_phase_value_v1
         evaluate_electrolyte_phase_value;
@@ -968,8 +1003,12 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t inverse_packing_geometry_result_size;
     epcsaft_evaluate_inverse_packing_geometry_v1
         evaluate_inverse_packing_geometry;
-    epcsaft_evaluate_sigma_basis_associating_pure_phase_parameters_v1
-        evaluate_sigma_basis_associating_pure_phase_parameters;
+    void (*reserved_abi_slot_2)(void);
+    size_t fixed_topology_association_result_size;
+    const epcsaft_fixed_topology_association_descriptor_v1*
+        fixed_topology_association;
+    epcsaft_evaluate_fixed_topology_association_v1
+        evaluate_fixed_topology_association;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

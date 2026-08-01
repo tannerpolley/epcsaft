@@ -14,10 +14,9 @@ temperature domain, component count, and component order. One further
 append-only `evaluate_mixture_phase_kij` and `evaluate_mixture_phase_lij` pointers evaluate
 the same phase with one distinct unlike interaction parameter active. A final
 append-only `evaluate_pure_phase_parameter` pointer evaluates a supported pure
-model with exactly one of `m`, `sigma`, or `epsilon/k` active. Exact neutral
-pure 2B models additionally expose separate joint callbacks for the
-Baygi--Pahlavanzadeh `d_ij^3` and ordinary Gross--Sadowski `sigma_ij^3`
-association-strength bases.
+nonassociating model with exactly one of `m`, `sigma`, or `epsilon/k` active.
+Associating pure models use only the generic fixed-topology descriptor and its
+variable-width request/result callback.
 
 The first reference-evidence fingerprints are:
 
@@ -36,11 +35,12 @@ nonassociating binary model, while their authority effect remains `none`.
 Pure, associating, ionic, or otherwise unsupported model shapes advertise
 neither binary descriptor. A neutral, nonassociating, constant-diameter pure
 model advertises three component-identity descriptors, one for each scalar
-pure family; it advertises no binary descriptor. An exact neutral pure 2B
-model advertises the two scalar association descriptors and one distinct
-joint ordinary-sigma descriptor with five active parameters. The diameter-
-basis callback remains separately named and is not represented by that
-ordinary-sigma capability.
+pure family; it advertises no binary descriptor. A neutral associating pure
+model instead advertises one structural fixed-topology descriptor. That
+descriptor contains the ordinary-pure slots plus one energy and one volume
+slot for every canonical allowed site pair, and the caller may request any
+nonempty ordered subset. No scalar association capability, topology-specific
+joint callback, or compatibility adapter remains.
 
 The descriptor binds a topology fingerprint separately from the parameter
 fingerprint. Its canonical payload contains the ordered component IDs,
@@ -139,6 +139,15 @@ nonfinite trial values fail as invalid arguments. Zero or negative `m`,
 `sigma`, or `epsilon/k` fails the Provider's positive EOS domain; regression
 still owns the narrower scientific fit bounds.
 
+For the fixed-topology association callback, the descriptor owns the immutable
+component/site order, multiplicities, allowed-pair graph, slot identity, unit,
+positive physical domain, parameter fingerprint, topology fingerprint, and
+installed-artifact fingerprint. Requests must be a nonempty subset in
+advertised slot order. The caller supplies exactly `2 + request_count`
+gradient entries and its square in row-major Hessian storage for
+`(n,V,requested slots...)`. Unknown, reordered, duplicated, nonfinite,
+out-of-domain, or identity-mismatched requests fail closed.
+
 The provider preserves the caller's pointers and capacities, copies exactly
 the advertised number of gradient and Hessian values, and propagates neither
 exceptions nor ownership across the C boundary. The Hessian layout is row
@@ -185,25 +194,25 @@ identity, compiles the installed C header layout, and rejects unknown families
 and nonfinite trials. It does not claim that three independent scalar fits are
 equivalent to the accepted joint pure-parameter solve.
 
-For a neutral pure model with exactly one donor and one acceptor site, each
-with unit multiplicity, the scalar callback additionally exposes one active
-association energy or volume on the ordinary source-owned `sigma_ij^3`
-association basis. A separate appended callback returns the joint Hessian in
-`(n,V,m,sigma,epsilon/k,epsilon_assoc/k,kappa_assoc)` using the
-Baygi--Pahlavanzadeh Eq. 4 temperature-dependent `d_ij^3` basis. Directional
-evidence checks every gradient and Hessian coordinate and a direct oracle
-checks that the diameter basis differs from the unchanged ordinary EOS basis.
-A further appended callback returns the same tensor on the ordinary
-`sigma_ij^3 kappa` basis. DEEA source evidence checks its value, pressure, and
-chemical potential against the public Provider state at the resolved
-parameters, then checks the gradient and every Hessian column needed by the
-five active fit coordinates with centered differences. Capability 21,
-parameter family 13, and the exact seven typed coordinates identify this
-ordinary-basis tensor without a runtime basis selector.
+For any admitted neutral pure fixed topology, the sole association callback
+accepts a nonempty ordered subset of descriptor slots. Slots identify ordinary
+component parameters or association energy/volume by canonical component/site
+endpoints. The returned coordinate order is `(n,V,requested slots...)` with a
+complete exact row-major Hessian on the ordinary `sigma_ij^3 kappa` basis.
+A compact 2B case and a three-site multi-pair model check every gradient and
+Hessian entry against an equation-level oracle independent of the native and
+public EOS evaluation paths. No scalar association callback, alternate basis
+adapter, topology name, or compatibility route remains.
 
-These candidates do not own or admit other association topologies, ions,
-multicomponent interaction tensors, density closure, phase identity, phase
-discovery, third derivatives, Ipopt, Ceres, equilibrium residuals, regression
-targets, fit bounds, scaling, or fit acceptance. Implementation and a passing
-wheel do not transfer authority. Independent review, a promotion receipt, and
-each consumer's installed-wheel gate remain required.
+Each EOS slot remains a distinct derivative coordinate. A Regression sharing
+map may assign one fitted value to several requested slots and accumulate the
+returned columns; EOS accepts those equal-valued slots without owning the
+consumer's sharing policy or collapsing endpoint identities.
+
+These candidates do not own topology discovery, multicomponent
+cross-association, ions, multicomponent interaction tensors, density closure,
+phase identity, phase discovery, third derivatives, Ipopt, Ceres, equilibrium
+residuals, regression targets, fit bounds, scaling, or fit acceptance.
+Implementation and a passing wheel do not transfer authority. Independent
+review, a promotion receipt, and each consumer's installed-wheel gate remain
+required.
