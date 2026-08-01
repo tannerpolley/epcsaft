@@ -16,9 +16,9 @@
   "active_distributions": {
     "epcsaft": {
       "repository": "ePC-SAFT/ePC-SAFT-eos",
-      "source_commit": "24ab1bdfb3a1558eb87815e9c3b5d97fbe6a025d",
+      "source_commit": "7b97bab039e1c50a6f89522698af80493bea5f9e",
       "version": "0.2.0.dev0",
-      "sha256": "66b7ea8fb29e0a268b555cbdf401c3502517c088669a4157e8f64ab985b59ce9"
+      "sha256": "1567cda72e1b525526dc0e647af0c6fe711edcb70bc4cee08f06284e847956d9"
     },
     "epcsaft-equilibrium": {
       "repository": "ePC-SAFT/ePC-SAFT-equilibrium",
