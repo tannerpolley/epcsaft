@@ -1423,10 +1423,15 @@ def _evaluate_fixed_topology(
     requests: tuple[FixedTopologyParameterRequest, ...],
     *,
     expected_artifact_fingerprint: str | None = None,
+    output_sentinel: float = 0.0,
 ) -> tuple[FixedTopologyPhaseResult, tuple[float, ...], tuple[float, ...]]:
     coordinate_count = 2 + len(requests)
-    gradient = (ctypes.c_double * coordinate_count)()
-    hessian = (ctypes.c_double * (coordinate_count * coordinate_count))()
+    gradient = (ctypes.c_double * coordinate_count)(
+        *(output_sentinel for _ in range(coordinate_count))
+    )
+    hessian = (ctypes.c_double * (coordinate_count * coordinate_count))(
+        *(output_sentinel for _ in range(coordinate_count * coordinate_count))
+    )
     request_array = (FixedTopologyParameterRequest * len(requests))(*requests)
     result = FixedTopologyPhaseResult(
         struct_size=ctypes.sizeof(FixedTopologyPhaseResult),

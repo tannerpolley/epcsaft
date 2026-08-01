@@ -47,7 +47,11 @@ def test_bundle_template__is_created_without_catalog_lookup(tmp_path: Path) -> N
     ]
 
 
-def test_external_bundle_purpose__accepts_data_legacy_and_rejects_unknown(tmp_path: Path) -> None:
+@pytest.mark.parametrize("purpose", ("installed-catalog", "typo"))
+def test_external_bundle_purpose__rejects_legacy_catalog_and_unknown(
+    tmp_path: Path,
+    purpose: str,
+) -> None:
     parameters = Parameters.from_dictionary(NEUTRAL_BINARY)
     bundle = tmp_path / "external-bundle"
     parameters.to_bundle(bundle)
@@ -55,10 +59,7 @@ def test_external_bundle_purpose__accepts_data_legacy_and_rejects_unknown(tmp_pa
     original = manifest.read_text()
 
     manifest.write_text(
-        original.replace('purpose = "user-provided"', 'purpose = "installed-catalog"')
+        original.replace('purpose = "user-provided"', f'purpose = "{purpose}"')
     )
-    assert Parameters.from_bundle(bundle).fingerprint == parameters.fingerprint
-
-    manifest.write_text(original.replace('purpose = "user-provided"', 'purpose = "typo"'))
     with pytest.raises(ParameterError, match="invalid-value"):
         Parameters.from_bundle(bundle)

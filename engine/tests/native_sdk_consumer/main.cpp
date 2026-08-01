@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <vector>
@@ -175,6 +176,23 @@ bool fixed_topology_association_is_available(
             hessian.begin(), hessian.end(),
             [](double value) { return std::isfinite(value); }
         );
+    if (valid) {
+        std::cout << std::setprecision(17)
+                  << "association_value="
+                  << result.helmholtz_over_rt_reference_amount << '\n';
+        const auto print_vector = [](const char* label, const auto& values) {
+            std::cout << label << '=';
+            for (std::size_t index = 0; index < values.size(); ++index) {
+                if (index != 0) {
+                    std::cout << ',';
+                }
+                std::cout << values[index];
+            }
+            std::cout << '\n';
+        };
+        print_vector("association_gradient", gradient);
+        print_vector("association_hessian", hessian);
+    }
     epcsaft_native_model_destroy_v1(model);
     return valid;
 }

@@ -29,7 +29,6 @@ _BundlePurpose: TypeAlias = Literal["external-bundle", "package-test-fixture", "
 _EXTERNAL_PURPOSES = frozenset(
     {
         "external-bundle",
-        "installed-catalog",  # Legacy metadata in immutable Data packets.
         "package-test-fixture",
         "user-provided",
     }

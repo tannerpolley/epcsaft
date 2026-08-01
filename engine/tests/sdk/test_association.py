@@ -508,6 +508,29 @@ def test_fixed_topology_non_2b_value_gradient_hessian_subsets_and_identity() -> 
     assert not any(failed_gradient)
     assert not any(failed_hessian)
 
+    overflowing_request = FixedTopologyParameterRequest(
+        struct_size=requests[2].struct_size,
+        parameter_family=requests[2].parameter_family,
+        component_index=requests[2].component_index,
+        site_index_a=requests[2].site_index_a,
+        site_index_b=requests[2].site_index_b,
+        unit=requests[2].unit,
+        value=1.0e308,
+    )
+    overflowing, overflowing_gradient, overflowing_hessian = _evaluate_fixed_topology(
+        table,
+        model.parameter_fingerprint,
+        topology_fingerprint,
+        temperature_k,
+        point[0],
+        point[1],
+        (overflowing_request,),
+        output_sentinel=17.0,
+    )
+    assert overflowing.status == STATUS_EVALUATION_ERROR
+    assert overflowing_gradient == (17.0,) * 3
+    assert overflowing_hessian == (17.0,) * 9
+
     guarded_gradient = (ctypes.c_double * 3)(11.0, 12.0, 13.0)
     guarded_hessian = (ctypes.c_double * 9)(*range(21, 30))
     malformed = FixedTopologyPhaseResult(

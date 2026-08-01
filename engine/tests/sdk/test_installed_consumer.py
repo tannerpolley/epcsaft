@@ -24,10 +24,29 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
     neutral_artifact = tmp_path / "methane-ethane.json"
     export_native_model(_mixture_model(), neutral_artifact)
     association_artifact = tmp_path / "associating-non-2b.json"
-    export_native_model(
-        Mixture.from_dictionary(three_site_association_case()),
-        association_artifact,
+    association_model = Mixture.from_dictionary(three_site_association_case())
+    export_native_model(association_model, association_artifact)
+    association_capsule, association_table = _fixed_topology_table(
+        association_model
     )
+    association_descriptor = association_table.fixed_topology_association.contents
+    association_slots = tuple(
+        association_descriptor.slots[index]
+        for index in range(association_descriptor.slot_count)
+    )
+    expected_result, expected_gradient, expected_hessian = _evaluate_fixed_topology(
+        association_table,
+        association_model.parameter_fingerprint,
+        association_descriptor.topology_fingerprint.decode(),
+        300.0,
+        1.0,
+        1.0 / 6000.0,
+        _fixed_topology_requests(
+            association_slots,
+            (1.4, 3.2, 220.0, 2400.0, 0.03, 1800.0, 0.025),
+        ),
+    )
+    assert association_capsule is not None
     static_library = (
         Path(native_core.__file__).parent / "lib" / "libepcsaft_native_sdk.a"
     )
@@ -89,3 +108,26 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
     assert consumed.returncode == 0, consumed.stderr
     assert "component_count=3" in consumed.stdout
     assert "reference_branch=liquid" in consumed.stdout
+
+    def emitted(name: str) -> tuple[float, ...]:
+        prefix = f"{name}="
+        line = next(
+            line for line in consumed.stdout.splitlines() if line.startswith(prefix)
+        )
+        return tuple(float(value) for value in line.removeprefix(prefix).split(","))
+
+    assert emitted("association_value") == pytest.approx(
+        (expected_result.helmholtz_over_rt_reference_amount,),
+        rel=2.0e-13,
+        abs=2.0e-13,
+    )
+    assert emitted("association_gradient") == pytest.approx(
+        expected_gradient,
+        rel=2.0e-12,
+        abs=2.0e-10,
+    )
+    assert emitted("association_hessian") == pytest.approx(
+        expected_hessian,
+        rel=2.0e-11,
+        abs=2.0e-8,
+    )
