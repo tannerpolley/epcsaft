@@ -15,6 +15,8 @@ inline constexpr int RELATIVE_PERMITTIVITY_FORMULATION_DENSITY_VOLUME_TEMPERATUR
 inline constexpr int RELATIVE_PERMITTIVITY_FORMULATION_ION_SPECIFIC_SUPPRESSION = 4;
 inline constexpr int RELATIVE_PERMITTIVITY_FORMULATION_DIPOLAR_DENSITY_PERTURBATION = 5;
 inline constexpr int RELATIVE_PERMITTIVITY_FORMULATION_SOLVENT_ONLY = 6;
+inline constexpr int POLAR_FORMULATION_NONE = 0;
+inline constexpr int POLAR_FORMULATION_GROSS_VRABEC_POINT_MULTIPOLE = 1;
 
 struct NativeParameters final {
     std::vector<double> segment_count;
@@ -45,6 +47,9 @@ struct NativeParameters final {
     std::vector<double> polarizability_scaling_angstrom3;
     std::vector<double> correlation_integral_parameter;
     int relative_permittivity_formulation;
+    std::vector<double> dipole_moment_debye;
+    std::vector<double> quadrupole_moment_debye_angstrom;
+    int polar_formulation;
 };
 
 }  // namespace epcsaft

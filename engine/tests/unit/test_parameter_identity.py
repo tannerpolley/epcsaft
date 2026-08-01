@@ -66,6 +66,7 @@ def test_parameter_fingerprint__depends_on_values_order_and_validity_not_provena
     ).select(original.component_ids)
 
     assert renamed.fingerprint == original.fingerprint
+    assert renamed._bundle.fingerprint != original._bundle.fingerprint
     assert (
         Parameters.from_dictionary(neutral_binary(("ethane", "methane"))).fingerprint
         != original.fingerprint

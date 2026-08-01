@@ -60,6 +60,8 @@ Supplying both is `duplicate-alias`.
 | `mu2` | `dipole_scaling` | debye² |
 | `alpha` | `polarizability_scaling` | Å³ |
 | `a2` | `correlation_integral_parameter` | dimensionless |
+| `mu` | `dipole_moment` | debye |
+| `Q` | `quadrupole_moment` | debye Å |
 | `k_ij` | `dispersion_interaction` | dimensionless matrix |
 | `l_ij` | `diameter_interaction` | dimensionless matrix |
 
@@ -78,6 +80,18 @@ Options use the same one-to-one alias rule:
 | `permittivity_model` | `relative_permittivity_formulation` |
 | `epsilon_r_ion` | `ionic_region_relative_permittivity` |
 | `a_dh` | `ion_fraction_suppression_coefficient` |
+| `polar_model` | `polar_formulation` |
+
+`polar_formulation="gross-vrabec-point-multipole"` admits optional physical
+`dipole_moment` and `quadrupole_moment` values for neutral components. Missing
+moments are exactly inactive. Negative, nonfinite, charged-component, reduced-
+moment, and multiplicity inputs fail closed. The dielectric `dipole_scaling`
+field is separate and cannot activate the polar Helmholtz contribution.
+
+Polar mixture states require strictly positive mole fractions for every
+model component. Composition-boundary states are rejected because the
+family-wise Padé form does not provide a single CppAD derivative graph at an
+incipient polar component; interior compositions remain fully differentiable.
 
 Validity is either exactly `{"kind": "unknown"}` or a `fit-range` /
 `reported-conditions` mapping with at least one explicit bound. Bounds are
@@ -116,6 +130,8 @@ state = mixture.state(T=298.15 * u.K, P=1 * u.bar, x=(0.4, 0.6), phase="vapor")
 and reduced scalars with `basis="reduced"`. `State.fugacity` preserves component
 order. Admitted electrolyte models can create a reference with
 `Mixture.reference(...)` and project activities with `reference.state(...)`.
+`State.ares_polar` is the dimensionless aggregate
+`a_DD + a_QQ + a_DQ35`; no family-specific public contribution is exposed.
 
 ## Native SDK
 
@@ -134,6 +150,5 @@ installed-artifact fingerprints are mandatory fail-closed identities. There
 are no scalar association callbacks, 2B-specific entry points, or alternate
 association-basis selector.
 
-Future polar equation support will retain independently parameterized dipole,
-quadrupole, and dipole–quadrupole inputs while reporting one aggregate
-`ares_polar` contribution.
+Native phase blocks evaluate the same fingerprint-distinct aggregate for polar
+models; no polar callback or family-specific result type is added.

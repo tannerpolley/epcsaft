@@ -19,6 +19,47 @@ NEUTRAL_BINARY = {
 }
 
 
+POLAR_BINARY = {
+    "schema": "epcsaft.parameters",
+    "schema_version": 1,
+    "components": ("dipolar", "quadrupolar"),
+    "parameters": {
+        "m": (1.5, 2.25),
+        "s": (3.4, 3.8),
+        "e": (220.0, 280.0),
+        "dipole_moment": (1.7, None),
+        "quadrupole_moment": (None, 4.1),
+        "k_ij": ((0.0, 0.08), (0.08, 0.0)),
+        "l_ij": ((0.0, 0.17), (0.17, 0.0)),
+    },
+    "options": {
+        "permittivity_model": "none",
+        "polar_formulation": "gross-vrabec-point-multipole",
+    },
+    "validity": {"kind": "unknown"},
+}
+
+
+POLAR_PURE = {
+    "schema": "epcsaft.parameters",
+    "schema_version": 1,
+    "components": ("polar-fluid",),
+    "parameters": {
+        "m": (1.5,),
+        "s": (3.4,),
+        "e": (220.0,),
+        "dipole_moment": (1.7,),
+        "quadrupole_moment": (4.1,),
+        "k_ij": ((0.0,),),
+    },
+    "options": {
+        "permittivity_model": "none",
+        "polar_formulation": "gross-vrabec-point-multipole",
+    },
+    "validity": {"kind": "unknown"},
+}
+
+
 ASSOCIATING_PURE = {
     "schema": "epcsaft.parameters",
     "schema_version": 1,

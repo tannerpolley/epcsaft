@@ -222,7 +222,11 @@ def _parameter_value(row: dict[str, str]) -> object:
     if row["value"] == "":
         raise _error("missing-record", field="value", value=row["record_id"])
     family = row["family"]
-    if family in {"electrolyte_formulation", "relative_permittivity_formulation"}:
+    if family in {
+        "electrolyte_formulation",
+        "relative_permittivity_formulation",
+        "polar_formulation",
+    }:
         if row["unit"]:
             raise _error("invalid-unit", field="unit", expected="blank")
         return row["value"]
@@ -519,7 +523,11 @@ def _toml_string(value: str) -> str:
 
 
 def _parameter_text(family: str, value: object) -> tuple[str, str]:
-    if family in {"electrolyte_formulation", "relative_permittivity_formulation"}:
+    if family in {
+        "electrolyte_formulation",
+        "relative_permittivity_formulation",
+        "polar_formulation",
+    }:
         assert isinstance(value, str)
         return value, ""
     if family == "charge_number":

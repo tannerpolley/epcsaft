@@ -212,6 +212,9 @@ struct PhaseBlockParameters final {
     std::vector<int> association_active;
     std::vector<int> charge_number;
     int electrolyte_model;
+    std::vector<double> dipole_moment_debye;
+    std::vector<double> quadrupole_moment_debye_angstrom;
+    int polar_formulation;
 };
 
 template <typename Scalar>
@@ -240,6 +243,9 @@ PhaseBlockParameters<Scalar> binary_interaction_parameters(
         parameters.association_active,
         parameters.charge_number,
         parameters.electrolyte_model,
+        parameters.dipole_moment_debye,
+        parameters.quadrupole_moment_debye_angstrom,
+        parameters.polar_formulation,
     };
 }
 
@@ -263,6 +269,9 @@ PhaseBlockParameters<Scalar> binary_size_interaction_parameters(
         parameters.association_active,
         parameters.charge_number,
         parameters.electrolyte_model,
+        parameters.dipole_moment_debye,
+        parameters.quadrupole_moment_debye_angstrom,
+        parameters.polar_formulation,
     };
 }
 
@@ -304,7 +313,9 @@ Scalar mixture_phase_helmholtz_over_rt_reference_amount(
         ideal += amount * (scalar_log(amount / volume) - Scalar(1.0));
     }
     // EqID: phase_dimensionless_helmholtz
-    return ideal + total * (contributions.hard_chain + contributions.dispersion);
+    return ideal + total * (
+        contributions.hard_chain + contributions.dispersion + contributions.polar
+    );
 }
 
 // EqExclude: input and domain validation
@@ -1071,7 +1082,8 @@ template <typename Scalar>
 PhaseBlockParameters<Scalar> pure_phase_parameters(
     const Scalar& segment_count,
     const Scalar& segment_diameter_angstrom,
-    const Scalar& dispersion_energy_over_k
+    const Scalar& dispersion_energy_over_k,
+    const NativeParameters& base_parameters
 ) {
     return {
         {segment_count},
@@ -1087,6 +1099,9 @@ PhaseBlockParameters<Scalar> pure_phase_parameters(
         {},
         {0},
         ELECTROLYTE_MODEL_NONE,
+        base_parameters.dipole_moment_debye,
+        base_parameters.quadrupole_moment_debye_angstrom,
+        base_parameters.polar_formulation,
     };
 }
 
@@ -1115,7 +1130,8 @@ Scalar pure_phase_helmholtz_over_rt_reference_amount(
         Scalar(0.0),
         Scalar(0.0)
     );
-    const Scalar residual = contributions.hard_chain + contributions.dispersion;
+    const Scalar residual = contributions.hard_chain + contributions.dispersion
+        + contributions.polar;
     // EqID: phase_dimensionless_helmholtz
     return amount * (scalar_log(density) - Scalar(1.0) + residual);
 }
@@ -1253,7 +1269,10 @@ inline NativeParameterizedPurePhaseBlock parameterized_pure_phase_block(
     }
 
     const auto value_parameters = pure_phase_parameters(
-        segment_count, segment_diameter_angstrom, dispersion_energy_over_k
+        segment_count,
+        segment_diameter_angstrom,
+        dispersion_energy_over_k,
+        base_parameters
     );
     pure_phase_helmholtz_over_rt_reference_amount(
         temperature, amount, volume, value_parameters
@@ -1270,7 +1289,7 @@ inline NativeParameterizedPurePhaseBlock parameterized_pure_phase_block(
     };
     CppAD::Independent(independent);
     const auto active_parameters = pure_phase_parameters(
-        independent[2], independent[3], independent[4]
+        independent[2], independent[3], independent[4], base_parameters
     );
     const ADScalar phase = pure_phase_helmholtz_over_rt_reference_amount(
         temperature, independent[0], independent[1], active_parameters
@@ -1446,6 +1465,9 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
         base_parameters.association_active,
         base_parameters.charge_number,
         base_parameters.electrolyte_model,
+        base_parameters.dipole_moment_debye,
+        base_parameters.quadrupole_moment_debye_angstrom,
+        base_parameters.polar_formulation,
     };
     std::vector<ADScalar> association_energies(
         base_parameters.association_energy_over_k.begin(),
@@ -1512,6 +1534,7 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
         + contributions.hard_chain
         + contributions.dispersion
         + contributions.association
+        + contributions.polar
     );
     const auto delta = association_delta_values(
         ADScalar(temperature),

@@ -213,6 +213,9 @@ def _native_arguments(
         list(model.polarizability_scaling_angstrom3) or [0.0] * components,
         list(model.correlation_integral_parameter) or [0.0] * components,
         relative_permittivity_formulation_codes[model.relative_permittivity_formulation],
+        list(model.dipole_moment_debye) or [0.0] * components,
+        list(model.quadrupole_moment_debye_angstrom) or [0.0] * components,
+        0 if model.polar_formulation is None else 1,
     )
 
 
@@ -319,6 +322,12 @@ class Mixture:
                 expected=1.0,
                 tolerance=1.0e-12,
             )
+        if self._model.polar_formulation is not None and any(value <= 0.0 for value in fractions):
+            raise _eos_error(
+                "invalid-state",
+                field="x",
+                reason="polar-composition-boundary",
+            )
 
         if (
             self._model.temperature_min_k is not None
@@ -374,6 +383,8 @@ class Mixture:
             try:
                 native = self._native.evaluate(temperature_k, density_molar, fractions)
             except (RuntimeError, ValueError) as exc:
+                if str(exc) == "polar-domain-error":
+                    raise _eos_error("polar-domain-error") from exc
                 raise _eos_error("evaluation-failed", reason=str(exc)) from exc
         else:
             pressure_pa = _state_magnitude(P, "pascal", "P")
@@ -382,6 +393,8 @@ class Mixture:
                     temperature_k, pressure_pa, fractions, phase or ""
                 )
             except (RuntimeError, ValueError) as exc:
+                if str(exc) == "polar-domain-error":
+                    raise _eos_error("polar-domain-error") from exc
                 raise _eos_error("evaluation-failed", reason=str(exc)) from exc
         diagnostics = native.density_diagnostics
         return State(
@@ -392,6 +405,7 @@ class Mixture:
             hard_chain=native.hard_chain,
             dispersion=native.dispersion,
             association=native.association,
+            ares_polar=native.ares_polar,
             debye_huckel=native.debye_huckel,
             born=native.born_ssm_ds,
             bulk_relative_permittivity=None
@@ -491,7 +505,17 @@ def _native_topology_fingerprint(model: Mixture) -> str:
             "site_ids": resolved.site_ids,
             "site_multiplicity": resolved.site_multiplicity,
             "association_pair_count": len(resolved.association_pairs),
-            "helmholtz_terms": ("ideal", "hard-chain", "dispersion"),
+            "polar_formulation": resolved.polar_formulation,
+            "dipole_presence": tuple(value > 0.0 for value in resolved.dipole_moment_debye),
+            "quadrupole_presence": tuple(
+                value > 0.0 for value in resolved.quadrupole_moment_debye_angstrom
+            ),
+            "helmholtz_terms": (
+                "ideal",
+                "hard-chain",
+                "dispersion",
+                *(("polar",) if resolved.polar_formulation is not None else ()),
+            ),
         }
     else:
         payload = {
@@ -505,6 +529,11 @@ def _native_topology_fingerprint(model: Mixture) -> str:
                 (pair.endpoint_a, pair.endpoint_b) for pair in resolved.association_pairs
             ),
             "relative_permittivity_formulation": (resolved.relative_permittivity_formulation),
+            "polar_formulation": resolved.polar_formulation,
+            "dipole_presence": tuple(value > 0.0 for value in resolved.dipole_moment_debye),
+            "quadrupole_presence": tuple(
+                value > 0.0 for value in resolved.quadrupole_moment_debye_angstrom
+            ),
         }
     encoded = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
@@ -641,6 +670,9 @@ def export_native_model(model: Mixture, path: str | PathLike[str]) -> None:
         "polarizability_scaling_angstrom3",
         "correlation_integral_parameter",
         "relative_permittivity_formulation",
+        "dipole_moment_debye",
+        "quadrupole_moment_debye_angstrom",
+        "polar_formulation",
     )
     native_parameters = dict(zip(names, _native_arguments(model._model), strict=True))
     for key in (
@@ -734,6 +766,7 @@ class State:
     hard_chain: float
     dispersion: float
     association: float
+    ares_polar: float
     debye_huckel: float
     born: float
     bulk_relative_permittivity: float | None

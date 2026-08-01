@@ -1,5 +1,6 @@
 #include "eos.hpp"
 #include "native_sdk_pybind.hpp"
+#include "polar.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -11,6 +12,43 @@
 namespace py = pybind11;
 
 PYBIND11_MODULE(_core, module) {
+    module.def("_polar_constants", []() {
+        py::dict values;
+        values["dd_a0"] = epcsaft::detail::DD_A0;
+        values["dd_a1"] = epcsaft::detail::DD_A1;
+        values["dd_a2"] = epcsaft::detail::DD_A2;
+        values["dd_b0"] = epcsaft::detail::DD_B0;
+        values["dd_b1"] = epcsaft::detail::DD_B1;
+        values["dd_b2"] = epcsaft::detail::DD_B2;
+        values["dd_c0"] = epcsaft::detail::DD_C0;
+        values["dd_c1"] = epcsaft::detail::DD_C1;
+        values["dd_c2"] = epcsaft::detail::DD_C2;
+        values["qq_a0"] = epcsaft::detail::QQ_A0;
+        values["qq_a1"] = epcsaft::detail::QQ_A1;
+        values["qq_a2"] = epcsaft::detail::QQ_A2;
+        values["qq_b0"] = epcsaft::detail::QQ_B0;
+        values["qq_b1"] = epcsaft::detail::QQ_B1;
+        values["qq_b2"] = epcsaft::detail::QQ_B2;
+        values["qq_c0"] = epcsaft::detail::QQ_C0;
+        values["qq_c1"] = epcsaft::detail::QQ_C1;
+        values["qq_c2"] = epcsaft::detail::QQ_C2;
+        values["dq_a0"] = epcsaft::detail::DQ_A0;
+        values["dq_a1"] = epcsaft::detail::DQ_A1;
+        values["dq_a2"] = epcsaft::detail::DQ_A2;
+        values["dq_b0"] = epcsaft::detail::DQ_B0;
+        values["dq_b1"] = epcsaft::detail::DQ_B1;
+        values["dq_b2"] = epcsaft::detail::DQ_B2;
+        values["dq_c0"] = epcsaft::detail::DQ_C0;
+        values["dq_c1"] = epcsaft::detail::DQ_C1;
+        values["dq_alpha"] = epcsaft::detail::DQ_ALPHA;
+        return values;
+    });
+    module.def(
+        "_polar_pade",
+        [](double second, double third, bool active) {
+            return epcsaft::detail::polar_pade(second, third, active);
+        }
+    );
     py::class_<epcsaft::NativeDensityDiagnostics>(module, "NativeDensityDiagnostics")
         .def_readonly(
             "bracket_lower", &epcsaft::NativeDensityDiagnostics::bracket_lower
@@ -44,6 +82,7 @@ PYBIND11_MODULE(_core, module) {
         .def_readonly("hard_chain", &epcsaft::NativeResult::hard_chain)
         .def_readonly("dispersion", &epcsaft::NativeResult::dispersion)
         .def_readonly("association", &epcsaft::NativeResult::association)
+        .def_readonly("ares_polar", &epcsaft::NativeResult::ares_polar)
         .def_readonly("debye_huckel", &epcsaft::NativeResult::debye_huckel)
         .def_readonly("born_ssm_ds", &epcsaft::NativeResult::born_ssm_ds)
         .def_readonly(
@@ -135,7 +174,10 @@ PYBIND11_MODULE(_core, module) {
             std::vector<double> dipole_scaling_debye2,
             std::vector<double> polarizability_scaling_angstrom3,
             std::vector<double> correlation_integral_parameter,
-            int relative_permittivity_formulation
+            int relative_permittivity_formulation,
+            std::vector<double> dipole_moment_debye,
+            std::vector<double> quadrupole_moment_debye_angstrom,
+            int polar_formulation
         ) {
             return epcsaft::NativeModel(epcsaft::NativeParameters{
                 std::move(segment_count),
@@ -166,9 +208,17 @@ PYBIND11_MODULE(_core, module) {
                 std::move(polarizability_scaling_angstrom3),
                 std::move(correlation_integral_parameter),
                 relative_permittivity_formulation,
+                std::move(dipole_moment_debye),
+                std::move(quadrupole_moment_debye_angstrom),
+                polar_formulation,
             });
         }))
         .def("evaluate", &epcsaft::NativeModel::evaluate)
+        .def("_polar_terms", &epcsaft::NativeModel::polar_terms)
+        .def(
+            "_reduced_multipole_moments",
+            &epcsaft::NativeModel::reduced_multipole_moments
+        )
         .def("evaluate_pressure", &epcsaft::NativeModel::evaluate_pressure)
         .def("reference_composition", &epcsaft::NativeModel::reference_composition)
         .def(

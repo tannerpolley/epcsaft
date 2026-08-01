@@ -31,6 +31,7 @@ struct NativeResult final {
     double hard_chain;
     double dispersion;
     double association;
+    double ares_polar;
     double debye_huckel;
     double born_ssm_ds;
     double bulk_relative_permittivity;
@@ -211,6 +212,12 @@ public:
         const std::vector<double>& mole_fractions,
         const std::string& phase
     ) const;
+    std::array<double, 6> polar_terms(
+        double temperature,
+        double molar_density,
+        const std::vector<double>& mole_fractions
+    ) const;
+    std::vector<double> reduced_multipole_moments(double temperature) const;
     bool supports_native_sdk_v1() const;
     bool supports_parameterized_pure_native_sdk_v1() const;
     bool supports_fixed_topology_association_native_sdk_v1() const;

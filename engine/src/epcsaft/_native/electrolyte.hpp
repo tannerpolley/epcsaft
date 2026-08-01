@@ -1,6 +1,7 @@
 #pragma once
 
 #include "model.hpp"
+#include "physical_constants.hpp"
 
 #include <cppad/cppad.hpp>
 
@@ -12,10 +13,6 @@
 
 namespace epcsaft::detail {
 
-inline constexpr double ELEMENTARY_CHARGE = 1.602176634e-19;
-inline constexpr double VACUUM_PERMITTIVITY = 8.8541878128e-12;
-inline constexpr double BOLTZMANN = 1.380649e-23;
-inline constexpr double ELECTROLYTE_AVOGADRO = 6.02214076e23;
 inline constexpr double ELECTROLYTE_PI =
     3.141592653589793238462643383279502884;
 
@@ -96,7 +93,7 @@ Scalar bulk_relative_permittivity(
     Scalar dipolar_correlation = Scalar(0.0);
 
     const Scalar number_density_angstrom3 =
-        molar_density * ELECTROLYTE_AVOGADRO * 1.0e-30;
+        molar_density * PHYSICAL_AVOGADRO * 1.0e-30;
     const auto relative_permittivity = [&](std::size_t component) {
         return relative_permittivity_override == nullptr
             ? Scalar(parameters.relative_permittivity[component])
@@ -124,7 +121,7 @@ Scalar bulk_relative_permittivity(
         effective_dipolar_density += number_density_angstrom3 * fraction
             * (
                 parameters.dipole_scaling_debye2[component]
-                    * 1.0e-19 / (BOLTZMANN * temperature)
+                    * 1.0e-19 / (PHYSICAL_BOLTZMANN * temperature)
                 + 3.0 * parameters.polarizability_scaling_angstrom3[component]
             );
         // EqID: dipolar_correlation_integral
@@ -276,15 +273,18 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     }
     // EqID: debye_screening_parameter
     const Scalar kappa = electrolyte_sqrt(
-        molar_density * ELECTROLYTE_AVOGADRO
-        * ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * charge_square_sum
-        / (VACUUM_PERMITTIVITY * bulk_permittivity * BOLTZMANN * temperature)
+        molar_density * PHYSICAL_AVOGADRO
+        * PHYSICAL_ELEMENTARY_CHARGE * PHYSICAL_ELEMENTARY_CHARGE * charge_square_sum
+        / (PHYSICAL_VACUUM_PERMITTIVITY * bulk_permittivity
+           * PHYSICAL_BOLTZMANN * temperature)
     );
     const Scalar reference_kappa = electrolyte_sqrt(
-        reference_molar_density * ELECTROLYTE_AVOGADRO
-        * ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * reference_charge_square_sum
-        / (VACUUM_PERMITTIVITY * reference_permittivity * BOLTZMANN
-            * reference_temperature)
+        reference_molar_density * PHYSICAL_AVOGADRO
+        * PHYSICAL_ELEMENTARY_CHARGE * PHYSICAL_ELEMENTARY_CHARGE
+        * reference_charge_square_sum
+        / (PHYSICAL_VACUUM_PERMITTIVITY * reference_permittivity
+            * PHYSICAL_BOLTZMANN
+           * reference_temperature)
     );
     const double reference_permittivity_for_branch =
         detail::bulk_relative_permittivity(
@@ -294,10 +294,11 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
             parameters
         );
     const double reference_kappa_for_branch = std::sqrt(
-        reference_molar_density * ELECTROLYTE_AVOGADRO
-        * ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * reference_charge_square_sum
-        / (VACUUM_PERMITTIVITY * reference_permittivity_for_branch
-            * BOLTZMANN * reference_temperature)
+        reference_molar_density * PHYSICAL_AVOGADRO
+        * PHYSICAL_ELEMENTARY_CHARGE * PHYSICAL_ELEMENTARY_CHARGE
+        * reference_charge_square_sum
+        / (PHYSICAL_VACUUM_PERMITTIVITY * reference_permittivity_for_branch
+            * PHYSICAL_BOLTZMANN * reference_temperature)
     );
     Scalar weighted_chi = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
@@ -325,10 +326,10 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         weighted_chi += mole_fractions[component] * charge * charge * chi;
     }
     // EqID: debye_huckel_helmholtz
-    const Scalar debye_huckel = -kappa * ELEMENTARY_CHARGE * ELEMENTARY_CHARGE
-        * weighted_chi
-        / (12.0 * ELECTROLYTE_PI * VACUUM_PERMITTIVITY * bulk_permittivity
-           * BOLTZMANN * temperature);
+    const Scalar debye_huckel = -kappa * PHYSICAL_ELEMENTARY_CHARGE
+        * PHYSICAL_ELEMENTARY_CHARGE * weighted_chi
+        / (12.0 * ELECTROLYTE_PI * PHYSICAL_VACUUM_PERMITTIVITY
+           * bulk_permittivity * PHYSICAL_BOLTZMANN * temperature);
     return {bulk_permittivity, debye_huckel};
 }
 

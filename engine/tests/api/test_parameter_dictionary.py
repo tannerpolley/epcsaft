@@ -77,6 +77,8 @@ def test_from_dictionary__round_trips_through_an_external_bundle(tmp_path) -> No
         ("mu2", "dipole_scaling", (1.0, 2.0)),
         ("alpha", "polarizability_scaling", (1.0, 2.0)),
         ("a2", "correlation_integral_parameter", (1.0, 2.0)),
+        ("mu", "dipole_moment", (1.0, 2.0)),
+        ("Q", "quadrupole_moment", (3.0, 4.0)),
         ("k_ij", "dispersion_interaction", ((0.0, 0.02), (0.02, 0.0))),
         ("l_ij", "diameter_interaction", ((0.0, 0.01), (0.01, 0.0))),
     ),
@@ -105,6 +107,7 @@ def test_from_dictionary__all_parameter_aliases_are_equivalent(
         ("permittivity_model", "relative_permittivity_formulation", "none"),
         ("epsilon_r_ion", "ionic_region_relative_permittivity", 8.0),
         ("a_dh", "ion_fraction_suppression_coefficient", 7.01),
+        ("polar_model", "polar_formulation", "gross-vrabec-point-multipole"),
     ),
 )
 def test_from_dictionary__all_option_aliases_are_equivalent(

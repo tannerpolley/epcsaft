@@ -3918,6 +3918,8 @@ struct NativeSdkEndpoint final {
             );
             result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
             return result->status;
+        } catch (const detail::PolarDomainError& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
         } catch (const std::invalid_argument& error) {
             return fail(EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1, error.what());
         } catch (const std::logic_error& error) {

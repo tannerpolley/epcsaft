@@ -276,6 +276,7 @@ owners:
   state_input: Mixture.state
   result: State
   equation_kernel: src/epcsaft/_native/helmholtz.hpp
+  polar: src/epcsaft/_native/polar.hpp
   association: src/epcsaft/_native/association.hpp
   electrolyte: src/epcsaft/_native/electrolyte.hpp
   born: src/epcsaft/_native/born.hpp
@@ -293,7 +294,7 @@ public_surface:
   parameter_dictionary_resolution: Parameters.from_dictionary
   mixture_dictionary_construction: Mixture.from_dictionary
   parameter_bundle_persistence: [Parameters.to_bundle, Parameters.from_bundle]
-  result_state_metadata: [component_ids, temperature, mole_fractions, parameter_fingerprint]
+  result_state_metadata: [component_ids, temperature, mole_fractions, parameter_fingerprint, ares_polar]
   typing: PEP-561 py.typed with Pint quantities, overloads, and public Literal aliases
   exports:
     - Parameters

@@ -378,15 +378,191 @@ a^{assoc}=\sum_A x_{i(A)}\nu_A
 \label{eq:association_helmholtz}
 \end{equation}
 
+\subsection{Gross--Vrabec point multipoles}
+
+% EqID: polar_cross_energy
+% Source: \cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, unlike-energy rule
+% Status: Source equation
+% Description: Corrected unlike dispersion energy used only inside each second-order polar integral.
+% Change note: Uses k_ij but never l_ij; pure-energy prefactors remain uncorrected.
+\begin{equation}
+\frac{\epsilon_{ij}^{polar}}{k_B}
+=(1-k_{ij})\sqrt{\frac{\epsilon_i}{k_B}\frac{\epsilon_j}{k_B}},
+\qquad \sigma_{ij}^{polar}=\frac{\sigma_i+\sigma_j}{2}.
+\label{eq:polar_cross_energy}
+\end{equation}
+
+% EqID: polar_reduced_dipole_moment
+% Source: \cite{GrossVrabec2006DD}, Eq.~(9) and Table~2 unit definition
+% Status: Source equation
+% Description: Squared reduced dipole moment derived from a physical moment in Debye.
+% Change note: The implementation derives the SI conversion through epsilon_0, k_B, c, and the angstrom conversion.
+\begin{equation}
+\mu_i^{*2}=\frac{\mu_i^2}
+{4\pi\epsilon_0 m_i k_B(\epsilon_i/k_B)\sigma_i^3}.
+\label{eq:polar_reduced_dipole_moment}
+\end{equation}
+
+% EqID: polar_reduced_quadrupole_moment
+% Source: \cite{Gross2005QQ}, Eq.~(10) and Eq.~(A14)
+% Status: Source equation
+% Description: Squared reduced quadrupole moment derived from a physical moment in Debye angstrom.
+% Change note: The implementation derives the SI conversion rather than storing a historical decimal factor.
+\begin{equation}
+Q_i^{*2}=\frac{Q_i^2}
+{4\pi\epsilon_0 m_i k_B(\epsilon_i/k_B)\sigma_i^5}.
+\label{eq:polar_reduced_quadrupole_moment}
+\end{equation}
+
+% EqID: polar_chain_coefficient
+% Source: \cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, coefficient mixing equations
+% Status: Source equation
+% Description: Chain-length interpolation shared by the polar pair and triplet integrals.
+% Change note: DD caps m_ij and m_ijk at two; QQ and DQ use uncapped geometric means, and DQ c has no c_2 term.
+\begin{equation}
+y_{n}(m)=y_{0n}+\frac{m-1}{m}y_{1n}
++\frac{m-1}{m}\frac{m-2}{m}y_{2n},
+\quad y\in\{a,b,c\}.
+\label{eq:polar_chain_coefficient}
+\end{equation}
+
+% EqID: polar_pair_integral
+% Source: \cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, pair-integral correlations
+% Status: Bounded empirical relation
+% Description: Family-specific second-order pair integral using the corrected unlike energy.
+% Change note: Uses each paper's printed five-row coefficient table without reordering.
+\begin{equation}
+J_{2,ij}^{f}=\sum_{n=0}^{4}\left[
+a_{n,ij}^{f}+b_{n,ij}^{f}\frac{\epsilon_{ij}^{polar}}{k_BT}
+\right]\eta^n,
+\qquad f\in\{DD,QQ,DQ35\}.
+\label{eq:polar_pair_integral}
+\end{equation}
+
+% EqID: polar_triplet_integral
+% Source: \cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, triplet-integral correlations
+% Status: Bounded empirical relation
+% Description: Family-specific third-order triplet integral.
+% Change note: DQ35 uses the printed c normalization and its unprinted final row is zero.
+\begin{equation}
+J_{3,ijk}^{f}=\sum_{n=0}^{4}c_{n,ijk}^{f}\eta^n,
+\qquad f\in\{DD,QQ,DQ35\}.
+\label{eq:polar_triplet_integral}
+\end{equation}
+
+% EqID: polar_dd_second_order
+% Source: \cite{GrossVrabec2006DD}, Eq.~(8)
+% Status: Source equation
+% Description: Gross--Vrabec dipole-dipole second-order perturbation term.
+% Change note: One point dipole per neutral molecule is admitted and the pair chain mean is capped at two.
+\begin{equation}
+a_2^{DD}=-\pi\widehat\rho\sum_{ij}x_ix_j
+\frac{\epsilon_i\epsilon_j}{(k_BT)^2}
+\frac{\sigma_i^3\sigma_j^3}{\sigma_{ij}^3}
+\mu_i^{*2}\mu_j^{*2}J_{2,ij}^{DD}.
+\label{eq:polar_dd_second_order}
+\end{equation}
+
+% EqID: polar_dd_third_order
+% Source: \cite{GrossVrabec2006DD}, Eq.~(9)
+% Status: Source equation
+% Description: Gross--Vrabec dipole-dipole third-order perturbation term.
+% Change note: The triplet chain mean is capped at two and no k_ij or l_ij correction enters this term.
+\begin{equation}
+a_3^{DD}=-\frac{4\pi^2}{3}\widehat\rho^2\sum_{ijk}x_ix_jx_k
+\frac{\epsilon_i\epsilon_j\epsilon_k}{(k_BT)^3}
+\frac{\sigma_i^3\sigma_j^3\sigma_k^3}{\sigma_{ij}\sigma_{ik}\sigma_{jk}}
+\mu_i^{*2}\mu_j^{*2}\mu_k^{*2}J_{3,ijk}^{DD}.
+\label{eq:polar_dd_third_order}
+\end{equation}
+
+% EqID: polar_qq_second_order
+% Source: \cite{Gross2005QQ}, Eq.~(9)
+% Status: Source equation
+% Description: Gross quadrupole-quadrupole second-order perturbation term.
+% Change note: Uses the uncapped pair chain mean and the Lorentz polar diameter.
+\begin{equation}
+a_2^{QQ}=-\frac{9\pi}{16}\widehat\rho\sum_{ij}x_ix_j
+\frac{\epsilon_i\epsilon_j}{(k_BT)^2}
+\frac{\sigma_i^5\sigma_j^5}{\sigma_{ij}^7}
+Q_i^{*2}Q_j^{*2}J_{2,ij}^{QQ}.
+\label{eq:polar_qq_second_order}
+\end{equation}
+
+% EqID: polar_qq_third_order
+% Source: \cite{Gross2005QQ}, Eq.~(10) with J_3,ij=0
+% Status: Source equation
+% Description: Gross quadrupole-quadrupole third-order triplet term.
+% Change note: Preserves the positive prefactor and uncapped triplet chain mean.
+\begin{equation}
+a_3^{QQ}=\frac{9\pi^2}{16}\widehat\rho^2\sum_{ijk}x_ix_jx_k
+\frac{\epsilon_i\epsilon_j\epsilon_k}{(k_BT)^3}
+\frac{\sigma_i^5\sigma_j^5\sigma_k^5}
+{\sigma_{ij}^3\sigma_{ik}^3\sigma_{jk}^3}
+Q_i^{*2}Q_j^{*2}Q_k^{*2}J_{3,ijk}^{QQ}.
+\label{eq:polar_qq_third_order}
+\end{equation}
+
+% EqID: polar_dq_second_order
+% Source: \cite{VrabecGross2008DQ}, Eq.~(14)
+% Status: Source equation
+% Description: Directional DQ35 second-order dipole-quadrupole perturbation term.
+% Change note: Preserves sigma_i cubed, sigma_j to the fifth, and sigma_ij to the fifth.
+\begin{equation}
+a_2^{DQ}=-\frac{9\pi}{4}\widehat\rho\sum_{ij}x_ix_j
+\frac{\epsilon_i\epsilon_j}{(k_BT)^2}
+\frac{\sigma_i^3\sigma_j^5}{\sigma_{ij}^5}
+\mu_i^{*2}Q_j^{*2}J_{2,ij}^{DQ}.
+\label{eq:polar_dq_second_order}
+\end{equation}
+
+% EqID: polar_dq_third_order
+% Source: \cite{VrabecGross2008DQ}, Eq.~(15) and Table~3
+% Status: Source equation
+% Description: Directional DQ35 third-order DDQ and DQQ perturbation term.
+% Change note: Uses the paper's printed c normalization, negative prefactor, and alpha=1.19374.
+\begin{equation}
+a_3^{DQ}=-\widehat\rho^2\sum_{ijk}x_ix_jx_k
+\frac{\epsilon_i\epsilon_j\epsilon_k}{(k_BT)^3}
+\frac{\sigma_i^4\sigma_j^4\sigma_k^4}
+{\sigma_{ij}^2\sigma_{ik}^2\sigma_{jk}^2}
+\left(\mu_i^{*2}\mu_j^{*2}Q_k^{*2}
++\alpha\mu_i^{*2}Q_j^{*2}Q_k^{*2}\right)J_{3,ijk}^{DQ},
+\quad \alpha=1.19374.
+\label{eq:polar_dq_third_order}
+\end{equation}
+
+% EqID: polar_pade
+% Source: \cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, family Padé forms
+% Status: Source equation
+% Description: Independent third-order Padé resummation for one active polar family.
+% Change note: Inactive families return exact zero; active near-pole or nonfinite terms raise the polar-domain error.
+\begin{equation}
+a^f=\frac{a_2^f}{1-a_3^f/a_2^f}
+=\frac{(a_2^f)^2}{a_2^f-a_3^f},
+\qquad f\in\{DD,QQ,DQ35\}.
+\label{eq:polar_pade}
+\end{equation}
+
+% EqID: polar_helmholtz
+% Source: Aggregate of \cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}
+% Status: Implementation convention
+% Description: One public polar residual Helmholtz contribution from the three private Padé families.
+% Change note: No family-specific public result field or type is introduced.
+\begin{equation}
+a^{polar}=a^{DD}+a^{QQ}+a^{DQ35}.
+\label{eq:polar_helmholtz}
+\end{equation}
+
 \section{Residual Helmholtz energy}
 
 % EqID: residual_helmholtz
-% Source: \cite{Gross2001}, PC-SAFT residual decomposition, extended by the admitted electrolyte terms
+% Source: \cite{Gross2001}, PC-SAFT residual decomposition, extended by admitted polar and electrolyte terms
 % Status: Implementation convention
 % Description: Sum of every active residual Helmholtz contribution.
 % Change note: Mirrors the single EOS Helmholtz owner and its contribution result.
 \begin{equation}
-a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}.
+a^r=a^{hc}+a^{disp}+a^{assoc}+a^{polar}+a^{DH}+a^{Born}.
 \label{eq:residual_helmholtz}
 \end{equation}
 

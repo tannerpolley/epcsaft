@@ -29,7 +29,14 @@ from epcsaft import (
     unit_registry,
 )
 
-from tests._raw_cases import ASSOCIATING_PURE, electrolyte, neutral_binary, neutral_pure
+from tests._raw_cases import (
+    ASSOCIATING_PURE,
+    POLAR_BINARY,
+    POLAR_PURE,
+    electrolyte,
+    neutral_binary,
+    neutral_pure,
+)
 
 
 def three_site_association_case(
@@ -88,6 +95,7 @@ def three_site_association_case(
         "options": {"permittivity_model": "none"},
         "validity": {"kind": "unknown"},
     }
+
 
 CAPSULE_NAME = b"epcsaft.native_sdk.v1"
 

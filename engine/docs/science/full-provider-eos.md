@@ -25,6 +25,9 @@ It does not override this bounded specification or the current implementation.
 | Gross2001 | Gross and Sadowski, *Ind. Eng. Chem. Res.* 2001, 40, 1244-1260, DOI `10.1021/ie0003887` | PC-SAFT hard-chain, dispersion, pressure, chemical potential, fugacity, and residual properties |
 | Gross2002 | Gross and Sadowski, *Ind. Eng. Chem. Res.* 2002, 41, 5510-5515, DOI `10.1021/ie010954d` | Association mixing for associating systems |
 | Chapman1990 | Chapman et al., *Ind. Eng. Chem. Res.* 1990, 29, 1709-1721, DOI `10.1021/ie00104a021` | Wertheim association energy and site-fraction equations |
+| Gross2005QQ | Gross, *AIChE J.* 2005, 51, 2556-2568, DOI `10.1002/aic.10502` | Quadrupole-quadrupole Padé contribution, coefficients, and physical moment reduction |
+| GrossVrabec2006DD | Gross and Vrabec, *AIChE J.* 2006, 52, 1194-1204, DOI `10.1002/aic.10683` | Dipole-dipole Padé contribution, coefficients, chain caps, and physical moment reduction |
+| VrabecGross2008DQ | Vrabec and Gross, DOI `10.1021/jp072619u` | Directional DQ35 Padé contribution, coefficients, and alpha |
 | Bulow2019 | Bülow et al., *Fluid Phase Equilibria* 2019, 492, 26-33, DOI `10.1016/j.fluid.2019.03.010` | Debye-Huckel contribution with composition-dependent dielectric treatment |
 | Figiel2025 | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2025, 64, 9406-9418, DOI `10.1021/acs.iecr.5c00475` | Fitted Born diameter, SSM+DS Born term, solvation factor, dielectric rule, fugacity relations, and electrolyte reference-state equations |
 | Figiel2025SI | Official ACS supporting information, DOI `10.1021/acs.iecr.5c00475.s001`, Figshare article `28888514`, file `54030209`, MD5 `4c3d3964d6e61b908c3ce3b17bb4e6b0` | Comparison of direct, SSM, and SSM+DS formulations and retained validation evidence |
@@ -98,6 +101,9 @@ Component inputs use:
   records; and
 - pair values `k_ij` for dispersion energy and, where the selected formulation
   requires it, explicit `l_ij` for cross diameter.
+- optional physical dipole moments in debye and quadrupole moments in debye
+  angstrom for `gross-vrabec-point-multipole`; dielectric `dipole_scaling`
+  remains a separate identity.
 
 The clean native kernel converts every length to one basis before combining it
 with number density. It does not mix SI number density with Angstrom cubed.
@@ -116,6 +122,7 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Hard chain | hard-sphere mixture Helmholtz minus chain contact terms | source equation | Gross2001 Eqs. (A.9), (A.16), (A.17) | `_native/helmholtz.hpp` |
 | Dispersion | first- and second-order perturbation terms using `I_1`, `I_2`, and `C_1` | source equation | Gross2001 Eqs. (A.10)-(A.15) | `_native/helmholtz.hpp` |
 | Association | mass-action site fractions and `sum_i x_i sum_A [ln X_iA - X_iA/2 + 1/2]` | source equation | Chapman1990 Eqs. (19), (21) | `_native/association.hpp` |
+| Gross--Vrabec polar | independently Padé-resummed DD, QQ, and directional DQ35 terms reported as one `a^polar` | source equations and aggregate convention | Gross2005QQ Eqs. (8)--(19), GrossVrabec2006DD Eqs. (7)--(16), VrabecGross2008DQ Eqs. (13)--(22) | `_native/polar.hpp` |
 | Debye-Huckel | finite-size DH residual Helmholtz term | adapted source equation | Bulow2019 Eq. (2), with diameter and screening definitions below | `_native/electrolyte.hpp` |
 | Figiel bulk dielectric | salt-free solvent mass mixing followed by ion suppression | bounded empirical relation | Figiel2025 Eqs. (11), (12) | `_native/electrolyte.hpp` |
 | Ascani bulk dielectric | combined salt-free-solvent mass and ion-mole mixing | source equation | AscaniHeld2021 Eq. (13) | `_native/electrolyte.hpp` |
@@ -124,7 +131,7 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Rueben bulk dielectric | partial-density perturbation-theory relation | source equation | Rueben2024 Eqs. (4)--(6) | `_native/electrolyte.hpp` |
 | Born SSM+DS | piecewise-dielectric shell work | corrected source equation | Figiel2026Correction Eq. (7) | `_native/born.hpp` |
 | Original Born | direct charging work with ion diameter `sigma_i` | source equation | AscaniHeld2021 Eq. (10) and diameter convention | `_native/born.hpp` |
-| Total Helmholtz | `a^r = a^hc + a^disp + a^assoc + a^DH + a^Born` | source equation | Figiel2025 Eq. (1) | `_native/helmholtz.hpp` |
+| Total Helmholtz | `a^r = a^hc + a^disp + a^assoc + a^polar + a^DH + a^Born` | source equation and aggregate convention | Gross2001; polar sources; Figiel2025 Eq. (1) | `_native/helmholtz.hpp` |
 | Pressure | `Z = 1 + rho_m (partial a^r/partial rho_m)_(T,x)` and `P = rho_m R T Z` | source equation | Gross2001 Eq. (A.24) | `_native/derivatives.hpp` |
 | Chemical potential | composition derivative of the common `a^r` owner | source equation | Gross2001 Eq. (A.33); Figiel2025 Eq. (13) | `_native/derivatives.hpp` |
 | Fugacity | `ln phi_i = mu_i^r/(RT) - ln Z` | source equation | Gross2001 Eq. (A.32) | `_native/derivatives.hpp` |
@@ -134,6 +141,12 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Practical molal osmotic coefficient | pure-solvent-referenced solvent activity on the formula-unit molality basis | source equation | HamerWu1972 Eqs. (3.4'), (3.5) | `reference.py` |
 | Residual caloric properties | temperature and density derivatives of the common `a^r` owner | source equation and exact derivation | Gross2001 Eqs. (A.46)-(A.50) plus identities below | `_native/derivatives.hpp` |
 | Density closure | `rho_m R T Z(T,rho_m,x) - P_spec = 0` | exact derivation | pressure identity | `_native/density.hpp` |
+
+ADR 0003 governs the polar identity interpretation. Physical moment values,
+units, presence, component order, formulation, and topology participate in the
+resolved parameter fingerprint. Source locators and record identifiers remain
+in the provenance-sensitive bundle fingerprint and exported records, while the
+resolved equation identity remains provenance-neutral.
 
 The EOS does not implement the lab catalogue's handwritten nonlinear
 composition, density, or temperature derivative formulas. CppAD differentiates

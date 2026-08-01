@@ -40,8 +40,10 @@ void copy_error(const std::string& message, char* error, std::size_t capacity) {
 }
 
 epcsaft::NativeParameters parameters(const Json& value) {
+    const auto segment_count = value.at("segment_count").get<std::vector<double>>();
+    const std::size_t components = segment_count.size();
     return epcsaft::NativeParameters{
-        value.at("segment_count").get<std::vector<double>>(),
+        segment_count,
         value.at("sigma_constant_angstrom").get<std::vector<double>>(),
         value.at("sigma_term_component").get<std::vector<int>>(),
         value.at("sigma_term_amplitude_angstrom").get<std::vector<double>>(),
@@ -73,6 +75,14 @@ epcsaft::NativeParameters parameters(const Json& value) {
         value.at("correlation_integral_parameter")
             .get<std::vector<double>>(),
         value.at("relative_permittivity_formulation").get<int>(),
+        value.contains("dipole_moment_debye")
+            ? value.at("dipole_moment_debye").get<std::vector<double>>()
+            : std::vector<double>(components, 0.0),
+        value.contains("quadrupole_moment_debye_angstrom")
+            ? value.at("quadrupole_moment_debye_angstrom")
+                  .get<std::vector<double>>()
+            : std::vector<double>(components, 0.0),
+        value.value("polar_formulation", epcsaft::POLAR_FORMULATION_NONE),
     };
 }
 

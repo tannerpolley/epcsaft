@@ -111,7 +111,11 @@ def _component(record: ComponentRecord) -> dict[str, object]:
 
 
 def _value(family: str, value: object) -> object:
-    if family in {"electrolyte_formulation", "relative_permittivity_formulation"}:
+    if family in {
+        "electrolyte_formulation",
+        "relative_permittivity_formulation",
+        "polar_formulation",
+    }:
         assert isinstance(value, str)
         return _string(value)
     if family == "charge_number":

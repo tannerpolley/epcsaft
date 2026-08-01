@@ -12,6 +12,7 @@ from .records import (
     ConstantPlusSumOfExponentialsCorrelation,
     ModelParameterRecord,
     PairParameterRecord,
+    PolarFormulation,
     RelativePermittivityFormulation,
     SingleParameterRecord,
     SiteRecord,
@@ -78,6 +79,9 @@ class _ResolvedModel:
     dipole_scaling_debye2: tuple[float, ...] = ()
     polarizability_scaling_angstrom3: tuple[float, ...] = ()
     correlation_integral_parameter: tuple[float, ...] = ()
+    polar_formulation: PolarFormulation | None = None
+    dipole_moment_debye: tuple[float, ...] = ()
+    quadrupole_moment_debye_angstrom: tuple[float, ...] = ()
 
 
 def _missing(*, component_id: str | None = None, family: str, pair: tuple[str, str] | None = None):
@@ -300,18 +304,26 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         record for record in parameters.records if isinstance(record, AssociationParameterRecord)
     )
     model_records = tuple(
-        record
-        for record in parameters.records
-        if isinstance(record, ModelParameterRecord)
+        record for record in parameters.records if isinstance(record, ModelParameterRecord)
     )
-    models = {
-        record.family: record
-        for record in model_records
-    }
+    models = {record.family: record for record in model_records}
+    polar_records = tuple(
+        record for record in model_records if record.family == "polar_formulation"
+    )
+    if len(polar_records) > 1:
+        raise _error("invalid-value", family="polar_formulation", reason="duplicate")
+    polar_formulation: PolarFormulation | None = (
+        None if not polar_records else polar_records[0].value  # type: ignore[assignment]
+    )
+    moment_families = {"dipole_moment", "quadrupole_moment"}
+    if polar_formulation is None and any(family in moment_families for _, family in singles):
+        raise _error(
+            "invalid-value",
+            family="polar_formulation",
+            reason="missing-for-multipole",
+        )
     formulation_records = tuple(
-        record
-        for record in model_records
-        if record.family == "relative_permittivity_formulation"
+        record for record in model_records if record.family == "relative_permittivity_formulation"
     )
     if not formulation_records:
         raise _error("missing-record", family="relative_permittivity_formulation")
@@ -359,8 +371,7 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         (
             family
             for _, family in singles
-            if family in formulation_single_families
-            and family not in allowed_single_families
+            if family in formulation_single_families and family not in allowed_single_families
         ),
         None,
     )
@@ -434,13 +445,45 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         for component_id in component_ids
     )
     site_ids, site_multiplicity, association_pairs = _association(sites, association_records)
-    temperature_min, temperature_max, pressure_min, pressure_max, ion_fraction_max = (
-        _domain_limits(parameters)
+    temperature_min, temperature_max, pressure_min, pressure_max, ion_fraction_max = _domain_limits(
+        parameters
     )
 
     selected_charges = tuple(
         singles.get((component_id, "charge_number")) for component_id in component_ids
     )
+    dipole_moment = tuple(
+        0.0
+        if (record := singles.get((component_id, "dipole_moment"))) is None
+        else _magnitude(record, "debye")
+        for component_id in component_ids
+    )
+    quadrupole_moment = tuple(
+        0.0
+        if (record := singles.get((component_id, "quadrupole_moment"))) is None
+        else _magnitude(record, "debye * angstrom")
+        for component_id in component_ids
+    )
+    for index, component_id in enumerate(component_ids):
+        if dipole_moment[index] < 0.0 or quadrupole_moment[index] < 0.0:
+            raise _error(
+                "invalid-value",
+                component_id=component_id,
+                family="multipole-moment",
+                reason="negative",
+            )
+        charge = selected_charges[index]
+        if (
+            charge is not None
+            and int(charge.value) != 0
+            and (dipole_moment[index] != 0.0 or quadrupole_moment[index] != 0.0)
+        ):
+            raise _error(
+                "invalid-value",
+                component_id=component_id,
+                family="multipole-moment",
+                reason="charged-component",
+            )
     ionic_topology = any(
         record is not None and int(record.value) != 0 for record in selected_charges
     ) or any(family == "born_diameter" for _, family in singles)
@@ -472,6 +515,9 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             pressure_max,
             None,
             "none",
+            polar_formulation=polar_formulation,
+            dipole_moment_debye=dipole_moment,
+            quadrupole_moment_debye_angstrom=quadrupole_moment,
         )
 
     charge_records = tuple(
@@ -536,7 +582,8 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
                 reason="incompatible-electrolyte-topology",
             )
         neutral_components = tuple(
-            component_id for component_id, charge in zip(component_ids, charges, strict=True)
+            component_id
+            for component_id, charge in zip(component_ids, charges, strict=True)
             if charge == 0
         )
         if len(neutral_components) != 1:
@@ -557,9 +604,7 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
                     reason="fully-dissociated-dispersion-rule",
                 )
         solvent_relative_permittivity: list[_TemperatureRecord | None] = []
-        for index, (component_id, charge) in enumerate(
-            zip(component_ids, charges, strict=True)
-        ):
+        for index, (component_id, charge) in enumerate(zip(component_ids, charges, strict=True)):
             if charge == 0:
                 if molar_mass[index] is None:
                     raise _missing(component_id=component_id, family="molar_mass")
@@ -598,6 +643,9 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             pressure_max,
             ion_fraction_max,
             "solvent-only",
+            polar_formulation=polar_formulation,
+            dipole_moment_debye=dipole_moment,
+            quadrupole_moment_debye_angstrom=quadrupole_moment,
         )
     if relative_permittivity_formulation == "component-permittivity-mixing":
         if corrected_born_schema_present:
@@ -641,6 +689,9 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             pressure_max,
             ion_fraction_max,
             "component-permittivity-mixing",
+            polar_formulation=polar_formulation,
+            dipole_moment_debye=dipole_moment,
+            quadrupole_moment_debye_angstrom=quadrupole_moment,
         )
 
     if relative_permittivity_formulation not in {
@@ -662,7 +713,10 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         if charge == 0:
             if molar_mass[index] is None:
                 raise _missing(component_id=component_id, family="molar_mass")
-            if relative_permittivity_formulation in {"ion-fraction-suppression", "ion-specific-suppression"}:
+            if relative_permittivity_formulation in {
+                "ion-fraction-suppression",
+                "ion-specific-suppression",
+            }:
                 relative_permittivity.append(
                     _component_record(
                         component_id,
@@ -725,12 +779,8 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         "ion_specific_suppression_coefficient", "dimensionless"
     )
     dipole_scaling = component_values("dipole_scaling", "debye ** 2")
-    polarizability_scaling = component_values(
-        "polarizability_scaling", "angstrom ** 3"
-    )
-    correlation_integral = component_values(
-        "correlation_integral_parameter", "dimensionless"
-    )
+    polarizability_scaling = component_values("polarizability_scaling", "angstrom ** 3")
+    correlation_integral = component_values("correlation_integral_parameter", "dimensionless")
 
     for index, charge in enumerate(charges):
         if relative_permittivity_formulation == "density-volume-temperature" and charge == 0:
@@ -760,7 +810,10 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
                     component_id=component_ids[index],
                     family="correlation_integral_parameter",
                 )
-    if relative_permittivity_formulation == "ion-specific-suppression" and sum(charge == 0 for charge in charges) != 1:
+    if (
+        relative_permittivity_formulation == "ion-specific-suppression"
+        and sum(charge == 0 for charge in charges) != 1
+    ):
         raise _error(
             "invalid-value",
             family="relative_permittivity_formulation",
@@ -797,6 +850,9 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         dipole_scaling,
         polarizability_scaling,
         correlation_integral,
+        polar_formulation,
+        dipole_moment,
+        quadrupole_moment,
     )
 
 

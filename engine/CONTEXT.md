@@ -30,7 +30,10 @@ scientific admission or runtime authority.
 
 The accepted EOS contains one typed parameter lifecycle and one scalar-
 generic residual Helmholtz kernel for hard-chain, dispersion, association,
-Debye--Huckel, and corrected Born SSM+DS contributions. It returns residual
+aggregate Gross--Vrabec DD/QQ/DQ35 point-multipole, Debye--Huckel, and corrected
+Born SSM+DS contributions. Physical dipole and quadrupole moments are optional,
+source-unit inputs for neutral components; the public state reports only
+`ares_polar`. It returns residual
 chemical potentials, fugacity coefficients when defined, residual caloric
 properties, pressure, and branch diagnostics for pressure-specified states.
 The 0.2.0.dev0 Python frontend exposes `Parameters.from_dictionary(...)`,

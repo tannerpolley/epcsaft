@@ -23,13 +23,9 @@ ALLOWED_STATUSES = frozenset(
 )
 
 EQID_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
-METADATA_PATTERN = re.compile(
-    r"^%\s*(EqID|Source|Status|Description|Change note):\s*(.+?)\s*$"
-)
+METADATA_PATTERN = re.compile(r"^%\s*(EqID|Source|Status|Description|Change note):\s*(.+?)\s*$")
 LABEL_PATTERN = re.compile(r"\\label\{([^}]+)\}")
-ANNOTATION_PATTERN = re.compile(
-    r"^\s*(?://|#)\s*(EqID|EqExclude):\s*(.+?)\s*$"
-)
+ANNOTATION_PATTERN = re.compile(r"^\s*(?://|#)\s*(EqID|EqExclude):\s*(.+?)\s*$")
 CPP_NAME_PATTERN = re.compile(r"((?:\w+::)*~?\w+)\s*$")
 CPP_DECLARATION_PREFIX_PATTERN = re.compile(
     r"^(?:"
@@ -66,6 +62,7 @@ ALLOWED_EXCLUSIONS = frozenset(
 
 MATH_OWNER_FILES = (
     "src/epcsaft/_native/helmholtz.hpp",
+    "src/epcsaft/_native/polar.hpp",
     "src/epcsaft/_native/association.hpp",
     "src/epcsaft/_native/electrolyte.hpp",
     "src/epcsaft/_native/born.hpp",
@@ -148,9 +145,7 @@ def parse_equations(tex_path: Path, repo_root: Path) -> list[EquationEntry]:
             required = {"EqID", "Source", "Status", "Description", "Change note"}
             missing = sorted(required - metadata.keys())
             if missing:
-                raise ValueError(
-                    f"{tex_path}:{index + 1}: missing metadata: {', '.join(missing)}"
-                )
+                raise ValueError(f"{tex_path}:{index + 1}: missing metadata: {', '.join(missing)}")
             eqid = metadata["EqID"]
             if not EQID_PATTERN.fullmatch(eqid):
                 raise ValueError(f"{tex_path}:{metadata_line}: invalid EqID {eqid!r}")
@@ -158,19 +153,14 @@ def parse_equations(tex_path: Path, repo_root: Path) -> list[EquationEntry]:
                 raise ValueError(f"{tex_path}:{metadata_line}: duplicate EqID {eqid!r}")
             if metadata["Status"] not in ALLOWED_STATUSES:
                 raise ValueError(
-                    f"{tex_path}:{metadata_line}: unsupported status "
-                    f"{metadata['Status']!r}"
+                    f"{tex_path}:{metadata_line}: unsupported status {metadata['Status']!r}"
                 )
             body_lines = lines[index + 1 : end]
             labels = [
-                label
-                for body_line in body_lines
-                for label in LABEL_PATTERN.findall(body_line)
+                label for body_line in body_lines for label in LABEL_PATTERN.findall(body_line)
             ]
             if len(labels) != 1:
-                raise ValueError(
-                    f"{tex_path}:{index + 1}: equation requires exactly one label"
-                )
+                raise ValueError(f"{tex_path}:{index + 1}: equation requires exactly one label")
             entries.append(
                 EquationEntry(
                     eqid=eqid,
@@ -249,10 +239,7 @@ def _cpp_function_spans(path: Path) -> list[_FunctionSpan]:
             continue
         name = name_match.group(1)
         qualified_parts = name.split("::")
-        constructor = (
-            len(qualified_parts) >= 2
-            and qualified_parts[-1] == qualified_parts[-2]
-        )
+        constructor = len(qualified_parts) >= 2 and qualified_parts[-1] == qualified_parts[-2]
         qualified_definition = "::" in name and line == line.lstrip()
         class_body_method = name.removeprefix("~") in class_names
         if (
@@ -302,19 +289,13 @@ def _function_spans(path: Path) -> list[_FunctionSpan]:
     return _cpp_function_spans(path)
 
 
-def _annotation_owner(
-    comment_line: int, functions: list[_FunctionSpan]
-) -> _FunctionSpan | None:
+def _annotation_owner(comment_line: int, functions: list[_FunctionSpan]) -> _FunctionSpan | None:
     containing = [
-        function
-        for function in functions
-        if function.start <= comment_line <= function.end
+        function for function in functions if function.start <= comment_line <= function.end
     ]
     if containing:
         return min(containing, key=lambda function: function.end - function.start)
-    following = [
-        function for function in functions if function.start > comment_line
-    ]
+    following = [function for function in functions if function.start > comment_line]
     return min(following, key=lambda function: function.start, default=None)
 
 
@@ -347,9 +328,7 @@ def parse_source_annotations(
                 continue
             owner = _annotation_owner(comment_line, functions)
             if owner is None:
-                raise ValueError(
-                    f"{path}:{comment_line}: annotation has no function owner"
-                )
+                raise ValueError(f"{path}:{comment_line}: annotation has no function owner")
             classified.add((owner.symbol, owner.start))
             relative = str(path.relative_to(repo_root))
             if match.group(1) == "EqID":
@@ -368,9 +347,7 @@ def parse_source_annotations(
             else:
                 reason = match.group(2)
                 if reason not in ALLOWED_EXCLUSIONS:
-                    raise ValueError(
-                        f"{path}:{comment_line}: unsupported EqExclude {reason!r}"
-                    )
+                    raise ValueError(f"{path}:{comment_line}: unsupported EqExclude {reason!r}")
                 exclusions.append(
                     SourceExclusion(
                         file=relative,
@@ -386,9 +363,7 @@ def parse_source_annotations(
                         f"{path.relative_to(repo_root)}:{function.start}:{function.symbol}"
                     )
     if unclassified:
-        raise ValueError(
-            "unclassified mathematical-owner function: " + ", ".join(unclassified)
-        )
+        raise ValueError("unclassified mathematical-owner function: " + ", ".join(unclassified))
     return references, exclusions
 
 
@@ -417,9 +392,7 @@ def load_repository_inputs(
     list[SourceExclusion],
 ]:
     """Load and link the canonical LaTeX and declared implementation owners."""
-    entries = parse_equations(
-        repo_root / "docs" / "latex" / "equations.tex", repo_root
-    )
+    entries = parse_equations(repo_root / "docs" / "latex" / "equations.tex", repo_root)
     declared = [repo_root / relative for relative in MATH_OWNER_FILES]
     existing = [path for path in declared if path.exists()]
     if len(existing) == len(declared):
@@ -435,9 +408,7 @@ def load_repository_inputs(
                 references.setdefault(eqid, []).extend(refs)
             exclusions.extend(path_exclusions)
     else:
-        references, exclusions = parse_source_annotations(
-            _owner_source_root(repo_root), repo_root
-        )
+        references, exclusions = parse_source_annotations(_owner_source_root(repo_root), repo_root)
     linked = [
         replace(
             entry,
@@ -458,9 +429,7 @@ def validate_registry(
     entry_ids = {entry.eqid for entry in entries}
     unknown_ids = sorted(set(references) - entry_ids)
     if unknown_ids:
-        raise ValueError(
-            "source EqID absent from LaTeX: " + ", ".join(unknown_ids)
-        )
+        raise ValueError("source EqID absent from LaTeX: " + ", ".join(unknown_ids))
     for entry in entries:
         refs = references.get(entry.eqid) or list(entry.implementation_refs)
         if entry.status != "Documentation-only" and not refs:
@@ -469,14 +438,11 @@ def validate_registry(
         for citation_group in citations:
             for citation in (item.strip() for item in citation_group.split(",")):
                 if citation not in bibliography_keys:
-                    raise ValueError(
-                        f"equation {entry.eqid!r} has unknown citation {citation!r}"
-                    )
+                    raise ValueError(f"equation {entry.eqid!r} has unknown citation {citation!r}")
     for exclusion in exclusions:
         if exclusion.reason not in ALLOWED_EXCLUSIONS:
             raise ValueError(
-                f"{exclusion.file}:{exclusion.line}: unsupported exclusion "
-                f"{exclusion.reason!r}"
+                f"{exclusion.file}:{exclusion.line}: unsupported exclusion {exclusion.reason!r}"
             )
 
 
@@ -484,9 +450,7 @@ def _quoted(value: object) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
-def render_registry(
-    entries: list[EquationEntry], exclusions: list[SourceExclusion]
-) -> str:
+def render_registry(entries: list[EquationEntry], exclusions: list[SourceExclusion]) -> str:
     """Render deterministic YAML using JSON-compatible scalar quoting."""
     lines = ["schema_version: 1", "equations:"]
     for entry in sorted(entries, key=lambda item: item.eqid):
@@ -519,9 +483,7 @@ def render_registry(
                 ]
             )
     lines.append("source_exclusions:")
-    for exclusion in sorted(
-        exclusions, key=lambda item: (item.file, item.line, item.symbol)
-    ):
+    for exclusion in sorted(exclusions, key=lambda item: (item.file, item.line, item.symbol)):
         lines.extend(
             [
                 f"  - file: {_quoted(exclusion.file)}",
@@ -533,9 +495,7 @@ def render_registry(
     return "\n".join(lines) + "\n"
 
 
-def render_markdown(
-    entries: list[EquationEntry], exclusions: list[SourceExclusion]
-) -> str:
+def render_markdown(entries: list[EquationEntry], exclusions: list[SourceExclusion]) -> str:
     """Render a searchable human-readable view of the checked registry."""
     lines = [
         "# EOS Equation Registry",
@@ -559,18 +519,12 @@ def render_markdown(
             ]
         )
         for reference in entry.implementation_refs:
-            lines.append(
-                f"  - `{reference.file}:{reference.line}` "
-                f"(`{reference.symbol}`)"
-            )
+            lines.append(f"  - `{reference.file}:{reference.line}` (`{reference.symbol}`)")
         lines.extend(["", "$$", entry.latex, "$$", ""])
     lines.extend(["## Audited source exclusions", ""])
-    for exclusion in sorted(
-        exclusions, key=lambda item: (item.file, item.line, item.symbol)
-    ):
+    for exclusion in sorted(exclusions, key=lambda item: (item.file, item.line, item.symbol)):
         lines.append(
-            f"- `{exclusion.file}:{exclusion.line}` (`{exclusion.symbol}`): "
-            f"{exclusion.reason}"
+            f"- `{exclusion.file}:{exclusion.line}` (`{exclusion.symbol}`): {exclusion.reason}"
         )
     lines.append("")
     return "\n".join(lines)
@@ -586,12 +540,8 @@ def synchronize(repo_root: Path, *, check: bool) -> None:
         load_bibliography_keys(repo_root),
     )
     outputs = {
-        repo_root / "docs" / "equations_registry.yaml": render_registry(
-            entries, exclusions
-        ),
-        repo_root / "docs" / "equations.md": render_markdown(
-            entries, exclusions
-        ),
+        repo_root / "docs" / "equations_registry.yaml": render_registry(entries, exclusions),
+        repo_root / "docs" / "equations.md": render_markdown(entries, exclusions),
     }
     stale = [
         path

@@ -82,12 +82,13 @@ no scalar or 2B-specific association callback is retained.
 
 ## Scientific boundary
 
-The native kernel evaluates hard-chain, dispersion, association,
-Debye--Hückel, and Born contributions. State pressure, fugacity, residual
-caloric properties, and density diagnostics all derive from that one owner.
-The open polar equation work will expose one aggregate `ares_polar`
-contribution; it will not create separate Helmholtz result terms for each polar
-interaction type.
+The native kernel evaluates hard-chain, dispersion, association, the aggregate
+Gross--Vrabec point-multipole contribution, Debye--Hückel, and Born terms.
+State pressure, fugacity, residual caloric properties, and density diagnostics
+all derive from that one owner. Polar models expose one `ares_polar` result;
+polar mixture evaluation is restricted to strictly positive component mole
+fractions so composition derivatives remain on one valid CppAD graph.
+DD, QQ, and directional DQ35 remain private perturbation families.
 
 The repository test suite is fully self-contained. Compact raw cases live in
 `tests/_raw_cases.py`; external bundle files are created only in temporary

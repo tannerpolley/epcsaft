@@ -1,6 +1,7 @@
 #pragma once
 
 #include "model.hpp"
+#include "polar.hpp"
 
 #include <cppad/cppad.hpp>
 
@@ -47,6 +48,7 @@ struct HelmholtzResult final {
     Scalar hard_chain;
     Scalar dispersion;
     Scalar association;
+    Scalar polar;
     Scalar debye_huckel;
     Scalar born_ssm_ds;
 };
@@ -365,8 +367,22 @@ HelmholtzResult<Scalar> residual_helmholtz(
             parameters.site_multiplicity[site] *
             (scalar_log(site_fraction[site]) - site_fraction[site] / 2.0 + 0.5);
     }
+    const auto polar_expansion = polar_terms(
+        temperature,
+        number_density,
+        mole_fractions,
+        parameters,
+        sigma,
+        zeta[3],
+        active_aqueous_k_ij,
+        dispersion_energy_override
+    );
+    // EqID: polar_helmholtz
+    const Scalar polar = polar_helmholtz(
+        polar_expansion, mole_fractions, parameters
+    );
     // EqID: residual_helmholtz
-    return {hard_chain, dispersion, association, debye_huckel, born_ssm_ds};
+    return {hard_chain, dispersion, association, polar, debye_huckel, born_ssm_ds};
 }
 
 }  // namespace epcsaft::detail

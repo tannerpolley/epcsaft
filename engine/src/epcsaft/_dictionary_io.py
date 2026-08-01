@@ -41,6 +41,8 @@ _ALIASES = {
     "dipole_scaling": "mu2",
     "polarizability_scaling": "alpha",
     "correlation_integral_parameter": "a2",
+    "dipole_moment": "mu",
+    "quadrupole_moment": "Q",
     "dispersion_interaction": "k_ij",
     "diameter_interaction": "l_ij",
 }
@@ -59,6 +61,8 @@ _SINGLE_UNITS = {
     "dipole_scaling": "debye ** 2",
     "polarizability_scaling": "angstrom ** 3",
     "correlation_integral_parameter": None,
+    "dipole_moment": "debye",
+    "quadrupole_moment": "debye * angstrom",
 }
 _PARAMETER_KEYS = frozenset({*_ALIASES, *_ALIASES.values(), "sites", "association", "correlations"})
 _OPTION_ALIASES = {
@@ -66,6 +70,7 @@ _OPTION_ALIASES = {
     "relative_permittivity_formulation": "permittivity_model",
     "ionic_region_relative_permittivity": "epsilon_r_ion",
     "ion_fraction_suppression_coefficient": "a_dh",
+    "polar_formulation": "polar_model",
 }
 _OPTION_KEYS = frozenset({*_OPTION_ALIASES, *_OPTION_ALIASES.values()})
 

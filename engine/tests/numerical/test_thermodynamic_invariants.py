@@ -62,7 +62,12 @@ def test_residual_helmholtz__equals_sum_of_active_contributions(mapping, composi
     state = _state(mapping, x=composition)
 
     assert state.ares(basis="reduced") == pytest.approx(
-        state.hard_chain + state.dispersion + state.association + state.debye_huckel + state.born,
+        state.hard_chain
+        + state.dispersion
+        + state.association
+        + state.ares_polar
+        + state.debye_huckel
+        + state.born,
         rel=2.0e-14,
         abs=2.0e-14,
     )
@@ -80,6 +85,7 @@ def test_neutral_model__inactive_electrolyte_terms_are_exactly_zero() -> None:
     state = _state(NEUTRAL_BINARY, x=(0.4, 0.6))
 
     assert state.association == 0.0
+    assert state.ares_polar == 0.0
     assert state.debye_huckel == 0.0
     assert state.born == 0.0
     assert state.bulk_relative_permittivity is None
@@ -394,9 +400,7 @@ def test_electrolyte_reference__matches_public_projection_identities() -> None:
     assert tuple(
         value.to("joule / mole").magnitude for value in reference.solvation_free_energy
     ) == pytest.approx(
-        tuple(
-            scale * value for value in reference.infinite_dilution_log_fugacity_coefficient
-        )
+        tuple(scale * value for value in reference.infinite_dilution_log_fugacity_coefficient)
     )
     identity = reference.transfer_to(reference)
     assert isinstance(identity, TransferFreeEnergy)

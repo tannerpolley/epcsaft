@@ -67,6 +67,136 @@ def test_native_sdk_phase_block_matches_public_thermodynamics(
     )
 
 
+def test_native_sdk_phase_blocks_include_the_model_bound_polar_aggregate() -> None:
+    pure = Mixture.from_dictionary(POLAR_PURE)
+    pure_capsule, pure_table = _table(pure)
+    assert pure_capsule is not None
+    pure_block = _evaluate(pure_table, 315.0, 1.0, 1.0 / 4200.0)
+    pure_state = pure.state(
+        T=315.0 * unit_registry.kelvin,
+        rho=4200.0 * unit_registry.mole / unit_registry.meter**3,
+        x=(1.0,),
+    )
+    assert pure_state.ares_polar != 0.0
+    assert pure_block.helmholtz_over_rt_reference_amount == pytest.approx(
+        math.log(4200.0) - 1.0 + pure_state._residual_helmholtz,
+        rel=2.0e-12,
+        abs=2.0e-12,
+    )
+
+    mixture = Mixture.from_dictionary(POLAR_BINARY)
+    mixture_capsule, mixture_table = _table(mixture)
+    assert mixture_capsule is not None
+    amounts = (0.35, 0.65)
+    volume = 1.0 / 4200.0
+    mixture_block, _, _ = _evaluate_mixture(mixture_table, 315.0, amounts, volume)
+    mixture_state = mixture.state(
+        T=315.0 * unit_registry.kelvin,
+        rho=4200.0 * unit_registry.mole / unit_registry.meter**3,
+        x=amounts,
+    )
+    expected = sum(amount * (math.log(amount / volume) - 1.0) for amount in amounts)
+    expected += mixture_state._residual_helmholtz
+    assert mixture_state.ares_polar != 0.0
+    assert mixture_block.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected, rel=2.0e-12, abs=2.0e-12
+    )
+
+
+def test_polar_moment_presence__participates_in_sdk_topology_identity() -> None:
+    mappings = []
+    for keep in (
+        (),
+        ("dipole_moment",),
+        ("quadrupole_moment",),
+        ("dipole_moment", "quadrupole_moment"),
+    ):
+        mapping = deepcopy(POLAR_BINARY)
+        for family in ("dipole_moment", "quadrupole_moment"):
+            if family not in keep:
+                mapping["parameters"].pop(family)
+        mappings.append(mapping)
+
+    capsules = []
+    topologies = set()
+    for mapping in mappings:
+        model = Mixture.from_dictionary(mapping)
+        capsule, table = _capability_table(model)
+        capsules.append(capsule)
+        assert table.capability_count == 2
+        topologies.add(table.capabilities[0].topology_fingerprint.decode())
+
+    assert all(capsule is not None for capsule in capsules)
+    assert len(topologies) == len(mappings)
+
+
+def test_polar_pade_failure__is_an_sdk_domain_error() -> None:
+    mapping = deepcopy(POLAR_PURE)
+    mapping["parameters"].pop("quadrupole_moment")
+    mapping["parameters"]["dipole_moment"] = (1.0,)
+    base = Mixture.from_dictionary(mapping)
+    second, third, *_ = base._native._polar_terms(100.0, 1.0, (1.0,))
+    mapping["parameters"]["dipole_moment"] = (math.sqrt(second / third),)
+    model = Mixture.from_dictionary(mapping)
+    capsule, table = _table(model)
+
+    assert capsule is not None
+    result = _evaluate(table, 100.0, 1.0, 1.0)
+    assert result.status == STATUS_DOMAIN_ERROR
+    assert result.error == b"polar-domain-error"
+
+
+def test_associating_polar_presence__participates_in_sdk_topology_identity() -> None:
+    capsules = []
+    topologies = set()
+    for moments in (
+        {},
+        {"dipole_moment": (1.7,)},
+        {"quadrupole_moment": (4.1,)},
+        {"dipole_moment": (1.7,), "quadrupole_moment": (4.1,)},
+    ):
+        mapping = three_site_association_case()
+        mapping["options"]["polar_formulation"] = "gross-vrabec-point-multipole"
+        mapping["parameters"].update(moments)
+        model = Mixture.from_dictionary(mapping)
+        capsule, table = _fixed_topology_table(model)
+        capsules.append(capsule)
+        topologies.add(table.fixed_topology_association.contents.topology_fingerprint.decode())
+
+    assert all(capsule is not None for capsule in capsules)
+    assert len(topologies) == 4
+
+
+def test_fixed_topology_polar_pade_failure__is_an_sdk_domain_error() -> None:
+    mapping = three_site_association_case()
+    mapping["options"]["polar_formulation"] = "gross-vrabec-point-multipole"
+    mapping["parameters"]["dipole_moment"] = (1.0,)
+    base = Mixture.from_dictionary(mapping)
+    second, third, *_ = base._native._polar_terms(100.0, 1.0, (1.0,))
+    mapping["parameters"]["dipole_moment"] = (math.sqrt(second / third),)
+    model = Mixture.from_dictionary(mapping)
+    capsule, table = _fixed_topology_table(model)
+    descriptor = table.fixed_topology_association.contents
+    slots = tuple(descriptor.slots[index] for index in range(descriptor.slot_count))
+    requests = _fixed_topology_requests(
+        slots,
+        (1.4, 3.2, 220.0, 2400.0, 0.03, 1800.0, 0.025),
+    )
+
+    assert capsule is not None
+    result, _, _ = _evaluate_fixed_topology(
+        table,
+        model.parameter_fingerprint,
+        descriptor.topology_fingerprint.decode(),
+        100.0,
+        1.0,
+        1.0,
+        requests,
+    )
+    assert result.status == STATUS_DOMAIN_ERROR
+    assert result.error == b"polar-domain-error"
+
+
 def test_native_sdk_derivative_tensors_match_directional_oracles() -> None:
     model = _model("neutral", "methane")
     capsule, table = _table(model)
@@ -156,7 +286,7 @@ def test_native_sdk_describes_the_exact_neutral_binary_pair_derivative_contracts
     ) == ("methane", "ethane")
     assert descriptor.parameter_fingerprint.decode() == model.parameter_fingerprint
     assert descriptor.topology_fingerprint.decode() == (
-        "sha256:172e3c9dce280763cf785db5d6fc94deeb30a23359346b2222a836077930351a"
+        "sha256:850375880434f73ebe6e098736052f5310e6df6e0cd63e8aa46baad10343e7bc"
     )
     assert descriptor.topology_fingerprint != descriptor.parameter_fingerprint
     assert descriptor.helmholtz_basis_id.decode() == (

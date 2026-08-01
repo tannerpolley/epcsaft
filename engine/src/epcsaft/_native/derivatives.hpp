@@ -405,7 +405,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     );
     std::vector<ADScalar> dependent = {
         contributions.hard_chain + contributions.dispersion
-            + contributions.association + contributions.debye_huckel
+            + contributions.association + contributions.polar
+            + contributions.debye_huckel
             + contributions.born_ssm_ds,
     };
     dependent.insert(dependent.end(), mass_action.begin(), mass_action.end());

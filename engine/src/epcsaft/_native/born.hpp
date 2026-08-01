@@ -71,8 +71,9 @@ Scalar born_ssm_ds_contribution_impl(
         );
     }
     // EqID: ssm_ds_born_helmholtz
-    return -ELEMENTARY_CHARGE * ELEMENTARY_CHARGE * radial_work
-        / (4.0 * ELECTROLYTE_PI * VACUUM_PERMITTIVITY * BOLTZMANN
+    return -PHYSICAL_ELEMENTARY_CHARGE * PHYSICAL_ELEMENTARY_CHARGE * radial_work
+        / (4.0 * ELECTROLYTE_PI * PHYSICAL_VACUUM_PERMITTIVITY
+            * PHYSICAL_BOLTZMANN
            * temperature);
 }
 
@@ -118,10 +119,11 @@ Scalar born_original_contribution(
         radial_work += mole_fractions[component] * charge * charge / diameter;
     }
     // EqID: original_born_helmholtz
-    return -ELEMENTARY_CHARGE * ELEMENTARY_CHARGE
+    return -PHYSICAL_ELEMENTARY_CHARGE * PHYSICAL_ELEMENTARY_CHARGE
         * (Scalar(1.0) - Scalar(1.0) / bulk_relative_permittivity)
         * radial_work
-        / (4.0 * ELECTROLYTE_PI * VACUUM_PERMITTIVITY * BOLTZMANN
+        / (4.0 * ELECTROLYTE_PI * PHYSICAL_VACUUM_PERMITTIVITY
+            * PHYSICAL_BOLTZMANN
            * temperature);
 }
 

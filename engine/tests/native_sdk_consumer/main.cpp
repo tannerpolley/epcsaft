@@ -90,6 +90,58 @@ bool neutral_inverse_packing_is_available(const char* path) {
     return valid;
 }
 
+bool polar_mixture_is_available(const char* path) {
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
+    epcsaft_native_model_handle_v1* model =
+        epcsaft_native_model_load_v1(path, error, sizeof(error));
+    if (model == nullptr) {
+        std::cerr << error << '\n';
+        return false;
+    }
+    const epcsaft_native_sdk_v1* sdk = epcsaft_native_model_sdk_v1(model);
+    const char* fingerprint = epcsaft_native_model_fingerprint_v1(model);
+    const double amounts[] = {0.35, 0.65};
+    std::vector<double> gradient(3);
+    std::vector<double> hessian(9);
+    epcsaft_mixture_phase_block_result_v1 result{};
+    result.struct_size = sizeof(result);
+    result.coordinate_count = 3;
+    result.gradient_capacity = gradient.size();
+    result.hessian_capacity = hessian.size();
+    result.gradient = gradient.data();
+    result.hessian = hessian.data();
+    const int status = sdk != nullptr && fingerprint != nullptr
+        && sdk->component_count == 2 && sdk->evaluate_mixture_phase != nullptr
+        ? sdk->evaluate_mixture_phase(
+            sdk->model_context,
+            315.0,
+            amounts,
+            2,
+            1.0 / 4200.0,
+            &result
+        )
+        : EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+    const bool valid = status == EPCSAFT_NATIVE_STATUS_OK_V1
+        && result.status == EPCSAFT_NATIVE_STATUS_OK_V1
+        && std::strcmp(result.parameter_fingerprint, fingerprint) == 0
+        && std::isfinite(result.helmholtz_over_rt_reference_amount)
+        && std::all_of(
+            gradient.begin(), gradient.end(),
+            [](double value) { return std::isfinite(value); }
+        )
+        && std::all_of(
+            hessian.begin(), hessian.end(),
+            [](double value) { return std::isfinite(value); }
+        );
+    if (valid) {
+        std::cout << std::setprecision(17)
+                  << "polar_value="
+                  << result.helmholtz_over_rt_reference_amount << '\n';
+    }
+    epcsaft_native_model_destroy_v1(model);
+    return valid;
+}
+
 bool fixed_topology_association_is_available(
     const char* path,
     const char* expected_artifact_fingerprint
@@ -198,7 +250,7 @@ bool fixed_topology_association_is_available(
 }
 
 int main(int argc, char** argv) {
-    if (argc != 6) {
+    if (argc != 7) {
         return 2;
     }
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
@@ -416,7 +468,8 @@ int main(int argc, char** argv) {
         && std::isfinite(parameter_derivatives[0])
         && neutral_inverse_packing_is_available(argv[2])
         && fixed_topology_association_is_available(argv[3], argv[5])
-        && !fixed_topology_association_is_available(argv[4], argv[5]);
+        && !fixed_topology_association_is_available(argv[4], argv[5])
+        && polar_mixture_is_available(argv[6]);
     std::cout << "component_count=" << (sdk == nullptr ? 0 : sdk->component_count)
               << '\n'
               << "phase_pressure_pa=" << phase.pressure_pa << '\n'

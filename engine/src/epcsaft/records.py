@@ -24,6 +24,7 @@ RelativePermittivityFormulation: TypeAlias = Literal[
     "dipolar-density-perturbation",
     "solvent-only",
 ]
+PolarFormulation: TypeAlias = Literal["gross-vrabec-point-multipole"]
 SingleParameterFamily: TypeAlias = Literal[
     "molar_mass",
     "segment_count",
@@ -39,16 +40,17 @@ SingleParameterFamily: TypeAlias = Literal[
     "dipole_scaling",
     "polarizability_scaling",
     "correlation_integral_parameter",
+    "dipole_moment",
+    "quadrupole_moment",
 ]
 PairParameterFamily: TypeAlias = Literal["k_ij", "l_ij"]
-AssociationParameterFamily: TypeAlias = Literal[
-    "association_energy_over_k", "association_volume"
-]
+AssociationParameterFamily: TypeAlias = Literal["association_energy_over_k", "association_volume"]
 ModelParameterFamily: TypeAlias = Literal[
     "ion_fraction_suppression_coefficient",
     "electrolyte_formulation",
     "ionic_region_relative_permittivity",
     "relative_permittivity_formulation",
+    "polar_formulation",
 ]
 CorrelationFamily: TypeAlias = Literal[
     "segment_diameter", "relative_permittivity", "solvation_factor"
@@ -60,9 +62,8 @@ _PAIR_FAMILIES = frozenset(get_args(PairParameterFamily))
 _ASSOCIATION_FAMILIES = frozenset(get_args(AssociationParameterFamily))
 _MODEL_FAMILIES = frozenset(get_args(ModelParameterFamily))
 _ELECTROLYTE_FORMULATIONS = frozenset({"fully-dissociated-debye-huckel"})
-_RELATIVE_PERMITTIVITY_FORMULATIONS = frozenset(
-    get_args(RelativePermittivityFormulation)
-)
+_RELATIVE_PERMITTIVITY_FORMULATIONS = frozenset(get_args(RelativePermittivityFormulation))
+_POLAR_FORMULATIONS = frozenset(get_args(PolarFormulation))
 _CORRELATION_FAMILIES = frozenset(get_args(CorrelationFamily))
 _DIMENSIONAL_UNITS = {
     "molar_mass": "kilogram / mole",
@@ -72,6 +73,8 @@ _DIMENSIONAL_UNITS = {
     "dielectric_volume": "meter ** 3 / mole",
     "dielectric_temperature": "kelvin",
     "dipole_scaling": "debye ** 2",
+    "dipole_moment": "debye",
+    "quadrupole_moment": "debye * angstrom",
     "polarizability_scaling": "angstrom ** 3",
     "association_energy_over_k": "kelvin",
 }
@@ -117,10 +120,11 @@ def _family(value: object, *, allowed: frozenset[str], field: str = "family") ->
 
 def _parameter_value(family: str, value: object) -> object:
     if family == "relative_permittivity_formulation":
-        if (
-            not isinstance(value, str)
-            or value not in _RELATIVE_PERMITTIVITY_FORMULATIONS
-        ):
+        if not isinstance(value, str) or value not in _RELATIVE_PERMITTIVITY_FORMULATIONS:
+            raise _error("invalid-value", field="value", family=family, value=value)
+        return value
+    if family == "polar_formulation":
+        if not isinstance(value, str) or value not in _POLAR_FORMULATIONS:
             raise _error("invalid-value", field="value", family=family, value=value)
         return value
     if family == "electrolyte_formulation":
@@ -481,6 +485,7 @@ __all__ = (
     "ModelParameterRecord",
     "PairParameterFamily",
     "PairParameterRecord",
+    "PolarFormulation",
     "RelativePermittivityFormulation",
     "SingleParameterFamily",
     "SingleParameterRecord",
