@@ -322,7 +322,15 @@ class Mixture:
                 expected=1.0,
                 tolerance=1.0e-12,
             )
-        if self._model.polar_formulation is not None and any(value <= 0.0 for value in fractions):
+        polar_boundary = self._model.polar_formulation is not None and any(
+            fraction <= 0.0
+            and (
+                self._model.dipole_moment_debye[component] != 0.0
+                or self._model.quadrupole_moment_debye_angstrom[component] != 0.0
+            )
+            for component, fraction in enumerate(fractions)
+        )
+        if polar_boundary:
             raise _eos_error(
                 "invalid-state",
                 field="x",
@@ -586,7 +594,7 @@ def _native_sdk_configuration(
     neutral_reference_admitted = (
         complete_reference_domain
         and len(charges) == len(model._component_ids)
-        and sum(charge == 0 for charge in charges) == 1
+        and any(charge == 0 for charge in charges)
         and any(charge > 0 for charge in charges)
         and any(charge < 0 for charge in charges)
     )

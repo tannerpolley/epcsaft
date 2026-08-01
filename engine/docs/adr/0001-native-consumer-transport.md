@@ -223,28 +223,31 @@ the callback calls it directly. Neither path may retain a second copy
 or expose this refactor as a new public abstraction.
 
 The final local candidate tail exposes an equivalently complete charge-neutral
-reference basis rather than accepting reaction rows. An admitted aqueous phase
-model must contain exactly one water reference carrier, at least one cation and
-one anion, and may contain additional neutral components and ions. The table
-reports `C-1` rows: one unit row for every neutral component, then minimal
-formula-unit rows joining the first cation to every anion and every remaining
-cation to the first anion. This deterministic spanning tree is a complete
-basis of the ordered charge-null space, including unequal charge magnitudes.
+reference basis rather than accepting reaction rows. An admitted phase model
+must contain one or more neutral molecular components, at least one cation, at
+least one anion, and complete finite source temperature and pressure bounds.
+The table reports `C-1` rows: one unit row for every neutral component, then
+minimal formula-unit rows joining the canonical first cation to every anion and
+every remaining cation to the canonical first anion. Components are ordered by
+their exact identifiers for basis construction. This deterministic spanning
+tree is a full-rank basis of the ordered charge-nullspace, including unequal
+charge magnitudes, and is invariant to component permutation after columns are
+mapped back by identity.
 
-The callback evaluates the neutral rows at infinite dilution in the explicit
-pure-water reference composition and evaluates every formula-unit row through
-the canonical four-molality reference sequence. It returns the ordered basis,
-dimensionless log-fugacity contractions, reference composition, water molar
-mass, exact `T,P`, worst row convergence error, source fingerprint, and typed
-Helmholtz basis. The existing exact Figiel selections preserve their admission;
-full phase-admitted catalog and authenticated `user-provided` models use the
-same topology rule. An unknown caller-owned domain may transport the table but
-cannot evaluate a reference value. Equivalent reaction bases and species
-permutations require only consumer-side linear algebra; the EOS assigns
-no absolute single-ion reference. Derivative availability is an explicit zero
-bit mask: this v1 entry returns no temperature, pressure, composition, or
-parameter derivatives. The existing reference-sequence and fixed-pressure EOS
-owners remain the only numerical owners.
+The callback evaluates neutral rows in the salt-free composition assigning an
+equal fraction to every neutral component and evaluates every formula-unit row
+through the canonical four-molality reference sequence. It returns the ordered
+basis, dimensionless log-fugacity contractions, reference composition,
+composition-weighted neutral molar mass, exact trial `T,P`, worst row
+convergence error, source fingerprint, and typed Helmholtz basis. It
+re-evaluates this reference at every admitted trial pressure; a source
+standard-state pressure carried by an Equilibrium record is not substituted
+for that trial pressure. An unknown caller-owned domain advertises no evaluable
+neutral-reference capability. Equivalent reaction bases require only
+consumer-side linear algebra; the EOS assigns no absolute single-ion
+reference. The value entry retains its zero derivative bit mask, while the
+append-only derivative entry supplies exact fixed-pressure and admitted active-
+parameter derivatives through the existing reference-sequence and CppAD owners.
 
 The capsule owns the model context. A consumer keeps a Python reference to the
 capsule for as long as it calls the table; ordinary `Py_INCREF`/`Py_DECREF`

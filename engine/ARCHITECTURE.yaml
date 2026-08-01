@@ -245,20 +245,22 @@ native_sdk_candidates:
   neutral_reacting_reference_v1:
     status: project-truss-implementation-candidate-no-authority-effect
     scope: >-
-      Admitted aqueous phase models with one explicit water reference carrier,
-      arbitrary neutral components, at least one cation and one anion, and
-      finite source temperature and pressure applicability for value evaluation.
+      Admitted phase models with one or more neutral molecular components, at
+      least one cation and one anion, and finite source temperature and pressure
+      applicability for value and derivative evaluation.
     representation: complete ordered charge-neutral stoichiometric basis plus dimensionless log-fugacity contractions
     basis_construction: >-
-      Neutral component unit rows followed by minimal formula-unit rows joining
-      the first cation to every anion and every remaining cation to the first anion.
+      Exact-component-identity-ordered neutral unit rows followed by minimal
+      formula-unit rows joining the canonical first cation to every anion and
+      every remaining cation to the canonical first anion.
+    reference_composition: equimolar over every neutral component and exactly zero for ions
     component_mapping: existing SDK component_ids and component_charges
     table_size_bytes_64_bit: 208
     result_size_bytes_64_bit: 440
     reference_sequence_owner: epcsaft::detail::electrolyte_reference_sequence in src/epcsaft/_native/electrolyte_reference.hpp
     pressure_state_owner: NativeModel::evaluate_pressure
-    derivative_availability: none
-    exclusions: [absolute single-ion standards, reaction constants, source standard-state transformation, simultaneous multi-salt reference compositions, constraints, equilibrium]
+    derivative_availability: fixed-pressure and admitted active-parameter derivatives in the append-only derivative entry
+    exclusions: [absolute single-ion standards, reaction constants, source standard-state transformation, finite-salt reference compositions, constraints, equilibrium]
 
 accepted_scope: >-
   Source-backed neutral, associating, and bounded ionic SSM+DS residual EOS at

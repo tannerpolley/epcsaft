@@ -70,22 +70,167 @@ bool aqueous_solvation_factor_model_admitted(
 }
 
 // EqExclude: input and domain validation
+struct NeutralReferenceBasis final {
+    std::vector<std::size_t> neutral_components;
+    std::vector<std::size_t> cations;
+    std::vector<std::size_t> anions;
+    std::vector<double> reference_composition;
+    std::vector<double> rows;
+
+    [[nodiscard]] std::size_t row_count() const {
+        return reference_composition.empty()
+            ? 0u
+            : rows.size() / reference_composition.size();
+    }
+};
+
+// EqExclude: input and domain validation
+bool full_row_rank(
+    const std::vector<double>& values,
+    std::size_t rows,
+    std::size_t columns
+) {
+    if (rows == 0 || columns == 0 || values.size() != rows * columns) {
+        return false;
+    }
+    std::vector<double> matrix(values);
+    std::size_t rank = 0;
+    for (std::size_t column = 0; column < columns && rank < rows; ++column) {
+        std::size_t pivot = rank;
+        while (pivot < rows
+               && std::abs(matrix[pivot * columns + column]) <= 1.0e-12) {
+            ++pivot;
+        }
+        if (pivot == rows) {
+            continue;
+        }
+        for (std::size_t item = column; item < columns; ++item) {
+            std::swap(
+                matrix[rank * columns + item],
+                matrix[pivot * columns + item]
+            );
+        }
+        const double divisor = matrix[rank * columns + column];
+        for (std::size_t item = column; item < columns; ++item) {
+            matrix[rank * columns + item] /= divisor;
+        }
+        for (std::size_t row = 0; row < rows; ++row) {
+            if (row == rank) {
+                continue;
+            }
+            const double factor = matrix[row * columns + column];
+            for (std::size_t item = column; item < columns; ++item) {
+                matrix[row * columns + item] -=
+                    factor * matrix[rank * columns + item];
+            }
+        }
+        ++rank;
+    }
+    return rank == rows;
+}
+
+// EqID: neutral_reference_stoichiometric_basis
+NeutralReferenceBasis make_neutral_reference_basis(
+    const std::vector<std::string>& component_ids,
+    const std::vector<int>& charges
+) {
+    NeutralReferenceBasis result;
+    const std::size_t components = component_ids.size();
+    if (components < 3 || components != charges.size()
+        || std::any_of(
+            component_ids.begin(), component_ids.end(), [](const auto& value) {
+                return value.empty();
+            }
+        )
+        || std::any_of(charges.begin(), charges.end(), [](int charge) {
+            return charge == std::numeric_limits<int>::min();
+        })) {
+        return result;
+    }
+    std::vector<std::size_t> order(components);
+    std::iota(order.begin(), order.end(), 0u);
+    std::sort(order.begin(), order.end(), [&](std::size_t left, std::size_t right) {
+        return component_ids[left] < component_ids[right];
+    });
+    for (std::size_t index = 1; index < order.size(); ++index) {
+        if (component_ids[order[index - 1]] == component_ids[order[index]]) {
+            return {};
+        }
+    }
+    for (std::size_t component : order) {
+        if (charges[component] == 0) {
+            result.neutral_components.push_back(component);
+        } else if (charges[component] > 0) {
+            result.cations.push_back(component);
+        } else {
+            result.anions.push_back(component);
+        }
+    }
+    if (result.neutral_components.empty() || result.cations.empty()
+        || result.anions.empty()) {
+        return {};
+    }
+    result.reference_composition.assign(components, 0.0);
+    const double neutral_fraction =
+        1.0 / static_cast<double>(result.neutral_components.size());
+    for (std::size_t component : result.neutral_components) {
+        result.reference_composition[component] = neutral_fraction;
+    }
+    auto append_row = [&](std::size_t left, double left_value,
+                          std::size_t right = 0u, double right_value = 0.0) {
+        result.rows.resize(result.rows.size() + components, 0.0);
+        const std::size_t offset = result.rows.size() - components;
+        result.rows[offset + left] = left_value;
+        if (right_value != 0.0) {
+            result.rows[offset + right] = right_value;
+        }
+    };
+    for (std::size_t component : result.neutral_components) {
+        append_row(component, 1.0);
+    }
+    auto append_pair = [&](std::size_t cation, std::size_t anion) {
+        const int divisor = std::gcd(
+            std::abs(charges[cation]), std::abs(charges[anion])
+        );
+        append_row(
+            cation,
+            static_cast<double>(std::abs(charges[anion]) / divisor),
+            anion,
+            static_cast<double>(std::abs(charges[cation]) / divisor)
+        );
+    };
+    for (std::size_t anion : result.anions) {
+        append_pair(result.cations.front(), anion);
+    }
+    for (std::size_t index = 1; index < result.cations.size(); ++index) {
+        append_pair(result.cations[index], result.anions.front());
+    }
+    const std::size_t expected_rows = components - 1u;
+    if (result.row_count() != expected_rows
+        || !full_row_rank(result.rows, expected_rows, components)) {
+        return {};
+    }
+    for (std::size_t row = 0; row < expected_rows; ++row) {
+        double net_charge = 0.0;
+        for (std::size_t component = 0; component < components; ++component) {
+            net_charge += result.rows[row * components + component]
+                * static_cast<double>(charges[component]);
+        }
+        if (net_charge != 0.0) {
+            return {};
+        }
+    }
+    return result;
+}
+
+// EqExclude: input and domain validation
 bool neutral_reference_model_shape_admitted(
     const std::vector<std::string>& component_ids,
     const std::vector<int>& charges
 ) {
-    if (component_ids.size() != charges.size()) {
-        return false;
-    }
-    std::size_t neutral_count = 0;
-    std::size_t cation_count = 0;
-    std::size_t anion_count = 0;
-    for (std::size_t component = 0; component < component_ids.size(); ++component) {
-        neutral_count += charges[component] == 0;
-        cation_count += charges[component] > 0;
-        anion_count += charges[component] < 0;
-    }
-    return neutral_count == 1 && cation_count > 0 && anion_count > 0;
+    return !component_ids.empty()
+        && make_neutral_reference_basis(component_ids, charges).row_count()
+            == component_ids.size() - 1u;
 }
 
 std::vector<std::pair<std::size_t, std::size_t>>
@@ -260,6 +405,7 @@ struct NativeSdkEndpoint final {
     std::vector<std::string> component_ids;
     std::vector<const char*> component_id_pointers;
     std::vector<int32_t> component_charges;
+    NeutralReferenceBasis neutral_reference_basis;
     std::vector<std::string> site_ids;
     std::vector<const char*> site_id_pointers;
     std::vector<int32_t> site_components;
@@ -351,6 +497,9 @@ struct NativeSdkEndpoint final {
               source_model.charge_numbers().begin(),
               source_model.charge_numbers().end()
           ),
+          neutral_reference_basis(make_neutral_reference_basis(
+              component_ids, source_model.charge_numbers()
+          )),
           site_ids(std::move(site_identifiers)),
           site_id_pointers([&] {
               std::vector<const char*> pointers;
@@ -983,7 +1132,9 @@ struct NativeSdkEndpoint final {
               &NativeSdkEndpoint::evaluate_ion_solvation_born,
               sizeof(epcsaft_aqueous_miac_kij_result_v1),
               &NativeSdkEndpoint::evaluate_aqueous_miac_kij,
-              neutral_reference_admitted ? component_ids.size() - 1u : 0u,
+              neutral_reference_admitted
+                  ? neutral_reference_basis.row_count()
+                  : 0u,
               sizeof(epcsaft_neutral_reference_result_v1),
               &NativeSdkEndpoint::evaluate_neutral_reference,
               sizeof(epcsaft_aqueous_miac_solvation_factor_result_v1),
@@ -1396,7 +1547,8 @@ struct NativeSdkEndpoint final {
             );
         }
         const std::size_t component_count = endpoint.component_ids.size();
-        const std::size_t row_count = component_count - 1;
+        const auto& reference_basis = endpoint.neutral_reference_basis;
+        const std::size_t row_count = reference_basis.row_count();
         auto& value = result->value;
         if (value.struct_size != sizeof(epcsaft_neutral_reference_result_v1)
             || value.component_count != component_count
@@ -1423,29 +1575,14 @@ struct NativeSdkEndpoint final {
             const auto parameters = active_parameters(
                 endpoint, requests, request_count
             );
-            std::size_t solvent = component_count;
-            std::vector<std::size_t> cations;
-            std::vector<std::size_t> anions;
-            for (std::size_t component = 0;
-                 component < component_count;
-                 ++component) {
-                if (endpoint.component_charges[component] == 0) {
-                    solvent = component;
-                } else if (endpoint.component_charges[component] > 0) {
-                    cations.push_back(component);
-                } else if (endpoint.component_charges[component] < 0) {
-                    anions.push_back(component);
-                }
-            }
-            if (solvent == component_count || cations.empty()
-                || anions.empty()) {
+            if (row_count != component_count - 1u) {
                 throw std::logic_error(
                     "neutral-reference derivative topology is incomplete"
                 );
             }
-            std::vector<double> reference_composition(component_count, 0.0);
-            reference_composition[solvent] = 1.0;
-            std::vector<double> basis(row_count * component_count, 0.0);
+            const std::vector<double> reference_composition =
+                reference_basis.reference_composition;
+            std::vector<double> basis = reference_basis.rows;
             std::vector<double> contractions(row_count);
             std::vector<double> pressure_derivatives(row_count);
             std::vector<double> parameter_derivatives(
@@ -1521,26 +1658,22 @@ struct NativeSdkEndpoint final {
                 reference_branch = observation.branch;
                 return observation;
             };
-            std::optional<detail::DensityRootIdentity> pure_root;
-            const auto pure = observe(reference_composition, pure_root);
+            std::optional<detail::DensityRootIdentity> reference_root;
+            const auto reference_state = observe(
+                reference_composition, reference_root
+            );
             std::size_t row = 0;
-            for (std::size_t component = 0;
-                 component < component_count;
-                 ++component) {
-                if (endpoint.component_charges[component] != 0) {
-                    continue;
-                }
-                basis[row * component_count + component] = 1.0;
+            for (std::size_t component : reference_basis.neutral_components) {
                 contractions[row] =
-                    pure.log_fugacity_coefficient[component];
+                    reference_state.log_fugacity_coefficient[component];
                 pressure_derivatives[row] =
-                    pure.pressure_derivative_per_pa[component];
+                    reference_state.pressure_derivative_per_pa[component];
                 for (std::size_t parameter = 0;
                      parameter < request_count;
                      ++parameter) {
                     parameter_derivatives[
                         row * request_count + parameter
-                    ] = pure.parameter_derivatives[
+                    ] = reference_state.parameter_derivatives[
                         component * request_count + parameter
                     ];
                 }
@@ -1551,7 +1684,7 @@ struct NativeSdkEndpoint final {
             double derivative_convergence_error = 0.0;
             auto append_pair = [&](std::size_t cation, std::size_t anion) {
                 std::optional<detail::DensityRootIdentity> sequence_root =
-                    pure_root;
+                    reference_root;
                 const int divisor = std::gcd(
                     std::abs(endpoint.component_charges[cation]),
                     std::abs(endpoint.component_charges[anion])
@@ -1604,8 +1737,6 @@ struct NativeSdkEndpoint final {
                         "neutral-reference derivative limit is unavailable"
                     );
                 }
-                basis[row * component_count + cation] = stoichiometry[0];
-                basis[row * component_count + anion] = stoichiometry[1];
                 contractions[row] =
                     stoichiometry[0] * sequence.log_fugacity[0]
                     + stoichiometry[1] * sequence.log_fugacity[1];
@@ -1635,11 +1766,16 @@ struct NativeSdkEndpoint final {
                 );
                 ++row;
             };
-            for (std::size_t anion : anions) {
-                append_pair(cations.front(), anion);
+            for (std::size_t anion : reference_basis.anions) {
+                append_pair(reference_basis.cations.front(), anion);
             }
-            for (std::size_t index = 1; index < cations.size(); ++index) {
-                append_pair(cations[index], anions.front());
+            for (std::size_t index = 1;
+                 index < reference_basis.cations.size();
+                 ++index) {
+                append_pair(
+                    reference_basis.cations[index],
+                    reference_basis.anions.front()
+                );
             }
             if (row != row_count || !std::isfinite(minimum_slope)
                 || minimum_slope <= 0.0 || !std::isfinite(maximum_condition)
@@ -1647,7 +1783,7 @@ struct NativeSdkEndpoint final {
                 || !std::isfinite(maximum_relative_bracket_width)
                 || maximum_relative_bracket_width > 1.0e-8
                 || !std::isfinite(maximum_relative_density_step)
-                || !pure_root.has_value()
+                || !reference_root.has_value()
                 || reference_branch.empty()) {
                 throw detail::DensityDomainError(
                     "neutral-reference derivative path is ill-conditioned"
@@ -1695,8 +1831,12 @@ struct NativeSdkEndpoint final {
                 EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_NONE_V1;
             value.temperature_k = temperature_k;
             value.pressure_pa = pressure_pa;
-            value.solvent_molar_mass_kg_per_mol =
-                endpoint.model.molar_masses_kg_per_mol()[solvent];
+            value.solvent_molar_mass_kg_per_mol = std::inner_product(
+                reference_composition.begin(),
+                reference_composition.end(),
+                endpoint.model.molar_masses_kg_per_mol().begin(),
+                0.0
+            );
             value.reference_amount_mol = 1.0;
             value.reference_number_density_mol_per_m3 = 1.0;
             value.reference_molality_mol_per_kg = reference_molality;
@@ -1732,9 +1872,9 @@ struct NativeSdkEndpoint final {
                 maximum_relative_bracket_width;
             result->maximum_relative_root_density_step =
                 maximum_relative_density_step;
-            result->stable_root_count = pure_root->stable_root_count;
+            result->stable_root_count = reference_root->stable_root_count;
             result->selected_stable_root_index =
-                pure_root->selected_stable_root_index;
+                reference_root->selected_stable_root_index;
             std::snprintf(
                 result->reference_branch,
                 sizeof(result->reference_branch),
@@ -2588,7 +2728,8 @@ struct NativeSdkEndpoint final {
             );
         }
         const std::size_t component_count = endpoint.component_ids.size();
-        const std::size_t row_count = component_count - 1;
+        const auto& reference_basis = endpoint.neutral_reference_basis;
+        const std::size_t row_count = reference_basis.row_count();
         if (result->component_count != component_count
             || result->neutral_basis_row_count != row_count
             || result->neutral_basis_capacity != row_count * component_count
@@ -2603,42 +2744,27 @@ struct NativeSdkEndpoint final {
             );
         }
         try {
-            std::size_t solvent = component_count;
-            std::vector<std::size_t> cations;
-            std::vector<std::size_t> anions;
-            for (std::size_t component = 0; component < component_count; ++component) {
-                if (endpoint.component_charges[component] == 0) {
-                    solvent = component;
-                }
-                if (endpoint.component_charges[component] > 0) {
-                    cations.push_back(component);
-                } else if (endpoint.component_charges[component] < 0) {
-                    anions.push_back(component);
-                }
-            }
-            if (solvent == component_count || cations.empty() || anions.empty()) {
+            if (row_count != component_count - 1u) {
                 return fail(
                     EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
                     "neutral reference component topology is incomplete"
                 );
             }
-            std::vector<double> reference_composition(component_count, 0.0);
-            reference_composition[solvent] = 1.0;
-            const auto pure_state = endpoint.model.evaluate_pressure(
+            const std::vector<double> reference_composition =
+                reference_basis.reference_composition;
+            const auto reference_state = endpoint.model.evaluate_pressure(
                 temperature_k, pressure_pa, reference_composition, "liquid"
             );
-            if (!pure_state.log_fugacity_coefficient.has_value()) {
-                throw std::runtime_error("pure-solvent reference fugacity is unavailable");
+            if (!reference_state.log_fugacity_coefficient.has_value()) {
+                throw std::runtime_error("neutral reference fugacity is unavailable");
             }
-            std::vector<double> basis(row_count * component_count, 0.0);
+            std::vector<double> basis = reference_basis.rows;
             std::vector<double> contractions(row_count, 0.0);
             std::size_t row = 0;
-            for (std::size_t component = 0; component < component_count; ++component) {
-                if (endpoint.component_charges[component] == 0) {
-                    basis[row * component_count + component] = 1.0;
-                    contractions[row] = (*pure_state.log_fugacity_coefficient)[component];
-                    ++row;
-                }
+            for (std::size_t component : reference_basis.neutral_components) {
+                contractions[row] =
+                    (*reference_state.log_fugacity_coefficient)[component];
+                ++row;
             }
             double reference_molality = std::numeric_limits<double>::quiet_NaN();
             double reference_convergence_error = 0.0;
@@ -2659,8 +2785,6 @@ struct NativeSdkEndpoint final {
                     stoichiometry,
                     "liquid"
                 );
-                basis[row * component_count + cation] = stoichiometry[0];
-                basis[row * component_count + anion] = stoichiometry[1];
                 contractions[row] = stoichiometry[0] * sequence.log_fugacity[0]
                     + stoichiometry[1] * sequence.log_fugacity[1];
                 if (std::isnan(reference_molality)) {
@@ -2673,17 +2797,27 @@ struct NativeSdkEndpoint final {
                 );
                 ++row;
             };
-            for (std::size_t anion : anions) {
-                append_pair(cations.front(), anion);
+            for (std::size_t anion : reference_basis.anions) {
+                append_pair(reference_basis.cations.front(), anion);
             }
-            for (std::size_t index = 1; index < cations.size(); ++index) {
-                append_pair(cations[index], anions.front());
+            for (std::size_t index = 1;
+                 index < reference_basis.cations.size();
+                 ++index) {
+                append_pair(
+                    reference_basis.cations[index],
+                    reference_basis.anions.front()
+                );
             }
             if (row != row_count) {
                 throw std::runtime_error("neutral reference basis dimension changed");
             }
             const auto& molar_masses = endpoint.model.molar_masses_kg_per_mol();
-            const double solvent_molar_mass = molar_masses[solvent];
+            const double solvent_molar_mass = std::inner_product(
+                reference_composition.begin(),
+                reference_composition.end(),
+                molar_masses.begin(),
+                0.0
+            );
             if (!std::all_of(basis.begin(), basis.end(), [](double value) {
                     return std::isfinite(value);
                 })

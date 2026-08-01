@@ -4,6 +4,7 @@ import hashlib
 import json
 
 from ._support import *
+from .test_neutral_reference import _generic_electrolyte
 
 
 def test_native_sdk_header_is_installed_package_data() -> None:
@@ -45,6 +46,9 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
         1.0 / 4200.0,
     )
     assert polar_capsule is not None
+    generic_reference_artifact = tmp_path / "generic-neutral-reference.json"
+    generic_reference_model = Mixture.from_dictionary(_generic_electrolyte())
+    export_native_model(generic_reference_model, generic_reference_artifact)
     association_artifact = tmp_path / "associating-non-2b.json"
     association_model = Mixture.from_dictionary(three_site_association_case())
     export_native_model(association_model, association_artifact)
@@ -111,6 +115,7 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
             str(tampered_artifact),
             expected_artifact_fingerprint,
             str(polar_artifact),
+            str(generic_reference_artifact),
         ),
         capture_output=True,
         text=True,
@@ -119,6 +124,7 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
     assert consumed.returncode == 0, consumed.stderr
     assert "component_count=3" in consumed.stdout
     assert "reference_branch=liquid" in consumed.stdout
+    assert "generic_reference_rows=5" in consumed.stdout
 
     def emitted(name: str) -> tuple[float, ...]:
         prefix = f"{name}="

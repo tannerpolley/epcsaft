@@ -142,6 +142,161 @@ bool polar_mixture_is_available(const char* path) {
     return valid;
 }
 
+bool generic_neutral_reference_is_available(const char* path) {
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
+    epcsaft_native_model_handle_v1* model =
+        epcsaft_native_model_load_v1(path, error, sizeof(error));
+    if (model == nullptr) {
+        std::cerr << error << '\n';
+        return false;
+    }
+    const epcsaft_native_sdk_v1* sdk = epcsaft_native_model_sdk_v1(model);
+    const char* fingerprint = epcsaft_native_model_fingerprint_v1(model);
+    const char* topology = nullptr;
+    if (sdk != nullptr) {
+        for (std::size_t index = 0; index < sdk->capability_count; ++index) {
+            if (sdk->capabilities[index].topology_fingerprint[0] != '\0') {
+                topology = sdk->capabilities[index].topology_fingerprint;
+                break;
+            }
+        }
+    }
+    constexpr std::size_t components = 6;
+    constexpr std::size_t rows = 5;
+    std::vector<double> basis(rows * components);
+    std::vector<double> contractions(rows);
+    std::vector<double> composition(components);
+    std::vector<double> pressure_derivatives(rows);
+    epcsaft_neutral_reference_derivative_result_v1 result{};
+    result.struct_size = sizeof(result);
+    result.value.struct_size = sizeof(result.value);
+    result.value.component_count = components;
+    result.value.neutral_basis_row_count = rows;
+    result.value.neutral_basis_capacity = basis.size();
+    result.value.contraction_capacity = contractions.size();
+    result.value.reference_composition_capacity = composition.size();
+    result.value.neutral_basis = basis.data();
+    result.value.log_fugacity_contractions = contractions.data();
+    result.value.reference_composition = composition.data();
+    result.active_parameter_count = 0;
+    result.pressure_derivative_capacity = pressure_derivatives.size();
+    result.parameter_derivative_capacity = 0;
+    result.pressure_derivatives_per_pa = pressure_derivatives.data();
+    result.parameter_derivatives = nullptr;
+    const int status = sdk != nullptr && fingerprint != nullptr
+        && topology != nullptr && sdk->component_count == components
+        && sdk->neutral_reference_basis_row_count == rows
+        && sdk->neutral_reference_result_size
+            == sizeof(epcsaft_neutral_reference_result_v1)
+        && sdk->neutral_reference_derivative_result_size == sizeof(result)
+        && sdk->evaluate_neutral_reference != nullptr
+        && sdk->evaluate_neutral_reference_derivatives != nullptr
+        ? sdk->evaluate_neutral_reference_derivatives(
+            sdk->model_context,
+            fingerprint,
+            topology,
+            298.15,
+            100000.0,
+            nullptr,
+            0,
+            &result
+        )
+        : EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+    const std::vector<double> expected_basis{
+        1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 2.0, 0.0, 0.0, 1.0,
+        0.0, 0.0, 1.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 2.0, 0.0, 1.0,
+    };
+    const std::vector<double> expected_composition{
+        0.5, 0.5, 0.0, 0.0, 0.0, 0.0,
+    };
+    const char* expected_component_ids[] = {
+        "neutral-alpha",
+        "neutral-beta",
+        "cation-monovalent",
+        "cation-secondary",
+        "anion-monovalent",
+        "anion-divalent",
+    };
+    const int32_t expected_charges[] = {0, 0, 1, 1, -1, -2};
+    const auto evaluate_value = [&](double pressure_pa, std::vector<double>& values) {
+        std::vector<double> value_basis(rows * components);
+        std::vector<double> value_composition(components);
+        epcsaft_neutral_reference_result_v1 value{};
+        value.struct_size = sizeof(value);
+        value.component_count = components;
+        value.neutral_basis_row_count = rows;
+        value.neutral_basis_capacity = value_basis.size();
+        value.contraction_capacity = values.size();
+        value.reference_composition_capacity = value_composition.size();
+        value.neutral_basis = value_basis.data();
+        value.log_fugacity_contractions = values.data();
+        value.reference_composition = value_composition.data();
+        return sdk->evaluate_neutral_reference(
+            sdk->model_context,
+            fingerprint,
+            298.15,
+            pressure_pa,
+            &value
+        );
+    };
+    std::vector<double> lower(rows);
+    std::vector<double> upper(rows);
+    const double pressure_step_pa = 10.0;
+    bool derivative_matches_difference = status == EPCSAFT_NATIVE_STATUS_OK_V1
+        && evaluate_value(100000.0 - pressure_step_pa, lower)
+            == EPCSAFT_NATIVE_STATUS_OK_V1
+        && evaluate_value(100000.0 + pressure_step_pa, upper)
+            == EPCSAFT_NATIVE_STATUS_OK_V1;
+    for (std::size_t row = 0; row < rows && derivative_matches_difference; ++row) {
+        const double estimate =
+            (upper[row] - lower[row]) / (2.0 * pressure_step_pa);
+        const double scale = std::max(
+            std::abs(estimate), std::abs(pressure_derivatives[row])
+        );
+        derivative_matches_difference =
+            std::abs(estimate - pressure_derivatives[row])
+            <= 1.0e-11 + 2.0e-5 * scale;
+    }
+    bool exact_components = sdk != nullptr && sdk->component_ids != nullptr
+        && sdk->component_charges != nullptr;
+    for (std::size_t component = 0; component < components && exact_components;
+         ++component) {
+        exact_components = std::strcmp(
+            sdk->component_ids[component], expected_component_ids[component]
+        ) == 0 && sdk->component_charges[component] == expected_charges[component];
+    }
+    const bool valid = status == EPCSAFT_NATIVE_STATUS_OK_V1
+        && result.status == EPCSAFT_NATIVE_STATUS_OK_V1
+        && result.value.status == EPCSAFT_NATIVE_STATUS_OK_V1
+        && result.value.temperature_k == 298.15
+        && result.value.pressure_pa == 100000.0
+        && result.source_pressure_min_pa == 50000.0
+        && result.source_pressure_max_pa == 200000.0
+        && std::strcmp(result.parameter_fingerprint, fingerprint) == 0
+        && std::strcmp(result.topology_fingerprint, topology) == 0
+        && exact_components
+        && std::strcmp(result.reference_branch, "liquid") == 0
+        && basis == expected_basis
+        && composition == expected_composition
+        && derivative_matches_difference
+        && std::all_of(
+            contractions.begin(), contractions.end(),
+            [](double value) { return std::isfinite(value); }
+        )
+        && std::all_of(
+            pressure_derivatives.begin(), pressure_derivatives.end(),
+            [](double value) { return std::isfinite(value); }
+        );
+    if (valid) {
+        std::cout << "generic_reference_rows=" << rows << '\n';
+    }
+    epcsaft_native_model_destroy_v1(model);
+    return valid;
+}
+
 bool fixed_topology_association_is_available(
     const char* path,
     const char* expected_artifact_fingerprint
@@ -250,7 +405,7 @@ bool fixed_topology_association_is_available(
 }
 
 int main(int argc, char** argv) {
-    if (argc != 7) {
+    if (argc != 8) {
         return 2;
     }
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
@@ -469,7 +624,8 @@ int main(int argc, char** argv) {
         && neutral_inverse_packing_is_available(argv[2])
         && fixed_topology_association_is_available(argv[3], argv[5])
         && !fixed_topology_association_is_available(argv[4], argv[5])
-        && polar_mixture_is_available(argv[6]);
+        && polar_mixture_is_available(argv[6])
+        && generic_neutral_reference_is_available(argv[7]);
     std::cout << "component_count=" << (sdk == nullptr ? 0 : sdk->component_count)
               << '\n'
               << "phase_pressure_pa=" << phase.pressure_pa << '\n'

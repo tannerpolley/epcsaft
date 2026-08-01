@@ -40,6 +40,28 @@ bool finite(const std::vector<double>& values) {
     });
 }
 
+// EqExclude: input and domain validation
+bool polar_composition_admitted(
+    const NativeParameters& parameters,
+    const std::vector<double>& mole_fractions
+) {
+    if (parameters.polar_formulation == POLAR_FORMULATION_NONE) {
+        return true;
+    }
+    for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+        if (mole_fractions[component] < 0.0) {
+            return false;
+        }
+        const bool carries_moment =
+            parameters.dipole_moment_debye[component] != 0.0
+            || parameters.quadrupole_moment_debye_angstrom[component] != 0.0;
+        if (carries_moment && mole_fractions[component] <= 0.0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 double log_fugacity_density(
     const NativeResult& state,
     const detail::ThermodynamicDerivatives& derivatives,
@@ -1804,11 +1826,7 @@ NativeResult NativeModel::evaluate(
         mole_fractions.size() != components || !finite(mole_fractions)) {
         throw std::invalid_argument("invalid native state");
     }
-    if (parameters_.polar_formulation != POLAR_FORMULATION_NONE
-        && std::any_of(
-            mole_fractions.begin(), mole_fractions.end(),
-            [](double fraction) { return fraction <= 0.0; }
-        )) {
+    if (!polar_composition_admitted(parameters_, mole_fractions)) {
         throw std::invalid_argument(
             "polar model mole fractions must be positive"
         );
@@ -2012,11 +2030,7 @@ NativeResult NativeModel::evaluate_pressure(
         || mole_fractions.size() != components || !finite(mole_fractions)) {
         throw std::invalid_argument("invalid native pressure state");
     }
-    if (parameters_.polar_formulation != POLAR_FORMULATION_NONE
-        && std::any_of(
-            mole_fractions.begin(), mole_fractions.end(),
-            [](double fraction) { return fraction <= 0.0; }
-        )) {
+    if (!polar_composition_admitted(parameters_, mole_fractions)) {
         throw std::invalid_argument(
             "polar model mole fractions must be positive"
         );

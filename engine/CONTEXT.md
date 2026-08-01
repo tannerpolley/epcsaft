@@ -235,19 +235,21 @@ chains. It must not be confused with the radial
 `ionic_region_relative_permittivity`; neither fitted result mutates the
 caller-owned parameter input.
 
-Historical Project Truss EOS issue `#10` adds a separate append-only installed-SDK
-candidate for charge-neutral reacting standard references. For an admitted
-aqueous phase model with one explicit water reference carrier, it returns a
-complete neutral stoichiometric basis and gauge-invariant reference
-log-fugacity contractions for any number of neutral components, cations, and
-anions. The exact current Figiel selections retain their existing admission;
-explicit phase models satisfying the admitted topology can use
-the same tail. Unknown caller-owned applicability transports the dimensions
-but fails value evaluation until finite source temperature and pressure bounds
-exist. The same reference-sequence and pressure-state owners supply the values;
-no single-ion standard, reaction constant, reaction solver, chemistry selector,
-or source-identity admission is introduced. The result explicitly reports that `T`,
-`P`, composition, and parameter derivatives are unavailable.
+Historical Project Truss EOS issue `#10` and its generic completion leaf `#75`
+own the append-only installed-SDK candidate for charge-neutral reacting
+standard references. Every admitted phase model with one or more neutral
+molecular components, at least one cation, at least one anion, and a complete
+finite source domain uses the same callback. It returns a complete
+charge-nullspace basis and gauge-invariant reference log-fugacity contractions
+for arbitrary charge magnitudes. The salt-free reference composition is
+equimolar over all neutral components. Basis rows and ionic anchors are ordered
+by exact component identity, so equivalent component permutations reproduce
+the same rows after column remapping. Unknown caller-owned applicability
+transports no evaluable neutral-reference capability. The same
+reference-sequence, pressure-state, and CppAD owners supply values and admitted
+pressure/parameter derivatives; no single-ion standard, reaction constant,
+reaction solver, chemistry selector, or source-identity admission is
+introduced.
 
 An explicit Held aqueous-electrolyte record set uses that same generic
 neutral-reference tail and the existing fixed-pressure density closure.

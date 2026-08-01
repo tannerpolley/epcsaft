@@ -1303,14 +1303,20 @@ a^r_{y_py_q}y_{p,\alpha}y_{q,\beta}
 % Source: Exact charge-neutral basis built from Eq.~\eqref{eq:charge_balanced_formula_stoichiometry}
 % Status: Exact derivation
 % Description: Native standard-reference rows and log-fugacity contractions.
-% Change note: Solvent unit rows and a spanning set of cation-anion formula rows are immutable for a resolved model.
+% Change note: Neutral-component unit rows and a spanning set of cation-anion formula rows are immutable for a resolved model.
 \begin{equation}
 \boldsymbol{b}^{(s)}=\boldsymbol{e}_s,
 \qquad
 \boldsymbol{b}^{(+-)}=\nu_+\boldsymbol{e}_+
 +\nu_-\boldsymbol{e}_-,
 \qquad
-c_r=\sum_i b_i^{(r)}\ln\phi_i^\infty.
+c_r=\sum_i b_i^{(r)}\ln\phi_i^{\mathrm{ref}},
+\qquad
+\ln\phi_i^{\mathrm{ref}}=
+\begin{cases}
+\ln\phi_i(\boldsymbol{x}_{\mathrm{neutral}}), & z_i=0,\\
+\ln\phi_i^\infty, & z_i\ne 0.
+\end{cases}
 \label{eq:neutral_reference_stoichiometric_basis}
 \end{equation}
 
