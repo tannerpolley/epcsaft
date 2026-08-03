@@ -7,8 +7,9 @@ their own promotion receipts; a generic pure fixed-topology association entry
 is an issue-61 implementation candidate with no authority effect; a
 model-bound active-Born solvation entry is design-only pending bounded
 independent review, implementation, evidence, and its own authority decision;
-an append-only charge-neutral reference-basis entry is a Project Truss
-implementation candidate with no authority effect;
+an append-only charge-neutral reference-basis entry and its declared-solvent
+source-reference transfer are Project Truss implementation candidates with no
+authority effect;
 consumer gates separate
 
 Date: 2026-07-17
@@ -213,11 +214,12 @@ evidence gate are specified in
 records the implementation shape but no authority for that tail.
 
 The former Python-owned four-molality algorithm is refactored behind one
-private EOS-native owner,
-`epcsaft::detail::electrolyte_reference_sequence` in
-`src/epcsaft/_native/electrolyte_reference.hpp`. It alone owns electroneutral
-composition construction, the exact schedule, convergence adjudication, and
-terminal fugacity selection. The public `reference_state` path delegates to it
+private EOS-native sequence owner,
+`epcsaft::detail::reference_limit_sequence` in
+`src/epcsaft/_native/electrolyte_reference.hpp`. It owns the exact schedule,
+convergence adjudication, and terminal selection; the electrolyte wrapper in
+the same module owns formula-unit composition construction. The public
+`reference_state` path delegates to that module
 through the existing private `_core` module with unchanged public behavior;
 the callback calls it directly. Neither path may retain a second copy
 or expose this refactor as a new public abstraction.
@@ -248,6 +250,31 @@ consumer-side linear algebra; the EOS assigns no absolute single-ion
 reference. The value entry retains its zero derivative bit mask, while the
 append-only derivative entry supplies exact fixed-pressure and admitted active-
 parameter derivatives through the existing reference-sequence and CppAD owners.
+
+Issue #78 appends a declared-solvent operation without changing that basis or
+the Provider Helmholtz gauge. Its source-reference declaration binds exact
+component order, salt-free solvent mole fractions, activity convention,
+standard molality, source-pressure provenance, and trial temperature and
+pressure. Positive neutral fractions are finite-composition solvent
+components; zero neutral fractions and every charge-neutral ionic row approach
+infinite dilution on one deterministic x-process. For source solvent molar
+mass M_S, the operation returns separate fugacity and activity-scale
+contractions. A solvent unit row has activity-scale term ln(x_i^S), a
+zero-composition neutral-solute row has ln(M_S m_standard), and an ionic
+formula-unit row has the stoichiometric sum of that same term. Their sum is the
+source-to-Provider transfer in the reported basis. No individual ionic
+fugacity is returned.
+
+The callback evaluates at trial pressure. Source reference pressure is retained
+only in the immutable declaration receipt. Parameter, topology, component
+order, source reference, domain, installed artifact, and Helmholtz-basis
+fingerprints close the result identity. The first operation exposes no
+reference derivatives; any nonempty derivative requirement fails with the
+dedicated derivative-unavailable status before a consumer can optimize.
+Success explicitly records admitted-domain and converged-limit statuses.
+Unknown applicability or legacy artifacts without the new component-order and
+domain identities do not advertise this appended operation; their existing
+neutral-reference callback remains loadable.
 
 The capsule owns the model context. A consumer keeps a Python reference to the
 capsule for as long as it calls the table; ordinary `Py_INCREF`/`Py_DECREF`

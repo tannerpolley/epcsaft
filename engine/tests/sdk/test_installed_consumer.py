@@ -49,6 +49,18 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
     generic_reference_artifact = tmp_path / "generic-neutral-reference.json"
     generic_reference_model = Mixture.from_dictionary(_generic_electrolyte())
     export_native_model(generic_reference_model, generic_reference_artifact)
+    legacy_reference_artifact = tmp_path / "legacy-generic-neutral-reference.json"
+    legacy_reference_document = json.loads(
+        generic_reference_artifact.read_text(encoding="utf-8")
+    )
+    legacy_reference_document["sdk"].pop("component_order_fingerprint")
+    legacy_reference_document["sdk"].pop("domain_fingerprint")
+    legacy_reference_artifact.write_text(
+        json.dumps(
+            legacy_reference_document, separators=(",", ":"), sort_keys=True
+        ),
+        encoding="utf-8",
+    )
     association_artifact = tmp_path / "associating-non-2b.json"
     association_model = Mixture.from_dictionary(three_site_association_case())
     export_native_model(association_model, association_artifact)
@@ -116,6 +128,7 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
             expected_artifact_fingerprint,
             str(polar_artifact),
             str(generic_reference_artifact),
+            str(legacy_reference_artifact),
         ),
         capture_output=True,
         text=True,

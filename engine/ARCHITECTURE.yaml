@@ -261,6 +261,24 @@ native_sdk_candidates:
     pressure_state_owner: NativeModel::evaluate_pressure
     derivative_availability: fixed-pressure and admitted active-parameter derivatives in the append-only derivative entry
     exclusions: [absolute single-ion standards, reaction constants, source standard-state transformation, finite-salt reference compositions, constraints, equilibrium]
+  declared_solvent_source_reference_transfer_v1:
+    status: project-truss-implementation-candidate-no-authority-effect
+    scope: >-
+      Caller-declared salt-free source-solvent compositions evaluated at exact
+      trial temperature and pressure for every model admitted by the generic
+      neutral reacting reference topology.
+    declaration: [component_ids, solvent_mole_fractions, activity_convention_id, standard_molality_mol_per_kg, source_reference_pressure_pa, required_derivatives]
+    representation: >-
+      Existing ordered charge-nullspace basis plus separate log-fugacity,
+      molality activity-scale, and summed source-to-Provider contractions.
+    pressure_binding: trial pressure is evaluated; source reference pressure is provenance only
+    success_status: [ok, admitted-domain, converged-limit]
+    derivative_availability: none; nonempty requirements fail closed
+    sdk_table_size_bytes_64_bit: 488
+    request_size_bytes_64_bit: 88
+    result_size_bytes_64_bit: 864
+    identity_binding: [parameter, topology, component_order, source_reference, domain, artifact, helmholtz_basis]
+    exclusions: [individual ionic fugacities, reaction rows, reaction constants, equilibrium, chemistry selectors, application branches, numerical derivative fallback, authority]
 
 accepted_scope: >-
   Source-backed neutral, associating, and bounded ionic SSM+DS residual EOS at

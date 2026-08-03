@@ -1,13 +1,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+import hashlib
+import json
 import math
 from math import gcd
 from typing import TYPE_CHECKING, Literal
 
 import pint
 
-from .eos import _eos_error, _state_magnitude
+from .eos import (
+    EosError,
+    _eos_error,
+    _native_topology_fingerprint,
+    _state_magnitude,
+    native_sdk,
+)
+from . import _core as _native_core
 from .units import unit_registry
 
 if TYPE_CHECKING:
@@ -15,6 +24,24 @@ if TYPE_CHECKING:
 
 
 _MOLAR_GAS_CONSTANT = 8.31446261815324
+_SOURCE_REFERENCE_DERIVATIVES = {
+    "temperature": 1,
+    "pressure": 2,
+    "composition": 4,
+    "parameters": 8,
+}
+_SOURCE_REFERENCE_ERRORS = {
+    1: "unsupported-source-reference-transfer",
+    2: "invalid-source-composition",
+    3: "component-order-mismatch",
+    4: "missing-parameter-or-topology",
+    5: "provider-domain-rejection",
+    6: "reference-limit-convergence-failure",
+    7: "derivative-unavailable",
+    8: "nonfinite-source-reference-state",
+    9: "source-reference-abi-mismatch",
+    10: "source-reference-evaluation-failure",
+}
 
 
 # EqExclude: transport and buffer mechanics
@@ -60,6 +87,208 @@ class Activity:
 class TransferFreeEnergy:
     ion_component_ids: tuple[str, str]
     values: tuple[pint.Quantity[float], pint.Quantity[float]]
+
+
+@dataclass(frozen=True, slots=True)
+class SourceReferenceDeclaration:
+    """Exact caller-owned source standard state in installed component order."""
+
+    reference_state_id: str
+    component_ids: tuple[str, ...]
+    solvent_mole_fractions: tuple[float, ...]
+    activity_convention_id: str
+    standard_molality_mol_per_kg: float
+    reference_pressure_pa: float
+    required_derivatives: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "component_ids", tuple(self.component_ids))
+        object.__setattr__(
+            self, "solvent_mole_fractions", tuple(self.solvent_mole_fractions)
+        )
+        object.__setattr__(
+            self, "required_derivatives", tuple(self.required_derivatives)
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class SourceReferenceTransfer:
+    """Charge-neutral source-to-Provider transfer and immutable EOS receipt."""
+
+    status: Literal["ok"]
+    domain_status: Literal["admitted"]
+    convergence_status: Literal["converged"]
+    reference_state_id: str
+    activity_convention_id: str
+    component_ids: tuple[str, ...]
+    neutral_basis: tuple[tuple[float, ...], ...]
+    log_fugacity_contractions: tuple[float, ...]
+    activity_scale_log_contractions: tuple[float, ...]
+    transfer_log_contractions: tuple[float, ...]
+    source_composition: tuple[float, ...]
+    derivative_availability: tuple[str, ...]
+    pressure_derivatives_per_pa: tuple[float, ...]
+    temperature_k: float
+    pressure_pa: float
+    source_reference_pressure_pa: float
+    standard_molality_mol_per_kg: float
+    solvent_molar_mass_kg_per_mol: float
+    reference_limit_molality_mol_per_kg: float
+    reference_convergence_error: float
+    source_temperature_interval_k: tuple[float, float]
+    source_pressure_interval_pa: tuple[float, float]
+    parameter_fingerprint: str
+    topology_fingerprint: str
+    component_order_fingerprint: str
+    reference_state_fingerprint: str
+    domain_fingerprint: str
+    artifact_fingerprint: str
+    helmholtz_basis_id: str
+
+
+def source_reference_transfer(
+    model: Mixture,
+    declaration: SourceReferenceDeclaration,
+    *,
+    T: object,
+    P: object,
+) -> SourceReferenceTransfer:
+    """Evaluate a declared-solvent source reference through the installed SDK."""
+    if not isinstance(declaration, SourceReferenceDeclaration):
+        raise _eos_error("unsupported-source-reference-transfer", field="declaration")
+    temperature_k = _state_magnitude(T, "kelvin", "temperature")
+    pressure_pa = _state_magnitude(P, "pascal", "pressure")
+    component_ids = tuple(declaration.component_ids)
+    try:
+        solvent_mole_fractions = tuple(
+            float(value) for value in declaration.solvent_mole_fractions
+        )
+        standard_molality_mol_per_kg = float(
+            declaration.standard_molality_mol_per_kg
+        )
+        reference_pressure_pa = float(declaration.reference_pressure_pa)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise _eos_error("invalid-source-composition", reason=str(exc)) from exc
+    if any(not math.isfinite(value) for value in solvent_mole_fractions) or any(
+        not math.isfinite(value)
+        for value in (standard_molality_mol_per_kg, reference_pressure_pa)
+    ):
+        raise _eos_error("nonfinite-source-reference-state")
+    required_derivatives = tuple(declaration.required_derivatives)
+    if component_ids != tuple(model.component_ids):
+        raise _eos_error("component-order-mismatch")
+    for derivative in required_derivatives:
+        if derivative not in _SOURCE_REFERENCE_DERIVATIVES:
+            raise _eos_error("derivative-unavailable", derivative=derivative)
+    try:
+        derivative_mask = 0
+        seen: set[str] = set()
+        for derivative in required_derivatives:
+            if derivative in seen:
+                raise _eos_error("derivative-unavailable", derivative=derivative)
+            seen.add(derivative)
+            derivative_mask |= _SOURCE_REFERENCE_DERIVATIVES[derivative]
+        payload = {
+            "schema": "epcsaft-source-reference-declaration-v1",
+            "reference_state_id": declaration.reference_state_id,
+            "component_ids": component_ids,
+            "solvent_mole_fractions": solvent_mole_fractions,
+            "activity_convention_id": declaration.activity_convention_id,
+            "standard_molality_mol_per_kg": standard_molality_mol_per_kg,
+            "reference_pressure_pa": reference_pressure_pa,
+        }
+        reference_fingerprint = "sha256:" + hashlib.sha256(
+            json.dumps(
+                payload,
+                allow_nan=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest()
+        value = _native_core.source_reference_transfer_v1(
+            native_sdk(model),
+            model.parameter_fingerprint,
+            _native_topology_fingerprint(model),
+            temperature_k,
+            pressure_pa,
+            component_ids,
+            solvent_mole_fractions,
+            declaration.reference_state_id,
+            declaration.activity_convention_id,
+            reference_fingerprint,
+            standard_molality_mol_per_kg,
+            reference_pressure_pa,
+            derivative_mask,
+        )
+    except EosError:
+        raise
+    except (OverflowError, TypeError, ValueError) as exc:
+        if str(exc) == "unsupported-source-reference-transfer":
+            raise _eos_error(
+                "unsupported-source-reference-transfer", reason=str(exc)
+            ) from exc
+        raise _eos_error(
+            "source-reference-evaluation-failure", reason=str(exc)
+        ) from exc
+    status = int(value["status"])
+    if status != 0:
+        raise _eos_error(
+            _SOURCE_REFERENCE_ERRORS.get(
+                status, "source-reference-evaluation-failure"
+            ),
+            reason=value.get("error", "unknown failure"),
+        )
+    component_count = int(value["component_count"])
+    row_count = int(value["neutral_basis_row_count"])
+    flat_basis = tuple(float(item) for item in value["neutral_basis"])
+    return SourceReferenceTransfer(
+        status="ok",
+        domain_status="admitted",
+        convergence_status="converged",
+        reference_state_id=declaration.reference_state_id,
+        activity_convention_id=declaration.activity_convention_id,
+        component_ids=component_ids,
+        neutral_basis=tuple(
+            flat_basis[offset : offset + component_count]
+            for offset in range(0, row_count * component_count, component_count)
+        ),
+        log_fugacity_contractions=tuple(value["log_fugacity_contractions"]),
+        activity_scale_log_contractions=tuple(
+            value["activity_scale_log_contractions"]
+        ),
+        transfer_log_contractions=tuple(value["transfer_log_contractions"]),
+        source_composition=tuple(value["source_composition"]),
+        derivative_availability=(),
+        pressure_derivatives_per_pa=(),
+        temperature_k=float(value["temperature_k"]),
+        pressure_pa=float(value["pressure_pa"]),
+        source_reference_pressure_pa=float(value["source_reference_pressure_pa"]),
+        standard_molality_mol_per_kg=float(
+            value["standard_molality_mol_per_kg"]
+        ),
+        solvent_molar_mass_kg_per_mol=float(
+            value["solvent_molar_mass_kg_per_mol"]
+        ),
+        reference_limit_molality_mol_per_kg=float(
+            value["reference_limit_molality_mol_per_kg"]
+        ),
+        reference_convergence_error=float(value["reference_convergence_error"]),
+        source_temperature_interval_k=(
+            float(value["source_temperature_min_k"]),
+            float(value["source_temperature_max_k"]),
+        ),
+        source_pressure_interval_pa=(
+            float(value["source_pressure_min_pa"]),
+            float(value["source_pressure_max_pa"]),
+        ),
+        parameter_fingerprint=str(value["parameter_fingerprint"]),
+        topology_fingerprint=str(value["topology_fingerprint"]),
+        component_order_fingerprint=str(value["component_order_fingerprint"]),
+        reference_state_fingerprint=str(value["reference_state_fingerprint"]),
+        domain_fingerprint=str(value["domain_fingerprint"]),
+        artifact_fingerprint=str(value["artifact_fingerprint"]),
+        helmholtz_basis_id=str(value["helmholtz_basis_id"]),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -307,4 +536,11 @@ def build_reference_state(
     )
 
 
-__all__ = ("Activity", "ElectrolyteReference", "TransferFreeEnergy")
+__all__ = (
+    "Activity",
+    "ElectrolyteReference",
+    "SourceReferenceDeclaration",
+    "SourceReferenceTransfer",
+    "TransferFreeEnergy",
+    "source_reference_transfer",
+)

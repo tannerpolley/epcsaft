@@ -37,6 +37,77 @@ struct ReferenceSequenceResult final {
     std::optional<double> derivative_convergence_error;
 };
 
+struct VectorReferenceSequenceResult final {
+    std::vector<double> values;
+    std::vector<double> convergence_errors;
+    double molality;
+    double convergence_error;
+};
+
+template <typename Evaluator, typename NeedsWitness>
+// EqID: reference_limit_sequence
+VectorReferenceSequenceResult reference_limit_sequence(
+    Evaluator evaluator,
+    NeedsWitness needs_witness
+) {
+    std::optional<std::vector<double>> previous;
+    std::optional<std::vector<double>> current;
+    std::vector<double> convergence_errors;
+    double convergence_error = INFINITY;
+    const auto observe = [&](double molality) {
+        current = evaluator(molality);
+        if (current->empty()
+            || !std::all_of(current->begin(), current->end(), [](double value) {
+                return std::isfinite(value);
+            })) {
+            throw std::runtime_error("nonfinite source-reference limit value");
+        }
+        if (previous.has_value()) {
+            if (previous->size() != current->size()) {
+                throw std::runtime_error(
+                    "source-reference limit dimension changed"
+                );
+            }
+            convergence_errors.assign(current->size(), 0.0);
+            convergence_error = 0.0;
+            for (std::size_t index = 0; index < current->size(); ++index) {
+                convergence_errors[index] =
+                    std::abs((*current)[index] - (*previous)[index]);
+                convergence_error =
+                    std::max(convergence_error, convergence_errors[index]);
+            }
+        }
+        previous = current;
+    };
+    for (double molality : REFERENCE_MOLALITIES) {
+        observe(molality);
+    }
+    if (current.has_value() && needs_witness(*current, convergence_errors)) {
+        observe(REFERENCE_CONVERGENCE_WITNESS_MOLALITY);
+    }
+    if (!current.has_value() || needs_witness(*current, convergence_errors)) {
+        throw std::runtime_error("reference limit did not converge");
+    }
+    return {
+        *current,
+        convergence_errors,
+        REFERENCE_MOLALITIES.back(),
+        convergence_error,
+    };
+}
+
+template <typename Evaluator>
+VectorReferenceSequenceResult reference_limit_sequence(Evaluator evaluator) {
+    return reference_limit_sequence(
+        std::move(evaluator),
+        [](const std::vector<double>&, const std::vector<double>& errors) {
+            return errors.empty()
+                || *std::max_element(errors.begin(), errors.end())
+                    > REFERENCE_CONVERGENCE_TOLERANCE;
+        }
+    );
+}
+
 // EqID: formula_unit_composition
 inline std::vector<double> formula_composition(
     const std::vector<double>& solvent_fractions,
@@ -94,111 +165,61 @@ ReferenceSequenceResult electrolyte_reference_sequence(
     Evaluator evaluator,
     Checkpoint checkpoint = {}
 ) {
-    std::optional<ReferenceObservation> previous;
-    std::optional<ReferenceObservation> current;
-    double convergence_error = INFINITY;
+    std::optional<std::size_t> derivative_size;
+    const auto sequence = reference_limit_sequence(
+        [&](double molality) {
+            checkpoint();
+            const auto observation = evaluator(
+                formula_composition(
+                    solvent_fractions,
+                    molar_masses_kg_per_mol,
+                    ion_indices,
+                    stoichiometry,
+                    molality
+                )
+            );
+            const std::size_t observed_derivative_size =
+                observation.derivative.has_value()
+                ? observation.derivative->size()
+                : 0u;
+            if (derivative_size.has_value()
+                && *derivative_size != observed_derivative_size) {
+                throw std::runtime_error("reference derivative size changed");
+            }
+            derivative_size = observed_derivative_size;
+            std::vector<double> values{
+                observation.log_fugacity[0], observation.log_fugacity[1]
+            };
+            if (observation.derivative.has_value()) {
+                values.insert(
+                    values.end(),
+                    observation.derivative->begin(),
+                    observation.derivative->end()
+                );
+            }
+            return values;
+        },
+        [](const std::vector<double>&, const std::vector<double>& errors) {
+            return errors.size() < 2
+                || std::max(errors[0], errors[1])
+                    > REFERENCE_CONVERGENCE_TOLERANCE;
+        }
+    );
+    const double convergence_error = std::max(
+        sequence.convergence_errors[0], sequence.convergence_errors[1]
+    );
+    std::optional<std::vector<double>> derivative;
     std::optional<double> derivative_convergence_error;
-
-    for (double molality : REFERENCE_MOLALITIES) {
-        checkpoint();
-        current = evaluator(
-            formula_composition(
-                solvent_fractions,
-                molar_masses_kg_per_mol,
-                ion_indices,
-                stoichiometry,
-                molality
-            )
+    if (sequence.values.size() > 2) {
+        derivative = std::vector<double>(
+            sequence.values.begin() + 2, sequence.values.end()
         );
-        for (double value : current->log_fugacity) {
-            if (!std::isfinite(value)) {
-                throw std::runtime_error("nonfinite reference fugacity");
-            }
-        }
-        if (current->derivative.has_value()) {
-            for (double value : *current->derivative) {
-                if (!std::isfinite(value)) {
-                    throw std::runtime_error("nonfinite reference derivative");
-                }
-            }
-        }
-        if (previous.has_value()) {
-            convergence_error = std::max(
-                std::abs(current->log_fugacity[0] - previous->log_fugacity[0]),
-                std::abs(current->log_fugacity[1] - previous->log_fugacity[1])
-            );
-            if (current->derivative.has_value() && previous->derivative.has_value()) {
-                if (current->derivative->size() != previous->derivative->size()) {
-                    throw std::runtime_error("reference derivative size changed");
-                }
-                derivative_convergence_error = 0.0;
-                for (std::size_t index = 0; index < current->derivative->size(); ++index) {
-                    derivative_convergence_error = std::max(
-                        *derivative_convergence_error,
-                        std::abs(
-                            (*current->derivative)[index]
-                            - (*previous->derivative)[index]
-                        )
-                    );
-                }
-            }
-        }
-        previous = current;
-    }
-    if (convergence_error > REFERENCE_CONVERGENCE_TOLERANCE) {
-        checkpoint();
-        current = evaluator(
-            formula_composition(
-                solvent_fractions,
-                molar_masses_kg_per_mol,
-                ion_indices,
-                stoichiometry,
-                REFERENCE_CONVERGENCE_WITNESS_MOLALITY
-            )
+        derivative_convergence_error = *std::max_element(
+            sequence.convergence_errors.begin() + 2,
+            sequence.convergence_errors.end()
         );
-        for (double value : current->log_fugacity) {
-            if (!std::isfinite(value)) {
-                throw std::runtime_error("nonfinite reference fugacity");
-            }
-        }
-        if (current->derivative.has_value()) {
-            for (double value : *current->derivative) {
-                if (!std::isfinite(value)) {
-                    throw std::runtime_error("nonfinite reference derivative");
-                }
-            }
-        }
-        if (previous.has_value()) {
-            convergence_error = std::max(
-                std::abs(current->log_fugacity[0] - previous->log_fugacity[0]),
-                std::abs(current->log_fugacity[1] - previous->log_fugacity[1])
-            );
-            if (current->derivative.has_value() && previous->derivative.has_value()) {
-                if (current->derivative->size() != previous->derivative->size()) {
-                    throw std::runtime_error("reference derivative size changed");
-                }
-                derivative_convergence_error = 0.0;
-                for (std::size_t index = 0; index < current->derivative->size(); ++index) {
-                    derivative_convergence_error = std::max(
-                        *derivative_convergence_error,
-                        std::abs(
-                            (*current->derivative)[index]
-                            - (*previous->derivative)[index]
-                        )
-                    );
-                }
-            }
-        }
-    }
-    if (!current.has_value() || convergence_error > REFERENCE_CONVERGENCE_TOLERANCE) {
-        throw std::runtime_error("reference limit did not converge");
-    }
-    if (current->derivative.has_value()) {
-        if (!derivative_convergence_error.has_value()) {
-            throw std::runtime_error("reference derivative limit unavailable");
-        }
         double derivative_scale = 1.0;
-        for (double value : *current->derivative) {
+        for (double value : *derivative) {
             derivative_scale = std::max(derivative_scale, std::abs(value));
         }
         if (*derivative_convergence_error
@@ -207,8 +228,8 @@ ReferenceSequenceResult electrolyte_reference_sequence(
         }
     }
     return {
-        current->log_fugacity,
-        current->derivative,
+        {sequence.values[0], sequence.values[1]},
+        derivative,
         REFERENCE_MOLALITIES.back(),
         convergence_error,
         derivative_convergence_error,

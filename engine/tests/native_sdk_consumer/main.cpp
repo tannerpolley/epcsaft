@@ -90,6 +90,24 @@ bool neutral_inverse_packing_is_available(const char* path) {
     return valid;
 }
 
+bool legacy_neutral_reference_remains_loadable(const char* path) {
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
+    epcsaft_native_model_handle_v1* model =
+        epcsaft_native_model_load_v1(path, error, sizeof(error));
+    if (model == nullptr) {
+        std::cerr << error << '\n';
+        return false;
+    }
+    const epcsaft_native_sdk_v1* sdk = epcsaft_native_model_sdk_v1(model);
+    const bool valid = sdk != nullptr
+        && sdk->neutral_reference_basis_row_count > 0
+        && sdk->evaluate_neutral_reference != nullptr
+        && sdk->source_reference_transfer_result_size == 0
+        && sdk->evaluate_source_reference_transfer == nullptr;
+    epcsaft_native_model_destroy_v1(model);
+    return valid;
+}
+
 bool polar_mixture_is_available(const char* path) {
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
     epcsaft_native_model_handle_v1* model =
@@ -268,6 +286,53 @@ bool generic_neutral_reference_is_available(const char* path) {
             sdk->component_ids[component], expected_component_ids[component]
         ) == 0 && sdk->component_charges[component] == expected_charges[component];
     }
+    const double source_composition[] = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    const char reference_fingerprint[] =
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+    epcsaft_source_reference_request_v1 request{
+        sizeof(epcsaft_source_reference_request_v1),
+        components,
+        expected_component_ids,
+        components,
+        source_composition,
+        "installed-consumer-source-reference-v1",
+        EPCSAFT_SOURCE_REFERENCE_ACTIVITY_MOLALITY_INFINITE_DILUTION_V1,
+        reference_fingerprint,
+        1.0,
+        100000.0,
+        EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_NONE_V1,
+    };
+    std::vector<double> source_basis(rows * components);
+    std::vector<double> source_fugacity(rows);
+    std::vector<double> source_activity(rows);
+    std::vector<double> source_transfer(rows);
+    std::vector<double> evaluated_source(components);
+    epcsaft_source_reference_transfer_result_v1 source_result{};
+    source_result.struct_size = sizeof(source_result);
+    source_result.component_count = components;
+    source_result.neutral_basis_row_count = rows;
+    source_result.neutral_basis_capacity = source_basis.size();
+    source_result.contraction_capacity = rows;
+    source_result.source_composition_capacity = components;
+    source_result.neutral_basis = source_basis.data();
+    source_result.log_fugacity_contractions = source_fugacity.data();
+    source_result.activity_scale_log_contractions = source_activity.data();
+    source_result.transfer_log_contractions = source_transfer.data();
+    source_result.source_composition = evaluated_source.data();
+    const int source_status =
+        sdk != nullptr && sdk->source_reference_transfer_result_size
+            == sizeof(source_result)
+        && sdk->evaluate_source_reference_transfer != nullptr
+        ? sdk->evaluate_source_reference_transfer(
+            sdk->model_context,
+            fingerprint,
+            topology,
+            298.15,
+            75000.0,
+            &request,
+            &source_result
+        )
+        : EPCSAFT_SOURCE_REFERENCE_ABI_MISMATCH_V1;
     const bool valid = status == EPCSAFT_NATIVE_STATUS_OK_V1
         && result.status == EPCSAFT_NATIVE_STATUS_OK_V1
         && result.value.status == EPCSAFT_NATIVE_STATUS_OK_V1
@@ -282,6 +347,21 @@ bool generic_neutral_reference_is_available(const char* path) {
         && basis == expected_basis
         && composition == expected_composition
         && derivative_matches_difference
+        && source_status == EPCSAFT_SOURCE_REFERENCE_OK_V1
+        && source_result.status == EPCSAFT_SOURCE_REFERENCE_OK_V1
+        && source_result.pressure_pa == 75000.0
+        && source_result.source_reference_pressure_pa == 100000.0
+        && source_basis == expected_basis
+        && evaluated_source
+            == std::vector<double>(source_composition, source_composition + components)
+        && std::strcmp(
+            source_result.reference_state_fingerprint,
+            reference_fingerprint
+        ) == 0
+        && std::all_of(
+            source_transfer.begin(), source_transfer.end(),
+            [](double value) { return std::isfinite(value); }
+        )
         && std::all_of(
             contractions.begin(), contractions.end(),
             [](double value) { return std::isfinite(value); }
@@ -405,7 +485,7 @@ bool fixed_topology_association_is_available(
 }
 
 int main(int argc, char** argv) {
-    if (argc != 8) {
+    if (argc != 9) {
         return 2;
     }
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
@@ -625,7 +705,8 @@ int main(int argc, char** argv) {
         && fixed_topology_association_is_available(argv[3], argv[5])
         && !fixed_topology_association_is_available(argv[4], argv[5])
         && polar_mixture_is_available(argv[6])
-        && generic_neutral_reference_is_available(argv[7]);
+        && generic_neutral_reference_is_available(argv[7])
+        && legacy_neutral_reference_remains_loadable(argv[8]);
     std::cout << "component_count=" << (sdk == nullptr ? 0 : sdk->component_count)
               << '\n'
               << "phase_pressure_pa=" << phase.pressure_pa << '\n'

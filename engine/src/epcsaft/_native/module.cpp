@@ -261,7 +261,26 @@ PYBIND11_MODULE(_core, module) {
         py::arg("aqueous_solvation_factor_admitted") = false,
         py::arg("ion_solvation_kij_admitted") = false,
         py::arg("topology_fingerprint") = "",
+        py::arg("component_order_fingerprint") = "",
+        py::arg("domain_fingerprint") = "",
         py::arg("site_ids") = std::vector<std::string>{},
         py::arg("artifact_fingerprint") = ""
+    );
+    module.def(
+        "source_reference_transfer_v1",
+        &epcsaft::evaluate_source_reference_transfer_v1,
+        py::arg("capsule"),
+        py::arg("expected_parameter_fingerprint"),
+        py::arg("expected_topology_fingerprint"),
+        py::arg("temperature_k"),
+        py::arg("pressure_pa"),
+        py::arg("component_ids"),
+        py::arg("source_solvent_mole_fractions"),
+        py::arg("reference_state_id"),
+        py::arg("activity_convention_id"),
+        py::arg("reference_state_fingerprint"),
+        py::arg("standard_molality_mol_per_kg"),
+        py::arg("source_reference_pressure_pa"),
+        py::arg("required_derivatives")
     );
 }

@@ -389,6 +389,8 @@ struct NativeSdkEndpoint final {
     NativeModel model;
     std::string parameter_fingerprint;
     std::string topology_fingerprint;
+    std::string component_order_fingerprint;
+    std::string domain_fingerprint;
     std::string artifact_fingerprint;
     double temperature_min_k;
     double temperature_max_k;
@@ -402,6 +404,7 @@ struct NativeSdkEndpoint final {
     bool ion_solvation_kij_admitted;
     bool aqueous_solvation_factor_admitted;
     bool neutral_reference_admitted;
+    bool source_reference_transfer_admitted;
     std::vector<std::string> component_ids;
     std::vector<const char*> component_id_pointers;
     std::vector<int32_t> component_charges;
@@ -464,11 +467,15 @@ struct NativeSdkEndpoint final {
         bool admit_neutral_reference,
         bool admit_aqueous_solvation_factor,
         std::string topology_identity,
+        std::string component_order_identity,
+        std::string domain_identity,
         std::string artifact_identity
     )
         : model(source_model),
           parameter_fingerprint(std::move(fingerprint)),
           topology_fingerprint(std::move(topology_identity)),
+          component_order_fingerprint(std::move(component_order_identity)),
+          domain_fingerprint(std::move(domain_identity)),
           artifact_fingerprint(std::move(artifact_identity)),
           temperature_min_k(minimum_temperature),
           temperature_max_k(maximum_temperature),
@@ -484,6 +491,15 @@ struct NativeSdkEndpoint final {
               admit_aqueous_solvation_factor
           ),
           neutral_reference_admitted(admit_neutral_reference),
+          source_reference_transfer_admitted(
+              admit_neutral_reference
+              && sha256_fingerprint_valid(component_order_fingerprint)
+              && sha256_fingerprint_valid(domain_fingerprint)
+              && std::isfinite(minimum_temperature)
+              && std::isfinite(maximum_temperature)
+              && std::isfinite(minimum_pressure)
+              && std::isfinite(maximum_pressure)
+          ),
           component_ids(std::move(identifiers)),
           component_id_pointers([&] {
               std::vector<const char*> pointers;
@@ -1172,6 +1188,12 @@ struct NativeSdkEndpoint final {
                   ? nullptr
                   : &fixed_topology_association,
               &NativeSdkEndpoint::evaluate_fixed_topology_association,
+              source_reference_transfer_admitted
+                  ? sizeof(epcsaft_source_reference_transfer_result_v1)
+                  : 0u,
+              source_reference_transfer_admitted
+                  ? &NativeSdkEndpoint::evaluate_source_reference_transfer
+                  : nullptr,
           } {}
 
     // EqExclude: transport and buffer mechanics
@@ -1515,7 +1537,7 @@ struct NativeSdkEndpoint final {
         }
         const auto& endpoint =
             *static_cast<const NativeSdkEndpoint*>(context);
-        if (!endpoint.neutral_reference_admitted
+        if (!endpoint.source_reference_transfer_admitted
             || endpoint.topology_fingerprint.empty()
             || std::strcmp(
                 expected_fingerprint,
@@ -2877,6 +2899,447 @@ struct NativeSdkEndpoint final {
             return fail(
                 EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
                 "unknown neutral standard-reference evaluation failure"
+            );
+        }
+    }
+
+    // EqID: declared_solvent_source_reference_transfer
+    static int evaluate_source_reference_transfer(
+        const void* context,
+        const char* expected_fingerprint,
+        const char* expected_topology_fingerprint,
+        double temperature_k,
+        double pressure_pa,
+        const epcsaft_source_reference_request_v1* request,
+        epcsaft_source_reference_transfer_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_SOURCE_REFERENCE_ABI_MISMATCH_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_source_reference_transfer_result_v1)) {
+            return EPCSAFT_SOURCE_REFERENCE_ABI_MISMATCH_V1;
+        }
+        result->status = EPCSAFT_SOURCE_REFERENCE_OK_V1;
+        result->derivative_availability =
+            EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_NONE_V1;
+        result->error[0] = '\0';
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_fingerprint == nullptr
+            || expected_topology_fingerprint == nullptr || request == nullptr) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_MISSING_MODEL_V1,
+                "source-reference model contract is incomplete"
+            );
+        }
+        if (request->struct_size != sizeof(epcsaft_source_reference_request_v1)) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_ABI_MISMATCH_V1,
+                "source-reference request ABI is incompatible"
+            );
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (!endpoint.neutral_reference_admitted
+            || endpoint.topology_fingerprint.empty()
+            || std::strcmp(
+                expected_fingerprint, endpoint.parameter_fingerprint.c_str()
+            ) != 0
+            || std::strcmp(
+                expected_topology_fingerprint,
+                endpoint.topology_fingerprint.c_str()
+            ) != 0) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_MISSING_MODEL_V1,
+                "source-reference model identity is incompatible"
+            );
+        }
+        if (!std::isfinite(temperature_k) || temperature_k <= 0.0
+            || !std::isfinite(pressure_pa) || pressure_pa <= 0.0) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_NONFINITE_V1,
+                "source-reference temperature and pressure must be positive and finite"
+            );
+        }
+        if (temperature_k < endpoint.temperature_min_k
+            || temperature_k > endpoint.temperature_max_k
+            || pressure_pa < endpoint.pressure_min_pa
+            || pressure_pa > endpoint.pressure_max_pa) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_DOMAIN_REJECTION_V1,
+                "source-reference trial state is outside the Provider domain"
+            );
+        }
+        const std::size_t component_count = endpoint.component_ids.size();
+        const auto& reference_basis = endpoint.neutral_reference_basis;
+        const std::size_t row_count = reference_basis.row_count();
+        if (request->component_count != component_count
+            || request->source_composition_count != component_count
+            || request->component_ids == nullptr
+            || request->source_solvent_mole_fractions == nullptr) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_COMPONENT_MISMATCH_V1,
+                "source-reference component dimensions do not match"
+            );
+        }
+        for (std::size_t component = 0; component < component_count; ++component) {
+            if (request->component_ids[component] == nullptr
+                || endpoint.component_ids[component]
+                    != request->component_ids[component]) {
+                return fail(
+                    EPCSAFT_SOURCE_REFERENCE_COMPONENT_MISMATCH_V1,
+                    "source-reference component order does not match"
+                );
+            }
+        }
+        if (request->reference_state_id == nullptr
+            || request->reference_state_id[0] == '\0'
+            || request->activity_convention_id == nullptr
+            || std::strcmp(
+                request->activity_convention_id,
+                EPCSAFT_SOURCE_REFERENCE_ACTIVITY_MOLALITY_INFINITE_DILUTION_V1
+            ) != 0
+            || request->reference_state_fingerprint == nullptr
+            || !sha256_fingerprint_valid(request->reference_state_fingerprint)
+            || !std::isfinite(request->standard_molality_mol_per_kg)
+            || request->standard_molality_mol_per_kg <= 0.0
+            || !std::isfinite(request->source_reference_pressure_pa)
+            || request->source_reference_pressure_pa <= 0.0) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_UNSUPPORTED_V1,
+                "source-reference declaration or activity convention is unsupported"
+            );
+        }
+        if (request->required_derivatives
+            != EPCSAFT_NEUTRAL_REFERENCE_DERIVATIVE_NONE_V1) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_DERIVATIVE_UNAVAILABLE_V1,
+                "required source-reference derivative is unavailable"
+            );
+        }
+        if (result->component_count != component_count
+            || result->neutral_basis_row_count != row_count
+            || result->neutral_basis_capacity != row_count * component_count
+            || result->contraction_capacity != row_count
+            || result->source_composition_capacity != component_count
+            || result->pressure_derivative_capacity != 0
+            || result->neutral_basis == nullptr
+            || result->log_fugacity_contractions == nullptr
+            || result->activity_scale_log_contractions == nullptr
+            || result->transfer_log_contractions == nullptr
+            || result->source_composition == nullptr) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_ABI_MISMATCH_V1,
+                "source-reference result buffers do not match immutable dimensions"
+            );
+        }
+        try {
+            std::vector<double> source_composition(
+                request->source_solvent_mole_fractions,
+                request->source_solvent_mole_fractions + component_count
+            );
+            double sum = 0.0;
+            for (std::size_t component = 0; component < component_count; ++component) {
+                const double fraction = source_composition[component];
+                if (!std::isfinite(fraction) || fraction < 0.0
+                    || (endpoint.component_charges[component] != 0
+                        && fraction != 0.0)) {
+                    return fail(
+                        EPCSAFT_SOURCE_REFERENCE_INVALID_SOURCE_V1,
+                        "source composition must be finite, salt-free, and nonnegative"
+                    );
+                }
+                sum += fraction;
+            }
+            if (std::abs(sum - 1.0) > 1.0e-12) {
+                return fail(
+                    EPCSAFT_SOURCE_REFERENCE_INVALID_SOURCE_V1,
+                    "source composition must sum to one"
+                );
+            }
+            const auto& molar_masses = endpoint.model.molar_masses_kg_per_mol();
+            const double solvent_molar_mass = std::inner_product(
+                source_composition.begin(),
+                source_composition.end(),
+                molar_masses.begin(),
+                0.0
+            );
+            if (!std::isfinite(solvent_molar_mass)
+                || solvent_molar_mass <= 0.0) {
+                return fail(
+                    EPCSAFT_SOURCE_REFERENCE_INVALID_SOURCE_V1,
+                    "source solvent molar mass is unavailable"
+                );
+            }
+            std::vector<double> fugacity(row_count, 0.0);
+            std::vector<double> activity(row_count, 0.0);
+            std::vector<double> transfer(row_count, 0.0);
+            double reference_molality =
+                detail::REFERENCE_MOLALITIES.back();
+            double convergence_error = 0.0;
+            std::vector<std::size_t> neutral_solutes;
+            for (std::size_t component : reference_basis.neutral_components) {
+                if (source_composition[component] == 0.0) {
+                    neutral_solutes.push_back(component);
+                }
+            }
+            std::vector<double> neutral_log_fugacity(component_count, 0.0);
+            if (neutral_solutes.empty()) {
+                const auto state = endpoint.model.evaluate_pressure(
+                    temperature_k, pressure_pa, source_composition, "liquid"
+                );
+                if (!state.log_fugacity_coefficient.has_value()) {
+                    throw std::runtime_error(
+                        "source-reference fugacity is unavailable"
+                    );
+                }
+                neutral_log_fugacity = *state.log_fugacity_coefficient;
+            } else {
+                const auto sequence = detail::reference_limit_sequence(
+                    [&](double molality) {
+                        const double solvent_moles = 1.0 / solvent_molar_mass;
+                        const double total_moles = solvent_moles
+                            + molality
+                                * static_cast<double>(neutral_solutes.size());
+                        std::vector<double> composition(component_count, 0.0);
+                        for (std::size_t component = 0;
+                             component < component_count;
+                             ++component) {
+                            composition[component] =
+                                source_composition[component] * solvent_moles
+                                / total_moles;
+                        }
+                        for (std::size_t component : neutral_solutes) {
+                            composition[component] = molality / total_moles;
+                        }
+                        const auto state = endpoint.model.evaluate_pressure(
+                            temperature_k, pressure_pa, composition, "liquid"
+                        );
+                        if (!state.log_fugacity_coefficient.has_value()) {
+                            throw std::runtime_error(
+                                "neutral-solute reference fugacity is unavailable"
+                            );
+                        }
+                        std::vector<double> values;
+                        values.reserve(
+                            reference_basis.neutral_components.size()
+                        );
+                        for (std::size_t component
+                             : reference_basis.neutral_components) {
+                            values.push_back(
+                                (*state.log_fugacity_coefficient)[component]
+                            );
+                        }
+                        return values;
+                    }
+                );
+                for (std::size_t index = 0;
+                     index < reference_basis.neutral_components.size();
+                     ++index) {
+                    neutral_log_fugacity[
+                        reference_basis.neutral_components[index]
+                    ] = sequence.values[index];
+                }
+                reference_molality = sequence.molality;
+                convergence_error = sequence.convergence_error;
+            }
+            const double solute_scale = std::log(
+                solvent_molar_mass
+                * request->standard_molality_mol_per_kg
+            );
+            std::size_t row = 0;
+            for (std::size_t component : reference_basis.neutral_components) {
+                fugacity[row] = neutral_log_fugacity[component];
+                if (source_composition[component] > 0.0) {
+                    activity[row] = std::log(source_composition[component]);
+                } else {
+                    activity[row] = solute_scale;
+                }
+                transfer[row] = fugacity[row] + activity[row];
+                ++row;
+            }
+            auto append_pair = [&](std::size_t cation, std::size_t anion) {
+                const int divisor = std::gcd(
+                    std::abs(endpoint.component_charges[cation]),
+                    std::abs(endpoint.component_charges[anion])
+                );
+                const std::array<int, 2> stoichiometry{
+                    std::abs(endpoint.component_charges[anion]) / divisor,
+                    std::abs(endpoint.component_charges[cation]) / divisor,
+                };
+                const auto sequence = detail::reference_limit_sequence(
+                    [&](double molality) {
+                        const double solvent_moles = 1.0 / solvent_molar_mass;
+                        const double added_moles = molality
+                            * static_cast<double>(
+                                stoichiometry[0] + stoichiometry[1]
+                                + neutral_solutes.size()
+                            );
+                        const double total_moles = solvent_moles + added_moles;
+                        std::vector<double> composition(component_count, 0.0);
+                        for (std::size_t component = 0;
+                             component < component_count;
+                             ++component) {
+                            composition[component] =
+                                source_composition[component] * solvent_moles
+                                / total_moles;
+                        }
+                        for (std::size_t component : neutral_solutes) {
+                            composition[component] = molality / total_moles;
+                        }
+                        composition[cation] =
+                            static_cast<double>(stoichiometry[0]) * molality
+                            / total_moles;
+                        composition[anion] =
+                            static_cast<double>(stoichiometry[1]) * molality
+                            / total_moles;
+                        const auto state = endpoint.model.evaluate_pressure(
+                            temperature_k, pressure_pa, composition, "liquid"
+                        );
+                        if (!state.log_fugacity_coefficient.has_value()) {
+                            throw std::runtime_error(
+                                "ionic source-reference fugacity is unavailable"
+                            );
+                        }
+                        return std::vector<double>{
+                            (*state.log_fugacity_coefficient)[cation],
+                            (*state.log_fugacity_coefficient)[anion],
+                        };
+                    }
+                );
+                fugacity[row] =
+                    stoichiometry[0] * sequence.values[0]
+                    + stoichiometry[1] * sequence.values[1];
+                activity[row] =
+                    static_cast<double>(stoichiometry[0] + stoichiometry[1])
+                    * solute_scale;
+                transfer[row] = fugacity[row] + activity[row];
+                reference_molality = sequence.molality;
+                convergence_error = std::max(
+                    convergence_error, sequence.convergence_error
+                );
+                ++row;
+            };
+            for (std::size_t anion : reference_basis.anions) {
+                append_pair(reference_basis.cations.front(), anion);
+            }
+            for (std::size_t index = 1;
+                 index < reference_basis.cations.size();
+                 ++index) {
+                append_pair(
+                    reference_basis.cations[index],
+                    reference_basis.anions.front()
+                );
+            }
+            const auto finite = [](const std::vector<double>& values) {
+                return std::all_of(values.begin(), values.end(), [](double value) {
+                    return std::isfinite(value);
+                });
+            };
+            if (row != row_count || !finite(fugacity) || !finite(activity)
+                || !finite(transfer) || !std::isfinite(convergence_error)) {
+                return fail(
+                    EPCSAFT_SOURCE_REFERENCE_NONFINITE_V1,
+                    "source-reference transfer is nonfinite"
+                );
+            }
+            std::copy(
+                reference_basis.rows.begin(),
+                reference_basis.rows.end(),
+                result->neutral_basis
+            );
+            std::copy(fugacity.begin(), fugacity.end(),
+                      result->log_fugacity_contractions);
+            std::copy(activity.begin(), activity.end(),
+                      result->activity_scale_log_contractions);
+            std::copy(transfer.begin(), transfer.end(),
+                      result->transfer_log_contractions);
+            std::copy(source_composition.begin(), source_composition.end(),
+                      result->source_composition);
+            result->temperature_k = temperature_k;
+            result->pressure_pa = pressure_pa;
+            result->source_reference_pressure_pa =
+                request->source_reference_pressure_pa;
+            result->standard_molality_mol_per_kg =
+                request->standard_molality_mol_per_kg;
+            result->solvent_molar_mass_kg_per_mol = solvent_molar_mass;
+            result->reference_limit_molality_mol_per_kg = reference_molality;
+            result->reference_convergence_error = convergence_error;
+            result->source_temperature_min_k = endpoint.temperature_min_k;
+            result->source_temperature_max_k = endpoint.temperature_max_k;
+            result->source_pressure_min_pa = endpoint.pressure_min_pa;
+            result->source_pressure_max_pa = endpoint.pressure_max_pa;
+            const auto copy_fingerprint = [](char* target, std::size_t capacity,
+                                             const std::string& value) {
+                std::snprintf(target, capacity, "%s", value.c_str());
+            };
+            copy_fingerprint(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                endpoint.parameter_fingerprint
+            );
+            copy_fingerprint(
+                result->topology_fingerprint,
+                sizeof(result->topology_fingerprint),
+                endpoint.topology_fingerprint
+            );
+            copy_fingerprint(
+                result->component_order_fingerprint,
+                sizeof(result->component_order_fingerprint),
+                endpoint.component_order_fingerprint
+            );
+            copy_fingerprint(
+                result->reference_state_fingerprint,
+                sizeof(result->reference_state_fingerprint),
+                request->reference_state_fingerprint
+            );
+            copy_fingerprint(
+                result->domain_fingerprint,
+                sizeof(result->domain_fingerprint),
+                endpoint.domain_fingerprint
+            );
+            copy_fingerprint(
+                result->artifact_fingerprint,
+                sizeof(result->artifact_fingerprint),
+                endpoint.artifact_fingerprint
+            );
+            copy_fingerprint(
+                result->helmholtz_basis_id,
+                sizeof(result->helmholtz_basis_id),
+                EPCSAFT_NATIVE_HELMHOLTZ_BASIS_ID_V1
+            );
+            result->status = EPCSAFT_SOURCE_REFERENCE_OK_V1;
+            return result->status;
+        } catch (const detail::DensityDomainError& error) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_DOMAIN_REJECTION_V1, error.what()
+            );
+        } catch (const std::invalid_argument& error) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_INVALID_SOURCE_V1, error.what()
+            );
+        } catch (const std::runtime_error& error) {
+            const std::string message(error.what());
+            const bool nonfinite = message.find("nonfinite") != std::string::npos;
+            return fail(
+                nonfinite
+                    ? EPCSAFT_SOURCE_REFERENCE_NONFINITE_V1
+                    : (message.find("limit") == std::string::npos
+                        ? EPCSAFT_SOURCE_REFERENCE_EVALUATION_FAILURE_V1
+                        : EPCSAFT_SOURCE_REFERENCE_LIMIT_FAILURE_V1),
+                error.what()
+            );
+        } catch (const std::exception& error) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_EVALUATION_FAILURE_V1, error.what()
+            );
+        } catch (...) {
+            return fail(
+                EPCSAFT_SOURCE_REFERENCE_EVALUATION_FAILURE_V1,
+                "unknown source-reference transfer failure"
             );
         }
     }
@@ -4626,6 +5089,8 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
     bool aqueous_solvation_factor_admitted,
     bool ion_solvation_kij_admitted,
     const std::string& topology_fingerprint,
+    const std::string& component_order_fingerprint,
+    const std::string& domain_fingerprint,
     const std::vector<std::string>& site_ids,
     const std::string& artifact_fingerprint
 ) {
@@ -4693,11 +5158,15 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
         || parameter_fingerprint.size() >= EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE) {
         throw std::invalid_argument("invalid parameter fingerprint");
     }
-    if (!topology_fingerprint.empty()
-        && (topology_fingerprint.size()
+    if ((!topology_fingerprint.empty()
+         && (topology_fingerprint.size()
                 >= EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE
             || topology_fingerprint.rfind("sha256:", 0) != 0
-            || topology_fingerprint.size() != 71)) {
+            || topology_fingerprint.size() != 71))
+        || ((!component_order_fingerprint.empty()
+             || !domain_fingerprint.empty())
+            && (!sha256_fingerprint_valid(component_order_fingerprint)
+                || !sha256_fingerprint_valid(domain_fingerprint)))) {
         throw std::invalid_argument("invalid topology fingerprint");
     }
     if (component_ids.size() != model.component_count()
@@ -4766,6 +5235,8 @@ const epcsaft_native_sdk_v1* create_native_sdk_v1(
         neutral_reference_admitted,
         aqueous_solvation_factor_admitted,
         topology_fingerprint,
+        component_order_fingerprint,
+        domain_fingerprint,
         artifact_fingerprint
     );
     return &endpoint->table;
