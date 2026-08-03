@@ -756,7 +756,7 @@ $$
 - Change note: Uses one kilogram of salt-free solvent as the construction basis.
 - LaTeX: `docs/latex/equations.tex:1061`
 - Implementation:
-  - `src/epcsaft/_native/electrolyte_reference.hpp:112` (`formula_composition`)
+  - `src/epcsaft/_native/electrolyte_reference.hpp:116` (`formula_composition`)
   - `src/epcsaft/_native/eos.cpp:1181` (`reference_composition`)
 
 $$
@@ -1681,7 +1681,7 @@ $$
 - LaTeX: `docs/latex/equations.tex:1077`
 - Implementation:
   - `src/epcsaft/_native/electrolyte_reference.hpp:49` (`reference_limit_sequence`)
-  - `src/epcsaft/_native/electrolyte_reference.hpp:160` (`electrolyte_reference_sequence`)
+  - `src/epcsaft/_native/electrolyte_reference.hpp:164` (`electrolyte_reference_sequence`)
   - `src/epcsaft/_native/eos.cpp:1197` (`electrolyte_reference_sequence`)
 
 $$

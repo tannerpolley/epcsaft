@@ -82,14 +82,18 @@ VectorReferenceSequenceResult reference_limit_sequence(
     for (double molality : REFERENCE_MOLALITIES) {
         observe(molality);
     }
-    if (current.has_value() && needs_witness(*current, convergence_errors)) {
+    if (!current.has_value()) {
+        throw std::runtime_error("reference limit did not converge");
+    }
+    const auto terminal = *current;
+    if (needs_witness(terminal, convergence_errors)) {
         observe(REFERENCE_CONVERGENCE_WITNESS_MOLALITY);
     }
-    if (!current.has_value() || needs_witness(*current, convergence_errors)) {
+    if (needs_witness(*current, convergence_errors)) {
         throw std::runtime_error("reference limit did not converge");
     }
     return {
-        *current,
+        terminal,
         convergence_errors,
         REFERENCE_MOLALITIES.back(),
         convergence_error,

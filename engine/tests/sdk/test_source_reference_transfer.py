@@ -131,6 +131,42 @@ def test_source_reference_transfer_is_component_permutation_safe() -> None:
     )
 
 
+def test_reference_witness_does_not_replace_the_reported_terminal_value() -> None:
+    model = Mixture.from_dictionary(_generic_electrolyte())
+    result = source_reference_transfer(
+        model,
+        _declaration(),
+        T=298.15 * unit_registry.kelvin,
+        P=75000.0 * unit_registry.pascal,
+    )
+    row_index = 2
+    row = result.neutral_basis[row_index]
+    amounts = tuple(
+        fraction / result.solvent_molar_mass_kg_per_mol
+        + coefficient * result.reference_limit_molality_mol_per_kg
+        for fraction, coefficient in zip(result.source_composition, row, strict=True)
+    )
+    total_amount = math.fsum(amounts)
+    terminal_state = model.state(
+        T=298.15 * unit_registry.kelvin,
+        P=75000.0 * unit_registry.pascal,
+        x=tuple(amount / total_amount for amount in amounts),
+        phase="liquid",
+    )
+    assert terminal_state.fugacity is not None
+    terminal_contraction = math.fsum(
+        coefficient * log_fugacity
+        for coefficient, log_fugacity in zip(
+            row, terminal_state.fugacity.ln_coefficient, strict=True
+        )
+    )
+
+    assert result.reference_limit_molality_mol_per_kg == 1.0e-12
+    assert result.log_fugacity_contractions[row_index] == pytest.approx(
+        terminal_contraction, abs=2.0e-9
+    )
+
+
 def test_source_reference_transfer_advertises_full_nine_component_basis() -> None:
     pressure_interval_pa = (6105.45, 300000.0)
     model = Mixture.from_dictionary(
