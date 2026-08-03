@@ -45,7 +45,7 @@ struct VectorReferenceSequenceResult final {
 };
 
 template <typename Evaluator, typename NeedsWitness>
-// EqID: reference_limit_sequence
+// EqID: reference_molality_sequence
 VectorReferenceSequenceResult reference_limit_sequence(
     Evaluator evaluator,
     NeedsWitness needs_witness

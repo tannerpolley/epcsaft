@@ -112,8 +112,8 @@ class SourceReferenceTransfer:
     """Charge-neutral source-to-Provider transfer and immutable EOS receipt."""
 
     status: Literal["ok"]
-    domain_status: Literal["admitted"]
-    convergence_status: Literal["converged"]
+    domain_status: Literal["admitted-domain"]
+    convergence_status: Literal["converged-limit"]
     reference_state_id: str
     activity_convention_id: str
     component_ids: tuple[str, ...]
@@ -236,8 +236,8 @@ def source_reference_transfer(
     flat_basis = tuple(float(item) for item in value["neutral_basis"])
     return SourceReferenceTransfer(
         status="ok",
-        domain_status="admitted",
-        convergence_status="converged",
+        domain_status="admitted-domain",
+        convergence_status="converged-limit",
         reference_state_id=declaration.reference_state_id,
         activity_convention_id=declaration.activity_convention_id,
         component_ids=component_ids,

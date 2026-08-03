@@ -16,6 +16,7 @@ from epcsaft import (
 from tests.sdk.test_neutral_reference import (
     _CHARGES,
     _COMPONENTS,
+    _NINE_COMPONENTS,
     _generic_electrolyte,
     _matrix_rank,
 )
@@ -60,8 +61,8 @@ def test_source_reference_transfer_uses_declared_solvent_for_every_model(
 
     assert result.component_ids == _COMPONENTS
     assert result.status == "ok"
-    assert result.domain_status == "admitted"
-    assert result.convergence_status == "converged"
+    assert result.domain_status == "admitted-domain"
+    assert result.convergence_status == "converged-limit"
     assert result.reference_state_id == _declaration().reference_state_id
     assert result.activity_convention_id == "molality-infinite-dilution-v1"
     assert result.source_composition == (1.0, 0.0, 0.0, 0.0, 0.0, 0.0)
@@ -126,6 +127,36 @@ def test_source_reference_transfer_is_component_permutation_safe() -> None:
     assert permuted.transfer_log_contractions == pytest.approx(
         canonical.transfer_log_contractions, abs=6.0e-11
     )
+
+
+def test_source_reference_transfer_advertises_full_nine_component_basis() -> None:
+    pressure_interval_pa = (6105.45, 300000.0)
+    model = Mixture.from_dictionary(
+        _generic_electrolyte(
+            _NINE_COMPONENTS,
+            temperature_k=313.15,
+            pressure_interval_pa=pressure_interval_pa,
+        )
+    )
+
+    result = source_reference_transfer(
+        model,
+        _declaration(_NINE_COMPONENTS),
+        T=313.15 * unit_registry.kelvin,
+        P=7326.7 * unit_registry.pascal,
+    )
+    charges = tuple(_CHARGES[component_id] for component_id in _NINE_COMPONENTS)
+
+    assert result.component_ids == _NINE_COMPONENTS
+    assert result.source_composition == (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    assert result.source_pressure_interval_pa == pressure_interval_pa
+    assert len(result.neutral_basis) == 8
+    assert _matrix_rank(result.neutral_basis) == 8
+    assert all(
+        math.fsum(value * charge for value, charge in zip(row, charges, strict=True)) == 0.0
+        for row in result.neutral_basis
+    )
+    assert all(math.isfinite(value) for value in result.transfer_log_contractions)
 
 
 def test_source_reference_transfer_fails_closed() -> None:

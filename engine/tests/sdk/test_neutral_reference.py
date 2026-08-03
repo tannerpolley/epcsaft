@@ -16,12 +16,26 @@ _COMPONENTS = (
     "anion-monovalent",
     "anion-divalent",
 )
+_NINE_COMPONENTS = (
+    "neutral-alpha",
+    "neutral-beta",
+    "neutral-gamma",
+    "cation-monovalent",
+    "cation-secondary",
+    "anion-monovalent",
+    "anion-secondary",
+    "anion-tertiary",
+    "anion-divalent",
+)
 _CHARGES = {
     "neutral-alpha": 0,
     "neutral-beta": 0,
+    "neutral-gamma": 0,
     "cation-monovalent": 1,
     "cation-secondary": 1,
     "anion-monovalent": -1,
+    "anion-secondary": -1,
+    "anion-tertiary": -1,
     "anion-divalent": -2,
 }
 
@@ -30,13 +44,18 @@ def _generic_electrolyte(
     component_ids: tuple[str, ...] = _COMPONENTS,
     *,
     variant: str = "associating",
+    temperature_k: float = 298.15,
+    pressure_interval_pa: tuple[float, float] = (50000.0, 200000.0),
 ) -> dict[str, object]:
     values = {
         "neutral-alpha": (0.0180153, 1.2047, None, 353.95, None, 1.5),
         "neutral-beta": (0.04401, 1.5, 3.3, 220.0, None, 1.2),
+        "neutral-gamma": (0.06108, 2.0, 3.5, 260.0, None, 1.1),
         "cation-monovalent": (None, 1.0, 2.8232, 230.0, 3.445, 1.0),
         "cation-secondary": (None, 1.0, 2.9, 210.0, 3.6, 1.0),
         "anion-monovalent": (None, 1.0, 2.756, 170.0, 4.1, 1.0),
+        "anion-secondary": (None, 1.0, 2.8, 180.0, 4.0, 1.0),
+        "anion-tertiary": (None, 1.0, 2.9, 185.0, 4.1, 1.0),
         "anion-divalent": (None, 1.0, 3.0, 190.0, 4.2, 1.0),
     }
     charges = tuple(_CHARGES[component_id] for component_id in component_ids)
@@ -86,6 +105,17 @@ def _generic_electrolyte(
             },
         ),
     }
+    if "neutral-gamma" in component_ids:
+        correlations = parameters["correlations"]
+        assert isinstance(correlations, tuple)
+        parameters["correlations"] = correlations + (
+            {
+                "component_id": "neutral-gamma",
+                "family": "relative_permittivity",
+                "form": "constant",
+                "constant": 30.0,
+            },
+        )
     if variant != "ordinary":
         parameters["sites"] = (
             {
@@ -134,10 +164,10 @@ def _generic_electrolyte(
         "options": options,
         "validity": {
             "kind": "fit-range",
-            "temperature_min_k": 298.15,
-            "temperature_max_k": 298.15,
-            "pressure_min_pa": 50000.0,
-            "pressure_max_pa": 200000.0,
+            "temperature_min_k": temperature_k,
+            "temperature_max_k": temperature_k,
+            "pressure_min_pa": pressure_interval_pa[0],
+            "pressure_max_pa": pressure_interval_pa[1],
             "ion_mole_fraction_max": 0.38,
         },
     }

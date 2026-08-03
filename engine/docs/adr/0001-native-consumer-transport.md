@@ -254,10 +254,12 @@ parameter derivatives through the existing reference-sequence and CppAD owners.
 Issue #78 appends a declared-solvent operation without changing that basis or
 the Provider Helmholtz gauge. Its source-reference declaration binds exact
 component order, salt-free solvent mole fractions, activity convention,
-standard molality, source-pressure provenance, and trial temperature and
-pressure. Positive neutral fractions are finite-composition solvent
-components; zero neutral fractions and every charge-neutral ionic row approach
-infinite dilution on one deterministic x-process. For source solvent molar
+standard molality, and source-pressure provenance. Trial temperature and
+pressure are explicit operation inputs so the immutable declaration can be
+re-evaluated at every solver trial state. Positive neutral fractions are
+finite-composition solvent components; zero neutral fractions and every
+charge-neutral ionic row approach infinite dilution on one deterministic
+x-process. For source solvent molar
 mass M_S, the operation returns separate fugacity and activity-scale
 contractions. A solvent unit row has activity-scale term ln(x_i^S), a
 zero-composition neutral-solute row has ln(M_S m_standard), and an ionic

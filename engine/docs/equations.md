@@ -181,7 +181,7 @@ $$
 - Change note: Shared by the public reference-state owner and native neutral basis.
 - LaTeX: `docs/latex/equations.tex:1045`
 - Implementation:
-  - `src/epcsaft/reference.py:217` (`build_reference_state`)
+  - `src/epcsaft/reference.py:431` (`build_reference_state`)
 
 $$
 g=\gcd(|z_+|,|z_-|),
@@ -356,6 +356,32 @@ $$
 \sqrt{\frac{\rho_mN_Ae^2S_z}
 {\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}}.
 \label{eq:debye_screening_parameter}
+$$
+
+## `declared_solvent_source_reference_transfer`
+
+- Section: Native phase coordinates / Gross--Vrabec point multipoles
+- Status: Exact derivation
+- Source: Exact change of source activity scale on the neutral-reference basis
+- Description: Declared-solvent fugacity and activity-scale contractions transferred to the Provider reference.
+- Change note: The source pressure is provenance; every fugacity contraction is evaluated at the requested trial pressure.
+- LaTeX: `docs/latex/equations.tex:1328`
+- Implementation:
+  - `src/epcsaft/_native/native_sdk.cpp:2889` (`evaluate_source_reference_transfer`)
+
+$$
+\begin{aligned}
+\Delta_r^{\mathrm{src}\rightarrow\mathrm{Provider}}
+&=c_r+s_r,\\
+s_r&=\sum_i b_i^{(r)}\ell_i^{\mathrm{src}},\\
+\ell_i^{\mathrm{src}}&=
+\begin{cases}
+\ln x_i^S, & z_i=0,\ x_i^S>0,\\
+\ln(\overline M_S m^\circ), & z_i=0,\ x_i^S=0,\\
+\ln(\overline M_S m^\circ), & z_i\ne0.
+\end{cases}
+\end{aligned}
+\label{eq:declared_solvent_source_reference_transfer}
 $$
 
 ## `density_correlated_bulk_permittivity`
@@ -711,7 +737,7 @@ $$
   - `src/epcsaft/_native/eos.cpp:1359` (`evaluate_ion_solvation_kij`)
   - `src/epcsaft/_native/eos.cpp:1438` (`evaluate_aqueous_miac_kij_batch`)
   - `src/epcsaft/_native/eos.cpp:1618` (`evaluate_aqueous_miac_solvation_factor_batch`)
-  - `src/epcsaft/_native/native_sdk.cpp:1467` (`evaluate_neutral_reference_derivatives`)
+  - `src/epcsaft/_native/native_sdk.cpp:1501` (`evaluate_neutral_reference_derivatives`)
 
 $$
 \left.\frac{dQ}{d\theta}\right|_{P}
@@ -730,7 +756,7 @@ $$
 - Change note: Uses one kilogram of salt-free solvent as the construction basis.
 - LaTeX: `docs/latex/equations.tex:1061`
 - Implementation:
-  - `src/epcsaft/_native/electrolyte_reference.hpp:41` (`formula_composition`)
+  - `src/epcsaft/_native/electrolyte_reference.hpp:112` (`formula_composition`)
   - `src/epcsaft/_native/eos.cpp:1181` (`reference_composition`)
 
 $$
@@ -830,7 +856,7 @@ $$
   - `src/epcsaft/_native/eos.cpp:1285` (`evaluate_ion_solvation_ionic_permittivity`)
   - `src/epcsaft/_native/eos.cpp:1322` (`evaluate_ion_solvation_solvent_permittivity`)
   - `src/epcsaft/_native/eos.cpp:1359` (`evaluate_ion_solvation_kij`)
-  - `src/epcsaft/reference.py:83` (`solvation_free_energy`)
+  - `src/epcsaft/reference.py:297` (`solvation_free_energy`)
 
 $$
 \Delta G_{i,\mathrm{solv}}^\infty
@@ -942,7 +968,7 @@ $$
 - Implementation:
   - `src/epcsaft/_native/eos.cpp:1438` (`evaluate_aqueous_miac_kij_batch`)
   - `src/epcsaft/_native/eos.cpp:1618` (`evaluate_aqueous_miac_solvation_factor_batch`)
-  - `src/epcsaft/reference.py:97` (`state`)
+  - `src/epcsaft/reference.py:311` (`state`)
 
 $$
 \ln\gamma_\pm^{(x)}
@@ -1014,7 +1040,7 @@ $$
 - Implementation:
   - `src/epcsaft/_native/eos.cpp:1438` (`evaluate_aqueous_miac_kij_batch`)
   - `src/epcsaft/_native/eos.cpp:1618` (`evaluate_aqueous_miac_solvation_factor_batch`)
-  - `src/epcsaft/reference.py:97` (`state`)
+  - `src/epcsaft/reference.py:311` (`state`)
 
 $$
 \gamma_\pm^{(m)}=
@@ -1032,9 +1058,9 @@ $$
 - Change note: Neutral-component unit rows and a spanning set of cation-anion formula rows are immutable for a resolved model.
 - LaTeX: `docs/latex/equations.tex:1307`
 - Implementation:
-  - `src/epcsaft/_native/native_sdk.cpp:133` (`make_neutral_reference_basis`)
-  - `src/epcsaft/_native/native_sdk.cpp:1467` (`evaluate_neutral_reference_derivatives`)
-  - `src/epcsaft/_native/native_sdk.cpp:2662` (`evaluate_neutral_reference`)
+  - `src/epcsaft/_native/native_sdk.cpp:138` (`make_neutral_reference_basis`)
+  - `src/epcsaft/_native/native_sdk.cpp:1501` (`evaluate_neutral_reference_derivatives`)
+  - `src/epcsaft/_native/native_sdk.cpp:2681` (`evaluate_neutral_reference`)
 
 $$
 \boldsymbol{b}^{(s)}=\boldsymbol{e}_s,
@@ -1264,7 +1290,7 @@ $$
   - `src/epcsaft/_native/phase_block.hpp:834` (`packing_fraction_block`)
   - `src/epcsaft/_native/phase_block.hpp:904` (`packing_fraction_block_active_parameters`)
   - `src/epcsaft/_native/phase_block.hpp:991` (`inverse_packing_geometry_block`)
-  - `src/epcsaft/_native/native_sdk.cpp:1309` (`evaluate_inverse_packing_geometry`)
+  - `src/epcsaft/_native/native_sdk.cpp:1343` (`evaluate_inverse_packing_geometry`)
 
 $$
 \eta(T,\boldsymbol{n},V)=
@@ -1580,7 +1606,7 @@ $$
 - Change note: Defined only for the admitted single-active-solvent aqueous path.
 - LaTeX: `docs/latex/equations.tex:1126`
 - Implementation:
-  - `src/epcsaft/reference.py:97` (`state`)
+  - `src/epcsaft/reference.py:311` (`state`)
 
 $$
 \Phi=
@@ -1654,7 +1680,8 @@ $$
 - Change note: One internal owner constructs composition, adjudicates convergence, and selects the terminal observation.
 - LaTeX: `docs/latex/equations.tex:1077`
 - Implementation:
-  - `src/epcsaft/_native/electrolyte_reference.hpp:89` (`electrolyte_reference_sequence`)
+  - `src/epcsaft/_native/electrolyte_reference.hpp:49` (`reference_limit_sequence`)
+  - `src/epcsaft/_native/electrolyte_reference.hpp:160` (`electrolyte_reference_sequence`)
   - `src/epcsaft/_native/eos.cpp:1197` (`electrolyte_reference_sequence`)
 
 $$
@@ -1841,7 +1868,7 @@ $$
 - Change note: Exposes the exponential of the finite-minus-reference log fugacity.
 - LaTeX: `docs/latex/equations.tex:1091`
 - Implementation:
-  - `src/epcsaft/reference.py:97` (`state`)
+  - `src/epcsaft/reference.py:311` (`state`)
 
 $$
 \gamma_i^{(x)}=
@@ -1902,7 +1929,7 @@ $$
 - Change note: Source and target must share temperature, pressure, phase, ions, and stoichiometry.
 - LaTeX: `docs/latex/equations.tex:1151`
 - Implementation:
-  - `src/epcsaft/reference.py:185` (`transfer_to`)
+  - `src/epcsaft/reference.py:399` (`transfer_to`)
 
 $$
 \Delta G_{i,\mathrm{tr}}^{A\rightarrow B}
@@ -1978,42 +2005,42 @@ $$
 - `src/epcsaft/_native/native_sdk.cpp:46` (`ion_fraction_suppression_model_admitted`): input and domain validation
 - `src/epcsaft/_native/native_sdk.cpp:55` (`ion_solvation_kij_model_admitted`): input and domain validation
 - `src/epcsaft/_native/native_sdk.cpp:64` (`aqueous_solvation_factor_model_admitted`): input and domain validation
-- `src/epcsaft/_native/native_sdk.cpp:88` (`full_row_rank`): input and domain validation
-- `src/epcsaft/_native/native_sdk.cpp:88` (`full_row_rank`): input and domain validation
-- `src/epcsaft/_native/native_sdk.cpp:227` (`neutral_reference_model_shape_admitted`): input and domain validation
-- `src/epcsaft/_native/native_sdk.cpp:254` (`fixed_topology_site_ids_valid`): input and domain validation
-- `src/epcsaft/_native/native_sdk.cpp:279` (`sha256_fingerprint_valid`): input and domain validation
-- `src/epcsaft/_native/native_sdk.cpp:292` (`make_fixed_topology_parameter_ids`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:1178` (`active_parameters`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:1309` (`evaluate_inverse_packing_geometry`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:1925` (`evaluate_reacting_phase_parameters`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:2261` (`evaluate_ion_solvation_ionic_permittivity`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:2356` (`evaluate_ion_solvation_solvent_permittivity`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:2451` (`evaluate_ion_solvation_kij`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:2569` (`evaluate_ion_fraction_suppression`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:2885` (`evaluate_aqueous_miac_kij`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:2980` (`evaluate_aqueous_miac_solvation_factor`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:3088` (`evaluate_aqueous_miac_kij_batch_impl`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:3261` (`evaluate_aqueous_miac_kij_batch`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:3289` (`evaluate_aqueous_miac_kij_batch_bounded`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:3318` (`evaluate_aqueous_miac_solvation_factor_batch_impl`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:3480` (`evaluate_aqueous_miac_solvation_factor_batch`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:3506` (`evaluate_aqueous_miac_solvation_factor_batch_bounded`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:3533` (`evaluate_ion_solvation_born`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:3623` (`evaluate`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:3715` (`evaluate_parameters`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:3802` (`evaluate_fixed_topology_association`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:4073` (`evaluate_mixture_common`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:4198` (`evaluate_pure_parameter`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:4249` (`evaluate_mixture`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:4279` (`evaluate_mixture_kij`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:4310` (`evaluate_mixture_lij`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:4341` (`evaluate_electrolyte`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:4375` (`evaluate_electrolyte_value`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:4471` (`evaluate_molar_volume_bounds`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:4538` (`evaluate_packing_fraction`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:4611` (`create_native_sdk_v1`): transport and buffer mechanics
-- `src/epcsaft/_native/native_sdk.cpp:4775` (`destroy_native_sdk_v1`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:93` (`full_row_rank`): input and domain validation
+- `src/epcsaft/_native/native_sdk.cpp:93` (`full_row_rank`): input and domain validation
+- `src/epcsaft/_native/native_sdk.cpp:239` (`neutral_reference_model_shape_admitted`): input and domain validation
+- `src/epcsaft/_native/native_sdk.cpp:266` (`fixed_topology_site_ids_valid`): input and domain validation
+- `src/epcsaft/_native/native_sdk.cpp:291` (`sha256_fingerprint_valid`): input and domain validation
+- `src/epcsaft/_native/native_sdk.cpp:304` (`make_fixed_topology_parameter_ids`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:1212` (`active_parameters`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:1343` (`evaluate_inverse_packing_geometry`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:1944` (`evaluate_reacting_phase_parameters`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:2280` (`evaluate_ion_solvation_ionic_permittivity`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:2375` (`evaluate_ion_solvation_solvent_permittivity`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:2470` (`evaluate_ion_solvation_kij`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:2588` (`evaluate_ion_fraction_suppression`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:3315` (`evaluate_aqueous_miac_kij`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:3410` (`evaluate_aqueous_miac_solvation_factor`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:3518` (`evaluate_aqueous_miac_kij_batch_impl`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:3691` (`evaluate_aqueous_miac_kij_batch`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:3719` (`evaluate_aqueous_miac_kij_batch_bounded`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:3748` (`evaluate_aqueous_miac_solvation_factor_batch_impl`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:3910` (`evaluate_aqueous_miac_solvation_factor_batch`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:3936` (`evaluate_aqueous_miac_solvation_factor_batch_bounded`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:3963` (`evaluate_ion_solvation_born`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:4053` (`evaluate`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:4145` (`evaluate_parameters`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:4232` (`evaluate_fixed_topology_association`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:4503` (`evaluate_mixture_common`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:4628` (`evaluate_pure_parameter`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:4679` (`evaluate_mixture`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:4709` (`evaluate_mixture_kij`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:4740` (`evaluate_mixture_lij`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:4771` (`evaluate_electrolyte`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:4805` (`evaluate_electrolyte_value`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:4901` (`evaluate_molar_volume_bounds`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:4968` (`evaluate_packing_fraction`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:5041` (`create_native_sdk_v1`): transport and buffer mechanics
+- `src/epcsaft/_native/native_sdk.cpp:5213` (`destroy_native_sdk_v1`): transport and buffer mechanics
 - `src/epcsaft/_native/phase_block.hpp:80` (`supports_pure_phase_block`): input and domain validation
 - `src/epcsaft/_native/phase_block.hpp:88` (`supports_fixed_topology_associating_pure_phase_block`): input and domain validation
 - `src/epcsaft/_native/phase_block.hpp:135` (`supports_mixture_phase_block`): input and domain validation
@@ -2047,4 +2074,4 @@ $$
 - `src/epcsaft/_native/polar.hpp:261` (`polar_epsilon`): scalar utility dispatch
 - `src/epcsaft/_native/polar.hpp:303` (`polar_present`): input and domain validation
 - `src/epcsaft/_native/polar.hpp:314` (`polar_terms`): scalar utility dispatch
-- `src/epcsaft/reference.py:21` (`_log_fugacity`): transport and buffer mechanics
+- `src/epcsaft/reference.py:48` (`_log_fugacity`): transport and buffer mechanics
