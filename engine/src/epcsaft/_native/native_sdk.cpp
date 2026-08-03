@@ -71,9 +71,14 @@ bool aqueous_solvation_factor_model_admitted(
 
 // EqExclude: input and domain validation
 struct NeutralReferenceBasis final {
+    struct IonPair final {
+        std::size_t cation;
+        std::size_t anion;
+        std::array<int, 2> stoichiometry;
+    };
+
     std::vector<std::size_t> neutral_components;
-    std::vector<std::size_t> cations;
-    std::vector<std::size_t> anions;
+    std::vector<IonPair> ion_pairs;
     std::vector<double> reference_composition;
     std::vector<double> rows;
 
@@ -148,6 +153,8 @@ NeutralReferenceBasis make_neutral_reference_basis(
         return result;
     }
     std::vector<std::size_t> order(components);
+    std::vector<std::size_t> cations;
+    std::vector<std::size_t> anions;
     std::iota(order.begin(), order.end(), 0u);
     std::sort(order.begin(), order.end(), [&](std::size_t left, std::size_t right) {
         return component_ids[left] < component_ids[right];
@@ -161,13 +168,13 @@ NeutralReferenceBasis make_neutral_reference_basis(
         if (charges[component] == 0) {
             result.neutral_components.push_back(component);
         } else if (charges[component] > 0) {
-            result.cations.push_back(component);
+            cations.push_back(component);
         } else {
-            result.anions.push_back(component);
+            anions.push_back(component);
         }
     }
-    if (result.neutral_components.empty() || result.cations.empty()
-        || result.anions.empty()) {
+    if (result.neutral_components.empty() || cations.empty()
+        || anions.empty()) {
         return {};
     }
     result.reference_composition.assign(components, 0.0);
@@ -192,18 +199,23 @@ NeutralReferenceBasis make_neutral_reference_basis(
         const int divisor = std::gcd(
             std::abs(charges[cation]), std::abs(charges[anion])
         );
+        const std::array<int, 2> stoichiometry{
+            std::abs(charges[anion]) / divisor,
+            std::abs(charges[cation]) / divisor,
+        };
+        result.ion_pairs.push_back({cation, anion, stoichiometry});
         append_row(
             cation,
-            static_cast<double>(std::abs(charges[anion]) / divisor),
+            static_cast<double>(stoichiometry[0]),
             anion,
-            static_cast<double>(std::abs(charges[cation]) / divisor)
+            static_cast<double>(stoichiometry[1])
         );
     };
-    for (std::size_t anion : result.anions) {
-        append_pair(result.cations.front(), anion);
+    for (std::size_t anion : anions) {
+        append_pair(cations.front(), anion);
     }
-    for (std::size_t index = 1; index < result.cations.size(); ++index) {
-        append_pair(result.cations[index], result.anions.front());
+    for (std::size_t index = 1; index < cations.size(); ++index) {
+        append_pair(cations[index], anions.front());
     }
     const std::size_t expected_rows = components - 1u;
     if (result.row_count() != expected_rows
@@ -1704,17 +1716,10 @@ struct NativeSdkEndpoint final {
             double reference_molality = nan;
             double reference_convergence_error = 0.0;
             double derivative_convergence_error = 0.0;
-            auto append_pair = [&](std::size_t cation, std::size_t anion) {
+            auto append_pair = [&](const NeutralReferenceBasis::IonPair& pair) {
+                const auto [cation, anion, stoichiometry] = pair;
                 std::optional<detail::DensityRootIdentity> sequence_root =
                     reference_root;
-                const int divisor = std::gcd(
-                    std::abs(endpoint.component_charges[cation]),
-                    std::abs(endpoint.component_charges[anion])
-                );
-                const std::array<int, 2> stoichiometry{
-                    std::abs(endpoint.component_charges[anion]) / divisor,
-                    std::abs(endpoint.component_charges[cation]) / divisor,
-                };
                 const auto sequence = detail::electrolyte_reference_sequence(
                     reference_composition,
                     endpoint.model.molar_masses_kg_per_mol(),
@@ -1788,16 +1793,8 @@ struct NativeSdkEndpoint final {
                 );
                 ++row;
             };
-            for (std::size_t anion : reference_basis.anions) {
-                append_pair(reference_basis.cations.front(), anion);
-            }
-            for (std::size_t index = 1;
-                 index < reference_basis.cations.size();
-                 ++index) {
-                append_pair(
-                    reference_basis.cations[index],
-                    reference_basis.anions.front()
-                );
+            for (const auto& pair : reference_basis.ion_pairs) {
+                append_pair(pair);
             }
             if (row != row_count || !std::isfinite(minimum_slope)
                 || minimum_slope <= 0.0 || !std::isfinite(maximum_condition)
@@ -2790,15 +2787,8 @@ struct NativeSdkEndpoint final {
             }
             double reference_molality = std::numeric_limits<double>::quiet_NaN();
             double reference_convergence_error = 0.0;
-            auto append_pair = [&](std::size_t cation, std::size_t anion) {
-                const int divisor = std::gcd(
-                    std::abs(endpoint.component_charges[cation]),
-                    std::abs(endpoint.component_charges[anion])
-                );
-                const std::array<int, 2> stoichiometry = {
-                    std::abs(endpoint.component_charges[anion]) / divisor,
-                    std::abs(endpoint.component_charges[cation]) / divisor,
-                };
+            auto append_pair = [&](const NeutralReferenceBasis::IonPair& pair) {
+                const auto [cation, anion, stoichiometry] = pair;
                 const auto sequence = endpoint.model.electrolyte_reference_sequence(
                     temperature_k,
                     pressure_pa,
@@ -2819,16 +2809,8 @@ struct NativeSdkEndpoint final {
                 );
                 ++row;
             };
-            for (std::size_t anion : reference_basis.anions) {
-                append_pair(reference_basis.cations.front(), anion);
-            }
-            for (std::size_t index = 1;
-                 index < reference_basis.cations.size();
-                 ++index) {
-                append_pair(
-                    reference_basis.cations[index],
-                    reference_basis.anions.front()
-                );
+            for (const auto& pair : reference_basis.ion_pairs) {
+                append_pair(pair);
             }
             if (row != row_count) {
                 throw std::runtime_error("neutral reference basis dimension changed");
@@ -3161,15 +3143,8 @@ struct NativeSdkEndpoint final {
                 transfer[row] = fugacity[row] + activity[row];
                 ++row;
             }
-            auto append_pair = [&](std::size_t cation, std::size_t anion) {
-                const int divisor = std::gcd(
-                    std::abs(endpoint.component_charges[cation]),
-                    std::abs(endpoint.component_charges[anion])
-                );
-                const std::array<int, 2> stoichiometry{
-                    std::abs(endpoint.component_charges[anion]) / divisor,
-                    std::abs(endpoint.component_charges[cation]) / divisor,
-                };
+            auto append_pair = [&](const NeutralReferenceBasis::IonPair& pair) {
+                const auto [cation, anion, stoichiometry] = pair;
                 const auto sequence = detail::reference_limit_sequence(
                     [&](double molality) {
                         const double solvent_moles = 1.0 / solvent_molar_mass;
@@ -3223,16 +3198,8 @@ struct NativeSdkEndpoint final {
                 );
                 ++row;
             };
-            for (std::size_t anion : reference_basis.anions) {
-                append_pair(reference_basis.cations.front(), anion);
-            }
-            for (std::size_t index = 1;
-                 index < reference_basis.cations.size();
-                 ++index) {
-                append_pair(
-                    reference_basis.cations[index],
-                    reference_basis.anions.front()
-                );
+            for (const auto& pair : reference_basis.ion_pairs) {
+                append_pair(pair);
             }
             const auto finite = [](const std::vector<double>& values) {
                 return std::all_of(values.begin(), values.end(), [](double value) {

@@ -103,12 +103,8 @@ class SourceReferenceDeclaration:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "component_ids", tuple(self.component_ids))
-        object.__setattr__(
-            self, "solvent_mole_fractions", tuple(self.solvent_mole_fractions)
-        )
-        object.__setattr__(
-            self, "required_derivatives", tuple(self.required_derivatives)
-        )
+        object.__setattr__(self, "solvent_mole_fractions", tuple(self.solvent_mole_fractions))
+        object.__setattr__(self, "required_derivatives", tuple(self.required_derivatives))
 
 
 @dataclass(frozen=True, slots=True)
@@ -160,34 +156,34 @@ def source_reference_transfer(
     pressure_pa = _state_magnitude(P, "pascal", "pressure")
     component_ids = tuple(declaration.component_ids)
     try:
-        solvent_mole_fractions = tuple(
-            float(value) for value in declaration.solvent_mole_fractions
-        )
-        standard_molality_mol_per_kg = float(
-            declaration.standard_molality_mol_per_kg
-        )
+        solvent_mole_fractions = tuple(float(value) for value in declaration.solvent_mole_fractions)
+        standard_molality_mol_per_kg = float(declaration.standard_molality_mol_per_kg)
         reference_pressure_pa = float(declaration.reference_pressure_pa)
     except (OverflowError, TypeError, ValueError) as exc:
         raise _eos_error("invalid-source-composition", reason=str(exc)) from exc
     if any(not math.isfinite(value) for value in solvent_mole_fractions) or any(
-        not math.isfinite(value)
-        for value in (standard_molality_mol_per_kg, reference_pressure_pa)
+        not math.isfinite(value) for value in (standard_molality_mol_per_kg, reference_pressure_pa)
     ):
         raise _eos_error("nonfinite-source-reference-state")
     required_derivatives = tuple(declaration.required_derivatives)
     if component_ids != tuple(model.component_ids):
         raise _eos_error("component-order-mismatch")
-    for derivative in required_derivatives:
-        if derivative not in _SOURCE_REFERENCE_DERIVATIVES:
-            raise _eos_error("derivative-unavailable", derivative=derivative)
+    invalid_derivative = next(
+        (
+            derivative
+            for derivative in required_derivatives
+            if derivative not in _SOURCE_REFERENCE_DERIVATIVES
+        ),
+        None,
+    )
+    if invalid_derivative is not None or len(set(required_derivatives)) != len(
+        required_derivatives
+    ):
+        raise _eos_error("derivative-unavailable", derivative=invalid_derivative or "duplicate")
     try:
-        derivative_mask = 0
-        seen: set[str] = set()
-        for derivative in required_derivatives:
-            if derivative in seen:
-                raise _eos_error("derivative-unavailable", derivative=derivative)
-            seen.add(derivative)
-            derivative_mask |= _SOURCE_REFERENCE_DERIVATIVES[derivative]
+        derivative_mask = sum(
+            _SOURCE_REFERENCE_DERIVATIVES[derivative] for derivative in required_derivatives
+        )
         payload = {
             "schema": "epcsaft-source-reference-declaration-v1",
             "reference_state_id": declaration.reference_state_id,
@@ -197,14 +193,17 @@ def source_reference_transfer(
             "standard_molality_mol_per_kg": standard_molality_mol_per_kg,
             "reference_pressure_pa": reference_pressure_pa,
         }
-        reference_fingerprint = "sha256:" + hashlib.sha256(
-            json.dumps(
-                payload,
-                allow_nan=False,
-                separators=(",", ":"),
-                sort_keys=True,
-            ).encode("utf-8")
-        ).hexdigest()
+        reference_fingerprint = (
+            "sha256:"
+            + hashlib.sha256(
+                json.dumps(
+                    payload,
+                    allow_nan=False,
+                    separators=(",", ":"),
+                    sort_keys=True,
+                ).encode("utf-8")
+            ).hexdigest()
+        )
         value = _native_core.source_reference_transfer_v1(
             native_sdk(model),
             model.parameter_fingerprint,
@@ -224,18 +223,12 @@ def source_reference_transfer(
         raise
     except (OverflowError, TypeError, ValueError) as exc:
         if str(exc) == "unsupported-source-reference-transfer":
-            raise _eos_error(
-                "unsupported-source-reference-transfer", reason=str(exc)
-            ) from exc
-        raise _eos_error(
-            "source-reference-evaluation-failure", reason=str(exc)
-        ) from exc
+            raise _eos_error("unsupported-source-reference-transfer", reason=str(exc)) from exc
+        raise _eos_error("source-reference-evaluation-failure", reason=str(exc)) from exc
     status = int(value["status"])
     if status != 0:
         raise _eos_error(
-            _SOURCE_REFERENCE_ERRORS.get(
-                status, "source-reference-evaluation-failure"
-            ),
+            _SOURCE_REFERENCE_ERRORS.get(status, "source-reference-evaluation-failure"),
             reason=value.get("error", "unknown failure"),
         )
     component_count = int(value["component_count"])
@@ -253,9 +246,7 @@ def source_reference_transfer(
             for offset in range(0, row_count * component_count, component_count)
         ),
         log_fugacity_contractions=tuple(value["log_fugacity_contractions"]),
-        activity_scale_log_contractions=tuple(
-            value["activity_scale_log_contractions"]
-        ),
+        activity_scale_log_contractions=tuple(value["activity_scale_log_contractions"]),
         transfer_log_contractions=tuple(value["transfer_log_contractions"]),
         source_composition=tuple(value["source_composition"]),
         derivative_availability=(),
@@ -263,15 +254,9 @@ def source_reference_transfer(
         temperature_k=float(value["temperature_k"]),
         pressure_pa=float(value["pressure_pa"]),
         source_reference_pressure_pa=float(value["source_reference_pressure_pa"]),
-        standard_molality_mol_per_kg=float(
-            value["standard_molality_mol_per_kg"]
-        ),
-        solvent_molar_mass_kg_per_mol=float(
-            value["solvent_molar_mass_kg_per_mol"]
-        ),
-        reference_limit_molality_mol_per_kg=float(
-            value["reference_limit_molality_mol_per_kg"]
-        ),
+        standard_molality_mol_per_kg=float(value["standard_molality_mol_per_kg"]),
+        solvent_molar_mass_kg_per_mol=float(value["solvent_molar_mass_kg_per_mol"]),
+        reference_limit_molality_mol_per_kg=float(value["reference_limit_molality_mol_per_kg"]),
         reference_convergence_error=float(value["reference_convergence_error"]),
         source_temperature_interval_k=(
             float(value["source_temperature_min_k"]),
