@@ -5,6 +5,17 @@
   "objects": [
     {
       "aliases": [
+        "active/epcsaft-regression/epcsaft_regression-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
+      ],
+      "bytes": 392104,
+      "distribution": "epcsaft-regression",
+      "object": "objects/sha256/0edfca6896b27b87c7861f49c020dbe2a9b1d6f5bd9fd17285ce1ba538d0c913/epcsaft_regression-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "retention": "current",
+      "sha256": "0edfca6896b27b87c7861f49c020dbe2a9b1d6f5bd9fd17285ce1ba538d0c913",
+      "version": "0.2.0.dev0"
+    },
+    {
+      "aliases": [
         "active/epcsaft-equilibrium/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
       ],
       "bytes": 3552697,
@@ -23,17 +34,6 @@
       "object": "objects/sha256/1567cda72e1b525526dc0e647af0c6fe711edcb70bc4cee08f06284e847956d9/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
       "retention": "current",
       "sha256": "1567cda72e1b525526dc0e647af0c6fe711edcb70bc4cee08f06284e847956d9",
-      "version": "0.2.0.dev0"
-    },
-    {
-      "aliases": [
-        "active/epcsaft-regression/epcsaft_regression-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
-      ],
-      "bytes": 366082,
-      "distribution": "epcsaft-regression",
-      "object": "objects/sha256/779c9346e47e6fba109d7147f6177c42bb84b5c105b705fd1311b75f40e0d409/epcsaft_regression-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
-      "retention": "current",
-      "sha256": "779c9346e47e6fba109d7147f6177c42bb84b5c105b705fd1311b75f40e0d409",
       "version": "0.2.0.dev0"
     }
   ],

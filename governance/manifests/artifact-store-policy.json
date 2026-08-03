@@ -28,9 +28,9 @@
     },
     "epcsaft-regression": {
       "repository": "ePC-SAFT/ePC-SAFT-regression",
-      "source_commit": "fc42629253125ad327150473872994d7944545ad",
+      "source_commit": "2db0077fd7fa0ada0a5f4fc04e19ed501cdddbb6",
       "version": "0.2.0.dev0",
-      "sha256": "779c9346e47e6fba109d7147f6177c42bb84b5c105b705fd1311b75f40e0d409"
+      "sha256": "0edfca6896b27b87c7861f49c020dbe2a9b1d6f5bd9fd17285ce1ba538d0c913"
     }
   },
   "historical_archive": {
