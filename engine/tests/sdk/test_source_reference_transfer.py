@@ -92,7 +92,9 @@ def test_source_reference_transfer_uses_declared_solvent_for_every_model(
     assert result.parameter_fingerprint == model.parameter_fingerprint
     assert result.topology_fingerprint.startswith("sha256:")
     assert result.component_order_fingerprint.startswith("sha256:")
-    assert result.reference_state_fingerprint.startswith("sha256:")
+    assert result.reference_state_fingerprint == (
+        "sha256:22dab514c8f2910652c794d7446f06af59b91a30e399b8ffbb50d1c49b456f99"
+    )
     assert result.domain_fingerprint.startswith("sha256:")
     assert result.artifact_fingerprint.startswith("sha256:")
 

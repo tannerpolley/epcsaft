@@ -192,6 +192,7 @@ def source_reference_transfer(
             "activity_convention_id": declaration.activity_convention_id,
             "standard_molality_mol_per_kg": standard_molality_mol_per_kg,
             "reference_pressure_pa": reference_pressure_pa,
+            "required_derivatives": required_derivatives,
         }
         reference_fingerprint = (
             "sha256:"

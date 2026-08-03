@@ -165,8 +165,8 @@ equations:
     tex_line: 1045
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 431
-        comment_line: 475
+        line: 432
+        comment_line: 476
         symbol: "build_reference_state"
   - eqid: "close_packing_fraction"
     section: "Density and packing"
@@ -801,8 +801,8 @@ equations:
         comment_line: 1357
         symbol: "evaluate_ion_solvation_kij"
       - file: "src/epcsaft/reference.py"
-        line: 297
-        comment_line: 300
+        line: 298
+        comment_line: 301
         symbol: "solvation_free_energy"
   - eqid: "ion_fraction_suppressed_bulk_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
@@ -909,8 +909,8 @@ equations:
         comment_line: 1615
         symbol: "evaluate_aqueous_miac_solvation_factor_batch"
       - file: "src/epcsaft/reference.py"
-        line: 311
-        comment_line: 349
+        line: 312
+        comment_line: 350
         symbol: "state"
   - eqid: "mean_segment_count"
     section: "Density and packing"
@@ -981,8 +981,8 @@ equations:
         comment_line: 1616
         symbol: "evaluate_aqueous_miac_solvation_factor_batch"
       - file: "src/epcsaft/reference.py"
-        line: 311
-        comment_line: 366
+        line: 312
+        comment_line: 367
         symbol: "state"
   - eqid: "neutral_reference_stoichiometric_basis"
     section: "Native phase coordinates"
@@ -1541,8 +1541,8 @@ equations:
     tex_line: 1126
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 311
-        comment_line: 375
+        line: 312
+        comment_line: 376
         symbol: "state"
   - eqid: "pressure"
     section: "Thermodynamic properties"
@@ -1793,8 +1793,8 @@ equations:
     tex_line: 1091
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 311
-        comment_line: 346
+        line: 312
+        comment_line: 347
         symbol: "state"
   - eqid: "ssm_ds_born_helmholtz"
     section: "Born solvation relations"
@@ -1857,8 +1857,8 @@ equations:
     tex_line: 1151
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 399
-        comment_line: 416
+        line: 400
+        comment_line: 417
         symbol: "transfer_to"
 source_exclusions:
   - file: "src/epcsaft/_native/association.hpp"
