@@ -505,8 +505,10 @@ struct NativeSdkEndpoint final {
           neutral_reference_admitted(admit_neutral_reference),
           source_reference_transfer_admitted(
               admit_neutral_reference
+              && sha256_fingerprint_valid(topology_fingerprint)
               && sha256_fingerprint_valid(component_order_fingerprint)
               && sha256_fingerprint_valid(domain_fingerprint)
+              && sha256_fingerprint_valid(artifact_fingerprint)
               && std::isfinite(minimum_temperature)
               && std::isfinite(maximum_temperature)
               && std::isfinite(minimum_pressure)

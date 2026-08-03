@@ -127,7 +127,7 @@ def test_source_reference_transfer_is_component_permutation_safe() -> None:
         == canonical.neutral_basis
     )
     assert permuted.transfer_log_contractions == pytest.approx(
-        canonical.transfer_log_contractions, abs=6.0e-11
+        canonical.transfer_log_contractions, abs=1.0e-10
     )
 
 

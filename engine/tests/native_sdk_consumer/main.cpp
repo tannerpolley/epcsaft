@@ -485,7 +485,7 @@ bool fixed_topology_association_is_available(
 }
 
 int main(int argc, char** argv) {
-    if (argc != 9) {
+    if (argc != 11) {
         return 2;
     }
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
@@ -706,7 +706,9 @@ int main(int argc, char** argv) {
         && !fixed_topology_association_is_available(argv[4], argv[5])
         && polar_mixture_is_available(argv[6])
         && generic_neutral_reference_is_available(argv[7])
-        && legacy_neutral_reference_remains_loadable(argv[8]);
+        && legacy_neutral_reference_remains_loadable(argv[8])
+        && legacy_neutral_reference_remains_loadable(argv[9])
+        && legacy_neutral_reference_remains_loadable(argv[10]);
     std::cout << "component_count=" << (sdk == nullptr ? 0 : sdk->component_count)
               << '\n'
               << "phase_pressure_pa=" << phase.pressure_pa << '\n'
