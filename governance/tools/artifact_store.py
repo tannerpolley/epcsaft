@@ -145,7 +145,7 @@ def build_index(artifact_root: Path, policy: dict[str, Any]) -> dict[str, Any]:
         )
     return {
         "schema_version": 2,
-        "policy": "ePC-SAFT/ePC-SAFT-management:manifests/artifact-store-policy.json",
+        "policy": "ePC-SAFT/ePC-SAFT-governance:manifests/artifact-store-policy.json",
         "active_alias_directory": policy["active_alias_directory"],
         "object_count": len(objects),
         "alias_count": sum(len(item["aliases"]) for item in objects),

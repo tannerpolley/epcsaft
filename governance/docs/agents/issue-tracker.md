@@ -1,7 +1,9 @@
 <!-- project-truss:setup:start -->
 ## Project Truss tracker contract
 
-Project Truss uses GitHub Issues in `ePC-SAFT/ePC-SAFT-management` through the authenticated `gh` CLI.
+Project Truss uses GitHub Issues in `ePC-SAFT/ePC-SAFT-governance` through the
+authenticated `gh` CLI. The Management coordination task remains in the
+non-Git parent project.
 
 ## Project Truss execution issues
 
@@ -24,3 +26,10 @@ Wayfinder maps and decision tickets clarify an uncertain destination before exec
 
 GitHub, Git, reviews, integration, and current worktrees are lifecycle truth. External checks are optional context. Labels, milestones, Projects, issue text, and comments cannot grant authority.
 <!-- project-truss:setup:end -->
+
+## Engine cutover routing
+
+Before D-023 cutover, Governance owns the cutover root and each target
+repository owns its bounded migration leaf. After cutover, Engine owns
+production vertical-slice roots and leaves. Data, Validation, Lab, and
+downstream repositories own only their repository-specific leaves.

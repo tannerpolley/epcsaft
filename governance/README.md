@@ -1,16 +1,25 @@
-# ePC-SAFT Management
+# ePC-SAFT Governance
 
-Repository role: `management_control_plane`
+Repository role: `governance_control_plane`
 
-GitHub home: `ePC-SAFT/ePC-SAFT-management`
+GitHub home: `ePC-SAFT/ePC-SAFT-governance`
 
-Status: canonical ecosystem doctrine and management home.
+Local checkout: `ePC-SAFT-governance`.
 
-Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 6 and
+Status: canonical ecosystem doctrine and governance home.
+
+Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 8 and
 [manifests/management.json](manifests/management.json) for the repository and
 access topology.
 
-Management owns:
+D-023 approves a direct cutover from the separate EOS, Equilibrium, and
+Regression repositories and wheels to one `ePC-SAFT-engine` repository and one
+`epcsaft` wheel. Read
+[the canonical cutover plan](docs/plans/2026-08-04-unified-engine-direct-cutover.md)
+and [the transition manifest](manifests/runtime-consolidation.json) before
+runtime, artifact, Validation, or downstream-consumer work.
+
+Governance owns:
 
 - permanent ecosystem doctrine;
 - repository roles and naming;
@@ -18,6 +27,10 @@ Management owns:
 - coordinated project and external-operation sequencing;
 - artifact, environment, scientific-packet ownership, and retained-draft ledgers; and
 - reusable synchronization and preflight policy.
+
+The non-Git parent project hosts the Management coordination task. It may
+sequence work against these records but is not a repository or authority
+source.
 
 Artifact layout and admission rules are documented in
 [docs/artifact-store.md](docs/artifact-store.md). Cross-repository consumers
@@ -29,8 +42,8 @@ Scientific-packet storage, runtime-copy, evidence, and pending disposition
 ownership are tracked in
 [manifests/parameter-ownership.json](manifests/parameter-ownership.json).
 Immutable Data packet commits and fingerprints are tracked in
-[manifests/data-packet-locks.json](manifests/data-packet-locks.json); package
-repositories add their own materialization locks when their owning tasks are
+[manifests/data-packet-locks.json](manifests/data-packet-locks.json); Engine and
+Validation add their own materialization locks when their owning tasks are
 ready.
 
 It owns no package runtime, scientific solver, regression target, Validation

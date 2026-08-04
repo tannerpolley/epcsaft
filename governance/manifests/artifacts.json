@@ -37,6 +37,6 @@
       "version": "0.2.0.dev0"
     }
   ],
-  "policy": "ePC-SAFT/ePC-SAFT-management:manifests/artifact-store-policy.json",
+  "policy": "ePC-SAFT/ePC-SAFT-governance:manifests/artifact-store-policy.json",
   "schema_version": 2
 }

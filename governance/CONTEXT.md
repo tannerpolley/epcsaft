@@ -1,22 +1,42 @@
-# Management Control-Plane Context
+# ePC-SAFT Governance Repository Context
 
-`GOVERNANCE.md` revision 6 is the canonical ecosystem doctrine.
+`GOVERNANCE.md` revision 8 is the canonical ecosystem doctrine.
 
 `governance_source_of_truth: true`
 
-`management_source_of_truth: true`
+`management_source_of_truth: false`
+
+`coordination_project: management`
+
+The non-Git `ePC-SAFT-project` parent hosts the Management coordination task.
+Governance is the durable Git-tracked authority repository; Management is not
+a second repository or source of truth.
 
 `runtime_source_of_truth: false`
 
-GitHub home: `ePC-SAFT/ePC-SAFT-management`.
+GitHub home: `ePC-SAFT/ePC-SAFT-governance`.
+
+Local checkout: `ePC-SAFT-governance`.
 
 The public `ePC-SAFT/.github` repository is a thin organization profile and
-community-default surface. It links to Management but owns no independent
+community-default surface. It links to Governance but owns no independent
 doctrine, project state, or execution plan.
 
-Management owns current repository topology, worktree access, exact-subject
-coordination, artifact and environment inventories, scientific-packet
-ownership policy, draft disposition, and external-operation receipts.
+Governance owns current repository topology, worktree access, artifact and
+environment inventories, scientific-packet ownership policy, draft disposition,
+and external-operation receipts. The Management coordination task handles
+exact-subject sequencing within those records.
+
+D-023 approves a direct cutover to `ePC-SAFT/ePC-SAFT-engine` as the sole
+runtime repository and `epcsaft` as the sole runtime distribution. EOS,
+Equilibrium, and Regression become internal Engine modules under
+`epcsaft`, `epcsaft.equilibrium`, and `epcsaft.regression`. The current three
+runtime repositories remain transition sources until one accepted cutover
+receipt changes authority and retires the separate distributions.
+
+`manifests/runtime-consolidation.json` records the approved target, transition
+freeze, consumer inventory, and execution gates. The canonical execution plan
+is `docs/plans/2026-08-04-unified-engine-direct-cutover.md`.
 
 `manifests/parameter-ownership.json` is the machine-readable parameter
 disposition map. It separates canonical Data storage, admitted EOS runtime
@@ -25,8 +45,8 @@ owning repository tasks execute them.
 
 `manifests/data-packet-locks.json` pins each reusable bundle to the merged
 Data commit, packet path, version, and canonical packet fingerprint. It is a
-control-plane lock, not a runtime dependency; EOS, Validation, and Regression
-add their own materialization records when their owning tasks are ready.
+control-plane lock, not a runtime dependency; Engine and Validation add their
+own materialization records when their owning tasks are ready.
 
 `ePC-SAFT/ePC-SAFT-data` is the canonical store for reusable scientific packets.
 It is neither a runtime dependency nor the artifact store. Consumers pin an
@@ -41,6 +61,7 @@ provenance home. The adjacent local `ePC-SAFT-legacy` container and archived
 `tannerpolley/ePC-SAFT-legacy-monorepo` preserve historical code and tracker
 state outside the active authority topology.
 
-Repository identity and Python identity are independent. The EOS GitHub
-repository is `ePC-SAFT/ePC-SAFT-eos`; its distribution and import remain
-`epcsaft`.
+Repository identity and Python identity are independent. The cutover renames
+the EOS repository to `ePC-SAFT/ePC-SAFT-engine`; the distribution remains
+`epcsaft`. The separate Equilibrium and Regression distributions and import
+names receive no compatibility aliases.

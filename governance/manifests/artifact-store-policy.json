@@ -39,6 +39,14 @@
     "alias_count": 107,
     "object_count": 106
   },
+  "approved_transition": {
+    "decision": "D-023",
+    "manifest": "manifests/runtime-consolidation.json",
+    "status": "not_executed",
+    "target_active_distributions": [
+      "epcsaft"
+    ]
+  },
   "rules": {
     "mutable_repository_dist_wheels": "forbidden",
     "cross_repository_install": "object-path-and-sha256-only",
