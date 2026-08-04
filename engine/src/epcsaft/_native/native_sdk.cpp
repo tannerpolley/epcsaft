@@ -309,11 +309,15 @@ std::vector<std::string> make_fixed_topology_parameter_ids(
     if (!fixed_topology_site_ids_valid(model, site_ids)) {
         return {};
     }
-    std::vector<std::string> result{
-        "component:" + component_ids[0] + "/segment_count",
-        "component:" + component_ids[0] + "/segment_diameter",
-        "component:" + component_ids[0] + "/dispersion_energy_over_k",
-    };
+    std::vector<std::string> result;
+    result.reserve(3 * component_ids.size());
+    for (const auto& component_id : component_ids) {
+        result.push_back("component:" + component_id + "/segment_count");
+        result.push_back("component:" + component_id + "/segment_diameter");
+        result.push_back(
+            "component:" + component_id + "/dispersion_energy_over_k"
+        );
+    }
     const auto& site_components = model.site_components();
     for (const auto& [left, right] : fixed_topology_association_pairs(model)) {
         const std::string endpoints =
@@ -339,12 +343,16 @@ make_fixed_topology_parameter_slots(
     }
     std::vector<epcsaft_fixed_topology_parameter_slot_v1> result;
     result.reserve(parameter_ids.size());
-    const auto add_component = [&](uint32_t family, const char* unit) {
+    const auto add_component = [&result, &parameter_ids](
+                                   uint32_t family,
+                                   std::size_t component,
+                                   const char* unit
+                               ) {
         const std::size_t index = result.size();
         result.push_back({
             sizeof(epcsaft_fixed_topology_parameter_slot_v1),
             family,
-            0,
+            static_cast<int32_t>(component),
             -1,
             -1,
             -1,
@@ -355,18 +363,25 @@ make_fixed_topology_parameter_slots(
             std::numeric_limits<double>::infinity(),
         });
     };
-    add_component(
-        EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_COUNT_V1,
-        "dimensionless"
-    );
-    add_component(
-        EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1,
-        "angstrom"
-    );
-    add_component(
-        EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1,
-        "kelvin"
-    );
+    for (std::size_t component = 0;
+         component < model.component_count();
+         ++component) {
+        add_component(
+            EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_COUNT_V1,
+            component,
+            "dimensionless"
+        );
+        add_component(
+            EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1,
+            component,
+            "angstrom"
+        );
+        add_component(
+            EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1,
+            component,
+            "kelvin"
+        );
+    }
     const auto& site_components = model.site_components();
     for (const auto& [left, right] : fixed_topology_association_pairs(model)) {
         const auto add_association = [&](uint32_t family, const char* unit) {
@@ -1084,7 +1099,9 @@ struct NativeSdkEndpoint final {
               value.observation_contract =
                   EPCSAFT_NATIVE_OBSERVATION_FIXED_COMPOSITION_HELMHOLTZ_PHASE_V1;
               value.model_domain =
-                  EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_PURE_V1;
+                  component_ids.size() == 1
+                  ? EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_PURE_V1
+                  : EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_MIXTURE_V1;
               value.tensor_layout =
                   EPCSAFT_NATIVE_TENSOR_LAYOUT_ROW_MAJOR_V1;
               value.derivative_order = 2;
@@ -1095,7 +1112,7 @@ struct NativeSdkEndpoint final {
               value.unsupported_status =
                   EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1;
               value.domain_status = EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1;
-              value.state_coordinate_count = 2;
+              value.state_coordinate_count = component_ids.size() + 1;
               value.slot_count = fixed_topology_parameter_slots.size();
               value.slots = fixed_topology_parameter_slots.data();
               value.component_count = component_ids.size();
@@ -1197,16 +1214,36 @@ struct NativeSdkEndpoint final {
               sizeof(epcsaft_inverse_packing_geometry_result_v1),
               &NativeSdkEndpoint::evaluate_inverse_packing_geometry,
               nullptr,
-              sizeof(epcsaft_fixed_topology_phase_result_v1),
+              fixed_topology_association.struct_size != 0
+                      && component_ids.size() != 1
+                  ? 0u
+                  : sizeof(epcsaft_fixed_topology_phase_result_v1),
               fixed_topology_association.struct_size == 0
                   ? nullptr
                   : &fixed_topology_association,
-              &NativeSdkEndpoint::evaluate_fixed_topology_association,
+              fixed_topology_association.struct_size != 0
+                      && component_ids.size() != 1
+                  ? nullptr
+                  : &NativeSdkEndpoint::evaluate_fixed_topology_association,
               source_reference_transfer_admitted
                   ? sizeof(epcsaft_source_reference_transfer_result_v1)
                   : 0u,
               source_reference_transfer_admitted
                   ? &NativeSdkEndpoint::evaluate_source_reference_transfer
+                  : nullptr,
+              fixed_topology_association.struct_size != 0
+                      && model
+                          .supports_fixed_topology_associating_mixture_native_sdk_v1()
+                      && sha256_fingerprint_valid(component_order_fingerprint)
+                      && sha256_fingerprint_valid(domain_fingerprint)
+                  ? sizeof(epcsaft_fixed_topology_mixture_phase_result_v1)
+                  : 0u,
+              fixed_topology_association.struct_size != 0
+                      && model
+                          .supports_fixed_topology_associating_mixture_native_sdk_v1()
+                      && sha256_fingerprint_valid(component_order_fingerprint)
+                      && sha256_fingerprint_valid(domain_fingerprint)
+                  ? &NativeSdkEndpoint::evaluate_fixed_topology_associating_mixture
                   : nullptr,
           } {}
 
@@ -4231,6 +4268,102 @@ struct NativeSdkEndpoint final {
     }
 
     // EqExclude: transport and buffer mechanics
+    static std::vector<NativeFixedTopologyParameter>
+    fixed_topology_active_parameters(
+        const NativeSdkEndpoint& endpoint,
+        const epcsaft_fixed_topology_parameter_request_v1* requests,
+        std::size_t request_count,
+        bool require_advertised_order
+    ) {
+        std::vector<NativeFixedTopologyParameter> result;
+        result.reserve(request_count);
+        std::size_t previous_slot_index = 0;
+        bool has_previous_slot = false;
+        for (std::size_t index = 0; index < request_count; ++index) {
+            const auto& request = requests[index];
+            if (request.struct_size
+                    != sizeof(epcsaft_fixed_topology_parameter_request_v1)
+                || request.unit == nullptr
+                || !std::isfinite(request.value)) {
+                throw std::invalid_argument(
+                    "fixed-topology active parameter request is malformed"
+                );
+            }
+            if (request.value <= 0.0) {
+                throw std::domain_error(
+                    "fixed-topology active parameter value is outside its "
+                    "advertised physical domain"
+                );
+            }
+            const auto slot = std::find_if(
+                endpoint.fixed_topology_parameter_slots.begin(),
+                endpoint.fixed_topology_parameter_slots.end(),
+                [&](const auto& candidate) {
+                    return candidate.parameter_family == request.parameter_family
+                        && candidate.component_index == request.component_index
+                        && candidate.site_index_a == request.site_index_a
+                        && candidate.site_index_b == request.site_index_b
+                        && std::strcmp(candidate.unit, request.unit) == 0;
+                }
+            );
+            if (slot == endpoint.fixed_topology_parameter_slots.end()) {
+                throw std::invalid_argument(
+                    "active parameter is not advertised by the fixed topology"
+                );
+            }
+            const auto slot_index = static_cast<std::size_t>(std::distance(
+                endpoint.fixed_topology_parameter_slots.begin(), slot
+            ));
+            if (require_advertised_order && has_previous_slot
+                && slot_index <= previous_slot_index) {
+                throw std::invalid_argument(
+                    "active parameters must follow advertised slot order"
+                );
+            }
+            previous_slot_index = slot_index;
+            has_previous_slot = true;
+            NativeFixedTopologyParameterKind kind;
+            switch (request.parameter_family) {
+                case EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_COUNT_V1:
+                    kind = NativeFixedTopologyParameterKind::SegmentCount;
+                    break;
+                case EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1:
+                    kind = NativeFixedTopologyParameterKind::SegmentDiameter;
+                    break;
+                case EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1:
+                    kind =
+                        NativeFixedTopologyParameterKind::DispersionEnergyOverK;
+                    break;
+                case EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_ENERGY_OVER_K_V1:
+                    kind =
+                        NativeFixedTopologyParameterKind::AssociationEnergyOverK;
+                    break;
+                case EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_VOLUME_V1:
+                    kind = NativeFixedTopologyParameterKind::AssociationVolume;
+                    break;
+                default:
+                    throw std::logic_error(
+                        "advertised fixed-topology family is unsupported"
+                    );
+            }
+            result.push_back({
+                kind,
+                request.component_index < 0
+                    ? 0u
+                    : static_cast<std::size_t>(request.component_index),
+                request.site_index_a < 0
+                    ? 0u
+                    : static_cast<std::size_t>(request.site_index_a),
+                request.site_index_b < 0
+                    ? 0u
+                    : static_cast<std::size_t>(request.site_index_b),
+                request.value,
+            });
+        }
+        return result;
+    }
+
+    // EqExclude: transport and buffer mechanics
     static int evaluate_fixed_topology_association(
         const void* context,
         const char* expected_parameter_fingerprint,
@@ -4336,92 +4469,9 @@ struct NativeSdkEndpoint final {
         }
 
         try {
-            std::vector<NativeFixedTopologyParameter> active_parameters;
-            active_parameters.reserve(request_count);
-            std::size_t previous_slot_index = 0;
-            bool has_previous_slot = false;
-            for (std::size_t index = 0; index < request_count; ++index) {
-                const auto& request = requests[index];
-                if (request.struct_size
-                        != sizeof(epcsaft_fixed_topology_parameter_request_v1)
-                    || request.unit == nullptr
-                    || !std::isfinite(request.value)) {
-                    throw std::invalid_argument(
-                        "fixed-topology active parameter request is malformed"
-                    );
-                }
-                if (request.value <= 0.0) {
-                    return fail(
-                        EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
-                        "fixed-topology active parameter value is outside its "
-                        "advertised physical domain"
-                    );
-                }
-                const auto slot = std::find_if(
-                    endpoint.fixed_topology_parameter_slots.begin(),
-                    endpoint.fixed_topology_parameter_slots.end(),
-                    [&](const auto& candidate) {
-                        return candidate.parameter_family
-                                == request.parameter_family
-                            && candidate.component_index
-                                == request.component_index
-                            && candidate.site_index_a == request.site_index_a
-                            && candidate.site_index_b == request.site_index_b
-                            && std::strcmp(candidate.unit, request.unit) == 0;
-                    }
-                );
-                if (slot == endpoint.fixed_topology_parameter_slots.end()) {
-                    throw std::invalid_argument(
-                        "active parameter is not advertised by the fixed topology"
-                    );
-                }
-                const auto slot_index = static_cast<std::size_t>(std::distance(
-                    endpoint.fixed_topology_parameter_slots.begin(), slot
-                ));
-                if (has_previous_slot
-                    && slot_index <= previous_slot_index) {
-                    throw std::invalid_argument(
-                        "active parameters must follow advertised slot order"
-                    );
-                }
-                previous_slot_index = slot_index;
-                has_previous_slot = true;
-                NativeFixedTopologyParameterKind kind;
-                switch (request.parameter_family) {
-                    case EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_COUNT_V1:
-                        kind = NativeFixedTopologyParameterKind::SegmentCount;
-                        break;
-                    case EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER_V1:
-                        kind = NativeFixedTopologyParameterKind::SegmentDiameter;
-                        break;
-                    case EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K_V1:
-                        kind =
-                            NativeFixedTopologyParameterKind::DispersionEnergyOverK;
-                        break;
-                    case EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_ENERGY_OVER_K_V1:
-                        kind =
-                            NativeFixedTopologyParameterKind::AssociationEnergyOverK;
-                        break;
-                    case EPCSAFT_NATIVE_PARAMETER_FAMILY_ASSOCIATION_VOLUME_V1:
-                        kind =
-                            NativeFixedTopologyParameterKind::AssociationVolume;
-                        break;
-                    default:
-                        throw std::logic_error(
-                            "advertised fixed-topology family is unsupported"
-                        );
-                }
-                active_parameters.push_back({
-                    kind,
-                    request.site_index_a < 0
-                        ? 0u
-                        : static_cast<std::size_t>(request.site_index_a),
-                    request.site_index_b < 0
-                        ? 0u
-                        : static_cast<std::size_t>(request.site_index_b),
-                    request.value,
-                });
-            }
+            const auto active_parameters = fixed_topology_active_parameters(
+                endpoint, requests, request_count, true
+            );
             const auto block = endpoint.model.evaluate_fixed_topology_association(
                 temperature_k,
                 amount_mol,
@@ -4486,6 +4536,8 @@ struct NativeSdkEndpoint final {
             return result->status;
         } catch (const detail::PolarDomainError& error) {
             return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::domain_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
         } catch (const std::invalid_argument& error) {
             return fail(EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1, error.what());
         } catch (const std::logic_error& error) {
@@ -4496,6 +4548,238 @@ struct NativeSdkEndpoint final {
             return fail(
                 EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
                 "unknown fixed-topology association evaluation failure"
+            );
+        }
+    }
+
+    // EqExclude: transport and buffer mechanics
+    static int evaluate_fixed_topology_associating_mixture(
+        const void* context,
+        const char* expected_parameter_fingerprint,
+        const char* expected_topology_fingerprint,
+        const char* expected_artifact_fingerprint,
+        const char* const* expected_component_ids,
+        size_t component_count,
+        double temperature_k,
+        const double* amounts_mol,
+        size_t amount_count,
+        double volume_m3,
+        const epcsaft_fixed_topology_parameter_request_v1* requests,
+        size_t request_count,
+        epcsaft_fixed_topology_mixture_phase_result_v1* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        }
+        if (result->struct_size
+            != sizeof(epcsaft_fixed_topology_mixture_phase_result_v1)) {
+            return EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1;
+        }
+        result->status = EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+        result->error[0] = '\0';
+        result->parameter_fingerprint[0] = '\0';
+        result->topology_fingerprint[0] = '\0';
+        result->component_order_fingerprint[0] = '\0';
+        result->domain_fingerprint[0] = '\0';
+        result->artifact_fingerprint[0] = '\0';
+        result->helmholtz_basis_id[0] = '\0';
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || expected_parameter_fingerprint == nullptr
+            || expected_topology_fingerprint == nullptr
+            || expected_artifact_fingerprint == nullptr
+            || expected_component_ids == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "model context and expected fingerprints are required"
+            );
+        }
+        const auto& endpoint = *static_cast<const NativeSdkEndpoint*>(context);
+        if (endpoint.fixed_topology_association.struct_size == 0
+            || !endpoint.model
+                    .supports_fixed_topology_associating_mixture_native_sdk_v1()) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "model does not advertise a fixed-topology associating mixture"
+            );
+        }
+        if (std::strcmp(
+                expected_parameter_fingerprint,
+                endpoint.parameter_fingerprint.c_str()
+            ) != 0
+            || std::strcmp(
+                expected_topology_fingerprint,
+                endpoint.topology_fingerprint.c_str()
+            ) != 0
+            || std::strcmp(
+                expected_artifact_fingerprint,
+                endpoint.artifact_fingerprint.c_str()
+            ) != 0) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1,
+                "fixed-topology association fingerprint mismatch"
+            );
+        }
+        if (component_count != endpoint.component_ids.size()) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "component identities do not match the installed model order"
+            );
+        }
+        for (std::size_t index = 0; index < component_count; ++index) {
+            if (expected_component_ids[index] == nullptr
+                || std::strcmp(
+                    expected_component_ids[index],
+                    endpoint.component_ids[index].c_str()
+                ) != 0) {
+                return fail(
+                    EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                    "component identities do not match the installed model order"
+                );
+            }
+        }
+        if (request_count == 0 || requests == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "a nonempty active parameter request is required"
+            );
+        }
+        if (request_count > endpoint.fixed_topology_parameter_slots.size()) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "active parameter request exceeds the advertised slot count"
+            );
+        }
+        const std::size_t coordinate_count =
+            amount_count + 1 + request_count;
+        if (result->coordinate_count != coordinate_count
+            || result->active_parameter_count != request_count
+            || result->gradient_capacity != coordinate_count
+            || result->hessian_capacity != coordinate_count * coordinate_count
+            || result->gradient == nullptr || result->hessian == nullptr) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_ABI_MISMATCH_V1,
+                "fixed-topology mixture result dimensions or buffers do not match"
+            );
+        }
+        if (amounts_mol == nullptr
+            || amount_count != endpoint.component_ids.size()
+            || !std::isfinite(temperature_k) || temperature_k <= 0.0
+            || !std::isfinite(volume_m3) || volume_m3 <= 0.0
+            || !std::all_of(
+                amounts_mol,
+                amounts_mol + amount_count,
+                [](double amount) {
+                    return std::isfinite(amount) && amount > 0.0;
+                }
+            )) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1,
+                "fixed-topology mixture state must match the positive ordered "
+                "component amounts"
+            );
+        }
+        if ((std::isfinite(endpoint.temperature_min_k)
+             && temperature_k < endpoint.temperature_min_k)
+            || (std::isfinite(endpoint.temperature_max_k)
+                && temperature_k > endpoint.temperature_max_k)) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1,
+                "temperature is outside the parameter source domain"
+            );
+        }
+
+        try {
+            const auto active_parameters = fixed_topology_active_parameters(
+                endpoint, requests, request_count, false
+            );
+            const auto block =
+                endpoint.model.evaluate_fixed_topology_associating_mixture(
+                    temperature_k,
+                    std::vector<double>(
+                        amounts_mol, amounts_mol + amount_count
+                    ),
+                    volume_m3,
+                    active_parameters
+                );
+            if (block.gradient.size() != coordinate_count
+                || block.hessian.size() != coordinate_count * coordinate_count
+                || !std::isfinite(block.helmholtz_over_rt_reference_amount)
+                || !std::isfinite(block.pressure_pa)
+                || !std::all_of(
+                    block.gradient.begin(), block.gradient.end(),
+                    [](double value) { return std::isfinite(value); }
+                )
+                || !std::all_of(
+                    block.hessian.begin(), block.hessian.end(),
+                    [](double value) { return std::isfinite(value); }
+                )) {
+                throw std::runtime_error(
+                    "fixed-topology mixture phase result is incomplete or nonfinite"
+                );
+            }
+            std::copy(
+                block.gradient.begin(), block.gradient.end(), result->gradient
+            );
+            std::copy(
+                block.hessian.begin(), block.hessian.end(), result->hessian
+            );
+            result->helmholtz_over_rt_reference_amount =
+                block.helmholtz_over_rt_reference_amount;
+            result->pressure_pa = block.pressure_pa;
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s",
+                endpoint.parameter_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->topology_fingerprint,
+                sizeof(result->topology_fingerprint),
+                "%s",
+                endpoint.topology_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->component_order_fingerprint,
+                sizeof(result->component_order_fingerprint),
+                "%s",
+                endpoint.component_order_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->domain_fingerprint,
+                sizeof(result->domain_fingerprint),
+                "%s",
+                endpoint.domain_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->artifact_fingerprint,
+                sizeof(result->artifact_fingerprint),
+                "%s",
+                endpoint.artifact_fingerprint.c_str()
+            );
+            std::snprintf(
+                result->helmholtz_basis_id,
+                sizeof(result->helmholtz_basis_id),
+                "%s",
+                EPCSAFT_NATIVE_SDK_V1_HELMHOLTZ_BASIS_ID
+            );
+            result->status = EPCSAFT_NATIVE_STATUS_OK_V1;
+            return result->status;
+        } catch (const std::domain_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR_V1, error.what());
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL_V1, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1, error.what());
+        } catch (...) {
+            return fail(
+                EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR_V1,
+                "unknown fixed-topology associating-mixture evaluation failure"
             );
         }
     }

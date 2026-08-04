@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <numeric>
 #include <stdexcept>
 #include <vector>
 
@@ -42,6 +43,7 @@ enum class NativeFixedTopologyParameterKind {
 
 struct NativeFixedTopologyParameter final {
     NativeFixedTopologyParameterKind kind;
+    std::size_t component;
     std::size_t site_a;
     std::size_t site_b;
     double value;
@@ -85,13 +87,18 @@ inline bool supports_pure_phase_block(const NativeParameters& parameters) {
 }
 
 // EqExclude: input and domain validation
-inline bool supports_fixed_topology_associating_pure_phase_block(
+inline bool supports_fixed_topology_associating_phase_block(
     const NativeParameters& parameters
 ) {
+    const std::size_t components = parameters.segment_count.size();
     const std::size_t sites = parameters.site_component.size();
-    if (!(parameters.segment_count.size() == 1
-        && parameters.charge_number.size() == 1
-        && parameters.charge_number[0] == 0
+    if (!(components > 0
+        && parameters.charge_number.size() == components
+        && std::all_of(
+            parameters.charge_number.begin(),
+            parameters.charge_number.end(),
+            [](int charge) { return charge == 0; }
+        )
         && sites > 0
         && parameters.site_multiplicity.size() == sites
         && parameters.association_active.size() == sites * sites
@@ -100,7 +107,10 @@ inline bool supports_fixed_topology_associating_pure_phase_block(
         && std::all_of(
             parameters.site_component.begin(),
             parameters.site_component.end(),
-            [](int component) { return component == 0; }
+            [components](int component) {
+                return component >= 0
+                    && static_cast<std::size_t>(component) < components;
+            }
         )
         && std::all_of(
             parameters.site_multiplicity.begin(),
@@ -129,6 +139,22 @@ inline bool supports_fixed_topology_associating_pure_phase_block(
         }
     }
     return true;
+}
+
+// EqExclude: input and domain validation
+inline bool supports_fixed_topology_associating_pure_phase_block(
+    const NativeParameters& parameters
+) {
+    return parameters.segment_count.size() == 1
+        && supports_fixed_topology_associating_phase_block(parameters);
+}
+
+// EqExclude: input and domain validation
+inline bool supports_fixed_topology_associating_mixture_phase_block(
+    const NativeParameters& parameters
+) {
+    return parameters.segment_count.size() >= 2
+        && supports_fixed_topology_associating_phase_block(parameters);
 }
 
 // EqExclude: input and domain validation
@@ -1336,28 +1362,29 @@ inline NativeParameterizedPurePhaseBlock parameterized_pure_phase_block(
 // EqID: phase_pressure
 // EqID: association_mass_action
 // EqExclude: CppAD-generated derivative machinery
-inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_block(
+inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
     double temperature,
-    double amount,
+    const std::vector<double>& amounts,
     double volume,
     const std::vector<NativeFixedTopologyParameter>& active_parameters,
     const NativeParameters& base_parameters
 ) {
-    if (!supports_fixed_topology_associating_pure_phase_block(base_parameters)
+    if (!supports_fixed_topology_associating_phase_block(base_parameters)
         || !base_parameters.sigma_term_component.empty()) {
         throw std::logic_error(
-            "fixed-topology association parameters require one neutral pure "
+            "fixed-topology association parameters require a neutral "
             "constant-diameter associating model"
         );
     }
-    if (!std::isfinite(temperature) || temperature <= 0.0
-        || !std::isfinite(amount) || amount <= 0.0
-        || !std::isfinite(volume) || volume <= 0.0
-        || active_parameters.empty()) {
+    validate_mixture_phase_state(
+        temperature, amounts, volume, base_parameters
+    );
+    if (active_parameters.empty()) {
         throw std::invalid_argument(
-            "fixed-topology phase state and active block must be positive and finite"
+            "fixed-topology active parameter block must be nonempty"
         );
     }
+    const std::size_t components = base_parameters.segment_count.size();
     const std::size_t sites = base_parameters.site_component.size();
     NativeParameters value_parameters = base_parameters;
     std::vector<std::pair<NativeFixedTopologyParameterKind, std::size_t>>
@@ -1372,13 +1399,34 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
         std::size_t identity = 0;
         switch (parameter.kind) {
             case NativeFixedTopologyParameterKind::SegmentCount:
-                value_parameters.segment_count[0] = parameter.value;
+                if (parameter.component >= components) {
+                    throw std::invalid_argument(
+                        "component parameter index is outside the fixed topology"
+                    );
+                }
+                identity = parameter.component;
+                value_parameters.segment_count[parameter.component] =
+                    parameter.value;
                 break;
             case NativeFixedTopologyParameterKind::SegmentDiameter:
-                value_parameters.sigma_constant[0] = parameter.value;
+                if (parameter.component >= components) {
+                    throw std::invalid_argument(
+                        "component parameter index is outside the fixed topology"
+                    );
+                }
+                identity = parameter.component;
+                value_parameters.sigma_constant[parameter.component] =
+                    parameter.value;
                 break;
             case NativeFixedTopologyParameterKind::DispersionEnergyOverK:
-                value_parameters.dispersion_energy_over_k[0] = parameter.value;
+                if (parameter.component >= components) {
+                    throw std::invalid_argument(
+                        "component parameter index is outside the fixed topology"
+                    );
+                }
+                identity = parameter.component;
+                value_parameters.dispersion_energy_over_k[parameter.component] =
+                    parameter.value;
                 break;
             case NativeFixedTopologyParameterKind::AssociationEnergyOverK:
             case NativeFixedTopologyParameterKind::AssociationVolume: {
@@ -1419,8 +1467,14 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
         identities.push_back(key);
     }
 
-    const double density = amount / volume;
-    const std::vector<double> composition{1.0};
+    const double total_amount =
+        std::accumulate(amounts.begin(), amounts.end(), 0.0);
+    const double density = total_amount / volume;
+    std::vector<double> composition;
+    composition.reserve(components);
+    for (const double amount : amounts) {
+        composition.push_back(amount / total_amount);
+    }
     const auto value_sigma = segment_sigma(temperature, value_parameters);
     const auto value_diameter = segment_diameter(
         temperature, value_parameters, value_sigma
@@ -1436,13 +1490,17 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
 
     CppAdSerialGuard cppad_guard;
     using ADScalar = CppAD::AD<double>;
-    const std::size_t coordinates = 2 + active_parameters.size();
+    const std::size_t volume_coordinate = components;
+    const std::size_t parameter_coordinate = volume_coordinate + 1;
+    const std::size_t coordinates =
+        parameter_coordinate + active_parameters.size();
     const std::size_t width = coordinates + sites;
     std::vector<ADScalar> independent(width);
-    independent[0] = amount;
-    independent[1] = volume;
+    std::copy(amounts.begin(), amounts.end(), independent.begin());
+    independent[volume_coordinate] = volume;
     for (std::size_t index = 0; index < active_parameters.size(); ++index) {
-        independent[2 + index] = active_parameters[index].value;
+        independent[parameter_coordinate + index] =
+            active_parameters[index].value;
     }
     for (std::size_t site = 0; site < sites; ++site) {
         independent[coordinates + site] = site_fractions[site];
@@ -1479,16 +1537,16 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
     );
     for (std::size_t index = 0; index < active_parameters.size(); ++index) {
         const auto& parameter = active_parameters[index];
-        const ADScalar& active = independent[2 + index];
+        const ADScalar& active = independent[parameter_coordinate + index];
         switch (parameter.kind) {
             case NativeFixedTopologyParameterKind::SegmentCount:
-                parameters.segment_count[0] = active;
+                parameters.segment_count[parameter.component] = active;
                 break;
             case NativeFixedTopologyParameterKind::SegmentDiameter:
-                parameters.sigma_constant[0] = active;
+                parameters.sigma_constant[parameter.component] = active;
                 break;
             case NativeFixedTopologyParameterKind::DispersionEnergyOverK:
-                parameters.dispersion_energy_over_k[0] = active;
+                parameters.dispersion_energy_over_k[parameter.component] = active;
                 break;
             case NativeFixedTopologyParameterKind::AssociationEnergyOverK:
             case NativeFixedTopologyParameterKind::AssociationVolume: {
@@ -1508,8 +1566,20 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
         }
     }
 
-    const ADScalar active_density = independent[0] / independent[1];
-    const std::vector<ADScalar> active_composition{ADScalar(1.0)};
+    std::vector<ADScalar> active_amounts(
+        independent.begin(), independent.begin() + volume_coordinate
+    );
+    ADScalar active_total = ADScalar(0.0);
+    for (const ADScalar& amount : active_amounts) {
+        active_total += amount;
+    }
+    const ADScalar active_density =
+        active_total / independent[volume_coordinate];
+    std::vector<ADScalar> active_composition;
+    active_composition.reserve(components);
+    for (const ADScalar& amount : active_amounts) {
+        active_composition.push_back(amount / active_total);
+    }
     const std::vector<ADScalar> active_site_fractions(
         independent.begin() + static_cast<std::ptrdiff_t>(coordinates),
         independent.end()
@@ -1529,9 +1599,15 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
         ADScalar(0.0),
         ADScalar(0.0)
     );
-    const ADScalar phase = independent[0] * (
-        CppAD::log(active_density) - ADScalar(1.0)
-        + contributions.hard_chain
+    ADScalar ideal = ADScalar(0.0);
+    for (const ADScalar& amount : active_amounts) {
+        ideal += amount * (
+            scalar_log(amount / independent[volume_coordinate])
+            - ADScalar(1.0)
+        );
+    }
+    const ADScalar phase = ideal + active_total * (
+        contributions.hard_chain
         + contributions.dispersion
         + contributions.association
         + contributions.polar
@@ -1557,7 +1633,8 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
     dependent.insert(dependent.end(), mass_action.begin(), mass_action.end());
     CppAD::ADFun<double> function(independent, dependent);
 
-    std::vector<double> point{amount, volume};
+    std::vector<double> point(amounts.begin(), amounts.end());
+    point.push_back(volume);
     for (const auto& parameter : active_parameters) {
         point.push_back(parameter.value);
     }
@@ -1645,8 +1722,37 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
         value,
         gradient,
         hessian,
-        -GAS_CONSTANT * temperature * gradient[1],
-        gradient[0],
+        -GAS_CONSTANT * temperature * gradient[volume_coordinate],
+    };
+}
+
+// EqExclude: transport and buffer mechanics
+inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_block(
+    double temperature,
+    double amount,
+    double volume,
+    const std::vector<NativeFixedTopologyParameter>& active_parameters,
+    const NativeParameters& base_parameters
+) {
+    if (!supports_fixed_topology_associating_pure_phase_block(base_parameters)) {
+        throw std::logic_error(
+            "fixed-topology pure association parameters require one neutral "
+            "associating component"
+        );
+    }
+    const auto block = fixed_topology_parameterized_mixture_phase_block(
+        temperature,
+        {amount},
+        volume,
+        active_parameters,
+        base_parameters
+    );
+    return {
+        block.helmholtz_over_rt_reference_amount,
+        block.gradient,
+        block.hessian,
+        block.pressure_pa,
+        block.gradient[0],
     };
 }
 

@@ -221,6 +221,7 @@ public:
     bool supports_native_sdk_v1() const;
     bool supports_parameterized_pure_native_sdk_v1() const;
     bool supports_fixed_topology_association_native_sdk_v1() const;
+    bool supports_fixed_topology_associating_mixture_native_sdk_v1() const;
     bool supports_mixture_native_sdk_v1() const;
     bool supports_electrolyte_native_sdk_v1() const;
     std::size_t component_count() const;
@@ -248,6 +249,12 @@ public:
     NativeFixedTopologyPhaseBlock evaluate_fixed_topology_association(
         double temperature,
         double amount,
+        double volume,
+        const std::vector<NativeFixedTopologyParameter>& active_parameters
+    ) const;
+    NativeMixturePhaseBlock evaluate_fixed_topology_associating_mixture(
+        double temperature,
+        const std::vector<double>& amounts,
         double volume,
         const std::vector<NativeFixedTopologyParameter>& active_parameters
     ) const;

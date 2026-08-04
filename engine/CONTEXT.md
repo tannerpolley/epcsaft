@@ -112,24 +112,21 @@ the accepted joint `(m,sigma,epsilon/k)` workflow. None is authoritative
 until a separate promotion receipt is accepted, and neither adds phase,
 density, equilibrium, or regression ownership.
 The append-only fixed-topology association candidate exposes the ordinary
-`sigma_ij^3 kappa` mechanics without adding topology selection. Its model-
+`sigma_ij^3 kappa` mechanics for neutral constant-diameter pure and mixture
+models without adding topology selection. Its model-
 bound descriptor publishes component and site identities, positive site
 multiplicities, allowed continuous slots, parameter/topology/artifact
 fingerprints, temperature domain, basis, derivative order, and tensor layout.
 A caller may activate any nonempty ordered subset of the advertised `m`,
 `sigma`, `epsilon/k`, site-pair association-energy, and site-pair
-association-volume slots. The callback returns exact value, gradient, and
-complete row-major Hessian coordinates in `(n,V,requested slots...)` with
-exact caller-owned capacities. Unknown, duplicate, malformed, nonfinite,
+association-volume slots. The pure callback returns exact coordinates in
+`(n,V,requested slots...)`; the mixture callback returns
+`(n_1,...,n_C,V,requested slots...)`. Both provide the value, pressure,
+gradient, and complete row-major Hessian with exact caller-owned capacities.
+Unknown, duplicate, malformed, nonfinite,
 nonpositive, or fingerprint-mismatched requests fail closed. It adds no scalar
-association callback, 2B-specific path, fitted values, topology inference,
+association callback, species-specific path, fitted values, topology inference,
 regression policy, parameter persistence, or production authority.
-The same finite descriptor set now binds the existing first-derivative
-callbacks for resolved water single-ion Born diameter and NaBr water
-solvation factor to their exact component identity, direct-observable
-contract, units, fixed 298.15 K domain, topology, and parameter fingerprint.
-This is metadata for callbacks already present in the SDK, not a new
-thermodynamic implementation or a general electrolyte admission.
 
 Historical Migration decision D-024 records a local append-only full-electrolyte phase-block
 candidate in explicit component amounts and extensive volume. The callback

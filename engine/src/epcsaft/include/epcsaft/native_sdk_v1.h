@@ -571,7 +571,8 @@ enum epcsaft_native_model_domain_v1 {
     EPCSAFT_NATIVE_MODEL_DOMAIN_ION_FRACTION_SUPPRESSION_V1 = 5u,
     EPCSAFT_NATIVE_MODEL_DOMAIN_ORGANIC_SINGLE_ION_SOLVATION_V1 = 6u,
     EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_PURE_V1 = 7u,
-    EPCSAFT_NATIVE_MODEL_DOMAIN_REACTING_ELECTROLYTE_PHASE_V1 = 8u
+    EPCSAFT_NATIVE_MODEL_DOMAIN_REACTING_ELECTROLYTE_PHASE_V1 = 8u,
+    EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_MIXTURE_V1 = 9u
 };
 
 enum epcsaft_native_tensor_layout_v1 {
@@ -1026,6 +1027,51 @@ typedef int (*epcsaft_evaluate_source_reference_transfer_v1)(
     epcsaft_source_reference_transfer_result_v1* result
 );
 
+/*
+ * Generic constant-diameter fixed-topology associating-mixture result.
+ * Coordinate order is
+ * (n_1, ..., n_C, V, requested parameters...). The gradient and full
+ * row-major Hessian use that exact order. The bound descriptor owns component
+ * and site order, fixed topology, slot identities, units, and physical domains.
+ * The caller repeats the descriptor's exact ordered component IDs; the result
+ * binds their order and the source domain to immutable fingerprints.
+ */
+typedef struct epcsaft_fixed_topology_mixture_phase_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    size_t coordinate_count;
+    size_t active_parameter_count;
+    size_t gradient_capacity;
+    size_t hessian_capacity;
+    double* gradient;
+    double* hessian;
+    double helmholtz_over_rt_reference_amount;
+    double pressure_pa;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char component_order_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char domain_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char artifact_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char helmholtz_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_fixed_topology_mixture_phase_result_v1;
+
+typedef int (*epcsaft_evaluate_fixed_topology_associating_mixture_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    const char* expected_topology_fingerprint,
+    const char* expected_artifact_fingerprint,
+    const char* const* expected_component_ids,
+    size_t component_count,
+    double temperature_k,
+    const double* amounts_mol,
+    size_t amount_count,
+    double volume_m3,
+    const epcsaft_fixed_topology_parameter_request_v1* active_parameters,
+    size_t active_parameter_count,
+    epcsaft_fixed_topology_mixture_phase_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -1105,6 +1151,9 @@ typedef struct epcsaft_native_sdk_v1 {
     size_t source_reference_transfer_result_size;
     epcsaft_evaluate_source_reference_transfer_v1
         evaluate_source_reference_transfer;
+    size_t fixed_topology_associating_mixture_result_size;
+    epcsaft_evaluate_fixed_topology_associating_mixture_v1
+        evaluate_fixed_topology_associating_mixture;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus

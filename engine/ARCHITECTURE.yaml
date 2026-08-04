@@ -132,6 +132,18 @@ native_sdk_candidates:
     association_strength_basis: source-owned-sigma-ij-cubed-times-kappa
     identity: [component_order, site_order, site_multiplicity, allowed_bond_graph, parameter_fingerprint, topology_fingerprint, installed_native_artifact_fingerprint]
     exclusions: topology_selection, topology_mutation, mixture_cross_association, electrolyte, density_solve, phase_identity, third_derivatives, Ipopt, Ceres, regression_targets, fit_bounds, scaling, fitted_values, parameter_persistence, parameter_uniqueness, predictive_validity, and_authority
+  neutral_mixture_fixed_topology_active_parameter_hessian_v1:
+    status: local-candidate-pending-independent-review-and-promotion-receipt
+    scope: >-
+      Model-bound neutral constant-diameter associating-mixture fixed-topology phase value,
+      gradient, Hessian, and pressure for any nonempty ordered subset of the
+      advertised component and association site-pair parameter slots.
+    coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3, requested_parameter_slots_in_caller_order]
+    derivative_order: 2
+    parameter_families: [segment_count, segment_diameter, dispersion_energy_over_k, association_energy_over_k, association_volume]
+    association_strength_basis: source-owned-sigma-ij-cubed-times-kappa
+    identity: [component_order, site_order, site_multiplicity, allowed_bond_graph, parameter_fingerprint, topology_fingerprint, component_order_fingerprint, domain_fingerprint, installed_native_artifact_fingerprint]
+    exclusions: temperature_dependent_segment_diameter, topology_selection, topology_mutation, induced_association_inference, electrolyte, density_solve, phase_identity, third_derivatives, Ipopt, Ceres, regression_targets, fit_bounds, scaling, fitted_values, parameter_persistence, parameter_uniqueness, predictive_validity, and_authority
   figiel_water_active_born_solvation_v1:
     status: local-candidate-pending-independent-review-and-promotion-receipt
     scope: >-
@@ -404,6 +416,15 @@ public_surface:
       derivative_order: 2
       artifact_identity: installed_native_binary_sha256
       status: issue-61-local-candidate-pending-independent-review-and-promotion-receipt
+    - capsule: epcsaft.native_sdk.v1
+      entry: evaluate_fixed_topology_associating_mixture
+      descriptor: fixed_topology_association
+      association_strength_basis: sigma_ij_cubed_times_kappa
+      coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3, requested_parameter_slots_in_caller_order]
+      parameter_families: [segment_count, segment_diameter, dispersion_energy_over_k, association_energy_over_k, association_volume]
+      derivative_order: 2
+      artifact_identity: installed_native_binary_sha256
+      status: local-candidate-pending-independent-review-and-promotion-receipt
     - capsule: epcsaft.native_sdk.v1
       entry: evaluate_electrolyte_phase
       coordinate_order: [component_amounts_mol_in_parameter_order, volume_m3]

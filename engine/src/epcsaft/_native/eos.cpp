@@ -725,7 +725,14 @@ bool NativeModel::supports_parameterized_pure_native_sdk_v1() const {
 
 // EqExclude: input and domain validation
 bool NativeModel::supports_fixed_topology_association_native_sdk_v1() const {
-    return detail::supports_fixed_topology_associating_pure_phase_block(
+    return detail::supports_fixed_topology_associating_phase_block(
+        parameters_
+    ) && parameters_.sigma_term_component.empty();
+}
+
+// EqExclude: input and domain validation
+bool NativeModel::supports_fixed_topology_associating_mixture_native_sdk_v1() const {
+    return detail::supports_fixed_topology_associating_mixture_phase_block(
         parameters_
     ) && parameters_.sigma_term_component.empty();
 }
@@ -809,6 +816,28 @@ NativeFixedTopologyPhaseBlock NativeModel::evaluate_fixed_topology_association(
     return detail::fixed_topology_parameterized_pure_phase_block(
         temperature,
         amount,
+        volume,
+        active_parameters,
+        parameters_
+    );
+}
+
+// EqExclude: transport and buffer mechanics
+NativeMixturePhaseBlock NativeModel::evaluate_fixed_topology_associating_mixture(
+    double temperature,
+    const std::vector<double>& amounts,
+    double volume,
+    const std::vector<NativeFixedTopologyParameter>& active_parameters
+) const {
+    if (!supports_fixed_topology_associating_mixture_native_sdk_v1()) {
+        throw std::logic_error(
+            "fixed-topology associating-mixture parameters require at least "
+            "two neutral associating components"
+        );
+    }
+    return detail::fixed_topology_parameterized_mixture_phase_block(
+        temperature,
+        amounts,
         volume,
         active_parameters,
         parameters_

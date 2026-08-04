@@ -50,15 +50,11 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
     generic_reference_model = Mixture.from_dictionary(_generic_electrolyte())
     export_native_model(generic_reference_model, generic_reference_artifact)
     legacy_reference_artifact = tmp_path / "legacy-generic-neutral-reference.json"
-    legacy_reference_document = json.loads(
-        generic_reference_artifact.read_text(encoding="utf-8")
-    )
+    legacy_reference_document = json.loads(generic_reference_artifact.read_text(encoding="utf-8"))
     legacy_reference_document["sdk"].pop("component_order_fingerprint")
     legacy_reference_document["sdk"].pop("domain_fingerprint")
     legacy_reference_artifact.write_text(
-        json.dumps(
-            legacy_reference_document, separators=(",", ":"), sort_keys=True
-        ),
+        json.dumps(legacy_reference_document, separators=(",", ":"), sort_keys=True),
         encoding="utf-8",
     )
     incomplete_identity_artifacts = []
@@ -92,6 +88,35 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
         ),
     )
     assert association_capsule is not None
+    association_mixture_artifact = tmp_path / "associating-mixture.json"
+    association_mixture_model = Mixture.from_dictionary(association_mixture_case())
+    export_native_model(association_mixture_model, association_mixture_artifact)
+    mixture_capsule, mixture_table = _fixed_topology_mixture_table(association_mixture_model)
+    mixture_descriptor = mixture_table.fixed_topology_association.contents
+    mixture_slots = tuple(
+        mixture_descriptor.slots[index] for index in range(mixture_descriptor.slot_count)
+    )
+    selected_mixture_slots = tuple(
+        slot
+        for slot in mixture_slots
+        if slot.parameter_id.decode()
+        in {
+            "component:component-b/segment_count",
+            "association:component-a/donor--component-b/acceptor/association_volume",
+        }
+    )
+    expected_mixture, expected_mixture_gradient, expected_mixture_hessian = (
+        _evaluate_fixed_topology_mixture(
+            mixture_table,
+            association_mixture_model.parameter_fingerprint,
+            mixture_descriptor.topology_fingerprint.decode(),
+            305.0,
+            (0.4, 0.6),
+            1.0 / 5500.0,
+            _fixed_topology_requests(selected_mixture_slots, (2.2, 0.027)),
+        )
+    )
+    assert mixture_capsule is not None
     static_library = Path(native_core.__file__).parent / "lib" / "libepcsaft_native_sdk.a"
     expected_artifact_fingerprint = (
         f"sha256:{hashlib.sha256(static_library.read_bytes()).hexdigest()}"
@@ -140,6 +165,7 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
             str(generic_reference_artifact),
             str(legacy_reference_artifact),
             *(str(path) for path in incomplete_identity_artifacts),
+            str(association_mixture_artifact),
         ),
         capture_output=True,
         text=True,
@@ -167,6 +193,21 @@ def test_native_sdk_installed_cpp_consumer_reads_sensitivity_tail(
     )
     assert emitted("association_hessian") == pytest.approx(
         expected_hessian,
+        rel=2.0e-11,
+        abs=2.0e-8,
+    )
+    assert emitted("association_mixture_value") == pytest.approx(
+        (expected_mixture.helmholtz_over_rt_reference_amount,),
+        rel=2.0e-13,
+        abs=2.0e-13,
+    )
+    assert emitted("association_mixture_gradient") == pytest.approx(
+        expected_mixture_gradient,
+        rel=2.0e-12,
+        abs=2.0e-10,
+    )
+    assert emitted("association_mixture_hessian") == pytest.approx(
+        expected_mixture_hessian,
         rel=2.0e-11,
         abs=2.0e-8,
     )

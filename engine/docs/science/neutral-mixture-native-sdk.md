@@ -15,8 +15,9 @@ append-only `evaluate_mixture_phase_kij` and `evaluate_mixture_phase_lij` pointe
 the same phase with one distinct unlike interaction parameter active. A final
 append-only `evaluate_pure_phase_parameter` pointer evaluates a supported pure
 nonassociating model with exactly one of `m`, `sigma`, or `epsilon/k` active.
-Associating pure models use only the generic fixed-topology descriptor and its
-variable-width request/result callback.
+Associating models use one generic fixed-topology descriptor. Pure models use
+the original variable-width phase callback; multicomponent models use the
+append-only associating-mixture callback with the same descriptor-owned slots.
 
 The first reference-evidence fingerprints are:
 
@@ -33,14 +34,17 @@ supported ordered model. They identify the callbacks as derivative-ready for
 one unordered binary `k_ij` and one unordered binary `l_ij` on a neutral,
 nonassociating binary model, while their authority effect remains `none`.
 Pure, associating, ionic, or otherwise unsupported model shapes advertise
-neither binary descriptor. A neutral, nonassociating, constant-diameter pure
+neither binary-interaction descriptor. A neutral, nonassociating,
+constant-diameter pure
 model advertises three component-identity descriptors, one for each scalar
-pure family; it advertises no binary descriptor. A neutral associating pure
-model instead advertises one structural fixed-topology descriptor. That
-descriptor contains the ordinary-pure slots plus one energy and one volume
-slot for every canonical allowed site pair, and the caller may request any
-nonempty ordered subset. No scalar association capability, topology-specific
-joint callback, or compatibility adapter remains.
+pure family; it advertises no binary descriptor. A neutral constant-diameter associating model
+instead advertises one structural fixed-topology descriptor. That descriptor
+contains three ordinary slots for every component plus one energy and one
+volume slot for every canonical allowed site pair, and the caller may request
+any nonempty ordered subset. The model fixes component order, site order,
+multiplicity, and the complete allowed-pair graph. No scalar association
+capability, species-specific callback, dynamic topology, or compatibility
+adapter is introduced.
 
 The descriptor binds a topology fingerprint separately from the parameter
 fingerprint. Its canonical payload contains the ordered component IDs,
@@ -139,14 +143,20 @@ nonfinite trial values fail as invalid arguments. Zero or negative `m`,
 `sigma`, or `epsilon/k` fails the Provider's positive EOS domain; regression
 still owns the narrower scientific fit bounds.
 
-For the fixed-topology association callback, the descriptor owns the immutable
+For the fixed-topology association callbacks, the descriptor owns the immutable
 component/site order, multiplicities, allowed-pair graph, slot identity, unit,
 positive physical domain, parameter fingerprint, topology fingerprint, and
-installed-artifact fingerprint. Requests must be a nonempty subset in
-advertised slot order. The caller supplies exactly `2 + request_count`
-gradient entries and its square in row-major Hessian storage for
-`(n,V,requested slots...)`. Unknown, reordered, duplicated, nonfinite,
-out-of-domain, or identity-mismatched requests fail closed.
+installed-artifact fingerprint. Pure requests must be a nonempty subset in
+advertised slot order. Mixture requests may use any nonempty unique subset of
+advertised slots, and the caller's request order defines the parameter
+coordinates. A pure caller supplies exactly `2 + request_count` gradient
+entries for `(n,V,requested slots...)`. A mixture caller supplies exactly
+`component_count + 1 + request_count` entries for
+`(n_1,...,n_C,V,requested slots...)` and repeats the exact ordered component
+IDs at the call boundary. Its result binds component-order and source-domain
+fingerprints in addition to the descriptor identities. The square row-major
+Hessian uses the same order. Unknown, duplicated, nonfinite, out-of-domain, or
+identity-mismatched requests fail closed; reordered pure requests also fail.
 
 The provider preserves the caller's pointers and capacities, copies exactly
 the advertised number of gradient and Hessian values, and propagates neither
@@ -194,23 +204,25 @@ identity, compiles the installed C header layout, and rejects unknown families
 and nonfinite trials. It does not claim that three independent scalar fits are
 equivalent to the accepted joint pure-parameter solve.
 
-For any admitted neutral pure fixed topology, the sole association callback
-accepts a nonempty ordered subset of descriptor slots. Slots identify ordinary
-component parameters or association energy/volume by canonical component/site
-endpoints. The returned coordinate order is `(n,V,requested slots...)` with a
-complete exact row-major Hessian on the ordinary `sigma_ij^3 kappa` basis.
-A compact 2B case and a three-site multi-pair model check every gradient and
-Hessian entry against an equation-level oracle independent of the native and
-public EOS evaluation paths. No scalar association callback, alternate basis
-adapter, topology name, or compatibility route remains.
+For any admitted neutral constant-diameter fixed topology, its phase callback
+accepts a nonempty ordered subset of descriptor slots. Slots identify ordinary component
+parameters or association energy/volume by canonical component/site endpoints.
+The returned coordinate order is `(n,V,requested slots...)` for a pure model
+or `(n_1,...,n_C,V,requested slots...)` for a mixture, with a complete exact
+row-major Hessian on the ordinary `sigma_ij^3 kappa` basis. Compact pure 2B and
+three-site cases check every derivative against an independent equation-level
+oracle. Anonymous binary and ternary cross-associating cases finite-difference
+every mixture gradient and Hessian column and verify component permutation.
+No scalar association callback, species name, alternate basis adapter,
+topology name, or compatibility route remains.
 
 Each EOS slot remains a distinct derivative coordinate. A Regression sharing
 map may assign one fitted value to several requested slots and accumulate the
 returned columns; EOS accepts those equal-valued slots without owning the
 consumer's sharing policy or collapsing endpoint identities.
 
-These candidates do not own topology discovery, multicomponent
-cross-association, ions, multicomponent interaction tensors, density closure,
+These candidates do not own topology discovery, induced-association inference,
+ions, multicomponent interaction tensors, density closure,
 phase identity, phase discovery, third derivatives, Ipopt, Ceres, equilibrium
 residuals, regression targets, fit bounds, scaling, or fit acceptance.
 Implementation and a passing wheel do not transfer authority. Independent

@@ -1,26 +1,17 @@
 import ctypes
-
-from copy import deepcopy
-
 import gc
-
 import math
-
+import shutil
+import subprocess
+import time
+from copy import deepcopy
 from pathlib import Path
 
-import shutil
-
-import subprocess
-
-import time
-
-import pytest
-
-import epcsaft
-
 import epcsaft._core as native_core
+import pytest
 from epcsaft._core import native_sdk_v1 as _native_sdk_v1
 
+import epcsaft
 from epcsaft import (
     Mixture,
     Parameters,
@@ -28,7 +19,6 @@ from epcsaft import (
     native_sdk,
     unit_registry,
 )
-
 from tests._raw_cases import (
     ASSOCIATING_PURE,
     POLAR_BINARY,
@@ -94,6 +84,85 @@ def three_site_association_case(
         },
         "options": {"permittivity_model": "none"},
         "validity": {"kind": "unknown"},
+    }
+
+
+def association_mixture_case(
+    component_ids: tuple[str, ...] = ("component-a", "component-b"),
+    *,
+    polar: bool = False,
+) -> dict[str, object]:
+    component_values = {
+        "component-a": (1.4, 3.2, 220.0),
+        "component-b": (2.1, 3.7, 310.0),
+        "component-c": (1.8, 3.5, 270.0),
+    }
+    sites = {
+        "component-a": {
+            "component_id": "component-a",
+            "site_id": "donor",
+            "site_class": "generic",
+            "multiplicity": 2,
+        },
+        "component-b": {
+            "component_id": "component-b",
+            "site_id": "acceptor",
+            "site_class": "generic",
+            "multiplicity": 1,
+        },
+        "component-c": {
+            "component_id": "component-c",
+            "site_id": "acceptor",
+            "site_class": "generic",
+            "multiplicity": 1,
+        },
+    }
+    associations = {
+        component_id: {
+            "component_id_a": "component-a",
+            "site_id_a": "donor",
+            "component_id_b": component_id,
+            "site_id_b": "acceptor",
+            "association_energy_over_k": energy,
+            "association_volume": volume,
+        }
+        for component_id, energy, volume in (
+            ("component-b", 1900.0, 0.025),
+            ("component-c", 1700.0, 0.020),
+        )
+    }
+    return {
+        "schema": "epcsaft.parameters",
+        "schema_version": 1,
+        "components": component_ids,
+        "parameters": {
+            "m": tuple(component_values[item][0] for item in component_ids),
+            "s": tuple(component_values[item][1] for item in component_ids),
+            "e": tuple(component_values[item][2] for item in component_ids),
+            "k_ij": tuple(tuple(0.0 for _ in component_ids) for _ in component_ids),
+            "sites": tuple(sites[item] for item in component_ids),
+            "association": tuple(
+                associations[item] for item in component_ids if item in associations
+            ),
+            **(
+                {
+                    "dipole_moment": tuple(
+                        1.2 if item == "component-a" else None for item in component_ids
+                    )
+                }
+                if polar
+                else {}
+            ),
+        },
+        "options": {
+            "permittivity_model": "none",
+            **({"polar_formulation": "gross-vrabec-point-multipole"} if polar else {}),
+        },
+        "validity": {
+            "kind": "fit-range",
+            "temperature_min_k": 290.0,
+            "temperature_max_k": 320.0,
+        },
     }
 
 
@@ -633,6 +702,37 @@ class FixedTopologyNativeSdkTable(ctypes.Structure):
     )
 
 
+class FixedTopologyMixturePhaseResult(ctypes.Structure):
+    _fields_ = (
+        ("struct_size", ctypes.c_uint32),
+        ("status", ctypes.c_int32),
+        ("coordinate_count", ctypes.c_size_t),
+        ("active_parameter_count", ctypes.c_size_t),
+        ("gradient_capacity", ctypes.c_size_t),
+        ("hessian_capacity", ctypes.c_size_t),
+        ("gradient", ctypes.POINTER(ctypes.c_double)),
+        ("hessian", ctypes.POINTER(ctypes.c_double)),
+        ("helmholtz_over_rt_reference_amount", ctypes.c_double),
+        ("pressure_pa", ctypes.c_double),
+        ("parameter_fingerprint", ctypes.c_char * 72),
+        ("topology_fingerprint", ctypes.c_char * 72),
+        ("component_order_fingerprint", ctypes.c_char * 72),
+        ("domain_fingerprint", ctypes.c_char * 72),
+        ("artifact_fingerprint", ctypes.c_char * 72),
+        ("helmholtz_basis_id", ctypes.c_char * 72),
+        ("error", ctypes.c_char * 160),
+    )
+
+
+class FixedTopologyMixtureNativeSdkTable(ctypes.Structure):
+    _fields_ = FixedTopologyNativeSdkTable._fields_ + (
+        ("source_reference_transfer_result_size", ctypes.c_size_t),
+        ("evaluate_source_reference_transfer", ctypes.c_void_p),
+        ("fixed_topology_associating_mixture_result_size", ctypes.c_size_t),
+        ("evaluate_fixed_topology_associating_mixture", ctypes.c_void_p),
+    )
+
+
 class NativeSdkPrefix(ctypes.Structure):
     _fields_ = NativeSdkTable._fields_[:5]
 
@@ -712,6 +812,11 @@ FIXED_TOPOLOGY_ASSOCIATION_PREFIX_SIZE = (
     + ctypes.sizeof(ctypes.c_void_p)
 )
 
+FIXED_TOPOLOGY_ASSOCIATING_MIXTURE_PREFIX_SIZE = (
+    FixedTopologyMixtureNativeSdkTable.evaluate_fixed_topology_associating_mixture.offset
+    + ctypes.sizeof(ctypes.c_void_p)
+)
+
 EvaluatePurePhase = ctypes.CFUNCTYPE(
     ctypes.c_int,
     ctypes.c_void_p,
@@ -786,6 +891,23 @@ EvaluateFixedTopologyAssociation = ctypes.CFUNCTYPE(
     ctypes.POINTER(FixedTopologyParameterRequest),
     ctypes.c_size_t,
     ctypes.POINTER(FixedTopologyPhaseResult),
+)
+
+EvaluateFixedTopologyAssociatingMixture = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.POINTER(ctypes.c_char_p),
+    ctypes.c_size_t,
+    ctypes.c_double,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.c_double,
+    ctypes.POINTER(FixedTopologyParameterRequest),
+    ctypes.c_size_t,
+    ctypes.POINTER(FixedTopologyMixturePhaseResult),
 )
 
 EvaluatePackingFraction = ctypes.CFUNCTYPE(
@@ -1060,6 +1182,20 @@ def _fixed_topology_table(
     assert address
     table = ctypes.cast(address, ctypes.POINTER(FixedTopologyNativeSdkTable)).contents
     assert table.table_size >= FIXED_TOPOLOGY_ASSOCIATION_PREFIX_SIZE
+    return capsule, table
+
+
+def _fixed_topology_mixture_table(
+    model: Mixture,
+) -> tuple[object, FixedTopologyMixtureNativeSdkTable]:
+    capsule = native_sdk(model)
+    get_pointer = ctypes.pythonapi.PyCapsule_GetPointer
+    get_pointer.argtypes = (ctypes.py_object, ctypes.c_char_p)
+    get_pointer.restype = ctypes.c_void_p
+    address = get_pointer(capsule, CAPSULE_NAME)
+    assert address
+    table = ctypes.cast(address, ctypes.POINTER(FixedTopologyMixtureNativeSdkTable)).contents
+    assert table.table_size >= FIXED_TOPOLOGY_ASSOCIATING_MIXTURE_PREFIX_SIZE
     return capsule, table
 
 
@@ -1460,6 +1596,72 @@ def _evaluate_fixed_topology(
         ).encode(),
         temperature_k,
         amount_mol,
+        volume_m3,
+        request_array,
+        len(requests),
+        ctypes.byref(result),
+    )
+    assert status == result.status
+    return result, tuple(gradient), tuple(hessian)
+
+
+def _evaluate_fixed_topology_mixture(
+    table: FixedTopologyMixtureNativeSdkTable,
+    fingerprint: str,
+    topology_fingerprint: str,
+    temperature_k: float,
+    amounts_mol: tuple[float, ...],
+    volume_m3: float,
+    requests: tuple[FixedTopologyParameterRequest, ...],
+    component_ids: tuple[str, ...] | None = None,
+    buffer_value: float = 0.0,
+    artifact_fingerprint: bytes | None = None,
+    gradient_capacity: int | None = None,
+) -> tuple[
+    FixedTopologyMixturePhaseResult,
+    tuple[float, ...],
+    tuple[float, ...],
+]:
+    coordinate_count = len(amounts_mol) + 1 + len(requests)
+    amounts = (ctypes.c_double * len(amounts_mol))(*amounts_mol)
+    gradient = (ctypes.c_double * coordinate_count)(
+        *(buffer_value for _ in range(coordinate_count))
+    )
+    hessian = (ctypes.c_double * (coordinate_count * coordinate_count))(
+        *(buffer_value for _ in range(coordinate_count * coordinate_count))
+    )
+    request_array = (FixedTopologyParameterRequest * len(requests))(*requests)
+    ordered_component_ids = (
+        tuple(
+            table.fixed_topology_association.contents.component_ids[index].decode()
+            for index in range(table.fixed_topology_association.contents.component_count)
+        )
+        if component_ids is None
+        else component_ids
+    )
+    encoded_component_ids = tuple(component_id.encode() for component_id in ordered_component_ids)
+    component_id_array = (ctypes.c_char_p * len(encoded_component_ids))(*encoded_component_ids)
+    result = FixedTopologyMixturePhaseResult(
+        struct_size=ctypes.sizeof(FixedTopologyMixturePhaseResult),
+        coordinate_count=coordinate_count,
+        active_parameter_count=len(requests),
+        gradient_capacity=(coordinate_count if gradient_capacity is None else gradient_capacity),
+        hessian_capacity=coordinate_count * coordinate_count,
+        gradient=gradient,
+        hessian=hessian,
+    )
+    status = EvaluateFixedTopologyAssociatingMixture(
+        table.evaluate_fixed_topology_associating_mixture
+    )(
+        table.model_context,
+        fingerprint.encode(),
+        topology_fingerprint.encode(),
+        artifact_fingerprint or table.fixed_topology_association.contents.artifact_fingerprint,
+        component_id_array,
+        len(component_id_array),
+        temperature_k,
+        amounts,
+        len(amounts_mol),
         volume_m3,
         request_array,
         len(requests),

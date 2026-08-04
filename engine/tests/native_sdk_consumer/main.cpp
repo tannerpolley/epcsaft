@@ -11,6 +11,18 @@
 #include <limits>
 #include <vector>
 
+template <typename Values>
+void print_vector(const char* label, const Values& values) {
+    std::cout << label << '=';
+    for (std::size_t index = 0; index < values.size(); ++index) {
+        if (index != 0) {
+            std::cout << ',';
+        }
+        std::cout << values[index];
+    }
+    std::cout << '\n';
+}
+
 bool neutral_inverse_packing_is_available(const char* path) {
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
     epcsaft_native_model_handle_v1* model =
@@ -467,16 +479,6 @@ bool fixed_topology_association_is_available(
         std::cout << std::setprecision(17)
                   << "association_value="
                   << result.helmholtz_over_rt_reference_amount << '\n';
-        const auto print_vector = [](const char* label, const auto& values) {
-            std::cout << label << '=';
-            for (std::size_t index = 0; index < values.size(); ++index) {
-                if (index != 0) {
-                    std::cout << ',';
-                }
-                std::cout << values[index];
-            }
-            std::cout << '\n';
-        };
         print_vector("association_gradient", gradient);
         print_vector("association_hessian", hessian);
     }
@@ -484,8 +486,118 @@ bool fixed_topology_association_is_available(
     return valid;
 }
 
+bool fixed_topology_associating_mixture_is_available(
+    const char* path,
+    const char* expected_artifact_fingerprint
+) {
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
+    epcsaft_native_model_handle_v1* model =
+        epcsaft_native_model_load_v1(path, error, sizeof(error));
+    if (model == nullptr) {
+        std::cerr << error << '\n';
+        return false;
+    }
+    const epcsaft_native_sdk_v1* sdk = epcsaft_native_model_sdk_v1(model);
+    const char* fingerprint = epcsaft_native_model_fingerprint_v1(model);
+    const auto* descriptor =
+        sdk == nullptr ? nullptr : sdk->fixed_topology_association;
+    const char* component_ids[] = {"component-a", "component-b"};
+    bool valid = sdk != nullptr && fingerprint != nullptr
+        && sdk->table_size == sizeof(epcsaft_native_sdk_v1)
+        && sdk->fixed_topology_associating_mixture_result_size
+            == sizeof(epcsaft_fixed_topology_mixture_phase_result_v1)
+        && sdk->evaluate_fixed_topology_associating_mixture != nullptr
+        && descriptor != nullptr && descriptor->model_domain
+            == EPCSAFT_NATIVE_MODEL_DOMAIN_NEUTRAL_ASSOCIATING_MIXTURE_V1
+        && descriptor->component_count == 2
+        && std::strcmp(descriptor->component_ids[0], component_ids[0]) == 0
+        && std::strcmp(descriptor->component_ids[1], component_ids[1]) == 0;
+    std::vector<epcsaft_fixed_topology_parameter_request_v1> requests;
+    if (valid) {
+        for (std::size_t index = 0; index < descriptor->slot_count; ++index) {
+            const auto& slot = descriptor->slots[index];
+            const char* id = slot.parameter_id;
+            const bool selected = std::strcmp(
+                id, "component:component-b/segment_count"
+            ) == 0 || std::strcmp(
+                id,
+                "association:component-a/donor--component-b/acceptor/association_volume"
+            ) == 0;
+            if (selected) {
+                requests.push_back({
+                    sizeof(epcsaft_fixed_topology_parameter_request_v1),
+                    slot.parameter_family,
+                    slot.component_index,
+                    slot.site_index_a,
+                    slot.site_index_b,
+                    slot.unit,
+                    requests.empty() ? 2.2 : 0.027,
+                });
+            }
+        }
+        valid = requests.size() == 2;
+    }
+    const double amounts[] = {0.4, 0.6};
+    constexpr std::size_t coordinate_count = 5;
+    std::vector<double> gradient(coordinate_count);
+    std::vector<double> hessian(coordinate_count * coordinate_count);
+    epcsaft_fixed_topology_mixture_phase_result_v1 result{};
+    result.struct_size = sizeof(result);
+    result.coordinate_count = coordinate_count;
+    result.active_parameter_count = requests.size();
+    result.gradient_capacity = gradient.size();
+    result.hessian_capacity = hessian.size();
+    result.gradient = gradient.data();
+    result.hessian = hessian.data();
+    const int status = valid
+        ? sdk->evaluate_fixed_topology_associating_mixture(
+            sdk->model_context,
+            fingerprint,
+            descriptor->topology_fingerprint,
+            expected_artifact_fingerprint,
+            component_ids,
+            2,
+            305.0,
+            amounts,
+            2,
+            1.0 / 5500.0,
+            requests.data(),
+            requests.size(),
+            &result
+        )
+        : EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT_V1;
+    valid = valid && status == EPCSAFT_NATIVE_STATUS_OK_V1
+        && result.status == EPCSAFT_NATIVE_STATUS_OK_V1
+        && result.coordinate_count == coordinate_count
+        && result.active_parameter_count == requests.size()
+        && std::strcmp(result.parameter_fingerprint, fingerprint) == 0
+        && std::strcmp(
+            result.topology_fingerprint, descriptor->topology_fingerprint
+        ) == 0
+        && std::strncmp(result.component_order_fingerprint, "sha256:", 7) == 0
+        && std::strncmp(result.domain_fingerprint, "sha256:", 7) == 0
+        && std::strcmp(result.artifact_fingerprint, expected_artifact_fingerprint) == 0
+        && std::all_of(
+            gradient.begin(), gradient.end(),
+            [](double value) { return std::isfinite(value); }
+        )
+        && std::all_of(
+            hessian.begin(), hessian.end(),
+            [](double value) { return std::isfinite(value); }
+        );
+    if (valid) {
+        std::cout << std::setprecision(17)
+                  << "association_mixture_value="
+                  << result.helmholtz_over_rt_reference_amount << '\n';
+        print_vector("association_mixture_gradient", gradient);
+        print_vector("association_mixture_hessian", hessian);
+    }
+    epcsaft_native_model_destroy_v1(model);
+    return valid;
+}
+
 int main(int argc, char** argv) {
-    if (argc != 11) {
+    if (argc != 12) {
         return 2;
     }
     char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE] = {};
@@ -704,6 +816,7 @@ int main(int argc, char** argv) {
         && neutral_inverse_packing_is_available(argv[2])
         && fixed_topology_association_is_available(argv[3], argv[5])
         && !fixed_topology_association_is_available(argv[4], argv[5])
+        && fixed_topology_associating_mixture_is_available(argv[11], argv[5])
         && polar_mixture_is_available(argv[6])
         && generic_neutral_reference_is_available(argv[7])
         && legacy_neutral_reference_remains_loadable(argv[8])

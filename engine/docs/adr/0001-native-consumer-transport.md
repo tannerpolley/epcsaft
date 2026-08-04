@@ -142,7 +142,9 @@ does not replace the joint five-coordinate callback used by accepted
 three-parameter pure-saturation regression.
 
 The issue-61 candidate appends one variable-width pure fixed-topology
-association callback and descriptor. The descriptor binds exact component and
+association callback and descriptor. The current constant-diameter generic
+extension reuses that descriptor and appends a multicomponent callback. The
+descriptor binds exact component and
 site order, site multiplicities, typed allowed slots, parameter, topology, and
 installed-artifact fingerprints, temperature domain, ordinary
 `sigma_ij^3 kappa` basis, per-slot open physical bounds, derivative order,
@@ -150,11 +152,14 @@ and row-major tensor layout. Its slots comprise `m`, `sigma`, `epsilon/k`,
 and one association-energy and association-volume coordinate for each
 canonical allowed site pair. A caller supplies any nonempty ordered subset and
 exact-size gradient and Hessian buffers; output coordinates are
-`(n,V,requested slots...)`. Unknown, duplicated, noncanonical, malformed,
+`(n,V,requested slots...)` for the pure callback and
+`(n_1,...,n_C,V,requested slots...)` for the mixture callback. Unknown,
+duplicated, noncanonical, malformed,
 nonfinite, nonpositive, or fingerprint-mismatched requests fail closed. EOS
 retains the allowed-bond graph, inactive values, implicit site-fraction solve,
-and exact first and second derivatives. No scalar association callback,
-alternate basis, 2B wrapper, or compatibility path remains.
+and exact first and second derivatives. The extension adds no component name,
+fitted tuple, topology inference, scalar association callback, alternate basis,
+2B wrapper, or compatibility path.
 
 The historical D-024 candidate appended the full-electrolyte phase callback and
 two model-bound volume-domain callbacks. Its unchanged phase callback recorded
@@ -342,10 +347,12 @@ The EOS-side evidence requires:
   against an independent numerical oracle;
 - fixed/parameterized value agreement at the source methane parameters and
   independent five-coordinate gradient and Hessian-vector checks;
-- fixed-topology 2B descriptor parity and a non-2B three-site, two-bond case
+- fixed-topology 2B descriptor parity, a non-2B three-site two-bond case, and
+  an anonymous two-component cross-associating case
   whose value, every gradient entry, and every Hessian entry are checked
   against independently rebuilt public-model finite differences;
-- arbitrary ordered subsets, nonunit multiplicity, exact ABI capacities,
+- arbitrary ordered subsets, nonunit multiplicity, component-specific slots,
+  exact ABI capacities,
   failed inner solves, and parameter/topology/artifact identity rejection;
 - methane, ethane, and propane in-domain coverage; and
 - absence of EOS implementation sources from the EOS wheel.

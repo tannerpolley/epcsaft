@@ -6,7 +6,6 @@ from epcsaft.eos import (
     _native_sdk_configuration,
     _python_native_artifact_fingerprint,
 )
-
 from tests._raw_cases import AQUEOUS_ELECTROLYTE
 
 from ._support import *
@@ -98,7 +97,7 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
     )
 
 
-def test_native_sdk_header_preserves_prefix_and_appends_source_reference() -> None:
+def test_native_sdk_header_preserves_prefix_and_appends_public_operations() -> None:
     compiler = shutil.which("cc")
     assert compiler is not None
     include_root = Path(__file__).parents[2] / "src" / "epcsaft" / "include"
@@ -130,12 +129,31 @@ _Static_assert(
     offsetof(epcsaft_native_sdk_v1, evaluate_source_reference_transfer) == 480,
     "source-reference callback offset"
 );
-_Static_assert(sizeof(epcsaft_native_sdk_v1) == 488, "generic SDK table size");
+_Static_assert(
+    sizeof(epcsaft_fixed_topology_mixture_phase_result_v1) == 664,
+    "fixed-topology mixture result ABI"
+);
+_Static_assert(
+    offsetof(
+        epcsaft_native_sdk_v1,
+        fixed_topology_associating_mixture_result_size
+    ) == 488,
+    "fixed-topology mixture result-size offset"
+);
+_Static_assert(
+    offsetof(
+        epcsaft_native_sdk_v1,
+        evaluate_fixed_topology_associating_mixture
+    ) == 496,
+    "fixed-topology mixture callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) == 504, "generic SDK table size");
 
 int main(void) {
     epcsaft_evaluate_fixed_topology_association_v1 callback = 0;
+    epcsaft_evaluate_fixed_topology_associating_mixture_v1 mixture_callback = 0;
     epcsaft_evaluate_source_reference_transfer_v1 source_callback = 0;
-    return callback != 0 || source_callback != 0;
+    return callback != 0 || source_callback != 0 || mixture_callback != 0;
 }
 """
     completed = subprocess.run(

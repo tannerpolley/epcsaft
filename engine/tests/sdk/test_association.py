@@ -2,30 +2,59 @@ from __future__ import annotations
 
 from ._support import *
 
-
 _A0 = (
-    0.9105631445, 0.6361281449, 2.6861347891, -26.547362491,
-    97.759208784, -159.59154087, 91.297774084,
+    0.9105631445,
+    0.6361281449,
+    2.6861347891,
+    -26.547362491,
+    97.759208784,
+    -159.59154087,
+    91.297774084,
 )
 _A1 = (
-    -0.3084016918, 0.1860531159, -2.5030047259, 21.419793629,
-    -65.255885330, 83.318680481, -33.746922930,
+    -0.3084016918,
+    0.1860531159,
+    -2.5030047259,
+    21.419793629,
+    -65.255885330,
+    83.318680481,
+    -33.746922930,
 )
 _A2 = (
-    -0.0906148351, 0.4527842806, 0.5962700728, -1.7241829131,
-    -4.1302112531, 13.776631870, -8.6728470368,
+    -0.0906148351,
+    0.4527842806,
+    0.5962700728,
+    -1.7241829131,
+    -4.1302112531,
+    13.776631870,
+    -8.6728470368,
 )
 _B0 = (
-    0.7240946941, 2.2382791861, -4.0025849485, -21.003576815,
-    26.855641363, 206.55133841, -355.60235612,
+    0.7240946941,
+    2.2382791861,
+    -4.0025849485,
+    -21.003576815,
+    26.855641363,
+    206.55133841,
+    -355.60235612,
 )
 _B1 = (
-    -0.5755498075, 0.6995095521, 3.8925673390, -17.215471648,
-    192.67226447, -161.82646165, -165.20769346,
+    -0.5755498075,
+    0.6995095521,
+    3.8925673390,
+    -17.215471648,
+    192.67226447,
+    -161.82646165,
+    -165.20769346,
 )
 _B2 = (
-    0.0976883116, -0.2557574982, -9.1558561530, 20.642075974,
-    -38.804430052, 93.626774077, -29.666905585,
+    0.0976883116,
+    -0.2557574982,
+    -9.1558561530,
+    20.642075974,
+    -38.804430052,
+    93.626774077,
+    -29.666905585,
 )
 
 
@@ -41,49 +70,30 @@ def _independent_fixed_topology_phase(
     amount, volume, segment_count, sigma, epsilon = point[:5]
     density = amount / volume
     number_density = density * 6.02214076e-7
-    diameter = sigma * (
-        1.0 - 0.12 * math.exp(-3.0 * epsilon / temperature_k)
-    )
+    diameter = sigma * (1.0 - 0.12 * math.exp(-3.0 * epsilon / temperature_k))
     zeta = tuple(
-        math.pi / 6.0 * number_density * segment_count * diameter**order
-        for order in range(4)
+        math.pi / 6.0 * number_density * segment_count * diameter**order for order in range(4)
     )
     eta = zeta[3]
     one_minus_eta = 1.0 - eta
     hard_sphere = (
         3.0 * zeta[1] * zeta[2] / one_minus_eta
         + zeta[2] ** 3 / (zeta[3] * one_minus_eta**2)
-        + (zeta[2] ** 3 / zeta[3] ** 2 - zeta[0])
-        * math.log(one_minus_eta)
+        + (zeta[2] ** 3 / zeta[3] ** 2 - zeta[0]) * math.log(one_minus_eta)
     ) / zeta[0]
     contact = (
         1.0 / one_minus_eta
         + 1.5 * diameter * zeta[2] / one_minus_eta**2
         + 0.5 * diameter**2 * zeta[2] ** 2 / one_minus_eta**3
     )
-    hard_chain = (
-        segment_count * hard_sphere
-        - (segment_count - 1.0) * math.log(contact)
-    )
+    hard_chain = segment_count * hard_sphere - (segment_count - 1.0) * math.log(contact)
 
     chain_1 = (segment_count - 1.0) / segment_count
     chain_2 = chain_1 * (segment_count - 2.0) / segment_count
-    a = tuple(
-        x + chain_1 * y + chain_2 * z
-        for x, y, z in zip(_A0, _A1, _A2, strict=True)
-    )
-    b = tuple(
-        x + chain_1 * y + chain_2 * z
-        for x, y, z in zip(_B0, _B1, _B2, strict=True)
-    )
-    integral_1 = sum(
-        coefficient * eta**order
-        for order, coefficient in enumerate(a)
-    )
-    integral_2 = sum(
-        coefficient * eta**order
-        for order, coefficient in enumerate(b)
-    )
+    a = tuple(x + chain_1 * y + chain_2 * z for x, y, z in zip(_A0, _A1, _A2, strict=True))
+    b = tuple(x + chain_1 * y + chain_2 * z for x, y, z in zip(_B0, _B1, _B2, strict=True))
+    integral_1 = sum(coefficient * eta**order for order, coefficient in enumerate(a))
+    integral_2 = sum(coefficient * eta**order for order, coefficient in enumerate(b))
     c1 = 1.0 / (
         1.0
         + segment_count * (8.0 * eta - 2.0 * eta**2) / one_minus_eta**4
@@ -92,30 +102,16 @@ def _independent_fixed_topology_phase(
         / ((one_minus_eta * (2.0 - eta)) ** 2)
     )
     first_moment = segment_count**2 * sigma**3 * epsilon / temperature_k
-    second_moment = (
-        segment_count**2 * sigma**3 * (epsilon / temperature_k) ** 2
-    )
+    second_moment = segment_count**2 * sigma**3 * (epsilon / temperature_k) ** 2
     dispersion = (
         -2.0 * math.pi * number_density * integral_1 * first_moment
-        - math.pi
-        * number_density
-        * segment_count
-        * c1
-        * integral_2
-        * second_moment
+        - math.pi * number_density * segment_count * c1 * integral_2 * second_moment
     )
 
     deltas = [[0.0] * site_count for _ in range(site_count)]
     for pair_index, (left, right) in enumerate(pairs):
-        energy, association_volume = point[
-            5 + 2 * pair_index : 7 + 2 * pair_index
-        ]
-        delta = (
-            contact
-            * math.expm1(energy / temperature_k)
-            * sigma**3
-            * association_volume
-        )
+        energy, association_volume = point[5 + 2 * pair_index : 7 + 2 * pair_index]
+        delta = contact * math.expm1(energy / temperature_k) * sigma**3 * association_volume
         deltas[left][right] = delta
         deltas[right][left] = delta
     fractions = [1.0] * site_count
@@ -126,22 +122,17 @@ def _independent_fixed_topology_phase(
                 1.0
                 + number_density
                 * sum(
-                    multiplicities[other]
-                    * fractions[other]
-                    * deltas[site][other]
+                    multiplicities[other] * fractions[other] * deltas[site][other]
                     for other in range(site_count)
                 )
             )
             for site in range(site_count)
         ]
-        next_fractions = [
-            0.5 * (old + new)
-            for old, new in zip(fractions, fixed, strict=True)
-        ]
-        if max(
-            abs(new - old)
-            for old, new in zip(fractions, next_fractions, strict=True)
-        ) < 2.0e-14:
+        next_fractions = [0.5 * (old + new) for old, new in zip(fractions, fixed, strict=True)]
+        if (
+            max(abs(new - old) for old, new in zip(fractions, next_fractions, strict=True))
+            < 2.0e-14
+        ):
             fractions = next_fractions
             break
         fractions = next_fractions
@@ -149,13 +140,9 @@ def _independent_fixed_topology_phase(
         raise AssertionError("independent association oracle did not converge")
     association = sum(
         multiplicity * (math.log(fraction) - 0.5 * fraction + 0.5)
-        for multiplicity, fraction in zip(
-            multiplicities, fractions, strict=True
-        )
+        for multiplicity, fraction in zip(multiplicities, fractions, strict=True)
     )
-    return amount * (
-        math.log(density) - 1.0 + hard_chain + dispersion + association
-    )
+    return amount * (math.log(density) - 1.0 + hard_chain + dispersion + association)
 
 
 def _assert_derivatives_match_oracle(
@@ -216,6 +203,356 @@ def _descriptor(
     return capsule, table, table.fixed_topology_association.contents
 
 
+def test_fixed_topology_associating_mixture_exposes_generic_active_slots() -> None:
+    model = Mixture.from_dictionary(association_mixture_case(polar=True))
+    capsule, table = _fixed_topology_mixture_table(model)
+    assert capsule is not None
+    descriptor = table.fixed_topology_association.contents
+    assert table.fixed_topology_associating_mixture_result_size == ctypes.sizeof(
+        FixedTopologyMixturePhaseResult
+    )
+    assert table.fixed_topology_association_result_size == 0
+    assert not table.evaluate_fixed_topology_association
+    assert descriptor.model_domain == 9
+    assert descriptor.component_count == 2
+    assert descriptor.state_coordinate_count == 3
+    assert descriptor.temperature_min_k == 290.0
+    assert descriptor.temperature_max_k == 320.0
+    assert tuple(
+        descriptor.component_ids[index].decode() for index in range(descriptor.component_count)
+    ) == ("component-a", "component-b")
+    slots = tuple(descriptor.slots[index] for index in range(descriptor.slot_count))
+    assert tuple(slot.component_index for slot in slots) == (
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        -1,
+        -1,
+    )
+    temperature_k = 305.0
+    point = (0.4, 0.6, 1.0 / 5500.0, 2.2, 0.027)
+
+    def evaluate(
+        candidate: tuple[float, ...],
+    ) -> tuple[
+        FixedTopologyMixturePhaseResult,
+        tuple[float, ...],
+        tuple[float, ...],
+    ]:
+        requests = _fixed_topology_requests(
+            (slots[3], slots[7]),
+            candidate[3:],
+        )
+        return _evaluate_fixed_topology_mixture(
+            table,
+            model.parameter_fingerprint,
+            descriptor.topology_fingerprint.decode(),
+            temperature_k,
+            candidate[:2],
+            candidate[2],
+            requests,
+        )
+
+    result, gradient, hessian = evaluate(point)
+    assert result.status == STATUS_OK
+    assert len(gradient) == 5
+    assert len(hessian) == 25
+    assert result.pressure_pa == pytest.approx(-8.31446261815324 * temperature_k * gradient[2])
+    assert result.parameter_fingerprint.decode() == model.parameter_fingerprint
+    assert result.topology_fingerprint == descriptor.topology_fingerprint
+    assert result.component_order_fingerprint.decode().startswith("sha256:")
+    assert result.domain_fingerprint.decode().startswith("sha256:")
+    assert result.artifact_fingerprint == descriptor.artifact_fingerprint
+
+    def public_state(candidate: tuple[float, ...]):
+        parameters = association_mixture_case(polar=True)
+        parameters["parameters"]["m"] = (1.4, candidate[3])
+        parameters["parameters"]["association"][0]["association_volume"] = candidate[4]
+        public_model = Mixture.from_dictionary(parameters)
+        total_amount = candidate[0] + candidate[1]
+        return public_model.state(
+            T=temperature_k * unit_registry.kelvin,
+            rho=(total_amount / candidate[2]) * unit_registry.mole / unit_registry.meter**3,
+            x=(candidate[0] / total_amount, candidate[1] / total_amount),
+        )
+
+    def public_value(candidate: tuple[float, ...]) -> float:
+        total_amount = candidate[0] + candidate[1]
+        return sum(
+            amount * (math.log(amount / candidate[2]) - 1.0) for amount in candidate[:2]
+        ) + total_amount * float(public_state(candidate).ares(basis="reduced"))
+
+    state = public_state(point)
+    expected = public_value(point)
+    assert result.helmholtz_over_rt_reference_amount == pytest.approx(
+        expected, rel=3.0e-12, abs=3.0e-12
+    )
+    assert result.pressure_pa == pytest.approx(
+        state.pressure.to("pascal").magnitude, rel=3.0e-11, abs=1.0e-5
+    )
+
+    steps = (2.0e-5, 2.0e-5, 2.0e-9, 2.0e-4, 2.0e-6)
+    for column, step in enumerate(steps):
+        lower_point = list(point)
+        upper_point = list(point)
+        lower_point[column] -= step
+        upper_point[column] += step
+        finite_gradient = (public_value(tuple(upper_point)) - public_value(tuple(lower_point))) / (
+            2.0 * step
+        )
+        assert gradient[column] == pytest.approx(finite_gradient, rel=5.0e-7, abs=5.0e-7)
+        for row in range(5):
+            if row == column:
+                finite_hessian = (
+                    public_value(tuple(upper_point))
+                    - 2.0 * expected
+                    + public_value(tuple(lower_point))
+                ) / (step * step)
+            else:
+                row_step = steps[row]
+                shifted_values = []
+                for row_direction, column_direction in (
+                    (1.0, 1.0),
+                    (1.0, -1.0),
+                    (-1.0, 1.0),
+                    (-1.0, -1.0),
+                ):
+                    shifted = list(point)
+                    shifted[row] += row_direction * row_step
+                    shifted[column] += column_direction * step
+                    shifted_values.append(public_value(tuple(shifted)))
+                finite_hessian = (
+                    shifted_values[0] - shifted_values[1] - shifted_values[2] + shifted_values[3]
+                ) / (4.0 * row_step * step)
+            assert hessian[row * 5 + column] == pytest.approx(
+                finite_hessian, rel=2.0e-4, abs=2.0e-3
+            )
+
+
+def test_fixed_topology_associating_ternary_is_permutation_safe() -> None:
+    base_order = ("component-a", "component-b", "component-c")
+    permuted_order = ("component-c", "component-a", "component-b")
+    amounts_by_id = {
+        "component-a": 0.2,
+        "component-b": 0.5,
+        "component-c": 0.3,
+    }
+
+    def evaluate(order: tuple[str, ...]):
+        model = Mixture.from_dictionary(association_mixture_case(order))
+        _, table = _fixed_topology_mixture_table(model)
+        descriptor = table.fixed_topology_association.contents
+        assert (
+            tuple(
+                descriptor.component_ids[index].decode()
+                for index in range(descriptor.component_count)
+            )
+            == order
+        )
+        slots = tuple(descriptor.slots[index] for index in range(descriptor.slot_count))
+        selected = tuple(
+            slot
+            for slot in slots
+            if slot.parameter_id.decode() == "component:component-b/segment_count"
+            or slot.parameter_family == 10
+        )
+        assert len(selected) == 3
+        result, gradient, hessian = _evaluate_fixed_topology_mixture(
+            table,
+            model.parameter_fingerprint,
+            descriptor.topology_fingerprint.decode(),
+            305.0,
+            tuple(amounts_by_id[item] for item in order),
+            1.0 / 5200.0,
+            _fixed_topology_requests(selected, (2.2, 0.027, 0.027)),
+        )
+        assert result.status == STATUS_OK
+        return result, gradient, hessian
+
+    base, base_gradient, base_hessian = evaluate(base_order)
+    permuted, permuted_gradient, permuted_hessian = evaluate(permuted_order)
+    assert permuted.helmholtz_over_rt_reference_amount == pytest.approx(
+        base.helmholtz_over_rt_reference_amount, rel=3.0e-13, abs=3.0e-13
+    )
+    base_to_permuted = (1, 2, 0, 3, 4, 5, 6)
+    for base_index, permuted_index in enumerate(base_to_permuted):
+        assert permuted_gradient[permuted_index] == pytest.approx(
+            base_gradient[base_index], rel=2.0e-11, abs=2.0e-9
+        )
+        for base_column, permuted_column in enumerate(base_to_permuted):
+            assert permuted_hessian[permuted_index * 7 + permuted_column] == pytest.approx(
+                base_hessian[base_index * 7 + base_column],
+                rel=3.0e-10,
+                abs=3.0e-7,
+            )
+
+
+def test_fixed_topology_associating_mixture_fails_closed() -> None:
+    model = Mixture.from_dictionary(association_mixture_case())
+    capsule, table = _fixed_topology_mixture_table(model)
+    assert capsule is not None
+    descriptor = table.fixed_topology_association.contents
+    slots = tuple(descriptor.slots[index] for index in range(descriptor.slot_count))
+    requests = _fixed_topology_requests((slots[3], slots[7]), (2.2, 0.027))
+
+    for boundary in (290.0, 320.0):
+        result, gradient, hessian = _evaluate_fixed_topology_mixture(
+            table,
+            model.parameter_fingerprint,
+            descriptor.topology_fingerprint.decode(),
+            boundary,
+            (0.4, 0.6),
+            1.0 / 5500.0,
+            requests,
+        )
+        assert result.status == STATUS_OK
+        assert gradient and hessian
+
+    sentinel = 12345.0
+    rejected, gradient, hessian = _evaluate_fixed_topology_mixture(
+        table,
+        model.parameter_fingerprint,
+        descriptor.topology_fingerprint.decode(),
+        289.99,
+        (0.4, 0.6),
+        1.0 / 5500.0,
+        requests,
+        buffer_value=sentinel,
+    )
+    assert rejected.status == STATUS_DOMAIN_ERROR
+    assert {*gradient, *hessian} == {sentinel}
+
+    wrong_order, gradient, hessian = _evaluate_fixed_topology_mixture(
+        table,
+        model.parameter_fingerprint,
+        descriptor.topology_fingerprint.decode(),
+        305.0,
+        (0.4, 0.6),
+        1.0 / 5500.0,
+        requests,
+        component_ids=("component-b", "component-a"),
+        buffer_value=sentinel,
+    )
+    assert wrong_order.status == STATUS_INVALID_ARGUMENT
+    assert {*gradient, *hessian} == {sentinel}
+
+    wrong_fingerprint, gradient, hessian = _evaluate_fixed_topology_mixture(
+        table,
+        f"sha256:{'0' * 64}",
+        descriptor.topology_fingerprint.decode(),
+        305.0,
+        (0.4, 0.6),
+        1.0 / 5500.0,
+        requests,
+        buffer_value=sentinel,
+    )
+    assert wrong_fingerprint.status == STATUS_UNSUPPORTED_MODEL
+    assert {*gradient, *hessian} == {sentinel}
+    wrong_artifact, gradient, hessian = _evaluate_fixed_topology_mixture(
+        table,
+        model.parameter_fingerprint,
+        descriptor.topology_fingerprint.decode(),
+        305.0,
+        (0.4, 0.6),
+        1.0 / 5500.0,
+        requests,
+        buffer_value=sentinel,
+        artifact_fingerprint=f"sha256:{'f' * 64}".encode(),
+    )
+    assert wrong_artifact.status == STATUS_UNSUPPORTED_MODEL
+    assert {*gradient, *hessian} == {sentinel}
+
+    ordered, ordered_gradient, ordered_hessian = _evaluate_fixed_topology_mixture(
+        table,
+        model.parameter_fingerprint,
+        descriptor.topology_fingerprint.decode(),
+        305.0,
+        (0.4, 0.6),
+        1.0 / 5500.0,
+        requests,
+    )
+    reversed_slots, reversed_gradient, reversed_hessian = _evaluate_fixed_topology_mixture(
+        table,
+        model.parameter_fingerprint,
+        descriptor.topology_fingerprint.decode(),
+        305.0,
+        (0.4, 0.6),
+        1.0 / 5500.0,
+        _fixed_topology_requests((slots[7], slots[3]), (0.027, 2.2)),
+    )
+    assert reversed_slots.status == STATUS_OK
+    assert reversed_slots.helmholtz_over_rt_reference_amount == pytest.approx(
+        ordered.helmholtz_over_rt_reference_amount, rel=2.0e-13, abs=2.0e-13
+    )
+    order = (0, 1, 2, 4, 3)
+    for row, reversed_row in enumerate(order):
+        assert reversed_gradient[reversed_row] == pytest.approx(ordered_gradient[row])
+        for column, reversed_column in enumerate(order):
+            assert reversed_hessian[reversed_row * 5 + reversed_column] == pytest.approx(
+                ordered_hessian[row * 5 + column]
+            )
+    outside_slot_domain, gradient, hessian = _evaluate_fixed_topology_mixture(
+        table,
+        model.parameter_fingerprint,
+        descriptor.topology_fingerprint.decode(),
+        305.0,
+        (0.4, 0.6),
+        1.0 / 5500.0,
+        _fixed_topology_requests((slots[3],), (0.0,)),
+        buffer_value=sentinel,
+    )
+    assert outside_slot_domain.status == STATUS_DOMAIN_ERROR
+    assert {*gradient, *hessian} == {sentinel}
+    nonfinite_amount, gradient, hessian = _evaluate_fixed_topology_mixture(
+        table,
+        model.parameter_fingerprint,
+        descriptor.topology_fingerprint.decode(),
+        305.0,
+        (math.nan, 0.6),
+        1.0 / 5500.0,
+        requests,
+        buffer_value=sentinel,
+    )
+    assert nonfinite_amount.status == STATUS_INVALID_ARGUMENT
+    assert {*gradient, *hessian} == {sentinel}
+
+    wrong_amount_count, gradient, hessian = _evaluate_fixed_topology_mixture(
+        table,
+        model.parameter_fingerprint,
+        descriptor.topology_fingerprint.decode(),
+        305.0,
+        (0.4,),
+        1.0 / 5500.0,
+        requests,
+        buffer_value=sentinel,
+    )
+    assert wrong_amount_count.status == STATUS_INVALID_ARGUMENT
+    assert {*gradient, *hessian} == {sentinel}
+    wrong_capacity, gradient, hessian = _evaluate_fixed_topology_mixture(
+        table,
+        model.parameter_fingerprint,
+        descriptor.topology_fingerprint.decode(),
+        305.0,
+        (0.4, 0.6),
+        1.0 / 5500.0,
+        requests,
+        buffer_value=sentinel,
+        gradient_capacity=4,
+    )
+    assert wrong_capacity.status == STATUS_ABI_MISMATCH
+    assert {*gradient, *hessian} == {sentinel}
+
+    _, pure_table = _fixed_topology_mixture_table(Mixture.from_dictionary(ASSOCIATING_PURE))
+    assert pure_table.fixed_topology_associating_mixture_result_size == 0
+    assert not pure_table.evaluate_fixed_topology_associating_mixture
+    _, ordinary_table = _fixed_topology_mixture_table(_mixture_model())
+    assert ordinary_table.fixed_topology_associating_mixture_result_size == 0
+    assert not ordinary_table.evaluate_fixed_topology_associating_mixture
+
+
 def test_fixed_topology_descriptor_replaces_legacy_association_contracts() -> None:
     model = Mixture.from_dictionary(ASSOCIATING_PURE)
     capsule, table, descriptor = _descriptor(model)
@@ -249,9 +586,7 @@ def test_fixed_topology_2b_matches_independent_value_gradient_hessian_oracle() -
     values = (1.0, 3.0, 200.0, 2400.0, 0.03)
     model = Mixture.from_dictionary(ASSOCIATING_PURE)
     _, table, descriptor = _descriptor(model)
-    slots = tuple(
-        descriptor.slots[index] for index in range(descriptor.slot_count)
-    )
+    slots = tuple(descriptor.slots[index] for index in range(descriptor.slot_count))
     point = (1.0, 1.0 / 6000.0, *values)
     result, gradient, hessian = _evaluate_fixed_topology(
         table,
@@ -313,9 +648,7 @@ def test_fixed_topology_non_2b_value_gradient_hessian_subsets_and_identity() -> 
     )
     assert result.status == STATUS_OK
     assert result.artifact_fingerprint == descriptor.artifact_fingerprint
-    assert result.pressure_pa == pytest.approx(
-        -8.31446261815324 * temperature_k * gradient[1]
-    )
+    assert result.pressure_pa == pytest.approx(-8.31446261815324 * temperature_k * gradient[1])
     assert result.chemical_potential_over_rt == pytest.approx(gradient[0])
 
     steps = (

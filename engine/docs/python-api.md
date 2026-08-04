@@ -141,14 +141,17 @@ exact component order, and declared applicability. Parameter and topology
 fingerprints remain deterministic handshake values, but paper, packet, and
 bundle membership never admit or reject an endpoint.
 
-For an admitted neutral associating pure model, the installed header exposes
-one `fixed_topology_association` descriptor and callback. The descriptor lists
-the immutable site graph and typed active slots; callers may request any
-nonempty ordered subset and receive the exact value, gradient, and row-major
-Hessian in `(amount, volume, requested slots...)`. Parameter, topology, and
-installed-artifact fingerprints are mandatory fail-closed identities. There
-are no scalar association callbacks, 2B-specific entry points, or alternate
-association-basis selector.
+For an admitted neutral constant-diameter associating model, the installed header exposes one
+`fixed_topology_association` descriptor. The descriptor lists the immutable
+component/site graph and typed active slots. Pure callers use
+`evaluate_fixed_topology_association` and receive exact derivatives in
+`(amount, volume, requested slots...)`; multicomponent callers use
+`evaluate_fixed_topology_associating_mixture` and receive exact derivatives in
+`(component amounts in model order, volume, requested slots...)`. Exact
+component IDs are passed back to the mixture callback; its result binds
+parameter, topology, component-order, domain, and installed-artifact
+fingerprints. There are no species-specific callbacks, topology inference,
+2B-specific entry points, or alternate association-basis selector.
 
 Native phase blocks evaluate the same fingerprint-distinct aggregate for polar
 models; no polar callback or family-specific result type is added.
