@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import ClassVar, Literal, TypeAlias, get_args
-import re
 
 from .units import (
     _decimal_number,
@@ -11,7 +11,6 @@ from .units import (
     _exact_integer,
     _quantity,
 )
-
 
 _ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 DomainKind: TypeAlias = Literal["fit-range", "reported-conditions", "unknown"]

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "data_repository": "ePC-SAFT/ePC-SAFT-data",
+  "data_commit": "9185bce8452191e6425e164c51dd6f8db983fc9b",
+  "packet_id": "gross-2001-propane",
+  "packet_version": "1",
+  "packet_path": "packets/gross-2001-propane/1",
+  "packet_fingerprint": "b039bdf6b9622019c46c1cb7342c6c88b64714b8ac64f2dc3d7f413e1b5a720a",
+  "materialization_mode": "byte-for-byte-test-fixture",
+  "destination": "tests/fixtures/data/gross-2001-propane/1",
+  "accepted_by": "unified-engine-direct-cutover-g3",
+  "files": [
+    {"path": "packet.toml", "sha256": "bd2c0c355bded6f33e92cfc2086afc82ac46e32aecfaef76427e3ce1e483e7b0"},
+    {"path": "parameters/bundle.toml", "sha256": "106a07a0eedd9a856136fe9a30d5cc38414c3e67c1199e15e8d398ffd8a47c29"},
+    {"path": "parameters/components.csv", "sha256": "65c97dae721acb3321fe134ff8973ecc2f137ac5dd53821d2cc7cfa6bc3793f4"},
+    {"path": "parameters/model.csv", "sha256": "fe04acbd54d0fb2617cf720c2e93c35e4388c72ee8f96e7b62ff4149bdf6286a"},
+    {"path": "parameters/single.csv", "sha256": "f2d13d5e1e281e6b8250f693a4a8dfc6853ed9f91ae32342cd33ccbfc67af48c"},
+    {"path": "provenance/source-origin.toml", "sha256": "58ae54283e3d2dbcec3ac8a58e3fa15004757db434a7a7f5bfc8772c27c16cda"}
+  ]
+}

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from decimal import Decimal
 import hashlib
 import json
 import unicodedata
+from decimal import Decimal
 
 from .records import (
+    _DIMENSIONAL_UNITS,
     AssociationParameterRecord,
     ComponentRecord,
     ConstantCorrelation,
@@ -16,9 +17,7 @@ from .records import (
     SiteRecord,
     SourceRecord,
     ValidityDomain,
-    _DIMENSIONAL_UNITS,
 )
-
 
 _TAG = "epcsaft-parameters-v1"
 

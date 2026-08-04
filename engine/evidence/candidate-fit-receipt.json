@@ -1,0 +1,816 @@
+{
+  "approval": {
+    "implementation_scope": "approved in delegated user prompt",
+    "runtime_authority_change": "not requested; not granted",
+    "validation_admission": "pending"
+  },
+  "independent_reviewer": {
+    "identity": "codex-independent-reviewer:019f715b-6a5b-7341-9d28-b329b3f206d0",
+    "path": "docs/reviews/independent-review.md",
+    "sha256": "b307a642b8cf5b4a50548f2a47b56411dafc415aafac1bb1939c817b66b334b5"
+  },
+  "producer": "codex:/root",
+  "receipt_payload_sha256": "fb4b6b78bdef3bd141ac6d4857bd6da4fc3c0b1833218ba4f5f7fcafbbda565b",
+  "schema_version": "epcsaft-regression-candidate-fit-receipt-v1",
+  "status": "candidate",
+  "subject": {
+    "authority_status": "candidate-manager-review; validation admission pending",
+    "capability": "pure-methane-saturation-parameter-candidate-v1",
+    "evidence_boundary": {
+      "reporting_block_directional_jacobian": "promotion-receipt evidence item; the existing private native test surface does not expose reporting Jacobians and no production seam was added"
+    },
+    "exclusions": [
+      "binary k_ij",
+      "association parameters",
+      "electrolyte targets",
+      "reactive targets",
+      "generic regression families",
+      "provider catalog persistence",
+      "global identifiability claim",
+      "predictive validation admission",
+      "runtime authority promotion"
+    ],
+    "execution": {
+      "artifacts": {
+        "provider_test_receipt": "provider-tests.xml",
+        "provider_wheel": "epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+        "regression_wheel": "epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl"
+      },
+      "ceres": "2.2.0 system package used by the linked native target",
+      "platform": "Linux-6.17.0-40-generic-x86_64-with-glibc2.39",
+      "python": "3.13.14"
+    },
+    "held_out_reporting": {
+      "acceptance_threshold": null,
+      "interpretation": "descriptive candidate evidence; validation owns admission",
+      "liquid_density_relative_error_max_abs": 0.021013716245584985,
+      "liquid_density_relative_error_rms": 0.009874690419026068,
+      "pressure_relative_error_max_abs": 0.007277982826095972,
+      "pressure_relative_error_rms": 0.003588469984233625,
+      "temperatures_k": [
+        100.0,
+        120.0,
+        140.0,
+        160.0,
+        180.0
+      ]
+    },
+    "installed_artifact_binding": {
+      "import_origins": {
+        "provider": "epcsaft/__init__.py",
+        "regression": "epcsaft_regression/__init__.py"
+      },
+      "method": "all non-RECORD wheel members matched installed files byte-for-byte before package import",
+      "provider": {
+        "distribution": "epcsaft",
+        "verified_member_count": 29,
+        "version": "0.1.0.dev0"
+      },
+      "regression": {
+        "distribution": "epcsaft-regression",
+        "verified_member_count": 8,
+        "version": "0.1.0.dev0"
+      }
+    },
+    "owner": "ePC-SAFT/ePC-SAFT-regression",
+    "problem": {
+      "ceres_linear_solver": "DENSE_QR",
+      "ceres_logging": "SILENT",
+      "ceres_num_threads": 1,
+      "confirmation_cost_relative_delta": 1e-08,
+      "confirmation_liquid_volume_start_multiplier": 1.01,
+      "confirmation_parameter_scaled_max_delta": 1e-05,
+      "confirmation_vapor_volume_start_multiplier": 0.98,
+      "fixed_amount_mol": 1.0,
+      "function_tolerance": 1e-10,
+      "gradient_tolerance": 1e-10,
+      "liquid_volume_bounds_m3": [
+        2e-05,
+        0.0001
+      ],
+      "lower_bounds": [
+        0.5,
+        2.0,
+        50.0
+      ],
+      "max_num_iterations": 500,
+      "methane_molar_mass_kg_per_mol": 0.016043,
+      "parameter_names": [
+        "segment_count",
+        "segment_diameter_angstrom",
+        "dispersion_energy_over_k_kelvin"
+      ],
+      "parameter_scales": [
+        0.1,
+        0.1,
+        10.0
+      ],
+      "parameter_tolerance": 1e-10,
+      "parameter_units": [
+        "1",
+        "angstrom",
+        "K"
+      ],
+      "reporting_chemical_potential_residual_max": 1e-08,
+      "reporting_pressure_bounds_pa": [
+        1000.0,
+        10000000.0
+      ],
+      "reporting_pressure_scaled_residual_max": 1e-08,
+      "residual_names": [
+        "liquid_pressure",
+        "vapor_pressure",
+        "chemical_potential_equality",
+        "liquid_density"
+      ],
+      "residual_weights": [
+        0.25,
+        0.25,
+        0.25,
+        0.25
+      ],
+      "specification_id": "pure-methane-saturation-lifted-volumes-v1",
+      "start": [
+        1.08,
+        3.555744,
+        157.5315
+      ],
+      "topology_relative_separation_min": 0.001,
+      "training_temperatures_k": [
+        110.0,
+        130.0,
+        150.0,
+        170.0
+      ],
+      "upper_bounds": [
+        3.5,
+        5.0,
+        400.0
+      ],
+      "vapor_volume_bounds_m3": [
+        0.00015,
+        0.1
+      ]
+    },
+    "provider": {
+      "capsule": "epcsaft.native_sdk.v1",
+      "commit": "4b10cb899c94687cae734980285badb224dc95e6",
+      "coordinate_order": [
+        "amount_mol",
+        "volume_m3",
+        "segment_count",
+        "segment_diameter_angstrom",
+        "dispersion_energy_over_k_kelvin"
+      ],
+      "entry": "evaluate_pure_phase_parameters",
+      "source_parameter_fingerprint": "sha256:5f836aa84935df70be2e5cffae51b178a7b797c2cee036e9ff47d8097ca94bbf",
+      "test_receipt": "provider-tests.xml",
+      "test_receipt_sha256": "07447721abaca946c6e9221e7d49e431e13fcb8e6867944f67b6ba8337901480",
+      "wheel": "epcsaft-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "f92f79c8d6f614660e5c201b7061c9b02b5cd1a25a4ed8c8fee0b59adaabf2bf"
+    },
+    "regression_artifact": {
+      "wheel": "epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "f832af6d5df0af4c05bfedd3cc7a4b616f9e443a8e1e193b9d51584f9f7f55ba"
+    },
+    "residuals": {
+      "jacobian": "provider Hessian plus exact affine/log/linear chain rules",
+      "order": [
+        "liquid_pressure",
+        "vapor_pressure",
+        "chemical_potential_equality",
+        "liquid_density"
+      ],
+      "raw": [
+        "P_liquid - P_observed [Pa]",
+        "P_vapor - P_observed [Pa]",
+        "mu_liquid/(RT) - mu_vapor/(RT) [1]",
+        "molar_mass/V_liquid - observed_liquid_mass_density [kg/m3]"
+      ],
+      "scales": [
+        "P_observed",
+        "P_observed",
+        1.0,
+        "rho_liquid_observed"
+      ],
+      "weight_meaning": "equal per-row normalization; not an uncertainty claim",
+      "weights": [
+        0.25,
+        0.25,
+        0.25,
+        0.25
+      ]
+    },
+    "result": {
+      "compiled_problem_identity": [
+        "nist-webbook-methane-saturation-100-180-k-v1",
+        "methane",
+        "K",
+        "Pa",
+        "kg/m3",
+        "nist-webbook-srd69-methane-saturation",
+        "NIST Chemistry WebBook, SRD 69, methane (CAS 74-82-8) fluid properties",
+        "Saturation properties query, 100 K through 180 K in 10 K increments",
+        "https://webbook.nist.gov/cgi/fluid.cgi?Action=Data&Wide=on&ID=C74828&Type=SatP&Digits=8&THigh=180&TLow=100&TInc=10&RefState=DEF&TUnit=K&PUnit=Pa&DUnit=kg%2Fm3&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm",
+        "2026-07-17",
+        "NIST Standard Reference Data retained as compact source-backed candidate evidence; redistribution and use remain subject to the NIST SRD terms",
+        "Exact retained CSV fields and decimal strings; CRLF line endings normalized to LF. Retained source SHA-256: a5e16df3bf8ec78483fc340782cddc89ab8b284a9f6dfaecd6cda3ffde579227; packaged SHA-256: dec64d5a6cac414a4a92393a0d728fa27c02135c6a159d0d1881d7b6dde6d26c.",
+        "temperature",
+        "K",
+        "pressure",
+        "Pa",
+        "saturated_liquid_mass_density",
+        "kg/m3",
+        "a5e16df3bf8ec78483fc340782cddc89ab8b284a9f6dfaecd6cda3ffde579227",
+        "dec64d5a6cac414a4a92393a0d728fa27c02135c6a159d0d1881d7b6dde6d26c",
+        "pure-methane-saturation-lifted-volumes-v1",
+        "segment_count",
+        "segment_diameter_angstrom",
+        "dispersion_energy_over_k_kelvin",
+        "1",
+        "angstrom",
+        "K",
+        "liquid_pressure",
+        "vapor_pressure",
+        "chemical_potential_equality",
+        "liquid_density",
+        "mol",
+        "m3/mol",
+        "epcsaft.native_sdk.v1",
+        "sha256:5f836aa84935df70be2e5cffae51b178a7b797c2cee036e9ff47d8097ca94bbf",
+        "p_j = start_j + parameter_scale_j * z_j",
+        "V_liquid = (molar_mass / observed_liquid_density) * exp(u_liquid)",
+        "V_vapor = (R * T / observed_pressure) * exp(u_vapor)",
+        "P_report = observed_pressure * exp(u_pressure)",
+        "DENSE_QR",
+        "SILENT"
+      ],
+      "confirmation_cost_relative_delta": 1.6515278998974897e-16,
+      "confirmation_parameter_scaled_max_delta": 2.2115622559937265e-06,
+      "confirmation_solution_usable": true,
+      "confirmation_termination": "CONVERGENCE",
+      "dataset_id": "nist-webbook-methane-saturation-100-180-k-v1",
+      "failure_reasons": [],
+      "final_cost": 4.798586497669576e-06,
+      "initial_cost": 14340.021563034428,
+      "iterations": 282,
+      "jacobian": {
+        "complete_columns": true,
+        "full_condition_number": 502465.22577539383,
+        "full_rank": 11,
+        "full_singular_values": [
+          2608.931243051706,
+          387.7201834384377,
+          69.66858270349849,
+          10.03603093288209,
+          0.7665322999770852,
+          0.6324548191976115,
+          0.5279311042695605,
+          0.3652622699490841,
+          0.3418146025811784,
+          0.11989075292313389,
+          0.005192262288451222
+        ],
+        "parameter_condition_number": 4806.140456669111,
+        "parameter_rank": 3,
+        "parameter_singular_values": [
+          336.08769981347007,
+          5.559012203901723,
+          0.06992881353417524
+        ]
+      },
+      "numerically_converged": true,
+      "parameters": [
+        {
+          "active_bound": null,
+          "final": 0.9932081279826167,
+          "lower_bound": 0.5,
+          "movement": -0.08679187201738336,
+          "name": "segment_count",
+          "start": 1.08,
+          "unit": "1",
+          "upper_bound": 3.5
+        },
+        {
+          "active_bound": null,
+          "final": 3.717121437945618,
+          "lower_bound": 2.0,
+          "movement": 0.16137743794561832,
+          "name": "segment_diameter_angstrom",
+          "start": 3.555744,
+          "unit": "angstrom",
+          "upper_bound": 5.0
+        },
+        {
+          "active_bound": null,
+          "final": 150.4888402511307,
+          "lower_bound": 50.0,
+          "movement": -7.0426597488692835,
+          "name": "dispersion_energy_over_k_kelvin",
+          "start": 157.5315,
+          "unit": "K",
+          "upper_bound": 400.0
+        }
+      ],
+      "physically_valid": true,
+      "provider_fingerprint": "sha256:5f836aa84935df70be2e5cffae51b178a7b797c2cee036e9ff47d8097ca94bbf",
+      "reporting_rows": [
+        {
+          "failure_reasons": [],
+          "liquid_density_relative_error": -0.004649067497679514,
+          "liquid_mass_density_kg_m3": 436.84483289550474,
+          "liquid_molar_density_mol_m3": 27229.622445646368,
+          "liquid_stability_slope": 20339.151665320154,
+          "liquid_volume_m3": 3.672471045076447e-05,
+          "observed_liquid_density_kg_m3": 438.88524,
+          "observed_pressure_pa": 34375.892,
+          "physically_valid": true,
+          "predicted_liquid_density_kg_m3": 436.84483289550474,
+          "predicted_pressure_pa": 34626.07915160773,
+          "pressure_relative_error": 0.007277982826095972,
+          "raw_equilibrium_residuals": [
+            1.0023359209299088e-07,
+            -1.8291757442057133e-08,
+            -6.612488334667432e-13
+          ],
+          "row_id": "nist-methane-sat-100-k",
+          "solution_usable": true,
+          "temperature_k": 100.0,
+          "termination": "CONVERGENCE",
+          "training": false,
+          "vapor_mass_density_kg_m3": 0.6783132413572062,
+          "vapor_molar_density_mol_m3": 42.280947538316155,
+          "vapor_stability_slope": 806.4900342533952,
+          "vapor_volume_m3": 0.023651314793590485
+        },
+        {
+          "failure_reasons": [],
+          "liquid_density_relative_error": -0.0032493992167778587,
+          "liquid_mass_density_kg_m3": 423.3969791365449,
+          "liquid_molar_density_mol_m3": 26391.38435059184,
+          "liquid_stability_slope": 17282.060349996227,
+          "liquid_volume_m3": 3.789115367029144e-05,
+          "observed_liquid_density_kg_m3": 424.77725,
+          "observed_pressure_pa": 88130.038,
+          "physically_valid": true,
+          "predicted_liquid_density_kg_m3": 423.3969791365449,
+          "predicted_pressure_pa": 88224.60866583801,
+          "pressure_relative_error": 0.0010730809606369137,
+          "raw_equilibrium_residuals": [
+            2.0286825019866228e-07,
+            -3.812601789832115e-09,
+            -4.973799150320701e-14
+          ],
+          "row_id": "nist-methane-sat-110-k",
+          "solution_usable": true,
+          "temperature_k": 110.0,
+          "termination": "CONVERGENCE",
+          "training": true,
+          "vapor_mass_density_kg_m3": 1.59573618894173,
+          "vapor_molar_density_mol_m3": 99.46619640601695,
+          "vapor_stability_slope": 859.5285950024037,
+          "vapor_volume_m3": 0.010053666834891735
+        },
+        {
+          "failure_reasons": [],
+          "liquid_density_relative_error": -0.0013700301605476743,
+          "liquid_mass_density_kg_m3": 409.3407614313209,
+          "liquid_molar_density_mol_m3": 25515.225421138246,
+          "liquid_stability_slope": 14320.152765474011,
+          "liquid_volume_m3": 3.9192285527351986e-05,
+          "observed_liquid_density_kg_m3": 409.90234,
+          "observed_pressure_pa": 191430.08,
+          "physically_valid": true,
+          "predicted_liquid_density_kg_m3": 409.3407614313209,
+          "predicted_pressure_pa": 191083.41254773695,
+          "pressure_relative_error": -0.0018109351062436721,
+          "raw_equilibrium_residuals": [
+            -1.7904676496982574e-07,
+            -3.4924596548080444e-10,
+            -1.1546319456101628e-14
+          ],
+          "row_id": "nist-methane-sat-120-k",
+          "solution_usable": true,
+          "temperature_k": 120.0,
+          "termination": "CONVERGENCE",
+          "training": false,
+          "vapor_mass_density_kg_m3": 3.2442498252638243,
+          "vapor_molar_density_mol_m3": 202.22214207217004,
+          "vapor_stability_slope": 892.6912997562289,
+          "vapor_volume_m3": 0.0049450569050105055
+        },
+        {
+          "failure_reasons": [],
+          "liquid_density_relative_error": 0.0007889901335299196,
+          "liquid_mass_density_kg_m3": 394.3482315735024,
+          "liquid_molar_density_mol_m3": 24580.703831795945,
+          "liquid_stability_slope": 11496.17545981396,
+          "liquid_volume_m3": 4.068231759525402e-05,
+          "observed_liquid_density_kg_m3": 394.03734,
+          "observed_pressure_pa": 367319.94,
+          "physically_valid": true,
+          "predicted_liquid_density_kg_m3": 394.34823157350235,
+          "predicted_pressure_pa": 366384.5067925305,
+          "pressure_relative_error": -0.002546644234640588,
+          "raw_equilibrium_residuals": [
+            2.7980422601103783e-07,
+            -8.149072527885437e-10,
+            9.769962616701378e-15
+          ],
+          "row_id": "nist-methane-sat-130-k",
+          "solution_usable": true,
+          "temperature_k": 130.0,
+          "termination": "CONVERGENCE",
+          "training": true,
+          "vapor_mass_density_kg_m3": 5.937680465079681,
+          "vapor_molar_density_mol_m3": 370.1103574817478,
+          "vapor_stability_slope": 900.777967662806,
+          "vapor_volume_m3": 0.0027018968255956345
+        },
+        {
+          "failure_reasons": [],
+          "liquid_density_relative_error": 0.0028840659883874785,
+          "liquid_mass_density_kg_m3": 377.95195367291694,
+          "liquid_molar_density_mol_m3": 23558.683143608858,
+          "liquid_stability_slope": 8848.136866980278,
+          "liquid_volume_m3": 4.2447194263966576e-05,
+          "observed_liquid_density_kg_m3": 376.86505,
+          "observed_pressure_pa": 641181.43,
+          "physically_valid": true,
+          "predicted_liquid_density_kg_m3": 377.95195367291694,
+          "predicted_pressure_pa": 639981.9267634666,
+          "pressure_relative_error": -0.0018707703941667365,
+          "raw_equilibrium_residuals": [
+            -1.1757947504520416e-07,
+            -9.080395102500916e-09,
+            -2.842170943040401e-14
+          ],
+          "row_id": "nist-methane-sat-140-k",
+          "solution_usable": true,
+          "temperature_k": 140.0,
+          "termination": "CONVERGENCE",
+          "training": false,
+          "vapor_mass_density_kg_m3": 10.074736927148352,
+          "vapor_molar_density_mol_m3": 627.9833526864272,
+          "vapor_stability_slope": 878.8617064254406,
+          "vapor_volume_m3": 0.001592398899942389
+        },
+        {
+          "failure_reasons": [],
+          "liquid_density_relative_error": 0.0042954344988820736,
+          "liquid_mass_density_kg_m3": 359.43578939218077,
+          "liquid_molar_density_mol_m3": 22404.524676942016,
+          "liquid_stability_slope": 6414.309683958895,
+          "liquid_volume_m3": 4.463384135210717e-05,
+          "observed_liquid_density_kg_m3": 357.89846,
+          "observed_pressure_pa": 1039961.3,
+          "physically_valid": true,
+          "predicted_liquid_density_kg_m3": 359.43578939218077,
+          "predicted_pressure_pa": 1039603.4624909018,
+          "pressure_relative_error": -0.000344087331998056,
+          "raw_equilibrium_residuals": [
+            1.4319084584712982e-07,
+            -4.71482053399086e-08,
+            -5.861977570020827e-14
+          ],
+          "row_id": "nist-methane-sat-150-k",
+          "solution_usable": true,
+          "temperature_k": 150.0,
+          "termination": "CONVERGENCE",
+          "training": true,
+          "vapor_mass_density_kg_m3": 16.207368762175996,
+          "vapor_molar_density_mol_m3": 1010.2455128202952,
+          "vapor_stability_slope": 821.8815180434424,
+          "vapor_volume_m3": 0.000989858393142779
+        },
+        {
+          "failure_reasons": [],
+          "liquid_density_relative_error": 0.00376332778852705,
+          "liquid_mass_density_kg_m3": 337.58061339703204,
+          "liquid_molar_density_mol_m3": 21042.237324504895,
+          "liquid_stability_slope": 4239.0671228293595,
+          "liquid_volume_m3": 4.752346362121116e-05,
+          "observed_liquid_density_kg_m3": 336.31495,
+          "observed_pressure_pa": 1592078.0,
+          "physically_valid": true,
+          "predicted_liquid_density_kg_m3": 337.5806133970321,
+          "predicted_pressure_pa": 1594405.452356535,
+          "pressure_relative_error": 0.0014618959350829609,
+          "raw_equilibrium_residuals": [
+            -1.0337680578231812e-07,
+            3.3294782042503357e-07,
+            4.085620730620576e-13
+          ],
+          "row_id": "nist-methane-sat-160-k",
+          "solution_usable": true,
+          "temperature_k": 160.0,
+          "termination": "CONVERGENCE",
+          "training": false,
+          "vapor_mass_density_kg_m3": 25.197816860589956,
+          "vapor_molar_density_mol_m3": 1570.6424521965937,
+          "vapor_stability_slope": 723.7598410466861,
+          "vapor_volume_m3": 0.0006366821415029678
+        },
+        {
+          "failure_reasons": [],
+          "liquid_density_relative_error": -0.00172463023237858,
+          "liquid_mass_density_kg_m3": 309.96652881184707,
+          "liquid_molar_density_mol_m3": 19320.98290917204,
+          "liquid_stability_slope": 2382.312718886683,
+          "liquid_volume_m3": 5.175720120974181e-05,
+          "observed_liquid_density_kg_m3": 310.50203,
+          "observed_pressure_pa": 2328348.8,
+          "physically_valid": true,
+          "predicted_liquid_density_kg_m3": 309.96652881184707,
+          "predicted_pressure_pa": 2334648.4404434026,
+          "pressure_relative_error": 0.0027056257393234247,
+          "raw_equilibrium_residuals": [
+            3.725290298461914e-09,
+            1.3969838619232178e-09,
+            -8.881784197001252e-16
+          ],
+          "row_id": "nist-methane-sat-170-k",
+          "solution_usable": true,
+          "temperature_k": 170.0,
+          "termination": "CONVERGENCE",
+          "training": true,
+          "vapor_mass_density_kg_m3": 38.639843778188954,
+          "vapor_molar_density_mol_m3": 2408.5173457700525,
+          "vapor_stability_slope": 575.6935975615719,
+          "vapor_volume_m3": 0.0004151931900163582
+        },
+        {
+          "failure_reasons": [],
+          "liquid_density_relative_error": -0.021013716245584985,
+          "liquid_mass_density_kg_m3": 270.4239126820564,
+          "liquid_molar_density_mol_m3": 16856.19352253671,
+          "liquid_stability_slope": 939.0771539303894,
+          "liquid_volume_m3": 5.932537489338867e-05,
+          "observed_liquid_density_kg_m3": 276.2285,
+          "observed_pressure_pa": 3285180.7,
+          "physically_valid": true,
+          "predicted_liquid_density_kg_m3": 270.4239126820564,
+          "predicted_pressure_pa": 3290375.174877589,
+          "pressure_relative_error": 0.0015811839140504253,
+          "raw_equilibrium_residuals": [
+            -8.498318493366241e-07,
+            1.3727694749832153e-06,
+            1.2638778912332782e-12
+          ],
+          "row_id": "nist-methane-sat-180-k",
+          "solution_usable": true,
+          "temperature_k": 180.0,
+          "termination": "CONVERGENCE",
+          "training": false,
+          "vapor_mass_density_kg_m3": 60.43028339105386,
+          "vapor_molar_density_mol_m3": 3766.7695188589328,
+          "vapor_stability_slope": 362.6513344788516,
+          "vapor_volume_m3": 0.00026547947650986883
+        }
+      ],
+      "solution_usable": true,
+      "solver_converged": true,
+      "specification_id": "pure-methane-saturation-lifted-volumes-v1",
+      "termination": "CONVERGENCE",
+      "training_rows": [
+        {
+          "liquid_chemical_potential_over_rt": 4.539350501625543,
+          "liquid_mass_density_kg_m3": 423.3968912364471,
+          "liquid_molar_density_mol_m3": 26391.37887156062,
+          "liquid_pressure_pa": 88129.91980400862,
+          "liquid_stability_slope": 17282.028939856853,
+          "liquid_volume_m3": 3.789116153675476e-05,
+          "observed_liquid_density_kg_m3": 424.77725,
+          "observed_pressure_pa": 88130.038,
+          "raw_residuals": [
+            -0.11819599138107151,
+            45.63314904810977,
+            0.0005341781666983181,
+            -1.380358763552863
+          ],
+          "row_id": "nist-methane-sat-110-k",
+          "scaled_residuals": [
+            -6.705772178441107e-07,
+            0.00025889668314967577,
+            0.00026708908334915904,
+            -0.0016248030744971194
+          ],
+          "temperature_k": 110.0,
+          "vapor_chemical_potential_over_rt": 4.538816323458844,
+          "vapor_mass_density_kg_m3": 1.5948227925571257,
+          "vapor_molar_density_mol_m3": 99.40926214281154,
+          "vapor_pressure_pa": 88175.67114904811,
+          "vapor_stability_slope": 859.5598425170144,
+          "vapor_volume_m3": 0.010059424830690304
+        },
+        {
+          "liquid_chemical_potential_over_rt": 5.744714519527522,
+          "liquid_mass_density_kg_m3": 394.3495452853319,
+          "liquid_molar_density_mol_m3": 24580.785718714196,
+          "liquid_pressure_pa": 367325.90742032847,
+          "liquid_stability_slope": 11496.523445700534,
+          "liquid_volume_m3": 4.068218206868244e-05,
+          "observed_liquid_density_kg_m3": 394.03734,
+          "observed_pressure_pa": 367319.94,
+          "raw_residuals": [
+            5.967420328466687,
+            -420.8787132393336,
+            -0.0012498175523605326,
+            0.3122052853319133
+          ],
+          "row_id": "nist-methane-sat-130-k",
+          "scaled_residuals": [
+            8.122919121225338e-06,
+            -0.000572904799613293,
+            -0.0006249087761802663,
+            0.000396162055773589
+          ],
+          "temperature_k": 130.0,
+          "vapor_chemical_potential_over_rt": 5.745964337079883,
+          "vapor_mass_density_kg_m3": 5.946846135776879,
+          "vapor_molar_density_mol_m3": 370.68167648051354,
+          "vapor_pressure_pa": 366899.06128676067,
+          "vapor_stability_slope": 900.5081667741138,
+          "vapor_volume_m3": 0.0026977324843640315
+        },
+        {
+          "liquid_chemical_potential_over_rt": 6.563677448073789,
+          "liquid_mass_density_kg_m3": 359.43661880751336,
+          "liquid_molar_density_mol_m3": 22404.57637645785,
+          "liquid_pressure_pa": 1039935.0827903224,
+          "liquid_stability_slope": 6414.448727893034,
+          "liquid_volume_m3": 4.4633738357614034e-05,
+          "observed_liquid_density_kg_m3": 357.89846,
+          "observed_pressure_pa": 1039961.3,
+          "raw_residuals": [
+            -26.2172096776776,
+            -138.90918538172264,
+            -0.0001618689514479854,
+            1.538158807513355
+          ],
+          "row_id": "nist-methane-sat-150-k",
+          "scaled_residuals": [
+            -1.2604896777253923e-05,
+            -6.678574740315944e-05,
+            -8.09344757239927e-05,
+            0.0021488759793956013
+          ],
+          "temperature_k": 150.0,
+          "vapor_chemical_potential_over_rt": 6.563839317025237,
+          "vapor_mass_density_kg_m3": 16.211642478875593,
+          "vapor_molar_density_mol_m3": 1010.5119041872214,
+          "vapor_pressure_pa": 1039822.3908146183,
+          "vapor_stability_slope": 821.7777820540297,
+          "vapor_volume_m3": 0.000989597446458905
+        },
+        {
+          "liquid_chemical_potential_over_rt": 7.139308631118438,
+          "liquid_mass_density_kg_m3": 309.92407733692113,
+          "liquid_molar_density_mol_m3": 19318.336803398433,
+          "liquid_pressure_pa": 2328348.7750609536,
+          "liquid_stability_slope": 2379.1492314401503,
+          "liquid_volume_m3": 5.176429058965793e-05,
+          "observed_liquid_density_kg_m3": 310.50203,
+          "observed_pressure_pa": 2328348.8,
+          "raw_residuals": [
+            -0.02493904624134302,
+            1763.654535970185,
+            0.0011039009066129424,
+            -0.577952663078861
+          ],
+          "row_id": "nist-methane-sat-170-k",
+          "scaled_residuals": [
+            -5.3555219564489275e-09,
+            0.0003787350365997966,
+            0.0005519504533064712,
+            -0.00093067453227095
+          ],
+          "temperature_k": 170.0,
+          "vapor_chemical_potential_over_rt": 7.138204730211825,
+          "vapor_mass_density_kg_m3": 38.5136861136095,
+          "vapor_molar_density_mol_m3": 2400.653625482111,
+          "vapor_pressure_pa": 2330112.45453597,
+          "vapor_stability_slope": 577.955728873243,
+          "vapor_volume_m3": 0.00041655322091673066
+        }
+      ]
+    },
+    "rows": [
+      {
+        "liquid_density_kg_m3": 438.88524,
+        "pressure_pa": 34375.892,
+        "row_id": "nist-methane-sat-100-k",
+        "source_id": "nist-webbook-srd69-methane-saturation",
+        "species": "methane",
+        "temperature_k": 100.0
+      },
+      {
+        "liquid_density_kg_m3": 424.77725,
+        "pressure_pa": 88130.038,
+        "row_id": "nist-methane-sat-110-k",
+        "source_id": "nist-webbook-srd69-methane-saturation",
+        "species": "methane",
+        "temperature_k": 110.0
+      },
+      {
+        "liquid_density_kg_m3": 409.90234,
+        "pressure_pa": 191430.08,
+        "row_id": "nist-methane-sat-120-k",
+        "source_id": "nist-webbook-srd69-methane-saturation",
+        "species": "methane",
+        "temperature_k": 120.0
+      },
+      {
+        "liquid_density_kg_m3": 394.03734,
+        "pressure_pa": 367319.94,
+        "row_id": "nist-methane-sat-130-k",
+        "source_id": "nist-webbook-srd69-methane-saturation",
+        "species": "methane",
+        "temperature_k": 130.0
+      },
+      {
+        "liquid_density_kg_m3": 376.86505,
+        "pressure_pa": 641181.43,
+        "row_id": "nist-methane-sat-140-k",
+        "source_id": "nist-webbook-srd69-methane-saturation",
+        "species": "methane",
+        "temperature_k": 140.0
+      },
+      {
+        "liquid_density_kg_m3": 357.89846,
+        "pressure_pa": 1039961.3,
+        "row_id": "nist-methane-sat-150-k",
+        "source_id": "nist-webbook-srd69-methane-saturation",
+        "species": "methane",
+        "temperature_k": 150.0
+      },
+      {
+        "liquid_density_kg_m3": 336.31495,
+        "pressure_pa": 1592078.0,
+        "row_id": "nist-methane-sat-160-k",
+        "source_id": "nist-webbook-srd69-methane-saturation",
+        "species": "methane",
+        "temperature_k": 160.0
+      },
+      {
+        "liquid_density_kg_m3": 310.50203,
+        "pressure_pa": 2328348.8,
+        "row_id": "nist-methane-sat-170-k",
+        "source_id": "nist-webbook-srd69-methane-saturation",
+        "species": "methane",
+        "temperature_k": 170.0
+      },
+      {
+        "liquid_density_kg_m3": 276.2285,
+        "pressure_pa": 3285180.7,
+        "row_id": "nist-methane-sat-180-k",
+        "source_id": "nist-webbook-srd69-methane-saturation",
+        "species": "methane",
+        "temperature_k": 180.0
+      }
+    ],
+    "source": {
+      "citation": "NIST Chemistry WebBook, SRD 69, methane (CAS 74-82-8) fluid properties",
+      "data_sha256": "a5e16df3bf8ec78483fc340782cddc89ab8b284a9f6dfaecd6cda3ffde579227",
+      "locator": "Saturation properties query, 100 K through 180 K in 10 K increments",
+      "retrieved_on": "2026-07-17",
+      "source_id": "nist-webbook-srd69-methane-saturation",
+      "transformation": "Exact retained CSV fields and decimal strings; CRLF line endings normalized to LF. Retained source SHA-256: a5e16df3bf8ec78483fc340782cddc89ab8b284a9f6dfaecd6cda3ffde579227; packaged SHA-256: dec64d5a6cac414a4a92393a0d728fa27c02135c6a159d0d1881d7b6dde6d26c.",
+      "units": [
+        [
+          "temperature",
+          "K"
+        ],
+        [
+          "pressure",
+          "Pa"
+        ],
+        [
+          "saturated_liquid_mass_density",
+          "kg/m3"
+        ]
+      ],
+      "url": "https://webbook.nist.gov/cgi/fluid.cgi?Action=Data&Wide=on&ID=C74828&Type=SatP&Digits=8&THigh=180&TLow=100&TInc=10&RefState=DEF&TUnit=K&PUnit=Pa&DUnit=kg%2Fm3&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm",
+      "use_basis": "NIST Standard Reference Data retained as compact source-backed candidate evidence; redistribution and use remain subject to the NIST SRD terms"
+    },
+    "training_row_ids": [
+      "nist-methane-sat-110-k",
+      "nist-methane-sat-130-k",
+      "nist-methane-sat-150-k",
+      "nist-methane-sat-170-k"
+    ],
+    "transforms": {
+      "gas_constant_j_per_mol_k": 8.31446261815324,
+      "methane_molar_mass_provenance": "fixed formulation constant 0.016043 kg/mol retained by the admitted M5 plan",
+      "parameters": "p_j = start_j + parameter_scale_j * z_j",
+      "reporting_pressure": "P_report = P_observed * exp(u_pressure)",
+      "row_volumes": "V_phase = V_phase_start * exp(u_phase)",
+      "start_provenance": "retained M5 displaced methane start: (1.0*1.08, 3.7039*0.96, 150.03*1.05)",
+      "volume_starts": {
+        "liquid": "molar_mass / observed_liquid_mass_density",
+        "vapor": "R*T / observed_pressure"
+      }
+    }
+  },
+  "subject_sha256": "3ba15a2859cf2bb4e75bd489985072b8546a1942799c911ad99af4f19bc5d78c"
+}

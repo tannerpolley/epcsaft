@@ -1,0 +1,121 @@
+schema_version = 2
+packet_id = "held-cameretti-sadowski-2008"
+packet_version = "1"
+title = "held-cameretti-sadowski-2008 source parameter packet"
+description = "Reusable parameter packet for held-cameretti-sadowski-2008, copied byte-for-byte from the admitted EOS source bundle and retained with source/domain metadata."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "The packet preserves source values byte-for-byte and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "held-cameretti-sadowski-2008"
+citation = "Held, C.; Cameretti, L. F.; Sadowski, G. Modeling Aqueous Electrolyte Solutions. Part 1. Fully Dissociated Electrolytes. Fluid Phase Equilibria 2008, 270, 87-96."
+doi = "10.1016/j.fluid.2008.06.010"
+use_basis = "Eqs. (1)-(7), Table 1 water model, all 29 Table 2 ion rows, one-segment ion convention, water-only constant dielectric rule, and excluded ion-ion dispersion; inspected PDF SHA-256 20855b3de708fd529b29c7c4d8f6d0a1270802b610408606db1488b32d9c97e8"
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "numeric water relative permittivity 78.09 used to instantiate the Held 2008 concentration-independent solvent dielectric; main PDF SHA-256 a3c940895c530f72f47f22f8c0f4796b5ad37918a4edd274f85497c6dd81ad1f"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5."
+use_basis = "water identity and molecular weight"
+
+[[domains]]
+domain_id = "held-aqueous-electrolyte-298-15-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+description = "Source-defined reported-conditions domain held-aqueous-electrolyte-298-15-k-1-bar (temperature 298.15–298.15 kelvin; pressure 1–1 bar); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "nist-water-identity"
+kind = "unknown"
+description = "Source-defined domain nist-water-identity has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[files]]
+path = "parameters/bundle.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "48cb1009a13ae8fe09c3d0f72b5eb2da11c9fbb3eebee2bc3fe6b427bdab1418"
+source_refs = ["held-cameretti-sadowski-2008", "figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["held-aqueous-electrolyte-298-15-k-1-bar", "nist-water-identity"]
+units_basis = "Bundle identity, file membership, and source metadata are non-numeric identifiers."
+
+[[files]]
+path = "parameters/components.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "be14e550b7d5f4a19554a5af2aa7aaa37242f56d362ecf0ae9d44b68316f65f5"
+source_refs = ["held-cameretti-sadowski-2008", "figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["held-aqueous-electrolyte-298-15-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/single.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "17c4f71a9501f76fde7709d71ee8447f184d7fd7d4df97911848c3461d05489f"
+source_refs = ["held-cameretti-sadowski-2008", "figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["held-aqueous-electrolyte-298-15-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/pair.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "042bbde7f6fc4128b5dbfc538e171fe070f8ee81208f29d36212f92ff3cca8e6"
+source_refs = ["held-cameretti-sadowski-2008", "figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["held-aqueous-electrolyte-298-15-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/sites.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "c84e7302eb8f0294af63e721734b060d3d7b726f8b0d7d60cd626a7f76ed9bfb"
+source_refs = ["held-cameretti-sadowski-2008", "figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["held-aqueous-electrolyte-298-15-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/association.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "70921ceedce2b95bba9bd15b54546679a2f9dce87df1a3ecfbab10490ca9a9e2"
+source_refs = ["held-cameretti-sadowski-2008", "figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["held-aqueous-electrolyte-298-15-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/model.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "d31b9a947bfa9901d30a7d0eccfd06821967ba0b66d42e611875e39b81d2cea5"
+source_refs = ["held-cameretti-sadowski-2008", "figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["held-aqueous-electrolyte-298-15-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/correlations.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "eea0da2610cf3c50da1a38db72ab8f06c03c76a9e45607f11be680e65291ad2e"
+source_refs = ["held-cameretti-sadowski-2008", "figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["held-aqueous-electrolyte-298-15-k-1-bar", "nist-water-identity"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "6fd78fda8b284fc3a0be9a95746516ad8a79388d132669dfde3f9a65f34effa9"
+source_refs = ["held-cameretti-sadowski-2008", "figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["held-aqueous-electrolyte-298-15-k-1-bar", "nist-water-identity"]
+units_basis = "Origin repository, commit, tree, path, and hash metadata are non-numeric identifiers."

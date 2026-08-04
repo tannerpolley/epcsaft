@@ -1,0 +1,11 @@
+record_id,component_id_a,site_id_a,component_id_b,site_id_b,family,value,unit,source_id,locator,domain_id
+water-association-energy,water,a,water,b,association_energy_over_k,2425.7,kelvin,figiel-yu-held-2025,"Table 2, water column, epsilon^AiBi/k_B row",figiel-298-k-1-bar
+water-association-volume,water,a,water,b,association_volume,0.04509,,figiel-yu-held-2025,"Table 2, water column, kappa^AiBi row",figiel-298-k-1-bar
+methanol-association-energy,methanol,a,methanol,b,association_energy_over_k,2899.5,kelvin,figiel-yu-held-2025,"Table 2, methanol column, epsilon^AiBi/k_B row",figiel-298-k-1-bar
+methanol-association-volume,methanol,a,methanol,b,association_volume,0.03518,,figiel-yu-held-2025,"Table 2, methanol column, kappa^AiBi row",figiel-298-k-1-bar
+ethanol-association-energy,ethanol,a,ethanol,b,association_energy_over_k,2653.4,kelvin,figiel-yu-held-2025,"Table 2, ethanol column, epsilon^AiBi/k_B row",figiel-298-k-1-bar
+ethanol-association-volume,ethanol,a,ethanol,b,association_volume,0.03238,,figiel-yu-held-2025,"Table 2, ethanol column, kappa^AiBi row",figiel-298-k-1-bar
+water-a-ethanol-b-energy,water,a,ethanol,b,association_energy_over_k,2539.55,kelvin,figiel-yu-held-2025,"Gross 2002 Eq. 2 applied to Figiel 2025 Table 2 water and ethanol values",figiel-298-k-1-bar
+water-a-ethanol-b-volume,water,a,ethanol,b,association_volume,0.03797842747120087,,figiel-yu-held-2025,"Gross 2002 Eq. 3 applied to Figiel 2025 Table 2 water and ethanol values with k_hb=0",figiel-298-k-1-bar
+water-b-ethanol-a-energy,water,b,ethanol,a,association_energy_over_k,2539.55,kelvin,figiel-yu-held-2025,"Gross 2002 Eq. 2 applied to Figiel 2025 Table 2 water and ethanol values",figiel-298-k-1-bar
+water-b-ethanol-a-volume,water,b,ethanol,a,association_volume,0.03797842747120087,,figiel-yu-held-2025,"Gross 2002 Eq. 3 applied to Figiel 2025 Table 2 water and ethanol values with k_hb=0",figiel-298-k-1-bar

@@ -19,7 +19,6 @@ from .records import (
 )
 from .units import _error
 
-
 _ScalarRecord = SingleParameterRecord | ConstantCorrelation
 _TemperatureRecord = (
     SingleParameterRecord | ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation

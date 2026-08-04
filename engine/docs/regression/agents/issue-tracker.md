@@ -1,0 +1,8 @@
+# Unified Engine issue tracker
+
+Regression work is tracked in the Unified Engine repository. Infer the exact
+repository from `git remote -v` during the cutover; after the external rename,
+the durable target is `ePC-SAFT/ePC-SAFT-engine`.
+
+Use the conventions in `../../agents/issue-tracker.md`. Regression is a module
+of the Engine, not a separate package or issue authority.

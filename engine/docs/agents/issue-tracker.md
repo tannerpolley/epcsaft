@@ -1,7 +1,8 @@
 # Issue tracker: GitHub
 
 Issues and PRDs for this repo live as GitHub issues in
-`ePC-SAFT/ePC-SAFT-eos`. Use the `gh` CLI for all operations.
+`ePC-SAFT/ePC-SAFT-engine`. During the direct cutover, infer the current remote
+with `git remote -v`. Use the `gh` CLI for all operations.
 
 ## Conventions
 
@@ -55,7 +56,7 @@ Used by `/wayfinder`. The map is one issue with child issues as tickets.
 <!-- project-truss:setup:start -->
 ## Project Truss tracker contract
 
-Project Truss uses GitHub Issues in `ePC-SAFT/ePC-SAFT-eos` through the authenticated `gh` CLI.
+Project Truss uses GitHub Issues in `ePC-SAFT/ePC-SAFT-engine` through the authenticated `gh` CLI.
 
 ## Project Truss execution issues
 

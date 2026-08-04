@@ -10,6 +10,7 @@ from .eos import (
     native_sdk,
 )
 from .parameters import Parameters
+from .records import SourceRecord, ValidityDomain
 from .reference import (
     Activity,
     ElectrolyteReference,
@@ -21,22 +22,24 @@ from .reference import (
 from .units import ParameterError, unit_registry
 
 __all__ = (
-    "Parameters",
-    "ParameterError",
-    "unit_registry",
-    "Mixture",
-    "State",
-    "Fugacity",
+    "Activity",
     "DensityDiagnostics",
+    "ElectrolyteReference",
     "EosError",
+    "Fugacity",
+    "Mixture",
+    "ParameterError",
+    "Parameters",
     "Phase",
     "PropertyBasis",
-    "native_sdk",
-    "export_native_model",
-    "ElectrolyteReference",
-    "Activity",
-    "TransferFreeEnergy",
     "SourceReferenceDeclaration",
     "SourceReferenceTransfer",
+    "State",
+    "SourceRecord",
+    "TransferFreeEnergy",
+    "ValidityDomain",
+    "export_native_model",
+    "native_sdk",
     "source_reference_transfer",
+    "unit_registry",
 )

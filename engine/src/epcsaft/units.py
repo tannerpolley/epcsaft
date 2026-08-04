@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from decimal import Decimal, InvalidOperation
-from typing import Iterable
 
 import pint
-
 
 unit_registry = pint.UnitRegistry()
 

@@ -1,0 +1,591 @@
+{
+  "claim": "Conditional real-data recovery of the eleven current-catalog Figiel aqueous interactions",
+  "comparison": {
+    "coordinates_outside_gate": {
+      "lithium-cation--bromide-anion": 0.26079436319380545,
+      "lithium-cation--chloride-anion": 0.19999999999999996,
+      "potassium-cation--bromide-anion": 0.17563110453065492,
+      "potassium-cation--chloride-anion": 0.13420060218999108,
+      "sodium-cation--chloride-anion": 0.13940250303993806,
+      "water--bromide-anion": 0.07439022939723744,
+      "water--chloride-anion": 0.10550297873440695,
+      "water--lithium-cation": 0.1364822745121732,
+      "water--potassium-cation": 0.05797321784955045
+    },
+    "coordinates_within_gate": 2,
+    "published_max_abs_delta": 0.26079436319380545,
+    "published_parameter_max_abs_delta_gate": 0.05,
+    "start_max_abs_delta": 1.3809200687386891e-06
+  },
+  "confirmation": {
+    "active_bounds": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "complete_jacobian_columns": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "condition_number": 40784.892211551145,
+    "conditional_final_cost_sum": 1.0216866971165677,
+    "conditional_initial_cost_sum": 16.002658377834297,
+    "coordinate_solves": [
+      {
+        "coordinate": 0,
+        "failure_reason": "",
+        "final_cost": 0.18502665656249934,
+        "initial_cost": 3.808548721613753,
+        "iterations": 7,
+        "parameter": -0.5364825850771815,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 1,
+        "failure_reason": "",
+        "final_cost": 0.07041897452892787,
+        "initial_cost": 1.8492948389770782,
+        "iterations": 6,
+        "parameter": -0.32925220209564904,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 2,
+        "failure_reason": "",
+        "final_cost": 0.05394549568139205,
+        "initial_cost": 1.8779144739358578,
+        "iterations": 6,
+        "parameter": -0.15797312194638288,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 3,
+        "failure_reason": "",
+        "final_cost": 0.15489317334570102,
+        "initial_cost": 2.5719825185416507,
+        "iterations": 6,
+        "parameter": -0.4055031323911942,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 4,
+        "failure_reason": "",
+        "final_cost": 0.24499623683551125,
+        "initial_cost": 3.7929328840572802,
+        "iterations": 6,
+        "parameter": -0.3743909070294135,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 5,
+        "failure_reason": "",
+        "final_cost": 0.07251588279868472,
+        "initial_cost": 0.6740121678890465,
+        "iterations": 2,
+        "parameter": 1.0,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 6,
+        "failure_reason": "",
+        "final_cost": 0.03396384710650864,
+        "initial_cost": 0.3461325074377615,
+        "iterations": 5,
+        "parameter": 0.9394025030399382,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 7,
+        "failure_reason": "",
+        "final_cost": 0.02678697062138291,
+        "initial_cost": 0.04031940614795944,
+        "iterations": 5,
+        "parameter": 0.13420038706701554,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 8,
+        "failure_reason": "",
+        "final_cost": 0.12526401088467243,
+        "initial_cost": 0.49491184852317505,
+        "iterations": 6,
+        "parameter": 0.7607929822737367,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 9,
+        "failure_reason": "",
+        "final_cost": 0.028010777082147602,
+        "initial_cost": 0.18149682212524743,
+        "iterations": 5,
+        "parameter": 0.6520084069841584,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 10,
+        "failure_reason": "",
+        "final_cost": 0.025864671669139815,
+        "initial_cost": 0.36511218858548544,
+        "iterations": 5,
+        "parameter": -0.17436779176848044,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      }
+    ],
+    "iterations": 59,
+    "parameters": [
+      -0.5364825850771815,
+      -0.32925220209564904,
+      -0.15797312194638288,
+      -0.4055031323911942,
+      -0.3743909070294135,
+      1.0,
+      0.9394025030399382,
+      0.13420038706701554,
+      0.7607929822737367,
+      0.6520084069841584,
+      -0.17436779176848044
+    ],
+    "rank": 11,
+    "rank_threshold": 3.48680830090478e-11,
+    "singular_values": [
+      9.575114978455561,
+      7.186020756602646,
+      6.0092857433449955,
+      5.415637622070015,
+      2.159189713886078,
+      1.710327870148486,
+      0.03392814974967731,
+      0.02080960931072433,
+      0.015559460340092254,
+      0.011741566527404402,
+      0.00023477112379724973
+    ],
+    "solution_usable": true,
+    "termination": "CONVERGENCE"
+  },
+  "derivative_checks": {
+    "columns": [
+      {
+        "column": 0,
+        "passed_rows": 164,
+        "total_rows": 164
+      },
+      {
+        "column": 1,
+        "passed_rows": 164,
+        "total_rows": 164
+      },
+      {
+        "column": 2,
+        "passed_rows": 164,
+        "total_rows": 164
+      },
+      {
+        "column": 3,
+        "passed_rows": 164,
+        "total_rows": 164
+      },
+      {
+        "column": 4,
+        "passed_rows": 164,
+        "total_rows": 164
+      },
+      {
+        "column": 5,
+        "passed_rows": 164,
+        "total_rows": 164
+      },
+      {
+        "column": 6,
+        "passed_rows": 164,
+        "total_rows": 164
+      },
+      {
+        "column": 7,
+        "passed_rows": 164,
+        "total_rows": 164
+      },
+      {
+        "column": 8,
+        "passed_rows": 164,
+        "total_rows": 164
+      },
+      {
+        "column": 9,
+        "passed_rows": 164,
+        "total_rows": 164
+      },
+      {
+        "column": 10,
+        "passed_rows": 164,
+        "total_rows": 164
+      }
+    ],
+    "criterion": "abs(J_exact-J_h/2) <= max(1e-8,20*abs(J_h-J_h/2),2e-8*abs(J_exact))",
+    "passed_entries": 1804,
+    "steps": [
+      0.0001,
+      5e-05
+    ],
+    "total_entries": 1804,
+    "worst": {
+      "absolute_error": 7.986240557755764e-10,
+      "centered_h": -0.345788242848144,
+      "centered_h_over_2": -0.34578824333664215,
+      "column": 5,
+      "exact": -0.3457882425380181,
+      "row": 20,
+      "tolerance": 1e-08
+    },
+    "worst_error_over_tolerance": 0.07986240557755764
+  },
+  "failure_reasons": [
+    "fitted interactions did not reproduce the printed Table 4/5 tuple"
+  ],
+  "limits": [
+    "The conditional formulation was user-approved and is not claimed as Figiel's undisclosed historical optimizer.",
+    "All rows are training observations; no predictive or uncertainty claim is supported.",
+    "The fitted values are not Provider-catalog authority.",
+    "No rows, weights, bounds, starts, tolerances, or comparison gates were tuned after execution."
+  ],
+  "observables": {
+    "all_frozen_in_sample_gates_passed": true,
+    "evaluated_rows": 164,
+    "failed_rows": 0,
+    "input_rows": 164,
+    "pooled_miac_rmse": 0.1465724137287975,
+    "salt_metrics": {
+      "KBr": {
+        "first_modeled_gamma_pm_m": 0.9649263734028966,
+        "miac_max_abs_error": 0.11409200859999569,
+        "miac_rmse": 0.07405564356999148,
+        "row_count": 28
+      },
+      "KCl": {
+        "first_modeled_gamma_pm_m": 0.9648803652952579,
+        "miac_max_abs_error": 0.10260380030720218,
+        "miac_rmse": 0.06814760121950571,
+        "row_count": 28
+      },
+      "LiBr": {
+        "first_modeled_gamma_pm_m": 0.9652048654906487,
+        "miac_max_abs_error": 0.5538732017578516,
+        "miac_rmse": 0.2750411937293317,
+        "row_count": 29
+      },
+      "LiCl": {
+        "first_modeled_gamma_pm_m": 0.9650957667989327,
+        "miac_max_abs_error": 0.3333090248980475,
+        "miac_rmse": 0.16853280662385622,
+        "row_count": 29
+      },
+      "NaBr": {
+        "first_modeled_gamma_pm_m": 0.9649823123691937,
+        "miac_max_abs_error": 0.13357234195264578,
+        "miac_rmse": 0.07797589523984329,
+        "row_count": 21
+      },
+      "NaCl": {
+        "first_modeled_gamma_pm_m": 0.9648983941815091,
+        "miac_max_abs_error": 0.09520710878088323,
+        "miac_rmse": 0.05709432631384141,
+        "row_count": 29
+      }
+    }
+  },
+  "primary": {
+    "active_bounds": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "complete_jacobian_columns": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "condition_number": 40784.83209599819,
+    "conditional_final_cost_sum": 1.02168669710827,
+    "conditional_initial_cost_sum": 9.496865211496866,
+    "coordinate_solves": [
+      {
+        "coordinate": 0,
+        "failure_reason": "",
+        "final_cost": 0.18502665656053097,
+        "initial_cost": 2.2955869548951426,
+        "iterations": 7,
+        "parameter": -0.5364822745121732,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 1,
+        "failure_reason": "",
+        "final_cost": 0.07041897452865561,
+        "initial_cost": 0.7839952607853112,
+        "iterations": 6,
+        "parameter": -0.3292520490662036,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 2,
+        "failure_reason": "",
+        "final_cost": 0.053945495682115596,
+        "initial_cost": 0.42233993746055976,
+        "iterations": 5,
+        "parameter": -0.15797321784955046,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 3,
+        "failure_reason": "",
+        "final_cost": 0.15489317334539804,
+        "initial_cost": 1.2461531083650668,
+        "iterations": 6,
+        "parameter": -0.40550297873440694,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 4,
+        "failure_reason": "",
+        "final_cost": 0.2449962368252791,
+        "initial_cost": 1.8634839265071212,
+        "iterations": 6,
+        "parameter": -0.37439022939723743,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 5,
+        "failure_reason": "",
+        "final_cost": 0.07251588279868472,
+        "initial_cost": 0.9871512391826024,
+        "iterations": 2,
+        "parameter": 1.0,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 6,
+        "failure_reason": "",
+        "final_cost": 0.03396384710650864,
+        "initial_cost": 0.5608150947977142,
+        "iterations": 5,
+        "parameter": 0.9394025030399381,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 7,
+        "failure_reason": "",
+        "final_cost": 0.026786970621460793,
+        "initial_cost": 0.04307276968023202,
+        "iterations": 4,
+        "parameter": 0.13420060218999108,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 8,
+        "failure_reason": "",
+        "final_cost": 0.12526401089117276,
+        "initial_cost": 0.8362696271421007,
+        "iterations": 6,
+        "parameter": 0.7607943631938054,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 9,
+        "failure_reason": "",
+        "final_cost": 0.028010777081771226,
+        "initial_cost": 0.3825947461221617,
+        "iterations": 6,
+        "parameter": 0.6520078999238217,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      },
+      {
+        "coordinate": 10,
+        "failure_reason": "",
+        "final_cost": 0.025864671666692516,
+        "initial_cost": 0.07540254655885072,
+        "iterations": 5,
+        "parameter": -0.17436889546934506,
+        "solution_usable": true,
+        "termination": "CONVERGENCE"
+      }
+    ],
+    "iterations": 58,
+    "parameters": [
+      -0.5364822745121732,
+      -0.3292520490662036,
+      -0.15797321784955046,
+      -0.40550297873440694,
+      -0.37439022939723743,
+      1.0,
+      0.9394025030399381,
+      0.13420060218999108,
+      0.7607943631938054,
+      0.6520078999238217,
+      -0.17436889546934506
+    ],
+    "rank": 11,
+    "rank_threshold": 3.486805588853725e-11,
+    "singular_values": [
+      9.575107530899391,
+      7.186018433030976,
+      6.009282807981872,
+      5.41563403454866,
+      2.1591887119347564,
+      1.7103267364893269,
+      0.03392812979682692,
+      0.02080959269316059,
+      0.015559445706329488,
+      0.011741554576998084,
+      0.0002347712872364357
+    ],
+    "solution_usable": true,
+    "termination": "CONVERGENCE"
+  },
+  "problem": {
+    "affected_rows_only": true,
+    "assembled_jacobian": "164x11",
+    "bounds": [
+      -1.0,
+      1.0
+    ],
+    "confirmation_start": 0.25,
+    "fixed_born_diameters_angstrom": [
+      2.7888130173797934,
+      3.4524616464076425,
+      4.147266741279482,
+      4.101505615791675,
+      4.476998527506598
+    ],
+    "fixed_born_evidence_file_sha256": "99d46eafbdae3428f690543364096fb414b818db201d1c35b0c0da8b03ae91d5",
+    "fixed_born_evidence_subject_sha256": "55ea2cd69af62c45b26179cfab6939760de23058b5a7e8c880a79f67faa417ed",
+    "fixed_water_solvation_factor": 1.5590515389548207,
+    "fixed_water_factor_regression_commit": "882e0735ed1b5586a591682da1fd3d78f46636d4",
+    "fixed_water_factor_regression_tree": "9860f7bf3f0548a6a7a527da627e7f4d97a47797",
+    "formulation": "eleven conditional scalar Ceres fits; other ten interactions fixed to the printed tuple",
+    "primary_start": 0.0,
+    "published_tuple": [
+      -0.4,
+      -0.3,
+      -0.1,
+      -0.3,
+      -0.3,
+      0.8,
+      0.8,
+      0.0,
+      0.5,
+      0.65,
+      -0.35
+    ],
+    "residual": "1 - gamma_model/gamma_observed",
+    "weighting": "equal"
+  },
+  "provider": {
+    "callback": "evaluate_aqueous_miac_kij_batch_bounded",
+    "commit": "8af6e5467cba70ade226cb28f93688ce88048c29",
+    "derivative": "exact total fixed-temperature fixed-pressure first derivative",
+    "installed_header_sha256": "555ebde7aa2dcfc7a41a1a8f14af8a7ede678caafd24aa93cd165d291325fb4d",
+    "model_fingerprints": [
+      "sha256:2e86bfea7ba8d860482189c50b5c8c9ab20736e216d7dff511fc32fc8b66156f",
+      "sha256:7a88365c8a238c0d3d650a6d9b49e477e9f5e762e51abf779d0f65fe3aa1cb73",
+      "sha256:f598133ee5894859c95c58ff03c0fc9c8be48b6033890d26a753c2db3c94d2fe",
+      "sha256:0f3795c2e83813a7c06d2d12d534284e729b5b2c836bfe9602ab6f3be4806807",
+      "sha256:1102deed6b08dbab82db24aea4187056db4432b9674187fb126cf19470ed65e1",
+      "sha256:bef74bbf5556b32a1e440da9500c4e9740af457d370ec5ee900c0e59bcd79a25"
+    ],
+    "tree": "2ec243429600de75ccaeb51955044bf2e7557fbe",
+    "wheel_sha256": "1d77a46aca369269fd97b32a722e8b548617a4ae840e07645040a138f63863db"
+  },
+  "regression_artifact": {
+    "implementation_commit": "846c3671a437f961f92c20300c4cb3c874ff6009",
+    "implementation_tree": "e524dc61c692a0c962f5818fbeccdc6de206d83d",
+    "source_date_epoch": 1785198578,
+    "wheel": "../artifacts/regression-figiel-aqueous-kij-v1/846c367/epcsaft_regression-0.1.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "0fe3ddfe6a31993c7859609d2bdc13cb6b69bd037b276671cbee2b1ded32a365",
+    "wheel_members": 14,
+    "installed_non_record_members_verified": 13,
+    "installed_stage_c_routine_tests": "7-passed-1-campaign-deselected-42.39-seconds",
+    "installed_public_campaign": "1-passed-272.45-seconds",
+    "public_campaign_command": "python -m pytest -o addopts='' -q tests/test_figiel_aqueous_kij.py::test_public_aqueous_kij_fit_replays_retained_negative_result",
+    "installed_accepted_provider_legacy_tests": "49-passed",
+    "cross_artifact_diagnostic_only": "not-repeated-final-artifact; prior-review-subject-61-passed-3-failed-known-legacy-numerical-compatibility"
+  },
+  "schema_version": 1,
+  "source": {
+    "hamer_wu_csv_sha256": "2f63e13f06a5b0f4e8bca2980b6a8d9d7fb0f839153c43e3a71952daf9796595",
+    "packaged_data_sha256": "2f63e13f06a5b0f4e8bca2980b6a8d9d7fb0f839153c43e3a71952daf9796595",
+    "rows": 164,
+    "salt_counts": {
+      "KBr": 28,
+      "KCl": 28,
+      "LiBr": 29,
+      "LiCl": 29,
+      "NaBr": 21,
+      "NaCl": 29
+    },
+    "validation_commit": "8944d34f7002cda1bb8760e606cc1f11696f58cd",
+    "validation_tree": "6c8fd350dcd6bfdd7be1918f73fd33a23e2070dd"
+  },
+  "status": "SOURCE_DESCRIBED_STAGED_RECOVERY_DID_NOT_REPRODUCE_PRINTED_TUPLE",
+  "statuses": {
+    "numerically_converged": true,
+    "physically_valid": true,
+    "predictive_status": "NOT_ADJUDICATED_NO_APPROVED_HELD_OUT_CUTOFF",
+    "scientifically_valid": false,
+    "solver_converged": true,
+    "workflow_valid": true
+  }
+}

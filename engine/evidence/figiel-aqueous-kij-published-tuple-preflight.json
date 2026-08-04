@@ -1,0 +1,120 @@
+{
+  "schema_version": 3,
+  "status": "BLOCKED_FROZEN_PARAMETER_RECOVERY_GATE",
+  "claim": "Installed-artifact derivative, rank, and bounded multistart feasibility for the frozen Figiel Table 4/5 recovery contract",
+  "source": {
+    "validation_commit": "8944d34f7002cda1bb8760e606cc1f11696f58cd",
+    "validation_tree": "6c8fd350dcd6bfdd7be1918f73fd33a23e2070dd",
+    "csv_sha256": "2f63e13f06a5b0f4e8bca2980b6a8d9d7fb0f839153c43e3a71952daf9796595",
+    "rows": 164,
+    "salt_counts": {"LiCl": 29, "NaCl": 29, "KCl": 28, "LiBr": 29, "NaBr": 21, "KBr": 28}
+  },
+  "provider": {
+    "implementation_commit": "06d21af0334a22bafd31d617f3c8535b53711140",
+    "merged_commit": "39b39d9d7831a8da943372df019f5a9d7d388b44",
+    "wheel_sha256": "3bacac6818708091629a79ce9a7a320a07f87093f0697508060aa1aee7368cb6",
+    "installed_header_sha256": "01568808f48c8cf0cd5fd0eb0b3d038349a319251eb8a9f9053b028ed35e5a36",
+    "callback": "evaluate_aqueous_miac_kij",
+    "callback_coordinates": ["water-cation", "water-anion", "cation-anion"],
+    "callback_threading_observed": "serial per model; no public thread-safety contract"
+  },
+  "problem": {
+    "residual": "ln(gamma_model/gamma_observed)",
+    "weighting": "equal",
+    "parameters": 11,
+    "residuals": 164,
+    "bounds": [-1.0, 1.0],
+    "starts": {"primary": 0.0, "negative": -0.5, "positive": 0.5},
+    "published_tuple": [-0.4, -0.3, -0.1, -0.3, -0.3, 0.8, 0.8, 0.0, 0.5, 0.65, -0.35],
+    "parameter_proximity_max_abs": 0.05
+  },
+  "published_tuple_evaluation": {
+    "cost": 0.4200114112320464,
+    "log_rmse": 0.0715687807698204,
+    "gradient": [1.5623022773006192, -1.4391078664650414, -0.10559316314644929, -0.31729790078527, 0.07210581872191069, -0.20658585742807284, 0.21043159729654437, 0.11786388312944486, -0.5667613511240471, 0.4918663747175617, -0.08647859905393707],
+    "jacobian_rank": 11,
+    "rank_threshold": 3.0211337256460086e-11,
+    "condition_number": 47788.50024950208,
+    "singular_values": [8.296327268936464, 6.165846122788197, 5.331205508308083, 4.962792762361359, 1.8438142119864809, 1.5292255680578744, 0.022637020360721016, 0.014881872260478496, 0.012955864395330103, 0.008624600568276419, 0.0001736050979968325],
+    "unconstrained_gauss_newton_max_abs_step_approx": 38.41
+  },
+  "nonpublished_trial_preflight": {
+    "parameters": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
+    "cost": 46.99942497325529,
+    "complete_nonzero_columns": true,
+    "jacobian_rank": 11,
+    "rank_threshold": 3.396827102277414e-11,
+    "condition_number": 198577.92559465414,
+    "singular_values": [9.3280178488162, 6.936665933239163, 6.032305976057615, 5.621928295897976, 1.8018269472320798, 1.4979089632696425, 0.016726727516712416, 0.012549489370301503, 0.011303495967932562, 0.010811619551957603, 0.00004697409251749842],
+    "least_sensitive_right_singular_vector": [0.3606557817020148, 0.46083799237313017, 0.3804360538922135, -0.5591512139078273, -0.44725140892667015, -0.00798205336097968, -0.00509555139417979, -0.0025969940987835075, -0.00600296173024481, -0.0027606020872461903, -0.0004234810592256],
+    "normalized_column_correlations": [
+      [1.0, 0.0, 0.0, 0.3584008896127834, 0.41811934662651434, -0.6603243483415613, 0.0, 0.0, -0.7509564799878433, 0.0, 0.0],
+      [0.0, 1.0, 0.0, 0.3838965448089803, 0.3933784306149236, 0.0, -0.6841870881819205, 0.0, 0.0, -0.7292622712237257, 0.0],
+      [0.0, 0.0, 1.0, 0.4161493879210085, 0.47130191890457984, 0.0, 0.0, -0.6658261334556332, 0.0, 0.0, -0.7460360504192265],
+      [0.3584008896127834, 0.3838965448089803, 0.4161493879210085, 1.0, 0.0, -0.5427479192729739, -0.5610601659577624, -0.6249567687984288, 0.0, 0.0, 0.0],
+      [0.41811934662651434, 0.3933784306149236, 0.47130191890457984, 0.0, 1.0, 0.0, 0.0, 0.0, -0.5567604969645726, -0.539387112697428, -0.6316661003231944],
+      [-0.6603243483415613, 0.0, 0.0, -0.5427479192729739, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+      [0.0, -0.6841870881819205, 0.0, -0.5610601659577624, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+      [0.0, 0.0, -0.6658261334556332, -0.6249567687984288, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+      [-0.7509564799878433, 0.0, 0.0, 0.0, -0.5567604969645726, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+      [0.0, -0.7292622712237257, 0.0, 0.0, -0.539387112697428, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+      [0.0, 0.0, -0.7460360504192265, 0.0, -0.6316661003231944, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    ],
+    "directional_check": {
+      "steps": [0.0001, 0.00005],
+      "criterion": "abs(J_exact-J_h/2) <= max(1e-8,20*abs(J_h-J_h/2),2e-8*abs(J_exact))",
+      "checks": 492,
+      "passed_columns": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "failed_columns": [],
+      "columns": [
+        {"column": 0, "checks": 58, "max_abs_error": 6.067999436254468e-10, "max_tolerance": 4.195716586383121e-8, "passed": true},
+        {"column": 1, "checks": 50, "max_abs_error": 7.181970773303958e-10, "max_tolerance": 3.3968035783145644e-8, "passed": true},
+        {"column": 2, "checks": 56, "max_abs_error": 6.483495962328334e-10, "max_tolerance": 4.646212377219863e-8, "passed": true},
+        {"column": 3, "checks": 86, "max_abs_error": 6.964437915257804e-10, "max_tolerance": 2.6871390599775654e-8, "passed": true},
+        {"column": 4, "checks": 78, "max_abs_error": 6.345244329963862e-10, "max_tolerance": 3.953538701295836e-8, "passed": true},
+        {"column": 5, "checks": 29, "max_abs_error": 6.054467474245206e-10, "max_tolerance": 1.5129272984020363e-8, "passed": true},
+        {"column": 6, "checks": 29, "max_abs_error": 8.966347664340901e-10, "max_tolerance": 1.9895196601282805e-8, "passed": true},
+        {"column": 7, "checks": 28, "max_abs_error": 5.889214671483955e-10, "max_tolerance": 1.4210854715202004e-8, "passed": true},
+        {"column": 8, "checks": 29, "max_abs_error": 6.485654235888205e-10, "max_tolerance": 1.830378894463974e-8, "passed": true},
+        {"column": 9, "checks": 21, "max_abs_error": 5.396917912570132e-10, "max_tolerance": 1.4279873748616385e-8, "passed": true},
+        {"column": 10, "checks": 28, "max_abs_error": 5.947047299059705e-10, "max_tolerance": 1.513147508755102e-8, "passed": true}
+      ],
+      "worst_row": {"column": 3, "index": 7, "salt": "LiCl", "molality_mol_per_kg": 0.2, "exact": -0.04818659181274576, "coarse_difference": -0.04818659206762277, "fine_difference": -0.04818659249394841, "abs_error": 6.812026498437262e-10, "tolerance": 1e-8, "error_over_tolerance": 0.06812026498437262}
+    },
+    "reference_molality_min": 1e-12,
+    "reference_molality_max": 1e-12,
+    "reference_convergence_error_max": 1.0628388139366507e-5,
+    "reference_derivative_convergence_error_max": 8.281553220967908e-11
+  },
+  "bounded_multistart_preflight": {
+    "backend": "disposable scipy least_squares evidence runner; not package runtime or production derivative backend",
+    "all_starts_converged": true,
+    "all_starts_full_rank": true,
+    "max_confirmation_parameter_delta": 6.740175084729572e-11,
+    "parameter_proximity_gate_passed": false,
+    "non_bound_gate_passed": false,
+    "starts": [
+      {"label": "primary", "initial_value": 0.0, "success": true, "termination_status": 1, "termination_message": "gtol satisfied", "evaluations": 26, "jacobian_evaluations": 26, "cost": 0.25101017331848846, "optimality": 1.1002309641561244e-12, "parameters": [-0.9653939940475286, -0.5864883567421767, 0.04512008992786286, -0.9999999999999999, -0.7390065208751735, -0.9999999999999999, -0.9999999999999999, -0.9999999999999999, -0.9999999999999999, -0.9258808813758226, -0.9194313236210534], "active_bound_columns": [3, 5, 6, 7, 8], "max_abs_published_delta": 1.7999999999999998, "jacobian_rank": 11, "condition_number": 45473.43671967281},
+      {"label": "negative", "initial_value": -0.5, "success": true, "termination_status": 1, "termination_message": "gtol satisfied", "evaluations": 21, "jacobian_evaluations": 21, "cost": 0.25101017331846276, "optimality": 5.792055238346346e-13, "parameters": [-0.9653939940476017, -0.5864883567421099, 0.045120089927869145, -0.9999999999999999, -0.7390065208750624, -0.9999999999999999, -0.9999999999999999, -0.9999999999999999, -0.9999999999999999, -0.925880881375509, -0.9194313236207489], "active_bound_columns": [3, 5, 6, 7, 8], "max_abs_primary_delta": 3.136380044566067e-13, "max_abs_published_delta": 1.7999999999999998, "jacobian_rank": 11, "condition_number": 45473.436750062385},
+      {"label": "positive", "initial_value": 0.5, "success": true, "termination_status": 3, "termination_message": "xtol satisfied", "evaluations": 29, "jacobian_evaluations": 27, "cost": 0.25101017331846953, "optimality": 5.485353697129861e-10, "parameters": [-0.9653939940494869, -0.5864883567843097, 0.045120089929862384, -0.9999999999999999, -0.739006520878105, -0.9999999999948296, -0.9999999999999999, -0.9999999999999686, -0.9999999999999999, -0.9258808814432243, -0.9194313236170575], "active_bound_columns": [3, 5, 6, 7, 8], "max_abs_primary_delta": 6.740175084729572e-11, "max_abs_published_delta": 1.7999999999999998, "jacobian_rank": 11, "condition_number": 45473.43675576683}
+    ]
+  },
+  "interpretation": {
+    "provider_callback_shape_sufficient": true,
+    "local_rank_gate_passed": true,
+    "directional_derivative_gate_passed": true,
+    "bounded_multistart_agreement_passed": true,
+    "published_parameter_proximity_passed": false,
+    "all_parameters_interior_passed": false,
+    "supported_claim": "The corrected exact installed-artifact callback passes all 492 frozen directional checks; the preflight is rank sufficient and converges reproducibly, but the three converged equal-weight starts miss the 0.05 recovery gate with five active bounds.",
+    "smallest_unblockers": [
+      "The source/Regression contract must resolve whether equal-weight log recovery is the intended claim or supply a reproducible source-backed alternative; weights, bounds, starts, and tolerances must not be tuned post hoc to the printed tuple."
+    ]
+  },
+  "limits": [
+    "This evidence used the exact installed Provider wheel/header and immutable 164-row source packet, with no sibling Provider source import or copied EOS/reference sequence.",
+    "The nonlinear runner was disposable preflight evidence and is not retained as package runtime, a Ceres substitute, or a numerical-derivative production backend.",
+    "All 164 rows are training observations; no predictive, uncertainty, global-identifiability, or Provider-catalog claim is supported.",
+    "The result does not prove global impossibility of another source-backed objective reproducing the published tuple."
+  ]
+}

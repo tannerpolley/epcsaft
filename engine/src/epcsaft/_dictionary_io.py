@@ -21,7 +21,6 @@ from .records import (
 )
 from .units import _decimal_number, _error, _exact_integer, unit_registry
 
-
 _MISSING = object()
 _TOP_LEVEL = frozenset(
     {"schema", "schema_version", "components", "parameters", "options", "validity"}

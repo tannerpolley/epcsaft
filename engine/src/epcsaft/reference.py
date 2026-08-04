@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
 import hashlib
 import json
 import math
+from dataclasses import dataclass, replace
 from math import gcd
 from typing import TYPE_CHECKING, Literal
 
 import pint
 
+from . import _core as _native_core
 from .eos import (
     EosError,
     _eos_error,
@@ -16,7 +17,6 @@ from .eos import (
     _state_magnitude,
     native_sdk,
 )
-from . import _core as _native_core
 from .units import unit_registry
 
 if TYPE_CHECKING:

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from collections.abc import Mapping
 from os import PathLike
-from typing import Iterable, Literal, Sequence, TypeAlias, cast
+from typing import Literal, TypeAlias, cast
 
 from ._bundle_io import _create_template, _dump_path, _load_path
 from ._canonical import _bundle_fingerprint, _parameter_fingerprint
@@ -24,14 +24,19 @@ from .records import (
 )
 from .units import _error
 
-
-_BundlePurpose: TypeAlias = Literal["external-bundle", "package-test-fixture", "user-provided"]
+_BundlePurpose: TypeAlias = Literal[
+    "external-bundle",
+    "package-test-fixture",
+    "regression-output",
+    "user-provided",
+]
 _EXTERNAL_PURPOSES = frozenset(
     {
         "external-bundle",
         # Persisted Data v1 metadata; normalized below without lookup or path selection.
         "installed-catalog",
         "package-test-fixture",
+        "regression-output",
         "user-provided",
     }
 )
@@ -46,7 +51,7 @@ def _version(value: object) -> int:
 def _purpose(value: object) -> _BundlePurpose:
     if not isinstance(value, str) or value not in _EXTERNAL_PURPOSES:
         raise _error("invalid-value", field="purpose", value=value)
-    if value in {"package-test-fixture", "user-provided"}:
+    if value in {"package-test-fixture", "regression-output", "user-provided"}:
         return cast(_BundlePurpose, value)
     return "external-bundle"
 

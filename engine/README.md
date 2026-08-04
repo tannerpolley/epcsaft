@@ -1,96 +1,67 @@
-# ePC-SAFT EOS
+# Unified ePC-SAFT Engine
 
-`epcsaft` is the typed equation-of-state engine for the ePC-SAFT project. Its
-public lifecycle is:
+`epcsaft` is one installable thermodynamic engine for parameter handling, EOS
+evaluation, phase/species equilibrium, and parameter regression:
 
 ```text
-Parameters -> Mixture -> State
-                         |
-                         -> Fugacity
-                         -> Activity (electrolyte reference states)
+Data packet -> Parameters -> Regression -> fitted Parameters
+                          -> EOS State -> Equilibrium
 ```
 
-EOS owns parameter resolution, residual Helmholtz evaluation, derivatives,
-density closure, properties, and the model-bound native SDK. It does not own
-parameter discovery, fitting, phase equilibrium, or literature validation.
+The distribution has one version and three public module surfaces:
+
+```python
+import epcsaft
+from epcsaft import equilibrium, regression
+```
+
+There are no separate equilibrium or regression packages and no compatibility
+imports.
 
 ## Install
 
-Python 3.11+, CMake 3.20+, Ninja, and a C++17 compiler are required for a source
-build. Pint is the sole Python runtime dependency.
+Python 3.13, CMake, Ninja, a C++17 compiler, Ipopt, Ceres, and their native
+dependencies are required for a source build.
 
 ```console
 python -m pip install .
 ```
 
-## Construct and evaluate a model
+The one built wheel contains the Python modules, three compiled extension
+modules, and the public native headers. Downstream repositories must install an
+immutable wheel and hash; they must not install this checkout in editable mode.
 
-Tests and small applications can pass compact fixed-unit dictionaries directly:
+## End-to-end use
 
 ```python
-from epcsaft import Mixture, Parameters, unit_registry as u
+from epcsaft import Mixture, Parameters, SourceRecord, ValidityDomain
+from epcsaft import equilibrium, regression, unit_registry as u
 
-raw = {
-    "schema": "epcsaft.parameters",
-    "schema_version": 1,
-    "components": ("methane", "ethane"),
-    "parameters": {
-        "mw": (0.016043, 0.03007),
-        "m": (1.0, 1.6069),
-        "s": (3.7039, 3.5206),
-        "e": (150.03, 191.42),
-        "k_ij": ((0.0, 0.0), (0.0, 0.0)),
-    },
-    "options": {"permittivity_model": "none"},
-    "validity": {"kind": "unknown"},
-}
-
-mixture = Mixture.from_dictionary(raw)
-state = mixture.state(
+parameters = Parameters.from_bundle(
+    "/materialized/data-packet/parameters",
+    components=("methane", "ethane"),
+)
+model = Mixture(parameters)
+state = model.state(
     T=250 * u.kelvin,
     rho=1000 * u.mole / u.meter**3,
     x=(0.4, 0.6),
 )
-
-assert state.component_ids == ("methane", "ethane")
-assert state.ares().check("[energy] / [substance]")
 ```
 
-`Parameters.from_bundle(path, components=...)` loads the same strict external
-bundle format from an explicit path. Omitting `components` preserves the bundle
-component order. `Parameters.create_bundle_template(...)` creates an authoring
-skeleton. EOS has no installed parameter catalog and never locates or imports
-`ePC-SAFT-data` at runtime.
+Regression workflows return immutable typed results. A valid result transfers
+fitted values back to the EOS only through
+`RegressionResult.to_parameters(...)`, with explicit source, validity, bundle
+identity, and locator metadata. Equilibrium then consumes the resulting
+`Mixture` directly.
 
-The external loader accepts the historical purpose value retained by immutable
-Data migration packets only as inert manifest metadata; it does not restore a
-catalog route, lookup, identity, or admission rule.
+## Data and evidence
 
-Reusable parameter/property packets and provenance belong in
-[`ePC-SAFT-data`](https://github.com/ePC-SAFT/ePC-SAFT-data). Paper-, table-, or
-figure-specific campaign extracts may remain in Validation when they are local
-campaign evidence. Applications materialize the desired Data packet themselves
-and pass its parameter directory to `from_bundle`.
+Reusable scientific packets remain in the Data repository. Engine never
+discovers a sibling checkout; callers materialize exact packet bytes and pass
+an explicit path. Test fixtures include receipts that bind the Data commit,
+packet fingerprint, and every file hash.
 
-See [the Python API guide](docs/python-api.md) for the complete dictionary
-schema, units, aliases, bundle route, errors, and property API. The SDK headers
-are installed under `epcsaft/include/epcsaft`; native capability admission uses
-resolved topology, required fields, component order, and validity—not source or
-bundle fingerprints. Neutral constant-diameter associating models expose one generic,
-descriptor-driven fixed topology and the pure or mixture phase callback that
-matches its component count. Both accept ordered active-parameter subsets; no
-species-, topology-name-, or 2B-specific association callback is retained.
-
-## Scientific boundary
-
-The native kernel evaluates hard-chain, dispersion, association, the aggregate
-Gross--Vrabec point-multipole contribution, Debye--Hückel, and Born terms.
-State pressure, fugacity, residual caloric properties, and density diagnostics
-all derive from that one owner. Polar models expose one `ares_polar` result;
-polar mixture evaluation is restricted to strictly positive component mole
-fractions so composition derivatives remain on one valid CppAD graph.
-DD, QQ, and directional DQ35 remain private perturbation families.
-
-The repository test suite is fully self-contained. Compact raw cases live in
-`tests/_raw_cases.py`; external bundle files are created only in temporary
-directories for I/O tests.
+Validation runs black-box campaigns against one immutable Engine wheel. Lab and
+applications consume the same accepted wheel. Historical plans and receipts
+are preserved as provenance but are not live installation instructions.

@@ -1,0 +1,3 @@
+record_id,component_id_a,site_id_a,component_id_b,site_id_b,family,value,unit,source_id,locator,domain_id
+water-association-energy,water,a,water,b,association_energy_over_k,2425.6714,kelvin,held-cameretti-sadowski-2008,"Table 1, association energy",held-aqueous-electrolyte-298-15-k-1-bar
+water-association-volume,water,a,water,b,association_volume,0.0450989,,held-cameretti-sadowski-2008,"Table 1, association volume",held-aqueous-electrolyte-298-15-k-1-bar

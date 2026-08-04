@@ -1,0 +1,304 @@
+{
+  "authority_effect": "none",
+  "blocking_gate": {
+    "interpretation": "the three declared converged equal-weight starts did not meet the approved 1e-8 pressure-closure gate",
+    "name": "scaled_pressure_closure_le_1e-8",
+    "observed": 0.022691483584976503,
+    "threshold": 1e-08,
+    "worst_row": {
+      "ethane_mu_over_rt_equality_residual": -0.06950599355260767,
+      "liquid_pressure_relative_closure": 0.003910995749513778,
+      "max_abs_mu_over_rt_equality_residual_all_rows": 0.06950599355260767,
+      "methane_mu_over_rt_equality_residual": 0.014205213221523572,
+      "row_id": "may2015-ch4-c2h6-002",
+      "vapor_pressure_relative_closure": -0.022691483584976503
+    }
+  },
+  "checks": {
+    "callback_derivatives": {
+      "acceptance": "each scaled error <= 1",
+      "central_difference_step": 1e-05,
+      "gradient_hessian_directional_scaled_error": 3.561921853293435e-05,
+      "hessian_symmetry_scaled_error": 0.002389195125402063,
+      "pressure_identity_scale_pa": "abs(error)/(1e-6 + 5e-13*abs(expected))",
+      "pressure_identity_scaled_error": 0.0,
+      "symmetry_scale": "abs(error)/(1e-12 + 5e-13*abs(expected))",
+      "value_and_gradient_scale": "abs(error)/(5e-7 + 5e-5*abs(expected))",
+      "value_directional_scaled_error": 1.887331061986623e-05
+    },
+    "gates": {
+      "ceres_convergence_and_cost_reduction_all_starts": true,
+      "exact_scaled_residual_jacobian": true,
+      "finite_moved_non_bound_kij": true,
+      "full_scaled_jacobian_rank_35": true,
+      "installed_artifact_identity": true,
+      "methane_ethane_semantic_coordinate_order": true,
+      "perturbed_start_confirmation": true,
+      "positive_stability_and_separated_phases": true,
+      "projected_parameter_rank_1": true,
+      "provider_value_gradient_hessian_contract": true,
+      "scaled_pressure_closure_le_1e-8": false
+    },
+    "residual_jacobian": {
+      "acceptance": "max scaled directional error <= 1 and exact 68 x 35 shape",
+      "central_difference_step": 1e-06,
+      "jacobian_entry_count": 2380,
+      "max_abs_directional_error": 3.2377076436551633e-09,
+      "max_scaled_directional_error": 0.012687348470964473,
+      "residual_count": 68,
+      "scale": "abs(error)/(2e-7 + 2e-6*abs(expected))",
+      "variable_count": 35
+    },
+    "semantic_coordinate_order": {
+      "acceptance": "both maxima <= 1e-12",
+      "component_order": [
+        "methane",
+        "ethane"
+      ],
+      "max_mu_over_rt_phase_difference_from_public_value_api": 4.440892098500626e-16,
+      "max_pressure_relative_difference_from_public_value_api": 6.803799662260651e-16,
+      "representative_row_id": "may2015-ch4-c2h6-001"
+    }
+  },
+  "claim": "the three declared converged equal-weight starts did not meet the 1e-8 pressure-closure gate; no global infeasibility or model/data incompatibility claim",
+  "confirmation": [
+    {
+      "scaled_kij_delta_from_primary": 2.255772852538529e-06,
+      "start_kij": -0.05,
+      "symmetric_relative_cost_delta_from_primary": 6.045202596244109e-11
+    },
+    {
+      "scaled_kij_delta_from_primary": 1.7089550972265721e-06,
+      "start_kij": 0.05,
+      "symmetric_relative_cost_delta_from_primary": 7.31892665322379e-11
+    }
+  ],
+  "excluded": [
+    "runtime or package API",
+    "changed residual weights, bounds, or tolerances",
+    "predicted compositions or held-out evidence",
+    "uncertainty, covariance, or global identifiability",
+    "density roots, equilibrium dependencies, or copied provider equations",
+    "provider catalog persistence, promotion, publication, or authority change"
+  ],
+  "implementation": {
+    "cmake_sha256": "46a955e6232675d14be5707b34fe851a4eb4abd29cf184065f08779675b3eb91",
+    "installed": false,
+    "native_module_sha256": "2e9596fac81a52f13075be13fd203232f371104e4d565472e481c9b35feca679",
+    "native_source_sha256": "add2e273861fbe7f961b6d15d0104856b369af6c22361aff95790924229b4fd7",
+    "public_api": false,
+    "retention": "hashes identify the rejected alternative at the provenance commit; executable owners are removed from clean Regression HEAD",
+    "runner_sha256": "857ae3325d52fb71a9f1ae9e2a8411c7fb6c2a1a90e5174a55f9e8a28407f90b"
+  },
+  "predictive_status": "NOT_ADJUDICATED_NO_APPROVED_HELD_OUT_CUTOFF",
+  "problem": {
+    "ceres": {
+      "function_gradient_parameter_tolerances": [
+        1e-10,
+        1e-10,
+        1e-10
+      ],
+      "linear_solver": "DENSE_QR",
+      "max_iterations": 500,
+      "threads": 1
+    },
+    "jacobian": "exact provider Hessian chain rule; no third derivatives or density roots",
+    "kij_bounds": [
+      -0.15,
+      0.1
+    ],
+    "kij_start": 0.0,
+    "kij_transform": "kij = 0 + 0.01*z_kij",
+    "liquid_volume": "V_L = 6.5e-5 m3*exp(u_L)",
+    "liquid_volume_bounds_m3": [
+      2e-05,
+      0.0001
+    ],
+    "residual_count": 68,
+    "residuals_per_row": [
+      "0.25*(P_L-P_observed)/P_observed",
+      "0.25*(P_V-P_observed)/P_observed",
+      "0.25*((mu_methane/RT)_L-(mu_methane/RT)_V)",
+      "0.25*((mu_ethane/RT)_L-(mu_ethane/RT)_V)"
+    ],
+    "starts": [
+      {
+        "kij": 0.0,
+        "liquid_volume_multiplier": 1.0,
+        "vapor_volume_multiplier": 1.0
+      },
+      {
+        "kij": -0.05,
+        "liquid_volume_multiplier": 1.01,
+        "vapor_volume_multiplier": 0.98
+      },
+      {
+        "kij": 0.05,
+        "liquid_volume_multiplier": 1.01,
+        "vapor_volume_multiplier": 0.98
+      }
+    ],
+    "vapor_volume": "V_V = (R*T/P) m3*exp(u_V)",
+    "vapor_volume_bounds_m3": [
+      0.0001,
+      0.01
+    ],
+    "variable_count": 35,
+    "variables": "[z_kij, u_L_1, u_V_1, ..., u_L_17, u_V_17]"
+  },
+  "provenance": {
+    "migration_control_plane_commit": "4fd0e6eff5fd17399573132430d13c7e34626b98",
+    "rejected_alternative_receipt_subject_sha256": "d51c9f0713b6a7355be719b6843e4459f41d46d16d973668d694715d36b63676",
+    "rejected_alternative_regression_commit": "47a2a8d9579a01347df7ccaa977337ad7d4047af",
+    "retention": "compact evidence only; replay harness removed from clean Regression HEAD"
+  },
+  "provider": {
+    "callback_coordinates": [
+      "n_methane_mol",
+      "n_ethane_mol",
+      "volume_m3",
+      "kij"
+    ],
+    "callback_derivative_backend": "provider CppAD value, gradient, and Hessian",
+    "callback_derivative_order": 2,
+    "commit": "45d5764f61729d387100348a8ff91792f6e0a395",
+    "component_order": [
+      "methane",
+      "ethane"
+    ],
+    "installed_public_header_sha256": "6f3a186bf5359f32449a31c544e8b8525be6c594804151d3e74a74e411ded8f4",
+    "installed_wheel_binding": {
+      "distribution": "epcsaft",
+      "imported_core_sha256": "c05712ff63bb0f01ee81f67c59031fa25d097e99d3e42644964beb099426cd45",
+      "verified_member_count": 29,
+      "version": "0.1.0.dev0"
+    },
+    "model_fingerprint": "sha256:307fcb28d535b94782f3e3caf4012c0c8c0dc87ee4239d6c316de56553543286",
+    "tree": "271d4848faf73afd4cf0683efe5c855053df7d01",
+    "wheel_sha256": "95d2292b052ab74657931f2dec97c3ea4160d9b17812956515c7195a853e6c5b"
+  },
+  "receipt_id": "binary-kij-all-may2015-installed-artifact-preflight-v1",
+  "receipt_payload_sha256": "f9033e6d1b00b0bfc11b421e6ef1e388db714d95431618b981d294d11f728d62",
+  "solves": [
+    {
+      "complete_finite_jacobian": true,
+      "condition_number": 1345.943122509698,
+      "failure": null,
+      "final_cost": 0.0003084644606680515,
+      "fitted_kij": -0.008430339623289762,
+      "full_rank": 35,
+      "initial_cost": 2.894260466715941,
+      "iterations": 7,
+      "largest_scaled_jacobian_singular_value": 25.262623060813343,
+      "max_pressure_relative_closure": 0.022691483584976503,
+      "minimum_relative_phase_separation": 0.3081955222082135,
+      "minimum_volume_stability_slope": 1462950.9638871236,
+      "projected_parameter_rank": 1,
+      "projected_parameter_singular_value": 0.01886370066465226,
+      "rank_threshold": 3.814411826697633e-13,
+      "smallest_scaled_jacobian_singular_value": 0.018769458113287635,
+      "solution_usable": true,
+      "start_kij": 0.0,
+      "termination": "CONVERGENCE",
+      "worst_pressure_row": {
+        "ethane_mu_over_rt_equality_residual": -0.06950599355260767,
+        "liquid_pressure_relative_closure": 0.003910995749513778,
+        "max_abs_mu_over_rt_equality_residual_all_rows": 0.06950599355260767,
+        "methane_mu_over_rt_equality_residual": 0.014205213221523572,
+        "row_id": "may2015-ch4-c2h6-002",
+        "vapor_pressure_relative_closure": -0.022691483584976503
+      }
+    },
+    {
+      "complete_finite_jacobian": true,
+      "condition_number": 1345.943142614924,
+      "failure": null,
+      "final_cost": 0.0003084644606494042,
+      "fitted_kij": -0.008430317065561237,
+      "full_rank": 35,
+      "initial_cost": 3.951131236360308,
+      "iterations": 7,
+      "largest_scaled_jacobian_singular_value": 25.26262160511894,
+      "max_pressure_relative_closure": 0.022691471478912328,
+      "minimum_relative_phase_separation": 0.30819575503138724,
+      "minimum_volume_stability_slope": 1462951.00102181,
+      "projected_parameter_rank": 1,
+      "projected_parameter_singular_value": 0.018863699362387618,
+      "rank_threshold": 3.814411606901853e-13,
+      "smallest_scaled_jacobian_singular_value": 0.01876945675137379,
+      "solution_usable": true,
+      "start_kij": -0.05,
+      "termination": "CONVERGENCE",
+      "worst_pressure_row": {
+        "ethane_mu_over_rt_equality_residual": -0.06950599030250881,
+        "liquid_pressure_relative_closure": 0.003910993031628838,
+        "max_abs_mu_over_rt_equality_residual_all_rows": 0.06950599030250881,
+        "methane_mu_over_rt_equality_residual": 0.014205292742519582,
+        "row_id": "may2015-ch4-c2h6-002",
+        "vapor_pressure_relative_closure": -0.022691471478912328
+      }
+    },
+    {
+      "complete_finite_jacobian": true,
+      "condition_number": 1345.9431758311455,
+      "failure": null,
+      "final_cost": 0.0003084644606454752,
+      "fitted_kij": -0.00843032253373879,
+      "full_rank": 35,
+      "initial_cost": 2.4080003916828847,
+      "iterations": 8,
+      "largest_scaled_jacobian_singular_value": 25.262621931487022,
+      "max_pressure_relative_closure": 0.022691606269635674,
+      "minimum_relative_phase_separation": 0.30819594649142734,
+      "minimum_volume_stability_slope": 1462950.6148682358,
+      "projected_parameter_rank": 1,
+      "projected_parameter_singular_value": 0.01886369915910864,
+      "rank_threshold": 3.814411656180278e-13,
+      "smallest_scaled_jacobian_singular_value": 0.0187694565306495,
+      "solution_usable": true,
+      "start_kij": 0.05,
+      "termination": "CONVERGENCE",
+      "worst_pressure_row": {
+        "ethane_mu_over_rt_equality_residual": -0.06950592498840535,
+        "liquid_pressure_relative_closure": 0.00391098281892548,
+        "max_abs_mu_over_rt_equality_residual_all_rows": 0.06950592498840535,
+        "methane_mu_over_rt_equality_residual": 0.014205389264840385,
+        "row_id": "may2015-ch4-c2h6-002",
+        "vapor_pressure_relative_closure": -0.022691606269635674
+      }
+    }
+  ],
+  "source": {
+    "csv_sha256": "5cd1e74925a3c6504f5106dcf911f2cae2d6e99a5133fccc20454d8991bdbc7f",
+    "packet_sha256": "d43433e93b354e01f96d330c760818a24b775026461ce795e45774cfb11ac94e",
+    "pair_record_sha256": "747e8281c7a1e4240ee4badbc0bedd047521fb303726699b38c99fccf7f74c2a",
+    "row_count": 17,
+    "row_ids": [
+      "may2015-ch4-c2h6-001",
+      "may2015-ch4-c2h6-002",
+      "may2015-ch4-c2h6-003",
+      "may2015-ch4-c2h6-004",
+      "may2015-ch4-c2h6-005",
+      "may2015-ch4-c2h6-006",
+      "may2015-ch4-c2h6-007",
+      "may2015-ch4-c2h6-008",
+      "may2015-ch4-c2h6-009",
+      "may2015-ch4-c2h6-010",
+      "may2015-ch4-c2h6-011",
+      "may2015-ch4-c2h6-012",
+      "may2015-ch4-c2h6-013",
+      "may2015-ch4-c2h6-014",
+      "may2015-ch4-c2h6-015",
+      "may2015-ch4-c2h6-016",
+      "may2015-ch4-c2h6-017"
+    ],
+    "use": "all rows are training data",
+    "validation_commit": "73a37f5935e919a34d1e4fa3af285951d6fac8e7"
+  },
+  "status": "BLOCKED_FROZEN_PRESSURE_CLOSURE",
+  "status_split": {
+    "numerical_derivatives_ranks_and_confirmation": "PASS",
+    "physical_pressure_closure": "BLOCKED",
+    "solver_convergence": "PASS"
+  }
+}

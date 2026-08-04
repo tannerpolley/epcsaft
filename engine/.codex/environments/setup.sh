@@ -15,15 +15,28 @@ if [[ ! -x .venv/bin/python ]]; then
     uv venv --python 3.13 .venv
 fi
 
-uv pip uninstall --python .venv/bin/python \
-    epcsaft-equilibrium \
-    epcsaft-regression
+mapfile -t stale_distributions < <(
+    .venv/bin/python - <<'PY'
+from importlib import metadata
+import re
+
+for distribution in metadata.distributions():
+    name = distribution.metadata.get("Name", "")
+    normalized = re.sub(r"[-_.]+", "-", name).lower()
+    if normalized.startswith("epcsaft") and normalized != "epcsaft":
+        print(name)
+PY
+)
+if ((${#stale_distributions[@]})); then
+    uv pip uninstall --python .venv/bin/python "${stale_distributions[@]}"
+fi
 
 uv pip install --python .venv/bin/python \
     --reinstall-package epcsaft \
     --editable . \
     build \
     mypy \
+    numpy \
     pytest \
     ruff
 
@@ -32,18 +45,22 @@ from importlib import metadata
 from pathlib import Path
 
 import epcsaft
+from epcsaft import equilibrium, regression
 
 repo_root = Path.cwd().resolve()
-module_root = Path(epcsaft.__file__).resolve().parent
-if repo_root not in module_root.parents:
-    raise SystemExit(f"epcsaft is not installed from this worktree: {module_root}")
+for module in (epcsaft, equilibrium, regression):
+    module_path = Path(module.__file__).resolve()
+    if repo_root not in module_path.parents:
+        raise SystemExit(f"{module.__name__} is not installed from this worktree: {module_path}")
 if metadata.version("epcsaft") != "0.2.0.dev0":
     raise SystemExit(f"unexpected epcsaft version: {metadata.version('epcsaft')}")
 
-for forbidden in ("epcsaft-equilibrium", "epcsaft-regression"):
-    try:
-        metadata.distribution(forbidden)
-    except metadata.PackageNotFoundError:
-        continue
-    raise SystemExit(f"forbidden sibling distribution is installed: {forbidden}")
+unexpected = []
+for distribution in metadata.distributions():
+    name = distribution.metadata.get("Name", "")
+    normalized = name.lower().replace("_", "-").replace(".", "-")
+    if normalized.startswith("epcsaft") and normalized != "epcsaft":
+        unexpected.append(name)
+if unexpected:
+    raise SystemExit(f"unexpected additional ePC-SAFT distributions: {sorted(unexpected)}")
 PY

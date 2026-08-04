@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import csv
-from decimal import Decimal, InvalidOperation
 import json
+import tomllib
+from decimal import Decimal, InvalidOperation
 from os import PathLike
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import tomllib
 
 from .records import (
+    _DIMENSIONAL_UNITS,
     AssociationParameterRecord,
     ComponentRecord,
     ConstantCorrelation,
@@ -20,10 +21,8 @@ from .records import (
     SiteRecord,
     SourceRecord,
     ValidityDomain,
-    _DIMENSIONAL_UNITS,
 )
 from .units import ParameterError, _error, unit_registry
-
 
 _OPTIONAL_FILES = frozenset(
     {

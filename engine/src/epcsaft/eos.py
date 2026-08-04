@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal, SupportsFloat, TypeAlias, overlo
 import pint
 
 from . import _core as _native_core
-from ._resolve import _ResolvedModel, _resolve_model
+from ._resolve import _resolve_model, _ResolvedModel
 from .parameters import Parameters
 from .records import (
     ConstantCorrelation,
