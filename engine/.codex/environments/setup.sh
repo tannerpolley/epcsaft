@@ -4,17 +4,9 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-for required_command in uv cmake ninja c++ serena; do
+for required_command in uv cmake ninja c++; do
     if ! command -v "$required_command" >/dev/null 2>&1; then
         echo "missing required command: $required_command" >&2
-        exit 1
-    fi
-done
-
-skill_root="${HOME}/.agents/skills"
-for required_skill in chemical-engineer scientific-coding-and-testing; do
-    if [[ ! -f "${skill_root}/${required_skill}/SKILL.md" ]]; then
-        echo "missing required Codex skill: ${required_skill}" >&2
         exit 1
     fi
 done
@@ -23,7 +15,12 @@ if [[ ! -x .venv/bin/python ]]; then
     uv venv --python 3.13 .venv
 fi
 
+uv pip uninstall --python .venv/bin/python \
+    epcsaft-equilibrium \
+    epcsaft-regression
+
 uv pip install --python .venv/bin/python \
+    --reinstall-package epcsaft \
     --editable . \
     build \
     mypy \
