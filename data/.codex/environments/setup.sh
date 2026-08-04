@@ -15,10 +15,20 @@ if [[ ! -x .venv/bin/python ]]; then
     uv venv --python 3.13 .venv
 fi
 
-uv pip uninstall --python .venv/bin/python \
-    epcsaft \
-    epcsaft-equilibrium \
-    epcsaft-regression
+mapfile -t runtime_distributions < <(
+    .venv/bin/python - <<'PY'
+from importlib import metadata
+import re
+
+for distribution in metadata.distributions():
+    name = distribution.metadata.get("Name", "")
+    if re.sub(r"[-_.]+", "-", name).lower().startswith("epcsaft"):
+        print(name)
+PY
+)
+if ((${#runtime_distributions[@]})); then
+    uv pip uninstall --python .venv/bin/python "${runtime_distributions[@]}"
+fi
 
 .venv/bin/python tools/validate_packets.py
 .venv/bin/python -m unittest discover -s tests -v
