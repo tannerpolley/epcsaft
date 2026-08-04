@@ -309,10 +309,49 @@ def data_packet_lock_errors(
             errors.append(f"cannot inspect Data repository for packet locks: {exc}")
         else:
             if actual_commit != data_commit:
-                errors.append(
-                    "Data checkout does not match the locked commit: "
-                    f"{actual_commit} != {data_commit}"
+                locked_commit = subprocess.run(
+                    [
+                        "git",
+                        "-C",
+                        str(data_root),
+                        "cat-file",
+                        "-e",
+                        f"{data_commit}^{{commit}}",
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
                 )
+                packet_diff = subprocess.run(
+                    [
+                        "git",
+                        "-C",
+                        str(data_root),
+                        "diff",
+                        "--quiet",
+                        f"{data_commit}..{actual_commit}",
+                        "--",
+                        "packets",
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                if locked_commit.returncode != 0:
+                    errors.append(
+                        "locked Data packet source commit is unavailable: "
+                        f"{data_commit}"
+                    )
+                elif packet_diff.returncode == 1:
+                    errors.append(
+                        "Data packet paths changed after the locked source commit: "
+                        f"{data_commit}..{actual_commit}"
+                    )
+                elif packet_diff.returncode != 0:
+                    errors.append(
+                        "cannot compare Data packet paths with the locked source "
+                        f"commit: {packet_diff.stderr.strip()}"
+                    )
         for packet_id, packet in by_id.items():
             packet_path = packet.get("packet_path")
             if not isinstance(packet_path, str):
