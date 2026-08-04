@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "gate": "G4",
+  "status": "complete_non_authoritative_candidate",
+  "captured_on": "2026-08-04",
+  "engine_commit": "c712fe9730faef0732341ccdabc4d799fef2d953",
+  "wheel": {
+    "filename": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049",
+    "bytes": 4577089,
+    "python_tag": "cp313",
+    "abi_tag": "cp313",
+    "platform_tag": "linux_x86_64",
+    "build_source": "git archive of the exact Engine commit in a disposable directory",
+    "local_review_path": "review-bundles/unified-engine-c712fe9/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "artifact_store_status": "candidate only; active three-wheel channel unchanged until G7"
+  },
+  "wheel_contents": {
+    "native_extension_count": 3,
+    "public_header_families": [
+      "epcsaft/native_model_v1.h",
+      "epcsaft/native_sdk_v1.h",
+      "epcsaft/regression/evaluator_v1.h"
+    ],
+    "record_present": true
+  },
+  "fresh_environment": {
+    "python": "3.13.14",
+    "editable_packages": false,
+    "epcsaft_distribution_count": 1,
+    "module_origins_same_wheel": true,
+    "engine_tests": "305 passed, 22 deselected in 151.33s"
+  },
+  "validation": {
+    "commit": "4fb77e424a03fe56f6e852e3a287c9d5f948b679",
+    "receipt": "ePC-SAFT-validation/campaigns/unified-engine/receipt.json",
+    "receipt_sha256": "d228a7632b0cadd3838c80f44996f6d2fad3ceefe84aa0175f64cca1d4d1b1db",
+    "campaign_status": "passed",
+    "validation_tests": "23 passed"
+  }
+}

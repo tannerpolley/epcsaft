@@ -4,7 +4,7 @@
   "doctrine_revision": 8,
   "approved_on": "2026-08-04",
   "decision_status": "approved",
-  "execution_status": "not_started",
+  "execution_status": "in_progress",
   "plan": "docs/plans/2026-08-04-unified-engine-direct-cutover.md",
   "coordination_root": "~/Workspaces/Engineering/ePC-SAFT-project",
   "current_runtime_sources": {
@@ -100,32 +100,38 @@
     {
       "id": "G0",
       "name": "plan-review-and-start-approval",
-      "status": "pending"
+      "status": "complete",
+      "evidence": "receipts/unified-engine-g1-baseline.json"
     },
     {
       "id": "G1",
       "name": "source-and-consumer-baseline",
-      "status": "pending"
+      "status": "complete",
+      "evidence": "receipts/unified-engine-g1-baseline.json"
     },
     {
       "id": "G2",
       "name": "unified-source-and-build",
-      "status": "pending"
+      "status": "complete",
+      "evidence": "receipts/unified-engine-g2-source-build.json"
     },
     {
       "id": "G3",
       "name": "module-and-transfer-contracts",
-      "status": "pending"
+      "status": "complete",
+      "evidence": "receipts/unified-engine-g3-transfer.json"
     },
     {
       "id": "G4",
       "name": "single-wheel-validation",
-      "status": "pending"
+      "status": "complete",
+      "evidence": "receipts/unified-engine-g4-candidate.json"
     },
     {
       "id": "G5",
       "name": "downstream-consumer-validation",
-      "status": "pending"
+      "status": "blocked",
+      "evidence": "receipts/unified-engine-g5-downstream.json"
     },
     {
       "id": "G6",

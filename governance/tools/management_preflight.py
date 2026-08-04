@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "manifests" / "management.json"
 GENERATED = ROOT / ".management-state"
 ARTIFACT_POLICY_PATH = ROOT / "manifests" / "artifact-store-policy.json"
+RUNTIME_CONSOLIDATION_PATH = ROOT / "manifests" / "runtime-consolidation.json"
 ARTIFACT_DISPOSITIONS_RELATIVE = "manifests/artifact-dispositions.json"
 OPERATION_RECEIPT_SCHEMA_PATH = (
     ROOT / "manifests" / "operation-receipt-envelope-v1.json"
@@ -495,10 +496,39 @@ def environment_policy_errors(config: dict[str, Any]) -> list[str]:
         normalized_distribution_name(distribution): subject["sha256"]
         for distribution, subject in artifact_policy["active_distributions"].items()
     }
+    allowed_distributions = {
+        name: set(distributions)
+        for name, distributions in ALLOWED_ENVIRONMENT_DISTRIBUTIONS.items()
+    }
+    candidate_validation_sha: str | None = None
+    if RUNTIME_CONSOLIDATION_PATH.exists():
+        consolidation = load_json(RUNTIME_CONSOLIDATION_PATH)
+        gates = {
+            gate.get("id"): gate
+            for gate in consolidation.get("execution_gates", [])
+            if isinstance(gate, dict)
+        }
+        g4 = gates.get("G4", {})
+        evidence = g4.get("evidence")
+        evidence_path = ROOT / evidence if isinstance(evidence, str) else None
+        if g4.get("status") == "complete" and evidence_path is not None:
+            if not evidence_path.is_file():
+                errors.append(f"G4 candidate evidence does not exist: {evidence}")
+            else:
+                candidate = load_json(evidence_path)
+                candidate_validation_sha = candidate.get("wheel", {}).get("sha256")
+                if not _valid_hex(candidate_validation_sha, 64):
+                    errors.append("G4 candidate evidence has an invalid wheel SHA-256")
+                    candidate_validation_sha = None
+                else:
+                    allowed_distributions["validation"] = {"epcsaft"}
+
     artifact_consumers = {
         "equilibrium": {"epcsaft"},
         "regression": {"epcsaft"},
-        "validation": set(active_objects),
+        "validation": (
+            {"epcsaft"} if candidate_validation_sha is not None else set(active_objects)
+        ),
     }
     editable_providers = {
         "eos": "epcsaft",
@@ -507,7 +537,7 @@ def environment_policy_errors(config: dict[str, Any]) -> list[str]:
     }
     for name, record in sorted(config["repositories"].items()):
         environment = Path(record["local_path"]) / ".venv"
-        allowed = ALLOWED_ENVIRONMENT_DISTRIBUTIONS.get(name, set())
+        allowed = allowed_distributions.get(name, set())
         distributions = environment_distributions(environment)
         installed = {
             normalized_distribution_name(distribution["name"]): distribution
@@ -549,6 +579,23 @@ def environment_policy_errors(config: dict[str, Any]) -> list[str]:
                 continue
 
             if normalized not in artifact_consumers.get(name, set()):
+                continue
+            if name == "validation" and candidate_validation_sha is not None:
+                candidate_path = (
+                    Path(unquote(urlparse(url).path))
+                    if url.startswith("file://")
+                    else None
+                )
+                if candidate_path is None or not candidate_path.is_file():
+                    errors.append(
+                        "validation must install the recorded G4 Engine candidate "
+                        f"from an existing immutable wheel, found {url or 'no direct_url'}"
+                    )
+                elif sha256(candidate_path) != candidate_validation_sha:
+                    errors.append(
+                        "validation Engine wheel does not match the recorded G4 "
+                        f"candidate {candidate_validation_sha}: {candidate_path}"
+                    )
                 continue
             active_sha = active_objects[normalized]
             expected_marker = f"/artifacts/objects/sha256/{active_sha}/"

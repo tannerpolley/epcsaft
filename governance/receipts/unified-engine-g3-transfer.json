@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "gate": "G3",
+  "status": "complete",
+  "captured_on": "2026-08-04",
+  "engine_commit": "c712fe9730faef0732341ccdabc4d799fef2d953",
+  "data_commit": "9185bce8452191e6425e164c51dd6f8db983fc9b",
+  "materializations": [
+    {
+      "packet": "figiel-2025-reference-electrolytes/1",
+      "packet_fingerprint": "5ea86c44f67ded4c309e17f396b9414cfadcb2b0f00b2ac41f8c48c047af42e5",
+      "receipt_sha256": "29bcc66565448d8a55f997f10c645157364d28ddc56976db5f777d4ad4296d35"
+    },
+    {
+      "packet": "gross-2001-methane-ethane/1",
+      "packet_fingerprint": "4b20a82c7ed8f34ec9a60ab547014b78064c3331ce636c49d32c10bfb7298ca7",
+      "receipt_sha256": "d20ccee0ddca004c2e947284d60b588be076e49f22789b574ef251078a51ce33"
+    },
+    {
+      "packet": "gross-2001-propane/1",
+      "packet_fingerprint": "b039bdf6b9622019c46c1cb7342c6c88b64714b8ac64f2dc3d7f413e1b5a720a",
+      "receipt_sha256": "d11805633a8714347405a423bbd1a01cfd2d0a1ec6d1e21722234980bc6258d6"
+    },
+    {
+      "packet": "held-cameretti-sadowski-2008/1",
+      "packet_fingerprint": "6850a420751cc323f2700450aef8b900af95aa388b6acb003b1d8eaad04e8dbb",
+      "receipt_sha256": "93df6c0a7bf260ec2a91bd4a001d8f7538b896217c80666a701b64c59bc82e76"
+    }
+  ],
+  "transfer_slice": {
+    "path": "tests/integration/test_scientific_slice.py",
+    "route": "Data packet -> Parameters -> RegressionResult.to_parameters -> Mixture -> tp_flash",
+    "source_parameter_fingerprint": "sha256:8347d8daad42af60d61071f0584eb50d8866d98d9636872fd9d173f491ea7947",
+    "fitted_parameter_fingerprint": "sha256:26249ade6f1f9fa6ce0f4d99a421213fcc7902bbb31dfc7acb7e6af4a18a33cc"
+  },
+  "source_reference_derivatives": {
+    "disposition": "capability_narrowed",
+    "behavior": "chemical observation construction rejects source-standard-state derivatives before native execution",
+    "downstream_effect": "MEA coupled observation regression remains blocked at G5"
+  },
+  "checks": {
+    "sibling_data_discovery": false,
+    "typed_parameter_transfer": true,
+    "flash_fingerprint_matches_fitted_parameters": true
+  }
+}

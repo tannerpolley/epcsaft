@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "gate": "G5",
+  "status": "blocked",
+  "captured_on": "2026-08-04",
+  "engine_commit": "c712fe9730faef0732341ccdabc4d799fef2d953",
+  "engine_wheel_sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049",
+  "consumers": [
+    {
+      "repository": "Lithium_Extraction",
+      "branch": "codex/unified-engine-cutover",
+      "commit": "33f619af7aeea21b5a640ad5ec8e8d4947d7f7bc",
+      "environment": "one immutable Engine wheel; no additional ePC-SAFT distributions",
+      "tests": "70 passed",
+      "scientific_replay": {
+        "name": "Hubach 2024 unified Engine benchmark",
+        "status": "attempt_completed_result_refused",
+        "accepted_point_count": 2,
+        "point_count": 5,
+        "parameter_fingerprint": "sha256:92bfcfb9040151bbe8a15fef14cd992fbdf8040e9818e0cc0660a10180b4599b",
+        "blocker": "paper uses a 0.88 sigma ion diameter model form that the Engine artifact does not represent"
+      },
+      "lock_status": "release URL unavailable before G7; old Git lock cannot be replaced yet"
+    },
+    {
+      "repository": "MEA-Thermodynamics",
+      "branch": "codex/unified-engine-cutover",
+      "commit": "ac5ff017870ecf2c7987cba39f243b0399b8f106",
+      "environment": "one immutable Engine wheel; no additional ePC-SAFT distributions",
+      "tests": "15 passed",
+      "parameter_fingerprint": "sha256:7ac9cf016af9086a8f1c70189b524cbad1e29a75bb742862106d34ba7ab44ae0",
+      "state_replay": "liquid state solved at 313.15 K and 100000 Pa",
+      "blocker": "coupled chemical-observation regression requires source-reference derivatives that the narrowed Engine interface rejects",
+      "lock_status": "release URL unavailable before G7; old Git lock cannot be replaced yet"
+    },
+    {
+      "repository": "MEA-Absorption-Column",
+      "branch": "main",
+      "commit": "c4726f69fdc034f5bec817ab720239967084ecdf",
+      "dirty_path_count": 200,
+      "status": "blocked_user_owned_dirty_checkout",
+      "blocker": "cannot safely edit, regenerate the lock, or validate the consumer without a clean owner handoff"
+    }
+  ],
+  "exit_condition_met": false,
+  "next_gate": "G6 remains closed"
+}

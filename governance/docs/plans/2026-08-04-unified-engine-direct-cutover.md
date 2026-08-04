@@ -1,6 +1,11 @@
 # Unified ePC-SAFT Engine direct cutover
 
-Status: canonical plan; execution not started
+Status: canonical plan; G2-G4 complete; G5 blocked
+
+Execution note (2026-08-04): explicit G0 start approval was received. The
+non-authoritative candidate and local gate evidence are recorded in
+`receipts/unified-engine-g2-source-build.json` through
+`receipts/unified-engine-g5-downstream.json`. G6 remains closed.
 
 Approved architecture: 2026-08-04
 
