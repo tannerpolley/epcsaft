@@ -15,5 +15,10 @@ if [[ ! -x .venv/bin/python ]]; then
     uv venv --python 3.13 .venv
 fi
 
+uv pip uninstall --python .venv/bin/python \
+    epcsaft \
+    epcsaft-equilibrium \
+    epcsaft-regression
+
 .venv/bin/python tools/validate_packets.py
 .venv/bin/python -m unittest discover -s tests -v

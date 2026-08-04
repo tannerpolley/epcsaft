@@ -1,6 +1,6 @@
 # ePC-SAFT Data Context
 
-`GOVERNANCE.md` revision 6 in `ePC-SAFT/ePC-SAFT-management` is the canonical
+`GOVERNANCE.md` revision 8 in `ePC-SAFT/ePC-SAFT-governance` is the canonical
 ecosystem doctrine.
 
 Repository role: `scientific_asset`
@@ -32,8 +32,9 @@ Storage authority is independent of runtime and evidence authority:
 - `evidence_owner = validation` for generated campaign evidence.
 
 Lab remains the home for exploratory, rejected, broad, or incomplete material.
-Management remains the home for policy, registries, operation receipts, wheels,
-and SDK artifact objects.
+Governance remains the durable repository home for policy, registries,
+operation receipts, wheels, and SDK artifact objects. Management is the
+coordination project, not a Git repository.
 
 Consumers pin a Data commit, packet path, and packet fingerprint. No installed
 package has a runtime dependency on this repository.

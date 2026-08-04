@@ -2,10 +2,10 @@
 
 Repository Profile: scientific-computing
 
-Before work, read doctrine revision 6 and the machine-readable topology from
-`../ePC-SAFT-organization/GOVERNANCE.md` and
-`../ePC-SAFT-organization/manifests/management.json`. Their published home is
-`https://github.com/ePC-SAFT/ePC-SAFT-management`.
+Before work, read doctrine revision 8 and the machine-readable topology from
+`../ePC-SAFT-governance/GOVERNANCE.md` and
+`../ePC-SAFT-governance/manifests/management.json`. Their published home is
+`https://github.com/ePC-SAFT/ePC-SAFT-governance`.
 
 This repository is the canonical store for reusable reviewed scientific
 packets: parameter bundles, source-derived datasets, normalized observations,
