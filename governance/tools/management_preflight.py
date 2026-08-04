@@ -561,30 +561,22 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
         catalog_presence = entry.get("catalog_presence")
         if catalog_presence not in {
             "admitted_runtime_copy",
-            "legacy_copy_pending_removal",
             "absent",
         }:
             errors.append(f"invalid EOS catalog presence for {bundle_id}")
         disposition = entry.get("disposition")
-        if disposition not in {"sync_to_eos_runtime", "relocate_to_data"}:
+        if disposition not in {"sync_to_eos_runtime", "canonical_data_only"}:
             errors.append(f"invalid parameter disposition for {bundle_id}")
         elif disposition == "sync_to_eos_runtime" and entry.get("runtime_owner") != "eos":
             errors.append(f"EOS runtime sync requires EOS runtime ownership for {bundle_id}")
-        elif disposition == "relocate_to_data" and entry.get("runtime_owner") is not None:
-            errors.append(f"Data relocation cannot retain runtime ownership for {bundle_id}")
+        elif disposition == "canonical_data_only" and entry.get("runtime_owner") is not None:
+            errors.append(f"Data-only packet cannot retain runtime ownership for {bundle_id}")
         if catalog_presence == "admitted_runtime_copy" and (
             entry.get("runtime_owner") != "eos"
             or disposition != "sync_to_eos_runtime"
         ):
             errors.append(
                 f"admitted EOS catalog packet {bundle_id} requires EOS runtime ownership"
-            )
-        if catalog_presence == "legacy_copy_pending_removal" and (
-            entry.get("runtime_owner") is not None
-            or disposition != "relocate_to_data"
-        ):
-            errors.append(
-                f"legacy EOS catalog packet {bundle_id} must remain pending Data relocation"
             )
         if catalog_presence == "absent" and entry.get("runtime_owner") is not None:
             errors.append(f"absent EOS catalog packet {bundle_id} cannot own runtime")
@@ -609,8 +601,7 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
     expected_eos = {
         bundle_id
         for bundle_id, entry in by_id.items()
-        if entry.get("catalog_presence")
-        in {"admitted_runtime_copy", "legacy_copy_pending_removal"}
+        if entry.get("catalog_presence") == "admitted_runtime_copy"
     }
     missing_eos = sorted(expected_eos.difference(eos_discovered))
     if missing_eos:
@@ -620,21 +611,18 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
     if packets.exists():
         for manifest in packets.glob("*/*/packet.toml"):
             data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+            files = data.get("files", [])
+            if not any(
+                isinstance(item, dict) and item.get("role") == "parameters"
+                for item in files
+            ):
+                continue
             discovered.add(
                 data.get("packet_id", data.get("bundle_id", manifest.parent.parent.name))
             )
-    validation = Path(config["repositories"]["validation"]["local_path"])
-    if validation.exists():
-        for manifest in validation.rglob("bundle.toml"):
-            if ".git" in manifest.parts or ".worktrees" in manifest.parts:
-                continue
-            data = tomllib.loads(manifest.read_text(encoding="utf-8"))
-            discovered.add(
-                data.get("bundle_id", data.get("packet_id", manifest.parent.parent.name))
-            )
     missing = sorted(discovered.difference(by_id))
     if missing:
-        errors.append(f"unregistered scientific parameter packets: {missing}")
+        errors.append(f"unregistered canonical parameter packets: {missing}")
     return errors
 
 

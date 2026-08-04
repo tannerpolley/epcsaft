@@ -13,13 +13,15 @@ artifacts/
   objects/sha256/<full-sha256>/<wheel-name>.whl
   archive/legacy-sdk-wheels-20260730.tar.zst
   archive/candidate-wheel-dispositions-20260731.tar.zst
+  archive/candidate-wheel-dispositions-20260804.tar.zst
 ```
 
 `active/` is the only live SDK channel. It contains exactly one immutable
 wheel for each admitted distribution: `epcsaft`, `epcsaft-equilibrium`, and
-`epcsaft-regression`. `objects/sha256/` contains exactly one hard-linked,
-full-SHA-256 object for each of those three wheels; package setup scripts may
-install only those object paths. The external `artifacts/index.json` and
+`epcsaft-regression`. `objects/sha256/` contains the hard-linked,
+full-SHA-256 object for every indexed active wheel and may retain immutable
+objects that have no live alias. Package setup scripts may install only the
+active subjects' object paths. The external `artifacts/index.json` and
 tracked `manifests/artifacts.json` contain the same three-entry index.
 
 ## Approved Engine cutover
@@ -30,6 +32,11 @@ receipt passes every gate in
 `docs/plans/2026-08-04-unified-engine-direct-cutover.md`. Governance MUST NOT
 promote an Engine wheel beside the three current distributions or update one
 current distribution as a partial cutover.
+
+Correcting a stale current SDK binding to the exact source-bound wheel already
+required by a current package is maintenance of the three-distribution channel,
+not an Engine cutover. Such a repair still updates the policy, active alias,
+tracked index, package setup scripts, and validation evidence as one operation.
 
 At cutover, Governance will:
 

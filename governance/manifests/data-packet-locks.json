@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "data_repository": "ePC-SAFT/ePC-SAFT-data",
-  "data_commit": "cc197d686e03f79403e50db4200f227543912e82",
+  "data_commit": "5f6b6cb2f21743fe43e5d218d468b6fc0a23a88b",
   "packets": [
     {
       "packet_id": "ascani-2022-case-study-2-electrolyte-lle",
@@ -75,9 +75,9 @@
     },
     {
       "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
-      "packet_version": "3",
-      "packet_path": "packets/khudaida-2026-figure-2-electrolyte-lle/3",
-      "packet_fingerprint": "73c48ac9fb97f06185bd78d27ceaa7ffe6308abe9feee34b15eadff31cc985eb",
+      "packet_version": "4",
+      "packet_path": "packets/khudaida-2026-figure-2-electrolyte-lle/4",
+      "packet_fingerprint": "6dfd71dfbad011834685c192a310314cdc844146843e060f1135d3993261ae43",
       "materialization": "byte-for-byte"
     }
   ]

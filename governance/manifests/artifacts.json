@@ -29,11 +29,11 @@
       "aliases": [
         "active/epcsaft/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
       ],
-      "bytes": 843664,
+      "bytes": 963778,
       "distribution": "epcsaft",
-      "object": "objects/sha256/1567cda72e1b525526dc0e647af0c6fe711edcb70bc4cee08f06284e847956d9/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "object": "objects/sha256/bc7e637de084330ebded4ddfd52e02bc1ce5451221128692972ebba8856d098e/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
       "retention": "current",
-      "sha256": "1567cda72e1b525526dc0e647af0c6fe711edcb70bc4cee08f06284e847956d9",
+      "sha256": "bc7e637de084330ebded4ddfd52e02bc1ce5451221128692972ebba8856d098e",
       "version": "0.2.0.dev0"
     }
   ],

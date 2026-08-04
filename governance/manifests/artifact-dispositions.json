@@ -7,6 +7,12 @@
       "sha256": "2b649c5f3fb1535fae15ec2a9b0bca023f25f39e927171f3721110402a1ccdbc",
       "bytes": 4491414,
       "entries": 2
+    },
+    {
+      "path": "archive/candidate-wheel-dispositions-20260804.tar.zst",
+      "sha256": "23c5c8fd9dd83ee8340e3db8c822f00a6c398739199111e70faf659bcba89122",
+      "bytes": 15400963,
+      "entries": 5
     }
   ],
   "dispositions": [
@@ -23,6 +29,41 @@
       "distribution": "epcsaft",
       "retention": "superseded-replay",
       "reason": "Superseded EOS native-SDK candidate retained for exact replay; the active installable subject is the Governance SHA-256 object."
+    },
+    {
+      "archive_member": "wheels/equilibrium-khudaida-figure2-candidate-v1/6c3695c/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "72fb10d39f55dd005ffc23d0a5c95a93ec9e152537259331d1cf0e866637c1ee",
+      "distribution": "epcsaft-equilibrium",
+      "retention": "failed-or-non-admission-evidence",
+      "reason": "Khudaida Figure 2 candidate v1 is retained for exact diagnostic replay and is not an admitted active subject."
+    },
+    {
+      "archive_member": "wheels/equilibrium-khudaida-figure2-candidate-v2/39f0a1b/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "3ffec793245d9c79220645aac9cf10e45d0c0c35ddd743dc7c7616df780ed868",
+      "distribution": "epcsaft-equilibrium",
+      "retention": "failed-or-non-admission-evidence",
+      "reason": "Khudaida Figure 2 candidate v2 is retained for exact diagnostic replay and is not an admitted active subject."
+    },
+    {
+      "archive_member": "wheels/equilibrium-khudaida-figure2-candidate-v3/a0f5dde/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "c98edd42e656602a2fd294128c66f925be537f413107345225d56b644724630b",
+      "distribution": "epcsaft-equilibrium",
+      "retention": "failed-or-non-admission-evidence",
+      "reason": "Khudaida Figure 2 candidate v3 is retained for exact diagnostic replay and is not an admitted active subject."
+    },
+    {
+      "archive_member": "wheels/equilibrium-khudaida-figure2-candidate-v4/14e05c8/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "d837310db28ef518897215caf3b8f100c0629461a1652facae00face7f9c399c",
+      "distribution": "epcsaft-equilibrium",
+      "retention": "failed-or-non-admission-evidence",
+      "reason": "Khudaida Figure 2 candidate v4 is retained for exact diagnostic replay and is not an admitted active subject."
+    },
+    {
+      "archive_member": "wheels/provider-native-sdk-v1/50cf2c2/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "620bad7b4ce04b99116e04da0a9253b55edb67bf6c78040c2a4dd86793b6a8e7",
+      "distribution": "epcsaft",
+      "retention": "superseded-replay",
+      "reason": "Superseded provider-named native-SDK candidate is retained for exact replay and is not an active install source."
     }
   ]
 }

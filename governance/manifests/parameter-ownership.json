@@ -3,7 +3,7 @@
   "enforcement": "inventory",
   "policy": {
     "storage": "Reusable scientific parameter packets are canonical only in ePC-SAFT-data.",
-    "runtime": "EOS may ship only an admitted, self-contained runtime subset generated or copied from an immutable Data packet release.",
+    "runtime": "EOS currently ships no installed parameter catalog; any future Engine runtime subset requires a separate admission from an immutable Data packet release.",
     "evidence": "Validation owns generated campaign evidence and pins exact Data commits; it does not own canonical parameter bytes."
   },
   "bundles": [
@@ -12,36 +12,36 @@
       "storage_owner": "data",
       "runtime_owner": null,
       "evidence_owner": "validation",
-      "catalog_presence": "legacy_copy_pending_removal",
-      "disposition": "relocate_to_data",
-      "reason": "Reusable source-derived case-study packet; not an admitted EOS runtime catalog entry."
+      "catalog_presence": "absent",
+      "disposition": "canonical_data_only",
+      "reason": "Reusable source-derived case-study packet in Data; EOS has no installed parameter catalog."
     },
     {
       "bundle_id": "crespo-2021-deea",
       "storage_owner": "data",
       "runtime_owner": null,
       "evidence_owner": "validation",
-      "catalog_presence": "legacy_copy_pending_removal",
-      "disposition": "relocate_to_data",
-      "reason": "Reusable fitted parameter packet; not an admitted EOS runtime catalog entry."
+      "catalog_presence": "absent",
+      "disposition": "canonical_data_only",
+      "reason": "Reusable fitted parameter packet in Data; EOS has no installed parameter catalog."
     },
     {
       "bundle_id": "figiel-2025-aqueous-iodides",
       "storage_owner": "data",
-      "runtime_owner": "eos",
+      "runtime_owner": null,
       "evidence_owner": null,
-      "catalog_presence": "admitted_runtime_copy",
-      "disposition": "sync_to_eos_runtime",
-      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
+      "catalog_presence": "absent",
+      "disposition": "canonical_data_only",
+      "reason": "Canonical Data packet consumed through an explicit materialized path; EOS has no installed parameter catalog."
     },
     {
       "bundle_id": "figiel-2025-reference-electrolytes",
       "storage_owner": "data",
-      "runtime_owner": "eos",
+      "runtime_owner": null,
       "evidence_owner": null,
-      "catalog_presence": "admitted_runtime_copy",
-      "disposition": "sync_to_eos_runtime",
-      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
+      "catalog_presence": "absent",
+      "disposition": "canonical_data_only",
+      "reason": "Canonical Data packet consumed through an explicit materialized path; EOS has no installed parameter catalog."
     },
     {
       "bundle_id": "figiel-2025-validation-parameters",
@@ -49,53 +49,53 @@
       "runtime_owner": null,
       "evidence_owner": "validation",
       "catalog_presence": "absent",
-      "disposition": "relocate_to_data",
+      "disposition": "canonical_data_only",
       "reason": "Reusable source-derived Validation packet; generated campaign evidence remains in Validation."
     },
     {
       "bundle_id": "figiel-yu-held-2025",
       "storage_owner": "data",
-      "runtime_owner": "eos",
+      "runtime_owner": null,
       "evidence_owner": null,
-      "catalog_presence": "admitted_runtime_copy",
-      "disposition": "sync_to_eos_runtime",
-      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
+      "catalog_presence": "absent",
+      "disposition": "canonical_data_only",
+      "reason": "Canonical Data packet consumed through an explicit materialized path; EOS has no installed parameter catalog."
     },
     {
       "bundle_id": "gross-2001-methane-ethane",
       "storage_owner": "data",
-      "runtime_owner": "eos",
+      "runtime_owner": null,
       "evidence_owner": null,
-      "catalog_presence": "admitted_runtime_copy",
-      "disposition": "sync_to_eos_runtime",
-      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
+      "catalog_presence": "absent",
+      "disposition": "canonical_data_only",
+      "reason": "Canonical Data packet consumed through an explicit materialized path; EOS has no installed parameter catalog."
     },
     {
       "bundle_id": "gross-2001-propane",
       "storage_owner": "data",
-      "runtime_owner": "eos",
+      "runtime_owner": null,
       "evidence_owner": null,
-      "catalog_presence": "admitted_runtime_copy",
-      "disposition": "sync_to_eos_runtime",
-      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
+      "catalog_presence": "absent",
+      "disposition": "canonical_data_only",
+      "reason": "Canonical Data packet consumed through an explicit materialized path; EOS has no installed parameter catalog."
     },
     {
       "bundle_id": "gross-sadowski-2001",
       "storage_owner": "data",
-      "runtime_owner": "eos",
+      "runtime_owner": null,
       "evidence_owner": null,
-      "catalog_presence": "admitted_runtime_copy",
-      "disposition": "sync_to_eos_runtime",
-      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy."
+      "catalog_presence": "absent",
+      "disposition": "canonical_data_only",
+      "reason": "Canonical Data packet consumed through an explicit materialized path; EOS has no installed parameter catalog."
     },
     {
       "bundle_id": "held-cameretti-sadowski-2008",
       "storage_owner": "data",
-      "runtime_owner": "eos",
+      "runtime_owner": null,
       "evidence_owner": "validation",
-      "catalog_presence": "admitted_runtime_copy",
-      "disposition": "sync_to_eos_runtime",
-      "reason": "Canonical Data packet with an admitted self-contained EOS runtime copy and literature validation evidence."
+      "catalog_presence": "absent",
+      "disposition": "canonical_data_only",
+      "reason": "Canonical Data packet with Validation evidence, consumed through an explicit materialized path; EOS has no installed parameter catalog."
     },
     {
       "bundle_id": "khudaida-2026-figure-2-electrolyte-lle",
@@ -103,7 +103,7 @@
       "runtime_owner": null,
       "evidence_owner": "validation",
       "catalog_presence": "absent",
-      "disposition": "relocate_to_data",
+      "disposition": "canonical_data_only",
       "reason": "Reusable source-derived Figure 2 packet; Validation retains only generated campaign evidence."
     }
   ]

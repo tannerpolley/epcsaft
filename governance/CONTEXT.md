@@ -39,9 +39,10 @@ freeze, consumer inventory, and execution gates. The canonical execution plan
 is `docs/plans/2026-08-04-unified-engine-direct-cutover.md`.
 
 `manifests/parameter-ownership.json` is the machine-readable parameter
-disposition map. It separates canonical Data storage, admitted EOS runtime
-copies, and Validation evidence. Pending relocations remain explicit until the
-owning repository tasks execute them.
+disposition map. It separates canonical Data storage from Validation evidence
+and records that the current EOS ships no installed parameter catalog. Generic
+property packets and campaign-local Validation bundles do not enter this
+parameter ledger.
 
 `manifests/data-packet-locks.json` pins each reusable bundle to the merged
 Data commit, packet path, version, and canonical packet fingerprint. It is a

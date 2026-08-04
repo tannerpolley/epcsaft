@@ -38,9 +38,10 @@ install only full-SHA-256 objects; repository `dist/` wheels are rejected.
 Non-active candidate wheel retention is recorded in
 [manifests/artifact-dispositions.json](manifests/artifact-dispositions.json).
 
-Scientific-packet storage, runtime-copy, evidence, and pending disposition
-ownership are tracked in
+Canonical parameter-packet storage and evidence ownership are tracked in
 [manifests/parameter-ownership.json](manifests/parameter-ownership.json).
+Generic property packets and campaign-local Validation bundles remain outside
+that parameter ledger.
 Immutable Data packet commits and fingerprints are tracked in
 [manifests/data-packet-locks.json](manifests/data-packet-locks.json); Engine and
 Validation add their own materialization locks when their owning tasks are
