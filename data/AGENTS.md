@@ -31,10 +31,6 @@ Use `project-truss:setup` once, then `project-truss:start` to begin or resume Ma
 
 Project Truss uses GitHub-native root and leaf issues. See `docs/agents/issue-tracker.md`.
 
-### Triage labels
-
-Matt triage roles map to descriptive labels only. See `docs/agents/triage-labels.md`.
-
 ### Domain docs
 
 Read the configured domain context and ADRs. See `docs/agents/domain.md`.

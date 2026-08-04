@@ -19,6 +19,9 @@ packets/<packet-id>/<version>/
 ```
 
 Read [the packet contract](docs/packet-contract.md) before adding data.
+Read [the data-organization guide](docs/data-organization.md) before deciding
+whether a source record belongs in Data or remains campaign evidence in
+Validation.
 
 Validate all packets and run the contract tests with:
 

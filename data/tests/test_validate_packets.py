@@ -187,6 +187,39 @@ units_basis = "Repository metadata are non-numeric identifiers."
                     )
                 )
 
+    def test_source_record_provenance_supports_mixed_origins(self) -> None:
+        temporary, manifest, data = self.make_packet()
+        self.addCleanup(temporary.cleanup)
+        payload = f'''schema_version = 1
+provenance_kind = "source-record-provenance-v1"
+
+[[records]]
+retained_path = "observations/points.csv"
+origin_repository = "example/source-a"
+origin_commit = "{"a" * 40}"
+origin_tree = "{"b" * 40}"
+origin_path = "data/points.csv"
+sha256 = "{_sha256(data.read_bytes())}"
+'''.encode()
+        provenance = manifest.parent / "provenance" / "source-origin.toml"
+        provenance.parent.mkdir()
+        provenance.write_bytes(payload)
+        manifest.write_text(
+            manifest.read_text(encoding="utf-8")
+            + f'''
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "{_sha256(payload)}"
+source_refs = ["fixture"]
+domain_refs = ["fixture-domain"]
+units_basis = "Source origin metadata are non-numeric identifiers."
+''',
+            encoding="utf-8",
+        )
+        self.assertEqual(validate_packet(manifest), [])
+
     def test_parameter_bundle_file_set_is_exact(self) -> None:
         temporary, manifest, bundle = self.make_parameter_bundle_packet()
         self.addCleanup(temporary.cleanup)

@@ -21,6 +21,22 @@ Full papers, broad extraction corpora, rejected experiments, and exploratory
 notebooks remain in Lab. Generated campaign results, plots, and receipts remain
 in Validation.
 
+## Property-data admission boundary
+
+An observation file belongs in Data only when it is a reusable, source-backed
+property record that can be consumed independently of one named validation
+campaign. It should retain the component identity, independent conditions,
+explicit units, source locator or source ID, and source uncertainty when the
+source provides it. Source-native wide tables are acceptable when their column
+names and packet metadata make the units and meaning unambiguous.
+
+Paper- or figure-specific matrices, digitized curves, direct experimental rows
+kept only to reproduce a named publication, fitted targets, campaign-specific
+partitions, and generated results remain in Validation. Normalizing a table or
+copying it into CSV does not change that ownership. Promotion of a campaign
+record requires a separate review and a new packet version or family; existing
+immutable packets and consumer locks are never rewritten in place.
+
 ## Manifest
 
 `packet.toml` requires:
@@ -53,6 +69,14 @@ Each file entry requires:
 The manifest lists every retained file exactly once. Paths may not be absolute,
 escape the packet, or traverse symlinks. Hash changes require a new commit; a
 semantic or source change should normally create a new packet version.
+
+Provenance manifests under `provenance/` are TOML and are validated with the
+packet. `repository-migration-v1` is for a packet copied from one immutable
+repository source and records one source bundle manifest. Mixed-source
+property packets use `source-record-provenance-v1`; each retained non-
+provenance file then records its own origin repository, commit, tree, path, and
+SHA-256. This distinction prevents a single synthetic origin receipt from
+concealing a cross-repository migration.
 
 ## Consumer lock
 

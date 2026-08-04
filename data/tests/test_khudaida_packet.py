@@ -17,6 +17,7 @@ PACKET_ROOT = (
 )
 PACKET_V2 = PACKET_ROOT / "2"
 PACKET = PACKET_ROOT / "3"
+PACKET_V4 = PACKET_ROOT / "4"
 
 
 class KhudaidaPacketTests(unittest.TestCase):
@@ -100,6 +101,32 @@ class KhudaidaPacketTests(unittest.TestCase):
         )
         self.assertIn("Generated results", provenance["scope"])
         self.assertFalse(any(path.name.startswith("results") for path in PACKET.rglob("*")))
+
+    def test_version_four_is_parameter_only_successor(self) -> None:
+        self.assertEqual(validate_packet(PACKET_V4 / "packet.toml"), [])
+        manifest = tomllib.loads(
+            (PACKET_V4 / "packet.toml").read_text(encoding="utf-8")
+        )
+        self.assertFalse((PACKET_V4 / "observations").exists())
+        self.assertEqual(
+            {record["path"] for record in manifest["files"]},
+            {
+                "parameters/bundle.toml",
+                "parameters/components.csv",
+                "parameters/single.csv",
+                "parameters/pair.csv",
+                "parameters/sites.csv",
+                "parameters/association.csv",
+                "parameters/model.csv",
+                "parameters/correlations.toml",
+                "provenance/parameter-origin.toml",
+            },
+        )
+        for path in (PACKET / "parameters").iterdir():
+            self.assertEqual(
+                path.read_bytes(),
+                (PACKET_V4 / "parameters" / path.name).read_bytes(),
+            )
 
 
 if __name__ == "__main__":

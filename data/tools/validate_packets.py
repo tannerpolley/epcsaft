@@ -148,6 +148,10 @@ def _validate_migration_provenance(
         data = tomllib.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
         return [f"{prefix}: cannot read migration provenance {relative}: {exc}"]
+    if data.get("provenance_kind") == "source-record-provenance-v1":
+        return _validate_source_record_provenance(
+            packet_root, relative, expected_paths, prefix, data
+        )
     if data.get("provenance_kind") != "repository-migration-v1":
         return [f"{prefix}: unsupported provenance_kind for {relative}"]
     errors: list[str] = []
@@ -184,6 +188,48 @@ def _validate_migration_provenance(
             errors.append(f"{prefix}: provenance hash mismatch for {retained}")
     if mapped != expected_paths:
         errors.append(f"{prefix}: migration provenance file set is incomplete")
+    return errors
+
+
+def _validate_source_record_provenance(
+    packet_root: Path,
+    relative: PurePosixPath,
+    expected_paths: set[PurePosixPath],
+    prefix: str,
+    data: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    if data.get("schema_version") != 1:
+        errors.append(f"{prefix}: source-record provenance requires schema_version 1")
+    records = data.get("records")
+    if not isinstance(records, list) or not records:
+        return errors + [f"{prefix}: source-record provenance requires records"]
+    mapped: set[PurePosixPath] = set()
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            errors.append(f"{prefix}: source record {index} must be a table")
+            continue
+        retained = _safe_relative_path(record.get("retained_path"))
+        if retained is None or retained in mapped:
+            errors.append(
+                f"{prefix}: source record {index} has invalid retained_path"
+            )
+            continue
+        mapped.add(retained)
+        for field in ("origin_repository", "origin_path"):
+            if not _nonempty_string(record.get(field)):
+                errors.append(f"{prefix}: source record {retained} requires {field}")
+        for field in ("origin_commit", "origin_tree"):
+            if not _valid_hex(record.get(field), 40):
+                errors.append(f"{prefix}: source record {retained} has invalid {field}")
+        declared_hash = record.get("sha256")
+        target = packet_root / Path(*retained.parts)
+        if not _valid_hex(declared_hash, SHA256_LENGTH):
+            errors.append(f"{prefix}: source record {retained} has invalid sha256")
+        elif not target.is_file() or sha256(target) != declared_hash:
+            errors.append(f"{prefix}: source record hash mismatch for {retained}")
+    if mapped != expected_paths:
+        errors.append(f"{prefix}: source-record provenance file set is incomplete")
     return errors
 
 
