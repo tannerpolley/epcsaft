@@ -83,7 +83,7 @@ proof includes 64 package tests and direct-data campaigns owned by
 release or a claim beyond the recorded capability boundaries.
 
 Phase equilibrium, phase discovery/global stability, reaction and species
-equilibrium, multi-salt reference paths, regression, and ideal-gas caloric data
+equilibrium, regression, and ideal-gas caloric data
 remain outside this repository's current capability. Historical Migration
 receipt
 `promotion-0015-provider-native-sdk-v1` alone determines authority for the ADR
@@ -250,6 +250,18 @@ reference-sequence, pressure-state, and CppAD owners supply values and admitted
 pressure/parameter derivatives; no single-ion standard, reaction constant,
 reaction solver, chemistry selector, or source-identity admission is
 introduced.
+
+Project Truss issue #78 adds the generic declared-solvent source-reference
+transfer over that same basis. A Source Reference Declaration is exact ordered
+component identity, salt-free solvent composition, molality convention and
+standard, source-pressure provenance, trial state, and derivative requirement.
+A Source Reference Transfer is the ordered sum of EOS log-fugacity and
+activity-scale contractions that maps that declaration into the unchanged
+Provider Computational Reference. Its immutable Transfer Receipt binds model,
+topology, component order, source reference, domain, build artifact, and basis
+identities. EOS evaluates neutral solutes and charge-neutral ionic formula
+units at infinite dilution in the declared solvent and exposes no individual
+ionic fugacity. Reaction projection and equilibrium remain consumer-owned.
 
 An explicit Held aqueous-electrolyte record set uses that same generic
 neutral-reference tail and the existing fixed-pressure density closure.

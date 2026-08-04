@@ -10,7 +10,14 @@ from .eos import (
     native_sdk,
 )
 from .parameters import Parameters
-from .reference import Activity, ElectrolyteReference, TransferFreeEnergy
+from .reference import (
+    Activity,
+    ElectrolyteReference,
+    SourceReferenceDeclaration,
+    SourceReferenceTransfer,
+    TransferFreeEnergy,
+    source_reference_transfer,
+)
 from .units import ParameterError, unit_registry
 
 __all__ = (
@@ -29,4 +36,7 @@ __all__ = (
     "ElectrolyteReference",
     "Activity",
     "TransferFreeEnergy",
+    "SourceReferenceDeclaration",
+    "SourceReferenceTransfer",
+    "source_reference_transfer",
 )

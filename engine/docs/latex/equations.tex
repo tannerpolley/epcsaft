@@ -1320,6 +1320,26 @@ c_r=\sum_i b_i^{(r)}\ln\phi_i^{\mathrm{ref}},
 \label{eq:neutral_reference_stoichiometric_basis}
 \end{equation}
 
+% EqID: declared_solvent_source_reference_transfer
+% Source: Exact change of source activity scale on the neutral-reference basis
+% Status: Exact derivation
+% Description: Declared-solvent fugacity and activity-scale contractions transferred to the Provider reference.
+% Change note: The source pressure is provenance; every fugacity contraction is evaluated at the requested trial pressure.
+\begin{equation}
+\begin{aligned}
+\Delta_r^{\mathrm{src}\rightarrow\mathrm{Provider}}
+&=c_r+s_r,\\
+s_r&=\sum_i b_i^{(r)}\ell_i^{\mathrm{src}},\\
+\ell_i^{\mathrm{src}}&=
+\begin{cases}
+\ln x_i^S, & z_i=0,\ x_i^S>0,\\
+\ln(\overline M_S m^\circ), & z_i=0,\ x_i^S=0,\\
+\ln(\overline M_S m^\circ), & z_i\ne0.
+\end{cases}
+\end{aligned}
+\label{eq:declared_solvent_source_reference_transfer}
+\end{equation}
+
 \nocite{*}
 \printbibliography
 

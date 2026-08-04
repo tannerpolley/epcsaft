@@ -547,6 +547,15 @@ def _native_topology_fingerprint(model: Mixture) -> str:
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
+def _native_identity_fingerprint(schema: str, payload: object) -> str:
+    encoded = json.dumps(
+        {"schema": schema, "payload": payload},
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
 def _native_sdk_configuration(
     model: Mixture,
     artifact_fingerprint: str,
@@ -633,6 +642,23 @@ def _native_sdk_configuration(
         "unknown_applicability_admitted": unknown_applicability,
         "aqueous_solvation_factor_admitted": aqueous_solvation_factor_admitted,
         "topology_fingerprint": _native_topology_fingerprint(model),
+        "component_order_fingerprint": _native_identity_fingerprint(
+            "epcsaft-native-component-order-v1",
+            {
+                "component_ids": model._component_ids,
+                "charges": charges,
+            },
+        ),
+        "domain_fingerprint": _native_identity_fingerprint(
+            "epcsaft-native-source-domain-v1",
+            {
+                "temperature_min_k": resolved.temperature_min_k,
+                "temperature_max_k": resolved.temperature_max_k,
+                "pressure_min_pa": resolved.pressure_min_pa,
+                "pressure_max_pa": resolved.pressure_max_pa,
+                "ion_mole_fraction_max": resolved.ion_mole_fraction_max,
+            },
+        ),
         "artifact_fingerprint": artifact_fingerprint,
     }
 

@@ -4,7 +4,14 @@ from typing import assert_type
 
 import pint
 
-from epcsaft import Mixture, Parameters, State
+from epcsaft import (
+    Mixture,
+    Parameters,
+    SourceReferenceDeclaration,
+    SourceReferenceTransfer,
+    State,
+    source_reference_transfer,
+)
 from epcsaft.records import (
     AssociationParameterFamily,
     CorrelationFamily,
@@ -84,6 +91,24 @@ def check_public_types(
     assert_type(result.component_ids, tuple[str, ...])
     assert_type(result.mole_fractions, tuple[float, ...])
     assert_type(result.parameter_fingerprint, str)
+    declaration = SourceReferenceDeclaration(
+        reference_state_id="source-v1",
+        component_ids=model.component_ids,
+        solvent_mole_fractions=tuple(1.0 for _ in model.component_ids),
+        activity_convention_id="molality-infinite-dilution-v1",
+        standard_molality_mol_per_kg=1.0,
+        reference_pressure_pa=100000.0,
+        required_derivatives=(),
+    )
+    assert_type(
+        source_reference_transfer(
+            model,
+            declaration,
+            T=temperature,
+            P=pressure,
+        ),
+        SourceReferenceTransfer,
+    )
 
     model.state(  # type: ignore[call-overload]
         T=temperature,

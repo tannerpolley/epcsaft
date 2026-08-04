@@ -98,7 +98,7 @@ def test_native_sdk_addition_preserves_the_original_table_prefix() -> None:
     )
 
 
-def test_native_sdk_header_exposes_only_generic_fixed_topology_association() -> None:
+def test_native_sdk_header_preserves_prefix_and_appends_source_reference() -> None:
     compiler = shutil.which("cc")
     assert compiler is not None
     include_root = Path(__file__).parents[2] / "src" / "epcsaft" / "include"
@@ -122,11 +122,20 @@ _Static_assert(
     offsetof(epcsaft_native_sdk_v1, evaluate_fixed_topology_association) == 464,
     "fixed-topology callback offset"
 );
-_Static_assert(sizeof(epcsaft_native_sdk_v1) == 472, "generic SDK table size");
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, source_reference_transfer_result_size) == 472,
+    "source-reference result-size offset"
+);
+_Static_assert(
+    offsetof(epcsaft_native_sdk_v1, evaluate_source_reference_transfer) == 480,
+    "source-reference callback offset"
+);
+_Static_assert(sizeof(epcsaft_native_sdk_v1) == 488, "generic SDK table size");
 
 int main(void) {
     epcsaft_evaluate_fixed_topology_association_v1 callback = 0;
-    return callback != 0;
+    epcsaft_evaluate_source_reference_transfer_v1 source_callback = 0;
+    return callback != 0 || source_callback != 0;
 }
 """
     completed = subprocess.run(

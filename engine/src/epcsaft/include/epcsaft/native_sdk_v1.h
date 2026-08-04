@@ -934,6 +934,98 @@ typedef int (*epcsaft_evaluate_fixed_topology_association_v1)(
     epcsaft_fixed_topology_phase_result_v1* result
 );
 
+#define EPCSAFT_SOURCE_REFERENCE_ACTIVITY_MOLALITY_INFINITE_DILUTION_V1 \
+    "molality-infinite-dilution-v1"
+
+enum epcsaft_source_reference_status_v1 {
+    EPCSAFT_SOURCE_REFERENCE_OK_V1 = 0,
+    EPCSAFT_SOURCE_REFERENCE_UNSUPPORTED_V1 = 1,
+    EPCSAFT_SOURCE_REFERENCE_INVALID_SOURCE_V1 = 2,
+    EPCSAFT_SOURCE_REFERENCE_COMPONENT_MISMATCH_V1 = 3,
+    EPCSAFT_SOURCE_REFERENCE_MISSING_MODEL_V1 = 4,
+    EPCSAFT_SOURCE_REFERENCE_DOMAIN_REJECTION_V1 = 5,
+    EPCSAFT_SOURCE_REFERENCE_LIMIT_FAILURE_V1 = 6,
+    EPCSAFT_SOURCE_REFERENCE_DERIVATIVE_UNAVAILABLE_V1 = 7,
+    EPCSAFT_SOURCE_REFERENCE_NONFINITE_V1 = 8,
+    EPCSAFT_SOURCE_REFERENCE_ABI_MISMATCH_V1 = 9,
+    EPCSAFT_SOURCE_REFERENCE_EVALUATION_FAILURE_V1 = 10
+};
+
+/*
+ * Caller-declared salt-free source standard state. Component identities and
+ * source solvent fractions use the installed model order exactly. Charged
+ * components must have zero source fraction. Positive neutral fractions are
+ * finite-composition solvent components; zero neutral fractions are solutes
+ * evaluated at the EOS-owned infinite-dilution limit. The reference pressure
+ * is provenance only; the callback always evaluates at its trial pressure.
+ */
+typedef struct epcsaft_source_reference_request_v1 {
+    uint32_t struct_size;
+    size_t component_count;
+    const char* const* component_ids;
+    size_t source_composition_count;
+    const double* source_solvent_mole_fractions;
+    const char* reference_state_id;
+    const char* activity_convention_id;
+    const char* reference_state_fingerprint;
+    double standard_molality_mol_per_kg;
+    double source_reference_pressure_pa;
+    uint32_t required_derivatives;
+} epcsaft_source_reference_request_v1;
+
+/*
+ * Complete charge-neutral source-to-Provider transfer in the deterministic
+ * installed neutral basis. All row buffers use neutral_basis_row_count.
+ * transfer_log_contractions is the sum of the EOS log-fugacity and activity-
+ * scale contractions. No individual ionic fugacity is returned.
+ */
+typedef struct epcsaft_source_reference_transfer_result_v1 {
+    uint32_t struct_size;
+    int32_t status;
+    size_t component_count;
+    size_t neutral_basis_row_count;
+    size_t neutral_basis_capacity;
+    size_t contraction_capacity;
+    size_t source_composition_capacity;
+    size_t pressure_derivative_capacity;
+    double* neutral_basis;
+    double* log_fugacity_contractions;
+    double* activity_scale_log_contractions;
+    double* transfer_log_contractions;
+    double* source_composition;
+    double* pressure_derivatives_per_pa;
+    uint32_t derivative_availability;
+    double temperature_k;
+    double pressure_pa;
+    double source_reference_pressure_pa;
+    double standard_molality_mol_per_kg;
+    double solvent_molar_mass_kg_per_mol;
+    double reference_limit_molality_mol_per_kg;
+    double reference_convergence_error;
+    double source_temperature_min_k;
+    double source_temperature_max_k;
+    double source_pressure_min_pa;
+    double source_pressure_max_pa;
+    char parameter_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char topology_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char component_order_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char reference_state_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char domain_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char artifact_fingerprint[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char helmholtz_basis_id[EPCSAFT_NATIVE_SDK_V1_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_SDK_V1_ERROR_SIZE];
+} epcsaft_source_reference_transfer_result_v1;
+
+typedef int (*epcsaft_evaluate_source_reference_transfer_v1)(
+    const void* model_context,
+    const char* expected_parameter_fingerprint,
+    const char* expected_topology_fingerprint,
+    double temperature_k,
+    double pressure_pa,
+    const epcsaft_source_reference_request_v1* request,
+    epcsaft_source_reference_transfer_result_v1* result
+);
+
 typedef struct epcsaft_native_sdk_v1 {
     uint32_t abi_version;
     size_t table_size;
@@ -1010,6 +1102,9 @@ typedef struct epcsaft_native_sdk_v1 {
         fixed_topology_association;
     epcsaft_evaluate_fixed_topology_association_v1
         evaluate_fixed_topology_association;
+    size_t source_reference_transfer_result_size;
+    epcsaft_evaluate_source_reference_transfer_v1
+        evaluate_source_reference_transfer;
 } epcsaft_native_sdk_v1;
 
 #ifdef __cplusplus
