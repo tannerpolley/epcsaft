@@ -24,6 +24,17 @@ objects that have no live alias. Package setup scripts may install only the
 active subjects' object paths. The external `artifacts/index.json` and
 tracked `manifests/artifacts.json` contain the same three-entry index.
 
+Consumers resolve an admitted distribution through Governance rather than
+embedding an alias, filename, or hash in repository-local setup code:
+
+```bash
+python tools/artifact_store.py resolve --distribution epcsaft
+```
+
+The command checks the complete store policy and prints the absolute,
+full-SHA-256 object path. Unknown distributions or an inconsistent store fail
+closed without returning an install path.
+
 ## Approved Engine cutover
 
 D-023 replaces the three-distribution channel with one `epcsaft` Engine wheel.

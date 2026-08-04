@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "data_repository": "ePC-SAFT/ePC-SAFT-data",
-  "data_commit": "5f6b6cb2f21743fe43e5d218d468b6fc0a23a88b",
+  "data_commit": "253ab3c8f914a5d24db2c0e7524b5fe6be9d9d7d",
   "packets": [
     {
       "packet_id": "ascani-2022-case-study-2-electrolyte-lle",

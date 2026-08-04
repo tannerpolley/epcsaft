@@ -15,4 +15,10 @@ if [[ ! -x .venv/bin/python ]]; then
     uv venv --python 3.13 .venv
 fi
 
+uv pip uninstall --python .venv/bin/python \
+    epcsaft \
+    epcsaft-equilibrium \
+    epcsaft-regression
+
+.venv/bin/python tools/artifact_store.py check
 .venv/bin/python tools/management_preflight.py check

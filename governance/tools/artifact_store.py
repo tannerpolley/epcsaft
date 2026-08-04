@@ -267,15 +267,60 @@ def check() -> list[str]:
     return errors
 
 
+def resolve(distribution: str) -> tuple[Path | None, list[str]]:
+    _, artifact_root, policy = paths()
+    subject = policy.get("active_distributions", {}).get(distribution)
+    if not isinstance(subject, dict):
+        return None, [f"distribution is not active: {distribution}"]
+
+    errors = check()
+    if errors:
+        return None, errors
+
+    index = load_json(artifact_root / policy["index"])
+    matches = [
+        item
+        for item in index.get("objects", [])
+        if item.get("distribution") == distribution
+    ]
+    if len(matches) != 1:
+        return None, [
+            f"active distribution must resolve to exactly one object: {distribution}"
+        ]
+
+    item = matches[0]
+    object_path = (artifact_root / item["object"]).resolve()
+    expected_sha256 = subject.get("sha256")
+    if not object_path.is_file():
+        errors.append(f"missing active object: {object_path}")
+    elif sha256(object_path) != expected_sha256:
+        errors.append(
+            f"active object hash mismatch for {distribution}: {object_path}"
+        )
+    return (None if errors else object_path), errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=("normalize", "check"))
+    parser.add_argument("action", choices=("normalize", "check", "resolve"))
+    parser.add_argument("--distribution")
     arguments = parser.parse_args()
-    errors = normalize() if arguments.action == "normalize" else check()
+    resolved: Path | None = None
+    if arguments.action == "normalize":
+        errors = normalize()
+    elif arguments.action == "check":
+        errors = check()
+    elif not arguments.distribution:
+        errors = ["resolve requires --distribution"]
+    else:
+        resolved, errors = resolve(arguments.distribution)
     if errors:
         for error in errors:
-            print(f"ERROR: {error}")
+            print(f"ERROR: {error}", file=sys.stderr)
         return 1
+    if resolved is not None:
+        print(resolved)
+        return 0
     print(f"artifact_store: {arguments.action} clean")
     return 0
 

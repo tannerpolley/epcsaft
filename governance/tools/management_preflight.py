@@ -33,7 +33,7 @@ ALLOWED_ENVIRONMENT_DISTRIBUTIONS: dict[str, set[str]] = {
     "eos": {"epcsaft"},
     "equilibrium": {"epcsaft", "epcsaft_equilibrium"},
     "regression": {"epcsaft", "epcsaft_regression"},
-    "validation": set(),
+    "validation": {"epcsaft", "epcsaft_equilibrium", "epcsaft_regression"},
     "lab": set(),
 }
 
@@ -491,38 +491,83 @@ def environment_state(config: dict[str, Any]) -> dict[str, Any]:
 def environment_policy_errors(config: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     artifact_policy = load_json(ARTIFACT_POLICY_PATH)
-    active_eos_sha = artifact_policy["active_distributions"]["epcsaft"]["sha256"]
+    active_objects = {
+        normalized_distribution_name(distribution): subject["sha256"]
+        for distribution, subject in artifact_policy["active_distributions"].items()
+    }
+    artifact_consumers = {
+        "equilibrium": {"epcsaft"},
+        "regression": {"epcsaft"},
+        "validation": set(active_objects),
+    }
+    editable_providers = {
+        "eos": "epcsaft",
+        "equilibrium": "epcsaft_equilibrium",
+        "regression": "epcsaft_regression",
+    }
     for name, record in sorted(config["repositories"].items()):
         environment = Path(record["local_path"]) / ".venv"
         allowed = ALLOWED_ENVIRONMENT_DISTRIBUTIONS.get(name, set())
-        for distribution in environment_distributions(environment):
-            normalized = normalized_distribution_name(distribution["name"])
+        distributions = environment_distributions(environment)
+        installed = {
+            normalized_distribution_name(distribution["name"]): distribution
+            for distribution in distributions
+        }
+        if environment.exists():
+            missing = sorted(allowed - set(installed))
+            if missing:
+                errors.append(
+                    f"{name} environment is missing required distributions {missing}"
+                )
+        for normalized, distribution in installed.items():
             if normalized not in allowed:
                 errors.append(
                     f"{name} environment contains forbidden distribution "
                     f"{distribution['name']}"
                 )
                 continue
-            if name not in {"equilibrium", "regression"} or normalized != "epcsaft":
-                continue
+
             direct_url = distribution.get("direct_url")
             url = direct_url.get("url", "") if isinstance(direct_url, dict) else ""
-            expected_marker = f"/artifacts/objects/sha256/{active_eos_sha}/"
+            if normalized == editable_providers.get(name):
+                editable = (
+                    direct_url.get("dir_info", {}).get("editable", False)
+                    if isinstance(direct_url, dict)
+                    else False
+                )
+                source_path = (
+                    Path(unquote(urlparse(url).path)).resolve()
+                    if url.startswith("file://")
+                    else None
+                )
+                expected_source = Path(record["local_path"]).resolve()
+                if not editable or source_path != expected_source:
+                    errors.append(
+                        f"{name} must install {distribution['name']} editably from "
+                        f"{expected_source}, found {url or 'no direct_url'}"
+                    )
+                continue
+
+            if normalized not in artifact_consumers.get(name, set()):
+                continue
+            active_sha = active_objects[normalized]
+            expected_marker = f"/artifacts/objects/sha256/{active_sha}/"
             if not url.startswith("file://") or expected_marker not in url:
                 errors.append(
-                    f"{name} must install epcsaft from the active SHA-256 object "
-                    f"{active_eos_sha}, found {url or 'no direct_url'}"
+                    f"{name} must install {distribution['name']} from the active "
+                    f"SHA-256 object {active_sha}, found {url or 'no direct_url'}"
                 )
                 continue
             object_path = Path(unquote(urlparse(url).path))
             if not object_path.is_file():
                 errors.append(
-                    f"{name} epcsaft direct_url does not exist: {object_path}"
+                    f"{name} {distribution['name']} direct_url does not exist: "
+                    f"{object_path}"
                 )
-            elif sha256(object_path) != active_eos_sha:
+            elif sha256(object_path) != active_sha:
                 errors.append(
-                    f"{name} epcsaft direct_url hash does not match active object "
-                    f"{active_eos_sha}: {object_path}"
+                    f"{name} {distribution['name']} direct_url hash does not match "
+                    f"active object {active_sha}: {object_path}"
                 )
     return errors
 
