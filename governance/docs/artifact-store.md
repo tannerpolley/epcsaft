@@ -22,6 +22,28 @@ full-SHA-256 object for each of those three wheels; package setup scripts may
 install only those object paths. The external `artifacts/index.json` and
 tracked `manifests/artifacts.json` contain the same three-entry index.
 
+## Approved Engine cutover
+
+D-023 replaces the three-distribution channel with one `epcsaft` Engine wheel.
+The current three entries remain the live channel until the direct-cutover
+receipt passes every gate in
+`docs/plans/2026-08-04-unified-engine-direct-cutover.md`. Governance MUST NOT
+promote an Engine wheel beside the three current distributions or update one
+current distribution as a partial cutover.
+
+At cutover, Governance will:
+
+- admit one Engine wheel built from the accepted Engine commit;
+- verify that the wheel contains the EOS, Equilibrium, and Regression modules;
+- replace the current `epcsaft` alias with that wheel;
+- remove the `epcsaft-equilibrium` and `epcsaft-regression` active aliases
+  through recorded dispositions; and
+- regenerate the external and tracked artifact indexes as one-entry indexes.
+
+Downstream applications install the full-SHA-256 Engine object into their own
+environments. They do not share a mutable project environment or install from
+a Git repository.
+
 Superseded wheels are not alternate SDKs. They are retained, when needed for
 scientific provenance, only inside the compressed archive recorded by
 `manifests/artifact-archive.json`. The archive includes the pre-cleanup

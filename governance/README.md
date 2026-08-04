@@ -8,9 +8,16 @@ Local checkout: `ePC-SAFT-governance`.
 
 Status: canonical ecosystem doctrine and governance home.
 
-Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 7 and
+Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 8 and
 [manifests/management.json](manifests/management.json) for the repository and
 access topology.
+
+D-023 approves a direct cutover from the separate EOS, Equilibrium, and
+Regression repositories and wheels to one `ePC-SAFT-engine` repository and one
+`epcsaft` wheel. Read
+[the canonical cutover plan](docs/plans/2026-08-04-unified-engine-direct-cutover.md)
+and [the transition manifest](manifests/runtime-consolidation.json) before
+runtime, artifact, Validation, or downstream-consumer work.
 
 Governance owns:
 
@@ -35,8 +42,8 @@ Scientific-packet storage, runtime-copy, evidence, and pending disposition
 ownership are tracked in
 [manifests/parameter-ownership.json](manifests/parameter-ownership.json).
 Immutable Data packet commits and fingerprints are tracked in
-[manifests/data-packet-locks.json](manifests/data-packet-locks.json); package
-repositories add their own materialization locks when their owning tasks are
+[manifests/data-packet-locks.json](manifests/data-packet-locks.json); Engine and
+Validation add their own materialization locks when their owning tasks are
 ready.
 
 It owns no package runtime, scientific solver, regression target, Validation

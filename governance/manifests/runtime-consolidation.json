@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "decision": "D-023",
+  "doctrine_revision": 8,
+  "approved_on": "2026-08-04",
+  "decision_status": "approved",
+  "execution_status": "not_started",
+  "plan": "docs/plans/2026-08-04-unified-engine-direct-cutover.md",
+  "coordination_root": "~/Workspaces/Engineering/ePC-SAFT-project",
+  "current_runtime_sources": {
+    "eos": {
+      "repository": "ePC-SAFT/ePC-SAFT-eos",
+      "distribution": "epcsaft",
+      "allowed_work": [
+        "cutover",
+        "critical-repair"
+      ]
+    },
+    "equilibrium": {
+      "repository": "ePC-SAFT/ePC-SAFT-equilibrium",
+      "distribution": "epcsaft-equilibrium",
+      "allowed_work": [
+        "cutover",
+        "critical-repair"
+      ]
+    },
+    "regression": {
+      "repository": "ePC-SAFT/ePC-SAFT-regression",
+      "distribution": "epcsaft-regression",
+      "allowed_work": [
+        "cutover",
+        "critical-repair"
+      ]
+    }
+  },
+  "target_runtime": {
+    "repository": "ePC-SAFT/ePC-SAFT-engine",
+    "repository_origin": "rename-ePC-SAFT-eos",
+    "local_path": "~/Workspaces/Engineering/ePC-SAFT-project/ePC-SAFT-engine",
+    "distribution": "epcsaft",
+    "python_requires": ">=3.13",
+    "release_identity_count": 1,
+    "active_wheel_count": 1,
+    "public_imports": [
+      "epcsaft",
+      "epcsaft.equilibrium",
+      "epcsaft.regression"
+    ],
+    "internal_modules": [
+      "eos",
+      "equilibrium",
+      "regression"
+    ]
+  },
+  "retired_runtime_identities": {
+    "repositories": [
+      "ePC-SAFT/ePC-SAFT-equilibrium",
+      "ePC-SAFT/ePC-SAFT-regression"
+    ],
+    "distributions": [
+      "epcsaft-equilibrium",
+      "epcsaft-regression"
+    ],
+    "imports": [
+      "epcsaft_equilibrium",
+      "epcsaft_regression"
+    ]
+  },
+  "cutover_policy": {
+    "strategy": "single-acceptance-cutover",
+    "mixed_active_runtime": "forbidden",
+    "compatibility_aliases": "forbidden",
+    "git_source_runtime_dependencies": "forbidden",
+    "shared_mutable_environment": "forbidden",
+    "historical_receipts": "preserve-non-executable",
+    "current_runtime_feature_freeze": "required-after-plan-commit",
+    "external_operations": "separate-explicit-approval"
+  },
+  "downstream_consumers": [
+    {
+      "repository": "Lithium_Extraction",
+      "local_path": "~/Workspaces/Engineering/Lithium_Extraction",
+      "current_source": "tannerpolley/ePC-SAFT@b4144c72e580eaa2d2b7ebf19c2040063f1eddd7",
+      "target_source": "immutable-engine-wheel"
+    },
+    {
+      "repository": "MEA-Thermodynamics",
+      "local_path": "~/Workspaces/Engineering/MEA-Thermodynamics",
+      "current_source": "tannerpolley/ePC-SAFT@9f51afd0f9c11a6497ddca05c8b2dd0ea0ffa785",
+      "target_source": "immutable-engine-wheel"
+    },
+    {
+      "repository": "MEA-Absorption-Column",
+      "local_path": "~/Workspaces/Engineering/MEA-Absorption-Column",
+      "current_source": "tannerpolley/ePC-SAFT@9f51afd0f9c11a6497ddca05c8b2dd0ea0ffa785",
+      "target_source": "immutable-engine-wheel"
+    }
+  ],
+  "execution_gates": [
+    {
+      "id": "G0",
+      "name": "plan-review-and-start-approval",
+      "status": "pending"
+    },
+    {
+      "id": "G1",
+      "name": "source-and-consumer-baseline",
+      "status": "pending"
+    },
+    {
+      "id": "G2",
+      "name": "unified-source-and-build",
+      "status": "pending"
+    },
+    {
+      "id": "G3",
+      "name": "module-and-transfer-contracts",
+      "status": "pending"
+    },
+    {
+      "id": "G4",
+      "name": "single-wheel-validation",
+      "status": "pending"
+    },
+    {
+      "id": "G5",
+      "name": "downstream-consumer-validation",
+      "status": "pending"
+    },
+    {
+      "id": "G6",
+      "name": "external-operation-preflight-and-approval",
+      "status": "pending"
+    },
+    {
+      "id": "G7",
+      "name": "authority-and-artifact-cutover",
+      "status": "pending"
+    },
+    {
+      "id": "G8",
+      "name": "retirement-and-cleanup",
+      "status": "pending"
+    }
+  ]
+}

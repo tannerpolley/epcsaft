@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "doctrine_revision": 7,
+  "doctrine_revision": 8,
   "control_plane": "governance",
   "coordination_project": "management",
   "project_root": "~/Workspaces/Engineering/ePC-SAFT-project",
@@ -8,6 +8,7 @@
   "artifact_dispositions": "manifests/artifact-dispositions.json",
   "parameter_ownership": "manifests/parameter-ownership.json",
   "data_packet_locks": "manifests/data-packet-locks.json",
+  "runtime_consolidation": "manifests/runtime-consolidation.json",
   "approved_operations": "manifests/approved-operations.json",
   "operation_receipts": [
     "receipts/data-repository-creation-preflight.json",
