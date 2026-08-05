@@ -894,6 +894,8 @@ def validate_operation_receipt(
         errors.append(f"operation receipt {relative} requires producer and reviewer identities")
     elif producer_identity == reviewer_identity:
         errors.append(f"operation receipt {relative} producer and reviewer must differ")
+    if envelope["reviewer"].get("outcome") != "pass":
+        errors.append(f"operation receipt {relative} requires reviewer outcome pass")
     validator = envelope["validator"]
     try:
         actual_validator_hash = git_blob_sha256(
