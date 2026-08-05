@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-05",
+  "operation": "set-active-repositories-private",
+  "repositories": [
+    {
+      "id": "R_kgDOTZ9l2w",
+      "name": "ePC-SAFT/ePC-SAFT-governance",
+      "default_branch": "main",
+      "visibility": "PRIVATE",
+      "archived": false,
+      "actions_enabled": false,
+      "repository_workflow_count": 0,
+      "platform_dynamic_workflows": []
+    },
+    {
+      "id": "R_kgDOTn1yzA",
+      "name": "ePC-SAFT/.github",
+      "default_branch": "main",
+      "visibility": "PRIVATE",
+      "archived": false,
+      "actions_enabled": false,
+      "repository_workflow_count": 0,
+      "platform_dynamic_workflows": []
+    },
+    {
+      "id": "R_kgDOTZ9m0Q",
+      "name": "ePC-SAFT/ePC-SAFT-engine",
+      "default_branch": "main",
+      "visibility": "PRIVATE",
+      "archived": false,
+      "actions_enabled": false,
+      "repository_workflow_count": 0,
+      "platform_dynamic_workflows": [
+        {
+          "id": 328081381,
+          "name": "Dependency Graph",
+          "path": "dynamic/dependabot/update-graph",
+          "state": "active",
+          "classification": "github-managed-read-only-dependency-analysis"
+        }
+      ]
+    },
+    {
+      "id": "R_kgDOTZ9oyg",
+      "name": "ePC-SAFT/ePC-SAFT-validation",
+      "default_branch": "main",
+      "visibility": "PRIVATE",
+      "archived": false,
+      "actions_enabled": false,
+      "repository_workflow_count": 0,
+      "platform_dynamic_workflows": []
+    },
+    {
+      "id": "R_kgDOTpc4iA",
+      "name": "ePC-SAFT/ePC-SAFT-data",
+      "default_branch": "main",
+      "visibility": "PRIVATE",
+      "archived": false,
+      "actions_enabled": false,
+      "repository_workflow_count": 0,
+      "platform_dynamic_workflows": []
+    },
+    {
+      "id": "R_kgDOTgp0Ww",
+      "name": "ePC-SAFT/ePC-SAFT-lab",
+      "default_branch": "main",
+      "visibility": "PRIVATE",
+      "archived": false,
+      "actions_enabled": false,
+      "repository_workflow_count": 0,
+      "platform_dynamic_workflows": []
+    }
+  ]
+}

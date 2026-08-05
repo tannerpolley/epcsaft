@@ -8,7 +8,7 @@ Local checkout: `ePC-SAFT-governance`.
 
 Status: canonical ecosystem doctrine and governance home.
 
-Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 9 and
+Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 10 and
 [manifests/management.json](manifests/management.json) for the repository and
 access topology.
 
@@ -21,6 +21,10 @@ runtime, artifact, Validation, or downstream-consumer work.
 D-024 permits package authority to remain complete while the three named
 downstream applications are quarantined and unsupported until their later
 migrations.
+
+D-025 adopts Numerical Verification-Driven Development across the private
+project. Tests protect current numerical claims rather than API compatibility
+or legacy behavior, and reproducible local commands replace CI/CD.
 
 Governance owns:
 
@@ -61,5 +65,5 @@ python3 tools/management_preflight.py check
 ```
 
 The former `tannerpolley/ePC-SAFT-migration` repository is archived historical
-evidence. The public `ePC-SAFT/.github` repository is intentionally thin and
+evidence. The private `ePC-SAFT/.github` repository is intentionally thin and
 links here for current authority.

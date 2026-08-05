@@ -1,13 +1,13 @@
 # ePC-SAFT Governance Repository Agent Contract
 
 Read `GOVERNANCE.md` and `manifests/management.json` before planning,
-reviewing, or changing any ePC-SAFT repository. Doctrine revision 9 is the
+reviewing, or changing any ePC-SAFT repository. Doctrine revision 10 is the
 canonical ecosystem policy.
 
 ## Agent role
 
 Governance owns doctrine, repository topology, cross-repository access policy,
-external-operation policy, reusable workflow policy, and the machine-readable
+external-operation policy, NVDD policy, and the machine-readable
 ecosystem, artifact, environment, scientific-packet ownership, and draft
 ledgers. The non-Git parent project hosts the Management coordination task;
 that task coordinates execution but is not a repository or source of truth.
@@ -36,6 +36,29 @@ Engine consumers and this cutoff task must not edit them.
 
 The former `tannerpolley/ePC-SAFT-migration` repository is historical evidence
 only. It owns no active plan, queue, gate, decision, or authority.
+
+D-025 makes every active repository private, removes CI/CD from the active
+architecture, and permits tests only for numerical claims admitted by
+GOVERNANCE.md section 7. Governance owns no scientific tests.
+
+## NVDD propagation
+
+Keep section 7 as the single source of truth for scientific-test admission.
+A related parameterized matrix may satisfy its evidence-record requirements
+through one module-level evidence header or adjacent manifest that maps the
+claim, oracle, quantities, units or scaling, tolerances and their basis, and
+failure meaning to the retained assertions.
+
+Classify repository checks as persistent scientific evidence, explicit
+scientific campaigns, or readiness checks. Builds, typing, lint, schemas,
+hashes, manifests, environments, source materialization, and legacy-path
+searches are readiness checks rather than scientific tests. Governance's
+management preflight and artifact-store checks are readiness checks.
+
+When doctrine changes evidence ownership or admission, audit the non-Git
+Management `AGENTS.md`, every active repository `AGENTS.md`, and each declared
+Codex environment action before closing the change. Keep repository-local
+files limited to their local owner, evidence lane, and completion gate.
 
 ## Control records
 

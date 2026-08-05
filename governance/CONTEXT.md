@@ -1,6 +1,6 @@
 # ePC-SAFT Governance Repository Context
 
-`GOVERNANCE.md` revision 9 is the canonical ecosystem doctrine.
+`GOVERNANCE.md` revision 10 is the canonical ecosystem doctrine.
 
 `governance_source_of_truth: true`
 
@@ -18,9 +18,9 @@ GitHub home: `ePC-SAFT/ePC-SAFT-governance`.
 
 Local checkout: `ePC-SAFT-governance`.
 
-The public `ePC-SAFT/.github` repository is a thin organization profile and
-community-default surface. It links to Governance but owns no independent
-doctrine, project state, or execution plan.
+The private `ePC-SAFT/.github` repository is a thin organization-metadata
+surface. It links to Governance but owns no independent doctrine, project
+state, execution plan, CI/CD, or community contract.
 
 Governance owns current repository topology, worktree access, artifact and
 environment inventories, scientific-packet ownership policy, draft disposition,
@@ -38,6 +38,9 @@ D-024 authorizes that package-authority cutoff now while Lithium Extraction,
 MEA Thermodynamics, and MEA Absorption Column are quarantined as non-admitted
 consumers. Their migration is deferred; their current Git pins and workflows
 carry no accepted Engine claim and are outside this cutoff task's write scope.
+
+D-025 establishes NVDD as the ecosystem development method, removes CI/CD as
+an active responsibility, and makes all active repositories private.
 
 `manifests/runtime-consolidation.json` records the approved target, transition
 freeze, consumer inventory, and execution gates. The canonical execution plan

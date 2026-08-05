@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 9
+Doctrine revision: 10
 
-Approved: 2026-08-04
+Approved: 2026-08-05
 
 Owner: `ePC-SAFT/ePC-SAFT-governance`
 
@@ -170,7 +170,6 @@ release are forbidden.
 The Engine uses one source repository and one Python distribution:
 
 ```text
-.github/workflows/
 src/epcsaft/
   eos/
   equilibrium/
@@ -267,12 +266,45 @@ input domain, parameter and source fingerprints, topology, derivative orders,
 local or global scope, stability or discovery status, certificate, tolerance
 set, accepted artifact, and explicit failure boundaries.
 
-## 7. Evidence ownership
+## 7. Numerical Verification-Driven Development and evidence ownership
 
-Engine owns compact module tests for public contracts, internal native seams,
-equation contributions, derivative payloads, solver diagnostics, and a small
-set of source-backed scientific anchors. Tests protect behavior, not old file
-paths, source wording, private call graphs, or retired transition-era structure.
+The ecosystem uses Numerical Verification-Driven Development (NVDD). Tests are
+numerical evidence for the current scientific formulation, not permanent
+software contracts. A test MAY exist only when it can falsify at least one of:
+
+- an independently known numerical value;
+- a mathematical identity, conservation law, symmetry, or limiting value;
+- a derivative against an independent derivative route;
+- a nonlinear-system, KKT, stability, or equilibrium residual certificate;
+- a manufactured, published, or otherwise independently known solver result;
+- a metamorphic numerical relation; or
+- an experimental or literature validation metric.
+
+Every retained test MUST identify the scientific claim, oracle class, compared
+quantities, units or scaling, explicit absolute and relative tolerances, the
+basis for those tolerances, and the scientific meaning of failure. Expected
+values produced by the implementation under test are
+`change_detection_only`; they are not independent verification.
+
+Tests MUST NOT exist only to protect a module surface, compatibility,
+deprecated or legacy behavior, a private helper, call order, class layout,
+exception prose, serialization shape, solver label, iteration count, log
+output, diagnostic ordering, snapshot, branch, line, or coverage percentage.
+Mocks and call-count assertions are forbidden in scientific-core tests. Exact
+phase ordering and exact nonlinear iteration counts are forbidden acceptance
+criteria. Invalid-input tests are retained only when the invalid condition
+could otherwise produce a plausible but scientifically incorrect result.
+
+Tests follow the current intended formulation and MAY be revised or deleted
+when that formulation changes. Only benchmark evidence bound to a publication,
+tagged scientific release, or explicit reproducibility artifact is immutable.
+Line coverage is informational; numerical coverage of equations, derivatives,
+properties, equilibria, and validation domains is the quality measure.
+
+Engine owns compact numerical tests for equation contributions, derivative
+payloads, solver certificates, mathematical limits, manufactured solutions,
+and a small set of source-backed scientific anchors. It does not own API
+compatibility or architecture contract suites.
 
 Engine tests MAY own test-only independent numerical or high-precision
 oracles for white-box tensors. The validation repository owns test-only
@@ -371,21 +403,22 @@ and configuration in the same checkpoint. Empty skeletons are not baselines.
 
 ## 10. GitHub, issues, and releases
 
-Engine and Governance repositories are public. They may remain unreleased
-until a separate release decision exists. EOS, Equilibrium, and Regression
-share one Engine version and one `epcsaft` wheel. No 1.0 or public release
-workflow is implied by this doctrine.
+All active repositories are private. This is a rapidly evolving research
+project, not a public compatibility surface. EOS, Equilibrium, and Regression
+share one Engine version and one `epcsaft` wheel. Existing public release and
+repository events remain historical facts; no new publication or release is
+implied by this doctrine.
 
 Engine issues own production vertical slices. Data, Validation, Lab, and
 Governance keep issues for work unique to those repositories. One Management
 Project may aggregate them. Cross-repository references MUST use full URLs or
 stable node identifiers, never ambiguous number-only references.
 
-The public `.github` repository owns only the organization profile and
-GitHub-recognized community defaults. Governance owns reusable workflow policy;
-the Management coordination task executes project coordination. Engine and the
-other active repositories still own their caller workflows, checks, build
-matrices, and releases.
+The private `.github` repository owns only organization metadata and links to
+Governance. The Management coordination task executes project coordination.
+No active repository owns CI/CD, caller workflows, reusable workflows, build
+matrices, deployment automation, or release automation. Reproducible local
+commands belong in each repository's Codex environment and repository scripts.
 
 `main` MUST reject force pushes and deletion. Normal changes use review and
 required evidence when those checks exist. A direct-main or administrator
@@ -410,13 +443,18 @@ record proving the result.
 ## 11. Enforcement and amendment
 
 Every repository `AGENTS.md` and `CONTEXT.md` MUST name the doctrine revision it
-follows. Shared checks SHOULD verify the revision, forbidden dependency edges,
-receipt schemas, and architecture ratchet. Reusable workflows still require a
-small caller workflow in each active repository.
+follows. Repository-local preflight commands SHOULD verify the revision,
+forbidden dependency edges, receipt schemas, architecture ratchet, and NVDD
+evidence classification. No CI/CD or caller workflow is required.
 
 Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
+
+Revision 10 records the user-approved NVDD cutover, removal of CI/CD as an
+ecosystem responsibility, and conversion of all active repositories to private
+visibility. D-025 supersedes D-012's and D-021's public-visibility choices
+without rewriting their historical records.
 
 Revision 9 records the user-approved package-authority cutoff while Lithium
 Extraction, MEA Thermodynamics, and MEA Absorption Column are quarantined for a
@@ -458,3 +496,4 @@ Historical plans and receipts retain their original names.
 | D-022 Governance repository identity | User-approved 2026-07-31 repository rename | Use `ePC-SAFT/ePC-SAFT-governance` as the durable Git-tracked authority repository; keep Management as the non-Git coordination task in the `ePC-SAFT-project` parent; preserve former names in historical plans and receipts | Separates current repository authority from coordination context without rewriting accepted evidence | No | Governance and Management |
 | D-023 Unified Engine direct cutover | User-approved 2026-08-04 package and agent-friction review | Rename the EOS repository to `ePC-SAFT-engine`; consolidate EOS, Equilibrium, and Regression into one `epcsaft` distribution and namespace; assign each production capability to one Engine-rooted vertical-slice task; retain Data and Validation as separate repository seams; cut downstream applications to one immutable Engine wheel without compatibility aliases or a mixed active release | Removes cross-wheel SDK drift, independent version mismatches, Git-source downstream pins, and multi-repository package edits while preserving independent scientific inputs and black-box evidence | No | Engine, Management, and downstream application owners |
 | D-024 Package authority with quarantined consumers | Explicit user instruction on 2026-08-04 to begin the full ePC-SAFT package cutoff and fix Lithium and MEA later | Complete the one-repository, one-wheel Engine authority cutover now; quarantine Lithium Extraction, MEA Thermodynamics, and MEA Absorption Column as non-admitted consumers until separate vertical-slice migrations pass | Removes the three-package authority immediately without treating deferred Git-pinned applications or failed scientific routes as accepted Engine evidence | Yes: application migration | Engine, Management, and downstream application owners |
+| D-025 Private NVDD development | Explicit user instruction on 2026-08-05 adopting the revised Numerical Verification-Driven Development policy project-wide, authorizing CI/CD removal, and authorizing private repository visibility | Treat tests only as current numerical or scientific evidence; prohibit compatibility, API-shape, mock, snapshot, exact-prose, solver-label, and coverage-only suites; keep validation breadth in explicit local commands; remove CI/CD ownership; make every active repository private | Reduces agent friction and permanent contract surface while preserving numerical correctness, source traceability, publication locks, and independent Validation/Lab evidence | No | Governance, Engine, Validation, Data, Lab, and Management owners |

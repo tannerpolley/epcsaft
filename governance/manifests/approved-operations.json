@@ -68,6 +68,42 @@
         "phase": "completed-state"
       },
       "approval_source": "explicit Codex task request on 2026-08-04 to begin the full ePC-SAFT package cutoff with Lithium and MEA deferred"
+    },
+    "private-repository-cutover-2026-08-05": {
+      "subject": {
+        "operation": "set-active-repositories-private",
+        "repositories": [
+          "ePC-SAFT/ePC-SAFT-governance",
+          "ePC-SAFT/.github",
+          "ePC-SAFT/ePC-SAFT-engine",
+          "ePC-SAFT/ePC-SAFT-validation",
+          "ePC-SAFT/ePC-SAFT-data"
+        ],
+        "already_private": [
+          "ePC-SAFT/ePC-SAFT-lab"
+        ],
+        "doctrine_revision": 10,
+        "phase": "authorization-preflight"
+      },
+      "approval_source": "explicit Codex task request on 2026-08-05 to apply the revised Numerical Verification-Driven Development policy project-wide, remove CI/CD, and change repositories to private where needed"
+    },
+    "private-repository-cutover-state-2026-08-05": {
+      "subject": {
+        "operation": "set-active-repositories-private",
+        "repositories": [
+          "ePC-SAFT/ePC-SAFT-governance",
+          "ePC-SAFT/.github",
+          "ePC-SAFT/ePC-SAFT-engine",
+          "ePC-SAFT/ePC-SAFT-validation",
+          "ePC-SAFT/ePC-SAFT-data"
+        ],
+        "already_private": [
+          "ePC-SAFT/ePC-SAFT-lab"
+        ],
+        "doctrine_revision": 10,
+        "phase": "completed-state"
+      },
+      "approval_source": "explicit Codex task request on 2026-08-05 to apply the revised Numerical Verification-Driven Development policy project-wide, remove CI/CD, and change repositories to private where needed"
     }
   }
 }

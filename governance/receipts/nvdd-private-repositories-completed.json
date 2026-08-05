@@ -1,0 +1,121 @@
+{
+  "envelope": {
+    "schema": {
+      "path": "manifests/operation-receipt-envelope-v1.json",
+      "version": 1,
+      "sha256": "7cc1cbf4b92aaa54a4f7856bab5de4f1d8d2855c63566e5ecfe9660fb6f2061e"
+    },
+    "sequence": 6,
+    "subject": {
+      "operation": "set-active-repositories-private",
+      "repositories": [
+        "ePC-SAFT/ePC-SAFT-governance",
+        "ePC-SAFT/.github",
+        "ePC-SAFT/ePC-SAFT-engine",
+        "ePC-SAFT/ePC-SAFT-validation",
+        "ePC-SAFT/ePC-SAFT-data"
+      ],
+      "already_private": [
+        "ePC-SAFT/ePC-SAFT-lab"
+      ],
+      "doctrine_revision": 10,
+      "phase": "completed-state",
+      "authorization_id": "private-repository-cutover-state-2026-08-05",
+      "record_sha256": "b755b5cc50feef2b63be3dbafb77ff049637512f95491f8e942fce3d8bdd8f17"
+    },
+    "subject_sha256": "765192bf8f03805976e8da0f2741fbfbbbde6fd2c0100d18cd37ff5a2a561239",
+    "validator": {
+      "repository": "ePC-SAFT/ePC-SAFT-governance",
+      "commit": "b388e5cb8a5050de065352188a4450d605e6bb2c",
+      "path": "tools/management_preflight.py",
+      "sha256": "6708c69f04039c4b705bfba904fde8a6f8424b5aad14dfa3539309c54af3bf19"
+    },
+    "command": "gh repo edit five exact repositories --visibility private --accept-visibility-change-consequences; disable GitHub Actions for all six active repositories; verify exact repository identity, visibility, default branch, archival state, Actions permissions, and workflow inventory",
+    "environment": {
+      "captured_at": "2026-08-05",
+      "timezone": "America/Denver",
+      "platform": "linux",
+      "github_cli": "gh version 2.96.0 (2026-07-02)"
+    },
+    "artifacts": [
+      {
+        "kind": "github-visibility-completed-state",
+        "path": "receipts/nvdd-private-repositories-state.json",
+        "sha256": "d78eec5eaf1a2ebe6de66263f030b135f6ca64efe0a91484ce017029da2b86b8"
+      }
+    ],
+    "producer": {
+      "kind": "codex-task",
+      "id": "project-wide-nvdd-cutover-2026-08-05"
+    },
+    "reviewer": {
+      "kind": "management-coordination",
+      "id": "ePC-SAFT-project",
+      "outcome": "pass"
+    },
+    "failed_outcomes": [
+      {
+        "name": "github_managed_dependency_graph_disable",
+        "outcome": "not-repository-ci",
+        "observed": "GitHub retained a read-only dynamic/dependabot/update-graph entry for Engine after public-to-private conversion. The workflow disable API returned HTTP 422 because the entry is platform-managed, and the repository security-analysis PATCH does not expose dependency-graph control. No repository workflow file, test runner, build, deployment, release, or user-authored Actions workflow exists."
+      }
+    ],
+    "supersedes": null,
+    "revoked_by": null,
+    "user_approval": {
+      "source": "explicit Codex task request on 2026-08-05 to apply the revised Numerical Verification-Driven Development policy project-wide, remove CI/CD, and change repositories to private where needed",
+      "subject_sha256": "765192bf8f03805976e8da0f2741fbfbbbde6fd2c0100d18cd37ff5a2a561239"
+    }
+  },
+  "record": {
+    "status": "completed",
+    "observations": [
+      {
+        "name": "private_visibility",
+        "expected": "All six active repositories report private visibility.",
+        "observed": "Governance, organization metadata, Engine, Validation, Data, and Lab all report private visibility with their preflight repository IDs unchanged.",
+        "outcome": "pass"
+      },
+      {
+        "name": "repository_identity",
+        "expected": "Names, repository IDs, default branches, archival state, and local remotes remain unchanged.",
+        "observed": "All six exact repositories remain unarchived on main, and every local origin points to its canonical private repository name.",
+        "outcome": "pass"
+      },
+      {
+        "name": "ci_cd_absent",
+        "expected": "No active repository owns CI/CD or repository-authored Actions workflows, and GitHub Actions execution is disabled.",
+        "observed": "GitHub Actions is disabled for all six repositories. No active checkout or remote main contains .github/workflows, and GitHub reports no user-authored workflow; Engine alone exposes a non-executable GitHub-managed read-only dependency-graph analysis entry.",
+        "outcome": "pass"
+      },
+      {
+        "name": "nvdd_authority",
+        "expected": "Governance revision 10 makes local Numerical Verification-Driven Development the canonical verification policy.",
+        "observed": "D-025 and the live repository instructions bind numerical scientific evidence to local repository environments and explicitly exclude CI/CD and compatibility-contract testing.",
+        "outcome": "pass"
+      }
+    ],
+    "preconditions": [
+      "The exact repository IDs, names, default branches, visibility, and workflow inventory matched the authorization preflight.",
+      "The user explicitly authorized private visibility and CI/CD removal.",
+      "Lab was already private and required no external mutation."
+    ],
+    "expected_postconditions": [
+      "All six active repositories remain private.",
+      "GitHub Actions remains disabled and no active repository owns a CI/CD workflow, deployment, release automation, or test matrix.",
+      "Local Codex environments and repository scripts remain the only project verification runners.",
+      "Any GitHub-managed dependency analysis is classified separately from project CI/CD."
+    ],
+    "retry": "No visibility retry is pending. Any future visibility or platform-analysis change requires a new exact operation record.",
+    "stop_conditions": [
+      "An active repository becomes public without a separately approved doctrine change.",
+      "A repository-authored Actions workflow, deployment, or release automation is introduced.",
+      "A repository ID, canonical name, or default branch diverges from the completed state."
+    ],
+    "reversibility": "Repository visibility can be changed through a separately authorized GitHub settings operation; Git history and repository IDs remain unchanged.",
+    "irreversible_effects": [
+      "GitHub may erase public stars and detach public forks as a consequence of public-to-private conversion."
+    ],
+    "recovery_owner": "ePC-SAFT Management coordination task"
+  }
+}

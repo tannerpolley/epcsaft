@@ -11,7 +11,7 @@ Read the nearest applicable context before shaping or implementation. Keep durab
 
 ## Runtime terms
 
-Doctrine revision 9 uses these runtime terms:
+Doctrine revision 10 uses these runtime terms:
 
 - **Engine**: the single `epcsaft` distribution and repository that owns EOS,
   Equilibrium, and Regression production modules.

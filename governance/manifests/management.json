@@ -1,8 +1,9 @@
 {
   "schema_version": 1,
-  "doctrine_revision": 9,
+  "doctrine_revision": 10,
   "control_plane": "governance",
   "coordination_project": "management",
+  "ci_cd": "disabled",
   "project_root": "~/Workspaces/Engineering/ePC-SAFT-project",
   "artifact_root": "~/Workspaces/Engineering/ePC-SAFT-project/artifacts",
   "artifact_dispositions": "manifests/artifact-dispositions.json",
@@ -14,7 +15,9 @@
     "receipts/data-repository-creation-preflight.json",
     "receipts/data-repository-creation-state.json",
     "receipts/unified-engine-g6-preflight.json",
-    "receipts/unified-engine-cutover-state.json"
+    "receipts/unified-engine-cutover-state.json",
+    "receipts/nvdd-private-repositories-preflight.json",
+    "receipts/nvdd-private-repositories-completed.json"
   ],
   "historical_migration": {
     "repository": "tannerpolley/ePC-SAFT-migration",
@@ -25,6 +28,7 @@
   "repositories": {
     "governance": {
       "github": "ePC-SAFT/ePC-SAFT-governance",
+      "visibility": "private",
       "transition_aliases": [
         "ePC-SAFT/.github"
       ],
@@ -42,6 +46,7 @@
     },
     "github": {
       "github": "ePC-SAFT/.github",
+      "visibility": "private",
       "local_path": "~/Workspaces/Engineering/ePC-SAFT-project/.github",
       "default_branch": "main",
       "role": "organization_profile",
@@ -52,6 +57,7 @@
     },
     "data": {
       "github": "ePC-SAFT/ePC-SAFT-data",
+      "visibility": "private",
       "local_path": "~/Workspaces/Engineering/ePC-SAFT-project/ePC-SAFT-data",
       "default_branch": "main",
       "role": "scientific_asset",
@@ -62,6 +68,7 @@
     },
     "engine": {
       "github": "ePC-SAFT/ePC-SAFT-engine",
+      "visibility": "private",
       "transition_aliases": [
         "ePC-SAFT/ePC-SAFT-eos",
         "ePC-SAFT/ePC-SAFT"
@@ -80,6 +87,7 @@
     },
     "validation": {
       "github": "ePC-SAFT/ePC-SAFT-validation",
+      "visibility": "private",
       "local_path": "~/Workspaces/Engineering/ePC-SAFT-project/ePC-SAFT-validation",
       "default_branch": "main",
       "role": "evidence",
@@ -91,6 +99,7 @@
     },
     "lab": {
       "github": "ePC-SAFT/ePC-SAFT-lab",
+      "visibility": "private",
       "local_path": "~/Workspaces/Engineering/ePC-SAFT-project/ePC-SAFT-lab",
       "default_branch": "main",
       "role": "experiment",
