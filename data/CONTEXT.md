@@ -1,6 +1,6 @@
 # ePC-SAFT Data Context
 
-`GOVERNANCE.md` revision 9 in `ePC-SAFT/ePC-SAFT-governance` is the canonical
+`GOVERNANCE.md` revision 10 in `ePC-SAFT/ePC-SAFT-governance` is the canonical
 ecosystem doctrine.
 
 Repository role: `scientific_asset`

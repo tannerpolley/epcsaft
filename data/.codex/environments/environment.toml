@@ -10,9 +10,3 @@ name = "Validate packets"
 icon = "test"
 command = ".venv/bin/python tools/validate_packets.py"
 platform = "linux"
-
-[[actions]]
-name = "Test"
-icon = "test"
-command = ".venv/bin/python -m unittest discover -s tests -v"
-platform = "linux"

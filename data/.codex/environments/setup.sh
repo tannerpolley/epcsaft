@@ -31,4 +31,3 @@ if ((${#runtime_distributions[@]})); then
 fi
 
 .venv/bin/python tools/validate_packets.py
-.venv/bin/python -m unittest discover -s tests -v

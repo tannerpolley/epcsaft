@@ -2,7 +2,7 @@
 
 Repository Profile: scientific-computing
 
-Before work, read doctrine revision 9 and the machine-readable topology from
+Before work, read doctrine revision 10 and the machine-readable topology from
 `../ePC-SAFT-governance/GOVERNANCE.md` and
 `../ePC-SAFT-governance/manifests/management.json`. Their published home is
 `https://github.com/ePC-SAFT/ePC-SAFT-governance`.
@@ -19,6 +19,16 @@ commit; Validation and Engine Regression pin exact packet commits and fingerprin
 
 Packets live only at `packets/<packet-id>/<version>/packet.toml` and follow
 `docs/packet-contract.md`. Do not add empty speculative packet directories.
+
+Use Numerical Verification-Driven Development from Governance section 7.
+Data owns no pytest or unittest suite. Packet schema, hashes, provenance,
+units, domains, and declared tolerance metadata fail closed through
+`tools/validate_packets.py`. The named `Validate packets` environment action is
+the sole repository readiness gate, not a scientific test suite. It may check
+packet-internal normalization, unit and basis transformations, declared
+arithmetic, fingerprints, and consistency. Numerical model agreement belongs
+to Engine or Validation. This private repository has no CI/CD. Run that action
+and the repository cleanup audit before handoff.
 
 ## Agent skills
 

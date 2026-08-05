@@ -23,11 +23,10 @@ Read [the data-organization guide](docs/data-organization.md) before deciding
 whether a source record belongs in Data or remains campaign evidence in
 Validation.
 
-Validate all packets and run the contract tests with:
+Validate packet schema, provenance, units, domains, and hashes with:
 
 ```bash
 python3 tools/validate_packets.py
-python3 -m unittest discover -s tests -v
 ```
 
 Consumers must pin an immutable Git commit and packet fingerprint, materialize
