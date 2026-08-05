@@ -1,0 +1,141 @@
+{
+  "envelope": {
+    "schema": {
+      "path": "manifests/operation-receipt-envelope-v1.json",
+      "version": 1,
+      "sha256": "7cc1cbf4b92aaa54a4f7856bab5de4f1d8d2855c63566e5ecfe9660fb6f2061e"
+    },
+    "sequence": 7,
+    "subject": {
+      "operation": "complete-private-monorepo-cutover",
+      "repository": "tannerpolley/ePC-SAFT",
+      "repository_id": 1324553602,
+      "head": "06622d55a8d58ee878589d2c243998b55e2c3bd5",
+      "doctrine_revision": 11,
+      "phase": "completed-state",
+      "authorization_id": "phase-1-10-monorepo-migration-2026-08-05",
+      "record_sha256": "e5931cf97c301143d5eb7266ffce1f31d21514f7e5aa99a00a24bc392fd480b0"
+    },
+    "subject_sha256": "692e1c9973f26524eaa776b6f91554b0399ca13a83b0a2cf3d703c37b1a0e4b6",
+    "validator": {
+      "repository": "tannerpolley/ePC-SAFT",
+      "commit": "06622d55a8d58ee878589d2c243998b55e2c3bd5",
+      "path": "tools/management_preflight.py",
+      "sha256": "f0eff6a9778f9c9a656a1a9145b0565bd271b9b1dcd158aac3157003c3651756"
+    },
+    "command": "verify source main heads and tests; export issues and repository state; create and verify six Git bundles; rewrite five source main histories under directory prefixes with git-filter-repo 2.47.0; merge unrelated histories; normalize one root environment and doctrine; run full staging and fresh-clone checks; rename the archived personal legacy repository; create private tannerpolley/ePC-SAFT with Actions disabled; push main and engine/v0.2.0.dev0; recreate nine issues and preserve comments; replace the canonical local path recoverably; archive five source repositories",
+    "environment": {
+      "captured_at": "2026-08-05T23:43:29Z",
+      "timezone": "America/Denver",
+      "platform": "linux",
+      "github_cli": "gh version 2.96.0 (2026-07-02)",
+      "git_filter_repo": "2.47.0",
+      "python": "3.13"
+    },
+    "artifacts": [
+      {
+        "kind": "canonical-cutover-plan",
+        "path": "docs/plans/2026-08-05-monorepo-cutover.md",
+        "sha256": "a62a4fcd463117bab29b1fb636099d1815eb9c23e861eb6b8e1873536d09e5c3"
+      },
+      {
+        "kind": "canonical-management-manifest",
+        "path": "manifests/management.json",
+        "sha256": "117ca2fb6ea59bf28cba27028187826b5e6db89a3b204a25f7c464a127dea23f"
+      }
+    ],
+    "producer": {
+      "kind": "codex-task",
+      "id": "phase-1-10-monorepo-migration-2026-08-05"
+    },
+    "reviewer": {
+      "kind": "independent-luna-review",
+      "id": "environment-governance-history-triad",
+      "outcome": "pass-after-remediation"
+    },
+    "failed_outcomes": [],
+    "supersedes": null,
+    "revoked_by": null,
+    "user_approval": {
+      "source": "explicit Codex task request on 2026-08-05 to execute the full Phase 1-10 migration plan with supervised GPT-5.6 Luna Max agents",
+      "subject_sha256": "692e1c9973f26524eaa776b6f91554b0399ca13a83b0a2cf3d703c37b1a0e4b6"
+    }
+  },
+  "record": {
+    "status": "completed",
+    "observations": [
+      {
+        "name": "history_preservation",
+        "expected": "All five source main histories remain reachable under their owned monorepo directories with exact pre-normalization subtree trees.",
+        "observed": "Governance, Engine, Data, Validation, and Lab filtered heads are ancestors of the destination head; all five imported subtree tree hashes exactly matched their source main trees; git fsck --full passed; the integrated history contained 394 pre-normalization commits and namespaced the Engine tag as engine/v0.2.0.dev0.",
+        "outcome": "pass"
+      },
+      {
+        "name": "root_environment",
+        "expected": "One worktree-relative Codex environment builds and installs exactly one non-editable epcsaft wheel containing EOS, Equilibrium, and Regression.",
+        "observed": "Fresh-clone and canonical-path setup installed only epcsaft 0.2.0.dev0 from build/environment-wheel. Split and editable distributions were absent, and sanitizer wheel/venv state was removed after validation.",
+        "outcome": "pass"
+      },
+      {
+        "name": "scientific_and_readiness_validation",
+        "expected": "Retained numerical evidence, campaigns, packets, native quality, sanitizer checks, and Governance readiness pass from the unified root.",
+        "observed": "Engine: 123 passed and 6 deselected; mypy: 28 source files clean; selected Ruff gate: clean; Validation: 4 fast and 6 campaign tests passed; Lab: 51 oracle tests passed; sanitizer: 8 passed; Data packet inventory: 14 versions clean; Khudaida and Figiel vertical slices passed; clang-tidy/native build, management preflight, artifact-store check, Git fsck, JSON/TOML/shell syntax, and cleanup audits passed.",
+        "outcome": "pass"
+      },
+      {
+        "name": "review_remediation",
+        "expected": "Independent reviewers find no unresolved material migration defect.",
+        "observed": "Review findings were remediated by detecting staged/untracked affected paths, avoiding unnecessary campaigns, cleaning sanitizer artifacts, validating receipt integrity and ownership manifests, rejecting nested workflows, and binding archive-member hashes. Tampered receipt, ownership drift, nested workflow, and wrong member digest probes were all rejected.",
+        "outcome": "pass"
+      },
+      {
+        "name": "github_destination",
+        "expected": "A distinct private tannerpolley/ePC-SAFT repository owns main, the namespaced Engine tag, one issue tracker, and no CI/CD execution.",
+        "observed": "Repository ID 1324553602 is private and unarchived on main; GitHub Actions is disabled; main is synchronized at 06622d55a8d58ee878589d2c243998b55e2c3bd5; engine/v0.2.0.dev0 is published; nine source issues were recreated with original bodies, labels, comments, and provenance, with eight open and the resolved Khudaida/Data issue closed.",
+        "outcome": "pass"
+      },
+      {
+        "name": "canonical_local_cutover",
+        "expected": "The canonical local path becomes the clean monorepo without destroying the previous parent or local artifacts.",
+        "observed": "~/Workspaces/Engineering/ePC-SAFT-project is a clean synchronized main checkout with the sole origin https://github.com/tannerpolley/ePC-SAFT.git. The former non-Git polyrepo parent is preserved at ~/Workspaces/Engineering/ePC-SAFT-project-polyrepo-backup-20260805T233903Z; workflow state, bundles, commit maps, issue exports, source manifests, and artifacts remain under ePC-SAFT-local-state.",
+        "outcome": "pass"
+      },
+      {
+        "name": "source_archive",
+        "expected": "Source repositories are archived only after destination and fresh-clone success; the organization profile remains active.",
+        "observed": "ePC-SAFT/ePC-SAFT-governance (1302291931), ePC-SAFT/ePC-SAFT-engine (1302292177), ePC-SAFT/ePC-SAFT-data (1318533256), ePC-SAFT/ePC-SAFT-validation (1302292682), and ePC-SAFT/ePC-SAFT-lab (1309307995) are private and archived on main. ePC-SAFT/.github remains private, active, and separate.",
+        "outcome": "pass"
+      },
+      {
+        "name": "rollback_evidence",
+        "expected": "Complete source and local state remain independently recoverable.",
+        "observed": "Six Git bundles and SHA256SUMS verify; SHA256SUMS itself hashes to ef626afe7ac57e707eb55baecf6b842619ebfdd0e0935606db0346d69e806149. The corrected history-import manifest hashes to 89d16aeaed4d002d63c1555ce97c4e28aef9378ea9eb709cdbba984a38e6422a, and the nine-entry issue migration manifest hashes to b51182a40f8da80aa370793d542701cafe5c8ea7fe826bd567b5fc174244cf24.",
+        "outcome": "pass"
+      }
+    ],
+    "preconditions": [
+      "The user explicitly approved the exact Phase 1-10 monorepo migration, private destination, legacy rename, issue transfer, canonical-path replacement, commits, pushes, and source archival.",
+      "Every source repository was clean, synchronized on main, and backed by a verified Git bundle before history rewriting.",
+      "The destination namespace was made available by recoverably renaming and rearchiving repository ID 1205291036 as tannerpolley/ePC-SAFT-legacy."
+    ],
+    "expected_postconditions": [
+      "tannerpolley/ePC-SAFT is the sole active project Git, Codex environment, runtime package, and issue-tracker home.",
+      "The canonical local checkout remains clean on synchronized main with one origin and one local branch.",
+      "Data, Engine, Validation, Governance, and Lab retain directory ownership while one Engine-accountable branch may implement an end-to-end scientific slice.",
+      "The five source repositories remain archived and recoverable; ePC-SAFT/.github remains a thin active organization profile.",
+      "No CI/CD workflow or legacy split-package compatibility path becomes active."
+    ],
+    "retry": "No migration retry is pending. Any restoration, source unarchive, visibility change, namespace change, or topology reversal requires a new exact operation record.",
+    "stop_conditions": [
+      "Destination main diverges from the canonical local main or gains another active package identity.",
+      "A source repository is unarchived and treated as active authority without a new doctrine decision.",
+      "A nested Git root, subtree Codex environment, CI/CD workflow, mutable sibling install, or legacy split distribution is introduced.",
+      "Bundle, commit-map, issue-export, source-manifest, artifact-store, or backup evidence becomes unavailable or fails its recorded integrity check."
+    ],
+    "reversibility": "Source repositories can be unarchived, the former local parent can be restored from the timestamped backup, and source histories can be reconstructed from verified bundles and commit maps. Destination issues can be reopened or remapped through a separately recorded operation.",
+    "irreversible_effects": [
+      "Creating repository ID 1324553602 at tannerpolley/ePC-SAFT displaced GitHub's old-name redirect from the public legacy repository; that historical repository remains available as archived tannerpolley/ePC-SAFT-legacy with repository ID 1205291036."
+    ],
+    "recovery_owner": "ePC-SAFT root Management coordination role"
+  }
+}
