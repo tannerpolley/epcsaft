@@ -49,26 +49,36 @@ if ((${#stale_distributions[@]})); then
 fi
 
 uv pip install --python .venv/bin/python \
-    --reinstall-package epcsaft \
-    --editable . \
     build \
     mypy \
     numpy \
     pytest \
     ruff
 
+bash .codex/environments/install-worktree-wheel.sh
+
 .venv/bin/python - <<'PY'
 from importlib import metadata
+import json
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 
 import epcsaft
 from epcsaft import equilibrium, regression
 
-repo_root = Path.cwd().resolve()
+distribution = metadata.distribution("epcsaft")
+direct_url = json.loads(distribution.read_text("direct_url.json") or "{}")
+if direct_url.get("dir_info", {}).get("editable", False):
+    raise SystemExit("editable Engine install is forbidden")
+installed_url = direct_url.get("url", "")
+installed_wheel = Path(unquote(urlparse(installed_url).path)).resolve()
+if not installed_wheel.is_file() or installed_wheel.suffix != ".whl":
+    raise SystemExit(f"Engine is not installed from a worktree wheel: {installed_url}")
+installed_root = Path(distribution.locate_file("")).resolve()
 for module in (epcsaft, equilibrium, regression):
     module_path = Path(module.__file__).resolve()
-    if repo_root not in module_path.parents:
-        raise SystemExit(f"{module.__name__} is not installed from this worktree: {module_path}")
+    if installed_root not in module_path.parents:
+        raise SystemExit(f"{module.__name__} is outside the installed wheel: {module_path}")
 if metadata.version("epcsaft") != "0.2.0.dev0":
     raise SystemExit(f"unexpected epcsaft version: {metadata.version('epcsaft')}")
 

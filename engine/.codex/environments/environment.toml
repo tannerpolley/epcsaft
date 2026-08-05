@@ -8,7 +8,7 @@ script = "bash .codex/environments/setup.sh"
 [[actions]]
 name = "Test"
 icon = "test"
-command = ".venv/bin/python -m pytest -q"
+command = "bash .codex/environments/install-worktree-wheel.sh && .venv/bin/python -m pytest -q"
 platform = "linux"
 
 [[actions]]
