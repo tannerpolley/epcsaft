@@ -1,16 +1,15 @@
 # Unified ePC-SAFT Engine context
 
-`governance_doctrine_revision: 8`
+`governance_doctrine_revision: 9`
 
 Canonical doctrine and cutover state live in
 `../ePC-SAFT-governance/GOVERNANCE.md` and
 `../ePC-SAFT-governance/manifests/runtime-consolidation.json`.
 
-This source tree is the direct-cutover candidate for the durable Unified Engine
-repository. It builds one Python 3.13 distribution, `epcsaft`, containing EOS,
-equilibrium, and regression. The candidate remains non-authoritative until the
-installed-wheel, downstream, external-operation, and authority gates in the
-canonical cutover plan are complete.
+This source tree is the durable Unified Engine repository. It builds the sole
+Python 3.13 runtime distribution, `epcsaft`, containing EOS, equilibrium, and
+regression. Release `v0.2.0.dev0` at source commit
+`c712fe9730faef0732341ccdabc4d799fef2d953` is the accepted package subject.
 
 ## Runtime structure
 

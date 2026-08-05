@@ -2,7 +2,7 @@
 
 Repository Profile: scientific-computing
 
-Read doctrine revision 8 in `../ePC-SAFT-governance/GOVERNANCE.md` and the
+Read doctrine revision 9 in `../ePC-SAFT-governance/GOVERNANCE.md` and the
 machine-readable topology in
 `../ePC-SAFT-governance/manifests/management.json` before changing this
 repository. Local policy may narrow that doctrine but must not contradict it.
@@ -41,9 +41,9 @@ Preserve historical plans and receipts as provenance. Their former repository,
 package, symbol, and artifact names are historical facts, not live setup
 instructions.
 
-Current issue tracking belongs to `ePC-SAFT/ePC-SAFT-engine`. During the direct
-cutover, do not perform the external repository rename, release publication, or
-retirement operations before Governance gate G6 records exact user approval.
+Current issue tracking and runtime authority belong to
+`ePC-SAFT/ePC-SAFT-engine`. The accepted `v0.2.0.dev0` Release wheel and its
+Governance artifact-store object are the only supported installed runtime.
 
 After changes, run focused scientific checks, the retained Engine suite from an
 installed wheel, static legacy-path searches, and the repository cleanup audit.
