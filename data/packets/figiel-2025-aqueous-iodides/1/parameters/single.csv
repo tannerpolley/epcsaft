@@ -1,0 +1,24 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+water-molar-mass,water,molar_mass,18.0153,gram / mole,nist-srd-69-water,"Water record, molecular weight",nist-water-identity
+water-segment-count,water,segment_count,1.2047,,figiel-yu-held-2025,"Table 2, water column, m_i^seg row",figiel-298-k-1-bar
+water-dispersion-energy,water,dispersion_energy_over_k,353.95,kelvin,figiel-yu-held-2025,"Table 2, water column, u_i/k_B row",figiel-298-k-1-bar
+water-charge,water,charge_number,0,,figiel-yu-held-2025,"Table 2 identifies water as solvent; Table 3 separately lists ions",figiel-298-k-1-bar
+water-solvation-factor,water,solvation_factor,1.5,,figiel-yu-held-2025,"Table 2, water column, f_k row",figiel-298-k-1-bar
+sodium-segment-count,sodium-cation,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+sodium-segment-diameter,sodium-cation,segment_diameter,2.8232,angstrom,figiel-yu-held-2025,"Table 3, Na+ row, sigma_i column",figiel-298-k-1-bar
+sodium-dispersion-energy,sodium-cation,dispersion_energy_over_k,230.00,kelvin,figiel-yu-held-2025,"Table 3, Na+ row, u_i/k_B column",figiel-298-k-1-bar
+sodium-charge,sodium-cation,charge_number,+1,,figiel-yu-held-2025,"Table 3, Na+ ion label",figiel-298-k-1-bar
+sodium-born-diameter,sodium-cation,born_diameter,3.445,angstrom,figiel-yu-held-2025,"Table 3, Na+ row, d_i^Born column",figiel-298-k-1-bar
+sodium-solvation-factor,sodium-cation,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar
+potassium-segment-count,potassium-cation,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+potassium-segment-diameter,potassium-cation,segment_diameter,3.3417,angstrom,figiel-yu-held-2025,"Table 3, K+ row, sigma_i column",figiel-298-k-1-bar
+potassium-dispersion-energy,potassium-cation,dispersion_energy_over_k,200.00,kelvin,figiel-yu-held-2025,"Table 3, K+ row, u_i/k_B column",figiel-298-k-1-bar
+potassium-charge,potassium-cation,charge_number,+1,,figiel-yu-held-2025,"Table 3, K+ ion label",figiel-298-k-1-bar
+potassium-born-diameter,potassium-cation,born_diameter,4.150,angstrom,figiel-yu-held-2025,"Table 3, K+ row, d_i^Born column",figiel-298-k-1-bar
+potassium-solvation-factor,potassium-cation,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar
+iodide-segment-count,iodide-anion,segment_count,1,,figiel-yu-held-2025,"Table 3 footnote a, segment number is 1 for all ions",figiel-298-k-1-bar
+iodide-segment-diameter,iodide-anion,segment_diameter,3.6672,angstrom,figiel-yu-held-2025,"Table 3, I- row, sigma_i column; inherited from ref 17",figiel-298-k-1-bar
+iodide-dispersion-energy,iodide-anion,dispersion_energy_over_k,200.00,kelvin,figiel-yu-held-2025,"Table 3, I- row, u_i/k_B column; inherited from ref 17",figiel-298-k-1-bar
+iodide-charge,iodide-anion,charge_number,-1,,figiel-yu-held-2025,"Table 3, I- ion label",figiel-298-k-1-bar
+iodide-born-diameter,iodide-anion,born_diameter,4.985,angstrom,figiel-yu-held-2025,"Table 3, I- row, d_i^Born column; fitted in this work",figiel-298-k-1-bar
+iodide-solvation-factor,iodide-anion,solvation_factor,1,,figiel-yu-held-2025,"p. 9411, Model Parameters paragraph sets the solvation parameter to 1 for all ions",figiel-298-k-1-bar

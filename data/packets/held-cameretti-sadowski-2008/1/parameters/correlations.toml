@@ -1,0 +1,26 @@
+[[correlations]]
+record_id = "water-segment-diameter-correlation"
+component_id = "water"
+family = "segment_diameter"
+form = "constant-plus-sum-of-exponentials"
+constant = 2.792700
+output_unit = "angstrom"
+input_unit = "kelvin"
+coefficients = [
+  { amplitude = 10.1100, exponent_coefficient = -0.01775 },
+  { amplitude = -1.41700, exponent_coefficient = -0.01146 },
+]
+source_id = "held-cameretti-sadowski-2008"
+locator = "Table 1 and Eq. (7), water temperature-dependent segment-diameter correlation"
+domain_id = "held-aqueous-electrolyte-298-15-k-1-bar"
+
+[[correlations]]
+record_id = "water-relative-permittivity"
+component_id = "water"
+family = "relative_permittivity"
+form = "constant"
+constant = 78.09
+output_unit = "dimensionless"
+source_id = "figiel-yu-held-2025"
+locator = "Table 1, water dielectric constant; Held 2008 Eq. (2) uses a concentration-independent solvent dielectric"
+domain_id = "held-aqueous-electrolyte-298-15-k-1-bar"

@@ -1,0 +1,58 @@
+record_id,component_id,family,value,unit,source_id,locator,domain_id
+water-molar-mass,water,molar_mass,18.01528,gram / mole,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+water-segment-count,water,segment_count,1.2047,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+water-dispersion-energy,water,dispersion_energy_over_k,353.95,kelvin,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+water-charge,water,charge_number,0,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+water-solvation-factor,water,solvation_factor,1.5,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+methanol-molar-mass,methanol,molar_mass,32.042,gram / mole,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+methanol-segment-count,methanol,segment_count,1.5255,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+methanol-dispersion-energy,methanol,dispersion_energy_over_k,188.90,kelvin,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+methanol-charge,methanol,charge_number,0,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+methanol-solvation-factor,methanol,solvation_factor,1.4,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+ethanol-molar-mass,ethanol,molar_mass,46.069,gram / mole,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+ethanol-segment-count,ethanol,segment_count,2.3827,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+ethanol-dispersion-energy,ethanol,dispersion_energy_over_k,198.24,kelvin,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+ethanol-charge,ethanol,charge_number,0,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+ethanol-solvation-factor,ethanol,solvation_factor,1.6,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+lithium-cation-molar-mass,lithium-cation,molar_mass,6.94,gram / mole,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+lithium-segment-count,lithium-cation,segment_count,1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+lithium-segment-diameter,lithium-cation,segment_diameter,2.8449,angstrom,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+lithium-dispersion-energy,lithium-cation,dispersion_energy_over_k,360,kelvin,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+lithium-charge,lithium-cation,charge_number,+1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+lithium-born-diameter,lithium-cation,born_diameter,2.784,angstrom,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+lithium-solvation-factor,lithium-cation,solvation_factor,1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+sodium-cation-molar-mass,sodium-cation,molar_mass,22.98,gram / mole,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+sodium-segment-count,sodium-cation,segment_count,1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+sodium-segment-diameter,sodium-cation,segment_diameter,2.8232,angstrom,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+sodium-dispersion-energy,sodium-cation,dispersion_energy_over_k,230,kelvin,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+sodium-charge,sodium-cation,charge_number,+1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+sodium-born-diameter,sodium-cation,born_diameter,3.445,angstrom,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+sodium-solvation-factor,sodium-cation,solvation_factor,1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+potassium-cation-molar-mass,potassium-cation,molar_mass,39.1,gram / mole,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+potassium-segment-count,potassium-cation,segment_count,1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+potassium-segment-diameter,potassium-cation,segment_diameter,3.3417,angstrom,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+potassium-dispersion-energy,potassium-cation,dispersion_energy_over_k,200,kelvin,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+potassium-charge,potassium-cation,charge_number,+1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+potassium-born-diameter,potassium-cation,born_diameter,4.15,angstrom,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+potassium-solvation-factor,potassium-cation,solvation_factor,1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+chloride-anion-molar-mass,chloride-anion,molar_mass,35.45,gram / mole,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+chloride-segment-count,chloride-anion,segment_count,1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+chloride-segment-diameter,chloride-anion,segment_diameter,2.756,angstrom,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+chloride-dispersion-energy,chloride-anion,dispersion_energy_over_k,170,kelvin,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+chloride-charge,chloride-anion,charge_number,-1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+chloride-born-diameter,chloride-anion,born_diameter,4.1,angstrom,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+chloride-solvation-factor,chloride-anion,solvation_factor,1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+bromide-anion-molar-mass,bromide-anion,molar_mass,79.9,gram / mole,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+bromide-segment-count,bromide-anion,segment_count,1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+bromide-segment-diameter,bromide-anion,segment_diameter,3.0707,angstrom,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+bromide-dispersion-energy,bromide-anion,dispersion_energy_over_k,190,kelvin,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+bromide-charge,bromide-anion,charge_number,-1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+bromide-born-diameter,bromide-anion,born_diameter,4.48,angstrom,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+bromide-solvation-factor,bromide-anion,solvation_factor,1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+iodide-anion-molar-mass,iodide-anion,molar_mass,126.9,gram / mole,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+iodide-segment-count,iodide-anion,segment_count,1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+iodide-segment-diameter,iodide-anion,segment_diameter,3.6672,angstrom,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+iodide-dispersion-energy,iodide-anion,dispersion_energy_over_k,200,kelvin,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+iodide-charge,iodide-anion,charge_number,-1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+iodide-born-diameter,iodide-anion,born_diameter,4.985,angstrom,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar
+iodide-solvation-factor,iodide-anion,solvation_factor,1,,figiel-yu-held-2025,compact pure-parameter packet,figiel-298-k-1-bar

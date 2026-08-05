@@ -1,0 +1,127 @@
+schema_version = 2
+packet_id = "ascani-2022-case-study-2-electrolyte-lle"
+packet_version = "1"
+title = "ascani-2022-case-study-2-electrolyte-lle source parameter packet"
+description = "Reusable parameter packet for ascani-2022-case-study-2-electrolyte-lle, copied byte-for-byte from the admitted EOS source bundle and retained with source/domain metadata."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "The packet preserves source values byte-for-byte and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "ascani-et-al-2022"
+citation = "Ascani, M.; Sadowski, G.; Held, C. Calculation of Multiphase Equilibria Containing Mixed Solvents and Mixed Electrolytes: General Formulation and Case Studies. Journal of Chemical & Engineering Data 2022, 67, 1972-1984."
+doi = "10.1021/acs.jced.1c00866"
+use_basis = "Case Study 2 and Supporting Information Tables S1-S4 and Eqs. S4-S7 at 298.15 K and 1 bar"
+
+[[sources]]
+source_id = "ascani-held-2021"
+citation = "Ascani, M.; Held, C. Prediction of salting-out in liquid-liquid two-phase systems with ePC-SAFT: Effect of the Born term and of a concentration-dependent dielectric constant. Zeitschrift fuer anorganische und allgemeine Chemie 2021, 647, 1305-1314."
+doi = "10.1002/zaac.202100032"
+use_basis = "Eq. 10 altered Born term, Eq. 13 combined dielectric rule, and Table 5 solvent and ionic relative-permittivity records"
+
+[[sources]]
+source_id = "nann-held-sadowski-2013"
+citation = "Nann, A.; Held, C.; Sadowski, G. Liquid-Liquid Equilibria of 1-Butanol/Water/IL Systems. Industrial & Engineering Chemistry Research 2013, 52, 18472-18481."
+doi = "10.1021/ie403246e"
+use_basis = "Table 2 pure 1-butanol and water records and Wolbach-Sandler cross-association combining equations inherited by Ascani Table S1 and S3"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water"
+use_basis = "Water molecular weight used by the salt-free-solvent mass-fraction dielectric rule"
+
+[[sources]]
+source_id = "nist-srd-69-1-butanol"
+citation = "NIST Chemistry WebBook, SRD 69, 1-Butanol"
+use_basis = "1-Butanol molecular weight used by the salt-free-solvent mass-fraction dielectric rule"
+
+[[domains]]
+domain_id = "ascani-case-study-2-298-15-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+description = "Source-defined reported-conditions domain ascani-case-study-2-298-15-k-1-bar (temperature 298.15–298.15 kelvin; pressure 1–1 bar); see the cited sources and retained bundle."
+
+[[files]]
+path = "parameters/bundle.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "58871f4776ca44b00992d452a09d01386d5c70973fba310fd9dffc8b5a90e844"
+source_refs = ["ascani-et-al-2022", "ascani-held-2021", "nann-held-sadowski-2013", "nist-srd-69-water", "nist-srd-69-1-butanol"]
+domain_refs = ["ascani-case-study-2-298-15-k-1-bar"]
+units_basis = "Bundle identity, file membership, and source metadata are non-numeric identifiers."
+
+[[files]]
+path = "parameters/components.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "b4607016ba90d8f4b2808a8d17f915ad36d62e195c2657bbe1ca2badadf38cb8"
+source_refs = ["ascani-et-al-2022", "ascani-held-2021", "nann-held-sadowski-2013", "nist-srd-69-water", "nist-srd-69-1-butanol"]
+domain_refs = ["ascani-case-study-2-298-15-k-1-bar"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/single.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "81deac89b36b6fc7a004e67266fc70b6ad43bb4a311a20dc83c34a55ee807910"
+source_refs = ["ascani-et-al-2022", "ascani-held-2021", "nann-held-sadowski-2013", "nist-srd-69-water", "nist-srd-69-1-butanol"]
+domain_refs = ["ascani-case-study-2-298-15-k-1-bar"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/pair.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "2cd61331c87abf381d11f92aed703f0653ec48a6e6ed9b1c2303cd5c81952180"
+source_refs = ["ascani-et-al-2022", "ascani-held-2021", "nann-held-sadowski-2013", "nist-srd-69-water", "nist-srd-69-1-butanol"]
+domain_refs = ["ascani-case-study-2-298-15-k-1-bar"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/sites.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "c0ba8972e18e129ebf0fe7cf4dcd0384f6372397cde98e37ec6df027b10a175f"
+source_refs = ["ascani-et-al-2022", "ascani-held-2021", "nann-held-sadowski-2013", "nist-srd-69-water", "nist-srd-69-1-butanol"]
+domain_refs = ["ascani-case-study-2-298-15-k-1-bar"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/association.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "584a9295fcbe3b03b5b422fa0669d2d7f1ab4fab19bf0053740728f2cd42ac01"
+source_refs = ["ascani-et-al-2022", "ascani-held-2021", "nann-held-sadowski-2013", "nist-srd-69-water", "nist-srd-69-1-butanol"]
+domain_refs = ["ascani-case-study-2-298-15-k-1-bar"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/model.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "dafedb7bb95f8d6846655352137240a50752f6ff6d6866fc7d075635b092b94e"
+source_refs = ["ascani-et-al-2022", "ascani-held-2021", "nann-held-sadowski-2013", "nist-srd-69-water", "nist-srd-69-1-butanol"]
+domain_refs = ["ascani-case-study-2-298-15-k-1-bar"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/correlations.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "7b16cffb850bd28d02c4513772ea865ec6494a043a5455ebf2511864bee9d8ac"
+source_refs = ["ascani-et-al-2022", "ascani-held-2021", "nann-held-sadowski-2013", "nist-srd-69-water", "nist-srd-69-1-butanol"]
+domain_refs = ["ascani-case-study-2-298-15-k-1-bar"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "ccc4e56d083a301bb85b66340207f984371e14e46c88d7e55a61f98de5cb3d8e"
+source_refs = ["ascani-et-al-2022", "ascani-held-2021", "nann-held-sadowski-2013", "nist-srd-69-water", "nist-srd-69-1-butanol"]
+domain_refs = ["ascani-case-study-2-298-15-k-1-bar"]
+units_basis = "Origin repository, commit, tree, path, and hash metadata are non-numeric identifiers."

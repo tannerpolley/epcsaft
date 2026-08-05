@@ -1,0 +1,73 @@
+schema_version = 1
+provenance_kind = "source-record-provenance-v1"
+copy_mode = "byte-for-byte"
+source_packet = "packets/khudaida-2026-figure-2-electrolyte-lle/3"
+source_packet_commit = "06d9af3e2d2d92e60dd0238851647b99de054f06"
+source_packet_tree = "8e585c74b29e0bacbd9ab8a53c5ce1747c1289cb"
+upstream_validation_provenance = "packets/khudaida-2026-figure-2-electrolyte-lle/3/provenance/validation-origin.toml"
+upstream_validation_provenance_sha256 = "1b7d52533691f11de8588bfffc23e8dabe5582e2cb9db196f1226f3adc5ac129"
+scope = "Parameter files only. The Figure 2 observation files remain in the immutable historical packet and remain campaign-owned by Validation."
+
+[[records]]
+retained_path = "parameters/bundle.toml"
+origin_repository = "ePC-SAFT/ePC-SAFT-data"
+origin_commit = "06d9af3e2d2d92e60dd0238851647b99de054f06"
+origin_tree = "8e585c74b29e0bacbd9ab8a53c5ce1747c1289cb"
+origin_path = "packets/khudaida-2026-figure-2-electrolyte-lle/3/parameters/bundle.toml"
+sha256 = "f5d0fb91d5d6fe4837411a0d27d1e53000685b4062ecd7d6398db6e2377b1fa2"
+
+[[records]]
+retained_path = "parameters/components.csv"
+origin_repository = "ePC-SAFT/ePC-SAFT-data"
+origin_commit = "06d9af3e2d2d92e60dd0238851647b99de054f06"
+origin_tree = "8e585c74b29e0bacbd9ab8a53c5ce1747c1289cb"
+origin_path = "packets/khudaida-2026-figure-2-electrolyte-lle/3/parameters/components.csv"
+sha256 = "0ae7a793524cff50ef0285470b61c1282aad0db287c803882e8cac74ae73c44e"
+
+[[records]]
+retained_path = "parameters/single.csv"
+origin_repository = "ePC-SAFT/ePC-SAFT-data"
+origin_commit = "06d9af3e2d2d92e60dd0238851647b99de054f06"
+origin_tree = "8e585c74b29e0bacbd9ab8a53c5ce1747c1289cb"
+origin_path = "packets/khudaida-2026-figure-2-electrolyte-lle/3/parameters/single.csv"
+sha256 = "c66a460176920dbab620d69b9c442fbceb5193247e491079759b2ef43414ad9d"
+
+[[records]]
+retained_path = "parameters/pair.csv"
+origin_repository = "ePC-SAFT/ePC-SAFT-data"
+origin_commit = "06d9af3e2d2d92e60dd0238851647b99de054f06"
+origin_tree = "8e585c74b29e0bacbd9ab8a53c5ce1747c1289cb"
+origin_path = "packets/khudaida-2026-figure-2-electrolyte-lle/3/parameters/pair.csv"
+sha256 = "7222c0aa883688ceb985d8d34e6a4ff41014cb3c28e06c8a6feddd9314ca4d87"
+
+[[records]]
+retained_path = "parameters/sites.csv"
+origin_repository = "ePC-SAFT/ePC-SAFT-data"
+origin_commit = "06d9af3e2d2d92e60dd0238851647b99de054f06"
+origin_tree = "8e585c74b29e0bacbd9ab8a53c5ce1747c1289cb"
+origin_path = "packets/khudaida-2026-figure-2-electrolyte-lle/3/parameters/sites.csv"
+sha256 = "0725701832d86877d49c7c11f6dd80b07a25feae9a4a7ec0a7392ef24459792a"
+
+[[records]]
+retained_path = "parameters/association.csv"
+origin_repository = "ePC-SAFT/ePC-SAFT-data"
+origin_commit = "06d9af3e2d2d92e60dd0238851647b99de054f06"
+origin_tree = "8e585c74b29e0bacbd9ab8a53c5ce1747c1289cb"
+origin_path = "packets/khudaida-2026-figure-2-electrolyte-lle/3/parameters/association.csv"
+sha256 = "ea8e7d42383d62ac7f3fa73392112c7d1e3d8fd008e2895a6a78ae928a341161"
+
+[[records]]
+retained_path = "parameters/model.csv"
+origin_repository = "ePC-SAFT/ePC-SAFT-data"
+origin_commit = "06d9af3e2d2d92e60dd0238851647b99de054f06"
+origin_tree = "8e585c74b29e0bacbd9ab8a53c5ce1747c1289cb"
+origin_path = "packets/khudaida-2026-figure-2-electrolyte-lle/3/parameters/model.csv"
+sha256 = "e2ec78e9067d6bf6bbb806a29e8814e2e087c73be064bed9b02c19affc73367c"
+
+[[records]]
+retained_path = "parameters/correlations.toml"
+origin_repository = "ePC-SAFT/ePC-SAFT-data"
+origin_commit = "06d9af3e2d2d92e60dd0238851647b99de054f06"
+origin_tree = "8e585c74b29e0bacbd9ab8a53c5ce1747c1289cb"
+origin_path = "packets/khudaida-2026-figure-2-electrolyte-lle/3/parameters/correlations.toml"
+sha256 = "f284b10a36200624fea7f8c36ee0b6db5df891bbbbe0e4eea2ff97928b4cfbf7"

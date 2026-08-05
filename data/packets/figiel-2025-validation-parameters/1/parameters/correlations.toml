@@ -1,0 +1,65 @@
+[[correlations]]
+record_id = "water-segment-diameter"
+component_id = "water"
+family = "segment_diameter"
+form = "constant"
+constant = 2.79706
+output_unit = "angstrom"
+source_id = "figiel-yu-held-2025"
+locator = "compact pure-parameter packet"
+domain_id = "figiel-298-k-1-bar"
+
+[[correlations]]
+record_id = "methanol-segment-diameter"
+component_id = "methanol"
+family = "segment_diameter"
+form = "constant"
+constant = 3.2300
+output_unit = "angstrom"
+source_id = "figiel-yu-held-2025"
+locator = "compact pure-parameter packet"
+domain_id = "figiel-298-k-1-bar"
+
+[[correlations]]
+record_id = "ethanol-segment-diameter"
+component_id = "ethanol"
+family = "segment_diameter"
+form = "constant"
+constant = 3.1771
+output_unit = "angstrom"
+source_id = "figiel-yu-held-2025"
+locator = "compact pure-parameter packet"
+domain_id = "figiel-298-k-1-bar"
+
+[[correlations]]
+record_id = "water-relative-permittivity"
+component_id = "water"
+family = "relative_permittivity"
+form = "constant"
+constant = 78.09
+output_unit = "dimensionless"
+source_id = "figiel-yu-held-2025"
+locator = "compact pure-parameter packet"
+domain_id = "figiel-298-k-1-bar"
+
+[[correlations]]
+record_id = "methanol-relative-permittivity"
+component_id = "methanol"
+family = "relative_permittivity"
+form = "constant"
+constant = 33.05
+output_unit = "dimensionless"
+source_id = "figiel-yu-held-2025"
+locator = "compact pure-parameter packet"
+domain_id = "figiel-298-k-1-bar"
+
+[[correlations]]
+record_id = "ethanol-relative-permittivity"
+component_id = "ethanol"
+family = "relative_permittivity"
+form = "constant"
+constant = 24.88
+output_unit = "dimensionless"
+source_id = "figiel-yu-held-2025"
+locator = "compact pure-parameter packet"
+domain_id = "figiel-298-k-1-bar"

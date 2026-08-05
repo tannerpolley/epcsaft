@@ -1,0 +1,49 @@
+schema_version = 1
+bundle_id = "figiel-2025-validation-parameters"
+bundle_version = 1
+purpose = "user-provided"
+files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "model.csv", "correlations.toml"]
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "compact validation-side transcription of the Figiel 2025 parameter packets"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5."
+use_basis = "water identity and molecular weight"
+
+[[sources]]
+source_id = "nist-srd-69-methanol"
+citation = "NIST Chemistry WebBook, SRD 69, Methanol, CAS 67-56-1."
+use_basis = "methanol identity and molecular weight"
+
+[[sources]]
+source_id = "nist-srd-69-ethanol"
+citation = "NIST Chemistry WebBook, SRD 69, Ethanol, CAS 64-17-5."
+use_basis = "ethanol identity and molecular weight"
+
+[[domains]]
+domain_id = "figiel-298-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+ion_mole_fraction_max = 0.38
+
+[[domains]]
+domain_id = "nist-water-identity"
+kind = "unknown"
+
+[[domains]]
+domain_id = "nist-methanol-identity"
+kind = "unknown"
+
+[[domains]]
+domain_id = "nist-ethanol-identity"
+kind = "unknown"

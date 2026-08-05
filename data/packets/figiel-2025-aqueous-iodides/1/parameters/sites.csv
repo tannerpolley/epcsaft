@@ -1,0 +1,3 @@
+record_id,component_id,site_id,site_class,multiplicity,source_id,locator,domain_id
+water-site-a,water,a,a,1,figiel-yu-held-2025,"Table 2 footnote a, 2B association scheme expanded as one A site",figiel-298-k-1-bar
+water-site-b,water,b,b,1,figiel-yu-held-2025,"Table 2 footnote a, 2B association scheme expanded as one B site",figiel-298-k-1-bar

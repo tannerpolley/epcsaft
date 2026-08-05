@@ -1,0 +1,19 @@
+record_id,component_id_a,site_id_a,component_id_b,site_id_b,family,value,unit,source_id,locator,domain_id
+water-association-energy,water,a,water,b,association_energy_over_k,2425.7,kelvin,khudaida-et-al-2026,"Table 5, water epsilon^AiBi/k_B row",khudaida-293-15-k-0-1-mpa
+water-association-volume,water,a,water,b,association_volume,0.04509,,khudaida-et-al-2026,"Table 5, water kappa^AiBi row",khudaida-293-15-k-0-1-mpa
+ethanol-association-energy,ethanol,a,ethanol,b,association_energy_over_k,2653.4,kelvin,khudaida-et-al-2026,"Table 5, ethanol epsilon^AiBi/k_B row",khudaida-293-15-k-0-1-mpa
+ethanol-association-volume,ethanol,a,ethanol,b,association_volume,0.03238,,khudaida-et-al-2026,"Table 5, ethanol kappa^AiBi row",khudaida-293-15-k-0-1-mpa
+isobutanol-association-energy,isobutanol,a,isobutanol,b,association_energy_over_k,2514.3,kelvin,khudaida-et-al-2026,"Table 5, isobutanol epsilon^AiBi/k_B row",khudaida-293-15-k-0-1-mpa
+isobutanol-association-volume,isobutanol,a,isobutanol,b,association_volume,0.00391,,khudaida-et-al-2026,"Table 5, isobutanol kappa^AiBi row",khudaida-293-15-k-0-1-mpa
+water-a-ethanol-b-energy,water,a,ethanol,b,association_energy_over_k,2539.55,kelvin,gross-sadowski-2002,"Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",khudaida-293-15-k-0-1-mpa
+water-a-ethanol-b-volume,water,a,ethanol,b,association_volume,0.03798098222932118,,gross-sadowski-2002,"Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",khudaida-293-15-k-0-1-mpa
+water-b-ethanol-a-energy,water,b,ethanol,a,association_energy_over_k,2539.55,kelvin,gross-sadowski-2002,"Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",khudaida-293-15-k-0-1-mpa
+water-b-ethanol-a-volume,water,b,ethanol,a,association_volume,0.03798098222932118,,gross-sadowski-2002,"Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",khudaida-293-15-k-0-1-mpa
+water-a-isobutanol-b-energy,water,a,isobutanol,b,association_energy_over_k,2470.0,kelvin,gross-sadowski-2002,"Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",khudaida-293-15-k-0-1-mpa
+water-a-isobutanol-b-volume,water,a,isobutanol,b,association_volume,0.01299623825352431,,gross-sadowski-2002,"Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",khudaida-293-15-k-0-1-mpa
+water-b-isobutanol-a-energy,water,b,isobutanol,a,association_energy_over_k,2470.0,kelvin,gross-sadowski-2002,"Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",khudaida-293-15-k-0-1-mpa
+water-b-isobutanol-a-volume,water,b,isobutanol,a,association_volume,0.01299623825352431,,gross-sadowski-2002,"Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",khudaida-293-15-k-0-1-mpa
+ethanol-a-isobutanol-b-energy,ethanol,a,isobutanol,b,association_energy_over_k,2583.85,kelvin,gross-sadowski-2002,"Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",khudaida-293-15-k-0-1-mpa
+ethanol-a-isobutanol-b-volume,ethanol,a,isobutanol,b,association_volume,0.01119849133244554,,gross-sadowski-2002,"Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",khudaida-293-15-k-0-1-mpa
+ethanol-b-isobutanol-a-energy,ethanol,b,isobutanol,a,association_energy_over_k,2583.85,kelvin,gross-sadowski-2002,"Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",khudaida-293-15-k-0-1-mpa
+ethanol-b-isobutanol-a-volume,ethanol,b,isobutanol,a,association_volume,0.01119849133244554,,gross-sadowski-2002,"Eqs. 2-3 applied to Khudaida 2026 Table 5 pure values at 293.15 K with k_hb=0",khudaida-293-15-k-0-1-mpa

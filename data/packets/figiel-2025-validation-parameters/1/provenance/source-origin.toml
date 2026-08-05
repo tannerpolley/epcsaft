@@ -1,0 +1,48 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-validation"
+origin_commit = "dc1841fc8c7b837d92b7fed9d976a22ba6d5b2e6"
+origin_tree = "f9312688db6c8f624310e628b9127f31f8fcb009"
+copy_mode = "byte-for-byte"
+scope = "Reusable parameter packet only; generated campaign results, scripts, receipts, plots, and full paper content remain in the origin repository."
+source_bundle_manifest_path = "campaigns/2025-figiel/parameters/provider-bundle/1/bundle.toml"
+source_bundle_manifest_sha256 = "16476065e6b01141193d553394ec7c58ad5e97b7392bd2a0272a7f5039776821"
+
+[[files]]
+retained_path = "parameters/bundle.toml"
+origin_path = "campaigns/2025-figiel/parameters/provider-bundle/1/bundle.toml"
+sha256 = "16476065e6b01141193d553394ec7c58ad5e97b7392bd2a0272a7f5039776821"
+
+[[files]]
+retained_path = "parameters/components.csv"
+origin_path = "campaigns/2025-figiel/parameters/provider-bundle/1/components.csv"
+sha256 = "9de0ec3e572c2389f6d6a25241cec590f13da73b6ababa5ddaa82f2386fcbda0"
+
+[[files]]
+retained_path = "parameters/single.csv"
+origin_path = "campaigns/2025-figiel/parameters/provider-bundle/1/single.csv"
+sha256 = "6f19767ab7f61f433ff19029a2519f6eeff627beeb93d2f8ff3bb9a1b37d1f49"
+
+[[files]]
+retained_path = "parameters/pair.csv"
+origin_path = "campaigns/2025-figiel/parameters/provider-bundle/1/pair.csv"
+sha256 = "58d9b03feca9d331bd4b60295052396c8b4478d7f4e05562d2d32de88a37ae6b"
+
+[[files]]
+retained_path = "parameters/sites.csv"
+origin_path = "campaigns/2025-figiel/parameters/provider-bundle/1/sites.csv"
+sha256 = "d2aed39c8ce4a9a54cac5e861aadb101a89f86f4324e88b8af9ecaa02b6317e7"
+
+[[files]]
+retained_path = "parameters/association.csv"
+origin_path = "campaigns/2025-figiel/parameters/provider-bundle/1/association.csv"
+sha256 = "28c6d46c29c1f6e3a238c3c0edffcd4a8efaeb7b41cdd210fa97126808c1ca53"
+
+[[files]]
+retained_path = "parameters/model.csv"
+origin_path = "campaigns/2025-figiel/parameters/provider-bundle/1/model.csv"
+sha256 = "2c223d56113b5f539b04d8c0fb3d1c9a6be016de31e8e3f7fd549717f842e7c8"
+
+[[files]]
+retained_path = "parameters/correlations.toml"
+origin_path = "campaigns/2025-figiel/parameters/provider-bundle/1/correlations.toml"
+sha256 = "1eed7759621e69dd320cf1aa023b3261482c82774f4190a6a6e68af202b629e4"

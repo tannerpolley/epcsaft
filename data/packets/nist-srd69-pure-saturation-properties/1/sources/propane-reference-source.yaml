@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "dataset_id": "nist-webbook-propane-reference-eos-100-360-k-auxiliary-v1",
+  "source_id": "nist-webbook-srd69-propane-reference-eos-auxiliary",
+  "format_note": "This file uses the JSON-compatible subset of YAML 1.2 for stdlib-only validation.",
+  "citation": {
+    "authors": [
+      "Eric W. Lemmon",
+      "Ian H. Bell",
+      "Marcia L. Huber",
+      "Mark O. McLinden"
+    ],
+    "chapter": "Thermophysical Properties of Fluid Systems",
+    "title": "NIST Chemistry WebBook, NIST Standard Reference Database Number 69",
+    "editors": ["P. J. Linstrom", "W. G. Mallard"],
+    "publisher": "National Institute of Standards and Technology",
+    "doi": "10.18434/T4D303",
+    "species": "propane",
+    "cas_registry_number": "74-98-6",
+    "locator": "Saturation Properties for Propane — Temperature Increments; 100 K through 360 K in 20 K increments; liquid pressure and density columns",
+    "retrieved_on": "2026-07-17"
+  },
+  "reference_equation": {
+    "authors": ["E. W. Lemmon", "M. O. McLinden", "W. Wagner"],
+    "title": "Thermodynamic Properties of Propane. III. A Reference Equation of State for Temperatures from the Melting Line to 650 K and Pressures up to 1000 MPa",
+    "journal": "Journal of Chemical & Engineering Data",
+    "year": 2009,
+    "volume": 54,
+    "issue": 12,
+    "pages": "3141-3180",
+    "doi": "10.1021/je900217v",
+    "role": "Equation of state identified by the official NIST query page as the source of the tabulated thermodynamic values and uncertainty notes."
+  },
+  "sources": {
+    "nist_query_download": {
+      "url": "https://webbook.nist.gov/cgi/fluid.cgi?Action=Data&Wide=on&ID=C74986&Type=SatP&Digits=8&THigh=360&TLow=100&TInc=20&RefState=DEF&TUnit=K&PUnit=Pa&DUnit=kg%2Fm3&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm",
+      "retrieved_on": "2026-07-17",
+      "sha256": "e98f6e71594eef0aaa786e84080a69c163b595e898bd5d34bd94081b55fc3da4",
+      "role": "Controlling machine-readable numerical source."
+    },
+    "nist_query_page": {
+      "url": "https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&Wide=on&ID=C74986&Type=SatP&Digits=8&THigh=360&TLow=100&TInc=20&RefState=DEF&TUnit=K&PUnit=Pa&DUnit=kg%2Fm3&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm",
+      "retrieved_on": "2026-07-17",
+      "sha256": "1240d7da467561f554801996f34c94791e7e65e8566ace01d0f0c3bad7b67acc",
+      "role": "Official human-readable table, equation-of-state citation, property uncertainty notes, and saturation-domain locator."
+    },
+    "nist_recommended_citation": {
+      "url": "https://webbook.nist.gov/cgi/cbook.cgi?Contrib=LBHM",
+      "retrieved_on": "2026-07-17",
+      "sha256": "b52cde42af9090457a4112956a8e2b749d8202d725ba1595daf875c1ecf8466e",
+      "role": "Official recommended citation for the NIST fluid-system data."
+    }
+  },
+  "source_audit": {
+    "source_kind": "Auxiliary NIST reference-equation output; the retained rows are calculated reference values, not direct experimental measurements and not a regression target.",
+    "query_domain": {
+      "minimum_temperature_k": 100.0,
+      "maximum_temperature_k": 360.0,
+      "increment_k": 20.0,
+      "nist_minimum_temperature_k": 85.525,
+      "nist_maximum_temperature_k": 369.89,
+      "digits": 8,
+      "reference_state": "DEF"
+    },
+    "uncertainty_meaning": {
+      "basis": "Relative uncertainty statements supplied by the official NIST query page for the Lemmon-McLinden-Wagner reference equation; the page does not identify these values as row-level experimental standard uncertainties or provide a confidence level.",
+      "saturation_pressure": "0.02% above 180 K; 0.1% from 120 K through 180 K. Below 120 K the uncertainty increases steadily and no exact value is supplied for the retained 100 K row.",
+      "liquid_density": "0.01% below 350 K. In the extended critical region density uncertainty increases to 0.1% and rises rapidly very near the critical point; the page does not define a pointwise value for the retained 360 K row.",
+      "blank_fields": "A blank relative-uncertainty field means the official source did not quantify an unambiguous value for that retained state; it does not mean zero uncertainty."
+    },
+    "use_basis": "Compact factual extraction retained for scientific validation and reproducibility; the broad NIST download and article are not redistributed in this repository. NIST Standard Reference Data use remains subject to the linked SRD terms.",
+    "srd_terms_url": "https://www.nist.gov/open/copyright-fair-use-and-licensing-statements-srd-data-software-and-technical-series-publications#SRD"
+  },
+  "fields": {
+    "row_id": "Repository-assigned stable identifier from the source temperature.",
+    "component_id": "Exact component identifier propane.",
+    "role": "Always reference_only; these rows cannot enter the experimental regression target or its partitions.",
+    "T_K": "NIST download Temperature (K), exact decimal string.",
+    "p_sat_Pa": "NIST wide download Pressure (Pa), exact decimal string.",
+    "rho_sat_liq_kg_m3": "NIST wide download Density (l, kg/m3), exact decimal string.",
+    "source_pressure_relative_uncertainty": "Official relative saturation-pressure uncertainty where the source provides an unambiguous value for the retained temperature.",
+    "source_liquid_density_relative_uncertainty": "Official relative liquid-density uncertainty where the source provides an unambiguous value for the retained temperature."
+  },
+  "transformations": [
+    "Retain rows from the exact 100 K through 360 K, 20 K increment query in source order.",
+    "Copy Temperature (K), Pressure (Pa), and Density (l, kg/m3) decimal strings without numerical conversion or rounding.",
+    "Add stable row_id, component_id, and the auxiliary reference_only role.",
+    "Convert the official uncertainty percentages to dimensionless relative values: 0.02% to 0.0002, 0.1% to 0.001, and 0.01% to 0.0001.",
+    "Leave uncertainty blank when the official source does not quantify an unambiguous value for the retained state."
+  ],
+  "comparison_contract": {
+    "payload": {
+      "contract_version": 1,
+      "pressure_comparison_allowance": null,
+      "liquid_density_comparison_allowance": null,
+      "model_accuracy_floor": null,
+      "interpretation": "The NIST uncertainty statements describe the reference equation, not an approved ePC-SAFT model-accuracy threshold. No multiplier, confidence interpretation, or model-discrepancy allowance is introduced. Future errors are descriptive unless a separate pre-model decision approves a comparison rule."
+    },
+    "sha256": "ca5a1bf247b8b791138cfebe2449ea09ddf5da0614e9976a072085b1a726f7ac"
+  },
+  "retained_files": {
+    "csv": {
+      "path": "campaigns/2004-glos/source/nist-srd69-propane-reference-eos.csv",
+      "sha256": "4a05958854ed5fed28ce4f2b3dc1e98d2d5f833c3eb2f1290ce6428492f0051c"
+    }
+  },
+  "claim_boundary": "This auxiliary packet can cross-check scale and reference-EOS context only. It is not direct experimental evidence, is not a Checkpoint A target, has no training or held-out rows, and cannot validate ePC-SAFT or support model agreement, prediction, promotion, or authority."
+}

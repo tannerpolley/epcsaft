@@ -1,0 +1,43 @@
+schema_version = 1
+bundle_id = "ascani-2022-case-study-2-electrolyte-lle"
+bundle_version = 1
+purpose = "installed-catalog"
+files = ["components.csv", "single.csv", "pair.csv", "sites.csv", "association.csv", "model.csv", "correlations.toml"]
+
+[[sources]]
+source_id = "ascani-et-al-2022"
+citation = "Ascani, M.; Sadowski, G.; Held, C. Calculation of Multiphase Equilibria Containing Mixed Solvents and Mixed Electrolytes: General Formulation and Case Studies. Journal of Chemical & Engineering Data 2022, 67, 1972-1984."
+doi = "10.1021/acs.jced.1c00866"
+use_basis = "Case Study 2 and Supporting Information Tables S1-S4 and Eqs. S4-S7 at 298.15 K and 1 bar"
+
+[[sources]]
+source_id = "ascani-held-2021"
+citation = "Ascani, M.; Held, C. Prediction of salting-out in liquid-liquid two-phase systems with ePC-SAFT: Effect of the Born term and of a concentration-dependent dielectric constant. Zeitschrift fuer anorganische und allgemeine Chemie 2021, 647, 1305-1314."
+doi = "10.1002/zaac.202100032"
+use_basis = "Eq. 10 altered Born term, Eq. 13 combined dielectric rule, and Table 5 solvent and ionic relative-permittivity records"
+
+[[sources]]
+source_id = "nann-held-sadowski-2013"
+citation = "Nann, A.; Held, C.; Sadowski, G. Liquid-Liquid Equilibria of 1-Butanol/Water/IL Systems. Industrial & Engineering Chemistry Research 2013, 52, 18472-18481."
+doi = "10.1021/ie403246e"
+use_basis = "Table 2 pure 1-butanol and water records and Wolbach-Sandler cross-association combining equations inherited by Ascani Table S1 and S3"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water"
+use_basis = "Water molecular weight used by the salt-free-solvent mass-fraction dielectric rule"
+
+[[sources]]
+source_id = "nist-srd-69-1-butanol"
+citation = "NIST Chemistry WebBook, SRD 69, 1-Butanol"
+use_basis = "1-Butanol molecular weight used by the salt-free-solvent mass-fraction dielectric rule"
+
+[[domains]]
+domain_id = "ascani-case-study-2-298-15-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"

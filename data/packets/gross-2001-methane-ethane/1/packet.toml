@@ -1,0 +1,88 @@
+schema_version = 2
+packet_id = "gross-2001-methane-ethane"
+packet_version = "1"
+title = "gross-2001-methane-ethane source parameter packet"
+description = "Reusable parameter packet for gross-2001-methane-ethane, copied byte-for-byte from the admitted EOS source bundle and retained with source/domain metadata."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "The packet preserves source values byte-for-byte and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "gross-sadowski-2001"
+citation = "Gross, J.; Sadowski, G. PC-SAFT: An Equation of State Based on a Perturbation Theory for Chain Molecules. Industrial & Engineering Chemistry Research 2001, 40, 1244-1260."
+doi = "10.1021/ie0003887"
+use_basis = "source-backed installed parameter catalog"
+
+[[domains]]
+domain_id = "methane-fit-range"
+kind = "fit-range"
+temperature_min = 97
+temperature_max = 300
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain methane-fit-range (temperature 97–300 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "ethane-fit-range"
+kind = "fit-range"
+temperature_min = 90
+temperature_max = 305
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain ethane-fit-range (temperature 90–305 kelvin); see the cited sources and retained bundle."
+
+[[domains]]
+domain_id = "gross-pair-unknown"
+kind = "unknown"
+description = "Source-defined domain gross-pair-unknown has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[files]]
+path = "parameters/bundle.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "e853027b0ab6ecbc8d5b125d234caa04b6965c007ddcc85cfcc2f3e07fd4e01e"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "gross-pair-unknown"]
+units_basis = "Bundle identity, file membership, and source metadata are non-numeric identifiers."
+
+[[files]]
+path = "parameters/components.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "bff9dffd036f3a7e496b57240e70d806938f26dd2495f6db8faec0b5cf9c9614"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "gross-pair-unknown"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/single.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "17c26e8e0db5eb6e29e26ae898b28621f7ead148faf7855814827a73dbcd8c85"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "gross-pair-unknown"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/pair.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "747e8281c7a1e4240ee4badbc0bedd047521fb303726699b38c99fccf7f74c2a"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "gross-pair-unknown"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/model.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "5f3eb00bdcaa9f352285221b95fa58fc303386e380cd3794920bcc8924381c43"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "gross-pair-unknown"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "ad2ce6847c9a8bf7df5545b4a80721579a0badf249842ad64cdbd1d34bdaa179"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["methane-fit-range", "ethane-fit-range", "gross-pair-unknown"]
+units_basis = "Origin repository, commit, tree, path, and hash metadata are non-numeric identifiers."

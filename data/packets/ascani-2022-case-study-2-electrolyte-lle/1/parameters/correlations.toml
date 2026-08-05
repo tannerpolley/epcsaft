@@ -1,0 +1,37 @@
+[[correlations]]
+record_id = "water-segment-diameter-correlation"
+component_id = "water"
+family = "segment_diameter"
+form = "constant-plus-sum-of-exponentials"
+constant = 2.7927
+output_unit = "angstrom"
+input_unit = "kelvin"
+coefficients = [
+  { amplitude = 10.11, exponent_coefficient = -0.01775 },
+  { amplitude = -1.417, exponent_coefficient = -0.01146 },
+]
+source_id = "ascani-et-al-2022"
+locator = "Supporting Information Table S1 water footnote"
+domain_id = "ascani-case-study-2-298-15-k-1-bar"
+
+[[correlations]]
+record_id = "water-relative-permittivity"
+component_id = "water"
+family = "relative_permittivity"
+form = "constant"
+constant = 78.09282552212915
+output_unit = "dimensionless"
+source_id = "ascani-held-2021"
+locator = "Table 5 water correlation -105.2 ln(T/K)+677.480 evaluated at 298.15 K"
+domain_id = "ascani-case-study-2-298-15-k-1-bar"
+
+[[correlations]]
+record_id = "butanol-relative-permittivity"
+component_id = "1-butanol"
+family = "relative_permittivity"
+form = "constant"
+constant = 17.612245
+output_unit = "dimensionless"
+source_id = "ascani-held-2021"
+locator = "Table 5 1-butanol correlation -0.1077(T/K)+49.723 evaluated at 298.15 K"
+domain_id = "ascani-case-study-2-298-15-k-1-bar"
