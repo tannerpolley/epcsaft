@@ -894,7 +894,10 @@ def validate_operation_receipt(
         errors.append(f"operation receipt {relative} requires producer and reviewer identities")
     elif producer_identity == reviewer_identity:
         errors.append(f"operation receipt {relative} producer and reviewer must differ")
-    if envelope["reviewer"].get("outcome") != "pass":
+    if (
+        record["status"] == "completed"
+        and envelope["reviewer"].get("outcome") != "pass"
+    ):
         errors.append(f"operation receipt {relative} requires reviewer outcome pass")
     validator = envelope["validator"]
     try:
