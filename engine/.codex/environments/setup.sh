@@ -11,6 +11,23 @@ for required_command in uv cmake ninja c++; do
     fi
 done
 
+stale_build_root=""
+while IFS= read -r -d '' cmake_cache; do
+    cached_root="$(sed -n 's/^CMAKE_HOME_DIRECTORY:INTERNAL=//p' "$cmake_cache")"
+    if [[
+        -n "$cached_root"
+        && "$cached_root" != "$repo_root"
+        && "$cached_root" != "$repo_root/"*
+    ]]; then
+        stale_build_root="$cached_root"
+        break
+    fi
+done < <(find build -type f -name CMakeCache.txt -print0 2>/dev/null)
+if [[ -n "$stale_build_root" ]]; then
+    echo "removing stale CMake cache from moved checkout: $stale_build_root"
+    cmake -E remove_directory "$repo_root/build"
+fi
+
 if [[ ! -x .venv/bin/python ]]; then
     uv venv --python 3.13 .venv
 fi
