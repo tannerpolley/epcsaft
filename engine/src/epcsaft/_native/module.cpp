@@ -1,0 +1,286 @@
+#include "eos.hpp"
+#include "native_sdk_pybind.hpp"
+#include "polar.hpp"
+
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
+#include <limits>
+#include <utility>
+#include <vector>
+
+namespace py = pybind11;
+
+PYBIND11_MODULE(_core, module) {
+    module.def("_polar_constants", []() {
+        py::dict values;
+        values["dd_a0"] = epcsaft::detail::DD_A0;
+        values["dd_a1"] = epcsaft::detail::DD_A1;
+        values["dd_a2"] = epcsaft::detail::DD_A2;
+        values["dd_b0"] = epcsaft::detail::DD_B0;
+        values["dd_b1"] = epcsaft::detail::DD_B1;
+        values["dd_b2"] = epcsaft::detail::DD_B2;
+        values["dd_c0"] = epcsaft::detail::DD_C0;
+        values["dd_c1"] = epcsaft::detail::DD_C1;
+        values["dd_c2"] = epcsaft::detail::DD_C2;
+        values["qq_a0"] = epcsaft::detail::QQ_A0;
+        values["qq_a1"] = epcsaft::detail::QQ_A1;
+        values["qq_a2"] = epcsaft::detail::QQ_A2;
+        values["qq_b0"] = epcsaft::detail::QQ_B0;
+        values["qq_b1"] = epcsaft::detail::QQ_B1;
+        values["qq_b2"] = epcsaft::detail::QQ_B2;
+        values["qq_c0"] = epcsaft::detail::QQ_C0;
+        values["qq_c1"] = epcsaft::detail::QQ_C1;
+        values["qq_c2"] = epcsaft::detail::QQ_C2;
+        values["dq_a0"] = epcsaft::detail::DQ_A0;
+        values["dq_a1"] = epcsaft::detail::DQ_A1;
+        values["dq_a2"] = epcsaft::detail::DQ_A2;
+        values["dq_b0"] = epcsaft::detail::DQ_B0;
+        values["dq_b1"] = epcsaft::detail::DQ_B1;
+        values["dq_b2"] = epcsaft::detail::DQ_B2;
+        values["dq_c0"] = epcsaft::detail::DQ_C0;
+        values["dq_c1"] = epcsaft::detail::DQ_C1;
+        values["dq_alpha"] = epcsaft::detail::DQ_ALPHA;
+        return values;
+    });
+    module.def(
+        "_polar_pade",
+        [](double second, double third, bool active) {
+            return epcsaft::detail::polar_pade(second, third, active);
+        }
+    );
+    py::class_<epcsaft::NativeDensityDiagnostics>(module, "NativeDensityDiagnostics")
+        .def_readonly(
+            "bracket_lower", &epcsaft::NativeDensityDiagnostics::bracket_lower
+        )
+        .def_readonly(
+            "bracket_upper", &epcsaft::NativeDensityDiagnostics::bracket_upper
+        )
+        .def_readonly(
+            "pressure_residual",
+            &epcsaft::NativeDensityDiagnostics::pressure_residual
+        )
+        .def_readonly(
+            "pressure_density_derivative",
+            &epcsaft::NativeDensityDiagnostics::pressure_density_derivative
+        )
+        .def_readonly(
+            "iterations", &epcsaft::NativeDensityDiagnostics::iterations
+        )
+        .def_readonly("stable", &epcsaft::NativeDensityDiagnostics::stable)
+        .def_readonly("branch", &epcsaft::NativeDensityDiagnostics::branch)
+        .def_readonly(
+            "stable_root_count",
+            &epcsaft::NativeDensityDiagnostics::stable_root_count
+        )
+        .def_readonly(
+            "selected_stable_root_index",
+            &epcsaft::NativeDensityDiagnostics::selected_stable_root_index
+        );
+
+    py::class_<epcsaft::NativeResult>(module, "NativeResult")
+        .def_readonly("hard_chain", &epcsaft::NativeResult::hard_chain)
+        .def_readonly("dispersion", &epcsaft::NativeResult::dispersion)
+        .def_readonly("association", &epcsaft::NativeResult::association)
+        .def_readonly("ares_polar", &epcsaft::NativeResult::ares_polar)
+        .def_readonly("debye_huckel", &epcsaft::NativeResult::debye_huckel)
+        .def_readonly("born_ssm_ds", &epcsaft::NativeResult::born_ssm_ds)
+        .def_readonly(
+            "bulk_relative_permittivity",
+            &epcsaft::NativeResult::bulk_relative_permittivity
+        )
+        .def_readonly(
+            "residual_helmholtz", &epcsaft::NativeResult::residual_helmholtz
+        )
+        .def_readonly(
+            "compressibility_factor",
+            &epcsaft::NativeResult::compressibility_factor
+        )
+        .def_readonly("pressure", &epcsaft::NativeResult::pressure)
+        .def_readonly(
+            "residual_chemical_potential_over_rt",
+            &epcsaft::NativeResult::residual_chemical_potential_over_rt
+        )
+        .def_readonly(
+            "log_fugacity_coefficient",
+            &epcsaft::NativeResult::log_fugacity_coefficient
+        )
+        .def_readonly(
+            "residual_entropy", &epcsaft::NativeResult::residual_entropy
+        )
+        .def_readonly(
+            "residual_internal_energy",
+            &epcsaft::NativeResult::residual_internal_energy
+        )
+        .def_readonly(
+            "residual_enthalpy", &epcsaft::NativeResult::residual_enthalpy
+        )
+        .def_readonly(
+            "residual_isochoric_heat_capacity",
+            &epcsaft::NativeResult::residual_isochoric_heat_capacity
+        )
+        .def_readonly(
+            "residual_isobaric_heat_capacity",
+            &epcsaft::NativeResult::residual_isobaric_heat_capacity
+        )
+        .def_readonly("molar_density", &epcsaft::NativeResult::molar_density)
+        .def_readonly(
+            "density_diagnostics", &epcsaft::NativeResult::density_diagnostics
+        );
+
+    py::class_<epcsaft::NativeReferenceSequence>(module, "NativeReferenceSequence")
+        .def_readonly(
+            "log_fugacity", &epcsaft::NativeReferenceSequence::log_fugacity
+        )
+        .def_readonly(
+            "pure_solvent_log_fugacity_coefficient",
+            &epcsaft::NativeReferenceSequence::pure_solvent_log_fugacity_coefficient
+        )
+        .def_readonly(
+            "reference_molality",
+            &epcsaft::NativeReferenceSequence::reference_molality
+        )
+        .def_readonly(
+            "convergence_error",
+            &epcsaft::NativeReferenceSequence::convergence_error
+        );
+
+    py::class_<epcsaft::NativeModel>(module, "NativeModel")
+        .def(py::init([](
+            std::vector<double> segment_count,
+            std::vector<double> sigma_constant,
+            std::vector<int> sigma_term_component,
+            std::vector<double> sigma_term_amplitude,
+            std::vector<double> sigma_term_exponent,
+            std::vector<double> dispersion_energy_over_k,
+            std::vector<double> k_ij,
+            std::vector<double> l_ij,
+            std::vector<int> site_component,
+            std::vector<int> site_multiplicity,
+            std::vector<int> association_active,
+            std::vector<double> association_energy_over_k,
+            std::vector<double> association_volume,
+            std::vector<double> molar_mass_kg_per_mol,
+            std::vector<int> charge_number,
+            std::vector<double> relative_permittivity,
+            double ion_fraction_suppression_coefficient,
+            std::vector<double> born_diameter_angstrom,
+            std::vector<double> solvation_factor,
+            double ionic_region_relative_permittivity,
+            int electrolyte_model,
+            std::vector<double> dielectric_volume_m3_per_mol,
+            std::vector<double> dielectric_temperature_k,
+            std::vector<double> ion_specific_suppression_coefficient,
+            std::vector<double> dipole_scaling_debye2,
+            std::vector<double> polarizability_scaling_angstrom3,
+            std::vector<double> correlation_integral_parameter,
+            int relative_permittivity_formulation,
+            std::vector<double> dipole_moment_debye,
+            std::vector<double> quadrupole_moment_debye_angstrom,
+            int polar_formulation
+        ) {
+            return epcsaft::NativeModel(epcsaft::NativeParameters{
+                std::move(segment_count),
+                std::move(sigma_constant),
+                std::move(sigma_term_component),
+                std::move(sigma_term_amplitude),
+                std::move(sigma_term_exponent),
+                std::move(dispersion_energy_over_k),
+                std::move(k_ij),
+                std::move(l_ij),
+                std::move(site_component),
+                std::move(site_multiplicity),
+                std::move(association_active),
+                std::move(association_energy_over_k),
+                std::move(association_volume),
+                std::move(molar_mass_kg_per_mol),
+                std::move(charge_number),
+                std::move(relative_permittivity),
+                ion_fraction_suppression_coefficient,
+                std::move(born_diameter_angstrom),
+                std::move(solvation_factor),
+                ionic_region_relative_permittivity,
+                electrolyte_model,
+                std::move(dielectric_volume_m3_per_mol),
+                std::move(dielectric_temperature_k),
+                std::move(ion_specific_suppression_coefficient),
+                std::move(dipole_scaling_debye2),
+                std::move(polarizability_scaling_angstrom3),
+                std::move(correlation_integral_parameter),
+                relative_permittivity_formulation,
+                std::move(dipole_moment_debye),
+                std::move(quadrupole_moment_debye_angstrom),
+                polar_formulation,
+            });
+        }))
+        .def("evaluate", &epcsaft::NativeModel::evaluate)
+        .def("_polar_terms", &epcsaft::NativeModel::polar_terms)
+        .def(
+            "_reduced_multipole_moments",
+            &epcsaft::NativeModel::reduced_multipole_moments
+        )
+        .def("evaluate_pressure", &epcsaft::NativeModel::evaluate_pressure)
+        .def("reference_composition", &epcsaft::NativeModel::reference_composition)
+        .def(
+            "electrolyte_reference_sequence",
+            [](const epcsaft::NativeModel& model,
+               double temperature,
+               double pressure,
+               const std::vector<double>& solvent_fractions,
+               const std::array<std::size_t, 2>& ion_indices,
+               const std::array<int, 2>& stoichiometry,
+               const std::string& phase) {
+                return model.electrolyte_reference_sequence(
+                    temperature,
+                    pressure,
+                    solvent_fractions,
+                    ion_indices,
+                    stoichiometry,
+                    phase
+                );
+            }
+        );
+
+    module.def(
+        "native_sdk_v1",
+        &epcsaft::make_native_sdk_v1,
+        py::arg("model"),
+        py::arg("parameter_fingerprint"),
+        py::arg("temperature_min_k"),
+        py::arg("temperature_max_k"),
+        py::arg("component_ids"),
+        py::arg("ion_mole_fraction_max"),
+        py::arg("phase_callbacks_admitted") = true,
+        py::arg("active_born_admitted") = false,
+        py::arg("aqueous_kij_admitted") = false,
+        py::arg("ion_fraction_suppression_admitted") = false,
+        py::arg("pressure_min_pa") = std::numeric_limits<double>::quiet_NaN(),
+        py::arg("pressure_max_pa") = std::numeric_limits<double>::quiet_NaN(),
+        py::arg("neutral_reference_admitted") = false,
+        py::arg("unknown_applicability_admitted") = false,
+        py::arg("aqueous_solvation_factor_admitted") = false,
+        py::arg("ion_solvation_kij_admitted") = false,
+        py::arg("topology_fingerprint") = "",
+        py::arg("component_order_fingerprint") = "",
+        py::arg("domain_fingerprint") = "",
+        py::arg("site_ids") = std::vector<std::string>{},
+        py::arg("artifact_fingerprint") = ""
+    );
+    module.def(
+        "source_reference_transfer_v1",
+        &epcsaft::evaluate_source_reference_transfer_v1,
+        py::arg("capsule"),
+        py::arg("expected_parameter_fingerprint"),
+        py::arg("expected_topology_fingerprint"),
+        py::arg("temperature_k"),
+        py::arg("pressure_pa"),
+        py::arg("component_ids"),
+        py::arg("source_solvent_mole_fractions"),
+        py::arg("reference_state_id"),
+        py::arg("activity_convention_id"),
+        py::arg("reference_state_fingerprint"),
+        py::arg("standard_molality_mol_per_kg"),
+        py::arg("source_reference_pressure_pa"),
+        py::arg("required_derivatives")
+    );
+}

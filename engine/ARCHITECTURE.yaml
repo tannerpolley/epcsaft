@@ -1,0 +1,64 @@
+version: 3
+status: unified-engine-direct-cutover-candidate
+governance_doctrine_revision: 8
+
+artifact:
+  repository: ePC-SAFT/ePC-SAFT-engine
+  distribution: epcsaft
+  python: ">=3.13"
+  build_owner: pyproject.toml
+  native_build_owner: CMakeLists.txt
+  runtime_dependencies: [Pint]
+  public_modules: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
+
+owners:
+  parameters:
+    input: epcsaft.Parameters
+    persistence: src/epcsaft/_bundle_io.py
+    resolution: src/epcsaft/_resolve.py
+  eos:
+    model: epcsaft.Mixture
+    state: epcsaft.State
+    equation_kernel: src/epcsaft/_native/helmholtz.hpp
+    density_closure: src/epcsaft/_native/density.hpp
+    reference_states: src/epcsaft/reference.py
+  equilibrium:
+    public_module: epcsaft.equilibrium
+    python_api: src/epcsaft/equilibrium/_api.py
+    native_sources: cpp/equilibrium
+  regression:
+    public_module: epcsaft.regression
+    workflow: src/epcsaft/regression/workflow.py
+    result_transfer: epcsaft.regression.RegressionResult.to_parameters
+    native_sources: src/epcsaft/regression/native
+  native_transport:
+    implementation: src/epcsaft/_native/native_sdk.cpp
+    internal_header: src/epcsaft/include/epcsaft/native_sdk_v1.h
+    regression_internal_header: src/epcsaft/include/epcsaft/regression/evaluator_v1.h
+    installed_headers: forbidden
+
+scientific_boundaries:
+  reusable_packets: ePC-SAFT/ePC-SAFT-data
+  installed_artifact_evidence: ePC-SAFT/ePC-SAFT-validation
+  exploratory_workflows: ePC-SAFT/ePC-SAFT-lab
+  packet_access: explicit_materialization_only
+  sibling_discovery: forbidden
+  regression_transfer: typed_immutable_parameters
+
+build_invariants:
+  distributions: 1
+  versions: 1
+  wheels: 1
+  cmake_roots: 1
+  editable_downstream_dependencies: forbidden
+  compatibility_aliases: forbidden
+  installed_provider_discovery: forbidden
+  mutable_wheel_inputs: forbidden
+
+validation:
+  retained_tests: numerical_algorithm_and_scientific_workflow_only
+  package_test_mode: installed_wheel
+  required_module_origins: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
+  cross_module_slice: tests/integration/test_scientific_slice.py
+  materialized_packet_receipts: tests/fixtures/data/*/materialization.json
+  external_authority_gate: governance_g7

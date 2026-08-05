@@ -1,0 +1,42 @@
+[build-system]
+requires = ["scikit-build-core>=0.12", "pybind11>=3.0"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "epcsaft"
+version = "0.2.0.dev0"
+description = "Unified ePC-SAFT engine for EOS, equilibrium, and regression"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { file = "LICENSE" }
+dependencies = ["Pint>=0.25.3"]
+
+[tool.scikit-build]
+minimum-version = "0.12"
+build-dir = "build/{wheel_tag}"
+wheel.packages = ["src/epcsaft"]
+wheel.exclude = [
+  "epcsaft/_native/**",
+  "epcsaft/include/**",
+  "epcsaft/regression/native/**",
+]
+cmake.source-dir = "."
+cmake.version = ">=3.20"
+ninja.version = ">=1.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not campaign'"
+markers = [
+  "campaign: expensive installed-artifact scientific replay run explicitly",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.mypy]
+packages = ["epcsaft"]
+mypy_path = "src"
+python_version = "3.13"
+strict = true

@@ -1,0 +1,66 @@
+schema_version = 2
+packet_id = "gross-2001-propane"
+packet_version = "1"
+title = "gross-2001-propane source parameter packet"
+description = "Reusable parameter packet for gross-2001-propane, copied byte-for-byte from the admitted EOS source bundle and retained with source/domain metadata."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "The packet preserves source values byte-for-byte and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "gross-sadowski-2001"
+citation = "Gross, J.; Sadowski, G. PC-SAFT: An Equation of State Based on a Perturbation Theory for Chain Molecules. Industrial & Engineering Chemistry Research 2001, 40, 1244-1260."
+doi = "10.1021/ie0003887"
+use_basis = "source-backed installed parameter catalog"
+
+[[domains]]
+domain_id = "propane-fit-range"
+kind = "fit-range"
+temperature_min = 85
+temperature_max = 523
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain propane-fit-range (temperature 85–523 kelvin); see the cited sources and retained bundle."
+
+[[files]]
+path = "parameters/bundle.toml"
+role = "parameters"
+media_type = "application/toml"
+sha256 = "106a07a0eedd9a856136fe9a30d5cc38414c3e67c1199e15e8d398ffd8a47c29"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["propane-fit-range"]
+units_basis = "Bundle identity, file membership, and source metadata are non-numeric identifiers."
+
+[[files]]
+path = "parameters/components.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "65c97dae721acb3321fe134ff8973ecc2f137ac5dd53821d2cc7cfa6bc3793f4"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["propane-fit-range"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/single.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "f2d13d5e1e281e6b8250f693a4a8dfc6853ed9f91ae32342cd33ccbfc67af48c"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["propane-fit-range"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "parameters/model.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "fe04acbd54d0fb2617cf720c2e93c35e4388c72ee8f96e7b62ff4149bdf6286a"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["propane-fit-range"]
+units_basis = "Numeric units and conventions are declared by the retained source bundle and its source-specific metadata."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "58ae54283e3d2dbcec3ac8a58e3fa15004757db434a7a7f5bfc8772c27c16cda"
+source_refs = ["gross-sadowski-2001"]
+domain_refs = ["propane-fit-range"]
+units_basis = "Origin repository, commit, tree, path, and hash metadata are non-numeric identifiers."

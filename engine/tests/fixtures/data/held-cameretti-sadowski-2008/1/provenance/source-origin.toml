@@ -1,0 +1,48 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-eos"
+origin_commit = "e5cd64697d3fb33890f42e87b8779ddda4b52c6a"
+origin_tree = "7de4e53f5d81422039d621536053a66a3840d0f9"
+copy_mode = "byte-for-byte"
+scope = "Reusable parameter packet only; generated campaign results, scripts, receipts, plots, and full paper content remain in the origin repository."
+source_bundle_manifest_path = "src/epcsaft/data/bundles/held-cameretti-sadowski-2008/1/bundle.toml"
+source_bundle_manifest_sha256 = "48cb1009a13ae8fe09c3d0f72b5eb2da11c9fbb3eebee2bc3fe6b427bdab1418"
+
+[[files]]
+retained_path = "parameters/bundle.toml"
+origin_path = "src/epcsaft/data/bundles/held-cameretti-sadowski-2008/1/bundle.toml"
+sha256 = "48cb1009a13ae8fe09c3d0f72b5eb2da11c9fbb3eebee2bc3fe6b427bdab1418"
+
+[[files]]
+retained_path = "parameters/components.csv"
+origin_path = "src/epcsaft/data/bundles/held-cameretti-sadowski-2008/1/components.csv"
+sha256 = "be14e550b7d5f4a19554a5af2aa7aaa37242f56d362ecf0ae9d44b68316f65f5"
+
+[[files]]
+retained_path = "parameters/single.csv"
+origin_path = "src/epcsaft/data/bundles/held-cameretti-sadowski-2008/1/single.csv"
+sha256 = "17c4f71a9501f76fde7709d71ee8447f184d7fd7d4df97911848c3461d05489f"
+
+[[files]]
+retained_path = "parameters/pair.csv"
+origin_path = "src/epcsaft/data/bundles/held-cameretti-sadowski-2008/1/pair.csv"
+sha256 = "042bbde7f6fc4128b5dbfc538e171fe070f8ee81208f29d36212f92ff3cca8e6"
+
+[[files]]
+retained_path = "parameters/sites.csv"
+origin_path = "src/epcsaft/data/bundles/held-cameretti-sadowski-2008/1/sites.csv"
+sha256 = "c84e7302eb8f0294af63e721734b060d3d7b726f8b0d7d60cd626a7f76ed9bfb"
+
+[[files]]
+retained_path = "parameters/association.csv"
+origin_path = "src/epcsaft/data/bundles/held-cameretti-sadowski-2008/1/association.csv"
+sha256 = "70921ceedce2b95bba9bd15b54546679a2f9dce87df1a3ecfbab10490ca9a9e2"
+
+[[files]]
+retained_path = "parameters/model.csv"
+origin_path = "src/epcsaft/data/bundles/held-cameretti-sadowski-2008/1/model.csv"
+sha256 = "d31b9a947bfa9901d30a7d0eccfd06821967ba0b66d42e611875e39b81d2cea5"
+
+[[files]]
+retained_path = "parameters/correlations.toml"
+origin_path = "src/epcsaft/data/bundles/held-cameretti-sadowski-2008/1/correlations.toml"
+sha256 = "eea0da2610cf3c50da1a38db72ab8f06c03c76a9e45607f11be680e65291ad2e"

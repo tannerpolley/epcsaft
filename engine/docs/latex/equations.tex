@@ -1,0 +1,1346 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{siunitx}
+\usepackage[backend=biber,style=numeric]{biblatex}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+
+\addbibresource{references.bib}
+
+\title{EOS Equation Documentation Mirror}
+\author{ePC-SAFT EOS}
+\date{2026-07-24}
+
+\begin{document}
+\maketitle
+
+\section{Scope and authority}
+
+This document mirrors the current EOS implementation. It is not a runtime
+input and does not override \texttt{docs/science/full-provider-eos.md}. The
+legacy catalogue at commit
+\texttt{7920e56dbb0fc1fb418bae44e67ef50f334b75cd}, Git blob
+\texttt{2e970476258558de05391d9d77f31d1736d78de8}, is provenance and structural
+guidance only. CppAD is the sole nonlinear derivative authority.
+
+\section{Symbols, bases, and units}
+
+The residual molar Helmholtz energy is
+$a^r=A^r/(nRT)$. Molar density $\rho_m$ is in
+\si{\mole\per\meter\cubed}; segment diameters and size parameters are in
+\si{\angstrom}; $T$ and $\epsilon_i/k_B$ are in kelvin. The symbol
+$\widehat{\rho}$ denotes the corresponding number density in
+\si{\angstrom\tothe{-3}}.
+
+% EqID: angstrom_number_density
+% Source: \cite{Gross2001}, unit conversion used by Appendix A
+% Status: Exact derivation
+% Description: Convert molar density to molecular number density on the angstrom basis.
+% Change note: Uses the current EOS Avogadro constant and angstrom conversion.
+\begin{equation}
+\widehat{\rho}=\rho_m\,N_A\,10^{-30}.
+\label{eq:angstrom_number_density}
+\end{equation}
+
+\section{Parameter setup}
+
+% EqID: segment_sigma_correlation
+% Source: Source-receipted component correlation represented by the EOS parameter schema
+% Status: Bounded empirical relation
+% Description: Evaluate a component segment-size correlation from its constant and exponential terms.
+% Change note: Mirrors the general sparse correlation implemented by segment_sigma.
+\begin{equation}
+\sigma_i(T)=\sigma_{i,0}+\sum_{q\in\mathcal{Q}_i} A_q\exp(b_qT).
+\label{eq:segment_sigma_correlation}
+\end{equation}
+
+% EqID: neutral_segment_diameter
+% Source: \cite{Gross2001}, Eq.~(A.6)
+% Status: Source equation
+% Description: Temperature-dependent hard-chain diameter for neutral components.
+% Change note: Reconciled to the current neutral diameter branch.
+\begin{equation}
+d_i(T)=\sigma_i(T)\left[1-0.12\exp\left(-\frac{3(\epsilon_i/k_B)}{T}\right)\right],
+\qquad z_i=0.
+\label{eq:neutral_segment_diameter}
+\end{equation}
+
+% EqID: corrected_born_ionic_segment_diameter
+% Source: \cite{Figiel2025}, ionic hard-chain diameter convention
+% Status: Implementation convention
+% Description: Figiel-family ionic hard-chain diameter.
+% Change note: Preserves the current 0.88 sigma routing for Figiel electrolyte models.
+\begin{equation}
+d_i=0.88\,\sigma_i,\qquad z_i\ne0,\quad
+\mathcal{M}\ne\mathcal{M}_{\mathrm{Ascani}}.
+\label{eq:corrected_born_ionic_segment_diameter}
+\end{equation}
+
+% EqID: original_born_ionic_segment_diameter
+% Source: \cite{AscaniHeld2021}, ion diameter convention
+% Status: Source equation
+% Description: Ascani original-Born ionic hard-chain diameter.
+% Change note: Preserves the source-routed full-sigma diameter.
+\begin{equation}
+d_i=\sigma_i,\qquad z_i\ne0,\quad
+\mathcal{M}=\mathcal{M}_{\mathrm{Ascani}}.
+\label{eq:original_born_ionic_segment_diameter}
+\end{equation}
+
+% EqID: cross_segment_diameter
+% Source: \cite{Gross2001}, Eq.~(A.7), with source-receipted l_ij extension
+% Status: Source equation
+% Description: Unlike-pair segment diameter including the distinct l_ij family.
+% Change note: Makes the current l_ij semantics explicit.
+\begin{equation}
+\sigma_{ij}=\frac{\sigma_i+\sigma_j}{2}(1-l_{ij}).
+\label{eq:cross_segment_diameter}
+\end{equation}
+
+% EqID: cross_dispersion_energy
+% Source: \cite{Gross2001}, Eq.~(A.7)
+% Status: Source equation
+% Description: Unlike-pair dispersion energy for an applicable pair.
+% Change note: Keeps k_ij semantically distinct from l_ij and association data.
+\begin{equation}
+\frac{\epsilon_{ij}}{k_B}
+=\sqrt{\frac{\epsilon_i}{k_B}\frac{\epsilon_j}{k_B}}\,(1-k_{ij}),
+\qquad z_iz_j\le0.
+\label{eq:cross_dispersion_energy}
+\end{equation}
+
+% EqID: same_sign_ionic_dispersion
+% Source: \cite{Figiel2025}, same-sign ion convention
+% Status: Implementation convention
+% Description: Suppress dispersion between equally charged ions.
+% Change note: Mirrors the charged-pair branch in residual_helmholtz.
+\begin{equation}
+\epsilon_{ij}=0,\qquad z_iz_j>0.
+\label{eq:same_sign_ionic_dispersion}
+\end{equation}
+
+\section{Density and packing}
+
+% EqID: mean_segment_count
+% Source: \cite{Gross2001}, Appendix A mixture definition
+% Status: Source equation
+% Description: Composition-averaged segment count.
+% Change note: Reconciled to the current residual Helmholtz owner.
+\begin{equation}
+\overline{m}=\sum_i x_i m_i.
+\label{eq:mean_segment_count}
+\end{equation}
+
+% EqID: packing_moments
+% Source: \cite{Gross2001}, Eq.~(A.8)
+% Status: Source equation
+% Description: Segment-density moments used by hard-chain and association terms.
+% Change note: Uses the current angstrom number-density basis.
+\begin{equation}
+\zeta_n=\frac{\pi}{6}\widehat{\rho}\sum_i x_i m_i d_i^n,
+\qquad n=0,1,2,3.
+\label{eq:packing_moments}
+\end{equation}
+
+% EqID: packing_fraction
+% Source: \cite{Gross2001}, Eq.~(A.8) at n=3
+% Status: Source equation
+% Description: Packing fraction from molar density and segment geometry.
+% Change note: Shared by Helmholtz evaluation and EOS domain owners.
+\begin{equation}
+\eta=\zeta_3
+=\frac{\pi}{6}\rho_mN_A10^{-30}\sum_i x_i m_i d_i^3.
+\label{eq:packing_fraction}
+\end{equation}
+
+% EqID: close_packing_fraction
+% Source: Geometric close packing of equal spheres
+% Status: Exact derivation
+% Description: EOS hard upper packing-domain boundary.
+% Change note: Mirrors close_packing_fraction without introducing solver policy.
+\begin{equation}
+\eta_{\mathrm{cp}}=\frac{\pi}{3\sqrt{2}}.
+\label{eq:close_packing_fraction}
+\end{equation}
+
+% EqID: packing_fraction_coefficient
+% Source: Exact specialization of Eq.~\eqref{eq:packing_fraction}
+% Status: Exact derivation
+% Description: Composition and temperature coefficient satisfying eta=rho_m c_eta.
+% Change note: Mirrors the value-only volume-domain helper.
+\begin{equation}
+c_\eta(T,\boldsymbol{x})=
+\frac{\pi}{6}N_A10^{-30}\sum_i x_i m_i d_i(T)^3,
+\qquad \eta=\rho_m c_\eta.
+\label{eq:packing_fraction_coefficient}
+\end{equation}
+
+% EqID: phase_packing_fraction
+% Source: Exact extensive-coordinate form of Eq.~\eqref{eq:packing_fraction}
+% Status: Exact derivation
+% Description: Packing fraction in explicit component amounts and extensive volume.
+% Change note: Mirrors the native phase-domain derivative owner.
+\begin{equation}
+\eta(T,\boldsymbol{n},V)=
+\frac{\pi}{6}\frac{N_A10^{-30}}{V}\sum_i n_i m_i d_i(T)^3.
+\label{eq:phase_packing_fraction}
+\end{equation}
+
+\section{Contribution intermediates}
+
+\subsection{Hard chain}
+
+% EqID: hard_sphere_helmholtz
+% Source: \cite{Gross2001}, Eqs.~(A.8)--(A.9)
+% Status: Source equation
+% Description: Boublik-Mansoori-Carnahan-Starling-Leland hard-sphere Helmholtz term.
+% Change note: Mirrors the current zeta-based expression.
+\begin{equation}
+a^{hs}=\frac{1}{\zeta_0}\left[
+\frac{3\zeta_1\zeta_2}{1-\zeta_3}
++\frac{\zeta_2^3}{\zeta_3(1-\zeta_3)^2}
++\left(\frac{\zeta_2^3}{\zeta_3^2}-\zeta_0\right)
+\ln(1-\zeta_3)\right].
+\label{eq:hard_sphere_helmholtz}
+\end{equation}
+
+% EqID: hard_sphere_contact
+% Source: \cite{Gross2001}, Eq.~(A.17)
+% Status: Source equation
+% Description: Hard-sphere radial distribution function at segment contact.
+% Change note: Uses the current pure-component contact diameter d_i/2.
+\begin{equation}
+g_{ii}^{hs}=
+\frac{1}{1-\eta}
++\frac{3(d_i/2)\zeta_2}{(1-\eta)^2}
++\frac{2(d_i/2)^2\zeta_2^2}{(1-\eta)^3}.
+\label{eq:hard_sphere_contact}
+\end{equation}
+
+% EqID: hard_chain_helmholtz
+% Source: \cite{Gross2001}, Eq.~(A.16)
+% Status: Source equation
+% Description: PC-SAFT hard-chain residual Helmholtz contribution.
+% Change note: Mirrors the site-independent chain term.
+\begin{equation}
+a^{hc}=\overline{m}\,a^{hs}
+-\sum_i x_i(m_i-1)\ln g_{ii}^{hs}.
+\label{eq:hard_chain_helmholtz}
+\end{equation}
+
+\subsection{Dispersion}
+
+% EqID: dispersion_chain_coefficients
+% Source: \cite{Gross2001}, Eqs.~(A.13)--(A.14)
+% Status: Source equation
+% Description: Chain-length interpolation of universal dispersion coefficients.
+% Change note: Mirrors the current A0/A1/A2 and B0/B1/B2 arrays.
+\begin{equation}
+\begin{aligned}
+a_k(\overline m)&=a_{0k}
++\frac{\overline m-1}{\overline m}a_{1k}
++\frac{(\overline m-1)(\overline m-2)}{\overline m^2}a_{2k},\\
+b_k(\overline m)&=b_{0k}
++\frac{\overline m-1}{\overline m}b_{1k}
++\frac{(\overline m-1)(\overline m-2)}{\overline m^2}b_{2k}.
+\end{aligned}
+\label{eq:dispersion_chain_coefficients}
+\end{equation}
+
+% EqID: dispersion_polynomial
+% Source: \cite{Gross2001}, polynomial form in Eqs.~(A.11)--(A.12)
+% Status: Exact derivation
+% Description: Horner-evaluated sixth-order dispersion polynomial.
+% Change note: Documents the real arithmetic performed by polynomial.
+\begin{equation}
+\mathcal{P}(\boldsymbol{c},\eta)=\sum_{k=0}^{6}c_k\eta^k.
+\label{eq:dispersion_polynomial}
+\end{equation}
+
+% EqID: dispersion_integral_one
+% Source: \cite{Gross2001}, Eq.~(A.11)
+% Status: Source equation
+% Description: First PC-SAFT dispersion integral correlation.
+% Change note: Evaluated through the shared polynomial owner.
+\begin{equation}
+I_1(\eta,\overline m)=\sum_{k=0}^{6}a_k(\overline m)\eta^k.
+\label{eq:dispersion_integral_one}
+\end{equation}
+
+% EqID: dispersion_integral_two
+% Source: \cite{Gross2001}, Eq.~(A.12)
+% Status: Source equation
+% Description: Second PC-SAFT dispersion integral correlation.
+% Change note: Evaluated through the shared polynomial owner.
+\begin{equation}
+I_2(\eta,\overline m)=\sum_{k=0}^{6}b_k(\overline m)\eta^k.
+\label{eq:dispersion_integral_two}
+\end{equation}
+
+% EqID: dispersion_compressibility_factor
+% Source: \cite{Gross2001}, Eq.~(A.15)
+% Status: Source equation
+% Description: Chain compressibility correction multiplying the second-order term.
+% Change note: Mirrors the current rational expression.
+\begin{equation}
+C_1=\left[
+1+\overline m\frac{8\eta-2\eta^2}{(1-\eta)^4}
++(1-\overline m)
+\frac{20\eta-27\eta^2+12\eta^3-2\eta^4}
+{[(1-\eta)(2-\eta)]^2}
+\right]^{-1}.
+\label{eq:dispersion_compressibility_factor}
+\end{equation}
+
+% EqID: dispersion_first_moment
+% Source: \cite{Gross2001}, Eq.~(A.10) mixture sum
+% Status: Source equation
+% Description: First unlike-pair dispersion mixture moment.
+% Change note: Includes current segment counts and cross diameter.
+\begin{equation}
+M_1=\sum_i\sum_j x_ix_jm_im_j\sigma_{ij}^3
+\frac{\epsilon_{ij}/k_B}{T}.
+\label{eq:dispersion_first_moment}
+\end{equation}
+
+% EqID: dispersion_second_moment
+% Source: \cite{Gross2001}, Eq.~(A.10) mixture sum
+% Status: Source equation
+% Description: Second unlike-pair dispersion mixture moment.
+% Change note: Includes the squared reduced pair energy.
+\begin{equation}
+M_2=\sum_i\sum_j x_ix_jm_im_j\sigma_{ij}^3
+\left(\frac{\epsilon_{ij}/k_B}{T}\right)^2.
+\label{eq:dispersion_second_moment}
+\end{equation}
+
+% EqID: dispersion_helmholtz
+% Source: \cite{Gross2001}, Eq.~(A.10)
+% Status: Source equation
+% Description: PC-SAFT first- and second-order dispersion Helmholtz contribution.
+% Change note: Reconciled to the current angstrom number-density basis.
+\begin{equation}
+a^{disp}=-2\pi\widehat{\rho}I_1M_1
+-\pi\widehat{\rho}\,\overline m\,C_1I_2M_2.
+\label{eq:dispersion_helmholtz}
+\end{equation}
+
+\subsection{Association}
+
+% EqID: association_contact
+% Source: \cite{Gross2001}, hard-sphere contact rule used by association
+% Status: Source equation
+% Description: Unlike-site hard-sphere contact function.
+% Change note: Mirrors the reduced-diameter association contact expression.
+\begin{equation}
+g_{ij}^{hs}=
+\frac{1}{1-\eta}
++\frac{3d_id_j}{d_i+d_j}\frac{\zeta_2}{(1-\eta)^2}
++2\left(\frac{d_id_j}{d_i+d_j}\right)^2
+\frac{\zeta_2^2}{(1-\eta)^3}.
+\label{eq:association_contact}
+\end{equation}
+
+% EqID: association_strength
+% Source: \cite{Gross2002}, cross-association rule; \cite{Chapman1990}, association strength
+% Status: Source equation
+% Description: Site-pair association strength using explicit source-resolved cross records.
+% Change note: Keeps association energy and volume distinct from k_ij and l_ij.
+\begin{equation}
+\Delta_{AB}^{ij}=g_{ij}^{hs}
+\left[\exp\left(\frac{\epsilon_{AB}^{ij}/k_B}{T}\right)-1\right]
+\sigma_{ij}^3\kappa_{AB}^{ij}.
+\label{eq:association_strength}
+\end{equation}
+
+% EqID: association_mass_action
+% Source: \cite{Chapman1990}, Eq.~(19)
+% Status: Source equation
+% Description: Association site-fraction mass-action equation with explicit multiplicity.
+% Change note: Written in the zero-residual form used by the EOS.
+\begin{equation}
+F_A=X_A\left[
+1+\widehat{\rho}\sum_B x_{i(B)}\,\nu_B\,X_B\Delta_{AB}
+\right]-1=0.
+\label{eq:association_mass_action}
+\end{equation}
+
+% EqID: association_helmholtz
+% Source: \cite{Chapman1990}, Eq.~(21)
+% Status: Source equation
+% Description: Association residual Helmholtz contribution.
+% Change note: Uses explicit site multiplicity from the resolved model.
+\begin{equation}
+a^{assoc}=\sum_A x_{i(A)}\nu_A
+\left(\ln X_A-\frac{X_A}{2}+\frac{1}{2}\right).
+\label{eq:association_helmholtz}
+\end{equation}
+
+\subsection{Gross--Vrabec point multipoles}
+
+% EqID: polar_cross_energy
+% Source: \cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, unlike-energy rule
+% Status: Source equation
+% Description: Corrected unlike dispersion energy used only inside each second-order polar integral.
+% Change note: Uses k_ij but never l_ij; pure-energy prefactors remain uncorrected.
+\begin{equation}
+\frac{\epsilon_{ij}^{polar}}{k_B}
+=(1-k_{ij})\sqrt{\frac{\epsilon_i}{k_B}\frac{\epsilon_j}{k_B}},
+\qquad \sigma_{ij}^{polar}=\frac{\sigma_i+\sigma_j}{2}.
+\label{eq:polar_cross_energy}
+\end{equation}
+
+% EqID: polar_reduced_dipole_moment
+% Source: \cite{GrossVrabec2006DD}, Eq.~(9) and Table~2 unit definition
+% Status: Source equation
+% Description: Squared reduced dipole moment derived from a physical moment in Debye.
+% Change note: The implementation derives the SI conversion through epsilon_0, k_B, c, and the angstrom conversion.
+\begin{equation}
+\mu_i^{*2}=\frac{\mu_i^2}
+{4\pi\epsilon_0 m_i k_B(\epsilon_i/k_B)\sigma_i^3}.
+\label{eq:polar_reduced_dipole_moment}
+\end{equation}
+
+% EqID: polar_reduced_quadrupole_moment
+% Source: \cite{Gross2005QQ}, Eq.~(10) and Eq.~(A14)
+% Status: Source equation
+% Description: Squared reduced quadrupole moment derived from a physical moment in Debye angstrom.
+% Change note: The implementation derives the SI conversion rather than storing a historical decimal factor.
+\begin{equation}
+Q_i^{*2}=\frac{Q_i^2}
+{4\pi\epsilon_0 m_i k_B(\epsilon_i/k_B)\sigma_i^5}.
+\label{eq:polar_reduced_quadrupole_moment}
+\end{equation}
+
+% EqID: polar_chain_coefficient
+% Source: \cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, coefficient mixing equations
+% Status: Source equation
+% Description: Chain-length interpolation shared by the polar pair and triplet integrals.
+% Change note: DD caps m_ij and m_ijk at two; QQ and DQ use uncapped geometric means, and DQ c has no c_2 term.
+\begin{equation}
+y_{n}(m)=y_{0n}+\frac{m-1}{m}y_{1n}
++\frac{m-1}{m}\frac{m-2}{m}y_{2n},
+\quad y\in\{a,b,c\}.
+\label{eq:polar_chain_coefficient}
+\end{equation}
+
+% EqID: polar_pair_integral
+% Source: \cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, pair-integral correlations
+% Status: Bounded empirical relation
+% Description: Family-specific second-order pair integral using the corrected unlike energy.
+% Change note: Uses each paper's printed five-row coefficient table without reordering.
+\begin{equation}
+J_{2,ij}^{f}=\sum_{n=0}^{4}\left[
+a_{n,ij}^{f}+b_{n,ij}^{f}\frac{\epsilon_{ij}^{polar}}{k_BT}
+\right]\eta^n,
+\qquad f\in\{DD,QQ,DQ35\}.
+\label{eq:polar_pair_integral}
+\end{equation}
+
+% EqID: polar_triplet_integral
+% Source: \cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, triplet-integral correlations
+% Status: Bounded empirical relation
+% Description: Family-specific third-order triplet integral.
+% Change note: DQ35 uses the printed c normalization and its unprinted final row is zero.
+\begin{equation}
+J_{3,ijk}^{f}=\sum_{n=0}^{4}c_{n,ijk}^{f}\eta^n,
+\qquad f\in\{DD,QQ,DQ35\}.
+\label{eq:polar_triplet_integral}
+\end{equation}
+
+% EqID: polar_dd_second_order
+% Source: \cite{GrossVrabec2006DD}, Eq.~(8)
+% Status: Source equation
+% Description: Gross--Vrabec dipole-dipole second-order perturbation term.
+% Change note: One point dipole per neutral molecule is admitted and the pair chain mean is capped at two.
+\begin{equation}
+a_2^{DD}=-\pi\widehat\rho\sum_{ij}x_ix_j
+\frac{\epsilon_i\epsilon_j}{(k_BT)^2}
+\frac{\sigma_i^3\sigma_j^3}{\sigma_{ij}^3}
+\mu_i^{*2}\mu_j^{*2}J_{2,ij}^{DD}.
+\label{eq:polar_dd_second_order}
+\end{equation}
+
+% EqID: polar_dd_third_order
+% Source: \cite{GrossVrabec2006DD}, Eq.~(9)
+% Status: Source equation
+% Description: Gross--Vrabec dipole-dipole third-order perturbation term.
+% Change note: The triplet chain mean is capped at two and no k_ij or l_ij correction enters this term.
+\begin{equation}
+a_3^{DD}=-\frac{4\pi^2}{3}\widehat\rho^2\sum_{ijk}x_ix_jx_k
+\frac{\epsilon_i\epsilon_j\epsilon_k}{(k_BT)^3}
+\frac{\sigma_i^3\sigma_j^3\sigma_k^3}{\sigma_{ij}\sigma_{ik}\sigma_{jk}}
+\mu_i^{*2}\mu_j^{*2}\mu_k^{*2}J_{3,ijk}^{DD}.
+\label{eq:polar_dd_third_order}
+\end{equation}
+
+% EqID: polar_qq_second_order
+% Source: \cite{Gross2005QQ}, Eq.~(9)
+% Status: Source equation
+% Description: Gross quadrupole-quadrupole second-order perturbation term.
+% Change note: Uses the uncapped pair chain mean and the Lorentz polar diameter.
+\begin{equation}
+a_2^{QQ}=-\frac{9\pi}{16}\widehat\rho\sum_{ij}x_ix_j
+\frac{\epsilon_i\epsilon_j}{(k_BT)^2}
+\frac{\sigma_i^5\sigma_j^5}{\sigma_{ij}^7}
+Q_i^{*2}Q_j^{*2}J_{2,ij}^{QQ}.
+\label{eq:polar_qq_second_order}
+\end{equation}
+
+% EqID: polar_qq_third_order
+% Source: \cite{Gross2005QQ}, Eq.~(10) with J_3,ij=0
+% Status: Source equation
+% Description: Gross quadrupole-quadrupole third-order triplet term.
+% Change note: Preserves the positive prefactor and uncapped triplet chain mean.
+\begin{equation}
+a_3^{QQ}=\frac{9\pi^2}{16}\widehat\rho^2\sum_{ijk}x_ix_jx_k
+\frac{\epsilon_i\epsilon_j\epsilon_k}{(k_BT)^3}
+\frac{\sigma_i^5\sigma_j^5\sigma_k^5}
+{\sigma_{ij}^3\sigma_{ik}^3\sigma_{jk}^3}
+Q_i^{*2}Q_j^{*2}Q_k^{*2}J_{3,ijk}^{QQ}.
+\label{eq:polar_qq_third_order}
+\end{equation}
+
+% EqID: polar_dq_second_order
+% Source: \cite{VrabecGross2008DQ}, Eq.~(14)
+% Status: Source equation
+% Description: Directional DQ35 second-order dipole-quadrupole perturbation term.
+% Change note: Preserves sigma_i cubed, sigma_j to the fifth, and sigma_ij to the fifth.
+\begin{equation}
+a_2^{DQ}=-\frac{9\pi}{4}\widehat\rho\sum_{ij}x_ix_j
+\frac{\epsilon_i\epsilon_j}{(k_BT)^2}
+\frac{\sigma_i^3\sigma_j^5}{\sigma_{ij}^5}
+\mu_i^{*2}Q_j^{*2}J_{2,ij}^{DQ}.
+\label{eq:polar_dq_second_order}
+\end{equation}
+
+% EqID: polar_dq_third_order
+% Source: \cite{VrabecGross2008DQ}, Eq.~(15) and Table~3
+% Status: Source equation
+% Description: Directional DQ35 third-order DDQ and DQQ perturbation term.
+% Change note: Uses the paper's printed c normalization, negative prefactor, and alpha=1.19374.
+\begin{equation}
+a_3^{DQ}=-\widehat\rho^2\sum_{ijk}x_ix_jx_k
+\frac{\epsilon_i\epsilon_j\epsilon_k}{(k_BT)^3}
+\frac{\sigma_i^4\sigma_j^4\sigma_k^4}
+{\sigma_{ij}^2\sigma_{ik}^2\sigma_{jk}^2}
+\left(\mu_i^{*2}\mu_j^{*2}Q_k^{*2}
++\alpha\mu_i^{*2}Q_j^{*2}Q_k^{*2}\right)J_{3,ijk}^{DQ},
+\quad \alpha=1.19374.
+\label{eq:polar_dq_third_order}
+\end{equation}
+
+% EqID: polar_pade
+% Source: \cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, family Padé forms
+% Status: Source equation
+% Description: Independent third-order Padé resummation for one active polar family.
+% Change note: Inactive families return exact zero; active near-pole or nonfinite terms raise the polar-domain error.
+\begin{equation}
+a^f=\frac{a_2^f}{1-a_3^f/a_2^f}
+=\frac{(a_2^f)^2}{a_2^f-a_3^f},
+\qquad f\in\{DD,QQ,DQ35\}.
+\label{eq:polar_pade}
+\end{equation}
+
+% EqID: polar_helmholtz
+% Source: Aggregate of \cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}
+% Status: Implementation convention
+% Description: One public polar residual Helmholtz contribution from the three private Padé families.
+% Change note: No family-specific public result field or type is introduced.
+\begin{equation}
+a^{polar}=a^{DD}+a^{QQ}+a^{DQ35}.
+\label{eq:polar_helmholtz}
+\end{equation}
+
+\section{Residual Helmholtz energy}
+
+% EqID: residual_helmholtz
+% Source: \cite{Gross2001}, PC-SAFT residual decomposition, extended by admitted polar and electrolyte terms
+% Status: Implementation convention
+% Description: Sum of every active residual Helmholtz contribution.
+% Change note: Mirrors the single EOS Helmholtz owner and its contribution result.
+\begin{equation}
+a^r=a^{hc}+a^{disp}+a^{assoc}+a^{polar}+a^{DH}+a^{Born}.
+\label{eq:residual_helmholtz}
+\end{equation}
+
+\section{Thermodynamic properties}
+
+CppAD records the defining equations in this document and supplies the
+required partial derivatives. CppAD is the sole nonlinear derivative
+authority; the relations below transform those partials into reported
+properties and do not introduce a handwritten derivative implementation.
+
+% EqID: compressibility_factor
+% Source: \cite{Gross2001}, Eq.~(A.24)
+% Status: Source equation
+% Description: Compressibility factor from the residual Helmholtz density derivative.
+% Change note: Uses molar density as the independent density coordinate.
+\begin{equation}
+Z=1+\rho_m a_\rho,
+\qquad
+a_\rho=\left(\frac{\partial a^r}{\partial\rho_m}\right)_{T,\boldsymbol{x}}.
+\label{eq:compressibility_factor}
+\end{equation}
+
+% EqID: pressure
+% Source: \cite{Gross2001}, Eq.~(A.24)
+% Status: Source equation
+% Description: EOS pressure from compressibility factor.
+% Change note: Returns pressure in pascals on the SI molar-density basis.
+\begin{equation}
+P=\rho_mRTZ.
+\label{eq:pressure}
+\end{equation}
+
+% EqID: pressure_density_derivative
+% Source: Exact derivative of Eq.~\eqref{eq:pressure}
+% Status: Exact derivation
+% Description: Isothermal pressure derivative used by density closure and stability checks.
+% Change note: Transforms CppAD density partials without expanding the EOS derivative.
+\begin{equation}
+\left(\frac{\partial P}{\partial\rho_m}\right)_{T,\boldsymbol{x}}
+=RT\left(Z+\rho_mZ_\rho\right),
+\qquad
+Z_\rho=a_\rho+\rho_ma_{\rho\rho}.
+\label{eq:pressure_density_derivative}
+\end{equation}
+
+% EqID: residual_chemical_potential
+% Source: \cite{Gross2001}, Eq.~(A.33)
+% Status: Source equation
+% Description: Dimensionless residual chemical potential under unconstrained composition partials.
+% Change note: Mirrors the current constant-temperature, constant-density mixture convention.
+\begin{equation}
+\frac{\mu_i^r}{RT}
+=a^r+(Z-1)+a_{x_i}-\sum_jx_ja_{x_j}.
+\label{eq:residual_chemical_potential}
+\end{equation}
+
+% EqID: log_fugacity_coefficient
+% Source: \cite{Gross2001}, Eq.~(A.32)
+% Status: Source equation
+% Description: Natural logarithm of the component fugacity coefficient.
+% Change note: Available only when the compressibility factor is positive.
+\begin{equation}
+\ln\phi_i=\frac{\mu_i^r}{RT}-\ln Z.
+\label{eq:log_fugacity_coefficient}
+\end{equation}
+
+% EqID: residual_entropy
+% Source: \cite{Gross2001}, Eq.~(A.46)
+% Status: Source equation
+% Description: Residual entropy at the same temperature and density.
+% Change note: Does not silently change to a same-pressure ideal-gas reference.
+\begin{equation}
+s_V^r=-R\left(a^r+Ta_T\right).
+\label{eq:residual_entropy}
+\end{equation}
+
+% EqID: residual_internal_energy
+% Source: \cite{Gross2001}, Eq.~(A.47)
+% Status: Source equation
+% Description: Residual molar internal energy.
+% Change note: Uses the CppAD temperature partial at fixed density and composition.
+\begin{equation}
+u^r=-RT^2a_T.
+\label{eq:residual_internal_energy}
+\end{equation}
+
+% EqID: residual_enthalpy
+% Source: \cite{Gross2001}, Eq.~(A.48)
+% Status: Source equation
+% Description: Residual molar enthalpy.
+% Change note: Includes the residual pressure-volume term Z-1.
+\begin{equation}
+h^r=RT\left[-Ta_T+(Z-1)\right].
+\label{eq:residual_enthalpy}
+\end{equation}
+
+% EqID: residual_heat_capacity_cv
+% Source: \cite{Gross2001}, Eq.~(A.49)
+% Status: Source equation
+% Description: Residual isochoric molar heat capacity.
+% Change note: Transforms CppAD first and second temperature partials.
+\begin{equation}
+c_v^r=R\left(-2Ta_T-T^2a_{TT}\right).
+\label{eq:residual_heat_capacity_cv}
+\end{equation}
+
+% EqID: residual_heat_capacity_cp
+% Source: \cite{Gross2001}, Eq.~(A.50)
+% Status: Source equation
+% Description: Residual isobaric molar heat capacity on a conditioned mechanical branch.
+% Change note: The final minus one removes the ideal-gas cp-cv contribution.
+\begin{equation}
+\frac{c_p^r}{R}
+=\frac{c_v^r}{R}
++\frac{(Z+TZ_T)^2}{Z+\rho_mZ_\rho}-1.
+\label{eq:residual_heat_capacity_cp}
+\end{equation}
+
+% EqID: log_fugacity_density_derivative
+% Source: Exact derivative of Eqs.~\eqref{eq:residual_chemical_potential} and \eqref{eq:log_fugacity_coefficient}
+% Status: Exact derivation
+% Description: Density derivative of log fugacity used by active fixed-pressure observations.
+% Change note: Expressed in terms of CppAD Hessian entries rather than expanded EOS derivatives.
+\begin{equation}
+\begin{aligned}
+\left(\ln\phi_i\right)_\rho
+&=\left(\frac{\mu_i^r}{RT}\right)_\rho-\frac{Z_\rho}{Z},\\
+\left(\frac{\mu_i^r}{RT}\right)_\rho
+&=2a_\rho+\rho_ma_{\rho\rho}
++a_{x_i\rho}-\sum_jx_ja_{x_j\rho}.
+\end{aligned}
+\label{eq:log_fugacity_density_derivative}
+\end{equation}
+
+% EqID: fixed_pressure_fugacity_correction
+% Source: EOS Newton correction using Eq.~\eqref{eq:pressure_density_derivative}
+% Status: Implementation convention
+% Description: Correct a converged-state log fugacity for its bounded pressure residual.
+% Change note: Documents the exact arithmetic used by the reference observation owner.
+\begin{equation}
+\begin{aligned}
+\Delta\rho_m&=-\frac{P-P^\star}{P_\rho},\\
+\ln\phi_i(P^\star)&\approx
+\ln\phi_i(P)+(\ln\phi_i)_\rho\,\Delta\rho_m.
+\end{aligned}
+\label{eq:fixed_pressure_fugacity_correction}
+\end{equation}
+
+% EqID: fixed_pressure_total_derivative
+% Source: Exact implicit derivative of the pressure constraint
+% Status: Exact derivation
+% Description: Total derivative of a property with respect to an active coordinate at fixed pressure.
+% Change note: Shared by active Born, aqueous k_ij, and solvation-factor observations.
+\begin{equation}
+\left.\frac{dQ}{d\theta}\right|_{P}
+=Q_\theta+Q_\rho\left.\frac{d\rho_m}{d\theta}\right|_P,
+\qquad
+\left.\frac{d\rho_m}{d\theta}\right|_P=-\frac{P_\theta}{P_\rho}.
+\label{eq:fixed_pressure_total_derivative}
+\end{equation}
+
+\section{Density closure and mechanical domain}
+
+% EqID: density_residual
+% Source: Exact pressure-closure equation using Eq.~\eqref{eq:pressure}
+% Status: Exact derivation
+% Description: Scalar residual whose roots are specified-pressure EOS states.
+% Change note: Root-search mechanics are not thermodynamic equations.
+\begin{equation}
+F(\rho_m;T,\boldsymbol{x},P^\star)
+=P_{\mathrm{EOS}}(T,\rho_m,\boldsymbol{x})-P^\star=0.
+\label{eq:density_residual}
+\end{equation}
+
+% EqID: ideal_gas_density
+% Source: Ideal-gas limiting relation
+% Status: Exact derivation
+% Description: Ideal-gas density scale used to construct the density search interval.
+% Change note: This is a numerical scale, not a replacement EOS.
+\begin{equation}
+\rho_{\mathrm{ideal}}=\frac{P^\star}{RT}.
+\label{eq:ideal_gas_density}
+\end{equation}
+
+% EqID: density_upper_bound
+% Source: Exact inversion of Eqs.~\eqref{eq:packing_fraction_coefficient} and \eqref{eq:close_packing_fraction}
+% Status: Exact derivation
+% Description: Model-specific density boundary implied by close packing.
+% Change note: Reuses the sole EOS packing geometry owner.
+\begin{equation}
+\rho_{\max}=\frac{\eta_{\mathrm{cp}}}{c_\eta(T,\boldsymbol{x})}.
+\label{eq:density_upper_bound}
+\end{equation}
+
+% EqID: mechanical_stability
+% Source: Standard isothermal mechanical-stability criterion
+% Status: Source equation
+% Description: Positive isothermal pressure slope required for a stable density root.
+% Change note: The implementation adds a documented numerical conditioning floor.
+\begin{equation}
+\left(\frac{\partial P}{\partial\rho_m}\right)_{T,\boldsymbol{x}}>0,
+\qquad
+P_\rho>10^{-10}\frac{P^\star}{\rho_{\mathrm{ideal}}}
+\quad\text{for certified roots}.
+\label{eq:mechanical_stability}
+\end{equation}
+
+\section{Derivative authority}
+
+The independent coordinates taped by the common nonlinear owner are
+$(T,\rho_m,\boldsymbol{x})$, optional active model coordinates, and association
+site fractions. CppAD differentiates the defining Helmholtz and mass-action
+relations. The EOS then applies the implicit association solves and exact
+property transformations above. No analytical nonlinear gradient or Hessian
+catalogue is maintained beside CppAD.
+
+\section{Electrolyte dielectric and Debye--Huckel relations}
+
+% EqID: salt_free_solvent_permittivity
+% Source: \cite{Figiel2025}, Eq.~(11) solvent basis; \cite{AscaniHeld2021}, Eq.~(13)
+% Status: Source equation
+% Description: Mass-weighted relative permittivity of the salt-free solvent mixture.
+% Change note: Uses component molar masses and excludes ions from the denominator.
+\begin{equation}
+\epsilon_{r,\mathrm{sf}}=
+\frac{\sum_{s\in\mathcal{S}}x_sM_s\epsilon_{r,s}}
+{\sum_{s\in\mathcal{S}}x_sM_s}.
+\label{eq:salt_free_solvent_permittivity}
+\end{equation}
+
+% EqID: ion_fraction_suppressed_bulk_permittivity
+% Source: \cite{Figiel2025}, Eq.~(11)
+% Status: Bounded empirical relation
+% Description: Figiel-family ion-suppressed bulk relative permittivity.
+% Change note: The suppression coefficient is an explicit resolved model record.
+\begin{equation}
+\epsilon_{r,\mathrm{bulk}}=
+\frac{\epsilon_{r,\mathrm{sf}}}
+{1+C_\epsilon x_{\mathrm{ion}}},
+\qquad
+x_{\mathrm{ion}}=\sum_{i\in\mathcal{I}}x_i.
+\label{eq:ion_fraction_suppressed_bulk_permittivity}
+\end{equation}
+
+% EqID: component_mixed_bulk_permittivity
+% Source: \cite{AscaniHeld2021}, Eq.~(13)
+% Status: Source equation
+% Description: Ascani combined solvent-mass and ion-mole bulk relative permittivity.
+% Change note: Ion mixture permittivities remain distinct from Figiel radial-region permittivity.
+\begin{equation}
+\epsilon_{r,\mathrm{bulk}}=
+\epsilon_{r,\mathrm{sf}}\sum_{s\in\mathcal{S}}x_s
++\sum_{i\in\mathcal{I}}x_i\epsilon_{r,i}.
+\label{eq:component_mixed_bulk_permittivity}
+\end{equation}
+
+% EqID: density_correlation_mixed_parameters
+% Source: Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (2a)--(2b)
+% Status: Bounded empirical relation
+% Description: Solvent-fraction-normalized Schreckenberg mixture parameters.
+% Change note: Only neutral-solvent components enter these mixtures.
+\begin{equation}
+x_{\mathrm{solv}}=\sum_{s\in\mathcal{S}}x_s,\qquad
+d_{V,\mathrm{mix}}=\frac{\sum_{s\in\mathcal{S}}x_sd_{V,s}}{x_{\mathrm{solv}}},
+\qquad
+d_{T,\mathrm{mix}}=\frac{\sum_{s\in\mathcal{S}}x_sd_{T,s}}{x_{\mathrm{solv}}}.
+\label{eq:density_correlation_mixed_parameters}
+\end{equation}
+
+% EqID: density_correlated_bulk_permittivity
+% Source: Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (1a), (2a), and (2b)
+% Status: Bounded empirical relation
+% Description: Schreckenberg density-and-temperature bulk relative permittivity.
+% Change note: The solvent partial density makes the dilute-density limit explicit.
+\begin{equation}
+\epsilon_{r,\mathrm{bulk}}=
+1+\rho_m x_{\mathrm{solv}}d_{V,\mathrm{mix}}
+\left(\frac{d_{T,\mathrm{mix}}}{T}-1\right).
+\label{eq:density_correlated_bulk_permittivity}
+\end{equation}
+
+% EqID: ion_specific_suppressed_bulk_permittivity
+% Source: Zuber et al. (2014), DOI 10.1016/j.fluid.2014.05.037, Eq. (9)
+% Status: Bounded empirical relation
+% Description: Zuber single-solvent ion-specific dielectric suppression.
+% Change note: Each ion-solvent suppression coefficient is an explicit resolved record.
+\begin{equation}
+\epsilon_{r,\mathrm{bulk}}=
+\frac{\epsilon_{r,s}(T)}
+{1+\sum_{i\in\mathcal{I}}\alpha_{i,s}x_i}.
+\label{eq:ion_specific_suppressed_bulk_permittivity}
+\end{equation}
+
+% EqID: effective_dipolar_density
+% Source: Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (4)
+% Status: Source equation
+% Description: Rueben effective dipolar-density variable in the Angstrom number-density basis.
+% Change note: Dipole-squared and polarizability records are explicit for every component.
+\begin{equation}
+y=\frac{4\pi}{9}\sum_i \widehat{\rho}_i
+\left(\frac{\mu_i^2\,10^{-19}}{k_BT}+3\alpha_i\right),
+\qquad
+\widehat{\rho}_i=\rho_mN_Ax_i10^{-30}.
+\label{eq:effective_dipolar_density}
+\end{equation}
+
+% EqID: dipolar_correlation_integral
+% Source: Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (5)
+% Status: Source equation
+% Description: Rueben correlation integral from component correlation parameters.
+% Change note: The correlation parameter is an explicit record for every component.
+\begin{equation}
+I=1+\left(\sum_i a_{2,i}x_i\right)\left[\exp(-y)-1\right].
+\label{eq:dipolar_correlation_integral}
+\end{equation}
+
+% EqID: dipolar_perturbation_bulk_permittivity
+% Source: Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (6)
+% Status: Source equation
+% Description: Rueben perturbation-theory bulk relative permittivity.
+% Change note: The relation tends to one as all component partial densities vanish.
+\begin{equation}
+\epsilon_{r,\mathrm{bulk}}=
+1+3y\left\{1+y+\left[\frac{17}{16}I-1\right]y^2\right\}.
+\label{eq:dipolar_perturbation_bulk_permittivity}
+\end{equation}
+
+% EqID: ionic_strength_charge_sum
+% Source: \cite{Bulow2019}, charge-weighted composition in the screening definition
+% Status: Source equation
+% Description: Mole-fraction charge-square sum entering Debye screening.
+% Change note: Only charged components contribute.
+\begin{equation}
+S_z=\sum_{i\in\mathcal{I}}x_i z_i^2.
+\label{eq:ionic_strength_charge_sum}
+\end{equation}
+
+% EqID: debye_screening_parameter
+% Source: \cite{Bulow2019}, Debye screening definition associated with Eq.~(2)
+% Status: Source equation
+% Description: SI Debye screening parameter for the resolved bulk dielectric.
+% Change note: Uses molar density and the current EOS physical constants.
+\begin{equation}
+\kappa=
+\sqrt{\frac{\rho_mN_Ae^2S_z}
+{\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}}.
+\label{eq:debye_screening_parameter}
+\end{equation}
+
+% EqID: debye_finite_size_chi
+% Source: \cite{Bulow2019}, finite-size function in Eq.~(2)
+% Status: Source equation
+% Description: Finite-size Debye--Huckel correction and its cancellation-safe series.
+% Change note: The reference-state reduced diameter selects the numerical branch.
+\begin{equation}
+\chi(y)=
+\begin{cases}
+1-\dfrac{3}{4}y+\dfrac{3}{5}y^2-\dfrac{1}{2}y^3
++\dfrac{3}{7}y^4-\dfrac{3}{8}y^5+\dfrac{1}{3}y^6,
+& y_{\mathrm{ref}}<10^{-3},\\[6pt]
+\dfrac{3\left[\ln(1+y)-y+y^2/2\right]}{y^3},
+& y_{\mathrm{ref}}\ge10^{-3},
+\end{cases}
+\qquad y=\kappa d_i.
+\label{eq:debye_finite_size_chi}
+\end{equation}
+
+% EqID: debye_huckel_helmholtz
+% Source: \cite{Bulow2019}, Eq.~(2)
+% Status: Source equation
+% Description: Finite-size Debye--Huckel residual Helmholtz contribution.
+% Change note: Uses the model-routed common segment diameter converted to metres.
+\begin{equation}
+a^{DH}=
+-\frac{\kappa e^2}
+{12\pi\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}
+\sum_{i\in\mathcal{I}}x_i z_i^2\chi(\kappa d_i).
+\label{eq:debye_huckel_helmholtz}
+\end{equation}
+
+\section{Born solvation relations}
+
+% EqID: mixture_solvation_factor
+% Source: \cite{Figiel2025}, SSM+DS solvation-factor mixing rule
+% Status: Source equation
+% Description: Mole-fraction-weighted mixture solvation factor.
+% Change note: Retains the explicit fraction normalization used by the EOS.
+\begin{equation}
+f_{\mathrm{mix}}=
+\frac{\sum_kx_kf_k}{\sum_kx_k}.
+\label{eq:mixture_solvation_factor}
+\end{equation}
+
+% EqID: born_shell_diameter
+% Source: \cite{Figiel2025}, shell-thickness definition preceding Eq.~(7)
+% Status: Source equation
+% Description: Ion-specific outer Born shell diameter.
+% Change note: The fitted Born diameter and resolved solvation factor remain distinct inputs.
+\begin{equation}
+D_i=d_i^{Born}
+\left(1+\frac{f_{\mathrm{mix}}-1}{|z_i|}\right).
+\label{eq:born_shell_diameter}
+\end{equation}
+
+% EqID: ssm_ds_radial_work
+% Source: \cite{Figiel2026Correction}, corrected Eq.~(7)
+% Status: Source equation
+% Description: Corrected piecewise-dielectric SSM+DS radial charging sum.
+% Change note: Restores the ionic-region dielectric in the inner-shell term.
+\begin{equation}
+W_{\mathrm{SSM+DS}}=
+\sum_{i\in\mathcal{I}}x_i z_i^2
+\left[
+\frac{1-\epsilon_{r,\mathrm{bulk}}^{-1}}{D_i}
++\left(1-\epsilon_{r,\mathrm{ion}}^{-1}\right)
+\left(\frac{1}{d_i^{Born}}-\frac{1}{D_i}\right)
+\right].
+\label{eq:ssm_ds_radial_work}
+\end{equation}
+
+% EqID: ssm_ds_born_helmholtz
+% Source: \cite{Figiel2026Correction}, corrected Eq.~(7)
+% Status: Source equation
+% Description: Dimensionless SSM+DS Born residual Helmholtz contribution.
+% Change note: Shared by fixed and active-coordinate evaluation paths.
+\begin{equation}
+a^{Born}_{\mathrm{SSM+DS}}=
+-\frac{e^2}{4\pi\epsilon_0k_BT}\,
+W_{\mathrm{SSM+DS}}.
+\label{eq:ssm_ds_born_helmholtz}
+\end{equation}
+
+% EqID: original_born_radial_work
+% Source: \cite{AscaniHeld2021}, Eq.~(10) and ion-diameter convention
+% Status: Source equation
+% Description: Original-Born charge-square diameter sum.
+% Change note: Uses the Ascani ion sigma as the Born diameter.
+\begin{equation}
+W_{\mathrm{original}}=
+\sum_{i\in\mathcal{I}}\frac{x_i z_i^2}{\sigma_i}.
+\label{eq:original_born_radial_work}
+\end{equation}
+
+% EqID: original_born_helmholtz
+% Source: \cite{AscaniHeld2021}, Eq.~(10)
+% Status: Source equation
+% Description: Dimensionless original-Born residual Helmholtz contribution.
+% Change note: SSM and DS are absent for the source-routed Ascani model.
+\begin{equation}
+a^{Born}_{\mathrm{original}}=
+-\frac{e^2}{4\pi\epsilon_0k_BT}
+\left(1-\epsilon_{r,\mathrm{bulk}}^{-1}\right)
+W_{\mathrm{original}}.
+\label{eq:original_born_helmholtz}
+\end{equation}
+
+% EqID: born_model_selection
+% Source: EOS model-bound routing of \cite{Figiel2026Correction} and \cite{AscaniHeld2021}
+% Status: Implementation convention
+% Description: Select the source-consistent Born contribution from immutable model identity.
+% Change note: Documents routing without adding a public selector or case branch.
+\begin{equation}
+a^{Born}=
+\begin{cases}
+a^{Born}_{\mathrm{original}},&
+\mathcal{M}=\mathcal{M}_{\mathrm{Ascani}},\\
+a^{Born}_{\mathrm{SSM+DS}},&
+\mathcal{M}\in\mathcal{M}_{\mathrm{Figiel}}.
+\end{cases}
+\label{eq:born_model_selection}
+\end{equation}
+
+\section{Electrolyte reference states and reported activities}
+
+% EqID: charge_balanced_formula_stoichiometry
+% Source: Exact integer charge-balance construction
+% Status: Exact derivation
+% Description: Smallest positive cation and anion stoichiometric coefficients.
+% Change note: Shared by the public reference-state owner and native neutral basis.
+\begin{equation}
+g=\gcd(|z_+|,|z_-|),
+\qquad
+\nu_+=\frac{|z_-|}{g},
+\qquad
+\nu_-=\frac{|z_+|}{g},
+\qquad
+\nu_+z_++\nu_-z_-=0.
+\label{eq:charge_balanced_formula_stoichiometry}
+\end{equation}
+
+% EqID: formula_unit_composition
+% Source: \cite{Figiel2025}, formula-unit molality reference-state basis
+% Status: Exact derivation
+% Description: Convert salt formula-unit molality per kilogram of salt-free solvent to mole fractions.
+% Change note: Uses one kilogram of salt-free solvent as the construction basis.
+\begin{equation}
+\begin{aligned}
+\overline M_s&=\sum_{s\in\mathcal{S}}y_sM_s,
+&n_s^{(0)}&=\frac{1}{\overline M_s},\\
+n_{\mathrm{tot}}&=n_s^{(0)}+m(\nu_++\nu_-),
+&x_s&=\frac{y_sn_s^{(0)}}{n_{\mathrm{tot}}},
+&x_\pm&=\frac{\nu_\pm m}{n_{\mathrm{tot}}}.
+\end{aligned}
+\label{eq:formula_unit_composition}
+\end{equation}
+
+% EqID: reference_molality_sequence
+% Source: EOS convergence sequence for the \cite{Figiel2025} infinite-dilution reference
+% Status: Implementation convention
+% Description: Fixed four-molality sequence and terminal fugacity selection.
+% Change note: One internal owner constructs composition, adjudicates convergence, and selects the terminal observation.
+\begin{equation}
+\mathcal{M}_{\mathrm{ref}}=
+\{10^{-6},10^{-8},10^{-10},10^{-12}\}
+\ \si{\mole\per\kilogram},
+\qquad
+\ln\phi_i^\infty\equiv\ln\phi_i(m=10^{-12}).
+\label{eq:reference_molality_sequence}
+\end{equation}
+
+% EqID: single_ion_activity_coefficient
+% Source: \cite{Figiel2025}, electrolyte reference-state fugacity relation
+% Status: Source equation
+% Description: Single-ion mole-fraction activity coefficient relative to the infinite-dilution fugacity reference.
+% Change note: Exposes the exponential of the finite-minus-reference log fugacity.
+\begin{equation}
+\gamma_i^{(x)}=
+\exp\left(\ln\phi_i-\ln\phi_i^\infty\right).
+\label{eq:single_ion_activity_coefficient}
+\end{equation}
+
+% EqID: mean_ionic_activity_coefficient
+% Source: \cite{Figiel2025}, stoichiometric mean ionic activity definition
+% Status: Source equation
+% Description: Stoichiometric mean ionic activity coefficient on the mole-fraction basis.
+% Change note: Supports the one-formula-unit cation/anion topology.
+\begin{equation}
+\ln\gamma_\pm^{(x)}
+=\frac{\nu_+\ln\gamma_+^{(x)}+\nu_-\ln\gamma_-^{(x)}}
+{\nu_++\nu_-}.
+\label{eq:mean_ionic_activity_coefficient}
+\end{equation}
+
+% EqID: molality_activity_conversion
+% Source: \cite{Figiel2025}, mole-fraction to molality activity conversion
+% Status: Source equation
+% Description: Convert the mean ionic coefficient to the formula-unit molality basis.
+% Change note: Uses salt-free solvent molar mass in kilograms per mole.
+\begin{equation}
+\gamma_\pm^{(m)}=
+\frac{\gamma_\pm^{(x)}}
+{1+\overline M_s\,m(\nu_++\nu_-)}.
+\label{eq:molality_activity_conversion}
+\end{equation}
+
+% EqID: practical_osmotic_coefficient
+% Source: \cite{HamerWu1972}, practical molal osmotic-coefficient definition
+% Status: Source equation
+% Description: Dimensionless practical molal osmotic coefficient from pure-solvent-referenced solvent activity.
+% Change note: Defined only for the admitted single-active-solvent aqueous path.
+\begin{equation}
+\Phi=
+-\frac{\ln a_s}
+{(\nu_++\nu_-)mM_s},
+\qquad
+\ln a_s=\ln x_s+\ln\phi_s-\ln\phi_s^{\mathrm{pure}}.
+\label{eq:practical_osmotic_coefficient}
+\end{equation}
+
+% EqID: infinite_dilution_solvation_energy
+% Source: \cite{Figiel2025}, infinite-dilution fugacity-to-solvation-energy relation
+% Status: Source equation
+% Description: Single-ion infinite-dilution solvation Gibbs energy on the EOS reference convention.
+% Change note: Uses the terminal reference-sequence log fugacity.
+\begin{equation}
+\Delta G_{i,\mathrm{solv}}^\infty
+=RT\ln\phi_i^\infty.
+\label{eq:infinite_dilution_solvation_energy}
+\end{equation}
+
+% EqID: transfer_free_energy
+% Source: \cite{Figiel2025}, transfer Gibbs-energy relation
+% Status: Source equation
+% Description: Ion transfer free energy between compatible solvent reference states.
+% Change note: Source and target must share temperature, pressure, phase, ions, and stoichiometry.
+\begin{equation}
+\Delta G_{i,\mathrm{tr}}^{A\rightarrow B}
+=RT\left(\ln\phi_{i,B}^{\infty}-\ln\phi_{i,A}^{\infty}\right).
+\label{eq:transfer_free_energy}
+\end{equation}
+
+\section{Native phase coordinates}
+
+% EqID: phase_total_amount
+% Source: Exact extensive-coordinate definition
+% Status: Exact derivation
+% Description: Total phase amount from explicit component amounts.
+% Change note: Shared by neutral and electrolyte phase blocks.
+\begin{equation}
+n=\sum_i n_i.
+\label{eq:phase_total_amount}
+\end{equation}
+
+% EqID: phase_mole_fraction
+% Source: Exact extensive-to-intensive coordinate transformation
+% Status: Exact derivation
+% Description: Phase mole fractions from explicit component amounts.
+% Change note: Requires every admitted amount to be strictly positive.
+\begin{equation}
+x_i=\frac{n_i}{n}.
+\label{eq:phase_mole_fraction}
+\end{equation}
+
+% EqID: phase_molar_density
+% Source: Exact extensive-to-intensive coordinate transformation
+% Status: Exact derivation
+% Description: Phase molar density from total amount and extensive volume.
+% Change note: Uses SI mole and cubic-metre coordinates.
+\begin{equation}
+\rho_m=\frac{n}{V}.
+\label{eq:phase_molar_density}
+\end{equation}
+
+% EqID: phase_dimensionless_helmholtz
+% Source: Exact ideal-mixing plus residual Helmholtz construction
+% Status: Exact derivation
+% Description: Complete fixed-temperature phase Helmholtz function in explicit amount-volume coordinates.
+% Change note: Uses n_ref=1 mol and rho_ref=1 mol m^-3 as immutable unit references.
+\begin{equation}
+\Phi\equiv\frac{A}{RTn_{\mathrm{ref}}}
+=\sum_i\frac{n_i}{n_{\mathrm{ref}}}
+\left[
+\ln\left(\frac{n_i/V}{\rho_{\mathrm{ref}}}\right)-1
+\right]
++\frac{n}{n_{\mathrm{ref}}}a^r(T,\rho_m,\boldsymbol{x}).
+\label{eq:phase_dimensionless_helmholtz}
+\end{equation}
+
+% EqID: phase_pressure
+% Source: Exact extensive Helmholtz derivative
+% Status: Exact derivation
+% Description: Phase pressure from the volume gradient of the dimensionless phase Helmholtz function.
+% Change note: Returned on the original pascal scale.
+\begin{equation}
+P=-RTn_{\mathrm{ref}}
+\left(\frac{\partial\Phi}{\partial V}\right)_{T,\boldsymbol{n}}.
+\label{eq:phase_pressure}
+\end{equation}
+
+% EqID: packing_volume_bounds
+% Source: Exact inversion of eta=c_eta/V_m
+% Status: Exact derivation
+% Description: Molar-volume interval corresponding to caller-owned packing-fraction limits.
+% Change note: The EOS owns c_eta while the caller owns eta_min and eta_max.
+\begin{equation}
+V_{m,\min}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\max}},
+\qquad
+V_{m,\max}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\min}}.
+\label{eq:packing_volume_bounds}
+\end{equation}
+
+% EqID: active_binary_interaction_mapping
+% Source: EOS active-coordinate convention for the symmetric binary pair
+% Status: Implementation convention
+% Description: Map one active unlike-pair k_ij coordinate into the symmetric binary matrix.
+% Change note: Resolved diagonal values remain fixed.
+\begin{equation}
+\boldsymbol{k}(\theta)=
+\begin{bmatrix}
+k_{11}&\theta\\
+\theta&k_{22}
+\end{bmatrix}.
+\label{eq:active_binary_interaction_mapping}
+\end{equation}
+
+% EqID: active_binary_size_interaction_mapping
+% Source: EOS active-coordinate convention for the symmetric binary pair
+% Status: Implementation convention
+% Description: Map one active unlike-pair l_ij coordinate into the symmetric binary matrix.
+% Change note: Resolved diagonal values remain fixed and k_ij remains unchanged.
+\begin{equation}
+\boldsymbol{l}(\theta)=
+\begin{bmatrix}
+l_{11}&\theta\\
+\theta&l_{22}
+\end{bmatrix}.
+\label{eq:active_binary_size_interaction_mapping}
+\end{equation}
+
+% EqID: pure_active_parameter_mapping
+% Source: EOS parameterized pure-phase coordinate convention
+% Status: Implementation convention
+% Description: Construct the pure nonassociating model from active m, sigma, and epsilon-over-k coordinates.
+% Change note: No generic mutable parameter overlay is introduced.
+\begin{equation}
+\boldsymbol{\theta}_{\mathrm{pure}}
+=\left(m,\sigma,\epsilon/k_B\right),
+\qquad
+\boldsymbol{k}=\boldsymbol{l}=(0).
+\label{eq:pure_active_parameter_mapping}
+\end{equation}
+
+% EqID: electrolyte_phase_coordinate_jacobian
+% Source: Exact Jacobian of Eqs.~\eqref{eq:phase_mole_fraction}--\eqref{eq:phase_molar_density}
+% Status: Exact derivation
+% Description: State-coordinate Jacobian used to transform electrolyte Helmholtz gradients.
+% Change note: Evaluated analytically around the sole CppAD state derivative owner.
+\begin{equation}
+\frac{\partial\rho_m}{\partial n_j}=\frac{1}{V},
+\quad
+\frac{\partial\rho_m}{\partial V}=-\frac{n}{V^2},
+\quad
+\frac{\partial x_i}{\partial n_j}=\frac{\delta_{ij}-x_i}{n},
+\quad
+\frac{\partial x_i}{\partial V}=0.
+\label{eq:electrolyte_phase_coordinate_jacobian}
+\end{equation}
+
+% EqID: electrolyte_phase_hessian_chain_rule
+% Source: Exact second-order multivariable chain rule
+% Status: Exact derivation
+% Description: Transform state Helmholtz Hessians into explicit amount-volume coordinates.
+% Change note: CppAD supplies state Hessians; the EOS applies this exact coordinate transformation.
+\begin{equation}
+\frac{\partial^2(na^r)}{\partial q_\alpha\partial q_\beta}
+=n_\alpha a^r_{y_p}y_{p,\beta}
++n_\beta a^r_{y_p}y_{p,\alpha}
++n\left(
+a^r_{y_py_q}y_{p,\alpha}y_{q,\beta}
++a^r_{y_p}y_{p,\alpha\beta}
+\right),
+\quad
+\boldsymbol{y}=(\rho_m,\boldsymbol{x}).
+\label{eq:electrolyte_phase_hessian_chain_rule}
+\end{equation}
+
+% EqID: neutral_reference_stoichiometric_basis
+% Source: Exact charge-neutral basis built from Eq.~\eqref{eq:charge_balanced_formula_stoichiometry}
+% Status: Exact derivation
+% Description: Native standard-reference rows and log-fugacity contractions.
+% Change note: Neutral-component unit rows and a spanning set of cation-anion formula rows are immutable for a resolved model.
+\begin{equation}
+\boldsymbol{b}^{(s)}=\boldsymbol{e}_s,
+\qquad
+\boldsymbol{b}^{(+-)}=\nu_+\boldsymbol{e}_+
++\nu_-\boldsymbol{e}_-,
+\qquad
+c_r=\sum_i b_i^{(r)}\ln\phi_i^{\mathrm{ref}},
+\qquad
+\ln\phi_i^{\mathrm{ref}}=
+\begin{cases}
+\ln\phi_i(\boldsymbol{x}_{\mathrm{neutral}}), & z_i=0,\\
+\ln\phi_i^\infty, & z_i\ne 0.
+\end{cases}
+\label{eq:neutral_reference_stoichiometric_basis}
+\end{equation}
+
+% EqID: declared_solvent_source_reference_transfer
+% Source: Exact change of source activity scale on the neutral-reference basis
+% Status: Exact derivation
+% Description: Declared-solvent fugacity and activity-scale contractions transferred to the Provider reference.
+% Change note: The source pressure is provenance; every fugacity contraction is evaluated at the requested trial pressure.
+\begin{equation}
+\begin{aligned}
+\Delta_r^{\mathrm{src}\rightarrow\mathrm{Provider}}
+&=c_r+s_r,\\
+s_r&=\sum_i b_i^{(r)}\ell_i^{\mathrm{src}},\\
+\ell_i^{\mathrm{src}}&=
+\begin{cases}
+\ln x_i^S, & z_i=0,\ x_i^S>0,\\
+\ln(\overline M_S m^\circ), & z_i=0,\ x_i^S=0,\\
+\ln(\overline M_S m^\circ), & z_i\ne0.
+\end{cases}
+\end{aligned}
+\label{eq:declared_solvent_source_reference_transfer}
+\end{equation}
+
+\nocite{*}
+\printbibliography
+
+\end{document}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "data_repository": "ePC-SAFT/ePC-SAFT-data",
+  "data_commit": "9185bce8452191e6425e164c51dd6f8db983fc9b",
+  "packet_id": "gross-2001-methane-ethane",
+  "packet_version": "1",
+  "packet_path": "packets/gross-2001-methane-ethane/1",
+  "packet_fingerprint": "4b20a82c7ed8f34ec9a60ab547014b78064c3331ce636c49d32c10bfb7298ca7",
+  "materialization_mode": "byte-for-byte-test-fixture",
+  "destination": "tests/fixtures/data/gross-2001-methane-ethane/1",
+  "accepted_by": "unified-engine-direct-cutover-g3",
+  "files": [
+    {
+      "path": "packet.toml",
+      "sha256": "dd1a94da0a3ddfd69d1d2359f448452b0650b504fc6172bb470577f9d134254c"
+    },
+    {
+      "path": "parameters/bundle.toml",
+      "sha256": "e853027b0ab6ecbc8d5b125d234caa04b6965c007ddcc85cfcc2f3e07fd4e01e"
+    },
+    {
+      "path": "parameters/components.csv",
+      "sha256": "bff9dffd036f3a7e496b57240e70d806938f26dd2495f6db8faec0b5cf9c9614"
+    },
+    {
+      "path": "parameters/model.csv",
+      "sha256": "5f3eb00bdcaa9f352285221b95fa58fc303386e380cd3794920bcc8924381c43"
+    },
+    {
+      "path": "parameters/pair.csv",
+      "sha256": "747e8281c7a1e4240ee4badbc0bedd047521fb303726699b38c99fccf7f74c2a"
+    },
+    {
+      "path": "parameters/single.csv",
+      "sha256": "17c26e8e0db5eb6e29e26ae898b28621f7ead148faf7855814827a73dbcd8c85"
+    },
+    {
+      "path": "provenance/source-origin.toml",
+      "sha256": "ad2ce6847c9a8bf7df5545b4a80721579a0badf249842ad64cdbd1d34bdaa179"
+    }
+  ]
+}
