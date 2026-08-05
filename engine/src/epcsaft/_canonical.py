@@ -4,6 +4,9 @@ import hashlib
 import json
 import unicodedata
 from decimal import Decimal
+from typing import Protocol, cast
+
+import pint
 
 from .records import (
     _DIMENSIONAL_UNITS,
@@ -13,6 +16,7 @@ from .records import (
     ConstantPlusSumOfExponentialsCorrelation,
     ModelParameterRecord,
     PairParameterRecord,
+    ParameterRecord,
     SingleParameterRecord,
     SiteRecord,
     SourceRecord,
@@ -20,6 +24,29 @@ from .records import (
 )
 
 _TAG = "epcsaft-parameters-v1"
+
+
+class _BundleLike(Protocol):
+    @property
+    def bundle_id(self) -> str: ...
+
+    @property
+    def bundle_version(self) -> int: ...
+
+    @property
+    def purpose(self) -> str: ...
+
+    @property
+    def sources(self) -> tuple[SourceRecord, ...]: ...
+
+    @property
+    def domains(self) -> tuple[ValidityDomain, ...]: ...
+
+    @property
+    def components(self) -> tuple[ComponentRecord, ...]: ...
+
+    @property
+    def records(self) -> tuple[ParameterRecord, ...]: ...
 
 
 def _string(value: str) -> str:
@@ -34,7 +61,9 @@ def _decimal(value: object) -> str:
 
 
 def _quantity(value: object, unit: str) -> dict[str, str]:
-    return {"magnitude": _decimal(value.magnitude), "unit": unit}  # type: ignore[attr-defined]
+    if not isinstance(value, pint.Quantity):
+        raise TypeError(f"expected quantity for {unit}")
+    return {"magnitude": _decimal(value.magnitude), "unit": unit}
 
 
 def _optional(target: dict[str, object], name: str, value: object) -> None:
@@ -82,12 +111,12 @@ def _resolved_validity(domains: tuple[ValidityDomain, ...]) -> dict[str, object]
         if minima:
             result[minimum] = _quantity(
                 max(minima, key=lambda value: value.to(unit).magnitude),
-                unit,  # type: ignore[attr-defined]
+                unit,
             )
         if maxima:
             result[maximum] = _quantity(
                 min(maxima, key=lambda value: value.to(unit).magnitude),
-                unit,  # type: ignore[attr-defined]
+                unit,
             )
     ion_maxima = tuple(
         domain.ion_mole_fraction_max
@@ -95,7 +124,9 @@ def _resolved_validity(domains: tuple[ValidityDomain, ...]) -> dict[str, object]
         if domain.ion_mole_fraction_max is not None
     )
     if ion_maxima:
-        result["ion_mole_fraction_max"] = _decimal(min(ion_maxima))
+        result["ion_mole_fraction_max"] = _decimal(
+            min(cast(tuple[Decimal, ...], ion_maxima))
+        )
     return result
 
 
@@ -124,16 +155,16 @@ def _value(family: str, value: object) -> object:
     return _decimal(value)
 
 
-def _provenance(record: object) -> dict[str, object]:
+def _provenance(record: ParameterRecord) -> dict[str, object]:
     return {
-        "record_id": record.record_id,  # type: ignore[attr-defined]
-        "source_id": record.source_id,  # type: ignore[attr-defined]
-        "locator": record.locator,  # type: ignore[attr-defined]
-        "domain_id": record.domain_id,  # type: ignore[attr-defined]
+        "record_id": record.record_id,
+        "source_id": record.source_id,
+        "locator": record.locator,
+        "domain_id": record.domain_id,
     }
 
 
-def _record(record: object) -> dict[str, object]:
+def _record(record: ParameterRecord) -> dict[str, object]:
     result = _provenance(record)
     if isinstance(record, ModelParameterRecord):
         result.update(
@@ -222,39 +253,39 @@ def _json(value: object) -> str:
     )
 
 
-def _bundle_json(bundle: object) -> str:
+def _bundle_json(bundle: _BundleLike) -> str:
     projection = {
         "tag": _TAG,
         "bundle": {
-            "bundle_id": bundle.bundle_id,  # type: ignore[attr-defined]
-            "bundle_version": bundle.bundle_version,  # type: ignore[attr-defined]
-            "purpose": bundle.purpose,  # type: ignore[attr-defined]
+            "bundle_id": bundle.bundle_id,
+            "bundle_version": bundle.bundle_version,
+            "purpose": bundle.purpose,
             "sources": [
                 _source(record)
                 for record in sorted(
                     bundle.sources,
-                    key=lambda item: item.source_id,  # type: ignore[attr-defined]
+                    key=lambda item: item.source_id,
                 )
             ],
             "domains": [
                 _domain(record)
                 for record in sorted(
                     bundle.domains,
-                    key=lambda item: item.domain_id,  # type: ignore[attr-defined]
+                    key=lambda item: item.domain_id,
                 )
             ],
             "components": [
                 _component(record)
                 for record in sorted(
                     bundle.components,
-                    key=lambda item: item.component_id,  # type: ignore[attr-defined]
+                    key=lambda item: item.component_id,
                 )
             ],
             "records": [
                 _record(record)
                 for record in sorted(
                     bundle.records,
-                    key=lambda item: item.record_id,  # type: ignore[attr-defined]
+                    key=lambda item: item.record_id,
                 )
             ],
         },
@@ -266,7 +297,7 @@ def _fingerprint_json(value: str) -> str:
     return f"sha256:{hashlib.sha256(value.encode('utf-8')).hexdigest()}"
 
 
-def _bundle_fingerprint(bundle: object) -> str:
+def _bundle_fingerprint(bundle: _BundleLike) -> str:
     return _fingerprint_json(_bundle_json(bundle))
 
 
@@ -294,7 +325,7 @@ def _provenance_fingerprint(
 
 def _parameter_fingerprint(
     component_ids: tuple[str, ...],
-    records: tuple[object, ...],
+    records: tuple[ParameterRecord, ...],
     domains: tuple[ValidityDomain, ...],
 ) -> str:
     domain_by_id = {domain.domain_id: domain for domain in domains}
@@ -313,7 +344,7 @@ def _parameter_fingerprint(
         scientific_records.append(projection)
     selected_domains = tuple(
         domain_by_id[domain_id]
-        for domain_id in sorted({record.domain_id for record in records})  # type: ignore[attr-defined]
+        for domain_id in sorted({record.domain_id for record in records})
     )
     return _fingerprint_json(
         _json(

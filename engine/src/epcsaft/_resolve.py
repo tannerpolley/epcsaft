@@ -3,7 +3,9 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Literal
+from typing import Literal, SupportsFloat, cast
+
+import pint
 
 from .parameters import Parameters
 from .records import (
@@ -17,7 +19,7 @@ from .records import (
     SingleParameterRecord,
     SiteRecord,
 )
-from .units import _error
+from .units import ParameterError, _error
 
 _ScalarRecord = SingleParameterRecord | ConstantCorrelation
 _TemperatureRecord = (
@@ -83,7 +85,9 @@ class _ResolvedModel:
     quadrupole_moment_debye_angstrom: tuple[float, ...] = ()
 
 
-def _missing(*, component_id: str | None = None, family: str, pair: tuple[str, str] | None = None):
+def _missing(
+    *, component_id: str | None = None, family: str, pair: tuple[str, str] | None = None
+) -> ParameterError:
     if component_id is not None:
         return _error("missing-record", component_id=component_id, family=family)
     assert pair is not None
@@ -95,11 +99,41 @@ def _missing(*, component_id: str | None = None, family: str, pair: tuple[str, s
     )
 
 
-def _magnitude(record: object, unit: str) -> float:
-    value = record.constant if isinstance(record, ConstantCorrelation) else record.value  # type: ignore[attr-defined]
+def _magnitude(
+    record: SingleParameterRecord
+    | AssociationParameterRecord
+    | ConstantCorrelation
+    | ConstantPlusSumOfExponentialsCorrelation,
+    unit: str,
+) -> float:
+    value = (
+        record.constant
+        if isinstance(record, (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation))
+        else record.value
+    )
     if unit != "dimensionless":
+        if not isinstance(value, pint.Quantity):
+            raise TypeError(f"expected quantity convertible to {unit}")
         value = value.to(unit).magnitude
-    return float(value)
+    return float(cast(SupportsFloat, value))
+
+
+def _integer(record: SingleParameterRecord) -> int:
+    if type(record.value) is not int:
+        raise TypeError("expected integer parameter value")
+    return record.value
+
+
+def _required_matrix(values: tuple[float | None, ...], family: str) -> tuple[float, ...]:
+    if any(value is None for value in values):
+        raise _error("missing-record", family=family)
+    return tuple(cast(float, value) for value in values)
+
+
+def _domain_magnitude(value: object, unit: str) -> float:
+    if not isinstance(value, pint.Quantity):
+        raise TypeError(f"expected domain quantity convertible to {unit}")
+    return float(value.to(unit).magnitude)
 
 
 def _component_record(
@@ -147,7 +181,8 @@ def _pair_matrix(
             matrix[index * size + index] = 0.0
     positions = {component_id: index for index, component_id in enumerate(component_ids)}
     for component_a, component_b in combinations(component_ids, 2):
-        key = (*sorted((component_a, component_b)), family)
+        ordered = sorted((component_a, component_b))
+        key = (ordered[0], ordered[1], family)
         record = pairs.get(key)
         if record is None:
             pair = frozenset((component_a, component_b))
@@ -161,7 +196,9 @@ def _pair_matrix(
             continue
         i = positions[component_a]
         j = positions[component_b]
-        matrix[i * size + j] = matrix[j * size + i] = float(record.value)
+        matrix[i * size + j] = matrix[j * size + i] = float(
+            cast(SupportsFloat, record.value)
+        )
     return tuple(matrix)
 
 
@@ -234,27 +271,27 @@ def _domain_limits(
         }
     )
     lower_bounds = tuple(
-        float(domain.temperature_min.to("kelvin").magnitude)
+        _domain_magnitude(domain.temperature_min, "kelvin")
         for domain in active_domains
         if domain.temperature_min is not None
     )
     upper_bounds = tuple(
-        float(domain.temperature_max.to("kelvin").magnitude)
+        _domain_magnitude(domain.temperature_max, "kelvin")
         for domain in active_domains
         if domain.temperature_max is not None
     )
     pressure_lower_bounds = tuple(
-        float(domain.pressure_min.to("pascal").magnitude)
+        _domain_magnitude(domain.pressure_min, "pascal")
         for domain in active_domains
         if domain.pressure_min is not None
     )
     pressure_upper_bounds = tuple(
-        float(domain.pressure_max.to("pascal").magnitude)
+        _domain_magnitude(domain.pressure_max, "pascal")
         for domain in active_domains
         if domain.pressure_max is not None
     )
     ion_bounds = tuple(
-        float(domain.ion_mole_fraction_max)
+        float(cast(SupportsFloat, domain.ion_mole_fraction_max))
         for domain in active_domains
         if domain.ion_mole_fraction_max is not None
     )
@@ -283,17 +320,17 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
     if not isinstance(parameters, Parameters):
         raise _error("invalid-value", field="parameters", expected="Parameters")
 
-    singles = {
+    singles: dict[tuple[str, str], SingleParameterRecord] = {
         (record.component_id, record.family): record
         for record in parameters.records
         if isinstance(record, SingleParameterRecord)
     }
-    correlations = {
+    correlations: dict[tuple[str, str], _TemperatureRecord] = {
         (record.component_id, record.family): record
         for record in parameters.records
         if isinstance(record, (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation))
     }
-    pair_records = {
+    pair_records: dict[tuple[str, str, str], PairParameterRecord] = {
         (record.component_id_a, record.component_id_b, record.family): record
         for record in parameters.records
         if isinstance(record, PairParameterRecord)
@@ -305,7 +342,9 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
     model_records = tuple(
         record for record in parameters.records if isinstance(record, ModelParameterRecord)
     )
-    models = {record.family: record for record in model_records}
+    models: dict[str, ModelParameterRecord] = {
+        record.family: record for record in model_records
+    }
     polar_records = tuple(
         record for record in model_records if record.family == "polar_formulation"
     )
@@ -471,10 +510,10 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
                 family="multipole-moment",
                 reason="negative",
             )
-        charge = selected_charges[index]
+        charge_record = selected_charges[index]
         if (
-            charge is not None
-            and int(charge.value) != 0
+            charge_record is not None
+            and _integer(charge_record) != 0
             and (dipole_moment[index] != 0.0 or quadrupole_moment[index] != 0.0)
         ):
             raise _error(
@@ -484,7 +523,7 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
                 reason="charged-component",
             )
     ionic_topology = any(
-        record is not None and int(record.value) != 0 for record in selected_charges
+        record is not None and _integer(record) != 0 for record in selected_charges
     ) or any(family == "born_diameter" for _, family in singles)
     if not ionic_topology:
         topology: Literal["neutral", "associating"] = "associating" if site_ids else "neutral"
@@ -497,7 +536,7 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             segment_count,
             segment_diameter,
             dispersion_energy,
-            tuple(float(value) for value in k_ij),
+            _required_matrix(k_ij, "k_ij"),
             tuple(0.0 if value is None else float(value) for value in l_ij),
             site_ids,
             site_multiplicity,
@@ -529,7 +568,7 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         )
         for component_id in component_ids
     )
-    charges = tuple(int(record.value) for record in charge_records)  # type: ignore[union-attr]
+    charges = tuple(_integer(cast(SingleParameterRecord, record)) for record in charge_records)
     if not any(charge > 0 for charge in charges) or not any(charge < 0 for charge in charges):
         raise _error("invalid-value", family="charge_number", reason="missing-opposite-charges")
 
@@ -654,7 +693,7 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
                 reason="mixed-formulation-schema",
             )
         l_ij = _pair_matrix(component_ids, pair_records, "l_ij", required=True)
-        relative_permittivity = tuple(
+        original_relative_permittivity = tuple(
             _component_record(
                 component_id,
                 "relative_permittivity",
@@ -671,13 +710,13 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             segment_count,
             segment_diameter,
             dispersion_energy,
-            tuple(float(value) for value in k_ij),
-            tuple(float(value) for value in l_ij),
+            _required_matrix(k_ij, "k_ij"),
+            _required_matrix(l_ij, "l_ij"),
             site_ids,
             site_multiplicity,
             association_pairs,
             charges,
-            relative_permittivity,
+            original_relative_permittivity,
             (),
             (),
             None,
@@ -753,10 +792,10 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         required_models.append("ion_fraction_suppression_coefficient")
     model_values = []
     for family in required_models:
-        record = models.get(family)
-        if record is None:
+        model_record = models.get(family)
+        if model_record is None:
             raise _error("missing-record", family=family)
-        value = float(record.value)
+        value = float(cast(SupportsFloat, model_record.value))
         if value <= 0.0:
             raise _error("invalid-value", family=family, value=value)
         model_values.append(value)
@@ -826,7 +865,7 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         segment_count,
         segment_diameter,
         dispersion_energy,
-        tuple(float(value) for value in k_ij),
+        _required_matrix(k_ij, "k_ij"),
         tuple(0.0 for _ in range(len(component_ids) ** 2)),
         site_ids,
         site_multiplicity,

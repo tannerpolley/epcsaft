@@ -7,7 +7,10 @@ from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass, fields, is_dataclass, replace
 from enum import StrEnum
 
-from . import _native
+from typing import Any, cast
+
+import epcsaft.regression._native as _native
+from epcsaft.eos import Mixture
 from .parameter_regression import (
     AffineParameterTransform,
     AqueousKijMeanIonicActivityObservation,
@@ -186,7 +189,7 @@ class SourceInput:
 def _json_value(value: object) -> object:
     if isinstance(value, StrEnum):
         return value.value
-    if is_dataclass(value):
+    if is_dataclass(value) and not isinstance(value, type):
         return {key: _json_value(item) for key, item in asdict(value).items()}
     if isinstance(value, Mapping):
         return {str(key): _json_value(item) for key, item in value.items()}
@@ -332,14 +335,14 @@ class ObservationDataset:
             values = dict(record)
             for name in _TUPLE_FIELDS.intersection(values):
                 if isinstance(values[name], list):
-                    values[name] = tuple(values[name])
+                    values[name] = tuple(cast(Iterable[object], values[name]))
             if isinstance(values.get("partition"), str):
                 try:
-                    values["partition"] = ObservationPartition(values["partition"])
+                    values["partition"] = ObservationPartition(cast(str, values["partition"]))
                 except ValueError as exc:
                     raise ValueError(f"{row_label}: invalid partition") from exc
             try:
-                observations.append(observation_type(**values))
+                observations.append(cast(RegressionObservation, cast(Any, observation_type)(**values)))
             except (TypeError, ValueError) as exc:
                 raise ValueError(f"{row_label}: {exc}") from exc
         rows = tuple(observations)
@@ -481,7 +484,7 @@ def _observation_contract(observations: tuple[RegressionObservation, ...]) -> st
 
 
 def _resolve_coordinates(
-    model: object,
+    model: Mixture,
     requests: tuple[ParameterRequest, ...],
     observations: tuple[RegressionObservation, ...],
 ) -> tuple[ParameterCoordinate, ...]:
@@ -489,7 +492,7 @@ def _resolve_coordinates(
         item for item in parameter_capabilities(model) if isinstance(item, ParameterCapability)
     )
     derivative_ready = tuple(item for item in advertised if item.installed_ready)
-    matches = tuple(
+    fixed_matches = tuple(
         item
         for item in parameter_capabilities(model)
         if isinstance(item, FixedTopologyAssociationCapability) and item.installed_ready
@@ -497,23 +500,23 @@ def _resolve_coordinates(
     use_fixed_topology = any(
         isinstance(request.identity, AssociationParameterIdentity) for request in requests
     ) or (
-        len(matches) == 1
+        len(fixed_matches) == 1
         and all(
             any(
                 slot.family is request.family and slot.identity == request.identity
-                for slot in matches[0].slots
+                for slot in fixed_matches[0].slots
             )
             for request in requests
         )
     )
     if use_fixed_topology:
-        if len(matches) != 1:
+        if len(fixed_matches) != 1:
             raise ValueError(
                 "installed EOS does not advertise exactly one derivative-ready "
                 "fixed-topology association descriptor"
             )
-        capability = matches[0]
-        coordinates = []
+        fixed_capability = fixed_matches[0]
+        coordinates: list[ParameterCoordinate] = []
         for request in requests:
             identities = (
                 tuple(
@@ -526,7 +529,7 @@ def _resolve_coordinates(
             slots = tuple(
                 slot
                 for identity in identities
-                for slot in capability.slots
+                for slot in fixed_capability.slots
                 if slot.family is request.family and slot.identity == identity
             )
             if len(slots) != len(identities) or any(slot.unit != slots[0].unit for slot in slots):
@@ -539,40 +542,40 @@ def _resolve_coordinates(
                     family=request.family,
                     identity=request.identity,
                     capability_id=None,
-                    provider_parameter_fingerprint=capability.parameter_fingerprint,
-                    provider_topology_fingerprint=capability.topology_fingerprint,
+                    provider_parameter_fingerprint=fixed_capability.parameter_fingerprint,
+                    provider_topology_fingerprint=fixed_capability.topology_fingerprint,
                     unit=slots[0].unit,
                     transform=request.transform,
                     lower_bound=request.lower_bound,
                     upper_bound=request.upper_bound,
-                    provider_artifact_fingerprint=capability.artifact_fingerprint,
+                    provider_artifact_fingerprint=fixed_capability.artifact_fingerprint,
                 )
             )
         return tuple(coordinates)
     coordinates = []
     observation_contract = _observation_contract(observations)
     for request in requests:
-        matches = tuple(
+        capability_matches = tuple(
             item
             for item in derivative_ready
             if item.family is request.family
             and item.observation_contract == observation_contract
             and _identity_matches(request, item)
         )
-        if len(matches) != 1:
+        if len(capability_matches) != 1:
             raise ValueError(
                 f"installed EOS capability for {request.family.value} is "
-                f"{'ambiguous' if len(matches) > 1 else 'unavailable'}"
+                f"{'ambiguous' if len(capability_matches) > 1 else 'unavailable'}"
             )
-        capability = matches[0]
+        parameter_capability = capability_matches[0]
         coordinates.append(
             ParameterCoordinate(
                 request.family,
                 request.identity,
-                capability.capability_id,
-                capability.parameter_fingerprint,
-                capability.topology_fingerprint,
-                _unit(capability.coordinate_units[-1]),
+                parameter_capability.capability_id,
+                parameter_capability.parameter_fingerprint,
+                parameter_capability.topology_fingerprint,
+                _unit(parameter_capability.coordinate_units[-1]),
                 request.transform,
                 request.lower_bound,
                 request.upper_bound,
@@ -700,7 +703,7 @@ def _shape(rows: tuple[RegressionObservation, ...]) -> tuple[int, int]:
 def _residual_identities(
     rows: tuple[RegressionObservation, ...],
 ) -> tuple[ResidualIdentity, ...]:
-    identities = []
+    identities: list[ResidualIdentity] = []
     for row in rows:
         components = (
             (
@@ -969,7 +972,7 @@ def _evaluation_failure_reason(error: Exception) -> str:
 
 @dataclass(frozen=True, slots=True)
 class PreparedFit:
-    model: object
+    model: Mixture
     problem: RegressionProblem
     datasets: tuple[ObservationDataset, ...]
 
@@ -1307,7 +1310,7 @@ class PreparedFit:
 
 
 def prepare_fit(
-    model: object,
+    model: Mixture,
     *,
     datasets: tuple[ObservationDataset, ...],
     parameters: tuple[ParameterRequest, ...],

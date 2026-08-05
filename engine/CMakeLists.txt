@@ -5,7 +5,10 @@ project(${SKBUILD_PROJECT_NAME} VERSION ${SKBUILD_PROJECT_VERSION} LANGUAGES CXX
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PYBIND11_FINDPYTHON ON)
+
+option(EPCSAFT_ENABLE_SANITIZERS "Build Engine-owned native code with ASan and UBSan" OFF)
 
 find_package(Python 3.13 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
@@ -146,32 +149,31 @@ int main() {
 endif()
 
 add_library(
-    epcsaft_native_sdk
+    epcsaft_engine_eos_core
     STATIC
     "${cppad_SOURCE_DIR}/cppad_lib/temp_file.cpp"
     src/epcsaft/_native/eos.cpp
     src/epcsaft/_native/native_sdk.cpp
-    src/epcsaft/_native/native_model.cpp
 )
-set_target_properties(epcsaft_native_sdk PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(epcsaft_engine_eos_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(
-    epcsaft_native_sdk
+    epcsaft_engine_eos_core
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/epcsaft/include"
     PRIVATE src/epcsaft/_native
 )
 target_include_directories(
-    epcsaft_native_sdk SYSTEM PRIVATE "${EPCSAFT_CPPAD_INCLUDE_DIR}"
+    epcsaft_engine_eos_core SYSTEM PRIVATE "${EPCSAFT_CPPAD_INCLUDE_DIR}"
 )
 target_include_directories(
-    epcsaft_native_sdk SYSTEM PRIVATE "${nlohmann_json_SOURCE_DIR}/single_include"
+    epcsaft_engine_eos_core SYSTEM PRIVATE "${nlohmann_json_SOURCE_DIR}/single_include"
 )
 if(EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR)
     target_include_directories(
-        epcsaft_native_sdk SYSTEM PRIVATE "${EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR}"
+        epcsaft_engine_eos_core SYSTEM PRIVATE "${EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR}"
     )
 endif()
-target_compile_features(epcsaft_native_sdk PUBLIC cxx_std_17)
-target_link_libraries(epcsaft_native_sdk PUBLIC Threads::Threads)
+target_compile_features(epcsaft_engine_eos_core PUBLIC cxx_std_17)
+target_link_libraries(epcsaft_engine_eos_core PUBLIC Threads::Threads)
 
 pybind11_add_module(
     epcsaft_core
@@ -182,7 +184,7 @@ pybind11_add_module(
 set_target_properties(epcsaft_core PROPERTIES OUTPUT_NAME _core)
 target_include_directories(epcsaft_core PRIVATE src/epcsaft/_native)
 target_compile_features(epcsaft_core PRIVATE cxx_std_17)
-target_link_libraries(epcsaft_core PRIVATE epcsaft_native_sdk)
+target_link_libraries(epcsaft_core PRIVATE epcsaft_engine_eos_core)
 
 add_library(
     epcsaft_engine_equilibrium_core
@@ -226,7 +228,7 @@ target_include_directories(
 )
 target_link_libraries(
     epcsaft_engine_equilibrium_core
-    PUBLIC epcsaft_native_sdk
+    PUBLIC epcsaft_engine_eos_core
     PRIVATE PkgConfig::Ipopt highs nlopt
 )
 
@@ -278,9 +280,32 @@ target_include_directories(
 target_link_libraries(epcsaft_engine_regression_native PRIVATE Ceres::ceres)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    foreach(target epcsaft_engine_equilibrium_core epcsaft_engine_equilibrium_native)
+    set(
+        EPCSAFT_ENGINE_NATIVE_TARGETS
+        epcsaft_engine_eos_core
+        epcsaft_core
+        epcsaft_engine_equilibrium_core
+        epcsaft_engine_equilibrium_native
+        epcsaft_engine_regression_native
+    )
+    foreach(target IN LISTS EPCSAFT_ENGINE_NATIVE_TARGETS)
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
     endforeach()
+    if(EPCSAFT_ENABLE_SANITIZERS)
+        foreach(target IN LISTS EPCSAFT_ENGINE_NATIVE_TARGETS)
+            target_compile_options(
+                ${target} PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer
+            )
+        endforeach()
+        foreach(
+            target
+            epcsaft_core
+            epcsaft_engine_equilibrium_native
+            epcsaft_engine_regression_native
+        )
+            target_link_options(${target} PRIVATE -fsanitize=address,undefined)
+        endforeach()
+    endif()
 endif()
 
 install(
@@ -298,4 +323,3 @@ install(
     LIBRARY DESTINATION epcsaft/regression
     RUNTIME DESTINATION epcsaft/regression
 )
-install(DIRECTORY src/epcsaft/include/epcsaft DESTINATION epcsaft/include)

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import ClassVar, Literal, TypeAlias, get_args
+from typing import Any, ClassVar, Literal, TypeAlias, cast, get_args
+
+import pint
 
 from .units import (
     _decimal_number,
@@ -216,7 +218,12 @@ class ValidityDomain:
         if self.kind != "unknown" and all(value is None for value in normalized.values()):
             raise _error("invalid-domain", field="bounds", value="missing")
         for field, lower, upper in bounds:
-            if lower is not None and upper is not None and lower.magnitude > upper.magnitude:
+            if (
+                lower is not None
+                and upper is not None
+                and cast(pint.Quantity[Any], lower).magnitude
+                > cast(pint.Quantity[Any], upper).magnitude
+            ):
                 raise _error("invalid-domain", field=field, value="reversed-bounds")
 
 
@@ -468,6 +475,14 @@ class ConstantPlusSumOfExponentialsCorrelation:
 
 
 CorrelationRecord: TypeAlias = ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation
+ParameterRecord: TypeAlias = (
+    SingleParameterRecord
+    | ModelParameterRecord
+    | PairParameterRecord
+    | SiteRecord
+    | AssociationParameterRecord
+    | CorrelationRecord
+)
 
 
 __all__ = (
@@ -484,6 +499,7 @@ __all__ = (
     "ModelParameterRecord",
     "PairParameterFamily",
     "PairParameterRecord",
+    "ParameterRecord",
     "PolarFormulation",
     "RelativePermittivityFormulation",
     "SingleParameterFamily",

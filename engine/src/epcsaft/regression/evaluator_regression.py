@@ -9,7 +9,7 @@ from enum import StrEnum
 
 from epcsaft import regression as _package
 
-from . import _native
+import epcsaft.regression._native as _native
 from .parameter_regression import (
     ComponentParameterIdentity,
     FittedParameterDiagnostic,

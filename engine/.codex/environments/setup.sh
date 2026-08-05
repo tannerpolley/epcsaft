@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-for required_command in uv cmake ninja c++; do
+for required_command in uv cmake ninja c++ clang++-18 clang-tidy-18 run-clang-tidy-18; do
     if ! command -v "$required_command" >/dev/null 2>&1; then
         echo "missing required command: $required_command" >&2
         exit 1
@@ -50,7 +50,9 @@ fi
 
 uv pip install --python .venv/bin/python \
     build \
+    mypy \
     numpy \
+    pybind11 \
     pytest \
     ruff
 

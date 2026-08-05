@@ -33,8 +33,9 @@ owners:
     native_sources: src/epcsaft/regression/native
   native_transport:
     implementation: src/epcsaft/_native/native_sdk.cpp
-    public_header: src/epcsaft/include/epcsaft/native_sdk_v1.h
-    regression_header: src/epcsaft/include/epcsaft/regression/evaluator_v1.h
+    internal_header: src/epcsaft/include/epcsaft/native_sdk_v1.h
+    regression_internal_header: src/epcsaft/include/epcsaft/regression/evaluator_v1.h
+    installed_headers: forbidden
 
 scientific_boundaries:
   reusable_packets: ePC-SAFT/ePC-SAFT-data

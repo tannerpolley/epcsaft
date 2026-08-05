@@ -30,8 +30,6 @@ void bind_chemical_equilibrium(py::module_& module);
 
 namespace {
 
-constexpr std::string_view kFlashFingerprint =
-    "sha256:9e63656093548f1f64bec8cc5129421f6e1bc452b2ec3632ded65f5ac538b8e7";
 constexpr std::size_t kPureSdkTableSize = offsetof(epcsaft_native_sdk_v1, component_count);
 constexpr std::size_t kMixtureSdkTableSize =
     offsetof(epcsaft_native_sdk_v1, evaluate_mixture_phase)

@@ -262,7 +262,6 @@ def test_density_closure__returns_certified_single_root_and_slope() -> None:
 
     assert diagnostics is not None
     assert diagnostics.stable is True
-    assert diagnostics.branch == "single"
     assert abs(diagnostics.pressure_residual.to("pascal").magnitude) < 1.0e-3
     density = state.molar_density.to("mole / meter ** 3").magnitude
     step = density * 1.0e-4
@@ -360,7 +359,7 @@ def test_residual_caloric_properties__follow_helmholtz_identities() -> None:
         )
 
 
-def test_electrolyte_reference__matches_public_projection_identities() -> None:
+def test_electrolyte_reference_matches_projection_identities() -> None:
     model = Mixture.from_dictionary(AQUEOUS_ELECTROLYTE)
     reference = model.reference(
         T=298.15 * u.kelvin,

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from decimal import Decimal, InvalidOperation
+from typing import Any
 
 import pint
 
-unit_registry = pint.UnitRegistry()
+unit_registry: pint.UnitRegistry[Any] = pint.UnitRegistry()
 
 
 class ParameterError(ValueError):
@@ -54,12 +55,12 @@ def _exact_integer(value: object, *, field: str, positive: bool = False) -> int:
     return value
 
 
-def _quantity(value: object, target_unit: str, *, field: str) -> pint.Quantity:
+def _quantity(value: object, target_unit: str, *, field: str) -> pint.Quantity[Any]:
     if not isinstance(value, pint.Quantity):
         raise _error("invalid-unit", field=field, expected=target_unit)
     try:
-        magnitude = _decimal_number(value.magnitude, field=field)  # type: ignore[attr-defined]
-        declared_unit = str(value.units)  # type: ignore[attr-defined]
+        magnitude = _decimal_number(value.magnitude, field=field)
+        declared_unit = str(value.units)
         quantity = unit_registry.Quantity(magnitude, declared_unit).to(target_unit)
     except ParameterError:
         raise
@@ -68,12 +69,12 @@ def _quantity(value: object, target_unit: str, *, field: str) -> pint.Quantity:
     return quantity
 
 
-def _declared_quantity(value: object, *, field: str) -> pint.Quantity:
+def _declared_quantity(value: object, *, field: str) -> pint.Quantity[Any]:
     if not isinstance(value, pint.Quantity):
         raise _error("invalid-unit", field=field, expected="quantity")
     try:
-        magnitude = _decimal_number(value.magnitude, field=field)  # type: ignore[attr-defined]
-        declared_unit = str(value.units)  # type: ignore[attr-defined]
+        magnitude = _decimal_number(value.magnitude, field=field)
+        declared_unit = str(value.units)
         quantity = unit_registry.Quantity(magnitude, declared_unit)
     except ParameterError:
         raise

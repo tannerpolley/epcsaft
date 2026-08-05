@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from functools import cache
@@ -173,6 +173,16 @@ def _parameters_from_result(
         matches: list[int] = []
         identity = coordinate.identity
         for index, record in enumerate(records):
+            if not isinstance(
+                record,
+                (
+                    SingleParameterRecord,
+                    PairParameterRecord,
+                    ModelParameterRecord,
+                    AssociationParameterRecord,
+                ),
+            ):
+                continue
             if record.family != coordinate.family.value:
                 continue
             if isinstance(identity, ComponentParameterIdentity) and isinstance(
@@ -219,8 +229,19 @@ def _parameters_from_result(
         if len(matches) != expected_matches:
             raise ValueError("fitted parameter does not map to exactly one typed record identity")
         for index in matches:
-            records[index] = replace(
-                records[index],
+            fitted_record = records[index]
+            if not isinstance(
+                fitted_record,
+                (
+                    SingleParameterRecord,
+                    PairParameterRecord,
+                    ModelParameterRecord,
+                    AssociationParameterRecord,
+                ),
+            ):
+                raise TypeError("fitted coordinate resolved to a non-fittable record")
+            records[index] = _replace_fitted_record(
+                fitted_record,
                 value=diagnostic.final,
                 source_id=source.source_id,
                 locator=locator,
@@ -380,13 +401,10 @@ def _installed_eos_artifact_identity() -> tuple[tuple[str, str], ...]:
     if not wheel.is_file():
         raise RuntimeError("installed epcsaft wheel artifact is unavailable")
     wheel_sha256 = hashlib.sha256(wheel.read_bytes()).hexdigest()
-    header_sha256 = digest("epcsaft/include/epcsaft/native_sdk_v1.h")
-
     return (
         ("distribution", f"{installed.metadata['Name']}=={installed.version}"),
         ("wheel_sha256", wheel_sha256),
         ("record_sha256", digest(".dist-info/RECORD")),
-        ("public_header_sha256", header_sha256),
     )
 
 
@@ -429,7 +447,9 @@ def _without_unavailable(value: object, path: str = "") -> tuple[object | None, 
     return value, ()
 
 
-def _jacobian_record(result: RegressionResult, json_value) -> dict[str, object]:
+def _jacobian_record(
+    result: RegressionResult, json_value: Callable[[object], object]
+) -> dict[str, object]:
     record = json_value(result.jacobian)
     assert isinstance(record, dict)
     retained, unavailable = _without_unavailable(record)
@@ -438,7 +458,9 @@ def _jacobian_record(result: RegressionResult, json_value) -> dict[str, object]:
     return retained
 
 
-def _row_records(result: RegressionResult, json_value) -> list[object]:
+def _row_records(
+    result: RegressionResult, json_value: Callable[[object], object]
+) -> list[object]:
     records = []
     for row in result.rows:
         record = json_value(row)
@@ -452,7 +474,9 @@ def _row_records(result: RegressionResult, json_value) -> list[object]:
     return records
 
 
-def _capability_records(result: RegressionResult, json_value) -> list[object]:
+def _capability_records(
+    result: RegressionResult, json_value: Callable[[object], object]
+) -> list[object]:
     records = json_value(result.capabilities)
     assert isinstance(records, list)
     for capability, record in zip(result.capabilities, records, strict=True):
@@ -480,7 +504,9 @@ def _capability_records(result: RegressionResult, json_value) -> list[object]:
     return records
 
 
-def _resolved_data_identity(result: RegressionResult, json_value) -> object:
+def _resolved_data_identity(
+    result: RegressionResult, json_value: Callable[[object], object]
+) -> object:
     return {
         source.source_id: {
             "source": json_value(source),
@@ -495,7 +521,9 @@ def _resolved_data_identity(result: RegressionResult, json_value) -> object:
     }
 
 
-def _resolved_objective_identity(result: RegressionResult, json_value) -> object:
+def _resolved_objective_identity(
+    result: RegressionResult, json_value: Callable[[object], object]
+) -> object:
     from .usability import _OBJECTIVE_FAMILIES, ObjectiveContract
 
     if isinstance(result.problem, PositiveEvaluatorProblem):
@@ -547,6 +575,31 @@ def _result_record(
     ):
         raise ValueError("prepared fit provenance does not own this RegressionResult")
     positive = isinstance(result.problem, PositiveEvaluatorProblem)
+    if positive:
+        positive_capabilities = tuple(
+            capability
+            for capability in result.capabilities
+            if isinstance(capability, PositiveEvaluatorCapability)
+        )
+        if len(positive_capabilities) != 1:
+            raise ValueError("positive evaluator result requires exactly one evaluator capability")
+        positive_capability = positive_capabilities[0]
+        installed_artifacts: object = {
+            "provider": positive_capability.provider_artifact_identity,
+            "owner": positive_capability.owner_artifact_identity,
+            "evaluator": positive_capability.artifact_identity,
+        }
+    else:
+        installed_artifacts = dict(_installed_eos_artifact_identity())
+
+    def json_mapping(value: object) -> dict[str, object]:
+        converted = _json_value(value)
+        if not isinstance(converted, Mapping) or any(
+            not isinstance(key, str) for key in converted
+        ):
+            raise TypeError("JSON projection must be a string-keyed mapping")
+        return {str(key): item for key, item in converted.items()}
+
     problem = {
         "kind": type(result.problem).__name__,
         "resolved": _json_value(result.problem),
@@ -560,7 +613,7 @@ def _result_record(
                     "rows": [
                         {
                             "row_id": row_id,
-                            **_json_value(provenance),
+                            **json_mapping(provenance),
                         }
                         for row_id, provenance in dataset.row_provenance
                     ],
@@ -596,15 +649,7 @@ def _result_record(
             )
         ),
         "capabilities": _capability_records(result, _json_value),
-        "installed_artifacts": (
-            {
-                "provider": result.capabilities[0].provider_artifact_identity,
-                "owner": result.capabilities[0].owner_artifact_identity,
-                "evaluator": result.capabilities[0].artifact_identity,
-            }
-            if positive
-            else dict(_installed_eos_artifact_identity())
-        ),
+        "installed_artifacts": installed_artifacts,
         "provider_parameter_fingerprint": result.provider_parameter_fingerprint,
         "provider_topology_fingerprint": result.provider_topology_fingerprint,
         "status": {
@@ -681,3 +726,50 @@ __all__ = (
     "ReproductionClass",
     "ResultContext",
 )
+_FittableRecord = (
+    SingleParameterRecord
+    | PairParameterRecord
+    | ModelParameterRecord
+    | AssociationParameterRecord
+)
+
+
+def _replace_fitted_record(
+    record: _FittableRecord,
+    *,
+    value: float,
+    source_id: str,
+    locator: str,
+    domain_id: str,
+) -> _FittableRecord:
+    if isinstance(record, SingleParameterRecord):
+        return replace(
+            record,
+            value=value,
+            source_id=source_id,
+            locator=locator,
+            domain_id=domain_id,
+        )
+    if isinstance(record, PairParameterRecord):
+        return replace(
+            record,
+            value=value,
+            source_id=source_id,
+            locator=locator,
+            domain_id=domain_id,
+        )
+    if isinstance(record, ModelParameterRecord):
+        return replace(
+            record,
+            value=value,
+            source_id=source_id,
+            locator=locator,
+            domain_id=domain_id,
+        )
+    return replace(
+        record,
+        value=value,
+        source_id=source_id,
+        locator=locator,
+        domain_id=domain_id,
+    )

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from os import PathLike
-from typing import Literal, TypeAlias, cast
+from typing import Literal, TypeAlias, TypeVar, cast
 
 from ._bundle_io import _create_template, _dump_path, _load_path
 from ._canonical import _bundle_fingerprint, _parameter_fingerprint
@@ -16,6 +16,7 @@ from .records import (
     CorrelationRecord,
     ModelParameterRecord,
     PairParameterRecord,
+    ParameterRecord,
     SingleParameterRecord,
     SiteRecord,
     SourceRecord,
@@ -56,17 +57,22 @@ def _purpose(value: object) -> _BundlePurpose:
     return "external-bundle"
 
 
-def _typed(values: Iterable[object], expected: type | tuple[type, ...], name: str) -> tuple:
+_RecordT = TypeVar("_RecordT")
+
+
+def _typed(
+    values: Iterable[object], expected: type[_RecordT], name: str
+) -> tuple[_RecordT, ...]:
     try:
         result = tuple(values)
     except TypeError as exc:
         raise _error("invalid-value", field=name, value="not-iterable") from exc
     if not all(isinstance(value, expected) for value in result):
         raise _error("invalid-value", field=name, value="wrong-record-type")
-    return result
+    return cast(tuple[_RecordT, ...], result)
 
 
-def _unique(records: tuple, attribute: str) -> None:
+def _unique(records: tuple[object, ...], attribute: str) -> None:
     seen: set[object] = set()
     for record in records:
         key = getattr(record, attribute)
@@ -79,7 +85,7 @@ def _validate_records(
     sources: tuple[SourceRecord, ...],
     domains: tuple[ValidityDomain, ...],
     components: tuple[ComponentRecord, ...],
-    records: tuple,
+    records: tuple[ParameterRecord, ...],
 ) -> None:
     _unique(sources, "source_id")
     _unique(domains, "domain_id")
@@ -94,7 +100,7 @@ def _validate_records(
         for record in records
         if isinstance(record, SiteRecord)
     }
-    semantic_keys: set[tuple] = set()
+    semantic_keys: set[tuple[object, ...]] = set()
 
     for record in records:
         if record.source_id not in source_ids:
@@ -102,7 +108,7 @@ def _validate_records(
         if record.domain_id not in domain_ids:
             raise _error("invalid-domain", record_id=record.record_id, domain_id=record.domain_id)
         if isinstance(record, ModelParameterRecord):
-            referenced_components = ()
+            referenced_components: tuple[str, ...] = ()
         elif isinstance(
             record,
             (
@@ -127,7 +133,7 @@ def _validate_records(
             raise _error("missing-record", field="component_id", value=missing)
 
         if isinstance(record, ModelParameterRecord):
-            key = ("model", record.family)
+            key: tuple[object, ...] = ("model", record.family)
         elif isinstance(record, SingleParameterRecord):
             key = ("single", record.component_id, record.family)
         elif isinstance(record, PairParameterRecord):
@@ -150,7 +156,7 @@ def _validate_records(
         semantic_keys.add(key)
 
 
-def _record_components(record: object) -> tuple[str, ...]:
+def _record_components(record: ParameterRecord) -> tuple[str, ...]:
     if isinstance(record, ModelParameterRecord):
         return ()
     if isinstance(
@@ -163,7 +169,7 @@ def _record_components(record: object) -> tuple[str, ...]:
         ),
     ):
         return (record.component_id,)
-    return (record.component_id_a, record.component_id_b)  # type: ignore[attr-defined]
+    return (record.component_id_a, record.component_id_b)
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -174,7 +180,7 @@ class _ParameterBundle:
     sources: tuple[SourceRecord, ...]
     domains: tuple[ValidityDomain, ...]
     components: tuple[ComponentRecord, ...]
-    records: tuple
+    records: tuple[ParameterRecord, ...]
     fingerprint: str
 
     def __init__(self) -> None:
@@ -218,19 +224,27 @@ class _ParameterBundle:
         source_records = _typed(sources, SourceRecord, "sources")
         domain_records = _typed(domains, ValidityDomain, "domains")
         component_records = _typed(components, ComponentRecord, "components")
-        grouped_records = (
-            _typed(singles, SingleParameterRecord, "singles"),
-            _typed(pairs, PairParameterRecord, "pairs"),
-            _typed(sites, SiteRecord, "sites"),
-            _typed(associations, AssociationParameterRecord, "associations"),
-            _typed(
-                correlations,
-                (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation),
-                "correlations",
-            ),
-            _typed(models, ModelParameterRecord, "models"),
+        single_records = _typed(singles, SingleParameterRecord, "singles")
+        pair_records = _typed(pairs, PairParameterRecord, "pairs")
+        site_records = _typed(sites, SiteRecord, "sites")
+        association_records = _typed(
+            associations, AssociationParameterRecord, "associations"
         )
-        records = tuple(record for group in grouped_records for record in group)
+        correlation_records = tuple(correlations)
+        if not all(
+            isinstance(record, (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation))
+            for record in correlation_records
+        ):
+            raise _error("invalid-value", field="correlations", value="wrong-record-type")
+        model_records = _typed(models, ModelParameterRecord, "models")
+        records: tuple[ParameterRecord, ...] = (
+            *single_records,
+            *pair_records,
+            *site_records,
+            *association_records,
+            *correlation_records,
+            *model_records,
+        )
         _validate_records(source_records, domain_records, component_records, records)
 
         instance = object.__new__(cls)
@@ -303,7 +317,7 @@ class Parameters:
     component_ids: tuple[str, ...]
     components: tuple[ComponentRecord, ...]
     domains: tuple[ValidityDomain, ...]
-    records: tuple
+    records: tuple[ParameterRecord, ...]
     fingerprint: str
     _bundle: _ParameterBundle
 
@@ -388,7 +402,7 @@ class Parameters:
         bundle: _ParameterBundle,
         component_ids: tuple[str, ...],
         components: tuple[ComponentRecord, ...],
-        records: tuple,
+        records: tuple[ParameterRecord, ...],
     ) -> Parameters:
         instance = object.__new__(cls)
         object.__setattr__(instance, "component_ids", component_ids)

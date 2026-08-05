@@ -211,25 +211,22 @@ Primary method anchors include:
 These references support methods and limits; they do not supply universal
 parameter defaults.
 
-## Regression routine-test contract
+## Regression numerical verification set
 
-Regression keeps small deterministic tests that continuously prove the package
-can still execute its main generic numerical workflows and supported active
-parameter variations. These tests run through public or installed-artifact
-interfaces and remain suitable for routine CI.
+Regression keeps a small local NVDD set that verifies current scientific and
+numerical claims. The checks are mutable evidence rather than API, solver,
+serialization, or compatibility contracts, and they run only through the
+repository-local environment.
 
 The compact matrix covers:
 
 1. accepted methane and ethane joint pure-saturation numerical results;
-2. representative scalar component, pair, and direct-observable fits across
-   each distinct native observation/derivative adapter;
+2. representative scalar component, pair, and direct-observable fits with
+   independently checked derivatives;
 3. joint pure `(m, sigma, epsilon/k)` recovery;
-4. descriptor-driven fixed-topology association mechanics covering the 2B
-   reference, a non-2B multi-pair topology, `N_active = 1, 2, >2`, constrained
-   subsets, sharing, permutation rejection, and fail-closed identity checks;
-5. constant `k_ij` and `l_ij` fixed-composition VLE mechanics;
-6. the composed positive-observation evaluator transport; and
-7. deterministic result serialization once the general record exists.
+4. fixed-topology association parameter recovery for scientifically distinct
+   active-parameter cases; and
+5. constant `k_ij` and `l_ij` fixed-composition VLE recovery.
 
 Each retained numerical sentinel:
 
@@ -240,16 +237,15 @@ Each retained numerical sentinel:
 - checks fitted values with
   `abs(value - reference) <= atol + rtol * abs(reference)`;
 - justifies `atol` and `rtol` from parameter scale, oracle accuracy, source
-  precision, and deterministic numerical behavior;
-- checks solver termination, complete row evaluation, projected rank,
-  conditioning policy, active bounds, and confirmation-start agreement as
-  applicable; and
+  precision, and numerical conditioning;
+- checks residuals, independent derivatives, projected rank, fitted values,
+  and active-bound meaning where scientifically relevant; and
 - never generates the reference value with the implementation path under test.
 
 The matrix is parameterized where cases share one scientific invariant. It is
 not expanded into one broad literature campaign per parameter family.
 
-## Validation campaign contract
+## Validation campaign evidence
 
 The sibling Validation repository owns durable installed-artifact evidence
 whose breadth would make Regression tests slow, source-heavy, or
@@ -271,16 +267,15 @@ reference and content hash together with the exact installed EOS and Regression
 artifact identities. Regression result records retain those immutable
 references and hashes when the artifacts apply; absence is explicit.
 
-Validation consumes immutable installed EOS and Regression artifacts through
-public contracts. It does not import either source checkout, replace routine
-Regression mechanics tests, or turn a reconstructed literature campaign into
-author-method evidence.
+Validation consumes the immutable installed Unified Engine wheel and
+materialized Data packets. It does not import the Engine source checkout or
+turn a reconstructed literature campaign into author-method evidence.
 
 ## Acceptance boundary
 
 A literature-related fit is usable only when:
 
-- its reproduction class and complete available contract are retained;
+- its reproduction class and available evidence are retained;
 - every replacement decision is explicit;
 - exact derivatives and all required rows are evaluated or the fit fails
   closed;

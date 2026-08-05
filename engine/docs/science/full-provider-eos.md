@@ -1,8 +1,10 @@
 # Full EOS EOS Scientific Specification
 
-Status: scientific equation authority for the accepted full-EOS scope;
-native-SDK authority is determined separately by migration promotion receipt
-0015
+Status: scientific equation authority for the accepted full-EOS scope.
+
+References below to the native SDK and its historical promotion receipt name
+describe the retained internal transport implementation. They do not define a
+public Python API, installed header set, external ABI, or separate artifact.
 
 Design: `../designs/2026-07-16-full-EOS-eos-design.md`
 

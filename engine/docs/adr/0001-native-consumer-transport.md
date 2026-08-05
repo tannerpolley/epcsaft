@@ -1,18 +1,15 @@
 # ADR 0001: Versioned model-bound capsule for native consumers
 
-Status: accepted pure prefix authority determined by migration promotion
-receipt 0015; append-only neutral-mixture, active-kij, active-lij, and scalar
-pure-parameter entries are local candidates pending independent review and
-their own promotion receipts; a generic pure fixed-topology association entry
-is an issue-61 implementation candidate with no authority effect; a
-model-bound active-Born solvation entry is design-only pending bounded
-independent review, implementation, evidence, and its own authority decision;
-an append-only charge-neutral reference-basis entry and its declared-solvent
-source-reference transfer are Project Truss implementation candidates with no
-authority effect;
-consumer gates separate
+Status: superseded by the Unified Engine direct cutover. The model-bound
+capsule remains an internal implementation detail, but the public Python SDK,
+installed headers, independent ABI promise, and cross-repository consumer
+contract described below no longer exist.
 
 Date: 2026-07-17
+
+The remainder of this ADR is retained as historical design evidence. Current
+runtime authority is `CONTEXT.md`, `ARCHITECTURE.yaml`, and
+`docs/python-api.md`.
 
 Parameter-catalog language in this historical transport decision is superseded
 by ADR 0003. Current admission uses resolved topology, required fields,

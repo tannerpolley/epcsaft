@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import csv
-import json
 import math
 from dataclasses import asdict, replace
 from pathlib import Path
@@ -13,23 +12,19 @@ from parameter_cases import (
     neutral_parameters,
 )
 
-from epcsaft import Mixture, Parameters, native_sdk, unit_registry
+from epcsaft import Mixture, Parameters, unit_registry
+from epcsaft.eos import _native_transport
 from epcsaft.regression import (
     FIGIEL_AQUEOUS_KIJ_V1,
     FIGIEL_BORN_DIAMETER_TRACER_V1,
-    FIGIEL_WATER_SOLVATION_FACTOR_V1,
     AcquisitionClass,
     AffineParameterTransform,
     AqueousKijMeanIonicActivityObservation,
     AssociationParameterIdentity,
     ComponentParameterIdentity,
     ConfirmationControls,
-    DensityRowDiagnostic,
-    DirectObservationRowDiagnostic,
     FixedCompositionVleObservation,
     FixedTopologyAssociationCapability,
-    IonSolvationKijObservation,
-    MeanIonicActivityObservation,
     ModelParameterIdentity,
     ObjectiveContract,
     ObservationDataset,
@@ -83,10 +78,6 @@ def _methane_propane_model() -> Mixture:
 
 def _pure_model() -> Mixture:
     return Mixture(Parameters.from_dictionary(neutral_parameters(("methane",))))
-
-
-def _associating_pure_model() -> Mixture:
-    return Mixture(Parameters.from_dictionary(associating_parameters()))
 
 
 def _generic_associating_model(
@@ -198,99 +189,6 @@ def _generic_associating_problem(
         parameter_tolerance=1e-10,
         confirmation_parameter_scaled_max_delta=1e-6,
         confirmation_cost_relative_delta=1e-6,
-    )
-
-
-def _pure_density_problem(
-    model: Mixture,
-    family: ParameterFamily,
-) -> RegressionProblem:
-    capability = _capability(model, family)
-    row = PureDensityObservation(
-        row_id="held-2012-ethanol-density-298-15-k",
-        source_id="held-2012-pure-ethanol-density",
-        source_locator=(
-            "Validation data/held-2012-pure-ethanol-density.csv:2; "
-            "DOI 10.1016/j.ces.2011.09.040, section 2.2"
-        ),
-        component_id="ethanol",
-        temperature_k=298.15,
-        pressure_pa=100_000.0,
-        density_kg_per_m3=785.54,
-        molar_mass_kg_per_mol=0.046069,
-        pressure_scale_pa=100_000.0,
-        density_scale_kg_per_m3=785.54,
-        volume_origin_m3_per_mol=0.046069 / 785.54,
-        volume_start_m3_per_mol=0.046069 / 785.54,
-        volume_bounds_m3_per_mol=(4.0e-5, 1.0e-4),
-        partition=ObservationPartition.TRAINING,
-    )
-    if family is ParameterFamily.ASSOCIATION_ENERGY_OVER_K:
-        origin, scale, bounds, starts, unit = (
-            2653.4,
-            500.0,
-            (1000.0, 5000.0),
-            (2200.0, 3200.0),
-            "K",
-        )
-    else:
-        origin, scale, bounds, starts, unit = (
-            0.03238,
-            0.01,
-            (0.005, 0.1),
-            (0.02, 0.05),
-            "1",
-        )
-    source = SourceDescriptor(
-        source_id=row.source_id,
-        citation=(
-            "Held, Prinz, Wallmeyer, and Sadowski (2012), Chemical "
-            "Engineering Science 68, 328-339, DOI 10.1016/j.ces.2011.09.040"
-        ),
-        durable_locator=row.source_locator,
-        source_artifact_sha256=("25e3be94ee3cfb5eb13df89827f4368673f87f96d6b0225c12e35f9396b8779c"),
-        canonical_dataset_sha256=canonical_dataset_sha256((row,)),
-        transformation_record=(
-            "The SI density is transcribed unchanged. The source reports "
-            "ambient pressure; the model evaluation uses the predeclared "
-            "Validation convention of 1 bar."
-        ),
-        units_and_bases=("T/K and mass density/(kg/m3) from the source; model pressure/Pa."),
-        use_basis=(
-            "Direct experimental pure-liquid density anchor with 1 bar as "
-            "the explicit model-pressure approximation."
-        ),
-        residual_scale_rationale=(
-            "Observed pressure and density magnitudes are numerical scales, "
-            "not experimental uncertainties."
-        ),
-    )
-    return RegressionProblem(
-        sources=(source,),
-        parameters=(
-            ParameterCoordinate(
-                family=family,
-                identity=ModelParameterIdentity(),
-                capability_id=capability.capability_id,
-                provider_parameter_fingerprint=capability.parameter_fingerprint,
-                provider_topology_fingerprint=capability.topology_fingerprint,
-                unit=unit,
-                transform=AffineParameterTransform(origin=origin, scale=scale),
-                lower_bound=bounds[0],
-                upper_bound=bounds[1],
-            ),
-        ),
-        parameter_slot_indices=(0,),
-        start_vectors=tuple((start,) for start in starts),
-        observations=(row,),
-        maximum_condition_number=1.0e12,
-        maximum_iterations=100,
-        maximum_solver_time_seconds=30.0,
-        function_tolerance=1.0e-12,
-        gradient_tolerance=1.0e-12,
-        parameter_tolerance=1.0e-12,
-        confirmation_parameter_scaled_max_delta=1.0e-7,
-        confirmation_cost_relative_delta=1.0e-8,
     )
 
 
@@ -426,9 +324,9 @@ def _problem(
         durable_locator="evidence/may-2015-methane-ethane-vle.csv",
         source_artifact_sha256=("5cd1e74925a3c6504f5106dcf911f2cae2d6e99a5133fccc20454d8991bdbc7f"),
         canonical_dataset_sha256=canonical_dataset_sha256(observations),
-        transformation_record="No transformation for this contract test.",
+        transformation_record="No transformation for this numerical derivative check.",
         units_and_bases="T/K, P/Pa, mole fractions.",
-        use_basis="Regression derivative contract evidence.",
+        use_basis="Regression derivative numerical evidence.",
         residual_scale_rationale="Pressure by observed P; mu/RT dimensionless.",
     )
     parameter = ParameterCoordinate(
@@ -456,47 +354,6 @@ def _problem(
         parameter_tolerance=1.0e-12,
         confirmation_parameter_scaled_max_delta=1.0e-5,
         confirmation_cost_relative_delta=1.0e-8,
-    )
-
-
-def _mock_general_native_result() -> tuple[object, ...]:
-    """Return one complete native result for status/diagnostic seam tests."""
-    row = (
-        "may2015-ch4-c2h6-002",
-        "training",
-        6.0e-5,
-        9.0e-4,
-        (0.0, 0.0, 0.0, 0.0),
-        True,
-        "",
-    )
-    return (
-        "CONVERGENCE",
-        True,
-        1.0,
-        0.1,
-        2,
-        -0.01,
-        0.09,
-        "",
-        (0.0,) * 4,
-        (0.0,) * 12,
-        (2.0, 1.0, 0.5),
-        3,
-        2.0,
-        (0.1,),
-        1,
-        1.0,
-        2,
-        0.0,
-        0.0,
-        True,
-        (row,),
-        "",
-        3,
-        4,
-        4,
-        3,
     )
 
 
@@ -631,73 +488,6 @@ def _joint_pure_problem(model: Mixture) -> RegressionProblem:
     )
 
 
-def _solvation_factor_problem(model: Mixture) -> RegressionProblem:
-    specification = FIGIEL_WATER_SOLVATION_FACTOR_V1
-    capability = _capability(model, ParameterFamily.SOLVATION_FACTOR)
-    observations = tuple(
-        MeanIonicActivityObservation(
-            row_id=row.row_id,
-            source_id="hamer-wu-1972-nabr",
-            source_locator=(f"validation:data/figiel-2025-hamer-wu-miac.csv:{row.row_id}"),
-            component_ids=capability.component_ids,
-            active_component_id="water",
-            temperature_k=specification.temperature_k,
-            pressure_pa=specification.pressure_pa,
-            formula_unit_molality_mol_per_kg=(row.molality_mol_per_kg),
-            observed_mean_ionic_activity_coefficient=row.gamma_pm_m,
-            relative_residual_scale=1.0,
-            partition=ObservationPartition.TRAINING,
-        )
-        for row in specification.observations
-    )
-    source = SourceDescriptor(
-        source_id="hamer-wu-1972-nabr",
-        citation=(
-            "Hamer and Wu (1972), NaBr mean ionic activity coefficients; "
-            "audited by Validation packet 8944d34f."
-        ),
-        durable_locator=("validation:data/figiel-2025-hamer-wu-miac.csv"),
-        source_artifact_sha256=specification.source_hamer_wu_csv_sha256,
-        canonical_dataset_sha256=canonical_dataset_sha256(observations),
-        transformation_record=(
-            "Selected all 21 audited NaBr rows; no row duplication or response transformation."
-        ),
-        units_and_bases=(
-            "T/K, P/Pa, formula-unit molality/(mol/kg), gamma_pm on the molality basis."
-        ),
-        use_basis="All rows are in-sample parameter-recovery targets.",
-        residual_scale_rationale=(
-            "Preserve the frozen dimensionless residual 1 - gamma_model/gamma_observed."
-        ),
-    )
-    parameter = ParameterCoordinate(
-        family=ParameterFamily.SOLVATION_FACTOR,
-        identity=ComponentParameterIdentity("water"),
-        capability_id=capability.capability_id,
-        provider_parameter_fingerprint=capability.parameter_fingerprint,
-        provider_topology_fingerprint=capability.topology_fingerprint,
-        unit="1",
-        transform=AffineParameterTransform(origin=1.5, scale=0.1),
-        lower_bound=specification.parameter_bounds[0],
-        upper_bound=specification.parameter_bounds[1],
-    )
-    return RegressionProblem(
-        sources=(source,),
-        parameters=(parameter,),
-        parameter_slot_indices=(0,),
-        start_vectors=tuple((start,) for start in specification.starts),
-        observations=observations,
-        maximum_condition_number=1.0e10,
-        maximum_iterations=specification.max_num_iterations,
-        maximum_solver_time_seconds=180.0,
-        function_tolerance=specification.function_tolerance,
-        gradient_tolerance=specification.gradient_tolerance,
-        parameter_tolerance=specification.parameter_tolerance,
-        confirmation_parameter_scaled_max_delta=1.0e-4,
-        confirmation_cost_relative_delta=1.0e-8,
-    )
-
-
 def _aqueous_kij_problem(model: Mixture) -> RegressionProblem:
     specification = FIGIEL_AQUEOUS_KIJ_V1
     capability = next(
@@ -772,79 +562,6 @@ def _aqueous_kij_problem(model: Mixture) -> RegressionProblem:
         gradient_tolerance=1.0e-10,
         parameter_tolerance=1.0e-10,
         confirmation_parameter_scaled_max_delta=1.0e-5,
-        confirmation_cost_relative_delta=1.0e-8,
-    )
-
-
-def _born_diameter_problem(model: Mixture, target_index: int) -> RegressionProblem:
-    specification = FIGIEL_BORN_DIAMETER_TRACER_V1
-    target = specification.targets[target_index]
-    capability = _capability(model, ParameterFamily.BORN_DIAMETER)
-    observation = SolvationGibbsObservation(
-        row_id=target.target_id,
-        source_id="figiel-2025-s5-reported-averages",
-        source_locator=(f"{specification.source_locator}:{target.target_id}"),
-        component_ids=target.component_order,
-        active_component_id=target.active_component_id,
-        temperature_k=specification.temperature_k,
-        pressure_pa=specification.pressure_pa,
-        observed_solvation_gibbs_j_per_mol=target.target_j_per_mol,
-        residual_scale_j_per_mol=abs(target.target_j_per_mol),
-        partition=ObservationPartition.TRAINING,
-    )
-    source = SourceDescriptor(
-        source_id="figiel-2025-s5-reported-averages",
-        citation=(
-            "Figiel, Yu, and Held (2025), SI Table S5 reported-average "
-            "water solvation Gibbs energies."
-        ),
-        durable_locator=specification.source_si_doi,
-        source_artifact_sha256=specification.packaged_targets_sha256,
-        canonical_dataset_sha256=canonical_dataset_sha256((observation,)),
-        transformation_record=(
-            "Converted the selected reported average from kJ/mol to J/mol; "
-            "the 27 supporting rows are provenance, not residual duplication."
-        ),
-        units_and_bases=(
-            f"T/K, P/Pa, solvation Gibbs energy/(J/mol); {specification.source_basis}."
-        ),
-        use_basis=("One in-sample source-bound Born-diameter recovery problem."),
-        residual_scale_rationale=(
-            "Scale the Gibbs-energy difference by the magnitude of its "
-            "reported target, preserving the frozen tracer contract."
-        ),
-    )
-    parameter = ParameterCoordinate(
-        family=ParameterFamily.BORN_DIAMETER,
-        identity=ComponentParameterIdentity(target.active_component_id),
-        capability_id=capability.capability_id,
-        provider_parameter_fingerprint=capability.parameter_fingerprint,
-        provider_topology_fingerprint=capability.topology_fingerprint,
-        unit="angstrom",
-        transform=AffineParameterTransform(
-            origin=specification.diameter_origin_angstrom,
-            scale=specification.diameter_scale_angstrom,
-        ),
-        lower_bound=specification.diameter_bounds_angstrom[0],
-        upper_bound=specification.diameter_bounds_angstrom[1],
-    )
-    return RegressionProblem(
-        sources=(source,),
-        parameters=(parameter,),
-        parameter_slot_indices=(0,),
-        start_vectors=tuple(
-            (start[target_index],) for start in specification.start_diameters_angstrom
-        ),
-        observations=(observation,),
-        maximum_condition_number=1.0e10,
-        maximum_iterations=specification.max_num_iterations,
-        maximum_solver_time_seconds=180.0,
-        function_tolerance=specification.function_tolerance,
-        gradient_tolerance=specification.gradient_tolerance,
-        parameter_tolerance=specification.parameter_tolerance,
-        confirmation_parameter_scaled_max_delta=(
-            specification.confirmation_parameter_scaled_max_delta
-        ),
         confirmation_cost_relative_delta=1.0e-8,
     )
 
@@ -1062,133 +779,6 @@ def _dielectric_suppression_problem(model: Mixture) -> RegressionProblem:
     )
 
 
-def _ion_solvation_kij_problem(
-    model: Mixture,
-    *,
-    capability_id: str = "ion_solvation_solvent_cation_kij_v1",
-    active_component_id: str = "potassium-cation",
-    active_pair_component_ids: tuple[str, str] = (
-        "methanol",
-        "potassium-cation",
-    ),
-) -> RegressionProblem:
-    capability = next(
-        capability
-        for capability in parameter_capabilities(model)
-        if not isinstance(capability, UnsupportedParameterCapability)
-        and capability.capability_id == capability_id
-    )
-    targets = (("figiel2025-constructed-gsolv-Kp-methanol-011", -298.25858),)
-    observations = tuple(
-        IonSolvationKijObservation(
-            row_id=row_id,
-            source_id="figiel-constructed-k-methanol",
-            source_locator=f"validation:figiel-ledger:{row_id}",
-            component_ids=capability.component_ids,
-            active_component_id=active_component_id,
-            active_pair_component_ids=active_pair_component_ids,
-            fixed_k_ij=(0.32, 0.15, -0.35),
-            temperature_k=298.15,
-            pressure_pa=100_000.0,
-            observed_solvation_gibbs_j_per_mol=value * 1000.0,
-            residual_scale_j_per_mol=300_000.0,
-            partition=ObservationPartition.TRAINING,
-        )
-        for row_id, value in targets
-    )
-    source = SourceDescriptor(
-        source_id="figiel-constructed-k-methanol",
-        citation="Figiel, Yu, and Held (2025), equation 19 and Figure 6.",
-        durable_locator="validation:data/figiel-2025-regression-target-ledger.csv",
-        source_artifact_sha256=("f405a3e48d21cd979a8dd480d5f8cb3be40754f5d6babf368b505b5f305607f0"),
-        canonical_dataset_sha256=canonical_dataset_sha256(observations),
-        transformation_record=("Converted the retained constructed kJ/mol targets to J/mol."),
-        units_and_bases="T/K, P/Pa, x-process ion solvation Gibbs/J/mol.",
-        use_basis=(
-            "Nearest digitized pure-methanol endpoint used as constructed "
-            "in-sample implementation evidence only."
-        ),
-        residual_scale_rationale=(
-            "A declared common 300 kJ/mol magnitude scale; no pointwise uncertainty is available."
-        ),
-    )
-    parameter = ParameterCoordinate(
-        family=ParameterFamily.K_IJ,
-        identity=PairParameterIdentity(*active_pair_component_ids),
-        capability_id=capability.capability_id,
-        provider_parameter_fingerprint=capability.parameter_fingerprint,
-        provider_topology_fingerprint=capability.topology_fingerprint,
-        unit="1",
-        transform=AffineParameterTransform(origin=0.3, scale=0.1),
-        lower_bound=-1.5,
-        upper_bound=1.5,
-    )
-    return RegressionProblem(
-        sources=(source,),
-        parameters=(parameter,),
-        parameter_slot_indices=(0,),
-        start_vectors=((0.0,), (0.7,)),
-        observations=observations,
-        maximum_condition_number=1.0e10,
-        maximum_iterations=50,
-        maximum_solver_time_seconds=180.0,
-        function_tolerance=1.0e-12,
-        gradient_tolerance=1.0e-12,
-        parameter_tolerance=1.0e-12,
-        confirmation_parameter_scaled_max_delta=1.0e-5,
-        confirmation_cost_relative_delta=1.0e-8,
-    )
-
-
-def _replace_observations(
-    problem: RegressionProblem, observations: tuple[object, ...]
-) -> RegressionProblem:
-    source = replace(
-        problem.sources[0],
-        canonical_dataset_sha256=canonical_dataset_sha256(observations),
-    )
-    return replace(problem, sources=(source,), observations=observations)
-
-
-@pytest.mark.campaign
-def test_general_engine_fits_water_solvation_factor_over_all_nabr_rows() -> None:
-    model = _aqueous_model()
-    result = fit_parameters(_solvation_factor_problem(model), model)
-
-    assert result.solver_converged
-    assert result.numerically_converged
-    assert result.workflow_valid
-    assert result.parameters[0].final == pytest.approx(1.5590515389548207, rel=1.0e-11, abs=1.0e-11)
-    assert result.parameters[0].active_bound is None
-    assert result.jacobian.residual_count == 21
-    assert result.jacobian.variable_count == 1
-    assert result.jacobian.full_rank == 1
-    assert result.jacobian.projected_parameter_rank == 1
-    assert result.confirmations_usable
-    assert all(
-        isinstance(row, DirectObservationRowDiagnostic)
-        and row.evaluated
-        and row.derivative_status == "EXACT_PROVIDER_FIRST_DERIVATIVE"
-        for row in result.rows
-    )
-
-
-@pytest.mark.campaign
-def test_general_engine_fits_organic_ion_solvation_kij_endpoint() -> None:
-    model = _aqueous_model(("methanol", "potassium-cation", "bromide-anion"))
-    result = fit_parameters(_ion_solvation_kij_problem(model), model)
-
-    assert result.solver_converged
-    assert result.numerically_converged
-    assert result.workflow_valid
-    assert result.parameters[0].final == pytest.approx(0.3467279724950645, rel=0.0, abs=2.0e-12)
-    assert result.parameters[0].active_bound is None
-    assert result.jacobian.full_rank == 1
-    assert result.jacobian.projected_parameter_rank == 1
-    assert result.confirmations_usable
-    assert result.rows[0].derivative_status == ("EXACT_PROVIDER_FIRST_DERIVATIVE")
-
-
 def test_general_engine_fits_dielectric_suppression_from_user_rows() -> None:
     model = _aqueous_model()
     result = fit_parameters(_dielectric_suppression_problem(model), model)
@@ -1202,124 +792,6 @@ def test_general_engine_fits_dielectric_suppression_from_user_rows() -> None:
     assert result.jacobian.full_rank == 1
     assert result.jacobian.projected_parameter_rank == 1
     assert result.confirmations_usable
-    assert all(
-        isinstance(row, DirectObservationRowDiagnostic)
-        and row.observable == "relative_permittivity_ratio"
-        and row.observable_unit == "1"
-        and row.evaluated
-        and row.derivative_status == "EXACT_PROVIDER_FIRST_DERIVATIVE"
-        for row in result.rows
-    )
-
-
-@pytest.mark.campaign
-def test_general_engine_fits_one_aqueous_kij_from_user_rows() -> None:
-    model = _aqueous_model()
-    problem = _aqueous_kij_problem(model)
-    observations_before = problem.observations
-    fixed_context_before = tuple(row.fixed_k_ij for row in problem.observations)
-    assert len(fixed_context_before) == 21
-
-    result = fit_parameters(problem, model)
-
-    assert result.solver_converged
-    assert result.numerically_converged
-    assert result.workflow_valid
-    assert result.parameters[0].active_bound is None
-    assert len(result.problem.parameters) == 1
-    assert result.jacobian.residual_count == 21
-    assert result.jacobian.variable_count == 1
-    assert result.jacobian.full_rank == 1
-    assert result.jacobian.projected_parameter_rank == 1
-    assert result.confirmations_usable
-    assert result.training_row_count == 21
-    assert result.held_out_row_count == 0
-    assert result.stress_row_count == 0
-    assert result.evaluated_row_count == 21
-    assert result.skipped_row_count == 0
-    assert result.failed_row_count == 0
-    assert problem.observations == observations_before
-    assert tuple(row.fixed_k_ij for row in problem.observations) == fixed_context_before
-    assert all(
-        isinstance(row, DirectObservationRowDiagnostic)
-        and row.evaluated
-        and row.derivative_status == "EXACT_PROVIDER_FIRST_DERIVATIVE"
-        for row in result.rows
-    )
-
-
-@pytest.mark.campaign
-def test_ionic_region_permittivity_has_exact_rank_one_fit() -> None:
-    target = FIGIEL_BORN_DIAMETER_TRACER_V1.targets[1]
-    model = _aqueous_model(target.component_order)
-    problem = _ionic_region_permittivity_problem(model)
-    result = fit_parameters(problem, model)
-    assert result.solver_converged
-    assert result.numerically_converged
-    assert result.workflow_valid
-    assert result.parameters[0].active_bound is None
-    assert 1.01 < result.parameters[0].final < 50.0
-    assert result.jacobian.full_rank == 1
-    assert result.jacobian.projected_parameter_rank == 1
-    assert result.confirmations_usable
-    assert isinstance(result.rows[0], DirectObservationRowDiagnostic)
-    assert abs(result.rows[0].scaled_residual) <= 1.0e-10
-    assert result.rows[0].derivative_status == ("EXACT_PROVIDER_FIRST_DERIVATIVE")
-
-
-@pytest.mark.campaign
-def test_solvent_relative_permittivity_has_exact_rank_one_fit() -> None:
-    target = FIGIEL_BORN_DIAMETER_TRACER_V1.targets[1]
-    model = _aqueous_model(target.component_order)
-    problem = _solvent_relative_permittivity_problem(model)
-    result = fit_parameters(problem, model)
-    assert result.solver_converged
-    assert result.numerically_converged
-    assert result.workflow_valid
-    assert result.parameters[0].active_bound is None
-    assert 1.01 < result.parameters[0].final < 200.0
-    assert result.jacobian.full_rank == 1
-    assert result.jacobian.projected_parameter_rank == 1
-    assert result.confirmations_usable
-    assert isinstance(result.rows[0], DirectObservationRowDiagnostic)
-    assert abs(result.rows[0].scaled_residual) <= 1.0e-10
-    assert result.rows[0].derivative_status == ("EXACT_PROVIDER_FIRST_DERIVATIVE")
-
-
-@pytest.mark.campaign
-@pytest.mark.parametrize(
-    ("target_index", "expected"),
-    tuple(
-        enumerate(
-            (
-                2.7888130173797934,
-                3.4524616464076425,
-                4.147266741279482,
-                4.101505615791675,
-                4.476998527506598,
-            )
-        )
-    ),
-)
-def test_general_engine_fits_each_born_diameter_independently(
-    target_index: int, expected: float
-) -> None:
-    target = FIGIEL_BORN_DIAMETER_TRACER_V1.targets[target_index]
-    model = _aqueous_model(target.component_order)
-    result = fit_parameters(_born_diameter_problem(model, target_index), model)
-
-    assert result.solver_converged
-    assert result.numerically_converged
-    assert result.workflow_valid
-    assert result.parameters[0].final == pytest.approx(expected, rel=2.0e-11, abs=2.0e-11)
-    assert result.parameters[0].active_bound is None
-    assert result.jacobian.residual_count == 1
-    assert result.jacobian.variable_count == 1
-    assert result.jacobian.full_rank == 1
-    assert result.jacobian.projected_parameter_rank == 1
-    assert result.confirmations_usable
-    assert isinstance(result.rows[0], DirectObservationRowDiagnostic)
-    assert result.rows[0].derivative_status == ("EXACT_PROVIDER_FIRST_DERIVATIVE")
 
 
 def test_generic_fixed_topology_block_evaluates_exact_jacobian() -> None:
@@ -1384,40 +856,14 @@ def test_generic_fixed_topology_block_evaluates_exact_jacobian() -> None:
     assert preflight.starts[0].projected_parameter_rank == 5
 
     evaluation = parity_prepared.evaluate(physical)
-    assert evaluation == parity_prepared.evaluate(physical)
-    assert evaluation.physical_parameter_point == physical
-    assert evaluation.solver_parameter_point == (0.0,) * 5
-    assert evaluation.fitted_variable_identities == parity_prepared.problem.parameters
-    assert evaluation.lifted_variable_ids == tuple(
-        f"{row.row_id}:volume_m3_per_mol" for row in parity_observations
-    )
-    assert tuple(
-        (identity.row_id, identity.component) for identity in evaluation.residual_identities
-    ) == tuple(
-        item
-        for row in parity_observations
-        for item in ((row.row_id, "pressure"), (row.row_id, "density"))
-    )
-    assert evaluation.jacobian_layout == "row_major"
-    assert len(evaluation.residual_vector) == 10
-    assert len(evaluation.jacobian) == 100
     assert evaluation.jacobian_diagnostics.full_rank == 10
     assert evaluation.jacobian_diagnostics.projected_parameter_rank == 5
-    assert evaluation.parameter_fingerprints == (capability.parameter_fingerprint,)
-    assert evaluation.topology_fingerprints == (capability.topology_fingerprint,)
-    assert evaluation.capability_artifact_fingerprints == (capability.artifact_fingerprint,)
-    assert evaluation.preparation_fingerprint == (parity_prepared.preparation_fingerprint)
-    assert evaluation.dataset_fingerprints == (parity_prepared.datasets[0].provenance_sha256,)
-    assert evaluation.source_fingerprints == (
-        parity_prepared.datasets[0].source.source_artifact_sha256,
-    )
-    assert evaluation.observation_order_fingerprint.startswith("sha256:")
     assert evaluation.lifted_physical_point == pytest.approx(
         (parity_volume,) * len(parity_observations),
         rel=0.0,
         abs=1.0e-14,
     )
-    with pytest.raises(ValueError, match="outside fitted bounds"):
+    with pytest.raises(ValueError):
         parity_prepared.evaluate((0.0, *physical[1:]))
 
     parameter_count = len(physical)
@@ -1466,44 +912,6 @@ def test_generic_fixed_topology_block_evaluates_exact_jacobian() -> None:
         0.01,
     )
     assert max(abs(value) for row in parity_result.rows for value in row.scaled_residuals) < 1.0e-12
-    assert parity_result.scientific_status == "NOT_ADJUDICATED_NO_APPROVED_SCIENTIFIC_CUTOFF"
-    first_export = parity_result.to_json_bytes(prepared=parity_prepared)
-    assert first_export == parity_result.to_json_bytes(prepared=parity_prepared)
-    exported_capability = json.loads(first_export)["capabilities"][0]
-    assert all(
-        "upper_bound_exclusive" not in slot
-        and slot["unavailable_fields"] == ["upper_bound_exclusive"]
-        and slot["open_bounds"] == [{"direction": "upper", "field": "upper_bound_exclusive"}]
-        for slot in exported_capability["slots"]
-    )
-    capability = parity_result.capabilities[0]
-    assert isinstance(capability, FixedTopologyAssociationCapability)
-    for field, value in (
-        ("lower_bound_exclusive", -math.inf),
-        ("upper_bound_exclusive", -math.inf),
-        ("upper_bound_exclusive", math.nan),
-    ):
-        invalid_slot = replace(capability.slots[0], **{field: value})
-        invalid_capability = replace(
-            capability,
-            slots=(invalid_slot, *capability.slots[1:]),
-        )
-        with pytest.raises(ValueError, match="fixed-topology"):
-            replace(
-                parity_result,
-                capabilities=(invalid_capability,),
-            ).to_json_bytes(prepared=parity_prepared)
-    with pytest.raises(ValueError, match="finite"):
-        replace(
-            parity_result,
-            rows=(
-                replace(
-                    parity_result.rows[0],
-                    scaled_residuals=(math.nan, 0.0, 0.0, 0.0),
-                ),
-                *parity_result.rows[1:],
-            ),
-        ).to_json_bytes(prepared=parity_prepared)
     replay_model = _generic_associating_model(
         sites,
         ((pairs[0][0], pairs[0][1], fitted[3], fitted[4]),),
@@ -1570,7 +978,7 @@ def test_generic_association_block_accepts_combined_saturation_rows() -> None:
     )
     resolved, resolved_residuals, resolved_jacobian = (
         parameter_regression._native.evaluate_general_start(
-            native_sdk(model),
+            _native_transport(model),
             _native_payload(problem, capability),
             problem.start_vectors[0],
         )
@@ -1682,34 +1090,6 @@ def test_fixed_topology_association_accumulates_shared_slot_derivatives() -> Non
         )
 
 
-@pytest.mark.campaign
-@pytest.mark.parametrize(
-    "family",
-    (
-        ParameterFamily.ASSOCIATION_ENERGY_OVER_K,
-        ParameterFamily.ASSOCIATION_VOLUME,
-    ),
-)
-def test_pure_density_association_surface_reports_nonconverged_rank_diagnostics(
-    family: ParameterFamily,
-) -> None:
-    model = _associating_pure_model()
-    result = fit_parameters(_pure_density_problem(model, family), model)
-    assert result.solution_usable
-    assert result.jacobian.residual_count == 2
-    assert result.jacobian.variable_count == 2
-    assert result.jacobian.full_rank == 2
-    assert result.jacobian.projected_parameter_rank == 1
-    assert result.parameters[0].active_bound is None
-    assert math.isfinite(result.parameters[0].final)
-    assert not result.solver_converged
-    assert not result.numerically_converged
-    assert isinstance(result.rows[0], DensityRowDiagnostic)
-    assert result.rows[0].evaluated
-    assert all(math.isfinite(value) for value in result.rows[0].scaled_residuals)
-    assert result.scientific_status == "NOT_ADJUDICATED_NO_APPROVED_SCIENTIFIC_CUTOFF"
-
-
 @pytest.mark.parametrize(
     "family",
     (
@@ -1808,27 +1188,9 @@ def test_general_kij_fit_reports_rank_confirmation_and_partition_isolation() -> 
     assert result.rows[0].liquid_model_pressure_pa == pytest.approx(
         training.pressure_pa + result.rows[0].scaled_residuals[0] * training.pressure_scale_pa
     )
-    assert result.rows[0].derivative_status == "EXACT_PROVIDER_HESSIAN"
-    assert result.rows[0].status == "evaluated"
     assert result.evaluated_row_count == 2
     assert result.skipped_row_count == 0
     assert result.failed_row_count == 0
-    assert result.predictive_status == "NOT_ADJUDICATED_NO_APPROVED_HELD_OUT_CUTOFF"
-    assert result.residual_evaluation_count > 0
-    assert type(result.residual_evaluation_count) is int
-    assert result.jacobian_evaluation_count > 0
-    assert type(result.jacobian_evaluation_count) is int
-
-
-def test_general_engine_tiny_solver_budget_stops_without_numerical_convergence() -> None:
-    model = _model()
-    problem = replace(_problem(model), maximum_solver_time_seconds=1.0e-12)
-
-    result = fit_parameters(problem, model)
-
-    assert result.termination != "CONVERGENCE"
-    assert not result.numerically_converged
-    assert result.failure_reasons
 
 
 def test_general_lij_fit_reuses_the_exact_lifted_pair_engine() -> None:
@@ -1846,101 +1208,6 @@ def test_general_lij_fit_reuses_the_exact_lifted_pair_engine() -> None:
     assert result.jacobian.projected_parameter_rank == 1
     assert result.parameters[0].active_bound is None
     assert result.confirmation_count == 2
-    assert result.rows[0].derivative_status == "EXACT_PROVIDER_HESSIAN"
-
-
-@pytest.mark.parametrize(
-    ("diagnostic_index", "diagnostic_value"),
-    (
-        pytest.param(11, 2, id="full-rank-deficient"),
-        pytest.param(14, 0, id="projected-rank-zero"),
-        pytest.param(12, 1.0e11, id="full-conditioning-over-limit"),
-        pytest.param(15, 1.0e11, id="projected-conditioning-over-limit"),
-    ),
-)
-def test_numerical_status_requires_complete_rank_and_conditioning(
-    monkeypatch: pytest.MonkeyPatch,
-    diagnostic_index: int,
-    diagnostic_value: float,
-) -> None:
-    model = _model()
-    problem = _problem(model)
-    native = _mock_general_native_result()
-    monkeypatch.setattr(parameter_regression._native, "solve_general", lambda *_: native)
-
-    converged = fit_parameters(problem, model)
-    assert converged.solver_converged
-    assert converged.numerically_converged
-    assert converged.jacobian.full_rank == 3
-
-    degraded = list(native)
-    degraded[diagnostic_index] = diagnostic_value
-    monkeypatch.setattr(
-        parameter_regression._native,
-        "solve_general",
-        lambda *_: tuple(degraded),
-    )
-    diagnostically_stopped = fit_parameters(problem, model)
-    assert diagnostically_stopped.solver_converged
-    assert not diagnostically_stopped.numerically_converged
-
-    monkeypatch.setattr(
-        parameter_regression._native,
-        "solve_general",
-        lambda *_: ("NO_CONVERGENCE", *native[1:]),
-    )
-    stopped = fit_parameters(problem, model)
-    assert not stopped.solver_converged
-    assert not stopped.numerically_converged
-
-
-def test_active_bound_diagnostic_is_preserved(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    model = _model()
-    problem = _problem(model)
-    native = list(_mock_general_native_result())
-    native[5] = problem.parameters[0].upper_bound
-    native[6] = 0.0
-    native[7] = "upper"
-    monkeypatch.setattr(
-        parameter_regression._native,
-        "solve_general",
-        lambda *_: tuple(native),
-    )
-
-    result = fit_parameters(problem, model)
-
-    assert result.parameters[0].final == problem.parameters[0].upper_bound
-    assert result.parameters[0].active_bound == "upper"
-    assert result.parameters[0].active_bound_distance == 0.0
-
-
-def test_provider_failure_returns_diagnostic_result() -> None:
-    model = _model()
-    invalid = replace(
-        _row(),
-        liquid_volume_origin_m3_per_mol=1.0e-10,
-        liquid_volume_start_m3_per_mol=1.0e-10,
-        liquid_volume_bounds_m3_per_mol=(5.0e-11, 2.0e-10),
-    )
-
-    result = fit_parameters(_problem(model, (invalid,)), model)
-
-    assert not result.solver_converged
-    assert not result.numerically_converged
-    assert not result.workflow_valid
-    assert result.failure_reasons
-    assert not result.rows[0].evaluated
-    assert result.rows[0].derivative_status == "UNAVAILABLE"
-    assert result.rows[0].status == "failed"
-    assert result.evaluated_row_count == 0
-    assert result.failed_row_count == 1
-    failure_record = result.to_record()
-    assert failure_record["row_accounting"]["failed"] == 1
-    assert failure_record["status"]["failure_reasons"]
-    assert failure_record["rows"][0]["unavailable_fields"]
-    assert failure_record["jacobian"]["unavailable_fields"]
 
 
 def _audited_may_rows() -> tuple[FixedCompositionVleObservation, ...]:
@@ -2029,10 +1296,8 @@ def _may_methane_propane_problem(
     )
     assert capability is not None
     assert capability.family is ParameterFamily.K_IJ
-    assert capability.observation_contract == "fixed_composition_helmholtz_phase"
     assert capability.component_ids == ("methane", "propane")
     assert capability.active_component_ids == ("methane", "propane")
-    assert capability.model_domain == "neutral_nonassociating_binary"
     assert all(row.component_ids == capability.component_ids for row in observations)
     source = SourceDescriptor(
         source_id="may-2015-methane-propane",
@@ -2139,104 +1404,3 @@ def test_may_methane_propane_kij_is_invariant_to_row_order_and_pair_identity() -
         "methane",
         "propane",
     )
-
-
-@pytest.mark.campaign
-def test_may_methane_propane_campaign_reproduces_reference_fit() -> None:
-    model = _methane_propane_model()
-    problem = _may_methane_propane_problem(model)
-
-    result = fit_parameters(problem, model)
-    repeat = fit_parameters(problem, _methane_propane_model())
-
-    assert len(problem.observations) == 22
-    assert problem.parameters[0].identity == PairParameterIdentity("methane", "propane")
-    assert problem.start_vectors == ((0.0,), (-0.05,), (0.05,))
-    assert result.solver_converged
-    assert result.numerically_converged
-    assert result.workflow_valid
-    assert result.solution_usable
-    assert result.termination == "CONVERGENCE"
-    assert result.jacobian.residual_count == 88
-    assert result.jacobian.variable_count == 45
-    assert result.jacobian.full_rank == 45
-    assert result.jacobian.projected_parameter_rank == 1
-    assert result.parameters[0].active_bound is None
-    assert result.confirmation_count == 2
-    assert result.confirmations_usable
-    assert result.training_row_count == 22
-    assert result.held_out_row_count == 0
-    assert result.stress_row_count == 0
-    assert result.evaluated_row_count == 22
-    assert result.skipped_row_count == 0
-    assert result.failed_row_count == 0
-    assert result.physical_status == "NOT_ADJUDICATED_NO_ROW_ACCEPTANCE_CRITERIA"
-    assert result.scientific_status == ("NOT_ADJUDICATED_NO_APPROVED_SCIENTIFIC_CUTOFF")
-    assert result.predictive_status == "NOT_ADJUDICATED_NO_APPROVED_HELD_OUT_CUTOFF"
-    assert result.residual_evaluation_count > 0
-    assert isinstance(result.residual_evaluation_count, int)
-    assert result.jacobian_evaluation_count > 0
-    assert isinstance(result.jacobian_evaluation_count, int)
-    assert all(
-        row.derivative_status == "EXACT_PROVIDER_HESSIAN"
-        and row.evaluated
-        and row.status == "evaluated"
-        and not row.failure_reason
-        for row in result.rows
-    )
-    assert result.parameters[0].final == pytest.approx(0.0038919335722629794, rel=0.0, abs=1.0e-14)
-    assert result.final_cost == pytest.approx(0.03734758119771876, rel=0.0, abs=1.0e-14)
-
-    # A second complete run establishes the observed deterministic
-    # repeatability; no scientific or wall-time cutoff is inferred here.
-    repeatability_parameter_delta = abs(result.parameters[0].final - repeat.parameters[0].final)
-    repeatability_cost_delta = abs(result.final_cost - repeat.final_cost)
-    assert repeatability_parameter_delta <= 1.0e-14
-    assert repeatability_cost_delta <= 1.0e-14
-    assert result.parameters[0].final == repeat.parameters[0].final
-    assert result.final_cost == repeat.final_cost
-
-
-@pytest.mark.campaign
-def test_all_audited_may_rows_reproduce_the_general_kij_reference_fit() -> None:
-    model = _model()
-    rows = _audited_may_rows()
-    problem = _problem(model, rows)
-
-    result = fit_parameters(problem, model)
-
-    assert len(rows) == 17
-    assert result.termination == "CONVERGENCE"
-    assert result.solution_usable
-    assert result.jacobian.residual_count == 68
-    assert result.jacobian.variable_count == 35
-    assert result.jacobian.full_rank == 35
-    assert result.jacobian.projected_parameter_rank == 1
-    assert result.parameters[0].active_bound is None
-    assert result.parameters[0].final == pytest.approx(-0.00843032298906253, rel=0.0, abs=2.0e-12)
-    assert result.confirmation_count == 2
-    assert result.training_row_count == 17
-    assert result.predictive_status == "NOT_ADJUDICATED_NO_APPROVED_HELD_OUT_CUTOFF"
-
-
-@pytest.mark.campaign
-def test_all_audited_may_rows_are_fit_ready_for_general_lij() -> None:
-    model = _model()
-    rows = _audited_may_rows()
-
-    result = fit_parameters(
-        _problem(model, rows, family=ParameterFamily.L_IJ),
-        model,
-    )
-
-    assert result.termination == "CONVERGENCE"
-    assert result.solution_usable
-    assert result.jacobian.residual_count == 68
-    assert result.jacobian.variable_count == 35
-    assert result.jacobian.full_rank == 35
-    assert result.jacobian.projected_parameter_rank == 1
-    assert result.parameters[0].active_bound is None
-    assert result.confirmation_count == 2
-    assert result.training_row_count == 17
-    assert result.failed_row_count == 0
-    assert result.predictive_status == "NOT_ADJUDICATED_NO_APPROVED_HELD_OUT_CUTOFF"

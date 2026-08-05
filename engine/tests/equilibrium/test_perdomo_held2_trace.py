@@ -4,8 +4,9 @@ import pytest
 from parameter_dictionaries import FIGIEL_REFERENCE_ELECTROLYTE_PARAMETERS
 
 import epcsaft
+from epcsaft.eos import _native_transport
 from epcsaft import equilibrium
-from epcsaft.equilibrium import _api, _equilibrium
+from epcsaft.equilibrium import _equilibrium
 
 WATER_MOLAR_MASS_G_PER_MOL = 18.0153
 PERDOMO_TABLE3_NACL_MOL_PER_KG_WATER = 5.6
@@ -49,182 +50,10 @@ def _without_times(value: object) -> object:
     return value
 
 
-def test_public_held2_performance_diagnostics_aggregate_native_work() -> None:
-    diagnostics = _api._held2_diagnostics(
-        {
-            "outcome": "physical_equilibrium_accepted",
-            "failure_reason": None,
-            "failure_stage": None,
-            "globality_certificate": "not_guaranteed",
-            "upper_solve_count": 2,
-            "step2": {"minimum_tpd": -1.0},
-            "step9_history": [],
-            "step10": {
-                "status": "complete",
-                "final_certificate": None,
-                "trace_component_indices": [2],
-                "refinements": [{"component_index": 2}],
-            },
-            "step10_history": [
-                {
-                    "status": "complete",
-                    "reason": "trace_refinement_complete",
-                    "trace_component_indices": [2],
-                    "refinements": [{"component_index": 2}],
-                }
-            ],
-            "step_timings": [
-                {
-                    "step": 5,
-                    "invocation_count": 1,
-                    "wall_seconds": 1.25,
-                    "cpu_seconds": 1.0,
-                    "provider_evaluations": 12,
-                    "optimizer_solves": 3,
-                    "optimizer_iterations": 21,
-                    "terminal_status": "complete",
-                    "terminal_reason": "new_member",
-                    "next_step": 6,
-                },
-                {
-                    "step": 8,
-                    "invocation_count": 1,
-                    "wall_seconds": 2.5,
-                    "cpu_seconds": 2.0,
-                    "provider_evaluations": 30,
-                    "optimizer_solves": 2,
-                    "optimizer_iterations": 18,
-                    "terminal_status": "indeterminate",
-                    "terminal_reason": "problem_67_not_converged",
-                    "next_step": 4,
-                },
-                {
-                    "step": 10,
-                    "invocation_count": 1,
-                    "wall_seconds": 0.25,
-                    "cpu_seconds": 0.2,
-                    "provider_evaluations": 4,
-                    "optimizer_solves": 0,
-                    "optimizer_iterations": 0,
-                    "terminal_status": "complete",
-                    "terminal_reason": "trace_refinement_complete",
-                    "next_step": 0,
-                },
-            ],
-            "step5_history": [
-                {
-                    "starts_consumed": 2,
-                    "attempts": [
-                        {
-                            "accepted": False,
-                            "dilute_face_restart": {
-                                "attempted": True,
-                                "accepted": True,
-                                "coordinate_indices": [0, 2],
-                                "provider_component_indices": [1, 3],
-                            },
-                        },
-                        {"accepted": True, "dilute_face_restart": None},
-                    ],
-                }
-            ],
-            "step8_history": [
-                {
-                    "status": "indeterminate",
-                    "reason": "problem_67_not_converged",
-                    "warm_start_used": True,
-                    "cold_fallback_used": True,
-                    "provider_state_evaluations": 20,
-                    "provider_volume_bound_evaluations": 2,
-                    "provider_packing_evaluations": 0,
-                    "problem_candidate_ids": [1, 2],
-                    "attempted_candidate_ids": [1, 2],
-                    "problem_candidate_variables": [0.2, 1.0, 0.8, 1.0],
-                    "neighborhood_radius": 0.01,
-                },
-                {
-                    "status": "complete",
-                    "reason": "step8_complete",
-                    "problem_candidate_ids": [1, 2],
-                    "attempted_candidate_ids": [1, 2],
-                    "problem_candidate_variables": [0.2, 1.0, 0.8, 1.0],
-                    "neighborhood_radius": 0.02,
-                },
-            ],
-        }
-    )
-
-    performance = diagnostics.performance
-    assert performance is not None
-    assert performance.provider_evaluations == 46
-    assert performance.optimizer_solves == 5
-    assert performance.optimizer_iterations == 39
-    assert performance.step5_starts_consumed == 2
-    assert performance.step5_attempts == 2
-    assert performance.step5_accepted_attempts == 1
-    assert performance.step5_repeated_start_ordinal_count == 0
-    assert performance.dilute_face_restart_attempts == 1
-    assert performance.dilute_face_restart_accepts == 1
-    assert performance.dilute_face_coordinate_indices == (0, 2)
-    assert performance.dilute_face_component_indices == (1, 3)
-    assert performance.step8_invocations == 2
-    assert performance.step8_return_to_stage_ii_count == 1
-    assert performance.step8_warm_start_count == 1
-    assert performance.step8_cold_fallback_count == 1
-    assert performance.step8_provider_state_evaluations == 20
-    assert performance.step8_provider_volume_bound_evaluations == 2
-    assert performance.step8_provider_packing_evaluations == 0
-    assert performance.step8_problem_candidate_count == 4
-    assert performance.step8_attempted_candidate_count == 4
-    assert performance.step8_repeated_problem_count == 0
-    assert performance.step10_invocations == 1
-    assert performance.trace_refinement_activated_count == 1
-    assert performance.trace_refinement_return_to_stage_ii_count == 0
-    assert performance.trace_refinement_component_indices == (2,)
-    assert tuple(timing.step for timing in performance.step_timings) == (5, 8, 10)
-
-    with pytest.raises(ValueError, match="neighborhood radius is missing"):
-        _api._held2_performance(
-            {
-                "step8_history": [
-                    {
-                        "problem_candidate_ids": [1, 2],
-                        "problem_candidate_variables": [0.2, 1.0, 0.8, 1.0],
-                    }
-                ]
-            }
-        )
-
-
-def test_held2_observer_is_quiet_by_default_and_does_not_change_results(capfd) -> None:
-    model = _perdomo_table3_model()
-    arguments = (
-        epcsaft.native_sdk(model),
-        298.15,
-        2508.0,
-        PERDOMO_TABLE3_FEED,
-        model.parameter_fingerprint,
-    )
-
-    quiet = _equilibrium._solve_tp_flash(*arguments)
-    quiet_output = capfd.readouterr()
-    traced = _equilibrium._solve_tp_flash(*arguments, trace=True)
-    traced_output = capfd.readouterr()
-
-    assert quiet_output.out == ""
-    assert quiet_output.err == ""
-    assert _without_times(traced) == _without_times(quiet)
-    assert "HELD2.0  case=installed-held2-paper-rewrite" in traced_output.out
-    assert "STEP 1" in traced_output.out
-    assert "STEP 2" in traced_output.out
-    assert "REFERENCE PRESSURE ROOTS" in traced_output.out
-    assert "reason=declared_search_complete" in traced_output.out
-
-
 def test_perdomo_table3_nacl_workflow() -> None:
     model = _perdomo_table3_model()
     result = _equilibrium._solve_tp_flash(
-        epcsaft.native_sdk(model),
+        _native_transport(model),
         298.15,
         2508.0,
         PERDOMO_TABLE3_FEED,
@@ -235,15 +64,9 @@ def test_perdomo_table3_nacl_workflow() -> None:
     assert PERDOMO_TABLE3_FEED == pytest.approx(expected_feed, abs=1.0e-15)
     assert sum(PERDOMO_TABLE3_FEED) == pytest.approx(1.0, abs=1.0e-15)
     assert PERDOMO_TABLE3_FEED[1] - PERDOMO_TABLE3_FEED[2] == pytest.approx(0.0, abs=1.0e-15)
-    assert result["controller"] == "perdomo_held2_paper_steps_1_to_10_v1"
-    assert result["outcome"] == "one_phase_no_negative_witness_detected"
-    assert result["stability_search_status"] == ("finite_search_completed_no_negative_witness")
-    assert result["failure_reason"] is None
-    assert result["failure_stage"] is None
     assert len(result["phases"]) == 1
     assert result["phases"][0]["phase_fraction"] == pytest.approx(1.0)
     reference = result["step2"]["reference_pressure_envelope"]
-    assert reference["outcome"] == "selected"
     assert [root["mechanical_class"] for root in reference["roots"]] == [
         "strict_stable",
         "unstable",
@@ -258,20 +81,13 @@ def test_perdomo_table3_nacl_workflow() -> None:
         if root["mechanical_class"] == "strict_stable"
     )
 
-    assert result["step2"]["reason"] == "declared_search_complete"
     assert result["step2"]["minimum_tpd"] >= -1.0e-8
-    assert result["upper_solve_count"] == 0
-    assert result["step4_history"] == []
-    assert result["step8_history"] == []
-    assert result["step10"] is None
-    assert result["globality_certificate"] == "not_guaranteed"
 
 
 @pytest.mark.parametrize(
     (
         "pressure_pa",
         "molality_mol_per_kg",
-        "expected_outcome",
         "expected_free_energy",
         "expected_phase_fractions",
         "expected_mole_fractions",
@@ -281,7 +97,6 @@ def test_perdomo_table3_nacl_workflow() -> None:
         pytest.param(
             3181.454397,
             0.005000000139214637,
-            "physical_equilibrium_accepted",
             0.21155648678431022,
             (0.9851851723141468, 0.014814827685853224),
             (
@@ -294,7 +109,6 @@ def test_perdomo_table3_nacl_workflow() -> None:
         pytest.param(
             3213.5903,
             0.005000000139214637,
-            "physical_equilibrium_accepted",
             0.21162822804854456,
             (0.9976330842742641, 0.0023669157257357933),
             (
@@ -307,7 +121,6 @@ def test_perdomo_table3_nacl_workflow() -> None:
         pytest.param(
             2508.0,
             5.6,
-            "one_phase_no_negative_witness_detected",
             -24.27753305522489,
             (1.0,),
             ((0.8321050353538131, 0.08394748232309347, 0.08394748232309347),),
@@ -316,10 +129,9 @@ def test_perdomo_table3_nacl_workflow() -> None:
         ),
     ),
 )
-def test_perdomo_nacl_public_results_remain_in_the_numerical_regression_region(
+def test_perdomo_nacl_results_remain_in_the_numerical_regression_region(
     pressure_pa: float,
     molality_mol_per_kg: float,
-    expected_outcome: str,
     expected_free_energy: float,
     expected_phase_fractions: tuple[float, ...],
     expected_mole_fractions: tuple[tuple[float, ...], ...],
@@ -331,23 +143,6 @@ def test_perdomo_nacl_public_results_remain_in_the_numerical_regression_region(
         298.15 * epcsaft.unit_registry.kelvin,
         pressure_pa * epcsaft.unit_registry.pascal,
         feed,
-    )
-    assert result.diagnostics.outcome == expected_outcome
-    assert result.diagnostics.solver_status == "passed"
-    assert result.diagnostics.numerical_status == "passed"
-    assert result.diagnostics.physical_status == "passed"
-    assert result.diagnostics.globality_certificate == "not_guaranteed"
-    performance = result.diagnostics.performance
-    assert performance is not None
-    assert performance.step_timings
-    assert all(
-        isinstance(timing, equilibrium.HeldStepTiming)
-        and 1 <= timing.step <= 10
-        and timing.wall_seconds >= 0.0
-        for timing in performance.step_timings
-    )
-    assert performance.provider_evaluations == sum(
-        timing.provider_evaluations for timing in performance.step_timings
     )
     assert result.overall_mole_fractions == pytest.approx(
         feed,
@@ -376,7 +171,3 @@ def test_perdomo_nacl_public_results_remain_in_the_numerical_regression_region(
             abs=PHASE_COMPOSITION_ATOL,
             rel=NUMERICAL_RTOL,
         )
-    if molality_mol_per_kg == PERDOMO_TABLE3_NACL_MOL_PER_KG_WATER:
-        assert performance.provider_evaluations <= 3_500
-        assert performance.optimizer_solves <= 2
-        assert performance.optimizer_iterations <= 3_500

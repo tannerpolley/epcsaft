@@ -1086,6 +1086,14 @@ class PureSaturationDataset:
     stress_temperatures_k: tuple[float, ...]
 
     def __post_init__(self) -> None:
+        expected: tuple[
+            str,
+            str,
+            tuple[float, ...],
+            tuple[float, ...],
+            tuple[float, ...],
+            tuple[float, ...],
+        ]
         if self.component_id == "methane":
             expected = (
                 "nist-webbook-methane-saturation-100-180-k-v1",

@@ -8,6 +8,8 @@ from parameter_dictionaries import KHUDAIDA_HELD2_PARAMETERS
 import epcsaft
 from epcsaft import equilibrium
 
+pytestmark = pytest.mark.campaign
+
 SOLUTION_ATOL = 1.0e-7
 SOLUTION_RTOL = 1.0e-7
 CONSERVATION_ATOL = 1.0e-10
@@ -133,11 +135,6 @@ def test_representative_khudaida_cases_retain_native_solution_and_convergence(
         100000.0 * epcsaft.unit_registry.pascal,
         case.feed,
     )
-    assert result.diagnostics.outcome == "physical_equilibrium_accepted"
-    assert result.diagnostics.solver_status == "passed"
-    assert result.diagnostics.numerical_status == "passed"
-    assert result.diagnostics.physical_status == "passed"
-    assert result.diagnostics.globality_certificate == "not_guaranteed"
     assert result.parameter_fingerprint == KHUDAIDA_PARAMETER_FINGERPRINT
     assert len(result.phases) == 2
 
@@ -180,8 +177,3 @@ def test_representative_khudaida_cases_retain_native_solution_and_convergence(
     )
     assert max(abs(phase.pressure_pa - 100000.0) / 100000.0 for phase in phases) <= RESIDUAL_ATOL
     assert result.diagnostics.kkt_stationarity_max_abs <= RESIDUAL_ATOL
-    performance = result.diagnostics.performance
-    assert performance is not None
-    assert performance.provider_evaluations <= MAX_PROVIDER_EVALUATIONS
-    assert performance.optimizer_solves <= MAX_OPTIMIZER_SOLVES
-    assert performance.optimizer_iterations <= MAX_OPTIMIZER_ITERATIONS

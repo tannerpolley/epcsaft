@@ -3,19 +3,20 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from math import gcd
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal, SupportsFloat, cast
 
 import pint
 
-from . import _core as _native_core
+import epcsaft._core as _native_core
 from .eos import (
     EosError,
     _eos_error,
+    _native_transport,
     _native_topology_fingerprint,
     _state_magnitude,
-    native_sdk,
 )
 from .units import unit_registry
 
@@ -48,9 +49,9 @@ _SOURCE_REFERENCE_ERRORS = {
 def _log_fugacity(
     mixture: Mixture,
     *,
-    temperature: pint.Quantity,
-    pressure: pint.Quantity,
-    phase: str,
+    temperature: pint.Quantity[Any],
+    pressure: pint.Quantity[Any],
+    phase: Literal["vapor", "liquid"],
     composition: tuple[float, ...],
     required_indices: tuple[int, ...],
 ) -> tuple[float, ...]:
@@ -66,7 +67,7 @@ def _log_fugacity(
     values = fugacity.ln_coefficient
     if any(not math.isfinite(values[index]) for index in required_indices):
         raise _eos_error("reference-state-failed", reason="nonfinite-fugacity")
-    return values
+    return tuple(values)
 
 
 @dataclass(frozen=True, slots=True)
@@ -206,7 +207,7 @@ def source_reference_transfer(
             ).hexdigest()
         )
         value = _native_core.source_reference_transfer_v1(
-            native_sdk(model),
+            _native_transport(model),
             model.parameter_fingerprint,
             _native_topology_fingerprint(model),
             temperature_k,
@@ -285,7 +286,7 @@ class ElectrolyteReference:
     solvent_mole_fractions: tuple[float, ...]
     temperature: pint.Quantity[float]
     pressure: pint.Quantity[float]
-    phase: str
+    phase: Literal["liquid"]
     infinite_dilution_log_fugacity_coefficient: tuple[float, float]
     reference_molality: pint.Quantity[float]
     convergence_error: float
@@ -305,8 +306,9 @@ class ElectrolyteReference:
             * unit_registry.joule
             / unit_registry.mole
         )
-        return tuple(  # type: ignore[return-value]
-            value * scale for value in self.infinite_dilution_log_fugacity_coefficient
+        return (
+            self.infinite_dilution_log_fugacity_coefficient[0] * scale,
+            self.infinite_dilution_log_fugacity_coefficient[1] * scale,
         )
 
     def state(self, *, molality: object) -> State:
@@ -345,7 +347,7 @@ class ElectrolyteReference:
             )
         )
         # EqID: single_ion_activity_coefficient
-        single_ion = tuple(math.exp(value) for value in log_activity)
+        single_ion = (math.exp(log_activity[0]), math.exp(log_activity[1]))
         coefficient_sum = sum(self.formula_stoichiometry)
         # EqID: mean_ionic_activity_coefficient
         log_mean = (
@@ -384,7 +386,7 @@ class ElectrolyteReference:
             formula_unit_molality=molality * unit_registry.mole / unit_registry.kilogram,
             mole_fractions=composition,
             ion_component_ids=self.ion_component_ids,
-            single_ion=single_ion,  # type: ignore[arg-type]
+            single_ion=single_ion,
             mean_mole_fraction=mean_mole_fraction,
             mean_molality=mean_molality,
             osmotic_coefficient=osmotic_coefficient,
@@ -393,7 +395,7 @@ class ElectrolyteReference:
             T=self.temperature,
             P=self.pressure,
             x=composition,
-            phase=self.phase,  # type: ignore[arg-type]
+            phase=self.phase,
         )
         return replace(state, _activity=activity)
 
@@ -415,17 +417,21 @@ class ElectrolyteReference:
             / unit_registry.mole
         )
         # EqID: transfer_free_energy
-        values = tuple(
-            (target_value - source_value) * scale
-            for source_value, target_value in zip(
-                self.infinite_dilution_log_fugacity_coefficient,
-                target.infinite_dilution_log_fugacity_coefficient,
-                strict=True,
+        values = (
+            (
+                target.infinite_dilution_log_fugacity_coefficient[0]
+                - self.infinite_dilution_log_fugacity_coefficient[0]
             )
+            * scale,
+            (
+                target.infinite_dilution_log_fugacity_coefficient[1]
+                - self.infinite_dilution_log_fugacity_coefficient[1]
+            )
+            * scale,
         )
         return TransferFreeEnergy(
             ion_component_ids=self.ion_component_ids,
-            values=values,  # type: ignore[arg-type]
+            values=values,
         )
 
 
@@ -442,7 +448,10 @@ def build_reference_state(
     if phase != "liquid":
         raise _eos_error("invalid-reference-state", field="phase")
     try:
-        solvent_fractions = tuple(float(value) for value in solvent_mole_fractions)  # type: ignore[union-attr]
+        solvent_fractions = tuple(
+            float(cast(SupportsFloat, value))
+            for value in cast(Iterable[object], solvent_mole_fractions)
+        )
     except (TypeError, ValueError) as exc:
         raise _eos_error("invalid-reference-state", field="solvent_mole_fractions") from exc
 
@@ -493,6 +502,9 @@ def build_reference_state(
     except (RuntimeError, ValueError) as exc:
         raise _eos_error("reference-state-failed", reason=str(exc)) from exc
     current = tuple(sequence.log_fugacity)
+    if len(current) != 2:
+        raise _eos_error("reference-state-failed", reason="invalid-ion-reference-count")
+    ion_reference = (current[0], current[1])
     convergence_error = sequence.convergence_error
 
     active_solvents = tuple(index for index in solvent_indices if solvent_fractions[index] > 0.0)
@@ -510,7 +522,7 @@ def build_reference_state(
         temperature=temperature_quantity,
         pressure=pressure_quantity,
         phase=phase,
-        infinite_dilution_log_fugacity_coefficient=current,
+        infinite_dilution_log_fugacity_coefficient=ion_reference,
         reference_molality=sequence.reference_molality
         * unit_registry.mole
         / unit_registry.kilogram,

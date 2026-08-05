@@ -1,6 +1,6 @@
 # Unified ePC-SAFT Engine context
 
-`governance_doctrine_revision: 9`
+`governance_doctrine_revision: 10`
 
 Canonical doctrine and cutover state live in
 `../ePC-SAFT-governance/GOVERNANCE.md` and

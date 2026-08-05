@@ -17,7 +17,7 @@ not alter that equation identity.
 
 Immutable Data migration packets retain a historical `purpose` value. The path
 loader accepts that exact legacy value as inert external-file metadata only; it
-does not expose catalog discovery or use purpose in scientific identity or SDK
+does not expose catalog discovery or use purpose in scientific identity or runtime
 admission.
 
 ## Dictionary schema
@@ -133,25 +133,11 @@ order. Admitted electrolyte models can create a reference with
 `State.ares_polar` is the dimensionless aggregate
 `a_DD + a_QQ + a_DQ35`; no family-specific public contribution is exposed.
 
-## Native SDK
+## Internal native transport
 
-`native_sdk(mixture)` binds the resolved model to the append-only v1 capsule.
-Availability is determined by structural capability: topology, active fields,
-exact component order, and declared applicability. Parameter and topology
-fingerprints remain deterministic handshake values, but paper, packet, and
-bundle membership never admit or reject an endpoint.
-
-For an admitted neutral constant-diameter associating model, the installed header exposes one
-`fixed_topology_association` descriptor. The descriptor lists the immutable
-component/site graph and typed active slots. Pure callers use
-`evaluate_fixed_topology_association` and receive exact derivatives in
-`(amount, volume, requested slots...)`; multicomponent callers use
-`evaluate_fixed_topology_associating_mixture` and receive exact derivatives in
-`(component amounts in model order, volume, requested slots...)`. Exact
-component IDs are passed back to the mixture callback; its result binds
-parameter, topology, component-order, domain, and installed-artifact
-fingerprints. There are no species-specific callbacks, topology inference,
-2B-specific entry points, or alternate association-basis selector.
-
-Native phase blocks evaluate the same fingerprint-distinct aggregate for polar
-models; no polar callback or family-specific result type is added.
+EOS, Equilibrium, and Regression exchange model-bound values and exact
+derivatives through one private in-wheel native seam. It is not a public Python
+entry point, installed header set, separately versioned SDK, or external C++
+ABI. Public consumers use `Mixture`, `State`, `epcsaft.equilibrium`, and
+`epcsaft.regression`; the Engine build owns and may revise its internal native
+transport atomically.

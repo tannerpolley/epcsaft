@@ -14,6 +14,7 @@ from pint import Quantity
 from pint.errors import DimensionalityError
 
 import epcsaft
+from epcsaft.eos import _native_transport
 
 from . import _equilibrium
 
@@ -1248,7 +1249,7 @@ def tp_flash(
             _FLASH_METHANE_FEED_DOMAIN[0] <= feed[0] <= _FLASH_METHANE_FEED_DOMAIN[1]
         ):
             raise ValueError("composition is outside the audited May 2015 source domain")
-        capsule = epcsaft.native_sdk(model)
+        capsule = _native_transport(model)
     except (TypeError, ValueError) as error:
         diagnostics = _failed_held_diagnostics("invalid_input", "input_rejected", str(error))
         raise FlashError(str(error), diagnostics) from error
@@ -2174,17 +2175,6 @@ def _distribution_identity(distribution_name: str) -> tuple[str, str]:
     return distribution.version, f"sha256:{digest}"
 
 
-def _distribution_file_identity(
-    distribution_name: str,
-    relative_path: str,
-) -> str:
-    path = metadata.distribution(distribution_name).locate_file(relative_path)
-    payload = path.read_bytes()
-    if not payload:
-        raise ValueError(f"installed {distribution_name} file identity is unavailable")
-    return "sha256:" + hashlib.sha256(payload).hexdigest()
-
-
 def _chemical_artifact_identity(
     native: Mapping[str, object],
     *,
@@ -2669,7 +2659,7 @@ def chemical_equilibrium(
                 raise ValueError("packing-fraction bounds must be finite and increasing")
             model_fingerprint = phase.expected_parameter_fingerprint
             spec["provider_fingerprint"] = model_fingerprint
-            capsule = epcsaft.native_sdk(phase.model)
+            capsule = _native_transport(phase.model)
             thermodynamic_model = "engine_model"
             provider_ids = tuple(phase.model.component_ids)
             provider_fingerprint = model_fingerprint
@@ -2949,19 +2939,11 @@ def chemical_observation_context(
         for item in parameter_records
     )
     engine_version, engine_record = _distribution_identity("epcsaft")
-    provider_header = _distribution_file_identity(
-        "epcsaft",
-        "epcsaft/include/epcsaft/native_sdk_v1.h",
-    )
-    owner_header = _distribution_file_identity(
-        "epcsaft",
-        "epcsaft/include/epcsaft/regression/evaluator_v1.h",
-    )
     provider_artifact_identity = (
-        f"epcsaft=={engine_version};RECORD={engine_record};HEADER={provider_header}"
+        f"epcsaft=={engine_version};RECORD={engine_record};MODULE=epcsaft"
     )
     owner_artifact_identity = (
-        f"epcsaft=={engine_version};RECORD={engine_record};HEADER={owner_header}"
+        f"epcsaft=={engine_version};RECORD={engine_record};MODULE=epcsaft.equilibrium"
     )
     evaluator_identity = "epcsaft.equilibrium.homogeneous-liquid-observation.v1"
     capability_id = "homogeneous-liquid-positive-scalars-v1"
@@ -3012,7 +2994,7 @@ def chemical_observation_context(
     if len(trace_floors) != 1:
         raise ValueError("chemical-observation rows require one trace-floor contract")
     capsule = _equilibrium._chemical_observation_context(
-        epcsaft.native_sdk(phase.model),
+        _native_transport(phase.model),
         tuple(native_rows),
         packing_bounds,
         trace_floors.pop(),
@@ -3074,7 +3056,7 @@ def saturation(model: epcsaft.Mixture, temperature: Quantity[Any]) -> Saturation
             f"[{scope.temperature_min_k:g}, {scope.temperature_max_k:g}] K"
         )
 
-    capsule = epcsaft.native_sdk(model)
+    capsule = _native_transport(model)
     try:
         native = cast(
             Mapping[str, object],

@@ -16,8 +16,8 @@ not create a second parameter representation or validation path.
 
 Parameter fingerprints are computed from normalized scientific values,
 component order, options, and validity. Source IDs, citations, locators, record
-IDs, bundle IDs, and packet membership do not affect equation identity. Native
-SDK capabilities are admitted from resolved topology, required fields,
+IDs, bundle IDs, and packet membership do not affect equation identity. Internal
+native capabilities are admitted from resolved topology, required fields,
 component order, and applicability—not allowlisted fingerprints.
 
 Reusable parameter/property packets and provenance are owned by Data.

@@ -14,7 +14,19 @@ platform = "linux"
 [[actions]]
 name = "Check"
 icon = "test"
-command = ".venv/bin/python -m ruff check --select E4,E7,E9,F src tests"
+command = ".venv/bin/python -m ruff check --select E4,E7,E9,F src tests && .venv/bin/python -m mypy"
+platform = "linux"
+
+[[actions]]
+name = "Check native"
+icon = "test"
+command = "bash .codex/environments/check-native.sh"
+platform = "linux"
+
+[[actions]]
+name = "Check native sanitizers"
+icon = "test"
+command = "bash .codex/environments/check-native-sanitizers.sh"
 platform = "linux"
 
 [[actions]]

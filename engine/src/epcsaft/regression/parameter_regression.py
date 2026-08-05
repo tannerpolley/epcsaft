@@ -6,11 +6,12 @@ import math
 from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from enum import StrEnum
+from typing import Any
 
-from epcsaft import native_sdk
 from epcsaft import regression as _package
+from epcsaft.eos import Mixture, _native_transport
 
-from . import _native
+import epcsaft.regression._native as _native
 
 
 class ParameterFamily(StrEnum):
@@ -252,12 +253,12 @@ class DirectObservationRowDiagnostic:
 
 
 def parameter_capabilities(
-    model: object,
+    model: Mixture,
 ) -> tuple[
     ParameterCapability | FixedTopologyAssociationCapability | UnsupportedParameterCapability,
     ...,
 ]:
-    raw_capabilities = _native.parameter_capabilities(native_sdk(model))
+    raw_capabilities = _native.parameter_capabilities(_native_transport(model))
     capabilities: list[
         ParameterCapability | FixedTopologyAssociationCapability | UnsupportedParameterCapability
     ] = []
@@ -1090,7 +1091,8 @@ class AqueousKijMeanIonicActivityObservation:
 
     @property
     def canonical_active_pair_component_ids(self) -> tuple[str, str]:
-        return tuple(sorted(self.active_pair_component_ids))
+        ordered = sorted(self.active_pair_component_ids)
+        return ordered[0], ordered[1]
 
 
 @dataclass(frozen=True, slots=True)
@@ -1147,7 +1149,8 @@ class IonSolvationKijObservation:
 
     @property
     def canonical_active_pair_component_ids(self) -> tuple[str, str]:
-        return tuple(sorted(self.active_pair_component_ids))
+        ordered = sorted(self.active_pair_component_ids)
+        return ordered[0], ordered[1]
 
 
 @dataclass(frozen=True, slots=True)
@@ -1416,7 +1419,9 @@ def _canonical_row(row: RegressionObservation) -> dict[str, object]:
 def canonical_dataset_sha256(
     observations: Iterable[RegressionObservation],
 ) -> str:
-    rows = sorted((_canonical_row(row) for row in observations), key=lambda row: row["row_id"])
+    rows = sorted(
+        (_canonical_row(row) for row in observations), key=lambda row: str(row["row_id"])
+    )
     payload = json.dumps(rows, sort_keys=True, separators=(",", ":"), allow_nan=False)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
@@ -1806,7 +1811,11 @@ def _fixed_topology_slot_match(
             raise ValueError("association coordinate does not match the installed EOS artifact")
         if isinstance(parameter.identity, AssociationParameterIdentity):
             expected_identities: tuple[
-                ComponentParameterIdentity | AssociationParameterIdentity, ...
+                ComponentParameterIdentity
+                | PairParameterIdentity
+                | ModelParameterIdentity
+                | AssociationParameterIdentity,
+                ...,
             ] = tuple(
                 AssociationParameterIdentity(
                     parameter.family,
@@ -1927,7 +1936,7 @@ def _native_payload(
     )
 
 
-def _matched_capability(problem: RegressionProblem, model: object) -> ParameterCapability:
+def _matched_capability(problem: RegressionProblem, model: Mixture) -> ParameterCapability:
     capabilities = parameter_capabilities(model)
     parameter = problem.parameters[0]
     matches = tuple(
@@ -2038,7 +2047,7 @@ def _matched_capability(problem: RegressionProblem, model: object) -> ParameterC
 
 
 def _matched_capabilities(
-    problem: RegressionProblem, model: object
+    problem: RegressionProblem, model: Mixture
 ) -> tuple[ParameterCapability | FixedTopologyAssociationCapability, ...]:
     if _uses_fixed_topology_descriptor(problem.parameters):
         advertised = tuple(
@@ -2130,7 +2139,7 @@ def _supported_capability_block(
 
 
 def _evaluate_parameters(
-    problem: RegressionProblem, model: object, variables: tuple[float, ...]
+    problem: RegressionProblem, model: Mixture, variables: tuple[float, ...]
 ) -> tuple[tuple[float, ...], tuple[float, ...]]:
     capabilities = _matched_capabilities(problem, model)
     if not _supported_capability_block(problem, capabilities):
@@ -2139,14 +2148,14 @@ def _evaluate_parameters(
         )
     capability = capabilities[0]
     residuals, jacobian = _native.evaluate_general(
-        native_sdk(model), _native_payload(problem, capability), variables
+        _native_transport(model), _native_payload(problem, capability), variables
     )
     return tuple(residuals), tuple(jacobian)
 
 
 def _evaluate_parameters_at_start(
     problem: RegressionProblem,
-    model: object,
+    model: Mixture,
     physical_start: tuple[float, ...],
 ) -> tuple[tuple[float, ...], tuple[float, ...], tuple[float, ...]]:
     capabilities = _matched_capabilities(problem, model)
@@ -2155,7 +2164,7 @@ def _evaluate_parameters_at_start(
             "the installed capabilities do not expose one compatible multi-active evaluator"
         )
     variables, residuals, jacobian = _native.evaluate_general_start(
-        native_sdk(model),
+        _native_transport(model),
         _native_payload(problem, capabilities[0]),
         physical_start,
     )
@@ -2210,7 +2219,47 @@ def _complete_failure_reasons(
     return tuple(dict.fromkeys(reasons))
 
 
-def fit_parameters(problem: RegressionProblem, model: object) -> _package.RegressionResult:
+def _direct_observed_value(observation: RegressionObservation) -> float:
+    if isinstance(
+        observation,
+        (MeanIonicActivityObservation, AqueousKijMeanIonicActivityObservation),
+    ):
+        return observation.observed_mean_ionic_activity_coefficient
+    if isinstance(observation, RelativePermittivityRatioObservation):
+        return observation.observed_relative_permittivity_ratio
+    if isinstance(observation, (IonSolvationKijObservation, SolvationGibbsObservation)):
+        return observation.observed_solvation_gibbs_j_per_mol
+    raise TypeError("observation is not a direct scalar observation")
+
+
+def _general_row_diagnostic(row: Any, observation: RegressionObservation) -> GeneralRowDiagnostic:
+    if not isinstance(observation, FixedCompositionVleObservation):
+        raise TypeError("general row requires a fixed-composition VLE observation")
+    return GeneralRowDiagnostic(
+        row_id=row[0],
+        partition=row[1],
+        liquid_volume_m3_per_mol=row[2],
+        vapor_volume_m3_per_mol=row[3],
+        scaled_residuals=tuple(row[4]),
+        observed_pressure_pa=observation.pressure_pa,
+        liquid_model_pressure_pa=(
+            observation.pressure_pa + row[4][0] * observation.pressure_scale_pa
+        ),
+        vapor_model_pressure_pa=(
+            observation.pressure_pa + row[4][1] * observation.pressure_scale_pa
+        ),
+        chemical_potential_differences_over_rt=(
+            row[4][2] * observation.chemical_potential_scales[0],
+            row[4][3] * observation.chemical_potential_scales[1],
+        ),
+        derivative_status=("EXACT_PROVIDER_HESSIAN" if row[5] else "UNAVAILABLE"),
+        status="evaluated" if row[5] else "failed",
+        evaluated=row[5],
+        failure_reason=row[6],
+    )
+
+
+def fit_parameters(problem: RegressionProblem, model: Mixture) -> _package.RegressionResult:
     from .result import RegressionResult
 
     capabilities = _matched_capabilities(problem, model)
@@ -2219,7 +2268,7 @@ def fit_parameters(problem: RegressionProblem, model: object) -> _package.Regres
             "the installed capabilities do not expose one compatible multi-active evaluator"
         )
     capability = capabilities[0]
-    native = _native.solve_general(native_sdk(model), _native_payload(problem, capability))
+    native = _native.solve_general(_native_transport(model), _native_payload(problem, capability))
     vector_parameter_result = len(problem.parameters) > 1 or _uses_fixed_topology_descriptor(
         problem.parameters
     )
@@ -2274,19 +2323,7 @@ def fit_parameters(problem: RegressionProblem, model: object) -> _package.Regres
                     )
                     else "J/mol"
                 ),
-                observed_value=(
-                    observation.observed_mean_ionic_activity_coefficient
-                    if isinstance(
-                        observation,
-                        (
-                            MeanIonicActivityObservation,
-                            AqueousKijMeanIonicActivityObservation,
-                        ),
-                    )
-                    else observation.observed_relative_permittivity_ratio
-                    if isinstance(observation, RelativePermittivityRatioObservation)
-                    else observation.observed_solvation_gibbs_j_per_mol
-                ),
+                observed_value=_direct_observed_value(observation),
                 modeled_value=row[7],
                 scaled_residual=row[4][0],
                 provider_derivative=row[8],
@@ -2377,28 +2414,7 @@ def fit_parameters(problem: RegressionProblem, model: object) -> _package.Regres
                 observation := observations[row[0]],
                 PureSaturationObservation,
             )
-            else GeneralRowDiagnostic(
-                row_id=row[0],
-                partition=row[1],
-                liquid_volume_m3_per_mol=row[2],
-                vapor_volume_m3_per_mol=row[3],
-                scaled_residuals=tuple(row[4]),
-                observed_pressure_pa=observation.pressure_pa,
-                liquid_model_pressure_pa=(
-                    observation.pressure_pa + row[4][0] * observation.pressure_scale_pa
-                ),
-                vapor_model_pressure_pa=(
-                    observation.pressure_pa + row[4][1] * observation.pressure_scale_pa
-                ),
-                chemical_potential_differences_over_rt=(
-                    row[4][2] * observation.chemical_potential_scales[0],
-                    row[4][3] * observation.chemical_potential_scales[1],
-                ),
-                derivative_status=("EXACT_PROVIDER_HESSIAN" if row[5] else "UNAVAILABLE"),
-                status="evaluated" if row[5] else "failed",
-                evaluated=row[5],
-                failure_reason=row[6],
-            )
+            else _general_row_diagnostic(row, observation)
         )
         for row in native[20]
     )

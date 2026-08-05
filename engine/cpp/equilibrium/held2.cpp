@@ -280,7 +280,7 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
                 ++result.refinement_failure_count;
                 return std::nullopt;
             }
-            const EvaluatedPoint middle = evaluate_point(midpoint);
+            EvaluatedPoint middle = evaluate_point(midpoint);
             if (!middle.diagnostic.valid) {
                 ++result.refinement_failure_count;
                 return std::nullopt;

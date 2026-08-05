@@ -210,16 +210,24 @@ def _validity(value: object) -> ValidityDomain:
         kind,
         temperature_min=None
         if "temperature_min_k" not in raw
-        else unit_registry.Quantity(raw["temperature_min_k"], "kelvin"),
+        else unit_registry.Quantity(
+            _decimal_number(raw["temperature_min_k"], field="temperature_min_k"), "kelvin"
+        ),
         temperature_max=None
         if "temperature_max_k" not in raw
-        else unit_registry.Quantity(raw["temperature_max_k"], "kelvin"),
+        else unit_registry.Quantity(
+            _decimal_number(raw["temperature_max_k"], field="temperature_max_k"), "kelvin"
+        ),
         pressure_min=None
         if "pressure_min_pa" not in raw
-        else unit_registry.Quantity(raw["pressure_min_pa"], "pascal"),
+        else unit_registry.Quantity(
+            _decimal_number(raw["pressure_min_pa"], field="pressure_min_pa"), "pascal"
+        ),
         pressure_max=None
         if "pressure_max_pa" not in raw
-        else unit_registry.Quantity(raw["pressure_max_pa"], "pascal"),
+        else unit_registry.Quantity(
+            _decimal_number(raw["pressure_max_pa"], field="pressure_max_pa"), "pascal"
+        ),
         ion_mole_fraction_max=raw.get("ion_mole_fraction_max"),
     )
 
@@ -436,8 +444,16 @@ def _correlations(
                 )
                 terms.append(
                     ExponentialTerm(
-                        unit_registry.Quantity(term["amplitude"], "angstrom"),
-                        unit_registry.Quantity(term["exponent_coefficient_per_k"], "1 / kelvin"),
+                        unit_registry.Quantity(
+                            _decimal_number(term["amplitude"], field="amplitude"), "angstrom"
+                        ),
+                        unit_registry.Quantity(
+                            _decimal_number(
+                                term["exponent_coefficient_per_k"],
+                                field="exponent_coefficient_per_k",
+                            ),
+                            "1 / kelvin",
+                        ),
                     )
                 )
             records.append(ConstantPlusSumOfExponentialsCorrelation(**common, terms=tuple(terms)))

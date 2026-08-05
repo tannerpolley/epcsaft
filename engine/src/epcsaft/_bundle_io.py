@@ -7,6 +7,9 @@ from decimal import Decimal, InvalidOperation
 from os import PathLike
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any, Literal, Protocol, TypedDict, cast
+
+import pint
 
 from .records import (
     _DIMENSIONAL_UNITS,
@@ -14,15 +17,58 @@ from .records import (
     ComponentRecord,
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
+    CorrelationFamily,
+    CorrelationRecord,
     ExponentialTerm,
     ModelParameterRecord,
     PairParameterRecord,
+    ParameterRecord,
     SingleParameterRecord,
     SiteRecord,
     SourceRecord,
     ValidityDomain,
 )
 from .units import ParameterError, _error, unit_registry
+
+
+class _LoadedBundle(TypedDict):
+    bundle_id: str
+    bundle_version: int
+    purpose: Literal[
+        "external-bundle", "package-test-fixture", "regression-output", "user-provided"
+    ]
+    sources: tuple[SourceRecord, ...]
+    domains: tuple[ValidityDomain, ...]
+    components: tuple[ComponentRecord, ...]
+    singles: tuple[SingleParameterRecord, ...]
+    pairs: tuple[PairParameterRecord, ...]
+    sites: tuple[SiteRecord, ...]
+    associations: tuple[AssociationParameterRecord, ...]
+    correlations: tuple[ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation, ...]
+    models: tuple[ModelParameterRecord, ...]
+
+
+class _WritableBundle(Protocol):
+    @property
+    def bundle_id(self) -> str: ...
+
+    @property
+    def bundle_version(self) -> int: ...
+
+    @property
+    def purpose(self) -> str: ...
+
+    @property
+    def sources(self) -> tuple[SourceRecord, ...]: ...
+
+    @property
+    def domains(self) -> tuple[ValidityDomain, ...]: ...
+
+    @property
+    def components(self) -> tuple[ComponentRecord, ...]: ...
+
+    @property
+    def records(self) -> tuple[ParameterRecord, ...]: ...
 
 _OPTIONAL_FILES = frozenset(
     {
@@ -117,7 +163,9 @@ _TEMPLATE_FILES = {
 }
 
 
-def _exact_keys(value: object, required: set[str], optional: set[str] = set()) -> dict:
+def _exact_keys(
+    value: object, required: set[str], optional: set[str] = set()
+) -> dict[str, object]:
     if (
         not isinstance(value, dict)
         or not required <= value.keys()
@@ -127,7 +175,7 @@ def _exact_keys(value: object, required: set[str], optional: set[str] = set()) -
     return value
 
 
-def _toml(path: Path) -> dict:
+def _toml(path: Path) -> dict[str, object]:
     try:
         return tomllib.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
@@ -144,7 +192,7 @@ def _decimal(value: object, *, field: str) -> Decimal:
     return result
 
 
-def _quantity(value: object, unit: object, *, field: str):
+def _quantity(value: object, unit: object, *, field: str) -> pint.Quantity[Any]:
     if not isinstance(unit, str) or not unit:
         raise _error("invalid-unit", field=field, expected="declared-unit")
     try:
@@ -259,14 +307,16 @@ def _components(path: Path) -> tuple[ComponentRecord, ...]:
     )
 
 
-def _parameters(path: Path, name: str, record_type: type) -> tuple:
+def _parameters(
+    path: Path, name: str, record_type: type[ParameterRecord]
+) -> tuple[ParameterRecord, ...]:
     result = []
     for row in _rows(path, name):
         data: dict[str, object] = {
             key: value for key, value in row.items() if key not in {"unit", "value"}
         }
         data["value"] = _parameter_value(row)
-        result.append(record_type(**data))
+        result.append(cast(ParameterRecord, cast(Any, record_type)(**data)))
     return tuple(result)
 
 
@@ -292,12 +342,14 @@ def _sites(path: Path) -> tuple[SiteRecord, ...]:
     return tuple(result)
 
 
-def _correlations(path: Path) -> tuple:
+def _correlations(
+    path: Path,
+) -> tuple[ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation, ...]:
     document = _toml(path)
     _exact_keys(document, {"correlations"})
     if not isinstance(document["correlations"], list) or not document["correlations"]:
         raise _error("invalid-schema", field="correlations", value="empty")
-    result = []
+    result: list[ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation] = []
     common = {
         "record_id",
         "component_id",
@@ -318,13 +370,13 @@ def _correlations(path: Path) -> tuple:
             constant = _correlation_value(data["family"], data["constant"], data["output_unit"])
             result.append(
                 ConstantCorrelation(
-                    record_id=data["record_id"],
-                    component_id=data["component_id"],
-                    family=data["family"],
+                    record_id=cast(str, data["record_id"]),
+                    component_id=cast(str, data["component_id"]),
+                    family=cast(CorrelationFamily, data["family"]),
                     constant=constant,
-                    source_id=data["source_id"],
-                    locator=data["locator"],
-                    domain_id=data["domain_id"],
+                    source_id=cast(str, data["source_id"]),
+                    locator=cast(str, data["locator"]),
+                    domain_id=cast(str, data["domain_id"]),
                 )
             )
         elif form == "constant-plus-sum-of-exponentials":
@@ -348,16 +400,16 @@ def _correlations(path: Path) -> tuple:
                 )
             result.append(
                 ConstantPlusSumOfExponentialsCorrelation(
-                    record_id=data["record_id"],
-                    component_id=data["component_id"],
-                    family=data["family"],
+                    record_id=cast(str, data["record_id"]),
+                    component_id=cast(str, data["component_id"]),
+                    family="segment_diameter",
                     constant=_correlation_value(
                         data["family"], data["constant"], data["output_unit"]
                     ),
                     terms=tuple(terms),
-                    source_id=data["source_id"],
-                    locator=data["locator"],
-                    domain_id=data["domain_id"],
+                    source_id=cast(str, data["source_id"]),
+                    locator=cast(str, data["locator"]),
+                    domain_id=cast(str, data["domain_id"]),
                 )
             )
         else:
@@ -373,7 +425,7 @@ def _correlation_value(family: object, value: object, output_unit: object) -> ob
     return _decimal(value, field="constant")
 
 
-def _load_path(path: str | PathLike[str]) -> dict[str, object]:
+def _load_path(path: str | PathLike[str]) -> _LoadedBundle:
     try:
         root = Path(path)
     except TypeError as exc:
@@ -414,15 +466,31 @@ def _load_path(path: str | PathLike[str]) -> dict[str, object]:
 
     if not isinstance(data["sources"], list) or not isinstance(data["domains"], list):
         raise _error("invalid-schema", field="metadata", value="not-array")
-    sources = tuple(
-        SourceRecord(**_exact_keys(raw, {"source_id", "citation", "use_basis"}, {"doi"}))
-        for raw in data["sources"]
-    )
+    sources_list: list[SourceRecord] = []
+    for raw in data["sources"]:
+        source = _exact_keys(raw, {"source_id", "citation", "use_basis"}, {"doi"})
+        sources_list.append(
+            SourceRecord(
+                source_id=cast(str, source["source_id"]),
+                citation=cast(str, source["citation"]),
+                use_basis=cast(str, source["use_basis"]),
+                doi=cast(str | None, source.get("doi")),
+            )
+        )
+    sources = tuple(sources_list)
     domains = tuple(_domain(raw) for raw in data["domains"])
-    result: dict[str, object] = {
-        "bundle_id": data["bundle_id"],
-        "bundle_version": data["bundle_version"],
-        "purpose": data["purpose"],
+    result: _LoadedBundle = {
+        "bundle_id": cast(str, data["bundle_id"]),
+        "bundle_version": cast(int, data["bundle_version"]),
+        "purpose": cast(
+            Literal[
+                "external-bundle",
+                "package-test-fixture",
+                "regression-output",
+                "user-provided",
+            ],
+            data["purpose"],
+        ),
         "sources": sources,
         "domains": domains,
         "components": _components(root / "components.csv"),
@@ -434,17 +502,29 @@ def _load_path(path: str | PathLike[str]) -> dict[str, object]:
         "models": (),
     }
     if "single.csv" in files:
-        result["singles"] = _parameters(root / "single.csv", "single.csv", SingleParameterRecord)
+        result["singles"] = cast(
+            tuple[SingleParameterRecord, ...],
+            _parameters(root / "single.csv", "single.csv", SingleParameterRecord),
+        )
     if "pair.csv" in files:
-        result["pairs"] = _parameters(root / "pair.csv", "pair.csv", PairParameterRecord)
+        result["pairs"] = cast(
+            tuple[PairParameterRecord, ...],
+            _parameters(root / "pair.csv", "pair.csv", PairParameterRecord),
+        )
     if "sites.csv" in files:
         result["sites"] = _sites(root / "sites.csv")
     if "association.csv" in files:
-        result["associations"] = _parameters(
-            root / "association.csv", "association.csv", AssociationParameterRecord
+        result["associations"] = cast(
+            tuple[AssociationParameterRecord, ...],
+            _parameters(
+                root / "association.csv", "association.csv", AssociationParameterRecord
+            ),
         )
     if "model.csv" in files:
-        result["models"] = _parameters(root / "model.csv", "model.csv", ModelParameterRecord)
+        result["models"] = cast(
+            tuple[ModelParameterRecord, ...],
+            _parameters(root / "model.csv", "model.csv", ModelParameterRecord),
+        )
     if "correlations.toml" in files:
         result["correlations"] = _correlations(root / "correlations.toml")
     return result
@@ -533,22 +613,24 @@ def _parameter_text(family: str, value: object) -> tuple[str, str]:
         return str(value), ""
     unit = _DIMENSIONAL_UNITS.get(family, "")
     if unit:
-        return _number_text(value.to(unit).magnitude), unit  # type: ignore[attr-defined]
+        if not isinstance(value, pint.Quantity):
+            raise TypeError(f"expected quantity for {family}")
+        return _number_text(value.to(unit).magnitude), unit
     return _number_text(value), ""
 
 
-def _write_manifest(root: Path, bundle: object, files: tuple[str, ...]) -> None:
+def _write_manifest(root: Path, bundle: _WritableBundle, files: tuple[str, ...]) -> None:
     lines = [
         "schema_version = 1",
-        f"bundle_id = {_toml_string(bundle.bundle_id)}",  # type: ignore[attr-defined]
-        f"bundle_version = {bundle.bundle_version}",  # type: ignore[attr-defined]
-        f"purpose = {_toml_string(bundle.purpose)}",  # type: ignore[attr-defined]
+        f"bundle_id = {_toml_string(bundle.bundle_id)}",
+        f"bundle_version = {bundle.bundle_version}",
+        f"purpose = {_toml_string(bundle.purpose)}",
         f"files = [{', '.join(_toml_string(name) for name in files)}]",
     ]
-    sources = bundle.sources  # type: ignore[attr-defined]
+    sources = bundle.sources
     if not sources:
         lines.append("sources = []")
-    domains = bundle.domains  # type: ignore[attr-defined]
+    domains = bundle.domains
     if not domains:
         lines.append("domains = []")
     for source in sources:
@@ -579,7 +661,9 @@ def _write_manifest(root: Path, bundle: object, files: tuple[str, ...]) -> None:
             if getattr(domain, name) is not None
         )
         for name, value in temperature_bounds:
-            magnitude = _number_text(value.to("kelvin").magnitude)  # type: ignore[attr-defined]
+            if not isinstance(value, pint.Quantity):
+                raise TypeError("expected temperature quantity")
+            magnitude = _number_text(value.to("kelvin").magnitude)
             lines.append(f"{name} = {_toml_string(magnitude)}")
         if temperature_bounds:
             lines.append('temperature_unit = "kelvin"')
@@ -589,7 +673,9 @@ def _write_manifest(root: Path, bundle: object, files: tuple[str, ...]) -> None:
             if getattr(domain, name) is not None
         )
         for name, value in pressure_bounds:
-            magnitude = _number_text(value.to("pascal").magnitude)  # type: ignore[attr-defined]
+            if not isinstance(value, pint.Quantity):
+                raise TypeError("expected pressure quantity")
+            magnitude = _number_text(value.to("pascal").magnitude)
             lines.append(f"{name} = {_toml_string(magnitude)}")
         if pressure_bounds:
             lines.append('pressure_unit = "pascal"')
@@ -625,33 +711,45 @@ def _write_components(root: Path, components: tuple[ComponentRecord, ...]) -> No
     )
 
 
-def _parameter_row(record: object, fields: tuple[str, ...]) -> tuple[object, ...]:
-    value, unit = _parameter_text(record.family, record.value)  # type: ignore[attr-defined]
+def _parameter_row(
+    record: SingleParameterRecord
+    | PairParameterRecord
+    | AssociationParameterRecord
+    | ModelParameterRecord,
+    fields: tuple[str, ...],
+) -> tuple[object, ...]:
+    value, unit = _parameter_text(record.family, record.value)
     return (
-        record.record_id,  # type: ignore[attr-defined]
+        record.record_id,
         *(getattr(record, field) for field in fields),
-        record.family,  # type: ignore[attr-defined]
+        record.family,
         value,
         unit,
-        record.source_id,  # type: ignore[attr-defined]
-        record.locator,  # type: ignore[attr-defined]
-        record.domain_id,  # type: ignore[attr-defined]
+        record.source_id,
+        record.locator,
+        record.domain_id,
     )
 
 
-def _write_correlations(root: Path, records: tuple[object, ...]) -> None:
+def _converted_magnitude(value: object, unit: str) -> object:
+    if not isinstance(value, pint.Quantity):
+        raise TypeError(f"expected quantity convertible to {unit}")
+    return value.to(unit).magnitude
+
+
+def _write_correlations(root: Path, records: tuple[CorrelationRecord, ...]) -> None:
     lines: list[str] = []
     for record in records:
-        constant, output_unit = _parameter_text(record.family, record.constant)  # type: ignore[attr-defined]
+        constant, output_unit = _parameter_text(record.family, record.constant)
         if lines:
             lines.append("")
         lines.extend(
             (
                 "[[correlations]]",
-                f"record_id = {_toml_string(record.record_id)}",  # type: ignore[attr-defined]
-                f"component_id = {_toml_string(record.component_id)}",  # type: ignore[attr-defined]
-                f"family = {_toml_string(record.family)}",  # type: ignore[attr-defined]
-                f"form = {_toml_string(record.form)}",  # type: ignore[attr-defined]
+                f"record_id = {_toml_string(record.record_id)}",
+                f"component_id = {_toml_string(record.component_id)}",
+                f"family = {_toml_string(record.family)}",
+                f"form = {_toml_string(record.form)}",
                 f"constant = {_toml_string(constant)}",
                 f"output_unit = {_toml_string(output_unit or 'dimensionless')}",
             )
@@ -659,9 +757,9 @@ def _write_correlations(root: Path, records: tuple[object, ...]) -> None:
         if isinstance(record, ConstantPlusSumOfExponentialsCorrelation):
             coefficients = ", ".join(
                 "{ amplitude = "
-                f"{_toml_string(_number_text(term.amplitude.to('angstrom').magnitude))}, "
+                f"{_toml_string(_number_text(_converted_magnitude(term.amplitude, 'angstrom')))}, "
                 "exponent_coefficient = "
-                f"{_toml_string(_number_text(term.exponent_coefficient.to('1 / kelvin').magnitude))} }}"
+                f"{_toml_string(_number_text(_converted_magnitude(term.exponent_coefficient, '1 / kelvin')))} }}"
                 for term in record.terms
             )
             lines.extend(
@@ -672,66 +770,68 @@ def _write_correlations(root: Path, records: tuple[object, ...]) -> None:
             )
         lines.extend(
             (
-                f"source_id = {_toml_string(record.source_id)}",  # type: ignore[attr-defined]
-                f"locator = {_toml_string(record.locator)}",  # type: ignore[attr-defined]
-                f"domain_id = {_toml_string(record.domain_id)}",  # type: ignore[attr-defined]
+                f"source_id = {_toml_string(record.source_id)}",
+                f"locator = {_toml_string(record.locator)}",
+                f"domain_id = {_toml_string(record.domain_id)}",
             )
         )
     (root / "correlations.toml").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def _write_bundle(root: Path, bundle: object) -> None:
-    records = bundle.records  # type: ignore[attr-defined]
-    groups = {
-        "single.csv": tuple(
-            record for record in records if isinstance(record, SingleParameterRecord)
-        ),
-        "pair.csv": tuple(record for record in records if isinstance(record, PairParameterRecord)),
-        "sites.csv": tuple(record for record in records if isinstance(record, SiteRecord)),
-        "association.csv": tuple(
-            record for record in records if isinstance(record, AssociationParameterRecord)
-        ),
-        "model.csv": tuple(
-            record for record in records if isinstance(record, ModelParameterRecord)
-        ),
-        "correlations.toml": tuple(
-            record
-            for record in records
-            if isinstance(record, (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation))
-        ),
-    }
-    files = ("components.csv", *(name for name, group in groups.items() if group))
+def _write_bundle(root: Path, bundle: _WritableBundle) -> None:
+    records = bundle.records
+    singles = tuple(record for record in records if isinstance(record, SingleParameterRecord))
+    pairs = tuple(record for record in records if isinstance(record, PairParameterRecord))
+    sites = tuple(record for record in records if isinstance(record, SiteRecord))
+    associations = tuple(
+        record for record in records if isinstance(record, AssociationParameterRecord)
+    )
+    models = tuple(record for record in records if isinstance(record, ModelParameterRecord))
+    correlations = tuple(
+        record
+        for record in records
+        if isinstance(record, (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation))
+    )
+    groups = (
+        ("single.csv", singles),
+        ("pair.csv", pairs),
+        ("sites.csv", sites),
+        ("association.csv", associations),
+        ("model.csv", models),
+        ("correlations.toml", correlations),
+    )
+    files = ("components.csv", *(name for name, group in groups if group))
     _write_manifest(root, bundle, files)
-    _write_components(root, bundle.components)  # type: ignore[attr-defined]
-    if singles := groups["single.csv"]:
+    _write_components(root, bundle.components)
+    if singles:
         _write_csv(
             root, "single.csv", [_parameter_row(record, ("component_id",)) for record in singles]
         )
-    if pairs := groups["pair.csv"]:
+    if pairs:
         _write_csv(
             root,
             "pair.csv",
             [_parameter_row(record, ("component_id_a", "component_id_b")) for record in pairs],
         )
-    if sites := groups["sites.csv"]:
+    if sites:
         _write_csv(
             root,
             "sites.csv",
             [
                 (
-                    record.record_id,  # type: ignore[attr-defined]
-                    record.component_id,  # type: ignore[attr-defined]
-                    record.site_id,  # type: ignore[attr-defined]
-                    record.site_class,  # type: ignore[attr-defined]
-                    record.multiplicity,  # type: ignore[attr-defined]
-                    record.source_id,  # type: ignore[attr-defined]
-                    record.locator,  # type: ignore[attr-defined]
-                    record.domain_id,  # type: ignore[attr-defined]
+                    record.record_id,
+                    record.component_id,
+                    record.site_id,
+                    record.site_class,
+                    record.multiplicity,
+                    record.source_id,
+                    record.locator,
+                    record.domain_id,
                 )
                 for record in sites
             ],
         )
-    if associations := groups["association.csv"]:
+    if associations:
         _write_csv(
             root,
             "association.csv",
@@ -743,13 +843,13 @@ def _write_bundle(root: Path, bundle: object) -> None:
                 for record in associations
             ],
         )
-    if models := groups["model.csv"]:
+    if models:
         _write_csv(root, "model.csv", [_parameter_row(record, ()) for record in models])
-    if correlations := groups["correlations.toml"]:
+    if correlations:
         _write_correlations(root, correlations)
 
 
-def _dump_path(bundle: object, path: str | PathLike[str]) -> None:
+def _dump_path(bundle: _WritableBundle, path: str | PathLike[str]) -> None:
     try:
         root = Path(path)
     except TypeError as exc:
@@ -758,7 +858,7 @@ def _dump_path(bundle: object, path: str | PathLike[str]) -> None:
         raise _error("invalid-value", field="path", value=root, reason="already-exists")
     if not root.parent.is_dir():
         raise _error("invalid-value", field="path", value=root, reason="missing-parent")
-    if not bundle.components:  # type: ignore[attr-defined]
+    if not bundle.components:
         raise _error("invalid-value", field="components", value="empty")
 
     try:

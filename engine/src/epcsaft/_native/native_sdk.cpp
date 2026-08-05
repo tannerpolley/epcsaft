@@ -383,7 +383,10 @@ make_fixed_topology_parameter_slots(
         );
     }
     const auto& site_components = model.site_components();
-    for (const auto& [left, right] : fixed_topology_association_pairs(model)) {
+    const auto association_pairs = fixed_topology_association_pairs(model);
+    for (const auto& pair : association_pairs) {
+        const std::size_t left = pair.first;
+        const std::size_t right = pair.second;
         const auto add_association = [&](uint32_t family, const char* unit) {
             const std::size_t index = result.size();
             result.push_back({
@@ -1756,7 +1759,9 @@ struct NativeSdkEndpoint final {
             double reference_convergence_error = 0.0;
             double derivative_convergence_error = 0.0;
             auto append_pair = [&](const NeutralReferenceBasis::IonPair& pair) {
-                const auto [cation, anion, stoichiometry] = pair;
+                const std::size_t cation = pair.cation;
+                const std::size_t anion = pair.anion;
+                const auto& stoichiometry = pair.stoichiometry;
                 std::optional<detail::DensityRootIdentity> sequence_root =
                     reference_root;
                 const auto sequence = detail::electrolyte_reference_sequence(
@@ -3183,7 +3188,9 @@ struct NativeSdkEndpoint final {
                 ++row;
             }
             auto append_pair = [&](const NeutralReferenceBasis::IonPair& pair) {
-                const auto [cation, anion, stoichiometry] = pair;
+                const std::size_t cation = pair.cation;
+                const std::size_t anion = pair.anion;
+                const auto& stoichiometry = pair.stoichiometry;
                 const auto sequence = detail::reference_limit_sequence(
                     [&](double molality) {
                         const double solvent_moles = 1.0 / solvent_molar_mass;

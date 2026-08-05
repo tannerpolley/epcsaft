@@ -16,7 +16,10 @@
 namespace epcsaft_engine::equilibrium {
 namespace {
 
-using Integer = boost::multiprecision::cpp_int;
+using Integer = boost::multiprecision::number<
+    boost::multiprecision::cpp_int_backend<>,
+    boost::multiprecision::et_off
+>;
 using Rational = boost::rational<Integer>;
 
 constexpr std::size_t kMaximumBasisCandidates = 100000;
@@ -51,7 +54,8 @@ Rational exact(double value) {
     if (shift >= 0) {
         return Rational(numerator << shift);
     }
-    return Rational(numerator, Integer(1) << -shift);
+    const Integer denominator = Integer(1) << -shift;
+    return Rational(numerator, denominator);
 }
 
 ExactSystem independent_equalities(

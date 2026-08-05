@@ -21,5 +21,5 @@ chooses to provide.
 
 `Parameters -> Mixture -> State` and the property API are otherwise unchanged.
 Parameter fingerprints now identify normalized scientific inputs rather than
-bundle provenance. SDK admission likewise uses resolved topology, fields,
+bundle provenance. Internal native admission likewise uses resolved topology, fields,
 order, and validity rather than catalog allowlists.

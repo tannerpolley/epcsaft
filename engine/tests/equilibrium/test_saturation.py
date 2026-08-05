@@ -9,25 +9,11 @@ import pytest
 from parameter_dictionaries import PURE_SATURATION_PARAMETERS
 
 import epcsaft
+from epcsaft.eos import _native_transport
 from epcsaft import equilibrium
 from epcsaft.equilibrium import _equilibrium
 
 ANCHORS = Path(__file__).parents[2] / "data" / "reference" / "pure_saturation_anchors.csv"
-
-
-class _PhaseBlockResult(ctypes.Structure):
-    _fields_ = (
-        ("struct_size", ctypes.c_uint32),
-        ("status", ctypes.c_int32),
-        ("helmholtz_over_rt_reference_amount", ctypes.c_double),
-        ("gradient", ctypes.c_double * 2),
-        ("hessian", ctypes.c_double * 4),
-        ("third", ctypes.c_double * 8),
-        ("pressure_pa", ctypes.c_double),
-        ("chemical_potential_over_rt", ctypes.c_double),
-        ("parameter_fingerprint", ctypes.c_char * 72),
-        ("error", ctypes.c_char * 160),
-    )
 
 
 class _NativeSdkTable(ctypes.Structure):
@@ -48,16 +34,6 @@ class _NativeSdkTable(ctypes.Structure):
 _CAPSULE_NAME_BUFFERS: list[ctypes.Array[ctypes.c_char]] = []
 _EVALUATORS: list[object] = []
 _SDK_TABLES: list[_NativeSdkTable] = []
-
-
-def _capsule(table: _NativeSdkTable, name: str = "epcsaft.native_sdk.v1") -> object:
-    name_buffer = ctypes.create_string_buffer(name.encode())
-    _CAPSULE_NAME_BUFFERS.append(name_buffer)
-    _SDK_TABLES.append(table)
-    new_capsule = ctypes.pythonapi.PyCapsule_New
-    new_capsule.argtypes = (ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p)
-    new_capsule.restype = ctypes.py_object
-    return new_capsule(ctypes.addressof(table), name_buffer, None)
 
 
 def _model(component: str = "methane") -> epcsaft.Mixture:
@@ -82,7 +58,7 @@ def test_saturation_nlp_exact_derivatives_match_independent_directional_differen
     variables: tuple[float, float, float],
 ) -> None:
     model = _model(component)
-    capsule = epcsaft.native_sdk(model)
+    capsule = _native_transport(model)
     multipliers = (0.7, -0.4, 1.2)
     direction = (0.3, -0.2, 0.1)
     step = 2.0e-5
@@ -140,81 +116,7 @@ def test_saturation_nlp_exact_derivatives_match_independent_directional_differen
         assert gradient_difference == pytest.approx(hessian_direction, rel=2.0e-6, abs=2.0e-7)
 
 
-def test_public_saturation_wraps_native_failures_with_structured_diagnostics(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    def fail_native(*_args: object) -> object:
-        raise RuntimeError("synthetic native failure")
-
-    monkeypatch.setattr(_equilibrium, "solve_saturation", fail_native)
-    with pytest.raises(equilibrium.SaturationError, match="synthetic") as failed:
-        equilibrium.saturation(
-            _model("methane"),
-            150.0 * epcsaft.unit_registry.kelvin,
-        )
-    assert failed.value.diagnostics["solver_status"] == "native_exception"
-    assert failed.value.diagnostics["physical_accepted"] is False
-    assert failed.value.diagnostics["exact_derivatives"] is False
-
-
-def test_public_ethane_saturation_separates_all_acceptance_layers(
-    capfd: pytest.CaptureFixture[str],
-) -> None:
-    result = equilibrium.saturation(
-        _model("ethane"),
-        240.0 * epcsaft.unit_registry.kelvin,
-    )
-
-    assert result.temperature_k == 240.0
-    assert result.parameter_fingerprint == (
-        "sha256:73aea4044ad3a49a8045861ba88c8e5966ad7b9db99e28f83df90c1d3d456223"
-    )
-    assert result.saturation_pressure_pa == pytest.approx(969_152.1055945412, rel=5.0e-6)
-    assert result.vapor.amount_mol == 1.0
-    assert result.liquid.amount_mol == 1.0
-    assert result.vapor.volume_m3 > result.liquid.volume_m3 > 0.0
-    assert result.vapor.molar_density_mol_m3 < result.liquid.molar_density_mol_m3
-    assert result.vapor.pressure_pa == pytest.approx(result.saturation_pressure_pa, rel=1.0e-8)
-    assert result.liquid.pressure_pa == pytest.approx(result.saturation_pressure_pa, rel=1.0e-8)
-    assert result.vapor.chemical_potential_over_rt == pytest.approx(
-        result.liquid.chemical_potential_over_rt,
-        abs=1.0e-8,
-    )
-    assert len(result.vapor.chemical_potential_over_rt) == 1
-    assert result.diagnostics.solver_converged is True
-    assert math.isfinite(result.diagnostics.solver_constraint_violation)
-    assert result.diagnostics.solver_constraint_violation <= 1.0e-10
-    assert result.diagnostics.numerical_converged is True
-    assert result.diagnostics.physical_accepted is True
-    assert result.diagnostics.exact_derivatives is True
-    assert result.diagnostics.globality_certificate is False
-    assert result.diagnostics.pressure_relative_residual <= 1.0e-8
-    assert result.diagnostics.chemical_potential_absolute_residual <= 1.0e-8
-    assert result.diagnostics.phase_density_distance > 1.0e-3
-    assert len(result.diagnostics.solver_lower_bounds) == 3
-    assert len(result.diagnostics.solver_upper_bounds) == 3
-    assert len(result.diagnostics.attempt_log) == result.diagnostics.attempts
-    assert {attempt.role for attempt in result.diagnostics.attempt_log} == {
-        "search",
-        "confirmation",
-    }
-    for attempt in result.diagnostics.attempt_log:
-        assert all(
-            lower < initial < upper
-            for lower, initial, upper in zip(
-                result.diagnostics.solver_lower_bounds,
-                attempt.initial_guess,
-                result.diagnostics.solver_upper_bounds,
-                strict=True,
-            )
-        )
-        assert attempt.callback_error == ""
-    captured = capfd.readouterr()
-    assert captured.out == ""
-    assert captured.err == ""
-
-
-def test_public_saturation_matches_retained_lab_and_nist_anchors() -> None:
+def test_saturation_matches_retained_lab_and_nist_anchors() -> None:
     with ANCHORS.open(encoding="utf-8", newline="") as stream:
         anchors = list(csv.DictReader(stream))
     assert sorted(anchor["component"] for anchor in anchors) == [

@@ -15,7 +15,11 @@ dependencies = ["Pint>=0.25.3"]
 minimum-version = "0.12"
 build-dir = "build/{wheel_tag}"
 wheel.packages = ["src/epcsaft"]
-wheel.exclude = ["epcsaft/_native/**", "epcsaft/regression/native/**"]
+wheel.exclude = [
+  "epcsaft/_native/**",
+  "epcsaft/include/**",
+  "epcsaft/regression/native/**",
+]
 cmake.source-dir = "."
 cmake.version = ">=3.20"
 ninja.version = ">=1.11"
@@ -30,10 +34,6 @@ markers = [
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-
-[tool.ruff.lint.per-file-ignores]
-"tests/eos/sdk/_support.py" = ["F401"]
-"tests/eos/sdk/test_*.py" = ["F403", "F405"]
 
 [tool.mypy]
 packages = ["epcsaft"]

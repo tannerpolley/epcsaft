@@ -6,8 +6,6 @@ from .eos import (
     Phase,
     PropertyBasis,
     State,
-    export_native_model,
-    native_sdk,
 )
 from .parameters import Parameters
 from .records import SourceRecord, ValidityDomain
@@ -38,8 +36,6 @@ __all__ = (
     "SourceRecord",
     "TransferFreeEnergy",
     "ValidityDomain",
-    "export_native_model",
-    "native_sdk",
     "source_reference_transfer",
     "unit_registry",
 )

@@ -100,7 +100,7 @@ Scalar bulk_relative_permittivity(
             : (*relative_permittivity_override)[component];
     };
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
-        const Scalar fraction = mole_fractions[component];
+        const Scalar& fraction = mole_fractions[component];
         const int charge = parameters.charge_number[component];
         if (charge == 0) {
             solvent_fraction += fraction;
@@ -258,16 +258,6 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
                 * charge * charge;
         }
     }
-    const std::vector<Scalar> reference_fractions(
-        reference_mole_fractions.begin(), reference_mole_fractions.end()
-    );
-    const Scalar reference_permittivity = detail::bulk_relative_permittivity(
-        Scalar(reference_temperature),
-        Scalar(reference_molar_density),
-        reference_fractions,
-        parameters,
-        relative_permittivity_override
-    );
     if (reference_charge_square_sum == 0.0) {
         return {bulk_permittivity, Scalar(0.0)};
     }
@@ -277,14 +267,6 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         * PHYSICAL_ELEMENTARY_CHARGE * PHYSICAL_ELEMENTARY_CHARGE * charge_square_sum
         / (PHYSICAL_VACUUM_PERMITTIVITY * bulk_permittivity
            * PHYSICAL_BOLTZMANN * temperature)
-    );
-    const Scalar reference_kappa = electrolyte_sqrt(
-        reference_molar_density * PHYSICAL_AVOGADRO
-        * PHYSICAL_ELEMENTARY_CHARGE * PHYSICAL_ELEMENTARY_CHARGE
-        * reference_charge_square_sum
-        / (PHYSICAL_VACUUM_PERMITTIVITY * reference_permittivity
-            * PHYSICAL_BOLTZMANN
-           * reference_temperature)
     );
     const double reference_permittivity_for_branch =
         detail::bulk_relative_permittivity(

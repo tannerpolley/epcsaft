@@ -1,8 +1,13 @@
 # Neutral Parameter Native SDK Candidates
 
-Status: local candidate pending independent review and promotion receipt
+Status: historical internal-transport design evidence; superseded by the
+Unified Engine direct cutover
 
 Authority effect: none
+
+The names and capsule layout below remain internal implementation details.
+They are not a public Python API, installed header set, external ABI, or
+separately versioned SDK.
 
 ## Scope
 
@@ -179,12 +184,11 @@ acceptance policy.
 
 Package evidence checks the candidate at `T = 220 K`,
 `n = (0.4, 0.6) mol`, and `V = 1.25e-4 m3`. It compares the value and pressure
-with the public explicit-density provider path, contracts the gradient and
+with an independent explicit-density calculation, compares the gradient and
 Hessian against centered directional differences, and verifies component
-permutation. A compact malformed-contract test covers null pointers, count and
-capacity mismatches, source-domain rejection, nonpositive amounts, result-size
-mismatch, and pure/mixture scope separation. Accepted-prefix field offsets are
-unchanged.
+permutation. Production validation rejects malformed buffers, invalid domains,
+and nonpositive amounts, but NVDD does not freeze those rejection paths as a
+compatibility test surface.
 
 Active-pair evidence contracts all four gradient and Hessian coordinates
 against centered differences at 220 K and 280 K. At the resolved baseline value
@@ -192,10 +196,9 @@ against centered differences at 220 K and 280 K. At the resolved baseline value
 agree with the fixed callback. Negative evidence covers malformed four-coordinate buffers,
 nonfinite trial values and state inputs, pure models, association, and ions;
 a finite negative trial confirms that the provider applies no fit bound.
-The descriptor evidence additionally freezes the append-only table offsets,
-the exact Gross methane/ethane reference mapping and topology fingerprint,
-caller-model identity propagation, and zero advertised capabilities for an
-unsupported pure-model shape.
+Descriptor metadata records the current coordinate meaning, reference mapping,
+and provenance fingerprints. It is implementation documentation, not an
+append-only ABI or table-layout test contract.
 
 Scalar pure evidence checks each family against the corresponding slice of the
 joint five-coordinate result, contracts its value gradient and Hessian against

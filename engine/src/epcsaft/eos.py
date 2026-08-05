@@ -6,13 +6,12 @@ import math
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from functools import lru_cache
-from os import PathLike
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, SupportsFloat, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Literal, SupportsFloat, TypeAlias, cast, overload
 
 import pint
 
-from . import _core as _native_core
+import epcsaft._core as _native_core
 from ._resolve import _resolve_model, _ResolvedModel
 from .parameters import Parameters
 from .records import (
@@ -29,8 +28,7 @@ if TYPE_CHECKING:
 Phase: TypeAlias = Literal["vapor", "liquid"]
 PropertyBasis: TypeAlias = Literal["molar", "reduced"]
 _MOLAR_GAS_CONSTANT = 8.31446261815324
-_NativeModel = _native_core.NativeModel
-_native_sdk_v1 = _native_core.native_sdk_v1
+_native_transport_v1 = _native_core.native_sdk_v1
 
 
 @lru_cache(maxsize=1)
@@ -38,23 +36,28 @@ def _python_native_artifact_fingerprint() -> str:
     return _file_fingerprint(Path(_native_core.__file__))
 
 
-@lru_cache(maxsize=1)
-def _static_native_artifact_fingerprint() -> str:
-    return _file_fingerprint(Path(_native_core.__file__).parent / "lib" / "libepcsaft_native_sdk.a")
-
-
 def _file_fingerprint(path: Path) -> str:
     return f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
 
 
 def _magnitude(
-    record: SingleParameterRecord | ConstantCorrelation,
+    record: SingleParameterRecord
+    | ConstantCorrelation
+    | ConstantPlusSumOfExponentialsCorrelation,
     unit: str,
 ) -> float:
     value = record.value if isinstance(record, SingleParameterRecord) else record.constant
     if unit != "dimensionless":
+        if not isinstance(value, pint.Quantity):
+            raise TypeError(f"expected quantity convertible to {unit}")
         value = value.to(unit).magnitude
-    return float(value)
+    return float(cast(SupportsFloat, value))
+
+
+def _quantity_magnitude(value: object, unit: str) -> float:
+    if not isinstance(value, pint.Quantity):
+        raise TypeError(f"expected quantity convertible to {unit}")
+    return float(value.to(unit).magnitude)
 
 
 class EosError(ValueError):
@@ -92,13 +95,13 @@ def _native_arguments(
         if isinstance(record, SingleParameterRecord):
             sigma_constant.append(_magnitude(record, "angstrom"))
         else:
-            sigma_constant.append(float(record.constant.to("angstrom").magnitude))
+            sigma_constant.append(_quantity_magnitude(record.constant, "angstrom"))
             if isinstance(record, ConstantPlusSumOfExponentialsCorrelation):
                 for term in record.terms:
                     term_component.append(component)
-                    term_amplitude.append(float(term.amplitude.to("angstrom").magnitude))
+                    term_amplitude.append(_quantity_magnitude(term.amplitude, "angstrom"))
                     term_exponent.append(
-                        float(term.exponent_coefficient.to("1 / kelvin").magnitude)
+                        _quantity_magnitude(term.exponent_coefficient, "1 / kelvin")
                     )
             elif not isinstance(record, ConstantCorrelation):
                 raise _error(
@@ -224,7 +227,7 @@ class Mixture:
     _component_ids: tuple[str, ...]
     _parameter_fingerprint: str
     _model: _ResolvedModel
-    _native: _NativeModel
+    _native: _native_core.NativeModel
 
     def __init__(self, parameters: Parameters) -> None:
         model = _resolve_model(parameters)
@@ -232,7 +235,7 @@ class Mixture:
         object.__setattr__(self, "_component_ids", parameters.component_ids)
         object.__setattr__(self, "_parameter_fingerprint", parameters.fingerprint)
         object.__setattr__(self, "_model", model)
-        object.__setattr__(self, "_native", _NativeModel(*native_arguments))
+        object.__setattr__(self, "_native", _native_core.NativeModel(*native_arguments))
 
     @classmethod
     def from_dictionary(cls, mapping: Mapping[str, object]) -> Mixture:
@@ -297,7 +300,9 @@ class Mixture:
             raise _eos_error("invalid-state", field="phase")
         temperature_k = _state_magnitude(T, "kelvin", "T")
         try:
-            fractions = tuple(float(value) for value in x)  # type: ignore[union-attr]
+            fractions = tuple(
+                float(cast(SupportsFloat, value)) for value in cast(Iterable[object], x)
+            )
         except (TypeError, ValueError) as exc:
             raise _eos_error("invalid-state", field="x", reason="not-numeric-sequence") from exc
         if len(fractions) != len(self._component_ids):
@@ -556,7 +561,7 @@ def _native_identity_fingerprint(schema: str, payload: object) -> str:
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
-def _native_sdk_configuration(
+def _native_transport_configuration(
     model: Mixture,
     artifact_fingerprint: str,
 ) -> dict[str, object]:
@@ -663,70 +668,13 @@ def _native_sdk_configuration(
     }
 
 
-def native_sdk(model: Mixture) -> object:
-    """Return the model-bound version-1 native provider capsule."""
-    configuration = _native_sdk_configuration(model, _python_native_artifact_fingerprint())
+def _native_transport(model: Mixture) -> object:
+    """Return the model-bound capsule used only by Engine's native modules."""
+    configuration = _native_transport_configuration(model, _python_native_artifact_fingerprint())
     try:
-        return _native_sdk_v1(model._native, **configuration)
+        return _native_transport_v1(model._native, **configuration)
     except (RuntimeError, ValueError) as exc:
-        raise _eos_error("unsupported-native-sdk", reason=str(exc)) from exc
-
-
-def export_native_model(model: Mixture, path: str | PathLike[str]) -> None:
-    """Write one immutable resolved-model artifact for the installed native SDK."""
-    configuration = _native_sdk_configuration(model, _static_native_artifact_fingerprint())
-    names = (
-        "segment_count",
-        "sigma_constant_angstrom",
-        "sigma_term_component",
-        "sigma_term_amplitude_angstrom",
-        "sigma_term_exponent_per_k",
-        "dispersion_energy_over_k_k",
-        "k_ij",
-        "l_ij",
-        "site_component",
-        "site_multiplicity",
-        "association_active",
-        "association_energy_over_k_k",
-        "association_volume",
-        "molar_mass_kg_per_mol",
-        "charge_number",
-        "relative_permittivity",
-        "ion_fraction_suppression_coefficient",
-        "born_diameter_angstrom",
-        "solvation_factor",
-        "ionic_region_relative_permittivity",
-        "electrolyte_model",
-        "dielectric_volume_m3_per_mol",
-        "dielectric_temperature_k",
-        "ion_specific_suppression_coefficient",
-        "dipole_scaling_debye2",
-        "polarizability_scaling_angstrom3",
-        "correlation_integral_parameter",
-        "relative_permittivity_formulation",
-        "dipole_moment_debye",
-        "quadrupole_moment_debye_angstrom",
-        "polar_formulation",
-    )
-    native_parameters = dict(zip(names, _native_arguments(model._model), strict=True))
-    for key in (
-        "temperature_min_k",
-        "temperature_max_k",
-        "ion_mole_fraction_max",
-        "pressure_min_pa",
-        "pressure_max_pa",
-    ):
-        if math.isnan(float(configuration[key])):
-            configuration[key] = None
-    payload = {
-        "schema": "epcsaft-resolved-native-model-v1",
-        "native_parameters": native_parameters,
-        "sdk": configuration,
-    }
-    target = Path(path)
-    with target.open("x", encoding="utf-8") as stream:
-        json.dump(payload, stream, allow_nan=False, separators=(",", ":"), sort_keys=True)
-        stream.write("\n")
+        raise _eos_error("unsupported-native-transport", reason=str(exc)) from exc
 
 
 def _state_magnitude(value: object, unit: str, field: str) -> float:
@@ -819,7 +767,8 @@ class State:
     _activity: Activity | None = None
 
     def _rt(self) -> pint.Quantity[float]:
-        return (
+        return cast(
+            pint.Quantity[float],
             _MOLAR_GAS_CONSTANT
             * self.temperature.to("kelvin").magnitude
             * unit_registry.joule
@@ -960,6 +909,4 @@ __all__ = (
     "Phase",
     "PropertyBasis",
     "State",
-    "export_native_model",
-    "native_sdk",
 )

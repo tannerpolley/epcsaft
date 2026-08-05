@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import Any, cast
 
-from epcsaft import native_sdk
+from epcsaft.eos import Mixture, _native_transport
 
-from . import _native
+import epcsaft.regression._native as _native
 from .parameter_regression import (
     AffineParameterTransform,
     ComponentParameterIdentity,
     ObservationPartition,
+    PureSaturationRowDiagnostic,
     ParameterCapability,
     ParameterCoordinate,
     ParameterFamily,
@@ -45,6 +48,32 @@ WATER_FACTOR_RESIDUAL = "r_q = 1 - gamma_q_model / gamma_q_observed"
 WATER_FACTOR_JACOBIAN = (
     "dr_q/df_water = -(gamma_q_model/gamma_q_observed) * dln(gamma_q_model)/df_water"
 )
+
+
+def _native_tuple(value: object) -> tuple[Any, ...]:
+    return tuple(cast(Iterable[Any], value))
+
+
+def _native_float(value: object) -> float:
+    return float(cast(Any, value))
+
+
+def _native_int(value: object) -> int:
+    return int(cast(Any, value))
+
+
+def _native_triple(value: object) -> tuple[float, float, float]:
+    items = tuple(_native_float(item) for item in _native_tuple(value))
+    if len(items) != 3:
+        raise RuntimeError("native vector must contain three values")
+    return items[0], items[1], items[2]
+
+
+def _native_quad(value: object) -> tuple[float, float, float, float]:
+    items = tuple(_native_float(item) for item in _native_tuple(value))
+    if len(items) != 4:
+        raise RuntimeError("native vector must contain four values")
+    return items[0], items[1], items[2], items[3]
 
 
 def _row_payload(row: SaturationObservation) -> tuple[object, ...]:
@@ -505,7 +534,7 @@ def _active_bound(value: float, lower: float, upper: float) -> str | None:
 
 
 def _general_pure_saturation_problem(
-    model: object,
+    model: Mixture,
     dataset: PureSaturationDataset,
     specification: PureSaturationFitSpecification,
 ) -> RegressionProblem:
@@ -628,13 +657,13 @@ def _reporting_row_diagnostic(
 ) -> ReportingRowDiagnostic:
     if str(native_row[0]) != source.row_id or str(native_row[1]) != source.source_id:
         raise RuntimeError("native reporting row identity did not match the immutable dataset")
-    predicted_pressure = float(native_row[5])
-    predicted_density = float(native_row[6])
-    liquid_volume = float(native_row[7])
-    vapor_volume = float(native_row[8])
-    liquid_slope = float(native_row[9])
-    vapor_slope = float(native_row[10])
-    raw = tuple(float(value) for value in native_row[11])
+    predicted_pressure = _native_float(native_row[5])
+    predicted_density = _native_float(native_row[6])
+    liquid_volume = _native_float(native_row[7])
+    vapor_volume = _native_float(native_row[8])
+    liquid_slope = _native_float(native_row[9])
+    vapor_slope = _native_float(native_row[10])
+    raw = _native_triple(native_row[11])
     termination = str(native_row[12])
     usable = bool(native_row[13])
     native_failure_reason = str(native_row[14]).strip()
@@ -725,7 +754,7 @@ def _reporting_row_diagnostic(
 
 def fit_pure_saturation(
     *,
-    model: object,
+    model: Mixture,
     dataset: PureSaturationDataset,
     specification: PureSaturationFitSpecification,
 ) -> PureSaturationFitResult:
@@ -742,7 +771,7 @@ def fit_pure_saturation(
         raise ValueError("dataset and specification identities do not match")
     if tuple(getattr(model, "component_ids", ())) != (specification.component_id,):
         raise ValueError("model component order does not match the specification")
-    capsule = native_sdk(model)
+    capsule = _native_transport(model)
     provider_fingerprint = getattr(model, "parameter_fingerprint", None)
     if not isinstance(provider_fingerprint, str) or not provider_fingerprint:
         raise ValueError("model must expose a nonblank provider parameter_fingerprint")
@@ -754,6 +783,11 @@ def fit_pure_saturation(
         _general_pure_saturation_problem(model, dataset, specification),
         model,
     )
+    phase_rows = tuple(
+        row for row in general_result.rows if isinstance(row, PureSaturationRowDiagnostic)
+    )
+    if len(phase_rows) != len(dataset.training_rows):
+        raise RuntimeError("general saturation fit returned an unexpected diagnostic row type")
     final_parameters = tuple(parameter.final for parameter in general_result.parameters)
     variables = tuple(
         (final - start) / scale
@@ -765,7 +799,7 @@ def fit_pure_saturation(
         )
     ) + tuple(
         coordinate
-        for source, diagnostic in zip(dataset.training_rows, general_result.rows, strict=True)
+        for source, diagnostic in zip(dataset.training_rows, phase_rows, strict=True)
         for coordinate in (
             math.log(
                 diagnostic.liquid_volume_m3_per_mol
@@ -827,8 +861,8 @@ def fit_pure_saturation(
             vapor_chemical_potential_over_rt=float(native_row[8]),
             liquid_stability_slope=float(native_row[9]),
             vapor_stability_slope=float(native_row[10]),
-            raw_residuals=tuple(float(value) for value in native_row[11]),
-            scaled_residuals=tuple(float(value) for value in native_row[12]),
+            raw_residuals=_native_quad(native_row[11]),
+            scaled_residuals=_native_quad(native_row[12]),
         )
         for source, native_row in zip(dataset.training_rows, training_rows_native)
         if str(native_row[0]) == source.row_id and str(native_row[1]) == source.source_id
@@ -943,7 +977,7 @@ def fit_pure_saturation(
         dataset_id=dataset.dataset_id,
         specification_id=specification.specification_id,
         provider_fingerprint=observed_fingerprint,
-        compiled_problem_identity=tuple(str(value) for value in compiled_identity_native),
+        compiled_problem_identity=tuple(str(value) for value in _native_tuple(compiled_identity_native)),
         solver_converged=solver_converged,
         numerically_converged=numerically_converged,
         physically_valid=physical_valid,
@@ -953,7 +987,7 @@ def fit_pure_saturation(
         initial_cost=initial_cost,
         final_cost=final_cost,
         iterations=general_result.iterations,
-        parameters=parameters,
+        parameters=(parameters[0], parameters[1], parameters[2]),
         jacobian=jacobian,
         training_rows=training_rows,
         reporting_rows=reporting_tuple,
@@ -976,14 +1010,14 @@ def _born_observations(
             target_id=target.target_id,
             ion_label=target.ion_label,
             target_j_per_mol=target.target_j_per_mol,
-            modeled_j_per_mol=float(row[0]),
-            derivative_j_per_mol_per_angstrom=float(row[1]),
-            raw_error_j_per_mol=float(row[2]),
-            scaled_residual=float(row[3]),
-            scaled_jacobian=float(row[4]),
-            reference_molality_mol_per_kg=float(row[5]),
-            reference_convergence_error=float(row[6]),
-            provider_fingerprint=str(row[7]),
+            modeled_j_per_mol=_native_float(_native_tuple(row)[0]),
+            derivative_j_per_mol_per_angstrom=_native_float(_native_tuple(row)[1]),
+            raw_error_j_per_mol=_native_float(_native_tuple(row)[2]),
+            scaled_residual=_native_float(_native_tuple(row)[3]),
+            scaled_jacobian=_native_float(_native_tuple(row)[4]),
+            reference_molality_mol_per_kg=_native_float(_native_tuple(row)[5]),
+            reference_convergence_error=_native_float(_native_tuple(row)[6]),
+            provider_fingerprint=str(_native_tuple(row)[7]),
         )
         for target, row in zip(specification.targets, native_rows, strict=True)
     )
@@ -1010,10 +1044,10 @@ def _born_start_diagnostic(
         complete_columns_native,
         failure_native,
     ) = native_start
-    transformed = tuple(float(value) for value in transformed_native)
-    residuals = tuple(float(value) for value in residuals_native)
-    jacobian = tuple(float(value) for value in jacobian_native)
-    singular_values = tuple(float(value) for value in singular_values_native)
+    transformed = tuple(_native_float(value) for value in _native_tuple(transformed_native))
+    residuals = tuple(_native_float(value) for value in _native_tuple(residuals_native))
+    jacobian = tuple(_native_float(value) for value in _native_tuple(jacobian_native))
+    singular_values = tuple(_native_float(value) for value in _native_tuple(singular_values_native))
     if not (
         len(transformed) == len(residuals) == len(singular_values) == 5 and len(jacobian) == 25
     ):
@@ -1035,11 +1069,11 @@ def _born_start_diagnostic(
         > active_tolerance
         for value in transformed
     )
-    observations = _born_observations(tuple(rows_native), specification)
-    initial_cost = float(initial_cost_native)
-    final_cost = float(final_cost_native)
-    condition_number = float(condition_native)
-    rank = int(rank_native)
+    observations = _born_observations(_native_tuple(rows_native), specification)
+    initial_cost = _native_float(initial_cost_native)
+    final_cost = _native_float(final_cost_native)
+    condition_number = _native_float(condition_native)
+    rank = _native_int(rank_native)
     complete_columns = bool(complete_columns_native)
     native_failure = str(failure_native).strip()
     finite = all(
@@ -1082,7 +1116,7 @@ def _born_start_diagnostic(
         solution_usable=bool(usable_native),
         initial_cost=initial_cost,
         final_cost=final_cost,
-        iterations=int(iterations_native),
+        iterations=_native_int(iterations_native),
         transformed_parameters=transformed,
         final_diameters_angstrom=final_diameters,
         observations=observations,
@@ -1097,7 +1131,7 @@ def _born_start_diagnostic(
     )
 
 
-def fit_figiel_born_diameters(*, models: tuple[object, ...]) -> BornDiameterFitResult:
+def fit_figiel_born_diameters(*, models: tuple[Mixture, ...]) -> BornDiameterFitResult:
     specification = FIGIEL_BORN_DIAMETER_TRACER_V1
     if type(models) is not tuple or len(models) != 5:
         raise TypeError("models must be the exact ordered five-model tuple")
@@ -1108,7 +1142,7 @@ def fit_figiel_born_diameters(*, models: tuple[object, ...]) -> BornDiameterFitR
         fingerprint = getattr(model, "parameter_fingerprint", None)
         if fingerprint != target.expected_provider_fingerprint:
             raise ValueError("model fingerprint does not match the immutable Born target")
-    capsules = tuple(native_sdk(model) for model in models)
+    capsules = tuple(_native_transport(model) for model in models)
     model_fingerprints = tuple(model.parameter_fingerprint for model in models)
     payload = _born_native_payload(specification, model_fingerprints)
     starts_native, compiled_identity_native = _native.solve_born(capsules, payload)
@@ -1254,16 +1288,16 @@ def _water_factor_row(
 ) -> WaterSolvationFactorRowDiagnostic:
     return WaterSolvationFactorRowDiagnostic(
         row_id=str(native_row[0]),
-        molality_mol_per_kg=float(native_row[1]),
-        observed_gamma_pm_m=float(native_row[2]),
-        modeled_log_gamma_pm_m=float(native_row[3]),
-        modeled_gamma_pm_m=float(native_row[4]),
-        scaled_residual=float(native_row[5]),
-        provider_log_derivative=float(native_row[6]),
-        exact_scaled_residual_derivative=float(native_row[7]),
-        reference_molality_mol_per_kg=float(native_row[8]),
-        reference_convergence_error=float(native_row[9]),
-        reference_derivative_convergence_error=float(native_row[10]),
+        molality_mol_per_kg=_native_float(native_row[1]),
+        observed_gamma_pm_m=_native_float(native_row[2]),
+        modeled_log_gamma_pm_m=_native_float(native_row[3]),
+        modeled_gamma_pm_m=_native_float(native_row[4]),
+        scaled_residual=_native_float(native_row[5]),
+        provider_log_derivative=_native_float(native_row[6]),
+        exact_scaled_residual_derivative=_native_float(native_row[7]),
+        reference_molality_mol_per_kg=_native_float(native_row[8]),
+        reference_convergence_error=_native_float(native_row[9]),
+        reference_derivative_convergence_error=_native_float(native_row[10]),
         provider_fingerprint=str(native_row[11]),
     )
 
@@ -1274,15 +1308,15 @@ def _water_factor_start(
 ) -> WaterSolvationFactorStartDiagnostic:
     if len(native_start) != 13:
         raise RuntimeError("native water-factor start has the wrong dimension")
-    rows = tuple(_water_factor_row(tuple(row)) for row in tuple(native_start[7]))
-    parameter = float(native_start[6])
-    initial_cost = float(native_start[3])
-    final_cost = float(native_start[4])
-    singular_value = float(native_start[8])
-    rank_threshold = float(native_start[9])
+    rows = tuple(_water_factor_row(_native_tuple(row)) for row in _native_tuple(native_start[7]))
+    parameter = _native_float(native_start[6])
+    initial_cost = _native_float(native_start[3])
+    final_cost = _native_float(native_start[4])
+    singular_value = _native_float(native_start[8])
+    rank_threshold = _native_float(native_start[9])
     termination = str(native_start[1])
     solution_usable = bool(native_start[2])
-    rank = int(native_start[10])
+    rank = _native_int(native_start[10])
     complete_column = bool(native_start[11])
     active_tolerance = math.sqrt(math.ulp(1.0)) * 2.0
     active_bound = (
@@ -1340,7 +1374,7 @@ def _water_factor_start(
         solution_usable=solution_usable,
         initial_cost=initial_cost,
         final_cost=final_cost,
-        iterations=int(native_start[5]),
+        iterations=_native_int(native_start[5]),
         parameter=parameter,
         rows=rows,
         singular_value=singular_value,
@@ -1354,7 +1388,7 @@ def _water_factor_start(
     )
 
 
-def fit_figiel_water_solvation_factor(*, model: object) -> FigielWaterSolvationFactorFitResult:
+def fit_figiel_water_solvation_factor(*, model: Mixture) -> FigielWaterSolvationFactorFitResult:
     specification = FIGIEL_WATER_SOLVATION_FACTOR_V1
     if tuple(getattr(model, "component_ids", ())) != (
         "water",
@@ -1366,9 +1400,10 @@ def fit_figiel_water_solvation_factor(*, model: object) -> FigielWaterSolvationF
     if not isinstance(expected_fingerprint, str) or not expected_fingerprint:
         raise ValueError("model must expose a nonblank parameter fingerprint")
     payload = _water_factor_native_payload(specification, expected_fingerprint)
-    native_starts = _native.solve_figiel_water_factor(native_sdk(model), payload)
+    native_starts = _native.solve_figiel_water_factor(_native_transport(model), payload)
     starts = tuple(
-        _water_factor_start(tuple(start), specification) for start in tuple(native_starts)
+        _water_factor_start(_native_tuple(start), specification)
+        for start in _native_tuple(native_starts)
     )
     if tuple(start.name for start in starts) != ("primary", "upper"):
         raise RuntimeError("native water-factor starts did not match the contract")
@@ -1478,25 +1513,25 @@ def _aqueous_kij_native_payload(
 def _aqueous_kij_row(
     native_row: tuple[object, ...],
 ) -> AqueousKijRowDiagnostic:
-    local_derivative = tuple(float(value) for value in native_row[7])
+    local_derivative = tuple(_native_float(value) for value in _native_tuple(native_row[7]))
     if len(local_derivative) != 3:
         raise RuntimeError("native aqueous-kij derivative has the wrong dimension")
     return AqueousKijRowDiagnostic(
         row_id=str(native_row[0]),
         salt=str(native_row[1]),
-        molality_mol_per_kg=float(native_row[2]),
-        observed_gamma_pm_m=float(native_row[3]),
-        modeled_log_gamma_pm_m=float(native_row[4]),
-        modeled_gamma_pm_m=float(native_row[5]),
-        scaled_residual=float(native_row[6]),
+        molality_mol_per_kg=_native_float(native_row[2]),
+        observed_gamma_pm_m=_native_float(native_row[3]),
+        modeled_log_gamma_pm_m=_native_float(native_row[4]),
+        modeled_gamma_pm_m=_native_float(native_row[5]),
+        scaled_residual=_native_float(native_row[6]),
         local_log_derivative=(
             local_derivative[0],
             local_derivative[1],
             local_derivative[2],
         ),
-        reference_molality_mol_per_kg=float(native_row[8]),
-        reference_convergence_error=float(native_row[9]),
-        reference_derivative_convergence_error=float(native_row[10]),
+        reference_molality_mol_per_kg=_native_float(native_row[8]),
+        reference_convergence_error=_native_float(native_row[9]),
+        reference_derivative_convergence_error=_native_float(native_row[10]),
         provider_fingerprint=str(native_row[11]),
     )
 
@@ -1507,11 +1542,11 @@ def _aqueous_kij_start(
 ) -> AqueousKijStartDiagnostic:
     if len(native_start) != 17:
         raise RuntimeError("native aqueous-kij start has the wrong dimension")
-    parameters = tuple(float(value) for value in native_start[7])
-    rows = tuple(_aqueous_kij_row(tuple(row)) for row in tuple(native_start[8]))
-    singular_values = tuple(float(value) for value in native_start[9])
-    least_sensitive = tuple(float(value) for value in native_start[13])
-    complete_columns = tuple(bool(value) for value in native_start[14])
+    parameters = tuple(_native_float(value) for value in _native_tuple(native_start[7]))
+    rows = tuple(_aqueous_kij_row(_native_tuple(row)) for row in _native_tuple(native_start[8]))
+    singular_values = tuple(_native_float(value) for value in _native_tuple(native_start[9]))
+    least_sensitive = tuple(_native_float(value) for value in _native_tuple(native_start[13]))
+    complete_columns = tuple(bool(value) for value in _native_tuple(native_start[14]))
     coordinates = tuple(
         AqueousKijCoordinateDiagnostic(
             coordinate=int(item[0]),
@@ -1523,7 +1558,7 @@ def _aqueous_kij_start(
             solution_usable=bool(item[6]),
             failure_reason=str(item[7]),
         )
-        for item in (tuple(value) for value in tuple(native_start[15]))
+        for item in (_native_tuple(value) for value in _native_tuple(native_start[15]))
     )
     if not (
         len(parameters)
@@ -1538,11 +1573,11 @@ def _aqueous_kij_start(
         raise RuntimeError("native aqueous-kij result dimensions did not match 164 x 11")
     termination = str(native_start[2])
     solution_usable = bool(native_start[3])
-    initial_cost = float(native_start[4])
-    final_cost = float(native_start[5])
-    rank_threshold = float(native_start[10])
-    rank = int(native_start[11])
-    condition_number = float(native_start[12])
+    initial_cost = _native_float(native_start[4])
+    final_cost = _native_float(native_start[5])
+    rank_threshold = _native_float(native_start[10])
+    rank = _native_int(native_start[11])
+    condition_number = _native_float(native_start[12])
     bound_tolerance = math.sqrt(math.ulp(1.0)) * 2.0
     active_bounds = tuple(
         min(
@@ -1630,7 +1665,7 @@ def _aqueous_kij_start(
         solution_usable=solution_usable,
         initial_cost=initial_cost,
         final_cost=final_cost,
-        iterations=int(native_start[6]),
+        iterations=_native_int(native_start[6]),
         parameters=parameters,
         coordinates=coordinates,
         rows=rows,
@@ -1646,7 +1681,7 @@ def _aqueous_kij_start(
     )
 
 
-def fit_figiel_aqueous_kij(*, models: tuple[object, ...]) -> FigielAqueousKijFitResult:
+def fit_figiel_aqueous_kij(*, models: tuple[Mixture, ...]) -> FigielAqueousKijFitResult:
     specification = FIGIEL_AQUEOUS_KIJ_V1
     expected_orders = tuple(
         ("water", cation, anion) for _, cation, anion, _ in specification.salt_contracts
@@ -1655,11 +1690,11 @@ def fit_figiel_aqueous_kij(*, models: tuple[object, ...]) -> FigielAqueousKijFit
         raise TypeError("models must be the exact ordered six-model tuple")
     if tuple(tuple(getattr(model, "component_ids", ())) for model in models) != expected_orders:
         raise ValueError("model component orders do not match the aqueous-kij contract")
-    fingerprints = tuple(getattr(model, "parameter_fingerprint", None) for model in models)
-    if any(not isinstance(value, str) or not value for value in fingerprints):
+    fingerprints = tuple(model.parameter_fingerprint for model in models)
+    if any(not value for value in fingerprints):
         raise ValueError("each model must expose a nonblank parameter fingerprint")
     payload = _aqueous_kij_native_payload(specification, fingerprints)
-    capsules = tuple(native_sdk(model) for model in models)
+    capsules = tuple(_native_transport(model) for model in models)
     primary = _aqueous_kij_start(
         tuple(_native.solve_figiel_kij(capsules, payload, 0)),
         specification,
