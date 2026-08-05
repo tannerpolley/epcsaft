@@ -548,7 +548,11 @@ def environment_policy_errors(config: dict[str, Any]) -> list[str]:
         g4 = gates.get("G4", {})
         evidence = g4.get("evidence")
         evidence_path = ROOT / evidence if isinstance(evidence, str) else None
-        if g4.get("status") == "complete" and evidence_path is not None:
+        if (
+            consolidation.get("execution_status") != "completed"
+            and g4.get("status") == "complete"
+            and evidence_path is not None
+        ):
             if not evidence_path.is_file():
                 errors.append(f"G4 candidate evidence does not exist: {evidence}")
             else:
@@ -565,7 +569,6 @@ def environment_policy_errors(config: dict[str, Any]) -> list[str]:
             {"epcsaft"} if candidate_validation_sha is not None else set(active_objects)
         ),
     }
-    editable_providers = {"engine": "epcsaft"}
     for name, record in sorted(config["repositories"].items()):
         environment = Path(record["local_path"]) / ".venv"
         allowed = allowed_distributions.get(name, set())
@@ -590,22 +593,31 @@ def environment_policy_errors(config: dict[str, Any]) -> list[str]:
 
             direct_url = distribution.get("direct_url")
             url = direct_url.get("url", "") if isinstance(direct_url, dict) else ""
-            if normalized == editable_providers.get(name):
+            if name == "engine" and normalized == "epcsaft":
                 editable = (
                     direct_url.get("dir_info", {}).get("editable", False)
                     if isinstance(direct_url, dict)
                     else False
                 )
-                source_path = (
+                wheel_path = (
                     Path(unquote(urlparse(url).path)).resolve()
                     if url.startswith("file://")
                     else None
                 )
-                expected_source = Path(record["local_path"]).resolve()
-                if not editable or source_path != expected_source:
+                expected_wheelhouse = (
+                    Path(record["local_path"]) / "build" / "environment-wheel"
+                ).resolve()
+                if (
+                    editable
+                    or wheel_path is None
+                    or not wheel_path.is_file()
+                    or wheel_path.parent != expected_wheelhouse
+                    or wheel_path.suffix != ".whl"
+                ):
                     errors.append(
-                        f"{name} must install {distribution['name']} editably from "
-                        f"{expected_source}, found {url or 'no direct_url'}"
+                        "engine must install its development epcsaft distribution "
+                        f"from one non-editable worktree wheel under {expected_wheelhouse}, "
+                        f"found {url or 'no direct_url'}"
                     )
                 continue
 
