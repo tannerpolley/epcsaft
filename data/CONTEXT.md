@@ -1,6 +1,6 @@
 # ePC-SAFT Data Context
 
-`GOVERNANCE.md` revision 8 in `ePC-SAFT/ePC-SAFT-governance` is the canonical
+`GOVERNANCE.md` revision 9 in `ePC-SAFT/ePC-SAFT-governance` is the canonical
 ecosystem doctrine.
 
 Repository role: `scientific_asset`
@@ -28,12 +28,12 @@ remain immutable historical packets until downstream locks move.
 Storage authority is independent of runtime and evidence authority:
 
 - `storage_owner = data` for reusable reviewed packets;
-- `runtime_owner = eos` only for a separately admitted self-contained EOS copy;
+- `runtime_owner = engine` only for a separately admitted self-contained copy;
 - `evidence_owner = validation` for generated campaign evidence.
 
 Lab remains the home for exploratory, rejected, broad, or incomplete material.
 Governance remains the durable repository home for policy, registries,
-operation receipts, wheels, and SDK artifact objects. Management is the
+operation receipts, wheels, and Engine artifact objects. Management is the
 coordination project, not a Git repository.
 
 Consumers pin a Data commit, packet path, and packet fingerprint. No installed

@@ -2,7 +2,7 @@
 
 Repository Profile: scientific-computing
 
-Before work, read doctrine revision 8 and the machine-readable topology from
+Before work, read doctrine revision 9 and the machine-readable topology from
 `../ePC-SAFT-governance/GOVERNANCE.md` and
 `../ePC-SAFT-governance/manifests/management.json`. Their published home is
 `https://github.com/ePC-SAFT/ePC-SAFT-governance`.
@@ -13,9 +13,9 @@ provenance, units, domains, hashes, and license or use bases.
 
 It must not own runtime algorithms, generated Validation results, package
 artifacts, full papers, or exploratory and rejected material. Installed
-packages must not import from or fetch this repository at runtime. EOS may ship
+packages must not import from or fetch this repository at runtime. Engine may ship
 only an admitted self-contained copy generated or copied from a pinned Data
-commit; Validation and Regression pin exact packet commits and fingerprints.
+commit; Validation and Engine Regression pin exact packet commits and fingerprints.
 
 Packets live only at `packets/<packet-id>/<version>/packet.toml` and follow
 `docs/packet-contract.md`. Do not add empty speculative packet directories.
