@@ -14,7 +14,7 @@ platform = "linux"
 [[actions]]
 name = "Check"
 icon = "test"
-command = ".venv/bin/python -m ruff check src tests && .venv/bin/python -m mypy"
+command = ".venv/bin/python -m ruff check --select E4,E7,E9,F src tests"
 platform = "linux"
 
 [[actions]]

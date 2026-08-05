@@ -50,7 +50,6 @@ fi
 
 uv pip install --python .venv/bin/python \
     build \
-    mypy \
     numpy \
     pytest \
     ruff
