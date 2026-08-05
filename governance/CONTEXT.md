@@ -27,12 +27,12 @@ environment inventories, scientific-packet ownership policy, draft disposition,
 and external-operation receipts. The Management coordination task handles
 exact-subject sequencing within those records.
 
-D-023 approves a direct cutover to `ePC-SAFT/ePC-SAFT-engine` as the sole
+D-023 completed the direct cutover to `ePC-SAFT/ePC-SAFT-engine` as the sole
 runtime repository and `epcsaft` as the sole runtime distribution. EOS,
-Equilibrium, and Regression become internal Engine modules under
-`epcsaft`, `epcsaft.equilibrium`, and `epcsaft.regression`. The current three
-runtime repositories remain transition sources until one accepted cutover
-receipt changes authority and retires the separate distributions.
+Equilibrium, and Regression are Engine capabilities exposed under `epcsaft`,
+`epcsaft.equilibrium`, and `epcsaft.regression`. The former EOS name redirects
+to Engine; the separate Equilibrium and Regression repositories are archived
+provenance and their distributions are inactive.
 
 D-024 authorizes that package-authority cutoff now while Lithium Extraction,
 MEA Thermodynamics, and MEA Absorption Column are quarantined as non-admitted
@@ -67,7 +67,7 @@ provenance home. The adjacent local `ePC-SAFT-legacy` container and archived
 `tannerpolley/ePC-SAFT-legacy-monorepo` preserve historical code and tracker
 state outside the active authority topology.
 
-Repository identity and Python identity are independent. The cutover renames
-the EOS repository to `ePC-SAFT/ePC-SAFT-engine`; the distribution remains
-`epcsaft`. The separate Equilibrium and Regression distributions and import
-names receive no compatibility aliases.
+Repository identity and Python identity are independent. Repository
+`R_kgDOTZ9m0Q` is now `ePC-SAFT/ePC-SAFT-engine`; the distribution remains
+`epcsaft`. The retired distributions and import names receive no compatibility
+aliases.

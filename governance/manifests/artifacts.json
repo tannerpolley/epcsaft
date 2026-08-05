@@ -1,39 +1,17 @@
 {
   "active_alias_directory": "active",
-  "alias_count": 3,
-  "object_count": 3,
+  "alias_count": 1,
+  "object_count": 1,
   "objects": [
-    {
-      "aliases": [
-        "active/epcsaft-regression/epcsaft_regression-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
-      ],
-      "bytes": 392104,
-      "distribution": "epcsaft-regression",
-      "object": "objects/sha256/0edfca6896b27b87c7861f49c020dbe2a9b1d6f5bd9fd17285ce1ba538d0c913/epcsaft_regression-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
-      "retention": "current",
-      "sha256": "0edfca6896b27b87c7861f49c020dbe2a9b1d6f5bd9fd17285ce1ba538d0c913",
-      "version": "0.2.0.dev0"
-    },
-    {
-      "aliases": [
-        "active/epcsaft-equilibrium/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
-      ],
-      "bytes": 3552697,
-      "distribution": "epcsaft-equilibrium",
-      "object": "objects/sha256/1482778b113df890931de692262c291111b979bb4762f85a7e352dbd2d5b0266/epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
-      "retention": "current",
-      "sha256": "1482778b113df890931de692262c291111b979bb4762f85a7e352dbd2d5b0266",
-      "version": "0.2.0.dev0"
-    },
     {
       "aliases": [
         "active/epcsaft/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl"
       ],
-      "bytes": 963778,
+      "bytes": 4577089,
       "distribution": "epcsaft",
-      "object": "objects/sha256/bc7e637de084330ebded4ddfd52e02bc1ce5451221128692972ebba8856d098e/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "object": "objects/sha256/21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
       "retention": "current",
-      "sha256": "bc7e637de084330ebded4ddfd52e02bc1ce5451221128692972ebba8856d098e",
+      "sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049",
       "version": "0.2.0.dev0"
     }
   ],

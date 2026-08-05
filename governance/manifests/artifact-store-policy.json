@@ -15,22 +15,10 @@
   ],
   "active_distributions": {
     "epcsaft": {
-      "repository": "ePC-SAFT/ePC-SAFT-eos",
-      "source_commit": "d0c2575908323db6c487d4e541cf497c93c89d9e",
+      "repository": "ePC-SAFT/ePC-SAFT-engine",
+      "source_commit": "c712fe9730faef0732341ccdabc4d799fef2d953",
       "version": "0.2.0.dev0",
-      "sha256": "bc7e637de084330ebded4ddfd52e02bc1ce5451221128692972ebba8856d098e"
-    },
-    "epcsaft-equilibrium": {
-      "repository": "ePC-SAFT/ePC-SAFT-equilibrium",
-      "source_commit": "13b171b0a8fbff5b2ee6d97d3c0ad21c7868d30b",
-      "version": "0.2.0.dev0",
-      "sha256": "1482778b113df890931de692262c291111b979bb4762f85a7e352dbd2d5b0266"
-    },
-    "epcsaft-regression": {
-      "repository": "ePC-SAFT/ePC-SAFT-regression",
-      "source_commit": "2db0077fd7fa0ada0a5f4fc04e19ed501cdddbb6",
-      "version": "0.2.0.dev0",
-      "sha256": "0edfca6896b27b87c7861f49c020dbe2a9b1d6f5bd9fd17285ce1ba538d0c913"
+      "sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049"
     }
   },
   "historical_archive": {
@@ -42,7 +30,7 @@
   "approved_transition": {
     "decision": "D-024",
     "manifest": "manifests/runtime-consolidation.json",
-    "status": "authorized_pending",
+    "status": "completed",
     "target_active_distributions": [
       "epcsaft"
     ]

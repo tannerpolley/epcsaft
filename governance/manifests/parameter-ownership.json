@@ -3,7 +3,7 @@
   "enforcement": "inventory",
   "policy": {
     "storage": "Reusable scientific parameter packets are canonical only in ePC-SAFT-data.",
-    "runtime": "EOS currently ships no installed parameter catalog; any future Engine runtime subset requires a separate admission from an immutable Data packet release.",
+    "runtime": "Engine ships no installed parameter catalog; any future runtime subset requires a separate admission from an immutable Data packet release.",
     "evidence": "Validation owns generated campaign evidence and pins exact Data commits; it does not own canonical parameter bytes."
   },
   "bundles": [
@@ -14,7 +14,7 @@
       "evidence_owner": "validation",
       "catalog_presence": "absent",
       "disposition": "canonical_data_only",
-      "reason": "Reusable source-derived case-study packet in Data; EOS has no installed parameter catalog."
+      "reason": "Reusable source-derived case-study packet in Data; Engine has no installed parameter catalog."
     },
     {
       "bundle_id": "crespo-2021-deea",
@@ -23,7 +23,7 @@
       "evidence_owner": "validation",
       "catalog_presence": "absent",
       "disposition": "canonical_data_only",
-      "reason": "Reusable fitted parameter packet in Data; EOS has no installed parameter catalog."
+      "reason": "Reusable fitted parameter packet in Data; Engine has no installed parameter catalog."
     },
     {
       "bundle_id": "figiel-2025-aqueous-iodides",
@@ -32,7 +32,7 @@
       "evidence_owner": null,
       "catalog_presence": "absent",
       "disposition": "canonical_data_only",
-      "reason": "Canonical Data packet consumed through an explicit materialized path; EOS has no installed parameter catalog."
+      "reason": "Canonical Data packet consumed through an explicit materialized path; Engine has no installed parameter catalog."
     },
     {
       "bundle_id": "figiel-2025-reference-electrolytes",
@@ -41,7 +41,7 @@
       "evidence_owner": null,
       "catalog_presence": "absent",
       "disposition": "canonical_data_only",
-      "reason": "Canonical Data packet consumed through an explicit materialized path; EOS has no installed parameter catalog."
+      "reason": "Canonical Data packet consumed through an explicit materialized path; Engine has no installed parameter catalog."
     },
     {
       "bundle_id": "figiel-2025-validation-parameters",
@@ -59,7 +59,7 @@
       "evidence_owner": null,
       "catalog_presence": "absent",
       "disposition": "canonical_data_only",
-      "reason": "Canonical Data packet consumed through an explicit materialized path; EOS has no installed parameter catalog."
+      "reason": "Canonical Data packet consumed through an explicit materialized path; Engine has no installed parameter catalog."
     },
     {
       "bundle_id": "gross-2001-methane-ethane",
@@ -68,7 +68,7 @@
       "evidence_owner": null,
       "catalog_presence": "absent",
       "disposition": "canonical_data_only",
-      "reason": "Canonical Data packet consumed through an explicit materialized path; EOS has no installed parameter catalog."
+      "reason": "Canonical Data packet consumed through an explicit materialized path; Engine has no installed parameter catalog."
     },
     {
       "bundle_id": "gross-2001-propane",
@@ -77,7 +77,7 @@
       "evidence_owner": null,
       "catalog_presence": "absent",
       "disposition": "canonical_data_only",
-      "reason": "Canonical Data packet consumed through an explicit materialized path; EOS has no installed parameter catalog."
+      "reason": "Canonical Data packet consumed through an explicit materialized path; Engine has no installed parameter catalog."
     },
     {
       "bundle_id": "gross-sadowski-2001",
@@ -86,7 +86,7 @@
       "evidence_owner": null,
       "catalog_presence": "absent",
       "disposition": "canonical_data_only",
-      "reason": "Canonical Data packet consumed through an explicit materialized path; EOS has no installed parameter catalog."
+      "reason": "Canonical Data packet consumed through an explicit materialized path; Engine has no installed parameter catalog."
     },
     {
       "bundle_id": "held-cameretti-sadowski-2008",
@@ -95,7 +95,7 @@
       "evidence_owner": "validation",
       "catalog_presence": "absent",
       "disposition": "canonical_data_only",
-      "reason": "Canonical Data packet with Validation evidence, consumed through an explicit materialized path; EOS has no installed parameter catalog."
+      "reason": "Canonical Data packet with Validation evidence, consumed through an explicit materialized path; Engine has no installed parameter catalog."
     },
     {
       "bundle_id": "khudaida-2026-figure-2-electrolyte-lle",

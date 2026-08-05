@@ -4,34 +4,16 @@
   "doctrine_revision": 9,
   "approved_on": "2026-08-04",
   "decision_status": "approved",
-  "execution_status": "external_cutover_authorized",
+  "execution_status": "completed",
   "plan": "docs/plans/2026-08-04-unified-engine-direct-cutover.md",
   "coordination_root": "~/Workspaces/Engineering/ePC-SAFT-project",
-  "current_runtime_sources": {
-    "eos": {
-      "repository": "ePC-SAFT/ePC-SAFT-eos",
-      "distribution": "epcsaft",
-      "allowed_work": [
-        "cutover",
-        "critical-repair"
-      ]
-    },
-    "equilibrium": {
-      "repository": "ePC-SAFT/ePC-SAFT-equilibrium",
-      "distribution": "epcsaft-equilibrium",
-      "allowed_work": [
-        "cutover",
-        "critical-repair"
-      ]
-    },
-    "regression": {
-      "repository": "ePC-SAFT/ePC-SAFT-regression",
-      "distribution": "epcsaft-regression",
-      "allowed_work": [
-        "cutover",
-        "critical-repair"
-      ]
-    }
+  "active_runtime": {
+    "repository": "ePC-SAFT/ePC-SAFT-engine",
+    "repository_id": "R_kgDOTZ9m0Q",
+    "source_commit": "c712fe9730faef0732341ccdabc4d799fef2d953",
+    "release_tag": "v0.2.0.dev0",
+    "distribution": "epcsaft",
+    "wheel_sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049"
   },
   "target_runtime": {
     "repository": "ePC-SAFT/ePC-SAFT-engine",
@@ -148,18 +130,20 @@
     {
       "id": "G6",
       "name": "external-operation-preflight-and-approval",
-      "status": "authorized_pending",
+      "status": "complete",
       "evidence": "receipts/unified-engine-g6-preflight.json"
     },
     {
       "id": "G7",
       "name": "authority-and-artifact-cutover",
-      "status": "pending"
+      "status": "complete",
+      "evidence": "receipts/unified-engine-cutover-state.json"
     },
     {
       "id": "G8",
       "name": "retirement-and-cleanup",
-      "status": "pending"
+      "status": "complete",
+      "evidence": "receipts/unified-engine-cutover-state.json"
     }
   ]
 }

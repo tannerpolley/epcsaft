@@ -13,7 +13,8 @@
   "operation_receipts": [
     "receipts/data-repository-creation-preflight.json",
     "receipts/data-repository-creation-state.json",
-    "receipts/unified-engine-g6-preflight.json"
+    "receipts/unified-engine-g6-preflight.json",
+    "receipts/unified-engine-cutover-state.json"
   ],
   "historical_migration": {
     "repository": "tannerpolley/ePC-SAFT-migration",
@@ -33,9 +34,7 @@
       "codex_environment": ".codex/environments/environment.toml",
       "outbound_access": [
         "governance",
-        "eos",
-        "equilibrium",
-        "regression",
+        "engine",
         "data",
         "validation",
         "lab"
@@ -61,53 +60,22 @@
         "data"
       ]
     },
-    "eos": {
-      "github": "ePC-SAFT/ePC-SAFT-eos",
+    "engine": {
+      "github": "ePC-SAFT/ePC-SAFT-engine",
       "transition_aliases": [
+        "ePC-SAFT/ePC-SAFT-eos",
         "ePC-SAFT/ePC-SAFT"
       ],
-      "local_path": "~/Workspaces/Engineering/ePC-SAFT-project/ePC-SAFT-eos",
+      "local_path": "~/Workspaces/Engineering/ePC-SAFT-project/ePC-SAFT-engine",
       "default_branch": "main",
       "role": "runtime",
       "distribution": "epcsaft",
       "import": "epcsaft",
       "codex_environment": ".codex/environments/environment.toml",
       "outbound_access": [
-        "eos",
+        "engine",
         "data",
         "validation"
-      ]
-    },
-    "equilibrium": {
-      "github": "ePC-SAFT/ePC-SAFT-equilibrium",
-      "local_path": "~/Workspaces/Engineering/ePC-SAFT-project/ePC-SAFT-equilibrium",
-      "default_branch": "main",
-      "role": "runtime",
-      "codex_environment": ".codex/environments/environment.toml",
-      "outbound_access": [
-        "governance",
-        "eos",
-        "equilibrium",
-        "regression",
-        "data",
-        "validation",
-        "lab"
-      ]
-    },
-    "regression": {
-      "github": "ePC-SAFT/ePC-SAFT-regression",
-      "local_path": "~/Workspaces/Engineering/ePC-SAFT-project/ePC-SAFT-regression",
-      "default_branch": "main",
-      "role": "runtime",
-      "codex_environment": ".codex/environments/environment.toml",
-      "outbound_access": [
-        "governance",
-        "eos",
-        "equilibrium",
-        "regression",
-        "data",
-        "validation",
-        "lab"
       ]
     },
     "validation": {

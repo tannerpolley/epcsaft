@@ -12,15 +12,15 @@ Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 9 and
 [manifests/management.json](manifests/management.json) for the repository and
 access topology.
 
-D-023 approves a direct cutover from the separate EOS, Equilibrium, and
-Regression repositories and wheels to one `ePC-SAFT-engine` repository and one
-`epcsaft` wheel. Read
+D-023 completed the direct cutover from the separate package repositories and
+wheels to one `ePC-SAFT-engine` repository and one `epcsaft` wheel. Read
 [the canonical cutover plan](docs/plans/2026-08-04-unified-engine-direct-cutover.md)
-and [the transition manifest](manifests/runtime-consolidation.json) before
+and [the runtime manifest](manifests/runtime-consolidation.json) before
 runtime, artifact, Validation, or downstream-consumer work.
 
-D-024 authorizes the package-authority cutoff while the three named downstream
-applications remain quarantined and unsupported until their later migrations.
+D-024 permits package authority to remain complete while the three named
+downstream applications are quarantined and unsupported until their later
+migrations.
 
 Governance owns:
 

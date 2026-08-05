@@ -23,12 +23,12 @@ Engine vertical-slice task performs each assigned campaign there through a
 target-owned access worktree. The Management coordination task serializes
 writers and records exact subjects under Governance policy.
 
-D-023 approves one `ePC-SAFT/ePC-SAFT-engine` repository and one `epcsaft`
-wheel. The current EOS, Equilibrium, and Regression repositories are transition
-sources until the accepted cutover receipt. Follow
-`docs/plans/2026-08-04-unified-engine-direct-cutover.md`; do not create
-compatibility aliases, mixed active releases, or independent feature lines in
-the transition repositories.
+D-023 establishes `ePC-SAFT/ePC-SAFT-engine` as the sole runtime repository and
+`epcsaft` as the sole runtime wheel. The separate Equilibrium and Regression
+repositories are archived provenance, and the former EOS repository name is a
+redirect to Engine. Follow `docs/plans/2026-08-04-unified-engine-direct-cutover.md`;
+do not create compatibility aliases, mixed active releases, or independent
+feature lines in retired repositories.
 
 D-024 authorizes package authority to cut over while Lithium Extraction, MEA
 Thermodynamics, and MEA Absorption Column are quarantined. They are not admitted

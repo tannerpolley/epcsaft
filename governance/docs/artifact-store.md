@@ -17,12 +17,11 @@ artifacts/
 ```
 
 `active/` is the only live SDK channel. It contains exactly one immutable
-wheel for each admitted distribution: `epcsaft`, `epcsaft-equilibrium`, and
-`epcsaft-regression`. `objects/sha256/` contains the hard-linked,
-full-SHA-256 object for every indexed active wheel and may retain immutable
-objects that have no live alias. Package setup scripts may install only the
-active subjects' object paths. The external `artifacts/index.json` and
-tracked `manifests/artifacts.json` contain the same three-entry index.
+Engine wheel for the sole admitted distribution, `epcsaft`.
+`objects/sha256/` contains the hard-linked, full-SHA-256 object for that wheel.
+Package setup scripts may install only the active subject's object path. The
+external `artifacts/index.json` and tracked `manifests/artifacts.json` contain
+the same one-entry index.
 
 Consumers resolve an admitted distribution through Governance rather than
 embedding an alias, filename, or hash in repository-local setup code:
@@ -37,24 +36,17 @@ closed without returning an install path.
 
 ## Approved Engine cutover
 
-D-023 replaces the three-distribution channel with one `epcsaft` Engine wheel.
-The current three entries remain the live channel until the direct-cutover
-receipt passes every gate in
-`docs/plans/2026-08-04-unified-engine-direct-cutover.md`. Governance MUST NOT
-promote an Engine wheel beside the three current distributions or update one
-current distribution as a partial cutover.
+D-023 replaced the former three-distribution channel with one `epcsaft` Engine
+wheel under the accepted receipt in
+`docs/plans/2026-08-04-unified-engine-direct-cutover.md`. Governance must not
+reintroduce a parallel package channel or partial runtime distribution.
 
-Correcting a stale current SDK binding to the exact source-bound wheel already
-required by a current package is maintenance of the three-distribution channel,
-not an Engine cutover. Such a repair still updates the policy, active alias,
-tracked index, package setup scripts, and validation evidence as one operation.
-
-At cutover, Governance will:
+The completed cutover:
 
 - admit one Engine wheel built from the accepted Engine commit;
 - verify that the wheel contains the EOS, Equilibrium, and Regression modules;
 - replace the current `epcsaft` alias with that wheel;
-- remove the `epcsaft-equilibrium` and `epcsaft-regression` active aliases
+- removed the retired distribution aliases
   through recorded dispositions; and
 - regenerate the external and tracked artifact indexes as one-entry indexes.
 
@@ -83,7 +75,7 @@ The check fails when:
 - an alias is missing from the index;
 - a wheel exists outside `active/` (or an uncompressed wheel appears in the
   historical archive);
-- an object is absent or has the wrong hash;
+- the active object is absent or has the wrong hash;
 - more than one active wheel exists for a distribution;
 - an active distribution is absent; or
 - the retention policy or index is stale.
