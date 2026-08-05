@@ -1,114 +1,20 @@
-# ePC-SAFT Governance Repository Agent Contract
+# Governance Directory Agent Contract
 
-Read `GOVERNANCE.md` and `manifests/management.json` before planning,
-reviewing, or changing any ePC-SAFT repository. Doctrine revision 10 is the
-canonical ecosystem policy.
+Read `GOVERNANCE.md` revision 11 and `manifests/management.json` before
+project-wide planning or authority changes. Root `AGENTS.md` governs execution.
 
-## Agent role
+This directory owns doctrine, directory topology, policy, manifests, ledgers,
+readiness checks, and external-operation receipts. It owns no scientific test,
+runtime, solver, regression target, Data packet, Validation campaign, or Lab
+experiment. Management is a root coordination role, not another repository.
 
-Governance owns doctrine, repository topology, cross-repository access policy,
-external-operation policy, NVDD policy, and the machine-readable
-ecosystem, artifact, environment, scientific-packet ownership, and draft
-ledgers. The non-Git parent project hosts the Management coordination task;
-that task coordinates execution but is not a repository or source of truth.
+D-026 makes `tannerpolley/ePC-SAFT` the sole active Git home and the root Codex
+environment the sole environment. Preserve historical plans, decisions,
+receipts, old repository names, package names, hashes, and source locators as
+provenance. Current records use `governance/`, `engine/`, `data/`,
+`validation/`, and `lab/` ownership.
 
-Engine behavior, module tests, builds, releases, and scientific capabilities
-remain with the Engine repository. Governance may coordinate policy for that
-work but does not become a runtime, solver, regression, Validation, or Lab
-owner. Data, Validation, Lab, and downstream applications retain their separate
-repository roles.
-
-Validation is the evidence repository, not a standing agent. The accountable
-Engine vertical-slice task performs each assigned campaign there through a
-target-owned access worktree. The Management coordination task serializes
-writers and records exact subjects under Governance policy.
-
-D-023 establishes `ePC-SAFT/ePC-SAFT-engine` as the sole runtime repository and
-`epcsaft` as the sole runtime wheel. The separate Equilibrium and Regression
-repositories are archived provenance, and the former EOS repository name is a
-redirect to Engine. Follow `docs/plans/2026-08-04-unified-engine-direct-cutover.md`;
-do not create compatibility aliases, mixed active releases, or independent
-feature lines in retired repositories.
-
-D-024 authorizes package authority to cut over while Lithium Extraction, MEA
-Thermodynamics, and MEA Absorption Column are quarantined. They are not admitted
-Engine consumers and this cutoff task must not edit them.
-
-The former `tannerpolley/ePC-SAFT-migration` repository is historical evidence
-only. It owns no active plan, queue, gate, decision, or authority.
-
-D-025 makes every active repository private, removes CI/CD from the active
-architecture, and permits tests only for numerical claims admitted by
-GOVERNANCE.md section 7. Governance owns no scientific tests.
-
-## NVDD propagation
-
-Keep section 7 as the single source of truth for scientific-test admission.
-A related parameterized matrix may satisfy its evidence-record requirements
-through one module-level evidence header or adjacent manifest that maps the
-claim, oracle, quantities, units or scaling, tolerances and their basis, and
-failure meaning to the retained assertions.
-
-Classify repository checks as persistent scientific evidence, explicit
-scientific campaigns, or readiness checks. Builds, typing, lint, schemas,
-hashes, manifests, environments, source materialization, and legacy-path
-searches are readiness checks rather than scientific tests. Governance's
-management preflight and artifact-store checks are readiness checks.
-
-When doctrine changes evidence ownership or admission, audit the non-Git
-Management `AGENTS.md`, every active repository `AGENTS.md`, and each declared
-Codex environment action before closing the change. Keep repository-local
-files limited to their local owner, evidence lane, and completion gate.
-
-## Control records
-
-- `GOVERNANCE.md`: permanent doctrine.
-- `CONTEXT.md`: current role and vocabulary.
-- `manifests/management.json`: stable machine-readable governance topology and
-  access source of truth.
-- `manifests/runtime-consolidation.json`: approved Engine target, transition
-  rules, downstream inventory, and execution gates.
-- `manifests/artifact-dispositions.json`: compressed-retention records for
-  non-active candidate wheels.
-- `manifests/data-packet-locks.json`: immutable Data packet commit and
-  fingerprint locks for the parameter ownership inventory.
-- `manifests/drafts.json`: retained branch and pull-request dispositions.
-- `.management-state/`: ignored, reproducible local snapshots of ecosystem,
-  artifact, environment, and parameter state.
-- `tools/management_preflight.py`: snapshot and consistency check.
-- `docs/plans/`: approved cross-repository execution plans.
-
-Do not duplicate these records in package repositories. Package policy should
-link to Governance and contain only local constraints.
-
-## External boundaries
-
-Remote creation, rename, archive, settings, issue, Project, release, and
-publication changes require an explicit user-approved operation plan. The
-Data-repository creation is approved by the user on 2026-07-31 and recorded in
-`receipts/data-repository-creation-preflight.json`.
-
-Before each Git mutation, verify the attached checkout, branch, and command
-directory agree. Preserve historical commits, receipts, and unresolved draft
-subjects. Never force-push, rewrite accepted evidence, or delete an
-unregistered worktree or artifact.
-
-## Agent skills
-
-<!-- project-truss:setup:start -->
-### Project Truss
-
-Use `project-truss:setup` once, then `project-truss:start` to begin or resume Matt-first engineering work. All six Project Truss skills are callable; Start normally invokes the relevant Matt disciplines and routes each stage until verified closeout.
-
-### Issue tracker
-
-Project Truss uses GitHub-native root and leaf issues. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Matt triage roles map to descriptive labels only. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Read the configured domain context and ADRs. See `docs/agents/domain.md`.
-<!-- project-truss:setup:end -->
+Governance checks are readiness checks, never scientific tests. Keep
+`tools/management_preflight.py` and `tools/artifact_store.py` fail-closed and
+worktree-relative. External GitHub mutations require explicit user authority
+and a receipt. This project has no CI/CD.

@@ -1,34 +1,14 @@
 # ePC-SAFT Data
 
-Canonical reusable scientific packets for the ePC-SAFT ecosystem.
+Canonical reusable scientific packets for the ePC-SAFT project.
 
-This repository stores reviewed parameter bundles, source-derived datasets,
-normalized observations, provenance, units, domains, hashes, and license or use
-bases. It does not store runtime algorithms, generated Validation results,
-package artifacts, full papers, or exploratory and rejected material.
-
-Each packet is self-contained at:
-
-```text
-packets/<packet-id>/<version>/
-  packet.toml
-  parameters/     # only when present
-  observations/   # only when present
-  sources/        # only when distributable and present
-  provenance/     # only when present
-```
-
-Read [the packet contract](docs/packet-contract.md) before adding data.
-Read [the data-organization guide](docs/data-organization.md) before deciding
-whether a source record belongs in Data or remains campaign evidence in
-Validation.
-
-Validate packet schema, provenance, units, domains, and hashes with:
+Packets live at `packets/<packet-id>/<version>/packet.toml` and include their
+source, provenance, units, domains, hashes, and use basis. Validate all packets
+from the repository root:
 
 ```bash
-python3 tools/validate_packets.py
+.venv/bin/python data/tools/validate_packets.py
 ```
 
-Consumers must pin an immutable Git commit and packet fingerprint, materialize
-the packet before execution, and remain self-contained. Installed packages must
-not fetch or import this repository at runtime.
+Data contains no runtime package or scientific test suite. Consumers
+materialize exact packets and never import or fetch this directory at runtime.

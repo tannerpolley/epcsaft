@@ -1,69 +1,18 @@
-# ePC-SAFT Governance
+# Governance
 
-Repository role: `governance_control_plane`
+Canonical doctrine and machine-readable control records for the private
+`tannerpolley/ePC-SAFT` monorepo.
 
-GitHub home: `ePC-SAFT/ePC-SAFT-governance`
+- Read [GOVERNANCE.md](GOVERNANCE.md) for revision 11 and D-026.
+- Read [manifests/management.json](manifests/management.json) for directory
+  ownership and external-state locations.
+- Read [the monorepo cutover plan](docs/plans/2026-08-05-monorepo-cutover.md)
+  for the history-preserving migration.
 
-Local checkout: `ePC-SAFT-governance`.
-
-Status: canonical ecosystem doctrine and governance home.
-
-Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 10 and
-[manifests/management.json](manifests/management.json) for the repository and
-access topology.
-
-D-023 completed the direct cutover from the separate package repositories and
-wheels to one `ePC-SAFT-engine` repository and one `epcsaft` wheel. Read
-[the canonical cutover plan](docs/plans/2026-08-04-unified-engine-direct-cutover.md)
-and [the runtime manifest](manifests/runtime-consolidation.json) before
-runtime, artifact, Validation, or downstream-consumer work.
-
-D-024 permits package authority to remain complete while the three named
-downstream applications are quarantined and unsupported until their later
-migrations.
-
-D-025 adopts Numerical Verification-Driven Development across the private
-project. Tests protect current numerical claims rather than API compatibility
-or legacy behavior, and reproducible local commands replace CI/CD.
-
-Governance owns:
-
-- permanent ecosystem doctrine;
-- repository roles and naming;
-- cross-repository worktree access;
-- coordinated project and external-operation sequencing;
-- artifact, environment, scientific-packet ownership, and retained-draft ledgers; and
-- reusable synchronization and preflight policy.
-
-The non-Git parent project hosts the Management coordination task. It may
-sequence work against these records but is not a repository or authority
-source.
-
-Artifact layout and admission rules are documented in
-[docs/artifact-store.md](docs/artifact-store.md). Cross-repository consumers
-install only full-SHA-256 objects; repository `dist/` wheels are rejected.
-Non-active candidate wheel retention is recorded in
-[manifests/artifact-dispositions.json](manifests/artifact-dispositions.json).
-
-Canonical parameter-packet storage and evidence ownership are tracked in
-[manifests/parameter-ownership.json](manifests/parameter-ownership.json).
-Generic property packets and campaign-local Validation bundles remain outside
-that parameter ledger.
-Immutable Data packet commits and fingerprints are tracked in
-[manifests/data-packet-locks.json](manifests/data-packet-locks.json); Engine and
-Validation add their own materialization locks when their owning tasks are
-ready.
-
-It owns no package runtime, scientific solver, regression target, Validation
-campaign, or Lab experiment.
-
-Run the local snapshot and consistency check with:
+Governance owns no scientific tests. Run its readiness checks from the
+repository root:
 
 ```bash
-python3 tools/management_preflight.py snapshot
-python3 tools/management_preflight.py check
+python3 governance/tools/management_preflight.py check
+python3 governance/tools/artifact_store.py check
 ```
-
-The former `tannerpolley/ePC-SAFT-migration` repository is archived historical
-evidence. The private `ePC-SAFT/.github` repository is intentionally thin and
-links here for current authority.

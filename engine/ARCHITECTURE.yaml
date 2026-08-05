@@ -1,9 +1,10 @@
 version: 3
-status: unified-engine-direct-cutover-candidate
-governance_doctrine_revision: 8
+status: unified-monorepo-active
+governance_doctrine_revision: 11
 
 artifact:
-  repository: ePC-SAFT/ePC-SAFT-engine
+  repository: tannerpolley/ePC-SAFT
+  source_directory: engine
   distribution: epcsaft
   python: ">=3.13"
   build_owner: pyproject.toml
@@ -38,9 +39,9 @@ owners:
     installed_headers: forbidden
 
 scientific_boundaries:
-  reusable_packets: ePC-SAFT/ePC-SAFT-data
-  installed_artifact_evidence: ePC-SAFT/ePC-SAFT-validation
-  exploratory_workflows: ePC-SAFT/ePC-SAFT-lab
+  reusable_packets: data
+  installed_artifact_evidence: validation
+  exploratory_workflows: lab
   packet_access: explicit_materialization_only
   sibling_discovery: forbidden
   regression_transfer: typed_immutable_parameters

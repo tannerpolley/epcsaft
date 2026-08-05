@@ -2,15 +2,15 @@
 
 Status: canonical
 
-Doctrine revision: 10
+Doctrine revision: 11
 
 Approved: 2026-08-05
 
-Owner: `ePC-SAFT/ePC-SAFT-governance`
+Owner: `tannerpolley/ePC-SAFT:governance/`
 
-The durable Git-tracked authority repository is Governance. The non-Git
-`ePC-SAFT-project` parent hosts the Management coordination task and has no
-separate repository or governance authority.
+The private `tannerpolley/ePC-SAFT` monorepo is the sole active Git and Codex
+home. `governance/` contains doctrine and control records; Management is the
+coordination role performed from the repository root, not a second authority.
 
 This document is the permanent architecture and governance authority for the
 ePC-SAFT repository ecosystem. `MUST`, `MUST NOT`, `SHOULD`, and `MAY` are
@@ -57,24 +57,20 @@ evidence; they do not silently regain authority.
 Governance authority and runtime authority are separate. Accepting this
 doctrine does not transfer any scientific implementation or capability.
 
-## 3. Repository ownership
+## 3. Directory ownership
 
 | Home | Sole ecosystem role | Must not own |
 |---|---|---|
-| `ePC-SAFT/ePC-SAFT-governance` | Doctrine, repository topology, governance policy, manifests, ledgers, synchronization checks, and external-operation receipts | Package source, package tests, scientific capabilities, or releases |
-| `ePC-SAFT/.github` | Organization profile and GitHub-recognized community defaults linking to Governance | Independent doctrine, project state, package source, or scientific capability |
-| `ePC-SAFT/ePC-SAFT-data` | Canonical reusable scientific packets: parameter bundles, source-derived datasets, normalized observations, provenance, units, domains, hashes, and license or use bases | Runtime algorithms, generated validation results, package artifacts, full papers, or exploratory and rejected material |
-| `ePC-SAFT/ePC-SAFT-engine` | The single `epcsaft` runtime distribution: EOS/state/property evaluation, CppAD derivatives, equilibrium formulations and certification, regression targets and diagnostics, one native build, and one release identity | Canonical scientific packets, durable black-box validation evidence, application workflows, or separate Equilibrium and Regression distributions |
-| `ePC-SAFT/ePC-SAFT-validation` | Installed-artifact, cross-module, downstream-consumer, and literature acceptance evidence authored by the accountable Engine task | Production algorithms, private Engine imports, a paper archive, or a permanent execution owner |
-| `ePC-SAFT/ePC-SAFT-lab` | Non-production experiments, manufactured and independent reference oracles, broad provenance, source indexes, and rejected alternatives | Production distributions or releases, runtime authority, admission receipts, or dependencies consumed by production or validation repositories |
+| `governance/` | Doctrine, topology, policy, manifests, ledgers, readiness checks, and external-operation receipts | Package source, package tests, scientific capabilities, or releases |
+| `data/` | Canonical reusable scientific packets: parameter bundles, source-derived datasets, normalized observations, provenance, units, domains, hashes, and license or use bases | Runtime algorithms, generated validation results, package artifacts, full papers, or exploratory and rejected material |
+| `engine/` | The single `epcsaft` runtime distribution: EOS/state/property evaluation, CppAD derivatives, equilibrium formulations and certification, regression targets and diagnostics, one native build, and one release identity | Canonical scientific packets, durable black-box validation evidence, application workflows, or separate Equilibrium and Regression distributions |
+| `validation/` | Installed-artifact, cross-module, downstream-consumer, and literature acceptance evidence authored by the accountable Engine task | Production algorithms, private Engine imports, a paper archive, or a permanent execution owner |
+| `lab/` | Non-production experiments, manufactured and independent reference oracles, broad provenance, source indexes, and rejected alternatives | Production distributions or releases, runtime authority, admission receipts, or dependencies consumed by production or validation directories |
 
-Revision 9 approves `ePC-SAFT/ePC-SAFT-engine` as the target runtime home. The
-cutover will rename `ePC-SAFT/ePC-SAFT-eos` and transfer the accepted
-Equilibrium and Regression implementations into that repository. Until an
-accepted D-023 cutover receipt changes runtime authority, the three current
-repositories remain transition sources for cutover work and critical repairs.
-They MUST NOT start independent feature or release lines. The transition state
-and gates live in `manifests/runtime-consolidation.json`.
+D-026 supersedes the active polyrepo topology and D-019's environment-per-repo
+rule. The source repositories remain immutable migration provenance after
+archive. The separate `ePC-SAFT/.github` repository remains a thin organization
+profile and is not part of the active project Git graph.
 
 One concept has one runtime owner. Canonical scientific storage does not confer
 runtime authority. A capability without an accepted production
@@ -90,12 +86,11 @@ The public `tannerpolley/ePC-SAFT-legacy-monorepo` is a read-only historical
 repository. Legacy code, tracker state, branches, tags, and releases are
 provenance only; they own no current runtime, roadmap, or governance authority.
 
-Repository ownership and task residence are distinct. Validation is the
-durable evidence home, not a standing agent or implementation team. One Engine
-vertical-slice task remains accountable for each capability and performs the
-assigned black-box campaign in the Validation repository. The Management
-coordination task sequences exact subjects under Governance policy and
-prevents concurrent writers; it does not maintain a waiting Validation worker.
+Directory ownership and task residence are distinct. Validation is the durable
+evidence home, not a standing agent or implementation team. One Engine
+vertical-slice task remains accountable for each capability and may change the
+necessary Data, Engine, and Validation files in one branch. Management prevents
+concurrent writers; it does not maintain a waiting Validation worker.
 
 The completed `tannerpolley/ePC-SAFT-migration` repository is historical
 evidence outside the active topology. It owns no current plan, queue, gate,
@@ -114,7 +109,7 @@ fingerprint.
 The only production dependency edge is:
 
 ```text
-ePC-SAFT-validation -----> installed ePC-SAFT Engine artifact
+validation/ -----> installed wheel built from engine/
 ```
 
 EOS, Equilibrium, and Regression are internal Engine modules. They use
@@ -124,10 +119,10 @@ dependencies. No production or validation repository depends on the lab.
 Scientific packet flow is separate from production dependency direction:
 
 ```text
-ePC-SAFT-lab -----------> ePC-SAFT-data   reviewed packet submission
-ePC-SAFT-data ----------> ePC-SAFT-engine    pinned admitted runtime subset
-ePC-SAFT-data ----------> ePC-SAFT-validation  pinned campaign input
-ePC-SAFT-data ----------> ePC-SAFT-engine    pinned regression input
+lab/ -----------> data/         reviewed packet submission
+data/ ----------> engine/       pinned admitted runtime subset
+data/ ----------> validation/   pinned campaign input
+data/ ----------> engine/       pinned regression input
 ```
 
 No installed package may import from or fetch Data at runtime. Engine wheels
@@ -136,10 +131,11 @@ campaigns must materialize declared packets before execution and remain
 replayable from an immutable Data commit. Wheels and SDK objects remain in
 Governance's artifact store; Data does not replace it.
 
-Cross-repository consumers MUST use the installed Engine artifact. They MUST
-NOT use sibling source paths, compile Engine implementation sources, copy an
-Engine kernel, or reach through private headers or Python modules. Downstream
-applications MUST pin an immutable Engine wheel, not a Git source dependency.
+Validation and downstream consumers MUST use the installed Engine artifact.
+They MUST NOT import the `engine/` source tree, compile Engine implementation
+sources, copy an Engine kernel, or reach through private headers or Python
+modules. Downstream applications MUST pin an immutable Engine wheel, not a Git
+source dependency.
 
 A named downstream application MAY be quarantined during an Engine authority
 cutover only by an explicit user decision recorded in Governance. A quarantined
@@ -451,6 +447,12 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 11 records the user-approved direct cutover to one private monorepo,
+one Git root, one Codex environment, one issue tracker, and one end-to-end
+vertical-slice agent. D-026 supersedes active repository topology and
+environment-per-repository rules while retaining directory ownership and all
+historical evidence.
+
 Revision 10 records the user-approved NVDD cutover, removal of CI/CD as an
 ecosystem responsibility, and conversion of all active repositories to private
 visibility. D-025 supersedes D-012's and D-021's public-visibility choices
@@ -490,10 +492,11 @@ Historical plans and receipts retain their original names.
 | D-016 Lab and legacy separation | User-approved 2026-07-22 repository cutover | Give `ePC-SAFT/ePC-SAFT-lab` fresh history and a permanent non-production experimental role; retain the old monorepo and related projects under `ePC-SAFT-legacy` with no authority | Separates active research from historical code and removes fallback runtime authority from both lab and legacy | No | Management and Lab |
 | D-017 Management control plane | User-approved 2026-07-29 topology decision | Rename the current authority repository to `ePC-SAFT-management`, keep `.github` thin, retire Migration, and centralize doctrine, manifests, ledgers, access, synchronization, and external-operation receipts in Management | Removes temporary coordination authority and duplicated project state | No | Management |
 | D-018 Repository access | User-approved hierarchy, superseded by D-021 | Equilibrium and Regression may work in every operational repository; EOS may work only in EOS and Validation; Validation and Lab have no outbound access; every worktree is target-owned | Preserved as the pre-Data access policy | No | Management |
-| D-019 Codex worktree environments | User-approved setup requirement | Track a worktree-relative Codex local environment in every active repository; setup must be idempotent and must not consume mutable sibling build output | Makes new Codex worktrees reproducible | No | Management and repository owners |
+| D-019 Codex worktree environments | User-approved setup requirement, superseded by D-026 | Track a worktree-relative Codex local environment in every active repository; setup must be idempotent and must not consume mutable sibling build output | Preserved as the polyrepo environment rule; D-026 supplies one worktree-relative root environment | No | Management and repository owners |
 | D-020 Ephemeral worktrees and immutable artifacts | User-approved 2026-07-29 cleanup | Create target-owned worktrees only on demand and retire them after merge or recorded preservation; install cross-repository wheels only through the SHA-256 object store and reject mutable repository `dist/` wheels | Prevents stale checkout and SDK accumulation | No | Management and repository owners |
 | D-021 Canonical scientific Data home | User-approved 2026-07-31 repository and ownership amendment | Create public `ePC-SAFT/ePC-SAFT-data` for reusable self-contained scientific packets; separate Data storage ownership from Engine runtime-subset ownership and Validation evidence ownership; allow read-only packet flow to Engine, Validation, and Lab while forbidding runtime repository dependencies | Removes ambiguous parameter ownership and keeps canonical inputs distinct from runtime copies, generated evidence, artifacts, and exploratory provenance | No | Management, Data, and consuming repository owners |
 | D-022 Governance repository identity | User-approved 2026-07-31 repository rename | Use `ePC-SAFT/ePC-SAFT-governance` as the durable Git-tracked authority repository; keep Management as the non-Git coordination task in the `ePC-SAFT-project` parent; preserve former names in historical plans and receipts | Separates current repository authority from coordination context without rewriting accepted evidence | No | Governance and Management |
 | D-023 Unified Engine direct cutover | User-approved 2026-08-04 package and agent-friction review | Rename the EOS repository to `ePC-SAFT-engine`; consolidate EOS, Equilibrium, and Regression into one `epcsaft` distribution and namespace; assign each production capability to one Engine-rooted vertical-slice task; retain Data and Validation as separate repository seams; cut downstream applications to one immutable Engine wheel without compatibility aliases or a mixed active release | Removes cross-wheel SDK drift, independent version mismatches, Git-source downstream pins, and multi-repository package edits while preserving independent scientific inputs and black-box evidence | No | Engine, Management, and downstream application owners |
 | D-024 Package authority with quarantined consumers | Explicit user instruction on 2026-08-04 to begin the full ePC-SAFT package cutoff and fix Lithium and MEA later | Complete the one-repository, one-wheel Engine authority cutover now; quarantine Lithium Extraction, MEA Thermodynamics, and MEA Absorption Column as non-admitted consumers until separate vertical-slice migrations pass | Removes the three-package authority immediately without treating deferred Git-pinned applications or failed scientific routes as accepted Engine evidence | Yes: application migration | Engine, Management, and downstream application owners |
 | D-025 Private NVDD development | Explicit user instruction on 2026-08-05 adopting the revised Numerical Verification-Driven Development policy project-wide, authorizing CI/CD removal, and authorizing private repository visibility | Treat tests only as current numerical or scientific evidence; prohibit compatibility, API-shape, mock, snapshot, exact-prose, solver-label, and coverage-only suites; keep validation breadth in explicit local commands; remove CI/CD ownership; make every active repository private | Reduces agent friction and permanent contract surface while preserving numerical correctness, source traceability, publication locks, and independent Validation/Lab evidence | No | Governance, Engine, Validation, Data, Lab, and Management owners |
+| D-026 Single private monorepo | Explicit user instruction on 2026-08-05 after package-management and agent-friction review | Move Governance, Engine, Data, Validation, and Lab main histories into private `tannerpolley/ePC-SAFT`; use one Git root, root Codex environment, issue tracker, and Engine-accountable vertical-slice branch while retaining strict directory ownership; archive rather than delete source repositories | Removes cross-repository branch, worktree, wheel, and version coordination while preserving scientific independence and recoverable history | No | Root Management role and directory owners |

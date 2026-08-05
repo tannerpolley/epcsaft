@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(git rev-parse --show-toplevel)"
-cd "$repo_root"
+engine_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+workspace_root="$(dirname "$engine_root")"
+cd "$engine_root"
 
 for required_command in cmake ninja clang++-18 clang-tidy-18 run-clang-tidy-18; do
     if ! command -v "$required_command" >/dev/null 2>&1; then
@@ -10,17 +11,17 @@ for required_command in cmake ninja clang++-18 clang-tidy-18 run-clang-tidy-18; 
         exit 1
     fi
 done
-if [[ ! -x .venv/bin/python ]]; then
-    echo "missing Engine environment; run .codex/environments/setup.sh" >&2
+if [[ ! -x "$workspace_root/.venv/bin/python" ]]; then
+    echo "missing root environment; run bash .codex/environments/setup.sh" >&2
     exit 1
 fi
 
-build_root="$repo_root/build/native-quality"
-pybind11_dir="$(.venv/bin/python -m pybind11 --cmakedir)"
-cmake -S "$repo_root" -B "$build_root" -G Ninja \
+build_root="$workspace_root/build/native-quality"
+pybind11_dir="$($workspace_root/.venv/bin/python -m pybind11 --cmakedir)"
+cmake -S "$engine_root" -B "$build_root" -G Ninja \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_CXX_COMPILER=clang++-18 \
-    -DPython_EXECUTABLE="$repo_root/.venv/bin/python" \
+    -DPython_EXECUTABLE="$workspace_root/.venv/bin/python" \
     -Dpybind11_DIR="$pybind11_dir" \
     -DSKBUILD_PROJECT_NAME=epcsaft \
     -DSKBUILD_PROJECT_VERSION=0.2.0

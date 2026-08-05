@@ -48,7 +48,7 @@ def wheel_identity(path: Path) -> tuple[str, str]:
 def paths() -> tuple[Path, Path, dict[str, Any]]:
     management = load_json(MANAGEMENT)
     policy = load_json(POLICY)
-    project_root = Path(management["project_root"])
+    project_root = ROOT.parent
     artifact_root = Path(management["artifact_root"])
     return project_root, artifact_root, policy
 
@@ -145,7 +145,7 @@ def build_index(artifact_root: Path, policy: dict[str, Any]) -> dict[str, Any]:
         )
     return {
         "schema_version": 2,
-        "policy": "ePC-SAFT/ePC-SAFT-governance:manifests/artifact-store-policy.json",
+        "policy": "tannerpolley/ePC-SAFT:governance/manifests/artifact-store-policy.json",
         "active_alias_directory": policy["active_alias_directory"],
         "object_count": len(objects),
         "alias_count": sum(len(item["aliases"]) for item in objects),

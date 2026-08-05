@@ -1,7 +1,7 @@
 <!-- project-truss:setup:start -->
 ## Project Truss tracker contract
 
-Project Truss uses GitHub Issues in `ePC-SAFT/ePC-SAFT-data` through the authenticated `gh` CLI.
+Project Truss uses GitHub Issues in `tannerpolley/ePC-SAFT` through the authenticated `gh` CLI.
 
 ## Project Truss execution issues
 

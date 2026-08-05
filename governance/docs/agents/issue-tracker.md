@@ -1,7 +1,7 @@
 <!-- project-truss:setup:start -->
 ## Project Truss tracker contract
 
-Project Truss uses GitHub Issues in `ePC-SAFT/ePC-SAFT-governance` through the
+Project Truss uses GitHub Issues in `tannerpolley/ePC-SAFT` through the
 authenticated `gh` CLI. The Management coordination task remains in the
 non-Git parent project.
 

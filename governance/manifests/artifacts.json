@@ -15,6 +15,6 @@
       "version": "0.2.0.dev0"
     }
   ],
-  "policy": "ePC-SAFT/ePC-SAFT-governance:manifests/artifact-store-policy.json",
+  "policy": "tannerpolley/ePC-SAFT:governance/manifests/artifact-store-policy.json",
   "schema_version": 2
 }
