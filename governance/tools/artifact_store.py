@@ -6,7 +6,9 @@ import hashlib
 import json
 import os
 import shutil
+import subprocess
 import sys
+import tempfile
 import zipfile
 from email.parser import Parser
 from pathlib import Path
@@ -18,6 +20,7 @@ MANAGEMENT = ROOT / "manifests" / "management.json"
 POLICY = ROOT / "manifests" / "artifact-store-policy.json"
 TRACKED_INDEX = ROOT / "manifests" / "artifacts.json"
 DISPOSITIONS = ROOT / "manifests" / "artifact-dispositions.json"
+HEX64 = set("0123456789abcdef")
 
 
 def load_json(path: Path) -> Any:
@@ -69,15 +72,50 @@ def active_subjects(policy: dict[str, Any]) -> dict[str, str]:
     }
 
 
-def disposition_errors(artifact_root: Path, policy: dict[str, Any]) -> list[str]:
-    if not DISPOSITIONS.exists():
-        return [f"missing artifact disposition manifest: {DISPOSITIONS}"]
-    manifest = load_json(DISPOSITIONS)
+def archive_members(path: Path) -> tuple[set[str], str | None]:
+    result = subprocess.run(
+        ["tar", "--zstd", "-tf", str(path)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode:
+        return set(), result.stderr.strip() or "tar listing failed"
+    return set(result.stdout.splitlines()), None
+
+
+def archive_member_hashes(path: Path, members: set[str]) -> tuple[dict[str, str], str | None]:
+    with tempfile.TemporaryDirectory(prefix="artifact-disposition-") as temp_name:
+        root = Path(temp_name).resolve()
+        result = subprocess.run(
+            ["tar", "--zstd", "-xf", str(path), "-C", str(root), "--", *sorted(members)],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode:
+            return {}, result.stderr.strip() or "tar extraction failed"
+        hashes: dict[str, str] = {}
+        for member in members:
+            target = root / member
+            if target.is_symlink() or root not in target.resolve().parents or not target.is_file():
+                return {}, f"unsafe extracted archive member: {member}"
+            hashes[member] = sha256(target)
+    return hashes, None
+
+
+def disposition_errors(
+    artifact_root: Path,
+    policy: dict[str, Any],
+    dispositions_path: Path = DISPOSITIONS,
+) -> list[str]:
+    if not dispositions_path.exists():
+        return [f"missing artifact disposition manifest: {dispositions_path}"]
+    manifest = load_json(dispositions_path)
     if manifest.get("schema_version") != 1:
         return ["artifact disposition manifest schema_version must be 1"]
     allowed = set(policy["allowed_retention"])
     errors: list[str] = []
     archives = manifest.get("archives")
+    archive_paths: dict[Path, set[str]] = {}
     if not isinstance(archives, list) or not archives:
         errors.append("artifact disposition manifest archives must be non-empty")
     else:
@@ -86,14 +124,21 @@ def disposition_errors(artifact_root: Path, policy: dict[str, Any]) -> list[str]
                 errors.append("artifact disposition archive entries must be objects")
                 continue
             relative = archive.get("path")
-            path = artifact_root / relative if isinstance(relative, str) else None
-            if path is None or not path.is_file():
+            path = (artifact_root / relative).resolve() if isinstance(relative, str) else None
+            if path is None or artifact_root.resolve() not in path.parents or not path.is_file():
                 errors.append(f"missing supplemental artifact archive: {relative}")
-            elif archive.get("sha256") != sha256(path):
-                errors.append(f"supplemental artifact archive hash mismatch: {path}")
+            else:
+                if archive.get("sha256") != sha256(path):
+                    errors.append(f"supplemental artifact archive hash mismatch: {path}")
+                members, error = archive_members(path)
+                if error:
+                    errors.append(f"cannot read supplemental artifact archive: {path}: {error}")
+                else:
+                    archive_paths[path] = members
             if not isinstance(archive.get("entries"), int) or archive["entries"] < 1:
                 errors.append(f"invalid supplemental archive entry count: {relative}")
     dispositions = manifest.get("dispositions")
+    valid_items: list[dict[str, Any]] = []
     if not isinstance(dispositions, list) or not dispositions:
         errors.append("artifact disposition manifest dispositions must be non-empty")
     else:
@@ -101,12 +146,35 @@ def disposition_errors(artifact_root: Path, policy: dict[str, Any]) -> list[str]
             if not isinstance(item, dict):
                 errors.append("artifact disposition entries must be objects")
                 continue
-            if not isinstance(item.get("archive_member"), str) or not item["archive_member"].startswith("wheels/"):
+            member = item.get("archive_member")
+            if not isinstance(member, str) or not member.startswith("wheels/") or ".." in Path(member).parts:
                 errors.append("artifact disposition entries require archive_member under wheels/")
-            if not isinstance(item.get("sha256"), str) or len(item["sha256"]) != 64:
+                continue
+            if not isinstance(item.get("sha256"), str) or len(item["sha256"]) != 64 or set(item["sha256"]) - HEX64:
                 errors.append("artifact disposition entries require a 64-hex sha256")
             if item.get("retention") not in allowed:
                 errors.append(f"invalid artifact disposition retention: {item.get('retention')}")
+            valid_items.append(item)
+    member_hashes: dict[tuple[Path, str], str] = {}
+    for path, members in archive_paths.items():
+        requested = {item["archive_member"] for item in valid_items if item["archive_member"] in members}
+        if not requested:
+            continue
+        hashes, error = archive_member_hashes(path, requested)
+        if error:
+            errors.append(f"cannot read supplemental artifact members: {path}: {error}")
+        member_hashes.update({(path, member): digest for member, digest in hashes.items()})
+    for item in valid_items:
+        member = item["archive_member"]
+        matches = [path for path, members in archive_paths.items() if member in members]
+        if len(matches) != 1:
+            errors.append(f"artifact disposition member is not uniquely present in a declared archive: {member}")
+        elif isinstance(item.get("sha256"), str) and len(item["sha256"]) == 64:
+            digest = member_hashes.get((matches[0], member))
+            if digest is None:
+                errors.append(f"cannot hash artifact disposition member: {member}")
+            elif digest != item["sha256"]:
+                errors.append(f"artifact disposition member hash mismatch: {member}")
     return errors
 
 
@@ -188,6 +256,10 @@ def normalize() -> list[str]:
 
 def check() -> list[str]:
     project_root, artifact_root, policy = paths()
+    management = load_json(MANAGEMENT)
+    if management.get("artifact_dispositions") != "manifests/artifact-dispositions.json":
+        return ["management artifact_dispositions must bind the canonical manifest"]
+    dispositions_path = ROOT / management.get("artifact_dispositions", "")
     index_path = artifact_root / policy["index"]
     if not index_path.exists():
         return [f"missing artifact index: {index_path}"]
@@ -197,7 +269,7 @@ def check() -> list[str]:
     tracked = load_json(TRACKED_INDEX)
     expected = build_index(artifact_root, policy)
     errors: list[str] = []
-    errors.extend(disposition_errors(artifact_root, policy))
+    errors.extend(disposition_errors(artifact_root, policy, dispositions_path))
     if recorded != expected:
         errors.append("artifact index is stale; run artifact_store.py normalize")
     if tracked != expected:

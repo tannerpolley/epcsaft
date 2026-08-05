@@ -7,7 +7,14 @@ base_ref="${1:-HEAD~1}"
 if ! git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
     base_ref="HEAD"
 fi
-mapfile -t changed < <(git diff --name-only "$base_ref" HEAD; git diff --name-only)
+mapfile -t changed < <(
+    {
+        git diff --name-only "$base_ref" HEAD
+        git diff --name-only
+        git diff --cached --name-only
+        git ls-files --others --exclude-standard
+    } | sort -u
+)
 if ((${#changed[@]} == 0)); then
     echo "no changed paths"
     exit 0
@@ -27,7 +34,10 @@ if grep -q '^engine/' <<<"$paths"; then
     (cd engine && ../.venv/bin/mypy)
 fi
 if grep -q '^validation/' <<<"$paths"; then
-    (cd validation && ../.venv/bin/python -m pytest -q)
+    (cd validation && ../.venv/bin/python -m pytest -q -m 'not campaign')
+    if grep -q '^validation/campaigns/' <<<"$paths"; then
+        (cd validation && ../.venv/bin/python -m pytest -q -m campaign)
+    fi
 fi
 if grep -q '^lab/' <<<"$paths"; then
     (cd lab && ../.venv/bin/python -m pytest -q reference_oracles)

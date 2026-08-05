@@ -18,6 +18,10 @@ fi
 
 run_root="$workspace_root/build/native-sanitizers"
 wheelhouse="$run_root/wheelhouse"
+cleanup() {
+    cmake -E remove_directory "$run_root"
+}
+trap cleanup EXIT
 cmake -E make_directory "$run_root"
 cmake -E remove_directory "$wheelhouse"
 cmake -E remove_directory "$run_root/venv"
