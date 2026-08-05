@@ -825,6 +825,50 @@ def validate_operation_receipt(
         )
     if not isinstance(approval.get("source"), str) or not approval["source"].strip():
         errors.append(f"operation receipt {relative} requires approval source")
+    artifacts = envelope["artifacts"]
+    if not isinstance(artifacts, list):
+        errors.append(f"operation receipt {relative} requires artifact list")
+    else:
+        root = ROOT.resolve()
+        for artifact in artifacts:
+            if not isinstance(artifact, dict):
+                errors.append(
+                    f"operation receipt {relative} artifact entries must be objects"
+                )
+                continue
+            digest = artifact.get("sha256")
+            if not _valid_hex(digest, 64):
+                errors.append(
+                    f"operation receipt {relative} artifact requires SHA-256"
+                )
+                continue
+            artifact_relative = artifact.get("path")
+            if artifact_relative is None:
+                continue
+            if not isinstance(artifact_relative, str) or not artifact_relative:
+                errors.append(
+                    f"operation receipt {relative} artifact path must be nonempty"
+                )
+                continue
+            artifact_path = (ROOT / artifact_relative).resolve()
+            try:
+                artifact_path.relative_to(root)
+            except ValueError:
+                errors.append(
+                    f"operation receipt {relative} artifact escapes Governance: "
+                    f"{artifact_relative}"
+                )
+            else:
+                if not artifact_path.is_file():
+                    errors.append(
+                        f"operation receipt {relative} artifact is missing: "
+                        f"{artifact_relative}"
+                    )
+                elif sha256(artifact_path) != digest:
+                    errors.append(
+                        f"operation receipt {relative} artifact hash mismatch: "
+                        f"{artifact_relative}"
+                    )
     approved_operations = load_json(APPROVED_OPERATIONS_PATH)["operations"]
     authorization_id = subject.get("authorization_id")
     approved = approved_operations.get(authorization_id)
