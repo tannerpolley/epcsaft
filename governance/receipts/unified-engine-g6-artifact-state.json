@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "captured_on": "2026-08-04",
+  "tracked_index": {
+    "path": "manifests/artifacts.json",
+    "sha256": "9723bb1913d00cd12680be3d4b9e9da91d2d662c358557bdc21d37c0ba17e3e1"
+  },
+  "external_index": {
+    "path": "artifacts/index.json",
+    "sha256": "9723bb1913d00cd12680be3d4b9e9da91d2d662c358557bdc21d37c0ba17e3e1"
+  },
+  "policy": {
+    "path": "manifests/artifact-store-policy.json",
+    "sha256": "2e1df750903eaaa6ae5c27616ad3e525bf3f468961ff684df7884d57b56100be"
+  },
+  "active_aliases": [
+    {
+      "distribution": "epcsaft",
+      "filename": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "bytes": 963778,
+      "sha256": "bc7e637de084330ebded4ddfd52e02bc1ce5451221128692972ebba8856d098e"
+    },
+    {
+      "distribution": "epcsaft-equilibrium",
+      "filename": "epcsaft_equilibrium-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "bytes": 3552697,
+      "sha256": "1482778b113df890931de692262c291111b979bb4762f85a7e352dbd2d5b0266"
+    },
+    {
+      "distribution": "epcsaft-regression",
+      "filename": "epcsaft_regression-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "bytes": 392104,
+      "sha256": "0edfca6896b27b87c7861f49c020dbe2a9b1d6f5bd9fd17285ce1ba538d0c913"
+    }
+  ],
+  "candidate": {
+    "source": "review-bundles/unified-engine-c712fe9/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "bytes": 4577089,
+    "sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049"
+  },
+  "recovery": {
+    "method": "restore the three aliases from their immutable SHA-256 objects, restore both recorded index bytes, and rerun artifact_store.py check",
+    "installation_policy": "no installation resumes until either the old three-subject state or the new one-subject state validates cleanly"
+  }
+}

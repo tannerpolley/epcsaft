@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "gate": "G5",
-  "status": "blocked",
+  "status": "complete_with_quarantined_consumers",
   "captured_on": "2026-08-04",
   "engine_commit": "c712fe9730faef0732341ccdabc4d799fef2d953",
   "engine_wheel_sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049",
@@ -20,7 +20,8 @@
         "parameter_fingerprint": "sha256:92bfcfb9040151bbe8a15fef14cd992fbdf8040e9818e0cc0660a10180b4599b",
         "blocker": "paper uses a 0.88 sigma ion diameter model form that the Engine artifact does not represent"
       },
-      "lock_status": "release URL unavailable before G7; old Git lock cannot be replaced yet"
+      "lock_status": "quarantined; migration deferred by D-024",
+      "admission_status": "not_admitted"
     },
     {
       "repository": "MEA-Thermodynamics",
@@ -31,7 +32,8 @@
       "parameter_fingerprint": "sha256:7ac9cf016af9086a8f1c70189b524cbad1e29a75bb742862106d34ba7ab44ae0",
       "state_replay": "liquid state solved at 313.15 K and 100000 Pa",
       "blocker": "coupled chemical-observation regression requires source-reference derivatives that the narrowed Engine interface rejects",
-      "lock_status": "release URL unavailable before G7; old Git lock cannot be replaced yet"
+      "lock_status": "quarantined; migration deferred by D-024",
+      "admission_status": "not_admitted"
     },
     {
       "repository": "MEA-Absorption-Column",
@@ -39,9 +41,11 @@
       "commit": "c4726f69fdc034f5bec817ab720239967084ecdf",
       "dirty_path_count": 200,
       "status": "blocked_user_owned_dirty_checkout",
-      "blocker": "cannot safely edit, regenerate the lock, or validate the consumer without a clean owner handoff"
+      "blocker": "cannot safely edit, regenerate the lock, or validate the consumer without a clean owner handoff",
+      "admission_status": "not_admitted"
     }
   ],
-  "exit_condition_met": false,
-  "next_gate": "G6 remains closed"
+  "exit_condition_met": true,
+  "disposition": "D-024 quarantines all three named applications; none is accepted as an Engine consumer",
+  "next_gate": "G6 authorized by explicit user instruction"
 }

@@ -32,10 +32,10 @@
     "engine_tests": "305 passed, 22 deselected in 151.33s"
   },
   "validation": {
-    "commit": "4fb77e424a03fe56f6e852e3a287c9d5f948b679",
+    "commit": "9d0a25980b59158d694e2c3ace162bfa0c2a2d66",
     "receipt": "ePC-SAFT-validation/campaigns/unified-engine/receipt.json",
     "receipt_sha256": "d228a7632b0cadd3838c80f44996f6d2fad3ceefe84aa0175f64cca1d4d1b1db",
     "campaign_status": "passed",
-    "validation_tests": "23 passed"
+    "validation_tests": "5 passed after executable three-wheel campaign retirement"
   }
 }

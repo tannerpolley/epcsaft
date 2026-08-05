@@ -1,6 +1,6 @@
 # ePC-SAFT Governance Repository Context
 
-`GOVERNANCE.md` revision 8 is the canonical ecosystem doctrine.
+`GOVERNANCE.md` revision 9 is the canonical ecosystem doctrine.
 
 `governance_source_of_truth: true`
 
@@ -33,6 +33,11 @@ Equilibrium, and Regression become internal Engine modules under
 `epcsaft`, `epcsaft.equilibrium`, and `epcsaft.regression`. The current three
 runtime repositories remain transition sources until one accepted cutover
 receipt changes authority and retires the separate distributions.
+
+D-024 authorizes that package-authority cutoff now while Lithium Extraction,
+MEA Thermodynamics, and MEA Absorption Column are quarantined as non-admitted
+consumers. Their migration is deferred; their current Git pins and workflows
+carry no accepted Engine claim and are outside this cutoff task's write scope.
 
 `manifests/runtime-consolidation.json` records the approved target, transition
 freeze, consumer inventory, and execution gates. The canonical execution plan

@@ -8,7 +8,7 @@ Local checkout: `ePC-SAFT-governance`.
 
 Status: canonical ecosystem doctrine and governance home.
 
-Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 8 and
+Read [GOVERNANCE.md](GOVERNANCE.md) for doctrine revision 9 and
 [manifests/management.json](manifests/management.json) for the repository and
 access topology.
 
@@ -18,6 +18,9 @@ Regression repositories and wheels to one `ePC-SAFT-engine` repository and one
 [the canonical cutover plan](docs/plans/2026-08-04-unified-engine-direct-cutover.md)
 and [the transition manifest](manifests/runtime-consolidation.json) before
 runtime, artifact, Validation, or downstream-consumer work.
+
+D-024 authorizes the package-authority cutoff while the three named downstream
+applications remain quarantined and unsupported until their later migrations.
 
 Governance owns:
 

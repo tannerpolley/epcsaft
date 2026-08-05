@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "authorization_id": "unified-engine-package-cutover-2026-08-04",
+  "operations": [
+    {
+      "order": 1,
+      "request": "fast-forward accepted cutover branch commits to each protected main branch",
+      "postcondition": "each main contains its reviewed cutover subject without history rewrite",
+      "recovery": "stop; commits remain reachable and can be reverted by a separately reviewed commit"
+    },
+    {
+      "order": 2,
+      "request": "PATCH /repos/ePC-SAFT/ePC-SAFT-eos with name=ePC-SAFT-engine",
+      "postcondition": "repository ID R_kgDOTZ9m0Q resolves at the new name and the old URL redirects",
+      "recovery": "before authority acceptance only, PATCH the same repository ID back to name=ePC-SAFT-eos if the old namespace remains unoccupied; this cancels the attempted rename and its new-name redirect and is not reuse by a competing repository"
+    },
+    {
+      "order": 3,
+      "request": "create GitHub prerelease v0.2.0.dev0 at c712fe9730faef0732341ccdabc4d799fef2d953 and upload the accepted wheel",
+      "postcondition": "downloaded release asset SHA-256 equals 21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049",
+      "recovery": "retain the non-authoritative release as failed evidence or delete it only through a separately recorded cleanup; do not activate it"
+    },
+    {
+      "order": 4,
+      "request": "PATCH Equilibrium and Regression archived=true after their cutover pull requests close",
+      "postcondition": "both repositories are read-only at their accepted final main commits",
+      "recovery": "PATCH the affected repository archived=false before any corrective commit"
+    },
+    {
+      "order": 5,
+      "request": "replace the three active artifact aliases and indexes with the single accepted epcsaft subject during a no-install transaction",
+      "postcondition": "artifact_store.py check and resolve --distribution epcsaft pass; retired distributions fail resolution",
+      "recovery": "restore aliases and index bytes from unified-engine-g6-artifact-state.json before allowing installs"
+    },
+    {
+      "order": 6,
+      "request": "merge the completed Governance state receipt and topology",
+      "postcondition": "the merge commit is the sole effective Engine authority boundary",
+      "recovery": "if merge fails, keep installs disabled and restore the pre-cutover artifact state"
+    }
+  ]
+}

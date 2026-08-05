@@ -22,6 +22,29 @@
         "phase": "creation-state"
       },
       "approval_source": "explicit Codex task request on 2026-07-31"
+    },
+    "unified-engine-package-cutover-2026-08-04": {
+      "subject": {
+        "operation": "unified-engine-package-authority-cutover",
+        "source_repository": "ePC-SAFT/ePC-SAFT-eos",
+        "target_repository": "ePC-SAFT/ePC-SAFT-engine",
+        "source_repository_id": "R_kgDOTZ9m0Q",
+        "engine_commit": "c712fe9730faef0732341ccdabc4d799fef2d953",
+        "release_tag": "v0.2.0.dev0",
+        "wheel_sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049",
+        "archive_repositories": [
+          "ePC-SAFT/ePC-SAFT-equilibrium",
+          "ePC-SAFT/ePC-SAFT-regression"
+        ],
+        "deferred_consumers": [
+          "Lithium_Extraction",
+          "MEA-Thermodynamics",
+          "MEA-Absorption-Column"
+        ],
+        "doctrine_revision": 9,
+        "phase": "authorization-preflight"
+      },
+      "approval_source": "explicit Codex task request on 2026-08-04 to begin the full ePC-SAFT package cutoff with Lithium and MEA deferred"
     }
   }
 }

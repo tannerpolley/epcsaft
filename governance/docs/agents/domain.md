@@ -11,7 +11,7 @@ Read the nearest applicable context before shaping or implementation. Keep durab
 
 ## Runtime terms
 
-Doctrine revision 8 uses these runtime terms:
+Doctrine revision 9 uses these runtime terms:
 
 - **Engine**: the single `epcsaft` distribution and repository that owns EOS,
   Equilibrium, and Regression production modules.
@@ -23,3 +23,6 @@ Doctrine revision 8 uses these runtime terms:
   post-cutover release line.
 - **Consumer environment**: an application-owned environment that installs the
   immutable Engine wheel. It is not an SDK source or shared project runtime.
+- **Quarantined consumer**: a named downstream application explicitly removed
+  from current Engine admission. It carries no supported runtime or scientific
+  claim until its own Engine migration and Validation evidence pass.

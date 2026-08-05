@@ -2,7 +2,7 @@
 
 Status: canonical
 
-Doctrine revision: 8
+Doctrine revision: 9
 
 Approved: 2026-08-04
 
@@ -68,7 +68,7 @@ doctrine does not transfer any scientific implementation or capability.
 | `ePC-SAFT/ePC-SAFT-validation` | Installed-artifact, cross-module, downstream-consumer, and literature acceptance evidence authored by the accountable Engine task | Production algorithms, private Engine imports, a paper archive, or a permanent execution owner |
 | `ePC-SAFT/ePC-SAFT-lab` | Non-production experiments, manufactured and independent reference oracles, broad provenance, source indexes, and rejected alternatives | Production distributions or releases, runtime authority, admission receipts, or dependencies consumed by production or validation repositories |
 
-Revision 8 approves `ePC-SAFT/ePC-SAFT-engine` as the target runtime home. The
+Revision 9 approves `ePC-SAFT/ePC-SAFT-engine` as the target runtime home. The
 cutover will rename `ePC-SAFT/ePC-SAFT-eos` and transfer the accepted
 Equilibrium and Regression implementations into that repository. Until an
 accepted D-023 cutover receipt changes runtime authority, the three current
@@ -140,6 +140,14 @@ Cross-repository consumers MUST use the installed Engine artifact. They MUST
 NOT use sibling source paths, compile Engine implementation sources, copy an
 Engine kernel, or reach through private headers or Python modules. Downstream
 applications MUST pin an immutable Engine wheel, not a Git source dependency.
+
+A named downstream application MAY be quarantined during an Engine authority
+cutover only by an explicit user decision recorded in Governance. A quarantined
+application is not an admitted Engine consumer, carries no current ecosystem
+scientific or production claim, and MUST NOT be executed or published as a
+supported workflow until its owner installs an accepted Engine wheel and passes
+the applicable Validation evidence. Its retained dependency state is deferred
+work, not a compatibility path or alternate runtime authority.
 
 The EOS native interface used by Equilibrium and Regression is internal to the
 Engine implementation. Engine modules link repository-owned native targets in
@@ -410,6 +418,12 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 9 records the user-approved package-authority cutoff while Lithium
+Extraction, MEA Thermodynamics, and MEA Absorption Column are quarantined for a
+later Engine migration. D-024 changes only the authority gate ordering: it does
+not admit their old Git pins, results, or workflows and does not weaken the
+single-Engine architecture approved by D-023.
+
 Revision 8 records the user-approved direct cutover from three runtime
 repositories and distributions to one `ePC-SAFT/ePC-SAFT-engine` repository,
 one `epcsaft` distribution, and one Engine-rooted vertical-slice workflow.
@@ -443,3 +457,4 @@ Historical plans and receipts retain their original names.
 | D-021 Canonical scientific Data home | User-approved 2026-07-31 repository and ownership amendment | Create public `ePC-SAFT/ePC-SAFT-data` for reusable self-contained scientific packets; separate Data storage ownership from Engine runtime-subset ownership and Validation evidence ownership; allow read-only packet flow to Engine, Validation, and Lab while forbidding runtime repository dependencies | Removes ambiguous parameter ownership and keeps canonical inputs distinct from runtime copies, generated evidence, artifacts, and exploratory provenance | No | Management, Data, and consuming repository owners |
 | D-022 Governance repository identity | User-approved 2026-07-31 repository rename | Use `ePC-SAFT/ePC-SAFT-governance` as the durable Git-tracked authority repository; keep Management as the non-Git coordination task in the `ePC-SAFT-project` parent; preserve former names in historical plans and receipts | Separates current repository authority from coordination context without rewriting accepted evidence | No | Governance and Management |
 | D-023 Unified Engine direct cutover | User-approved 2026-08-04 package and agent-friction review | Rename the EOS repository to `ePC-SAFT-engine`; consolidate EOS, Equilibrium, and Regression into one `epcsaft` distribution and namespace; assign each production capability to one Engine-rooted vertical-slice task; retain Data and Validation as separate repository seams; cut downstream applications to one immutable Engine wheel without compatibility aliases or a mixed active release | Removes cross-wheel SDK drift, independent version mismatches, Git-source downstream pins, and multi-repository package edits while preserving independent scientific inputs and black-box evidence | No | Engine, Management, and downstream application owners |
+| D-024 Package authority with quarantined consumers | Explicit user instruction on 2026-08-04 to begin the full ePC-SAFT package cutoff and fix Lithium and MEA later | Complete the one-repository, one-wheel Engine authority cutover now; quarantine Lithium Extraction, MEA Thermodynamics, and MEA Absorption Column as non-admitted consumers until separate vertical-slice migrations pass | Removes the three-package authority immediately without treating deferred Git-pinned applications or failed scientific routes as accepted Engine evidence | Yes: application migration | Engine, Management, and downstream application owners |

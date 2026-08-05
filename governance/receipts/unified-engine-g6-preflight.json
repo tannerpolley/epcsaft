@@ -1,0 +1,166 @@
+{
+  "envelope": {
+    "schema": {
+      "path": "manifests/operation-receipt-envelope-v1.json",
+      "version": 1,
+      "sha256": "7cc1cbf4b92aaa54a4f7856bab5de4f1d8d2855c63566e5ecfe9660fb6f2061e"
+    },
+    "sequence": 3,
+    "subject": {
+      "operation": "unified-engine-package-authority-cutover",
+      "source_repository": "ePC-SAFT/ePC-SAFT-eos",
+      "target_repository": "ePC-SAFT/ePC-SAFT-engine",
+      "source_repository_id": "R_kgDOTZ9m0Q",
+      "engine_commit": "c712fe9730faef0732341ccdabc4d799fef2d953",
+      "release_tag": "v0.2.0.dev0",
+      "wheel_sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049",
+      "archive_repositories": [
+        "ePC-SAFT/ePC-SAFT-equilibrium",
+        "ePC-SAFT/ePC-SAFT-regression"
+      ],
+      "deferred_consumers": [
+        "Lithium_Extraction",
+        "MEA-Thermodynamics",
+        "MEA-Absorption-Column"
+      ],
+      "doctrine_revision": 9,
+      "phase": "authorization-preflight",
+      "authorization_id": "unified-engine-package-cutover-2026-08-04",
+      "record_sha256": "54742f007bae65d03498887f7d93c4f0c3e157985ede6a0ef2a66eabb08bb09f"
+    },
+    "subject_sha256": "a8a2cea2e59710b7fc78d1e7e6de3096d4df01aadf93dc7c07ea7ce8670e27d4",
+    "validator": {
+      "repository": "ePC-SAFT/ePC-SAFT-governance",
+      "commit": "01eb7f86e2261db18b56c2f9c049a16757d8dcf5",
+      "path": "tools/management_preflight.py",
+      "sha256": "20f99c751440943147fcf0abe04374688eea87ff439cd59ee4be9c491799ee69"
+    },
+    "command": "gh api repository metadata, branches, main protection, Actions workflows, pull requests, and releases for EOS, Equilibrium, and Regression; gh api repos/ePC-SAFT/ePC-SAFT-engine",
+    "environment": {
+      "captured_at": "2026-08-04",
+      "timezone": "America/Denver",
+      "platform": "linux",
+      "github_cli": "gh version 2.96.0 (2026-07-02)"
+    },
+    "artifacts": [
+      {
+        "kind": "github-precutover-state",
+        "path": "receipts/unified-engine-g6-github-state.json",
+        "sha256": "27120959bf72ee4643b41bf2a88f0294cc830c59688ab6f27d8515c039e7b677"
+      },
+      {
+        "kind": "artifact-precutover-state",
+        "path": "receipts/unified-engine-g6-artifact-state.json",
+        "sha256": "b66f42e54cc872f6605a1a9d27ca80ca22ed4b8b2bc5fbee4149483dd4219b3c"
+      },
+      {
+        "kind": "ordered-operation-and-recovery-plan",
+        "path": "receipts/unified-engine-g6-operations.json",
+        "sha256": "9bfb18090622aeda835d9db9947f9cc80209034cab41591e9a01f4b3da1d89e3"
+      },
+      {
+        "kind": "engine-wheel",
+        "filename": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+        "sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049",
+        "bytes": 4577089
+      }
+    ],
+    "producer": {
+      "kind": "codex-task",
+      "id": "package-cutoff-task-2026-08-04",
+      "repository": "ePC-SAFT/ePC-SAFT-governance"
+    },
+    "reviewer": {
+      "kind": "independent-agent",
+      "id": "019fcf59-d316-7122-9792-7edfdba8d1a7",
+      "outcome": "pass"
+    },
+    "failed_outcomes": [],
+    "supersedes": null,
+    "revoked_by": null,
+    "user_approval": {
+      "source": "explicit Codex task request on 2026-08-04 to begin the full ePC-SAFT package cutoff with Lithium and MEA deferred",
+      "subject_sha256": "a8a2cea2e59710b7fc78d1e7e6de3096d4df01aadf93dc7c07ea7ce8670e27d4"
+    }
+  },
+  "record": {
+    "status": "authorized_pending",
+    "observations": [
+      {
+        "name": "target_namespace_absent",
+        "expected": "ePC-SAFT/ePC-SAFT-engine is unoccupied before rename.",
+        "observed": "GitHub returned HTTP 404 for ePC-SAFT/ePC-SAFT-engine.",
+        "command_exit_code": 1,
+        "outcome": "pass"
+      },
+      {
+        "name": "source_repository_identity",
+        "expected": "Public, unarchived EOS repository with stable ID R_kgDOTZ9m0Q and protected main.",
+        "observed": "ePC-SAFT/ePC-SAFT-eos is public and unarchived; main rejects force pushes and deletion with admin enforcement.",
+        "repository_id": "R_kgDOTZ9m0Q",
+        "outcome": "pass"
+      },
+      {
+        "name": "accepted_candidate",
+        "expected": "One hash-bound cp313 Engine wheel from c712fe9730faef0732341ccdabc4d799fef2d953.",
+        "observed": "G4 passed for wheel SHA-256 21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049; installed-wheel Engine and Validation suites passed.",
+        "outcome": "pass"
+      },
+      {
+        "name": "transition_archive_subjects",
+        "expected": "Equilibrium and Regression are unarchived, have no releases or conflicting open pull requests, and their cutover branches are clean.",
+        "observed": "Both repositories satisfy the expected state and retain stable IDs R_kgDOTZ9n6A and R_kgDOTZ9ogA.",
+        "outcome": "pass"
+      },
+      {
+        "name": "deferred_consumer_scope",
+        "expected": "The three deferred applications are quarantined and excluded from package-cutoff writes and admission.",
+        "observed": "D-024 records Lithium Extraction, MEA Thermodynamics, and MEA Absorption Column as non-admitted until later migrations pass.",
+        "outcome": "pass"
+      },
+      {
+        "name": "metadata_and_recovery_exports",
+        "expected": "Hash-bound repository settings, branches, protections, workflows, releases, redirect limits, artifact indexes, ordered requests, and per-step recovery.",
+        "observed": "The G6 GitHub, artifact, and ordered-operation exports capture all requested subjects and their SHA-256 hashes.",
+        "outcome": "pass"
+      },
+      {
+        "name": "rename_and_archive_behavior",
+        "expected": "Known redirect, namespace-reuse, archive, and unarchive behavior with accepted losses stated.",
+        "observed": "Official GitHub behavior is recorded; no package repository has Pages or Actions workflows; old-name reuse is forbidden; archiving is reversible by unarchive; accepted_losses is empty.",
+        "outcome": "pass"
+      }
+    ],
+    "preconditions": [
+      "Doctrine revision 9 and D-024 are merged before the repository rename.",
+      "Engine main resolves exactly to c712fe9730faef0732341ccdabc4d799fef2d953 before release creation.",
+      "The target namespace remains unoccupied immediately before rename.",
+      "The candidate wheel hash remains 21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049.",
+      "Main protection continues to reject force pushes and deletion.",
+      "No write is made to a D-024-quarantined downstream repository."
+    ],
+    "expected_postconditions": [
+      "Repository R_kgDOTZ9m0Q is named ePC-SAFT/ePC-SAFT-engine with protected main at the accepted Engine commit.",
+      "GitHub release v0.2.0.dev0 contains the accepted wheel and its downloaded SHA-256 matches.",
+      "Governance exposes one active epcsaft artifact and no active separate Equilibrium or Regression distribution.",
+      "Equilibrium and Regression are archived after release validation but before the no-install authority transaction.",
+      "A completed G7/G8 state receipt records exact remote and local outcomes.",
+      "The three quarantined applications remain unchanged and unsupported pending later migrations."
+    ],
+    "retry": "Retry an idempotent metadata read or upload once; stop on any identity, commit, hash, protection, or namespace mismatch.",
+    "stop_conditions": [
+      "The target namespace becomes occupied by a different repository.",
+      "Engine main differs from the accepted commit.",
+      "The uploaded or downloaded wheel hash differs from the accepted candidate.",
+      "Repository identity or main protection is lost.",
+      "Any operation would require changing a quarantined downstream repository.",
+      "A partial authority state cannot be completed without accepting two active package channels."
+    ],
+    "reversibility": "The repository rename is reversible while the old namespace redirects and remains unclaimed. Git commits and release metadata are recoverable. Artifact aliases can be restored from the recorded pre-cutover index.",
+    "irreversible_effects": [
+      "The GitHub rename and release publication become durable public events.",
+      "Archiving transition repositories changes their public writable state until explicitly unarchived."
+    ],
+    "recovery_owner": "ePC-SAFT Management coordination task"
+  }
+}

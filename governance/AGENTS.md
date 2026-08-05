@@ -1,7 +1,7 @@
 # ePC-SAFT Governance Repository Agent Contract
 
 Read `GOVERNANCE.md` and `manifests/management.json` before planning,
-reviewing, or changing any ePC-SAFT repository. Doctrine revision 8 is the
+reviewing, or changing any ePC-SAFT repository. Doctrine revision 9 is the
 canonical ecosystem policy.
 
 ## Agent role
@@ -29,6 +29,10 @@ sources until the accepted cutover receipt. Follow
 `docs/plans/2026-08-04-unified-engine-direct-cutover.md`; do not create
 compatibility aliases, mixed active releases, or independent feature lines in
 the transition repositories.
+
+D-024 authorizes package authority to cut over while Lithium Extraction, MEA
+Thermodynamics, and MEA Absorption Column are quarantined. They are not admitted
+Engine consumers and this cutoff task must not edit them.
 
 The former `tannerpolley/ePC-SAFT-migration` repository is historical evidence
 only. It owns no active plan, queue, gate, decision, or authority.

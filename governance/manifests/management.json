@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "doctrine_revision": 8,
+  "doctrine_revision": 9,
   "control_plane": "governance",
   "coordination_project": "management",
   "project_root": "~/Workspaces/Engineering/ePC-SAFT-project",
@@ -12,7 +12,8 @@
   "approved_operations": "manifests/approved-operations.json",
   "operation_receipts": [
     "receipts/data-repository-creation-preflight.json",
-    "receipts/data-repository-creation-state.json"
+    "receipts/data-repository-creation-state.json",
+    "receipts/unified-engine-g6-preflight.json"
   ],
   "historical_migration": {
     "repository": "tannerpolley/ePC-SAFT-migration",

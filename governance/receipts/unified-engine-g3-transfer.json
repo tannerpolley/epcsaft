@@ -5,7 +5,7 @@
   "captured_on": "2026-08-04",
   "engine_commit": "c712fe9730faef0732341ccdabc4d799fef2d953",
   "data_commit": "9185bce8452191e6425e164c51dd6f8db983fc9b",
-  "data_checkout_commit": "a5b8588bd02cfb96e81e611550debc1b91662e6e",
+  "data_checkout_commit": "0511363c441db1c1eb81dab3870a654ee4d02034",
   "packet_paths_changed_after_source_commit": false,
   "materializations": [
     {

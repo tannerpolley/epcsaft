@@ -1,15 +1,18 @@
 # Unified ePC-SAFT Engine direct cutover
 
-Status: canonical plan; G2-G4 complete; G5 blocked
+Status: canonical plan; G2-G5 complete under D-024 quarantine; G6 authorized
 
 Execution note (2026-08-04): explicit G0 start approval was received. The
 non-authoritative candidate and local gate evidence are recorded in
 `receipts/unified-engine-g2-source-build.json` through
-`receipts/unified-engine-g5-downstream.json`. G6 remains closed.
+`receipts/unified-engine-g5-downstream.json`. On 2026-08-04 the user explicitly
+deferred Lithium Extraction, MEA Thermodynamics, and MEA Absorption Column and
+authorized the full package cutoff. D-024 quarantines those applications as
+non-admitted consumers and opens G6 without accepting their old pins or results.
 
 Approved architecture: 2026-08-04
 
-Doctrine: revision 8, decision D-023
+Doctrine: revision 9, decisions D-023 and D-024
 
 Plan owner: Governance documentation and Management coordination
 
@@ -57,6 +60,9 @@ starts only after gate G0 receives a separate user instruction.
 10. Change runtime authority once, after every acceptance gate passes. Do not
     run a mixed active release with both the Engine wheel and the separate
     Equilibrium or Regression wheels.
+11. A consumer explicitly quarantined by D-024 is not an active or admitted
+    Engine consumer, does not block package authority, and must not be executed
+    or published as supported until its later migration passes.
 
 ## Current baseline
 
@@ -225,17 +231,17 @@ parent coordination folder as a Git repository.
 
 ### G0: plan review and start approval
 
-Entry condition: doctrine revision 8, D-023, this plan, and
+Entry condition: doctrine revision 9, D-023, D-024, this plan, and
 `manifests/runtime-consolidation.json` agree.
 
-Actions:
+Completed actions:
 
 - review the complete Governance diff;
 - decide whether to commit and publish the planning change; and
 - obtain a separate user instruction to start implementation.
 
-Exit evidence: planning commit and explicit start approval bound to that
-commit.
+Exit evidence: the planning commit, the original implementation instruction,
+and the later explicit package-cutoff instruction recorded by D-024.
 
 ### G1: source and consumer baseline
 
@@ -255,7 +261,7 @@ Actions:
 - disposition each candidate, mutable `dist/`, and mismatched active wheel
   without promoting another independent package cohort;
 - update active repository `AGENTS.md` and `CONTEXT.md` pointers to doctrine
-  revision 8 through repository-owned changes; and
+  revision 9 through repository-owned changes; and
 - freeze independent EOS, Equilibrium, and Regression feature work.
 
 Stop when any source commit, dirty path, or active consumer cannot be assigned
@@ -323,7 +329,8 @@ remains non-authoritative until G7.
 
 ### G5: downstream consumer validation
 
-Actions for Lithium Extraction, MEA Thermodynamics, and MEA Absorption Column:
+Deferred follow-up actions for Lithium Extraction, MEA Thermodynamics, and MEA
+Absorption Column, outside this package cutoff:
 
 - replace the Git dependency with the immutable candidate Engine wheel source
   and SHA-256 hash;
@@ -333,11 +340,18 @@ Actions for Lithium Extraction, MEA Thermodynamics, and MEA Absorption Column:
 - run the application's focused thermodynamic and integration tests; and
 - record the Engine wheel and Data packet identities used by each result.
 
-Search the Engineering workspace again before exit. Add any newly discovered
-consumer to the manifest and execute the same gate.
+Do not perform those actions during G6-G8. A later application-owned vertical
+slice must remove quarantine, execute the applicable list, and add any newly
+discovered consumer to the manifest.
 
-Exit evidence: every active consumer passes in its own environment with the
-same Engine wheel bytes.
+Ordinary exit evidence is that every admitted consumer passes in its own
+environment with the same Engine wheel bytes.
+
+D-024 amendment: Lithium Extraction, MEA Thermodynamics, and MEA Absorption
+Column are quarantined rather than active consumers for this cutoff. Their
+recorded attempts and blockers remain evidence, but none is an accepted Engine
+workflow. G5 exits for package authority when Governance records that exact
+quarantine and prohibits supported execution until each later migration passes.
 
 ### G6: external-operation preflight and approval
 
@@ -349,7 +363,8 @@ Prepare one operation record covering:
 - publish the accepted wheel as a versioned GitHub Release asset and mirror it
   in the Governance artifact object store;
 - archive `ePC-SAFT/ePC-SAFT-equilibrium` and
-  `ePC-SAFT/ePC-SAFT-regression` after downstream acceptance;
+  `ePC-SAFT/ePC-SAFT-regression` after release validation but before the
+  no-install artifact transaction and authority-receipt boundary;
 - update local checkout names and remotes;
 - update organization links, workflow references, and project fields; and
 - state rollback limits and recovery ownership.
@@ -361,24 +376,32 @@ exact external operations. Doctrine approval alone does not satisfy this gate.
 
 Execute the approved operation in this order:
 
-1. merge the accepted Engine commit into the EOS repository default branch;
-2. rename the repository to `ePC-SAFT-engine`;
-3. build or verify the release wheel from that exact commit;
+1. merge the accepted Data, Validation, Lab, and transition-repository support
+   commits;
+2. fast-forward the EOS default branch to the accepted Engine commit;
+3. rename the repository to `ePC-SAFT-engine` and verify stable identity,
+   protection, issues, pull requests, and redirects;
 4. publish the versioned release asset and verify its downloaded SHA-256 hash;
-5. replace the artifact store with one active `epcsaft` Engine alias;
-6. apply reviewed downstream lock changes;
-7. run the installed-wheel and downstream smoke suite from fresh environments;
-8. accept the runtime authority receipt;
-9. archive Equilibrium and Regression repositories; and
-10. update Governance manifests from transition to completed state.
+5. run the installed-wheel Engine and Validation smoke suite from fresh
+   environments;
+6. close the transition pull requests and archive Equilibrium and Regression;
+7. enter a no-install transaction and replace the three active aliases and
+   indexes with one `epcsaft` Engine subject;
+8. merge the completed Governance authority receipt and completed topology;
+   that merge is the sole runtime-authority boundary; and
+9. update local names, remotes, organization links, and live metadata.
 
-The three current wheels remain authoritative until step 8. The Engine
-candidate remains non-authoritative before step 8. If a pre-receipt step fails,
-stop and retain the old authority. Do not accept partial authority.
+The three current wheels remain authoritative through step 6. No installation
+is allowed during steps 7-8. The Engine candidate remains non-authoritative
+until the completed Governance receipt merges in step 8, at which instant it
+becomes the sole authority. If a step before 7 fails, retain the old authority.
+If step 7 or 8 fails, restore the hash-bound pre-cutover artifact index and
+aliases before installation resumes. There is no interval with two admitted
+channels.
 
-Exit evidence: one accepted Engine commit and wheel, passing consumers, updated
-Governance state, archived old repositories, and a complete external-operation
-receipt.
+Exit evidence: one accepted Engine commit and wheel, passing Engine and
+Validation evidence, updated Governance state, archived old repositories, and
+a complete external-operation receipt.
 
 ### G8: retirement and cleanup
 
@@ -439,8 +462,9 @@ The cutover cannot pass unless all checks below succeed.
 - Engine module and integration suites pass;
 - Validation installs only the immutable Engine wheel;
 - current EOS, Equilibrium, Regression, and cross-module campaigns pass;
-- Lithium Extraction, MEA Thermodynamics, and MEA Absorption Column pass their
-  focused suites with the same wheel hash; and
+- every admitted consumer passes its focused suite with the same wheel hash;
+- D-024-quarantined applications are identified as unsupported and carry no
+  accepted Engine claim; and
 - each receipt records exact commands, environment, Data inputs, Engine commit,
   and wheel hash.
 
@@ -462,8 +486,9 @@ from_catalog
 ../ePC-SAFT-data
 ```
 
-Historical plans, receipts, archived repositories, and compressed artifact
-manifests are excluded from this live-path audit.
+Historical plans, receipts, archived repositories, compressed artifact
+manifests, and D-024-quarantined downstream repositories are excluded from this
+live-path audit until their separate migration begins.
 
 ## Risks and controls
 
@@ -492,9 +517,9 @@ manifests are excluded from this live-path audit.
 
 ## Plan completion
 
-Planning completes when doctrine revision 8, D-023, this document,
-`manifests/runtime-consolidation.json`, and the live Governance pointers agree;
-the Governance diff passes local validation; and G0 remains pending.
-
-Implementation begins only after the user reviews this plan and issues a
-separate start instruction.
+G0-G6 complete when doctrine revision 9, D-023, D-024, this document,
+`manifests/runtime-consolidation.json`, the G1-G6 receipts, and live Governance
+pointers agree and local validation passes. G7 completes only at the
+single-authority receipt boundary above. G8 completes when the live-path and
+cleanup audits pass and the quarantined applications remain explicitly outside
+the admitted consumer set.

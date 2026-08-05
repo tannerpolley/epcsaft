@@ -40,9 +40,9 @@
     "object_count": 106
   },
   "approved_transition": {
-    "decision": "D-023",
+    "decision": "D-024",
     "manifest": "manifests/runtime-consolidation.json",
-    "status": "not_executed",
+    "status": "authorized_pending",
     "target_active_distributions": [
       "epcsaft"
     ]
