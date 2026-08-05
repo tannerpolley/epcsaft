@@ -31,10 +31,8 @@ ALLOWED_ENVIRONMENT_DISTRIBUTIONS: dict[str, set[str]] = {
     "governance": set(),
     "github": set(),
     "data": set(),
-    "eos": {"epcsaft"},
-    "equilibrium": {"epcsaft", "epcsaft_equilibrium"},
-    "regression": {"epcsaft", "epcsaft_regression"},
-    "validation": {"epcsaft", "epcsaft_equilibrium", "epcsaft_regression"},
+    "engine": {"epcsaft"},
+    "validation": {"epcsaft"},
     "lab": set(),
 }
 
@@ -440,18 +438,18 @@ def parameter_state(config: dict[str, Any]) -> dict[str, Any]:
                     **ownership_projection(policy),
                 }
             )
-    eos = Path(config["repositories"]["eos"]["local_path"])
-    eos_bundles = eos / "src" / "epcsaft" / "data" / "bundles"
-    if eos_bundles.exists():
-        for manifest in sorted(eos_bundles.glob("*/*/bundle.toml")):
+    engine = Path(config["repositories"]["engine"]["local_path"])
+    engine_bundles = engine / "src" / "epcsaft" / "data" / "bundles"
+    if engine_bundles.exists():
+        for manifest in sorted(engine_bundles.glob("*/*/bundle.toml")):
             data = tomllib.loads(manifest.read_text(encoding="utf-8"))
             directory = manifest.parent
             bundle_id = data.get("bundle_id", directory.parent.name)
             policy = parameter_entries.get(bundle_id, {})
             records.append(
                 {
-                    "repository": "eos",
-                    "path": str(directory.relative_to(eos)),
+                    "repository": "engine",
+                    "path": str(directory.relative_to(engine)),
                     "bundle_id": bundle_id,
                     **record_hashes(directory),
                     "data_lock": data_lock_projection(bundle_id),
@@ -563,17 +561,11 @@ def environment_policy_errors(config: dict[str, Any]) -> list[str]:
                     allowed_distributions["validation"] = {"epcsaft"}
 
     artifact_consumers = {
-        "equilibrium": {"epcsaft"},
-        "regression": {"epcsaft"},
         "validation": (
             {"epcsaft"} if candidate_validation_sha is not None else set(active_objects)
         ),
     }
-    editable_providers = {
-        "eos": "epcsaft",
-        "equilibrium": "epcsaft_equilibrium",
-        "regression": "epcsaft_regression",
-    }
+    editable_providers = {"engine": "epcsaft"}
     for name, record in sorted(config["repositories"].items()):
         environment = Path(record["local_path"]) / ".venv"
         allowed = allowed_distributions.get(name, set())
@@ -685,7 +677,7 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
         by_id[bundle_id] = entry
         if entry.get("storage_owner") != "data":
             errors.append(f"parameter storage owner must be Data for {bundle_id}")
-        if entry.get("runtime_owner") not in {"eos", None}:
+        if entry.get("runtime_owner") not in {"engine", None}:
             errors.append(f"invalid parameter runtime owner for {bundle_id}")
         if entry.get("evidence_owner") not in {"validation", None}:
             errors.append(f"invalid parameter evidence owner for {bundle_id}")
@@ -694,49 +686,49 @@ def parameter_policy_errors(config: dict[str, Any]) -> list[str]:
             "admitted_runtime_copy",
             "absent",
         }:
-            errors.append(f"invalid EOS catalog presence for {bundle_id}")
+            errors.append(f"invalid Engine catalog presence for {bundle_id}")
         disposition = entry.get("disposition")
-        if disposition not in {"sync_to_eos_runtime", "canonical_data_only"}:
+        if disposition not in {"sync_to_engine_runtime", "canonical_data_only"}:
             errors.append(f"invalid parameter disposition for {bundle_id}")
-        elif disposition == "sync_to_eos_runtime" and entry.get("runtime_owner") != "eos":
-            errors.append(f"EOS runtime sync requires EOS runtime ownership for {bundle_id}")
+        elif disposition == "sync_to_engine_runtime" and entry.get("runtime_owner") != "engine":
+            errors.append(f"Engine runtime sync requires Engine runtime ownership for {bundle_id}")
         elif disposition == "canonical_data_only" and entry.get("runtime_owner") is not None:
             errors.append(f"Data-only packet cannot retain runtime ownership for {bundle_id}")
         if catalog_presence == "admitted_runtime_copy" and (
-            entry.get("runtime_owner") != "eos"
-            or disposition != "sync_to_eos_runtime"
+            entry.get("runtime_owner") != "engine"
+            or disposition != "sync_to_engine_runtime"
         ):
             errors.append(
-                f"admitted EOS catalog packet {bundle_id} requires EOS runtime ownership"
+                f"admitted Engine catalog packet {bundle_id} requires Engine runtime ownership"
             )
         if catalog_presence == "absent" and entry.get("runtime_owner") is not None:
-            errors.append(f"absent EOS catalog packet {bundle_id} cannot own runtime")
+            errors.append(f"absent Engine catalog packet {bundle_id} cannot own runtime")
     errors.extend(data_packet_lock_errors(config, by_id))
-    eos = Path(config["repositories"]["eos"]["local_path"])
-    eos_bundles = eos / "src" / "epcsaft" / "data" / "bundles"
+    engine = Path(config["repositories"]["engine"]["local_path"])
+    engine_bundles = engine / "src" / "epcsaft" / "data" / "bundles"
     discovered: set[str] = set()
-    if eos_bundles.exists():
-        for manifest in eos_bundles.glob("*/*/bundle.toml"):
+    if engine_bundles.exists():
+        for manifest in engine_bundles.glob("*/*/bundle.toml"):
             data = tomllib.loads(manifest.read_text(encoding="utf-8"))
             bundle_id = data.get("bundle_id", manifest.parent.parent.name)
             discovered.add(bundle_id)
             entry = by_id.get(bundle_id)
             if entry and entry.get("catalog_presence") == "absent":
                 errors.append(
-                    f"EOS catalog contains packet declared absent: {bundle_id}"
+                    f"Engine catalog contains packet declared absent: {bundle_id}"
                 )
     missing = sorted(discovered.difference(by_id))
     if missing:
-        errors.append(f"unregistered EOS parameter bundles: {missing}")
-    eos_discovered = set(discovered)
-    expected_eos = {
+        errors.append(f"unregistered Engine parameter bundles: {missing}")
+    engine_discovered = set(discovered)
+    expected_engine = {
         bundle_id
         for bundle_id, entry in by_id.items()
         if entry.get("catalog_presence") == "admitted_runtime_copy"
     }
-    missing_eos = sorted(expected_eos.difference(eos_discovered))
-    if missing_eos:
-        errors.append(f"declared EOS catalog packets are missing: {missing_eos}")
+    missing_engine = sorted(expected_engine.difference(engine_discovered))
+    if missing_engine:
+        errors.append(f"declared Engine catalog packets are missing: {missing_engine}")
     data_root = Path(config["repositories"]["data"]["local_path"])
     packets = data_root / "packets"
     if packets.exists():
@@ -989,9 +981,7 @@ def validate_config(config: dict[str, Any]) -> list[str]:
         "governance",
         "github",
         "data",
-        "eos",
-        "equilibrium",
-        "regression",
+        "engine",
         "validation",
         "lab",
     }
@@ -1006,24 +996,21 @@ def validate_config(config: dict[str, Any]) -> list[str]:
     data_access = repositories.get("data", {}).get("outbound_access")
     if data_access != ["data"]:
         errors.append("Data outbound access must be Data only")
-    eos_access = set(repositories.get("eos", {}).get("outbound_access", []))
-    if eos_access != {"eos", "data", "validation"}:
-        errors.append("EOS outbound access must be EOS, Data, and Validation only")
+    engine_access = set(repositories.get("engine", {}).get("outbound_access", []))
+    if engine_access != {"engine", "data", "validation"}:
+        errors.append("Engine outbound access must be Engine, Data, and Validation only")
     lab_access = set(repositories.get("lab", {}).get("outbound_access", []))
     if lab_access != {"lab", "data"}:
         errors.append("Lab outbound access must be Lab and Data only")
     expected_top = {
         "governance",
         "data",
-        "eos",
-        "equilibrium",
-        "regression",
+        "engine",
         "validation",
         "lab",
     }
-    for owner in ("governance", "equilibrium", "regression"):
-        if set(repositories.get(owner, {}).get("outbound_access", [])) != expected_top:
-            errors.append(f"{owner} must have full operational repository access")
+    if set(repositories.get("governance", {}).get("outbound_access", [])) != expected_top:
+        errors.append("governance must have full operational repository access")
     for item in config.get("persistent_worktrees", []):
         target = item.get("target")
         accessor = item.get("accessor")
