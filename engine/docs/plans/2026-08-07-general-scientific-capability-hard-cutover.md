@@ -39,8 +39,10 @@ The pair-parameter scientific basis is recorded in
    observations. Equilibrium observations require a later numerical-failure
    review after the general Equilibrium owner is complete.
 5. The sole solvation formulation is `born`. Its explicit correction
-   coefficients reduce mathematically to the original Born expression at their
-   neutral zero/one values. There is no `original-born` selector.
+   coefficients admit exactly `(0, 0)`, `(1, 0)`, and `(1, 1)` as the
+   uncorrected, shell-only SSM, and SSM+DS models. Parameters resolution rejects
+   the globally redundant `(0, 1)` identity. There is no `original-born`, SSM,
+   or SSM+DS runtime selector.
 6. The nonreactive phase owner is `phase_equilibrium`, with discovery, hint, and
    constrained-specification modes for one to three liquid/vapor phases.
 7. Homogeneous chemical equilibrium remains separate. This plan defines only
@@ -123,23 +125,36 @@ active-parameter representation while waiting for EOS.
 
 ## Execution sequence
 
-### Phase 0 — Freeze the vocabulary and retirement ledger
+### Phase 0 — Freeze the vocabulary and bounded retirement evidence
 
 - Accept ADR 0004 and the new Equilibrium ADR.
 - Make `CONTEXT.md`, `ARCHITECTURE.yaml`, and these plans the only live design
   authority.
-- CAP-11 creates
-  `engine/docs/plans/2026-08-07-general-scientific-capability-retirement-ledger.json`
-  before deletion begins. Its versioned entries declare exact prohibited
-  symbols/path/link patterns, scan scopes, provenance exceptions with reasons,
-  and expected terminal counts. The independent audit records the ledger hash,
-  repository tree, scanned-file-list hash, every match/exception, and pass/fail.
+- CAP-11 performs one bounded retirement scan against the exact committed
+  cutover tree. A machine-generated Governance receipt records the exact
+  command and runtime, include/exclude scopes, pattern and case semantics,
+  scanned-file-list hash, every match and justified exception, terminal counts,
+  and one-wheel, sanitizer, readiness, and cleanup results. The one-shot
+  scanner is not retained as a repository tool or permanent negative-space
+  gate.
+- Before deleting `lab/experiments/cython-held2`, distill only source-neutral
+  conclusions or source locators still required by current Engine or Validation
+  guidance. Perdomo Table 3 is not an ePC-SAFT parity oracle, the bounded Ascani
+  run did not establish a valid equilibrium reproduction, and Figiel Figures
+  2--3 are bounded dielectric-curve evidence while Figures 4--9 remain
+  unadjudicated. Delete the executable package, local `pyproject.toml`, Cython
+  sources, runners, duplicate EOS/controller code, generated figures, and local
+  receipts; Git history preserves the complete experiment.
 - Remove superseded plans, designs, implementation reviews, and source-specific
-  runtime guidance. Retain citations, research, source locators, raw data,
-  receipts, results, and numerical evidence as provenance.
+  runtime guidance. Retain only citations, research, source locators, raw data,
+  results, and numerical evidence still consumed by live authority; provenance
+  alone does not justify a surviving executable or generated artifact.
 
 Completion: every remaining live instruction points to the new owner model and
-no deleted document is linked as current guidance.
+no deleted document is linked as current guidance. The cutover implementation,
+documentation, and Lab deletion are committed first; the scan and receipt bind
+that exact commit/tree, and the receipt is committed separately so it does not
+claim itself as accepted subject evidence.
 
 ### Phase 1 — Canonical parameter identity
 
@@ -213,7 +228,9 @@ The compact Engine matrix must include:
 - ternary electrolyte and multisolvent/multi-ion compositions;
 - several simultaneous `k_ij` coordinates and mixed-family active sets;
 - `k_HB,ij` reciprocal pair identity with role-aware edge application;
-- canonical Born neutral-limit reduction and non-neutral correction response;
+- one nondegenerate four-input Born matrix that compares `(0, 0)`, `(1, 0)`,
+  and `(1, 1)` with independent equations and rejects `(0, 1)` before
+  evaluation;
 - owner Jacobians against independent central differences at interior points;
 - symmetry/order invariance and no fixed solvent/cation/anion positions;
 - one-, two-, and three-phase Equilibrium certificates;
@@ -222,6 +239,33 @@ The compact Engine matrix must include:
 
 Finite differences are independent test oracles only. Production derivatives
 remain CppAD partials plus exact implicit linear algebra.
+
+## CAP issue resolution standard
+
+A CAP issue is resolved only when:
+
+- its exact scope and every applicable acceptance criterion are complete on the
+  accepted main-branch commit, with no partial fallback or competing owner;
+- each changed scientific or numerical claim has the narrowest durable
+  falsifier at its proper owner, and every claimed result meets its declared
+  residual, physical, conditioning, and tolerance criteria;
+- superseded implementation, configuration, generated output, live guidance,
+  and tests are removed in the same cutover unless a concrete current consumer
+  requires them;
+- applicable focused, affected-root, wheel-origin, static, sanitizer, and
+  installed-wheel Validation commands pass, or a pre-existing unrelated
+  failure is identified with evidence and does not weaken the issue's claim;
+- the complete diff and remaining-tree complement have received review
+  proportional to scientific and architectural risk; and
+- the branch is clean, the accepted commit is pushed, and GitHub relationships
+  and issue state describe the resulting live frontier.
+
+An issue does not owe a new test. Zero new persistent tests is correct when no
+distinct scientific claim needs a new falsifier. Prefer extending one existing
+parameterized numerical matrix; add at most the smallest claim-bearing Engine
+check or installed-wheel Validation campaign needed for a genuinely new failure
+meaning. Readiness, schemas, paths, hashes, imports, exception prose, API shape,
+and implementation branches are never promoted into scientific tests.
 
 ## Readiness and validation
 
@@ -255,12 +299,13 @@ four canonical plans are approved.
 | CAP-08 | Equilibrium exact solved-state sensitivities | CAP-07 | Implicit Jacobians match independent differences away from singularities |
 | CAP-09 | One `phase_equilibrium` owner | CAP-07 | Discovery and constrained 1–3 phase solves use one source-neutral path |
 | CAP-10 | Equilibrium observation admission review | CAP-08, CAP-09 | Explicit admit/defer decision with numerical-failure evidence |
-| CAP-11 | Final dead-surface and documentation audit | CAP-04, CAP-06, CAP-10 | No retired symbols, schemas, branches, docs, or tests remain |
+| CAP-11 | Final dead-surface and documentation audit | CAP-04, CAP-06, CAP-10 | The Cython experiment and retired surfaces are absent, and one final receipt binds the clean cutover tree and bounded scan |
 
 ## Done definition
 
 The cutover is complete only when all three owner plans are complete, the wheel
 contains one parameter and derivative system, source- or case-specific runtime
 routes are absent, compact numerical evidence passes, installed-wheel
-Validation owns literature acceptance, and a repository-wide symbol/path audit
-finds no live dependency on retired guidance or implementations.
+Validation owns literature acceptance, and the final Governance receipt proves
+that its exact cutover tree has no live dependency on retired guidance or
+implementations.

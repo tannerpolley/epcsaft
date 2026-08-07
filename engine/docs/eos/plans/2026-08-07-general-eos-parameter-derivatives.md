@@ -41,9 +41,9 @@ same parameter identity and tape, not through a new evaluator.
 The runtime formulation is named `born`. It includes explicit, physically
 named correction coefficients for the solvent-shared and dielectric-saturation
 terms currently described in the literature as SSM+DS. Generated parameter
-templates emit every coefficient. Neutral zero/one coefficient values reduce
-the equation algebraically to the original Born form; no separate
-`original-born` branch or selector exists.
+templates emit every coefficient. The fixed model topology admits exactly
+`(c_shell, c_dielectric) = (0, 0)`, `(1, 0)`, and `(1, 1)` through one
+equation; no separate `original-born`, SSM, or SSM+DS runtime branch exists.
 
 The source-neutral equation-registry identities are
 `born_outer_shell_diameter`, `born_radial_charging_work`, and
@@ -61,11 +61,15 @@ with the existing physical prefactor converting `W_Born` to residual
 Helmholtz energy. `d_i^Born` is a required positive length (angstrom at the
 document boundary); `f_mix`, `epsilon_bulk`, and `epsilon_i` are required
 positive dimensionless quantities. `c_shell` and `c_dielectric` are required
-dimensionless coefficients with strict admitted values zero or one; `(0, 0)`
-is the uncorrected Born limit and `(1, 1)` admits both corrections without a
-runtime formulation branch. They are model-definition fields, not continuous
-fit coordinates. The old `original-born`, `ssm-ds`, source-named equation IDs,
-and omitted-field forms are rejected rather than migrated or defaulted.
+dimensionless model-definition fields, not continuous fit coordinates.
+`(0, 0)` is the canonical uncorrected Born limit, `(1, 0)` is the shell-only
+SSM model, and `(1, 1)` admits shell and dielectric-saturation corrections.
+Parameters resolution rejects `(0, 1)` because `c_shell = 0` makes
+`D_i = d_i^Born` and nulls the dielectric increment at every state; admitting
+it would create a globally redundant, observationally indistinguishable model
+identity. It is not silently canonicalized or aliased. The old
+`original-born`, `ssm-ds`, source-named equation IDs, and omitted-field forms
+are rejected rather than migrated or defaulted.
 
 Fully dissociated Debye--Huckel remains a distinct physical contribution. It is
 not folded into Born and is not selected by a literature source.
@@ -218,15 +222,17 @@ Persistent EOS checks must falsify numerical claims, including:
 - `k_HB,ij` reciprocal storage and role-aware cross-edge application;
 - each analytic/CppAD column against an independent central difference at
   interior points using tolerance justified by conditioning;
-- Born neutral coefficients reproducing the canonical uncorrected expression
-  and non-neutral coefficients changing the expected term;
+- one parameterized Born matrix at a nondegenerate state with `f_mix != 1`
+  compares `(0, 0)`, `(1, 0)`, and `(1, 1)` against independent original-Born,
+  shell-only SSM, and SSM+DS equations and confirms that `(0, 1)` cannot
+  resolve to an evaluable thermodynamic model;
 - explicit-reference invariance under component reordering; and
 - structured failures at domain, topology, density, and association-solve
   boundaries without fabricated values.
 
 Named literature datasets and broad matrices move to installed-wheel
-Validation. Tests must not assert callback names, schema wording, compatibility,
-or provenance labels.
+Validation. Tests must not assert callback names, exception class or prose,
+loader mechanics, schema wording, compatibility, or provenance labels.
 
 ## Failure semantics
 
@@ -244,7 +250,7 @@ Do not publish these units until the four canonical plans are approved.
 | EOS-01 | Resolved active-coordinate descriptor | Mixed families resolve in one stable order with complete domains |
 | EOS-02 | Arbitrary-width native application and tape | Supported pre-Born N-component/P-parameter cases return declared tensor orders without specialized callbacks |
 | EOS-03 | Pair and cross-association correction handling | Reciprocal `k_ij`/`l_ij` and role-aware `k_HB,ij` checks pass |
-| EOS-04 | Canonical Born formulation | Neutral-limit identity passes and no alternate Born selector remains |
+| EOS-04 | Canonical Born formulation | The four-input nested-model matrix passes, `(0, 1)` fails before evaluation, and no alternate Born selector remains |
 | EOS-05 | Explicit electrolyte reference model | No component name/position controls behavior |
 | EOS-06 | Generic reference/permittivity derivatives | Multi-ion/multisolvent Jacobians match independent differences |
 | EOS-07 | EOS observable derivative blocks | Versioned fixed-state and pure-saturation blocks preserve active-set order, applicability, tensor order/layout, and typed row/solve status |
