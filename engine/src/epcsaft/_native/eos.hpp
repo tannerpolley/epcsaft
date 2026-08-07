@@ -51,7 +51,6 @@ struct NativeResult final {
 };
 
 struct NativePurePhaseBlock;
-struct NativeParameterizedPurePhaseBlock;
 struct NativeFixedTopologyParameter;
 struct NativeFixedTopologyPhaseBlock;
 struct NativeMixturePhaseBlock;
@@ -65,16 +64,9 @@ struct NativeReferenceSequence final {
     double convergence_error;
 };
 
-struct NativeIonSolvationBorn final {
-    double solvation_gibbs_j_per_mol;
-    double derivative_j_per_mol_per_angstrom;
-    double reference_molality_mol_per_kg;
-    double reference_convergence_error;
-};
-
-struct NativeIonSolvationIonicPermittivity final {
-    double solvation_gibbs_j_per_mol;
-    double derivative_j_per_mol;
+struct NativeIonSolvationDerivativeBlock final {
+    std::array<double, 2> solvation_gibbs_j_per_mol;
+    std::vector<double> parameter_derivatives_j_per_mol;
     double reference_molality_mol_per_kg;
     double reference_convergence_error;
 };
@@ -161,12 +153,6 @@ private:
     const std::uint64_t deadline_ns_;
 };
 
-enum class ActivePureParameter {
-    SegmentCount,
-    SegmentDiameter,
-    DispersionEnergyOverK,
-};
-
 enum class ActiveComponentParameter {
     SegmentDiameter,
     DispersionEnergyOverK,
@@ -198,6 +184,14 @@ struct NativeMolarVolumeBoundsParameterBlock final {
     std::vector<double> parameter_derivatives_m3_per_mol;
 };
 
+// Canonical EOS-facing request.  The native resolver translates identities to
+// the existing typed derivative primitives; Python never supplies a native
+// array slot or callback.
+struct NativeParameterRecord final {
+    std::string identity;
+    double value;
+};
+
 class NativeModel final {
 public:
     explicit NativeModel(NativeParameters parameters);
@@ -212,18 +206,11 @@ public:
         const std::vector<double>& mole_fractions,
         const std::string& phase
     ) const;
-    std::array<double, 6> polar_terms(
-        double temperature,
-        double molar_density,
-        const std::vector<double>& mole_fractions
-    ) const;
-    std::vector<double> reduced_multipole_moments(double temperature) const;
-    bool supports_native_sdk_v1() const;
-    bool supports_parameterized_pure_native_sdk_v1() const;
-    bool supports_fixed_topology_association_native_sdk_v1() const;
-    bool supports_fixed_topology_associating_mixture_native_sdk_v1() const;
-    bool supports_mixture_native_sdk_v1() const;
-    bool supports_electrolyte_native_sdk_v1() const;
+    bool supports_pure_transport() const;
+    bool supports_fixed_topology_association() const;
+    bool supports_fixed_topology_associating_mixture() const;
+    bool supports_mixture_transport() const;
+    bool supports_electrolyte_transport() const;
     std::size_t component_count() const;
     const std::vector<int>& charge_numbers() const;
     const std::vector<int>& site_components() const;
@@ -238,13 +225,12 @@ public:
         double amount,
         double volume
     ) const;
-    NativeParameterizedPurePhaseBlock evaluate_pure_phase_parameters(
-        double temperature,
-        double amount,
-        double volume,
-        double segment_count,
-        double segment_diameter_angstrom,
-        double dispersion_energy_over_k
+    NativeModel with_parameter_identities(
+        const std::vector<std::string>& component_ids,
+        const std::vector<std::string>& site_ids
+    ) const;
+    NativeModel with_active_parameters(
+        const std::vector<NativeParameterRecord>& active_parameters
     ) const;
     NativeFixedTopologyPhaseBlock evaluate_fixed_topology_association(
         double temperature,
@@ -252,18 +238,25 @@ public:
         double volume,
         const std::vector<NativeFixedTopologyParameter>& active_parameters
     ) const;
+    NativeFixedTopologyPhaseBlock
+    evaluate_fixed_topology_association_active_parameters(
+        double temperature,
+        double amount,
+        double volume,
+        const std::vector<NativeParameterRecord>& active_parameters
+    ) const;
     NativeMixturePhaseBlock evaluate_fixed_topology_associating_mixture(
         double temperature,
         const std::vector<double>& amounts,
         double volume,
         const std::vector<NativeFixedTopologyParameter>& active_parameters
     ) const;
-    NativeMixturePhaseBlock evaluate_pure_phase_parameter(
+    NativeMixturePhaseBlock
+    evaluate_fixed_topology_associating_mixture_active_parameters(
         double temperature,
-        double amount,
+        const std::vector<double>& amounts,
         double volume,
-        ActivePureParameter family,
-        double parameter_value
+        const std::vector<NativeParameterRecord>& active_parameters
     ) const;
     NativeMixturePhaseBlock evaluate_mixture_phase(
         double temperature,
@@ -281,6 +274,12 @@ public:
         const std::vector<double>& amounts,
         double volume,
         double l_ij
+    ) const;
+    NativeMixturePhaseBlock evaluate_mixture_phase_active_parameter(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume,
+        const NativeParameterRecord& active_parameter
     ) const;
     NativeMixturePhaseBlock evaluate_electrolyte_phase(
         double temperature,
@@ -307,6 +306,10 @@ public:
         double packing_fraction_min,
         double packing_fraction_max,
         double ion_mole_fraction_max
+    ) const;
+    double molar_density_upper_bound(
+        double temperature,
+        const std::vector<double>& mole_fractions
     ) const;
     NativePackingFractionBlock evaluate_packing_fraction(
         double temperature,
@@ -342,6 +345,13 @@ public:
         const std::string& phase,
         const std::vector<NativeActiveParameter>& active_parameters
     ) const;
+    NativeFugacityDerivativeBlock evaluate_fugacity_derivatives_active(
+        double temperature,
+        double pressure,
+        const std::vector<double>& composition,
+        const std::string& phase,
+        const std::vector<NativeParameterRecord>& active_parameters
+    ) const;
     std::vector<double> reference_composition(
         const std::vector<double>& solvent_fractions,
         const std::array<std::size_t, 2>& ion_indices,
@@ -357,22 +367,14 @@ public:
         const std::string& phase,
         NativeEvaluationBudget* budget = nullptr
     ) const;
-    NativeIonSolvationBorn evaluate_ion_solvation_born(
+    NativeIonSolvationDerivativeBlock evaluate_ion_solvation_derivatives(
         double temperature,
         double pressure,
-        double born_diameter_angstrom
-    ) const;
-    NativeIonSolvationIonicPermittivity
-    evaluate_ion_solvation_ionic_permittivity(
-        double temperature,
-        double pressure,
-        double ionic_region_relative_permittivity
-    ) const;
-    NativeIonSolvationIonicPermittivity
-    evaluate_ion_solvation_solvent_permittivity(
-        double temperature,
-        double pressure,
-        double solvent_relative_permittivity
+        const std::vector<double>& solvent_fractions,
+        const std::array<std::size_t, 2>& ion_indices,
+        const std::array<int, 2>& stoichiometry,
+        const std::string& phase,
+        const std::vector<NativeParameterRecord>& active_parameters
     ) const;
 
     NativeIonSolvationKij evaluate_ion_solvation_kij(
@@ -414,7 +416,15 @@ public:
     ) const;
 
 private:
+    NativeFixedTopologyParameter resolve_fixed_topology_parameter(
+        const NativeParameterRecord& parameter
+    ) const;
+    NativeActiveParameter resolve_component_parameter(
+        const NativeParameterRecord& parameter
+    ) const;
     const NativeParameters parameters_;
+    std::vector<std::string> component_ids_;
+    std::vector<std::string> site_ids_;
 };
 
 }  // namespace epcsaft

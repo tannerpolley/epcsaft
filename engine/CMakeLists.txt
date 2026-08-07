@@ -6,7 +6,17 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_SKIP_INSTALL_RPATH TRUE)
 set(PYBIND11_FINDPYTHON ON)
+
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM AND NOT CMAKE_CXX_COMPILER_LAUNCHER)
+    set(
+        CMAKE_CXX_COMPILER_LAUNCHER
+        "${CCACHE_PROGRAM}"
+        CACHE FILEPATH "Compiler cache used by all Engine native targets"
+    )
+endif()
 
 option(EPCSAFT_ENABLE_SANITIZERS "Build Engine-owned native code with ASan and UBSan" OFF)
 
@@ -153,7 +163,8 @@ add_library(
     STATIC
     "${cppad_SOURCE_DIR}/cppad_lib/temp_file.cpp"
     src/epcsaft/_native/eos.cpp
-    src/epcsaft/_native/native_sdk.cpp
+    src/epcsaft/_native/native_transport.cpp
+    src/epcsaft/_native/pure_saturation.cpp
 )
 set_target_properties(epcsaft_engine_eos_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(
@@ -173,18 +184,27 @@ if(EPCSAFT_CPPAD_GENERATED_INCLUDE_DIR)
     )
 endif()
 target_compile_features(epcsaft_engine_eos_core PUBLIC cxx_std_17)
-target_link_libraries(epcsaft_engine_eos_core PUBLIC Threads::Threads)
+target_link_libraries(
+    epcsaft_engine_eos_core
+    PUBLIC Threads::Threads
+    PRIVATE PkgConfig::Ipopt
+)
 
 pybind11_add_module(
     epcsaft_core
     NO_EXTRAS
     src/epcsaft/_native/module.cpp
-    src/epcsaft/_native/native_sdk_pybind.cpp
+    src/epcsaft/_native/native_transport_pybind.cpp
+    src/epcsaft/_native/saturation_pybind.cpp
+    src/epcsaft/regression/native/fit.cpp
 )
 set_target_properties(epcsaft_core PROPERTIES OUTPUT_NAME _core)
-target_include_directories(epcsaft_core PRIVATE src/epcsaft/_native)
+target_include_directories(
+    epcsaft_core
+    PRIVATE src/epcsaft/_native src/epcsaft/regression/native
+)
 target_compile_features(epcsaft_core PRIVATE cxx_std_17)
-target_link_libraries(epcsaft_core PRIVATE epcsaft_engine_eos_core)
+target_link_libraries(epcsaft_core PRIVATE epcsaft_engine_eos_core Ceres::ceres)
 
 add_library(
     epcsaft_engine_equilibrium_core
@@ -215,13 +235,13 @@ add_library(
     cpp/equilibrium/held2_step9.cpp
     cpp/equilibrium/held2_step10.cpp
     cpp/equilibrium/held2_step8_nlp.cpp
-    cpp/equilibrium/saturation.cpp
 )
 set_target_properties(epcsaft_engine_equilibrium_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(epcsaft_engine_equilibrium_core PUBLIC cxx_std_17)
 target_include_directories(
     epcsaft_engine_equilibrium_core
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/cpp/equilibrium"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/epcsaft/_native"
 )
 target_include_directories(
     epcsaft_engine_equilibrium_core SYSTEM PRIVATE "${boost_headers_SOURCE_DIR}"
@@ -237,47 +257,14 @@ pybind11_add_module(
     MODULE
     cpp/equilibrium/module.cpp
     cpp/equilibrium/chemical_equilibrium_bindings.cpp
-    cpp/equilibrium/chemical_observation.cpp
 )
 set_target_properties(epcsaft_engine_equilibrium_native PROPERTIES OUTPUT_NAME _equilibrium)
 target_include_directories(
     epcsaft_engine_equilibrium_native
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/epcsaft/include"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/epcsaft/_native"
 )
 target_link_libraries(epcsaft_engine_equilibrium_native PRIVATE epcsaft_engine_equilibrium_core)
-
-Python_add_library(
-    epcsaft_engine_regression_native
-    MODULE
-    WITH_SOABI
-    src/epcsaft/regression/native/born_diameter_fit.cpp
-    src/epcsaft/regression/native/ceres_core.cpp
-    src/epcsaft/regression/native/evaluator_fit.cpp
-    src/epcsaft/regression/native/figiel_kij_fit.cpp
-    src/epcsaft/regression/native/figiel_water_factor_fit.cpp
-    src/epcsaft/regression/native/general_fit.cpp
-    src/epcsaft/regression/native/pure_saturation_contract.cpp
-    src/epcsaft/regression/native/pure_saturation_fit.cpp
-    src/epcsaft/regression/native/module.cpp
-)
-set_target_properties(
-    epcsaft_engine_regression_native
-    PROPERTIES
-        OUTPUT_NAME _native
-        CXX_VISIBILITY_PRESET hidden
-        VISIBILITY_INLINES_HIDDEN YES
-)
-target_compile_features(epcsaft_engine_regression_native PRIVATE cxx_std_17)
-target_compile_options(
-    epcsaft_engine_regression_native PRIVATE -Wall -Wextra -Wpedantic -Werror
-)
-target_include_directories(
-    epcsaft_engine_regression_native
-    PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/epcsaft/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/epcsaft/regression/native"
-)
-target_link_libraries(epcsaft_engine_regression_native PRIVATE Ceres::ceres)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set(
@@ -286,7 +273,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         epcsaft_core
         epcsaft_engine_equilibrium_core
         epcsaft_engine_equilibrium_native
-        epcsaft_engine_regression_native
     )
     foreach(target IN LISTS EPCSAFT_ENGINE_NATIVE_TARGETS)
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
@@ -301,7 +287,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
             target
             epcsaft_core
             epcsaft_engine_equilibrium_native
-            epcsaft_engine_regression_native
         )
             target_link_options(${target} PRIVATE -fsanitize=address,undefined)
         endforeach()
@@ -317,9 +302,4 @@ install(
     TARGETS epcsaft_engine_equilibrium_native
     LIBRARY DESTINATION epcsaft/equilibrium
     RUNTIME DESTINATION epcsaft/equilibrium
-)
-install(
-    TARGETS epcsaft_engine_regression_native
-    LIBRARY DESTINATION epcsaft/regression
-    RUNTIME DESTINATION epcsaft/regression
 )

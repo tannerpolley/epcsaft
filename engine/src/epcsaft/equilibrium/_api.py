@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from functools import cache
 from importlib import metadata
-from types import MappingProxyType
 from typing import Any, cast
 
 from pint import Quantity
@@ -29,111 +27,6 @@ class PhaseState:
     molar_density_mol_m3: float
     pressure_pa: float
     chemical_potential_over_rt: tuple[float, ...]
-
-
-@dataclass(frozen=True)
-class SolverAttemptDiagnostics:
-    """One deterministic Ipopt search or confirmation attempt."""
-
-    role: str
-    initial_guess: tuple[float, ...]
-    solver_converged: bool
-    solver_status: str
-    iterations: int
-    constraint_violation: float
-    callback_error: str
-
-
-@dataclass(frozen=True)
-class SaturationDiagnostics:
-    """Separate numerical and physical evidence for one local boundary."""
-
-    solver_converged: bool
-    solver_status: str
-    iterations: int
-    attempts: int
-    attempt_log: tuple[SolverAttemptDiagnostics, ...]
-    solver_lower_bounds: tuple[float, float, float]
-    solver_upper_bounds: tuple[float, float, float]
-    solver_constraint_violation: float
-    numerical_converged: bool
-    confirmation_solves: int
-    confirmation_max_relative_difference: float
-    physical_accepted: bool
-    pressure_relative_residual: float
-    chemical_potential_absolute_residual: float
-    phase_density_distance: float
-    exact_derivatives: bool
-    globality_certificate: bool
-    failure_reason: str
-
-
-@dataclass(frozen=True)
-class SaturationResult:
-    """Certified local pure-component saturation boundary in named SI fields."""
-
-    temperature_k: float
-    saturation_pressure_pa: float
-    parameter_fingerprint: str
-    vapor: PhaseState
-    liquid: PhaseState
-    diagnostics: SaturationDiagnostics
-
-
-class SaturationError(RuntimeError):
-    """Raised when no seed produces a numerically confirmed physical boundary."""
-
-    def __init__(self, message: str, diagnostics: Mapping[str, object]) -> None:
-        super().__init__(message)
-        self.diagnostics = MappingProxyType(dict(diagnostics))
-
-
-@dataclass(frozen=True)
-class HeldStepTiming:
-    """One native HELD2 step invocation and its measured work."""
-
-    step: int
-    invocation_count: int
-    wall_seconds: float
-    cpu_seconds: float
-    provider_evaluations: int
-    optimizer_solves: int
-    optimizer_iterations: int
-    terminal_status: str
-    terminal_reason: str
-    next_step: int
-
-
-@dataclass(frozen=True)
-class HeldPerformanceDiagnostics:
-    """Measured HELD2 work and mechanism-based recovery evidence."""
-
-    step_timings: tuple[HeldStepTiming, ...]
-    provider_evaluations: int
-    optimizer_solves: int
-    optimizer_iterations: int
-    step5_starts_consumed: int
-    step5_attempts: int
-    step5_accepted_attempts: int
-    step5_repeated_start_ordinal_count: int
-    dilute_face_restart_attempts: int
-    dilute_face_restart_accepts: int
-    dilute_face_coordinate_indices: tuple[int, ...]
-    dilute_face_component_indices: tuple[int, ...]
-    step8_invocations: int
-    step8_return_to_stage_ii_count: int
-    step8_warm_start_count: int
-    step8_cold_fallback_count: int
-    step8_provider_state_evaluations: int
-    step8_provider_volume_bound_evaluations: int
-    step8_provider_packing_evaluations: int
-    step8_problem_candidate_count: int
-    step8_attempted_candidate_count: int
-    step8_repeated_problem_count: int
-    step10_invocations: int
-    trace_refinement_activated_count: int
-    trace_refinement_return_to_stage_ii_count: int
-    trace_refinement_component_indices: tuple[int, ...]
 
 
 @dataclass(frozen=True)
@@ -160,7 +53,28 @@ class HeldDiagnostics:
     search_profiles: tuple[str, ...]
     globality_certificate: str
     failure_reason: str
-    performance: HeldPerformanceDiagnostics | None = None
+
+
+@dataclass(frozen=True)
+class Held2Diagnostics:
+    """Compact evidence from the Perdomo HELD2 paper controller."""
+
+    outcome: str
+    failure_stage: str | None
+    solver_status: str
+    numerical_status: str
+    physical_status: str
+    optimizer_solves: int
+    optimizer_iterations: int
+    major_iterations: int
+    best_tpd: float
+    held_gap: float | None
+    material_balance_max_abs: float | None
+    pressure_stationarity_max_relative: float | None
+    kkt_stationarity_max_abs: float | None
+    confirmation_succeeded: bool
+    globality_certificate: str
+    failure_reason: str
 
 
 @dataclass(frozen=True)
@@ -174,13 +88,17 @@ class TpFlashResult:
     phase_fractions: tuple[float, ...]
     total_free_energy_over_rt: float
     parameter_fingerprint: str
-    diagnostics: HeldDiagnostics
+    diagnostics: HeldDiagnostics | Held2Diagnostics
 
 
 class FlashError(RuntimeError):
     """Raised when the bounded HELD search cannot return an accepted result."""
 
-    def __init__(self, message: str, diagnostics: HeldDiagnostics) -> None:
+    def __init__(
+        self,
+        message: str,
+        diagnostics: HeldDiagnostics | Held2Diagnostics,
+    ) -> None:
         super().__init__(message)
         self.diagnostics = diagnostics
 
@@ -473,78 +391,6 @@ class ChemicalEquilibriumSensitivityRequest:
 
 
 @dataclass(frozen=True)
-class ChemicalObservationPrimitive:
-    """One generic homogeneous-liquid observable evaluated by the installed artifacts."""
-
-    kind: str
-    component_id: str
-
-
-@dataclass(frozen=True)
-class ChemicalObservationRow:
-    """One source-bound row and immutable homogeneous-liquid state."""
-
-    row_id: str
-    state_id: str
-    state_schema_id: str
-    source_id: str
-    transform_id: str
-    temperature: Quantity[Any]
-    pressure: Quantity[Any]
-    problem: ChemicalEquilibriumProblem
-    primitive: ChemicalObservationPrimitive
-
-
-@dataclass(frozen=True)
-class ChemicalObservationContext:
-    """Process-local C evaluator handle with value and exact-Jacobian transport."""
-
-    _native_capsule: object
-    row_ids: tuple[str, ...]
-    state_ids: tuple[str, ...]
-    state_schema_ids: tuple[str, ...]
-    source_ids: tuple[str, ...]
-    primitive_ids: tuple[str, ...]
-    parameter_ids: tuple[str, ...]
-    primitive_units: tuple[str, ...]
-    transform_ids: tuple[str, ...]
-    reference_ids: tuple[str, ...]
-    reference_fingerprints: tuple[str, ...]
-    parameter_units: tuple[str, ...]
-    evaluator_identity: str
-    capability_id: str
-    capability_fingerprint: str
-    provider_artifact_identity: str
-    owner_artifact_identity: str
-    contract_fingerprint: str
-    artifact_identity: str
-
-    @property
-    def native_capsule(self) -> object:
-        """Return the installed generic evaluator capsule for C/C++ consumers."""
-
-        return self._native_capsule
-
-    def evaluate(
-        self,
-        parameter_values: Sequence[float],
-        *,
-        with_jacobian: bool = True,
-    ) -> Mapping[str, object]:
-        """Replay the same native callback for diagnostics or installed-artifact tests."""
-
-        values = tuple(float(value) for value in parameter_values)
-        return cast(
-            Mapping[str, object],
-            _equilibrium._chemical_observation_evaluate(
-                self._native_capsule,
-                values,
-                with_jacobian,
-            ),
-        )
-
-
-@dataclass(frozen=True)
 class ChemicalEquilibriumSensitivityParameter:
     """One ordered scalar input and the units of its returned state derivatives."""
 
@@ -586,7 +432,7 @@ class ChemicalEquilibriumSensitivity:
 
 @dataclass(frozen=True)
 class ChemicalArtifactIdentity:
-    """Installed distributions and Provider ABI consumed by one chemical result."""
+    """Installed distributions consumed by one chemical result."""
 
     equilibrium_distribution: str
     equilibrium_version: str
@@ -594,14 +440,7 @@ class ChemicalArtifactIdentity:
     provider_distribution: str | None
     provider_version: str | None
     provider_record_sha256: str | None
-    provider_sdk_capsule_name: str | None
-    provider_sdk_abi_version: int | None
-    provider_sdk_table_size: int | None
-    provider_sdk_result_size: int | None
-    provider_sdk_mixture_result_size: int | None
-    provider_sdk_neutral_reference_result_size: int | None
-    provider_sdk_neutral_reference_derivative_result_size: int | None
-    provider_sdk_reacting_phase_parameter_result_size: int | None
+    provider_transport_capsule_name: str | None
 
 
 @dataclass(frozen=True)
@@ -640,62 +479,10 @@ class ChemicalEquilibriumError(RuntimeError):
         self.diagnostics = diagnostics
 
 
-@dataclass(frozen=True)
-class _Scope:
-    component: str
-    temperature_min_k: float
-    temperature_max_k: float
-    liquid_density_upper_mol_m3: float
-
-
-_SCOPES = MappingProxyType(
-    {
-        "sha256:fe590be7d46775ff56a25c839c4b3b015cca516480db9732235e53e8064e206b": _Scope(
-            component="methane",
-            temperature_min_k=97.0,
-            temperature_max_k=300.0,
-            liquid_density_upper_mol_m3=40_000.0,
-        ),
-        "sha256:73aea4044ad3a49a8045861ba88c8e5966ad7b9db99e28f83df90c1d3d456223": _Scope(
-            component="ethane",
-            temperature_min_k=90.0,
-            temperature_max_k=305.0,
-            liquid_density_upper_mol_m3=40_000.0,
-        ),
-        "sha256:03f6d54f5d839830b6802ea914585a7e5f2402a0fae61cf451b9fab2c083cfc5": _Scope(
-            component="propane",
-            temperature_min_k=85.0,
-            temperature_max_k=523.0,
-            liquid_density_upper_mol_m3=25_000.0,
-        ),
-    }
-)
-
 _FLASH_FINGERPRINT = "sha256:9e63656093548f1f64bec8cc5129421f6e1bc452b2ec3632ded65f5ac538b8e7"
 _FLASH_TEMPERATURE_DOMAIN_K = (203.22, 243.61)
 _FLASH_PRESSURE_DOMAIN_PA = (2_124_000.0, 6_885_000.0)
 _FLASH_METHANE_FEED_DOMAIN = (0.4661, 0.66705)
-
-
-def _temperature_in_kelvin(temperature: Quantity[Any]) -> float:
-    if not isinstance(temperature, Quantity):
-        raise TypeError("saturation requires a Pint temperature quantity")
-    try:
-        value = float(temperature.to("kelvin").magnitude)
-    except DimensionalityError as error:
-        raise ValueError("temperature units must be convertible to kelvin") from error
-    except (TypeError, ValueError) as error:
-        raise TypeError("saturation requires one scalar Pint temperature quantity") from error
-    if not math.isfinite(value) or value <= 0.0:
-        raise ValueError("temperature must be positive and finite")
-    return value
-
-
-def _triple(payload: object) -> tuple[float, float, float]:
-    values = cast(list[float] | tuple[float, ...], payload)
-    if len(values) != 3:
-        raise RuntimeError("native solver diagnostic triple has the wrong size")
-    return (float(values[0]), float(values[1]), float(values[2]))
 
 
 def _float_tuple(payload: object) -> tuple[float, ...]:
@@ -710,46 +497,6 @@ def _vector(payload: object, size: int, name: str) -> tuple[float, ...]:
     if len(values) != size:
         raise RuntimeError(f"native {name} has the wrong size")
     return values
-
-
-def _attempt(payload: Mapping[str, object]) -> SolverAttemptDiagnostics:
-    return SolverAttemptDiagnostics(
-        role=str(payload["role"]),
-        initial_guess=_triple(payload["initial_guess"]),
-        solver_converged=bool(payload["solver_converged"]),
-        solver_status=str(payload["solver_status"]),
-        iterations=int(cast(int, payload["iterations"])),
-        constraint_violation=float(cast(float, payload["constraint_violation"])),
-        callback_error=str(payload["callback_error"]),
-    )
-
-
-def _diagnostics(payload: Mapping[str, object]) -> SaturationDiagnostics:
-    attempt_payloads = cast(list[Mapping[str, object]], payload["attempt_log"])
-    return SaturationDiagnostics(
-        solver_converged=bool(payload["solver_converged"]),
-        solver_status=str(payload["solver_status"]),
-        iterations=int(cast(int, payload["iterations"])),
-        attempts=int(cast(int, payload["attempts"])),
-        attempt_log=tuple(_attempt(item) for item in attempt_payloads),
-        solver_lower_bounds=_triple(payload["solver_lower_bounds"]),
-        solver_upper_bounds=_triple(payload["solver_upper_bounds"]),
-        solver_constraint_violation=float(cast(float, payload["solver_constraint_violation"])),
-        numerical_converged=bool(payload["numerical_converged"]),
-        confirmation_solves=int(cast(int, payload["confirmation_solves"])),
-        confirmation_max_relative_difference=float(
-            cast(float, payload["confirmation_max_relative_difference"])
-        ),
-        physical_accepted=bool(payload["physical_accepted"]),
-        pressure_relative_residual=float(cast(float, payload["pressure_relative_residual"])),
-        chemical_potential_absolute_residual=float(
-            cast(float, payload["chemical_potential_absolute_residual"])
-        ),
-        phase_density_distance=float(cast(float, payload["phase_density_distance"])),
-        exact_derivatives=bool(payload["exact_derivatives"]),
-        globality_certificate=bool(payload["globality_certificate"]),
-        failure_reason=str(payload["failure_reason"]),
-    )
 
 
 def _phase(payload: Mapping[str, object]) -> PhaseState:
@@ -767,7 +514,6 @@ def _phase(payload: Mapping[str, object]) -> PhaseState:
         pressure_pa=float(cast(float, payload["pressure_pa"])),
         chemical_potential_over_rt=chemical_potential,
     )
-
 
 def _quantity(quantity: object, units: str, name: str, operation: str) -> float:
     if not isinstance(quantity, Quantity):
@@ -869,232 +615,14 @@ def _failed_held_diagnostics(outcome: str, search_status: str, reason: str) -> H
     )
 
 
-def _held2_performance(payload: Mapping[str, object]) -> HeldPerformanceDiagnostics:
-    timing_payloads = cast(Sequence[object], payload.get("step_timings", ()))
-    timings: list[HeldStepTiming] = []
-    for raw_timing in timing_payloads:
-        if not isinstance(raw_timing, Mapping):
-            raise ValueError("native HELD2 step timing must be a mapping")
-        timing = cast(Mapping[str, object], raw_timing)
-        step = int(cast(int, timing["step"]))
-        invocation_count = int(cast(int, timing["invocation_count"]))
-        wall_seconds = float(cast(float, timing["wall_seconds"]))
-        cpu_seconds = float(cast(float, timing["cpu_seconds"]))
-        provider_evaluations = int(cast(int, timing["provider_evaluations"]))
-        optimizer_solves = int(cast(int, timing["optimizer_solves"]))
-        optimizer_iterations = int(cast(int, timing["optimizer_iterations"]))
-        next_step = int(cast(int, timing["next_step"]))
-        if (
-            step not in range(1, 11)
-            or invocation_count < 0
-            or not math.isfinite(wall_seconds)
-            or wall_seconds < 0.0
-            or not math.isfinite(cpu_seconds)
-            or cpu_seconds < 0.0
-            or min(provider_evaluations, optimizer_solves, optimizer_iterations) < 0
-            or next_step not in range(0, 11)
-        ):
-            raise ValueError("native HELD2 step timing is invalid")
-        timings.append(
-            HeldStepTiming(
-                step=step,
-                invocation_count=invocation_count,
-                wall_seconds=wall_seconds,
-                cpu_seconds=cpu_seconds,
-                provider_evaluations=provider_evaluations,
-                optimizer_solves=optimizer_solves,
-                optimizer_iterations=optimizer_iterations,
-                terminal_status=str(timing["terminal_status"]),
-                terminal_reason=str(timing["terminal_reason"]),
-                next_step=next_step,
-            )
-        )
-
-    step5_starts_consumed = 0
-    step5_attempts = 0
-    step5_accepted_attempts = 0
-    dilute_face_restart_attempts = 0
-    dilute_face_restart_accepts = 0
-    dilute_face_coordinate_indices: set[int] = set()
-    dilute_face_component_indices: set[int] = set()
-    start_ordinals: list[int] = []
-    for raw_step5 in cast(Sequence[object], payload.get("step5_history", ())):
-        if not isinstance(raw_step5, Mapping):
-            raise ValueError("native HELD2 Step 5 history must contain mappings")
-        step5 = cast(Mapping[str, object], raw_step5)
-        starts_consumed = int(cast(int, step5.get("starts_consumed", 0)))
-        if starts_consumed < 0:
-            raise ValueError("native HELD2 Step 5 starts consumed is invalid")
-        step5_starts_consumed += starts_consumed
-        for raw_attempt in cast(Sequence[object], step5.get("attempts", ())):
-            if not isinstance(raw_attempt, Mapping):
-                raise ValueError("native HELD2 Step 5 attempt must be a mapping")
-            attempt = cast(Mapping[str, object], raw_attempt)
-            step5_attempts += 1
-            step5_accepted_attempts += int(bool(attempt.get("accepted", False)))
-            if "start_ordinal" in attempt:
-                ordinal = int(cast(int, attempt["start_ordinal"]))
-                if ordinal < 0:
-                    raise ValueError("native HELD2 Step 5 start ordinal is invalid")
-                start_ordinals.append(ordinal)
-            raw_restart = attempt.get("dilute_face_restart")
-            if not isinstance(raw_restart, Mapping):
-                continue
-            restart = cast(Mapping[str, object], raw_restart)
-            if not bool(restart.get("attempted", False)):
-                continue
-            dilute_face_restart_attempts += 1
-            dilute_face_restart_accepts += int(bool(restart.get("accepted", False)))
-            for raw_coordinate in cast(Sequence[object], restart.get("coordinate_indices", ())):
-                coordinate = int(cast(int, raw_coordinate))
-                if coordinate < 0:
-                    raise ValueError("native HELD2 dilute-face coordinate is invalid")
-                dilute_face_coordinate_indices.add(coordinate)
-            for raw_component in cast(
-                Sequence[object], restart.get("provider_component_indices", ())
-            ):
-                component = int(cast(int, raw_component))
-                if component < 0:
-                    raise ValueError("native HELD2 dilute-face component is invalid")
-                dilute_face_component_indices.add(component)
-
-    return_to_stage_ii_reasons = {
-        "problem_67_not_converged",
-        "stage_iii_solver_not_converged",
-        "stage_iii_active_set_resolve_failed",
-        "stage_iii_active_set_balance_failed",
-    }
-    step8_invocations = 0
-    step8_return_to_stage_ii_count = 0
-    step8_warm_start_count = 0
-    step8_cold_fallback_count = 0
-    step8_provider_state_evaluations = 0
-    step8_provider_volume_bound_evaluations = 0
-    step8_provider_packing_evaluations = 0
-    step8_problem_candidate_count = 0
-    step8_attempted_candidate_count = 0
-    problem_signatures: list[tuple[tuple[int, ...], tuple[float, ...], float]] = []
-    for raw_step8 in cast(Sequence[object], payload.get("step8_history", ())):
-        if not isinstance(raw_step8, Mapping):
-            raise ValueError("native HELD2 Step 8 history must contain mappings")
-        step8 = cast(Mapping[str, object], raw_step8)
-        step8_invocations += 1
-        step8_return_to_stage_ii_count += int(
-            str(step8.get("reason", "")) in return_to_stage_ii_reasons
-        )
-        step8_warm_start_count += int(bool(step8.get("warm_start_used", False)))
-        step8_cold_fallback_count += int(bool(step8.get("cold_fallback_used", False)))
-        step8_provider_state_evaluations += int(
-            cast(int, step8.get("provider_state_evaluations", 0))
-        )
-        step8_provider_volume_bound_evaluations += int(
-            cast(int, step8.get("provider_volume_bound_evaluations", 0))
-        )
-        step8_provider_packing_evaluations += int(
-            cast(int, step8.get("provider_packing_evaluations", 0))
-        )
-        if (
-            min(
-                step8_provider_state_evaluations,
-                step8_provider_volume_bound_evaluations,
-                step8_provider_packing_evaluations,
-            )
-            < 0
-        ):
-            raise ValueError("native HELD2 Step 8 Provider work is invalid")
-        problem_ids = tuple(
-            int(cast(int, value))
-            for value in cast(Sequence[object], step8.get("problem_candidate_ids", ()))
-        )
-        attempted_ids = tuple(
-            int(cast(int, value))
-            for value in cast(Sequence[object], step8.get("attempted_candidate_ids", ()))
-        )
-        problem_variables = tuple(
-            float(cast(float, value))
-            for value in cast(Sequence[object], step8.get("problem_candidate_variables", ()))
-        )
-        if "neighborhood_radius" not in step8:
-            raise ValueError("native HELD2 Step 8 neighborhood radius is missing")
-        neighborhood_radius = float(cast(float, step8["neighborhood_radius"]))
-        if not math.isfinite(neighborhood_radius) or neighborhood_radius <= 0.0:
-            raise ValueError("native HELD2 Step 8 neighborhood radius is invalid")
-        step8_problem_candidate_count += len(problem_ids)
-        step8_attempted_candidate_count += len(attempted_ids)
-        problem_signatures.append((problem_ids, problem_variables, neighborhood_radius))
-
-    step10_timings = tuple(timing for timing in timings if timing.step == 10)
-    trace_refinement_component_indices: set[int] = set()
-    trace_refinement_activated_count = 0
-    raw_step10_history = payload.get("step10_history", ())
-    step10_payloads = (
-        cast(Sequence[object], raw_step10_history)
-        if isinstance(raw_step10_history, Sequence)
-        else ()
-    )
-    if not step10_payloads and isinstance(payload.get("step10"), Mapping):
-        step10_payloads = (cast(Mapping[str, object], payload["step10"]),)
-    for raw_step10 in step10_payloads:
-        if not isinstance(raw_step10, Mapping):
-            raise ValueError("native HELD2 Step 10 history must contain mappings")
-        step10 = cast(Mapping[str, object], raw_step10)
-        refinement_activated = False
-        raw_components = step10.get("trace_component_indices")
-        if raw_components is None:
-            raw_components = tuple(
-                cast(Mapping[str, object], refinement)["component_index"]
-                for refinement in cast(Sequence[object], step10.get("refinements", ()))
-                if isinstance(refinement, Mapping)
-            )
-        for raw_component in cast(Sequence[object], raw_components):
-            component = int(cast(int, raw_component))
-            if component < 0:
-                raise ValueError("native HELD2 trace component index is invalid")
-            trace_refinement_component_indices.add(component)
-            refinement_activated = True
-        for raw_refinement in cast(Sequence[object], step10.get("refinements", ())):
-            if not isinstance(raw_refinement, Mapping):
-                raise ValueError("native HELD2 trace refinement must be a mapping")
-        trace_refinement_activated_count += int(refinement_activated)
-
-    return HeldPerformanceDiagnostics(
-        step_timings=tuple(timings),
-        provider_evaluations=sum(timing.provider_evaluations for timing in timings),
-        optimizer_solves=sum(timing.optimizer_solves for timing in timings),
-        optimizer_iterations=sum(timing.optimizer_iterations for timing in timings),
-        step5_starts_consumed=step5_starts_consumed,
-        step5_attempts=step5_attempts,
-        step5_accepted_attempts=step5_accepted_attempts,
-        step5_repeated_start_ordinal_count=(len(start_ordinals) - len(set(start_ordinals))),
-        dilute_face_restart_attempts=dilute_face_restart_attempts,
-        dilute_face_restart_accepts=dilute_face_restart_accepts,
-        dilute_face_coordinate_indices=tuple(sorted(dilute_face_coordinate_indices)),
-        dilute_face_component_indices=tuple(sorted(dilute_face_component_indices)),
-        step8_invocations=step8_invocations,
-        step8_return_to_stage_ii_count=step8_return_to_stage_ii_count,
-        step8_warm_start_count=step8_warm_start_count,
-        step8_cold_fallback_count=step8_cold_fallback_count,
-        step8_provider_state_evaluations=step8_provider_state_evaluations,
-        step8_provider_volume_bound_evaluations=(step8_provider_volume_bound_evaluations),
-        step8_provider_packing_evaluations=step8_provider_packing_evaluations,
-        step8_problem_candidate_count=step8_problem_candidate_count,
-        step8_attempted_candidate_count=step8_attempted_candidate_count,
-        step8_repeated_problem_count=(len(problem_signatures) - len(set(problem_signatures))),
-        step10_invocations=sum(timing.invocation_count for timing in step10_timings),
-        trace_refinement_activated_count=trace_refinement_activated_count,
-        trace_refinement_return_to_stage_ii_count=sum(
-            timing.invocation_count for timing in step10_timings if timing.next_step == 4
-        ),
-        trace_refinement_component_indices=tuple(sorted(trace_refinement_component_indices)),
-    )
-
-
-def _held2_diagnostics(payload: Mapping[str, object]) -> HeldDiagnostics:
+def _held2_diagnostics(payload: Mapping[str, object]) -> Held2Diagnostics:
     outcome = str(payload["outcome"])
     accepted = outcome == "physical_equilibrium_accepted"
     one_phase = outcome == "one_phase_no_negative_witness_detected"
     step2 = cast(Mapping[str, object], payload["step2"])
     step9_history = cast(Sequence[Mapping[str, object]], payload["step9_history"])
+    step4_history = cast(Sequence[Mapping[str, object]], payload["step4_history"])
+    step_timings = cast(Sequence[Mapping[str, object]], payload["step_timings"])
     step10_value = payload.get("step10")
     step10 = cast(Mapping[str, object], step10_value) if isinstance(step10_value, Mapping) else None
     certificate_value = step10.get("final_certificate") if step10 else None
@@ -1105,18 +633,30 @@ def _held2_diagnostics(payload: Mapping[str, object]) -> HeldDiagnostics:
     )
     failure = payload.get("failure_reason")
     gap = step9_history[-1].get("free_energy_gap") if step9_history else None
-    status = "passed" if accepted or one_phase else "failed"
-    return HeldDiagnostics(
+    completed = accepted or one_phase
+    adjudication_status = "passed" if completed else "not_adjudicated"
+    physical_status = (
+        "passed" if completed else "failed" if certificate is not None else "not_adjudicated"
+    )
+    return Held2Diagnostics(
         outcome=outcome,
-        search_status=str(payload.get("failure_stage") or outcome),
-        solver_status=status,
-        numerical_status=status,
-        physical_status=status,
-        attempts=int(cast(int, payload["upper_solve_count"])),
-        major_iterations=int(cast(int, payload["upper_solve_count"])),
+        failure_stage=(
+            None if payload.get("failure_stage") is None else str(payload["failure_stage"])
+        ),
+        solver_status=adjudication_status,
+        numerical_status=adjudication_status,
+        physical_status=physical_status,
+        optimizer_solves=sum(int(cast(int, timing["optimizer_solves"])) for timing in step_timings),
+        optimizer_iterations=sum(
+            int(cast(int, timing["optimizer_iterations"])) for timing in step_timings
+        ),
+        major_iterations=(
+            0
+            if not step4_history
+            else 1
+            + max(int(cast(int, step["major_iteration"])) for step in step4_history)
+        ),
         best_tpd=float(cast(float, step2["minimum_tpd"])),
-        lower_bound=None,
-        upper_bound=None,
         held_gap=None if gap is None else float(cast(float, gap)),
         material_balance_max_abs=(
             None
@@ -1134,13 +674,9 @@ def _held2_diagnostics(payload: Mapping[str, object]) -> HeldDiagnostics:
         kkt_stationarity_max_abs=(
             None if certificate is None else float(cast(float, certificate["kkt_residual_inf"]))
         ),
-        chemical_potential_max_relative=None,
         confirmation_succeeded=bool(step10 and step10["status"] == "complete"),
-        confirmation_max_difference=None,
-        search_profiles=("HELD2.0 paper Steps 1-10",),
         globality_certificate=str(payload["globality_certificate"]),
         failure_reason="" if failure is None else str(failure),
-        performance=_held2_performance(payload),
     )
 
 
@@ -2189,32 +1725,11 @@ def _chemical_artifact_identity(
             provider_distribution=None,
             provider_version=None,
             provider_record_sha256=None,
-            provider_sdk_capsule_name=None,
-            provider_sdk_abi_version=None,
-            provider_sdk_table_size=None,
-            provider_sdk_result_size=None,
-            provider_sdk_mixture_result_size=None,
-            provider_sdk_neutral_reference_result_size=None,
-            provider_sdk_neutral_reference_derivative_result_size=None,
-            provider_sdk_reacting_phase_parameter_result_size=None,
+            provider_transport_capsule_name=None,
         )
-    capsule_name = str(native["provider_sdk_capsule_name"])
-    abi_version = int(cast(int, native["provider_sdk_abi_version"]))
-    sizes = tuple(
-        int(cast(int, native[name]))
-        for name in (
-            "provider_sdk_table_size",
-            "provider_sdk_result_size",
-            "provider_sdk_mixture_result_size",
-            "provider_sdk_neutral_reference_result_size",
-            "provider_sdk_neutral_reference_derivative_result_size",
-            "provider_sdk_reacting_phase_parameter_result_size",
-        )
-    )
-    if capsule_name != "epcsaft.native_sdk.v1" or abi_version != 1:
-        raise ValueError("native result has an incompatible Provider SDK identity")
-    if any(size <= 0 for size in sizes[:3]) or any(size < 0 for size in sizes[3:]):
-        raise ValueError("native result has invalid Provider SDK structure sizes")
+    capsule_name = str(native["provider_transport_capsule_name"])
+    if capsule_name != "epcsaft.native_transport":
+        raise ValueError("native result has an incompatible Provider transport identity")
     return ChemicalArtifactIdentity(
         equilibrium_distribution="epcsaft",
         equilibrium_version=engine_version,
@@ -2222,14 +1737,7 @@ def _chemical_artifact_identity(
         provider_distribution="epcsaft",
         provider_version=engine_version,
         provider_record_sha256=engine_record,
-        provider_sdk_capsule_name=capsule_name,
-        provider_sdk_abi_version=abi_version,
-        provider_sdk_table_size=sizes[0],
-        provider_sdk_result_size=sizes[1],
-        provider_sdk_mixture_result_size=sizes[2],
-        provider_sdk_neutral_reference_result_size=sizes[3],
-        provider_sdk_neutral_reference_derivative_result_size=sizes[4],
-        provider_sdk_reacting_phase_parameter_result_size=sizes[5],
+        provider_transport_capsule_name=capsule_name,
     )
 
 
@@ -2803,303 +2311,4 @@ def chemical_equilibrium(
         ),
         artifact_identity=artifact_identity,
         sensitivity=sensitivity,
-    )
-
-
-def chemical_observation_context(
-    phase: ProviderPhase,
-    *,
-    rows: Sequence[ChemicalObservationRow],
-    active_parameters: Sequence[ChemicalEquilibriumActiveParameter],
-) -> ChemicalObservationContext:
-    """Create one source-bound batch evaluator over immutable liquid states.
-
-    The returned handle owns no chemistry defaults and does not run a Python
-    callback. Its native callback re-solves every declared homogeneous state
-    and returns ordered values, exact total Jacobian columns, and row status.
-    """
-
-    if not isinstance(phase, ProviderPhase):
-        raise TypeError("chemical_observation_context requires a ProviderPhase")
-    row_records = tuple(rows)
-    parameter_records = tuple(active_parameters)
-    if not row_records or not parameter_records:
-        raise ValueError("chemical-observation context requires rows and parameters")
-    if any(not isinstance(item, ChemicalObservationRow) for item in row_records):
-        raise TypeError("chemical-observation rows use the typed row record")
-    if any(not isinstance(item, ChemicalEquilibriumActiveParameter) for item in parameter_records):
-        raise TypeError("active parameters use the typed request record")
-    if not isinstance(phase.model, epcsaft.Mixture):
-        raise TypeError("ProviderPhase requires an epcsaft.Mixture")
-    if (
-        not phase.expected_parameter_fingerprint
-        or phase.expected_parameter_fingerprint != phase.model.parameter_fingerprint
-    ):
-        raise ValueError("installed Provider fingerprint does not match the problem")
-    if len({item.row_id for item in row_records}) != len(row_records):
-        raise ValueError("chemical-observation row identities must be unique")
-    packing_bounds = tuple(float(value) for value in phase.admissible_packing_fraction_interval)
-    if len(packing_bounds) != 2 or not 0.0 < packing_bounds[0] < packing_bounds[1]:
-        raise ValueError("packing-fraction bounds must be finite and increasing")
-    native_rows: list[dict[str, object]] = []
-    for row in row_records:
-        problem = row.problem
-        if not isinstance(problem, ChemicalEquilibriumProblem):
-            raise TypeError("chemical-observation row requires a typed problem")
-        if problem.source_standard_state is not None:
-            raise ValueError("chemical-observation source-reference derivatives are unsupported")
-        if not isinstance(row.primitive, ChemicalObservationPrimitive):
-            raise TypeError("chemical-observation row requires a typed primitive")
-        if not row.row_id or not row.state_id or not row.state_schema_id or not row.source_id:
-            raise ValueError("chemical-observation row identity is incomplete")
-        if row.transform_id not in {"identity", "natural_log"}:
-            raise ValueError("unsupported chemical-observation transform")
-        temperature_k = _quantity(
-            row.temperature,
-            "kelvin",
-            "temperature",
-            "chemical_observation_context",
-        )
-        pressure_pa = _quantity(
-            row.pressure,
-            "pascal",
-            "pressure",
-            "chemical_observation_context",
-        )
-        if (
-            not math.isfinite(problem.strict_interior_amount_floor_mol)
-            or problem.strict_interior_amount_floor_mol <= 0.0
-        ):
-            raise ValueError("minimum admitted amount must be positive and finite")
-        constants = tuple(
-            {
-                "source_id": record.source_id,
-                "reference_id": record.reference_id,
-                "reaction_orientation": record.reaction_orientation,
-                "conversion_id": record.conversion_id,
-                "dimensionless": record.dimensionless,
-                "temperature_k": temperature_k,
-                "pressure_pa": pressure_pa,
-            }
-            for record in problem.equilibrium_constants
-        )
-        problem_record: dict[str, object] = {
-            "species_ids": problem.species_ids,
-            "charges": problem.charges,
-            "provider_fingerprint": phase.expected_parameter_fingerprint,
-            "molar_masses_kg_per_mol": problem.molar_masses_kg_per_mol,
-            "balance_matrix": problem.balance_matrix,
-            "conserved_totals": problem.conserved_totals,
-            "reaction_matrix": problem.reaction_matrix,
-            "feed_amounts": problem.feed_amounts_mol,
-            "ln_k": tuple(record.ln_value for record in problem.equilibrium_constants),
-            "equilibrium_constant_records": constants,
-            "temperature_k": temperature_k,
-            "pressure_pa": pressure_pa,
-        }
-        reference_id = "provider-helmholtz-coordinate-basis"
-        reference_fingerprint = (
-            "sha256:"
-            + hashlib.sha256(
-                json.dumps(
-                    {
-                        "reference_id": reference_id,
-                        "equilibrium_constants": constants,
-                    },
-                    allow_nan=False,
-                    separators=(",", ":"),
-                    sort_keys=True,
-                ).encode("utf-8")
-            ).hexdigest()
-        )
-        native_rows.append(
-            {
-                "row_id": row.row_id,
-                "state_id": row.state_id,
-                "state_schema_id": row.state_schema_id,
-                "source_id": row.source_id,
-                "transform_id": row.transform_id,
-                "reference_id": reference_id,
-                "reference_fingerprint": reference_fingerprint,
-                "problem": problem_record,
-                "primitive": {
-                    "kind": row.primitive.kind,
-                    "component_id": row.primitive.component_id,
-                },
-            }
-        )
-    native_parameters = tuple(
-        {
-            "family": item.family,
-            "identity": item.identity,
-            "component_ids": item.component_ids,
-            "value": item.value,
-            "unit": item.unit,
-        }
-        for item in parameter_records
-    )
-    engine_version, engine_record = _distribution_identity("epcsaft")
-    provider_artifact_identity = (
-        f"epcsaft=={engine_version};RECORD={engine_record};MODULE=epcsaft"
-    )
-    owner_artifact_identity = (
-        f"epcsaft=={engine_version};RECORD={engine_record};MODULE=epcsaft.equilibrium"
-    )
-    evaluator_identity = "epcsaft.equilibrium.homogeneous-liquid-observation.v1"
-    capability_id = "homogeneous-liquid-positive-scalars-v1"
-    capability_fingerprint = (
-        "sha256:"
-        + hashlib.sha256(
-            (
-                capability_id
-                + "\nneutral_component_fugacity_pa:Pa"
-                + "\nspecies_mole_fraction:dimensionless"
-                + "\nidentity\nnatural_log"
-            ).encode("utf-8")
-        ).hexdigest()
-    )
-    contract_fingerprint = (
-        "sha256:"
-        + hashlib.sha256(
-            json.dumps(
-                {
-                    "rows": native_rows,
-                    "parameters": native_parameters,
-                },
-                allow_nan=False,
-                separators=(",", ":"),
-                sort_keys=True,
-            ).encode("utf-8")
-        ).hexdigest()
-    )
-    artifact_identity = (
-        "sha256:"
-        + hashlib.sha256(
-            (
-                evaluator_identity
-                + "\n"
-                + capability_fingerprint
-                + "\n"
-                + provider_artifact_identity
-                + "\n"
-                + owner_artifact_identity
-                + "\n"
-                + contract_fingerprint
-                + "\n"
-                + phase.expected_parameter_fingerprint
-            ).encode("utf-8")
-        ).hexdigest()
-    )
-    trace_floors = {float(item.problem.strict_interior_amount_floor_mol) for item in row_records}
-    if len(trace_floors) != 1:
-        raise ValueError("chemical-observation rows require one trace-floor contract")
-    capsule = _equilibrium._chemical_observation_context(
-        _native_transport(phase.model),
-        tuple(native_rows),
-        packing_bounds,
-        trace_floors.pop(),
-        native_parameters,
-        evaluator_identity,
-        capability_id,
-        capability_fingerprint,
-        provider_artifact_identity,
-        owner_artifact_identity,
-        contract_fingerprint,
-        artifact_identity,
-    )
-    return ChemicalObservationContext(
-        _native_capsule=capsule,
-        row_ids=tuple(item.row_id for item in row_records),
-        state_ids=tuple(item.state_id for item in row_records),
-        state_schema_ids=tuple(item.state_schema_id for item in row_records),
-        source_ids=tuple(item.source_id for item in row_records),
-        primitive_ids=tuple(
-            f"{item.primitive.kind};{item.primitive.component_id}" for item in row_records
-        ),
-        parameter_ids=tuple(
-            f"{item.family};{item.identity};{','.join(item.component_ids)}"
-            for item in parameter_records
-        ),
-        primitive_units=tuple(
-            ("Pa" if item.primitive.kind == "neutral_component_fugacity_pa" else "dimensionless")
-            for item in row_records
-        ),
-        transform_ids=tuple(item.transform_id for item in row_records),
-        reference_ids=tuple("provider-helmholtz-coordinate-basis" for _ in row_records),
-        reference_fingerprints=tuple(
-            str(record["reference_fingerprint"]) for record in native_rows
-        ),
-        parameter_units=tuple(item.unit for item in parameter_records),
-        evaluator_identity=evaluator_identity,
-        capability_id=capability_id,
-        capability_fingerprint=capability_fingerprint,
-        provider_artifact_identity=provider_artifact_identity,
-        owner_artifact_identity=owner_artifact_identity,
-        contract_fingerprint=contract_fingerprint,
-        artifact_identity=artifact_identity,
-    )
-
-
-def saturation(model: epcsaft.Mixture, temperature: Quantity[Any]) -> SaturationResult:
-    """Solve and certify one local pure-component saturation boundary."""
-
-    if not isinstance(model, epcsaft.Mixture):
-        raise TypeError("saturation requires an epcsaft.Mixture")
-    temperature_k = _temperature_in_kelvin(temperature)
-    fingerprint = model.parameter_fingerprint
-    scope = _SCOPES.get(fingerprint)
-    if scope is None:
-        raise ValueError("saturation requires an approved pure-component fingerprint")
-    if not scope.temperature_min_k <= temperature_k <= scope.temperature_max_k:
-        raise ValueError(
-            f"{scope.component} temperature is outside its parameter source domain "
-            f"[{scope.temperature_min_k:g}, {scope.temperature_max_k:g}] K"
-        )
-
-    capsule = _native_transport(model)
-    try:
-        native = cast(
-            Mapping[str, object],
-            _equilibrium.solve_saturation(
-                capsule,
-                temperature_k,
-                fingerprint,
-                scope.liquid_density_upper_mol_m3,
-            ),
-        )
-    except (RuntimeError, ValueError) as error:
-        failure = {
-            "solver_converged": False,
-            "solver_status": "native_exception",
-            "iterations": 0,
-            "attempts": 0,
-            "attempt_log": (),
-            "solver_lower_bounds": (),
-            "solver_upper_bounds": (),
-            "solver_constraint_violation": math.inf,
-            "numerical_converged": False,
-            "confirmation_solves": 0,
-            "confirmation_max_relative_difference": math.inf,
-            "physical_accepted": False,
-            "pressure_relative_residual": math.inf,
-            "chemical_potential_absolute_residual": math.inf,
-            "phase_density_distance": 0.0,
-            "exact_derivatives": False,
-            "globality_certificate": False,
-            "failure_reason": str(error),
-        }
-        raise SaturationError(str(error), failure) from error
-    diagnostics_payload = cast(Mapping[str, object], native["diagnostics"])
-    diagnostics = _diagnostics(diagnostics_payload)
-    if not bool(native["accepted"]):
-        reason = diagnostics.failure_reason or "local saturation boundary was rejected"
-        raise SaturationError(reason, diagnostics_payload)
-
-    return SaturationResult(
-        temperature_k=temperature_k,
-        saturation_pressure_pa=float(cast(float, native["saturation_pressure_pa"])),
-        parameter_fingerprint=fingerprint,
-        vapor=_phase(cast(Mapping[str, object], native["vapor"])),
-        liquid=_phase(cast(Mapping[str, object], native["liquid"])),
-        diagnostics=diagnostics,
     )

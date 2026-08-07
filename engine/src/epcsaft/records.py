@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, ClassVar, Literal, TypeAlias, cast, get_args
+from typing import Any, ClassVar, Literal, cast
 
 import pint
 
@@ -15,8 +15,14 @@ from .units import (
 )
 
 _ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
-DomainKind: TypeAlias = Literal["fit-range", "reported-conditions", "unknown"]
-RelativePermittivityFormulation: TypeAlias = Literal[
+_FAMILY_PATTERN = re.compile(r"[a-z0-9]+(?:[-_][a-z0-9]+)*\Z")
+type DomainKind = Literal["fit-range", "reported-conditions", "unknown"]
+type ModelFamilyKind = Literal["base", "association", "electrolyte", "permittivity", "polar"]
+type AssociationSiteRole = Literal["donor", "acceptor", "effective"]
+type AssociationEdgeSourceKind = Literal["explicit", "combining-rule"]
+type AssociationPreset = Literal["1a", "2b", "3b", "4c"]
+type AssociationCombiningRuleId = Literal["arithmetic-energy-geometric-volume",]
+type RelativePermittivityFormulation = Literal[
     "none",
     "ion-fraction-suppression",
     "component-permittivity-mixing",
@@ -25,8 +31,8 @@ RelativePermittivityFormulation: TypeAlias = Literal[
     "dipolar-density-perturbation",
     "solvent-only",
 ]
-PolarFormulation: TypeAlias = Literal["gross-vrabec-point-multipole"]
-SingleParameterFamily: TypeAlias = Literal[
+type PolarFormulation = Literal["point-multipole"]
+type SingleParameterFamily = Literal[
     "molar_mass",
     "segment_count",
     "segment_diameter",
@@ -44,28 +50,49 @@ SingleParameterFamily: TypeAlias = Literal[
     "dipole_moment",
     "quadrupole_moment",
 ]
-PairParameterFamily: TypeAlias = Literal["k_ij", "l_ij"]
-AssociationParameterFamily: TypeAlias = Literal["association_energy_over_k", "association_volume"]
-ModelParameterFamily: TypeAlias = Literal[
+type PairParameterFamily = Literal["k_ij", "l_ij"]
+type AssociationParameterFamily = Literal["association_energy_over_k", "association_volume"]
+type ModelParameterFamily = Literal[
     "ion_fraction_suppression_coefficient",
-    "electrolyte_formulation",
     "ionic_region_relative_permittivity",
-    "relative_permittivity_formulation",
-    "polar_formulation",
 ]
-CorrelationFamily: TypeAlias = Literal[
-    "segment_diameter", "relative_permittivity", "solvation_factor"
-]
+type CorrelationFamily = Literal["segment_diameter", "relative_permittivity", "solvation_factor"]
 
-_DOMAIN_KINDS = frozenset(get_args(DomainKind))
-_SINGLE_FAMILIES = frozenset(get_args(SingleParameterFamily))
-_PAIR_FAMILIES = frozenset(get_args(PairParameterFamily))
-_ASSOCIATION_FAMILIES = frozenset(get_args(AssociationParameterFamily))
-_MODEL_FAMILIES = frozenset(get_args(ModelParameterFamily))
-_ELECTROLYTE_FORMULATIONS = frozenset({"fully-dissociated-debye-huckel"})
-_RELATIVE_PERMITTIVITY_FORMULATIONS = frozenset(get_args(RelativePermittivityFormulation))
-_POLAR_FORMULATIONS = frozenset(get_args(PolarFormulation))
-_CORRELATION_FAMILIES = frozenset(get_args(CorrelationFamily))
+_DOMAIN_KINDS = frozenset({"fit-range", "reported-conditions", "unknown"})
+_SINGLE_FAMILIES = frozenset(
+    {
+        "molar_mass",
+        "segment_count",
+        "segment_diameter",
+        "dispersion_energy_over_k",
+        "charge_number",
+        "relative_permittivity",
+        "born_diameter",
+        "solvation_factor",
+        "dielectric_volume",
+        "dielectric_temperature",
+        "ion_specific_suppression_coefficient",
+        "dipole_scaling",
+        "polarizability_scaling",
+        "correlation_integral_parameter",
+        "dipole_moment",
+        "quadrupole_moment",
+    }
+)
+_PAIR_FAMILIES = frozenset({"k_ij", "l_ij"})
+_ASSOCIATION_FAMILIES = frozenset(
+    {"association_energy_over_k", "association_volume"}
+)
+_MODEL_FAMILIES = frozenset(
+    {"ion_fraction_suppression_coefficient", "ionic_region_relative_permittivity"}
+)
+_CORRELATION_FAMILIES = frozenset(
+    {"segment_diameter", "relative_permittivity", "solvation_factor"}
+)
+_ASSOCIATION_PRESETS = frozenset({"1a", "2b", "3b", "4c"})
+_ASSOCIATION_COMBINING_RULES = frozenset(
+    {"arithmetic-energy-geometric-volume"}
+)
 _DIMENSIONAL_UNITS = {
     "molar_mass": "kilogram / mole",
     "segment_diameter": "angstrom",
@@ -101,6 +128,22 @@ def _identifier(value: object, *, field: str) -> str:
     return value
 
 
+def _parameter_identity(value: object, *, field: str = "identity") -> str:
+    if (
+        not isinstance(value, str)
+        or not value
+        or any(_FAMILY_PATTERN.fullmatch(part) is None for part in value.split("/"))
+    ):
+        raise _error("invalid-id", field=field, value=value)
+    return value
+
+
+def _family_identity(value: object, *, field: str = "family") -> str:
+    if not isinstance(value, str) or _FAMILY_PATTERN.fullmatch(value) is None:
+        raise _error("invalid-id", field=field, value=value)
+    return value
+
+
 def _text(value: object, *, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise _error("invalid-value", field=field, value=value)
@@ -120,18 +163,6 @@ def _family(value: object, *, allowed: frozenset[str], field: str = "family") ->
 
 
 def _parameter_value(family: str, value: object) -> object:
-    if family == "relative_permittivity_formulation":
-        if not isinstance(value, str) or value not in _RELATIVE_PERMITTIVITY_FORMULATIONS:
-            raise _error("invalid-value", field="value", family=family, value=value)
-        return value
-    if family == "polar_formulation":
-        if not isinstance(value, str) or value not in _POLAR_FORMULATIONS:
-            raise _error("invalid-value", field="value", family=family, value=value)
-        return value
-    if family == "electrolyte_formulation":
-        if not isinstance(value, str) or value not in _ELECTROLYTE_FORMULATIONS:
-            raise _error("invalid-value", field="value", family=family, value=value)
-        return value
     if family == "charge_number":
         return _exact_integer(value, field="value")
     if family in _DIMENSIONAL_UNITS:
@@ -165,6 +196,64 @@ class SourceRecord:
         object.__setattr__(self, "citation", _text(self.citation, field="citation"))
         object.__setattr__(self, "use_basis", _text(self.use_basis, field="use_basis"))
         object.__setattr__(self, "doi", _optional_text(self.doi, field="doi"))
+
+
+@dataclass(frozen=True, slots=True)
+class ModelFamilySpec:
+    """One closed, fixed model-family choice in a Parameters document."""
+
+    family_id: str
+    kind: ModelFamilyKind
+    choice: str
+    source_id: str
+    locator: str
+    domain_id: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "family_id", _parameter_identity(self.family_id, field="family_id")
+        )
+        if self.kind not in {"base", "association", "electrolyte", "permittivity", "polar"}:
+            raise _error("invalid-value", field="model_family.kind", value=self.kind)
+        object.__setattr__(self, "choice", _identifier(self.choice, field="model_family.choice"))
+        source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
+        object.__setattr__(self, "source_id", source_id)
+        object.__setattr__(self, "locator", locator)
+        object.__setattr__(self, "domain_id", domain_id)
+
+
+@dataclass(frozen=True, slots=True)
+class ParameterSpec:
+    """Stable identity and selection metadata for one stored parameter value."""
+
+    identity: str
+    family: str
+    value: object
+    unit: str
+    continuous: bool
+    source_id: str | None = None
+    locator: str | None = None
+    domain_id: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "identity", _parameter_identity(self.identity))
+        object.__setattr__(self, "family", _family_identity(self.family))
+        object.__setattr__(self, "unit", _text(self.unit, field="unit"))
+        if self.continuous is not True and self.continuous is not False:
+            raise _error("invalid-value", field="continuous", value=self.continuous)
+        provenance = (self.source_id, self.locator, self.domain_id)
+        if any(value is None for value in provenance):
+            if not all(value is None for value in provenance):
+                raise _error("invalid-provenance", field="parameter_spec", value="partial")
+        else:
+            source_id, locator, domain_id = _provenance(
+                cast(str, self.source_id),
+                cast(str, self.locator),
+                cast(str, self.domain_id),
+            )
+            object.__setattr__(self, "source_id", source_id)
+            object.__setattr__(self, "locator", locator)
+            object.__setattr__(self, "domain_id", domain_id)
 
 
 @dataclass(frozen=True, slots=True)
@@ -273,6 +362,10 @@ class SingleParameterRecord:
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
 
+    @property
+    def identity(self) -> str:
+        return f"component/{self.component_id}/{self.family}"
+
 
 @dataclass(frozen=True, slots=True)
 class ModelParameterRecord:
@@ -292,6 +385,10 @@ class ModelParameterRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+
+    @property
+    def identity(self) -> str:
+        return f"model/{self.family}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -322,13 +419,17 @@ class PairParameterRecord:
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
 
+    @property
+    def identity(self) -> str:
+        return f"pair/{self.component_id_a}/{self.component_id_b}/{self.family}"
+
 
 @dataclass(frozen=True, slots=True)
 class SiteRecord:
     record_id: str
     component_id: str
     site_id: str
-    site_class: str
+    site_role: AssociationSiteRole
     multiplicity: int
     source_id: str
     locator: str
@@ -340,7 +441,8 @@ class SiteRecord:
             self, "component_id", _identifier(self.component_id, field="component_id")
         )
         object.__setattr__(self, "site_id", _identifier(self.site_id, field="site_id"))
-        object.__setattr__(self, "site_class", _identifier(self.site_class, field="site_class"))
+        if self.site_role not in {"donor", "acceptor", "effective"}:
+            raise _error("invalid-value", field="site_role", value=self.site_role)
         object.__setattr__(
             self,
             "multiplicity",
@@ -350,6 +452,10 @@ class SiteRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+
+    @property
+    def identity(self) -> str:
+        return f"component/{self.component_id}/site/{self.site_id}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -388,11 +494,20 @@ class AssociationParameterRecord:
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
 
+    @property
+    def identity(self) -> str:
+        return (
+            f"association/{self.component_id_a}/{self.site_id_a}/"
+            f"{self.component_id_b}/{self.site_id_b}/{self.family}"
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class ExponentialTerm:
     amplitude: object
     exponent_coefficient: object
+    amplitude_identity: str | None = None
+    exponent_identity: str | None = None
 
     def __post_init__(self) -> None:
         amplitude = _declared_quantity(self.amplitude, field="amplitude")
@@ -408,6 +523,14 @@ class ExponentialTerm:
                 field="exponent_coefficient",
             ),
         )
+        if self.amplitude_identity is not None:
+            object.__setattr__(
+                self, "amplitude_identity", _parameter_identity(self.amplitude_identity)
+            )
+        if self.exponent_identity is not None:
+            object.__setattr__(
+                self, "exponent_identity", _parameter_identity(self.exponent_identity)
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -421,6 +544,7 @@ class ConstantCorrelation:
     source_id: str
     locator: str
     domain_id: str
+    correlation_id: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -434,6 +558,14 @@ class ConstantCorrelation:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        correlation_id = self.correlation_id or (
+            f"component/{self.component_id}/{self.family}/constant"
+        )
+        object.__setattr__(self, "correlation_id", _parameter_identity(correlation_id))
+
+    @property
+    def identity(self) -> str:
+        return self.correlation_id or ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -448,6 +580,7 @@ class ConstantPlusSumOfExponentialsCorrelation:
     source_id: str
     locator: str
     domain_id: str
+    correlation_id: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -464,6 +597,8 @@ class ConstantPlusSumOfExponentialsCorrelation:
             ExponentialTerm(
                 amplitude=_quantity(term.amplitude, "angstrom", field="amplitude"),
                 exponent_coefficient=term.exponent_coefficient,
+                amplitude_identity=term.amplitude_identity,
+                exponent_identity=term.exponent_identity,
             )
             for term in terms
         )
@@ -472,10 +607,169 @@ class ConstantPlusSumOfExponentialsCorrelation:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        correlation_id = self.correlation_id or (
+            f"component/{self.component_id}/{self.family}/temperature-exponential"
+        )
+        object.__setattr__(self, "correlation_id", _parameter_identity(correlation_id))
+
+    @property
+    def identity(self) -> str:
+        return self.correlation_id or ""
 
 
-CorrelationRecord: TypeAlias = ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation
-ParameterRecord: TypeAlias = (
+@dataclass(frozen=True, slots=True)
+class AssociationEdgeSource:
+    """The single declared origin of one materialized association edge."""
+
+    kind: AssociationEdgeSourceKind
+    rule_id: str | None
+    provenance: tuple[tuple[str, str, str], ...]
+    input_identities: tuple[str, ...]
+    derivative_sources: tuple[AssociationDerivativeSource, ...]
+
+    def __post_init__(self) -> None:
+        if self.kind not in {"explicit", "combining-rule"}:
+            raise _error("invalid-value", field="association_edge.source.kind", value=self.kind)
+        if self.kind == "combining-rule":
+            if self.rule_id is None:
+                raise _error(
+                    "invalid-value", field="association_edge.source.rule_id", value="missing"
+                )
+            if self.rule_id not in _ASSOCIATION_COMBINING_RULES:
+                raise _error(
+                    "invalid-value", field="association_edge.source.rule_id", value=self.rule_id
+                )
+        elif self.rule_id is not None:
+            raise _error(
+                "invalid-schema", field="association_edge.source", reason="competing-sources"
+            )
+        if not self.provenance:
+            raise _error("invalid-value", field="association_edge.source.provenance", value="empty")
+        normalized = tuple(
+            (
+                _identifier(source_id, field="source_id"),
+                _text(locator, field="locator"),
+                _identifier(domain_id, field="domain_id"),
+            )
+            for source_id, locator, domain_id in self.provenance
+        )
+        object.__setattr__(self, "provenance", normalized)
+        inputs = tuple(
+            _parameter_identity(identity, field="association_edge.source.input_identity")
+            for identity in self.input_identities
+        )
+        derivatives = tuple(self.derivative_sources)
+        if not all(isinstance(item, AssociationDerivativeSource) for item in derivatives):
+            raise _error("invalid-value", field="association_edge.source.derivative_sources")
+        if self.kind == "explicit" and (inputs or derivatives):
+            raise _error("invalid-schema", field="association_edge.source", reason="explicit-chain")
+        if self.kind == "combining-rule" and (not inputs or not derivatives):
+            raise _error("invalid-schema", field="association_edge.source", reason="missing-chain")
+        if len(inputs) != len(set(inputs)):
+            raise _error("duplicate-record", field="association_edge.source.input_identity")
+        object.__setattr__(self, "input_identities", inputs)
+        object.__setattr__(self, "derivative_sources", derivatives)
+
+
+@dataclass(frozen=True, slots=True)
+class AssociationDerivativeSource:
+    """One exact local chain factor from a rule input to a materialized edge value."""
+
+    output_identity: str
+    input_identity: str
+    factor: object
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "output_identity",
+            _parameter_identity(self.output_identity, field="output_identity"),
+        )
+        object.__setattr__(
+            self,
+            "input_identity",
+            _parameter_identity(self.input_identity, field="input_identity"),
+        )
+        object.__setattr__(self, "factor", _decimal_number(self.factor, field="factor"))
+
+
+@dataclass(frozen=True, slots=True)
+class AssociationEdge:
+    endpoint_a: tuple[str, str]
+    endpoint_b: tuple[str, str]
+    energy_identity: str
+    volume_identity: str
+    energy_over_k: object
+    volume: object
+    source: AssociationEdgeSource
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.source, AssociationEdgeSource):
+            raise _error("invalid-value", field="association_edge.source", value="invalid")
+        endpoint_a = (
+            _identifier(self.endpoint_a[0], field="component_id_a"),
+            _identifier(self.endpoint_a[1], field="site_id_a"),
+        )
+        endpoint_b = (
+            _identifier(self.endpoint_b[0], field="component_id_b"),
+            _identifier(self.endpoint_b[1], field="site_id_b"),
+        )
+        endpoint_a, endpoint_b = sorted((endpoint_a, endpoint_b))
+        object.__setattr__(self, "endpoint_a", endpoint_a)
+        object.__setattr__(self, "endpoint_b", endpoint_b)
+        energy_identity = _parameter_identity(self.energy_identity, field="energy_identity")
+        volume_identity = _parameter_identity(self.volume_identity, field="volume_identity")
+        prefix = f"association/{endpoint_a[0]}/{endpoint_a[1]}/{endpoint_b[0]}/{endpoint_b[1]}"
+        if energy_identity != f"{prefix}/energy_over_k":
+            raise _error("invalid-value", field="energy_identity", value=energy_identity)
+        if volume_identity != f"{prefix}/volume":
+            raise _error("invalid-value", field="volume_identity", value=volume_identity)
+        energy = _quantity(self.energy_over_k, "kelvin", field="energy_over_k")
+        volume = _decimal_number(self.volume, field="volume")
+        if energy.magnitude <= 0 or volume <= 0:
+            raise _error("invalid-value", field="association_edge", reason="nonpositive")
+        object.__setattr__(self, "energy_identity", energy_identity)
+        object.__setattr__(self, "volume_identity", volume_identity)
+        object.__setattr__(self, "energy_over_k", energy)
+        object.__setattr__(self, "volume", volume)
+
+
+@dataclass(frozen=True, slots=True)
+class AssociationTopology:
+    presets: tuple[tuple[str, AssociationPreset], ...]
+    sites: tuple[SiteRecord, ...]
+    edges: tuple[AssociationEdge, ...]
+
+    def __post_init__(self) -> None:
+        presets = tuple(
+            (
+                _identifier(component_id, field="preset.component_id"),
+                preset,
+            )
+            for component_id, preset in self.presets
+        )
+        if any(preset not in _ASSOCIATION_PRESETS for _, preset in presets):
+            raise _error("invalid-value", field="preset")
+        if len({component_id for component_id, _ in presets}) != len(presets):
+            raise _error("duplicate-record", field="preset.component_id")
+        object.__setattr__(self, "presets", tuple(sorted(presets)))
+        site_keys = tuple((site.component_id, site.site_id) for site in self.sites)
+        if len(site_keys) != len(set(site_keys)):
+            raise _error("duplicate-record", field="site")
+        edge_keys = tuple((edge.endpoint_a, edge.endpoint_b) for edge in self.edges)
+        if len(edge_keys) != len(set(edge_keys)):
+            raise _error("duplicate-record", field="association_edge")
+        site_set = set(site_keys)
+        if any(
+            endpoint not in site_set
+            for edge in self.edges
+            for endpoint in (edge.endpoint_a, edge.endpoint_b)
+        ):
+            raise _error("missing-record", field="association_edge.site")
+
+
+type CorrelationRecord = ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation
+type ParameterRecord = (
     SingleParameterRecord
     | ModelParameterRecord
     | PairParameterRecord
@@ -486,8 +780,16 @@ ParameterRecord: TypeAlias = (
 
 
 __all__ = (
+    "AssociationCombiningRuleId",
+    "AssociationDerivativeSource",
+    "AssociationEdge",
+    "AssociationEdgeSource",
+    "AssociationEdgeSourceKind",
     "AssociationParameterFamily",
     "AssociationParameterRecord",
+    "AssociationPreset",
+    "AssociationSiteRole",
+    "AssociationTopology",
     "ComponentRecord",
     "ConstantCorrelation",
     "ConstantPlusSumOfExponentialsCorrelation",
@@ -495,11 +797,14 @@ __all__ = (
     "CorrelationRecord",
     "DomainKind",
     "ExponentialTerm",
+    "ModelFamilyKind",
+    "ModelFamilySpec",
     "ModelParameterFamily",
     "ModelParameterRecord",
     "PairParameterFamily",
     "PairParameterRecord",
     "ParameterRecord",
+    "ParameterSpec",
     "PolarFormulation",
     "RelativePermittivityFormulation",
     "SingleParameterFamily",

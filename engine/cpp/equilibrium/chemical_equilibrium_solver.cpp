@@ -454,52 +454,6 @@ PhaseEvaluator ideal_phase_evaluator() {
     return evaluate_ideal_phase_block;
 }
 
-PhaseEvaluator manufactured_inconsistent_derivative_evaluator() {
-    return [](
-        double temperature_k,
-        const std::vector<double>& amounts,
-        double volume
-    ) {
-        PhaseBlockEvaluation result = evaluate_ideal_phase_block(
-            temperature_k, amounts, volume
-        );
-        result.mechanical.hessian.front() += 1.0;
-        return result;
-    };
-}
-
-PhaseEvaluator manufactured_nonconvex_phase_evaluator(double quadratic_strength) {
-    return [quadratic_strength](
-        double temperature_k,
-        const std::vector<double>& amounts,
-        double volume
-    ) {
-        if (amounts.size() != 2) {
-            throw std::invalid_argument(
-                "manufactured nonconvex phase requires two species"
-            );
-        }
-        PhaseBlockEvaluation result = evaluate_ideal_phase_block(
-            temperature_k, amounts, volume
-        );
-        constexpr double quartic_strength = 2.0;
-        const double difference = amounts[0] - amounts[1];
-        const double difference_gradient = -2.0 * quadratic_strength * difference
-            + 4.0 * quartic_strength * difference * difference * difference;
-        const double difference_hessian = -2.0 * quadratic_strength
-            + 12.0 * quartic_strength * difference * difference;
-        result.mechanical.value += -quadratic_strength * difference * difference
-            + quartic_strength * difference * difference * difference * difference;
-        result.mechanical.gradient[0] += difference_gradient;
-        result.mechanical.gradient[1] -= difference_gradient;
-        result.mechanical.hessian[0 * 3 + 0] += difference_hessian;
-        result.mechanical.hessian[0 * 3 + 1] -= difference_hessian;
-        result.mechanical.hessian[1 * 3 + 0] -= difference_hessian;
-        result.mechanical.hessian[1 * 3 + 1] += difference_hessian;
-        return result;
-    };
-}
-
 std::size_t reaction_constraint_count(
     const ConstraintRows& balances,
     const ReactionDomain& domain
@@ -2783,90 +2737,9 @@ ReducedHessianAnalysis analyze_reduced_hessian(
 
 }  // namespace
 
-ManufacturedReducedHessianEvidence analyze_manufactured_reduced_hessian(
-    const std::vector<double>& hessian,
-    const std::vector<double>& constraint_jacobian,
-    std::size_t constraint_count
-) {
-    const double dimension = std::sqrt(static_cast<double>(hessian.size()));
-    const std::size_t coordinate_count = static_cast<std::size_t>(dimension);
-    if (coordinate_count == 0
-        || coordinate_count * coordinate_count != hessian.size()
-        || !std::all_of(hessian.begin(), hessian.end(), [](double value) {
-            return std::isfinite(value);
-        })) {
-        throw std::invalid_argument("manufactured Hessian dimensions are invalid");
-    }
-    if (constraint_count > coordinate_count
-        || constraint_jacobian.size() != constraint_count * coordinate_count
-        || !std::all_of(
-            constraint_jacobian.begin(),
-            constraint_jacobian.end(),
-            [](double value) { return std::isfinite(value); }
-        )) {
-        throw std::invalid_argument(
-            "manufactured constraint Jacobian dimensions are invalid"
-        );
-    }
-    ReactionNlpEvaluation evaluation;
-    evaluation.gradient.assign(coordinate_count, 0.0);
-    evaluation.jacobian = constraint_jacobian;
-    evaluation.lagrangian_hessian = hessian;
-    const ReducedHessianAnalysis analysis = analyze_reduced_hessian(
-        evaluation, constraint_count
-    );
-    ManufacturedReducedHessianEvidence result;
-    result.positive = analysis.positive;
-    result.status = analysis.status;
-    result.negative_direction = analysis.negative_direction;
-    result.reduced_hessian = analysis.reduced_hessian;
-    result.nullspace_basis = analysis.nullspace_basis;
-    result.nullspace_rows = analysis.nullspace_rows;
-    result.nullspace_columns = analysis.nullspace_columns;
-    result.eigenvalues = analysis.eigenvalues;
-    result.inertia = {
-        analysis.positive_eigenvalues,
-        analysis.zero_eigenvalues,
-        analysis.negative_eigenvalues,
-    };
-    result.raw_inertia = {
-        analysis.raw_positive_eigenvalues,
-        analysis.raw_zero_eigenvalues,
-        analysis.raw_negative_eigenvalues,
-    };
-    result.spectrum_status = analysis.spectrum_status;
-    result.hessian_scale = analysis.hessian_scale;
-    result.eigenvalue_tolerance = analysis.eigenvalue_tolerance;
-    if (!result.negative_direction.empty()) {
-        for (std::size_t left = 0; left < coordinate_count; ++left) {
-            for (std::size_t right = 0; right < coordinate_count; ++right) {
-                result.curvature += result.negative_direction[left]
-                    * hessian[left * coordinate_count + right]
-                    * result.negative_direction[right];
-            }
-        }
-    }
-    return result;
-}
+namespace {
 
-std::vector<double> retract_manufactured_balance(
-    const CompiledReactionSystem& system,
-    const std::vector<double>& seed,
-    const std::vector<double>& lower,
-    const std::vector<double>& upper,
-    double trace_floor
-) {
-    return balance_feasible_retraction(
-        make_amount_chart(system.charges),
-        ConstraintRows{system.balance_matrix, system.balance_totals, {}},
-        seed,
-        lower,
-        upper,
-        trace_floor
-    );
-}
-
-std::vector<double> manufactured_recovery_displacement(
+std::vector<double> recovery_displacement(
     const std::vector<double>& variables,
     const std::vector<double>& lower,
     const std::vector<double>& upper,
@@ -2928,6 +2801,8 @@ std::vector<double> manufactured_recovery_displacement(
     }
     return displaced;
 }
+
+}  // namespace
 
 MaxMinInitializationResult max_min_initialization(
     const DenseMatrix& balance_matrix,
@@ -4201,7 +4076,7 @@ ChemicalSolveResult solve_reaction_attempt(
             for (std::size_t backtrack = 0; backtrack < 4; ++backtrack) {
                 ++result.negative_curvature_recovery_seed_count;
                 const std::vector<double> displaced =
-                    manufactured_recovery_displacement(
+                    recovery_displacement(
                         variables,
                         lower,
                         upper,
@@ -5601,6 +5476,46 @@ ChemicalSolveResult finalize_chemical_result(
     return result;
 }
 
+ChemicalSolveResult solve_manufactured_reaction(
+    const CompiledReactionSystem& system,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<double>& gauge_coefficients,
+    double trace_floor,
+    int max_iterations,
+    const PhaseEvaluator& phase_evaluator
+) {
+    const MaxMinInitializationResult initialization = max_min_initialization(
+        system.balance_matrix,
+        system.feed_amounts,
+        system.charges,
+        trace_floor,
+        std::numeric_limits<double>::quiet_NaN()
+    );
+    return finalize_chemical_result(
+        system,
+        solve_reaction(
+            system,
+            temperature_k,
+            pressure_pa,
+            gauge_coefficients,
+            trace_floor,
+            max_iterations,
+            initialization,
+            phase_evaluator,
+            ReactionDomain{},
+            std::numeric_limits<double>::quiet_NaN(),
+            {},
+            {},
+            {
+                std::numeric_limits<double>::quiet_NaN(),
+                std::numeric_limits<double>::quiet_NaN(),
+            }
+        ),
+        true
+    );
+}
+
 }  // namespace
 
 ChemicalSolveResult solve_manufactured_ideal_reaction(
@@ -5611,105 +5526,15 @@ ChemicalSolveResult solve_manufactured_ideal_reaction(
     double trace_floor,
     int max_iterations
 ) {
-    const MaxMinInitializationResult initialization = max_min_initialization(
-        system.balance_matrix,
-        system.feed_amounts,
-        system.charges,
-        trace_floor,
-        std::numeric_limits<double>::quiet_NaN()
-    );
-    ChemicalSolveResult result = solve_reaction(
+    return solve_manufactured_reaction(
         system,
         temperature_k,
         pressure_pa,
         gauge_coefficients,
         trace_floor,
         max_iterations,
-        initialization,
-        ideal_phase_evaluator(),
-        ReactionDomain{},
-        std::numeric_limits<double>::quiet_NaN(),
-        {},
-        {},
-        {
-            std::numeric_limits<double>::quiet_NaN(),
-            std::numeric_limits<double>::quiet_NaN(),
-        }
+        ideal_phase_evaluator()
     );
-    return finalize_chemical_result(system, std::move(result), true);
-}
-
-ChemicalSolveResult solve_manufactured_nonconvex_reaction(
-    const CompiledReactionSystem& system,
-    double temperature_k,
-    double pressure_pa,
-    const std::vector<double>& gauge_coefficients,
-    double trace_floor,
-    int max_iterations,
-    double quadratic_strength
-) {
-    const MaxMinInitializationResult initialization = max_min_initialization(
-        system.balance_matrix,
-        system.feed_amounts,
-        system.charges,
-        trace_floor,
-        std::numeric_limits<double>::quiet_NaN()
-    );
-    ChemicalSolveResult result = solve_reaction(
-        system,
-        temperature_k,
-        pressure_pa,
-        gauge_coefficients,
-        trace_floor,
-        max_iterations,
-        initialization,
-        manufactured_nonconvex_phase_evaluator(quadratic_strength),
-        ReactionDomain{},
-        std::numeric_limits<double>::quiet_NaN(),
-        {},
-        {},
-        {
-            std::numeric_limits<double>::quiet_NaN(),
-            std::numeric_limits<double>::quiet_NaN(),
-        }
-    );
-    return finalize_chemical_result(system, std::move(result), true);
-}
-
-ChemicalSolveResult solve_manufactured_inconsistent_derivative_reaction(
-    const CompiledReactionSystem& system,
-    double temperature_k,
-    double pressure_pa,
-    const std::vector<double>& gauge_coefficients,
-    double trace_floor,
-    int max_iterations
-) {
-    const MaxMinInitializationResult initialization = max_min_initialization(
-        system.balance_matrix,
-        system.feed_amounts,
-        system.charges,
-        trace_floor,
-        std::numeric_limits<double>::quiet_NaN()
-    );
-    ChemicalSolveResult result = solve_reaction(
-        system,
-        temperature_k,
-        pressure_pa,
-        gauge_coefficients,
-        trace_floor,
-        max_iterations,
-        initialization,
-        manufactured_inconsistent_derivative_evaluator(),
-        ReactionDomain{},
-        std::numeric_limits<double>::quiet_NaN(),
-        {},
-        {},
-        {
-            std::numeric_limits<double>::quiet_NaN(),
-            std::numeric_limits<double>::quiet_NaN(),
-        }
-    );
-    return finalize_chemical_result(system, std::move(result), true);
 }
 
 std::vector<double> provider_pressure_start_volumes(
@@ -6272,183 +6097,6 @@ ChemicalSolveResult solve_provider_reaction(
         ),
         false
     );
-}
-
-ManufacturedNlpEvaluation evaluate_manufactured_reaction_nlp(
-    const CompiledReactionSystem& system,
-    double temperature_k,
-    double pressure_pa,
-    const std::vector<double>& gauge_coefficients,
-    const std::vector<double>& variables,
-    const std::vector<double>& constraint_multipliers
-) {
-    std::vector<double> g_ref = system.g_ref;
-    if (!gauge_coefficients.empty()) {
-        if (gauge_coefficients.size() != system.balance_matrix.rows) {
-            throw std::invalid_argument("gauge coefficient count does not match balances");
-        }
-        for (std::size_t species = 0; species < g_ref.size(); ++species) {
-            for (std::size_t row = 0; row < system.balance_matrix.rows; ++row) {
-                g_ref[species] += system.balance_matrix(row, species)
-                    * gauge_coefficients[row];
-            }
-        }
-    }
-    const AmountChart chart = make_amount_chart(system.charges);
-    const ConstraintRows balances{
-        system.balance_matrix, system.balance_totals, {}
-    };
-    const ReactionNlpEvaluation evaluation = evaluate_reaction_nlp(
-        chart,
-        balances,
-        g_ref,
-        temperature_k,
-        pressure_pa,
-        ideal_phase_evaluator(),
-        ReactionDomain{},
-        variables,
-        constraint_multipliers
-    );
-    ManufacturedNlpEvaluation result;
-    result.objective = evaluation.objective;
-    result.objective_gradient = evaluation.gradient;
-    result.constraints = evaluation.constraints;
-    result.constraint_jacobian = evaluation.jacobian;
-    result.lagrangian_gradient = evaluation.gradient;
-    for (std::size_t variable = 0; variable < result.lagrangian_gradient.size(); ++variable) {
-        for (std::size_t row = 0; row < balances.matrix.rows; ++row) {
-            result.lagrangian_gradient[variable] += evaluation.jacobian[
-                row * result.lagrangian_gradient.size() + variable
-            ] * constraint_multipliers[row];
-        }
-    }
-    result.lagrangian_hessian = evaluation.lagrangian_hessian;
-    result.amounts = evaluation.amount_chart.amounts;
-    result.volume_m3 = evaluation.volume;
-    return result;
-}
-
-ManufacturedNlpEvaluation evaluate_manufactured_inverse_log_packing_nlp(
-    const CompiledReactionSystem& system,
-    double temperature_k,
-    double pressure_pa,
-    const std::vector<double>& gauge_coefficients,
-    const std::vector<double>& variables,
-    const std::vector<double>& constraint_multipliers,
-    bool zero_kkt_rhs
-) {
-    std::vector<double> g_ref = system.g_ref;
-    if (!gauge_coefficients.empty()) {
-        if (gauge_coefficients.size() != system.balance_matrix.rows) {
-            throw std::invalid_argument("gauge coefficient count does not match balances");
-        }
-        for (std::size_t species = 0; species < g_ref.size(); ++species) {
-            for (std::size_t row = 0; row < system.balance_matrix.rows; ++row) {
-                g_ref[species] += system.balance_matrix(row, species)
-                    * gauge_coefficients[row];
-            }
-        }
-    }
-    const AmountChart chart = make_amount_chart(system.charges);
-    const ConstraintRows balances{
-        system.balance_matrix, system.balance_totals, {}
-    };
-    VolumeCoordinateTransform inverse_log_packing;
-    inverse_log_packing.lower_coordinate = -40.0;
-    inverse_log_packing.upper_coordinate = 40.0;
-    inverse_log_packing.initial_coordinate = 0.0;
-    inverse_log_packing.evaluate = [](
-        double,
-        const std::vector<double>& amounts,
-        double log_packing_fraction
-    ) {
-        const double packing_fraction = std::exp(log_packing_fraction);
-        const double total = std::accumulate(
-            amounts.begin(), amounts.end(), 0.0
-        );
-        const double volume = total / packing_fraction;
-        const std::size_t physical_count = amounts.size() + 1;
-        VolumeCoordinateEvaluation result;
-        result.volume = volume;
-        result.gradient.assign(physical_count, 1.0 / packing_fraction);
-        result.gradient.back() = -volume;
-        result.hessian.assign(physical_count * physical_count, 0.0);
-        for (std::size_t species = 0; species < amounts.size(); ++species) {
-            result.hessian[species * physical_count + amounts.size()] =
-                -1.0 / packing_fraction;
-            result.hessian[amounts.size() * physical_count + species] =
-                -1.0 / packing_fraction;
-        }
-        result.hessian.back() = volume;
-        return result;
-    };
-    const ReactionNlpEvaluation evaluation = evaluate_reaction_nlp(
-        chart,
-        balances,
-        g_ref,
-        temperature_k,
-        pressure_pa,
-        ideal_phase_evaluator(),
-        ReactionDomain{},
-        variables,
-        constraint_multipliers,
-        &inverse_log_packing
-    );
-    ManufacturedNlpEvaluation result;
-    result.objective = evaluation.objective;
-    result.objective_gradient = evaluation.gradient;
-    result.constraints = evaluation.constraints;
-    result.constraint_jacobian = evaluation.jacobian;
-    result.lagrangian_gradient = evaluation.gradient;
-    for (std::size_t variable = 0;
-         variable < result.lagrangian_gradient.size();
-         ++variable) {
-        for (std::size_t row = 0; row < balances.matrix.rows; ++row) {
-            result.lagrangian_gradient[variable] += evaluation.jacobian[
-                row * result.lagrangian_gradient.size() + variable
-            ] * constraint_multipliers[row];
-        }
-    }
-    result.lagrangian_hessian = evaluation.lagrangian_hessian;
-    result.amounts = evaluation.amount_chart.amounts;
-    result.volume_m3 = evaluation.volume;
-    const std::size_t variable_count = variables.size();
-    const std::size_t equality_count = balances.matrix.rows;
-    const std::size_t kkt_dimension = variable_count + equality_count;
-    std::vector<double> kkt_matrix(kkt_dimension * kkt_dimension, 0.0);
-    for (std::size_t row = 0; row < variable_count; ++row) {
-        for (std::size_t column = 0; column < variable_count; ++column) {
-            kkt_matrix[row * kkt_dimension + column] =
-                evaluation.lagrangian_hessian[row * variable_count + column];
-        }
-    }
-    for (std::size_t row = 0; row < equality_count; ++row) {
-        for (std::size_t column = 0; column < variable_count; ++column) {
-            const double value = evaluation.jacobian[
-                row * variable_count + column
-            ];
-            kkt_matrix[column * kkt_dimension + variable_count + row] = value;
-            kkt_matrix[(variable_count + row) * kkt_dimension + column] = value;
-        }
-    }
-    result.kkt_backtransform_rhs.resize(kkt_dimension);
-    for (std::size_t index = 0; index < kkt_dimension; ++index) {
-        result.kkt_backtransform_rhs[index] =
-            zero_kkt_rhs ? 0.0 : 0.125 * static_cast<double>(index + 1);
-    }
-    const EquilibratedSquareSystem equilibrated =
-        equilibrate_square_system(kkt_matrix);
-    result.kkt_backtransform_solution = result.kkt_backtransform_rhs;
-    if (!solve_equilibrated_square_system(
-            equilibrated,
-            result.kkt_backtransform_rhs,
-            result.kkt_backtransform_solution
-        )) {
-        throw std::domain_error(
-            "manufactured inverse log-packing KKT back-transform failed"
-        );
-    }
-    return result;
 }
 
 }  // namespace epcsaft_engine::equilibrium

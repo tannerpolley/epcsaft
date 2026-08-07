@@ -37,6 +37,7 @@ struct NativeParameters final {
     std::vector<double> relative_permittivity;
     double ion_fraction_suppression_coefficient;
     std::vector<double> born_diameter_angstrom;
+    std::vector<double> born_diameter_sigma_scale;
     std::vector<double> solvation_factor;
     double ionic_region_relative_permittivity;
     int electrolyte_model;

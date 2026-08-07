@@ -61,19 +61,6 @@ Scalar ion_fraction_suppressed_relative_permittivity(
 }
 
 template <typename Scalar>
-// EqID: ion_fraction_suppressed_bulk_permittivity
-Scalar ion_fraction_suppressed_relative_permittivity_derivative(
-    const Scalar& salt_free_permittivity,
-    const Scalar& ion_fraction,
-    const Scalar& suppression_coefficient
-) {
-    const Scalar denominator =
-        Scalar(1.0) + suppression_coefficient * ion_fraction;
-    return -salt_free_permittivity * ion_fraction
-        / (denominator * denominator);
-}
-
-template <typename Scalar>
 Scalar bulk_relative_permittivity(
     const Scalar& temperature,
     const Scalar& molar_density,

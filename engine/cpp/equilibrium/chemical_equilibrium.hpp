@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <limits>
 #include <string>
@@ -296,37 +295,6 @@ struct ChemicalSolveResult {
     ChemicalSensitivityResult sensitivities;
 };
 
-struct ManufacturedNlpEvaluation {
-    double objective = 0.0;
-    std::vector<double> objective_gradient;
-    std::vector<double> constraints;
-    std::vector<double> constraint_jacobian;
-    std::vector<double> lagrangian_gradient;
-    std::vector<double> lagrangian_hessian;
-    std::vector<double> amounts;
-    double volume_m3 = 0.0;
-    // Populated only by the private inverse-chart evidence seam.
-    std::vector<double> kkt_backtransform_rhs;
-    std::vector<double> kkt_backtransform_solution;
-};
-
-struct ManufacturedReducedHessianEvidence {
-    bool positive = false;
-    std::string status = "second_order_inconclusive";
-    double curvature = 0.0;
-    std::vector<double> negative_direction;
-    std::vector<double> reduced_hessian;
-    std::vector<double> nullspace_basis;
-    std::size_t nullspace_rows = 0;
-    std::size_t nullspace_columns = 0;
-    std::vector<double> eigenvalues;
-    std::array<std::size_t, 3> inertia = {0, 0, 0};
-    std::array<std::size_t, 3> raw_inertia = {0, 0, 0};
-    std::string spectrum_status = "not_evaluated";
-    double hessian_scale = std::numeric_limits<double>::quiet_NaN();
-    double eigenvalue_tolerance = std::numeric_limits<double>::quiet_NaN();
-};
-
 struct ProviderPhaseBlockEvidence {
     double value = 0.0;
     std::vector<double> gradient;
@@ -415,74 +383,6 @@ struct SourceStandardStateResult {
     const std::vector<double>& gauge_coefficients,
     double trace_floor,
     int max_iterations = 500
-);
-
-// Private manufactured nonconvex case used only to verify the generic
-// negative-curvature recovery path. It is not a public model or capability.
-[[nodiscard]] ChemicalSolveResult solve_manufactured_nonconvex_reaction(
-    const CompiledReactionSystem& system,
-    double temperature_k,
-    double pressure_pa,
-    const std::vector<double>& gauge_coefficients,
-    double trace_floor,
-    int max_iterations = 500,
-    double quadratic_strength = 2.3
-);
-
-[[nodiscard]] ChemicalSolveResult solve_manufactured_inconsistent_derivative_reaction(
-    const CompiledReactionSystem& system,
-    double temperature_k,
-    double pressure_pa,
-    const std::vector<double>& gauge_coefficients,
-    double trace_floor,
-    int max_iterations = 200
-);
-
-[[nodiscard]] ManufacturedNlpEvaluation evaluate_manufactured_reaction_nlp(
-    const CompiledReactionSystem& system,
-    double temperature_k,
-    double pressure_pa,
-    const std::vector<double>& gauge_coefficients,
-    const std::vector<double>& variables,
-    const std::vector<double>& constraint_multipliers
-);
-
-// Private manufactured seams used to test the generic recovery mathematics.
-[[nodiscard]] ManufacturedReducedHessianEvidence analyze_manufactured_reduced_hessian(
-    const std::vector<double>& hessian,
-    const std::vector<double>& constraint_jacobian = {},
-    std::size_t constraint_count = 0
-);
-
-[[nodiscard]] std::vector<double> retract_manufactured_balance(
-    const CompiledReactionSystem& system,
-    const std::vector<double>& seed,
-    const std::vector<double>& lower,
-    const std::vector<double>& upper,
-    double trace_floor
-);
-
-[[nodiscard]] std::vector<double> manufactured_recovery_displacement(
-    const std::vector<double>& variables,
-    const std::vector<double>& lower,
-    const std::vector<double>& upper,
-    const std::vector<double>& direction,
-    int sign,
-    std::size_t backtrack_index = 0
-);
-
-// Private derivative evidence seam. This is intentionally not part of the
-// public equilibrium API; tests use it to exercise the inverse log-packing
-// chart with the same exact chain rules and KKT pullback as Provider phases.
-[[nodiscard]] ManufacturedNlpEvaluation
-evaluate_manufactured_inverse_log_packing_nlp(
-    const CompiledReactionSystem& system,
-    double temperature_k,
-    double pressure_pa,
-    const std::vector<double>& gauge_coefficients,
-    const std::vector<double>& variables,
-    const std::vector<double>& constraint_multipliers,
-    bool zero_kkt_rhs = false
 );
 
 [[nodiscard]] ProviderPhaseBlockEvidence evaluate_provider_phase_block(

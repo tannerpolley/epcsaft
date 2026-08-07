@@ -22,8 +22,6 @@ using Integer = boost::multiprecision::number<
 >;
 using Rational = boost::rational<Integer>;
 
-constexpr std::size_t kMaximumBasisCandidates = 100000;
-
 struct ExactSystem {
     std::vector<std::vector<Rational>> matrix;
     std::vector<Rational> totals;
@@ -214,7 +212,6 @@ std::vector<std::size_t> homogeneous_structural_zeros(
     );
     std::vector<bool> accessible(species_count, false);
     std::vector<std::size_t> basis;
-    std::size_t visited = 0;
     bool feasible = false;
     visit_bases(
         species_count,
@@ -222,11 +219,6 @@ std::vector<std::size_t> homogeneous_structural_zeros(
         0,
         basis,
         [&](const std::vector<std::size_t>& columns) {
-            if (++visited > kMaximumBasisCandidates) {
-                throw std::runtime_error(
-                    "exact homogeneous support enumeration limit exceeded"
-                );
-            }
             std::vector<std::vector<Rational>> square(
                 columns.size(), std::vector<Rational>(columns.size(), Rational(0))
             );

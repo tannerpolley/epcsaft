@@ -4,14 +4,13 @@ import hashlib
 import json
 import unicodedata
 from decimal import Decimal
-from typing import Protocol, cast
+from typing import cast
 
 import pint
 
 from .records import (
     _DIMENSIONAL_UNITS,
     AssociationParameterRecord,
-    ComponentRecord,
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
     ModelParameterRecord,
@@ -19,34 +18,10 @@ from .records import (
     ParameterRecord,
     SingleParameterRecord,
     SiteRecord,
-    SourceRecord,
     ValidityDomain,
 )
 
 _TAG = "epcsaft-parameters-v1"
-
-
-class _BundleLike(Protocol):
-    @property
-    def bundle_id(self) -> str: ...
-
-    @property
-    def bundle_version(self) -> int: ...
-
-    @property
-    def purpose(self) -> str: ...
-
-    @property
-    def sources(self) -> tuple[SourceRecord, ...]: ...
-
-    @property
-    def domains(self) -> tuple[ValidityDomain, ...]: ...
-
-    @property
-    def components(self) -> tuple[ComponentRecord, ...]: ...
-
-    @property
-    def records(self) -> tuple[ParameterRecord, ...]: ...
 
 
 def _string(value: str) -> str:
@@ -64,21 +39,6 @@ def _quantity(value: object, unit: str) -> dict[str, str]:
     if not isinstance(value, pint.Quantity):
         raise TypeError(f"expected quantity for {unit}")
     return {"magnitude": _decimal(value.magnitude), "unit": unit}
-
-
-def _optional(target: dict[str, object], name: str, value: object) -> None:
-    if value is not None:
-        target[name] = value
-
-
-def _source(record: SourceRecord) -> dict[str, object]:
-    result: dict[str, object] = {
-        "source_id": record.source_id,
-        "citation": record.citation,
-        "use_basis": record.use_basis,
-    }
-    _optional(result, "doi", record.doi)
-    return result
 
 
 def _domain(record: ValidityDomain) -> dict[str, object]:
@@ -127,16 +87,6 @@ def _resolved_validity(domains: tuple[ValidityDomain, ...]) -> dict[str, object]
         result["ion_mole_fraction_max"] = _decimal(
             min(cast(tuple[Decimal, ...], ion_maxima))
         )
-    return result
-
-
-def _component(record: ComponentRecord) -> dict[str, object]:
-    result: dict[str, object] = {
-        "component_id": record.component_id,
-        "aliases": list(record.aliases),
-    }
-    for name in ("name", "cas", "formula"):
-        _optional(result, name, getattr(record, name))
     return result
 
 
@@ -192,7 +142,7 @@ def _record(record: ParameterRecord) -> dict[str, object]:
             type="site",
             component_id=record.component_id,
             site_id=record.site_id,
-            site_class=record.site_class,
+            site_role=record.site_role,
             multiplicity=record.multiplicity,
         )
     elif isinstance(record, AssociationParameterRecord):
@@ -253,71 +203,24 @@ def _json(value: object) -> str:
     )
 
 
-def _bundle_json(bundle: _BundleLike) -> str:
-    projection = {
-        "tag": _TAG,
-        "bundle": {
-            "bundle_id": bundle.bundle_id,
-            "bundle_version": bundle.bundle_version,
-            "purpose": bundle.purpose,
-            "sources": [
-                _source(record)
-                for record in sorted(
-                    bundle.sources,
-                    key=lambda item: item.source_id,
-                )
-            ],
-            "domains": [
-                _domain(record)
-                for record in sorted(
-                    bundle.domains,
-                    key=lambda item: item.domain_id,
-                )
-            ],
-            "components": [
-                _component(record)
-                for record in sorted(
-                    bundle.components,
-                    key=lambda item: item.component_id,
-                )
-            ],
-            "records": [
-                _record(record)
-                for record in sorted(
-                    bundle.records,
-                    key=lambda item: item.record_id,
-                )
-            ],
-        },
-    }
-    return _json(projection)
-
-
 def _fingerprint_json(value: str) -> str:
     return f"sha256:{hashlib.sha256(value.encode('utf-8')).hexdigest()}"
 
 
-def _bundle_fingerprint(bundle: _BundleLike) -> str:
-    return _fingerprint_json(_bundle_json(bundle))
+def _document_fingerprint(value: object) -> str:
+    return _fingerprint_json(_json({"tag": _TAG, "parameters": value}))
 
 
-def _provenance_fingerprint(
-    sources: tuple[SourceRecord, ...], domains: tuple[ValidityDomain, ...]
+def _selected_document_fingerprint(
+    document_fingerprint: str,
+    component_ids: tuple[str, ...],
 ) -> str:
     return _fingerprint_json(
         _json(
             {
                 "tag": _TAG,
-                "provenance": {
-                    "sources": [
-                        _source(record)
-                        for record in sorted(sources, key=lambda item: item.source_id)
-                    ],
-                    "domains": [
-                        _domain(record)
-                        for record in sorted(domains, key=lambda item: item.domain_id)
-                    ],
-                },
+                "document_fingerprint": document_fingerprint,
+                "component_ids": list(component_ids),
             }
         )
     )

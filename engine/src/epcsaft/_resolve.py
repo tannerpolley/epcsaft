@@ -345,13 +345,10 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
     models: dict[str, ModelParameterRecord] = {
         record.family: record for record in model_records
     }
-    polar_records = tuple(
-        record for record in model_records if record.family == "polar_formulation"
-    )
-    if len(polar_records) > 1:
-        raise _error("invalid-value", family="polar_formulation", reason="duplicate")
+    family_choices = {record.kind: record.choice for record in parameters.model_families}
+    polar_choice = family_choices["polar"]
     polar_formulation: PolarFormulation | None = (
-        None if not polar_records else polar_records[0].value  # type: ignore[assignment]
+        None if polar_choice == "none" else cast(PolarFormulation, polar_choice)
     )
     moment_families = {"dipole_moment", "quadrupole_moment"}
     if polar_formulation is None and any(family in moment_families for _, family in singles):
@@ -360,20 +357,11 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             family="polar_formulation",
             reason="missing-for-multipole",
         )
-    formulation_records = tuple(
-        record for record in model_records if record.family == "relative_permittivity_formulation"
+    relative_permittivity_formulation = cast(
+        RelativePermittivityFormulation,
+        family_choices["permittivity"],
     )
-    if not formulation_records:
-        raise _error("missing-record", family="relative_permittivity_formulation")
-    if len(formulation_records) != 1:
-        raise _error(
-            "invalid-value",
-            family="relative_permittivity_formulation",
-            reason="duplicate",
-        )
-    relative_permittivity_formulation: RelativePermittivityFormulation = (
-        formulation_records[0].value  # type: ignore[assignment]
-    )
+    electrolyte_formulation = family_choices["electrolyte"]
     formulation_model_families = {"ion_fraction_suppression_coefficient"}
     formulation_single_families = {
         "dielectric_volume",
@@ -526,6 +514,12 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         record is not None and _integer(record) != 0 for record in selected_charges
     ) or any(family == "born_diameter" for _, family in singles)
     if not ionic_topology:
+        if electrolyte_formulation != "none":
+            raise _error(
+                "invalid-value",
+                family="electrolyte",
+                reason="enabled-without-ions",
+            )
         topology: Literal["neutral", "associating"] = "associating" if site_ids else "neutral"
         k_ij = _pair_matrix(component_ids, pair_records, "k_ij", required=True)
         l_ij = _pair_matrix(component_ids, pair_records, "l_ij", required=False)
@@ -585,6 +579,8 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         not_applicable=same_sign_ion_pairs,
     )
 
+    if electrolyte_formulation == "none":
+        raise _error("missing-record", family="electrolyte")
     corrected_born_schema_present = any(
         family in {"born_diameter", "solvation_factor"} for _, family in singles
     ) or any(
@@ -596,23 +592,30 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         for family in models
     )
     l_ij_present = any(key[2] == "l_ij" for key in pair_records)
-    formulation_record = models.get("electrolyte_formulation")
-    formulation = None if formulation_record is None else formulation_record.value
-    if corrected_born_schema_present and l_ij_present:
-        raise _error(
-            "invalid-value",
-            family="electrolyte-model",
-            reason="mixed-born-dielectric-schema",
-        )
-    if formulation is not None and (corrected_born_schema_present or l_ij_present):
-        raise _error(
-            "invalid-value",
-            family="electrolyte-model",
-            reason="mixed-formulation-schema",
-        )
-    if formulation is None and not corrected_born_schema_present and not l_ij_present:
-        raise _error("missing-record", family="electrolyte_formulation")
-    if formulation == "fully-dissociated-debye-huckel":
+    if electrolyte_formulation == "ssm-ds":
+        if not corrected_born_schema_present or l_ij_present:
+            raise _error(
+                "invalid-value",
+                family="electrolyte",
+                reason="invalid-ssm-ds-coefficients",
+            )
+    elif electrolyte_formulation == "original-born":
+        if corrected_born_schema_present or not l_ij_present:
+            raise _error(
+                "invalid-value",
+                family="electrolyte",
+                reason="invalid-original-born-coefficients",
+            )
+    elif electrolyte_formulation == "fully-dissociated-debye-huckel":
+        if corrected_born_schema_present or l_ij_present:
+            raise _error(
+                "invalid-value",
+                family="electrolyte",
+                reason="invalid-fully-dissociated-coefficients",
+            )
+    else:
+        raise _error("invalid-value", family="electrolyte", value=electrolyte_formulation)
+    if electrolyte_formulation == "fully-dissociated-debye-huckel":
         if relative_permittivity_formulation != "solvent-only":
             raise _error(
                 "invalid-value",
@@ -821,20 +824,26 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
     correlation_integral = component_values("correlation_integral_parameter", "dimensionless")
 
     for index, charge in enumerate(charges):
-        if relative_permittivity_formulation == "density-volume-temperature" and charge == 0:
-            if dielectric_volume[index] <= 0.0 or dielectric_temperature[index] <= 0.0:
-                raise _error(
-                    "missing-record",
-                    component_id=component_ids[index],
-                    family="density-permittivity-parameters",
-                )
-        if relative_permittivity_formulation == "ion-specific-suppression" and charge != 0:
-            if ion_specific_suppression[index] <= 0.0:
-                raise _error(
-                    "missing-record",
-                    component_id=component_ids[index],
-                    family="ion_specific_suppression_coefficient",
-                )
+        if (
+            relative_permittivity_formulation == "density-volume-temperature"
+            and charge == 0
+            and (dielectric_volume[index] <= 0.0 or dielectric_temperature[index] <= 0.0)
+        ):
+            raise _error(
+                "missing-record",
+                component_id=component_ids[index],
+                family="density-permittivity-parameters",
+            )
+        if (
+            relative_permittivity_formulation == "ion-specific-suppression"
+            and charge != 0
+            and ion_specific_suppression[index] <= 0.0
+        ):
+            raise _error(
+                "missing-record",
+                component_id=component_ids[index],
+                family="ion_specific_suppression_coefficient",
+            )
         if relative_permittivity_formulation == "dipolar-density-perturbation":
             if dipole_scaling[index] < 0.0 or polarizability_scaling[index] < 0.0:
                 raise _error(

@@ -1,8 +1,5 @@
-#include "native_sdk_pybind.hpp"
-
-#include "native_sdk.hpp"
-
-#include <epcsaft/native_sdk_v1.h>
+#include "native_transport_pybind.hpp"
+#include "native_transport.hpp"
 
 #include <pybind11/stl.h>
 
@@ -10,71 +7,53 @@
 
 namespace epcsaft {
 
-pybind11::capsule make_native_sdk_v1(
+pybind11::capsule make_native_transport(
     const NativeModel& model,
     const std::string& parameter_fingerprint,
     double temperature_min_k,
     double temperature_max_k,
     const std::vector<std::string>& component_ids,
     double ion_mole_fraction_max,
-    bool phase_callbacks_admitted,
-    bool active_born_admitted,
-    bool aqueous_kij_admitted,
-    bool ion_fraction_suppression_admitted,
     double pressure_min_pa,
     double pressure_max_pa,
-    bool neutral_reference_admitted,
-    bool unknown_applicability_admitted,
-    bool aqueous_solvation_factor_admitted,
-    bool ion_solvation_kij_admitted,
     const std::string& topology_fingerprint,
     const std::string& component_order_fingerprint,
     const std::string& domain_fingerprint,
-    const std::vector<std::string>& site_ids,
     const std::string& artifact_fingerprint
 ) {
-    const epcsaft_native_sdk_v1* sdk = create_native_sdk_v1(
+    const epcsaft_native_transport* transport = create_native_transport(
         model,
         parameter_fingerprint,
         temperature_min_k,
         temperature_max_k,
         component_ids,
         ion_mole_fraction_max,
-        phase_callbacks_admitted,
-        active_born_admitted,
-        aqueous_kij_admitted,
-        ion_fraction_suppression_admitted,
         pressure_min_pa,
         pressure_max_pa,
-        neutral_reference_admitted,
-        unknown_applicability_admitted,
-        aqueous_solvation_factor_admitted,
-        ion_solvation_kij_admitted,
         topology_fingerprint,
         component_order_fingerprint,
         domain_fingerprint,
-        site_ids,
         artifact_fingerprint
     );
     return pybind11::capsule(
-        const_cast<epcsaft_native_sdk_v1*>(sdk),
-        EPCSAFT_NATIVE_SDK_V1_CAPSULE_NAME,
+        const_cast<epcsaft_native_transport*>(transport),
+        EPCSAFT_NATIVE_TRANSPORT_CAPSULE_NAME,
         [](PyObject* capsule) {
             void* pointer = PyCapsule_GetPointer(
-                capsule, EPCSAFT_NATIVE_SDK_V1_CAPSULE_NAME
+                capsule, EPCSAFT_NATIVE_TRANSPORT_CAPSULE_NAME
             );
             if (pointer == nullptr) {
                 PyErr_Clear();
                 return;
             }
-            destroy_native_sdk_v1(
-                static_cast<const epcsaft_native_sdk_v1*>(pointer)
+            destroy_native_transport(
+                static_cast<const epcsaft_native_transport*>(pointer)
             );
         }
     );
 }
 
-pybind11::dict evaluate_source_reference_transfer_v1(
+pybind11::dict evaluate_source_reference_transfer(
     const pybind11::capsule& capsule,
     const std::string& expected_parameter_fingerprint,
     const std::string& expected_topology_fingerprint,
@@ -90,19 +69,13 @@ pybind11::dict evaluate_source_reference_transfer_v1(
     std::uint32_t required_derivatives
 ) {
     void* pointer = PyCapsule_GetPointer(
-        capsule.ptr(), EPCSAFT_NATIVE_SDK_V1_CAPSULE_NAME
+        capsule.ptr(), EPCSAFT_NATIVE_TRANSPORT_CAPSULE_NAME
     );
     if (pointer == nullptr) {
         throw pybind11::value_error("source-reference Provider capsule is invalid");
     }
-    const auto& sdk = *static_cast<const epcsaft_native_sdk_v1*>(pointer);
-    const std::size_t required_table_size =
-        offsetof(epcsaft_native_sdk_v1, evaluate_source_reference_transfer)
-        + sizeof(sdk.evaluate_source_reference_transfer);
-    if (sdk.table_size < required_table_size
-        || sdk.source_reference_transfer_result_size
-            != sizeof(epcsaft_source_reference_transfer_result_v1)
-        || sdk.evaluate_source_reference_transfer == nullptr) {
+    const auto& transport = *static_cast<const epcsaft_native_transport*>(pointer);
+    if (transport.evaluate_source_reference_transfer == nullptr) {
         throw pybind11::value_error(
             "unsupported-source-reference-transfer"
         );
@@ -112,14 +85,14 @@ pybind11::dict evaluate_source_reference_transfer_v1(
     for (const auto& component_id : component_ids) {
         component_id_pointers.push_back(component_id.c_str());
     }
-    const std::size_t row_count = sdk.neutral_reference_basis_row_count;
+    const std::size_t row_count = transport.neutral_reference_basis_row_count;
     std::vector<double> basis(row_count * component_ids.size());
     std::vector<double> fugacity(row_count);
     std::vector<double> activity(row_count);
     std::vector<double> transfer(row_count);
     std::vector<double> composition(component_ids.size());
-    epcsaft_source_reference_request_v1 request{
-        sizeof(epcsaft_source_reference_request_v1),
+    epcsaft_source_reference_request request{
+        sizeof(epcsaft_source_reference_request),
         component_ids.size(),
         component_id_pointers.data(),
         source_solvent_mole_fractions.size(),
@@ -131,9 +104,9 @@ pybind11::dict evaluate_source_reference_transfer_v1(
         source_reference_pressure_pa,
         required_derivatives,
     };
-    epcsaft_source_reference_transfer_result_v1 result{};
+    epcsaft_source_reference_transfer_result result{};
     result.struct_size =
-        sizeof(epcsaft_source_reference_transfer_result_v1);
+        sizeof(epcsaft_source_reference_transfer_result);
     result.component_count = component_ids.size();
     result.neutral_basis_row_count = row_count;
     result.neutral_basis_capacity = basis.size();
@@ -146,8 +119,8 @@ pybind11::dict evaluate_source_reference_transfer_v1(
     result.transfer_log_contractions = transfer.data();
     result.source_composition = composition.data();
     result.pressure_derivatives_per_pa = nullptr;
-    const int status = sdk.evaluate_source_reference_transfer(
-        sdk.model_context,
+    const int status = transport.evaluate_source_reference_transfer(
+        transport.model_context,
         expected_parameter_fingerprint.c_str(),
         expected_topology_fingerprint.c_str(),
         temperature_k,
@@ -158,7 +131,7 @@ pybind11::dict evaluate_source_reference_transfer_v1(
     pybind11::dict value;
     value["status"] = status;
     value["error"] = std::string(result.error);
-    if (status != EPCSAFT_SOURCE_REFERENCE_OK_V1) {
+    if (status != EPCSAFT_SOURCE_REFERENCE_OK) {
         return value;
     }
     value["component_count"] = result.component_count;

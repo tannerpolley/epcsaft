@@ -6,14 +6,14 @@
 #include <string>
 #include <vector>
 
-#include <epcsaft/native_sdk_v1.h>
+#include "native_transport.hpp"
 
 namespace epcsaft_engine::equilibrium {
 
 struct PhaseEvaluation {
     double amount_mol = 0.0;
     double volume_m3 = 0.0;
-    epcsaft_phase_block_result_v1 provider{};
+    epcsaft_phase_block_result provider{};
     std::string parameter_fingerprint;
 };
 
@@ -29,34 +29,6 @@ struct PackingFractionEvaluation {
     double value = 0.0;
     std::vector<double> gradient;
     std::vector<double> hessian;
-};
-
-struct NeutralReferenceEvaluation {
-    std::size_t component_count = 0;
-    std::size_t neutral_basis_row_count = 0;
-    std::vector<double> neutral_basis;
-    std::vector<double> log_fugacity_contractions;
-    std::vector<double> pressure_derivatives_per_pa;
-    std::vector<double> parameter_derivatives;
-    std::size_t active_parameter_count = 0;
-    std::uint32_t derivative_availability = 0;
-    double temperature_k = 0.0;
-    double pressure_pa = 0.0;
-    double source_pressure_min_pa = 0.0;
-    double source_pressure_max_pa = 0.0;
-    double maximum_root_residual_pa = 0.0;
-    double minimum_pressure_density_derivative_pa_m3_per_mol = 0.0;
-    double maximum_density_condition_number = 0.0;
-    double reference_derivative_convergence_error = 0.0;
-    double maximum_relative_root_bracket_width = 0.0;
-    double maximum_relative_root_density_step = 0.0;
-    std::size_t stable_root_count = 0;
-    std::size_t selected_stable_root_index = 0;
-    double reference_convergence_error = 0.0;
-    std::string reference_branch;
-    std::string basis_id;
-    std::string parameter_fingerprint;
-    std::string topology_fingerprint;
 };
 
 struct ProviderActiveParameterInput {
@@ -104,7 +76,7 @@ struct InversePackingGeometryEvaluation {
 
 class ProviderContext {
 public:
-    ProviderContext(const epcsaft_native_sdk_v1& sdk, std::string fingerprint);
+    ProviderContext(const epcsaft_native_transport& transport, std::string fingerprint);
 
     [[nodiscard]] std::string reacting_topology_fingerprint() const;
 
@@ -139,17 +111,6 @@ public:
         double volume_m3
     ) const;
 
-    [[nodiscard]] NeutralReferenceEvaluation evaluate_neutral_reference(
-        double temperature_k,
-        double pressure_pa
-    ) const;
-
-    [[nodiscard]] NeutralReferenceEvaluation evaluate_neutral_reference_derivatives(
-        double temperature_k,
-        double pressure_pa,
-        const ProviderActiveParameterSet& active_parameters = {}
-    ) const;
-
     [[nodiscard]] ProviderActiveParameterSet resolve_active_parameters(
         double temperature_k,
         const std::vector<ProviderActiveParameterInput>& requests
@@ -173,10 +134,10 @@ public:
     ) const;
 
     [[nodiscard]] const std::string& fingerprint() const;
-    [[nodiscard]] const epcsaft_native_sdk_v1& sdk() const noexcept;
+    [[nodiscard]] const epcsaft_native_transport& transport() const noexcept;
 
 private:
-    const epcsaft_native_sdk_v1& sdk_;
+    const epcsaft_native_transport& transport_;
     std::string fingerprint_;
 };
 

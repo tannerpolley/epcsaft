@@ -3,83 +3,130 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Literal
+from typing import Any, Literal, cast
+
+import pint
 
 from .records import (
+    _DIMENSIONAL_UNITS,
+    AssociationDerivativeSource,
+    AssociationEdge,
+    AssociationEdgeSource,
     AssociationParameterRecord,
+    AssociationPreset,
+    AssociationTopology,
     ComponentRecord,
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
     ExponentialTerm,
+    ModelFamilyKind,
+    ModelFamilySpec,
     ModelParameterRecord,
     PairParameterRecord,
+    ParameterSpec,
+    SingleParameterFamily,
     SingleParameterRecord,
     SiteRecord,
     SourceRecord,
     ValidityDomain,
     _identifier,
+    _parameter_identity,
 )
-from .units import _decimal_number, _error, _exact_integer, unit_registry
+from .units import ParameterError, _decimal_number, _error, _exact_integer, unit_registry
 
-_MISSING = object()
+type _Purpose = Literal[
+    "external-document", "package-test-fixture", "regression-output", "user-provided"
+]
+
 _TOP_LEVEL = frozenset(
-    {"schema", "schema_version", "components", "parameters", "options", "validity"}
+    {
+        "schema",
+        "schema_version",
+        "document_id",
+        "document_version",
+        "purpose",
+        "sources",
+        "domains",
+        "components",
+        "pairs",
+        "model_families",
+        "model_coefficients",
+        "correlations",
+        "topology",
+    }
 )
-_ALIASES = {
-    "molar_mass": "mw",
-    "segment_count": "m",
-    "segment_diameter": "s",
-    "dispersion_energy_over_k": "e",
-    "charge_number": "z",
-    "relative_permittivity": "epsilon_r",
-    "born_diameter": "d_born",
-    "solvation_factor": "f_solv",
-    "dielectric_volume": "v_dielectric",
-    "dielectric_temperature": "t_dielectric",
-    "ion_specific_suppression_coefficient": "a_ion",
-    "dipole_scaling": "mu2",
-    "polarizability_scaling": "alpha",
-    "correlation_integral_parameter": "a2",
-    "dipole_moment": "mu",
-    "quadrupole_moment": "Q",
-    "dispersion_interaction": "k_ij",
-    "diameter_interaction": "l_ij",
+_FIXED_FAMILIES = frozenset({"molar_mass", "charge_number", "dipole_moment", "quadrupole_moment"})
+_COMPONENT_COEFFICIENTS = frozenset(
+    {
+        "segment_count",
+        "segment_diameter",
+        "dispersion_energy_over_k",
+        "relative_permittivity",
+        "born_diameter",
+        "solvation_factor",
+        "dielectric_volume",
+        "dielectric_temperature",
+        "ion_specific_suppression_coefficient",
+        "dipole_scaling",
+        "polarizability_scaling",
+        "correlation_integral_parameter",
+    }
+)
+_PAIR_COEFFICIENTS = frozenset({"k_ij", "l_ij"})
+_MODEL_COEFFICIENTS = frozenset(
+    {"ionic_region_relative_permittivity", "ion_fraction_suppression_coefficient"}
+)
+_MODEL_FAMILY_IDS: dict[str, str] = {
+    "base": "model/base",
+    "association": "model/association",
+    "electrolyte": "model/electrolyte",
+    "permittivity": "model/relative_permittivity",
+    "polar": "model/polar",
 }
-_SINGLE_UNITS = {
-    "molar_mass": "kilogram / mole",
-    "segment_count": None,
-    "segment_diameter": "angstrom",
-    "dispersion_energy_over_k": "kelvin",
-    "charge_number": None,
-    "relative_permittivity": None,
-    "born_diameter": "angstrom",
-    "solvation_factor": None,
-    "dielectric_volume": "meter ** 3 / mole",
-    "dielectric_temperature": "kelvin",
-    "ion_specific_suppression_coefficient": None,
-    "dipole_scaling": "debye ** 2",
-    "polarizability_scaling": "angstrom ** 3",
-    "correlation_integral_parameter": None,
-    "dipole_moment": "debye",
-    "quadrupole_moment": "debye * angstrom",
+_MODEL_CHOICES = {
+    "base": frozenset({"pc-saft"}),
+    "association": frozenset({"none", "general-site"}),
+    "electrolyte": frozenset({"none", "ssm-ds", "original-born", "fully-dissociated-debye-huckel"}),
+    "permittivity": frozenset(
+        {
+            "none",
+            "ion-fraction-suppression",
+            "component-permittivity-mixing",
+            "density-volume-temperature",
+            "ion-specific-suppression",
+            "dipolar-density-perturbation",
+            "solvent-only",
+        }
+    ),
+    "polar": frozenset({"none", "point-multipole"}),
 }
-_PARAMETER_KEYS = frozenset({*_ALIASES, *_ALIASES.values(), "sites", "association", "correlations"})
-_OPTION_ALIASES = {
-    "electrolyte_formulation": "electrolyte",
-    "relative_permittivity_formulation": "permittivity_model",
-    "ionic_region_relative_permittivity": "epsilon_r_ion",
-    "ion_fraction_suppression_coefficient": "a_dh",
-    "polar_formulation": "polar_model",
+_MODEL_IDENTITIES = {
+    "ionic_region_relative_permittivity": (
+        "model/relative_permittivity/ionic_region_relative_permittivity"
+    ),
+    "ion_fraction_suppression_coefficient": (
+        "model/relative_permittivity/ion_fraction_suppression_coefficient"
+    ),
 }
-_OPTION_KEYS = frozenset({*_OPTION_ALIASES, *_OPTION_ALIASES.values()})
+_PRESET_SITES: dict[str, tuple[tuple[str, str], ...]] = {
+    "1a": (("a", "effective"),),
+    "2b": (("a", "donor"), ("b", "acceptor")),
+    "3b": (("a", "donor"), ("b", "acceptor"), ("c", "acceptor")),
+    "4c": (
+        ("a", "donor"),
+        ("b", "donor"),
+        ("c", "acceptor"),
+        ("d", "acceptor"),
+    ),
+}
 
 
 @dataclass(frozen=True, slots=True)
-class _DictionaryRecords:
+class _DocumentRecords:
     component_ids: tuple[str, ...]
-    bundle_id: str
-    bundle_version: int
-    purpose: Literal["user-provided"]
+    document_id: str
+    document_version: int
+    purpose: _Purpose
     sources: tuple[SourceRecord, ...]
     domains: tuple[ValidityDomain, ...]
     components: tuple[ComponentRecord, ...]
@@ -89,6 +136,9 @@ class _DictionaryRecords:
     associations: tuple[AssociationParameterRecord, ...]
     correlations: tuple[ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation, ...]
     models: tuple[ModelParameterRecord, ...]
+    model_families: tuple[ModelFamilySpec, ...]
+    topology: AssociationTopology
+    parameter_specs: tuple[ParameterSpec, ...]
 
 
 def _mapping(value: object, *, field: str) -> dict[str, object]:
@@ -97,415 +147,1209 @@ def _mapping(value: object, *, field: str) -> dict[str, object]:
     return dict(value)
 
 
+def _sequence(value: object, *, field: str) -> tuple[object, ...]:
+    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+        raise _error("invalid-schema", field=field, expected="array")
+    return tuple(value)
+
+
 def _strict(
     value: dict[str, object],
     *,
     field: str,
-    allowed: frozenset[str],
-    required: frozenset[str] = frozenset(),
+    required: frozenset[str],
+    optional: frozenset[str] = frozenset(),
 ) -> None:
-    unknown = sorted(set(value) - allowed)
-    if unknown:
+    if unknown := sorted(set(value) - required - optional):
         raise _error("invalid-schema", field=field, unknown=unknown[0])
-    missing = sorted(required - set(value))
-    if missing:
+    if missing := sorted(required - set(value)):
         raise _error("invalid-schema", field=field, missing=missing[0])
 
 
-def _alias(
-    value: dict[str, object],
-    descriptive: str,
-    abbreviated: str,
+def _positive_version(value: object, *, field: str) -> int:
+    return _exact_integer(value, field=field, positive=True)
+
+
+def _provenance(value: object, *, field: str) -> tuple[str, str, str]:
+    raw = _mapping(value, field=field)
+    _strict(
+        raw,
+        field=field,
+        required=frozenset({"source_id", "locator", "domain_id"}),
+    )
+    source_id = _identifier(raw["source_id"], field=f"{field}.source_id")
+    locator = raw["locator"]
+    if not isinstance(locator, str) or not locator.strip():
+        raise _error("invalid-value", field=f"{field}.locator", value=locator)
+    domain_id = _identifier(raw["domain_id"], field=f"{field}.domain_id")
+    return source_id, locator, domain_id
+
+
+def _measurement(
+    value: object,
     *,
-    required: bool = False,
-) -> object:
-    if descriptive in value and abbreviated in value:
-        raise _error(
-            "duplicate-alias",
-            field=descriptive,
-            alias=abbreviated,
+    family: str,
+    field: str,
+) -> tuple[object, str]:
+    raw = _mapping(value, field=field)
+    _strict(raw, field=field, required=frozenset({"magnitude", "unit"}))
+    unit = raw["unit"]
+    if not isinstance(unit, str) or not unit:
+        raise _error("invalid-unit", field=f"{field}.unit", expected="declared-unit")
+    magnitude = raw["magnitude"]
+    if family == "charge_number":
+        if unit != "elementary-charge":
+            raise _error("invalid-unit", field=f"{field}.unit", expected="elementary-charge")
+        return _exact_integer(magnitude, field=f"{field}.magnitude"), unit
+    target = (
+        "1 / kelvin"
+        if family == "exponential_temperature_coefficient"
+        else _DIMENSIONAL_UNITS.get(family, "dimensionless")
+    )
+    try:
+        quantity = unit_registry.Quantity(
+            _decimal_number(magnitude, field=f"{field}.magnitude"), unit
+        ).to(target)
+    except ParameterError:
+        raise
+    except (AttributeError, TypeError, ValueError, pint.errors.PintError) as exc:
+        raise _error("invalid-unit", field=f"{field}.unit", expected=target) from exc
+    if target == "dimensionless":
+        return (
+            _decimal_number(quantity.magnitude, field=f"{field}.magnitude"),
+            "dimensionless",
         )
-    result = value.get(descriptive, value.get(abbreviated, _MISSING))
-    if result is _MISSING and required:
-        raise _error("invalid-schema", field="parameters", missing=descriptive)
-    return result
+    return quantity, target
 
 
-def _sequence(value: object, *, field: str) -> tuple[object, ...]:
-    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
-        raise _error("invalid-shape", field=field, expected="sequence")
-    return tuple(value)
-
-
-def _vector(
+def _coefficient(
     value: object,
     *,
     field: str,
-    size: int,
-    integer: bool = False,
-    allow_none: bool = False,
-) -> tuple[object | None, ...]:
-    result = _sequence(value, field=field)
-    if len(result) != size:
-        raise _error("invalid-shape", field=field, expected=size, observed=len(result))
-    normalized: list[object | None] = []
-    for item in result:
-        if item is None and allow_none:
-            normalized.append(None)
-        elif integer:
-            normalized.append(_exact_integer(item, field=field))
-        else:
-            normalized.append(_decimal_number(item, field=field))
-    return tuple(normalized)
-
-
-def _matrix(value: object, *, field: str, size: int) -> tuple[tuple[Decimal, ...], ...]:
-    rows = _sequence(value, field=field)
-    if len(rows) != size:
-        raise _error("invalid-shape", field=field, expected=f"{size}x{size}")
-    matrix = tuple(
-        tuple(_decimal_number(item, field=field) for item in _sequence(row, field=field))
-        for row in rows
+    allowed_families: frozenset[str],
+    expected_identity: str,
+) -> tuple[str, object, ParameterSpec, tuple[str, str, str]]:
+    raw = _mapping(value, field=field)
+    _strict(
+        raw,
+        field=field,
+        required=frozenset({"identity", "family", "value", "provenance"}),
     )
-    if any(len(row) != size for row in matrix):
-        raise _error("invalid-shape", field=field, expected=f"{size}x{size}")
-    for i in range(size):
-        if matrix[i][i] != 0:
-            raise _error("invalid-value", field=field, reason="nonzero-diagonal")
-        for j in range(i):
-            if matrix[i][j] != matrix[j][i]:
-                raise _error("invalid-value", field=field, reason="asymmetric")
-    return matrix
+    family = raw["family"]
+    if not isinstance(family, str) or family not in allowed_families:
+        raise _error("invalid-value", field=f"{field}.family", value=family)
+    identity = _parameter_identity(raw["identity"], field=f"{field}.identity")
+    if identity != expected_identity:
+        raise _error(
+            "invalid-value",
+            field=f"{field}.identity",
+            expected=expected_identity,
+            value=identity,
+        )
+    parameter_value, unit = _measurement(raw["value"], family=family, field=f"{field}.value")
+    provenance = _provenance(raw["provenance"], field=f"{field}.provenance")
+    return (
+        family,
+        parameter_value,
+        ParameterSpec(identity, family, parameter_value, unit, True, *provenance),
+        provenance,
+    )
 
 
-def _quantity(value: object, unit: str | None, *, field: str) -> object:
-    number = _decimal_number(value, field=field)
-    return number if unit is None else unit_registry.Quantity(number, unit)
+def _record_id(identity: str) -> str:
+    return "parameter-" + identity.replace("/", "-").replace("_", "-")
 
 
-def _validity(value: object) -> ValidityDomain:
-    raw = _mapping(value, field="validity")
-    allowed = frozenset(
+def _sources(value: object) -> tuple[SourceRecord, ...]:
+    result = []
+    for index, item in enumerate(_sequence(value, field="sources")):
+        field = f"sources[{index}]"
+        raw = _mapping(item, field=field)
+        _strict(
+            raw,
+            field=field,
+            required=frozenset({"source_id", "citation", "use_basis"}),
+            optional=frozenset({"doi"}),
+        )
+        result.append(
+            SourceRecord(
+                cast(str, raw["source_id"]),
+                cast(str, raw["citation"]),
+                cast(str, raw["use_basis"]),
+                cast(str | None, raw.get("doi")),
+            )
+        )
+    return tuple(result)
+
+
+def _domains(value: object) -> tuple[ValidityDomain, ...]:
+    result = []
+    required = frozenset({"domain_id", "kind"})
+    optional = frozenset(
         {
-            "kind",
-            "temperature_min_k",
-            "temperature_max_k",
-            "pressure_min_pa",
-            "pressure_max_pa",
+            "temperature_min",
+            "temperature_max",
+            "pressure_min",
+            "pressure_max",
             "ion_mole_fraction_max",
         }
     )
-    _strict(raw, field="validity", allowed=allowed)
-    if "kind" not in raw:
-        raise _error("invalid-domain", field="kind", value="missing")
-    kind = raw["kind"]
-    if kind not in {"unknown", "fit-range", "reported-conditions"}:
-        raise _error("invalid-domain", field="kind", value=kind)
-    if kind == "unknown" and len(raw) != 1:
-        raise _error("invalid-domain", field="kind", value=kind)
-    if kind != "unknown" and len(raw) == 1:
-        raise _error("invalid-domain", field="bounds", value="missing")
-    return ValidityDomain(
-        "dictionary-validity",
-        kind,
-        temperature_min=None
-        if "temperature_min_k" not in raw
-        else unit_registry.Quantity(
-            _decimal_number(raw["temperature_min_k"], field="temperature_min_k"), "kelvin"
-        ),
-        temperature_max=None
-        if "temperature_max_k" not in raw
-        else unit_registry.Quantity(
-            _decimal_number(raw["temperature_max_k"], field="temperature_max_k"), "kelvin"
-        ),
-        pressure_min=None
-        if "pressure_min_pa" not in raw
-        else unit_registry.Quantity(
-            _decimal_number(raw["pressure_min_pa"], field="pressure_min_pa"), "pascal"
-        ),
-        pressure_max=None
-        if "pressure_max_pa" not in raw
-        else unit_registry.Quantity(
-            _decimal_number(raw["pressure_max_pa"], field="pressure_max_pa"), "pascal"
-        ),
-        ion_mole_fraction_max=raw.get("ion_mole_fraction_max"),
-    )
+    for index, item in enumerate(_sequence(value, field="domains")):
+        field = f"domains[{index}]"
+        raw = _mapping(item, field=field)
+        _strict(raw, field=field, required=required, optional=optional)
+        kwargs: dict[str, object] = {
+            "domain_id": raw["domain_id"],
+            "kind": raw["kind"],
+        }
+        for name, family in (
+            ("temperature_min", "dielectric_temperature"),
+            ("temperature_max", "dielectric_temperature"),
+            ("pressure_min", "pressure"),
+            ("pressure_max", "pressure"),
+        ):
+            if name in raw:
+                if family == "pressure":
+                    measurement = _mapping(raw[name], field=f"{field}.{name}")
+                    _strict(
+                        measurement,
+                        field=f"{field}.{name}",
+                        required=frozenset({"magnitude", "unit"}),
+                    )
+                    unit = measurement["unit"]
+                    if not isinstance(unit, str):
+                        raise _error("invalid-unit", field=f"{field}.{name}.unit")
+                    try:
+                        kwargs[name] = unit_registry.Quantity(
+                            _decimal_number(
+                                measurement["magnitude"], field=f"{field}.{name}.magnitude"
+                            ),
+                            unit,
+                        ).to("pascal")
+                    except (TypeError, ValueError, pint.errors.PintError) as exc:
+                        raise _error(
+                            "invalid-unit", field=f"{field}.{name}.unit", expected="pascal"
+                        ) from exc
+                else:
+                    kwargs[name] = _measurement(raw[name], family=family, field=f"{field}.{name}")[
+                        0
+                    ]
+        if "ion_mole_fraction_max" in raw:
+            kwargs["ion_mole_fraction_max"] = _measurement(
+                raw["ion_mole_fraction_max"],
+                family="solvation_factor",
+                field=f"{field}.ion_mole_fraction_max",
+            )[0]
+        result.append(ValidityDomain(**kwargs))  # type: ignore[arg-type]
+    return tuple(result)
 
 
-def _single_records(
-    raw: dict[str, object], component_ids: tuple[str, ...]
-) -> tuple[SingleParameterRecord, ...]:
-    records: list[SingleParameterRecord] = []
-    for family, unit in _SINGLE_UNITS.items():
-        value = _alias(
-            raw,
-            family,
-            _ALIASES[family],
-            required=family in {"segment_count", "segment_diameter", "dispersion_energy_over_k"},
+def _components(
+    value: object,
+) -> tuple[
+    tuple[ComponentRecord, ...], tuple[SingleParameterRecord, ...], tuple[ParameterSpec, ...]
+]:
+    components = []
+    singles = []
+    specs = []
+    required = frozenset({"component_id", "fixed", "coefficients"})
+    optional = frozenset({"name", "cas", "formula", "aliases"})
+    for index, item in enumerate(_sequence(value, field="components")):
+        field = f"components[{index}]"
+        raw = _mapping(item, field=field)
+        _strict(raw, field=field, required=required, optional=optional)
+        component_id = _identifier(raw["component_id"], field=f"{field}.component_id")
+        aliases = _sequence(raw.get("aliases", ()), field=f"{field}.aliases")
+        components.append(
+            ComponentRecord(
+                component_id,
+                cast(str | None, raw.get("name")),
+                cast(str | None, raw.get("cas")),
+                cast(str | None, raw.get("formula")),
+                cast(tuple[str, ...], aliases),
+            )
         )
-        if value is _MISSING:
-            continue
-        vector = _vector(
-            value,
-            field=family,
-            size=len(component_ids),
-            integer=family == "charge_number",
-            allow_none=family not in {"segment_count", "dispersion_energy_over_k", "charge_number"},
-        )
-        for index, (component_id, item) in enumerate(zip(component_ids, vector, strict=True)):
-            if item is None:
-                continue
-            records.append(
+
+        fixed = _mapping(raw["fixed"], field=f"{field}.fixed")
+        if unknown := sorted(set(fixed) - _FIXED_FAMILIES):
+            raise _error("invalid-schema", field=f"{field}.fixed", unknown=unknown[0])
+        for family, item_value in fixed.items():
+            fixed_field = f"{field}.fixed.{family}"
+            fixed_value = _mapping(item_value, field=fixed_field)
+            _strict(
+                fixed_value,
+                field=fixed_field,
+                required=frozenset({"value", "provenance"}),
+            )
+            parameter_value, _ = _measurement(
+                fixed_value["value"], family=family, field=f"{fixed_field}.value"
+            )
+            provenance = _provenance(fixed_value["provenance"], field=f"{fixed_field}.provenance")
+            singles.append(
                 SingleParameterRecord(
-                    f"dictionary-{component_id}-{family.replace('_', '-')}",
+                    _record_id(f"component/{component_id}/{family}"),
                     component_id,
-                    family,  # type: ignore[arg-type]
-                    item if family == "charge_number" else _quantity(item, unit, field=family),
-                    "dictionary-input",
-                    f"parameters.{family}[{index}]",
-                    "dictionary-validity",
+                    cast(SingleParameterFamily, family),
+                    parameter_value,
+                    *provenance,
                 )
             )
-    return tuple(records)
 
-
-def _pair_records(
-    raw: dict[str, object], component_ids: tuple[str, ...]
-) -> tuple[PairParameterRecord, ...]:
-    records: list[PairParameterRecord] = []
-    for descriptive, family in (
-        ("dispersion_interaction", "k_ij"),
-        ("diameter_interaction", "l_ij"),
-    ):
-        value = _alias(raw, descriptive, family, required=family == "k_ij")
-        if value is _MISSING:
-            continue
-        matrix = _matrix(value, field=descriptive, size=len(component_ids))
-        for left in range(len(component_ids)):
-            for right in range(left + 1, len(component_ids)):
-                records.append(
-                    PairParameterRecord(
-                        f"dictionary-{family.replace('_', '-')}-{left}-{right}",
-                        component_ids[left],
-                        component_ids[right],
-                        family,  # type: ignore[arg-type]
-                        matrix[left][right],
-                        "dictionary-input",
-                        f"parameters.{descriptive}[{left}][{right}]",
-                        "dictionary-validity",
-                    )
+        for coefficient_index, coefficient_value in enumerate(
+            _sequence(raw["coefficients"], field=f"{field}.coefficients")
+        ):
+            coefficient_field = f"{field}.coefficients[{coefficient_index}]"
+            coefficient_raw = _mapping(coefficient_value, field=coefficient_field)
+            coefficient_family = coefficient_raw.get("family")
+            if not isinstance(coefficient_family, str):
+                raise _error(
+                    "invalid-value",
+                    field=f"{coefficient_field}.family",
+                    value=coefficient_family,
                 )
-    return tuple(records)
+            identity = f"component/{component_id}/{coefficient_family}"
+            resolved_family, parameter_value, spec, provenance = _coefficient(
+                coefficient_raw,
+                field=coefficient_field,
+                allowed_families=_COMPONENT_COEFFICIENTS,
+                expected_identity=identity,
+            )
+            singles.append(
+                SingleParameterRecord(
+                    _record_id(identity),
+                    component_id,
+                    cast(SingleParameterFamily, resolved_family),
+                    parameter_value,
+                    *provenance,
+                )
+            )
+            specs.append(spec)
+    return tuple(components), tuple(singles), tuple(specs)
 
 
-def _model_records(raw: dict[str, object]) -> tuple[ModelParameterRecord, ...]:
+def _pairs(
+    value: object,
+    component_ids: frozenset[str],
+) -> tuple[tuple[PairParameterRecord, ...], tuple[ParameterSpec, ...]]:
     records = []
-    for family, abbreviated in _OPTION_ALIASES.items():
-        value = _alias(
+    specs = []
+    for index, item in enumerate(_sequence(value, field="pairs")):
+        field = f"pairs[{index}]"
+        raw = _mapping(item, field=field)
+        _strict(
             raw,
-            family,
-            abbreviated,
-            required=family == "relative_permittivity_formulation",
+            field=field,
+            required=frozenset({"component_id_a", "component_id_b", "coefficients"}),
         )
-        if value is _MISSING:
-            continue
-        if family in {
-            "ionic_region_relative_permittivity",
-            "ion_fraction_suppression_coefficient",
-        }:
-            value = _decimal_number(value, field=family)
+        component_a = _identifier(raw["component_id_a"], field=f"{field}.component_id_a")
+        component_b = _identifier(raw["component_id_b"], field=f"{field}.component_id_b")
+        if component_a not in component_ids or component_b not in component_ids:
+            raise _error("missing-record", field=field, value="component")
+        if component_a >= component_b:
+            raise _error("invalid-value", field=field, reason="noncanonical-pair-order")
+        for coefficient_index, coefficient_value in enumerate(
+            _sequence(raw["coefficients"], field=f"{field}.coefficients")
+        ):
+            coefficient_field = f"{field}.coefficients[{coefficient_index}]"
+            coefficient_raw = _mapping(coefficient_value, field=coefficient_field)
+            family = coefficient_raw.get("family")
+            if not isinstance(family, str):
+                raise _error("invalid-value", field=f"{coefficient_field}.family", value=family)
+            identity = f"pair/{component_a}/{component_b}/{family}"
+            family, parameter_value, spec, provenance = _coefficient(
+                coefficient_raw,
+                field=coefficient_field,
+                allowed_families=_PAIR_COEFFICIENTS,
+                expected_identity=identity,
+            )
+            records.append(
+                PairParameterRecord(
+                    _record_id(identity),
+                    component_a,
+                    component_b,
+                    cast(Any, family),
+                    parameter_value,
+                    *provenance,
+                )
+            )
+            specs.append(spec)
+    return tuple(records), tuple(specs)
+
+
+def _model_families(value: object) -> tuple[ModelFamilySpec, ...]:
+    result = []
+    seen: set[str] = set()
+    for index, item in enumerate(_sequence(value, field="model_families")):
+        field = f"model_families[{index}]"
+        raw = _mapping(item, field=field)
+        _strict(
+            raw,
+            field=field,
+            required=frozenset({"family_id", "kind", "choice", "provenance"}),
+        )
+        kind = raw["kind"]
+        if not isinstance(kind, str) or kind not in _MODEL_CHOICES:
+            raise _error("invalid-value", field=f"{field}.kind", value=kind)
+        if kind in seen:
+            raise _error("duplicate-record", field="model_family.kind", value=kind)
+        seen.add(kind)
+        family_id = _parameter_identity(raw["family_id"], field=f"{field}.family_id")
+        if family_id != _MODEL_FAMILY_IDS[kind]:
+            raise _error("invalid-value", field=f"{field}.family_id", value=family_id)
+        choice = raw["choice"]
+        if not isinstance(choice, str) or choice not in _MODEL_CHOICES[kind]:
+            raise _error("invalid-value", field=f"{field}.choice", value=choice)
+        result.append(
+            ModelFamilySpec(
+                family_id,
+                cast(ModelFamilyKind, kind),
+                choice,
+                *_provenance(raw["provenance"], field=f"{field}.provenance"),
+            )
+        )
+    if seen != set(_MODEL_CHOICES):
+        missing = min(set(_MODEL_CHOICES) - seen)
+        raise _error("missing-record", field="model_family.kind", value=missing)
+    return tuple(sorted(result, key=lambda item: item.kind))
+
+
+def _model_coefficients(
+    value: object,
+) -> tuple[tuple[ModelParameterRecord, ...], tuple[ParameterSpec, ...]]:
+    records = []
+    specs = []
+    for index, item in enumerate(_sequence(value, field="model_coefficients")):
+        field = f"model_coefficients[{index}]"
+        raw = _mapping(item, field=field)
+        family = raw.get("family")
+        if not isinstance(family, str) or family not in _MODEL_COEFFICIENTS:
+            raise _error("invalid-value", field=f"{field}.family", value=family)
+        identity = _MODEL_IDENTITIES[family]
+        family, parameter_value, spec, provenance = _coefficient(
+            raw,
+            field=field,
+            allowed_families=_MODEL_COEFFICIENTS,
+            expected_identity=identity,
+        )
         records.append(
             ModelParameterRecord(
-                f"dictionary-{family.replace('_', '-')}",
-                family,  # type: ignore[arg-type]
-                value,
-                "dictionary-input",
-                f"options.{family}",
-                "dictionary-validity",
+                _record_id(identity), cast(Any, family), parameter_value, *provenance
             )
         )
-    return tuple(records)
+        specs.append(spec)
+    return tuple(records), tuple(specs)
 
 
-def _sites(raw: object, component_ids: tuple[str, ...]) -> tuple[SiteRecord, ...]:
-    if raw is _MISSING:
-        return ()
-    records = []
-    for index, value in enumerate(_sequence(raw, field="sites")):
-        row = _mapping(value, field=f"sites[{index}]")
-        _strict(
-            row,
-            field=f"sites[{index}]",
-            allowed=frozenset({"component_id", "site_id", "site_class", "multiplicity"}),
-            required=frozenset({"component_id", "site_id", "site_class", "multiplicity"}),
-        )
-        component_id = _identifier(row["component_id"], field="component_id")
-        if component_id not in component_ids:
-            raise _error("invalid-value", field="component_id", value=component_id)
-        site_id = _identifier(row["site_id"], field="site_id")
-        records.append(
-            SiteRecord(
-                f"dictionary-site-{index}",
-                component_id,
-                site_id,
-                row["site_class"],  # type: ignore[arg-type]
-                row["multiplicity"],  # type: ignore[arg-type]
-                "dictionary-input",
-                f"parameters.sites[{index}]",
-                "dictionary-validity",
-            )
-        )
-    return tuple(records)
-
-
-def _association(raw: object) -> tuple[AssociationParameterRecord, ...]:
-    if raw is _MISSING:
-        return ()
-    records = []
-    required = frozenset(
-        {
-            "component_id_a",
-            "site_id_a",
-            "component_id_b",
-            "site_id_b",
-            "association_energy_over_k",
-            "association_volume",
-        }
+def _correlation_coefficient(
+    value: object,
+    *,
+    field: str,
+    identity: str,
+    family: str,
+    provenance: tuple[str, str, str],
+) -> tuple[object, ParameterSpec]:
+    raw = _mapping(value, field=field)
+    _strict(raw, field=field, required=frozenset({"identity", "value"}))
+    observed = _parameter_identity(raw["identity"], field=f"{field}.identity")
+    if observed != identity:
+        raise _error("invalid-value", field=f"{field}.identity", expected=identity, value=observed)
+    parameter_value, unit = _measurement(raw["value"], family=family, field=f"{field}.value")
+    return parameter_value, ParameterSpec(
+        identity, family, parameter_value, unit, True, *provenance
     )
-    for index, value in enumerate(_sequence(raw, field="association")):
-        row = _mapping(value, field=f"association[{index}]")
-        _strict(row, field=f"association[{index}]", allowed=required, required=required)
-        for family, unit in (
-            ("association_energy_over_k", "kelvin"),
-            ("association_volume", None),
-        ):
-            records.append(
-                AssociationParameterRecord(
-                    f"dictionary-association-{index}-{family.replace('_', '-')}",
-                    row["component_id_a"],  # type: ignore[arg-type]
-                    row["site_id_a"],  # type: ignore[arg-type]
-                    row["component_id_b"],  # type: ignore[arg-type]
-                    row["site_id_b"],  # type: ignore[arg-type]
-                    family,  # type: ignore[arg-type]
-                    _quantity(row[family], unit, field=family),
-                    "dictionary-input",
-                    f"parameters.association[{index}].{family}",
-                    "dictionary-validity",
-                )
-            )
-    return tuple(records)
 
 
 def _correlations(
-    raw: object,
-) -> tuple[ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation, ...]:
-    if raw is _MISSING:
-        return ()
+    value: object,
+    component_ids: frozenset[str],
+) -> tuple[
+    tuple[ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation, ...],
+    tuple[ParameterSpec, ...],
+]:
     records: list[ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation] = []
-    allowed = frozenset({"component_id", "family", "form", "constant", "terms"})
-    for index, value in enumerate(_sequence(raw, field="correlations")):
-        row = _mapping(value, field=f"correlations[{index}]")
+    specs = []
+    for index, item in enumerate(_sequence(value, field="correlations")):
+        field = f"correlations[{index}]"
+        raw = _mapping(item, field=field)
         _strict(
-            row,
-            field=f"correlations[{index}]",
-            allowed=allowed,
-            required=frozenset({"component_id", "family", "form", "constant"}),
+            raw,
+            field=field,
+            required=frozenset(
+                {
+                    "correlation_id",
+                    "component_id",
+                    "family",
+                    "form",
+                    "independent_variables",
+                    "constant",
+                    "provenance",
+                }
+            ),
+            optional=frozenset({"terms"}),
         )
-        family = row["family"]
+        component_id = _identifier(raw["component_id"], field=f"{field}.component_id")
+        if component_id not in component_ids:
+            raise _error("missing-record", field=f"{field}.component_id", value=component_id)
+        family = raw["family"]
         if family not in {"segment_diameter", "relative_permittivity", "solvation_factor"}:
-            raise _error("invalid-value", field="correlation.family", value=family)
-        unit = "angstrom" if family == "segment_diameter" else None
-        common: dict[str, Any] = {
-            "record_id": f"dictionary-correlation-{index}",
-            "component_id": row["component_id"],
-            "family": family,
-            "constant": _quantity(row["constant"], unit, field="constant"),
-            "source_id": "dictionary-input",
-            "locator": f"parameters.correlations[{index}]",
-            "domain_id": "dictionary-validity",
-        }
-        if row["form"] == "constant":
-            if "terms" in row:
-                raise _error("invalid-schema", field="correlation.terms", value="extraneous")
-            records.append(ConstantCorrelation(**common))
-        elif row["form"] == "constant-plus-sum-of-exponentials":
-            if family != "segment_diameter" or "terms" not in row:
-                raise _error("invalid-value", field="correlation.form", value=row["form"])
-            terms = []
-            for term_index, term_value in enumerate(
-                _sequence(row["terms"], field="correlation.terms")
-            ):
-                term = _mapping(term_value, field=f"correlation.terms[{term_index}]")
-                _strict(
-                    term,
-                    field=f"correlation.terms[{term_index}]",
-                    allowed=frozenset({"amplitude", "exponent_coefficient_per_k"}),
-                    required=frozenset({"amplitude", "exponent_coefficient_per_k"}),
+            raise _error("invalid-value", field=f"{field}.family", value=family)
+        form = raw["form"]
+        if form not in {"constant", "constant-plus-sum-of-exponentials"}:
+            raise _error("invalid-correlation", field=f"{field}.form", value=form)
+        if form == "constant-plus-sum-of-exponentials" and family != "segment_diameter":
+            raise _error("invalid-correlation", field=f"{field}.form", family=family)
+        correlation_id = f"component/{component_id}/{family}/{form}"
+        observed_id = _parameter_identity(raw["correlation_id"], field=f"{field}.correlation_id")
+        if observed_id != correlation_id:
+            raise _error("invalid-value", field=f"{field}.correlation_id", value=observed_id)
+        independent = _sequence(
+            raw["independent_variables"], field=f"{field}.independent_variables"
+        )
+        expected_independent = () if form == "constant" else ("temperature",)
+        if independent != expected_independent:
+            raise _error(
+                "invalid-correlation",
+                field=f"{field}.independent_variables",
+                value=independent,
+            )
+        provenance = _provenance(raw["provenance"], field=f"{field}.provenance")
+        constant, constant_spec = _correlation_coefficient(
+            raw["constant"],
+            field=f"{field}.constant",
+            identity=f"{correlation_id}/constant",
+            family=family,
+            provenance=provenance,
+        )
+        specs.append(constant_spec)
+        if form == "constant":
+            if "terms" in raw:
+                raise _error("invalid-schema", field=f"{field}.terms", value="extraneous")
+            records.append(
+                ConstantCorrelation(
+                    _record_id(correlation_id),
+                    component_id,
+                    family,
+                    constant,
+                    *provenance,
+                    correlation_id=correlation_id,
                 )
-                terms.append(
-                    ExponentialTerm(
-                        unit_registry.Quantity(
-                            _decimal_number(term["amplitude"], field="amplitude"), "angstrom"
-                        ),
-                        unit_registry.Quantity(
-                            _decimal_number(
-                                term["exponent_coefficient_per_k"],
-                                field="exponent_coefficient_per_k",
-                            ),
-                            "1 / kelvin",
-                        ),
-                    )
+            )
+            continue
+        if "terms" not in raw:
+            raise _error("invalid-schema", field=field, missing="terms")
+        terms = []
+        for term_index, item_term in enumerate(_sequence(raw["terms"], field=f"{field}.terms")):
+            term_field = f"{field}.terms[{term_index}]"
+            term = _mapping(item_term, field=term_field)
+            _strict(
+                term,
+                field=term_field,
+                required=frozenset({"amplitude", "exponent_coefficient"}),
+            )
+            prefix = f"{correlation_id}/term-{term_index}"
+            amplitude, amplitude_spec = _correlation_coefficient(
+                term["amplitude"],
+                field=f"{term_field}.amplitude",
+                identity=f"{prefix}/amplitude",
+                family="segment_diameter",
+                provenance=provenance,
+            )
+            exponent, exponent_spec = _correlation_coefficient(
+                term["exponent_coefficient"],
+                field=f"{term_field}.exponent_coefficient",
+                identity=f"{prefix}/exponent_coefficient",
+                family="exponential_temperature_coefficient",
+                provenance=provenance,
+            )
+            terms.append(
+                ExponentialTerm(
+                    amplitude,
+                    exponent,
+                    amplitude_identity=amplitude_spec.identity,
+                    exponent_identity=exponent_spec.identity,
                 )
-            records.append(ConstantPlusSumOfExponentialsCorrelation(**common, terms=tuple(terms)))
-        else:
-            raise _error("invalid-value", field="correlation.form", value=row["form"])
-    return tuple(records)
+            )
+            specs.extend((amplitude_spec, exponent_spec))
+        records.append(
+            ConstantPlusSumOfExponentialsCorrelation(
+                _record_id(correlation_id),
+                component_id,
+                "segment_diameter",
+                constant,
+                tuple(terms),
+                *provenance,
+                correlation_id=correlation_id,
+            )
+        )
+    return tuple(records), tuple(specs)
 
 
-def _records_from_dictionary(value: object) -> _DictionaryRecords:
-    raw = _mapping(value, field="dictionary")
+def _endpoint(
+    value: object,
+    *,
+    field: str,
+    sites: frozenset[tuple[str, str]],
+) -> tuple[str, str]:
+    raw = _mapping(value, field=field)
+    _strict(raw, field=field, required=frozenset({"component_id", "site_id"}))
+    endpoint = (
+        _identifier(raw["component_id"], field=f"{field}.component_id"),
+        _identifier(raw["site_id"], field=f"{field}.site_id"),
+    )
+    if endpoint not in sites:
+        raise _error("missing-record", field=field, value=endpoint)
+    return endpoint
+
+
+def _provenance_list(value: object, *, field: str) -> tuple[tuple[str, str, str], ...]:
+    result = tuple(
+        _provenance(item, field=f"{field}[{index}]")
+        for index, item in enumerate(_sequence(value, field=field))
+    )
+    if not result:
+        raise _error("invalid-value", field=field, value="empty")
+    if len(result) != len(set(result)):
+        raise _error("duplicate-record", field=field)
+    return tuple(sorted(result))
+
+
+def _edge_value(
+    value: object,
+    *,
+    field: str,
+    identity: str,
+    family: str,
+    provenance: tuple[str, str, str],
+) -> tuple[object, ParameterSpec]:
+    raw = _mapping(value, field=field)
+    _strict(raw, field=field, required=frozenset({"identity", "value"}))
+    observed = _parameter_identity(raw["identity"], field=f"{field}.identity")
+    if observed != identity:
+        raise _error("invalid-value", field=f"{field}.identity", expected=identity, value=observed)
+    parameter_value, unit = _measurement(raw["value"], family=family, field=f"{field}.value")
+    return parameter_value, ParameterSpec(
+        identity, family, parameter_value, unit, True, *provenance
+    )
+
+
+def _edge_records(
+    edge: AssociationEdge,
+) -> tuple[AssociationParameterRecord, AssociationParameterRecord]:
+    provenance = edge.source.provenance[0]
+    common = (
+        edge.endpoint_a[0],
+        edge.endpoint_a[1],
+        edge.endpoint_b[0],
+        edge.endpoint_b[1],
+    )
+    return (
+        AssociationParameterRecord(
+            _record_id(edge.energy_identity),
+            *common,
+            "association_energy_over_k",
+            edge.energy_over_k,
+            *provenance,
+        ),
+        AssociationParameterRecord(
+            _record_id(edge.volume_identity),
+            *common,
+            "association_volume",
+            edge.volume,
+            *provenance,
+        ),
+    )
+
+
+def _explicit_edge(
+    raw: dict[str, object],
+    *,
+    field: str,
+    endpoint_a: tuple[str, str],
+    endpoint_b: tuple[str, str],
+) -> tuple[AssociationEdge, tuple[ParameterSpec, ParameterSpec]]:
     _strict(
         raw,
-        field="dictionary",
-        allowed=_TOP_LEVEL,
-        required=_TOP_LEVEL,
+        field=field,
+        required=frozenset({"endpoint_a", "endpoint_b", "energy_over_k", "volume", "source"}),
     )
+    source_raw = _mapping(raw["source"], field=f"{field}.source")
+    _strict(
+        source_raw,
+        field=f"{field}.source",
+        required=frozenset({"kind", "provenance"}),
+    )
+    if source_raw["kind"] != "explicit":
+        raise _error("invalid-value", field=f"{field}.source.kind", value=source_raw["kind"])
+    provenance = _provenance_list(source_raw["provenance"], field=f"{field}.source.provenance")
+    prefix = f"association/{endpoint_a[0]}/{endpoint_a[1]}/{endpoint_b[0]}/{endpoint_b[1]}"
+    energy_identity = f"{prefix}/energy_over_k"
+    volume_identity = f"{prefix}/volume"
+    energy, energy_spec = _edge_value(
+        raw["energy_over_k"],
+        field=f"{field}.energy_over_k",
+        identity=energy_identity,
+        family="association_energy_over_k",
+        provenance=provenance[0],
+    )
+    volume, volume_spec = _edge_value(
+        raw["volume"],
+        field=f"{field}.volume",
+        identity=volume_identity,
+        family="association_volume",
+        provenance=provenance[0],
+    )
+    return (
+        AssociationEdge(
+            endpoint_a,
+            endpoint_b,
+            energy_identity,
+            volume_identity,
+            energy,
+            volume,
+            AssociationEdgeSource("explicit", None, provenance, (), ()),
+        ),
+        (energy_spec, volume_spec),
+    )
+
+
+def _rule_inputs(value: object, *, field: str) -> tuple[tuple[str, str], tuple[str, str]]:
+    raw = _mapping(value, field=field)
+    _strict(raw, field=field, required=frozenset({"energy_over_k", "volume"}))
+    result = []
+    for family in ("energy_over_k", "volume"):
+        identities = tuple(
+            _parameter_identity(item, field=f"{field}.{family}")
+            for item in _sequence(raw[family], field=f"{field}.{family}")
+        )
+        if len(identities) != 2 or len(set(identities)) != 2:
+            raise _error("invalid-value", field=f"{field}.{family}", value=identities)
+        result.append(tuple(sorted(identities)))
+    return cast(tuple[tuple[str, str], tuple[str, str]], tuple(result))
+
+
+def _association_input_edge(
+    identity: str,
+    *,
+    family: str,
+    field: str,
+) -> tuple[tuple[str, str], tuple[str, str]]:
+    parts = identity.split("/")
+    if len(parts) != 6 or parts[0] != "association" or parts[5] != family:
+        raise _error("invalid-value", field=field, value=identity)
+    endpoints = tuple(sorted(((parts[1], parts[2]), (parts[3], parts[4]))))
+    if endpoints[0][0] != endpoints[1][0]:
+        raise _error(
+            "invalid-value",
+            field=field,
+            value=identity,
+            reason="combining-input-must-be-self-edge",
+        )
+    return cast(tuple[tuple[str, str], tuple[str, str]], endpoints)
+
+
+def _validate_combining_inputs(
+    *,
+    field: str,
+    endpoint_a: tuple[str, str],
+    endpoint_b: tuple[str, str],
+    energy_inputs: tuple[str, str],
+    volume_inputs: tuple[str, str],
+    site_roles: Mapping[tuple[str, str], str],
+) -> None:
+    output_endpoints = (endpoint_a, endpoint_b)
+    if endpoint_a[0] == endpoint_b[0]:
+        raise _error(
+            "invalid-value",
+            field=field,
+            reason="combining-rule-requires-cross-component-edge",
+        )
+    if {site_roles[endpoint] for endpoint in output_endpoints} != {"donor", "acceptor"}:
+        raise _error(
+            "invalid-value",
+            field=field,
+            reason="combining-rule-requires-donor-acceptor-edge",
+        )
+    expected_components = {endpoint_a[0], endpoint_b[0]}
+    input_edge_sets: dict[
+        str,
+        frozenset[tuple[tuple[str, str], tuple[str, str]]],
+    ] = {}
+    for family, identities in (
+        ("energy_over_k", energy_inputs),
+        ("volume", volume_inputs),
+    ):
+        input_edges = tuple(
+            _association_input_edge(
+                identity,
+                family=family,
+                field=f"{field}.source.inputs.{family}",
+            )
+            for identity in identities
+        )
+        input_edge_sets[family] = frozenset(input_edges)
+        if {edge[0][0] for edge in input_edges} != expected_components:
+            raise _error(
+                "invalid-value",
+                field=f"{field}.source.inputs.{family}",
+                reason="combining-input-components-do-not-match-edge",
+            )
+        for output_endpoint in output_endpoints:
+            matching = tuple(edge for edge in input_edges if edge[0][0] == output_endpoint[0])
+            if len(matching) != 1 or output_endpoint not in matching[0]:
+                raise _error(
+                    "invalid-value",
+                    field=f"{field}.source.inputs.{family}",
+                    reason="combining-input-site-does-not-match-edge",
+                )
+            if {site_roles[endpoint] for endpoint in matching[0]} != {"donor", "acceptor"}:
+                raise _error(
+                    "invalid-value",
+                    field=f"{field}.source.inputs.{family}",
+                    reason="combining-input-must-be-donor-acceptor-self-edge",
+                )
+    if input_edge_sets["energy_over_k"] != input_edge_sets["volume"]:
+        raise _error(
+            "invalid-value",
+            field=f"{field}.source.inputs",
+            reason="combining-input-families-must-use-the-same-self-edges",
+        )
+
+
+def _combining_edge(
+    raw: dict[str, object],
+    *,
+    field: str,
+    endpoint_a: tuple[str, str],
+    endpoint_b: tuple[str, str],
+    explicit_values: Mapping[str, tuple[str, object]],
+    site_roles: Mapping[tuple[str, str], str],
+) -> tuple[AssociationEdge, tuple[ParameterSpec, ParameterSpec]]:
+    _strict(
+        raw,
+        field=field,
+        required=frozenset({"endpoint_a", "endpoint_b", "source"}),
+    )
+    source_raw = _mapping(raw["source"], field=f"{field}.source")
+    _strict(
+        source_raw,
+        field=f"{field}.source",
+        required=frozenset({"kind", "rule_id", "inputs", "provenance"}),
+    )
+    if source_raw["kind"] != "combining-rule":
+        raise _error("invalid-value", field=f"{field}.source.kind", value=source_raw["kind"])
+    rule_id = source_raw["rule_id"]
+    if rule_id != "arithmetic-energy-geometric-volume":
+        raise _error("invalid-value", field=f"{field}.source.rule_id", value=rule_id)
+    energy_inputs, volume_inputs = _rule_inputs(
+        source_raw["inputs"], field=f"{field}.source.inputs"
+    )
+    _validate_combining_inputs(
+        field=field,
+        endpoint_a=endpoint_a,
+        endpoint_b=endpoint_b,
+        energy_inputs=energy_inputs,
+        volume_inputs=volume_inputs,
+        site_roles=site_roles,
+    )
+    for identity in energy_inputs:
+        if explicit_values.get(identity, (None,))[0] != "association_energy_over_k":
+            raise _error("missing-record", field=f"{field}.source.inputs", value=identity)
+    for identity in volume_inputs:
+        if explicit_values.get(identity, (None,))[0] != "association_volume":
+            raise _error("missing-record", field=f"{field}.source.inputs", value=identity)
+    energy_values = tuple(
+        cast(pint.Quantity[Any], explicit_values[item][1]) for item in energy_inputs
+    )
+    volume_values = tuple(cast(Decimal, explicit_values[item][1]) for item in volume_inputs)
+    energy = (energy_values[0] + energy_values[1]) * Decimal("0.5")
+    volume = (volume_values[0] * volume_values[1]).sqrt()
+    prefix = f"association/{endpoint_a[0]}/{endpoint_a[1]}/{endpoint_b[0]}/{endpoint_b[1]}"
+    energy_identity = f"{prefix}/energy_over_k"
+    volume_identity = f"{prefix}/volume"
+    derivatives = (
+        *(
+            AssociationDerivativeSource(energy_identity, identity, Decimal("0.5"))
+            for identity in energy_inputs
+        ),
+        *(
+            AssociationDerivativeSource(
+                volume_identity,
+                identity,
+                volume / (Decimal(2) * value),
+            )
+            for identity, value in zip(volume_inputs, volume_values, strict=True)
+        ),
+    )
+    provenance = _provenance_list(source_raw["provenance"], field=f"{field}.source.provenance")
+    source = AssociationEdgeSource(
+        "combining-rule",
+        rule_id,
+        provenance,
+        (*energy_inputs, *volume_inputs),
+        derivatives,
+    )
+    edge = AssociationEdge(
+        endpoint_a,
+        endpoint_b,
+        energy_identity,
+        volume_identity,
+        energy,
+        volume,
+        source,
+    )
+    energy_spec = ParameterSpec(
+        energy_identity,
+        "association_energy_over_k",
+        energy,
+        "kelvin",
+        False,
+        *provenance[0],
+    )
+    volume_spec = ParameterSpec(
+        volume_identity,
+        "association_volume",
+        volume,
+        "dimensionless",
+        False,
+        *provenance[0],
+    )
+    return edge, (energy_spec, volume_spec)
+
+
+def _topology(
+    value: object,
+    component_ids: frozenset[str],
+) -> tuple[
+    AssociationTopology,
+    tuple[SiteRecord, ...],
+    tuple[AssociationParameterRecord, ...],
+    tuple[ParameterSpec, ...],
+]:
+    raw = _mapping(value, field="topology")
+    _strict(
+        raw,
+        field="topology",
+        required=frozenset({"presets", "sites", "edges"}),
+    )
+
+    presets: list[tuple[str, AssociationPreset]] = []
+    sites: list[SiteRecord] = []
+    preset_components: set[str] = set()
+    for index, item in enumerate(_sequence(raw["presets"], field="topology.presets")):
+        field = f"topology.presets[{index}]"
+        preset_raw = _mapping(item, field=field)
+        _strict(
+            preset_raw,
+            field=field,
+            required=frozenset({"component_id", "preset", "provenance"}),
+        )
+        component_id = _identifier(preset_raw["component_id"], field=f"{field}.component_id")
+        if component_id not in component_ids:
+            raise _error("missing-record", field=f"{field}.component_id", value=component_id)
+        preset = preset_raw["preset"]
+        if not isinstance(preset, str) or preset not in _PRESET_SITES:
+            raise _error("invalid-value", field=f"{field}.preset", value=preset)
+        if component_id in preset_components:
+            raise _error("duplicate-record", field="topology.preset.component_id")
+        preset_components.add(component_id)
+        provenance = _provenance(preset_raw["provenance"], field=f"{field}.provenance")
+        presets.append((component_id, cast(AssociationPreset, preset)))
+        for site_id, site_role in _PRESET_SITES[preset]:
+            sites.append(
+                SiteRecord(
+                    f"site-{component_id}-{site_id}",
+                    component_id,
+                    site_id,
+                    cast(Any, site_role),
+                    1,
+                    *provenance,
+                )
+            )
+
+    for index, item in enumerate(_sequence(raw["sites"], field="topology.sites")):
+        field = f"topology.sites[{index}]"
+        site_raw = _mapping(item, field=field)
+        _strict(
+            site_raw,
+            field=field,
+            required=frozenset(
+                {"component_id", "site_id", "site_role", "multiplicity", "provenance"}
+            ),
+        )
+        component_id = _identifier(site_raw["component_id"], field=f"{field}.component_id")
+        if component_id not in component_ids:
+            raise _error("missing-record", field=f"{field}.component_id", value=component_id)
+        if component_id in preset_components:
+            raise _error(
+                "invalid-schema",
+                field=field,
+                reason="preset-and-explicit-sites",
+            )
+        provenance = _provenance(site_raw["provenance"], field=f"{field}.provenance")
+        sites.append(
+            SiteRecord(
+                f"site-{component_id}-{site_raw['site_id']}",
+                component_id,
+                cast(str, site_raw["site_id"]),
+                cast(Any, site_raw["site_role"]),
+                cast(int, site_raw["multiplicity"]),
+                *provenance,
+            )
+        )
+
+    ordered_sites = tuple(sorted(sites, key=lambda item: (item.component_id, item.site_id)))
+    site_keys = frozenset((site.component_id, site.site_id) for site in ordered_sites)
+    site_roles = {(site.component_id, site.site_id): site.site_role for site in ordered_sites}
+    if len(site_keys) != len(ordered_sites):
+        raise _error("duplicate-record", field="topology.site")
+
+    pending: list[
+        tuple[
+            str,
+            dict[str, object],
+            tuple[str, str],
+            tuple[str, str],
+        ]
+    ] = []
+    edge_keys: set[tuple[tuple[str, str], tuple[str, str]]] = set()
+    for index, item in enumerate(_sequence(raw["edges"], field="topology.edges")):
+        field = f"topology.edges[{index}]"
+        edge_raw = _mapping(item, field=field)
+        endpoint_a = _endpoint(
+            edge_raw.get("endpoint_a"), field=f"{field}.endpoint_a", sites=site_keys
+        )
+        endpoint_b = _endpoint(
+            edge_raw.get("endpoint_b"), field=f"{field}.endpoint_b", sites=site_keys
+        )
+        endpoint_a, endpoint_b = sorted((endpoint_a, endpoint_b))
+        edge_key = (endpoint_a, endpoint_b)
+        if edge_key in edge_keys:
+            raise _error("duplicate-record", field="topology.edge", value=edge_key)
+        edge_keys.add(edge_key)
+        source_raw = _mapping(edge_raw.get("source"), field=f"{field}.source")
+        kind = source_raw.get("kind")
+        if kind not in {"explicit", "combining-rule"}:
+            raise _error("invalid-value", field=f"{field}.source.kind", value=kind)
+        pending.append((field, edge_raw, endpoint_a, endpoint_b))
+
+    edges: list[AssociationEdge] = []
+    specs: list[ParameterSpec] = []
+    explicit_values: dict[str, tuple[str, object]] = {}
+    for field, edge_raw, endpoint_a, endpoint_b in pending:
+        source_raw = _mapping(edge_raw["source"], field=f"{field}.source")
+        if source_raw["kind"] != "explicit":
+            continue
+        edge, edge_specs = _explicit_edge(
+            edge_raw,
+            field=field,
+            endpoint_a=endpoint_a,
+            endpoint_b=endpoint_b,
+        )
+        edges.append(edge)
+        specs.extend(edge_specs)
+        explicit_values[edge.energy_identity] = (
+            "association_energy_over_k",
+            edge.energy_over_k,
+        )
+        explicit_values[edge.volume_identity] = ("association_volume", edge.volume)
+
+    for field, edge_raw, endpoint_a, endpoint_b in pending:
+        source_raw = _mapping(edge_raw["source"], field=f"{field}.source")
+        if source_raw["kind"] != "combining-rule":
+            continue
+        edge, edge_specs = _combining_edge(
+            edge_raw,
+            field=field,
+            endpoint_a=endpoint_a,
+            endpoint_b=endpoint_b,
+            explicit_values=explicit_values,
+            site_roles=site_roles,
+        )
+        edges.append(edge)
+        specs.extend(edge_specs)
+
+    ordered_edges = tuple(sorted(edges, key=lambda edge: (edge.endpoint_a, edge.endpoint_b)))
+    associations = tuple(record for edge in ordered_edges for record in _edge_records(edge))
+    return (
+        AssociationTopology(tuple(sorted(presets)), ordered_sites, ordered_edges),
+        ordered_sites,
+        associations,
+        tuple(sorted(specs, key=lambda item: item.identity)),
+    )
+
+
+def _validate_document(
+    *,
+    sources: tuple[SourceRecord, ...],
+    domains: tuple[ValidityDomain, ...],
+    components: tuple[ComponentRecord, ...],
+    records: tuple[
+        SingleParameterRecord
+        | PairParameterRecord
+        | AssociationParameterRecord
+        | ConstantCorrelation
+        | ConstantPlusSumOfExponentialsCorrelation
+        | ModelParameterRecord
+        | SiteRecord,
+        ...,
+    ],
+    model_families: tuple[ModelFamilySpec, ...],
+    topology: AssociationTopology,
+    parameter_specs: tuple[ParameterSpec, ...],
+) -> None:
+    def unique(values: Sequence[str], field: str) -> None:
+        if len(values) != len(set(values)):
+            raise _error("duplicate-record", field=field)
+
+    if not sources or not domains or not components:
+        raise _error("missing-record", field="sources-domains-components")
+    unique(tuple(item.source_id for item in sources), "source_id")
+    unique(tuple(item.domain_id for item in domains), "domain_id")
+    unique(tuple(item.component_id for item in components), "component_id")
+    unique(tuple(item.record_id for item in records), "record_id")
+    unique(tuple(item.identity for item in parameter_specs), "parameter_identity")
+
+    source_ids = {item.source_id for item in sources}
+    domain_ids = {item.domain_id for item in domains}
+    component_ids = {item.component_id for item in components}
+
+    provenance_owners: list[object] = [*records, *model_families, *parameter_specs]
+    for owner in provenance_owners:
+        source_id = getattr(owner, "source_id", None)
+        domain_id = getattr(owner, "domain_id", None)
+        if source_id is not None and source_id not in source_ids:
+            raise _error("invalid-source", source_id=source_id)
+        if domain_id is not None and domain_id not in domain_ids:
+            raise _error("invalid-domain", domain_id=domain_id)
+    for edge in topology.edges:
+        for source_id, _, domain_id in edge.source.provenance:
+            if source_id not in source_ids:
+                raise _error("invalid-source", source_id=source_id)
+            if domain_id not in domain_ids:
+                raise _error("invalid-domain", domain_id=domain_id)
+
+    for record in records:
+        for attribute in ("component_id", "component_id_a", "component_id_b"):
+            component_id = getattr(record, attribute, None)
+            if component_id is not None and component_id not in component_ids:
+                raise _error("missing-record", field=attribute, value=component_id)
+
+    fixed_identities = {
+        record.identity
+        for record in records
+        if isinstance(record, SingleParameterRecord) and record.family in _FIXED_FAMILIES
+    }
+    if fixed_identities & {item.identity for item in parameter_specs}:
+        raise _error("invalid-schema", field="parameter_specs", reason="fixed-coordinate")
+    derived_identities = {
+        identity
+        for edge in topology.edges
+        if edge.source.kind == "combining-rule"
+        for identity in (edge.energy_identity, edge.volume_identity)
+    }
+    noncontinuous_identities = {item.identity for item in parameter_specs if not item.continuous}
+    if noncontinuous_identities != derived_identities:
+        raise _error(
+            "invalid-schema",
+            field="parameter_specs",
+            reason="derived-coordinate-classification",
+        )
+
+    direct_component_families = {
+        (record.component_id, record.family)
+        for record in records
+        if isinstance(record, SingleParameterRecord)
+    }
+    correlation_families = {
+        (record.component_id, record.family)
+        for record in records
+        if isinstance(record, (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation))
+    }
+    if direct_component_families & correlation_families:
+        raise _error("duplicate-record", field="component-correlation-family")
+
+    family_choices = {item.kind: item.choice for item in model_families}
+    has_association = bool(topology.sites or topology.edges)
+    if family_choices["association"] == "none" and has_association:
+        raise _error("invalid-schema", field="topology", reason="association-disabled")
+    if family_choices["association"] == "general-site" and (
+        not topology.sites or not topology.edges
+    ):
+        raise _error("missing-record", field="topology", reason="association-enabled")
+
+
+def _records_from_mapping(value: object) -> _DocumentRecords:
+    raw = _mapping(value, field="parameters")
+    _strict(raw, field="parameters", required=_TOP_LEVEL)
     if raw["schema"] != "epcsaft.parameters" or raw["schema_version"] != 1:
         raise _error("invalid-schema", field="schema", value=raw.get("schema_version"))
+    document_id = _identifier(raw["document_id"], field="document_id")
+    document_version = _positive_version(raw["document_version"], field="document_version")
+    purpose = raw["purpose"]
+    if purpose not in {
+        "external-document",
+        "package-test-fixture",
+        "regression-output",
+        "user-provided",
+    }:
+        raise _error("invalid-value", field="purpose", value=purpose)
 
-    component_ids = tuple(
-        _identifier(component, field="component_id")
-        for component in _sequence(raw["components"], field="components")
-    )
-    if not component_ids or len(component_ids) != len(set(component_ids)):
-        raise _error("invalid-selection", field="components", value="empty-or-duplicate")
-
-    parameters = _mapping(raw["parameters"], field="parameters")
-    options = _mapping(raw["options"], field="options")
-    _strict(parameters, field="parameters", allowed=_PARAMETER_KEYS)
-    _strict(options, field="options", allowed=_OPTION_KEYS)
-    domain = _validity(raw["validity"])
-    return _DictionaryRecords(
-        component_ids=component_ids,
-        bundle_id="dictionary-parameters",
-        bundle_version=1,
-        purpose="user-provided",
-        sources=(
-            SourceRecord(
-                "dictionary-input",
-                "Caller-supplied source-neutral parameter dictionary",
-                "Explicit fixed-unit values",
+    sources = _sources(raw["sources"])
+    domains = _domains(raw["domains"])
+    components, singles, component_specs = _components(raw["components"])
+    component_ids = frozenset(item.component_id for item in components)
+    pairs, pair_specs = _pairs(raw["pairs"], component_ids)
+    model_families = _model_families(raw["model_families"])
+    models, model_specs = _model_coefficients(raw["model_coefficients"])
+    correlations, correlation_specs = _correlations(raw["correlations"], component_ids)
+    topology, sites, associations, association_specs = _topology(raw["topology"], component_ids)
+    parameter_specs = tuple(
+        sorted(
+            (
+                *component_specs,
+                *pair_specs,
+                *model_specs,
+                *correlation_specs,
+                *association_specs,
             ),
-        ),
-        domains=(domain,),
-        components=tuple(ComponentRecord(component) for component in component_ids),
-        singles=_single_records(parameters, component_ids),
-        pairs=_pair_records(parameters, component_ids),
-        sites=_sites(parameters.get("sites", _MISSING), component_ids),
-        associations=_association(parameters.get("association", _MISSING)),
-        correlations=_correlations(parameters.get("correlations", _MISSING)),
-        models=_model_records(options),
+            key=lambda item: item.identity,
+        )
+    )
+    records = (
+        *singles,
+        *pairs,
+        *sites,
+        *associations,
+        *correlations,
+        *models,
+    )
+    _validate_document(
+        sources=sources,
+        domains=domains,
+        components=components,
+        records=records,
+        model_families=model_families,
+        topology=topology,
+        parameter_specs=parameter_specs,
+    )
+    return _DocumentRecords(
+        component_ids=tuple(item.component_id for item in components),
+        document_id=document_id,
+        document_version=document_version,
+        purpose=purpose,
+        sources=sources,
+        domains=domains,
+        components=components,
+        singles=singles,
+        pairs=pairs,
+        sites=sites,
+        associations=associations,
+        correlations=correlations,
+        models=models,
+        model_families=model_families,
+        topology=topology,
+        parameter_specs=parameter_specs,
     )
 
 
-__all__ = ("_records_from_dictionary",)
+__all__ = ("_records_from_mapping",)

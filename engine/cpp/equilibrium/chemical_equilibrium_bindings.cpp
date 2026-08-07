@@ -1,9 +1,7 @@
 #include "chemical_equilibrium.hpp"
-#include "chemical_observation.hpp"
 #include "provider.hpp"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <cstddef>
 #include <stdexcept>
@@ -14,71 +12,61 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include <epcsaft/native_sdk_v1.h>
+#include "native_transport.hpp"
 
 namespace py = pybind11;
 
 namespace epcsaft_engine::equilibrium {
 namespace {
 
-constexpr std::size_t kChemicalSourceDomainSdkTableSize =
-    offsetof(epcsaft_native_sdk_v1, total_ion_mole_fraction_max) + sizeof(double);
-constexpr std::size_t kChemicalNeutralReferenceSizeSdkTableSize =
-    offsetof(epcsaft_native_sdk_v1, neutral_reference_result_size)
-    + sizeof(std::size_t);
-constexpr std::size_t kChemicalNeutralReferenceDerivativeSizeSdkTableSize =
-    offsetof(epcsaft_native_sdk_v1, neutral_reference_derivative_result_size)
-    + sizeof(std::size_t);
-constexpr std::size_t kChemicalReactingPhaseParameterSizeSdkTableSize =
-    offsetof(epcsaft_native_sdk_v1, reacting_phase_parameter_result_size)
-    + sizeof(std::size_t);
 struct ChemicalProviderMetadata {
     std::vector<std::string> component_ids;
     std::vector<int> charges;
 };
 
-const epcsaft_native_sdk_v1& checked_chemical_sdk(const py::capsule& capsule) {
+const epcsaft_native_transport& checked_chemical_transport(
+    const py::capsule& capsule
+) {
     const char* name = capsule.name();
-    if (name == nullptr || std::string_view(name) != EPCSAFT_NATIVE_SDK_V1_CAPSULE_NAME) {
-        throw py::value_error("expected capsule epcsaft.native_sdk.v1");
+    if (name == nullptr
+        || std::string_view(name) != EPCSAFT_NATIVE_TRANSPORT_CAPSULE_NAME) {
+        throw py::value_error("expected private Engine native transport");
     }
-    const auto* sdk = capsule.get_pointer<epcsaft_native_sdk_v1>();
-    if (sdk == nullptr || sdk->abi_version != EPCSAFT_NATIVE_SDK_V1_ABI_VERSION
-        || sdk->table_size < kChemicalSourceDomainSdkTableSize) {
-        throw py::value_error("Provider capsule is missing the reacting-phase SDK contract");
-    }
-    if (sdk->model_context == nullptr || sdk->component_count < 3
-        || sdk->component_ids == nullptr || sdk->component_charges == nullptr
-        || sdk->mixture_result_size != sizeof(epcsaft_mixture_phase_block_result_v1)
-        || sdk->evaluate_electrolyte_phase == nullptr
-        || sdk->evaluate_molar_volume_bounds == nullptr
-        || sdk->evaluate_packing_fraction == nullptr) {
+    const auto* transport = capsule.get_pointer<epcsaft_native_transport>();
+    if (transport == nullptr || transport->model_context == nullptr
+        || transport->component_count < 3
+        || transport->component_ids == nullptr
+        || transport->component_charges == nullptr
+        || transport->evaluate_electrolyte_phase == nullptr
+        || transport->evaluate_molar_volume_bounds == nullptr
+        || transport->evaluate_packing_fraction == nullptr) {
         throw py::value_error("Provider capsule is missing the reacting-phase callbacks");
     }
-    if (!std::isfinite(sdk->source_temperature_min_k)
-        || !std::isfinite(sdk->source_temperature_max_k)
-        || sdk->source_temperature_min_k <= 0.0
-        || sdk->source_temperature_max_k < sdk->source_temperature_min_k
-        || (!std::isnan(sdk->total_ion_mole_fraction_max)
-            && (!std::isfinite(sdk->total_ion_mole_fraction_max)
-                || sdk->total_ion_mole_fraction_max < 0.0
-                || sdk->total_ion_mole_fraction_max > 1.0))) {
+    if (!std::isfinite(transport->source_temperature_min_k)
+        || !std::isfinite(transport->source_temperature_max_k)
+        || transport->source_temperature_min_k <= 0.0
+        || transport->source_temperature_max_k
+            < transport->source_temperature_min_k
+        || (!std::isnan(transport->total_ion_mole_fraction_max)
+            && (!std::isfinite(transport->total_ion_mole_fraction_max)
+                || transport->total_ion_mole_fraction_max < 0.0
+                || transport->total_ion_mole_fraction_max > 1.0))) {
         throw py::value_error("Provider source-domain metadata is invalid");
     }
-    return *sdk;
+    return *transport;
 }
 
-ChemicalProviderMetadata chemical_provider_metadata(const epcsaft_native_sdk_v1& sdk) {
+ChemicalProviderMetadata chemical_provider_metadata(const epcsaft_native_transport& transport) {
     ChemicalProviderMetadata result;
-    result.component_ids.reserve(sdk.component_count);
-    result.charges.reserve(sdk.component_count);
-    for (std::size_t component = 0; component < sdk.component_count; ++component) {
-        if (sdk.component_ids[component] == nullptr
-            || sdk.component_ids[component][0] == '\0') {
+    result.component_ids.reserve(transport.component_count);
+    result.charges.reserve(transport.component_count);
+    for (std::size_t component = 0; component < transport.component_count; ++component) {
+        if (transport.component_ids[component] == nullptr
+            || transport.component_ids[component][0] == '\0') {
             throw py::value_error("Provider component identity is incomplete");
         }
-        result.component_ids.emplace_back(sdk.component_ids[component]);
-        result.charges.push_back(static_cast<int>(sdk.component_charges[component]));
+        result.component_ids.emplace_back(transport.component_ids[component]);
+        result.charges.push_back(static_cast<int>(transport.component_charges[component]));
     }
     return result;
 }
@@ -163,29 +151,6 @@ ReactionSystemInput reaction_system_input(const py::dict& spec) {
     input.temperature_k = py::cast<double>(spec["temperature_k"]);
     input.pressure_pa = py::cast<double>(spec["pressure_pa"]);
     return input;
-}
-
-py::dict amount_chart_evidence(
-    const std::vector<int>& charges,
-    const std::vector<double>& coordinates,
-    double trace_floor
-) {
-    if (!std::isfinite(trace_floor) || trace_floor <= 0.0) {
-        throw py::value_error("trace floor must be finite and positive");
-    }
-    const AmountChart chart = make_amount_chart(charges);
-    const AmountChartEvaluation evaluation = evaluate_amount_chart(chart, coordinates);
-    py::dict result;
-    result["amounts"] = evaluation.amounts;
-    result["coordinate_count"] = chart.coordinate_count();
-    result["jacobian"] = evaluation.jacobian;
-    result["amount_hessians"] = evaluation.amount_hessians;
-    result["minimum_amount"] = evaluation.minimum_amount;
-    result["charge_residual"] = evaluation.charge_residual;
-    result["trace_status"] = evaluation.minimum_amount <= trace_floor
-        ? "at_or_below_floor"
-        : "interior";
-    return result;
 }
 
 py::dict chemical_result(const ChemicalSolveResult& evaluation) {
@@ -739,85 +704,6 @@ py::dict solve_manufactured(const py::dict& spec, double trace_floor) {
     );
 }
 
-py::dict solve_manufactured_nonconvex(
-    const py::dict& spec,
-    double trace_floor,
-    int max_iterations,
-    double quadratic_strength
-) {
-    const ReactionSystemInput input = reaction_system_input(spec);
-    const CompiledReactionSystem compiled = compile_reaction_system(input);
-    return chemical_result(
-        solve_manufactured_nonconvex_reaction(
-            compiled,
-            input.temperature_k,
-            input.pressure_pa,
-            {},
-            trace_floor,
-            max_iterations,
-            quadratic_strength
-        )
-    );
-}
-
-py::dict solve_manufactured_inconsistent_derivatives(
-    const py::dict& spec,
-    double trace_floor,
-    int max_iterations
-) {
-    const ReactionSystemInput input = reaction_system_input(spec);
-    const CompiledReactionSystem compiled = compile_reaction_system(input);
-    return chemical_result(
-        solve_manufactured_inconsistent_derivative_reaction(
-            compiled,
-            input.temperature_k,
-            input.pressure_pa,
-            {},
-            trace_floor,
-            max_iterations
-        )
-    );
-}
-
-py::dict provider_block_evidence(
-    const py::capsule& capsule,
-    double temperature_k,
-    const std::vector<double>& amounts,
-    double volume_m3,
-    const std::string& expected_fingerprint
-) {
-    const epcsaft_native_sdk_v1& sdk = checked_chemical_sdk(capsule);
-    const ChemicalProviderMetadata metadata = chemical_provider_metadata(sdk);
-    if (amounts.size() != metadata.component_ids.size()) {
-        throw py::value_error("Provider component order has the wrong length");
-    }
-    if (temperature_k < sdk.source_temperature_min_k
-        || temperature_k > sdk.source_temperature_max_k) {
-        throw py::value_error("temperature is outside the Provider source domain");
-    }
-    const ProviderContext provider(sdk, expected_fingerprint);
-    const ProviderPhaseBlockEvidence evaluation = evaluate_provider_phase_block(
-        provider, temperature_k, amounts, volume_m3
-    );
-    py::dict result;
-    result["component_ids"] = metadata.component_ids;
-    result["coordinate_order"] = py::make_tuple(
-        "component_amounts_mol_in_provider_order", "volume_m3"
-    );
-    result["density_transformation"] = "rho_i_mol_per_m3=amount_i_mol/volume_m3";
-    result["helmholtz_basis"] = "dimensionless_A_over_RT";
-    result["reference_transformation"] =
-        "provider_phase_block_only; source-standard offsets are linear external terms";
-    result["value"] = evaluation.value;
-    result["gradient"] = evaluation.gradient;
-    result["hessian"] = evaluation.hessian;
-    result["pressure_pa"] = evaluation.pressure_pa;
-    result["packing_fraction"] = evaluation.packing_fraction;
-    result["packing_gradient"] = evaluation.packing_gradient;
-    result["packing_hessian"] = evaluation.packing_hessian;
-    return result;
-}
-
 void validate_provider_identity(
     const ChemicalProviderMetadata& metadata,
     const ReactionSystemInput& input
@@ -831,7 +717,7 @@ void validate_provider_identity(
 }
 
 py::dict solve_provider_input(
-    const epcsaft_native_sdk_v1& sdk,
+    const epcsaft_native_transport& transport,
     const ChemicalProviderMetadata& metadata,
     const ReactionSystemInput& input,
     const ProviderContext& provider,
@@ -842,8 +728,8 @@ py::dict solve_provider_input(
     const ProviderActiveParameterSet* active_parameters = nullptr
 ) {
     validate_provider_identity(metadata, input);
-    if (input.temperature_k < sdk.source_temperature_min_k
-        || input.temperature_k > sdk.source_temperature_max_k) {
+    if (input.temperature_k < transport.source_temperature_min_k
+        || input.temperature_k > transport.source_temperature_max_k) {
         throw py::value_error("temperature is outside the Provider source domain");
     }
     const CompiledReactionSystem compiled = compile_reaction_system(input);
@@ -855,9 +741,9 @@ py::dict solve_provider_input(
             ionic_feed += input.feed_amounts[species];
         }
     }
-    if (std::isfinite(sdk.total_ion_mole_fraction_max)
+    if (std::isfinite(transport.total_ion_mole_fraction_max)
         && (total_feed <= 0.0
-            || ionic_feed / total_feed > sdk.total_ion_mole_fraction_max)) {
+            || ionic_feed / total_feed > transport.total_ion_mole_fraction_max)) {
         throw py::value_error("feed composition exceeds the Provider source domain");
     }
     if (packing_bounds.size() != 2) {
@@ -939,7 +825,7 @@ py::dict solve_provider_input(
         input.pressure_pa,
         packing_bounds[0],
         packing_bounds[1],
-        sdk.total_ion_mole_fraction_max,
+        transport.total_ion_mole_fraction_max,
         trace_floor,
         compiled_ln_k_pressure_derivatives_per_pa,
         compiled_ln_k_parameter_derivatives,
@@ -959,23 +845,8 @@ py::dict solve_provider_input(
     py::dict result = chemical_result(evaluation);
     result["parameter_fingerprint"] = input.provider_fingerprint;
     result["packing_fraction_bounds"] = packing_bounds;
-    result["provider_sdk_capsule_name"] = EPCSAFT_NATIVE_SDK_V1_CAPSULE_NAME;
-    result["provider_sdk_abi_version"] = sdk.abi_version;
-    result["provider_sdk_table_size"] = sdk.table_size;
-    result["provider_sdk_result_size"] = sdk.result_size;
-    result["provider_sdk_mixture_result_size"] = sdk.mixture_result_size;
-    result["provider_sdk_neutral_reference_result_size"] =
-        sdk.table_size >= kChemicalNeutralReferenceSizeSdkTableSize
-        ? sdk.neutral_reference_result_size
-        : 0;
-    result["provider_sdk_neutral_reference_derivative_result_size"] =
-        sdk.table_size >= kChemicalNeutralReferenceDerivativeSizeSdkTableSize
-        ? sdk.neutral_reference_derivative_result_size
-        : 0;
-    result["provider_sdk_reacting_phase_parameter_result_size"] =
-        sdk.table_size >= kChemicalReactingPhaseParameterSizeSdkTableSize
-        ? sdk.reacting_phase_parameter_result_size
-        : 0;
+    result["provider_transport_capsule_name"] =
+        EPCSAFT_NATIVE_TRANSPORT_CAPSULE_NAME;
     return result;
 }
 
@@ -1104,8 +975,8 @@ py::dict solve_provider_source(
     bool sensitivities_requested,
     const ProviderActiveParameterSet* active_parameters
 ) {
-    const epcsaft_native_sdk_v1& sdk = checked_chemical_sdk(capsule);
-    const ChemicalProviderMetadata metadata = chemical_provider_metadata(sdk);
+    const epcsaft_native_transport& transport = checked_chemical_transport(capsule);
+    const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
     ReactionSystemInput input = reaction_system_input(spec);
     validate_provider_identity(metadata, input);
     const std::string source_standard_state_id = py::cast<std::string>(
@@ -1168,7 +1039,7 @@ py::dict solve_provider_source(
             );
         }
     }
-    const ProviderContext provider(sdk, input.provider_fingerprint);
+    const ProviderContext provider(transport, input.provider_fingerprint);
     const std::string provider_topology_fingerprint =
         provider.reacting_topology_fingerprint();
     const SourceReferenceTransferEvidence reference =
@@ -1187,8 +1058,8 @@ py::dict solve_provider_source(
         );
     }
     if (reference.topology_fingerprint != provider_topology_fingerprint
-        || reference.source_temperature_min_k != sdk.source_temperature_min_k
-        || reference.source_temperature_max_k != sdk.source_temperature_max_k
+        || reference.source_temperature_min_k != transport.source_temperature_min_k
+        || reference.source_temperature_max_k != transport.source_temperature_max_k
         || !std::isfinite(reference.source_pressure_min_pa)
         || !std::isfinite(reference.source_pressure_max_pa)
         || reference.source_pressure_min_pa <= 0.0
@@ -1217,7 +1088,7 @@ py::dict solve_provider_source(
         record.pressure_pa = input.pressure_pa;
     }
     py::dict result = solve_provider_input(
-        sdk,
+        transport,
         metadata,
         input,
         provider,
@@ -1272,14 +1143,15 @@ py::dict solve_chemical_equilibrium(
         py::cast<std::vector<double>>(packing_fraction_bounds);
     const py::capsule provider_capsule = py::cast<py::capsule>(capsule);
     if (source_standard_state.is_none()) {
-        const epcsaft_native_sdk_v1& sdk = checked_chemical_sdk(provider_capsule);
-        const ChemicalProviderMetadata metadata = chemical_provider_metadata(sdk);
+        const epcsaft_native_transport& transport =
+            checked_chemical_transport(provider_capsule);
+        const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
         const ReactionSystemInput input = reaction_system_input(spec);
-        const ProviderContext provider(sdk, input.provider_fingerprint);
+        const ProviderContext provider(transport, input.provider_fingerprint);
         const ProviderActiveParameterSet resolved =
             provider.resolve_active_parameters(input.temperature_k, active_requests);
         return solve_provider_input(
-            sdk,
+            transport,
             metadata,
             input,
             provider,
@@ -1290,9 +1162,10 @@ py::dict solve_chemical_equilibrium(
             resolved.parameters.empty() ? nullptr : &resolved
         );
     }
-    const epcsaft_native_sdk_v1& sdk = checked_chemical_sdk(provider_capsule);
+    const epcsaft_native_transport& transport =
+        checked_chemical_transport(provider_capsule);
     const ReactionSystemInput input = reaction_system_input(spec);
-    const ProviderContext provider(sdk, input.provider_fingerprint);
+    const ProviderContext provider(transport, input.provider_fingerprint);
     const ProviderActiveParameterSet resolved =
         provider.resolve_active_parameters(input.temperature_k, active_requests);
     return solve_provider_source(
@@ -1306,133 +1179,9 @@ py::dict solve_chemical_equilibrium(
     );
 }
 
-py::dict manufactured_nlp_evidence(
-    const py::dict& spec,
-    const std::vector<double>& variables,
-    const std::vector<double>& constraint_multipliers,
-    const std::vector<double>& gauge_coefficients
-) {
-    const ReactionSystemInput input = reaction_system_input(spec);
-    const ManufacturedNlpEvaluation evaluation = evaluate_manufactured_reaction_nlp(
-        compile_reaction_system(input),
-        input.temperature_k,
-        input.pressure_pa,
-        gauge_coefficients,
-        variables,
-        constraint_multipliers
-    );
-    py::dict result;
-    result["objective"] = evaluation.objective;
-    result["objective_gradient"] = evaluation.objective_gradient;
-    result["constraints"] = evaluation.constraints;
-    result["constraint_jacobian"] = evaluation.constraint_jacobian;
-    result["lagrangian_gradient"] = evaluation.lagrangian_gradient;
-    result["lagrangian_hessian"] = evaluation.lagrangian_hessian;
-    result["amounts"] = evaluation.amounts;
-    result["volume_m3"] = evaluation.volume_m3;
-    return result;
-}
-
-py::dict manufactured_inverse_log_packing_nlp_evidence(
-    const py::dict& spec,
-    const std::vector<double>& variables,
-    const std::vector<double>& constraint_multipliers,
-    const std::vector<double>& gauge_coefficients,
-    bool zero_kkt_rhs
-) {
-    const ReactionSystemInput input = reaction_system_input(spec);
-    const ManufacturedNlpEvaluation evaluation =
-        evaluate_manufactured_inverse_log_packing_nlp(
-            compile_reaction_system(input),
-            input.temperature_k,
-            input.pressure_pa,
-            gauge_coefficients,
-            variables,
-            constraint_multipliers,
-            zero_kkt_rhs
-        );
-    py::dict result;
-    result["objective"] = evaluation.objective;
-    result["objective_gradient"] = evaluation.objective_gradient;
-    result["constraints"] = evaluation.constraints;
-    result["constraint_jacobian"] = evaluation.constraint_jacobian;
-    result["lagrangian_gradient"] = evaluation.lagrangian_gradient;
-    result["lagrangian_hessian"] = evaluation.lagrangian_hessian;
-    result["amounts"] = evaluation.amounts;
-    result["volume_m3"] = evaluation.volume_m3;
-    result["kkt_backtransform_rhs"] = evaluation.kkt_backtransform_rhs;
-    result["kkt_backtransform_solution"] = evaluation.kkt_backtransform_solution;
-    return result;
-}
-
-py::dict manufactured_reduced_hessian_evidence(
-    const std::vector<double>& hessian,
-    const std::vector<double>& constraint_jacobian,
-    std::size_t constraint_count
-) {
-    const ManufacturedReducedHessianEvidence evidence =
-        analyze_manufactured_reduced_hessian(
-            hessian, constraint_jacobian, constraint_count
-        );
-    py::dict result;
-    result["positive"] = evidence.positive;
-    result["status"] = evidence.status;
-    result["curvature"] = evidence.curvature;
-    result["negative_direction"] = evidence.negative_direction;
-    result["reduced_hessian"] = evidence.reduced_hessian;
-    result["nullspace_basis"] = evidence.nullspace_basis;
-    result["nullspace_shape"] = py::make_tuple(
-        evidence.nullspace_rows, evidence.nullspace_columns
-    );
-    result["eigenvalues"] = evidence.eigenvalues;
-    result["inertia"] = evidence.inertia;
-    result["raw_inertia"] = evidence.raw_inertia;
-    result["spectrum_status"] = evidence.spectrum_status;
-    result["hessian_scale"] = evidence.hessian_scale;
-    result["eigenvalue_tolerance"] = evidence.eigenvalue_tolerance;
-    return result;
-}
-
-std::vector<double> manufactured_balance_retraction_evidence(
-    const py::dict& spec,
-    const std::vector<double>& seed,
-    const std::vector<double>& lower,
-    const std::vector<double>& upper,
-    double trace_floor
-) {
-    const ReactionSystemInput input = reaction_system_input(spec);
-    return retract_manufactured_balance(
-        compile_reaction_system(input),
-        seed,
-        lower,
-        upper,
-        trace_floor
-    );
-}
-
-std::vector<double> manufactured_recovery_displacement_evidence(
-    const std::vector<double>& variables,
-    const std::vector<double>& lower,
-    const std::vector<double>& upper,
-    const std::vector<double>& direction,
-    int sign,
-    std::size_t backtrack_index
-) {
-    return manufactured_recovery_displacement(
-        variables, lower, upper, direction, sign, backtrack_index
-    );
-}
-
 }  // namespace
 
 void bind_chemical_equilibrium(py::module_& module) {
-    module.def(
-        "_chemical_amount_chart",
-        &amount_chart_evidence,
-        py::arg("charges"),
-        py::arg("coordinates"),
-        py::arg("trace_floor")
-    );
     module.def(
         "_chemical_equilibrium",
         &solve_chemical_equilibrium,
@@ -1443,74 +1192,6 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("trace_floor"),
         py::arg("active_parameters") = py::none()
     );
-    module.def(
-        "_chemical_evaluate_provider_block",
-        &provider_block_evidence,
-        py::arg("capsule"),
-        py::arg("temperature_k"),
-        py::arg("amounts"),
-        py::arg("volume_m3"),
-        py::arg("expected_fingerprint")
-    );
-    module.def(
-        "_chemical_evaluate_manufactured_nlp",
-        &manufactured_nlp_evidence,
-        py::arg("spec"),
-        py::arg("variables"),
-        py::arg("constraint_multipliers"),
-        py::arg("gauge_coefficients") = std::vector<double>{}
-    );
-    module.def(
-        "_chemical_evaluate_manufactured_inverse_log_packing_nlp",
-        &manufactured_inverse_log_packing_nlp_evidence,
-        py::arg("spec"),
-        py::arg("variables"),
-        py::arg("constraint_multipliers"),
-        py::arg("gauge_coefficients") = std::vector<double>{},
-        py::arg("zero_kkt_rhs") = false
-    );
-    module.def(
-        "_chemical_analyze_manufactured_reduced_hessian",
-        &manufactured_reduced_hessian_evidence,
-        py::arg("hessian"),
-        py::arg("constraint_jacobian") = std::vector<double>{},
-        py::arg("constraint_count") = 0
-    );
-    module.def(
-        "_chemical_retract_manufactured_balance",
-        &manufactured_balance_retraction_evidence,
-        py::arg("spec"),
-        py::arg("seed"),
-        py::arg("lower"),
-        py::arg("upper"),
-        py::arg("trace_floor")
-    );
-    module.def(
-        "_chemical_manufactured_recovery_displacement",
-        &manufactured_recovery_displacement_evidence,
-        py::arg("variables"),
-        py::arg("lower"),
-        py::arg("upper"),
-        py::arg("direction"),
-        py::arg("sign"),
-        py::arg("backtrack_index") = 0
-    );
-    module.def(
-        "_chemical_solve_manufactured_nonconvex",
-        &solve_manufactured_nonconvex,
-        py::arg("spec"),
-        py::arg("trace_floor") = 1.0e-12,
-        py::arg("max_iterations") = 500,
-        py::arg("quadratic_strength") = 2.3
-    );
-    module.def(
-        "_chemical_solve_manufactured_inconsistent_derivatives",
-        &solve_manufactured_inconsistent_derivatives,
-        py::arg("spec"),
-        py::arg("trace_floor") = 1.0e-12,
-        py::arg("max_iterations") = 200
-    );
-    bind_chemical_observation(module);
 }
 
 }  // namespace epcsaft_engine::equilibrium

@@ -21,14 +21,15 @@ wheel.exclude = [
   "epcsaft/regression/native/**",
 ]
 cmake.source-dir = "."
-cmake.version = ">=3.20"
+cmake.version = ">=3.24"
 ninja.version = ">=1.11"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-m 'not campaign'"
+addopts = "-m 'not expensive and not slow'"
 markers = [
-  "campaign: expensive installed-artifact scientific replay run explicitly",
+  "expensive: slow white-box numerical sentinel run explicitly",
+  "slow: compact numerical evidence retained for full verification",
 ]
 
 [tool.ruff]

@@ -191,6 +191,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     const std::vector<double>& site_fractions,
     std::optional<std::size_t> active_born_component,
     double active_born_diameter_angstrom,
+    std::optional<std::size_t> active_solvation_factor_component,
     const std::optional<double>& active_solvation_factor,
     const std::optional<double>& active_ionic_permittivity,
     std::optional<std::size_t> active_relative_permittivity_component,
@@ -345,6 +346,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
             composition,
             parameters,
             electrolyte.bulk_relative_permittivity,
+            sigma,
             *active_born_component,
             independent[born_offset]
         )
@@ -354,7 +356,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
                 composition,
                 parameters,
                 electrolyte.bulk_relative_permittivity,
-                0,
+                sigma,
+                *active_solvation_factor_component,
                 independent[solvation_offset]
             )
             : active_ionic_permittivity.has_value()
@@ -363,6 +366,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
                     composition,
                     parameters,
                     electrolyte.bulk_relative_permittivity,
+                    sigma,
                     independent[ionic_permittivity_offset]
                 )
             : born_contribution(
@@ -576,6 +580,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives(
         std::nullopt,
         std::nullopt,
         std::nullopt,
+        std::nullopt,
         0.0,
         std::nullopt
     );
@@ -602,6 +607,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_born(
         std::nullopt,
         std::nullopt,
         std::nullopt,
+        std::nullopt,
         0.0,
         std::nullopt
     );
@@ -614,6 +620,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_solvation_facto
     const std::vector<double>& mole_fractions,
     const NativeParameters& parameters,
     const std::vector<double>& site_fractions,
+    std::size_t active_component,
     double active_solvation_factor
 ) {
     return thermodynamic_derivatives_impl(
@@ -624,6 +631,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_solvation_facto
         site_fractions,
         std::nullopt,
         0.0,
+        active_component,
         active_solvation_factor,
         std::nullopt,
         std::nullopt,
@@ -650,6 +658,7 @@ thermodynamic_derivatives_active_ionic_region_permittivity(
         site_fractions,
         std::nullopt,
         0.0,
+        std::nullopt,
         std::nullopt,
         active_ionic_region_relative_permittivity,
         std::nullopt,
@@ -679,6 +688,7 @@ thermodynamic_derivatives_active_relative_permittivity(
         0.0,
         std::nullopt,
         std::nullopt,
+        std::nullopt,
         active_component,
         active_relative_permittivity,
         std::nullopt
@@ -705,6 +715,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_aqueous_kij(
         std::nullopt,
         std::nullopt,
         std::nullopt,
+        std::nullopt,
         0.0,
         active_aqueous_k_ij
     );
@@ -727,6 +738,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_active_components(
         site_fractions,
         std::nullopt,
         0.0,
+        std::nullopt,
         std::nullopt,
         std::nullopt,
         std::nullopt,

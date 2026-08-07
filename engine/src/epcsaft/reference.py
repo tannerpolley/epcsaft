@@ -11,11 +11,12 @@ from typing import TYPE_CHECKING, Any, Literal, SupportsFloat, cast
 import pint
 
 import epcsaft._core as _native_core
+
 from .eos import (
     EosError,
     _eos_error,
-    _native_transport,
     _native_topology_fingerprint,
+    _native_transport,
     _state_magnitude,
 )
 from .units import unit_registry
@@ -40,7 +41,7 @@ _SOURCE_REFERENCE_ERRORS = {
     6: "reference-limit-convergence-failure",
     7: "derivative-unavailable",
     8: "nonfinite-source-reference-state",
-    9: "source-reference-abi-mismatch",
+    9: "source-reference-transport-identity-mismatch",
     10: "source-reference-evaluation-failure",
 }
 
@@ -150,7 +151,7 @@ def source_reference_transfer(
     T: object,
     P: object,
 ) -> SourceReferenceTransfer:
-    """Evaluate a declared-solvent source reference through the installed SDK."""
+    """Evaluate a declared-solvent source reference through the installed transport."""
     if not isinstance(declaration, SourceReferenceDeclaration):
         raise _eos_error("unsupported-source-reference-transfer", field="declaration")
     temperature_k = _state_magnitude(T, "kelvin", "temperature")
@@ -206,7 +207,7 @@ def source_reference_transfer(
                 ).encode("utf-8")
             ).hexdigest()
         )
-        value = _native_core.source_reference_transfer_v1(
+        value = _native_core.source_reference_transfer(
             _native_transport(model),
             model.parameter_fingerprint,
             _native_topology_fingerprint(model),
@@ -442,6 +443,7 @@ def build_reference_state(
     pressure: object,
     solvent_mole_fractions: object,
     phase: Literal["liquid"],
+    ion_component_ids: tuple[str, str] | None = None,
 ) -> ElectrolyteReference:
     temperature_k = _state_magnitude(temperature, "kelvin", "temperature")
     pressure_pa = _state_magnitude(pressure, "pascal", "pressure")
@@ -459,13 +461,27 @@ def build_reference_state(
     charges = model.charge_number
     if model.topology not in {
         "ionic-ssm-ds",
+        "ionic-original-born",
         "ionic-fully-dissociated-debye-huckel",
     } or len(charges) != len(eos.component_ids):
         raise _eos_error("invalid-reference-state", reason="electrolyte-required")
     cations = tuple(index for index, charge in enumerate(charges) if charge > 0)
     anions = tuple(index for index, charge in enumerate(charges) if charge < 0)
-    if len(cations) != 1 or len(anions) != 1:
-        raise _eos_error("invalid-reference-state", reason="one-formula-unit-required")
+    if ion_component_ids is None:
+        if len(cations) != 1 or len(anions) != 1:
+            raise _eos_error("invalid-reference-state", reason="ion-pair-required")
+        cation, anion = cations[0], anions[0]
+    else:
+        if (
+            len(ion_component_ids) != 2
+            or ion_component_ids[0] not in eos.component_ids
+            or ion_component_ids[1] not in eos.component_ids
+        ):
+            raise _eos_error("invalid-reference-state", field="ion_component_ids")
+        cation = eos.component_ids.index(ion_component_ids[0])
+        anion = eos.component_ids.index(ion_component_ids[1])
+        if charges[cation] <= 0 or charges[anion] >= 0:
+            raise _eos_error("invalid-reference-state", field="ion_component_ids")
     if (
         len(solvent_fractions) != len(eos.component_ids)
         or any(not math.isfinite(value) or value < 0.0 for value in solvent_fractions)
@@ -480,7 +496,6 @@ def build_reference_state(
     ):
         raise _eos_error("invalid-reference-state", reason="solvent-molar-mass-required")
 
-    cation, anion = cations[0], anions[0]
     divisor = gcd(abs(charges[cation]), abs(charges[anion]))
     # EqID: charge_balanced_formula_stoichiometry
     stoichiometry = (

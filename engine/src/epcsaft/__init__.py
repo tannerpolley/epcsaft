@@ -3,11 +3,19 @@ from .eos import (
     EosError,
     Fugacity,
     Mixture,
+    ParameterCapability,
+    ParameterDerivativeResult,
     Phase,
     PropertyBasis,
+    Pure,
+    SaturationAttempt,
+    SaturationDiagnostics,
+    SaturationError,
+    SaturationPhase,
+    SaturationResult,
     State,
 )
-from .parameters import Parameters
+from .parameters import ActiveParameter, ActiveParameterSet, Parameters
 from .records import SourceRecord, ValidityDomain
 from .reference import (
     Activity,
@@ -20,20 +28,30 @@ from .reference import (
 from .units import ParameterError, unit_registry
 
 __all__ = (
+    "ActiveParameter",
+    "ActiveParameterSet",
     "Activity",
     "DensityDiagnostics",
     "ElectrolyteReference",
     "EosError",
     "Fugacity",
     "Mixture",
+    "ParameterCapability",
+    "ParameterDerivativeResult",
     "ParameterError",
     "Parameters",
     "Phase",
     "PropertyBasis",
+    "Pure",
+    "SaturationAttempt",
+    "SaturationDiagnostics",
+    "SaturationError",
+    "SaturationPhase",
+    "SaturationResult",
+    "SourceRecord",
     "SourceReferenceDeclaration",
     "SourceReferenceTransfer",
     "State",
-    "SourceRecord",
     "TransferFreeEnergy",
     "ValidityDomain",
     "source_reference_transfer",
