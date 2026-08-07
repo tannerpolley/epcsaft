@@ -48,5 +48,6 @@ observation.
   looser than the lab-reproduction gate and cover the retained source-route
   errors at the selected rows; they do not claim universal model accuracy.
 
-The executable owner of these thresholds is `tests/test_saturation.py`; the
+The executable owner of these thresholds is
+`tests/eos/numerical/test_pure_saturation.py`; the
 identical capability-level values are recorded in `ARCHITECTURE.yaml`.

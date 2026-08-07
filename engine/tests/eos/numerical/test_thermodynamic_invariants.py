@@ -3,17 +3,18 @@ from __future__ import annotations
 import math
 
 import pytest
+
+from epcsaft import Activity, Mixture, Parameters, Pure, TransferFreeEnergy
+from epcsaft import unit_registry as u
 from tests.eos._raw_cases import (
     AQUEOUS_ELECTROLYTE,
     ASSOCIATING_PURE,
     DIPOLAR_PERMITTIVITY_ELECTROLYTE,
     NEUTRAL_BINARY,
+    ORIGINAL_BORN_ELECTROLYTE,
     neutral_binary,
     neutral_pure,
 )
-
-from epcsaft import Activity, Mixture, Parameters, TransferFreeEnergy
-from epcsaft import unit_registry as u
 
 AVOGADRO = 6.02214076e23
 BOLTZMANN = 1.380649e-23
@@ -42,7 +43,13 @@ def _second_derivative(function, value: float, step: float) -> float:
 
 
 def _state(mapping, *, x, density=1000.0, temperature=298.15):
-    return Mixture(Parameters.from_dictionary(mapping)).state(
+    parameters = Parameters.from_mapping(mapping)
+    if len(parameters.component_ids) == 1:
+        return Pure(parameters).state(
+            T=temperature * u.kelvin,
+            rho=density * u.mole / u.meter**3,
+        )
+    return Mixture(parameters).state(
         T=temperature * u.kelvin,
         rho=density * u.mole / u.meter**3,
         x=x,
@@ -101,7 +108,7 @@ def test_component_permutation__preserves_scalar_thermodynamics() -> None:
 
 
 def test_pressure_identity__matches_compressibility_definition() -> None:
-    model = Mixture(Parameters.from_dictionary(NEUTRAL_BINARY))
+    model = Mixture(Parameters.from_mapping(NEUTRAL_BINARY))
     state = model.state(
         T=298.15 * u.kelvin,
         rho=40.0 * u.mole / u.meter**3,
@@ -123,7 +130,7 @@ def test_pressure_identity__matches_compressibility_definition() -> None:
 def test_neutral_contributions__match_independent_gross_anchors(
     temperature, density, composition, hard_chain, dispersion
 ) -> None:
-    state = Mixture.from_dictionary(NEUTRAL_BINARY).state(
+    state = Mixture(Parameters.from_mapping(NEUTRAL_BINARY)).state(
         T=temperature * u.kelvin,
         rho=density * u.mole / u.meter**3,
         x=composition,
@@ -236,6 +243,25 @@ def test_corrected_born__matches_independent_two_region_oracle() -> None:
     assert state.born == pytest.approx(expected, rel=3.0e-12, abs=2.0e-12)
 
 
+def test_canonical_born_reduces_exactly_to_original_form() -> None:
+    temperature = 298.15
+    fractions = (0.98, 0.01, 0.01)
+    state = _state(ORIGINAL_BORN_ELECTROLYTE, x=fractions, density=40000.0)
+    radial_sum = math.fsum(
+        fraction
+        * (1.0 - 1.0 / state.bulk_relative_permittivity)
+        / (diameter * 1.0e-10)
+        for fraction, diameter in zip(fractions[1:], (2.8232, 2.7560), strict=True)
+    )
+    expected = (
+        -(ELEMENTARY_CHARGE**2)
+        * radial_sum
+        / (4.0 * math.pi * VACUUM_PERMITTIVITY * BOLTZMANN * temperature)
+    )
+
+    assert state.born == pytest.approx(expected, rel=3.0e-12, abs=2.0e-12)
+
+
 def test_permittivity__matches_independent_ion_fraction_and_dipolar_equations() -> None:
     fractions = (0.9, 0.05, 0.05)
     density = 55000.0
@@ -256,8 +282,8 @@ def test_permittivity__matches_independent_ion_fraction_and_dipolar_equations() 
 
 
 def test_density_closure__returns_certified_single_root_and_slope() -> None:
-    model = Mixture.from_dictionary(neutral_pure("methane"))
-    state = model.state(T=250.0 * u.kelvin, P=10.0 * u.bar, x=(1.0,))
+    model = Pure(Parameters.from_mapping(neutral_pure("methane")))
+    state = model.state(T=250.0 * u.kelvin, P=10.0 * u.bar)
     diagnostics = state.density_diagnostics
 
     assert diagnostics is not None
@@ -269,7 +295,6 @@ def test_density_closure__returns_certified_single_root_and_slope() -> None:
         model.state(
             T=250.0 * u.kelvin,
             rho=value * u.mole / u.meter**3,
-            x=(1.0,),
         )
         .pressure.to("pascal")
         .magnitude
@@ -282,7 +307,7 @@ def test_density_closure__returns_certified_single_root_and_slope() -> None:
 
 
 def test_residual_chemical_potentials__match_total_amount_derivatives() -> None:
-    model = Mixture.from_dictionary(NEUTRAL_BINARY)
+    model = Mixture(Parameters.from_mapping(NEUTRAL_BINARY))
     temperature = 250.0
     density = 8000.0
     fractions = (0.4, 0.6)
@@ -291,10 +316,9 @@ def test_residual_chemical_potentials__match_total_amount_derivatives() -> None:
     expected = []
     step = 2.0e-5
     for component in range(2):
-
-        def total_helmholtz(delta: float) -> float:
+        def total_helmholtz(delta: float, component_index: int = component) -> float:
             amounts = [*fractions]
-            amounts[component] += delta
+            amounts[component_index] += delta
             total = math.fsum(amounts)
             perturbed = model.state(
                 T=temperature * u.kelvin,
@@ -360,7 +384,7 @@ def test_residual_caloric_properties__follow_helmholtz_identities() -> None:
 
 
 def test_electrolyte_reference_matches_projection_identities() -> None:
-    model = Mixture.from_dictionary(AQUEOUS_ELECTROLYTE)
+    model = Mixture(Parameters.from_mapping(AQUEOUS_ELECTROLYTE))
     reference = model.reference(
         T=298.15 * u.kelvin,
         P=1.0 * u.bar,

@@ -27,8 +27,7 @@ cmake -S "$engine_root" -B "$build_root" -G Ninja \
     -DSKBUILD_PROJECT_VERSION=0.2.0
 cmake --build "$build_root" --target \
     epcsaft_core \
-    epcsaft_engine_equilibrium_native \
-    epcsaft_engine_regression_native
+    epcsaft_engine_equilibrium_native
 
 run-clang-tidy-18 \
     -clang-tidy-binary clang-tidy-18 \

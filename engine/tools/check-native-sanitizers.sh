@@ -46,11 +46,23 @@ if [[ ! -f "$asan_runtime" ]]; then
     echo "clang ASan runtime not found: $asan_runtime" >&2
     exit 1
 fi
+ubsan_runtime="$(clang++-18 -print-file-name=libclang_rt.ubsan_standalone-x86_64.so)"
+if [[ ! -f "$ubsan_runtime" ]]; then
+    echo "clang UBSan runtime not found: $ubsan_runtime" >&2
+    exit 1
+fi
+sanitizer_preload="$asan_runtime:$ubsan_runtime"
 
-LD_PRELOAD="$asan_runtime" \
+LD_PRELOAD="$sanitizer_preload" \
+UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" \
+PYTHONNOUSERSITE=1 \
+    "$run_root/venv/bin/python" "$workspace_root/tools/verify-installed-wheel.py" \
+        --wheel "${wheels[0]}"
+
+LD_PRELOAD="$sanitizer_preload" \
 ASAN_OPTIONS="detect_leaks=0:halt_on_error=1" \
 UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" \
 PYTHONNOUSERSITE=1 \
     "$run_root/venv/bin/python" -m pytest -q \
-        tests/integration/test_scientific_slice.py \
-        tests/equilibrium/test_saturation.py
+        tests/eos/numerical/test_pure_saturation.py \
+        tests/regression/numerical/test_generic_fit.py

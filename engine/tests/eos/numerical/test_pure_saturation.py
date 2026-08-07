@@ -1,44 +1,21 @@
 from __future__ import annotations
 
 import csv
-import ctypes
 import math
 from pathlib import Path
 
 import pytest
-from parameter_dictionaries import PURE_SATURATION_PARAMETERS
 
 import epcsaft
-from epcsaft.eos import _native_transport
-from epcsaft import equilibrium
-from epcsaft.equilibrium import _equilibrium
+from epcsaft import _core
+from tests.equilibrium.parameter_dictionaries import PURE_SATURATION_PARAMETERS
 
-ANCHORS = Path(__file__).parents[2] / "data" / "reference" / "pure_saturation_anchors.csv"
-
-
-class _NativeSdkTable(ctypes.Structure):
-    _fields_ = (
-        ("abi_version", ctypes.c_uint32),
-        ("table_size", ctypes.c_size_t),
-        ("result_size", ctypes.c_size_t),
-        ("model_context", ctypes.c_void_p),
-        ("evaluate_pure_phase", ctypes.c_void_p),
-        ("parameterized_result_size", ctypes.c_size_t),
-        ("evaluate_pure_phase_parameters", ctypes.c_void_p),
-        ("component_count", ctypes.c_size_t),
-        ("mixture_result_size", ctypes.c_size_t),
-        ("evaluate_mixture_phase", ctypes.c_void_p),
-    )
+ANCHORS = Path(__file__).parents[3] / "data" / "reference" / "pure_saturation_anchors.csv"
 
 
-_CAPSULE_NAME_BUFFERS: list[ctypes.Array[ctypes.c_char]] = []
-_EVALUATORS: list[object] = []
-_SDK_TABLES: list[_NativeSdkTable] = []
-
-
-def _model(component: str = "methane") -> epcsaft.Mixture:
-    parameters = epcsaft.Parameters.from_dictionary(PURE_SATURATION_PARAMETERS[component])
-    return epcsaft.Mixture(parameters)
+def _model(component: str = "methane") -> epcsaft.Pure:
+    parameters = epcsaft.Parameters.from_mapping(PURE_SATURATION_PARAMETERS[component])
+    return epcsaft.Pure(parameters)
 
 
 @pytest.mark.parametrize(
@@ -58,7 +35,6 @@ def test_saturation_nlp_exact_derivatives_match_independent_directional_differen
     variables: tuple[float, float, float],
 ) -> None:
     model = _model(component)
-    capsule = _native_transport(model)
     multipliers = (0.7, -0.4, 1.2)
     direction = (0.3, -0.2, 0.1)
     step = 2.0e-5
@@ -67,10 +43,9 @@ def test_saturation_nlp_exact_derivatives_match_independent_directional_differen
         point = tuple(
             value + scale * delta for value, delta in zip(variables, direction, strict=True)
         )
-        return _equilibrium.evaluate_nlp(
-            capsule,
+        return _core._evaluate_saturation_nlp(
+            model._native,
             temperature_k,
-            model.parameter_fingerprint,
             point,
             multipliers,
         )
@@ -116,7 +91,7 @@ def test_saturation_nlp_exact_derivatives_match_independent_directional_differen
         assert gradient_difference == pytest.approx(hessian_direction, rel=2.0e-6, abs=2.0e-7)
 
 
-def test_saturation_matches_retained_lab_and_nist_anchors() -> None:
+def test_saturation_matches_independent_and_nist_anchors() -> None:
     with ANCHORS.open(encoding="utf-8", newline="") as stream:
         anchors = list(csv.DictReader(stream))
     assert sorted(anchor["component"] for anchor in anchors) == [
@@ -128,19 +103,17 @@ def test_saturation_matches_retained_lab_and_nist_anchors() -> None:
     for anchor in anchors:
         component = anchor["component"]
         model = _model(component)
-        result = equilibrium.saturation(
-            model,
-            float(anchor["T_K"]) * epcsaft.unit_registry.kelvin,
+        result = model.saturation(
+            T=float(anchor["T_K"]) * epcsaft.unit_registry.kelvin,
         )
-        assert result.parameter_fingerprint == anchor["parameter_fingerprint"]
         assert result.saturation_pressure_pa == pytest.approx(
-            float(anchor["lab_pressure_pa"]), rel=5.0e-6
+            float(anchor["independent_pressure_pa"]), rel=5.0e-6
         )
         assert result.vapor.molar_density_mol_m3 == pytest.approx(
-            float(anchor["lab_vapor_density_mol_m3"]), rel=5.0e-6
+            float(anchor["independent_vapor_density_mol_m3"]), rel=5.0e-6
         )
         assert result.liquid.molar_density_mol_m3 == pytest.approx(
-            float(anchor["lab_liquid_density_mol_m3"]), rel=5.0e-6
+            float(anchor["independent_liquid_density_mol_m3"]), rel=5.0e-6
         )
         assert result.saturation_pressure_pa == pytest.approx(
             float(anchor["nist_pressure_pa"]), rel=5.0e-3

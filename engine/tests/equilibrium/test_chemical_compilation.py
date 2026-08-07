@@ -4,12 +4,13 @@ import math
 from collections.abc import Callable
 
 import pytest
-from chemical_equilibrium_cases import base_system as _base_system
-from chemical_equilibrium_cases import bind_records as _bind_record
-from chemical_equilibrium_cases import typed_problem as _typed_problem
 
 import epcsaft
 from epcsaft import equilibrium
+
+from .chemical_equilibrium_cases import base_system as _base_system
+from .chemical_equilibrium_cases import bind_records as _bind_record
+from .chemical_equilibrium_cases import typed_problem as _typed_problem
 
 
 def _solve(
