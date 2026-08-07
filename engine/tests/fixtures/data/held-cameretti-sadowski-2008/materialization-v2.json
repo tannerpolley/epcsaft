@@ -1,0 +1,26 @@
+{
+  "schema_version": 3,
+  "repository": "tannerpolley/ePC-SAFT",
+  "lock_manifest": "governance/manifests/data-packet-locks.json",
+  "packet_id": "held-cameretti-sadowski-2008",
+  "packet_version": "2",
+  "packet_path": "data/packets/held-cameretti-sadowski-2008/2",
+  "packet_fingerprint": "8297f1aed9c2c7cca43d8eedd38d02a7ae6485ee83ca2d5da3e288c6802451da",
+  "materialization_mode": "byte-for-byte-test-fixture",
+  "destination": "engine/tests/fixtures/data/held-cameretti-sadowski-2008/2",
+  "files": [
+    {
+      "path": "packet.toml",
+      "sha256": "b8d4b609289bad2448d5a6601214c38d535e032cc528411a848c4cb2e29d851a"
+    },
+    {
+      "path": "parameters/parameters.json",
+      "sha256": "7bdc8f944501e30b9fb9b888ebf911f23dcc1513567555e2671e0d9b45e76532"
+    },
+    {
+      "path": "provenance/source-origin.toml",
+      "sha256": "39a1fe0fe53dbc17eb0dfa05d4da918f4236d5deae0d8902c96238a740df625f"
+    }
+  ],
+  "accepted_by": "unified-engine-direct-cutover-g3"
+}

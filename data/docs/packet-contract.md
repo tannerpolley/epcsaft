@@ -2,7 +2,7 @@
 
 Status: canonical
 
-Version: 2
+Version: 3
 
 ## Purpose
 
@@ -80,14 +80,13 @@ concealing a cross-repository migration.
 
 ## Consumer lock
 
-A consumer records the Data repository, immutable commit, packet path, packet
-ID and version, and a fingerprint over the complete packet directory. The
-smallest lock record is:
+The live Governance manifest records the monorepo identity, repository-relative
+packet path, packet ID and version, and a fingerprint over the complete packet
+directory. The smallest lock record is:
 
 ```toml
-data_repository = "ePC-SAFT/ePC-SAFT-data"
-data_commit = "<40-hex-commit>"
-packet_path = "packets/<packet-id>/<version>"
+repository = "tannerpolley/ePC-SAFT"
+packet_path = "data/packets/<packet-id>/<version>"
 packet_id = "<packet-id>"
 packet_version = "<version>"
 packet_fingerprint = "<64-hex-fingerprint>"
@@ -96,11 +95,19 @@ materialization = "byte-for-byte"
 
 The fingerprint is the raw 64-hex `packet_fingerprint` value emitted after
 `packet` by `python3 tools/validate_packets.py` (the CLI also prints the
-display-only `sha256:` prefix) for the pinned commit. A consumer may add
-its campaign or runtime purpose and the exact materialization destination, but
-must not omit the immutable commit or fingerprint. `materialization` is
+display-only `sha256:` prefix). A consumer may add its campaign or runtime
+purpose and the exact materialization destination, but must not omit the
+repository-relative path or fingerprint. `materialization` is
 `byte-for-byte` for Validation or Regression packet materialization,
 `subset-copy` for a self-contained admitted EOS subset copied from the packet,
 or `subset-generated` when EOS generates an admitted self-contained subset.
 EOS runtime copies must be self-contained. Validation and Regression
 materialize the packet before execution. Runtime fetching is forbidden.
+
+The live lock manifest deliberately does not contain a commit field. A tracked
+manifest cannot name the commit that first contains itself, and inventing or
+retaining an earlier commit would falsely claim that new packet bytes exist in
+that revision. The containing `tannerpolley/ePC-SAFT` commit binds the lock,
+packet, and in-repository materialization receipt atomically. An exported or
+post-commit receipt may additionally record that containing commit after it
+exists; it never replaces the packet fingerprint.
