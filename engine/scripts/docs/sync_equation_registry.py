@@ -1,16 +1,13 @@
-#!/usr/bin/env python3
 """Synchronize EOS equation documentation with implementation owners."""
 
 from __future__ import annotations
 
-import ast
 import argparse
-from dataclasses import dataclass
-from dataclasses import replace
+import ast
 import json
-from pathlib import Path
 import re
-
+from dataclasses import dataclass, replace
+from pathlib import Path
 
 ALLOWED_STATUSES = frozenset(
     {
@@ -71,7 +68,7 @@ MATH_OWNER_FILES = (
     "src/epcsaft/_native/electrolyte_reference.hpp",
     "src/epcsaft/_native/eos.cpp",
     "src/epcsaft/_native/phase_block.hpp",
-    "src/epcsaft/_native/native_sdk.cpp",
+    "src/epcsaft/_native/native_transport.cpp",
     "src/epcsaft/reference.py",
 )
 

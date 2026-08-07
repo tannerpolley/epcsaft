@@ -14,8 +14,9 @@ owners, or a public C++ ABI without a real external consumer.
 
 An Engine-accountable task owns its full scientific slice across the exact
 needed `data/`, `engine/`, and `validation/` files in one branch. Engine
-runtime and tests never discover sibling source dynamically. Copied Data
-fixtures require commit, packet, fingerprint, and file-hash materialization.
+runtime and tests never discover sibling source dynamically. The containing
+monorepo commit binds copied Data fixtures to their packet lock; every
+materialization also requires the packet fingerprint and exact file hashes.
 Validation must exercise the installed wheel through public APIs.
 
 Use Governance Numerical Verification-Driven Development. Retain compact tests

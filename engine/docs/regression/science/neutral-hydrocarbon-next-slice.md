@@ -32,13 +32,11 @@ model/data incompatibility. Clean Regression HEAD retains no binary executable
 target, package API, or runtime implementation.
 
 Migration D-023 supersedes this checkpoint order without rewriting the frozen
-evidence. The approved Figiel source and Provider design prerequisites and the
-resulting five-ion Ceres contract are now bound only by
-`docs/science/figiel-born-diameter-tracer.md`. Migration checkpoint `3a4ef0a`
-preserves that complete design as a parallel, deferred Provider-dependent
-track behind HELD2; runtime remains unauthorized. This historical neutral-
-hydrocarbon record admits no Figiel residual, callback, fit, persistence
-contract, or implementation surface.
+evidence. The approved Figiel source evidence now lives under
+`validation/campaigns/2025-figiel/`. Migration checkpoint `3a4ef0a` preserves
+the retired design in Git history; no source-specific runtime remains. This
+historical neutral-hydrocarbon record admits no Figiel residual, callback,
+fit, persistence contract, or implementation surface.
 
 ## Frozen source and model identity
 

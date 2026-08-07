@@ -2,9 +2,9 @@
 
 Status: scientific equation authority for the accepted full-EOS scope.
 
-References below to the native SDK and its historical promotion receipt name
-describe the retained internal transport implementation. They do not define a
-public Python API, installed header set, external ABI, or separate artifact.
+The native transport is a private in-wheel bridge from EOS to Equilibrium. It
+defines no public Python API, installed header set, external ABI, Regression
+capability, or separate artifact.
 
 Design: `../designs/2026-07-16-full-EOS-eos-design.md`
 
@@ -209,18 +209,29 @@ Delta_iA,jB = g_ij^hs [exp(epsilon_iA,jB/(k_B T)) - 1]
 
 These are source equations from Chapman1990 Eqs. (19) and (18), with explicit
 mixture/site indexing as an implementation convention. `g_ij^hs` is the
-Gross2001 hard-sphere contact function. Site-pair energy and volume come from
-explicit `AssociationParameterRecord` values. This first capability admits no
-cross-association combining equation. Every allowed site pair therefore has
-both an energy and volume record; an omitted unlike-site pair is inactive,
-not inferred. String schemes and inferred donor/acceptor pairs are forbidden.
+Gross2001 hard-sphere contact function. Every admitted site pair is an explicit
+topology edge whose source is either a direct coefficient record or the named
+closed-registry rule `arithmetic-energy-geometric-volume`. For unlike
+components `i` and `j`, that rule resolves
 
-The source-complete bounded 298.15 K Figiel2025 bundle stores both
-donor--acceptor cross directions explicitly for water--methanol,
-water--ethanol, and methanol--ethanol. Their energy and volume values are
-evaluated once from the Gross2002 cross-association equations using the
-Figiel2025 Table 2 pure-solvent records and no binary correction parameter.
-The runtime still performs no implicit combining or default insertion.
+```text
+epsilon_iA,jB/k_B = [(epsilon_iA,iB/k_B) + (epsilon_jA,jB/k_B)] / 2
+kappa_iA,jB = sqrt(kappa_iA,iB kappa_jA,jB).
+```
+
+Both inputs must be donor--acceptor self-edges for the same two components and
+must contain the output sites. The output must itself connect one donor and one
+acceptor. Resolved outputs are derived, non-selectable coordinates; their
+recorded derivative chain is `1/2` for each energy input and
+`kappa_iA,jB/(2 kappa_input)` for each volume input. This lets later exact
+parameter derivatives propagate through the rule without treating its output
+as an independent fit coefficient.
+
+The source-complete bounded Figiel2025 and Khudaida2026 documents explicitly
+name this rule, its pure-component self-edge inputs, and its provenance for
+both admitted cross directions. An omitted unlike-site pair remains inactive,
+not inferred. String schemes, inferred donor/acceptor pairs, implicit combining,
+and default insertion are forbidden.
 
 The Ascani2022 water--1-butanol selection likewise stores both cross directions
 explicitly. Their energy is the SI Eq. S6 arithmetic mean multiplied by
@@ -358,9 +369,9 @@ All three records are required for every selected component. The equation gives
 The selected `epsilon_r,bulk` is evaluated once by the scalar-generic native
 owner and is consumed unchanged by both Debye--Huckel and the selected Born
 equation. Temperature, density, composition, and parameter dependence therefore
-remain inside the common CppAD tape. `Mixture.relative_permittivity_formulation` reports the
-generic bundle-defined formulation and `State.bulk_relative_permittivity` reports the
-evaluated state value.
+remain inside the common CppAD tape. The parameter record identifies the generic
+bundle-defined formulation, and `State.bulk_relative_permittivity` reports the evaluated
+state value.
 
 The bounded comparison uses Perdomo2025 Table 3 at `T=298.15 K` and
 `P=2508 Pa`, with explicit-species compositions in EOS order
@@ -715,7 +726,7 @@ generation, and alternative concentration conventions remain closed.
 ### 10.1 Installed charge-neutral reference basis
 
 For an admitted phase model with `C` components, one or more neutral molecular
-components, at least one cation, and at least one anion, the native SDK exposes
+components, at least one cation, and at least one anion, the native transport exposes
 `C-1` rows spanning the nullspace of the ordered charge vector. Exact component
 identities define the canonical row and anchor order, independently of caller
 component permutation. Every neutral component contributes its unit row. For
@@ -810,14 +821,17 @@ pressure. The dielectric suppression relation is not evidence for another
 solvent, temperature, component topology, or larger ion fraction. Solver
 convergence does not expand that evidence.
 
-The Schreckenberg, Zuber, and Rueben parameter families are source-named
-implementation capabilities, not runtime defaults. A custom
-`Parameters.from_dictionary(...)` selection must provide one complete
-topology. Zuber currently requires one neutral solvent because the EOS has
-no source-backed mixed-solvent volume-fraction payload. Rueben requires its
-three parameters for every selected component. No new topology broadens the
-temperature, pressure, composition, or fitted-parameter evidence of an
-existing bundle.
+Relative-permittivity behavior is selected by one source-neutral Model Family
+choice in the canonical Parameters document. The admitted families are
+ion-fraction suppression, component-permittivity mixing,
+density-volume-temperature, ion-specific suppression,
+dipolar-density perturbation, and solvent-only permittivity. Citations to the
+papers that support a choice and its coefficients remain in provenance; paper
+names do not select runtime implementations. `Parameters.from_mapping(...)`
+and `Parameters.from_json(...)` parse the same strict document, which must
+provide every coefficient and one complete fixed topology needed by the
+selected model. No model choice or topology broadens the temperature,
+pressure, composition, or fitted-parameter evidence recorded by its sources.
 
 The Ascani Case Study 2 bundle is a separate exact selection of water,
 1-butanol, `Na+`, `K+`, and `Cl-` at `T = 298.15 K` and `p = 1 bar`. It requires
@@ -860,11 +874,10 @@ reaction equilibrium, caller-selected dielectric or Born modes, unsupported
 Zuber mixed-solvent volume mixing, synthetic Rueben parameter completion,
 analytic derivative modes, ideal-gas caloric data, phase equilibrium,
 regression, multi-salt reference paths, alternate single-ion conventions,
-mixture/associating/electrolyte native phase blocks, or reactive standard-state
-chemical potentials. ADR 0001 defines only the fixed-temperature pure
-nonassociating SDK v1 prefix and its append-only pure-parameter tail. Migration
-receipt `promotion-0015-provider-native-sdk-v1` alone determines their
-authority; this specification does not admit a consumer or fitted model.
+mixture/associating/electrolyte Regression observations, or reactive
+standard-state chemical potentials. The private native transport exposes only
+the EOS operations required by current Equilibrium consumers; it is not a
+Regression extension point and does not admit a fitted model.
 Adding any other exclusion requires a new source-backed capability design
 rather than a flag in this model.
 

@@ -995,45 +995,11 @@ W_{\mathrm{SSM+DS}}.
 \label{eq:ssm_ds_born_helmholtz}
 \end{equation}
 
-% EqID: original_born_radial_work
-% Source: \cite{AscaniHeld2021}, Eq.~(10) and ion-diameter convention
-% Status: Source equation
-% Description: Original-Born charge-square diameter sum.
-% Change note: Uses the Ascani ion sigma as the Born diameter.
-\begin{equation}
-W_{\mathrm{original}}=
-\sum_{i\in\mathcal{I}}\frac{x_i z_i^2}{\sigma_i}.
-\label{eq:original_born_radial_work}
-\end{equation}
-
-% EqID: original_born_helmholtz
-% Source: \cite{AscaniHeld2021}, Eq.~(10)
-% Status: Source equation
-% Description: Dimensionless original-Born residual Helmholtz contribution.
-% Change note: SSM and DS are absent for the source-routed Ascani model.
-\begin{equation}
-a^{Born}_{\mathrm{original}}=
--\frac{e^2}{4\pi\epsilon_0k_BT}
-\left(1-\epsilon_{r,\mathrm{bulk}}^{-1}\right)
-W_{\mathrm{original}}.
-\label{eq:original_born_helmholtz}
-\end{equation}
-
-% EqID: born_model_selection
-% Source: EOS model-bound routing of \cite{Figiel2026Correction} and \cite{AscaniHeld2021}
-% Status: Implementation convention
-% Description: Select the source-consistent Born contribution from immutable model identity.
-% Change note: Documents routing without adding a public selector or case branch.
-\begin{equation}
-a^{Born}=
-\begin{cases}
-a^{Born}_{\mathrm{original}},&
-\mathcal{M}=\mathcal{M}_{\mathrm{Ascani}},\\
-a^{Born}_{\mathrm{SSM+DS}},&
-\mathcal{M}\in\mathcal{M}_{\mathrm{Figiel}}.
-\end{cases}
-\label{eq:born_model_selection}
-\end{equation}
+The SSM+DS expression is the sole Born contribution.  Its original-Born
+limit is obtained without a second equation: setting
+$f_{\mathrm{mix}}=1$ and $d_i^{Born}=\sigma_i$ gives $D_i=\sigma_i$, so the
+inner-shell difference vanishes and the remaining bulk-dielectric term is the
+original Born form.
 
 \section{Electrolyte reference states and reported activities}
 

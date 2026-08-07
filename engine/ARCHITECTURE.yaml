@@ -1,6 +1,6 @@
 version: 3
 status: unified-monorepo-active
-governance_doctrine_revision: 11
+governance_doctrine_revision: 12
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -15,28 +15,51 @@ artifact:
 owners:
   parameters:
     input: epcsaft.Parameters
-    persistence: src/epcsaft/_bundle_io.py
+    persistence: src/epcsaft/_document_io.py
     resolution: src/epcsaft/_resolve.py
+    active_set: epcsaft.ActiveParameterSet
   eos:
-    model: epcsaft.Mixture
+    models: [epcsaft.Pure, epcsaft.Mixture]
     state: epcsaft.State
+    active_parameters: epcsaft.ActiveParameterSet
+    derivative_result: epcsaft.ParameterDerivativeResult
+    observable_derivative_block: eos_owned_source_neutral
     equation_kernel: src/epcsaft/_native/helmholtz.hpp
+    selected_parameter_derivatives: src/epcsaft/_native/phase_block.hpp
     density_closure: src/epcsaft/_native/density.hpp
+    pure_saturation: src/epcsaft/_native/pure_saturation.cpp
     reference_states: src/epcsaft/reference.py
   equilibrium:
     public_module: epcsaft.equilibrium
     python_api: src/epcsaft/equilibrium/_api.py
     native_sources: cpp/equilibrium
+    nonreactive_owner: phase_equilibrium
+    phase_modes: [discovery, constrained_specification]
+    phase_kinds: [liquid, vapor]
+    maximum_phase_count: 3
+    active_parameters: epcsaft.ActiveParameterSet
+    solved_state_sensitivity: exact_implicit_from_eos_partials
   regression:
     public_module: epcsaft.regression
-    workflow: src/epcsaft/regression/workflow.py
-    result_transfer: epcsaft.regression.RegressionResult.to_parameters
+    parameter_fit: epcsaft.regression.ParameterFit
+    schema_owner: src/epcsaft/regression/_model.py
+    resolution: src/epcsaft/regression/_resolve.py
+    fit: epcsaft.regression.fit
+    result: epcsaft.regression.FitResult
+    native_fit: src/epcsaft/regression/native/fit.cpp
     native_sources: src/epcsaft/regression/native
+    scientific_values: owner_provided_only
+    current_observation_boundary: [eos_fixed_state, eos_pure_saturation]
   native_transport:
-    implementation: src/epcsaft/_native/native_sdk.cpp
-    internal_header: src/epcsaft/include/epcsaft/native_sdk_v1.h
-    regression_internal_header: src/epcsaft/include/epcsaft/regression/evaluator_v1.h
+    implementation: src/epcsaft/_native
+    public_cpp_abi: forbidden
     installed_headers: forbidden
+
+canonical_plans:
+  capability_cutover: docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md
+  eos: docs/eos/plans/2026-08-07-general-eos-parameter-derivatives.md
+  regression: docs/regression/plans/2026-08-07-owner-driven-parameter-fit.md
+  equilibrium: docs/equilibrium/plans/2026-08-07-general-phase-equilibrium.md
 
 scientific_boundaries:
   reusable_packets: data
@@ -55,11 +78,17 @@ build_invariants:
   compatibility_aliases: forbidden
   installed_provider_discovery: forbidden
   mutable_wheel_inputs: forbidden
+  development_wheel_cache: content_addressed_and_verified
+  source_specific_runtime_routes: forbidden
+  inferred_parameter_defaults: forbidden
 
 validation:
   retained_tests: numerical_algorithm_and_scientific_workflow_only
+  normal_test_routing: affected_scientific_domain
+  full_test_routing: default_plus_slow_numerical_evidence
   package_test_mode: installed_wheel
   required_module_origins: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
-  cross_module_slice: tests/integration/test_scientific_slice.py
-  materialized_packet_receipts: tests/fixtures/data/*/materialization.json
+  installed_wheel_readiness: ../tools/verify-installed-wheel.py
+  phase_equilibrium_campaign: ../validation/campaigns/2026-khudaida/tests/test_khudaida_phase_equilibrium.py
+  materialized_packet_receipts: tests/fixtures/data/*/materialization-v2.json
   external_authority_gate: governance_g7

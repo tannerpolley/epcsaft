@@ -1,8 +1,14 @@
 # General ePC-SAFT Parameter Regression
 
-Status: general nonpolar/electrolyte families fit-ready for their typed
-observation contracts; descriptor-driven fixed-topology association block
-executable; polar regression excluded
+Status: superseded as live design; retained as pre-cutover implementation
+evidence
+
+Current authority:
+[`../plans/2026-08-07-owner-driven-parameter-fit.md`](../plans/2026-08-07-owner-driven-parameter-fit.md).
+Do not extend the source-specific surfaces or installed-SDK assumptions in this
+file. Its historical status on 2026-07-30 was: general nonpolar/electrolyte
+families fit-ready for their typed observation contracts; descriptor-driven
+fixed-topology association block executable; polar regression excluded.
 
 Date: 2026-07-30
 
