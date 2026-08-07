@@ -8,8 +8,8 @@ and the nearest subtree `AGENTS.md` before material work.
 
 One scientific slice has one accountable agent from input to evidence. That
 agent may change the exact files needed across `data/`, `engine/`, and
-`validation/` in one branch. Use `lab/` only for genuinely independent or
-manufactured oracles. Keep one writer per file and do not create nested Git
+`validation/` in one branch. Use `lab/` only for temporary non-production
+experiments. Keep one writer per file and do not create nested Git
 repositories, submodules, sibling-repository dependencies, or separate package
 installations.
 
@@ -21,13 +21,16 @@ Directory ownership remains strict:
 - `data/`: canonical reusable scientific packets and packet readiness checks.
 - `validation/`: installed-wheel literature, experimental, and cross-module
   scientific campaigns.
-- `lab/`: non-production experiments and independent or manufactured oracles.
+- `lab/`: temporary non-production experiments, source notes, and rejected
+  alternatives; it owns no persistent tests or test frameworks.
 
 The root `.codex/environments/environment.toml` is the only Codex environment.
 It creates one root `.venv`, builds `engine/` into one non-editable wheel, and
 rejects split or legacy ePC-SAFT distributions. Use `tools/check-affected.sh`
 for normal work, `tools/check-all.sh` for full verification, and
 `tools/run-slice.sh khudaida|figiel` for the two canonical vertical slices.
+Normal Engine checks route to affected EOS, Equilibrium, or Regression
+evidence; full verification also runs the retained slow numerical tier.
 
 Use Numerical Verification-Driven Development from Governance section 7.
 Persistent tests must falsify numerical claims; expensive installed-artifact

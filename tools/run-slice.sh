@@ -12,15 +12,9 @@ fi
 bash .codex/environments/setup.sh
 .venv/bin/python data/tools/validate_packets.py
 if [[ "$slice" == "khudaida" ]]; then
-    (cd engine && ../.venv/bin/python -m pytest -q -m campaign \
-        tests/equilibrium/test_khudaida_held2_numerical_regression.py)
-    (cd engine && ../.venv/bin/python -m pytest -q \
-        tests/integration/test_scientific_slice.py)
+    (cd validation && ../.venv/bin/python -m pytest -q -m campaign \
+        campaigns/2026-khudaida/tests/test_khudaida_phase_equilibrium.py)
 else
-    (cd engine && ../.venv/bin/python -m pytest -q -m campaign \
-        tests/regression/test_figiel_aqueous_kij.py \
-        tests/regression/test_figiel_water_factor.py \
-        tests/regression/test_born_tracer.py)
-    (cd validation && ../.venv/bin/python -m pytest -q \
-        campaigns/2025-figiel/tests/test_figiel_regression_campaigns.py)
+    (cd engine && ../.venv/bin/python -m pytest -q \
+        tests/regression/numerical/test_generic_fit.py)
 fi

@@ -1,17 +1,15 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
 import tomllib
+from pathlib import Path
 from typing import Any
-
 
 GOVERNANCE = Path(__file__).resolve().parents[1]
 ROOT = GOVERNANCE.parent
@@ -25,7 +23,7 @@ AREA_ROLES = {
     "engine": "runtime_and_compact_numerical_evidence",
     "data": "canonical_scientific_packets",
     "validation": "installed_artifact_campaigns",
-    "lab": "experiments_and_independent_oracles",
+    "lab": "temporary_experiments_and_provenance",
 }
 AREAS = tuple(AREA_ROLES)
 CONTROL_MANIFESTS = {
@@ -70,6 +68,19 @@ def canonical_sha256(value: Any) -> str:
 
 def valid_hash(value: Any) -> bool:
     return isinstance(value, str) and HEX64.fullmatch(value) is not None
+
+
+def packet_fingerprint(packet_root: Path) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(item for item in packet_root.rglob("*") if item.is_file()):
+        relative = path.relative_to(packet_root).as_posix().encode("utf-8")
+        digest.update(len(relative).to_bytes(8, "big"))
+        digest.update(relative)
+        digest.update(path.stat().st_size.to_bytes(8, "big"))
+        with path.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+    return digest.hexdigest()
 
 
 def replayable(value: Any) -> bool:
@@ -202,9 +213,14 @@ def receipt_errors() -> list[str]:
             for value in (producer, reviewer)
         ):
             errors.append(f"receipt {path.name} requires producer and reviewer identities")
-        if isinstance(producer, dict) and isinstance(reviewer, dict) and record.get("status") == "completed":
-            if (producer.get("kind"), producer.get("id")) == (reviewer.get("kind"), reviewer.get("id")):
-                errors.append(f"receipt {path.name} cannot be self-reviewed")
+        if (
+            isinstance(producer, dict)
+            and isinstance(reviewer, dict)
+            and record.get("status") == "completed"
+            and (producer.get("kind"), producer.get("id"))
+            == (reviewer.get("kind"), reviewer.get("id"))
+        ):
+            errors.append(f"receipt {path.name} cannot be self-reviewed")
         if not isinstance(envelope.get("failed_outcomes"), list):
             errors.append(f"receipt {path.name} failed_outcomes must be a list")
         for field in ("supersedes", "revoked_by"):
@@ -223,6 +239,174 @@ def receipt_errors() -> list[str]:
     return errors
 
 
+def data_packet_lock_errors(repository: str) -> list[str]:
+    path = GOVERNANCE / CONTROL_MANIFESTS["data_packet_locks"]
+    try:
+        locks = load_json(path)
+    except (OSError, json.JSONDecodeError) as error:
+        return [f"invalid data packet lock manifest: {error}"]
+    if not isinstance(locks, dict):
+        return ["data packet lock manifest must be an object"]
+
+    errors: list[str] = []
+    expected_top_level = {"schema_version", "repository", "packet_root", "packets"}
+    if set(locks) != expected_top_level:
+        errors.append("data packet lock manifest has an invalid top-level schema")
+    if locks.get("schema_version") != 2:
+        errors.append("data packet lock schema_version must be 2")
+    if locks.get("repository") != repository:
+        errors.append("data packet lock repository must match the monorepo")
+    if locks.get("packet_root") != "data/packets":
+        errors.append("data packet lock root must be data/packets")
+
+    packets = locks.get("packets")
+    if not isinstance(packets, list) or not packets:
+        errors.append("data packet lock manifest requires packets")
+        return errors
+
+    expected_packet_fields = {
+        "packet_id",
+        "packet_version",
+        "packet_path",
+        "packet_fingerprint",
+        "materialization",
+    }
+    seen_ids: set[str] = set()
+    seen_paths: set[str] = set()
+    for index, lock in enumerate(packets):
+        label = f"data packet lock {index}"
+        if not isinstance(lock, dict):
+            errors.append(f"{label} must be an object")
+            continue
+        if set(lock) != expected_packet_fields:
+            errors.append(f"{label} has an invalid schema")
+            continue
+        packet_id = lock.get("packet_id")
+        version = lock.get("packet_version")
+        packet_path = lock.get("packet_path")
+        if not isinstance(packet_id, str) or not packet_id:
+            errors.append(f"{label} has an incomplete identity")
+            continue
+        if not isinstance(version, str) or not version:
+            errors.append(f"{label} has an incomplete identity")
+            continue
+        if not isinstance(packet_path, str) or not packet_path:
+            errors.append(f"{label} has an incomplete identity")
+            continue
+        if packet_id in seen_ids:
+            errors.append(f"duplicate data packet lock ID: {packet_id}")
+        if packet_path in seen_paths:
+            errors.append(f"duplicate data packet lock path: {packet_path}")
+        seen_ids.add(packet_id)
+        seen_paths.add(packet_path)
+        expected_path = f"data/packets/{packet_id}/{version}"
+        if packet_path != expected_path or not replayable(packet_path):
+            errors.append(f"{label} path must be {expected_path}")
+            continue
+        packet_root = ROOT / packet_path
+        if not packet_root.is_dir():
+            errors.append(f"missing locked data packet: {packet_path}")
+            continue
+        expected_fingerprint = lock.get("packet_fingerprint")
+        if not valid_hash(expected_fingerprint):
+            errors.append(f"{label} requires a 64-hex fingerprint")
+        elif packet_fingerprint(packet_root) != expected_fingerprint:
+            errors.append(f"locked data packet fingerprint mismatch: {packet_path}")
+        if lock.get("materialization") != "byte-for-byte":
+            errors.append(f"{label} materialization must be byte-for-byte")
+    return errors
+
+
+def materialization_errors(repository: str) -> list[str]:
+    lock_path = GOVERNANCE / CONTROL_MANIFESTS["data_packet_locks"]
+    try:
+        locks = load_json(lock_path)
+    except (OSError, json.JSONDecodeError):
+        return []
+    lock_by_id = {
+        lock.get("packet_id"): lock
+        for lock in locks.get("packets", [])
+        if isinstance(lock, dict)
+    }
+    errors: list[str] = []
+    roots = (ROOT / "engine" / "tests" / "fixtures" / "data", ROOT / "validation" / "campaigns")
+    for root in roots:
+        for path in sorted(root.rglob("materialization*.json")):
+            try:
+                receipt = load_json(path)
+            except (OSError, json.JSONDecodeError) as error:
+                errors.append(f"invalid materialization {path.relative_to(ROOT)}: {error}")
+                continue
+            if not isinstance(receipt, dict) or receipt.get("schema_version") != 3:
+                continue
+            label = f"materialization {path.relative_to(ROOT)}"
+            required = {
+                "repository",
+                "lock_manifest",
+                "packet_id",
+                "packet_version",
+                "packet_path",
+                "packet_fingerprint",
+                "materialization_mode",
+                "destination",
+                "files",
+            }
+            if not required.issubset(receipt):
+                errors.append(f"{label} is missing required fields")
+                continue
+            if receipt["repository"] != repository:
+                errors.append(f"{label} repository must match the monorepo")
+            if receipt["lock_manifest"] != "governance/manifests/data-packet-locks.json":
+                errors.append(f"{label} has an invalid lock manifest")
+            lock = lock_by_id.get(receipt["packet_id"])
+            identity = (
+                receipt["packet_version"],
+                receipt["packet_path"],
+                receipt["packet_fingerprint"],
+            )
+            if lock is None or identity != (
+                lock.get("packet_version"),
+                lock.get("packet_path"),
+                lock.get("packet_fingerprint"),
+            ):
+                errors.append(f"{label} does not match its Governance lock")
+                continue
+            destination = receipt["destination"]
+            if not replayable(destination) or not (ROOT / destination).is_dir():
+                errors.append(f"{label} has an invalid destination")
+                continue
+            files = receipt["files"]
+            if not isinstance(files, list) or not files:
+                errors.append(f"{label} requires file hashes")
+                continue
+            recorded_paths: set[str] = set()
+            source_root = ROOT / receipt["packet_path"]
+            destination_root = ROOT / destination
+            for item in files:
+                if not isinstance(item, dict) or set(item) != {"path", "sha256"}:
+                    errors.append(f"{label} contains an invalid file record")
+                    continue
+                relative_path = item["path"]
+                expected_hash = item["sha256"]
+                if not replayable(relative_path) or not valid_hash(expected_hash):
+                    errors.append(f"{label} contains an invalid file identity")
+                    continue
+                recorded_paths.add(relative_path)
+                for owner, base in (("source", source_root), ("destination", destination_root)):
+                    materialized = base / relative_path
+                    if not materialized.is_file() or sha256_file(materialized) != expected_hash:
+                        errors.append(f"{label} {owner} hash mismatch: {relative_path}")
+            for owner, base in (("source", source_root), ("destination", destination_root)):
+                observed = {
+                    item.relative_to(base).as_posix()
+                    for item in base.rglob("*")
+                    if item.is_file()
+                }
+                if observed != recorded_paths:
+                    errors.append(f"{label} does not enumerate every {owner} file")
+    return errors
+
+
 def check() -> list[str]:
     errors: list[str] = []
     try:
@@ -232,8 +416,8 @@ def check() -> list[str]:
 
     if config.get("schema_version") != 2:
         errors.append("management schema_version must be 2")
-    if config.get("doctrine_revision") != 11:
-        errors.append("management doctrine_revision must be 11")
+    if config.get("doctrine_revision") != 12:
+        errors.append("management doctrine_revision must be 12")
     if config.get("repository") != "tannerpolley/ePC-SAFT":
         errors.append("management repository must be tannerpolley/ePC-SAFT")
     if config.get("ci_cd") != "disabled":
@@ -279,14 +463,13 @@ def check() -> list[str]:
         errors.append(f"tracked workflow check failed: {error}")
         tracked = []
     for name in tracked:
-        relative = Path(name)
-        parts = relative.parts
+        tracked_path = Path(name)
+        parts = tracked_path.parts
         if {"build", ".venv"}.intersection(parts):
             continue
         if any(parts[index:index + 2] == (".github", "workflows") for index in range(len(parts) - 1)):
-            workflows.add(ROOT / relative)
+            workflows.add(ROOT / tracked_path)
     for directory, directories, _ in os.walk(ROOT):
-        relative = Path(directory).relative_to(ROOT)
         directories[:] = [name for name in directories if name not in {".git", "build", ".venv"}]
         if Path(directory).name == ".github" and "workflows" in directories:
             workflows.add(Path(directory) / "workflows")
@@ -308,6 +491,8 @@ def check() -> list[str]:
         except (OSError, json.JSONDecodeError) as error:
             errors.append(f"invalid JSON manifest {manifest.name}: {error}")
 
+    errors.extend(data_packet_lock_errors(config.get("repository", "")))
+    errors.extend(materialization_errors(config.get("repository", "")))
     errors.extend(receipt_errors())
 
     for pointer in LIVE_POINTERS:
@@ -324,10 +509,15 @@ def check() -> list[str]:
             [
                 str(environment_python),
                 "-c",
-                "from importlib import metadata; import re; "
-                "print('\\n'.join(sorted(d.metadata.get('Name','') for d in metadata.distributions() "
-                "if re.sub(r'[-_.]+','-',d.metadata.get('Name','')).lower().startswith('epcsaft'))))",
+                (
+                    "from importlib import metadata; import re; "
+                    "print('\\n'.join(sorted(d.metadata.get('Name','') "
+                    "for d in metadata.distributions() if "
+                    "re.sub(r'[-_.]+','-',d.metadata.get('Name','')).lower()"
+                    ".startswith('epcsaft'))))"
+                ),
             ],
+            check=False,
             capture_output=True,
             text=True,
         )

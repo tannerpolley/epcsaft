@@ -2,7 +2,7 @@
 
 Status: canonical
 
-Doctrine revision: 11
+Doctrine revision: 12
 
 Approved: 2026-08-05
 
@@ -65,7 +65,7 @@ doctrine does not transfer any scientific implementation or capability.
 | `data/` | Canonical reusable scientific packets: parameter bundles, source-derived datasets, normalized observations, provenance, units, domains, hashes, and license or use bases | Runtime algorithms, generated validation results, package artifacts, full papers, or exploratory and rejected material |
 | `engine/` | The single `epcsaft` runtime distribution: EOS/state/property evaluation, CppAD derivatives, equilibrium formulations and certification, regression targets and diagnostics, one native build, and one release identity | Canonical scientific packets, durable black-box validation evidence, application workflows, or separate Equilibrium and Regression distributions |
 | `validation/` | Installed-artifact, cross-module, downstream-consumer, and literature acceptance evidence authored by the accountable Engine task | Production algorithms, private Engine imports, a paper archive, or a permanent execution owner |
-| `lab/` | Non-production experiments, manufactured and independent reference oracles, broad provenance, source indexes, and rejected alternatives | Production distributions or releases, runtime authority, admission receipts, or dependencies consumed by production or validation directories |
+| `lab/` | Temporary non-production experiments, broad provenance, source indexes, and rejected alternatives | Persistent tests or test frameworks, durable scientific evidence, production distributions or releases, runtime authority, admission receipts, or dependencies consumed by production or validation directories |
 
 D-026 supersedes the active polyrepo topology and D-019's environment-per-repo
 rule. The source repositories remain immutable migration provenance after
@@ -447,6 +447,10 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 12 records the user-approved conversion of Lab into a zero-test
+playground. D-027 removes permanent Lab oracle frameworks and routes every
+durable numerical claim to Engine or installed-wheel Validation evidence.
+
 Revision 11 records the user-approved direct cutover to one private monorepo,
 one Git root, one Codex environment, one issue tracker, and one end-to-end
 vertical-slice agent. D-026 supersedes active repository topology and
@@ -500,3 +504,4 @@ Historical plans and receipts retain their original names.
 | D-024 Package authority with quarantined consumers | Explicit user instruction on 2026-08-04 to begin the full ePC-SAFT package cutoff and fix Lithium and MEA later | Complete the one-repository, one-wheel Engine authority cutover now; quarantine Lithium Extraction, MEA Thermodynamics, and MEA Absorption Column as non-admitted consumers until separate vertical-slice migrations pass | Removes the three-package authority immediately without treating deferred Git-pinned applications or failed scientific routes as accepted Engine evidence | Yes: application migration | Engine, Management, and downstream application owners |
 | D-025 Private NVDD development | Explicit user instruction on 2026-08-05 adopting the revised Numerical Verification-Driven Development policy project-wide, authorizing CI/CD removal, and authorizing private repository visibility | Treat tests only as current numerical or scientific evidence; prohibit compatibility, API-shape, mock, snapshot, exact-prose, solver-label, and coverage-only suites; keep validation breadth in explicit local commands; remove CI/CD ownership; make every active repository private | Reduces agent friction and permanent contract surface while preserving numerical correctness, source traceability, publication locks, and independent Validation/Lab evidence | No | Governance, Engine, Validation, Data, Lab, and Management owners |
 | D-026 Single private monorepo | Explicit user instruction on 2026-08-05 after package-management and agent-friction review | Move Governance, Engine, Data, Validation, and Lab main histories into private `tannerpolley/ePC-SAFT`; use one Git root, root Codex environment, issue tracker, and Engine-accountable vertical-slice branch while retaining strict directory ownership; archive rather than delete source repositories | Removes cross-repository branch, worktree, wheel, and version coordination while preserving scientific independence and recoverable history | No | Root Management role and directory owners |
+| D-027 Zero-test Lab playground | Explicit user instruction on 2026-08-05 after reviewing all 51 Lab oracle checks | Make Lab a temporary playground with no persistent tests, test framework, or root verification gate; delete self-testing manufactured oracle implementations; distill any future durable numerical claim into Engine or installed-wheel Validation evidence | Removes a parallel 3,945-line toy implementation and prevents Lab experiments from becoming permanent maintenance contracts | No | Lab, Engine, Validation, and Management owners |

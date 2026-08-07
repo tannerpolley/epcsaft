@@ -24,23 +24,59 @@ paths="$(printf '%s\n' "${changed[@]}")"
 if grep -Eq '^(AGENTS.md|CONTEXT.md|README.md|pyproject.toml|uv.lock|\.codex/|tools/)' <<<"$paths"; then
     exec bash tools/check-all.sh
 fi
-bash .codex/environments/setup.sh
 if grep -q '^data/' <<<"$paths"; then
-    .venv/bin/python data/tools/validate_packets.py
+    python3 data/tools/validate_packets.py
+fi
+if grep -Eq '^(engine/(CMakeLists\.txt|LICENSE|README\.md|pyproject\.toml|cpp/|src/|data/|tests/)|validation/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
+    bash .codex/environments/setup.sh
 fi
 if grep -q '^engine/' <<<"$paths"; then
-    (cd engine && ../.venv/bin/python -m pytest -q)
-    (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)
-    (cd engine && ../.venv/bin/mypy)
+    engine_all=false
+    engine_eos=false
+    engine_equilibrium=false
+    engine_regression=false
+    while IFS= read -r path; do
+        case "$path" in
+            engine/tests/eos/*) engine_eos=true ;;
+            engine/tests/equilibrium/*) engine_equilibrium=true ;;
+            engine/tests/regression/*) engine_regression=true ;;
+            engine/cpp/equilibrium/*|engine/src/epcsaft/equilibrium/*|engine/data/reference/*)
+                engine_equilibrium=true
+                engine_regression=true
+                ;;
+            engine/src/epcsaft/regression/*) engine_regression=true ;;
+            engine/AGENTS.md|engine/ARCHITECTURE.yaml|engine/CONTEXT.md|engine/README.md|engine/CMakeLists.txt|engine/pyproject.toml|engine/cpp/*|engine/src/*|engine/data/*|engine/tests/*)
+                engine_all=true
+                ;;
+        esac
+    done <<<"$paths"
+
+    engine_test_paths=()
+    if [[ "$engine_all" == true ]]; then
+        engine_test_paths=(tests)
+    else
+        [[ "$engine_eos" == true ]] && engine_test_paths+=(tests/eos)
+        [[ "$engine_equilibrium" == true ]] && engine_test_paths+=(tests/equilibrium)
+        [[ "$engine_regression" == true ]] && engine_test_paths+=(tests/regression)
+    fi
+    if ((${#engine_test_paths[@]})); then
+        (cd engine && ../.venv/bin/python -m pytest -q "${engine_test_paths[@]}")
+    fi
+    if grep -Eq '^engine/(src/|tests/)' <<<"$paths"; then
+        (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)
+    fi
+    if grep -Eq '^engine/(src/|pyproject\.toml$)' <<<"$paths"; then
+        (cd engine && ../.venv/bin/mypy)
+    fi
+    if grep -q '^engine/tools/' <<<"$paths"; then
+        bash -n engine/tools/*.sh
+    fi
 fi
 if grep -q '^validation/' <<<"$paths"; then
     (cd validation && ../.venv/bin/python -m pytest -q -m 'not campaign')
     if grep -q '^validation/campaigns/' <<<"$paths"; then
         (cd validation && ../.venv/bin/python -m pytest -q -m campaign)
     fi
-fi
-if grep -q '^lab/' <<<"$paths"; then
-    (cd lab && ../.venv/bin/python -m pytest -q reference_oracles)
 fi
 if grep -q '^governance/' <<<"$paths"; then
     python3 governance/tools/management_preflight.py check

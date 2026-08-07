@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "doctrine_revision": 11,
+  "doctrine_revision": 12,
   "repository": "tannerpolley/ePC-SAFT",
   "visibility": "private",
   "default_branch": "main",
@@ -39,7 +39,7 @@
     },
     "lab": {
       "path": "lab",
-      "role": "experiments_and_independent_oracles"
+      "role": "temporary_experiments_and_provenance"
     }
   },
   "vertical_slice": {
@@ -49,7 +49,7 @@
       "engine",
       "validation"
     ],
-    "lab_use": "independent_or_manufactured_oracle_only"
+    "lab_use": "temporary_experiments_only"
   },
   "external_repositories": {
     "organization_profile": {
