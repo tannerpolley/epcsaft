@@ -35,6 +35,9 @@ enum class NativeFixedTopologyParameterKind {
   DispersionEnergyOverK,
   AssociationEnergyOverK,
   AssociationVolume,
+  PairDispersion,
+  PairSize,
+  CrossAssociationEnergyCorrection,
 };
 
 struct NativeFixedTopologyParameter final {
@@ -44,6 +47,9 @@ struct NativeFixedTopologyParameter final {
   std::size_t site_b;
   double value;
   std::size_t correlation_term{0};
+  std::size_t component_b{0};
+  std::vector<std::array<std::size_t, 2>> association_edges{};
+  std::vector<double> association_energy_scales{};
 };
 
 struct NativeFixedTopologyPhaseBlock final {
@@ -149,13 +155,6 @@ inline bool supports_mixture_phase_block(const NativeParameters &parameters) {
 
 // EqExclude: input and domain validation
 inline bool
-supports_binary_interaction_phase_block(const NativeParameters &parameters) {
-  return parameters.segment_count.size() == 2 &&
-         supports_mixture_phase_block(parameters);
-}
-
-// EqExclude: input and domain validation
-inline bool
 supports_electrolyte_phase_block(const NativeParameters &parameters) {
   return parameters.segment_count.size() >= 3 &&
          !parameters.site_component.empty() &&
@@ -243,30 +242,6 @@ phase_block_parameters(const NativeParameters &parameters) {
       parameters.quadrupole_moment_debye_angstrom,
       parameters.polar_formulation,
   };
-}
-
-template <typename Scalar>
-// EqID: active_binary_interaction_mapping
-PhaseBlockParameters<Scalar>
-kij_coordinate_parameters(const NativeParameters &parameters,
-                          std::size_t component_a,
-                          std::size_t component_b, const Scalar &k_ij) {
-  auto values = phase_block_parameters<Scalar>(parameters);
-  const std::size_t components = parameters.segment_count.size();
-  values.k_ij[component_a * components + component_b] = k_ij;
-  values.k_ij[component_b * components + component_a] = k_ij;
-  return values;
-}
-
-template <typename Scalar>
-// EqID: active_binary_size_interaction_mapping
-PhaseBlockParameters<Scalar>
-binary_size_interaction_parameters(const NativeParameters &parameters,
-                                   const Scalar &l_ij) {
-  auto values = phase_block_parameters<Scalar>(parameters);
-  values.l_ij = {Scalar(parameters.l_ij[0]), l_ij, l_ij,
-                 Scalar(parameters.l_ij[3])};
-  return values;
 }
 
 template <typename Scalar, typename Parameters>
@@ -400,80 +375,6 @@ mixture_phase_block(double temperature, const std::vector<double> &amounts,
         return mixture_phase_helmholtz_over_rt_reference_amount(
             temperature, active_amounts, independent[volume_coordinate],
             parameters);
-      });
-}
-
-// EqExclude: transport and buffer mechanics
-inline NativeMixturePhaseBlock
-mixture_phase_block_kij_coordinate(
-    double temperature, const std::vector<double> &amounts, double volume,
-    std::size_t component_a, std::size_t component_b, double k_ij,
-    const NativeParameters &parameters) {
-  if (!supports_binary_interaction_phase_block(parameters)) {
-    throw std::logic_error("active k_ij phase block requires two neutral "
-                           "nonassociating components");
-  }
-  if (component_a >= parameters.segment_count.size() ||
-      component_b >= parameters.segment_count.size() ||
-      component_a == component_b || !std::isfinite(k_ij) || k_ij > 1.0) {
-    throw std::invalid_argument("resolved k_ij coordinate is outside its domain");
-  }
-  validate_mixture_phase_state(temperature, amounts, volume, parameters);
-  const auto value_parameters = kij_coordinate_parameters(
-      parameters, component_a, component_b, k_ij);
-  mixture_phase_helmholtz_over_rt_reference_amount(temperature, amounts, volume,
-                                                   value_parameters);
-
-  std::vector<double> point(amounts.begin(), amounts.end());
-  point.push_back(volume);
-  point.push_back(k_ij);
-  const std::size_t volume_coordinate = amounts.size();
-  return differentiated_mixture_phase_block(
-      temperature, point, volume_coordinate, [&](const auto &independent) {
-        using ADScalar = CppAD::AD<double>;
-        const std::vector<ADScalar> active_amounts(
-            independent.begin(), independent.begin() + volume_coordinate);
-        const auto active_parameters = kij_coordinate_parameters(
-            parameters, component_a, component_b,
-            independent[volume_coordinate + 1]);
-        return mixture_phase_helmholtz_over_rt_reference_amount(
-            temperature, active_amounts, independent[volume_coordinate],
-            active_parameters);
-      });
-}
-
-// EqExclude: transport and buffer mechanics
-inline NativeMixturePhaseBlock
-mixture_phase_block_lij(double temperature, const std::vector<double> &amounts,
-                        double volume, double l_ij,
-                        const NativeParameters &parameters) {
-  if (!supports_binary_interaction_phase_block(parameters)) {
-    throw std::logic_error("active l_ij phase block requires two neutral "
-                           "nonassociating components");
-  }
-  if (!std::isfinite(l_ij)) {
-    throw std::invalid_argument("l_ij must be finite");
-  }
-  validate_mixture_phase_state(temperature, amounts, volume, parameters);
-  const auto value_parameters =
-      binary_size_interaction_parameters(parameters, l_ij);
-  mixture_phase_helmholtz_over_rt_reference_amount(temperature, amounts, volume,
-                                                   value_parameters);
-
-  std::vector<double> point(amounts.begin(), amounts.end());
-  point.push_back(volume);
-  point.push_back(l_ij);
-  const std::size_t volume_coordinate = amounts.size();
-  return differentiated_mixture_phase_block(
-      temperature, point, volume_coordinate, [&](const auto &independent) {
-        using ADScalar = CppAD::AD<double>;
-        const std::vector<ADScalar> active_amounts(
-            independent.begin(), independent.begin() + volume_coordinate);
-        const auto active_parameters = binary_size_interaction_parameters(
-            parameters, independent[volume_coordinate + 1]);
-        return mixture_phase_helmholtz_over_rt_reference_amount(
-            temperature, active_amounts, independent[volume_coordinate],
-            active_parameters);
       });
 }
 
@@ -1040,10 +941,19 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
                               SegmentDiameterCorrelationAmplitude ||
         parameter.kind == NativeFixedTopologyParameterKind::
                               SegmentDiameterCorrelationExponent;
+    const bool pair_upper_closed =
+        parameter.kind == NativeFixedTopologyParameterKind::PairDispersion;
+    const bool pair_upper_open =
+        parameter.kind == NativeFixedTopologyParameterKind::PairSize ||
+        parameter.kind == NativeFixedTopologyParameterKind::
+                              CrossAssociationEnergyCorrection;
     if (!std::isfinite(parameter.value) ||
-        (!signed_correlation && parameter.value <= 0.0)) {
+        (pair_upper_closed && parameter.value > 1.0) ||
+        (pair_upper_open && parameter.value >= 1.0) ||
+        (!signed_correlation && !pair_upper_closed && !pair_upper_open &&
+         parameter.value <= 0.0)) {
       throw std::invalid_argument(
-          "fixed-topology active values must be positive and finite");
+          "fixed-topology active value is outside its physical domain");
     }
     std::size_t identity = 0;
     switch (parameter.kind) {
@@ -1121,6 +1031,71 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
               : value_parameters.association_volume;
       values[forward] = parameter.value;
       values[reverse] = parameter.value;
+      break;
+    }
+    case NativeFixedTopologyParameterKind::PairDispersion:
+    case NativeFixedTopologyParameterKind::PairSize: {
+      // EqID: active_binary_interaction_mapping
+      // EqID: active_binary_size_interaction_mapping
+      if (parameter.component >= parameter.component_b ||
+          parameter.component_b >= components) {
+        throw std::invalid_argument(
+            "pair endpoints must be canonical model component indices");
+      }
+      const std::size_t forward =
+          parameter.component * components + parameter.component_b;
+      const std::size_t reverse =
+          parameter.component_b * components + parameter.component;
+      identity = forward;
+      auto &values =
+          parameter.kind == NativeFixedTopologyParameterKind::PairDispersion
+              ? value_parameters.k_ij
+              : value_parameters.l_ij;
+      values[forward] = parameter.value;
+      values[reverse] = parameter.value;
+      break;
+    }
+    case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection: {
+      // EqID: cross_association_energy_correction
+      if (parameter.component >= parameter.component_b ||
+          parameter.component_b >= components ||
+          parameter.association_edges.empty() ||
+          parameter.association_edges.size() !=
+              parameter.association_energy_scales.size()) {
+        throw std::invalid_argument(
+            "cross-association coordinate application is unresolved");
+      }
+      for (std::size_t edge_index = 0;
+           edge_index < parameter.association_edges.size(); ++edge_index) {
+        const auto edge = parameter.association_edges[edge_index];
+        const double scale = parameter.association_energy_scales[edge_index];
+        if (edge[0] > edge[1] || edge[1] >= sites || !std::isfinite(scale) ||
+            scale <= 0.0) {
+          throw std::invalid_argument(
+              "cross-association edge application is outside the topology");
+        }
+        const std::size_t forward = edge[0] * sites + edge[1];
+        const std::size_t reverse = edge[1] * sites + edge[0];
+        const auto site_component_a = static_cast<std::size_t>(
+            base_parameters.site_component[edge[0]]);
+        const auto site_component_b = static_cast<std::size_t>(
+            base_parameters.site_component[edge[1]]);
+        const auto component_a = std::min(site_component_a, site_component_b);
+        const auto component_b = std::max(site_component_a, site_component_b);
+        if (base_parameters.association_active[forward] == 0 ||
+            base_parameters.association_active[reverse] == 0 ||
+            component_a != parameter.component ||
+            component_b != parameter.component_b) {
+          throw std::invalid_argument(
+              "cross-association edge does not match its component pair");
+        }
+        value_parameters.association_energy_over_k[forward] =
+            scale * (1.0 - parameter.value);
+        value_parameters.association_energy_over_k[reverse] =
+            scale * (1.0 - parameter.value);
+      }
+      identity = parameter.association_edges.front()[0] * sites +
+                 parameter.association_edges.front()[1];
       break;
     }
     }
@@ -1208,6 +1183,31 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
       values[reverse] = active;
       break;
     }
+    case NativeFixedTopologyParameterKind::PairDispersion:
+    case NativeFixedTopologyParameterKind::PairSize: {
+      const std::size_t forward =
+          parameter.component * components + parameter.component_b;
+      const std::size_t reverse =
+          parameter.component_b * components + parameter.component;
+      auto &values =
+          parameter.kind == NativeFixedTopologyParameterKind::PairDispersion
+              ? parameters.k_ij
+              : parameters.l_ij;
+      values[forward] = active;
+      values[reverse] = active;
+      break;
+    }
+    case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection:
+      for (std::size_t edge_index = 0;
+           edge_index < parameter.association_edges.size(); ++edge_index) {
+        const auto edge = parameter.association_edges[edge_index];
+        const ADScalar corrected =
+            parameter.association_energy_scales[edge_index] *
+            (ADScalar(1.0) - active);
+        association_energies[edge[0] * sites + edge[1]] = corrected;
+        association_energies[edge[1] * sites + edge[0]] = corrected;
+      }
+      break;
     }
   }
 

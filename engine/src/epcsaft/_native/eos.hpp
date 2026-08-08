@@ -192,10 +192,15 @@ struct NativeParameterRecord final {
     double value;
 };
 
-struct NativeKijCoordinate final {
+struct NativePairCoordinate final {
     std::string identity;
+    std::string family;
     std::size_t component_a;
     std::size_t component_b;
+    std::string association_role_a;
+    std::string association_role_b;
+    std::vector<std::array<std::size_t, 2>> association_edges;
+    std::vector<double> association_energy_scales;
     double value;
 };
 
@@ -270,23 +275,11 @@ public:
         const std::vector<double>& amounts,
         double volume
     ) const;
-    NativeMixturePhaseBlock evaluate_mixture_phase_kij_coordinate(
+    NativeMixturePhaseBlock evaluate_mixture_phase_pair_coordinates(
         double temperature,
         const std::vector<double>& amounts,
         double volume,
-        const NativeKijCoordinate& coordinate
-    ) const;
-    NativeMixturePhaseBlock evaluate_mixture_phase_lij(
-        double temperature,
-        const std::vector<double>& amounts,
-        double volume,
-        double l_ij
-    ) const;
-    NativeMixturePhaseBlock evaluate_mixture_phase_active_parameter(
-        double temperature,
-        const std::vector<double>& amounts,
-        double volume,
-        const NativeParameterRecord& active_parameter
+        const std::vector<NativePairCoordinate>& coordinates
     ) const;
     NativeMixturePhaseBlock evaluate_electrolyte_phase(
         double temperature,

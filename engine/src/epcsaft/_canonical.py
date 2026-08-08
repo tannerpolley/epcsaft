@@ -13,6 +13,7 @@ from .records import (
     AssociationParameterRecord,
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
+    CrossAssociationCorrectionRecord,
     ModelParameterRecord,
     PairParameterRecord,
     ParameterRecord,
@@ -134,6 +135,16 @@ def _record(record: ParameterRecord) -> dict[str, object]:
             type="pair",
             component_id_a=record.component_id_a,
             component_id_b=record.component_id_b,
+            family=record.family,
+            value=_value(record.family, record.value),
+        )
+    elif isinstance(record, CrossAssociationCorrectionRecord):
+        result.update(
+            type="cross-association-correction",
+            component_id_a=record.component_id_a,
+            component_id_b=record.component_id_b,
+            role_a=record.role_a,
+            role_b=record.role_b,
             family=record.family,
             value=_value(record.family, record.value),
         )

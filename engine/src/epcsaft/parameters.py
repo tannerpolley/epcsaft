@@ -16,6 +16,7 @@ from .records import (
     ComponentRecord,
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
+    CrossAssociationCorrectionRecord,
     ModelFamilySpec,
     ModelParameterRecord,
     ParameterRecord,
@@ -52,9 +53,16 @@ class ActiveParameterApplicability:
     scope: Literal["unordered-component-pair"]
     component_ids: tuple[str, str]
     component_indices: tuple[int, int]
-    model_domain: Literal["neutral-binary-nonassociating"]
+    model_domain: Literal["fixed-topology-mixture"]
     observation_family: Literal["fixed-state-helmholtz"]
-    application: Literal["reciprocal-cross-dispersion"]
+    application: Literal[
+        "reciprocal-cross-dispersion",
+        "reciprocal-cross-size",
+        "role-aware-cross-association-energy",
+    ]
+    association_role_pair: tuple[str, str] | None = None
+    association_edges: tuple[tuple[int, int], ...] = ()
+    association_energy_scales: tuple[float, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,10 +103,16 @@ class ActiveParameterSet:
         if len(requested) != len(set(requested)):
             raise _error("duplicate-record", field="parameter_identity")
         available = {spec.identity: spec for spec in parameters.parameter_specs}
-        missing = tuple(identity for identity in requested if identity not in available)
+        selected = tuple(_active_spec(parameters, available, identity) for identity in requested)
+        missing = tuple(
+            identity for identity, spec in zip(requested, selected, strict=True) if spec is None
+        )
         if missing:
             raise _error("missing-record", field="parameter_identity", value=missing)
-        selected = tuple(available[identity] for identity in requested)
+        selected = cast(tuple[ParameterSpec, ...], selected)
+        resolved_identities = tuple(spec.identity for spec in selected)
+        if len(resolved_identities) != len(set(resolved_identities)):
+            raise _error("duplicate-record", field="parameter_identity")
         discrete = tuple(spec.identity for spec in selected if not spec.continuous)
         if discrete:
             raise _error("invalid-selection", field="parameter_identity", value=discrete)
@@ -123,7 +137,7 @@ class ActiveParameterSet:
             {
                 "schema": "epcsaft.active-parameter-set",
                 "parameters": parameters.fingerprint,
-                "identities": requested,
+                "identities": resolved_identities,
                 "values": tuple(coordinate.value for coordinate in coordinates),
             },
             separators=(",", ":"),
@@ -170,6 +184,52 @@ def _identity_components(identity: str) -> tuple[str, ...]:
 
 
 _K_IJ_DOMAIN = ActiveParameterDomain(None, 1.0, False, True)
+_L_IJ_DOMAIN = ActiveParameterDomain(None, 1.0, False, False)
+_K_HB_IJ_DOMAIN = ActiveParameterDomain(None, 1.0, False, False)
+
+
+def _active_spec(
+    parameters: Parameters,
+    available: Mapping[str, ParameterSpec],
+    identity: str,
+) -> ParameterSpec | None:
+    if identity in available:
+        return available[identity]
+    parts = identity.split("/")
+    if len(parts) != 5 or parts[0] != "pair" or parts[3:] != ["association", "k_hb_ij"]:
+        return None
+    if parts[1] >= parts[2]:
+        raise _error(
+            "invalid-selection",
+            field="parameter_identity",
+            value=identity,
+            reason="noncanonical-pair-order",
+        )
+    component_pair = (parts[1], parts[2])
+    site_roles = {
+        (site.component_id, site.site_id): site.site_role for site in parameters.topology.sites
+    }
+    eligible_role_pairs: set[tuple[str, str]] = set()
+    for edge in parameters.topology.edges:
+        edge_components = tuple(sorted((edge.endpoint_a[0], edge.endpoint_b[0])))
+        if edge.source.kind != "combining-rule" or edge_components != component_pair:
+            continue
+        roles = sorted((site_roles[edge.endpoint_a], site_roles[edge.endpoint_b]))
+        eligible_role_pairs.add((roles[0], roles[1]))
+    if len(eligible_role_pairs) > 1:
+        raise _error(
+            "invalid-selection",
+            field="parameter_identity",
+            value=identity,
+            reason="ambiguous-association-role-pair",
+        )
+    if not eligible_role_pairs:
+        return None
+    role_a, role_b = next(iter(eligible_role_pairs))
+    resolved = available.get(
+        f"pair/{parts[1]}/{parts[2]}/association/{role_a}/{role_b}/k_hb_ij"
+    )
+    return resolved if resolved is not None and resolved.family == "k_hb_ij" else None
 
 
 def _active_value(spec: ParameterSpec, value: object) -> float:
@@ -210,7 +270,12 @@ def _active_coordinate(
     parts = spec.identity.split("/")
     domain: ActiveParameterDomain | None = None
     applicability: ActiveParameterApplicability | None = None
-    if spec.family == "k_ij" and len(parts) == 4 and parts[0] == "pair" and parts[3] == "k_ij":
+    if (
+        spec.family in {"k_ij", "l_ij"}
+        and len(parts) == 4
+        and parts[0] == "pair"
+        and parts[3] == spec.family
+    ):
         component_ids = (parts[1], parts[2])
         if component_ids[0] >= component_ids[1]:
             raise _error(
@@ -222,14 +287,105 @@ def _active_coordinate(
             parameters.component_ids.index(component_ids[0]),
             parameters.component_ids.index(component_ids[1]),
         )
-        domain = _K_IJ_DOMAIN
+        domain = _K_IJ_DOMAIN if spec.family == "k_ij" else _L_IJ_DOMAIN
         applicability = ActiveParameterApplicability(
             "unordered-component-pair",
             component_ids,
             component_indices,
-            "neutral-binary-nonassociating",
+            "fixed-topology-mixture",
             "fixed-state-helmholtz",
-            "reciprocal-cross-dispersion",
+            "reciprocal-cross-dispersion"
+            if spec.family == "k_ij"
+            else "reciprocal-cross-size",
+        )
+    elif (
+        spec.family == "k_hb_ij"
+        and len(parts) == 7
+        and parts[0] == "pair"
+        and parts[3] == "association"
+        and parts[6] == "k_hb_ij"
+    ):
+        component_ids = (parts[1], parts[2])
+        role_pair = (parts[4], parts[5])
+        if component_ids[0] >= component_ids[1] or role_pair[0] > role_pair[1]:
+            raise _error(
+                "invalid-active-coordinate",
+                identity=spec.identity,
+                reason="noncanonical-pair-order",
+            )
+        correction = next(
+            (
+                record
+                for record in parameters.records
+                if isinstance(record, CrossAssociationCorrectionRecord)
+                and record.identity == spec.identity
+            ),
+            None,
+        )
+        if correction is None:
+            raise _error(
+                "invalid-active-coordinate",
+                identity=spec.identity,
+                reason="missing-cross-association-correction",
+            )
+        site_positions = {
+            endpoint: index
+            for index, endpoint in enumerate(
+                sorted((site.component_id, site.site_id) for site in parameters.topology.sites)
+            )
+        }
+        affected = tuple(
+            edge
+            for edge in parameters.topology.edges
+            if spec.identity in edge.source.input_identities
+        )
+        if not affected:
+            raise _error(
+                "invalid-active-coordinate",
+                identity=spec.identity,
+                reason="missing-eligible-association-edge",
+            )
+        association_edges = tuple(
+            tuple(
+                sorted((site_positions[edge.endpoint_a], site_positions[edge.endpoint_b]))
+            )
+            for edge in affected
+        )
+        association_energy_scales = tuple(
+            -float(
+                cast(
+                    SupportsFloat,
+                    next(
+                        derivative.factor
+                        for derivative in edge.source.derivative_sources
+                        if derivative.output_identity == edge.energy_identity
+                        and derivative.input_identity == spec.identity
+                    ),
+                )
+            )
+            for edge in affected
+        )
+        if any(scale <= 0.0 for scale in association_energy_scales):
+            raise _error(
+                "invalid-active-coordinate",
+                identity=spec.identity,
+                reason="invalid-combining-rule-derivative",
+            )
+        component_indices = (
+            parameters.component_ids.index(component_ids[0]),
+            parameters.component_ids.index(component_ids[1]),
+        )
+        domain = _K_HB_IJ_DOMAIN
+        applicability = ActiveParameterApplicability(
+            "unordered-component-pair",
+            component_ids,
+            component_indices,
+            "fixed-topology-mixture",
+            "fixed-state-helmholtz",
+            "role-aware-cross-association-energy",
+            role_pair,
+            cast(tuple[tuple[int, int], ...], association_edges),
+            association_energy_scales,
         )
     elif explicit:
         raise _error(
@@ -300,6 +456,7 @@ class _ParameterDocument:
         records: tuple[ParameterRecord, ...] = (
             *values.singles,
             *values.pairs,
+            *values.cross_association_corrections,
             *values.sites,
             *values.associations,
             *values.correlations,

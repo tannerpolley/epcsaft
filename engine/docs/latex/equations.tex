@@ -1218,6 +1218,22 @@ l_{11}&\theta\\
 \label{eq:active_binary_size_interaction_mapping}
 \end{equation}
 
+% EqID: cross_association_energy_correction
+% Source: EOS typed cross-association correction applied to the declared arithmetic energy combining rule
+% Status: Implementation convention
+% Description: Correct every matching role-aware cross-association energy while preserving association volume.
+% Change note: One unordered component-and-role coordinate owns every multiplicity-equivalent matching edge.
+\begin{equation}
+\frac{\epsilon_{AB,r}^{ij}}{k_B}
+=\left(1-k_{\mathrm{HB},ij,r}\right)
+\frac{\epsilon_{AB,r,0}^{ij}}{k_B},
+\qquad
+\frac{\partial\left(\epsilon_{AB,r}^{ij}/k_B\right)}
+{\partial k_{\mathrm{HB},ij,r}}
+=-\frac{\epsilon_{AB,r,0}^{ij}}{k_B}.
+\label{eq:cross_association_energy_correction}
+\end{equation}
+
 % EqID: pure_active_parameter_mapping
 % Source: EOS parameterized pure-phase coordinate convention
 % Status: Implementation convention
