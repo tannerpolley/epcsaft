@@ -774,6 +774,11 @@ NativeModel NativeModel::with_active_parameters(
       values[reverse] = parameter.value;
       break;
     }
+    case NativeFixedTopologyParameterKind::PairDispersion:
+    case NativeFixedTopologyParameterKind::PairSize:
+    case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection:
+      throw std::logic_error(
+          "pair coordinates require the resolved mixture-coordinate path");
     }
     const auto key = std::pair{parameter.kind, identity};
     if (std::find(seen.begin(), seen.end(), key) != seen.end()) {
@@ -1080,71 +1085,76 @@ NativeModel::evaluate_mixture_phase(double temperature,
 
 // EqExclude: transport and buffer mechanics
 NativeMixturePhaseBlock
-NativeModel::evaluate_mixture_phase_kij_coordinate(
+NativeModel::evaluate_mixture_phase_pair_coordinates(
     double temperature, const std::vector<double> &amounts, double volume,
-    const NativeKijCoordinate &coordinate) const {
+    const std::vector<NativePairCoordinate> &coordinates) const {
   if (component_ids_.size() != parameters_.segment_count.size() ||
-      coordinate.component_a >= component_ids_.size() ||
-      coordinate.component_b >= component_ids_.size() ||
-      coordinate.component_a == coordinate.component_b) {
-    throw std::invalid_argument("invalid resolved k_ij component indices");
-  }
-  const auto endpoints = std::minmax(
-      component_ids_[coordinate.component_a],
-      component_ids_[coordinate.component_b]);
-  const std::string expected_identity =
-      "pair/" + endpoints.first + "/" + endpoints.second + "/k_ij";
-  if (coordinate.identity != expected_identity) {
-    throw std::invalid_argument("resolved k_ij identity does not match its endpoints");
-  }
-  return detail::mixture_phase_block_kij_coordinate(
-      temperature, amounts, volume, coordinate.component_a,
-      coordinate.component_b, coordinate.value, parameters_);
-}
-
-// EqExclude: transport and buffer mechanics
-NativeMixturePhaseBlock
-NativeModel::evaluate_mixture_phase_lij(double temperature,
-                                        const std::vector<double> &amounts,
-                                        double volume, double l_ij) const {
-  return detail::mixture_phase_block_lij(temperature, amounts, volume, l_ij,
-                                         parameters_);
-}
-
-NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase_active_parameter(
-    double temperature, const std::vector<double> &amounts, double volume,
-    const NativeParameterRecord &active_parameter) const {
-  if (component_ids_.size() != 2 || parameters_.segment_count.size() != 2) {
-    throw std::logic_error(
-        "pair interaction phase parameters require a binary model");
-  }
-  const auto parts = split_identity(active_parameter.identity);
-  if (parts.size() != 4 || parts[0] != "pair") {
-    throw std::logic_error("unsupported pair interaction identity: " +
-                           active_parameter.identity);
-  }
-  const auto expected = std::minmax(component_ids_[0], component_ids_[1]);
-  if (parts[1] != expected.first || parts[2] != expected.second ||
-      !std::isfinite(active_parameter.value)) {
+      coordinates.empty()) {
     throw std::invalid_argument(
-        "pair interaction identity does not match the binary model");
+        "resolved pair coordinates require native component identities");
   }
-  if (parts[3] == "k_ij") {
-    const std::size_t component_a =
-        named_index(component_ids_, parts[1], "component");
-    const std::size_t component_b =
-        named_index(component_ids_, parts[2], "component");
-    return evaluate_mixture_phase_kij_coordinate(
-        temperature, amounts, volume,
-        {active_parameter.identity, component_a, component_b,
-         active_parameter.value});
+  std::vector<NativeFixedTopologyParameter> resolved;
+  resolved.reserve(coordinates.size());
+  for (const auto &coordinate : coordinates) {
+    if (coordinate.component_a >= component_ids_.size() ||
+        coordinate.component_b >= component_ids_.size() ||
+        coordinate.component_a == coordinate.component_b ||
+        !std::isfinite(coordinate.value)) {
+      throw std::invalid_argument("invalid resolved pair-coordinate endpoints");
+    }
+    const auto endpoint_ids = std::minmax(
+        component_ids_[coordinate.component_a],
+        component_ids_[coordinate.component_b]);
+    const auto component_indices =
+        std::minmax(coordinate.component_a, coordinate.component_b);
+    NativeFixedTopologyParameterKind kind;
+    std::string expected_identity;
+    if (coordinate.family == "k_ij" || coordinate.family == "l_ij") {
+      if (!coordinate.association_role_a.empty() ||
+          !coordinate.association_role_b.empty() ||
+          !coordinate.association_edges.empty() ||
+          !coordinate.association_energy_scales.empty()) {
+        throw std::invalid_argument(
+            "non-association pair coordinate contains association metadata");
+      }
+      kind = coordinate.family == "k_ij"
+                 ? NativeFixedTopologyParameterKind::PairDispersion
+                 : NativeFixedTopologyParameterKind::PairSize;
+      expected_identity = "pair/" + endpoint_ids.first + "/" +
+                          endpoint_ids.second + "/" + coordinate.family;
+    } else if (coordinate.family == "k_hb_ij") {
+      if (coordinate.association_role_a.empty() ||
+          coordinate.association_role_a > coordinate.association_role_b) {
+        throw std::invalid_argument(
+            "cross-association coordinate role pair is not canonical");
+      }
+      kind = NativeFixedTopologyParameterKind::
+          CrossAssociationEnergyCorrection;
+      expected_identity = "pair/" + endpoint_ids.first + "/" +
+                          endpoint_ids.second + "/association/" +
+                          coordinate.association_role_a + "/" +
+                          coordinate.association_role_b + "/k_hb_ij";
+    } else {
+      throw std::logic_error("unsupported resolved pair-coordinate family");
+    }
+    if (coordinate.identity != expected_identity) {
+      throw std::invalid_argument(
+          "resolved pair-coordinate identity does not match its application");
+    }
+    resolved.push_back({
+        kind,
+        component_indices.first,
+        0,
+        0,
+        coordinate.value,
+        0,
+        component_indices.second,
+        coordinate.association_edges,
+        coordinate.association_energy_scales,
+    });
   }
-  if (parts[3] == "l_ij") {
-    return evaluate_mixture_phase_lij(temperature, amounts, volume,
-                                      active_parameter.value);
-  }
-  throw std::logic_error("unsupported pair interaction identity: " +
-                         active_parameter.identity);
+  return detail::fixed_topology_parameterized_mixture_phase_block(
+      temperature, amounts, volume, resolved, parameters_);
 }
 
 // EqExclude: transport and buffer mechanics

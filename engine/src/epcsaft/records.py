@@ -51,6 +51,7 @@ type SingleParameterFamily = Literal[
     "quadrupole_moment",
 ]
 type PairParameterFamily = Literal["k_ij", "l_ij"]
+type CrossAssociationCorrectionFamily = Literal["k_hb_ij"]
 type AssociationParameterFamily = Literal["association_energy_over_k", "association_volume"]
 type ModelParameterFamily = Literal[
     "ion_fraction_suppression_coefficient",
@@ -114,6 +115,7 @@ _DIMENSIONLESS_FAMILIES = frozenset(
         "association_volume",
         "k_ij",
         "l_ij",
+        "k_hb_ij",
         "ion_fraction_suppression_coefficient",
         "ionic_region_relative_permittivity",
         "ion_specific_suppression_coefficient",
@@ -422,6 +424,52 @@ class PairParameterRecord:
     @property
     def identity(self) -> str:
         return f"pair/{self.component_id_a}/{self.component_id_b}/{self.family}"
+
+
+@dataclass(frozen=True, slots=True)
+class CrossAssociationCorrectionRecord:
+    """One unordered component- and role-pair correction to combined energy."""
+
+    record_id: str
+    component_id_a: str
+    component_id_b: str
+    role_a: AssociationSiteRole
+    role_b: AssociationSiteRole
+    family: CrossAssociationCorrectionFamily
+    value: object
+    source_id: str
+    locator: str
+    domain_id: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
+        component_a = _identifier(self.component_id_a, field="component_id_a")
+        component_b = _identifier(self.component_id_b, field="component_id_b")
+        if component_a == component_b:
+            raise _error("invalid-value", field="component_pair", value=component_a)
+        component_a, component_b = sorted((component_a, component_b))
+        object.__setattr__(self, "component_id_a", component_a)
+        object.__setattr__(self, "component_id_b", component_b)
+        roles = (self.role_a, self.role_b)
+        if any(role not in {"donor", "acceptor", "effective"} for role in roles):
+            raise _error("invalid-value", field="association_role_pair", value=roles)
+        role_a, role_b = sorted(roles)
+        object.__setattr__(self, "role_a", role_a)
+        object.__setattr__(self, "role_b", role_b)
+        if self.family != "k_hb_ij":
+            raise _error("invalid-value", field="family", value=self.family)
+        object.__setattr__(self, "value", _parameter_value(self.family, self.value))
+        source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
+        object.__setattr__(self, "source_id", source_id)
+        object.__setattr__(self, "locator", locator)
+        object.__setattr__(self, "domain_id", domain_id)
+
+    @property
+    def identity(self) -> str:
+        return (
+            f"pair/{self.component_id_a}/{self.component_id_b}/association/"
+            f"{self.role_a}/{self.role_b}/{self.family}"
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -773,6 +821,7 @@ type ParameterRecord = (
     SingleParameterRecord
     | ModelParameterRecord
     | PairParameterRecord
+    | CrossAssociationCorrectionRecord
     | SiteRecord
     | AssociationParameterRecord
     | CorrelationRecord
@@ -795,6 +844,8 @@ __all__ = (
     "ConstantPlusSumOfExponentialsCorrelation",
     "CorrelationFamily",
     "CorrelationRecord",
+    "CrossAssociationCorrectionFamily",
+    "CrossAssociationCorrectionRecord",
     "DomainKind",
     "ExponentialTerm",
     "ModelFamilyKind",

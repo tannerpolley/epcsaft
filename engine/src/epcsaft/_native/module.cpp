@@ -166,18 +166,47 @@ PYBIND11_MODULE(_core, module) {
         .def_readonly("identity", &epcsaft::NativeParameterRecord::identity)
         .def_readonly("value", &epcsaft::NativeParameterRecord::value);
 
-    py::class_<epcsaft::NativeKijCoordinate>(module, "NativeKijCoordinate")
+    py::class_<epcsaft::NativePairCoordinate>(module, "NativePairCoordinate")
         .def(
-            py::init<std::string, std::size_t, std::size_t, double>(),
+            py::init<
+                std::string,
+                std::string,
+                std::size_t,
+                std::size_t,
+                std::string,
+                std::string,
+                std::vector<std::array<std::size_t, 2>>,
+                std::vector<double>,
+                double
+            >(),
             py::arg("identity"),
+            py::arg("family"),
             py::arg("component_a"),
             py::arg("component_b"),
+            py::arg("association_role_a"),
+            py::arg("association_role_b"),
+            py::arg("association_edges"),
+            py::arg("association_energy_scales"),
             py::arg("value")
         )
-        .def_readonly("identity", &epcsaft::NativeKijCoordinate::identity)
-        .def_readonly("component_a", &epcsaft::NativeKijCoordinate::component_a)
-        .def_readonly("component_b", &epcsaft::NativeKijCoordinate::component_b)
-        .def_readonly("value", &epcsaft::NativeKijCoordinate::value);
+        .def_readonly("identity", &epcsaft::NativePairCoordinate::identity)
+        .def_readonly("family", &epcsaft::NativePairCoordinate::family)
+        .def_readonly("component_a", &epcsaft::NativePairCoordinate::component_a)
+        .def_readonly("component_b", &epcsaft::NativePairCoordinate::component_b)
+        .def_readonly(
+            "association_role_a", &epcsaft::NativePairCoordinate::association_role_a
+        )
+        .def_readonly(
+            "association_role_b", &epcsaft::NativePairCoordinate::association_role_b
+        )
+        .def_readonly(
+            "association_edges", &epcsaft::NativePairCoordinate::association_edges
+        )
+        .def_readonly(
+            "association_energy_scales",
+            &epcsaft::NativePairCoordinate::association_energy_scales
+        )
+        .def_readonly("value", &epcsaft::NativePairCoordinate::value);
 
     py::class_<epcsaft::NativePurePhaseBlock>(module, "NativePurePhaseBlock")
         .def_readonly(
@@ -406,20 +435,12 @@ PYBIND11_MODULE(_core, module) {
             py::arg("active_parameters")
         )
         .def(
-            "evaluate_mixture_phase_kij_coordinate",
-            &epcsaft::NativeModel::evaluate_mixture_phase_kij_coordinate,
+            "evaluate_mixture_phase_pair_coordinates",
+            &epcsaft::NativeModel::evaluate_mixture_phase_pair_coordinates,
             py::arg("temperature"),
             py::arg("amounts"),
             py::arg("volume"),
-            py::arg("coordinate")
-        )
-        .def(
-            "evaluate_mixture_phase_active_parameter",
-            &epcsaft::NativeModel::evaluate_mixture_phase_active_parameter,
-            py::arg("temperature"),
-            py::arg("amounts"),
-            py::arg("volume"),
-            py::arg("active_parameter")
+            py::arg("coordinates")
         )
         .def(
             "evaluate_fugacity_derivatives_active",

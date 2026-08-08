@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal
 from typing import Any, Literal, cast
 
@@ -14,10 +14,12 @@ from .records import (
     AssociationEdgeSource,
     AssociationParameterRecord,
     AssociationPreset,
+    AssociationSiteRole,
     AssociationTopology,
     ComponentRecord,
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
+    CrossAssociationCorrectionRecord,
     ExponentialTerm,
     ModelFamilyKind,
     ModelFamilySpec,
@@ -73,6 +75,7 @@ _COMPONENT_COEFFICIENTS = frozenset(
     }
 )
 _PAIR_COEFFICIENTS = frozenset({"k_ij", "l_ij"})
+_CROSS_ASSOCIATION_CORRECTIONS = frozenset({"k_hb_ij"})
 _MODEL_COEFFICIENTS = frozenset(
     {"ionic_region_relative_permittivity", "ion_fraction_suppression_coefficient"}
 )
@@ -132,6 +135,7 @@ class _DocumentRecords:
     components: tuple[ComponentRecord, ...]
     singles: tuple[SingleParameterRecord, ...]
     pairs: tuple[PairParameterRecord, ...]
+    cross_association_corrections: tuple[CrossAssociationCorrectionRecord, ...]
     sites: tuple[SiteRecord, ...]
     associations: tuple[AssociationParameterRecord, ...]
     correlations: tuple[ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation, ...]
@@ -430,8 +434,13 @@ def _components(
 def _pairs(
     value: object,
     component_ids: frozenset[str],
-) -> tuple[tuple[PairParameterRecord, ...], tuple[ParameterSpec, ...]]:
+) -> tuple[
+    tuple[PairParameterRecord, ...],
+    tuple[CrossAssociationCorrectionRecord, ...],
+    tuple[ParameterSpec, ...],
+]:
     records = []
+    corrections = []
     specs = []
     for index, item in enumerate(_sequence(value, field="pairs")):
         field = f"pairs[{index}]"
@@ -455,6 +464,45 @@ def _pairs(
             family = coefficient_raw.get("family")
             if not isinstance(family, str):
                 raise _error("invalid-value", field=f"{coefficient_field}.family", value=family)
+            if family == "k_hb_ij":
+                observed_identity = _parameter_identity(
+                    coefficient_raw.get("identity"), field=f"{coefficient_field}.identity"
+                )
+                parts = observed_identity.split("/")
+                if (
+                    len(parts) != 7
+                    or parts[:4] != ["pair", component_a, component_b, "association"]
+                    or parts[6] != family
+                    or parts[4] not in {"donor", "acceptor", "effective"}
+                    or parts[5] not in {"donor", "acceptor", "effective"}
+                    or parts[4] > parts[5]
+                ):
+                    raise _error(
+                        "invalid-value",
+                        field=f"{coefficient_field}.identity",
+                        value=observed_identity,
+                        reason="noncanonical-cross-association-correction",
+                    )
+                resolved_family, parameter_value, spec, provenance = _coefficient(
+                    coefficient_raw,
+                    field=coefficient_field,
+                    allowed_families=_CROSS_ASSOCIATION_CORRECTIONS,
+                    expected_identity=observed_identity,
+                )
+                corrections.append(
+                    CrossAssociationCorrectionRecord(
+                        _record_id(observed_identity),
+                        component_a,
+                        component_b,
+                        cast(AssociationSiteRole, parts[4]),
+                        cast(AssociationSiteRole, parts[5]),
+                        cast(Any, resolved_family),
+                        parameter_value,
+                        *provenance,
+                    )
+                )
+                specs.append(spec)
+                continue
             identity = f"pair/{component_a}/{component_b}/{family}"
             family, parameter_value, spec, provenance = _coefficient(
                 coefficient_raw,
@@ -473,7 +521,7 @@ def _pairs(
                 )
             )
             specs.append(spec)
-    return tuple(records), tuple(specs)
+    return tuple(records), tuple(corrections), tuple(specs)
 
 
 def _model_families(value: object) -> tuple[ModelFamilySpec, ...]:
@@ -863,12 +911,7 @@ def _validate_combining_inputs(
             field=field,
             reason="combining-rule-requires-cross-component-edge",
         )
-    if {site_roles[endpoint] for endpoint in output_endpoints} != {"donor", "acceptor"}:
-        raise _error(
-            "invalid-value",
-            field=field,
-            reason="combining-rule-requires-donor-acceptor-edge",
-        )
+    output_role_pair = tuple(sorted(site_roles[endpoint] for endpoint in output_endpoints))
     expected_components = {endpoint_a[0], endpoint_b[0]}
     input_edge_sets: dict[
         str,
@@ -901,11 +944,14 @@ def _validate_combining_inputs(
                     field=f"{field}.source.inputs.{family}",
                     reason="combining-input-site-does-not-match-edge",
                 )
-            if {site_roles[endpoint] for endpoint in matching[0]} != {"donor", "acceptor"}:
+            input_role_pair = tuple(
+                sorted(site_roles[endpoint] for endpoint in matching[0])
+            )
+            if input_role_pair != output_role_pair:
                 raise _error(
                     "invalid-value",
                     field=f"{field}.source.inputs.{family}",
-                    reason="combining-input-must-be-donor-acceptor-self-edge",
+                    reason="combining-input-role-pair-does-not-match-edge",
                 )
     if input_edge_sets["energy_over_k"] != input_edge_sets["volume"]:
         raise _error(
@@ -1016,9 +1062,92 @@ def _combining_edge(
     return edge, (energy_spec, volume_spec)
 
 
+def _apply_cross_association_corrections(
+    edges: list[AssociationEdge],
+    specs: list[ParameterSpec],
+    corrections: tuple[CrossAssociationCorrectionRecord, ...],
+    site_roles: Mapping[tuple[str, str], str],
+) -> tuple[list[AssociationEdge], list[ParameterSpec]]:
+    corrected_edges = list(edges)
+    corrected_specs = list(specs)
+    for correction in corrections:
+        component_pair = (correction.component_id_a, correction.component_id_b)
+        role_pair = (correction.role_a, correction.role_b)
+        matching = tuple(
+            index
+            for index, edge in enumerate(corrected_edges)
+            if edge.source.kind == "combining-rule"
+            and tuple(sorted((edge.endpoint_a[0], edge.endpoint_b[0]))) == component_pair
+            and tuple(
+                sorted((site_roles[edge.endpoint_a], site_roles[edge.endpoint_b]))
+            )
+            == role_pair
+        )
+        if not matching:
+            raise _error(
+                "invalid-active-coordinate",
+                identity=correction.identity,
+                reason="missing-eligible-association-edge",
+            )
+        correction_value = cast(Decimal, correction.value)
+        remaining = Decimal(1) - correction_value
+        if remaining <= 0:
+            raise _error(
+                "invalid-active-coordinate",
+                identity=correction.identity,
+                reason="out-of-domain",
+                value=correction_value,
+            )
+        for index in matching:
+            edge = corrected_edges[index]
+            if correction.identity in edge.source.input_identities:
+                raise _error("duplicate-record", field="cross_association_correction")
+            base_energy = cast(pint.Quantity[Any], edge.energy_over_k)
+            base_magnitude = Decimal(str(base_energy.to("kelvin").magnitude))
+            energy = base_energy * remaining
+            derivatives = tuple(
+                AssociationDerivativeSource(
+                    derivative.output_identity,
+                    derivative.input_identity,
+                    cast(Decimal, derivative.factor) * remaining
+                    if derivative.output_identity == edge.energy_identity
+                    else derivative.factor,
+                )
+                for derivative in edge.source.derivative_sources
+            ) + (
+                AssociationDerivativeSource(
+                    edge.energy_identity,
+                    correction.identity,
+                    -base_magnitude,
+                ),
+            )
+            source = AssociationEdgeSource(
+                edge.source.kind,
+                edge.source.rule_id,
+                edge.source.provenance,
+                (*edge.source.input_identities, correction.identity),
+                derivatives,
+            )
+            corrected_edges[index] = AssociationEdge(
+                edge.endpoint_a,
+                edge.endpoint_b,
+                edge.energy_identity,
+                edge.volume_identity,
+                energy,
+                edge.volume,
+                source,
+            )
+            corrected_specs = [
+                replace(spec, value=energy) if spec.identity == edge.energy_identity else spec
+                for spec in corrected_specs
+            ]
+    return corrected_edges, corrected_specs
+
+
 def _topology(
     value: object,
     component_ids: frozenset[str],
+    corrections: tuple[CrossAssociationCorrectionRecord, ...],
 ) -> tuple[
     AssociationTopology,
     tuple[SiteRecord, ...],
@@ -1168,6 +1297,9 @@ def _topology(
         edges.append(edge)
         specs.extend(edge_specs)
 
+    edges, specs = _apply_cross_association_corrections(
+        edges, specs, corrections, site_roles
+    )
     ordered_edges = tuple(sorted(edges, key=lambda edge: (edge.endpoint_a, edge.endpoint_b)))
     associations = tuple(record for edge in ordered_edges for record in _edge_records(edge))
     return (
@@ -1186,6 +1318,7 @@ def _validate_document(
     records: tuple[
         SingleParameterRecord
         | PairParameterRecord
+        | CrossAssociationCorrectionRecord
         | AssociationParameterRecord
         | ConstantCorrelation
         | ConstantPlusSumOfExponentialsCorrelation
@@ -1298,11 +1431,15 @@ def _records_from_mapping(value: object) -> _DocumentRecords:
     domains = _domains(raw["domains"])
     components, singles, component_specs = _components(raw["components"])
     component_ids = frozenset(item.component_id for item in components)
-    pairs, pair_specs = _pairs(raw["pairs"], component_ids)
+    pairs, cross_association_corrections, pair_specs = _pairs(
+        raw["pairs"], component_ids
+    )
     model_families = _model_families(raw["model_families"])
     models, model_specs = _model_coefficients(raw["model_coefficients"])
     correlations, correlation_specs = _correlations(raw["correlations"], component_ids)
-    topology, sites, associations, association_specs = _topology(raw["topology"], component_ids)
+    topology, sites, associations, association_specs = _topology(
+        raw["topology"], component_ids, cross_association_corrections
+    )
     parameter_specs = tuple(
         sorted(
             (
@@ -1318,6 +1455,7 @@ def _records_from_mapping(value: object) -> _DocumentRecords:
     records = (
         *singles,
         *pairs,
+        *cross_association_corrections,
         *sites,
         *associations,
         *correlations,
@@ -1342,6 +1480,7 @@ def _records_from_mapping(value: object) -> _DocumentRecords:
         components=components,
         singles=singles,
         pairs=pairs,
+        cross_association_corrections=cross_association_corrections,
         sites=sites,
         associations=associations,
         correlations=correlations,

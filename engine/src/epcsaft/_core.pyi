@@ -58,13 +58,27 @@ class NativeParameterRecord:
     value: float
     def __init__(self, identity: str, value: float) -> None: ...
 
-class NativeKijCoordinate:
+class NativePairCoordinate:
     identity: str
+    family: str
     component_a: int
     component_b: int
+    association_role_a: str
+    association_role_b: str
+    association_edges: Sequence[tuple[int, int]]
+    association_energy_scales: Sequence[float]
     value: float
     def __init__(
-        self, identity: str, component_a: int, component_b: int, value: float
+        self,
+        identity: str,
+        family: str,
+        component_a: int,
+        component_b: int,
+        association_role_a: str,
+        association_role_b: str,
+        association_edges: Sequence[tuple[int, int]],
+        association_energy_scales: Sequence[float],
+        value: float,
     ) -> None: ...
 
 class NativeFixedTopologyPhaseBlock:
@@ -123,19 +137,12 @@ class NativeModel:
         volume: float,
         active_parameters: Sequence[NativeParameterRecord],
     ) -> NativeMixturePhaseBlock: ...
-    def evaluate_mixture_phase_active_parameter(
+    def evaluate_mixture_phase_pair_coordinates(
         self,
         temperature: float,
         amounts: Sequence[float],
         volume: float,
-        active_parameter: NativeParameterRecord,
-    ) -> NativeMixturePhaseBlock: ...
-    def evaluate_mixture_phase_kij_coordinate(
-        self,
-        temperature: float,
-        amounts: Sequence[float],
-        volume: float,
-        coordinate: NativeKijCoordinate,
+        coordinates: Sequence[NativePairCoordinate],
     ) -> NativeMixturePhaseBlock: ...
     def evaluate_fugacity_derivatives_active(
         self,

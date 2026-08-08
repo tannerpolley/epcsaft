@@ -436,9 +436,24 @@ private:
     }
     if (components == 2 && parameters == 1) {
       const std::size_t width = components + 2;
-      const auto block = model_.evaluate_mixture_phase_active_parameter(
+      const auto separator = active.front().identity.rfind('/');
+      if (separator == std::string::npos) {
+        throw std::invalid_argument("pair parameter identity is malformed");
+      }
+      const NativePairCoordinate coordinate{
+          active.front().identity,
+          active.front().identity.substr(separator + 1),
+          0,
+          1,
+          "",
+          "",
+          {},
+          {},
+          active.front().value,
+      };
+      const auto block = model_.evaluate_mixture_phase_pair_coordinates(
           observation_.temperature_k, observation_.composition, volume,
-          active.front());
+          {coordinate});
       return fixed_state_pressure_evaluation(block, observation_.temperature_k,
                                              width, components, components + 1,
                                              1);

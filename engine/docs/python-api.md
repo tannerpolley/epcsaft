@@ -82,8 +82,11 @@ active = ActiveParameterSet(
 pair_parameters = parameters.select(("dipolar", "quadrupolar"))
 pair_active = ActiveParameterSet(
     pair_parameters,
-    ("pair/dipolar/quadrupolar/k_ij",),
-    values=(0.12,),
+    (
+        "pair/dipolar/quadrupolar/k_ij",
+        "pair/dipolar/quadrupolar/l_ij",
+    ),
+    values=(0.12, 0.01),
 )
 
 fixed_state = pure.phase_parameter_derivatives(
@@ -98,14 +101,24 @@ saturation = pure.saturation_parameter_derivatives(
 ```
 
 `ActiveParameterSet` freezes an ordered, nonempty selection of exact continuous
-identities from one `Parameters` value. An explicit `values` sequence currently
-admits the canonical constant `k_ij` tracer; it is interpreted in descriptor
-units and does not mutate the base `Parameters`. That coordinate records its
-canonical unordered endpoints and resolved component indices, reciprocal
-cross-dispersion application, source validity domain, intrinsic
-`(-infinity, 1]` value domain, and neutral binary fixed-state applicability.
-Other trial-value families fail closed until their application and domain are
-admitted by a later capability slice. Every derivative result contains:
+identities from one `Parameters` value. An explicit `values` sequence is
+interpreted in descriptor units and does not mutate the base `Parameters`.
+Any number of constant unordered `k_ij` and `l_ij` identities may be selected
+for a fixed-topology mixture; each coordinate records its canonical component
+endpoints, resolved reciprocal matrix application, source validity domain, and
+intrinsic domain (`k_ij <= 1`, `l_ij < 1`).
+
+A cross-association energy correction has the canonical identity
+`pair/<component-a>/<component-b>/association/<role-a>/<role-b>/k_hb_ij`,
+with both pairs unordered. It applies `epsilon_AB = epsilon_AB,0 * (1 -
+k_hb_ij)` to every combining-rule edge with the declared component and role
+pairs without changing association volume. The shorthand
+`pair/<component-a>/<component-b>/association/k_hb_ij` resolves only when the
+parameter topology contains exactly one eligible declared role pair; missing,
+ambiguous, directed, and unmatched selections fail closed. Its intrinsic
+domain is `k_hb_ij < 1`.
+
+Every derivative result contains:
 
 - values and row-major selected-parameter derivatives;
 - ordered active identities, trial values and units, plus observation row,

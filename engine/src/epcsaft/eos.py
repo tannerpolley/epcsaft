@@ -206,6 +206,17 @@ def _pair_identity(identity: str, family: str) -> bool:
     return len(parts) == 4 and parts[0] == "pair" and parts[3] == family
 
 
+def _cross_association_identity(identity: str, family: str) -> bool:
+    parts = identity.split("/")
+    return (
+        family == "k_hb_ij"
+        and len(parts) == 7
+        and parts[0] == "pair"
+        and parts[3] == "association"
+        and parts[6] == family
+    )
+
+
 def _require_supported_active_parameters(
     active_parameters: ActiveParameterSet,
     observation: str,
@@ -425,30 +436,34 @@ class _EosModel:
             )
         return tuple(records)
 
-    def _kij_coordinate(
+    def _pair_coordinates(
         self, active_parameters: ActiveParameterSet
-    ) -> _native_core.NativeKijCoordinate:
-        if len(active_parameters.coordinates) != 1:
-            raise _eos_error(
-                "unsupported-parameter-derivative",
-                observation="fixed-state-helmholtz",
-                reason="one-k-ij-coordinate-required",
+    ) -> tuple[_native_core.NativePairCoordinate, ...]:
+        result = []
+        for coordinate in active_parameters.coordinates:
+            applicability = coordinate.applicability
+            if coordinate.family not in {"k_ij", "l_ij", "k_hb_ij"} or applicability is None:
+                raise _eos_error(
+                    "unsupported-parameter-derivative",
+                    observation="fixed-state-helmholtz",
+                    identity=coordinate.identity,
+                    reason="unresolved-pair-application",
+                )
+            roles = applicability.association_role_pair or ("", "")
+            result.append(
+                _native_core.NativePairCoordinate(
+                    coordinate.identity,
+                    coordinate.family,
+                    applicability.component_indices[0],
+                    applicability.component_indices[1],
+                    roles[0],
+                    roles[1],
+                    applicability.association_edges,
+                    applicability.association_energy_scales,
+                    coordinate.value,
+                )
             )
-        coordinate = active_parameters.coordinates[0]
-        applicability = coordinate.applicability
-        if coordinate.family != "k_ij" or applicability is None:
-            raise _eos_error(
-                "unsupported-parameter-derivative",
-                observation="fixed-state-helmholtz",
-                identity=coordinate.identity,
-                reason="unresolved-k-ij-application",
-            )
-        return _native_core.NativeKijCoordinate(
-            coordinate.identity,
-            applicability.component_indices[0],
-            applicability.component_indices[1],
-            coordinate.value,
-        )
+        return tuple(result)
 
     def _capability(
         self,
@@ -680,7 +695,19 @@ class _EosModel:
         """Evaluate one fixed-density phase and exact selected-parameter derivatives."""
 
         associating = bool(self._model.association_pairs)
-        if associating:
+        pair_active = all(
+            coordinate.family in {"k_ij", "l_ij", "k_hb_ij"}
+            and coordinate.applicability is not None
+            for coordinate in active_parameters.coordinates
+        )
+        if pair_active:
+            admitted = (
+                _pair_identity(coordinate.identity, coordinate.family)
+                and coordinate.family in {"k_ij", "l_ij"}
+                or _cross_association_identity(coordinate.identity, coordinate.family)
+                for coordinate in active_parameters.coordinates
+            )
+        elif associating:
             admitted = (
                 (
                     _direct_component_identity(coordinate.identity, coordinate.family)
@@ -699,21 +726,7 @@ class _EosModel:
                 for coordinate in active_parameters.coordinates
             )
         else:
-            if (
-                len(self._component_ids) != 2
-                or len(active_parameters.coordinates) != 1
-                or any(self._model.charge_number)
-            ):
-                raise _eos_error(
-                    "unsupported-parameter-derivative",
-                    observation="fixed-state-helmholtz",
-                    reason="binary-pair-coordinate-required",
-                )
-            admitted = (
-                _pair_identity(coordinate.identity, coordinate.family)
-                and coordinate.family in {"k_ij", "l_ij"}
-                for coordinate in active_parameters.coordinates
-            )
+            admitted = (False for _ in active_parameters.coordinates)
         _require_supported_active_parameters(active_parameters, "fixed-state-helmholtz", admitted)
         records = self._active_records(active_parameters)
         state = self._state(T=T, rho=rho, x=x)
@@ -726,7 +739,16 @@ class _EosModel:
         parameter_coordinates: tuple[int, ...]
         block: Any
         try:
-            if self._model.association_pairs:
+            if pair_active:
+                block = self._native.evaluate_mixture_phase_pair_coordinates(
+                    temperature_k,
+                    amounts,
+                    volume,
+                    self._pair_coordinates(active_parameters),
+                )
+                width = component_count + 1 + parameter_count
+                parameter_coordinates = tuple(range(component_count + 1, width))
+            elif self._model.association_pairs:
                 block = (
                     self._native.evaluate_fixed_topology_association_active_parameters(
                         temperature_k, 1.0, volume, records
@@ -744,21 +766,6 @@ class _EosModel:
                 )
                 width = 2 + parameter_count
                 parameter_coordinates = tuple(range(2, width))
-            elif component_count == 2 and parameter_count == 1:
-                block = (
-                    self._native.evaluate_mixture_phase_kij_coordinate(
-                        temperature_k,
-                        amounts,
-                        volume,
-                        self._kij_coordinate(active_parameters),
-                    )
-                    if active_parameters.coordinates[0].family == "k_ij"
-                    else self._native.evaluate_mixture_phase_active_parameter(
-                        temperature_k, amounts, volume, records[0]
-                    )
-                )
-                width = 4
-                parameter_coordinates = (3,)
             else:
                 raise _eos_error(
                     "unsupported-parameter-derivative",

@@ -8,11 +8,14 @@ import pytest
 from epcsaft import ActiveParameterSet, Mixture, Parameters, Pure
 from epcsaft import unit_registry as u
 from tests.eos._raw_cases import (
+    _PROVENANCE,
     AQUEOUS_ELECTROLYTE,
     ASSOCIATING_PURE,
     POLAR_BINARY,
     POLAR_PURE,
     _component,
+    _document,
+    _model_families,
     _pair,
     neutral_pure,
 )
@@ -104,6 +107,174 @@ def _neutral_associating_mixture() -> dict[str, object]:
     )
     pairs.append(_pair("associating-fluid", "inert-fluid", k_ij=0.04))
     return mapping
+
+
+def _neutral_ternary_pairs() -> dict[str, object]:
+    return _document(
+        "neutral-ternary-pair-fixture",
+        [
+            _component(
+                "alpha",
+                segment_count=1.1,
+                segment_diameter=3.1,
+                dispersion_energy_over_k=180.0,
+            ),
+            _component(
+                "beta",
+                segment_count=1.6,
+                segment_diameter=3.5,
+                dispersion_energy_over_k=230.0,
+            ),
+            _component(
+                "gamma",
+                segment_count=2.0,
+                segment_diameter=3.9,
+                dispersion_energy_over_k=290.0,
+            ),
+        ],
+        pairs=[
+            _pair("alpha", "beta", k_ij=0.03, l_ij=-0.02),
+            _pair("alpha", "gamma", k_ij=0.07, l_ij=0.04),
+            _pair("beta", "gamma", k_ij=-0.05, l_ij=0.01),
+        ],
+    )
+
+
+def _association_edge(
+    component: str,
+    site_a: str,
+    site_b: str,
+    energy: float,
+    volume: float,
+) -> dict[str, object]:
+    endpoint_a, endpoint_b = sorted(((component, site_a), (component, site_b)))
+    prefix = (
+        f"association/{endpoint_a[0]}/{endpoint_a[1]}/"
+        f"{endpoint_b[0]}/{endpoint_b[1]}"
+    )
+    return {
+        "endpoint_a": {"component_id": endpoint_a[0], "site_id": endpoint_a[1]},
+        "endpoint_b": {"component_id": endpoint_b[0], "site_id": endpoint_b[1]},
+        "energy_over_k": {
+            "identity": f"{prefix}/energy_over_k",
+            "value": {"magnitude": energy, "unit": "kelvin"},
+        },
+        "volume": {
+            "identity": f"{prefix}/volume",
+            "value": {"magnitude": volume, "unit": "dimensionless"},
+        },
+        "source": {"kind": "explicit", "provenance": [deepcopy(_PROVENANCE)]},
+    }
+
+
+def _combined_edge(
+    endpoint_a: tuple[str, str],
+    endpoint_b: tuple[str, str],
+    input_a: tuple[str, str, str],
+    input_b: tuple[str, str, str],
+) -> dict[str, object]:
+    self_edges = tuple(
+        f"association/{component}/{site_a}/{component}/{site_b}"
+        for component, site_a, site_b in (input_a, input_b)
+    )
+    return {
+        "endpoint_a": {"component_id": endpoint_a[0], "site_id": endpoint_a[1]},
+        "endpoint_b": {"component_id": endpoint_b[0], "site_id": endpoint_b[1]},
+        "source": {
+            "kind": "combining-rule",
+            "rule_id": "arithmetic-energy-geometric-volume",
+            "inputs": {
+                "energy_over_k": [f"{prefix}/energy_over_k" for prefix in self_edges],
+                "volume": [f"{prefix}/volume" for prefix in self_edges],
+            },
+            "provenance": [deepcopy(_PROVENANCE)],
+        },
+    }
+
+
+def _multi_role_associating_binary() -> dict[str, object]:
+    pair = _pair("alpha", "beta", k_ij=0.02, l_ij=0.01)
+    coefficients = pair["coefficients"]
+    assert isinstance(coefficients, list)
+    for role_a, role_b, value in (
+        ("acceptor", "donor", 0.08),
+        ("effective", "effective", -0.04),
+    ):
+        identity = f"pair/alpha/beta/association/{role_a}/{role_b}/k_hb_ij"
+        coefficients.append(
+            {
+                "identity": identity,
+                "family": "k_hb_ij",
+                "value": {"magnitude": value, "unit": "dimensionless"},
+                "provenance": deepcopy(_PROVENANCE),
+            }
+        )
+    sites = [
+        {
+            "component_id": component,
+            "site_id": site,
+            "site_role": role,
+            "multiplicity": 1,
+            "provenance": deepcopy(_PROVENANCE),
+        }
+        for component in ("alpha", "beta")
+        for site, role in (
+            ("a", "acceptor"),
+            ("d", "donor"),
+            ("e1", "effective"),
+            ("e2", "effective"),
+        )
+    ]
+    edges = [
+        _association_edge("alpha", "a", "d", 2200.0, 0.030),
+        _association_edge("beta", "a", "d", 1800.0, 0.025),
+        _association_edge("alpha", "e1", "e2", 1500.0, 0.020),
+        _association_edge("beta", "e1", "e2", 1300.0, 0.018),
+        _combined_edge(
+            ("alpha", "a"),
+            ("beta", "d"),
+            ("alpha", "a", "d"),
+            ("beta", "a", "d"),
+        ),
+        _combined_edge(
+            ("alpha", "d"),
+            ("beta", "a"),
+            ("alpha", "a", "d"),
+            ("beta", "a", "d"),
+        ),
+        _combined_edge(
+            ("alpha", "e1"),
+            ("beta", "e2"),
+            ("alpha", "e1", "e2"),
+            ("beta", "e1", "e2"),
+        ),
+        _combined_edge(
+            ("alpha", "e2"),
+            ("beta", "e1"),
+            ("alpha", "e1", "e2"),
+            ("beta", "e1", "e2"),
+        ),
+    ]
+    return _document(
+        "multi-role-associating-binary-fixture",
+        [
+            _component(
+                "alpha",
+                segment_count=1.3,
+                segment_diameter=3.2,
+                dispersion_energy_over_k=210.0,
+            ),
+            _component(
+                "beta",
+                segment_count=1.7,
+                segment_diameter=3.6,
+                dispersion_energy_over_k=250.0,
+            ),
+        ],
+        pairs=[pair],
+        model_families=_model_families(association="general-site"),
+        topology={"presets": [], "sites": sites, "edges": edges},
+    )
 
 
 @pytest.mark.parametrize(
@@ -254,26 +425,156 @@ def test_canonical_kij_coordinate_is_exact_and_component_order_independent() -> 
         )
 
 
-def test_binary_size_interaction_derivatives_match_independent_differences() -> None:
-    identity = "pair/dipolar/quadrupolar/l_ij"
-    step = 1.0e-5
-    parameters = Parameters.from_mapping(POLAR_BINARY)
+def test_mixed_ternary_pair_coordinates_are_independent_and_ordered() -> None:
+    """Falsify reciprocal mixed-pair columns and their declared ordering."""
+
+    mapping = _neutral_ternary_pairs()
+    identities = (
+        "pair/alpha/beta/k_ij",
+        "pair/beta/gamma/k_ij",
+        "pair/alpha/gamma/l_ij",
+        "pair/beta/gamma/l_ij",
+    )
+    composition = (0.2, 0.3, 0.5)
+    parameters = Parameters.from_mapping(mapping)
     exact = Mixture(parameters).phase_parameter_derivatives(
-        ActiveParameterSet(parameters, (identity,)),
-        T=300.0 * u.kelvin,
-        rho=5000.0 * u.mole / u.meter**3,
-        x=(0.4, 0.6),
+        ActiveParameterSet(parameters, identities),
+        T=315.0 * u.kelvin,
+        rho=4300.0 * u.mole / u.meter**3,
+        x=composition,
     )
-    numerical = _central_difference(
-        POLAR_BINARY,
-        identity,
-        step,
-        lambda candidate: _fixed_state_values(candidate, 300.0, 5000.0, (0.4, 0.6)),
-    )
-    for row, expected in enumerate(numerical):
-        assert exact.derivatives[row][0] == pytest.approx(
-            expected, rel=3.0e-5, abs=2.0e-7
+
+    # h=1e-5 balances centered O(h^2) error and cancellation across the
+    # dimensionless Helmholtz/chemical rows and the pressure row in pascals.
+    # A mismatch means a selected coordinate wrote the wrong pair or column.
+    for column, identity in enumerate(identities):
+        numerical = _central_difference(
+            mapping,
+            identity,
+            1.0e-5,
+            lambda candidate: _fixed_state_values(
+                candidate, 315.0, 4300.0, composition
+            ),
         )
+        for row, expected in enumerate(numerical):
+            assert exact.derivatives[row][column] == pytest.approx(
+                expected, rel=4.0e-5, abs=3.0e-7
+            )
+
+    reordered_parameters = Parameters.from_mapping(
+        mapping, components=("gamma", "alpha", "beta")
+    )
+    reordered = Mixture(reordered_parameters).phase_parameter_derivatives(
+        ActiveParameterSet(reordered_parameters, tuple(reversed(identities))),
+        T=315.0 * u.kelvin,
+        rho=4300.0 * u.mole / u.meter**3,
+        x=(0.5, 0.2, 0.3),
+    )
+    assert reordered.capability.parameter_identities == tuple(reversed(identities))
+    for canonical_row, reordered_row in enumerate((0, 1, 3, 4, 2)):
+        assert reordered.values[reordered_row] == pytest.approx(
+            exact.values[canonical_row], rel=2.0e-12, abs=2.0e-12
+        )
+        for canonical_column in range(len(identities)):
+            reordered_column = len(identities) - canonical_column - 1
+            assert reordered.derivatives[reordered_row][reordered_column] == pytest.approx(
+                exact.derivatives[canonical_row][canonical_column],
+                rel=2.0e-10,
+                abs=2.0e-10,
+            )
+
+
+def test_role_aware_cross_association_corrections_apply_exact_chain() -> None:
+    """Falsify role-aware energy correction and its implicit EOS chain rule."""
+
+    mapping = _multi_role_associating_binary()
+    identities = (
+        "pair/alpha/beta/k_ij",
+        "pair/alpha/beta/l_ij",
+        "pair/alpha/beta/association/acceptor/donor/k_hb_ij",
+        "pair/alpha/beta/association/effective/effective/k_hb_ij",
+    )
+    composition = (0.45, 0.55)
+    parameters = Parameters.from_mapping(mapping)
+    # Independent combining-rule oracle: energies are kelvin and volumes are
+    # dimensionless; 1e-13 relative tolerance covers Decimal-to-double
+    # conversion only. A failure means k_HB altered volume or missed an
+    # eligible multiplicity-equivalent edge.
+    cross_edges = {
+        (edge.endpoint_a, edge.endpoint_b): (
+            float(edge.energy_over_k.to("kelvin").magnitude),
+            float(edge.volume),
+        )
+        for edge in parameters.topology.edges
+        if edge.endpoint_a[0] != edge.endpoint_b[0]
+    }
+    for endpoints in (
+        (("alpha", "a"), ("beta", "d")),
+        (("alpha", "d"), ("beta", "a")),
+    ):
+        energy, volume = cross_edges[endpoints]
+        assert energy == pytest.approx(
+            2000.0 * (1.0 - 0.08), rel=1.0e-13, abs=1.0e-12
+        )
+        assert volume == pytest.approx(
+            (0.030 * 0.025) ** 0.5, rel=1.0e-13, abs=1.0e-15
+        )
+    for endpoints in (
+        (("alpha", "e1"), ("beta", "e2")),
+        (("alpha", "e2"), ("beta", "e1")),
+    ):
+        energy, volume = cross_edges[endpoints]
+        assert energy == pytest.approx(
+            1400.0 * (1.0 - (-0.04)), rel=1.0e-13, abs=1.0e-12
+        )
+        assert volume == pytest.approx(
+            (0.020 * 0.018) ** 0.5, rel=1.0e-13, abs=1.0e-15
+        )
+
+    exact = Mixture(parameters).phase_parameter_derivatives(
+        ActiveParameterSet(parameters, identities),
+        T=310.0 * u.kelvin,
+        rho=2800.0 * u.mole / u.meter**3,
+        x=composition,
+    )
+
+    # The same h=1e-5/tolerance pair spans reduced Helmholtz and chemical rows
+    # plus pressure in pascals. A mismatch means the taped correction omitted
+    # an edge or failed the site-fraction implicit chain rule.
+    for column, identity in enumerate(identities):
+        numerical = _central_difference(
+            mapping,
+            identity,
+            1.0e-5,
+            lambda candidate: _fixed_state_values(
+                candidate, 310.0, 2800.0, composition
+            ),
+        )
+        for row, expected in enumerate(numerical):
+            assert exact.derivatives[row][column] == pytest.approx(
+                expected, rel=4.0e-5, abs=3.0e-7
+            )
+
+    reordered_parameters = Parameters.from_mapping(
+        mapping, components=("beta", "alpha")
+    )
+    reordered = Mixture(reordered_parameters).phase_parameter_derivatives(
+        ActiveParameterSet(reordered_parameters, tuple(reversed(identities))),
+        T=310.0 * u.kelvin,
+        rho=2800.0 * u.mole / u.meter**3,
+        x=(0.55, 0.45),
+    )
+    for canonical_row, reordered_row in enumerate((0, 1, 3, 2)):
+        assert reordered.values[reordered_row] == pytest.approx(
+            exact.values[canonical_row], rel=2.0e-12, abs=2.0e-12
+        )
+        for canonical_column in range(len(identities)):
+            reordered_column = len(identities) - canonical_column - 1
+            assert reordered.derivatives[reordered_row][reordered_column] == pytest.approx(
+                exact.derivatives[canonical_row][canonical_column],
+                rel=2.0e-10,
+                abs=2.0e-10,
+            )
 
 
 @pytest.mark.parametrize(
