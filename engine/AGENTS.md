@@ -3,7 +3,8 @@
 Repository Profile: scientific-computing
 
 Read `../governance/GOVERNANCE.md`, `../governance/manifests/management.json`,
-root `AGENTS.md`, and `CONTEXT.md` before material work.
+root `AGENTS.md`, and `CONTEXT.md` before material work. For CAP work, also read
+`docs/agents/issue-tracker.md` before selecting or executing a leaf.
 
 This directory owns the sole `epcsaft` distribution and its public
 `epcsaft`, `epcsaft.equilibrium`, and `epcsaft.regression` modules. Keep

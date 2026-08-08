@@ -1,6 +1,6 @@
 # Engine Context
 
-`governance_doctrine_revision: 12`
+`governance_doctrine_revision: 13`
 
 `engine/` is the sole runtime owner inside `tannerpolley/ePC-SAFT`. It
 builds one Python 3.13 distribution, `epcsaft`, containing EOS, equilibrium,

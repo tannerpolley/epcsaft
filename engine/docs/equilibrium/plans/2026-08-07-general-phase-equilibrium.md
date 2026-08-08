@@ -1,6 +1,6 @@
 # General Phase-Equilibrium Plan
 
-- Status: canonical owner plan; implementation not started
+- Status: canonical owner plan; execution is tracked by GitHub root issue #10 and its native CAP subissues
 - Date: 2026-08-07
 - Owner: Equilibrium
 - Parent: [General scientific capability hard cutover](../../plans/2026-08-07-general-scientific-capability-hard-cutover.md)

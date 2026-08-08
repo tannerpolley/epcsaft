@@ -1,9 +1,10 @@
-<!-- project-truss:setup:start -->
-## Project Truss domain contract
+# Data domain authority
 
-Layout: `single-context`.
+Before Data work, read root `CONTEXT.md`, `data/CONTEXT.md`, and
+`data/docs/packet-contract.md`. Engine architecture decisions remain under
+`engine/docs/adr/`; Data owns scientific packets, not runtime design or a
+parallel ADR tree.
 
-Use one root `CONTEXT.md` and root `docs/adr/`.
-
-Read the nearest applicable context before shaping or implementation. Keep durable terminology, invariants, ownership, and accepted decisions there; do not mirror lifecycle state.
-<!-- project-truss:setup:end -->
+Keep durable packet identity, provenance, units, domains, hashes, and use basis
+in Data. Lifecycle state remains in GitHub. An Engine-accountable monorepo task
+may revise the exact packet and consumers required by one vertical slice.

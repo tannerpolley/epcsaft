@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 12
+Doctrine revision: 13
 
-Approved: 2026-08-05
+Approved: 2026-08-07
 
 Owner: `tannerpolley/ePC-SAFT:governance/`
 
@@ -174,7 +174,6 @@ src/epcsaft/
 tests/eos/
 tests/equilibrium/
 tests/regression/
-tests/integration/
 docs/
 CMakeLists.txt
 pyproject.toml
@@ -447,6 +446,11 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 13 records the user-approved pre-CAP execution hygiene amendment.
+D-028 removes the retired integration-test shape, makes the native CAP issue
+graph the execution authority, and assigns each CAP leaf to one fresh,
+single-writer task with proportionate read-only review.
+
 Revision 12 records the user-approved conversion of Lab into a zero-test
 playground. D-027 removes permanent Lab oracle frameworks and routes every
 durable numerical claim to Engine or installed-wheel Validation evidence.
@@ -505,3 +509,4 @@ Historical plans and receipts retain their original names.
 | D-025 Private NVDD development | Explicit user instruction on 2026-08-05 adopting the revised Numerical Verification-Driven Development policy project-wide, authorizing CI/CD removal, and authorizing private repository visibility | Treat tests only as current numerical or scientific evidence; prohibit compatibility, API-shape, mock, snapshot, exact-prose, solver-label, and coverage-only suites; keep validation breadth in explicit local commands; remove CI/CD ownership; make every active repository private | Reduces agent friction and permanent contract surface while preserving numerical correctness, source traceability, publication locks, and independent Validation/Lab evidence | No | Governance, Engine, Validation, Data, Lab, and Management owners |
 | D-026 Single private monorepo | Explicit user instruction on 2026-08-05 after package-management and agent-friction review | Move Governance, Engine, Data, Validation, and Lab main histories into private `tannerpolley/ePC-SAFT`; use one Git root, root Codex environment, issue tracker, and Engine-accountable vertical-slice branch while retaining strict directory ownership; archive rather than delete source repositories | Removes cross-repository branch, worktree, wheel, and version coordination while preserving scientific independence and recoverable history | No | Root Management role and directory owners |
 | D-027 Zero-test Lab playground | Explicit user instruction on 2026-08-05 after reviewing all 51 Lab oracle checks | Make Lab a temporary playground with no persistent tests, test framework, or root verification gate; delete self-testing manufactured oracle implementations; distill any future durable numerical claim into Engine or installed-wheel Validation evidence | Removes a parallel 3,945-line toy implementation and prevents Lab experiments from becoming permanent maintenance contracts | No | Lab, Engine, Validation, and Management owners |
+| D-028 CAP execution hygiene | Explicit user instruction on 2026-08-07 to fix live pre-CAP guidance and establish one model, task, order, and review strategy | Remove `tests/integration/` from the normative package shape; use GitHub root issue #10 and native blockers for lifecycle state; execute each CAP leaf in a fresh single-writer task using the canonical Engine task map and proportionate read-only review | Prevents retired test structure, stale polyrepo routing, context-overloaded implementation, and per-task execution-setting drift from re-entering the cutover | No | Engine and Management |

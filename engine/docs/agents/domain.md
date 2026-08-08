@@ -1,44 +1,15 @@
-# Domain Docs
+# Engine domain authority
 
-This is a single-context repository. Engineering skills should consume its
-domain documentation before exploring the codebase.
+Before Engine shaping or implementation, read root `CONTEXT.md`,
+`engine/CONTEXT.md`, `engine/ARCHITECTURE.yaml`, and the relevant accepted
+decision under `engine/docs/adr/`. CAP work also reads the canonical hard-cutover
+plan and `engine/docs/agents/issue-tracker.md`.
 
-## Before exploring, read these
+Use the vocabulary defined by Engine Context in issues, code, evidence, and
+reviews. Surface an ADR conflict before implementation; lifecycle state remains
+in GitHub rather than being copied into domain documents.
 
-- `CONTEXT.md` at the repository root.
-- Relevant decisions under `docs/adr/`.
-
-If either is absent, proceed silently. Domain-modeling workflows create
-documentation only when terminology or decisions are actually resolved.
-
-## File structure
-
-```text
-/
-├── CONTEXT.md
-├── docs/adr/
-└── src/
-```
-
-## Use the glossary's vocabulary
-
-Use terms as defined in `CONTEXT.md` in issue titles, refactor proposals,
-hypotheses, and test names. Avoid synonyms the context explicitly rejects.
-
-If a needed concept is absent, reconsider whether the term belongs to this
-domain or note the gap for domain modeling.
-
-## Flag ADR conflicts
-
-Surface any conflict with an existing ADR explicitly rather than silently
-overriding it.
-
-<!-- project-truss:setup:start -->
-## Project Truss domain contract
-
-Layout: `single-context`.
-
-Use one root `CONTEXT.md` and root `docs/adr/`.
-
-Read the nearest applicable context before shaping or implementation. Keep durable terminology, invariants, ownership, and accepted decisions there; do not mirror lifecycle state.
-<!-- project-truss:setup:end -->
+The runtime lives under `engine/src/epcsaft/`, compact numerical falsifiers under
+`engine/tests/`, and installed-wheel literature evidence under `validation/`.
+One Engine-accountable task may change the exact Data, Engine, and Validation
+files required by its vertical slice.

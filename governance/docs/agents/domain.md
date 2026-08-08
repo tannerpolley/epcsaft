@@ -1,28 +1,23 @@
-<!-- project-truss:setup:start -->
-## Project Truss domain contract
+# Governance domain authority
 
-Layout: `single-context`.
+This is one monorepo with one root context and directory-specific context.
+Before Governance planning or authority changes, read root `CONTEXT.md`,
+`governance/CONTEXT.md`, and `governance/GOVERNANCE.md`. Engine design decisions
+remain under `engine/docs/adr/`; Governance does not create a parallel ADR tree.
 
-Use one root `CONTEXT.md` and root `docs/adr/`.
+Use these revision-13 terms:
 
-Read the nearest applicable context before shaping or implementation. Keep durable terminology, invariants, ownership, and accepted decisions there; do not mirror lifecycle state.
+- **Management**: the coordination role performed by the root task, not a
+  repository, directory, or runtime owner.
+- **Governance**: doctrine, topology, manifests, ledgers, readiness checks, and
+  external-operation receipts under `governance/`.
+- **Engine**: the sole `epcsaft` distribution under `engine/`, containing EOS,
+  Equilibrium, and Regression.
+- **Vertical slice**: one Engine-accountable task that carries a capability from
+  exact Data input through production implementation to installed-wheel
+  Validation evidence.
+- **Evidence home**: a directory that owns durable inputs or results without
+  becoming a separate implementation team.
 
-<!-- project-truss:setup:end -->
-
-## Runtime terms
-
-Doctrine revision 10 uses these runtime terms:
-
-- **Engine**: the single `epcsaft` distribution and repository that owns EOS,
-  Equilibrium, and Regression production modules.
-- **Vertical slice**: one task-owned capability change from scientific input
-  through Engine implementation, Engine tests, installed-wheel Validation, and
-  affected downstream applications.
-- **Transition source**: one of the current EOS, Equilibrium, or Regression
-  repositories before the D-023 cutover receipt. A transition source owns no
-  post-cutover release line.
-- **Consumer environment**: an application-owned environment that installs the
-  immutable Engine wheel. It is not an SDK source or shared project runtime.
-- **Quarantined consumer**: a named downstream application explicitly removed
-  from current Engine admission. It carries no supported runtime or scientific
-  claim until its own Engine migration and Validation evidence pass.
+Former repositories and names are provenance. They never select current task
+residence, runtime behavior, or lifecycle state.
