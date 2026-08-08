@@ -6,7 +6,7 @@ import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from os import PathLike
-from typing import SupportsFloat, cast
+from typing import Literal, SupportsFloat, cast
 
 from ._canonical import _document_fingerprint, _selected_document_fingerprint
 from ._dictionary_io import _records_from_mapping
@@ -29,13 +29,45 @@ from .units import _error
 
 
 @dataclass(frozen=True, slots=True)
+class ActiveParameterDomain:
+    """The intrinsic open/closed domain of one active coordinate value."""
+
+    lower: float | None
+    upper: float | None
+    lower_closed: bool
+    upper_closed: bool
+
+    def contains(self, value: float) -> bool:
+        return (
+            self.lower is None or value > self.lower or self.lower_closed and value == self.lower
+        ) and (
+            self.upper is None or value < self.upper or self.upper_closed and value == self.upper
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ActiveParameterApplicability:
+    """Resolved physical application of one derivative-ready coordinate."""
+
+    scope: Literal["unordered-component-pair"]
+    component_ids: tuple[str, str]
+    component_indices: tuple[int, int]
+    model_domain: Literal["neutral-binary-nonassociating"]
+    observation_family: Literal["fixed-state-helmholtz"]
+    application: Literal["reciprocal-cross-dispersion"]
+
+
+@dataclass(frozen=True, slots=True)
 class ActiveParameter:
     """One exact continuous coordinate selected from ``Parameters``."""
 
     identity: str
     family: str
-    value: object
+    value: float
     unit: str
+    source_domain: ValidityDomain | None
+    domain: ActiveParameterDomain | None
+    applicability: ActiveParameterApplicability | None
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -46,7 +78,13 @@ class ActiveParameterSet:
     coordinates: tuple[ActiveParameter, ...]
     fingerprint: str
 
-    def __init__(self, parameters: Parameters, identities: Sequence[str]) -> None:
+    def __init__(
+        self,
+        parameters: Parameters,
+        identities: Sequence[str],
+        *,
+        values: Sequence[object] | None = None,
+    ) -> None:
         if not isinstance(parameters, Parameters):
             raise _error("invalid-value", field="parameters", expected="Parameters")
         if isinstance(identities, str):
@@ -64,14 +102,29 @@ class ActiveParameterSet:
         discrete = tuple(spec.identity for spec in selected if not spec.continuous)
         if discrete:
             raise _error("invalid-selection", field="parameter_identity", value=discrete)
+        if values is not None:
+            if isinstance(values, str):
+                raise _error("invalid-selection", field="parameter_values", value="string")
+            supplied = tuple(values)
+            if len(supplied) != len(selected):
+                raise _error(
+                    "invalid-selection",
+                    field="parameter_values",
+                    expected=len(selected),
+                    value=len(supplied),
+                )
+        else:
+            supplied = tuple(spec.value for spec in selected)
         coordinates = tuple(
-            ActiveParameter(spec.identity, spec.family, spec.value, spec.unit) for spec in selected
+            _active_coordinate(parameters, spec, value, explicit=values is not None)
+            for spec, value in zip(selected, supplied, strict=True)
         )
         payload = json.dumps(
             {
                 "schema": "epcsaft.active-parameter-set",
                 "parameters": parameters.fingerprint,
                 "identities": requested,
+                "values": tuple(coordinate.value for coordinate in coordinates),
             },
             separators=(",", ":"),
             sort_keys=True,
@@ -83,6 +136,10 @@ class ActiveParameterSet:
     @property
     def identities(self) -> tuple[str, ...]:
         return tuple(coordinate.identity for coordinate in self.coordinates)
+
+    @property
+    def values(self) -> tuple[float, ...]:
+        return tuple(coordinate.value for coordinate in self.coordinates)
 
 
 def _record_components(record: ParameterRecord) -> tuple[str, ...]:
@@ -110,6 +167,92 @@ def _identity_components(identity: str) -> tuple[str, ...]:
     if parts[0] == "association" and len(parts) >= 5:
         return (parts[1], parts[3])
     return ()
+
+
+_K_IJ_DOMAIN = ActiveParameterDomain(None, 1.0, False, True)
+
+
+def _active_value(spec: ParameterSpec, value: object) -> float:
+    try:
+        magnitude = (
+            float(value.to(spec.unit).magnitude)
+            if hasattr(value, "to")
+            else float(cast(SupportsFloat, value))
+        )
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise _error(
+            "invalid-active-coordinate",
+            identity=spec.identity,
+            reason="non-numeric",
+        ) from exc
+    if not math.isfinite(magnitude):
+        raise _error(
+            "invalid-active-coordinate",
+            identity=spec.identity,
+            reason="nonfinite",
+        )
+    return magnitude
+
+
+def _active_coordinate(
+    parameters: Parameters,
+    spec: ParameterSpec,
+    value: object,
+    *,
+    explicit: bool,
+) -> ActiveParameter:
+    magnitude = _active_value(spec, value)
+    source_domain = (
+        None
+        if spec.domain_id is None
+        else next(domain for domain in parameters.domains if domain.domain_id == spec.domain_id)
+    )
+    parts = spec.identity.split("/")
+    domain: ActiveParameterDomain | None = None
+    applicability: ActiveParameterApplicability | None = None
+    if spec.family == "k_ij" and len(parts) == 4 and parts[0] == "pair" and parts[3] == "k_ij":
+        component_ids = (parts[1], parts[2])
+        if component_ids[0] >= component_ids[1]:
+            raise _error(
+                "invalid-active-coordinate",
+                identity=spec.identity,
+                reason="noncanonical-pair-order",
+            )
+        component_indices = (
+            parameters.component_ids.index(component_ids[0]),
+            parameters.component_ids.index(component_ids[1]),
+        )
+        domain = _K_IJ_DOMAIN
+        applicability = ActiveParameterApplicability(
+            "unordered-component-pair",
+            component_ids,
+            component_indices,
+            "neutral-binary-nonassociating",
+            "fixed-state-helmholtz",
+            "reciprocal-cross-dispersion",
+        )
+    elif explicit:
+        raise _error(
+            "unsupported-active-coordinate",
+            identity=spec.identity,
+            reason="trial-value-application-unresolved",
+        )
+    if domain is not None and not domain.contains(magnitude):
+        raise _error(
+            "invalid-active-coordinate",
+            identity=spec.identity,
+            reason="out-of-domain",
+            value=magnitude,
+        )
+    return ActiveParameter(
+        spec.identity,
+        spec.family,
+        magnitude,
+        spec.unit,
+        source_domain,
+        domain,
+        applicability,
+    )
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -382,4 +525,10 @@ class Parameters:
         return instance
 
 
-__all__ = ("ActiveParameter", "ActiveParameterSet", "Parameters")
+__all__ = (
+    "ActiveParameter",
+    "ActiveParameterApplicability",
+    "ActiveParameterDomain",
+    "ActiveParameterSet",
+    "Parameters",
+)

@@ -204,16 +204,59 @@ def test_fixed_state_selected_parameter_derivatives_match_independent_difference
             )
 
 
-@pytest.mark.parametrize(
-    ("identity", "step"),
-    (
-        ("pair/dipolar/quadrupolar/k_ij", 1.0e-5),
-        ("pair/dipolar/quadrupolar/l_ij", 1.0e-5),
-    ),
-)
-def test_binary_interaction_derivatives_match_independent_differences(
-    identity: str, step: float
-) -> None:
+def test_canonical_kij_coordinate_is_exact_and_component_order_independent() -> None:
+    """Falsify the selected k_ij Jacobian and unordered-pair identity together."""
+
+    identity = "pair/dipolar/quadrupolar/k_ij"
+    trial = 0.12
+    step = 1.0e-5
+    parameters = Parameters.from_mapping(POLAR_BINARY)
+    active = ActiveParameterSet(parameters, (identity,), values=(trial,))
+    exact = Mixture(parameters).phase_parameter_derivatives(
+        active,
+        T=300.0 * u.kelvin,
+        rho=5000.0 * u.mole / u.meter**3,
+        x=(0.4, 0.6),
+    )
+    trial_mapping = _perturbed(POLAR_BINARY, identity, trial)
+    numerical = _central_difference(
+        trial_mapping,
+        identity,
+        step,
+        lambda candidate: _fixed_state_values(candidate, 300.0, 5000.0, (0.4, 0.6)),
+    )
+    # h=1e-5 balances centered O(h^2) truncation with double-precision
+    # cancellation; 3e-5 relative tolerance spans reduced and pascal rows.
+    for row, expected in enumerate(numerical):
+        assert exact.derivatives[row][0] == pytest.approx(
+            expected, rel=3.0e-5, abs=2.0e-7
+        )
+
+    reordered_parameters = Parameters.from_mapping(
+        POLAR_BINARY, components=("quadrupolar", "dipolar")
+    )
+    reordered = Mixture(reordered_parameters).phase_parameter_derivatives(
+        ActiveParameterSet(reordered_parameters, (identity,), values=(trial,)),
+        T=300.0 * u.kelvin,
+        rho=5000.0 * u.mole / u.meter**3,
+        x=(0.6, 0.4),
+    )
+    assert reordered.capability.parameter_identities == exact.capability.parameter_identities
+    assert reordered.capability.parameter_values == exact.capability.parameter_values == (trial,)
+    # Reordering changes only component-labelled rows; the 2e-10 tolerance is
+    # tight enough to expose an incorrect directed write while allowing AD roundoff.
+    for canonical_row, reordered_row in enumerate((0, 1, 3, 2)):
+        assert reordered.values[reordered_row] == pytest.approx(
+            exact.values[canonical_row], rel=2.0e-12, abs=2.0e-12
+        )
+        assert reordered.derivatives[reordered_row][0] == pytest.approx(
+            exact.derivatives[canonical_row][0], rel=2.0e-10, abs=2.0e-10
+        )
+
+
+def test_binary_size_interaction_derivatives_match_independent_differences() -> None:
+    identity = "pair/dipolar/quadrupolar/l_ij"
+    step = 1.0e-5
     parameters = Parameters.from_mapping(POLAR_BINARY)
     exact = Mixture(parameters).phase_parameter_derivatives(
         ActiveParameterSet(parameters, (identity,)),

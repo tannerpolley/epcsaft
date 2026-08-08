@@ -1080,11 +1080,26 @@ NativeModel::evaluate_mixture_phase(double temperature,
 
 // EqExclude: transport and buffer mechanics
 NativeMixturePhaseBlock
-NativeModel::evaluate_mixture_phase_kij(double temperature,
-                                        const std::vector<double> &amounts,
-                                        double volume, double k_ij) const {
-  return detail::mixture_phase_block_kij(temperature, amounts, volume, k_ij,
-                                         parameters_);
+NativeModel::evaluate_mixture_phase_kij_coordinate(
+    double temperature, const std::vector<double> &amounts, double volume,
+    const NativeKijCoordinate &coordinate) const {
+  if (component_ids_.size() != parameters_.segment_count.size() ||
+      coordinate.component_a >= component_ids_.size() ||
+      coordinate.component_b >= component_ids_.size() ||
+      coordinate.component_a == coordinate.component_b) {
+    throw std::invalid_argument("invalid resolved k_ij component indices");
+  }
+  const auto endpoints = std::minmax(
+      component_ids_[coordinate.component_a],
+      component_ids_[coordinate.component_b]);
+  const std::string expected_identity =
+      "pair/" + endpoints.first + "/" + endpoints.second + "/k_ij";
+  if (coordinate.identity != expected_identity) {
+    throw std::invalid_argument("resolved k_ij identity does not match its endpoints");
+  }
+  return detail::mixture_phase_block_kij_coordinate(
+      temperature, amounts, volume, coordinate.component_a,
+      coordinate.component_b, coordinate.value, parameters_);
 }
 
 // EqExclude: transport and buffer mechanics
@@ -1115,8 +1130,14 @@ NativeMixturePhaseBlock NativeModel::evaluate_mixture_phase_active_parameter(
         "pair interaction identity does not match the binary model");
   }
   if (parts[3] == "k_ij") {
-    return evaluate_mixture_phase_kij(temperature, amounts, volume,
-                                      active_parameter.value);
+    const std::size_t component_a =
+        named_index(component_ids_, parts[1], "component");
+    const std::size_t component_b =
+        named_index(component_ids_, parts[2], "component");
+    return evaluate_mixture_phase_kij_coordinate(
+        temperature, amounts, volume,
+        {active_parameter.identity, component_a, component_b,
+         active_parameter.value});
   }
   if (parts[3] == "l_ij") {
     return evaluate_mixture_phase_lij(temperature, amounts, volume,

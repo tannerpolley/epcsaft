@@ -141,6 +141,7 @@ class SaturationResult:
 class ParameterCapability:
     observation_family: str
     parameter_identities: tuple[str, ...]
+    parameter_values: tuple[float, ...]
     parameter_units: tuple[str, ...]
     model_domain: str
     temperature_domain_k: tuple[float | None, float | None]
@@ -419,25 +420,35 @@ class _EosModel:
             raise _eos_error("invalid-active-parameter-set", reason="different-parameters")
         records = []
         for coordinate in active_parameters.coordinates:
-            value = coordinate.value
-            if isinstance(value, pint.Quantity):
-                value = value.to(coordinate.unit).magnitude
-            try:
-                magnitude = float(cast(SupportsFloat, value))
-            except (TypeError, ValueError) as exc:
-                raise _eos_error(
-                    "invalid-active-parameter-set",
-                    identity=coordinate.identity,
-                    reason="non-numeric",
-                ) from exc
-            if not math.isfinite(magnitude):
-                raise _eos_error(
-                    "invalid-active-parameter-set",
-                    identity=coordinate.identity,
-                    reason="nonfinite",
-                )
-            records.append(_native_core.NativeParameterRecord(coordinate.identity, magnitude))
+            records.append(
+                _native_core.NativeParameterRecord(coordinate.identity, coordinate.value)
+            )
         return tuple(records)
+
+    def _kij_coordinate(
+        self, active_parameters: ActiveParameterSet
+    ) -> _native_core.NativeKijCoordinate:
+        if len(active_parameters.coordinates) != 1:
+            raise _eos_error(
+                "unsupported-parameter-derivative",
+                observation="fixed-state-helmholtz",
+                reason="one-k-ij-coordinate-required",
+            )
+        coordinate = active_parameters.coordinates[0]
+        applicability = coordinate.applicability
+        if coordinate.family != "k_ij" or applicability is None:
+            raise _eos_error(
+                "unsupported-parameter-derivative",
+                observation="fixed-state-helmholtz",
+                identity=coordinate.identity,
+                reason="unresolved-k-ij-application",
+            )
+        return _native_core.NativeKijCoordinate(
+            coordinate.identity,
+            applicability.component_indices[0],
+            applicability.component_indices[1],
+            coordinate.value,
+        )
 
     def _capability(
         self,
@@ -449,6 +460,7 @@ class _EosModel:
         return ParameterCapability(
             observation_family=observation_family,
             parameter_identities=active_parameters.identities,
+            parameter_values=active_parameters.values,
             parameter_units=tuple(coordinate.unit for coordinate in active_parameters.coordinates),
             model_domain=self._model.topology,
             temperature_domain_k=(
@@ -703,12 +715,12 @@ class _EosModel:
                 for coordinate in active_parameters.coordinates
             )
         _require_supported_active_parameters(active_parameters, "fixed-state-helmholtz", admitted)
+        records = self._active_records(active_parameters)
         state = self._state(T=T, rho=rho, x=x)
         temperature_k = float(state.temperature.to("kelvin").magnitude)
         density = float(state.molar_density.to("mole / meter ** 3").magnitude)
         amounts = state.mole_fractions
         volume = 1.0 / density
-        records = self._active_records(active_parameters)
         parameter_count = len(records)
         component_count = len(amounts)
         parameter_coordinates: tuple[int, ...]
@@ -733,8 +745,17 @@ class _EosModel:
                 width = 2 + parameter_count
                 parameter_coordinates = tuple(range(2, width))
             elif component_count == 2 and parameter_count == 1:
-                block = self._native.evaluate_mixture_phase_active_parameter(
-                    temperature_k, amounts, volume, records[0]
+                block = (
+                    self._native.evaluate_mixture_phase_kij_coordinate(
+                        temperature_k,
+                        amounts,
+                        volume,
+                        self._kij_coordinate(active_parameters),
+                    )
+                    if active_parameters.coordinates[0].family == "k_ij"
+                    else self._native.evaluate_mixture_phase_active_parameter(
+                        temperature_k, amounts, volume, records[0]
+                    )
                 )
                 width = 4
                 parameter_coordinates = (3,)

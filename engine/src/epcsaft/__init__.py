@@ -15,7 +15,13 @@ from .eos import (
     SaturationResult,
     State,
 )
-from .parameters import ActiveParameter, ActiveParameterSet, Parameters
+from .parameters import (
+    ActiveParameter,
+    ActiveParameterApplicability,
+    ActiveParameterDomain,
+    ActiveParameterSet,
+    Parameters,
+)
 from .records import SourceRecord, ValidityDomain
 from .reference import (
     Activity,
@@ -29,6 +35,8 @@ from .units import ParameterError, unit_registry
 
 __all__ = (
     "ActiveParameter",
+    "ActiveParameterApplicability",
+    "ActiveParameterDomain",
     "ActiveParameterSet",
     "Activity",
     "DensityDiagnostics",

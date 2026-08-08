@@ -248,11 +248,13 @@ phase_block_parameters(const NativeParameters &parameters) {
 template <typename Scalar>
 // EqID: active_binary_interaction_mapping
 PhaseBlockParameters<Scalar>
-binary_interaction_parameters(const NativeParameters &parameters,
-                              const Scalar &k_ij) {
+kij_coordinate_parameters(const NativeParameters &parameters,
+                          std::size_t component_a,
+                          std::size_t component_b, const Scalar &k_ij) {
   auto values = phase_block_parameters<Scalar>(parameters);
-  values.k_ij = {Scalar(parameters.k_ij[0]), k_ij, k_ij,
-                 Scalar(parameters.k_ij[3])};
+  const std::size_t components = parameters.segment_count.size();
+  values.k_ij[component_a * components + component_b] = k_ij;
+  values.k_ij[component_b * components + component_a] = k_ij;
   return values;
 }
 
@@ -403,18 +405,22 @@ mixture_phase_block(double temperature, const std::vector<double> &amounts,
 
 // EqExclude: transport and buffer mechanics
 inline NativeMixturePhaseBlock
-mixture_phase_block_kij(double temperature, const std::vector<double> &amounts,
-                        double volume, double k_ij,
-                        const NativeParameters &parameters) {
+mixture_phase_block_kij_coordinate(
+    double temperature, const std::vector<double> &amounts, double volume,
+    std::size_t component_a, std::size_t component_b, double k_ij,
+    const NativeParameters &parameters) {
   if (!supports_binary_interaction_phase_block(parameters)) {
     throw std::logic_error("active k_ij phase block requires two neutral "
                            "nonassociating components");
   }
-  if (!std::isfinite(k_ij)) {
-    throw std::invalid_argument("k_ij must be finite");
+  if (component_a >= parameters.segment_count.size() ||
+      component_b >= parameters.segment_count.size() ||
+      component_a == component_b || !std::isfinite(k_ij) || k_ij > 1.0) {
+    throw std::invalid_argument("resolved k_ij coordinate is outside its domain");
   }
   validate_mixture_phase_state(temperature, amounts, volume, parameters);
-  const auto value_parameters = binary_interaction_parameters(parameters, k_ij);
+  const auto value_parameters = kij_coordinate_parameters(
+      parameters, component_a, component_b, k_ij);
   mixture_phase_helmholtz_over_rt_reference_amount(temperature, amounts, volume,
                                                    value_parameters);
 
@@ -427,8 +433,9 @@ mixture_phase_block_kij(double temperature, const std::vector<double> &amounts,
         using ADScalar = CppAD::AD<double>;
         const std::vector<ADScalar> active_amounts(
             independent.begin(), independent.begin() + volume_coordinate);
-        const auto active_parameters = binary_interaction_parameters(
-            parameters, independent[volume_coordinate + 1]);
+        const auto active_parameters = kij_coordinate_parameters(
+            parameters, component_a, component_b,
+            independent[volume_coordinate + 1]);
         return mixture_phase_helmholtz_over_rt_reference_amount(
             temperature, active_amounts, independent[volume_coordinate],
             active_parameters);
