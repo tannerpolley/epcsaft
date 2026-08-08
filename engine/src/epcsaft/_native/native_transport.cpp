@@ -557,7 +557,6 @@ struct NativeTransportEndpoint final {
     }
 
     // EqID: neutral_reference_stoichiometric_basis
-    // EqID: fixed_pressure_total_derivative
     static int evaluate_reacting_phase_parameters(
         const void* context,
         const char* expected_fingerprint,

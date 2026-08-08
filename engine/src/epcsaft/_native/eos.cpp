@@ -85,344 +85,6 @@ bool polar_composition_admitted(const NativeParameters &parameters,
   return true;
 }
 
-double log_fugacity_density(const NativeResult &state,
-                            const detail::ThermodynamicDerivatives &derivatives,
-                            const std::vector<double> &composition,
-                            std::size_t component, std::size_t coordinates) {
-  // EqID: log_fugacity_density_derivative
-  auto hessian = [&derivatives, coordinates](std::size_t row,
-                                             std::size_t column) {
-    return derivatives.hessian[row * coordinates + column];
-  };
-  double weighted_composition_density = 0.0;
-  for (std::size_t mixture_component = 0;
-       mixture_component < composition.size(); ++mixture_component) {
-    weighted_composition_density +=
-        composition[mixture_component] * hessian(2 + mixture_component, 1);
-  }
-  const double compressibility_density =
-      derivatives.density + state.molar_density * derivatives.density_density;
-  const double chemical_potential_density =
-      2.0 * derivatives.density +
-      state.molar_density * derivatives.density_density +
-      hessian(2 + component, 1) - weighted_composition_density;
-  return chemical_potential_density -
-         compressibility_density / state.compressibility_factor;
-}
-
-double fixed_pressure_log_fugacity(const NativeResult &state, double pressure,
-                                   std::size_t component,
-                                   double fugacity_density) {
-  // EqID: fixed_pressure_fugacity_correction
-  const double density_correction =
-      -(state.pressure - pressure) / state.pressure_density_derivative;
-  return (*state.log_fugacity_coefficient)[component] +
-         fugacity_density * density_correction;
-}
-
-enum class ActiveSolvationParameter {
-  BornDiameter,
-  SolvationFactor,
-  IonicRegionRelativePermittivity,
-  SolventRelativePermittivity,
-  ComponentParameter,
-};
-
-struct ResolvedSolvationParameter final {
-  ActiveSolvationParameter family;
-  std::size_t component;
-  std::optional<NativeActiveParameter> component_parameter;
-};
-
-// EqID: fixed_pressure_total_derivative
-detail::ReferenceObservation active_solvation_parameter_observation(
-    const NativeModel &model, const NativeParameters &parameters,
-    double temperature, double pressure, const std::vector<double> &composition,
-    const std::array<std::size_t, 2> &ion_indices, const std::string &phase,
-    const ResolvedSolvationParameter &active_parameter) {
-  const auto state = model.evaluate_pressure(temperature, pressure, composition,
-                                             phase);
-  if (!state.log_fugacity_coefficient.has_value()) {
-    throw std::runtime_error("reference fugacity is unavailable");
-  }
-  const auto sigma = detail::segment_sigma(temperature, parameters);
-  const auto diameter =
-      detail::segment_diameter(temperature, parameters, sigma);
-  const auto site_fractions =
-      detail::solve_site_fractions(temperature, state.molar_density,
-                                   composition, parameters, sigma, diameter);
-  const auto derivatives = [&] {
-    if (active_parameter.family == ActiveSolvationParameter::BornDiameter) {
-      return detail::thermodynamic_derivatives_active_born(
-          temperature, state.molar_density, composition, parameters,
-          site_fractions, active_parameter.component,
-          parameters.born_diameter_angstrom[active_parameter.component]);
-    }
-    if (active_parameter.family == ActiveSolvationParameter::SolvationFactor) {
-      return detail::thermodynamic_derivatives_active_solvation_factor(
-          temperature, state.molar_density, composition, parameters,
-          site_fractions, active_parameter.component,
-          parameters.solvation_factor[active_parameter.component]);
-    }
-    if (active_parameter.family ==
-        ActiveSolvationParameter::IonicRegionRelativePermittivity) {
-      return detail::thermodynamic_derivatives_active_ionic_region_permittivity(
-          temperature, state.molar_density, composition, parameters,
-          site_fractions, parameters.ionic_region_relative_permittivity);
-    }
-    if (active_parameter.family ==
-        ActiveSolvationParameter::SolventRelativePermittivity) {
-      return detail::thermodynamic_derivatives_active_relative_permittivity(
-          temperature, state.molar_density, composition, parameters,
-          site_fractions, active_parameter.component,
-          parameters.relative_permittivity[active_parameter.component]);
-    }
-    return detail::thermodynamic_derivatives_active_components(
-        temperature, state.molar_density, composition, parameters,
-        site_fractions, {*active_parameter.component_parameter});
-  }();
-  const std::optional<double> active_derivative =
-      active_parameter.family == ActiveSolvationParameter::BornDiameter
-          ? derivatives.active_born
-      : active_parameter.family == ActiveSolvationParameter::SolvationFactor
-          ? derivatives.active_solvation_factor
-      : active_parameter.family ==
-              ActiveSolvationParameter::IonicRegionRelativePermittivity
-          ? derivatives.active_ionic_permittivity
-      : active_parameter.family ==
-              ActiveSolvationParameter::SolventRelativePermittivity
-          ? derivatives.active_relative_permittivity
-      : derivatives.active_component_parameters.size() == 1
-          ? std::optional<double>(derivatives.active_component_parameters[0])
-          : std::nullopt;
-  if (!active_derivative.has_value()) {
-    throw std::runtime_error("active solvation derivative is unavailable");
-  }
-  const std::size_t components = composition.size();
-  const std::size_t coordinates = 3 + components;
-  const std::size_t active_coordinate = 2 + components;
-  const auto hessian = [&derivatives, coordinates](std::size_t row,
-                                                   std::size_t column) {
-    return derivatives.hessian[row * coordinates + column];
-  };
-  const double compressibility = state.compressibility_factor;
-  const double pressure_diameter = state.molar_density * state.molar_density *
-                                   detail::GAS_CONSTANT * temperature *
-                                   hessian(1, active_coordinate);
-  const double density_diameter =
-      -pressure_diameter / state.pressure_density_derivative;
-  std::vector<double> total_derivative(2);
-  for (std::size_t ion = 0; ion < 2; ++ion) {
-    const std::size_t component = ion_indices[ion];
-    double weighted_composition_diameter = 0.0;
-    double weighted_composition_density = 0.0;
-    for (std::size_t mixture_component = 0; mixture_component < components;
-         ++mixture_component) {
-      weighted_composition_diameter +=
-          composition[mixture_component] *
-          hessian(2 + mixture_component, active_coordinate);
-      weighted_composition_density +=
-          composition[mixture_component] * hessian(2 + mixture_component, 1);
-    }
-    const double chemical_potential_diameter =
-        *active_derivative +
-        state.molar_density * hessian(1, active_coordinate) +
-        hessian(2 + component, active_coordinate) -
-        weighted_composition_diameter;
-    const double log_fugacity_diameter =
-        chemical_potential_diameter -
-        state.molar_density * hessian(1, active_coordinate) / compressibility;
-    const double compressibility_density =
-        derivatives.density + state.molar_density * derivatives.density_density;
-    const double chemical_potential_density =
-        2.0 * derivatives.density +
-        state.molar_density * derivatives.density_density +
-        hessian(2 + component, 1) - weighted_composition_density;
-    const double log_fugacity_density =
-        chemical_potential_density - compressibility_density / compressibility;
-    total_derivative[ion] =
-        detail::GAS_CONSTANT * temperature *
-        (log_fugacity_diameter + log_fugacity_density * density_diameter);
-  }
-  return {
-      {
-          (*state.log_fugacity_coefficient)[ion_indices[0]],
-          (*state.log_fugacity_coefficient)[ion_indices[1]],
-      },
-      total_derivative,
-  };
-}
-
-// EqID: infinite_dilution_solvation_energy
-// EqID: fixed_pressure_total_derivative
-NativeIonSolvationDerivativeBlock active_solvation_parameter_reference(
-    NativeParameters active_parameters, double temperature, double pressure,
-    const std::vector<double> &solvent_fractions,
-    const std::array<std::size_t, 2> &ion_indices,
-    const std::array<int, 2> &stoichiometry, const std::string &phase,
-    const ResolvedSolvationParameter &active_parameter) {
-  const NativeModel active_model(active_parameters);
-  const auto result = detail::electrolyte_reference_sequence(
-      solvent_fractions, active_parameters.molar_mass_kg_per_mol, ion_indices,
-      stoichiometry,
-      [&active_model, &active_parameters, temperature, pressure,
-       &ion_indices, &phase,
-       &active_parameter](const std::vector<double> &composition) {
-        return active_solvation_parameter_observation(
-            active_model, active_parameters, temperature, pressure, composition,
-            ion_indices, phase, active_parameter);
-      });
-  if (!result.derivative.has_value() || result.derivative->size() != 2) {
-    throw std::runtime_error("active solvation derivative is unavailable");
-  }
-  return {
-      {
-          detail::GAS_CONSTANT * temperature * result.log_fugacity[0],
-          detail::GAS_CONSTANT * temperature * result.log_fugacity[1],
-      },
-      *result.derivative,
-      result.molality,
-      result.convergence_error,
-  };
-}
-
-// EqID: fixed_pressure_total_derivative
-detail::ReferenceObservation active_aqueous_kij_observation(
-    const NativeModel &model, const NativeParameters &parameters,
-    double temperature, double pressure, const std::vector<double> &composition,
-    const std::array<double, 3> &k_ij) {
-  const auto state =
-      model.evaluate_pressure(temperature, pressure, composition, "liquid");
-  if (!state.log_fugacity_coefficient.has_value()) {
-    throw std::runtime_error("reference fugacity is unavailable");
-  }
-  const auto sigma = detail::segment_sigma(temperature, parameters);
-  const auto diameter =
-      detail::segment_diameter(temperature, parameters, sigma);
-  const auto site_fractions =
-      detail::solve_site_fractions(temperature, state.molar_density,
-                                   composition, parameters, sigma, diameter);
-  const auto derivatives = detail::thermodynamic_derivatives_active_aqueous_kij(
-      temperature, state.molar_density, composition, parameters, site_fractions,
-      k_ij);
-  if (derivatives.active_aqueous_k_ij.size() != 3) {
-    throw std::runtime_error("active aqueous k_ij derivative is unavailable");
-  }
-  const std::size_t components = composition.size();
-  const std::size_t coordinates = 2 + components + 3;
-  const std::size_t active_offset = 2 + components;
-  const auto hessian = [&derivatives, coordinates](std::size_t row,
-                                                   std::size_t column) {
-    return derivatives.hessian[row * coordinates + column];
-  };
-  const double compressibility = state.compressibility_factor;
-  std::array<double, 2> fugacity_density{};
-  std::array<double, 2> corrected_log_fugacity{};
-  for (std::size_t ion = 0; ion < 2; ++ion) {
-    fugacity_density[ion] = log_fugacity_density(
-        state, derivatives, composition, 1 + ion, coordinates);
-    corrected_log_fugacity[ion] = fixed_pressure_log_fugacity(
-        state, pressure, 1 + ion, fugacity_density[ion]);
-  }
-  std::vector<double> total_derivative(6);
-  for (std::size_t active = 0; active < 3; ++active) {
-    const std::size_t active_coordinate = active_offset + active;
-    const double pressure_k = state.molar_density * state.molar_density *
-                              detail::GAS_CONSTANT * temperature *
-                              hessian(1, active_coordinate);
-    const double density_k = -pressure_k / state.pressure_density_derivative;
-    for (std::size_t ion = 0; ion < 2; ++ion) {
-      const std::size_t component = 1 + ion;
-      double weighted_composition_k = 0.0;
-      for (std::size_t mixture_component = 0; mixture_component < components;
-           ++mixture_component) {
-        weighted_composition_k +=
-            composition[mixture_component] *
-            hessian(2 + mixture_component, active_coordinate);
-      }
-      const double chemical_potential_k =
-          derivatives.active_aqueous_k_ij[active] +
-          state.molar_density * hessian(1, active_coordinate) +
-          hessian(2 + component, active_coordinate) - weighted_composition_k;
-      const double log_fugacity_k =
-          chemical_potential_k -
-          state.molar_density * hessian(1, active_coordinate) / compressibility;
-      total_derivative[ion * 3 + active] =
-          log_fugacity_k + fugacity_density[ion] * density_k;
-    }
-  }
-  return {
-      corrected_log_fugacity,
-      std::move(total_derivative),
-  };
-}
-
-// EqID: fixed_pressure_total_derivative
-detail::ReferenceObservation active_solvation_factor_observation(
-    const NativeModel &model, const NativeParameters &parameters,
-    double temperature, double pressure, const std::vector<double> &composition,
-    double solvation_factor) {
-  const auto state =
-      model.evaluate_pressure(temperature, pressure, composition, "liquid");
-  if (!state.log_fugacity_coefficient.has_value()) {
-    throw std::runtime_error("reference fugacity is unavailable");
-  }
-  const auto sigma = detail::segment_sigma(temperature, parameters);
-  const auto diameter =
-      detail::segment_diameter(temperature, parameters, sigma);
-  const auto site_fractions =
-      detail::solve_site_fractions(temperature, state.molar_density,
-                                   composition, parameters, sigma, diameter);
-  const auto derivatives =
-      detail::thermodynamic_derivatives_active_solvation_factor(
-          temperature, state.molar_density, composition, parameters,
-          site_fractions, 0, solvation_factor);
-  if (!derivatives.active_solvation_factor.has_value()) {
-    throw std::runtime_error(
-        "active solvation-factor derivative is unavailable");
-  }
-  const std::size_t components = composition.size();
-  const std::size_t coordinates = 2 + components + 1;
-  const std::size_t active_coordinate = 2 + components;
-  const auto hessian = [&derivatives, coordinates](std::size_t row,
-                                                   std::size_t column) {
-    return derivatives.hessian[row * coordinates + column];
-  };
-  const double pressure_factor = state.molar_density * state.molar_density *
-                                 detail::GAS_CONSTANT * temperature *
-                                 hessian(1, active_coordinate);
-  const double density_factor =
-      -pressure_factor / state.pressure_density_derivative;
-  std::array<double, 2> corrected_log_fugacity{};
-  std::vector<double> total_derivative(2);
-  for (std::size_t ion = 0; ion < 2; ++ion) {
-    const std::size_t component = 1 + ion;
-    const double fugacity_density = log_fugacity_density(
-        state, derivatives, composition, component, coordinates);
-    corrected_log_fugacity[ion] = fixed_pressure_log_fugacity(
-        state, pressure, component, fugacity_density);
-    double weighted_composition_factor = 0.0;
-    for (std::size_t mixture_component = 0; mixture_component < components;
-         ++mixture_component) {
-      weighted_composition_factor +=
-          composition[mixture_component] *
-          hessian(2 + mixture_component, active_coordinate);
-    }
-    const double chemical_potential_factor =
-        *derivatives.active_solvation_factor +
-        state.molar_density * hessian(1, active_coordinate) +
-        hessian(2 + component, active_coordinate) - weighted_composition_factor;
-    const double log_fugacity_factor =
-        chemical_potential_factor - state.molar_density *
-                                        hessian(1, active_coordinate) /
-                                        state.compressibility_factor;
-    total_derivative[ion] =
-        log_fugacity_factor + fugacity_density * density_factor;
-  }
-  return {corrected_log_fugacity, std::move(total_derivative)};
-}
-
-// EqExclude: transport and buffer mechanics
 std::optional<double> single_solvent_log_fugacity(
     const NativeModel &model, double temperature, double pressure,
     const std::vector<double> &solvent_fractions, const std::string &phase) {
@@ -729,17 +391,14 @@ NativeModel NativeModel::with_parameter_identities(
 }
 
 // EqID: pure_active_parameter_mapping
-NativeModel NativeModel::with_active_parameters(
-    const std::vector<NativeParameterRecord> &active_parameters) const {
-  if (active_parameters.empty()) {
+NativeModel NativeModel::with_active_coordinates(
+    const std::vector<NativeActiveCoordinate> &active_coordinates) const {
+  if (active_coordinates.empty()) {
     throw std::invalid_argument("active parameter set must be nonempty");
   }
   NativeParameters updated = parameters_;
-  std::vector<std::pair<NativeFixedTopologyParameterKind, std::size_t>> seen;
-  seen.reserve(active_parameters.size());
-  for (const auto &record : active_parameters) {
-    const auto parameter = resolve_fixed_topology_parameter(record);
-    std::size_t identity = parameter.component;
+  for (const auto &coordinate : active_coordinates) {
+    const auto parameter = resolve_active_coordinate(coordinate);
     switch (parameter.kind) {
     case NativeFixedTopologyParameterKind::SegmentCount:
       updated.segment_count[parameter.component] = parameter.value;
@@ -749,12 +408,9 @@ NativeModel NativeModel::with_active_parameters(
       updated.sigma_constant[parameter.component] = parameter.value;
       break;
     case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationAmplitude:
-      identity = parameter.correlation_term;
-      updated.sigma_term_amplitude[parameter.correlation_term] =
-          parameter.value;
+      updated.sigma_term_amplitude[parameter.correlation_term] = parameter.value;
       break;
     case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationExponent:
-      identity = parameter.correlation_term;
       updated.sigma_term_exponent[parameter.correlation_term] = parameter.value;
       break;
     case NativeFixedTopologyParameterKind::DispersionEnergyOverK:
@@ -765,7 +421,6 @@ NativeModel NativeModel::with_active_parameters(
       const std::size_t sites = updated.site_component.size();
       const std::size_t forward = parameter.site_a * sites + parameter.site_b;
       const std::size_t reverse = parameter.site_b * sites + parameter.site_a;
-      identity = forward;
       auto &values =
           parameter.kind == NativeFixedTopologyParameterKind::AssociationEnergyOverK
               ? updated.association_energy_over_k
@@ -775,16 +430,38 @@ NativeModel NativeModel::with_active_parameters(
       break;
     }
     case NativeFixedTopologyParameterKind::PairDispersion:
-    case NativeFixedTopologyParameterKind::PairSize:
-    case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection:
-      throw std::logic_error(
-          "pair coordinates require the resolved mixture-coordinate path");
+    case NativeFixedTopologyParameterKind::PairSize: {
+      const std::size_t components = updated.segment_count.size();
+      const std::size_t forward =
+          parameter.component * components + parameter.component_b;
+      const std::size_t reverse =
+          parameter.component_b * components + parameter.component;
+      auto &values =
+          parameter.kind == NativeFixedTopologyParameterKind::PairDispersion
+              ? updated.k_ij
+              : updated.l_ij;
+      values[forward] = parameter.value;
+      values[reverse] = parameter.value;
+      break;
     }
-    const auto key = std::pair{parameter.kind, identity};
-    if (std::find(seen.begin(), seen.end(), key) != seen.end()) {
-      throw std::invalid_argument("active parameter is duplicated");
+    case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection: {
+      const std::size_t sites = updated.site_component.size();
+      for (std::size_t index = 0; index < parameter.association_edges.size(); ++index) {
+        const auto edge = parameter.association_edges[index];
+        const double energy = parameter.association_energy_scales[index] *
+                              (1.0 - parameter.value);
+        updated.association_energy_over_k[edge[0] * sites + edge[1]] = energy;
+        updated.association_energy_over_k[edge[1] * sites + edge[0]] = energy;
+      }
+      break;
     }
-    seen.push_back(key);
+    case NativeFixedTopologyParameterKind::RelativePermittivity:
+      updated.relative_permittivity[parameter.component] = parameter.value;
+      break;
+    case NativeFixedTopologyParameterKind::IonFractionSuppressionCoefficient:
+      updated.ion_fraction_suppression_coefficient = parameter.value;
+      break;
+    }
   }
   NativeModel result(std::move(updated));
   result.component_ids_ = component_ids_;
@@ -793,8 +470,8 @@ NativeModel NativeModel::with_active_parameters(
 }
 
 NativeFixedTopologyParameter NativeModel::resolve_fixed_topology_parameter(
-    const NativeParameterRecord &parameter) const {
-  if (!std::isfinite(parameter.value)) {
+    const std::string &identity, double value) const {
+  if (!std::isfinite(value)) {
     throw std::invalid_argument("active parameter values must be finite");
   }
   if (component_ids_.size() != parameters_.segment_count.size() ||
@@ -802,7 +479,7 @@ NativeFixedTopologyParameter NativeModel::resolve_fixed_topology_parameter(
     throw std::logic_error(
         "canonical active parameters require native identity metadata");
   }
-  const auto parts = split_identity(parameter.identity);
+  const auto parts = split_identity(identity);
   if (parts.size() == 3 && parts[0] == "component") {
     const std::size_t component =
         named_index(component_ids_, parts[1], "component");
@@ -815,20 +492,20 @@ NativeFixedTopologyParameter NativeModel::resolve_fixed_topology_parameter(
       kind = NativeFixedTopologyParameterKind::DispersionEnergyOverK;
     } else {
       throw std::logic_error("unsupported active parameter identity: " +
-                             parameter.identity);
+                             identity);
     }
-    if (parameter.value <= 0.0) {
+    if (value <= 0.0) {
       throw std::invalid_argument(
           "direct component active values must be positive");
     }
-    return {kind, component, 0, 0, parameter.value};
+    return {kind, component, 0, 0, value};
   }
   if ((parts.size() == 5 || parts.size() == 6) && parts[0] == "component" &&
       parts[2] == "segment_diameter") {
     const std::size_t component =
         named_index(component_ids_, parts[1], "component");
     if (parts.size() == 5 && parts[4] == "constant") {
-      if (parameter.value <= 0.0) {
+      if (value <= 0.0) {
         throw std::invalid_argument(
             "segment-diameter correlation constant must be positive");
       }
@@ -837,7 +514,7 @@ NativeFixedTopologyParameter NativeModel::resolve_fixed_topology_parameter(
           component,
           0,
           0,
-          parameter.value,
+          value,
       };
     }
     if (parts.size() == 6 && parts[4].compare(0, 5, "term-") == 0 &&
@@ -882,7 +559,7 @@ NativeFixedTopologyParameter NativeModel::resolve_fixed_topology_parameter(
                                   SegmentDiameterCorrelationAmplitude
                             : NativeFixedTopologyParameterKind::
                                   SegmentDiameterCorrelationExponent;
-      return {kind, component, 0, 0, parameter.value, term};
+      return {kind, component, 0, 0, value, term};
     }
   }
   if (parts.size() == 6 && parts[0] == "association") {
@@ -897,9 +574,9 @@ NativeFixedTopologyParameter NativeModel::resolve_fixed_topology_parameter(
       kind = NativeFixedTopologyParameterKind::AssociationVolume;
     } else {
       throw std::logic_error("unsupported active parameter identity: " +
-                             parameter.identity);
+                             identity);
     }
-    if (parameter.value <= 0.0) {
+    if (value <= 0.0) {
       throw std::invalid_argument("association active values must be positive");
     }
     return {
@@ -907,49 +584,132 @@ NativeFixedTopologyParameter NativeModel::resolve_fixed_topology_parameter(
         0,
         std::min(site_a, site_b),
         std::max(site_a, site_b),
-        parameter.value,
+        value,
     };
+  }
+  if (parts.size() == 5 && parts[0] == "component" &&
+      parts[2] == "relative_permittivity" && parts[4] == "constant") {
+    const std::size_t component =
+        named_index(component_ids_, parts[1], "component");
+    if (value <= 0.0 ||
+        component >= parameters_.relative_permittivity.size()) {
+      throw std::invalid_argument(
+          "relative-permittivity active value must be positive and applicable");
+    }
+    return {NativeFixedTopologyParameterKind::RelativePermittivity,
+            component, 0, 0, value};
+  }
+  if (identity ==
+      "model/relative_permittivity/ion_fraction_suppression_coefficient") {
+    if (value <= 0.0 ||
+        parameters_.relative_permittivity_formulation != 1) {
+      throw std::invalid_argument(
+          "ion-fraction-suppression coordinate is outside the model");
+    }
+    return {NativeFixedTopologyParameterKind::IonFractionSuppressionCoefficient,
+            0, 0, 0, value};
   }
   throw std::logic_error("unsupported active parameter identity: " +
-                         parameter.identity);
+                         identity);
 }
 
-NativeActiveParameter NativeModel::resolve_component_parameter(
-    const NativeParameterRecord &parameter) const {
-  if (!std::isfinite(parameter.value) || parameter.value <= 0.0) {
-    throw std::invalid_argument(
-        "active parameter values must be positive and finite");
+NativeFixedTopologyParameter NativeModel::resolve_active_coordinate(
+    const NativeActiveCoordinate &coordinate) const {
+  if (!std::isfinite(coordinate.value)) {
+    throw std::invalid_argument("active coordinate value must be finite");
   }
-  if (component_ids_.size() != parameters_.segment_count.size()) {
-    throw std::logic_error(
-        "canonical active parameters require native identity metadata");
+  if (coordinate.application == "reciprocal-cross-dispersion" ||
+      coordinate.application == "reciprocal-cross-size" ||
+      coordinate.application == "role-aware-cross-association-energy") {
+    if (coordinate.indices.size() != 2 ||
+        coordinate.indices[0] == coordinate.indices[1] ||
+        coordinate.indices[0] >= component_ids_.size() ||
+        coordinate.indices[1] >= component_ids_.size()) {
+      throw std::invalid_argument(
+          "pair coordinate endpoints are not canonical model indices");
+    }
+    const auto parts = split_identity(coordinate.identity);
+    const auto endpoint_ids = std::minmax(component_ids_[coordinate.indices[0]],
+                                          component_ids_[coordinate.indices[1]]);
+    const auto endpoint_indices =
+        std::minmax(coordinate.indices[0], coordinate.indices[1]);
+    const std::string prefix =
+        "pair/" + endpoint_ids.first + "/" + endpoint_ids.second + "/";
+    NativeFixedTopologyParameterKind kind;
+    if (coordinate.application == "reciprocal-cross-dispersion") {
+      kind = NativeFixedTopologyParameterKind::PairDispersion;
+      if (coordinate.family != "k_ij" || coordinate.identity != prefix + "k_ij") {
+        throw std::invalid_argument("pair-dispersion descriptor is inconsistent");
+      }
+    } else if (coordinate.application == "reciprocal-cross-size") {
+      kind = NativeFixedTopologyParameterKind::PairSize;
+      if (coordinate.family != "l_ij" || coordinate.identity != prefix + "l_ij") {
+        throw std::invalid_argument("pair-size descriptor is inconsistent");
+      }
+    } else {
+      kind = NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection;
+      if (coordinate.family != "k_hb_ij" || parts.size() != 7 ||
+          parts[0] != "pair" || parts[1] != endpoint_ids.first ||
+          parts[2] != endpoint_ids.second ||
+          parts[3] != "association" || parts[4] > parts[5] ||
+          parts[6] != "k_hb_ij" || coordinate.association_edges.empty() ||
+          coordinate.association_edges.size() !=
+              coordinate.association_energy_scales.size()) {
+        throw std::invalid_argument(
+            "cross-association descriptor is inconsistent");
+      }
+    }
+    return {kind,
+            endpoint_indices.first,
+            0,
+            0,
+            coordinate.value,
+            0,
+            endpoint_indices.second,
+            coordinate.association_edges,
+            coordinate.association_energy_scales};
   }
-  const auto parts = split_identity(parameter.identity);
-  if (parts.size() != 3 || parts[0] != "component") {
-    throw std::logic_error("unsupported fugacity derivative identity: " +
-                           parameter.identity);
+
+  const auto resolved =
+      resolve_fixed_topology_parameter(coordinate.identity, coordinate.value);
+  std::string expected_application;
+  std::vector<std::size_t> expected_indices;
+  switch (resolved.kind) {
+  case NativeFixedTopologyParameterKind::SegmentCount:
+  case NativeFixedTopologyParameterKind::SegmentDiameter:
+  case NativeFixedTopologyParameterKind::DispersionEnergyOverK:
+    expected_application = "component-property";
+    expected_indices = {resolved.component};
+    break;
+  case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationConstant:
+  case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationAmplitude:
+  case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationExponent:
+  case NativeFixedTopologyParameterKind::RelativePermittivity:
+    expected_application = "typed-correlation-coefficient";
+    expected_indices = {resolved.component};
+    break;
+  case NativeFixedTopologyParameterKind::AssociationEnergyOverK:
+  case NativeFixedTopologyParameterKind::AssociationVolume:
+    expected_application = "symmetric-association-property";
+    expected_indices = {resolved.site_a, resolved.site_b};
+    break;
+  case NativeFixedTopologyParameterKind::IonFractionSuppressionCoefficient:
+    expected_application = "auxiliary-model-coefficient";
+    break;
+  case NativeFixedTopologyParameterKind::PairDispersion:
+  case NativeFixedTopologyParameterKind::PairSize:
+  case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection:
+    throw std::logic_error("pair descriptor did not use its resolved application");
   }
-  const std::size_t component =
-      named_index(component_ids_, parts[1], "component");
-  if (parts[2] == "segment_diameter") {
-    return {
-        ActiveComponentParameter::SegmentDiameter,
-        component,
-        parameter.value,
-    };
+  if (coordinate.application != expected_application ||
+      coordinate.indices != expected_indices ||
+      !coordinate.association_edges.empty() ||
+      !coordinate.association_energy_scales.empty()) {
+    throw std::invalid_argument("active coordinate descriptor is inconsistent");
   }
-  if (parts[2] == "dispersion_energy_over_k") {
-    return {
-        ActiveComponentParameter::DispersionEnergyOverK,
-        component,
-        parameter.value,
-    };
-  }
-  throw std::logic_error("unsupported fugacity derivative identity: " +
-                         parameter.identity);
+  return resolved;
 }
 
-// EqExclude: transport and buffer mechanics
 bool NativeModel::has_temperature_independent_segment_diameter(
     std::size_t component) const {
   if (component >= parameters_.sigma_constant.size()) {
@@ -1034,47 +794,6 @@ NativeFixedTopologyPhaseBlock NativeModel::evaluate_fixed_topology_association(
       temperature, amount, volume, active_parameters, parameters_);
 }
 
-NativeFixedTopologyPhaseBlock
-NativeModel::evaluate_fixed_topology_association_active_parameters(
-    double temperature, double amount, double volume,
-    const std::vector<NativeParameterRecord> &active_parameters) const {
-  std::vector<NativeFixedTopologyParameter> resolved;
-  resolved.reserve(active_parameters.size());
-  for (const auto &parameter : active_parameters) {
-    resolved.push_back(resolve_fixed_topology_parameter(parameter));
-  }
-  return evaluate_fixed_topology_association(temperature, amount, volume,
-                                             resolved);
-}
-
-// EqExclude: transport and buffer mechanics
-NativeMixturePhaseBlock
-NativeModel::evaluate_fixed_topology_associating_mixture(
-    double temperature, const std::vector<double> &amounts, double volume,
-    const std::vector<NativeFixedTopologyParameter> &active_parameters) const {
-  if (!detail::supports_fixed_topology_associating_mixture_phase_block(
-          parameters_)) {
-    throw std::logic_error(
-        "fixed-topology associating-mixture parameters require at least "
-        "two components and one active association edge");
-  }
-  return detail::fixed_topology_parameterized_mixture_phase_block(
-      temperature, amounts, volume, active_parameters, parameters_);
-}
-
-NativeMixturePhaseBlock
-NativeModel::evaluate_fixed_topology_associating_mixture_active_parameters(
-    double temperature, const std::vector<double> &amounts, double volume,
-    const std::vector<NativeParameterRecord> &active_parameters) const {
-  std::vector<NativeFixedTopologyParameter> resolved;
-  resolved.reserve(active_parameters.size());
-  for (const auto &parameter : active_parameters) {
-    resolved.push_back(resolve_fixed_topology_parameter(parameter));
-  }
-  return evaluate_fixed_topology_associating_mixture(temperature, amounts,
-                                                     volume, resolved);
-}
-
 // EqExclude: transport and buffer mechanics
 NativeMixturePhaseBlock
 NativeModel::evaluate_mixture_phase(double temperature,
@@ -1085,73 +804,23 @@ NativeModel::evaluate_mixture_phase(double temperature,
 
 // EqExclude: transport and buffer mechanics
 NativeMixturePhaseBlock
-NativeModel::evaluate_mixture_phase_pair_coordinates(
+NativeModel::evaluate_phase_derivatives(
     double temperature, const std::vector<double> &amounts, double volume,
-    const std::vector<NativePairCoordinate> &coordinates) const {
+    const std::vector<NativeActiveCoordinate> &coordinates,
+    std::size_t derivative_order) const {
+  if (derivative_order != 2) {
+    throw std::invalid_argument(
+        "phase derivative order must be exactly two");
+  }
   if (component_ids_.size() != parameters_.segment_count.size() ||
       coordinates.empty()) {
     throw std::invalid_argument(
-        "resolved pair coordinates require native component identities");
+        "phase derivatives require resolved active coordinates");
   }
   std::vector<NativeFixedTopologyParameter> resolved;
   resolved.reserve(coordinates.size());
   for (const auto &coordinate : coordinates) {
-    if (coordinate.component_a >= component_ids_.size() ||
-        coordinate.component_b >= component_ids_.size() ||
-        coordinate.component_a == coordinate.component_b ||
-        !std::isfinite(coordinate.value)) {
-      throw std::invalid_argument("invalid resolved pair-coordinate endpoints");
-    }
-    const auto endpoint_ids = std::minmax(
-        component_ids_[coordinate.component_a],
-        component_ids_[coordinate.component_b]);
-    const auto component_indices =
-        std::minmax(coordinate.component_a, coordinate.component_b);
-    NativeFixedTopologyParameterKind kind;
-    std::string expected_identity;
-    if (coordinate.family == "k_ij" || coordinate.family == "l_ij") {
-      if (!coordinate.association_role_a.empty() ||
-          !coordinate.association_role_b.empty() ||
-          !coordinate.association_edges.empty() ||
-          !coordinate.association_energy_scales.empty()) {
-        throw std::invalid_argument(
-            "non-association pair coordinate contains association metadata");
-      }
-      kind = coordinate.family == "k_ij"
-                 ? NativeFixedTopologyParameterKind::PairDispersion
-                 : NativeFixedTopologyParameterKind::PairSize;
-      expected_identity = "pair/" + endpoint_ids.first + "/" +
-                          endpoint_ids.second + "/" + coordinate.family;
-    } else if (coordinate.family == "k_hb_ij") {
-      if (coordinate.association_role_a.empty() ||
-          coordinate.association_role_a > coordinate.association_role_b) {
-        throw std::invalid_argument(
-            "cross-association coordinate role pair is not canonical");
-      }
-      kind = NativeFixedTopologyParameterKind::
-          CrossAssociationEnergyCorrection;
-      expected_identity = "pair/" + endpoint_ids.first + "/" +
-                          endpoint_ids.second + "/association/" +
-                          coordinate.association_role_a + "/" +
-                          coordinate.association_role_b + "/k_hb_ij";
-    } else {
-      throw std::logic_error("unsupported resolved pair-coordinate family");
-    }
-    if (coordinate.identity != expected_identity) {
-      throw std::invalid_argument(
-          "resolved pair-coordinate identity does not match its application");
-    }
-    resolved.push_back({
-        kind,
-        component_indices.first,
-        0,
-        0,
-        coordinate.value,
-        0,
-        component_indices.second,
-        coordinate.association_edges,
-        coordinate.association_energy_scales,
-    });
+    resolved.push_back(resolve_active_coordinate(coordinate));
   }
   return detail::fixed_topology_parameterized_mixture_phase_block(
       temperature, amounts, volume, resolved, parameters_);
@@ -1242,120 +911,6 @@ NativeModel::molar_volume_bounds_parameters(
   return {bounds, std::move(derivatives)};
 }
 
-// EqID: fixed_pressure_total_derivative
-NativeFugacityDerivativeBlock NativeModel::evaluate_fugacity_derivatives(
-    double temperature, double pressure, const std::vector<double> &composition,
-    const std::string &phase,
-    const std::vector<NativeActiveParameter> &active_parameters) const {
-  const NativeParameters active_values =
-      detail::active_component_parameter_values(parameters_, active_parameters);
-  const NativeModel active_model(active_values);
-  const auto state =
-      active_model.evaluate_pressure(temperature, pressure, composition, phase);
-  if (!state.log_fugacity_coefficient.has_value() ||
-      !state.density_diagnostics.has_value()) {
-    throw std::runtime_error(
-        "fixed-pressure fugacity diagnostics are unavailable");
-  }
-  const auto sigma = detail::segment_sigma(temperature, active_values);
-  const auto diameter =
-      detail::segment_diameter(temperature, active_values, sigma);
-  const auto site_fractions =
-      detail::solve_site_fractions(temperature, state.molar_density,
-                                   composition, active_values, sigma, diameter);
-  const auto derivatives = detail::thermodynamic_derivatives_active_components(
-      temperature, state.molar_density, composition, active_values,
-      site_fractions, active_parameters);
-  const std::size_t components = composition.size();
-  const std::size_t parameter_count = active_parameters.size();
-  const std::size_t coordinates = 2 + components + parameter_count;
-  const std::size_t parameter_offset = 2 + components;
-  const auto hessian = [&derivatives, coordinates](std::size_t row,
-                                                   std::size_t column) {
-    return derivatives.hessian[row * coordinates + column];
-  };
-  std::vector<double> values(components);
-  std::vector<double> pressure_derivatives(components);
-  std::vector<double> parameter_derivatives(components * parameter_count);
-  for (std::size_t component = 0; component < components; ++component) {
-    const double fugacity_density = log_fugacity_density(
-        state, derivatives, composition, component, coordinates);
-    values[component] = fixed_pressure_log_fugacity(state, pressure, component,
-                                                    fugacity_density);
-    pressure_derivatives[component] =
-        fugacity_density / state.pressure_density_derivative;
-    for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
-      const std::size_t active = parameter_offset + parameter;
-      double weighted_composition = 0.0;
-      for (std::size_t mixture_component = 0; mixture_component < components;
-           ++mixture_component) {
-        weighted_composition += composition[mixture_component] *
-                                hessian(2 + mixture_component, active);
-      }
-      const double pressure_parameter =
-          state.molar_density * state.molar_density * detail::GAS_CONSTANT *
-          temperature * hessian(1, active);
-      const double density_parameter =
-          -pressure_parameter / state.pressure_density_derivative;
-      const double chemical_potential_parameter =
-          derivatives.active_component_parameters[parameter] +
-          state.molar_density * hessian(1, active) +
-          hessian(2 + component, active) - weighted_composition;
-      const double log_fugacity_parameter =
-          chemical_potential_parameter - state.molar_density *
-                                             hessian(1, active) /
-                                             state.compressibility_factor;
-      parameter_derivatives[component * parameter_count + parameter] =
-          log_fugacity_parameter + fugacity_density * density_parameter;
-    }
-  }
-  const auto &diagnostics = *state.density_diagnostics;
-  const double condition =
-      std::abs(pressure /
-               (state.molar_density * diagnostics.pressure_density_derivative));
-  if (!std::all_of(values.begin(), values.end(),
-                   [](double item) { return std::isfinite(item); }) ||
-      !std::all_of(pressure_derivatives.begin(), pressure_derivatives.end(),
-                   [](double item) { return std::isfinite(item); }) ||
-      !std::all_of(parameter_derivatives.begin(), parameter_derivatives.end(),
-                   [](double item) { return std::isfinite(item); }) ||
-      !std::isfinite(condition)) {
-    throw std::runtime_error(
-        "fixed-pressure fugacity derivative block is nonfinite");
-  }
-  return {
-      std::move(values),
-      std::move(pressure_derivatives),
-      std::move(parameter_derivatives),
-      state.molar_density,
-      diagnostics.pressure_residual,
-      diagnostics.pressure_density_derivative,
-      condition,
-      diagnostics.branch,
-      diagnostics.bracket_lower,
-      diagnostics.bracket_upper,
-      diagnostics.stable_root_count,
-      diagnostics.selected_stable_root_index,
-  };
-}
-
-NativeFugacityDerivativeBlock NativeModel::evaluate_fugacity_derivatives_active(
-    double temperature, double pressure, const std::vector<double> &composition,
-    const std::string &phase,
-    const std::vector<NativeParameterRecord> &active_parameters) const {
-  if (active_parameters.empty()) {
-    throw std::invalid_argument(
-        "active fugacity derivative set must be nonempty");
-  }
-  std::vector<NativeActiveParameter> resolved;
-  resolved.reserve(active_parameters.size());
-  for (const auto &parameter : active_parameters) {
-    resolved.push_back(resolve_component_parameter(parameter));
-  }
-  return evaluate_fugacity_derivatives(temperature, pressure, composition,
-                                       phase, resolved);
-}
-
 // EqID: formula_unit_composition
 std::vector<double> NativeModel::reference_composition(
     const std::vector<double> &solvent_fractions,
@@ -1405,399 +960,6 @@ NativeReferenceSequence NativeModel::electrolyte_reference_sequence(
       result.molality,
       result.convergence_error,
   };
-}
-
-// EqID: infinite_dilution_solvation_energy
-// EqID: fixed_pressure_total_derivative
-NativeIonSolvationDerivativeBlock
-NativeModel::evaluate_ion_solvation_derivatives(
-    double temperature, double pressure,
-    const std::vector<double> &solvent_fractions,
-    const std::array<std::size_t, 2> &ion_indices,
-    const std::array<int, 2> &stoichiometry, const std::string &phase,
-    const std::vector<NativeParameterRecord> &active_parameters) const {
-  const std::size_t components = parameters_.segment_count.size();
-  if (!std::isfinite(temperature) || !std::isfinite(pressure) ||
-      temperature <= 0.0 || pressure <= 0.0 || phase != "liquid" ||
-      active_parameters.empty() || solvent_fractions.size() != components ||
-      ion_indices[0] >= components || ion_indices[1] >= components ||
-      ion_indices[0] == ion_indices[1] || stoichiometry[0] <= 0 ||
-      stoichiometry[1] <= 0 ||
-      parameters_.charge_number[ion_indices[0]] <= 0 ||
-      parameters_.charge_number[ion_indices[1]] >= 0) {
-    throw std::invalid_argument("invalid active ion-solvation reference inputs");
-  }
-
-  std::array<double, 2> values{};
-  std::vector<double> derivatives(2 * active_parameters.size());
-  double reference_molality = 0.0;
-  double convergence_error = 0.0;
-  for (std::size_t column = 0; column < active_parameters.size(); ++column) {
-    const auto &record = active_parameters[column];
-    if (!std::isfinite(record.value)) {
-      throw std::invalid_argument("active parameter values must be finite");
-    }
-    const auto parts = split_identity(record.identity);
-    NativeParameters updated = parameters_;
-    ResolvedSolvationParameter resolved{
-        ActiveSolvationParameter::BornDiameter, 0, std::nullopt};
-    if (parts.size() == 3 && parts[0] == "component") {
-      const std::size_t component =
-          named_index(component_ids_, parts[1], "component");
-      resolved.component = component;
-      if (parts[2] == "born_diameter" && record.value > 0.0) {
-        resolved.family = ActiveSolvationParameter::BornDiameter;
-        updated.born_diameter_angstrom[component] = record.value;
-      } else if (parts[2] == "solvation_factor" && record.value > 0.0) {
-        resolved.family = ActiveSolvationParameter::SolvationFactor;
-        updated.solvation_factor[component] = record.value;
-      } else if ((parts[2] == "segment_diameter" ||
-                  parts[2] == "dispersion_energy_over_k") &&
-                 record.value > 0.0) {
-        resolved.family = ActiveSolvationParameter::ComponentParameter;
-        resolved.component_parameter = resolve_component_parameter(record);
-        if (parts[2] == "segment_diameter") {
-          updated.sigma_constant[component] = record.value;
-        } else {
-          updated.dispersion_energy_over_k[component] = record.value;
-        }
-      } else {
-        throw std::logic_error("unsupported ion-solvation derivative identity: " +
-                               record.identity);
-      }
-    } else if (parts.size() == 5 && parts[0] == "component" &&
-               parts[2] == "relative_permittivity" &&
-               parts[3] == "constant" && parts[4] == "constant" &&
-               record.value > 1.0) {
-      const std::size_t component =
-          named_index(component_ids_, parts[1], "component");
-      resolved.family = ActiveSolvationParameter::SolventRelativePermittivity;
-      resolved.component = component;
-      updated.relative_permittivity[component] = record.value;
-    } else if (record.identity ==
-                   "model/relative_permittivity/ionic_region_relative_permittivity" &&
-               record.value > 0.0) {
-      resolved.family =
-          ActiveSolvationParameter::IonicRegionRelativePermittivity;
-      updated.ionic_region_relative_permittivity = record.value;
-    } else {
-      throw std::logic_error("unsupported ion-solvation derivative identity: " +
-                             record.identity);
-    }
-
-    const auto result = active_solvation_parameter_reference(
-        std::move(updated), temperature, pressure, solvent_fractions,
-        ion_indices, stoichiometry, phase, resolved);
-    if (column == 0) {
-      values = result.solvation_gibbs_j_per_mol;
-      reference_molality = result.reference_molality_mol_per_kg;
-      convergence_error = result.reference_convergence_error;
-    }
-    for (std::size_t ion = 0; ion < 2; ++ion) {
-      derivatives[ion * active_parameters.size() + column] =
-          result.parameter_derivatives_j_per_mol[ion];
-    }
-  }
-  return {values, derivatives, reference_molality, convergence_error};
-}
-
-// EqID: infinite_dilution_solvation_energy
-// EqID: fixed_pressure_total_derivative
-NativeIonSolvationKij NativeModel::evaluate_ion_solvation_kij(
-    double temperature, double pressure, std::size_t active_ion_component,
-    const std::array<double, 3> &k_ij) const {
-  if (!std::isfinite(temperature) || !std::isfinite(pressure) ||
-      temperature <= 0.0 || pressure <= 0.0 ||
-      (active_ion_component != 1 && active_ion_component != 2) ||
-      !std::all_of(k_ij.begin(), k_ij.end(),
-                   [](double value) { return std::isfinite(value); })) {
-    throw std::invalid_argument("invalid active ion-solvation k_ij inputs");
-  }
-  if (parameters_.charge_number.size() != 3 ||
-      parameters_.charge_number[0] != 0 || parameters_.charge_number[1] == 0 ||
-      parameters_.charge_number[2] == 0 ||
-      parameters_.charge_number[1] + parameters_.charge_number[2] != 0) {
-    throw std::logic_error("unsupported active ion-solvation k_ij model");
-  }
-  NativeParameters active_parameters = parameters_;
-  active_parameters.k_ij[1] = active_parameters.k_ij[3] = k_ij[0];
-  active_parameters.k_ij[2] = active_parameters.k_ij[6] = k_ij[1];
-  active_parameters.k_ij[5] = active_parameters.k_ij[7] = k_ij[2];
-  const NativeModel active_model(active_parameters);
-  const auto result = detail::electrolyte_reference_sequence(
-      std::vector<double>{1.0, 0.0, 0.0},
-      active_parameters.molar_mass_kg_per_mol, std::array<std::size_t, 2>{1, 2},
-      std::array<int, 2>{1, 1},
-      [&active_model, &active_parameters, temperature, pressure,
-       &k_ij](const std::vector<double> &composition) {
-        return active_aqueous_kij_observation(active_model, active_parameters,
-                                              temperature, pressure,
-                                              composition, k_ij);
-      });
-  if (!result.derivative.has_value() || result.derivative->size() != 6) {
-    throw std::runtime_error(
-        "active ion-solvation k_ij derivative is unavailable");
-  }
-  const std::size_t ion = active_ion_component - 1;
-  std::array<double, 3> derivative{};
-  for (std::size_t active = 0; active < 3; ++active) {
-    derivative[active] = detail::GAS_CONSTANT * temperature *
-                         (*result.derivative)[ion * 3 + active];
-  }
-  return {
-      detail::GAS_CONSTANT * temperature * result.log_fugacity[ion],
-      derivative,
-      result.molality,
-      result.convergence_error,
-  };
-}
-
-// EqExclude: transport and buffer mechanics
-NativeAqueousMiacKij NativeModel::evaluate_aqueous_miac_kij(
-    double temperature, double pressure, double molality,
-    const std::array<double, 3> &k_ij) const {
-  return evaluate_aqueous_miac_kij_batch(temperature, pressure,
-                                         std::vector<double>{molality}, k_ij)
-      .front();
-}
-
-std::vector<NativeAqueousMiacKij>
-// EqID: mean_ionic_activity_coefficient
-// EqID: molality_activity_conversion
-// EqID: fixed_pressure_total_derivative
-NativeModel::evaluate_aqueous_miac_kij_batch(
-    double temperature, double pressure, const std::vector<double> &molalities,
-    const std::array<double, 3> &k_ij, NativeEvaluationBudget *budget) const {
-  if (!std::isfinite(temperature) || !std::isfinite(pressure) ||
-      temperature <= 0.0 || pressure <= 0.0 || molalities.empty() ||
-      !positive_finite(molalities) ||
-      !std::all_of(k_ij.begin(), k_ij.end(),
-                   [](double value) { return std::isfinite(value); })) {
-    throw std::invalid_argument("invalid active aqueous k_ij inputs");
-  }
-  if (parameters_.charge_number.size() != 3 ||
-      parameters_.charge_number != std::vector<int>({0, 1, -1})) {
-    throw std::logic_error("unsupported active aqueous k_ij model");
-  }
-  NativeParameters active_parameters = parameters_;
-  active_parameters.k_ij[1] = active_parameters.k_ij[3] = k_ij[0];
-  active_parameters.k_ij[2] = active_parameters.k_ij[6] = k_ij[1];
-  active_parameters.k_ij[5] = active_parameters.k_ij[7] = k_ij[2];
-  const NativeModel active_model(active_parameters);
-  auto checkpoint = [budget] {
-    if (budget != nullptr) {
-      budget->checkpoint();
-    }
-  };
-  const auto reference = detail::electrolyte_reference_sequence(
-      std::vector<double>{1.0, 0.0, 0.0},
-      active_parameters.molar_mass_kg_per_mol, std::array<std::size_t, 2>{1, 2},
-      std::array<int, 2>{1, 1},
-      [&active_model, &active_parameters, temperature, pressure,
-       &k_ij](const std::vector<double> &reference_composition) {
-        return active_aqueous_kij_observation(active_model, active_parameters,
-                                              temperature, pressure,
-                                              reference_composition, k_ij);
-      },
-      checkpoint);
-  if (!reference.derivative.has_value() || reference.derivative->size() != 6 ||
-      !reference.derivative_convergence_error.has_value()) {
-    throw std::runtime_error("active aqueous k_ij derivative is unavailable");
-  }
-  std::vector<NativeAqueousMiacKij> results(molalities.size());
-  detail::cppad_parallel_for(molalities.size(), [&](std::size_t index) {
-    checkpoint();
-    const double molality = molalities[index];
-    const auto composition = detail::formula_composition(
-        std::vector<double>{1.0, 0.0, 0.0},
-        active_parameters.molar_mass_kg_per_mol,
-        std::array<std::size_t, 2>{1, 2}, std::array<int, 2>{1, 1}, molality);
-    const auto finite = active_aqueous_kij_observation(
-        active_model, active_parameters, temperature, pressure, composition,
-        k_ij);
-    if (!finite.derivative.has_value() || finite.derivative->size() != 6) {
-      throw std::runtime_error("active aqueous k_ij derivative is unavailable");
-    }
-    std::array<double, 3> total_derivative{};
-    for (std::size_t active = 0; active < 3; ++active) {
-      total_derivative[active] = 0.5 * ((*finite.derivative)[active] +
-                                        (*finite.derivative)[3 + active] -
-                                        (*reference.derivative)[active] -
-                                        (*reference.derivative)[3 + active]);
-    }
-    const double conversion = std::log(
-        1.0 + 2.0 * active_parameters.molar_mass_kg_per_mol[0] * molality);
-    results[index] = {
-        0.5 * (finite.log_fugacity[0] + finite.log_fugacity[1] -
-               reference.log_fugacity[0] - reference.log_fugacity[1]) -
-            conversion,
-        total_derivative,
-        reference.molality,
-        reference.convergence_error,
-        *reference.derivative_convergence_error,
-    };
-    const auto &result = results[index];
-    if (!std::isfinite(result.log_mean_ionic_activity_coefficient_molality) ||
-        !std::all_of(result.derivative.begin(), result.derivative.end(),
-                     [](double value) { return std::isfinite(value); }) ||
-        !std::isfinite(result.reference_molality_mol_per_kg) ||
-        !std::isfinite(result.reference_convergence_error) ||
-        !std::isfinite(result.reference_derivative_convergence_error)) {
-      throw std::runtime_error(
-          "active aqueous k_ij result contains nonfinite values");
-    }
-  });
-  return results;
-}
-
-NativeAqueousMiacSolvationFactor
-// EqExclude: transport and buffer mechanics
-NativeModel::evaluate_aqueous_miac_solvation_factor(
-    double temperature, double pressure, double molality,
-    double solvation_factor) const {
-  return evaluate_aqueous_miac_solvation_factor_batch(
-             temperature, pressure, std::vector<double>{molality},
-             solvation_factor)
-      .front();
-}
-
-// EqExclude: transport and buffer mechanics
-NativeIonFractionSuppression NativeModel::evaluate_ion_fraction_suppression(
-    double total_ion_mole_fraction, double suppression_coefficient) const {
-  if (!std::isfinite(total_ion_mole_fraction) ||
-      !std::isfinite(suppression_coefficient) ||
-      total_ion_mole_fraction <= 0.0 || total_ion_mole_fraction >= 1.0 ||
-      suppression_coefficient <= 0.0) {
-    throw std::invalid_argument(
-        "invalid active ion-fraction suppression inputs");
-  }
-  if (parameters_.relative_permittivity_formulation !=
-          RELATIVE_PERMITTIVITY_FORMULATION_ION_FRACTION_SUPPRESSION ||
-      parameters_.charge_number.size() != 3 ||
-      parameters_.charge_number[0] != 0 || parameters_.charge_number[1] <= 0 ||
-      parameters_.charge_number[2] >= 0 ||
-      !(parameters_.relative_permittivity[0] > 0.0)) {
-    throw std::logic_error("unsupported active ion-fraction suppression model");
-  }
-  const double salt_free = parameters_.relative_permittivity[0];
-  detail::CppAdSerialGuard cppad_guard;
-  using ADScalar = CppAD::AD<double>;
-  std::vector<ADScalar> active{suppression_coefficient};
-  CppAD::Independent(active);
-  const ADScalar permittivity =
-      detail::ion_fraction_suppressed_relative_permittivity(
-          ADScalar(salt_free), ADScalar(total_ion_mole_fraction), active[0]);
-  CppAD::ADFun<double> function(active, {permittivity});
-  const std::vector<double> point{suppression_coefficient};
-  return {
-      function.Forward(0, point)[0],
-      function.Jacobian(point)[0],
-      salt_free,
-  };
-}
-
-std::vector<NativeAqueousMiacSolvationFactor>
-// EqID: mean_ionic_activity_coefficient
-// EqID: molality_activity_conversion
-// EqID: fixed_pressure_total_derivative
-NativeModel::evaluate_aqueous_miac_solvation_factor_batch(
-    double temperature, double pressure, const std::vector<double> &molalities,
-    double solvation_factor, NativeEvaluationBudget *budget) const {
-  if (!std::isfinite(temperature) || !std::isfinite(pressure) ||
-      !std::isfinite(solvation_factor) || temperature <= 0.0 ||
-      pressure <= 0.0 || molalities.empty() || !positive_finite(molalities) ||
-      solvation_factor <= 0.0) {
-    throw std::invalid_argument("invalid active solvation-factor inputs");
-  }
-  if (parameters_.charge_number != std::vector<int>({0, 1, -1})) {
-    throw std::logic_error("unsupported active solvation-factor model");
-  }
-  NativeParameters active_parameters = parameters_;
-  active_parameters.solvation_factor[0] = solvation_factor;
-  const NativeModel active_model(active_parameters);
-  auto checkpoint = [budget] {
-    if (budget != nullptr) {
-      budget->checkpoint();
-    }
-  };
-  const auto reference = detail::electrolyte_reference_sequence(
-      std::vector<double>{1.0, 0.0, 0.0},
-      active_parameters.molar_mass_kg_per_mol, std::array<std::size_t, 2>{1, 2},
-      std::array<int, 2>{1, 1},
-      [&active_model, &active_parameters, temperature, pressure,
-       solvation_factor](const std::vector<double> &reference_composition) {
-        return active_solvation_factor_observation(
-            active_model, active_parameters, temperature, pressure,
-            reference_composition, solvation_factor);
-      },
-      checkpoint);
-  if (!reference.derivative.has_value() || reference.derivative->size() != 2 ||
-      !reference.derivative_convergence_error.has_value()) {
-    throw std::runtime_error(
-        "active solvation-factor derivative is unavailable");
-  }
-  auto reference_log_fugacity = reference.log_fugacity;
-  double reference_molality = reference.molality;
-  double reference_convergence_error = reference.convergence_error;
-  if (solvation_factor == parameters_.solvation_factor[0]) {
-    const auto value_reference = active_model.electrolyte_reference_sequence(
-        temperature, pressure, std::vector<double>{1.0, 0.0, 0.0},
-        std::array<std::size_t, 2>{1, 2}, std::array<int, 2>{1, 1}, "liquid",
-        budget);
-    reference_log_fugacity = value_reference.log_fugacity;
-    reference_molality = value_reference.reference_molality;
-    reference_convergence_error = value_reference.convergence_error;
-  }
-  std::vector<NativeAqueousMiacSolvationFactor> results(molalities.size());
-  detail::cppad_parallel_for(molalities.size(), [&](std::size_t index) {
-    checkpoint();
-    const double molality = molalities[index];
-    const auto composition = detail::formula_composition(
-        std::vector<double>{1.0, 0.0, 0.0},
-        active_parameters.molar_mass_kg_per_mol,
-        std::array<std::size_t, 2>{1, 2}, std::array<int, 2>{1, 1}, molality);
-    const auto finite = active_solvation_factor_observation(
-        active_model, active_parameters, temperature, pressure, composition,
-        solvation_factor);
-    if (!finite.derivative.has_value() || finite.derivative->size() != 2) {
-      throw std::runtime_error(
-          "active solvation-factor derivative is unavailable");
-    }
-    auto finite_log_fugacity = finite.log_fugacity;
-    if (solvation_factor == parameters_.solvation_factor[0]) {
-      const auto finite_state = active_model.evaluate_pressure(
-          temperature, pressure, composition, "liquid");
-      if (!finite_state.log_fugacity_coefficient.has_value()) {
-        throw std::runtime_error("finite fugacity is unavailable");
-      }
-      finite_log_fugacity = {
-          (*finite_state.log_fugacity_coefficient)[1],
-          (*finite_state.log_fugacity_coefficient)[2],
-      };
-    }
-    const double conversion = std::log(
-        1.0 + 2.0 * active_parameters.molar_mass_kg_per_mol[0] * molality);
-    results[index] = {
-        0.5 * (finite_log_fugacity[0] + finite_log_fugacity[1] -
-               reference_log_fugacity[0] - reference_log_fugacity[1]) -
-            conversion,
-        0.5 * ((*finite.derivative)[0] + (*finite.derivative)[1] -
-               (*reference.derivative)[0] - (*reference.derivative)[1]),
-        reference_molality,
-        reference_convergence_error,
-        *reference.derivative_convergence_error,
-    };
-    const auto &result = results[index];
-    if (!std::isfinite(result.log_mean_ionic_activity_coefficient_molality) ||
-        !std::isfinite(result.derivative) ||
-        !std::isfinite(result.reference_molality_mol_per_kg) ||
-        !std::isfinite(result.reference_convergence_error) ||
-        !std::isfinite(result.reference_derivative_convergence_error)) {
-      throw std::runtime_error(
-          "active solvation-factor result contains nonfinite values");
-    }
-  });
-  return results;
 }
 
 // EqID: packing_volume_bounds

@@ -160,7 +160,7 @@ def fit(
     }
     native = _core._fit_resolved(
         model._native,
-        resolved.selected_identities,
+        model._active_coordinates(resolved.active_parameters),
         [coordinate_indices[identity] for identity in resolved.selected_identities],
         [
             {

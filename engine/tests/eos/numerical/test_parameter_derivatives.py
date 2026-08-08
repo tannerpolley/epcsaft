@@ -5,7 +5,7 @@ from copy import deepcopy
 
 import pytest
 
-from epcsaft import ActiveParameterSet, Mixture, Parameters, Pure
+from epcsaft import ActiveParameterSet, EosError, Mixture, Parameters, Pure
 from epcsaft import unit_registry as u
 from tests.eos._raw_cases import (
     _PROVENANCE,
@@ -637,9 +637,15 @@ def test_fixed_pressure_fugacity_derivatives_include_density_closure() -> None:
         "component/propane/segment_diameter",
         "component/propane/dispersion_energy_over_k",
     )
+    trial_values = (5.0, 220.0)
+    trial_mapping = _perturbed(
+        _perturbed(mapping, identities[0], trial_values[0]),
+        identities[1],
+        trial_values[1],
+    )
     parameters = Parameters.from_mapping(mapping)
     exact = Pure(parameters).fugacity_parameter_derivatives(
-        ActiveParameterSet(parameters, identities),
+        ActiveParameterSet(parameters, identities, values=trial_values),
         T=300.0 * u.kelvin,
         P=1.0e5 * u.pascal,
         phase="vapor",
@@ -655,135 +661,85 @@ def test_fixed_pressure_fugacity_derivatives_include_density_closure() -> None:
     for column, (identity, step) in enumerate(
         zip(identities, (1.0e-5, 1.0e-3), strict=True)
     ):
-        numerical = _central_difference(mapping, identity, step, value)
+        numerical = _central_difference(trial_mapping, identity, step, value)
         assert exact.derivatives[0][column] == pytest.approx(
             numerical[0], rel=3.0e-5, abs=2.0e-8
         )
+    assert exact.values == pytest.approx(value(trial_mapping), rel=2.0e-12, abs=2.0e-12)
 
 
-@pytest.mark.parametrize(
-    ("identity", "step", "evaluate"),
-    (
-        (
-            "component/sodium-cation/born_diameter",
-            1.0e-5,
-            lambda model, active: model.ion_solvation_parameter_derivatives(
-                active,
-                reference=model.reference(
-                    T=298.15 * u.kelvin,
-                    P=1.0e5 * u.pascal,
-                    solvent_x=(1.0, 0.0, 0.0),
-                    phase="liquid",
-                ),
-            ),
-        ),
-        (
-            "model/relative_permittivity/ionic_region_relative_permittivity",
-            1.0e-5,
-            lambda model, active: model.ion_solvation_parameter_derivatives(
-                active,
-                reference=model.reference(
-                    T=298.15 * u.kelvin,
-                    P=1.0e5 * u.pascal,
-                    solvent_x=(1.0, 0.0, 0.0),
-                    phase="liquid",
-                ),
-            ),
-        ),
-        (
-            "component/water/relative_permittivity/constant/constant",
-            1.0e-4,
-            lambda model, active: model.ion_solvation_parameter_derivatives(
-                active,
-                reference=model.reference(
-                    T=298.15 * u.kelvin,
-                    P=1.0e5 * u.pascal,
-                    solvent_x=(1.0, 0.0, 0.0),
-                    phase="liquid",
-                ),
-            ),
-        ),
-        (
-            "component/water/solvation_factor",
-            1.0e-5,
-            lambda model, active: model.mean_ionic_activity_parameter_derivatives(
-                active,
-                T=298.15 * u.kelvin,
-                P=1.0e5 * u.pascal,
-                molality=1.0 * u.mole / u.kilogram,
-            ),
-        ),
-        (
-            "model/relative_permittivity/ion_fraction_suppression_coefficient",
-            1.0e-5,
-            lambda model, active: model.relative_permittivity_parameter_derivatives(
-                active, ion_mole_fraction=0.02
-            ),
-        ),
-    ),
-    ids=("born", "ionic-permittivity", "correlated-permittivity", "solvation", "suppression"),
-)
-def test_electrolyte_auxiliary_derivatives_match_independent_differences(
-    identity: str,
-    step: float,
-    evaluate: Callable[[Mixture, ActiveParameterSet], object],
-) -> None:
-    def result(mapping: dict[str, object]):
-        parameters = Parameters.from_mapping(mapping)
-        return evaluate(Mixture(parameters), ActiveParameterSet(parameters, (identity,)))
-
-    exact = result(AQUEOUS_ELECTROLYTE)
-    numerical = _central_difference(
-        AQUEOUS_ELECTROLYTE,
-        identity,
-        step,
-        lambda candidate: tuple(result(candidate).values),
-    )
-    for row, expected in enumerate(numerical):
-        assert exact.derivatives[row][0] == pytest.approx(
-            expected, rel=3.0e-5, abs=2.0e-7
+def test_active_geometry_rejects_close_packing_before_taping() -> None:
+    mapping = neutral_pure("propane")
+    identity = "component/propane/segment_diameter"
+    parameters = Parameters.from_mapping(mapping)
+    with pytest.raises(EosError, match="active packing fraction is outside") as captured:
+        Pure(parameters).phase_parameter_derivatives(
+            ActiveParameterSet(parameters, (identity,), values=(7.4,)),
+            T=300.0 * u.kelvin,
+            rho=4000.0 * u.mole / u.meter**3,
         )
+    assert captured.value.code == "unsupported-parameter-derivative"
 
 
-def test_ion_solvation_derivatives_are_component_order_independent() -> None:
+def test_mixed_aqueous_active_set_matches_differences_and_preserves_axes() -> None:
+    """Falsify one arbitrary-width pre-Born tape across every supported scope."""
+
     identities = (
-        "component/sodium-cation/born_diameter",
-        "component/water/solvation_factor",
+        "component/water/segment_count",
+        "component/chloride-anion/dispersion_energy_over_k",
+        "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
+        "association/water/a/water/b/energy_over_k",
+        "pair/chloride-anion/water/k_ij",
         "component/water/relative_permittivity/constant/constant",
-        "component/water/dispersion_energy_over_k",
+        "model/relative_permittivity/ion_fraction_suppression_coefficient",
     )
-    canonical_parameters = Parameters.from_mapping(AQUEOUS_ELECTROLYTE)
-    canonical = Mixture(canonical_parameters)
-    canonical_result = canonical.ion_solvation_parameter_derivatives(
-        ActiveParameterSet(canonical_parameters, identities),
-        reference=canonical.reference(
-            T=298.15 * u.kelvin,
-            P=1.0e5 * u.pascal,
-            solvent_x=(1.0, 0.0, 0.0),
-            phase="liquid",
-        ),
+    steps = (1.0e-5, 1.0e-3, 1.0e-5, 1.0e-3, 1.0e-5, 1.0e-4, 1.0e-5)
+    composition = (0.98, 0.01, 0.01)
+    parameters = Parameters.from_mapping(AQUEOUS_ELECTROLYTE)
+    exact = Mixture(parameters).phase_parameter_derivatives(
+        ActiveParameterSet(parameters, identities),
+        T=298.15 * u.kelvin,
+        rho=2000.0 * u.mole / u.meter**3,
+        x=composition,
     )
 
+    # Each column is independently reconstructed through Parameters. The
+    # scale-specific steps balance centered O(h^2) truncation and cancellation;
+    # the tolerance spans reduced rows and pressure in pascals.
+    for column, (identity, step) in enumerate(zip(identities, steps, strict=True)):
+        numerical = _central_difference(
+            AQUEOUS_ELECTROLYTE,
+            identity,
+            step,
+            lambda candidate: _fixed_state_values(
+                candidate, 298.15, 2000.0, composition
+            ),
+        )
+        for row, expected in enumerate(numerical):
+            assert exact.derivatives[row][column] == pytest.approx(
+                expected, rel=5.0e-5, abs=3.0e-7
+            )
+
+    reversed_identities = tuple(reversed(identities))
     reordered_parameters = Parameters.from_mapping(
         AQUEOUS_ELECTROLYTE,
         components=("chloride-anion", "water", "sodium-cation"),
     )
-    reordered = Mixture(reordered_parameters)
-    reordered_result = reordered.ion_solvation_parameter_derivatives(
-        ActiveParameterSet(reordered_parameters, identities),
-        reference=reordered.reference(
-            T=298.15 * u.kelvin,
-            P=1.0e5 * u.pascal,
-            solvent_x=(0.0, 1.0, 0.0),
-            phase="liquid",
-            ion_component_ids=("sodium-cation", "chloride-anion"),
-        ),
+    reordered = Mixture(reordered_parameters).phase_parameter_derivatives(
+        ActiveParameterSet(reordered_parameters, reversed_identities),
+        T=298.15 * u.kelvin,
+        rho=2000.0 * u.mole / u.meter**3,
+        x=(0.01, 0.98, 0.01),
     )
-
-    assert reordered_result.values == pytest.approx(canonical_result.values, rel=2.0e-12)
-    assert reordered_result.derivatives[0] == pytest.approx(
-        canonical_result.derivatives[0], rel=2.0e-10
-    )
-    assert reordered_result.derivatives[1] == pytest.approx(
-        canonical_result.derivatives[1], rel=2.0e-10
-    )
+    assert reordered.capability.active_axes == reversed_identities
+    for canonical_row, reordered_row in enumerate((0, 1, 3, 4, 2)):
+        assert reordered.values[reordered_row] == pytest.approx(
+            exact.values[canonical_row], rel=2.0e-12, abs=2.0e-12
+        )
+        for canonical_column in range(len(identities)):
+            reordered_column = len(identities) - canonical_column - 1
+            assert reordered.derivatives[reordered_row][reordered_column] == pytest.approx(
+                exact.derivatives[canonical_row][canonical_column],
+                rel=2.0e-10,
+                abs=2.0e-10,
+            )

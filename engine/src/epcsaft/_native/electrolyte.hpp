@@ -66,7 +66,8 @@ Scalar bulk_relative_permittivity(
     const Scalar& molar_density,
     const std::vector<Scalar>& mole_fractions,
     const NativeParameters& parameters,
-    const std::vector<Scalar>* relative_permittivity_override = nullptr
+    const std::vector<Scalar>* relative_permittivity_override = nullptr,
+    const Scalar* ion_fraction_suppression_override = nullptr
 ) {
     Scalar solvent_mass = Scalar(0.0);
     Scalar dielectric_mass = Scalar(0.0);
@@ -155,10 +156,14 @@ Scalar bulk_relative_permittivity(
         return salt_free_permittivity / (Scalar(1.0) + ion_specific_suppression);
     }
     if (parameters.relative_permittivity_formulation == RELATIVE_PERMITTIVITY_FORMULATION_ION_FRACTION_SUPPRESSION) {
+        const Scalar suppression_coefficient =
+            ion_fraction_suppression_override == nullptr
+                ? Scalar(parameters.ion_fraction_suppression_coefficient)
+                : *ion_fraction_suppression_override;
         return ion_fraction_suppressed_relative_permittivity(
             salt_free_permittivity,
             ion_fraction,
-            Scalar(parameters.ion_fraction_suppression_coefficient)
+            suppression_coefficient
         );
     }
     throw std::invalid_argument("invalid relative permittivity model");
@@ -195,7 +200,8 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     const std::vector<Scalar>& diameter,
     const std::vector<Scalar>& reference_diameter,
     const std::vector<Scalar>* relative_permittivity_override = nullptr,
-    const std::vector<double>* branch_reference_diameter = nullptr
+    const std::vector<double>* branch_reference_diameter = nullptr,
+    const Scalar* ion_fraction_suppression_override = nullptr
 ) {
     bool has_ion = false;
     for (int charge : parameters.charge_number) {
@@ -222,7 +228,8 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         molar_density,
         mole_fractions,
         parameters,
-        relative_permittivity_override
+        relative_permittivity_override,
+        ion_fraction_suppression_override
     );
     if constexpr (std::is_same_v<Scalar, double>) {
         if (!(solvent_mass > 0.0) || !std::isfinite(solvent_mass)) {

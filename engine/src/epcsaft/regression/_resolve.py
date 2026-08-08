@@ -219,6 +219,7 @@ def _source_check_mapping(check: SourceCheck) -> dict[str, object]:
 def _capability_mapping(capability: ParameterCapability) -> dict[str, object]:
     return {
         "observation_family": capability.observation_family,
+        "model_identity": capability.model_identity,
         "parameter_identities": list(capability.parameter_identities),
         "parameter_units": list(capability.parameter_units),
         "model_domain": capability.model_domain,
@@ -226,7 +227,14 @@ def _capability_mapping(capability: ParameterCapability) -> dict[str, object]:
         "value_labels": list(capability.value_labels),
         "value_units": list(capability.value_units),
         "value_shape": list(capability.value_shape),
-        "derivative_shape": list(capability.derivative_shape),
+        "state_axes": list(capability.state_axes),
+        "active_axes": list(capability.active_axes),
+        "derivative_order": capability.derivative_order,
+        "source_derivative_order": capability.source_derivative_order,
+        "tensor_shape": list(capability.tensor_shape),
+        "tensor_axes": list(capability.tensor_axes),
+        "tensor_layout": capability.tensor_layout,
+        "tensor_symmetry": capability.tensor_symmetry,
         "parameter_fingerprint": capability.parameter_fingerprint,
         "active_parameter_fingerprint": capability.active_parameter_fingerprint,
         "topology_fingerprint": capability.topology_fingerprint,

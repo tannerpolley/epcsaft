@@ -69,6 +69,7 @@ MATH_OWNER_FILES = (
     "src/epcsaft/_native/eos.cpp",
     "src/epcsaft/_native/phase_block.hpp",
     "src/epcsaft/_native/native_transport.cpp",
+    "src/epcsaft/eos.py",
     "src/epcsaft/reference.py",
 )
 

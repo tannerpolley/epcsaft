@@ -304,10 +304,11 @@ EosEvaluation fixed_state_pressure_evaluation(const Block &block,
 
 class EosCost final : public ceres::CostFunction {
 public:
-  EosCost(const NativeModel &model, std::vector<std::string> identities,
+  EosCost(const NativeModel &model,
+          std::vector<NativeActiveCoordinate> active_coordinates,
           std::vector<std::size_t> identity_coordinates,
           std::vector<double> coordinate_scales, Observation observation)
-      : model_(model), identities_(std::move(identities)),
+      : model_(model), active_coordinates_(std::move(active_coordinates)),
         identity_coordinates_(std::move(identity_coordinates)),
         coordinate_scales_(std::move(coordinate_scales)),
         observation_(std::move(observation)) {
@@ -318,14 +319,11 @@ public:
   bool Evaluate(double const *const *parameters, double *residuals,
                 double **jacobians) const override {
     try {
-      std::vector<NativeParameterRecord> active;
-      active.reserve(identities_.size());
-      for (std::size_t index = 0; index < identities_.size(); ++index) {
+      auto active = active_coordinates_;
+      for (std::size_t index = 0; index < active.size(); ++index) {
         const std::size_t coordinate = identity_coordinates_[index];
-        active.push_back({
-            identities_[index],
-            parameters[coordinate][0] * coordinate_scales_[coordinate],
-        });
+        active[index].value =
+            parameters[coordinate][0] * coordinate_scales_[coordinate];
       }
       const EosEvaluation evaluation = evaluate_eos(active);
       for (std::size_t row = 0; row < observation_.targets.size(); ++row) {
@@ -355,12 +353,12 @@ public:
             continue;
           }
           double derivative = 0.0;
-          for (std::size_t identity = 0; identity < identities_.size();
+          for (std::size_t identity = 0; identity < active_coordinates_.size();
                ++identity) {
             if (identity_coordinates_[identity] == coordinate) {
               derivative +=
                   evaluation
-                      .derivatives[target.value_index * identities_.size() +
+                      .derivatives[target.value_index * active_coordinates_.size() +
                                    identity];
             }
           }
@@ -384,7 +382,7 @@ public:
 
 private:
   EosEvaluation
-  evaluate_eos(const std::vector<NativeParameterRecord> &active) const {
+  evaluate_eos(const std::vector<NativeActiveCoordinate> &active) const {
     if (observation_.kind == ObservationKind::PureSaturation) {
       SaturationSensitivityResult result;
       {
@@ -409,57 +407,14 @@ private:
     const std::size_t components = model_.component_count();
     const std::size_t parameters = active.size();
     const double volume = 1.0 / observation_.molar_density_mol_m3;
-    if (!model_.site_components().empty()) {
-      const std::size_t width = components + 1 + parameters;
-      if (components == 1) {
-        const auto block =
-            model_.evaluate_fixed_topology_association_active_parameters(
-                observation_.temperature_k, 1.0, volume, active);
-        return fixed_state_pressure_evaluation(
-            block, observation_.temperature_k, width, 1, 2, parameters);
-      }
-      const auto block =
-          model_.evaluate_fixed_topology_associating_mixture_active_parameters(
-              observation_.temperature_k, observation_.composition, volume,
-              active);
-      return fixed_state_pressure_evaluation(block, observation_.temperature_k,
-                                             width, components, components + 1,
-                                             parameters);
-    }
-    if (components == 1) {
-      const std::size_t width = 2 + parameters;
-      const auto block =
-          model_.evaluate_fixed_topology_association_active_parameters(
-              observation_.temperature_k, 1.0, volume, active);
-      return fixed_state_pressure_evaluation(block, observation_.temperature_k,
-                                             width, 1, 2, parameters);
-    }
-    if (components == 2 && parameters == 1) {
-      const std::size_t width = components + 2;
-      const auto separator = active.front().identity.rfind('/');
-      if (separator == std::string::npos) {
-        throw std::invalid_argument("pair parameter identity is malformed");
-      }
-      const NativePairCoordinate coordinate{
-          active.front().identity,
-          active.front().identity.substr(separator + 1),
-          0,
-          1,
-          "",
-          "",
-          {},
-          {},
-          active.front().value,
-      };
-      const auto block = model_.evaluate_mixture_phase_pair_coordinates(
-          observation_.temperature_k, observation_.composition, volume,
-          {coordinate});
-      return fixed_state_pressure_evaluation(block, observation_.temperature_k,
-                                             width, components, components + 1,
-                                             1);
-    }
-    throw std::invalid_argument(
-        "fixed-state pressure does not support this active parameter set");
+    const std::size_t width = components + 1 + parameters;
+    const auto amounts = components == 1 ? std::vector<double>{1.0}
+                                         : observation_.composition;
+    const auto block = model_.evaluate_phase_derivatives(
+        observation_.temperature_k, amounts, volume, active, 2);
+    return fixed_state_pressure_evaluation(block, observation_.temperature_k,
+                                           width, components, components + 1,
+                                           parameters);
   }
 
   bool reject(const std::string &reason) const {
@@ -472,7 +427,7 @@ private:
   }
 
   NativeModel model_;
-  std::vector<std::string> identities_;
+  std::vector<NativeActiveCoordinate> active_coordinates_;
   std::vector<std::size_t> identity_coordinates_;
   std::vector<double> coordinate_scales_;
   Observation observation_;
@@ -580,7 +535,7 @@ ceres::Solver::Options solver_options(const Controls &controls) {
 }
 
 StartResult solve_start(std::size_t index, const NativeModel &model,
-                        const std::vector<std::string> &identities,
+                        const std::vector<NativeActiveCoordinate> &active_coordinates,
                         const std::vector<std::size_t> &identity_coordinates,
                         const std::vector<Coordinate> &coordinates,
                         const std::vector<Observation> &observations,
@@ -607,7 +562,7 @@ StartResult solve_start(std::size_t index, const NativeModel &model,
   }
   for (const auto &observation : observations) {
     costs.push_back(std::make_unique<EosCost>(
-        model, identities, identity_coordinates, scales, observation));
+        model, active_coordinates, identity_coordinates, scales, observation));
     problem.AddResidualBlock(costs.back().get(), nullptr, blocks);
   }
   for (std::size_t coordinate = 0; coordinate < coordinates.size();
@@ -780,7 +735,7 @@ py::dict result_mapping(const StartResult &value,
 }
 
 py::dict fit_resolved(const NativeModel &model,
-                      const std::vector<std::string> &identities,
+                      const std::vector<NativeActiveCoordinate> &active_coordinates,
                       const std::vector<std::size_t> &identity_coordinates,
                       const py::iterable &coordinate_values,
                       const py::iterable &observation_values,
@@ -788,7 +743,8 @@ py::dict fit_resolved(const NativeModel &model,
   const auto coordinates = parse_coordinates(coordinate_values);
   const auto observations = parse_observations(observation_values);
   const auto controls = parse_controls(control_values);
-  if (identities.empty() || identities.size() != identity_coordinates.size() ||
+  if (active_coordinates.empty() ||
+      active_coordinates.size() != identity_coordinates.size() ||
       std::any_of(identity_coordinates.begin(), identity_coordinates.end(),
                   [&](std::size_t coordinate) {
                     return coordinate >= coordinates.size();
@@ -821,7 +777,7 @@ py::dict fit_resolved(const NativeModel &model,
         }
         try {
           results[index] = solve_start(
-              index, model, identities, identity_coordinates, coordinates,
+              index, model, active_coordinates, identity_coordinates, coordinates,
               observations, controls, start_values[index]);
         } catch (const std::exception &error) {
           results[index].index = index;
@@ -863,7 +819,7 @@ py::dict fit_resolved(const NativeModel &model,
 
 void bind_parameter_fit(py::module_ &module) {
   module.def("_fit_resolved", &epcsaft::regression::fit_resolved,
-             py::arg("model"), py::arg("identities"),
+             py::arg("model"), py::arg("active_coordinates"),
              py::arg("identity_coordinates"), py::arg("coordinates"),
              py::arg("observations"), py::arg("controls"));
 }

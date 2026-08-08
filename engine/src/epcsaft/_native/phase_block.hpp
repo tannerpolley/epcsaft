@@ -38,6 +38,8 @@ enum class NativeFixedTopologyParameterKind {
   PairDispersion,
   PairSize,
   CrossAssociationEnergyCorrection,
+  RelativePermittivity,
+  IonFractionSuppressionCoefficient,
 };
 
 struct NativeFixedTopologyParameter final {
@@ -1098,6 +1100,19 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
                  parameter.association_edges.front()[1];
       break;
     }
+    case NativeFixedTopologyParameterKind::RelativePermittivity:
+      if (parameter.component >= components) {
+        throw std::invalid_argument(
+            "relative-permittivity component is outside the model");
+      }
+      identity = parameter.component;
+      value_parameters.relative_permittivity[parameter.component] =
+          parameter.value;
+      break;
+    case NativeFixedTopologyParameterKind::IonFractionSuppressionCoefficient:
+      identity = 0;
+      value_parameters.ion_fraction_suppression_coefficient = parameter.value;
+      break;
     }
     const auto key = std::pair{parameter.kind, identity};
     if (std::find(identities.begin(), identities.end(), key) !=
@@ -1119,6 +1134,23 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
   const auto value_sigma = segment_sigma(temperature, value_parameters);
   const auto value_diameter =
       segment_diameter(temperature, value_parameters, value_sigma);
+  if (std::any_of(value_sigma.begin(), value_sigma.end(), [](double value) {
+        return !std::isfinite(value) || value <= 0.0;
+      }) ||
+      std::any_of(value_diameter.begin(), value_diameter.end(),
+                  [](double value) {
+                    return !std::isfinite(value) || value <= 0.0;
+                  })) {
+    throw std::invalid_argument(
+        "active segment geometry is outside the model domain");
+  }
+  const double packing_fraction = packing_fraction_from_geometry(
+      density, composition, value_parameters, value_diameter);
+  if (!std::isfinite(packing_fraction) || packing_fraction <= 0.0 ||
+      packing_fraction >= close_packing_fraction()) {
+    throw std::invalid_argument(
+        "active packing fraction is outside the model domain");
+  }
   const auto site_fractions =
       solve_site_fractions(temperature, density, composition, value_parameters,
                            value_sigma, value_diameter);
@@ -1148,6 +1180,11 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
   std::vector<ADScalar> association_volumes(
       base_parameters.association_volume.begin(),
       base_parameters.association_volume.end());
+  std::vector<ADScalar> relative_permittivity(
+      base_parameters.relative_permittivity.begin(),
+      base_parameters.relative_permittivity.end());
+  ADScalar ion_fraction_suppression_coefficient =
+      ADScalar(base_parameters.ion_fraction_suppression_coefficient);
   for (std::size_t index = 0; index < active_parameters.size(); ++index) {
     const auto &parameter = active_parameters[index];
     const ADScalar &active = independent[parameter_coordinate + index];
@@ -1208,6 +1245,12 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
         association_energies[edge[1] * sites + edge[0]] = corrected;
       }
       break;
+    case NativeFixedTopologyParameterKind::RelativePermittivity:
+      relative_permittivity[parameter.component] = active;
+      break;
+    case NativeFixedTopologyParameterKind::IonFractionSuppressionCoefficient:
+      ion_fraction_suppression_coefficient = active;
+      break;
     }
   }
 
@@ -1238,7 +1281,8 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
       ADScalar(temperature), active_density, temperature, density,
       active_composition, composition, base_parameters, diameter,
       reference_diameter_ad,
-      static_cast<const std::vector<ADScalar> *>(nullptr), &reference_diameter);
+      &relative_permittivity, &reference_diameter,
+      &ion_fraction_suppression_coefficient);
   const auto born = born_contribution(
       ADScalar(temperature), active_composition, base_parameters,
       electrolyte_contributions.bulk_relative_permittivity, sigma);

@@ -39,32 +39,11 @@ class NativeReferenceSequence:
     reference_molality: float
     convergence_error: float
 
-class NativeIonSolvationDerivativeBlock:
-    solvation_gibbs_j_per_mol: Sequence[float]
-    parameter_derivatives_j_per_mol: Sequence[float]
-    reference_molality_mol_per_kg: float
-    reference_convergence_error: float
-
-class NativeAqueousMiacSolvationFactor:
-    log_mean_ionic_activity_coefficient_molality: float
-    derivative: float
-
-class NativeIonFractionSuppression:
-    bulk_relative_permittivity: float
-    derivative: float
-
-class NativeParameterRecord:
-    identity: str
-    value: float
-    def __init__(self, identity: str, value: float) -> None: ...
-
-class NativePairCoordinate:
+class NativeActiveCoordinate:
     identity: str
     family: str
-    component_a: int
-    component_b: int
-    association_role_a: str
-    association_role_b: str
+    application: str
+    indices: Sequence[int]
     association_edges: Sequence[tuple[int, int]]
     association_energy_scales: Sequence[float]
     value: float
@@ -72,10 +51,8 @@ class NativePairCoordinate:
         self,
         identity: str,
         family: str,
-        component_a: int,
-        component_b: int,
-        association_role_a: str,
-        association_role_b: str,
+        application: str,
+        indices: Sequence[int],
         association_edges: Sequence[tuple[int, int]],
         association_energy_scales: Sequence[float],
         value: float,
@@ -94,20 +71,6 @@ class NativeMixturePhaseBlock:
     hessian: Sequence[float]
     pressure_pa: float
 
-class NativeFugacityDerivativeBlock:
-    log_fugacity_coefficient: Sequence[float]
-    pressure_derivative_per_pa: Sequence[float]
-    parameter_derivatives: Sequence[float]
-    molar_density_mol_per_m3: float
-    root_residual_pa: float
-    pressure_density_derivative_pa_m3_per_mol: float
-    density_condition_number: float
-    branch: str
-    bracket_lower_mol_per_m3: float
-    bracket_upper_mol_per_m3: float
-    stable_root_count: int
-    selected_stable_root_index: int
-
 class NativeModel:
     def __init__(self, *args: object) -> None: ...
     def evaluate(
@@ -123,51 +86,17 @@ class NativeModel:
     def with_parameter_identities(
         self, component_ids: Sequence[str], site_ids: Sequence[str]
     ) -> NativeModel: ...
-    def evaluate_fixed_topology_association_active_parameters(
-        self,
-        temperature: float,
-        amount: float,
-        volume: float,
-        active_parameters: Sequence[NativeParameterRecord],
-    ) -> NativeFixedTopologyPhaseBlock: ...
-    def evaluate_fixed_topology_associating_mixture_active_parameters(
+    def with_active_coordinates(
+        self, coordinates: Sequence[NativeActiveCoordinate]
+    ) -> NativeModel: ...
+    def evaluate_phase_derivatives(
         self,
         temperature: float,
         amounts: Sequence[float],
         volume: float,
-        active_parameters: Sequence[NativeParameterRecord],
+        coordinates: Sequence[NativeActiveCoordinate],
+        derivative_order: int,
     ) -> NativeMixturePhaseBlock: ...
-    def evaluate_mixture_phase_pair_coordinates(
-        self,
-        temperature: float,
-        amounts: Sequence[float],
-        volume: float,
-        coordinates: Sequence[NativePairCoordinate],
-    ) -> NativeMixturePhaseBlock: ...
-    def evaluate_fugacity_derivatives_active(
-        self,
-        temperature: float,
-        pressure: float,
-        composition: Sequence[float],
-        phase: str,
-        active_parameters: Sequence[NativeParameterRecord],
-    ) -> NativeFugacityDerivativeBlock: ...
-    def evaluate_ion_solvation_derivatives(
-        self,
-        temperature: float,
-        pressure: float,
-        solvent_fractions: Sequence[float],
-        ion_indices: Sequence[int],
-        stoichiometry: Sequence[int],
-        phase: str,
-        active_parameters: Sequence[NativeParameterRecord],
-    ) -> NativeIonSolvationDerivativeBlock: ...
-    def evaluate_aqueous_miac_solvation_factor(
-        self, temperature: float, pressure: float, molality: float, factor: float
-    ) -> NativeAqueousMiacSolvationFactor: ...
-    def evaluate_ion_fraction_suppression(
-        self, ion_mole_fraction: float, coefficient: float
-    ) -> NativeIonFractionSuppression: ...
     def molar_volume_bounds(
         self,
         temperature_k: float,
@@ -212,11 +141,11 @@ def _solve_saturation_active(
     model: NativeModel,
     temperature_k: float,
     liquid_density_upper_mol_m3: float,
-    active_parameters: Sequence[NativeParameterRecord],
+    active_parameters: Sequence[NativeActiveCoordinate],
 ) -> dict[str, Any]: ...
 def _fit_resolved(
     model: NativeModel,
-    identities: Sequence[str],
+    active_coordinates: Sequence[NativeActiveCoordinate],
     identity_coordinates: Sequence[int],
     coordinates: Sequence[Mapping[str, object]],
     observations: Sequence[Mapping[str, object]],

@@ -683,9 +683,9 @@ c_v^r=R\left(-2Ta_T-T^2a_{TT}\right).
 
 % EqID: log_fugacity_density_derivative
 % Source: Exact derivative of Eqs.~\eqref{eq:residual_chemical_potential} and \eqref{eq:log_fugacity_coefficient}
-% Status: Exact derivation
+% Status: Documentation-only
 % Description: Density derivative of log fugacity used by active fixed-pressure observations.
-% Change note: Expressed in terms of CppAD Hessian entries rather than expanded EOS derivatives.
+% Change note: Retained as derivational provenance after the generic extensive-coordinate Hessian replaced the density-specific implementation.
 \begin{equation}
 \begin{aligned}
 \left(\ln\phi_i\right)_\rho
@@ -699,9 +699,9 @@ c_v^r=R\left(-2Ta_T-T^2a_{TT}\right).
 
 % EqID: fixed_pressure_fugacity_correction
 % Source: EOS Newton correction using Eq.~\eqref{eq:pressure_density_derivative}
-% Status: Implementation convention
+% Status: Documentation-only
 % Description: Correct a converged-state log fugacity for its bounded pressure residual.
-% Change note: Documents the exact arithmetic used by the reference observation owner.
+% Change note: Retained as provenance after the active-coordinate path adopted an exact extensive-coordinate pressure constraint.
 \begin{equation}
 \begin{aligned}
 \Delta\rho_m&=-\frac{P-P^\star}{P_\rho},\\
@@ -715,7 +715,7 @@ c_v^r=R\left(-2Ta_T-T^2a_{TT}\right).
 % Source: Exact implicit derivative of the pressure constraint
 % Status: Exact derivation
 % Description: Total derivative of a property with respect to an active coordinate at fixed pressure.
-% Change note: Shared by active Born, aqueous k_ij, and solvation-factor observations.
+% Change note: Applied by the generic EOS active-coordinate block; Born and reference-dependent admission remains deferred to CAP-04.
 \begin{equation}
 \left.\frac{dQ}{d\theta}\right|_{P}
 =Q_\theta+Q_\rho\left.\frac{d\rho_m}{d\theta}\right|_P,
@@ -1251,7 +1251,7 @@ l_{11}&\theta\\
 % Source: Exact Jacobian of Eqs.~\eqref{eq:phase_mole_fraction}--\eqref{eq:phase_molar_density}
 % Status: Exact derivation
 % Description: State-coordinate Jacobian used to transform electrolyte Helmholtz gradients.
-% Change note: Evaluated analytically around the sole CppAD state derivative owner.
+% Change note: Retained by the Equilibrium provider transport pending CAP-07; the generic EOS tape differentiates amount-volume coordinates directly.
 \begin{equation}
 \frac{\partial\rho_m}{\partial n_j}=\frac{1}{V},
 \quad
@@ -1267,7 +1267,7 @@ l_{11}&\theta\\
 % Source: Exact second-order multivariable chain rule
 % Status: Exact derivation
 % Description: Transform state Helmholtz Hessians into explicit amount-volume coordinates.
-% Change note: CppAD supplies state Hessians; the EOS applies this exact coordinate transformation.
+% Change note: Retained by the Equilibrium provider transport pending CAP-07; the generic EOS tape differentiates amount-volume coordinates directly.
 \begin{equation}
 \frac{\partial^2(na^r)}{\partial q_\alpha\partial q_\beta}
 =n_\alpha a^r_{y_p}y_{p,\beta}

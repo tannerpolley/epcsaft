@@ -217,7 +217,6 @@ HelmholtzResult<Scalar> residual_helmholtz(
     const std::vector<Scalar>& site_fraction,
     const Scalar& debye_huckel,
     const Scalar& born_ssm_ds,
-    const std::vector<Scalar>& active_aqueous_k_ij = {},
     const std::vector<Scalar>* dispersion_energy_override = nullptr
 ) {
     const std::size_t size = parameters.segment_count.size();
@@ -317,19 +316,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
             // EqID: cross_segment_diameter
             const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j])
                 * (Scalar(1.0) - parameters.l_ij[i * size + j]);
-            Scalar k_ij = Scalar(parameters.k_ij[i * size + j]);
-            if (!active_aqueous_k_ij.empty() && i != j) {
-                if (size != 3 || active_aqueous_k_ij.size() != 3) {
-                    throw std::invalid_argument("invalid active aqueous k_ij coordinates");
-                }
-                if ((i == 0 && j == 1) || (i == 1 && j == 0)) {
-                    k_ij = active_aqueous_k_ij[0];
-                } else if ((i == 0 && j == 2) || (i == 2 && j == 0)) {
-                    k_ij = active_aqueous_k_ij[1];
-                } else {
-                    k_ij = active_aqueous_k_ij[2];
-                }
-            }
+            const Scalar k_ij = Scalar(parameters.k_ij[i * size + j]);
             // EqID: cross_dispersion_energy
             // EqID: same_sign_ionic_dispersion
             const Scalar epsilon_i = dispersion_energy_override == nullptr
@@ -374,7 +361,6 @@ HelmholtzResult<Scalar> residual_helmholtz(
         parameters,
         sigma,
         zeta[3],
-        active_aqueous_k_ij,
         dispersion_energy_override
     );
     // EqID: polar_helmholtz
