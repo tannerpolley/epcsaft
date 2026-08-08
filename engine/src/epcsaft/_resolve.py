@@ -42,8 +42,7 @@ class _ResolvedModel:
         "neutral",
         "associating",
         "ionic-fully-dissociated-debye-huckel",
-        "ionic-ssm-ds",
-        "ionic-original-born",
+        "ionic-born",
     ]
     component_ids: tuple[str, ...]
     molar_mass_kg_per_mol: tuple[float | None, ...]
@@ -84,6 +83,10 @@ class _ResolvedModel:
     polar_formulation: PolarFormulation | None = None
     dipole_moment_debye: tuple[float, ...] = ()
     quadrupole_moment_debye_angstrom: tuple[float, ...] = ()
+    packing_diameter_angstrom: tuple[float | None, ...] = ()
+    debye_huckel_diameter_angstrom: tuple[float | None, ...] = ()
+    born_c_shell: float = 0.0
+    born_c_dielectric: float = 0.0
 
 
 def _missing(
@@ -197,9 +200,7 @@ def _pair_matrix(
             continue
         i = positions[component_a]
         j = positions[component_b]
-        matrix[i * size + j] = matrix[j * size + i] = float(
-            cast(SupportsFloat, record.value)
-        )
+        matrix[i * size + j] = matrix[j * size + i] = float(cast(SupportsFloat, record.value))
     return tuple(matrix)
 
 
@@ -343,10 +344,9 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
     model_records = tuple(
         record for record in parameters.records if isinstance(record, ModelParameterRecord)
     )
-    models: dict[str, ModelParameterRecord] = {
-        record.family: record for record in model_records
-    }
-    family_choices = {record.kind: record.choice for record in parameters.model_families}
+    models: dict[str, ModelParameterRecord] = {record.family: record for record in model_records}
+    family_specs = {record.kind: record for record in parameters.model_families}
+    family_choices = {kind: record.choice for kind, record in family_specs.items()}
     polar_choice = family_choices["polar"]
     polar_formulation: PolarFormulation | None = (
         None if polar_choice == "none" else cast(PolarFormulation, polar_choice)
@@ -514,7 +514,10 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             )
     ionic_topology = any(
         record is not None and _integer(record) != 0 for record in selected_charges
-    ) or any(family == "born_diameter" for _, family in singles)
+    ) or any(
+        family in {"born_diameter", "packing_diameter", "debye_huckel_diameter"}
+        for _, family in singles
+    )
     if not ionic_topology:
         if electrolyte_formulation != "none":
             raise _error(
@@ -583,40 +586,61 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
 
     if electrolyte_formulation == "none":
         raise _error("missing-record", family="electrolyte")
-    corrected_born_schema_present = any(
-        family in {"born_diameter", "solvation_factor"} for _, family in singles
-    ) or any(
-        family
-        in {
-            "ionic_region_relative_permittivity",
-            "ion_fraction_suppression_coefficient",
-        }
-        for family in models
+    born_schema_present = (
+        any(family in {"born_diameter", "solvation_factor"} for _, family in singles)
+        or "ionic_region_relative_permittivity" in models
     )
     l_ij_present = any(key[2] == "l_ij" for key in pair_records)
-    if electrolyte_formulation == "ssm-ds":
-        if not corrected_born_schema_present or l_ij_present:
-            raise _error(
-                "invalid-value",
-                family="electrolyte",
-                reason="invalid-ssm-ds-coefficients",
-            )
-    elif electrolyte_formulation == "original-born":
-        if corrected_born_schema_present or not l_ij_present:
-            raise _error(
-                "invalid-value",
-                family="electrolyte",
-                reason="invalid-original-born-coefficients",
-            )
-    elif electrolyte_formulation == "fully-dissociated-debye-huckel":
-        if corrected_born_schema_present or l_ij_present:
+    if electrolyte_formulation == "fully-dissociated-debye-huckel":
+        if born_schema_present or l_ij_present:
             raise _error(
                 "invalid-value",
                 family="electrolyte",
                 reason="invalid-fully-dissociated-coefficients",
             )
-    else:
+    elif electrolyte_formulation != "born":
         raise _error("invalid-value", family="electrolyte", value=electrolyte_formulation)
+
+    def ionic_diameters(family: str) -> list[float | None]:
+        values: list[float | None] = []
+        for component_id, charge in zip(component_ids, charges, strict=True):
+            if charge == 0:
+                if (component_id, family) in singles:
+                    raise _error(
+                        "invalid-value",
+                        component_id=component_id,
+                        family=family,
+                        reason="ionic-component-required",
+                    )
+                values.append(None)
+                continue
+            record = _component_record(
+                component_id,
+                family,
+                singles,
+                correlations,
+                allow_correlation=False,
+            )
+            value = _magnitude(record, "angstrom")
+            if value <= 0.0:
+                raise _error(
+                    "invalid-value",
+                    component_id=component_id,
+                    family=family,
+                    value=value,
+                )
+            values.append(value)
+        return values
+
+    packing_diameter = ionic_diameters("packing_diameter")
+    debye_huckel_diameter = ionic_diameters("debye_huckel_diameter")
+
+    if electrolyte_formulation == "born":
+        electrolyte_spec = family_specs["electrolyte"]
+        assert electrolyte_spec.c_shell is not None
+        assert electrolyte_spec.c_dielectric is not None
+    else:
+        electrolyte_spec = None
     if electrolyte_formulation == "fully-dissociated-debye-huckel":
         if relative_permittivity_formulation != "solvent-only":
             raise _error(
@@ -651,16 +675,31 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             if charge == 0:
                 if molar_mass[index] is None:
                     raise _missing(component_id=component_id, family="molar_mass")
-                solvent_relative_permittivity.append(
-                    _component_record(
-                        component_id,
-                        "relative_permittivity",
-                        singles,
-                        correlations,
-                        allow_correlation=True,
-                    )
+                permittivity = _component_record(
+                    component_id,
+                    "relative_permittivity",
+                    singles,
+                    correlations,
+                    allow_correlation=True,
                 )
+                if _magnitude(permittivity, "dimensionless") <= 0.0:
+                    raise _error(
+                        "invalid-value",
+                        component_id=component_id,
+                        family="relative_permittivity",
+                    )
+                solvent_relative_permittivity.append(permittivity)
             else:
+                if (component_id, "relative_permittivity") in singles or (
+                    component_id,
+                    "relative_permittivity",
+                ) in correlations:
+                    raise _error(
+                        "invalid-value",
+                        component_id=component_id,
+                        family="relative_permittivity",
+                        reason="unused-by-selected-model",
+                    )
                 solvent_relative_permittivity.append(None)
         return _ResolvedModel(
             "ionic-fully-dissociated-debye-huckel",
@@ -689,56 +728,12 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             polar_formulation=polar_formulation,
             dipole_moment_debye=dipole_moment,
             quadrupole_moment_debye_angstrom=quadrupole_moment,
+            packing_diameter_angstrom=tuple(packing_diameter),
+            debye_huckel_diameter_angstrom=tuple(debye_huckel_diameter),
         )
-    if relative_permittivity_formulation == "component-permittivity-mixing":
-        if corrected_born_schema_present:
-            raise _error(
-                "invalid-value",
-                family="relative_permittivity_formulation",
-                reason="mixed-formulation-schema",
-            )
-        l_ij = _pair_matrix(component_ids, pair_records, "l_ij", required=True)
-        original_relative_permittivity = tuple(
-            _component_record(
-                component_id,
-                "relative_permittivity",
-                singles,
-                correlations,
-                allow_correlation=True,
-            )
-            for component_id in component_ids
-        )
-        return _ResolvedModel(
-            "ionic-original-born",
-            component_ids,
-            molar_mass,
-            segment_count,
-            segment_diameter,
-            dispersion_energy,
-            _required_matrix(k_ij, "k_ij"),
-            _required_matrix(l_ij, "l_ij"),
-            site_ids,
-            site_multiplicity,
-            association_pairs,
-            charges,
-            original_relative_permittivity,
-            (),
-            (),
-            None,
-            None,
-            temperature_min,
-            temperature_max,
-            pressure_min,
-            pressure_max,
-            ion_fraction_max,
-            "component-permittivity-mixing",
-            polar_formulation=polar_formulation,
-            dipole_moment_debye=dipole_moment,
-            quadrupole_moment_debye_angstrom=quadrupole_moment,
-        )
-
     if relative_permittivity_formulation not in {
         "ion-fraction-suppression",
+        "component-permittivity-mixing",
         "density-volume-temperature",
         "ion-specific-suppression",
         "dipolar-density-perturbation",
@@ -753,27 +748,74 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
     born_diameter: list[float | None] = []
     solvation_factor: list[_TemperatureRecord | None] = []
     for index, (component_id, charge) in enumerate(zip(component_ids, charges, strict=True)):
-        if charge == 0:
+        permittivity_declared = (
+            component_id,
+            "relative_permittivity",
+        ) in singles or (component_id, "relative_permittivity") in correlations
+        if relative_permittivity_formulation == "component-permittivity-mixing":
+            permittivity = _component_record(
+                component_id,
+                "relative_permittivity",
+                singles,
+                correlations,
+                allow_correlation=True,
+            )
+            if _magnitude(permittivity, "dimensionless") <= 0.0:
+                raise _error(
+                    "invalid-value",
+                    component_id=component_id,
+                    family="relative_permittivity",
+                )
+            relative_permittivity.append(permittivity)
+        elif charge == 0:
             if molar_mass[index] is None:
                 raise _missing(component_id=component_id, family="molar_mass")
             if relative_permittivity_formulation in {
                 "ion-fraction-suppression",
                 "ion-specific-suppression",
             }:
-                relative_permittivity.append(
-                    _component_record(
-                        component_id,
-                        "relative_permittivity",
-                        singles,
-                        correlations,
-                        allow_correlation=True,
-                    )
+                permittivity = _component_record(
+                    component_id,
+                    "relative_permittivity",
+                    singles,
+                    correlations,
+                    allow_correlation=True,
                 )
+                if _magnitude(permittivity, "dimensionless") <= 0.0:
+                    raise _error(
+                        "invalid-value",
+                        component_id=component_id,
+                        family="relative_permittivity",
+                    )
+                relative_permittivity.append(permittivity)
             else:
+                if permittivity_declared:
+                    raise _error(
+                        "invalid-value",
+                        component_id=component_id,
+                        family="relative_permittivity",
+                        reason="unused-by-selected-model",
+                    )
                 relative_permittivity.append(None)
+        else:
+            if permittivity_declared:
+                raise _error(
+                    "invalid-value",
+                    component_id=component_id,
+                    family="relative_permittivity",
+                    reason="unused-by-selected-model",
+                )
+            relative_permittivity.append(None)
+        if charge == 0:
+            if (component_id, "born_diameter") in singles:
+                raise _error(
+                    "invalid-value",
+                    component_id=component_id,
+                    family="born_diameter",
+                    reason="ionic-component-required",
+                )
             born_diameter.append(None)
         else:
-            relative_permittivity.append(None)
             born = _component_record(
                 component_id,
                 "born_diameter",
@@ -781,16 +823,29 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
                 correlations,
                 allow_correlation=False,
             )
-            born_diameter.append(_magnitude(born, "angstrom"))
-        solvation_factor.append(
-            _component_record(
-                component_id,
-                "solvation_factor",
-                singles,
-                correlations,
-                allow_correlation=True,
-            )
+            born_value = _magnitude(born, "angstrom")
+            if born_value <= 0.0:
+                raise _error(
+                    "invalid-value",
+                    component_id=component_id,
+                    family="born_diameter",
+                    value=born_value,
+                )
+            born_diameter.append(born_value)
+        solvation = _component_record(
+            component_id,
+            "solvation_factor",
+            singles,
+            correlations,
+            allow_correlation=True,
         )
+        if _magnitude(solvation, "dimensionless") <= 0.0:
+            raise _error(
+                "invalid-value",
+                component_id=component_id,
+                family="solvation_factor",
+            )
+        solvation_factor.append(solvation)
 
     required_models = ["ionic_region_relative_permittivity"]
     if relative_permittivity_formulation == "ion-fraction-suppression":
@@ -869,15 +924,19 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             reason="mixed-solvent-volume-data-required",
         )
 
+    assert electrolyte_spec is not None
     return _ResolvedModel(
-        "ionic-ssm-ds",
+        "ionic-born",
         component_ids,
         molar_mass,
         segment_count,
         segment_diameter,
         dispersion_energy,
         _required_matrix(k_ij, "k_ij"),
-        tuple(0.0 for _ in range(len(component_ids) ** 2)),
+        tuple(
+            0.0 if value is None else float(value)
+            for value in _pair_matrix(component_ids, pair_records, "l_ij", required=False)
+        ),
         site_ids,
         site_multiplicity,
         association_pairs,
@@ -902,6 +961,10 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         polar_formulation,
         dipole_moment,
         quadrupole_moment,
+        tuple(packing_diameter),
+        tuple(debye_huckel_diameter),
+        cast(float, electrolyte_spec.c_shell),
+        cast(float, electrolyte_spec.c_dielectric),
     )
 
 

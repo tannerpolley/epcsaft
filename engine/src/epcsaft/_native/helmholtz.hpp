@@ -50,7 +50,7 @@ struct HelmholtzResult final {
     Scalar association;
     Scalar polar;
     Scalar debye_huckel;
-    Scalar born_ssm_ds;
+    Scalar born;
 };
 
 template <typename Scalar>
@@ -110,8 +110,7 @@ std::vector<Scalar> segment_sigma(
 
 template <typename Scalar, typename Parameters>
 // EqID: neutral_segment_diameter
-// EqID: corrected_born_ionic_segment_diameter
-// EqID: original_born_ionic_segment_diameter
+// EqID: ionic_packing_diameter
 std::vector<Scalar> segment_diameter(
     const Scalar& temperature,
     const Parameters& parameters,
@@ -129,12 +128,7 @@ std::vector<Scalar> segment_diameter(
                                : (*dispersion_energy_override)[component])
                         / temperature
                 ))
-            : Scalar(
-                  parameters.electrolyte_model
-                          == ELECTROLYTE_MODEL_ORIGINAL_BORN
-                      ? 1.0
-                      : 0.88
-              ) * sigma[component];
+            : Scalar(parameters.packing_diameter_angstrom[component]);
     }
     return diameter;
 }
@@ -216,7 +210,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
     const std::vector<Scalar>& diameter,
     const std::vector<Scalar>& site_fraction,
     const Scalar& debye_huckel,
-    const Scalar& born_ssm_ds,
+    const Scalar& born,
     const std::vector<Scalar>* dispersion_energy_override = nullptr
 ) {
     const std::size_t size = parameters.segment_count.size();
@@ -368,7 +362,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
         polar_expansion, mole_fractions, parameters
     );
     // EqID: residual_helmholtz
-    return {hard_chain, dispersion, association, polar, debye_huckel, born_ssm_ds};
+    return {hard_chain, dispersion, association, polar, debye_huckel, born};
 }
 
 }  // namespace epcsaft::detail

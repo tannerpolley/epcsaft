@@ -125,6 +125,19 @@
             "locator": "Supporting Information Table S1, 1-butanol row",
             "domain_id": "ascani-case-study-2-298-15-k-1-bar"
           }
+        },
+        {
+          "identity": "component/1-butanol/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Eq. S4 and Table S3, (1-l_ij) convention; explicit canonical uncorrected Born declaration",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
         }
       ],
       "name": "1-butanol",
@@ -149,6 +162,32 @@
       },
       "coefficients": [
         {
+          "identity": "component/chloride-anion/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 2.756,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Table S2, Cl- row; explicit d_i^Born = sigma_i",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.756,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Table S2, Cl- row; explicit d_i^pack = d_i^DH = sigma_i",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/chloride-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -158,6 +197,19 @@
           "provenance": {
             "source_id": "ascani-et-al-2022",
             "locator": "Supporting Information Table S2, Cl- row",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.756,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Table S2, Cl- row; explicit d_i^pack = d_i^DH = sigma_i",
             "domain_id": "ascani-case-study-2-298-15-k-1-bar"
           }
         },
@@ -199,6 +251,19 @@
             "locator": "Supporting Information Table S2, Cl- row",
             "domain_id": "ascani-case-study-2-298-15-k-1-bar"
           }
+        },
+        {
+          "identity": "component/chloride-anion/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Eq. S4 and Table S3, (1-l_ij) convention; explicit canonical uncorrected Born declaration",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
         }
       ],
       "name": "chloride anion",
@@ -222,6 +287,32 @@
       },
       "coefficients": [
         {
+          "identity": "component/potassium-cation/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 3.3417,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Table S2, K+ row; explicit d_i^Born = sigma_i",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.3417,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Table S2, K+ row; explicit d_i^pack = d_i^DH = sigma_i",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/potassium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -231,6 +322,19 @@
           "provenance": {
             "source_id": "ascani-et-al-2022",
             "locator": "Supporting Information Table S2, K+ row",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.3417,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Table S2, K+ row; explicit d_i^pack = d_i^DH = sigma_i",
             "domain_id": "ascani-case-study-2-298-15-k-1-bar"
           }
         },
@@ -272,6 +376,19 @@
             "locator": "Supporting Information Table S2, K+ row",
             "domain_id": "ascani-case-study-2-298-15-k-1-bar"
           }
+        },
+        {
+          "identity": "component/potassium-cation/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Eq. S4 and Table S3, (1-l_ij) convention; explicit canonical uncorrected Born declaration",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
         }
       ],
       "name": "potassium cation",
@@ -295,6 +412,32 @@
       },
       "coefficients": [
         {
+          "identity": "component/sodium-cation/born_diameter",
+          "family": "born_diameter",
+          "value": {
+            "magnitude": 2.8232,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Table S2, Na+ row; explicit d_i^Born = sigma_i",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.8232,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Table S2, Na+ row; explicit d_i^pack = d_i^DH = sigma_i",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/sodium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -304,6 +447,19 @@
           "provenance": {
             "source_id": "ascani-et-al-2022",
             "locator": "Supporting Information Table S2, Na+ row",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.8232,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Table S2, Na+ row; explicit d_i^pack = d_i^DH = sigma_i",
             "domain_id": "ascani-case-study-2-298-15-k-1-bar"
           }
         },
@@ -343,6 +499,19 @@
           "provenance": {
             "source_id": "ascani-et-al-2022",
             "locator": "Supporting Information Table S2, Na+ row",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Eq. S4 and Table S3, (1-l_ij) convention; explicit canonical uncorrected Born declaration",
             "domain_id": "ascani-case-study-2-298-15-k-1-bar"
           }
         }
@@ -401,6 +570,19 @@
           "provenance": {
             "source_id": "ascani-et-al-2022",
             "locator": "Supporting Information Table S1, water row",
+            "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/water/solvation_factor",
+          "family": "solvation_factor",
+          "value": {
+            "magnitude": 1.0,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "ascani-et-al-2022",
+            "locator": "Supporting Information Eq. S4 and Table S3, (1-l_ij) convention; explicit canonical uncorrected Born declaration",
             "domain_id": "ascani-case-study-2-298-15-k-1-bar"
           }
         }
@@ -743,7 +925,9 @@
     {
       "family_id": "model/electrolyte",
       "kind": "electrolyte",
-      "choice": "original-born",
+      "choice": "born",
+      "c_shell": 0.0,
+      "c_dielectric": 0.0,
       "provenance": {
         "source_id": "ascani-et-al-2022",
         "locator": "Supporting Information Eq. S4 and Table S3, (1-l_ij) convention",
@@ -771,7 +955,21 @@
       }
     }
   ],
-  "model_coefficients": [],
+  "model_coefficients": [
+    {
+      "identity": "model/relative_permittivity/ionic_region_relative_permittivity",
+      "family": "ionic_region_relative_permittivity",
+      "value": {
+        "magnitude": 1.0,
+        "unit": "dimensionless"
+      },
+      "provenance": {
+        "source_id": "ascani-et-al-2022",
+        "locator": "Supporting Information Eq. S4 and Table S3, (1-l_ij) convention; explicit canonical uncorrected Born declaration",
+        "domain_id": "ascani-case-study-2-298-15-k-1-bar"
+      }
+    }
+  ],
   "correlations": [
     {
       "correlation_id": "component/1-butanol/relative_permittivity/constant",

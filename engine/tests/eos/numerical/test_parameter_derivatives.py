@@ -11,6 +11,7 @@ from tests.eos._raw_cases import (
     _PROVENANCE,
     AQUEOUS_ELECTROLYTE,
     ASSOCIATING_PURE,
+    MULTISOLVENT_MULTIION,
     POLAR_BINARY,
     POLAR_PURE,
     _component,
@@ -46,9 +47,7 @@ def _parameter_value(mapping: dict[str, object], identity: str) -> float:
     return float(getattr(value, "magnitude", value))
 
 
-def _perturbed(
-    mapping: dict[str, object], identity: str, value: float
-) -> dict[str, object]:
+def _perturbed(mapping: dict[str, object], identity: str, value: float) -> dict[str, object]:
     changed = deepcopy(mapping)
     _set_parameter(changed, identity, value)
     return changed
@@ -148,10 +147,7 @@ def _association_edge(
     volume: float,
 ) -> dict[str, object]:
     endpoint_a, endpoint_b = sorted(((component, site_a), (component, site_b)))
-    prefix = (
-        f"association/{endpoint_a[0]}/{endpoint_a[1]}/"
-        f"{endpoint_b[0]}/{endpoint_b[1]}"
-    )
+    prefix = f"association/{endpoint_a[0]}/{endpoint_a[1]}/{endpoint_b[0]}/{endpoint_b[1]}"
     return {
         "endpoint_a": {"component_id": endpoint_a[0], "site_id": endpoint_a[1]},
         "endpoint_b": {"component_id": endpoint_b[0], "site_id": endpoint_b[1]},
@@ -365,14 +361,10 @@ def test_fixed_state_selected_parameter_derivatives_match_independent_difference
             mapping,
             identity,
             step,
-            lambda candidate: _fixed_state_values(
-                candidate, temperature_k, density, composition
-            ),
+            lambda candidate: _fixed_state_values(candidate, temperature_k, density, composition),
         )
         for row, expected in enumerate(numerical):
-            assert exact.derivatives[row][column] == pytest.approx(
-                expected, rel=3.0e-5, abs=2.0e-7
-            )
+            assert exact.derivatives[row][column] == pytest.approx(expected, rel=3.0e-5, abs=2.0e-7)
 
 
 def test_canonical_kij_coordinate_is_exact_and_component_order_independent() -> None:
@@ -399,9 +391,7 @@ def test_canonical_kij_coordinate_is_exact_and_component_order_independent() -> 
     # h=1e-5 balances centered O(h^2) truncation with double-precision
     # cancellation; 3e-5 relative tolerance spans reduced and pascal rows.
     for row, expected in enumerate(numerical):
-        assert exact.derivatives[row][0] == pytest.approx(
-            expected, rel=3.0e-5, abs=2.0e-7
-        )
+        assert exact.derivatives[row][0] == pytest.approx(expected, rel=3.0e-5, abs=2.0e-7)
 
     reordered_parameters = Parameters.from_mapping(
         POLAR_BINARY, components=("quadrupolar", "dipolar")
@@ -452,18 +442,12 @@ def test_mixed_ternary_pair_coordinates_are_independent_and_ordered() -> None:
             mapping,
             identity,
             1.0e-5,
-            lambda candidate: _fixed_state_values(
-                candidate, 315.0, 4300.0, composition
-            ),
+            lambda candidate: _fixed_state_values(candidate, 315.0, 4300.0, composition),
         )
         for row, expected in enumerate(numerical):
-            assert exact.derivatives[row][column] == pytest.approx(
-                expected, rel=4.0e-5, abs=3.0e-7
-            )
+            assert exact.derivatives[row][column] == pytest.approx(expected, rel=4.0e-5, abs=3.0e-7)
 
-    reordered_parameters = Parameters.from_mapping(
-        mapping, components=("gamma", "alpha", "beta")
-    )
+    reordered_parameters = Parameters.from_mapping(mapping, components=("gamma", "alpha", "beta"))
     reordered = Mixture(reordered_parameters).phase_parameter_derivatives(
         ActiveParameterSet(reordered_parameters, tuple(reversed(identities))),
         T=315.0 * u.kelvin,
@@ -513,23 +497,15 @@ def test_role_aware_cross_association_corrections_apply_exact_chain() -> None:
         (("alpha", "d"), ("beta", "a")),
     ):
         energy, volume = cross_edges[endpoints]
-        assert energy == pytest.approx(
-            2000.0 * (1.0 - 0.08), rel=1.0e-13, abs=1.0e-12
-        )
-        assert volume == pytest.approx(
-            (0.030 * 0.025) ** 0.5, rel=1.0e-13, abs=1.0e-15
-        )
+        assert energy == pytest.approx(2000.0 * (1.0 - 0.08), rel=1.0e-13, abs=1.0e-12)
+        assert volume == pytest.approx((0.030 * 0.025) ** 0.5, rel=1.0e-13, abs=1.0e-15)
     for endpoints in (
         (("alpha", "e1"), ("beta", "e2")),
         (("alpha", "e2"), ("beta", "e1")),
     ):
         energy, volume = cross_edges[endpoints]
-        assert energy == pytest.approx(
-            1400.0 * (1.0 - (-0.04)), rel=1.0e-13, abs=1.0e-12
-        )
-        assert volume == pytest.approx(
-            (0.020 * 0.018) ** 0.5, rel=1.0e-13, abs=1.0e-15
-        )
+        assert energy == pytest.approx(1400.0 * (1.0 - (-0.04)), rel=1.0e-13, abs=1.0e-12)
+        assert volume == pytest.approx((0.020 * 0.018) ** 0.5, rel=1.0e-13, abs=1.0e-15)
 
     exact = Mixture(parameters).phase_parameter_derivatives(
         ActiveParameterSet(parameters, identities),
@@ -546,18 +522,12 @@ def test_role_aware_cross_association_corrections_apply_exact_chain() -> None:
             mapping,
             identity,
             1.0e-5,
-            lambda candidate: _fixed_state_values(
-                candidate, 310.0, 2800.0, composition
-            ),
+            lambda candidate: _fixed_state_values(candidate, 310.0, 2800.0, composition),
         )
         for row, expected in enumerate(numerical):
-            assert exact.derivatives[row][column] == pytest.approx(
-                expected, rel=4.0e-5, abs=3.0e-7
-            )
+            assert exact.derivatives[row][column] == pytest.approx(expected, rel=4.0e-5, abs=3.0e-7)
 
-    reordered_parameters = Parameters.from_mapping(
-        mapping, components=("beta", "alpha")
-    )
+    reordered_parameters = Parameters.from_mapping(mapping, components=("beta", "alpha"))
     reordered = Mixture(reordered_parameters).phase_parameter_derivatives(
         ActiveParameterSet(reordered_parameters, tuple(reversed(identities))),
         T=310.0 * u.kelvin,
@@ -614,9 +584,7 @@ def test_saturation_implicit_parameter_derivatives_match_resolved_boundaries(
     )
 
     def values(candidate: dict[str, object]) -> Values:
-        result = Pure(Parameters.from_mapping(candidate)).saturation(
-            T=temperature_k * u.kelvin
-        )
+        result = Pure(Parameters.from_mapping(candidate)).saturation(T=temperature_k * u.kelvin)
         return (
             result.saturation_pressure_pa,
             result.vapor.molar_density_mol_m3,
@@ -626,9 +594,7 @@ def test_saturation_implicit_parameter_derivatives_match_resolved_boundaries(
     for column, (identity, step) in enumerate(zip(identities, steps, strict=True)):
         numerical = _central_difference(mapping, identity, step, values)
         for row, expected in enumerate(numerical):
-            assert exact.derivatives[row][column] == pytest.approx(
-                expected, rel=3.0e-5, abs=2.0e-6
-            )
+            assert exact.derivatives[row][column] == pytest.approx(expected, rel=3.0e-5, abs=2.0e-6)
 
 
 def test_fixed_pressure_fugacity_derivatives_include_density_closure() -> None:
@@ -658,13 +624,9 @@ def test_fixed_pressure_fugacity_derivatives_include_density_closure() -> None:
         assert state.fugacity is not None
         return state.fugacity.ln_coefficient
 
-    for column, (identity, step) in enumerate(
-        zip(identities, (1.0e-5, 1.0e-3), strict=True)
-    ):
+    for column, (identity, step) in enumerate(zip(identities, (1.0e-5, 1.0e-3), strict=True)):
         numerical = _central_difference(trial_mapping, identity, step, value)
-        assert exact.derivatives[0][column] == pytest.approx(
-            numerical[0], rel=3.0e-5, abs=2.0e-8
-        )
+        assert exact.derivatives[0][column] == pytest.approx(numerical[0], rel=3.0e-5, abs=2.0e-8)
     assert exact.values == pytest.approx(value(trial_mapping), rel=2.0e-12, abs=2.0e-12)
 
 
@@ -682,20 +644,32 @@ def test_active_geometry_rejects_close_packing_before_taping() -> None:
 
 
 def test_mixed_aqueous_active_set_matches_differences_and_preserves_axes() -> None:
-    """Falsify one arbitrary-width pre-Born tape across every supported scope."""
+    """Falsify the generic tape across scopes and Born input families."""
 
     identities = (
-        "component/water/segment_count",
-        "component/chloride-anion/dispersion_energy_over_k",
-        "component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude",
-        "association/water/a/water/b/energy_over_k",
-        "pair/chloride-anion/water/k_ij",
-        "component/water/relative_permittivity/constant/constant",
-        "model/relative_permittivity/ion_fraction_suppression_coefficient",
+        "component/solvent/segment_count",
+        "component/iodide-anion/dispersion_energy_over_k",
+        "component/solvent/segment_diameter",
+        "association/solvent/a/solvent/b/energy_over_k",
+        "pair/iodide-anion/solvent/k_ij",
+        "component/solvent/relative_permittivity",
+        "component/divalent-cation/born_diameter",
+        "component/cosolvent/solvation_factor",
+        "model/relative_permittivity/ionic_region_relative_permittivity",
     )
-    steps = (1.0e-5, 1.0e-3, 1.0e-5, 1.0e-3, 1.0e-5, 1.0e-4, 1.0e-5)
-    composition = (0.98, 0.01, 0.01)
-    parameters = Parameters.from_mapping(AQUEOUS_ELECTROLYTE)
+    steps = (
+        1.0e-5,
+        1.0e-3,
+        1.0e-5,
+        1.0e-3,
+        1.0e-5,
+        1.0e-4,
+        1.0e-5,
+        1.0e-5,
+        1.0e-5,
+    )
+    composition = (0.60, 0.33, 0.02, 0.02, 0.01, 0.02)
+    parameters = Parameters.from_mapping(MULTISOLVENT_MULTIION)
     exact = Mixture(parameters).phase_parameter_derivatives(
         ActiveParameterSet(parameters, identities),
         T=298.15 * u.kelvin,
@@ -708,31 +682,34 @@ def test_mixed_aqueous_active_set_matches_differences_and_preserves_axes() -> No
     # the tolerance spans reduced rows and pressure in pascals.
     for column, (identity, step) in enumerate(zip(identities, steps, strict=True)):
         numerical = _central_difference(
-            AQUEOUS_ELECTROLYTE,
+            MULTISOLVENT_MULTIION,
             identity,
             step,
-            lambda candidate: _fixed_state_values(
-                candidate, 298.15, 2000.0, composition
-            ),
+            lambda candidate: _fixed_state_values(candidate, 298.15, 2000.0, composition),
         )
         for row, expected in enumerate(numerical):
-            assert exact.derivatives[row][column] == pytest.approx(
-                expected, rel=5.0e-5, abs=3.0e-7
-            )
+            assert exact.derivatives[row][column] == pytest.approx(expected, rel=5.0e-5, abs=3.0e-7)
 
     reversed_identities = tuple(reversed(identities))
     reordered_parameters = Parameters.from_mapping(
-        AQUEOUS_ELECTROLYTE,
-        components=("chloride-anion", "water", "sodium-cation"),
+        MULTISOLVENT_MULTIION,
+        components=(
+            "iodide-anion",
+            "cosolvent",
+            "divalent-cation",
+            "solvent",
+            "anion",
+            "cation",
+        ),
     )
     reordered = Mixture(reordered_parameters).phase_parameter_derivatives(
         ActiveParameterSet(reordered_parameters, reversed_identities),
         T=298.15 * u.kelvin,
         rho=2000.0 * u.mole / u.meter**3,
-        x=(0.01, 0.98, 0.01),
+        x=(0.02, 0.33, 0.01, 0.60, 0.02, 0.02),
     )
     assert reordered.capability.active_axes == reversed_identities
-    for canonical_row, reordered_row in enumerate((0, 1, 3, 4, 2)):
+    for canonical_row, reordered_row in enumerate((0, 1, 5, 3, 7, 6, 4, 2)):
         assert reordered.values[reordered_row] == pytest.approx(
             exact.values[canonical_row], rel=2.0e-12, abs=2.0e-12
         )

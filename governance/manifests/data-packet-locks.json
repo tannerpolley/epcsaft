@@ -7,7 +7,7 @@
       "packet_id": "ascani-2022-case-study-2-electrolyte-lle",
       "packet_version": "2",
       "packet_path": "data/packets/ascani-2022-case-study-2-electrolyte-lle/2",
-      "packet_fingerprint": "9d3ea5536844a09a5bfe3b1fc57aea034a7e15552e572a0145f2678cb8be12a1",
+      "packet_fingerprint": "0daf7f08a6f9ebae030c7777c07bae049dcb79d014aee98bf48e9906f03fff5e",
       "materialization": "byte-for-byte"
     },
     {
@@ -21,28 +21,28 @@
       "packet_id": "figiel-2025-aqueous-iodides",
       "packet_version": "2",
       "packet_path": "data/packets/figiel-2025-aqueous-iodides/2",
-      "packet_fingerprint": "ab639e9d10afbbe14e100b555eeb84bd18e5ca9ac47aae617bd5daa52c3c559d",
+      "packet_fingerprint": "a0f35ed4a12998a7d8c76269aa7ccda27ca7758fb0af9ca67ceb1d9731a41899",
       "materialization": "byte-for-byte"
     },
     {
       "packet_id": "figiel-2025-reference-electrolytes",
       "packet_version": "2",
       "packet_path": "data/packets/figiel-2025-reference-electrolytes/2",
-      "packet_fingerprint": "419612d5964646d3f0699b9d8e56524c7007b9e37812eafbe8c93138d8971ac9",
+      "packet_fingerprint": "6d92f0e136eafcf4805d1c553207ba701fd272a58e06db0fbc081e204c93f78a",
       "materialization": "byte-for-byte"
     },
     {
       "packet_id": "figiel-2025-validation-parameters",
       "packet_version": "2",
       "packet_path": "data/packets/figiel-2025-validation-parameters/2",
-      "packet_fingerprint": "a0326438ddd3f78a41391b5d489bd33467f164e7a7f327a5e6bdb0d316896f17",
+      "packet_fingerprint": "f02450511b5612a4af4d6ce2297e5fde01b3398985fde8a1cea5a29e01eca246",
       "materialization": "byte-for-byte"
     },
     {
       "packet_id": "figiel-yu-held-2025",
       "packet_version": "2",
       "packet_path": "data/packets/figiel-yu-held-2025/2",
-      "packet_fingerprint": "fd25c1e83e3c1e1b7284d05e72cb453685e44ddf7d5322c152779c7495f9d9e8",
+      "packet_fingerprint": "66d2853029f464d431c22dadcbd161291524895110492287cedd49d7eba53dfe",
       "materialization": "byte-for-byte"
     },
     {
@@ -70,14 +70,14 @@
       "packet_id": "held-cameretti-sadowski-2008",
       "packet_version": "2",
       "packet_path": "data/packets/held-cameretti-sadowski-2008/2",
-      "packet_fingerprint": "8297f1aed9c2c7cca43d8eedd38d02a7ae6485ee83ca2d5da3e288c6802451da",
+      "packet_fingerprint": "891b6b6705169e35e9b1176040445bbe9a3fc6ccc6d908a1b6339caaf94cd944",
       "materialization": "byte-for-byte"
     },
     {
       "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
       "packet_version": "5",
       "packet_path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/5",
-      "packet_fingerprint": "c3c8889b7ec56f4345c727801afb7841af5b93c6d2865d216d0bc91c7aad5d45",
+      "packet_fingerprint": "342053495ef8a9ae19757a43e1d7517acb3a813e04fc30ab9244ee74e8cfcba8",
       "materialization": "byte-for-byte"
     }
   ]

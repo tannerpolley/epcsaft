@@ -39,7 +39,11 @@ enum class NativeFixedTopologyParameterKind {
   PairSize,
   CrossAssociationEnergyCorrection,
   RelativePermittivity,
+  BornDiameter,
+  SolvationFactor,
+  SolvationFactorCorrelationConstant,
   IonFractionSuppressionCoefficient,
+  IonicRegionRelativePermittivity,
 };
 
 struct NativeFixedTopologyParameter final {
@@ -210,6 +214,7 @@ template <typename Scalar> struct PhaseBlockParameters final {
   std::vector<int> site_multiplicity;
   std::vector<int> association_active;
   std::vector<int> charge_number;
+  std::vector<double> packing_diameter_angstrom;
   int electrolyte_model;
   std::vector<double> dipole_moment_debye;
   std::vector<double> quadrupole_moment_debye_angstrom;
@@ -239,6 +244,7 @@ phase_block_parameters(const NativeParameters &parameters) {
       parameters.site_multiplicity,
       parameters.association_active,
       parameters.charge_number,
+      parameters.packing_diameter_angstrom,
       parameters.electrolyte_model,
       parameters.dipole_moment_debye,
       parameters.quadrupole_moment_debye_angstrom,
@@ -1109,9 +1115,32 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
       value_parameters.relative_permittivity[parameter.component] =
           parameter.value;
       break;
+    case NativeFixedTopologyParameterKind::BornDiameter:
+      if (parameter.component >= components ||
+          base_parameters.charge_number[parameter.component] == 0) {
+        throw std::invalid_argument(
+            "Born-diameter component is outside the ionic model");
+      }
+      identity = parameter.component;
+      value_parameters.born_diameter_angstrom[parameter.component] =
+          parameter.value;
+      break;
+    case NativeFixedTopologyParameterKind::SolvationFactor:
+    case NativeFixedTopologyParameterKind::SolvationFactorCorrelationConstant:
+      if (parameter.component >= components) {
+        throw std::invalid_argument(
+            "solvation-factor component is outside the model");
+      }
+      identity = parameter.component;
+      value_parameters.solvation_factor[parameter.component] = parameter.value;
+      break;
     case NativeFixedTopologyParameterKind::IonFractionSuppressionCoefficient:
       identity = 0;
       value_parameters.ion_fraction_suppression_coefficient = parameter.value;
+      break;
+    case NativeFixedTopologyParameterKind::IonicRegionRelativePermittivity:
+      identity = 0;
+      value_parameters.ionic_region_relative_permittivity = parameter.value;
       break;
     }
     const auto key = std::pair{parameter.kind, identity};
@@ -1183,8 +1212,16 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
   std::vector<ADScalar> relative_permittivity(
       base_parameters.relative_permittivity.begin(),
       base_parameters.relative_permittivity.end());
+  std::vector<ADScalar> born_diameter(
+      base_parameters.born_diameter_angstrom.begin(),
+      base_parameters.born_diameter_angstrom.end());
+  std::vector<ADScalar> solvation_factor(
+      base_parameters.solvation_factor.begin(),
+      base_parameters.solvation_factor.end());
   ADScalar ion_fraction_suppression_coefficient =
       ADScalar(base_parameters.ion_fraction_suppression_coefficient);
+  ADScalar ionic_region_relative_permittivity =
+      ADScalar(base_parameters.ionic_region_relative_permittivity);
   for (std::size_t index = 0; index < active_parameters.size(); ++index) {
     const auto &parameter = active_parameters[index];
     const ADScalar &active = independent[parameter_coordinate + index];
@@ -1248,8 +1285,18 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
     case NativeFixedTopologyParameterKind::RelativePermittivity:
       relative_permittivity[parameter.component] = active;
       break;
+    case NativeFixedTopologyParameterKind::BornDiameter:
+      born_diameter[parameter.component] = active;
+      break;
+    case NativeFixedTopologyParameterKind::SolvationFactor:
+    case NativeFixedTopologyParameterKind::SolvationFactorCorrelationConstant:
+      solvation_factor[parameter.component] = active;
+      break;
     case NativeFixedTopologyParameterKind::IonFractionSuppressionCoefficient:
       ion_fraction_suppression_coefficient = active;
+      break;
+    case NativeFixedTopologyParameterKind::IonicRegionRelativePermittivity:
+      ionic_region_relative_permittivity = active;
       break;
     }
   }
@@ -1272,20 +1319,15 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
   const auto sigma = segment_sigma(ADScalar(temperature), parameters);
   const auto diameter =
       segment_diameter(ADScalar(temperature), parameters, sigma);
-  const auto reference_sigma = segment_sigma(temperature, value_parameters);
-  const auto reference_diameter =
-      segment_diameter(temperature, value_parameters, reference_sigma);
-  const std::vector<ADScalar> reference_diameter_ad(reference_diameter.begin(),
-                                                    reference_diameter.end());
   const auto electrolyte_contributions = electrolyte_contribution(
       ADScalar(temperature), active_density, temperature, density,
-      active_composition, composition, base_parameters, diameter,
-      reference_diameter_ad,
-      &relative_permittivity, &reference_diameter,
+      active_composition, composition, base_parameters,
+      &relative_permittivity,
       &ion_fraction_suppression_coefficient);
   const auto born = born_contribution(
       ADScalar(temperature), active_composition, base_parameters,
-      electrolyte_contributions.bulk_relative_permittivity, sigma);
+      electrolyte_contributions.bulk_relative_permittivity, &born_diameter,
+      &solvation_factor, &ionic_region_relative_permittivity);
   const auto contributions = residual_helmholtz(
       ADScalar(temperature), active_density, active_composition, parameters,
       sigma, diameter, active_site_fractions,
@@ -1299,7 +1341,7 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
       ideal +
       active_total * (contributions.hard_chain + contributions.dispersion +
                       contributions.association + contributions.polar +
-                      contributions.debye_huckel + contributions.born_ssm_ds);
+                      contributions.debye_huckel + contributions.born);
   const auto delta = association_delta_values(
       ADScalar(temperature), active_density, active_composition, parameters,
       sigma, diameter, association_energies, association_volumes);

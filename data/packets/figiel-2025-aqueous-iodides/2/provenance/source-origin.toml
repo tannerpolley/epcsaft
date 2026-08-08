@@ -12,4 +12,4 @@ source_packet_fingerprint = "f44f9d208ee2a72d755b1e3a929017f03f98dcff5d249ee322a
 [[files]]
 retained_path = "parameters/parameters.json"
 origin_path = "packets/figiel-2025-aqueous-iodides/1/parameters/{association.csv,bundle.toml,components.csv,correlations.toml,model.csv,pair.csv,single.csv,sites.csv}"
-sha256 = "35ebc47d0c51b81ed007ca97cbd1d2b02d236921e15be85edd5195820454cac9"
+sha256 = "a5764dbb902ddbcbb731c9f6dcb51f9b644d2f2901ba39a1549f59b6cbf50d4b"

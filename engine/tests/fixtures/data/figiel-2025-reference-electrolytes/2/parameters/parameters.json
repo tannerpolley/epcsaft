@@ -97,6 +97,19 @@
           }
         },
         {
+          "identity": "component/bromide-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.702216,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Br- row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
           "identity": "component/bromide-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -106,6 +119,19 @@
           "provenance": {
             "source_id": "figiel-yu-held-2025",
             "locator": "Table 3, Br- row, u_i/k_B column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/bromide-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.702216,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Br- row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "figiel-298-k-1-bar"
           }
         },
@@ -183,6 +209,19 @@
           }
         },
         {
+          "identity": "component/chloride-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.42528,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Cl- row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
           "identity": "component/chloride-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -192,6 +231,19 @@
           "provenance": {
             "source_id": "figiel-yu-held-2025",
             "locator": "Table 3, Cl- row, u_i/k_B column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.42528,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Cl- row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "figiel-298-k-1-bar"
           }
         },
@@ -341,6 +393,19 @@
           }
         },
         {
+          "identity": "component/lithium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.503512,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Li+ row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
           "identity": "component/lithium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -350,6 +415,19 @@
           "provenance": {
             "source_id": "figiel-yu-held-2025",
             "locator": "Table 3, Li+ row, u_i/k_B column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/lithium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.503512,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Li+ row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "figiel-298-k-1-bar"
           }
         },
@@ -499,6 +577,19 @@
           }
         },
         {
+          "identity": "component/potassium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.940696,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, K+ row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
           "identity": "component/potassium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -508,6 +599,19 @@
           "provenance": {
             "source_id": "figiel-yu-held-2025",
             "locator": "Table 3, K+ row, u_i/k_B column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.940696,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, K+ row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "figiel-298-k-1-bar"
           }
         },
@@ -585,6 +689,19 @@
           }
         },
         {
+          "identity": "component/sodium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.484416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
           "identity": "component/sodium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -594,6 +711,19 @@
           "provenance": {
             "source_id": "figiel-yu-held-2025",
             "locator": "Table 3, Na+ row, u_i/k_B column",
+            "domain_id": "figiel-298-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.484416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "figiel-yu-held-2025",
+            "locator": "Table 3, Na+ row, sigma_i column; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "figiel-298-k-1-bar"
           }
         },
@@ -1176,7 +1306,9 @@
     {
       "family_id": "model/electrolyte",
       "kind": "electrolyte",
-      "choice": "ssm-ds",
+      "choice": "born",
+      "c_shell": 1.0,
+      "c_dielectric": 1.0,
       "provenance": {
         "source_id": "figiel-yu-held-2025",
         "locator": "Table 2 identifies water as solvent; Table 3 separately lists ions",

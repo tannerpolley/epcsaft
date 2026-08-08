@@ -1,17 +1,27 @@
 from __future__ import annotations
 
 import math
+from copy import deepcopy
 
 import pytest
 
-from epcsaft import Activity, Mixture, Parameters, Pure, TransferFreeEnergy
+from epcsaft import (
+    Activity,
+    EosError,
+    Mixture,
+    ParameterError,
+    Parameters,
+    Pure,
+    TransferFreeEnergy,
+)
 from epcsaft import unit_registry as u
 from tests.eos._raw_cases import (
     AQUEOUS_ELECTROLYTE,
     ASSOCIATING_PURE,
     DIPOLAR_PERMITTIVITY_ELECTROLYTE,
+    MULTISOLVENT_MULTIION,
     NEUTRAL_BINARY,
-    ORIGINAL_BORN_ELECTROLYTE,
+    _component,
     neutral_binary,
     neutral_pure,
 )
@@ -207,12 +217,35 @@ def test_debye_huckel__matches_independent_si_oracle() -> None:
     assert state.debye_huckel == pytest.approx(expected, rel=2.0e-11, abs=2.0e-13)
 
 
-def test_corrected_born__matches_independent_two_region_oracle() -> None:
+@pytest.mark.parametrize(
+    ("c_shell", "c_dielectric"),
+    ((0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)),
+    ids=("uncorrected", "shell-only", "shell-and-dielectric", "redundant"),
+)
+def test_born_corrections_match_independent_nested_equations(
+    c_shell: float, c_dielectric: float
+) -> None:
     temperature = 298.15
-    fractions = (0.999998, 0.000001, 0.000001)
+    fractions = (0.90, 0.05, 0.05)
     charges = (0, 1, -1)
     diameters = (0.0, 3.445, 4.100)
     solvation = (1.5, 1.0, 1.0)
+    mapping = deepcopy(AQUEOUS_ELECTROLYTE)
+    electrolyte = next(
+        family for family in mapping["model_families"] if family["kind"] == "electrolyte"
+    )
+    electrolyte["c_shell"] = c_shell
+    electrolyte["c_dielectric"] = c_dielectric
+
+    try:
+        state = _state(mapping, x=fractions, density=40000.0)
+    except ParameterError:
+        state = None
+    if (c_shell, c_dielectric) == (0.0, 1.0):
+        assert state is None
+        return
+    assert state is not None
+
     mixed_solvation = math.fsum(
         fraction * factor for fraction, factor in zip(fractions, solvation, strict=True)
     )
@@ -222,14 +255,14 @@ def test_corrected_born__matches_independent_two_region_oracle() -> None:
         if charge == 0:
             continue
         born_diameter = diameter * 1.0e-10
-        shell_diameter = born_diameter * (1.0 + (mixed_solvation - 1.0) / abs(charge))
+        shell_diameter = born_diameter * (1.0 + c_shell * (mixed_solvation - 1.0) / abs(charge))
         radial_sum += (
             fraction
             * charge
             * charge
             * (
                 (1.0 - 1.0 / bulk_permittivity) / shell_diameter
-                + (1.0 - 1.0 / 8.0) * (1.0 / born_diameter - 1.0 / shell_diameter)
+                + c_dielectric * (1.0 - 1.0 / 8.0) * (1.0 / born_diameter - 1.0 / shell_diameter)
             )
         )
     expected = (
@@ -238,28 +271,83 @@ def test_corrected_born__matches_independent_two_region_oracle() -> None:
         / (4.0 * math.pi * VACUUM_PERMITTIVITY * BOLTZMANN * temperature)
     )
 
-    state = _state(AQUEOUS_ELECTROLYTE, x=fractions, density=40000.0)
-
     assert state.born == pytest.approx(expected, rel=3.0e-12, abs=2.0e-12)
 
 
-def test_canonical_born_reduces_exactly_to_original_form() -> None:
-    temperature = 298.15
-    fractions = (0.98, 0.01, 0.01)
-    state = _state(ORIGINAL_BORN_ELECTROLYTE, x=fractions, density=40000.0)
-    radial_sum = math.fsum(
-        fraction
-        * (1.0 - 1.0 / state.bulk_relative_permittivity)
-        / (diameter * 1.0e-10)
-        for fraction, diameter in zip(fractions[1:], (2.8232, 2.7560), strict=True)
-    )
-    expected = (
-        -(ELEMENTARY_CHARGE**2)
-        * radial_sum
-        / (4.0 * math.pi * VACUUM_PERMITTIVITY * BOLTZMANN * temperature)
-    )
+@pytest.mark.parametrize(
+    "declaration",
+    (
+        "neutral-packing-diameter",
+        "neutral-debye-huckel-diameter",
+        "neutral-born-diameter",
+        "nonpositive-packing-diameter",
+        "nonpositive-debye-huckel-diameter",
+        "nonpositive-born-diameter",
+        "nonpositive-solvation-factor",
+        "nonpositive-ionic-permittivity",
+        "unused-charged-relative-permittivity",
+    ),
+)
+def test_invalid_born_physical_declarations_do_not_resolve(declaration: str) -> None:
+    mapping = deepcopy(AQUEOUS_ELECTROLYTE)
+    if declaration == "unused-charged-relative-permittivity":
+        ion = next(
+            component
+            for component in mapping["components"]
+            if component["component_id"] == "sodium-cation"
+        )
+        ion["coefficients"].extend(
+            _component("sodium-cation", relative_permittivity=10.0)["coefficients"]
+        )
+        ion["coefficients"].sort(key=lambda item: str(item["family"]))
+        family = "relative_permittivity"
+    else:
+        family = (
+            declaration.removeprefix("neutral-")
+            .removeprefix("nonpositive-")
+            .replace("-", "_")
+        )
+    if declaration.startswith("neutral-"):
+        ion = next(
+            component
+            for component in mapping["components"]
+            if component["component_id"] == "sodium-cation"
+        )
+        source = deepcopy(
+            next(
+                coefficient
+                for coefficient in ion["coefficients"]
+                if coefficient["family"] == family
+            )
+        )
+        source["identity"] = f"component/water/{family}"
+        solvent = next(
+            component for component in mapping["components"] if component["component_id"] == "water"
+        )
+        solvent["coefficients"].append(source)
+        solvent["coefficients"].sort(key=lambda item: str(item["family"]))
+    elif declaration == "unused-charged-relative-permittivity":
+        pass
+    elif family == "ionic_permittivity":
+        coefficient = next(
+            item
+            for item in mapping["model_coefficients"]
+            if item["family"] == "ionic_region_relative_permittivity"
+        )
+        coefficient["value"]["magnitude"] = 0.0
+    else:
+        component_id = "water" if family == "solvation_factor" else "sodium-cation"
+        component = next(
+            item for item in mapping["components"] if item["component_id"] == component_id
+        )
+        coefficient = next(item for item in component["coefficients"] if item["family"] == family)
+        coefficient["value"]["magnitude"] = 0.0
 
-    assert state.born == pytest.approx(expected, rel=3.0e-12, abs=2.0e-12)
+    try:
+        model = Mixture(Parameters.from_mapping(mapping))
+    except ParameterError:
+        model = None
+    assert model is None
 
 
 def test_permittivity__matches_independent_ion_fraction_and_dipolar_equations() -> None:
@@ -279,6 +367,37 @@ def test_permittivity__matches_independent_ion_fraction_and_dipolar_equations() 
     )
     dipolar = _state(DIPOLAR_PERMITTIVITY_ELECTROLYTE, x=fractions, density=density)
     assert dipolar.bulk_relative_permittivity == pytest.approx(expected, rel=2.0e-12)
+
+    component_mixing = deepcopy(AQUEOUS_ELECTROLYTE)
+    permittivity_family = next(
+        family
+        for family in component_mixing["model_families"]
+        if family["kind"] == "permittivity"
+    )
+    permittivity_family["choice"] = "component-permittivity-mixing"
+    component_mixing["model_coefficients"] = [
+        coefficient
+        for coefficient in component_mixing["model_coefficients"]
+        if coefficient["family"] != "ion_fraction_suppression_coefficient"
+    ]
+    for component_id, permittivity in (
+        ("sodium-cation", 10.0),
+        ("chloride-anion", 5.0),
+    ):
+        component = next(
+            item
+            for item in component_mixing["components"]
+            if item["component_id"] == component_id
+        )
+        component["coefficients"].extend(
+            _component(component_id, relative_permittivity=permittivity)["coefficients"]
+        )
+        component["coefficients"].sort(key=lambda item: str(item["family"]))
+    mixed = _state(component_mixing, x=fractions, density=density)
+    assert mixed.bulk_relative_permittivity == pytest.approx(
+        fractions[0] * 78.09 + fractions[1] * 10.0 + fractions[2] * 5.0,
+        rel=2.0e-12,
+    )
 
 
 def test_density_closure__returns_certified_single_root_and_slope() -> None:
@@ -316,6 +435,7 @@ def test_residual_chemical_potentials__match_total_amount_derivatives() -> None:
     expected = []
     step = 2.0e-5
     for component in range(2):
+
         def total_helmholtz(delta: float, component_index: int = component) -> float:
             amounts = [*fractions]
             amounts[component_index] += delta
@@ -390,6 +510,9 @@ def test_electrolyte_reference_matches_projection_identities() -> None:
         P=1.0 * u.bar,
         solvent_x=(1.0, 0.0, 0.0),
         phase="liquid",
+        ion_component_ids=("sodium-cation", "chloride-anion"),
+        formula_stoichiometry=(1, 1),
+        reference_convention="molality-infinite-dilution",
     )
     state = reference.state(molality=0.1 * u.mole / u.kilogram)
     finite = model.state(
@@ -400,6 +523,7 @@ def test_electrolyte_reference_matches_projection_identities() -> None:
     )
 
     assert isinstance(state.activity, Activity)
+    assert state.activity.reference_convention == "molality-infinite-dilution"
     assert finite.fugacity is not None
     log_activity = tuple(
         finite.fugacity.ln_coefficient[index] - infinite
@@ -426,4 +550,67 @@ def test_electrolyte_reference_matches_projection_identities() -> None:
     )
     identity = reference.transfer_to(reference)
     assert isinstance(identity, TransferFreeEnergy)
+    assert identity.reference_convention == "molality-infinite-dilution"
     assert tuple(value.to("joule / mole").magnitude for value in identity.values) == (0.0, 0.0)
+
+    reference_arguments = {
+        "T": 298.15 * u.kelvin,
+        "P": 1.0 * u.bar,
+        "solvent_x": (1.0, 0.0, 0.0),
+        "phase": "liquid",
+        "ion_component_ids": ("sodium-cation", "chloride-anion"),
+        "formula_stoichiometry": (1, 1),
+        "reference_convention": "molality-infinite-dilution",
+    }
+    for invalid in (
+        {"formula_stoichiometry": (1, 2)},
+        {"reference_convention": "mole-fraction-pure-solvent"},
+    ):
+        try:
+            rejected = model.reference(**(reference_arguments | invalid))
+        except EosError:
+            rejected = None
+        assert rejected is None
+
+
+def test_multisolvent_multiion_reference_is_component_order_invariant() -> None:
+    solvent_by_id = {"solvent": 0.6, "cosolvent": 0.4}
+    ion_pair = ("divalent-cation", "iodide-anion")
+    stoichiometry = (1, 2)
+
+    def evaluate(component_ids: tuple[str, ...]) -> tuple[tuple[float, ...], tuple[float, ...]]:
+        parameters = Parameters.from_mapping(
+            MULTISOLVENT_MULTIION,
+            components=component_ids,
+        )
+        model = Mixture(parameters)
+        reference = model.reference(
+            T=298.15 * u.kelvin,
+            P=1.0 * u.bar,
+            solvent_x=tuple(solvent_by_id.get(component_id, 0.0) for component_id in component_ids),
+            phase="liquid",
+            ion_component_ids=ion_pair,
+            formula_stoichiometry=stoichiometry,
+            reference_convention="molality-infinite-dilution",
+        )
+        state = reference.state(molality=0.05 * u.mole / u.kilogram)
+        assert state.activity is not None
+        assert state.activity.reference_convention == "molality-infinite-dilution"
+        return reference.infinite_dilution_log_fugacity_coefficient, state.activity.single_ion
+
+    canonical_ids = tuple(
+        component["component_id"] for component in MULTISOLVENT_MULTIION["components"]
+    )
+    permuted_ids = (
+        "iodide-anion",
+        "cosolvent",
+        "divalent-cation",
+        "solvent",
+        "anion",
+        "cation",
+    )
+    canonical = evaluate(canonical_ids)
+    permuted = evaluate(permuted_ids)
+
+    assert permuted[0] == pytest.approx(canonical[0], rel=2.0e-10, abs=2.0e-10)
+    assert permuted[1] == pytest.approx(canonical[1], rel=2.0e-10, abs=2.0e-10)

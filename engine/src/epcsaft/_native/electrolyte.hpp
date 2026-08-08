@@ -197,10 +197,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     const std::vector<Scalar>& mole_fractions,
     const std::vector<double>& reference_mole_fractions,
     const NativeParameters& parameters,
-    const std::vector<Scalar>& diameter,
-    const std::vector<Scalar>& reference_diameter,
     const std::vector<Scalar>* relative_permittivity_override = nullptr,
-    const std::vector<double>* branch_reference_diameter = nullptr,
     const Scalar* ion_fraction_suppression_override = nullptr
 ) {
     bool has_ion = false;
@@ -282,21 +279,13 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         if (charge == 0) {
             continue;
         }
-        const Scalar diameter_m = Scalar(1.0e-10) * diameter[component];
+        const double diameter_angstrom =
+            parameters.debye_huckel_diameter_angstrom[component];
+        const Scalar diameter_m = Scalar(1.0e-10 * diameter_angstrom);
         const Scalar reduced = kappa * diameter_m;
-        double branch_diameter = 0.0;
-        if (branch_reference_diameter != nullptr) {
-            branch_diameter = (*branch_reference_diameter)[component];
-        } else if constexpr (std::is_same_v<Scalar, double>) {
-            branch_diameter = reference_diameter[component];
-        } else {
-            throw std::logic_error(
-                "AD electrolyte evaluation requires fixed branch geometry"
-            );
-        }
         const Scalar chi = finite_size_chi(
             reduced,
-            reference_kappa_for_branch * 1.0e-10 * branch_diameter
+            reference_kappa_for_branch * 1.0e-10 * diameter_angstrom
                 < 1.0e-3
         );
         weighted_chi += mole_fractions[component] * charge * charge * chi;

@@ -12,4 +12,4 @@ source_packet_fingerprint = "7d01b793359d60c978a978f354bf85b439b7f560ce20572ee06
 [[files]]
 retained_path = "parameters/parameters.json"
 origin_path = "packets/ascani-2022-case-study-2-electrolyte-lle/1/parameters/{association.csv,bundle.toml,components.csv,correlations.toml,model.csv,pair.csv,single.csv,sites.csv}"
-sha256 = "4976e85f8cfd985a4d91d8ee77d54cf6db100ca0659573a872a2c52dc350b20b"
+sha256 = "1bbc7dbed6654791fab1d99407de2190b217036cd3150f31630da6b4d486b7b0"

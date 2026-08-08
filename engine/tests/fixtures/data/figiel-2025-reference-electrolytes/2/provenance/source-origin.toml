@@ -12,4 +12,4 @@ source_packet_fingerprint = "5ea86c44f67ded4c309e17f396b9414cfadcb2b0f00b2ac41f8
 [[files]]
 retained_path = "parameters/parameters.json"
 origin_path = "packets/figiel-2025-reference-electrolytes/1/parameters/{association.csv,bundle.toml,components.csv,correlations.toml,model.csv,pair.csv,single.csv,sites.csv}"
-sha256 = "7c94ba2dcdee4395be94451918b9cbad482be7da8c05c820fd21cd020e4ed7c6"
+sha256 = "23b67caf1fdbf3dd6b6dd09d0d713782ca0b6b3fb5adca200e6b06ce21e15f2b"

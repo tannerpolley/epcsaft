@@ -39,6 +39,8 @@ type SingleParameterFamily = Literal[
     "dispersion_energy_over_k",
     "charge_number",
     "relative_permittivity",
+    "packing_diameter",
+    "debye_huckel_diameter",
     "born_diameter",
     "solvation_factor",
     "dielectric_volume",
@@ -68,6 +70,8 @@ _SINGLE_FAMILIES = frozenset(
         "dispersion_energy_over_k",
         "charge_number",
         "relative_permittivity",
+        "packing_diameter",
+        "debye_huckel_diameter",
         "born_diameter",
         "solvation_factor",
         "dielectric_volume",
@@ -97,6 +101,8 @@ _ASSOCIATION_COMBINING_RULES = frozenset(
 _DIMENSIONAL_UNITS = {
     "molar_mass": "kilogram / mole",
     "segment_diameter": "angstrom",
+    "packing_diameter": "angstrom",
+    "debye_huckel_diameter": "angstrom",
     "dispersion_energy_over_k": "kelvin",
     "born_diameter": "angstrom",
     "dielectric_volume": "meter ** 3 / mole",
@@ -210,6 +216,8 @@ class ModelFamilySpec:
     source_id: str
     locator: str
     domain_id: str
+    c_shell: float | None = None
+    c_dielectric: float | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -218,6 +226,20 @@ class ModelFamilySpec:
         if self.kind not in {"base", "association", "electrolyte", "permittivity", "polar"}:
             raise _error("invalid-value", field="model_family.kind", value=self.kind)
         object.__setattr__(self, "choice", _identifier(self.choice, field="model_family.choice"))
+        corrections = (self.c_shell, self.c_dielectric)
+        if self.kind == "electrolyte" and self.choice == "born":
+            if corrections not in {(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)}:
+                raise _error(
+                    "invalid-value",
+                    field="model_family.born_corrections",
+                    value=corrections,
+                )
+        elif corrections != (None, None):
+            raise _error(
+                "invalid-value",
+                field="model_family.born_corrections",
+                reason="non-born-model",
+            )
         source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)

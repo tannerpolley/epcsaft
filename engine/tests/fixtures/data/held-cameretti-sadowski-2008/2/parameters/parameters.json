@@ -70,6 +70,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/ammonium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.05844,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, NH4+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/ammonium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -79,6 +92,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, NH4+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/ammonium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.05844,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, NH4+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -132,6 +158,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/barium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.726416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Ba2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/barium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -141,6 +180,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Ba2+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/barium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.726416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Ba2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -194,6 +246,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/bromate-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.14732,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, BrO3- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/bromate-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -203,6 +268,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, BrO3- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/bromate-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.14732,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, BrO3- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -256,6 +334,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/bromide-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.042424,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Br- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/bromide-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -265,6 +356,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Br- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/bromide-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.042424,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Br- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -318,6 +422,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/calcium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.542232,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Ca2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/calcium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -327,6 +444,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Ca2+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/calcium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.542232,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Ca2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -380,6 +510,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/cesium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.133328,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Cs+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/cesium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -389,6 +532,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Cs+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/cesium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.133328,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Cs+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -442,6 +598,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/chlorate-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.362656,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, ClO3- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/chlorate-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -451,6 +620,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, ClO3- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chlorate-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.362656,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, ClO3- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -504,6 +686,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/chloride-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.6906,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Cl- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/chloride-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -513,6 +708,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Cl- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.6906,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Cl- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -566,6 +774,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/choline-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 5.211008,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Choline+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/choline-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -575,6 +796,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Choline+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/choline-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 5.211008,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Choline+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -628,6 +862,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/chromium-iii-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.84944,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Cr3+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/chromium-iii-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -637,6 +884,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Cr3+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/chromium-iii-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.84944,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Cr3+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -690,6 +950,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/cobalt-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.146056,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Co2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/cobalt-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -699,6 +972,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Co2+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/cobalt-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.146056,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Co2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -752,6 +1038,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/copper-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.37204,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Cu2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/copper-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -761,6 +1060,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Cu2+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/copper-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.37204,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Cu2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -814,6 +1126,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/dihydrogen-phosphate-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.258288,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, H2PO4- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/dihydrogen-phosphate-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -823,6 +1148,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, H2PO4- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/dihydrogen-phosphate-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.258288,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, H2PO4- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -876,6 +1214,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/fluoride-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 1.419616,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, F- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/fluoride-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -885,6 +1236,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, F- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/fluoride-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 1.419616,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, F- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -938,6 +1302,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/hydrogen-phosphate-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.925504,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, HPO4^2- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/hydrogen-phosphate-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -947,6 +1324,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, HPO4^2- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/hydrogen-phosphate-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.925504,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, HPO4^2- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1000,6 +1390,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/hydronium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.00112,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, H+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/hydronium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1009,6 +1412,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, H+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/hydronium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.00112,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, H+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1062,6 +1478,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/hydroxide-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 1.443288,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, OH- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/hydroxide-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1071,6 +1500,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, OH- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/hydroxide-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 1.443288,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, OH- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1124,6 +1566,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/iodide-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.460072,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, I- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/iodide-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1133,6 +1588,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, I- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/iodide-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.460072,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, I- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1186,6 +1654,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/iron-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.184864,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Fe2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/iron-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1195,6 +1676,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Fe2+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/iron-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.184864,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Fe2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1248,6 +1742,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/lithium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 1.599576,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Li+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/lithium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1257,6 +1764,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Li+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/lithium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 1.599576,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Li+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1310,6 +1830,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/magnesium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.044152,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Mg2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/magnesium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1319,6 +1852,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Mg2+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/magnesium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.044152,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Mg2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1372,6 +1918,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/nitrate-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.97484,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, NO3- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/nitrate-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1381,6 +1940,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, NO3- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/nitrate-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.97484,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, NO3- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1434,6 +2006,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/perchlorate-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.584328,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, ClO4- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/perchlorate-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1443,6 +2028,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, ClO4- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/perchlorate-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.584328,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, ClO4- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1496,6 +2094,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/potassium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.613424,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, K+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/potassium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1505,6 +2116,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, K+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/potassium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.613424,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, K+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1558,6 +2182,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/rubidium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.766984,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Rb+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/rubidium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1567,6 +2204,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Rb+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/rubidium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.766984,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Rb+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1620,6 +2270,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/sodium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.122736,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Na+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/sodium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1629,6 +2292,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Na+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.122736,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Na+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1682,6 +2358,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/strontium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.629616,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Sr2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/strontium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1691,6 +2380,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, Sr2+ row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/strontium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.629616,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, Sr2+ row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1744,6 +2446,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/sulfate-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.159344,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, SO4^2- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/sulfate-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1753,6 +2468,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, SO4^2- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/sulfate-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.159344,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, SO4^2- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },
@@ -1806,6 +2534,19 @@
       },
       "coefficients": [
         {
+          "identity": "component/thiocyanate-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 3.58292,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, SCN- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
           "identity": "component/thiocyanate-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -1815,6 +2556,19 @@
           "provenance": {
             "source_id": "held-cameretti-sadowski-2008",
             "locator": "Table 2, SCN- row",
+            "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
+          }
+        },
+        {
+          "identity": "component/thiocyanate-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 3.58292,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "held-cameretti-sadowski-2008",
+            "locator": "Table 2, SCN- row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
           }
         },

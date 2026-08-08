@@ -245,8 +245,7 @@ def _native_arguments(
     }
     if model.topology in {
         "ionic-fully-dissociated-debye-huckel",
-        "ionic-ssm-ds",
-        "ionic-original-born",
+        "ionic-born",
     }:
         molar_mass = [0.0 if value is None else value for value in model.molar_mass_kg_per_mol]
         charge_number = list(model.charge_number)
@@ -254,7 +253,14 @@ def _native_arguments(
             0.0 if record is None else _magnitude(record, "dimensionless")
             for record in model.relative_permittivity
         ]
-        if model.topology == "ionic-ssm-ds":
+        packing_diameter = [
+            0.0 if value is None else value for value in model.packing_diameter_angstrom
+        ]
+        debye_huckel_diameter = [
+            0.0 if value is None else value
+            for value in model.debye_huckel_diameter_angstrom
+        ]
+        if model.topology == "ionic-born":
             dielectric_suppression = (
                 0.0
                 if model.ion_fraction_suppression_coefficient is None
@@ -263,7 +269,6 @@ def _native_arguments(
             born_diameter = [
                 0.0 if value is None else value for value in model.born_diameter_angstrom
             ]
-            born_diameter_sigma_scale = [0.0] * components
             solvation_factor = [
                 _magnitude(record, "dimensionless")
                 for record in model.solvation_factor
@@ -271,33 +276,30 @@ def _native_arguments(
             ]
             ionic_permittivity = model.ionic_region_relative_permittivity
             electrolyte_model = 1
+            born_c_shell = model.born_c_shell
+            born_c_dielectric = model.born_c_dielectric
             assert ionic_permittivity is not None
             assert len(solvation_factor) == components
         elif model.topology == "ionic-fully-dissociated-debye-huckel":
             dielectric_suppression = 0.0
             born_diameter = [0.0] * components
-            born_diameter_sigma_scale = [0.0] * components
             solvation_factor = [0.0] * components
             ionic_permittivity = 0.0
-            electrolyte_model = 3
-        else:
-            dielectric_suppression = 0.0
-            born_diameter = [0.0] * components
-            born_diameter_sigma_scale = [
-                0.0 if charge == 0 else 1.0 for charge in charge_number
-            ]
-            solvation_factor = [1.0] * components
-            ionic_permittivity = 1.0
             electrolyte_model = 2
+            born_c_shell = 0.0
+            born_c_dielectric = 0.0
     else:
         molar_mass = [0.0] * components
         charge_number = [0] * components
         relative_permittivity = [0.0] * components
         dielectric_suppression = 0.0
+        packing_diameter = [0.0] * components
+        debye_huckel_diameter = [0.0] * components
         born_diameter = [0.0] * components
-        born_diameter_sigma_scale = [0.0] * components
         solvation_factor = [0.0] * components
         ionic_permittivity = 0.0
+        born_c_shell = 0.0
+        born_c_dielectric = 0.0
         electrolyte_model = 0
 
     return (
@@ -318,10 +320,13 @@ def _native_arguments(
         charge_number,
         relative_permittivity,
         dielectric_suppression,
+        packing_diameter,
+        debye_huckel_diameter,
         born_diameter,
-        born_diameter_sigma_scale,
         solvation_factor,
         ionic_permittivity,
+        born_c_shell,
+        born_c_dielectric,
         electrolyte_model,
         list(model.dielectric_volume_m3_per_mol) or [0.0] * components,
         list(model.dielectric_temperature_k) or [0.0] * components,
@@ -525,7 +530,7 @@ class _EosModel:
             context["unit"] = "kelvin"
             raise _eos_error("invalid-state", **context)
 
-        if self._model.topology in {"ionic-ssm-ds", "ionic-original-born"}:
+        if self._model.topology == "ionic-born":
             ion_fraction = math.fsum(
                 fraction
                 for fraction, charge in zip(fractions, self._model.charge_number, strict=True)
@@ -585,7 +590,7 @@ class _EosModel:
             association=native.association,
             ares_polar=native.ares_polar,
             debye_huckel=native.debye_huckel,
-            born=native.born_ssm_ds,
+            born=native.born,
             bulk_relative_permittivity=None
             if self._model.relative_permittivity_formulation == "none"
             else native.bulk_relative_permittivity,
@@ -813,7 +818,9 @@ class _EosModel:
         P: object,
         solvent_x: object,
         phase: Literal["liquid"],
-        ion_component_ids: tuple[str, str] | None = None,
+        ion_component_ids: tuple[str, str],
+        formula_stoichiometry: tuple[int, int],
+        reference_convention: Literal["molality-infinite-dilution"],
     ) -> ElectrolyteReference:
         """Build one liquid electrolyte reference on the selected component order.
 
@@ -829,6 +836,8 @@ class _EosModel:
             solvent_mole_fractions=solvent_x,
             phase=phase,
             ion_component_ids=ion_component_ids,
+            formula_stoichiometry=formula_stoichiometry,
+            reference_convention=reference_convention,
         )
 
 
@@ -1137,7 +1146,9 @@ class Mixture(_EosModel):
         P: object,
         solvent_x: object,
         phase: Literal["liquid"],
-        ion_component_ids: tuple[str, str] | None = None,
+        ion_component_ids: tuple[str, str],
+        formula_stoichiometry: tuple[int, int],
+        reference_convention: Literal["molality-infinite-dilution"],
     ) -> ElectrolyteReference:
         return _EosModel._reference(
             self,
@@ -1146,6 +1157,8 @@ class Mixture(_EosModel):
             solvent_x=solvent_x,
             phase=phase,
             ion_component_ids=ion_component_ids,
+            formula_stoichiometry=formula_stoichiometry,
+            reference_convention=reference_convention,
         )
 
 

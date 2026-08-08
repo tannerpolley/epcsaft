@@ -64,6 +64,8 @@ _COMPONENT_COEFFICIENTS = frozenset(
         "segment_diameter",
         "dispersion_energy_over_k",
         "relative_permittivity",
+        "packing_diameter",
+        "debye_huckel_diameter",
         "born_diameter",
         "solvation_factor",
         "dielectric_volume",
@@ -89,7 +91,7 @@ _MODEL_FAMILY_IDS: dict[str, str] = {
 _MODEL_CHOICES = {
     "base": frozenset({"pc-saft"}),
     "association": frozenset({"none", "general-site"}),
-    "electrolyte": frozenset({"none", "ssm-ds", "original-born", "fully-dissociated-debye-huckel"}),
+    "electrolyte": frozenset({"none", "born", "fully-dissociated-debye-huckel"}),
     "permittivity": frozenset(
         {
             "none",
@@ -534,6 +536,7 @@ def _model_families(value: object) -> tuple[ModelFamilySpec, ...]:
             raw,
             field=field,
             required=frozenset({"family_id", "kind", "choice", "provenance"}),
+            optional=frozenset({"c_shell", "c_dielectric"}),
         )
         kind = raw["kind"]
         if not isinstance(kind, str) or kind not in _MODEL_CHOICES:
@@ -547,12 +550,31 @@ def _model_families(value: object) -> tuple[ModelFamilySpec, ...]:
         choice = raw["choice"]
         if not isinstance(choice, str) or choice not in _MODEL_CHOICES[kind]:
             raise _error("invalid-value", field=f"{field}.choice", value=choice)
+        if kind == "electrolyte" and choice == "born":
+            if "c_shell" not in raw or "c_dielectric" not in raw:
+                missing = "c_shell" if "c_shell" not in raw else "c_dielectric"
+                raise _error("invalid-schema", field=field, missing=missing)
+            c_shell = float(_decimal_number(raw["c_shell"], field=f"{field}.c_shell"))
+            c_dielectric = float(
+                _decimal_number(raw["c_dielectric"], field=f"{field}.c_dielectric")
+            )
+        else:
+            if "c_shell" in raw or "c_dielectric" in raw:
+                raise _error(
+                    "invalid-schema",
+                    field=field,
+                    unknown="c_shell" if "c_shell" in raw else "c_dielectric",
+                )
+            c_shell = None
+            c_dielectric = None
         result.append(
             ModelFamilySpec(
                 family_id,
                 cast(ModelFamilyKind, kind),
                 choice,
                 *_provenance(raw["provenance"], field=f"{field}.provenance"),
+                c_shell,
+                c_dielectric,
             )
         )
     if seen != set(_MODEL_CHOICES):
