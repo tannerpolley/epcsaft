@@ -1,8 +1,8 @@
 # General Scientific Capability Hard-Cutover Plan
 
-- Status: canonical plan; implementation not started
+- Status: canonical plan; execution is tracked by GitHub root issue #10 and its native CAP subissues
 - Date: 2026-08-07
-- Doctrine: Governance revision 12, Numerical Verification-Driven Development
+- Doctrine: Governance revision 13, Numerical Verification-Driven Development
 - Scope: `engine/` EOS, Equilibrium, and Regression
 - Decision authority: ADR 0004 and the three owner plans linked below
 
@@ -284,12 +284,12 @@ installed-wheel Validation campaign. Readiness checks are not scientific tests.
 
 ## Issue-ready decomposition
 
-These rows are planning units only. Do not publish tracker issues until the
-four canonical plans are approved.
+These work units are published under GitHub root issue #10. Native subissue and
+blocked-by state is the lifecycle authority; this table defines scope and order.
 
 | ID | Work unit | Depends on | Acceptance |
 | --- | --- | --- | --- |
-| CAP-01 | Canonical active-coordinate descriptor | Phase 0 | Mixed ordered active set resolves once with exact identity and domain |
+| CAP-01 | Canonical active-coordinate descriptor | Phase 0 | One explicit unordered `k_ij` coordinate resolves once and preserves identity and order through an EOS observable and exact Jacobian |
 | CAP-02 | Unordered pair and typed `k_HB,ij` resolution | CAP-01 | Reciprocal application and exact chain rule pass permutation checks |
 | CAP-03 | EOS generic derivative core | CAP-02 | Arbitrary-width pre-Born active sets return exact order-declared derivative blocks; CAP-04 admits Born/reference coordinates |
 | CAP-04 | Canonical Born and explicit reference inputs | CAP-03 | Neutral limit and explicit-reference numerical checks pass |

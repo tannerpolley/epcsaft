@@ -192,6 +192,13 @@ struct NativeParameterRecord final {
     double value;
 };
 
+struct NativeKijCoordinate final {
+    std::string identity;
+    std::size_t component_a;
+    std::size_t component_b;
+    double value;
+};
+
 class NativeModel final {
 public:
     explicit NativeModel(NativeParameters parameters);
@@ -263,11 +270,11 @@ public:
         const std::vector<double>& amounts,
         double volume
     ) const;
-    NativeMixturePhaseBlock evaluate_mixture_phase_kij(
+    NativeMixturePhaseBlock evaluate_mixture_phase_kij_coordinate(
         double temperature,
         const std::vector<double>& amounts,
         double volume,
-        double k_ij
+        const NativeKijCoordinate& coordinate
     ) const;
     NativeMixturePhaseBlock evaluate_mixture_phase_lij(
         double temperature,

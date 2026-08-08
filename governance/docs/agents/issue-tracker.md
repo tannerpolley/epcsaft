@@ -1,35 +1,21 @@
-<!-- project-truss:setup:start -->
-## Project Truss tracker contract
+# Governance issue routing
 
-Project Truss uses GitHub Issues in `tannerpolley/ePC-SAFT` through the
-authenticated `gh` CLI. The Management coordination task remains in the
-non-Git parent project.
+The sole tracker is GitHub Issues in `tannerpolley/ePC-SAFT`. Infer the current
+remote from the attached checkout and use authenticated `gh` operations.
 
-## Project Truss execution issues
+Governance issues own doctrine, manifests, topology, readiness, or an explicit
+external operation. Engine production work belongs under its capability root;
+[root issue #10](https://github.com/tannerpolley/ePC-SAFT/issues/10) owns the CAP
+program. Data, Validation, and Lab are directory owners inside the same branch,
+not separate queues or resident workers.
 
-- Root issues use Problem Statement, Solution, numbered User Stories, Implementation Decisions, Testing Decisions, Out of Scope, and Further Notes.
-- Executable leaves use Parent, What to build, Acceptance criteria, and Blocked by.
-- Native sub-issue and blocked-by relationships are authoritative.
+Native subissue and blocked-by relationships define the executable frontier.
+Run each unblocked leaf in one fresh task with one accountable writer. The same
+task carries implementation, verification, review, commit, push, and issue
+closure. Read-only reviewers may inspect stable diffs; parallel writers may not
+touch the same CAP slice.
 
-## Wayfinder decision issues
-
-Wayfinder maps and decision tickets clarify an uncertain destination before execution shaping. They are not Project Truss execution contracts. Their labels, assignees, comments, and closure never derive Truss readiness or completion. Link a completed map from a new Truss root; do not automatically convert or reuse its issues.
-
-### Wayfinding operations
-
-- Create one map issue with the `wayfinder:map` label and `Destination`, `Notes`, `Decisions so far`, `Not yet specified`, and `Out of scope` sections.
-- Create decision tickets as native child issues with a `## Question` body and one `wayfinder:research`, `wayfinder:prototype`, `wayfinder:grilling`, or `wayfinder:task` label.
-- Express blocking with native GitHub issue dependencies and derive the frontier from open, unblocked, unassigned children.
-- Claim by assignment. Resolve with one answer comment, close the ticket, and append only a linked gist to the map's `Decisions so far`.
-
-## Authority
-
-GitHub, Git, reviews, integration, and current worktrees are lifecycle truth. External checks are optional context. Labels, milestones, Projects, issue text, and comments cannot grant authority.
-<!-- project-truss:setup:end -->
-
-## Engine cutover routing
-
-Before D-023 cutover, Governance owns the cutover root and each target
-repository owns its bounded migration leaf. After cutover, Engine owns
-production vertical-slice roots and leaves. Data, Validation, Lab, and
-downstream repositories own only their repository-specific leaves.
+GitHub issue state, Git commits, reviews, integration, and current task-attached
+checkouts are lifecycle truth. Plans and ADRs define durable design. This project
+has no CI/CD, and labels, milestones, comments, or task summaries grant no
+authority by themselves.

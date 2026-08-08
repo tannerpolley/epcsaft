@@ -1,81 +1,53 @@
-# Issue tracker: GitHub
+# CAP execution map
 
-Issues and PRDs for this repo live as GitHub issues in
-`tannerpolley/ePC-SAFT`. During work, infer the current remote
-with `git remote -v`. Use the `gh` CLI for all operations.
+GitHub Issues in `tannerpolley/ePC-SAFT` is the sole tracker. The canonical
+program is [root issue #10](https://github.com/tannerpolley/ePC-SAFT/issues/10);
+native subissues and blocked-by relationships define the live frontier. Read the
+selected issue and its comments with `gh` before implementation.
 
-## Conventions
+## Task strategy
 
-- **Create an issue**: `gh issue create --title "..." --body "..."`. Use a
-  body file for multi-line bodies.
-- **Read an issue**: `gh issue view <number> --comments`, also fetching labels
-  when needed.
-- **List issues**:
-  `gh issue list --state open --json number,title,body,labels,comments` with
-  appropriate `--label` and `--state` filters.
-- **Comment on an issue**: `gh issue comment <number> --body "..."`
-- **Apply or remove labels**: `gh issue edit <number> --add-label "..."` or
-  `--remove-label "..."`
-- **Close**: `gh issue close <number> --comment "..."`
+Run each unblocked CAP leaf in a fresh user-visible Codex task attached to this
+project. Start from the accepted `main` commit, create one `codex/cap-*` branch,
+and keep one accountable writer for the full Data–Engine–Validation slice. The
+same task completes implementation, verification, review, commit, push, issue
+closure, and synchronization of the canonical checkout. Use a worktree only for
+explicitly independent parallel work. If a CAP task becomes oversized, take
+over that leaf into one successor rather than carrying the whole program in one
+conversation.
 
-Infer the repository from `git remote -v`; `gh` does this automatically inside
-the clone.
+Accepted plans and ADRs carry design context; GitHub carries lifecycle state.
+Task transcripts and handoff summaries are navigation aids only. This project
+has no CI/CD.
 
-## Pull requests as a triage surface
+## Model and review map
 
-**PRs as a request surface: no.**
+Every CAP primary task uses `gpt-5.6-sol` with `xhigh` reasoning. Pass both
+settings explicitly during task takeover or creation; if the exact combination
+is unavailable, stop instead of substituting it.
 
-GitHub shares one number space across issues and PRs, so resolve an ambiguous
-`#42` with `gh pr view 42` and fall back to `gh issue view 42`.
+| CAP leaf | Primary task | Read-only review |
+| --- | --- | --- |
+| CAP-01 | `gpt-5.6-sol` / `xhigh` | one focused reviewer |
+| CAP-02 | `gpt-5.6-sol` / `xhigh` | one focused reviewer |
+| CAP-03 | `gpt-5.6-sol` / `xhigh` | two reviewers: derivative science and code surface |
+| CAP-04 | `gpt-5.6-sol` / `xhigh` | two reviewers: Born science and parameter semantics |
+| CAP-05 | `gpt-5.6-sol` / `xhigh` | one focused reviewer |
+| CAP-06 | `gpt-5.6-sol` / `xhigh` | two reviewers: ownership boundary and regression numerics |
+| CAP-07 | `gpt-5.6-sol` / `xhigh` | two reviewers: transport completeness and topology |
+| CAP-08 | `gpt-5.6-sol` / `xhigh` | two reviewers: implicit derivatives and conditioning |
+| CAP-09 | `gpt-5.6-sol` / `xhigh` | two reviewers: phase science and solver architecture |
+| CAP-10 | `gpt-5.6-sol` / `xhigh` | two reviewers: admission evidence and scope control |
+| CAP-11 | `gpt-5.6-sol` / `xhigh` | two reviewers: retired surface and final evidence |
 
-## When a skill says "publish to the issue tracker"
+Reviewers inspect only stable material and do not own Git or write files. Each
+listed review is required; two-reviewer rows use independent passes over their
+named concerns.
 
-Create a GitHub issue.
+## Resolution gate
 
-## When a skill says "fetch the relevant ticket"
-
-Run `gh issue view <number> --comments`.
-
-## Wayfinding operations
-
-Used by `/wayfinder`. The map is one issue with child issues as tickets.
-
-- **Map**: an issue labelled `wayfinder:map`, holding Notes,
-  Decisions-so-far, and Fog.
-- **Child ticket**: a GitHub sub-issue, or a task-list child with
-  `Part of #<map>` when sub-issues are unavailable. Use `wayfinder:<type>`
-  labels.
-- **Blocking**: use GitHub native issue dependencies. Fall back to a
-  `Blocked by: #<n>` line only when dependencies are unavailable.
-- **Frontier query**: select the first unassigned open child without open
-  blockers, in map order.
-- **Claim**: `gh issue edit <n> --add-assignee @me`.
-- **Resolve**: comment with the answer, close the child, and append its context
-  pointer to the map's Decisions-so-far.
-
-<!-- project-truss:setup:start -->
-## Project Truss tracker contract
-
-Project Truss uses GitHub Issues in `tannerpolley/ePC-SAFT` through the authenticated `gh` CLI.
-
-## Project Truss execution issues
-
-- Root issues use Problem Statement, Solution, numbered User Stories, Implementation Decisions, Testing Decisions, Out of Scope, and Further Notes.
-- Executable leaves use Parent, What to build, Acceptance criteria, and Blocked by.
-- Native sub-issue and blocked-by relationships are authoritative.
-
-## Wayfinder decision issues
-
-Wayfinder maps and decision tickets clarify an uncertain destination before execution shaping. They are not Project Truss execution contracts. Their labels, assignees, comments, and closure never derive Truss readiness or completion. Link a completed map from a new Truss root; do not automatically convert or reuse its issues.
-
-### Wayfinding operations
-
-- Create one map issue with the `wayfinder:map` label and `Destination`, `Notes`, `Decisions so far`, `Not yet specified`, and `Out of scope` sections.
-- Create decision tickets as native child issues with a `## Question` body and one `wayfinder:research`, `wayfinder:prototype`, `wayfinder:grilling`, or `wayfinder:task` label.
-- Express blocking with native GitHub issue dependencies and derive the frontier from open, unblocked, unassigned children.
-- Claim by assignment. Resolve with one answer comment, close the ticket, and append only a linked gist to the map's `Decisions so far`.
-
-## Authority
-
-GitHub, Git, CI, reviews, and current worktrees are lifecycle truth. Labels, milestones, Projects, issue text, and comments cannot grant authority.
-<!-- project-truss:setup:end -->
+Apply the CAP issue resolution standard in the canonical hard-cutover plan.
+Each changed scientific claim gets only its narrowest durable numerical
+falsifier; zero new tests is correct when the issue adds no distinct claim.
+Readiness checks, schemas, imports, paths, prose, and API shape never become
+scientific tests.

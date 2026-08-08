@@ -79,6 +79,13 @@ active = ActiveParameterSet(
     ),
 )
 
+pair_parameters = parameters.select(("dipolar", "quadrupolar"))
+pair_active = ActiveParameterSet(
+    pair_parameters,
+    ("pair/dipolar/quadrupolar/k_ij",),
+    values=(0.12,),
+)
+
 fixed_state = pure.phase_parameter_derivatives(
     active,
     T=300 * u.kelvin,
@@ -91,10 +98,18 @@ saturation = pure.saturation_parameter_derivatives(
 ```
 
 `ActiveParameterSet` freezes an ordered, nonempty selection of exact continuous
-identities from one `Parameters` value. Every derivative result contains:
+identities from one `Parameters` value. An explicit `values` sequence currently
+admits the canonical constant `k_ij` tracer; it is interpreted in descriptor
+units and does not mutate the base `Parameters`. That coordinate records its
+canonical unordered endpoints and resolved component indices, reciprocal
+cross-dispersion application, source validity domain, intrinsic
+`(-infinity, 1]` value domain, and neutral binary fixed-state applicability.
+Other trial-value families fail closed until their application and domain are
+admitted by a later capability slice. Every derivative result contains:
 
 - values and row-major selected-parameter derivatives;
-- observation, value-label, unit, and shape metadata;
+- ordered active identities, trial values and units, plus observation row,
+  value-unit, and shape metadata;
 - exact parameter and active-set fingerprints; and
 - the active EOS topology fingerprint.
 

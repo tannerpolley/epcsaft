@@ -166,6 +166,19 @@ PYBIND11_MODULE(_core, module) {
         .def_readonly("identity", &epcsaft::NativeParameterRecord::identity)
         .def_readonly("value", &epcsaft::NativeParameterRecord::value);
 
+    py::class_<epcsaft::NativeKijCoordinate>(module, "NativeKijCoordinate")
+        .def(
+            py::init<std::string, std::size_t, std::size_t, double>(),
+            py::arg("identity"),
+            py::arg("component_a"),
+            py::arg("component_b"),
+            py::arg("value")
+        )
+        .def_readonly("identity", &epcsaft::NativeKijCoordinate::identity)
+        .def_readonly("component_a", &epcsaft::NativeKijCoordinate::component_a)
+        .def_readonly("component_b", &epcsaft::NativeKijCoordinate::component_b)
+        .def_readonly("value", &epcsaft::NativeKijCoordinate::value);
+
     py::class_<epcsaft::NativePurePhaseBlock>(module, "NativePurePhaseBlock")
         .def_readonly(
             "helmholtz_over_rt_reference_amount",
@@ -391,6 +404,14 @@ PYBIND11_MODULE(_core, module) {
             py::arg("amounts"),
             py::arg("volume"),
             py::arg("active_parameters")
+        )
+        .def(
+            "evaluate_mixture_phase_kij_coordinate",
+            &epcsaft::NativeModel::evaluate_mixture_phase_kij_coordinate,
+            py::arg("temperature"),
+            py::arg("amounts"),
+            py::arg("volume"),
+            py::arg("coordinate")
         )
         .def(
             "evaluate_mixture_phase_active_parameter",

@@ -58,6 +58,15 @@ class NativeParameterRecord:
     value: float
     def __init__(self, identity: str, value: float) -> None: ...
 
+class NativeKijCoordinate:
+    identity: str
+    component_a: int
+    component_b: int
+    value: float
+    def __init__(
+        self, identity: str, component_a: int, component_b: int, value: float
+    ) -> None: ...
+
 class NativeFixedTopologyPhaseBlock:
     helmholtz_over_rt_reference_amount: float
     gradient: Sequence[float]
@@ -120,6 +129,13 @@ class NativeModel:
         amounts: Sequence[float],
         volume: float,
         active_parameter: NativeParameterRecord,
+    ) -> NativeMixturePhaseBlock: ...
+    def evaluate_mixture_phase_kij_coordinate(
+        self,
+        temperature: float,
+        amounts: Sequence[float],
+        volume: float,
+        coordinate: NativeKijCoordinate,
     ) -> NativeMixturePhaseBlock: ...
     def evaluate_fugacity_derivatives_active(
         self,
