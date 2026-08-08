@@ -124,3 +124,30 @@ def test_saturation_matches_independent_and_nist_anchors() -> None:
         assert liquid_density_kg_m3 == pytest.approx(
             float(anchor["nist_liquid_density_kg_m3"]), rel=1.0e-2
         )
+
+
+def test_supercritical_saturation_block_rejects_without_fabricated_rows() -> None:
+    parameters = epcsaft.Parameters.from_mapping(PURE_SATURATION_PARAMETERS["methane"])
+    block = epcsaft.Pure(parameters).observable_block(
+        epcsaft.ActiveParameterSet(parameters, ("component/methane/segment_count",)),
+        identity="eos.pure-saturation",
+        T=200.0 * epcsaft.unit_registry.kelvin,
+    )
+
+    assert block.status.status == "rejected"
+    assert all(value is None for value in block.values)
+    assert all(row is None for row in block.jacobian)
+    assert block.saturation_diagnostics is not None
+    diagnostics = block.saturation_diagnostics
+    assert diagnostics.physical_accepted is False
+    assert diagnostics.rejection_status != "none"
+    assert diagnostics.exact_derivatives is False
+    assert diagnostics.solver_status == "line_search_failed"
+    assert diagnostics.iterations > 0
+    assert math.isfinite(diagnostics.solver_constraint_violation)
+    assert tuple(branch.identity for branch in block.saturation_branches) == ("vapor", "liquid")
+    assert all(branch.pressure_relative_residual is None for branch in block.saturation_branches)
+    assert all(
+        branch.residual_density_derivative_m3_per_mol is None
+        for branch in block.saturation_branches
+    )

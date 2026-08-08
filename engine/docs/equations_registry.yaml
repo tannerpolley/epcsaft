@@ -633,9 +633,9 @@ equations:
     tex_line: 707
     implementation_refs:
       - file: "src/epcsaft/eos.py"
-        line: 716
-        comment_line: 772
-        symbol: "_fugacity_parameter_derivatives"
+        line: 890
+        comment_line: 946
+        symbol: "_fixed_pressure_fugacity_observable_block"
   - eqid: "formula_unit_composition"
     section: "Electrolyte reference states and reported activities"
     subsection: "Gross--Vrabec point multipoles"

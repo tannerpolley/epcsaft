@@ -52,7 +52,7 @@ class _Fields:
 @dataclass(frozen=True, slots=True)
 class TargetDefinition:
     positive: bool
-    capability_label: str
+    observable_row_identity: str
     unit: str
     bases: tuple[str, ...]
     references: tuple[str, ...]

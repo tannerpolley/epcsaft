@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -53,11 +54,23 @@ struct SaturationSolveResult {
     std::string callback_error;
   };
   std::vector<AttemptRecord> attempt_log;
-  double solver_constraint_violation = 0.0;
-  double confirmation_max_relative_difference = 0.0;
-  double pressure_relative_residual = 0.0;
-  double chemical_potential_absolute_residual = 0.0;
-  double phase_density_distance = 0.0;
+  double solver_constraint_violation =
+      std::numeric_limits<double>::infinity();
+  double confirmation_max_relative_difference =
+      std::numeric_limits<double>::infinity();
+  double pressure_relative_residual = std::numeric_limits<double>::infinity();
+  double vapor_pressure_relative_residual =
+      std::numeric_limits<double>::infinity();
+  double liquid_pressure_relative_residual =
+      std::numeric_limits<double>::infinity();
+  double chemical_potential_absolute_residual =
+      std::numeric_limits<double>::infinity();
+  double phase_density_distance = std::numeric_limits<double>::quiet_NaN();
+  double vapor_residual_density_derivative_m3_per_mol =
+      std::numeric_limits<double>::quiet_NaN();
+  double liquid_residual_density_derivative_m3_per_mol =
+      std::numeric_limits<double>::quiet_NaN();
+  std::string rejection_status = "solve-failure";
   NlpEvaluation evaluation{};
 };
 
@@ -73,7 +86,6 @@ solve_local_saturation(const NativeModel &model, double temperature_k,
 
 [[nodiscard]] SaturationSensitivityResult solve_local_saturation_active(
     const NativeModel &model, double temperature_k,
-    double liquid_density_upper_mol_m3,
     const std::vector<NativeActiveCoordinate> &active_parameters);
 
 } // namespace epcsaft

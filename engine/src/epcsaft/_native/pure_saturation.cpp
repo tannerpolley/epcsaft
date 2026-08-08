@@ -242,21 +242,32 @@ bool physical_acceptance(const AttemptResult &attempt,
                          SaturationSolveResult &result) {
   const double vapor_density = 1.0 / evaluation.vapor.volume_m3;
   const double liquid_density = 1.0 / evaluation.liquid.volume_m3;
-  result.pressure_relative_residual = std::max(
-      std::abs(evaluation.constraints[0]), std::abs(evaluation.constraints[1]));
+  result.vapor_pressure_relative_residual =
+      std::abs(evaluation.constraints[0]);
+  result.liquid_pressure_relative_residual =
+      std::abs(evaluation.constraints[1]);
+  result.pressure_relative_residual =
+      std::max(result.vapor_pressure_relative_residual,
+               result.liquid_pressure_relative_residual);
   result.chemical_potential_absolute_residual =
       std::abs(evaluation.constraints[2]);
   result.phase_density_distance =
       (liquid_density - vapor_density) / liquid_density;
+  result.vapor_residual_density_derivative_m3_per_mol =
+      evaluation.jacobian[0] / vapor_density;
+  result.liquid_residual_density_derivative_m3_per_mol =
+      evaluation.jacobian[4] / liquid_density;
   const bool finite =
       std::isfinite(evaluation.saturation_pressure_pa) &&
       std::isfinite(vapor_density) && std::isfinite(liquid_density) &&
       std::isfinite(result.pressure_relative_residual) &&
       std::isfinite(result.chemical_potential_absolute_residual) &&
-      std::isfinite(result.phase_density_distance);
+      std::isfinite(result.phase_density_distance) &&
+      std::isfinite(result.vapor_residual_density_derivative_m3_per_mol) &&
+      std::isfinite(result.liquid_residual_density_derivative_m3_per_mol);
   const bool locally_stable =
       evaluation.jacobian[0] > 0.0 && evaluation.jacobian[4] > 0.0;
-  return attempt.solver_converged &&
+  const bool accepted = attempt.solver_converged &&
          std::isfinite(attempt.solver_constraint_violation) &&
          attempt.solver_constraint_violation <= kSolverConstraintTolerance &&
          attempt.callback_error.empty() && finite &&
@@ -267,6 +278,20 @@ bool physical_acceptance(const AttemptResult &attempt,
          result.phase_density_distance > kPhaseDistanceTolerance &&
          locally_stable &&
          inside_bounds(attempt.variables, liquid_density_upper_mol_m3);
+  if (accepted) {
+    result.rejection_status = "none";
+  } else if (finite && liquid_density <= vapor_density) {
+    result.rejection_status = "root-swap";
+  } else if (finite && result.phase_density_distance <= kPhaseDistanceTolerance) {
+    result.rejection_status = "coalescence";
+  } else if (finite && (!locally_stable ||
+                        !inside_bounds(attempt.variables,
+                                       liquid_density_upper_mol_m3))) {
+    result.rejection_status = "branch-loss";
+  } else {
+    result.rejection_status = "solve-failure";
+  }
+  return accepted;
 }
 
 SaturationSolveResult solve_saturation(const NativeModel &model,
@@ -301,9 +326,15 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
           attempt.callback_error,
       });
       if (!attempt.solver_converged) {
-        last.failure_reason = attempt.callback_error.empty()
-                                  ? attempt.solver_status
-                                  : attempt.callback_error;
+        if (!last.solver_converged) {
+          last.solver_status = attempt.solver_status;
+          last.iterations = attempt.iterations;
+          last.solver_constraint_violation =
+              attempt.solver_constraint_violation;
+          last.failure_reason = attempt.callback_error.empty()
+                                    ? attempt.solver_status
+                                    : attempt.callback_error;
+        }
         continue;
       }
       NlpEvaluation evaluation = evaluate_saturation_state(
@@ -366,11 +397,13 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
       candidate.numerical_converged = confirmed && maximum_difference <= 1.0e-7;
       if (!candidate.numerical_converged) {
         last = candidate;
+        last.rejection_status = "solve-failure";
         last.failure_reason =
             "perturbed Newton solves did not confirm the boundary";
         continue;
       }
       candidate.accepted = true;
+      candidate.rejection_status = "none";
       candidate.failure_reason.clear();
       return candidate;
     }
@@ -470,7 +503,6 @@ solve_local_saturation(const NativeModel &model, double temperature_k,
 
 SaturationSensitivityResult solve_local_saturation_active(
     const NativeModel &model, double temperature_k,
-    double liquid_density_upper_mol_m3,
     const std::vector<NativeActiveCoordinate> &active_parameters) {
   if (active_parameters.empty()) {
     throw std::invalid_argument(
@@ -478,11 +510,12 @@ SaturationSensitivityResult solve_local_saturation_active(
   }
   SaturationSensitivityResult result;
   const NativeModel active_model = model.with_active_coordinates(active_parameters);
-  result.solve = solve_local_saturation(
-      active_model, temperature_k, liquid_density_upper_mol_m3);
+  const double liquid_density_upper_mol_m3 =
+      active_model.molar_density_upper_bound(temperature_k, {1.0});
+  result.solve = solve_local_saturation(active_model, temperature_k,
+                                        liquid_density_upper_mol_m3);
   if (!result.solve.accepted) {
-    throw std::runtime_error(
-        "saturation sensitivity requires an accepted solve");
+    return result;
   }
   const std::size_t count = active_parameters.size();
   result.parameter_identities.reserve(count);

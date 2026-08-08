@@ -89,13 +89,15 @@ pair_active = ActiveParameterSet(
     values=(0.12, 0.01),
 )
 
-fixed_state = pure.phase_parameter_derivatives(
+fixed_state = pure.observable_block(
     active,
+    identity="eos.fixed-state",
     T=300 * u.kelvin,
     rho=4_000 * u.mole / u.meter**3,
 )
-saturation = pure.saturation_parameter_derivatives(
+saturation = pure.observable_block(
     active,
+    identity="eos.pure-saturation",
     T=300 * u.kelvin,
 )
 ```
@@ -103,6 +105,10 @@ saturation = pure.saturation_parameter_derivatives(
 `ActiveParameterSet` freezes an ordered, nonempty selection of exact continuous
 identities from one `Parameters` value. An explicit `values` sequence is
 interpreted in descriptor units and does not mutate the base `Parameters`.
+Each EOS-owned block retains its versioned descriptor, exact active identity
+and order, row units and bases, state metadata, values, Jacobian layout, and
+structured row/shared-solve status. Saturation blocks additionally carry the
+two density-branch brackets, root residuals, and residual-density derivatives.
 Any number of constant unordered `k_ij` and `l_ij` identities may be selected
 for a fixed-topology mixture; each coordinate records its canonical component
 endpoints, resolved reciprocal matrix application, source validity domain, and

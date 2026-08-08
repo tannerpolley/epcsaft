@@ -388,8 +388,7 @@ private:
       {
         std::lock_guard<std::mutex> lock(saturation_solver_mutex());
         result = solve_local_saturation_active(
-            model_, observation_.temperature_k,
-            observation_.liquid_density_upper_mol_m3, active);
+            model_, observation_.temperature_k, active);
       }
       if (!result.solve.accepted) {
         throw std::runtime_error(result.solve.failure_reason);
