@@ -50,15 +50,24 @@ class ActiveParameterDomain:
 class ActiveParameterApplicability:
     """Resolved physical application of one derivative-ready coordinate."""
 
-    scope: Literal["unordered-component-pair"]
-    component_ids: tuple[str, str]
-    component_indices: tuple[int, int]
+    scope: Literal[
+        "component",
+        "unordered-component-pair",
+        "association-edge",
+        "model",
+    ]
+    component_ids: tuple[str, ...]
+    component_indices: tuple[int, ...]
     model_domain: Literal["fixed-topology-mixture"]
     observation_family: Literal["fixed-state-helmholtz"]
     application: Literal[
         "reciprocal-cross-dispersion",
         "reciprocal-cross-size",
         "role-aware-cross-association-energy",
+        "component-property",
+        "typed-correlation-coefficient",
+        "symmetric-association-property",
+        "auxiliary-model-coefficient",
     ]
     association_role_pair: tuple[str, str] | None = None
     association_edges: tuple[tuple[int, int], ...] = ()
@@ -186,6 +195,7 @@ def _identity_components(identity: str) -> tuple[str, ...]:
 _K_IJ_DOMAIN = ActiveParameterDomain(None, 1.0, False, True)
 _L_IJ_DOMAIN = ActiveParameterDomain(None, 1.0, False, False)
 _K_HB_IJ_DOMAIN = ActiveParameterDomain(None, 1.0, False, False)
+_POSITIVE_DOMAIN = ActiveParameterDomain(0.0, None, False, False)
 
 
 def _active_spec(
@@ -270,6 +280,7 @@ def _active_coordinate(
     parts = spec.identity.split("/")
     domain: ActiveParameterDomain | None = None
     applicability: ActiveParameterApplicability | None = None
+    component_ids: tuple[str, ...]
     if (
         spec.family in {"k_ij", "l_ij"}
         and len(parts) == 4
@@ -387,6 +398,95 @@ def _active_coordinate(
             cast(tuple[tuple[int, int], ...], association_edges),
             association_energy_scales,
         )
+    elif (
+        len(parts) == 3
+        and parts[0] == "component"
+        and parts[2] in {"segment_count", "segment_diameter", "dispersion_energy_over_k"}
+        and spec.family == parts[2]
+    ):
+        component_ids = (parts[1],)
+        applicability = ActiveParameterApplicability(
+            "component",
+            component_ids,
+            (parameters.component_ids.index(parts[1]),),
+            "fixed-topology-mixture",
+            "fixed-state-helmholtz",
+            "component-property",
+        )
+        domain = _POSITIVE_DOMAIN
+    elif (
+        len(parts) in {5, 6}
+        and parts[0] == "component"
+        and (
+            parts[2] == "segment_diameter"
+            or parts[2] == "relative_permittivity" and len(parts) == 5
+        )
+    ):
+        component_ids = (parts[1],)
+        application_resolved = (
+            len(parts) == 5
+            and parts[4] == "constant"
+            or len(parts) == 6
+            and parts[4].startswith("term-")
+            and parts[5] in {"amplitude", "exponent_coefficient"}
+        )
+        if not application_resolved:
+            raise _error(
+                "unsupported-active-coordinate",
+                identity=spec.identity,
+                reason="correlation-application-unresolved",
+            )
+        applicability = ActiveParameterApplicability(
+            "component",
+            component_ids,
+            (parameters.component_ids.index(parts[1]),),
+            "fixed-topology-mixture",
+            "fixed-state-helmholtz",
+            "typed-correlation-coefficient",
+        )
+        if len(parts) == 5:
+            domain = _POSITIVE_DOMAIN
+    elif (
+        len(parts) == 6
+        and parts[0] == "association"
+        and parts[5] in {"energy_over_k", "volume"}
+        and spec.family == f"association_{parts[5]}"
+    ):
+        endpoints = ((parts[1], parts[2]), (parts[3], parts[4]))
+        site_positions = {
+            endpoint: index
+            for index, endpoint in enumerate(
+                sorted((site.component_id, site.site_id) for site in parameters.topology.sites)
+            )
+        }
+        if endpoints[0] not in site_positions or endpoints[1] not in site_positions:
+            raise _error(
+                "unsupported-active-coordinate",
+                identity=spec.identity,
+                reason="association-application-unresolved",
+            )
+        applicability = ActiveParameterApplicability(
+            "association-edge",
+            tuple(sorted({parts[1], parts[3]})),
+            tuple(sorted((site_positions[endpoints[0]], site_positions[endpoints[1]]))),
+            "fixed-topology-mixture",
+            "fixed-state-helmholtz",
+            "symmetric-association-property",
+        )
+        domain = _POSITIVE_DOMAIN
+    elif (
+        spec.identity == "model/relative_permittivity/ion_fraction_suppression_coefficient"
+        and spec.family == "ion_fraction_suppression_coefficient"
+    ):
+        applicability = ActiveParameterApplicability(
+            "model",
+            (),
+            (),
+            "fixed-topology-mixture",
+            "fixed-state-helmholtz",
+            "auxiliary-model-coefficient",
+        )
+        domain = _POSITIVE_DOMAIN
     elif explicit:
         raise _error(
             "unsupported-active-coordinate",

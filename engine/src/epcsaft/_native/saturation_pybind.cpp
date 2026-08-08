@@ -106,7 +106,7 @@ py::dict solve_saturation(const epcsaft::NativeModel &model,
 py::dict solve_saturation_active(
     const epcsaft::NativeModel &model, double temperature_k,
     double liquid_density_upper_mol_m3,
-    const std::vector<epcsaft::NativeParameterRecord> &active_parameters) {
+    const std::vector<epcsaft::NativeActiveCoordinate> &active_parameters) {
   epcsaft::SaturationSensitivityResult sensitivity;
   {
     py::gil_scoped_release release;

@@ -74,6 +74,6 @@ solve_local_saturation(const NativeModel &model, double temperature_k,
 [[nodiscard]] SaturationSensitivityResult solve_local_saturation_active(
     const NativeModel &model, double temperature_k,
     double liquid_density_upper_mol_m3,
-    const std::vector<NativeParameterRecord> &active_parameters);
+    const std::vector<NativeActiveCoordinate> &active_parameters);
 
 } // namespace epcsaft

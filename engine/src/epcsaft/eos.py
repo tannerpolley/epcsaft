@@ -140,6 +140,7 @@ class SaturationResult:
 @dataclass(frozen=True, slots=True)
 class ParameterCapability:
     observation_family: str
+    model_identity: str
     parameter_identities: tuple[str, ...]
     parameter_values: tuple[float, ...]
     parameter_units: tuple[str, ...]
@@ -148,10 +149,25 @@ class ParameterCapability:
     value_labels: tuple[str, ...]
     value_units: tuple[str, ...]
     value_shape: tuple[int, ...]
-    derivative_shape: tuple[int, int]
+    state_axes: tuple[str, ...]
+    active_axes: tuple[str, ...]
+    derivative_order: int
+    source_derivative_order: int
+    tensor_shape: tuple[int, int]
+    tensor_axes: tuple[str, str]
+    tensor_layout: Literal["row-major"]
+    tensor_symmetry: Literal["none"]
     parameter_fingerprint: str
     active_parameter_fingerprint: str
     topology_fingerprint: str
+
+
+@dataclass(frozen=True, slots=True)
+class DerivativeStatus:
+    solver: Literal["not-required", "converged"]
+    numerical: Literal["passed"]
+    physical: Literal["accepted"]
+    reason: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -159,80 +175,12 @@ class ParameterDerivativeResult:
     capability: ParameterCapability
     values: tuple[float, ...]
     derivatives: tuple[tuple[float, ...], ...]
-
-
-def _direct_component_identity(identity: str, family: str) -> bool:
-    parts = identity.split("/")
-    return len(parts) == 3 and parts[0] == "component" and parts[2] == family
-
-
-def _segment_diameter_parameter_identity(identity: str, family: str) -> bool:
-    parts = identity.split("/")
-    if len(parts) == 3:
-        return family == "segment_diameter" and parts[0] == "component" and parts[2] == family
-    if len(parts) == 5:
-        return (
-            family == "segment_diameter"
-            and parts[0] == "component"
-            and parts[2] == "segment_diameter"
-            and parts[4] == "constant"
-        )
-    return (
-        len(parts) == 6
-        and parts[0] == "component"
-        and parts[2] == "segment_diameter"
-        and parts[4].startswith("term-")
-        and (
-            (family == "segment_diameter" and parts[5] == "amplitude")
-            or (
-                family == "exponential_temperature_coefficient"
-                and parts[5] == "exponent_coefficient"
-            )
-        )
+    status: DerivativeStatus = DerivativeStatus(
+        solver="not-required",
+        numerical="passed",
+        physical="accepted",
+        reason="",
     )
-
-
-def _association_identity(identity: str, family: str) -> bool:
-    parts = identity.split("/")
-    return (
-        len(parts) == 6
-        and parts[0] == "association"
-        and parts[5] == family.removeprefix("association_")
-    )
-
-
-def _pair_identity(identity: str, family: str) -> bool:
-    parts = identity.split("/")
-    return len(parts) == 4 and parts[0] == "pair" and parts[3] == family
-
-
-def _cross_association_identity(identity: str, family: str) -> bool:
-    parts = identity.split("/")
-    return (
-        family == "k_hb_ij"
-        and len(parts) == 7
-        and parts[0] == "pair"
-        and parts[3] == "association"
-        and parts[6] == family
-    )
-
-
-def _require_supported_active_parameters(
-    active_parameters: ActiveParameterSet,
-    observation: str,
-    admitted: Iterable[bool],
-) -> None:
-    unsupported = tuple(
-        coordinate.identity
-        for coordinate, supported in zip(active_parameters.coordinates, admitted, strict=True)
-        if not supported
-    )
-    if unsupported:
-        raise _eos_error(
-            "unsupported-parameter-derivative",
-            observation=observation,
-            identities=unsupported,
-        )
 
 
 class SaturationError(RuntimeError):
@@ -422,42 +370,32 @@ class _EosModel:
     def parameter_fingerprint(self) -> str:
         return self._parameter_fingerprint
 
-    def _active_records(
-        self, active_parameters: ActiveParameterSet
-    ) -> tuple[_native_core.NativeParameterRecord, ...]:
+    def _validate_active_parameters(self, active_parameters: ActiveParameterSet) -> None:
         if not isinstance(active_parameters, ActiveParameterSet):
             raise _eos_error("invalid-active-parameter-set", expected="ActiveParameterSet")
         if active_parameters.parameters.fingerprint != self._parameter_fingerprint:
             raise _eos_error("invalid-active-parameter-set", reason="different-parameters")
-        records = []
-        for coordinate in active_parameters.coordinates:
-            records.append(
-                _native_core.NativeParameterRecord(coordinate.identity, coordinate.value)
-            )
-        return tuple(records)
 
-    def _pair_coordinates(
+    def _active_coordinates(
         self, active_parameters: ActiveParameterSet
-    ) -> tuple[_native_core.NativePairCoordinate, ...]:
+    ) -> tuple[_native_core.NativeActiveCoordinate, ...]:
+        self._validate_active_parameters(active_parameters)
         result = []
         for coordinate in active_parameters.coordinates:
             applicability = coordinate.applicability
-            if coordinate.family not in {"k_ij", "l_ij", "k_hb_ij"} or applicability is None:
+            if applicability is None:
                 raise _eos_error(
                     "unsupported-parameter-derivative",
                     observation="fixed-state-helmholtz",
                     identity=coordinate.identity,
-                    reason="unresolved-pair-application",
+                    reason="physical-application-unresolved",
                 )
-            roles = applicability.association_role_pair or ("", "")
             result.append(
-                _native_core.NativePairCoordinate(
+                _native_core.NativeActiveCoordinate(
                     coordinate.identity,
                     coordinate.family,
-                    applicability.component_indices[0],
-                    applicability.component_indices[1],
-                    roles[0],
-                    roles[1],
+                    applicability.application,
+                    applicability.component_indices,
                     applicability.association_edges,
                     applicability.association_energy_scales,
                     coordinate.value,
@@ -474,6 +412,7 @@ class _EosModel:
     ) -> ParameterCapability:
         return ParameterCapability(
             observation_family=observation_family,
+            model_identity=self._model.topology,
             parameter_identities=active_parameters.identities,
             parameter_values=active_parameters.values,
             parameter_units=tuple(coordinate.unit for coordinate in active_parameters.coordinates),
@@ -485,7 +424,17 @@ class _EosModel:
             value_labels=labels,
             value_units=units,
             value_shape=(len(labels),),
-            derivative_shape=(len(labels), len(active_parameters.coordinates)),
+            state_axes=(
+                *(f"amount_mol/{component}" for component in self._component_ids),
+                "volume_m3",
+            ),
+            active_axes=active_parameters.identities,
+            derivative_order=1,
+            source_derivative_order=2,
+            tensor_shape=(len(labels), len(active_parameters.coordinates)),
+            tensor_axes=("observable", "active_parameter"),
+            tensor_layout="row-major",
+            tensor_symmetry="none",
             parameter_fingerprint=self._parameter_fingerprint,
             active_parameter_fingerprint=active_parameters.fingerprint,
             topology_fingerprint=_native_topology_fingerprint(self),
@@ -499,6 +448,7 @@ class _EosModel:
         P: object | None = None,
         x: object,
         phase: str | None = None,
+        native_model: _native_core.NativeModel | None = None,
     ) -> State:
         """Create one immutable state at explicit density or specified pressure.
 
@@ -605,10 +555,11 @@ class _EosModel:
                     tolerance=1.0e-12,
                 )
 
+        evaluator = self._native if native_model is None else native_model
         if rho is not None:
             density_molar = _state_magnitude(rho, "mole / meter ** 3", "rho")
             try:
-                native = self._native.evaluate(temperature_k, density_molar, fractions)
+                native = evaluator.evaluate(temperature_k, density_molar, fractions)
             except (RuntimeError, ValueError) as exc:
                 if str(exc) == "polar-domain-error":
                     raise _eos_error("polar-domain-error") from exc
@@ -616,7 +567,7 @@ class _EosModel:
         else:
             pressure_pa = _state_magnitude(P, "pascal", "P")
             try:
-                native = self._native.evaluate_pressure(
+                native = evaluator.evaluate_pressure(
                     temperature_k, pressure_pa, fractions, phase or ""
                 )
             except (RuntimeError, ValueError) as exc:
@@ -694,83 +645,24 @@ class _EosModel:
     ) -> ParameterDerivativeResult:
         """Evaluate one fixed-density phase and exact selected-parameter derivatives."""
 
-        associating = bool(self._model.association_pairs)
-        pair_active = all(
-            coordinate.family in {"k_ij", "l_ij", "k_hb_ij"}
-            and coordinate.applicability is not None
-            for coordinate in active_parameters.coordinates
-        )
-        if pair_active:
-            admitted = (
-                _pair_identity(coordinate.identity, coordinate.family)
-                and coordinate.family in {"k_ij", "l_ij"}
-                or _cross_association_identity(coordinate.identity, coordinate.family)
-                for coordinate in active_parameters.coordinates
-            )
-        elif associating:
-            admitted = (
-                (
-                    _direct_component_identity(coordinate.identity, coordinate.family)
-                    and coordinate.family in {"segment_count", "dispersion_energy_over_k"}
-                    or _segment_diameter_parameter_identity(coordinate.identity, coordinate.family)
-                )
-                or _association_identity(coordinate.identity, coordinate.family)
-                and coordinate.family in {"association_energy_over_k", "association_volume"}
-                for coordinate in active_parameters.coordinates
-            )
-        elif len(self._component_ids) == 1:
-            admitted = (
-                _direct_component_identity(coordinate.identity, coordinate.family)
-                and coordinate.family in {"segment_count", "dispersion_energy_over_k"}
-                or _segment_diameter_parameter_identity(coordinate.identity, coordinate.family)
-                for coordinate in active_parameters.coordinates
-            )
-        else:
-            admitted = (False for _ in active_parameters.coordinates)
-        _require_supported_active_parameters(active_parameters, "fixed-state-helmholtz", admitted)
-        records = self._active_records(active_parameters)
+        coordinates = self._active_coordinates(active_parameters)
         state = self._state(T=T, rho=rho, x=x)
         temperature_k = float(state.temperature.to("kelvin").magnitude)
         density = float(state.molar_density.to("mole / meter ** 3").magnitude)
         amounts = state.mole_fractions
         volume = 1.0 / density
-        parameter_count = len(records)
+        parameter_count = len(coordinates)
         component_count = len(amounts)
-        parameter_coordinates: tuple[int, ...]
-        block: Any
+        width = component_count + 1 + parameter_count
+        parameter_coordinates = tuple(range(component_count + 1, width))
         try:
-            if pair_active:
-                block = self._native.evaluate_mixture_phase_pair_coordinates(
-                    temperature_k,
-                    amounts,
-                    volume,
-                    self._pair_coordinates(active_parameters),
-                )
-                width = component_count + 1 + parameter_count
-                parameter_coordinates = tuple(range(component_count + 1, width))
-            elif self._model.association_pairs:
-                block = (
-                    self._native.evaluate_fixed_topology_association_active_parameters(
-                        temperature_k, 1.0, volume, records
-                    )
-                    if component_count == 1
-                    else self._native.evaluate_fixed_topology_associating_mixture_active_parameters(
-                        temperature_k, amounts, volume, records
-                    )
-                )
-                width = component_count + 1 + parameter_count
-                parameter_coordinates = tuple(range(component_count + 1, width))
-            elif component_count == 1:
-                block = self._native.evaluate_fixed_topology_association_active_parameters(
-                    temperature_k, 1.0, volume, records
-                )
-                width = 2 + parameter_count
-                parameter_coordinates = tuple(range(2, width))
-            else:
-                raise _eos_error(
-                    "unsupported-parameter-derivative",
-                    observation="fixed-state-helmholtz",
-                )
+            block = self._native.evaluate_phase_derivatives(
+                temperature_k,
+                amounts,
+                volume,
+                coordinates,
+                2,
+            )
         except (KeyError, RuntimeError, ValueError) as exc:
             if isinstance(exc, EosError):
                 raise
@@ -827,26 +719,25 @@ class _EosModel:
     ) -> ParameterDerivativeResult:
         """Evaluate fixed-pressure log fugacity and exact implicit derivatives."""
 
-        _require_supported_active_parameters(
-            active_parameters,
-            "fixed-pressure-fugacity",
-            (
-                _direct_component_identity(coordinate.identity, coordinate.family)
-                and coordinate.family in {"segment_diameter", "dispersion_energy_over_k"}
-                for coordinate in active_parameters.coordinates
-            ),
+        coordinates = self._active_coordinates(active_parameters)
+        active_native = self._native.with_active_coordinates(coordinates)
+        state = self._state(
+            T=T,
+            P=P,
+            x=x,
+            phase=phase,
+            native_model=active_native,
         )
-        state = self._state(T=T, P=P, x=x, phase=phase)
         temperature_k = float(state.temperature.to("kelvin").magnitude)
-        pressure_pa = float(state.pressure.to("pascal").magnitude)
-        records = self._active_records(active_parameters)
+        density = float(state.molar_density.to("mole / meter ** 3").magnitude)
+        volume = 1.0 / density
         try:
-            block = self._native.evaluate_fugacity_derivatives_active(
+            block = self._native.evaluate_phase_derivatives(
                 temperature_k,
-                pressure_pa,
                 state.mole_fractions,
-                phase,
-                records,
+                volume,
+                coordinates,
+                2,
             )
         except (RuntimeError, ValueError) as exc:
             raise _eos_error(
@@ -854,11 +745,35 @@ class _EosModel:
                 observation="fixed-pressure-fugacity",
                 reason=str(exc),
             ) from exc
-        parameter_count = len(records)
-        values = tuple(float(value) for value in block.log_fugacity_coefficient)
-        flat = tuple(float(value) for value in block.parameter_derivatives)
+        parameter_count = len(coordinates)
+        component_count = len(self._component_ids)
+        width = component_count + 1 + parameter_count
+        volume_coordinate = component_count
+        hessian = tuple(float(value) for value in block.hessian)
+        pressure_volume = hessian[volume_coordinate * width + volume_coordinate]
+        if not math.isfinite(pressure_volume) or pressure_volume == 0.0:
+            raise _eos_error(
+                "non-evaluable-parameter-derivative",
+                observation="fixed-pressure-fugacity",
+                reason="singular-pressure-closure",
+            )
+        if state._log_fugacity_coefficient is None:
+            raise _eos_error(
+                "non-evaluable-parameter-derivative",
+                observation="fixed-pressure-fugacity",
+                reason="fugacity-unavailable",
+            )
+        values = state._log_fugacity_coefficient
+        # EqID: fixed_pressure_total_derivative
         derivatives = tuple(
-            flat[row * parameter_count : (row + 1) * parameter_count] for row in range(len(values))
+            tuple(
+                hessian[component * width + component_count + 1 + parameter]
+                - hessian[component * width + volume_coordinate]
+                * hessian[volume_coordinate * width + component_count + 1 + parameter]
+                / pressure_volume
+                for parameter in range(parameter_count)
+            )
+            for component in range(component_count)
         )
         capability = self._capability(
             active_parameters,
@@ -866,7 +781,12 @@ class _EosModel:
             tuple(f"log_fugacity_coefficient/{component}" for component in self._component_ids),
             tuple("1" for _ in self._component_ids),
         )
-        return ParameterDerivativeResult(capability, values, derivatives)
+        return ParameterDerivativeResult(
+            capability,
+            values,
+            derivatives,
+            DerivativeStatus("converged", "passed", "accepted", ""),
+        )
 
     def parameter_capability(
         self,
@@ -878,43 +798,7 @@ class _EosModel:
             raise _eos_error(
                 "unsupported-observation-family", observation_family=observation_family
             )
-        self._active_records(active_parameters)
-        associating = bool(self._model.association_pairs)
-        if associating:
-            admitted = (
-                (
-                    _direct_component_identity(coordinate.identity, coordinate.family)
-                    and coordinate.family in {"segment_count", "dispersion_energy_over_k"}
-                    or _segment_diameter_parameter_identity(coordinate.identity, coordinate.family)
-                )
-                or _association_identity(coordinate.identity, coordinate.family)
-                and coordinate.family in {"association_energy_over_k", "association_volume"}
-                for coordinate in active_parameters.coordinates
-            )
-        elif len(self._component_ids) == 1:
-            admitted = (
-                _direct_component_identity(coordinate.identity, coordinate.family)
-                and coordinate.family in {"segment_count", "dispersion_energy_over_k"}
-                or _segment_diameter_parameter_identity(coordinate.identity, coordinate.family)
-                for coordinate in active_parameters.coordinates
-            )
-        else:
-            if (
-                len(self._component_ids) != 2
-                or len(active_parameters.coordinates) != 1
-                or any(self._model.charge_number)
-            ):
-                raise _eos_error(
-                    "unsupported-parameter-derivative",
-                    observation=observation_family,
-                    reason="binary-pair-coordinate-required",
-                )
-            admitted = (
-                _pair_identity(coordinate.identity, coordinate.family)
-                and coordinate.family in {"k_ij", "l_ij"}
-                for coordinate in active_parameters.coordinates
-            )
-        _require_supported_active_parameters(active_parameters, observation_family, admitted)
+        self._active_coordinates(active_parameters)
         return self._capability(
             active_parameters,
             observation_family,
@@ -1079,7 +963,7 @@ class Pure(_EosModel):
             active_parameters, observation_family="pure_saturation"
         )
         temperature_k = self._saturation_temperature(T)
-        records = self._active_records(active_parameters)
+        coordinates = self._active_coordinates(active_parameters)
         try:
             liquid_density_upper = self._native.molar_density_upper_bound(temperature_k, (1.0,))
             native = cast(
@@ -1088,14 +972,14 @@ class Pure(_EosModel):
                     self._native,
                     temperature_k,
                     liquid_density_upper,
-                    records,
+                    coordinates,
                 ),
             )
         except (RuntimeError, ValueError) as exc:
             failure = _saturation_diagnostics(_failed_saturation_diagnostics(str(exc)))
             raise SaturationError(str(exc), failure) from exc
         result = self._saturation_result(native, temperature_k)
-        parameter_count = len(records)
+        parameter_count = len(coordinates)
         flat = tuple(float(value) for value in cast(Iterable[SupportsFloat], native["derivatives"]))
         derivatives = tuple(
             flat[row * parameter_count : (row + 1) * parameter_count] for row in range(3)
@@ -1135,6 +1019,7 @@ class Pure(_EosModel):
             capability,
             values,
             derivatives,
+            DerivativeStatus("converged", "passed", "accepted", ""),
         )
 
     def parameter_capability(
@@ -1153,23 +1038,7 @@ class Pure(_EosModel):
             raise _eos_error(
                 "unsupported-observation-family", observation_family=observation_family
             )
-        self._active_records(active_parameters)
-        associating = bool(self._model.association_pairs)
-        _require_supported_active_parameters(
-            active_parameters,
-            observation_family,
-            (
-                (
-                    _direct_component_identity(coordinate.identity, coordinate.family)
-                    and coordinate.family in {"segment_count", "dispersion_energy_over_k"}
-                    or _segment_diameter_parameter_identity(coordinate.identity, coordinate.family)
-                )
-                or associating
-                and _association_identity(coordinate.identity, coordinate.family)
-                and coordinate.family in {"association_energy_over_k", "association_volume"}
-                for coordinate in active_parameters.coordinates
-            ),
-        )
+        self._active_coordinates(active_parameters)
         labels = [
             "saturation_pressure_pa",
             "vapor_molar_density_mol_per_m3",
@@ -1259,190 +1128,6 @@ class Mixture(_EosModel):
     ) -> ParameterDerivativeResult:
         return _EosModel._fugacity_parameter_derivatives(
             self, active_parameters, T=T, P=P, x=x, phase=phase
-        )
-
-    def ion_solvation_parameter_derivatives(
-        self,
-        active_parameters: ActiveParameterSet,
-        *,
-        reference: ElectrolyteReference,
-    ) -> ParameterDerivativeResult:
-        """Evaluate selected single-ion solvation energies and exact derivatives."""
-
-        from .reference import ElectrolyteReference as Reference
-
-        records = self._active_records(active_parameters)
-        if (
-            not isinstance(reference, Reference)
-            or reference.component_ids != self._component_ids
-            or reference._mixture.parameter_fingerprint != self._parameter_fingerprint
-        ):
-            raise _eos_error(
-                "unsupported-parameter-derivative",
-                observation="ion-solvation-gibbs",
-                reason="reference-model-mismatch",
-            )
-        _require_supported_active_parameters(
-            active_parameters,
-            "ion-solvation-gibbs",
-            (
-                _direct_component_identity(coordinate.identity, coordinate.family)
-                and coordinate.family
-                in {
-                    "born_diameter",
-                    "solvation_factor",
-                    "segment_diameter",
-                    "dispersion_energy_over_k",
-                }
-                or coordinate.family == "ionic_region_relative_permittivity"
-                and coordinate.identity
-                == "model/relative_permittivity/ionic_region_relative_permittivity"
-                or coordinate.family == "relative_permittivity"
-                and len(coordinate.identity.split("/")) == 5
-                and coordinate.identity.split("/")[0] == "component"
-                and coordinate.identity.split("/")[1] in self._component_ids
-                and coordinate.identity.split("/")[2:] == [
-                    "relative_permittivity",
-                    "constant",
-                    "constant",
-                ]
-                for coordinate in active_parameters.coordinates
-            ),
-        )
-        try:
-            block = self._native.evaluate_ion_solvation_derivatives(
-                float(reference.temperature.to("kelvin").magnitude),
-                float(reference.pressure.to("pascal").magnitude),
-                reference.solvent_mole_fractions,
-                reference._ion_indices,
-                reference.formula_stoichiometry,
-                reference.phase,
-                records,
-            )
-        except (RuntimeError, ValueError) as exc:
-            raise _eos_error(
-                "unsupported-parameter-derivative",
-                observation="ion-solvation-gibbs",
-                reason=str(exc),
-            ) from exc
-        capability = self._capability(
-            active_parameters,
-            "ion-solvation-gibbs",
-            tuple(
-                f"solvation_gibbs_j_per_mol/{component}"
-                for component in reference.ion_component_ids
-            ),
-            ("joule / mole", "joule / mole"),
-        )
-        values = tuple(float(value) for value in block.solvation_gibbs_j_per_mol)
-        flat = tuple(float(value) for value in block.parameter_derivatives_j_per_mol)
-        parameter_count = len(records)
-        return ParameterDerivativeResult(
-            capability,
-            values,
-            tuple(
-                flat[row * parameter_count : (row + 1) * parameter_count]
-                for row in range(len(values))
-            ),
-        )
-
-    def mean_ionic_activity_parameter_derivatives(
-        self,
-        active_parameters: ActiveParameterSet,
-        *,
-        T: object,
-        P: object,
-        molality: object,
-    ) -> ParameterDerivativeResult:
-        """Evaluate one admitted solvation-factor MIAC coordinate exactly."""
-
-        records = self._active_records(active_parameters)
-        if len(records) != 1 or active_parameters.coordinates[0].family != "solvation_factor":
-            raise _eos_error(
-                "unsupported-parameter-derivative",
-                observation="mean-ionic-activity",
-            )
-        coordinate = active_parameters.coordinates[0]
-        _require_supported_active_parameters(
-            active_parameters,
-            "mean-ionic-activity",
-            (
-                _direct_component_identity(coordinate.identity, coordinate.family)
-                and coordinate.identity.split("/")[1] == self._component_ids[0],
-            ),
-        )
-        temperature_k = _state_magnitude(T, "kelvin", "T")
-        pressure_pa = _state_magnitude(P, "pascal", "P")
-        molality_value = _state_magnitude(molality, "mole / kilogram", "molality")
-        try:
-            block = self._native.evaluate_aqueous_miac_solvation_factor(
-                temperature_k,
-                pressure_pa,
-                molality_value,
-                records[0].value,
-            )
-        except (RuntimeError, ValueError) as exc:
-            raise _eos_error(
-                "unsupported-parameter-derivative",
-                observation="mean-ionic-activity",
-                reason=str(exc),
-            ) from exc
-        capability = self._capability(
-            active_parameters,
-            "mean-ionic-activity",
-            ("log_mean_ionic_activity_coefficient_molality",),
-            ("1",),
-        )
-        return ParameterDerivativeResult(
-            capability,
-            (float(block.log_mean_ionic_activity_coefficient_molality),),
-            ((float(block.derivative),),),
-        )
-
-    def relative_permittivity_parameter_derivatives(
-        self,
-        active_parameters: ActiveParameterSet,
-        *,
-        ion_mole_fraction: SupportsFloat,
-    ) -> ParameterDerivativeResult:
-        """Evaluate ion-fraction permittivity and one exact coefficient derivative."""
-
-        records = self._active_records(active_parameters)
-        if (
-            len(records) != 1
-            or active_parameters.coordinates[0].family != "ion_fraction_suppression_coefficient"
-        ):
-            raise _eos_error(
-                "unsupported-parameter-derivative",
-                observation="relative-permittivity",
-            )
-        _require_supported_active_parameters(
-            active_parameters,
-            "relative-permittivity",
-            (
-                active_parameters.coordinates[0].identity
-                == "model/relative_permittivity/ion_fraction_suppression_coefficient",
-            ),
-        )
-        fraction = float(ion_mole_fraction)
-        try:
-            block = self._native.evaluate_ion_fraction_suppression(fraction, records[0].value)
-        except (RuntimeError, ValueError) as exc:
-            raise _eos_error(
-                "unsupported-parameter-derivative",
-                observation="relative-permittivity",
-                reason=str(exc),
-            ) from exc
-        capability = self._capability(
-            active_parameters,
-            "relative-permittivity",
-            ("bulk_relative_permittivity",),
-            ("1",),
-        )
-        return ParameterDerivativeResult(
-            capability,
-            (float(block.bulk_relative_permittivity),),
-            ((float(block.derivative),),),
         )
 
     def reference(

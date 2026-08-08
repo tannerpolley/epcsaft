@@ -471,13 +471,13 @@ solve_local_saturation(const NativeModel &model, double temperature_k,
 SaturationSensitivityResult solve_local_saturation_active(
     const NativeModel &model, double temperature_k,
     double liquid_density_upper_mol_m3,
-    const std::vector<NativeParameterRecord> &active_parameters) {
+    const std::vector<NativeActiveCoordinate> &active_parameters) {
   if (active_parameters.empty()) {
     throw std::invalid_argument(
         "active saturation parameter set must be nonempty");
   }
   SaturationSensitivityResult result;
-  const NativeModel active_model = model.with_active_parameters(active_parameters);
+  const NativeModel active_model = model.with_active_coordinates(active_parameters);
   result.solve = solve_local_saturation(
       active_model, temperature_k, liquid_density_upper_mol_m3);
   if (!result.solve.accepted) {
@@ -493,9 +493,8 @@ SaturationSensitivityResult solve_local_saturation_active(
   auto phase_partials = [&](double volume) {
     std::vector<double> pressure(count);
     std::vector<double> chemical_potential(count);
-    const auto block =
-        active_model.evaluate_fixed_topology_association_active_parameters(
-            temperature_k, 1.0, volume, active_parameters);
+    const auto block = active_model.evaluate_phase_derivatives(
+        temperature_k, {1.0}, volume, active_parameters, 2);
     const std::size_t width = count + 2;
     for (std::size_t parameter = 0; parameter < count; ++parameter) {
       const std::size_t coordinate = parameter + 2;

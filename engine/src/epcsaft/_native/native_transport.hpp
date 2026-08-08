@@ -91,6 +91,7 @@ using epcsaft_evaluate_packing_fraction = int (*)(
     std::size_t hessian_capacity
 );
 
+// CAP-07 transport-only surface; this is not the EOS derivative interface.
 enum epcsaft_native_parameter_family {
     EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER = 4u,
     EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K = 5u,

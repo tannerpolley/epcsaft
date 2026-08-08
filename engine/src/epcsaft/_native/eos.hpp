@@ -64,42 +64,6 @@ struct NativeReferenceSequence final {
     double convergence_error;
 };
 
-struct NativeIonSolvationDerivativeBlock final {
-    std::array<double, 2> solvation_gibbs_j_per_mol;
-    std::vector<double> parameter_derivatives_j_per_mol;
-    double reference_molality_mol_per_kg;
-    double reference_convergence_error;
-};
-
-struct NativeIonSolvationKij final {
-    double solvation_gibbs_j_per_mol;
-    std::array<double, 3> derivative;
-    double reference_molality_mol_per_kg;
-    double reference_convergence_error;
-};
-
-struct NativeAqueousMiacKij final {
-    double log_mean_ionic_activity_coefficient_molality;
-    std::array<double, 3> derivative;
-    double reference_molality_mol_per_kg;
-    double reference_convergence_error;
-    double reference_derivative_convergence_error;
-};
-
-struct NativeAqueousMiacSolvationFactor final {
-    double log_mean_ionic_activity_coefficient_molality;
-    double derivative;
-    double reference_molality_mol_per_kg;
-    double reference_convergence_error;
-    double reference_derivative_convergence_error;
-};
-
-struct NativeIonFractionSuppression final {
-    double bulk_relative_permittivity;
-    double derivative;
-    double salt_free_relative_permittivity;
-};
-
 class NativeEvaluationCancelled final : public std::runtime_error {
 public:
     NativeEvaluationCancelled()
@@ -158,25 +122,12 @@ enum class ActiveComponentParameter {
     DispersionEnergyOverK,
 };
 
+// Retained only for Equilibrium provider transport; CAP-07 replaces this
+// family-limited request with the canonical active-coordinate descriptor.
 struct NativeActiveParameter final {
     ActiveComponentParameter family;
     std::size_t component;
     double value;
-};
-
-struct NativeFugacityDerivativeBlock final {
-    std::vector<double> log_fugacity_coefficient;
-    std::vector<double> pressure_derivative_per_pa;
-    std::vector<double> parameter_derivatives;
-    double molar_density_mol_per_m3;
-    double root_residual_pa;
-    double pressure_density_derivative_pa_m3_per_mol;
-    double density_condition_number;
-    std::string branch;
-    double bracket_lower_mol_per_m3;
-    double bracket_upper_mol_per_m3;
-    std::size_t stable_root_count;
-    std::size_t selected_stable_root_index;
 };
 
 struct NativeMolarVolumeBoundsParameterBlock final {
@@ -184,21 +135,11 @@ struct NativeMolarVolumeBoundsParameterBlock final {
     std::vector<double> parameter_derivatives_m3_per_mol;
 };
 
-// Canonical EOS-facing request.  The native resolver translates identities to
-// the existing typed derivative primitives; Python never supplies a native
-// array slot or callback.
-struct NativeParameterRecord final {
-    std::string identity;
-    double value;
-};
-
-struct NativePairCoordinate final {
+struct NativeActiveCoordinate final {
     std::string identity;
     std::string family;
-    std::size_t component_a;
-    std::size_t component_b;
-    std::string association_role_a;
-    std::string association_role_b;
+    std::string application;
+    std::vector<std::size_t> indices;
     std::vector<std::array<std::size_t, 2>> association_edges;
     std::vector<double> association_energy_scales;
     double value;
@@ -241,8 +182,8 @@ public:
         const std::vector<std::string>& component_ids,
         const std::vector<std::string>& site_ids
     ) const;
-    NativeModel with_active_parameters(
-        const std::vector<NativeParameterRecord>& active_parameters
+    NativeModel with_active_coordinates(
+        const std::vector<NativeActiveCoordinate>& active_coordinates
     ) const;
     NativeFixedTopologyPhaseBlock evaluate_fixed_topology_association(
         double temperature,
@@ -250,36 +191,17 @@ public:
         double volume,
         const std::vector<NativeFixedTopologyParameter>& active_parameters
     ) const;
-    NativeFixedTopologyPhaseBlock
-    evaluate_fixed_topology_association_active_parameters(
-        double temperature,
-        double amount,
-        double volume,
-        const std::vector<NativeParameterRecord>& active_parameters
-    ) const;
-    NativeMixturePhaseBlock evaluate_fixed_topology_associating_mixture(
-        double temperature,
-        const std::vector<double>& amounts,
-        double volume,
-        const std::vector<NativeFixedTopologyParameter>& active_parameters
-    ) const;
-    NativeMixturePhaseBlock
-    evaluate_fixed_topology_associating_mixture_active_parameters(
-        double temperature,
-        const std::vector<double>& amounts,
-        double volume,
-        const std::vector<NativeParameterRecord>& active_parameters
-    ) const;
     NativeMixturePhaseBlock evaluate_mixture_phase(
         double temperature,
         const std::vector<double>& amounts,
         double volume
     ) const;
-    NativeMixturePhaseBlock evaluate_mixture_phase_pair_coordinates(
+    NativeMixturePhaseBlock evaluate_phase_derivatives(
         double temperature,
         const std::vector<double>& amounts,
         double volume,
-        const std::vector<NativePairCoordinate>& coordinates
+        const std::vector<NativeActiveCoordinate>& coordinates,
+        std::size_t derivative_order
     ) const;
     NativeMixturePhaseBlock evaluate_electrolyte_phase(
         double temperature,
@@ -338,20 +260,6 @@ public:
         double ion_mole_fraction_max,
         const std::vector<NativeActiveParameter>& active_parameters
     ) const;
-    NativeFugacityDerivativeBlock evaluate_fugacity_derivatives(
-        double temperature,
-        double pressure,
-        const std::vector<double>& composition,
-        const std::string& phase,
-        const std::vector<NativeActiveParameter>& active_parameters
-    ) const;
-    NativeFugacityDerivativeBlock evaluate_fugacity_derivatives_active(
-        double temperature,
-        double pressure,
-        const std::vector<double>& composition,
-        const std::string& phase,
-        const std::vector<NativeParameterRecord>& active_parameters
-    ) const;
     std::vector<double> reference_composition(
         const std::vector<double>& solvent_fractions,
         const std::array<std::size_t, 2>& ion_indices,
@@ -367,60 +275,13 @@ public:
         const std::string& phase,
         NativeEvaluationBudget* budget = nullptr
     ) const;
-    NativeIonSolvationDerivativeBlock evaluate_ion_solvation_derivatives(
-        double temperature,
-        double pressure,
-        const std::vector<double>& solvent_fractions,
-        const std::array<std::size_t, 2>& ion_indices,
-        const std::array<int, 2>& stoichiometry,
-        const std::string& phase,
-        const std::vector<NativeParameterRecord>& active_parameters
-    ) const;
-
-    NativeIonSolvationKij evaluate_ion_solvation_kij(
-        double temperature,
-        double pressure,
-        std::size_t active_ion_component,
-        const std::array<double, 3>& k_ij
-    ) const;
-    NativeAqueousMiacKij evaluate_aqueous_miac_kij(
-        double temperature,
-        double pressure,
-        double formula_unit_molality_mol_per_kg,
-        const std::array<double, 3>& k_ij
-    ) const;
-    std::vector<NativeAqueousMiacKij> evaluate_aqueous_miac_kij_batch(
-        double temperature,
-        double pressure,
-        const std::vector<double>& formula_unit_molalities_mol_per_kg,
-        const std::array<double, 3>& k_ij,
-        NativeEvaluationBudget* budget = nullptr
-    ) const;
-    NativeAqueousMiacSolvationFactor evaluate_aqueous_miac_solvation_factor(
-        double temperature,
-        double pressure,
-        double formula_unit_molality_mol_per_kg,
-        double solvation_factor
-    ) const;
-    std::vector<NativeAqueousMiacSolvationFactor>
-    evaluate_aqueous_miac_solvation_factor_batch(
-        double temperature,
-        double pressure,
-        const std::vector<double>& formula_unit_molalities_mol_per_kg,
-        double solvation_factor,
-        NativeEvaluationBudget* budget = nullptr
-    ) const;
-    NativeIonFractionSuppression evaluate_ion_fraction_suppression(
-        double total_ion_mole_fraction,
-        double ion_fraction_suppression_coefficient
-    ) const;
-
 private:
     NativeFixedTopologyParameter resolve_fixed_topology_parameter(
-        const NativeParameterRecord& parameter
+        const std::string& identity,
+        double value
     ) const;
-    NativeActiveParameter resolve_component_parameter(
-        const NativeParameterRecord& parameter
+    NativeFixedTopologyParameter resolve_active_coordinate(
+        const NativeActiveCoordinate& coordinate
     ) const;
     const NativeParameters parameters_;
     std::vector<std::string> component_ids_;

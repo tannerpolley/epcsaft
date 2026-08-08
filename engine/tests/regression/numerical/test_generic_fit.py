@@ -8,7 +8,7 @@ from typing import Any, cast
 
 import pytest
 
-from epcsaft import _core
+from epcsaft import ActiveParameterSet, _core
 from epcsaft.eos import Mixture, Pure
 from epcsaft.parameters import Parameters
 from epcsaft.regression._model import ParameterFit
@@ -81,7 +81,7 @@ def _fit(
 ) -> dict[str, Any]:
     return _core._fit_resolved(
         model._native,
-        [_IDENTITY],
+        model._active_coordinates(ActiveParameterSet(model._parameters, (_IDENTITY,))),
         [0],
         [{"scale": 100.0, "lower": lower, "upper": upper, "input": input_value}],
         observations,
@@ -284,9 +284,12 @@ def test_fixed_state_pressure_recovers_generic_binary_parameter_with_exact_jacob
             }
         )
 
+    input_model = model(0.0)
     native = _core._fit_resolved(
-        model(0.0)._native,
-        [_PAIR_IDENTITY],
+        input_model._native,
+        input_model._active_coordinates(
+            ActiveParameterSet(input_model._parameters, (_PAIR_IDENTITY,))
+        ),
         [0],
         [{"scale": 0.05, "lower": -0.1, "upper": 0.1, "input": 0.0}],
         observations,

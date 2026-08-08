@@ -111,102 +111,37 @@ PYBIND11_MODULE(_core, module) {
             &epcsaft::NativeReferenceSequence::convergence_error
         );
 
-    py::class_<epcsaft::NativeIonSolvationDerivativeBlock>(
-        module, "NativeIonSolvationDerivativeBlock"
-    )
-        .def_readonly(
-            "solvation_gibbs_j_per_mol",
-            &epcsaft::NativeIonSolvationDerivativeBlock::solvation_gibbs_j_per_mol
-        )
-        .def_readonly(
-            "parameter_derivatives_j_per_mol",
-            &epcsaft::NativeIonSolvationDerivativeBlock::
-                parameter_derivatives_j_per_mol
-        )
-        .def_readonly(
-            "reference_molality_mol_per_kg",
-            &epcsaft::NativeIonSolvationDerivativeBlock::
-                reference_molality_mol_per_kg
-        )
-        .def_readonly(
-            "reference_convergence_error",
-            &epcsaft::NativeIonSolvationDerivativeBlock::
-                reference_convergence_error
-        );
-
-    py::class_<epcsaft::NativeAqueousMiacSolvationFactor>(
-        module, "NativeAqueousMiacSolvationFactor"
-    )
-        .def_readonly(
-            "log_mean_ionic_activity_coefficient_molality",
-            &epcsaft::NativeAqueousMiacSolvationFactor::
-                log_mean_ionic_activity_coefficient_molality
-        )
-        .def_readonly(
-            "derivative", &epcsaft::NativeAqueousMiacSolvationFactor::derivative
-        );
-
-    py::class_<epcsaft::NativeIonFractionSuppression>(
-        module, "NativeIonFractionSuppression"
-    )
-        .def_readonly(
-            "bulk_relative_permittivity",
-            &epcsaft::NativeIonFractionSuppression::bulk_relative_permittivity
-        )
-        .def_readonly(
-            "derivative", &epcsaft::NativeIonFractionSuppression::derivative
-        );
-
-    py::class_<epcsaft::NativeParameterRecord>(module, "NativeParameterRecord")
-        .def(
-            py::init<std::string, double>(),
-            py::arg("identity"),
-            py::arg("value")
-        )
-        .def_readonly("identity", &epcsaft::NativeParameterRecord::identity)
-        .def_readonly("value", &epcsaft::NativeParameterRecord::value);
-
-    py::class_<epcsaft::NativePairCoordinate>(module, "NativePairCoordinate")
+    py::class_<epcsaft::NativeActiveCoordinate>(module, "NativeActiveCoordinate")
         .def(
             py::init<
                 std::string,
                 std::string,
-                std::size_t,
-                std::size_t,
                 std::string,
-                std::string,
+                std::vector<std::size_t>,
                 std::vector<std::array<std::size_t, 2>>,
                 std::vector<double>,
                 double
             >(),
             py::arg("identity"),
             py::arg("family"),
-            py::arg("component_a"),
-            py::arg("component_b"),
-            py::arg("association_role_a"),
-            py::arg("association_role_b"),
+            py::arg("application"),
+            py::arg("indices"),
             py::arg("association_edges"),
             py::arg("association_energy_scales"),
             py::arg("value")
         )
-        .def_readonly("identity", &epcsaft::NativePairCoordinate::identity)
-        .def_readonly("family", &epcsaft::NativePairCoordinate::family)
-        .def_readonly("component_a", &epcsaft::NativePairCoordinate::component_a)
-        .def_readonly("component_b", &epcsaft::NativePairCoordinate::component_b)
+        .def_readonly("identity", &epcsaft::NativeActiveCoordinate::identity)
+        .def_readonly("family", &epcsaft::NativeActiveCoordinate::family)
+        .def_readonly("application", &epcsaft::NativeActiveCoordinate::application)
+        .def_readonly("indices", &epcsaft::NativeActiveCoordinate::indices)
         .def_readonly(
-            "association_role_a", &epcsaft::NativePairCoordinate::association_role_a
-        )
-        .def_readonly(
-            "association_role_b", &epcsaft::NativePairCoordinate::association_role_b
-        )
-        .def_readonly(
-            "association_edges", &epcsaft::NativePairCoordinate::association_edges
+            "association_edges", &epcsaft::NativeActiveCoordinate::association_edges
         )
         .def_readonly(
             "association_energy_scales",
-            &epcsaft::NativePairCoordinate::association_energy_scales
+            &epcsaft::NativeActiveCoordinate::association_energy_scales
         )
-        .def_readonly("value", &epcsaft::NativePairCoordinate::value);
+        .def_readonly("value", &epcsaft::NativeActiveCoordinate::value);
 
     py::class_<epcsaft::NativePurePhaseBlock>(module, "NativePurePhaseBlock")
         .def_readonly(
@@ -252,56 +187,6 @@ PYBIND11_MODULE(_core, module) {
         .def_readonly("gradient", &epcsaft::NativeMixturePhaseBlock::gradient)
         .def_readonly("hessian", &epcsaft::NativeMixturePhaseBlock::hessian)
         .def_readonly("pressure_pa", &epcsaft::NativeMixturePhaseBlock::pressure_pa);
-
-    py::class_<epcsaft::NativeFugacityDerivativeBlock>(
-        module, "NativeFugacityDerivativeBlock"
-    )
-        .def_readonly(
-            "log_fugacity_coefficient",
-            &epcsaft::NativeFugacityDerivativeBlock::log_fugacity_coefficient
-        )
-        .def_readonly(
-            "pressure_derivative_per_pa",
-            &epcsaft::NativeFugacityDerivativeBlock::pressure_derivative_per_pa
-        )
-        .def_readonly(
-            "parameter_derivatives",
-            &epcsaft::NativeFugacityDerivativeBlock::parameter_derivatives
-        )
-        .def_readonly(
-            "molar_density_mol_per_m3",
-            &epcsaft::NativeFugacityDerivativeBlock::molar_density_mol_per_m3
-        )
-        .def_readonly(
-            "root_residual_pa",
-            &epcsaft::NativeFugacityDerivativeBlock::root_residual_pa
-        )
-        .def_readonly(
-            "pressure_density_derivative_pa_m3_per_mol",
-            &epcsaft::NativeFugacityDerivativeBlock::
-                pressure_density_derivative_pa_m3_per_mol
-        )
-        .def_readonly(
-            "density_condition_number",
-            &epcsaft::NativeFugacityDerivativeBlock::density_condition_number
-        )
-        .def_readonly("branch", &epcsaft::NativeFugacityDerivativeBlock::branch)
-        .def_readonly(
-            "bracket_lower_mol_per_m3",
-            &epcsaft::NativeFugacityDerivativeBlock::bracket_lower_mol_per_m3
-        )
-        .def_readonly(
-            "bracket_upper_mol_per_m3",
-            &epcsaft::NativeFugacityDerivativeBlock::bracket_upper_mol_per_m3
-        )
-        .def_readonly(
-            "stable_root_count",
-            &epcsaft::NativeFugacityDerivativeBlock::stable_root_count
-        )
-        .def_readonly(
-            "selected_stable_root_index",
-            &epcsaft::NativeFugacityDerivativeBlock::selected_stable_root_index
-        );
 
     py::class_<epcsaft::NativePackingFractionBlock>(
         module, "NativePackingFractionBlock"
@@ -417,58 +302,18 @@ PYBIND11_MODULE(_core, module) {
             py::arg("site_ids")
         )
         .def(
-            "evaluate_fixed_topology_association_active_parameters",
-            &epcsaft::NativeModel::
-                evaluate_fixed_topology_association_active_parameters,
-            py::arg("temperature"),
-            py::arg("amount"),
-            py::arg("volume"),
-            py::arg("active_parameters")
-        )
-        .def(
-            "evaluate_fixed_topology_associating_mixture_active_parameters",
-            &epcsaft::NativeModel::
-                evaluate_fixed_topology_associating_mixture_active_parameters,
-            py::arg("temperature"),
-            py::arg("amounts"),
-            py::arg("volume"),
-            py::arg("active_parameters")
-        )
-        .def(
-            "evaluate_mixture_phase_pair_coordinates",
-            &epcsaft::NativeModel::evaluate_mixture_phase_pair_coordinates,
-            py::arg("temperature"),
-            py::arg("amounts"),
-            py::arg("volume"),
+            "with_active_coordinates",
+            &epcsaft::NativeModel::with_active_coordinates,
             py::arg("coordinates")
         )
         .def(
-            "evaluate_fugacity_derivatives_active",
-            &epcsaft::NativeModel::evaluate_fugacity_derivatives_active,
+            "evaluate_phase_derivatives",
+            &epcsaft::NativeModel::evaluate_phase_derivatives,
             py::arg("temperature"),
-            py::arg("pressure"),
-            py::arg("composition"),
-            py::arg("phase"),
-            py::arg("active_parameters")
-        )
-        .def(
-            "evaluate_ion_solvation_derivatives",
-            &epcsaft::NativeModel::evaluate_ion_solvation_derivatives,
-            py::arg("temperature"),
-            py::arg("pressure"),
-            py::arg("solvent_fractions"),
-            py::arg("ion_indices"),
-            py::arg("stoichiometry"),
-            py::arg("phase"),
-            py::arg("active_parameters")
-        )
-        .def(
-            "evaluate_aqueous_miac_solvation_factor",
-            &epcsaft::NativeModel::evaluate_aqueous_miac_solvation_factor
-        )
-        .def(
-            "evaluate_ion_fraction_suppression",
-            &epcsaft::NativeModel::evaluate_ion_fraction_suppression
+            py::arg("amounts"),
+            py::arg("volume"),
+            py::arg("coordinates"),
+            py::arg("derivative_order")
         )
         .def("molar_volume_bounds", &epcsaft::NativeModel::molar_volume_bounds)
         .def(

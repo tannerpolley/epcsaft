@@ -274,23 +274,10 @@ Scalar polar_cross_epsilon(
     std::size_t i,
     std::size_t j,
     const Parameters& parameters,
-    const std::vector<Scalar>& active_k_ij,
     const std::vector<Scalar>* energy_override
 ) {
-    Scalar k = Scalar(parameters.k_ij[i * parameters.segment_count.size() + j]);
-    if (!active_k_ij.empty() && i != j) {
-        const std::size_t size = parameters.segment_count.size();
-        if (size != 3 || active_k_ij.size() != 3) {
-            throw std::invalid_argument("invalid active aqueous k_ij coordinates");
-        }
-        if ((i == 0 && j == 1) || (i == 1 && j == 0)) {
-            k = active_k_ij[0];
-        } else if ((i == 0 && j == 2) || (i == 2 && j == 0)) {
-            k = active_k_ij[1];
-        } else {
-            k = active_k_ij[2];
-        }
-    }
+    const Scalar k =
+        Scalar(parameters.k_ij[i * parameters.segment_count.size() + j]);
     return (Scalar(1.0) - k)
         * polar_sqrt(
             polar_epsilon<Scalar>(i, parameters, energy_override)
@@ -318,7 +305,6 @@ PolarTerms<Scalar> polar_terms(
     const Parameters& parameters,
     const std::vector<Scalar>& sigma,
     const Scalar& eta,
-    const std::vector<Scalar>& active_k_ij = {},
     const std::vector<Scalar>* energy_override = nullptr
 ) {
     PolarTerms<Scalar> result{
@@ -369,7 +355,7 @@ PolarTerms<Scalar> polar_terms(
                     ? Scalar(2.0) : pair_chain;
                 const Scalar j2 = polar_j2(
                     DD_A0, DD_A1, DD_A2, DD_B0, DD_B1, DD_B2, chain,
-                    polar_cross_epsilon(i, j, parameters, active_k_ij, energy_override)
+                    polar_cross_epsilon(i, j, parameters, energy_override)
                         / temperature,
                     eta
                 );
@@ -419,7 +405,7 @@ PolarTerms<Scalar> polar_terms(
                 );
                 const Scalar j2 = polar_j2(
                     QQ_A0, QQ_A1, QQ_A2, QQ_B0, QQ_B1, QQ_B2, chain,
-                    polar_cross_epsilon(i, j, parameters, active_k_ij, energy_override)
+                    polar_cross_epsilon(i, j, parameters, energy_override)
                         / temperature,
                     eta
                 );
@@ -469,7 +455,7 @@ PolarTerms<Scalar> polar_terms(
                     );
                     const Scalar j2 = polar_j2(
                         DQ_A0, DQ_A1, DQ_A2, DQ_B0, DQ_B1, DQ_B2, chain,
-                        polar_cross_epsilon(i, j, parameters, active_k_ij, energy_override)
+                        polar_cross_epsilon(i, j, parameters, energy_override)
                             / temperature,
                         eta
                     );
