@@ -12,7 +12,7 @@ from typing import SupportsFloat, cast
 
 import pint
 
-from ..eos import EosError, Mixture, ParameterCapability, Pure, SaturationError
+from ..eos import EosError, Mixture, ObservableDescriptor, Pure, SaturationError
 from ..parameters import ActiveParameterSet, Parameters
 from ..units import unit_registry
 from ._model import (
@@ -79,7 +79,7 @@ class QuadraturePlan:
 @dataclass(frozen=True, slots=True)
 class ResolvedObservation:
     specification: ObservationSpec
-    capability: ParameterCapability
+    descriptor: ObservableDescriptor
     canonical_units: tuple[tuple[str, str], ...]
     rows: tuple[TableRow, ...] | None
     source_check: SourceCheck
@@ -128,7 +128,7 @@ class ResolvedFit:
             "observations": [
                 {
                     "specification": fit_observations[index],
-                    "capability": _capability_mapping(observation.capability),
+                    "descriptor": _descriptor_mapping(observation.descriptor),
                     "canonical_units": dict(observation.canonical_units),
                     "rows": None
                     if observation.rows is None
@@ -216,28 +216,32 @@ def _source_check_mapping(check: SourceCheck) -> dict[str, object]:
     }
 
 
-def _capability_mapping(capability: ParameterCapability) -> dict[str, object]:
+def _descriptor_mapping(descriptor: ObservableDescriptor) -> dict[str, object]:
     return {
-        "observation_family": capability.observation_family,
-        "model_identity": capability.model_identity,
-        "parameter_identities": list(capability.parameter_identities),
-        "parameter_units": list(capability.parameter_units),
-        "model_domain": capability.model_domain,
-        "temperature_domain_k": list(capability.temperature_domain_k),
-        "value_labels": list(capability.value_labels),
-        "value_units": list(capability.value_units),
-        "value_shape": list(capability.value_shape),
-        "state_axes": list(capability.state_axes),
-        "active_axes": list(capability.active_axes),
-        "derivative_order": capability.derivative_order,
-        "source_derivative_order": capability.source_derivative_order,
-        "tensor_shape": list(capability.tensor_shape),
-        "tensor_axes": list(capability.tensor_axes),
-        "tensor_layout": capability.tensor_layout,
-        "tensor_symmetry": capability.tensor_symmetry,
-        "parameter_fingerprint": capability.parameter_fingerprint,
-        "active_parameter_fingerprint": capability.active_parameter_fingerprint,
-        "topology_fingerprint": capability.topology_fingerprint,
+        "identity": descriptor.identity,
+        "version": descriptor.version,
+        "required_inputs": list(descriptor.required_inputs),
+        "applicability": descriptor.applicability,
+        "model_identity": descriptor.model_identity,
+        "supported_topologies": list(descriptor.supported_topologies),
+        "model_domain": descriptor.model_domain,
+        "temperature_domain_k": list(descriptor.temperature_domain_k),
+        "row_identities": list(descriptor.row_identities),
+        "row_units": list(descriptor.row_units),
+        "row_bases": list(descriptor.row_bases),
+        "state_fields": list(descriptor.state_fields),
+        "reference": descriptor.reference,
+        "active_parameter_identities": list(descriptor.active_parameter_identities),
+        "active_parameter_values": list(descriptor.active_parameter_values),
+        "active_parameter_units": list(descriptor.active_parameter_units),
+        "derivative_orders": list(descriptor.derivative_orders),
+        "source_derivative_order": descriptor.source_derivative_order,
+        "jacobian_shape": list(descriptor.jacobian_shape),
+        "jacobian_axes": list(descriptor.jacobian_axes),
+        "jacobian_layout": descriptor.jacobian_layout,
+        "parameter_fingerprint": descriptor.parameter_fingerprint,
+        "active_parameter_fingerprint": descriptor.active_parameter_fingerprint,
+        "topology_fingerprint": descriptor.topology_fingerprint,
     }
 
 
@@ -457,16 +461,16 @@ def _validate_rows(rows: Sequence[TableRow], source: TableSource, targets: tuple
 
 
 def _validate_observation(
-    observation: ObservationSpec, capability: ParameterCapability
+    observation: ObservationSpec, descriptor: ObservableDescriptor
 ) -> tuple[tuple[tuple[str, str], ...], tuple[tuple[str, float], ...]]:
-    capability_labels = {
+    descriptor_rows = {
         label: unit
-        for label, unit in zip(capability.value_labels, capability.value_units, strict=True)
+        for label, unit in zip(descriptor.row_identities, descriptor.row_units, strict=True)
     }
     unsupported_targets = tuple(
         target
         for target in observation.targets
-        if SCHEMA_REGISTRY.targets[target].capability_label not in capability_labels
+        if SCHEMA_REGISTRY.targets[target].observable_row_identity not in descriptor_rows
     )
     if unsupported_targets:
         raise FitResolutionError(
@@ -478,7 +482,7 @@ def _validate_observation(
                 "invalid-domain", f"{observation.source.path}.{name}", (lower, upper)
             )
         if name == "temperature_k":
-            model_lower, model_upper = capability.temperature_domain_k
+            model_lower, model_upper = descriptor.temperature_domain_k
             if (model_lower is not None and lower < model_lower) or (
                 model_upper is not None and upper > model_upper
             ):
@@ -487,21 +491,21 @@ def _validate_observation(
                     f"{observation.source.path}.{name}",
                     {
                         "source": (lower, upper),
-                        "model": capability.temperature_domain_k,
+                        "model": descriptor.temperature_domain_k,
                     },
                 )
     canonical_units: list[tuple[str, str]] = []
     factors: list[tuple[str, float]] = []
     for target, unit in observation.units:
-        capability_unit = capability_labels[SCHEMA_REGISTRY.targets[target].capability_label]
+        canonical_unit = descriptor_rows[SCHEMA_REGISTRY.targets[target].observable_row_identity]
         try:
-            zero = float(unit_registry.Quantity(0, unit).to(capability_unit).magnitude)
-            factor = float(unit_registry.Quantity(1, unit).to(capability_unit).magnitude)
+            zero = float(unit_registry.Quantity(0, unit).to(canonical_unit).magnitude)
+            factor = float(unit_registry.Quantity(1, unit).to(canonical_unit).magnitude)
         except (AttributeError, TypeError, ValueError, pint.errors.PintError) as exc:
             raise FitResolutionError("invalid-unit", target, unit) from exc
         if zero != 0.0 or not math.isfinite(factor) or factor <= 0.0:
             raise FitResolutionError("invalid-unit", target, unit)
-        canonical_units.append((target, capability_unit))
+        canonical_units.append((target, canonical_unit))
         factors.append((target, factor))
     return tuple(canonical_units), tuple(factors)
 
@@ -609,7 +613,7 @@ def _quadrature_objective(
     active_parameters: ActiveParameterSet,
 ) -> tuple[float, tuple[float, ...]]:
     target = observation.targets[0]
-    label = SCHEMA_REGISTRY.targets[target].capability_label
+    label = SCHEMA_REGISTRY.targets[target].observable_row_identity
     residual_kind = dict(observation.residuals)[target]
     if residual_kind != "log_ratio":
         raise RuntimeError(f"unhandled residual: {residual_kind}")
@@ -617,26 +621,31 @@ def _quadrature_objective(
     jacobian: list[tuple[float, ...]] = []
     for temperature_k, observed in zip(rule.nodes, rule.observed_values, strict=True):
         try:
-            result = model.saturation_parameter_derivatives(
+            result = model.observable_block(
                 active_parameters,
+                identity="eos.pure-saturation",
                 T=temperature_k * unit_registry.kelvin,
             )
-            index = result.capability.value_labels.index(label)
+            index = result.descriptor.row_identities.index(label)
         except (EosError, SaturationError, ValueError) as exc:
             raise FitResolutionError(
                 "quadrature-evaluation", observation.source.path, temperature_k
             ) from exc
         predicted = result.values[index]
-        if not math.isfinite(predicted) or predicted <= 0:
+        derivative_row = result.jacobian[index]
+        if (
+            result.status.status != "accepted"
+            or predicted is None
+            or derivative_row is None
+            or not math.isfinite(predicted)
+            or predicted <= 0
+        ):
             raise FitResolutionError(
                 "quadrature-evaluation", observation.source.path, temperature_k
             )
         residuals.append(observation.multiplier * math.log(predicted / observed))
         jacobian.append(
-            tuple(
-                observation.multiplier * derivative / predicted
-                for derivative in result.derivatives[index]
-            )
+            tuple(observation.multiplier * derivative / predicted for derivative in derivative_row)
         )
     objective = sum(
         weight * residual * residual
@@ -777,14 +786,19 @@ def resolve_fit(
             )
         definition = SCHEMA_REGISTRY.observations[observation.family]
         try:
-            capability = model.parameter_capability(
-                active_parameters, observation_family=observation.family
+            descriptor = model.observable_descriptor(
+                active_parameters,
+                identity=(
+                    "eos.fixed-state"
+                    if observation.family == "fixed_state_pressure"
+                    else "eos.pure-saturation"
+                ),
             )
         except EosError as exc:
             raise FitResolutionError(
                 "unsupported-parameter-derivative", observation.family, str(exc)
             ) from exc
-        canonical_units, unit_factors = _validate_observation(observation, capability)
+        canonical_units, unit_factors = _validate_observation(observation, descriptor)
         factors = dict(unit_factors)
         source = observation.source
         if isinstance(source, PublishedObservationCorrelation) and not isinstance(model, Pure):
@@ -827,7 +841,7 @@ def resolve_fit(
         resolved_observations.append(
             ResolvedObservation(
                 observation,
-                capability,
+                descriptor,
                 canonical_units,
                 rows,
                 check,

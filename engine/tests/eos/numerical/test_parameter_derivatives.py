@@ -342,20 +342,21 @@ def test_fixed_state_selected_parameter_derivatives_match_independent_difference
     active = ActiveParameterSet(parameters, identities)
     model = Pure(parameters) if len(composition) == 1 else Mixture(parameters)
     exact = (
-        model.phase_parameter_derivatives(
+        model.observable_block(
             active,
+            identity="eos.fixed-state",
             T=temperature_k * u.kelvin,
             rho=density * u.mole / u.meter**3,
         )
         if isinstance(model, Pure)
-        else model.phase_parameter_derivatives(
+        else model.observable_block(
             active,
+            identity="eos.fixed-state",
             T=temperature_k * u.kelvin,
             rho=density * u.mole / u.meter**3,
             x=composition,
         )
     )
-
     for column, (identity, step) in enumerate(zip(identities, steps, strict=True)):
         numerical = _central_difference(
             mapping,
@@ -364,7 +365,7 @@ def test_fixed_state_selected_parameter_derivatives_match_independent_difference
             lambda candidate: _fixed_state_values(candidate, temperature_k, density, composition),
         )
         for row, expected in enumerate(numerical):
-            assert exact.derivatives[row][column] == pytest.approx(expected, rel=3.0e-5, abs=2.0e-7)
+            assert exact.jacobian[row][column] == pytest.approx(expected, rel=3.0e-5, abs=2.0e-7)
 
 
 def test_canonical_kij_coordinate_is_exact_and_component_order_independent() -> None:
@@ -375,8 +376,9 @@ def test_canonical_kij_coordinate_is_exact_and_component_order_independent() -> 
     step = 1.0e-5
     parameters = Parameters.from_mapping(POLAR_BINARY)
     active = ActiveParameterSet(parameters, (identity,), values=(trial,))
-    exact = Mixture(parameters).phase_parameter_derivatives(
+    exact = Mixture(parameters).observable_block(
         active,
+        identity="eos.fixed-state",
         T=300.0 * u.kelvin,
         rho=5000.0 * u.mole / u.meter**3,
         x=(0.4, 0.6),
@@ -391,27 +393,26 @@ def test_canonical_kij_coordinate_is_exact_and_component_order_independent() -> 
     # h=1e-5 balances centered O(h^2) truncation with double-precision
     # cancellation; 3e-5 relative tolerance spans reduced and pascal rows.
     for row, expected in enumerate(numerical):
-        assert exact.derivatives[row][0] == pytest.approx(expected, rel=3.0e-5, abs=2.0e-7)
+        assert exact.jacobian[row][0] == pytest.approx(expected, rel=3.0e-5, abs=2.0e-7)
 
     reordered_parameters = Parameters.from_mapping(
         POLAR_BINARY, components=("quadrupolar", "dipolar")
     )
-    reordered = Mixture(reordered_parameters).phase_parameter_derivatives(
+    reordered = Mixture(reordered_parameters).observable_block(
         ActiveParameterSet(reordered_parameters, (identity,), values=(trial,)),
+        identity="eos.fixed-state",
         T=300.0 * u.kelvin,
         rho=5000.0 * u.mole / u.meter**3,
         x=(0.6, 0.4),
     )
-    assert reordered.capability.parameter_identities == exact.capability.parameter_identities
-    assert reordered.capability.parameter_values == exact.capability.parameter_values == (trial,)
     # Reordering changes only component-labelled rows; the 2e-10 tolerance is
     # tight enough to expose an incorrect directed write while allowing AD roundoff.
     for canonical_row, reordered_row in enumerate((0, 1, 3, 2)):
         assert reordered.values[reordered_row] == pytest.approx(
             exact.values[canonical_row], rel=2.0e-12, abs=2.0e-12
         )
-        assert reordered.derivatives[reordered_row][0] == pytest.approx(
-            exact.derivatives[canonical_row][0], rel=2.0e-10, abs=2.0e-10
+        assert reordered.jacobian[reordered_row][0] == pytest.approx(
+            exact.jacobian[canonical_row][0], rel=2.0e-10, abs=2.0e-10
         )
 
 
@@ -427,8 +428,9 @@ def test_mixed_ternary_pair_coordinates_are_independent_and_ordered() -> None:
     )
     composition = (0.2, 0.3, 0.5)
     parameters = Parameters.from_mapping(mapping)
-    exact = Mixture(parameters).phase_parameter_derivatives(
+    exact = Mixture(parameters).observable_block(
         ActiveParameterSet(parameters, identities),
+        identity="eos.fixed-state",
         T=315.0 * u.kelvin,
         rho=4300.0 * u.mole / u.meter**3,
         x=composition,
@@ -445,24 +447,24 @@ def test_mixed_ternary_pair_coordinates_are_independent_and_ordered() -> None:
             lambda candidate: _fixed_state_values(candidate, 315.0, 4300.0, composition),
         )
         for row, expected in enumerate(numerical):
-            assert exact.derivatives[row][column] == pytest.approx(expected, rel=4.0e-5, abs=3.0e-7)
+            assert exact.jacobian[row][column] == pytest.approx(expected, rel=4.0e-5, abs=3.0e-7)
 
     reordered_parameters = Parameters.from_mapping(mapping, components=("gamma", "alpha", "beta"))
-    reordered = Mixture(reordered_parameters).phase_parameter_derivatives(
+    reordered = Mixture(reordered_parameters).observable_block(
         ActiveParameterSet(reordered_parameters, tuple(reversed(identities))),
+        identity="eos.fixed-state",
         T=315.0 * u.kelvin,
         rho=4300.0 * u.mole / u.meter**3,
         x=(0.5, 0.2, 0.3),
     )
-    assert reordered.capability.parameter_identities == tuple(reversed(identities))
     for canonical_row, reordered_row in enumerate((0, 1, 3, 4, 2)):
         assert reordered.values[reordered_row] == pytest.approx(
             exact.values[canonical_row], rel=2.0e-12, abs=2.0e-12
         )
         for canonical_column in range(len(identities)):
             reordered_column = len(identities) - canonical_column - 1
-            assert reordered.derivatives[reordered_row][reordered_column] == pytest.approx(
-                exact.derivatives[canonical_row][canonical_column],
+            assert reordered.jacobian[reordered_row][reordered_column] == pytest.approx(
+                exact.jacobian[canonical_row][canonical_column],
                 rel=2.0e-10,
                 abs=2.0e-10,
             )
@@ -507,8 +509,9 @@ def test_role_aware_cross_association_corrections_apply_exact_chain() -> None:
         assert energy == pytest.approx(1400.0 * (1.0 - (-0.04)), rel=1.0e-13, abs=1.0e-12)
         assert volume == pytest.approx((0.020 * 0.018) ** 0.5, rel=1.0e-13, abs=1.0e-15)
 
-    exact = Mixture(parameters).phase_parameter_derivatives(
+    exact = Mixture(parameters).observable_block(
         ActiveParameterSet(parameters, identities),
+        identity="eos.fixed-state",
         T=310.0 * u.kelvin,
         rho=2800.0 * u.mole / u.meter**3,
         x=composition,
@@ -525,11 +528,12 @@ def test_role_aware_cross_association_corrections_apply_exact_chain() -> None:
             lambda candidate: _fixed_state_values(candidate, 310.0, 2800.0, composition),
         )
         for row, expected in enumerate(numerical):
-            assert exact.derivatives[row][column] == pytest.approx(expected, rel=4.0e-5, abs=3.0e-7)
+            assert exact.jacobian[row][column] == pytest.approx(expected, rel=4.0e-5, abs=3.0e-7)
 
     reordered_parameters = Parameters.from_mapping(mapping, components=("beta", "alpha"))
-    reordered = Mixture(reordered_parameters).phase_parameter_derivatives(
+    reordered = Mixture(reordered_parameters).observable_block(
         ActiveParameterSet(reordered_parameters, tuple(reversed(identities))),
+        identity="eos.fixed-state",
         T=310.0 * u.kelvin,
         rho=2800.0 * u.mole / u.meter**3,
         x=(0.55, 0.45),
@@ -540,8 +544,8 @@ def test_role_aware_cross_association_corrections_apply_exact_chain() -> None:
         )
         for canonical_column in range(len(identities)):
             reordered_column = len(identities) - canonical_column - 1
-            assert reordered.derivatives[reordered_row][reordered_column] == pytest.approx(
-                exact.derivatives[canonical_row][canonical_column],
+            assert reordered.jacobian[reordered_row][reordered_column] == pytest.approx(
+                exact.jacobian[canonical_row][canonical_column],
                 rel=2.0e-10,
                 abs=2.0e-10,
             )
@@ -579,9 +583,21 @@ def test_saturation_implicit_parameter_derivatives_match_resolved_boundaries(
     steps: tuple[float, ...],
 ) -> None:
     parameters = Parameters.from_mapping(mapping)
-    exact = Pure(parameters).saturation_parameter_derivatives(
-        ActiveParameterSet(parameters, identities), T=temperature_k * u.kelvin
+    exact = Pure(parameters).observable_block(
+        ActiveParameterSet(parameters, identities),
+        identity="eos.pure-saturation",
+        T=temperature_k * u.kelvin,
     )
+    branches = {branch.identity: branch for branch in exact.saturation_branches}
+    for row, identity in ((1, "vapor"), (2, "liquid")):
+        branch = branches[identity]
+        density = exact.values[row]
+        assert density is not None
+        assert branch.density_bracket_mol_per_m3[0] < density < branch.density_bracket_mol_per_m3[1]
+        assert branch.pressure_relative_residual is not None
+        assert branch.pressure_relative_residual <= 1.0e-8
+        assert branch.residual_density_derivative_m3_per_mol is not None
+        assert branch.residual_density_derivative_m3_per_mol > 0.0
 
     def values(candidate: dict[str, object]) -> Values:
         result = Pure(Parameters.from_mapping(candidate)).saturation(T=temperature_k * u.kelvin)
@@ -594,7 +610,35 @@ def test_saturation_implicit_parameter_derivatives_match_resolved_boundaries(
     for column, (identity, step) in enumerate(zip(identities, steps, strict=True)):
         numerical = _central_difference(mapping, identity, step, values)
         for row, expected in enumerate(numerical):
-            assert exact.derivatives[row][column] == pytest.approx(expected, rel=3.0e-5, abs=2.0e-6)
+            assert exact.jacobian[row][column] == pytest.approx(expected, rel=3.0e-5, abs=2.0e-6)
+
+
+def test_saturation_trial_geometry_uses_its_active_density_domain() -> None:
+    mapping = PURE_SATURATION_PARAMETERS["propane"]
+    identity = "component/propane/segment_diameter"
+    trial = 2.5
+    parameters = Parameters.from_mapping(mapping)
+    exact = Pure(parameters).observable_block(
+        ActiveParameterSet(parameters, (identity,), values=(trial,)),
+        identity="eos.pure-saturation",
+        T=300.0 * u.kelvin,
+    )
+    trial_mapping = _perturbed(mapping, identity, trial)
+
+    def values(candidate: dict[str, object]) -> Values:
+        result = Pure(Parameters.from_mapping(candidate)).saturation(T=300.0 * u.kelvin)
+        return (
+            result.saturation_pressure_pa,
+            result.vapor.molar_density_mol_m3,
+            result.liquid.molar_density_mol_m3,
+        )
+
+    numerical = _central_difference(trial_mapping, identity, 1.0e-5, values)
+    assert exact.values[:3] == pytest.approx(values(trial_mapping), rel=2.0e-12, abs=2.0e-12)
+    for row, expected in enumerate(numerical):
+        derivative = exact.jacobian[row]
+        assert derivative is not None
+        assert derivative[0] == pytest.approx(expected, rel=3.0e-5, abs=2.0e-6)
 
 
 def test_fixed_pressure_fugacity_derivatives_include_density_closure() -> None:
@@ -610,8 +654,9 @@ def test_fixed_pressure_fugacity_derivatives_include_density_closure() -> None:
         trial_values[1],
     )
     parameters = Parameters.from_mapping(mapping)
-    exact = Pure(parameters).fugacity_parameter_derivatives(
+    exact = Pure(parameters).observable_block(
         ActiveParameterSet(parameters, identities, values=trial_values),
+        identity="eos.fixed-pressure-fugacity",
         T=300.0 * u.kelvin,
         P=1.0e5 * u.pascal,
         phase="vapor",
@@ -626,7 +671,7 @@ def test_fixed_pressure_fugacity_derivatives_include_density_closure() -> None:
 
     for column, (identity, step) in enumerate(zip(identities, (1.0e-5, 1.0e-3), strict=True)):
         numerical = _central_difference(trial_mapping, identity, step, value)
-        assert exact.derivatives[0][column] == pytest.approx(numerical[0], rel=3.0e-5, abs=2.0e-8)
+        assert exact.jacobian[0][column] == pytest.approx(numerical[0], rel=3.0e-5, abs=2.0e-8)
     assert exact.values == pytest.approx(value(trial_mapping), rel=2.0e-12, abs=2.0e-12)
 
 
@@ -635,8 +680,9 @@ def test_active_geometry_rejects_close_packing_before_taping() -> None:
     identity = "component/propane/segment_diameter"
     parameters = Parameters.from_mapping(mapping)
     with pytest.raises(EosError, match="active packing fraction is outside") as captured:
-        Pure(parameters).phase_parameter_derivatives(
+        Pure(parameters).observable_block(
             ActiveParameterSet(parameters, (identity,), values=(7.4,)),
+            identity="eos.fixed-state",
             T=300.0 * u.kelvin,
             rho=4000.0 * u.mole / u.meter**3,
         )
@@ -670,8 +716,9 @@ def test_mixed_aqueous_active_set_matches_differences_and_preserves_axes() -> No
     )
     composition = (0.60, 0.33, 0.02, 0.02, 0.01, 0.02)
     parameters = Parameters.from_mapping(MULTISOLVENT_MULTIION)
-    exact = Mixture(parameters).phase_parameter_derivatives(
+    exact = Mixture(parameters).observable_block(
         ActiveParameterSet(parameters, identities),
+        identity="eos.fixed-state",
         T=298.15 * u.kelvin,
         rho=2000.0 * u.mole / u.meter**3,
         x=composition,
@@ -688,7 +735,7 @@ def test_mixed_aqueous_active_set_matches_differences_and_preserves_axes() -> No
             lambda candidate: _fixed_state_values(candidate, 298.15, 2000.0, composition),
         )
         for row, expected in enumerate(numerical):
-            assert exact.derivatives[row][column] == pytest.approx(expected, rel=5.0e-5, abs=3.0e-7)
+            assert exact.jacobian[row][column] == pytest.approx(expected, rel=5.0e-5, abs=3.0e-7)
 
     reversed_identities = tuple(reversed(identities))
     reordered_parameters = Parameters.from_mapping(
@@ -702,21 +749,21 @@ def test_mixed_aqueous_active_set_matches_differences_and_preserves_axes() -> No
             "cation",
         ),
     )
-    reordered = Mixture(reordered_parameters).phase_parameter_derivatives(
+    reordered = Mixture(reordered_parameters).observable_block(
         ActiveParameterSet(reordered_parameters, reversed_identities),
+        identity="eos.fixed-state",
         T=298.15 * u.kelvin,
         rho=2000.0 * u.mole / u.meter**3,
         x=(0.02, 0.33, 0.01, 0.60, 0.02, 0.02),
     )
-    assert reordered.capability.active_axes == reversed_identities
     for canonical_row, reordered_row in enumerate((0, 1, 5, 3, 7, 6, 4, 2)):
         assert reordered.values[reordered_row] == pytest.approx(
             exact.values[canonical_row], rel=2.0e-12, abs=2.0e-12
         )
         for canonical_column in range(len(identities)):
             reordered_column = len(identities) - canonical_column - 1
-            assert reordered.derivatives[reordered_row][reordered_column] == pytest.approx(
-                exact.derivatives[canonical_row][canonical_column],
+            assert reordered.jacobian[reordered_row][reordered_column] == pytest.approx(
+                exact.jacobian[canonical_row][canonical_column],
                 rel=2.0e-10,
                 abs=2.0e-10,
             )

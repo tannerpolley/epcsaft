@@ -601,8 +601,9 @@ descriptive prediction.
 The intended public surface is:
 
 ```text
+model.observable_descriptor(...) -> ObservableDescriptor
+model.observable_block(...) -> ObservableBlock
 fit_parameters(problem: RegressionProblem) -> RegressionResult
-parameter_capabilities(model) -> tuple[ParameterCapability, ...]
 ```
 
 `RegressionProblem` owns one ordered parameter block, typed observations,

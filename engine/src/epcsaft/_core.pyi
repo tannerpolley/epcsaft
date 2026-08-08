@@ -140,7 +140,6 @@ def _solve_saturation(
 def _solve_saturation_active(
     model: NativeModel,
     temperature_k: float,
-    liquid_density_upper_mol_m3: float,
     active_parameters: Sequence[NativeActiveCoordinate],
 ) -> dict[str, Any]: ...
 def _fit_resolved(

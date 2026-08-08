@@ -28,6 +28,12 @@ if TYPE_CHECKING:
 
 type Phase = Literal["vapor", "liquid"]
 type PropertyBasis = Literal["molar", "reduced"]
+type ObservableBasis = Literal["absolute", "mass", "molar", "reduced"]
+type ObservableIdentity = Literal[
+    "eos.fixed-pressure-fugacity",
+    "eos.fixed-state",
+    "eos.pure-saturation",
+]
 _MOLAR_GAS_CONSTANT = 8.31446261815324
 _native_transport_factory = _native_core.native_transport
 
@@ -122,6 +128,11 @@ class SaturationDiagnostics:
     pressure_relative_residual: float
     chemical_potential_absolute_residual: float
     phase_density_distance: float
+    vapor_pressure_relative_residual: float
+    liquid_pressure_relative_residual: float
+    vapor_residual_density_derivative_m3_per_mol: float
+    liquid_residual_density_derivative_m3_per_mol: float
+    rejection_status: Literal["none", "solve-failure", "root-swap", "coalescence", "branch-loss"]
     exact_derivatives: bool
     globality_certificate: bool
     failure_reason: str
@@ -138,48 +149,179 @@ class SaturationResult:
 
 
 @dataclass(frozen=True, slots=True)
-class ParameterCapability:
-    observation_family: str
+class ObservableDescriptor:
+    identity: ObservableIdentity
+    version: int
+    required_inputs: tuple[str, ...]
+    applicability: str
     model_identity: str
-    parameter_identities: tuple[str, ...]
-    parameter_values: tuple[float, ...]
-    parameter_units: tuple[str, ...]
+    supported_topologies: tuple[str, ...]
     model_domain: str
     temperature_domain_k: tuple[float | None, float | None]
-    value_labels: tuple[str, ...]
-    value_units: tuple[str, ...]
-    value_shape: tuple[int, ...]
-    state_axes: tuple[str, ...]
-    active_axes: tuple[str, ...]
-    derivative_order: int
+    row_identities: tuple[str, ...]
+    row_units: tuple[str, ...]
+    row_bases: tuple[ObservableBasis, ...]
+    state_fields: tuple[str, ...]
+    reference: str
+    active_parameter_identities: tuple[str, ...]
+    active_parameter_values: tuple[float, ...]
+    active_parameter_units: tuple[str, ...]
+    derivative_orders: tuple[int, ...]
     source_derivative_order: int
-    tensor_shape: tuple[int, int]
-    tensor_axes: tuple[str, str]
-    tensor_layout: Literal["row-major"]
-    tensor_symmetry: Literal["none"]
+    jacobian_shape: tuple[int, int]
+    jacobian_axes: tuple[str, str]
+    jacobian_layout: Literal["row-major"]
     parameter_fingerprint: str
     active_parameter_fingerprint: str
     topology_fingerprint: str
 
 
 @dataclass(frozen=True, slots=True)
-class DerivativeStatus:
-    solver: Literal["not-required", "converged"]
-    numerical: Literal["passed"]
-    physical: Literal["accepted"]
+class ObservableState:
+    temperature_k: float
+    molar_density_mol_m3: float | None
+    pressure_pa: float | None
+    composition: tuple[float, ...]
+    phase: Phase | None
+    reference: str
+
+
+@dataclass(frozen=True, slots=True)
+class ObservableRowStatus:
+    identity: str
+    status: Literal["accepted", "rejected"]
     reason: str
 
 
 @dataclass(frozen=True, slots=True)
-class ParameterDerivativeResult:
-    capability: ParameterCapability
-    values: tuple[float, ...]
-    derivatives: tuple[tuple[float, ...], ...]
-    status: DerivativeStatus = DerivativeStatus(
-        solver="not-required",
-        numerical="passed",
-        physical="accepted",
-        reason="",
+class ObservableBlockStatus:
+    scope: Literal["not-required", "row", "shared-solve", "branch"]
+    status: Literal["accepted", "rejected"]
+    reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class SaturationBranchEvidence:
+    identity: Phase
+    density_bracket_mol_per_m3: tuple[float, float]
+    pressure_relative_residual: float | None
+    residual_density_derivative_m3_per_mol: float | None
+    rejection_status: Literal["none", "solve-failure", "root-swap", "coalescence", "branch-loss"]
+
+
+@dataclass(frozen=True, slots=True)
+class ObservableBlock:
+    descriptor: ObservableDescriptor
+    state: ObservableState
+    values: tuple[float | None, ...]
+    jacobian: tuple[tuple[float, ...] | None, ...]
+    row_statuses: tuple[ObservableRowStatus, ...]
+    status: ObservableBlockStatus
+    saturation_diagnostics: SaturationDiagnostics | None = None
+    saturation_branches: tuple[SaturationBranchEvidence, ...] = ()
+
+
+def _accepted_observable_block(
+    descriptor: ObservableDescriptor,
+    state: ObservableState,
+    values: tuple[float, ...],
+    jacobian: tuple[tuple[float, ...], ...],
+    *,
+    scope: Literal["not-required", "shared-solve"] = "not-required",
+    saturation_diagnostics: SaturationDiagnostics | None = None,
+    saturation_branches: tuple[SaturationBranchEvidence, ...] = (),
+) -> ObservableBlock:
+    if len(values) != len(descriptor.row_identities) or len(jacobian) != len(values):
+        raise RuntimeError("observable block rows do not match its descriptor")
+    row_statuses: list[ObservableRowStatus] = []
+    retained_values: list[float | None] = []
+    retained_jacobian: list[tuple[float, ...] | None] = []
+    for identity, value, row in zip(descriptor.row_identities, values, jacobian, strict=True):
+        finite = (
+            math.isfinite(value)
+            and len(row) == descriptor.jacobian_shape[1]
+            and all(math.isfinite(derivative) for derivative in row)
+        )
+        row_statuses.append(
+            ObservableRowStatus(
+                identity, "accepted" if finite else "rejected", "" if finite else "nonfinite-row"
+            )
+        )
+        retained_values.append(value if finite else None)
+        retained_jacobian.append(row if finite else None)
+    rejected = any(status.status == "rejected" for status in row_statuses)
+    return ObservableBlock(
+        descriptor=descriptor,
+        state=state,
+        values=tuple(retained_values),
+        jacobian=tuple(retained_jacobian),
+        row_statuses=tuple(row_statuses),
+        status=ObservableBlockStatus(
+            "row" if rejected else scope,
+            "rejected" if rejected else "accepted",
+            "one or more observable rows are nonfinite" if rejected else "",
+        ),
+        saturation_diagnostics=saturation_diagnostics,
+        saturation_branches=saturation_branches,
+    )
+
+
+def _saturation_branch_evidence(
+    diagnostics: SaturationDiagnostics,
+) -> tuple[SaturationBranchEvidence, ...]:
+    lower = diagnostics.solver_lower_bounds
+    upper = diagnostics.solver_upper_bounds
+    vapor_residual = diagnostics.vapor_pressure_relative_residual
+    liquid_residual = diagnostics.liquid_pressure_relative_residual
+    vapor_derivative = diagnostics.vapor_residual_density_derivative_m3_per_mol
+    liquid_derivative = diagnostics.liquid_residual_density_derivative_m3_per_mol
+    return (
+        SaturationBranchEvidence(
+            "vapor",
+            (math.exp(lower[0]), math.exp(upper[0])),
+            vapor_residual if math.isfinite(vapor_residual) else None,
+            vapor_derivative if math.isfinite(vapor_derivative) else None,
+            diagnostics.rejection_status,
+        ),
+        SaturationBranchEvidence(
+            "liquid",
+            (math.exp(lower[1]), math.exp(upper[1])),
+            liquid_residual if math.isfinite(liquid_residual) else None,
+            liquid_derivative if math.isfinite(liquid_derivative) else None,
+            diagnostics.rejection_status,
+        ),
+    )
+
+
+def _rejected_saturation_block(
+    descriptor: ObservableDescriptor,
+    temperature_k: float,
+    diagnostics: SaturationDiagnostics,
+) -> ObservableBlock:
+    reason = diagnostics.failure_reason or diagnostics.rejection_status
+    return ObservableBlock(
+        descriptor=descriptor,
+        state=ObservableState(
+            temperature_k=temperature_k,
+            molar_density_mol_m3=None,
+            pressure_pa=None,
+            composition=(1.0,),
+            phase=None,
+            reference=descriptor.reference,
+        ),
+        values=tuple(None for _ in descriptor.row_identities),
+        jacobian=tuple(None for _ in descriptor.row_identities),
+        row_statuses=tuple(
+            ObservableRowStatus(identity, "rejected", reason)
+            for identity in descriptor.row_identities
+        ),
+        status=ObservableBlockStatus(
+            "shared-solve" if diagnostics.rejection_status == "solve-failure" else "branch",
+            "rejected",
+            reason,
+        ),
+        saturation_diagnostics=diagnostics,
+        saturation_branches=_saturation_branch_evidence(diagnostics),
     )
 
 
@@ -257,8 +399,7 @@ def _native_arguments(
             0.0 if value is None else value for value in model.packing_diameter_angstrom
         ]
         debye_huckel_diameter = [
-            0.0 if value is None else value
-            for value in model.debye_huckel_diameter_angstrom
+            0.0 if value is None else value for value in model.debye_huckel_diameter_angstrom
         ]
         if model.topology == "ionic-born":
             dielectric_suppression = (
@@ -408,38 +549,59 @@ class _EosModel:
             )
         return tuple(result)
 
-    def _capability(
+    def _descriptor(
         self,
         active_parameters: ActiveParameterSet,
-        observation_family: str,
-        labels: tuple[str, ...],
+        identity: ObservableIdentity,
+        rows: tuple[str, ...],
         units: tuple[str, ...],
-    ) -> ParameterCapability:
-        return ParameterCapability(
-            observation_family=observation_family,
+        bases: tuple[ObservableBasis, ...],
+    ) -> ObservableDescriptor:
+        self._active_coordinates(active_parameters)
+        required_inputs: tuple[str, ...]
+        if identity == "eos.fixed-state":
+            required_inputs = ("temperature_k", "molar_density_mol_m3")
+            if len(self._component_ids) > 1:
+                required_inputs = (*required_inputs, "composition")
+            applicability = "single-phase fixed-density state"
+            reference = "residual Helmholtz energy at the declared reference amount"
+        elif identity == "eos.fixed-pressure-fugacity":
+            required_inputs = ("temperature_k", "pressure_pa", "phase")
+            if len(self._component_ids) > 1:
+                required_inputs = (*required_inputs, "composition")
+            applicability = "stable single-phase fixed-pressure state"
+            reference = "ideal-gas mixture at the same temperature, pressure, and composition"
+        else:
+            required_inputs = ("temperature_k",)
+            applicability = "pure-component vapor-liquid coexistence boundary"
+            reference = "shared pure-component vapor-liquid saturation state"
+        return ObservableDescriptor(
+            identity=identity,
+            version=1,
+            required_inputs=required_inputs,
+            applicability=applicability,
             model_identity=self._model.topology,
-            parameter_identities=active_parameters.identities,
-            parameter_values=active_parameters.values,
-            parameter_units=tuple(coordinate.unit for coordinate in active_parameters.coordinates),
+            supported_topologies=(self._model.topology,),
             model_domain=self._model.topology,
             temperature_domain_k=(
                 self._model.temperature_min_k,
                 self._model.temperature_max_k,
             ),
-            value_labels=labels,
-            value_units=units,
-            value_shape=(len(labels),),
-            state_axes=(
-                *(f"amount_mol/{component}" for component in self._component_ids),
-                "volume_m3",
+            row_identities=rows,
+            row_units=units,
+            row_bases=bases,
+            state_fields=required_inputs,
+            reference=reference,
+            active_parameter_identities=active_parameters.identities,
+            active_parameter_values=active_parameters.values,
+            active_parameter_units=tuple(
+                coordinate.unit for coordinate in active_parameters.coordinates
             ),
-            active_axes=active_parameters.identities,
-            derivative_order=1,
+            derivative_orders=(0, 1),
             source_derivative_order=2,
-            tensor_shape=(len(labels), len(active_parameters.coordinates)),
-            tensor_axes=("observable", "active_parameter"),
-            tensor_layout="row-major",
-            tensor_symmetry="none",
+            jacobian_shape=(len(rows), len(active_parameters.coordinates)),
+            jacobian_axes=("observable_row", "active_parameter"),
+            jacobian_layout="row-major",
             parameter_fingerprint=self._parameter_fingerprint,
             active_parameter_fingerprint=active_parameters.fingerprint,
             topology_fingerprint=_native_topology_fingerprint(self),
@@ -640,15 +802,15 @@ class _EosModel:
             ),
         )
 
-    def _phase_parameter_derivatives(
+    def _fixed_state_observable_block(
         self,
         active_parameters: ActiveParameterSet,
         *,
         T: object,
         rho: object,
         x: object,
-    ) -> ParameterDerivativeResult:
-        """Evaluate one fixed-density phase and exact selected-parameter derivatives."""
+    ) -> ObservableBlock:
+        """Evaluate one fixed-density EOS-owned observable block."""
 
         coordinates = self._active_coordinates(active_parameters)
         state = self._state(T=T, rho=rho, x=x)
@@ -693,27 +855,39 @@ class _EosModel:
             "pressure_pa",
             *(f"chemical_potential_over_rt/{component}" for component in self._component_ids),
         )
-        capability = self._capability(
+        descriptor = self._descriptor(
             active_parameters,
-            "fixed-state-helmholtz",
+            "eos.fixed-state",
             labels,
             ("1", "pascal", *("1" for _ in self._component_ids)),
+            cast(
+                tuple[ObservableBasis, ...],
+                ("reduced", "absolute", *("reduced" for _ in self._component_ids)),
+            ),
         )
-        return ParameterDerivativeResult(
-            capability=capability,
-            values=(
+        return _accepted_observable_block(
+            descriptor,
+            ObservableState(
+                temperature_k=temperature_k,
+                molar_density_mol_m3=density,
+                pressure_pa=float(block.pressure_pa),
+                composition=state.mole_fractions,
+                phase=None,
+                reference=descriptor.reference,
+            ),
+            (
                 float(block.helmholtz_over_rt_reference_amount),
                 float(block.pressure_pa),
                 *(gradient[component] for component in range(component_count)),
             ),
-            derivatives=(
+            (
                 helmholtz_derivatives,
                 pressure_derivatives,
                 *chemical_derivatives,
             ),
         )
 
-    def _fugacity_parameter_derivatives(
+    def _fixed_pressure_fugacity_observable_block(
         self,
         active_parameters: ActiveParameterSet,
         *,
@@ -721,8 +895,8 @@ class _EosModel:
         P: object,
         x: object,
         phase: Phase,
-    ) -> ParameterDerivativeResult:
-        """Evaluate fixed-pressure log fugacity and exact implicit derivatives."""
+    ) -> ObservableBlock:
+        """Evaluate one fixed-pressure fugacity observable block."""
 
         coordinates = self._active_coordinates(active_parameters)
         active_native = self._native.with_active_coordinates(coordinates)
@@ -780,36 +954,61 @@ class _EosModel:
             )
             for component in range(component_count)
         )
-        capability = self._capability(
+        descriptor = self._descriptor(
             active_parameters,
-            "fixed-pressure-fugacity",
+            "eos.fixed-pressure-fugacity",
             tuple(f"log_fugacity_coefficient/{component}" for component in self._component_ids),
             tuple("1" for _ in self._component_ids),
+            tuple("reduced" for _ in self._component_ids),
         )
-        return ParameterDerivativeResult(
-            capability,
+        return _accepted_observable_block(
+            descriptor,
+            ObservableState(
+                temperature_k=temperature_k,
+                molar_density_mol_m3=density,
+                pressure_pa=float(state.pressure.to("pascal").magnitude),
+                composition=state.mole_fractions,
+                phase=phase,
+                reference=descriptor.reference,
+            ),
             values,
             derivatives,
-            DerivativeStatus("converged", "passed", "accepted", ""),
+            scope="shared-solve",
         )
 
-    def parameter_capability(
+    def observable_descriptor(
         self,
         active_parameters: ActiveParameterSet,
         *,
-        observation_family: str,
-    ) -> ParameterCapability:
-        if observation_family != "fixed_state_pressure":
-            raise _eos_error(
-                "unsupported-observation-family", observation_family=observation_family
+        identity: ObservableIdentity,
+    ) -> ObservableDescriptor:
+        if identity == "eos.fixed-state":
+            labels = (
+                "helmholtz_over_rt_reference_amount",
+                "pressure_pa",
+                *(f"chemical_potential_over_rt/{component}" for component in self._component_ids),
             )
-        self._active_coordinates(active_parameters)
-        return self._capability(
-            active_parameters,
-            observation_family,
-            ("pressure_pa",),
-            ("pascal",),
-        )
+            return self._descriptor(
+                active_parameters,
+                identity,
+                labels,
+                ("1", "pascal", *("1" for _ in self._component_ids)),
+                cast(
+                    tuple[ObservableBasis, ...],
+                    ("reduced", "absolute", *("reduced" for _ in self._component_ids)),
+                ),
+            )
+        if identity == "eos.fixed-pressure-fugacity":
+            return self._descriptor(
+                active_parameters,
+                identity,
+                tuple(f"log_fugacity_coefficient/{component}" for component in self._component_ids),
+                tuple("1" for _ in self._component_ids),
+                tuple("reduced" for _ in self._component_ids),
+            )
+        if identity != "eos.pure-saturation":
+            raise _eos_error("unsupported-observable-descriptor", identity=identity)
+        raise _eos_error("unsupported-observable-descriptor", identity=identity)
 
     def _reference(
         self,
@@ -858,7 +1057,7 @@ class Pure(_EosModel):
     def state(
         self,
         *,
-        T: pint.Quantity[Any],
+        T: object,
         rho: pint.Quantity[Any],
         P: None = None,
         phase: None = None,
@@ -884,28 +1083,27 @@ class Pure(_EosModel):
     ) -> State:
         return _EosModel._state(self, T=T, rho=rho, P=P, x=(1.0,), phase=phase)
 
-    def phase_parameter_derivatives(
+    def observable_block(
         self,
         active_parameters: ActiveParameterSet,
         *,
+        identity: ObservableIdentity,
         T: object,
-        rho: object,
-    ) -> ParameterDerivativeResult:
-        return _EosModel._phase_parameter_derivatives(
-            self, active_parameters, T=T, rho=rho, x=(1.0,)
-        )
-
-    def fugacity_parameter_derivatives(
-        self,
-        active_parameters: ActiveParameterSet,
-        *,
-        T: object,
-        P: object,
-        phase: Phase,
-    ) -> ParameterDerivativeResult:
-        return _EosModel._fugacity_parameter_derivatives(
-            self, active_parameters, T=T, P=P, x=(1.0,), phase=phase
-        )
+        rho: object | None = None,
+        P: object | None = None,
+        phase: Phase | None = None,
+    ) -> ObservableBlock:
+        if identity == "eos.fixed-state" and rho is not None and P is None and phase is None:
+            return _EosModel._fixed_state_observable_block(
+                self, active_parameters, T=T, rho=rho, x=(1.0,)
+            )
+        if identity == "eos.fixed-pressure-fugacity" and rho is None and P is not None and phase:
+            return _EosModel._fixed_pressure_fugacity_observable_block(
+                self, active_parameters, T=T, P=P, x=(1.0,), phase=phase
+            )
+        if identity == "eos.pure-saturation" and rho is None and P is None and phase is None:
+            return self._pure_saturation_observable_block(active_parameters, T=T)
+        raise _eos_error("invalid-observable-inputs", identity=identity)
 
     def _saturation_temperature(self, T: object) -> float:
         temperature_k = _state_magnitude(T, "kelvin", "T")
@@ -960,33 +1158,32 @@ class Pure(_EosModel):
             raise SaturationError(str(exc), failure) from exc
         return self._saturation_result(native, temperature_k)
 
-    def saturation_parameter_derivatives(
+    def _pure_saturation_observable_block(
         self,
         active_parameters: ActiveParameterSet,
         *,
-        T: pint.Quantity[Any],
-    ) -> ParameterDerivativeResult:
-        """Solve saturation and return exact implicit selected-parameter derivatives."""
+        T: object,
+    ) -> ObservableBlock:
+        """Solve one shared saturation state and return its EOS-owned block."""
 
-        capability = self.parameter_capability(
-            active_parameters, observation_family="pure_saturation"
-        )
+        descriptor = self.observable_descriptor(active_parameters, identity="eos.pure-saturation")
         temperature_k = self._saturation_temperature(T)
         coordinates = self._active_coordinates(active_parameters)
         try:
-            liquid_density_upper = self._native.molar_density_upper_bound(temperature_k, (1.0,))
             native = cast(
                 Mapping[str, object],
                 _native_core._solve_saturation_active(
                     self._native,
                     temperature_k,
-                    liquid_density_upper,
                     coordinates,
                 ),
             )
         except (RuntimeError, ValueError) as exc:
             failure = _saturation_diagnostics(_failed_saturation_diagnostics(str(exc)))
             raise SaturationError(str(exc), failure) from exc
+        diagnostics = _saturation_diagnostics(cast(Mapping[str, object], native["diagnostics"]))
+        if not bool(native["accepted"]):
+            return _rejected_saturation_block(descriptor, temperature_k, diagnostics)
         result = self._saturation_result(native, temperature_k)
         parameter_count = len(coordinates)
         flat = tuple(float(value) for value in cast(Iterable[SupportsFloat], native["derivatives"]))
@@ -1008,14 +1205,6 @@ class Pure(_EosModel):
                 tuple(value * molar_mass for value in derivatives[1]),
                 tuple(value * molar_mass for value in derivatives[2]),
             )
-            if not all(math.isfinite(value) for value in mass_values) or not all(
-                math.isfinite(value) for row in mass_derivatives for value in row
-            ):
-                raise _eos_error(
-                    "nonfinite-parameter-derivative",
-                    observation_family=capability.observation_family,
-                    target="mass-density",
-                )
             values = (
                 *values,
                 *mass_values,
@@ -1024,30 +1213,33 @@ class Pure(_EosModel):
                 *derivatives,
                 *mass_derivatives,
             )
-        return ParameterDerivativeResult(
-            capability,
+        return _accepted_observable_block(
+            descriptor,
+            ObservableState(
+                temperature_k=temperature_k,
+                molar_density_mol_m3=None,
+                pressure_pa=result.saturation_pressure_pa,
+                composition=(1.0,),
+                phase=None,
+                reference=descriptor.reference,
+            ),
             values,
             derivatives,
-            DerivativeStatus("converged", "passed", "accepted", ""),
+            scope="shared-solve",
+            saturation_diagnostics=diagnostics,
+            saturation_branches=_saturation_branch_evidence(diagnostics),
         )
 
-    def parameter_capability(
+    def observable_descriptor(
         self,
         active_parameters: ActiveParameterSet,
         *,
-        observation_family: str,
-    ) -> ParameterCapability:
-        """Return one exact EOS-owned derivative capability without evaluating a state."""
+        identity: ObservableIdentity,
+    ) -> ObservableDescriptor:
+        """Return one versioned EOS-owned observable descriptor."""
 
-        if observation_family == "fixed_state_pressure":
-            return _EosModel.parameter_capability(
-                self, active_parameters, observation_family=observation_family
-            )
-        if observation_family != "pure_saturation":
-            raise _eos_error(
-                "unsupported-observation-family", observation_family=observation_family
-            )
-        self._active_coordinates(active_parameters)
+        if identity != "eos.pure-saturation":
+            return _EosModel.observable_descriptor(self, active_parameters, identity=identity)
         labels = [
             "saturation_pressure_pa",
             "vapor_molar_density_mol_per_m3",
@@ -1062,11 +1254,17 @@ class Pure(_EosModel):
                 )
             )
             units.extend(("kilogram / meter ** 3", "kilogram / meter ** 3"))
-        return self._capability(
+        return self._descriptor(
             active_parameters,
-            observation_family,
+            identity,
             tuple(labels),
             tuple(units),
+            (
+                "absolute",
+                "molar",
+                "molar",
+                *(("mass", "mass") if self._model.molar_mass_kg_per_mol[0] is not None else ()),
+            ),
         )
 
 
@@ -1116,28 +1314,26 @@ class Mixture(_EosModel):
     ) -> State:
         return _EosModel._state(self, T=T, rho=rho, P=P, x=x, phase=phase)
 
-    def phase_parameter_derivatives(
+    def observable_block(
         self,
         active_parameters: ActiveParameterSet,
         *,
+        identity: ObservableIdentity,
         T: object,
-        rho: object,
         x: object,
-    ) -> ParameterDerivativeResult:
-        return _EosModel._phase_parameter_derivatives(self, active_parameters, T=T, rho=rho, x=x)
-
-    def fugacity_parameter_derivatives(
-        self,
-        active_parameters: ActiveParameterSet,
-        *,
-        T: object,
-        P: object,
-        x: object,
-        phase: Phase,
-    ) -> ParameterDerivativeResult:
-        return _EosModel._fugacity_parameter_derivatives(
-            self, active_parameters, T=T, P=P, x=x, phase=phase
-        )
+        rho: object | None = None,
+        P: object | None = None,
+        phase: Phase | None = None,
+    ) -> ObservableBlock:
+        if identity == "eos.fixed-state" and rho is not None and P is None and phase is None:
+            return _EosModel._fixed_state_observable_block(
+                self, active_parameters, T=T, rho=rho, x=x
+            )
+        if identity == "eos.fixed-pressure-fugacity" and rho is None and P is not None and phase:
+            return _EosModel._fixed_pressure_fugacity_observable_block(
+                self, active_parameters, T=T, P=P, x=x, phase=phase
+            )
+        raise _eos_error("invalid-observable-inputs", identity=identity)
 
     def reference(
         self,
@@ -1199,10 +1395,26 @@ def _saturation_diagnostics(payload: Mapping[str, object]) -> SaturationDiagnost
         ),
         physical_accepted=bool(payload["physical_accepted"]),
         pressure_relative_residual=float(cast(float, payload["pressure_relative_residual"])),
+        vapor_pressure_relative_residual=float(
+            cast(float, payload["vapor_pressure_relative_residual"])
+        ),
+        liquid_pressure_relative_residual=float(
+            cast(float, payload["liquid_pressure_relative_residual"])
+        ),
         chemical_potential_absolute_residual=float(
             cast(float, payload["chemical_potential_absolute_residual"])
         ),
         phase_density_distance=float(cast(float, payload["phase_density_distance"])),
+        vapor_residual_density_derivative_m3_per_mol=float(
+            cast(float, payload["vapor_residual_density_derivative_m3_per_mol"])
+        ),
+        liquid_residual_density_derivative_m3_per_mol=float(
+            cast(float, payload["liquid_residual_density_derivative_m3_per_mol"])
+        ),
+        rejection_status=cast(
+            Literal["none", "solve-failure", "root-swap", "coalescence", "branch-loss"],
+            str(payload["rejection_status"]),
+        ),
         exact_derivatives=bool(payload["exact_derivatives"]),
         globality_certificate=bool(payload["globality_certificate"]),
         failure_reason=str(payload["failure_reason"]),
@@ -1237,8 +1449,13 @@ def _failed_saturation_diagnostics(reason: str) -> dict[str, object]:
         "confirmation_max_relative_difference": math.inf,
         "physical_accepted": False,
         "pressure_relative_residual": math.inf,
+        "vapor_pressure_relative_residual": math.inf,
+        "liquid_pressure_relative_residual": math.inf,
         "chemical_potential_absolute_residual": math.inf,
         "phase_density_distance": 0.0,
+        "vapor_residual_density_derivative_m3_per_mol": math.nan,
+        "liquid_residual_density_derivative_m3_per_mol": math.nan,
+        "rejection_status": "solve-failure",
         "exact_derivatives": False,
         "globality_certificate": False,
         "failure_reason": reason,
@@ -1596,10 +1813,18 @@ __all__ = (
     "EosError",
     "Fugacity",
     "Mixture",
+    "ObservableBasis",
+    "ObservableBlock",
+    "ObservableBlockStatus",
+    "ObservableDescriptor",
+    "ObservableIdentity",
+    "ObservableRowStatus",
+    "ObservableState",
     "Phase",
     "PropertyBasis",
     "Pure",
     "SaturationAttempt",
+    "SaturationBranchEvidence",
     "SaturationDiagnostics",
     "SaturationError",
     "SaturationPhase",

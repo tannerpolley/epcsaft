@@ -22,8 +22,8 @@ owners:
     models: [epcsaft.Pure, epcsaft.Mixture]
     state: epcsaft.State
     active_parameters: epcsaft.ActiveParameterSet
-    derivative_result: epcsaft.ParameterDerivativeResult
-    observable_derivative_block: eos_owned_source_neutral
+    observable_descriptor: epcsaft.ObservableDescriptor
+    observable_block: epcsaft.ObservableBlock
     equation_kernel: src/epcsaft/_native/helmholtz.hpp
     selected_parameter_derivatives: src/epcsaft/_native/phase_block.hpp
     density_closure: src/epcsaft/_native/density.hpp

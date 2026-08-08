@@ -55,7 +55,8 @@ py::dict evaluate_saturation_nlp(const epcsaft::NativeModel &model,
 }
 
 py::dict saturation_to_dict(const epcsaft::SaturationSolveResult &solve,
-                            double temperature_k) {
+                            double temperature_k,
+                            bool exact_derivatives) {
   py::dict diagnostics;
   diagnostics["solver_converged"] = solve.solver_converged;
   diagnostics["solver_status"] = solve.solver_status;
@@ -72,10 +73,19 @@ py::dict saturation_to_dict(const epcsaft::SaturationSolveResult &solve,
       solve.confirmation_max_relative_difference;
   diagnostics["physical_accepted"] = solve.physical_accepted;
   diagnostics["pressure_relative_residual"] = solve.pressure_relative_residual;
+  diagnostics["vapor_pressure_relative_residual"] =
+      solve.vapor_pressure_relative_residual;
+  diagnostics["liquid_pressure_relative_residual"] =
+      solve.liquid_pressure_relative_residual;
   diagnostics["chemical_potential_absolute_residual"] =
       solve.chemical_potential_absolute_residual;
   diagnostics["phase_density_distance"] = solve.phase_density_distance;
-  diagnostics["exact_derivatives"] = true;
+  diagnostics["vapor_residual_density_derivative_m3_per_mol"] =
+      solve.vapor_residual_density_derivative_m3_per_mol;
+  diagnostics["liquid_residual_density_derivative_m3_per_mol"] =
+      solve.liquid_residual_density_derivative_m3_per_mol;
+  diagnostics["rejection_status"] = solve.rejection_status;
+  diagnostics["exact_derivatives"] = exact_derivatives;
   diagnostics["globality_certificate"] = false;
   diagnostics["failure_reason"] = solve.failure_reason;
 
@@ -100,20 +110,24 @@ py::dict solve_saturation(const epcsaft::NativeModel &model,
     solve = epcsaft::solve_local_saturation(model, temperature_k,
                                             liquid_density_upper_mol_m3);
   }
-  return saturation_to_dict(solve, temperature_k);
+  return saturation_to_dict(solve, temperature_k, solve.accepted);
 }
 
 py::dict solve_saturation_active(
     const epcsaft::NativeModel &model, double temperature_k,
-    double liquid_density_upper_mol_m3,
     const std::vector<epcsaft::NativeActiveCoordinate> &active_parameters) {
   epcsaft::SaturationSensitivityResult sensitivity;
   {
     py::gil_scoped_release release;
     sensitivity = epcsaft::solve_local_saturation_active(
-        model, temperature_k, liquid_density_upper_mol_m3, active_parameters);
+        model, temperature_k, active_parameters);
   }
-  py::dict result = saturation_to_dict(sensitivity.solve, temperature_k);
+  const bool exact_derivatives =
+      sensitivity.solve.accepted &&
+      sensitivity.parameter_identities.size() == active_parameters.size() &&
+      sensitivity.derivatives.size() == 3 * active_parameters.size();
+  py::dict result =
+      saturation_to_dict(sensitivity.solve, temperature_k, exact_derivatives);
   result["parameter_identities"] = sensitivity.parameter_identities;
   result["derivatives"] = sensitivity.derivatives;
   return result;
@@ -129,6 +143,5 @@ void bind_pure_saturation(py::module_ &module) {
              py::arg("temperature_k"), py::arg("liquid_density_upper_mol_m3"));
   module.def("_solve_saturation_active", &solve_saturation_active,
              py::arg("model"), py::arg("temperature_k"),
-             py::arg("liquid_density_upper_mol_m3"),
              py::arg("active_parameters"));
 }

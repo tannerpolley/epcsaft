@@ -724,7 +724,7 @@ $$
 - Change note: Applied by the generic EOS active-coordinate block, including canonical Born, solvation, and permittivity coordinates.
 - LaTeX: `docs/latex/equations.tex:707`
 - Implementation:
-  - `src/epcsaft/eos.py:716` (`_fugacity_parameter_derivatives`)
+  - `src/epcsaft/eos.py:890` (`_fixed_pressure_fugacity_observable_block`)
 
 $$
 \left.\frac{dQ}{d\theta}\right|_{P}

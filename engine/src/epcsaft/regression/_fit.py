@@ -57,7 +57,7 @@ def _target(
     row: TableRow,
     target: str,
 ) -> dict[str, object]:
-    label = SCHEMA_REGISTRY.targets[target].capability_label
+    label = SCHEMA_REGISTRY.targets[target].observable_row_identity
     factor = 1.0
     if label.endswith("_mass_density_kg_per_m3"):
         molar_masses = model._model.molar_mass_kg_per_mol
@@ -99,9 +99,7 @@ def _observation(
     return result
 
 
-def _observations(
-    model: Pure | Mixture, resolved: ResolvedFit
-) -> list[dict[str, object]]:
+def _observations(model: Pure | Mixture, resolved: ResolvedFit) -> list[dict[str, object]]:
     result: list[dict[str, object]] = []
     for observation in resolved.observations:
         if observation.rows is not None:
