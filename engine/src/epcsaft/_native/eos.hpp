@@ -33,7 +33,7 @@ struct NativeResult final {
     double association;
     double ares_polar;
     double debye_huckel;
-    double born_ssm_ds;
+    double born;
     double bulk_relative_permittivity;
     double residual_helmholtz;
     double compressibility_factor;

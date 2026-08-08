@@ -115,10 +115,9 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Family | Governing relation | Status | Source locator | Owner |
 |---|---|---|---|---|
 | Segment diameter | `d_i(T) = sigma_i [1 - 0.12 exp(-3(u_i/k_B)/T)]` | source equation | Gross2001 Eq. (A.6) | `_native/helmholtz.hpp` |
-| Figiel ionic segment diameter | `d_i = 0.88 sigma_i` | source equation | Figiel2025 Eqs. (3), (4) | `_native/helmholtz.hpp` |
+| Ionic packing diameter | `d_i = d_i^pack > 0`, declared independently of Debye--Huckel and Born diameters | parameter declaration | Figiel2025 Eqs. (3), (4); AscaniHeld2021 following Eq. (10) | `Parameters`, `_native/helmholtz.hpp` |
 | Held water-ionization formulation | water and ion hard-chain/dispersion plus association and Debye--Huckel; `a^Born = 0` | source equation and explicit absence | Held2008 Eqs. (1)--(7), Sections 2--3 | `_native/helmholtz.hpp`, `_native/electrolyte.hpp` |
 | Held ion--ion dispersion | `k_(H3O+,OH-) = 1`; water--ion `k_ij = 0` | source equation | Held2008 Eqs. (5), (6) and Section 3 | explicit Held record set and `_native/helmholtz.hpp` |
-| Ascani ionic segment diameter | `d_i = sigma_i` in hard-chain, Debye--Huckel, and Born terms | source equation | AscaniHeld2021 model description following Eq. (10) | `_native/helmholtz.hpp` |
 | Cross diameter | `sigma_ij = (sigma_i + sigma_j)(1-l_ij)/2` | source equation | Ascani2022SI Eq. (S4) | `_native/helmholtz.hpp`, `_native/association.hpp` |
 | Mixture moments | `zeta_n = (pi/6) rho_hat sum_i x_i m_i d_i^n`, `n=0..3` | source equation | Gross2001 Eq. (A.8) | `_native/helmholtz.hpp` |
 | Hard chain | hard-sphere mixture Helmholtz minus chain contact terms | source equation | Gross2001 Eqs. (A.9), (A.16), (A.17) | `_native/helmholtz.hpp` |
@@ -131,8 +130,7 @@ with number density. It does not mix SI number density with Angstrom cubed.
 | Schreckenberg bulk dielectric | solvent-density and temperature correlation | bounded empirical relation | Yang2024 Eqs. (1a), (2a), (2b) | `_native/electrolyte.hpp` |
 | Zuber bulk dielectric | pure-solvent dielectric with ion-specific suppression | bounded empirical relation | Zuber2014 Eq. (9), Table 2 | `_native/electrolyte.hpp` |
 | Rueben bulk dielectric | partial-density perturbation-theory relation | source equation | Rueben2024 Eqs. (4)--(6) | `_native/electrolyte.hpp` |
-| Born SSM+DS | piecewise-dielectric shell work | corrected source equation | Figiel2026Correction Eq. (7) | `_native/born.hpp` |
-| Original Born | direct charging work with ion diameter `sigma_i` | source equation | AscaniHeld2021 Eq. (10) and diameter convention | `_native/born.hpp` |
+| Born | one radial charging equation with explicit fixed `c_shell` and `c_dielectric` coefficients | source equation with explicit limiting forms | Figiel2026Correction Eq. (7); AscaniHeld2021 Eq. (10) | `_native/born.hpp` |
 | Total Helmholtz | `a^r = a^hc + a^disp + a^assoc + a^polar + a^DH + a^Born` | source equation and aggregate convention | Gross2001; polar sources; Figiel2025 Eq. (1) | `_native/helmholtz.hpp` |
 | Pressure | `Z = 1 + rho_m (partial a^r/partial rho_m)_(T,x)` and `P = rho_m R T Z` | source equation | Gross2001 Eq. (A.24) | `_native/derivatives.hpp` |
 | Chemical potential | composition derivative of the common `a^r` owner | source equation | Gross2001 Eq. (A.33); Figiel2025 Eq. (13) | `_native/derivatives.hpp` |
@@ -489,7 +487,7 @@ diameter is used only in the Born term. CppAD differentiates the defining
 relations above on the positive-ionic-strength branch; the lab
 `dkappa/dx_i` catalogue entry is not a production owner.
 
-## 7. Born SSM+DS reconciliation
+## 7. Canonical Born source reconciliation
 
 Figiel2025 defines a fitted `d_i^Born` and the shell thickness
 
@@ -519,13 +517,14 @@ contradicts all of the following evidence in the same source:
 
 Figiel2026Correction confirms that the original Eq. (7) omitted one bracket
 and incorrectly named the second dielectric constant `epsilon_r,bulk` instead
-of `epsilon_r,ion`. The clean EOS implements the corrected primary-source
+of `epsilon_r,ion`. The clean EOS implements one canonical primary-source
 equation:
 
 ```text
-a^(Born,SSM+DS) = -e^2/(4 pi epsilon_0 k_B T) sum_(i in ions) x_i z_i^2
+D_i = d_i^Born [1 + c_shell (f_mix - 1)/|z_i|]
+a^Born = -e^2/(4 pi epsilon_0 k_B T) sum_(i in ions) x_i z_i^2
   { (1 - 1/epsilon_r,bulk)/D_i
-    + (1 - 1/epsilon_r,ion) [1/d_i^Born - 1/D_i] }.
+    + c_dielectric (1 - 1/epsilon_r,ion) [1/d_i^Born - 1/D_i] }.
 ```
 
 Every `d_i^Born` and `D_i` in this equation is converted from angstrom to metre
@@ -535,20 +534,11 @@ both limiting diameters, and matches the archived candidate kernel.
 `epsilon_r,ion = 8` enters through a Figiel/Buelow source-bearing model record.
 The native source must not embed 8 or 7.01.
 
-The distinct Ascani bundle uses the original Born expression
-
-```text
-a^(Born,original) = -e^2/(4 pi epsilon_0 k_B T)
-  sum_(i in ions) x_i z_i^2 (1 - 1/epsilon_r,bulk)/sigma_i.
-```
-
-The ion diameter is its source `sigma_i`, converted from angstrom to metre.
-SSM and DS are disabled for this bundle: there is no fitted Born diameter,
-solvation factor, shell, or radial dielectric input. The internal equation
-selection follows the mutually exclusive resolved source schema and immutable
-bundle fingerprint. It is not a caller-selectable Born mode or a literature
-`solvation_factor`. `State.born` carries whichever Born equation the
-immutable bundle selects; no second result owner is created.
+The fixed pairs `(c_shell, c_dielectric) = (0,0), (1,0), (1,1)` recover the
+uncorrected, shell-only, and shell-plus-dielectric limits. The redundant
+`(0,1)` pair is rejected. Source packets retain the literature-specific
+diameter values and provenance, but all resolve through this single equation;
+no source or bundle selects a different runtime Born owner.
 
 ## 8. Common derivatives and state properties
 
@@ -840,8 +830,11 @@ same-sign `Na+/K+` dispersion pair is source-marked not applicable; its
 equation-level zero cannot be used as source evidence for another pair. The
 bundle also carries the source-derived water/1-butanol cross-association
 energy and volume while preserving the distinct `k_ij_hb` provenance. Its
-combined dielectric and original-Born equations do not alter the Figiel
-SSM+DS bundles or their fingerprints.
+source records preserve the combined-dielectric and uncorrected-Born
+provenance, while it and the Figiel records resolve through the same canonical
+`born` equation with explicit fixed coefficients. Those source distinctions
+remain packet provenance and do not create runtime variants or alter packet
+fingerprints.
 
 The Held2008 bundle is a source-complete selection of water plus all 29 Table 2
 ions at `T = 298.15 K` and `p = 1 bar`. It requires explicit water--ion

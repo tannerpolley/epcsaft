@@ -5,9 +5,8 @@
 namespace epcsaft {
 
 inline constexpr int ELECTROLYTE_MODEL_NONE = 0;
-inline constexpr int ELECTROLYTE_MODEL_SSM_DS = 1;
-inline constexpr int ELECTROLYTE_MODEL_ORIGINAL_BORN = 2;
-inline constexpr int ELECTROLYTE_MODEL_FULLY_DISSOCIATED_DEBYE_HUCKEL = 3;
+inline constexpr int ELECTROLYTE_MODEL_BORN = 1;
+inline constexpr int ELECTROLYTE_MODEL_FULLY_DISSOCIATED_DEBYE_HUCKEL = 2;
 inline constexpr int RELATIVE_PERMITTIVITY_FORMULATION_NONE = 0;
 inline constexpr int RELATIVE_PERMITTIVITY_FORMULATION_ION_FRACTION_SUPPRESSION = 1;
 inline constexpr int RELATIVE_PERMITTIVITY_FORMULATION_COMPONENT_MIXING = 2;
@@ -36,10 +35,13 @@ struct NativeParameters final {
     std::vector<int> charge_number;
     std::vector<double> relative_permittivity;
     double ion_fraction_suppression_coefficient;
+    std::vector<double> packing_diameter_angstrom;
+    std::vector<double> debye_huckel_diameter_angstrom;
     std::vector<double> born_diameter_angstrom;
-    std::vector<double> born_diameter_sigma_scale;
     std::vector<double> solvation_factor;
     double ionic_region_relative_permittivity;
+    double born_c_shell;
+    double born_c_dielectric;
     int electrolyte_model;
     std::vector<double> dielectric_volume_m3_per_mol;
     std::vector<double> dielectric_temperature_k;

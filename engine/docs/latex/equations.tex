@@ -67,26 +67,14 @@ d_i(T)=\sigma_i(T)\left[1-0.12\exp\left(-\frac{3(\epsilon_i/k_B)}{T}\right)\righ
 \label{eq:neutral_segment_diameter}
 \end{equation}
 
-% EqID: corrected_born_ionic_segment_diameter
-% Source: \cite{Figiel2025}, ionic hard-chain diameter convention
+% EqID: ionic_packing_diameter
+% Source: Declared ion-specific hard-chain diameter; source packets retain the originating convention
 % Status: Implementation convention
-% Description: Figiel-family ionic hard-chain diameter.
-% Change note: Preserves the current 0.88 sigma routing for Figiel electrolyte models.
+% Description: Ionic hard-chain packing diameter, independent of Debye--Huckel and Born diameters.
+% Change note: Removes the Born-selector dependency and keeps packing, Debye--Huckel, and Born lengths independently declarable.
 \begin{equation}
-d_i=0.88\,\sigma_i,\qquad z_i\ne0,\quad
-\mathcal{M}\ne\mathcal{M}_{\mathrm{Ascani}}.
-\label{eq:corrected_born_ionic_segment_diameter}
-\end{equation}
-
-% EqID: original_born_ionic_segment_diameter
-% Source: \cite{AscaniHeld2021}, ion diameter convention
-% Status: Source equation
-% Description: Ascani original-Born ionic hard-chain diameter.
-% Change note: Preserves the source-routed full-sigma diameter.
-\begin{equation}
-d_i=\sigma_i,\qquad z_i\ne0,\quad
-\mathcal{M}=\mathcal{M}_{\mathrm{Ascani}}.
-\label{eq:original_born_ionic_segment_diameter}
+d_i=d_i^{\mathrm{pack}},\qquad z_i\ne0,\qquad d_i^{\mathrm{pack}}>0.
+\label{eq:ionic_packing_diameter}
 \end{equation}
 
 % EqID: cross_segment_diameter
@@ -715,7 +703,7 @@ c_v^r=R\left(-2Ta_T-T^2a_{TT}\right).
 % Source: Exact implicit derivative of the pressure constraint
 % Status: Exact derivation
 % Description: Total derivative of a property with respect to an active coordinate at fixed pressure.
-% Change note: Applied by the generic EOS active-coordinate block; Born and reference-dependent admission remains deferred to CAP-04.
+% Change note: Applied by the generic EOS active-coordinate block, including canonical Born, solvation, and permittivity coordinates.
 \begin{equation}
 \left.\frac{dQ}{d\theta}\right|_{P}
 =Q_\theta+Q_\rho\left.\frac{d\rho_m}{d\theta}\right|_P,
@@ -945,79 +933,49 @@ a^{DH}=
 
 \section{Born solvation relations}
 
-% EqID: mixture_solvation_factor
-% Source: \cite{Figiel2025}, SSM+DS solvation-factor mixing rule
+% EqID: born_outer_shell_diameter
+% Source: \cite{Figiel2025}, shell-thickness definition preceding Eq.~(7), parameterized to include its uncorrected limit
 % Status: Source equation
-% Description: Mole-fraction-weighted mixture solvation factor.
-% Change note: Retains the explicit fraction normalization used by the EOS.
+% Description: Ion-specific outer Born shell diameter with one explicit fixed correction coefficient.
+% Change note: The fitted Born diameter, solvation factor, and model-definition coefficient remain distinct inputs.
 \begin{equation}
-f_{\mathrm{mix}}=
-\frac{\sum_kx_kf_k}{\sum_kx_k}.
-\label{eq:mixture_solvation_factor}
+f_{\mathrm{mix}}=\frac{\sum_kx_kf_k}{\sum_kx_k},\qquad
+D_i=d_i^{Born}\left(1+c_{\mathrm{shell}}\frac{f_{\mathrm{mix}}-1}{|z_i|}\right).
+\label{eq:born_outer_shell_diameter}
 \end{equation}
 
-% EqID: born_shell_diameter
-% Source: \cite{Figiel2025}, shell-thickness definition preceding Eq.~(7)
+% EqID: born_radial_charging_work
+% Source: Born charging work; \cite{Figiel2026Correction}, corrected Eq.~(7)
 % Status: Source equation
-% Description: Ion-specific outer Born shell diameter.
-% Change note: The fitted Born diameter and resolved solvation factor remain distinct inputs.
+% Description: Canonical radial charging sum with an explicit dielectric-saturation coefficient.
+% Change note: The admitted fixed coefficients express the uncorrected, shell-only, and shell-plus-dielectric limits through one equation.
 \begin{equation}
-D_i=d_i^{Born}
-\left(1+\frac{f_{\mathrm{mix}}-1}{|z_i|}\right).
-\label{eq:born_shell_diameter}
-\end{equation}
-
-% EqID: ssm_ds_radial_work
-% Source: \cite{Figiel2026Correction}, corrected Eq.~(7)
-% Status: Source equation
-% Description: Corrected piecewise-dielectric SSM+DS radial charging sum.
-% Change note: Restores the ionic-region dielectric in the inner-shell term.
-\begin{equation}
-W_{\mathrm{SSM+DS}}=
+W_{Born}=
 \sum_{i\in\mathcal{I}}x_i z_i^2
 \left[
 \frac{1-\epsilon_{r,\mathrm{bulk}}^{-1}}{D_i}
-+\left(1-\epsilon_{r,\mathrm{ion}}^{-1}\right)
++c_{\mathrm{dielectric}}\left(1-\epsilon_{r,i}^{-1}\right)
 \left(\frac{1}{d_i^{Born}}-\frac{1}{D_i}\right)
 \right].
-\label{eq:ssm_ds_radial_work}
+\label{eq:born_radial_charging_work}
 \end{equation}
 
-% EqID: ssm_ds_born_helmholtz
-% Source: \cite{Figiel2026Correction}, corrected Eq.~(7)
+% EqID: born_residual_helmholtz
+% Source: Born charging work; \cite{Figiel2026Correction}, corrected Eq.~(7)
 % Status: Source equation
-% Description: Dimensionless SSM+DS Born residual Helmholtz contribution.
-% Change note: Shared by fixed and active-coordinate evaluation paths.
+% Description: Dimensionless residual Helmholtz contribution from the sole Born charging equation.
+% Change note: Shared by fixed and active-coordinate evaluation paths without a formulation selector.
 \begin{equation}
-a^{Born}_{\mathrm{SSM+DS}}=
--\frac{e^2}{4\pi\epsilon_0k_BT}\,
-W_{\mathrm{SSM+DS}}.
-\label{eq:ssm_ds_born_helmholtz}
+a^{Born}=-\frac{e^2}{4\pi\epsilon_0k_BT}\,W_{Born}.
+\label{eq:born_residual_helmholtz}
 \end{equation}
 
-The SSM+DS expression is the sole Born contribution.  Its original-Born
-limit is obtained without a second equation: setting
-$f_{\mathrm{mix}}=1$ and $d_i^{Born}=\sigma_i$ gives $D_i=\sigma_i$, so the
-inner-shell difference vanishes and the remaining bulk-dielectric term is the
-original Born form.
+The three admitted fixed coefficient pairs are $(0,0)$, $(1,0)$, and $(1,1)$.
+They express the uncorrected, shell-only, and shell-plus-dielectric forms without
+creating separate runtime equations.  The pair $(0,1)$ is excluded because it
+is globally indistinguishable from $(0,0)$.
 
 \section{Electrolyte reference states and reported activities}
-
-% EqID: charge_balanced_formula_stoichiometry
-% Source: Exact integer charge-balance construction
-% Status: Exact derivation
-% Description: Smallest positive cation and anion stoichiometric coefficients.
-% Change note: Shared by the public reference-state owner and native neutral basis.
-\begin{equation}
-g=\gcd(|z_+|,|z_-|),
-\qquad
-\nu_+=\frac{|z_-|}{g},
-\qquad
-\nu_-=\frac{|z_+|}{g},
-\qquad
-\nu_+z_++\nu_-z_-=0.
-\label{eq:charge_balanced_formula_stoichiometry}
-\end{equation}
 
 % EqID: formula_unit_composition
 % Source: \cite{Figiel2025}, formula-unit molality reference-state basis
@@ -1282,7 +1240,7 @@ a^r_{y_py_q}y_{p,\alpha}y_{q,\beta}
 \end{equation}
 
 % EqID: neutral_reference_stoichiometric_basis
-% Source: Exact charge-neutral basis built from Eq.~\eqref{eq:charge_balanced_formula_stoichiometry}
+% Source: Exact charge-neutral basis from explicit stoichiometric declarations
 % Status: Exact derivation
 % Description: Native standard-reference rows and log-fugacity contractions.
 % Change note: Neutral-component unit rows and a spanning set of cation-anion formula rows are immutable for a resolved model.

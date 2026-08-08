@@ -5,7 +5,6 @@ import json
 import math
 from collections.abc import Iterable
 from dataclasses import dataclass, replace
-from math import gcd
 from typing import TYPE_CHECKING, Any, Literal, SupportsFloat, cast
 
 import pint
@@ -79,6 +78,7 @@ class Activity:
     formula_unit_molality: pint.Quantity[float]
     mole_fractions: tuple[float, ...]
     ion_component_ids: tuple[str, str]
+    reference_convention: Literal["molality-infinite-dilution"]
     single_ion: tuple[float, float]
     mean_mole_fraction: float
     mean_molality: float
@@ -88,6 +88,7 @@ class Activity:
 @dataclass(frozen=True, slots=True)
 class TransferFreeEnergy:
     ion_component_ids: tuple[str, str]
+    reference_convention: Literal["molality-infinite-dilution"]
     values: tuple[pint.Quantity[float], pint.Quantity[float]]
 
 
@@ -284,6 +285,7 @@ class ElectrolyteReference:
     component_ids: tuple[str, ...]
     ion_component_ids: tuple[str, str]
     formula_stoichiometry: tuple[int, int]
+    reference_convention: Literal["molality-infinite-dilution"]
     solvent_mole_fractions: tuple[float, ...]
     temperature: pint.Quantity[float]
     pressure: pint.Quantity[float]
@@ -294,7 +296,8 @@ class ElectrolyteReference:
     _mixture: Mixture
     _ion_indices: tuple[int, int]
     _molar_masses: tuple[float | None, ...]
-    _pure_water_log_fugacity: float | None
+    _osmotic_solvent_index: int | None
+    _pure_solvent_log_fugacity: float | None
 
     @property
     def solvation_free_energy(
@@ -327,9 +330,7 @@ class ElectrolyteReference:
                 molality,
             )
         )
-        water_index = (
-            self.component_ids.index("water") if self._pure_water_log_fugacity is not None else None
-        )
+        osmotic_solvent_index = self._osmotic_solvent_index
         finite_log_fugacity = _log_fugacity(
             self._mixture,
             temperature=self.temperature,
@@ -337,7 +338,7 @@ class ElectrolyteReference:
             phase=self.phase,
             composition=composition,
             required_indices=self._ion_indices
-            + ((water_index,) if water_index is not None else ()),
+            + ((osmotic_solvent_index,) if osmotic_solvent_index is not None else ()),
         )
         log_activity = tuple(
             finite_log_fugacity[index] - reference
@@ -370,11 +371,14 @@ class ElectrolyteReference:
         # EqID: molality_activity_conversion
         mean_molality = mean_mole_fraction / (1.0 + solvent_molar_mass * molality * coefficient_sum)
         osmotic_coefficient = None
-        if self._pure_water_log_fugacity is not None and water_index is not None:
+        if (
+            self._pure_solvent_log_fugacity is not None
+            and osmotic_solvent_index is not None
+        ):
             log_solvent_activity = (
-                math.log(composition[water_index])
-                + finite_log_fugacity[water_index]
-                - self._pure_water_log_fugacity
+                math.log(composition[osmotic_solvent_index])
+                + finite_log_fugacity[osmotic_solvent_index]
+                - self._pure_solvent_log_fugacity
             )
             # EqID: practical_osmotic_coefficient
             osmotic_coefficient = -log_solvent_activity / (
@@ -387,6 +391,7 @@ class ElectrolyteReference:
             formula_unit_molality=molality * unit_registry.mole / unit_registry.kilogram,
             mole_fractions=composition,
             ion_component_ids=self.ion_component_ids,
+            reference_convention=self.reference_convention,
             single_ion=single_ion,
             mean_mole_fraction=mean_mole_fraction,
             mean_molality=mean_molality,
@@ -406,6 +411,7 @@ class ElectrolyteReference:
         if (
             self.ion_component_ids != target.ion_component_ids
             or self.formula_stoichiometry != target.formula_stoichiometry
+            or self.reference_convention != target.reference_convention
             or self.phase != target.phase
             or self.temperature.to("kelvin").magnitude != target.temperature.to("kelvin").magnitude
             or self.pressure.to("pascal").magnitude != target.pressure.to("pascal").magnitude
@@ -432,6 +438,7 @@ class ElectrolyteReference:
         )
         return TransferFreeEnergy(
             ion_component_ids=self.ion_component_ids,
+            reference_convention=self.reference_convention,
             values=values,
         )
 
@@ -443,12 +450,16 @@ def build_reference_state(
     pressure: object,
     solvent_mole_fractions: object,
     phase: Literal["liquid"],
-    ion_component_ids: tuple[str, str] | None = None,
+    ion_component_ids: tuple[str, str],
+    formula_stoichiometry: tuple[int, int],
+    reference_convention: Literal["molality-infinite-dilution"],
 ) -> ElectrolyteReference:
     temperature_k = _state_magnitude(temperature, "kelvin", "temperature")
     pressure_pa = _state_magnitude(pressure, "pascal", "pressure")
     if phase != "liquid":
         raise _eos_error("invalid-reference-state", field="phase")
+    if reference_convention != "molality-infinite-dilution":
+        raise _eos_error("invalid-reference-state", field="reference_convention")
     try:
         solvent_fractions = tuple(
             float(cast(SupportsFloat, value))
@@ -460,28 +471,30 @@ def build_reference_state(
     model = eos._model
     charges = model.charge_number
     if model.topology not in {
-        "ionic-ssm-ds",
-        "ionic-original-born",
+        "ionic-born",
         "ionic-fully-dissociated-debye-huckel",
     } or len(charges) != len(eos.component_ids):
         raise _eos_error("invalid-reference-state", reason="electrolyte-required")
     cations = tuple(index for index, charge in enumerate(charges) if charge > 0)
     anions = tuple(index for index, charge in enumerate(charges) if charge < 0)
-    if ion_component_ids is None:
-        if len(cations) != 1 or len(anions) != 1:
-            raise _eos_error("invalid-reference-state", reason="ion-pair-required")
-        cation, anion = cations[0], anions[0]
-    else:
-        if (
-            len(ion_component_ids) != 2
-            or ion_component_ids[0] not in eos.component_ids
-            or ion_component_ids[1] not in eos.component_ids
-        ):
-            raise _eos_error("invalid-reference-state", field="ion_component_ids")
-        cation = eos.component_ids.index(ion_component_ids[0])
-        anion = eos.component_ids.index(ion_component_ids[1])
-        if charges[cation] <= 0 or charges[anion] >= 0:
-            raise _eos_error("invalid-reference-state", field="ion_component_ids")
+    if (
+        len(ion_component_ids) != 2
+        or ion_component_ids[0] not in eos.component_ids
+        or ion_component_ids[1] not in eos.component_ids
+    ):
+        raise _eos_error("invalid-reference-state", field="ion_component_ids")
+    cation = eos.component_ids.index(ion_component_ids[0])
+    anion = eos.component_ids.index(ion_component_ids[1])
+    if charges[cation] <= 0 or charges[anion] >= 0:
+        raise _eos_error("invalid-reference-state", field="ion_component_ids")
+    if (
+        len(formula_stoichiometry) != 2
+        or any(type(value) is not int or value <= 0 for value in formula_stoichiometry)
+        or formula_stoichiometry[0] * charges[cation]
+        + formula_stoichiometry[1] * charges[anion]
+        != 0
+    ):
+        raise _eos_error("invalid-reference-state", field="formula_stoichiometry")
     if (
         len(solvent_fractions) != len(eos.component_ids)
         or any(not math.isfinite(value) or value < 0.0 for value in solvent_fractions)
@@ -496,12 +509,7 @@ def build_reference_state(
     ):
         raise _eos_error("invalid-reference-state", reason="solvent-molar-mass-required")
 
-    divisor = gcd(abs(charges[cation]), abs(charges[anion]))
-    # EqID: charge_balanced_formula_stoichiometry
-    stoichiometry = (
-        abs(charges[anion]) // divisor,
-        abs(charges[cation]) // divisor,
-    )
+    stoichiometry = formula_stoichiometry
     ion_indices = (cation, anion)
     temperature_quantity = temperature_k * unit_registry.kelvin
     pressure_quantity = pressure_pa * unit_registry.pascal
@@ -523,16 +531,20 @@ def build_reference_state(
     convergence_error = sequence.convergence_error
 
     active_solvents = tuple(index for index in solvent_indices if solvent_fractions[index] > 0.0)
-    pure_water_log_fugacity = None
-    if len(active_solvents) == 1 and eos.component_ids[active_solvents[0]] == "water":
-        pure_water_log_fugacity = sequence.pure_solvent_log_fugacity_coefficient
-        if pure_water_log_fugacity is None or not math.isfinite(pure_water_log_fugacity):
+    osmotic_solvent_index = active_solvents[0] if len(active_solvents) == 1 else None
+    pure_solvent_log_fugacity = None
+    if osmotic_solvent_index is not None:
+        pure_solvent_log_fugacity = sequence.pure_solvent_log_fugacity_coefficient
+        if pure_solvent_log_fugacity is None or not math.isfinite(
+            pure_solvent_log_fugacity
+        ):
             raise _eos_error("reference-state-failed", reason="pure-solvent-fugacity-unavailable")
 
     return ElectrolyteReference(
         component_ids=eos.component_ids,
         ion_component_ids=(eos.component_ids[cation], eos.component_ids[anion]),
         formula_stoichiometry=stoichiometry,
+        reference_convention=reference_convention,
         solvent_mole_fractions=solvent_fractions,
         temperature=temperature_quantity,
         pressure=pressure_quantity,
@@ -545,7 +557,8 @@ def build_reference_state(
         _mixture=eos,
         _ion_indices=ion_indices,
         _molar_masses=model.molar_mass_kg_per_mol,
-        _pure_water_log_fugacity=pure_water_log_fugacity,
+        _osmotic_solvent_index=osmotic_solvent_index,
+        _pure_solvent_log_fugacity=pure_solvent_log_fugacity,
     )
 
 

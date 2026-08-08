@@ -95,6 +95,19 @@
           }
         },
         {
+          "identity": "component/chloride-anion/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.42528,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Cl- sigma_i row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
           "identity": "component/chloride-anion/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -104,6 +117,19 @@
           "provenance": {
             "source_id": "khudaida-et-al-2026",
             "locator": "Table 5, Cl- u_i/k_B row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/chloride-anion/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.42528,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Cl- sigma_i row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "khudaida-293-15-k-0-1-mpa"
           }
         },
@@ -352,6 +378,19 @@
           }
         },
         {
+          "identity": "component/sodium-cation/debye_huckel_diameter",
+          "family": "debye_huckel_diameter",
+          "value": {
+            "magnitude": 2.484416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Na+ sigma_i row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
           "identity": "component/sodium-cation/dispersion_energy_over_k",
           "family": "dispersion_energy_over_k",
           "value": {
@@ -361,6 +400,19 @@
           "provenance": {
             "source_id": "khudaida-et-al-2026",
             "locator": "Table 5, Na+ u_i/k_B row",
+            "domain_id": "khudaida-293-15-k-0-1-mpa"
+          }
+        },
+        {
+          "identity": "component/sodium-cation/packing_diameter",
+          "family": "packing_diameter",
+          "value": {
+            "magnitude": 2.484416,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "khudaida-et-al-2026",
+            "locator": "Table 5, Na+ sigma_i row; explicit d_i^pack = d_i^DH = 0.88 sigma_i",
             "domain_id": "khudaida-293-15-k-0-1-mpa"
           }
         },
@@ -696,7 +748,9 @@
     {
       "family_id": "model/electrolyte",
       "kind": "electrolyte",
-      "choice": "ssm-ds",
+      "choice": "born",
+      "c_shell": 1.0,
+      "c_dielectric": 1.0,
       "provenance": {
         "source_id": "khudaida-et-al-2026",
         "locator": "Table 5 identifies water as a solvent and separately lists Na+ and Cl-",

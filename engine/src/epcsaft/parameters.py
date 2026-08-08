@@ -236,9 +236,7 @@ def _active_spec(
     if not eligible_role_pairs:
         return None
     role_a, role_b = next(iter(eligible_role_pairs))
-    resolved = available.get(
-        f"pair/{parts[1]}/{parts[2]}/association/{role_a}/{role_b}/k_hb_ij"
-    )
+    resolved = available.get(f"pair/{parts[1]}/{parts[2]}/association/{role_a}/{role_b}/k_hb_ij")
     return resolved if resolved is not None and resolved.family == "k_hb_ij" else None
 
 
@@ -278,6 +276,32 @@ def _active_coordinate(
         else next(domain for domain in parameters.domains if domain.domain_id == spec.domain_id)
     )
     parts = spec.identity.split("/")
+    if spec.family == "relative_permittivity":
+        component_id = parts[1]
+        charge = next(
+            record.value
+            for record in parameters.records
+            if isinstance(record, SingleParameterRecord)
+            and record.component_id == component_id
+            and record.family == "charge_number"
+        )
+        formulation = next(
+            family.choice for family in parameters.model_families if family.kind == "permittivity"
+        )
+        if formulation != "component-permittivity-mixing" and not (
+            charge == 0
+            and formulation
+            in {
+                "ion-fraction-suppression",
+                "ion-specific-suppression",
+                "solvent-only",
+            }
+        ):
+            raise _error(
+                "unsupported-active-coordinate",
+                identity=spec.identity,
+                reason="relative-permittivity-application-unresolved",
+            )
     domain: ActiveParameterDomain | None = None
     applicability: ActiveParameterApplicability | None = None
     component_ids: tuple[str, ...]
@@ -305,9 +329,7 @@ def _active_coordinate(
             component_indices,
             "fixed-topology-mixture",
             "fixed-state-helmholtz",
-            "reciprocal-cross-dispersion"
-            if spec.family == "k_ij"
-            else "reciprocal-cross-size",
+            "reciprocal-cross-dispersion" if spec.family == "k_ij" else "reciprocal-cross-size",
         )
     elif (
         spec.family == "k_hb_ij"
@@ -357,9 +379,7 @@ def _active_coordinate(
                 reason="missing-eligible-association-edge",
             )
         association_edges = tuple(
-            tuple(
-                sorted((site_positions[edge.endpoint_a], site_positions[edge.endpoint_b]))
-            )
+            tuple(sorted((site_positions[edge.endpoint_a], site_positions[edge.endpoint_b])))
             for edge in affected
         )
         association_energy_scales = tuple(
@@ -401,7 +421,15 @@ def _active_coordinate(
     elif (
         len(parts) == 3
         and parts[0] == "component"
-        and parts[2] in {"segment_count", "segment_diameter", "dispersion_energy_over_k"}
+        and parts[2]
+        in {
+            "segment_count",
+            "segment_diameter",
+            "dispersion_energy_over_k",
+            "relative_permittivity",
+            "born_diameter",
+            "solvation_factor",
+        }
         and spec.family == parts[2]
     ):
         component_ids = (parts[1],)
@@ -419,7 +447,8 @@ def _active_coordinate(
         and parts[0] == "component"
         and (
             parts[2] == "segment_diameter"
-            or parts[2] == "relative_permittivity" and len(parts) == 5
+            or parts[2] in {"relative_permittivity", "solvation_factor"}
+            and len(parts) == 5
         )
     ):
         component_ids = (parts[1],)
@@ -477,6 +506,9 @@ def _active_coordinate(
     elif (
         spec.identity == "model/relative_permittivity/ion_fraction_suppression_coefficient"
         and spec.family == "ion_fraction_suppression_coefficient"
+    ) or (
+        spec.identity == "model/relative_permittivity/ionic_region_relative_permittivity"
+        and spec.family == "ionic_region_relative_permittivity"
     ):
         applicability = ActiveParameterApplicability(
             "model",

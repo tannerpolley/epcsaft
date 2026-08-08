@@ -50,7 +50,7 @@ PYBIND11_MODULE(_core, module) {
         .def_readonly("association", &epcsaft::NativeResult::association)
         .def_readonly("ares_polar", &epcsaft::NativeResult::ares_polar)
         .def_readonly("debye_huckel", &epcsaft::NativeResult::debye_huckel)
-        .def_readonly("born_ssm_ds", &epcsaft::NativeResult::born_ssm_ds)
+        .def_readonly("born", &epcsaft::NativeResult::born)
         .def_readonly(
             "bulk_relative_permittivity",
             &epcsaft::NativeResult::bulk_relative_permittivity
@@ -242,10 +242,13 @@ PYBIND11_MODULE(_core, module) {
             std::vector<int> charge_number,
             std::vector<double> relative_permittivity,
             double ion_fraction_suppression_coefficient,
+            std::vector<double> packing_diameter_angstrom,
+            std::vector<double> debye_huckel_diameter_angstrom,
             std::vector<double> born_diameter_angstrom,
-            std::vector<double> born_diameter_sigma_scale,
             std::vector<double> solvation_factor,
             double ionic_region_relative_permittivity,
+            double born_c_shell,
+            double born_c_dielectric,
             int electrolyte_model,
             std::vector<double> dielectric_volume_m3_per_mol,
             std::vector<double> dielectric_temperature_k,
@@ -276,10 +279,13 @@ PYBIND11_MODULE(_core, module) {
                 std::move(charge_number),
                 std::move(relative_permittivity),
                 ion_fraction_suppression_coefficient,
+                std::move(packing_diameter_angstrom),
+                std::move(debye_huckel_diameter_angstrom),
                 std::move(born_diameter_angstrom),
-                std::move(born_diameter_sigma_scale),
                 std::move(solvation_factor),
                 ionic_region_relative_permittivity,
+                born_c_shell,
+                born_c_dielectric,
                 electrolyte_model,
                 std::move(dielectric_volume_m3_per_mol),
                 std::move(dielectric_temperature_k),

@@ -18,6 +18,8 @@ _UNITS = {
     "segment_diameter": "angstrom",
     "dispersion_energy_over_k": "kelvin",
     "relative_permittivity": "dimensionless",
+    "packing_diameter": "angstrom",
+    "debye_huckel_diameter": "angstrom",
     "born_diameter": "angstrom",
     "solvation_factor": "dimensionless",
     "dipole_scaling": "debye ** 2",
@@ -28,9 +30,7 @@ _UNITS = {
     "ionic_region_relative_permittivity": "dimensionless",
     "ion_fraction_suppression_coefficient": "dimensionless",
 }
-_FIXED = frozenset(
-    {"molar_mass", "charge_number", "dipole_moment", "quadrupole_moment"}
-)
+_FIXED = frozenset({"molar_mass", "charge_number", "dipole_moment", "quadrupole_moment"})
 
 
 def _value(magnitude: float, family: str) -> dict[str, object]:
@@ -89,6 +89,7 @@ def _model_families(
     electrolyte: str = "none",
     permittivity: str = "none",
     polar: str = "none",
+    born_corrections: tuple[float, float] | None = None,
 ) -> list[dict[str, object]]:
     choices = {
         "association": association,
@@ -104,7 +105,7 @@ def _model_families(
         "permittivity": "model/relative_permittivity",
         "polar": "model/polar",
     }
-    return [
+    result = [
         {
             "family_id": family_ids[kind],
             "kind": kind,
@@ -113,6 +114,14 @@ def _model_families(
         }
         for kind, choice in choices.items()
     ]
+    if electrolyte == "born":
+        if born_corrections is None:
+            raise ValueError("Born fixtures require explicit correction coefficients")
+        electrolyte_family = next(item for item in result if item["kind"] == "electrolyte")
+        electrolyte_family["c_shell"], electrolyte_family["c_dielectric"] = born_corrections
+    elif born_corrections is not None:
+        raise ValueError("Born correction coefficients require the Born model")
+    return result
 
 
 def _document(
@@ -144,9 +153,7 @@ def _document(
         "model_families": _model_families() if model_families is None else model_families,
         "model_coefficients": [] if model_coefficients is None else model_coefficients,
         "correlations": [] if correlations is None else correlations,
-        "topology": {"presets": [], "sites": [], "edges": []}
-        if topology is None
-        else topology,
+        "topology": {"presets": [], "sites": [], "edges": []} if topology is None else topology,
     }
 
 
@@ -159,9 +166,7 @@ def _model_coefficient(family: str, magnitude: float) -> dict[str, object]:
     }
 
 
-def _constant_correlation(
-    component_id: str, family: str, magnitude: float
-) -> dict[str, object]:
+def _constant_correlation(component_id: str, family: str, magnitude: float) -> dict[str, object]:
     correlation_id = f"component/{component_id}/{family}/constant"
     return {
         "correlation_id": correlation_id,
@@ -349,6 +354,8 @@ AQUEOUS_ELECTROLYTE = _document(
             segment_count=1.0,
             segment_diameter=2.8232,
             dispersion_energy_over_k=230.0,
+            packing_diameter=2.484416,
+            debye_huckel_diameter=2.484416,
             born_diameter=3.445,
             solvation_factor=1.0,
         ),
@@ -358,6 +365,8 @@ AQUEOUS_ELECTROLYTE = _document(
             segment_count=1.0,
             segment_diameter=2.7560,
             dispersion_energy_over_k=170.0,
+            packing_diameter=2.42528,
+            debye_huckel_diameter=2.42528,
             born_diameter=4.100,
             solvation_factor=1.0,
         ),
@@ -369,8 +378,9 @@ AQUEOUS_ELECTROLYTE = _document(
     ],
     model_families=_model_families(
         association="general-site",
-        electrolyte="ssm-ds",
+        electrolyte="born",
         permittivity="ion-fraction-suppression",
+        born_corrections=(1.0, 1.0),
     ),
     model_coefficients=[
         _model_coefficient("ionic_region_relative_permittivity", 8.0),
@@ -393,50 +403,6 @@ AQUEOUS_ELECTROLYTE["domains"] = [
         "ion_mole_fraction_max": {"magnitude": 0.38, "unit": "dimensionless"},
     }
 ]
-
-ORIGINAL_BORN_ELECTROLYTE = _document(
-    "original-born-electrolyte-fixture",
-    [
-        _component(
-            "water",
-            molar_mass=0.0180153,
-            charge_number=0,
-            segment_count=1.2047,
-            dispersion_energy_over_k=353.95,
-        ),
-        _component(
-            "sodium-cation",
-            charge_number=1,
-            segment_count=1.0,
-            segment_diameter=2.8232,
-            dispersion_energy_over_k=230.0,
-        ),
-        _component(
-            "chloride-anion",
-            charge_number=-1,
-            segment_count=1.0,
-            segment_diameter=2.7560,
-            dispersion_energy_over_k=170.0,
-        ),
-    ],
-    pairs=[
-        _pair("water", "sodium-cation", k_ij=-0.3, l_ij=0.0),
-        _pair("water", "chloride-anion", k_ij=-0.3, l_ij=0.0),
-        _pair("sodium-cation", "chloride-anion", k_ij=0.8, l_ij=0.0),
-    ],
-    model_families=_model_families(
-        association="general-site",
-        electrolyte="original-born",
-        permittivity="component-permittivity-mixing",
-    ),
-    correlations=[
-        _water_diameter_correlation(),
-        _constant_correlation("water", "relative_permittivity", 78.09),
-        _constant_correlation("sodium-cation", "relative_permittivity", 1.0),
-        _constant_correlation("chloride-anion", "relative_permittivity", 1.0),
-    ],
-    topology=_association_topology("water", 2425.7, 0.04509),
-)
 
 MULTINEUTRAL_REACTIVE = _document(
     "multineutral-reactive-fixture",
@@ -465,6 +431,8 @@ MULTINEUTRAL_REACTIVE = _document(
             segment_count=1.0,
             segment_diameter=2.8,
             dispersion_energy_over_k=230.0,
+            packing_diameter=2.464,
+            debye_huckel_diameter=2.464,
             born_diameter=3.4,
             solvation_factor=1.0,
         ),
@@ -474,21 +442,22 @@ MULTINEUTRAL_REACTIVE = _document(
             segment_count=1.0,
             segment_diameter=2.8,
             dispersion_energy_over_k=170.0,
+            packing_diameter=2.464,
+            debye_huckel_diameter=2.464,
             born_diameter=4.1,
             solvation_factor=1.0,
         ),
     ],
     pairs=[
         _pair(component_a, component_b, k_ij=0.0)
-        for index, component_a in enumerate(
-            ("solvent", "cosolvent", "cation", "anion")
-        )
+        for index, component_a in enumerate(("solvent", "cosolvent", "cation", "anion"))
         for component_b in ("solvent", "cosolvent", "cation", "anion")[index + 1 :]
     ],
     model_families=_model_families(
         association="general-site",
-        electrolyte="ssm-ds",
+        electrolyte="born",
         permittivity="ion-fraction-suppression",
+        born_corrections=(1.0, 1.0),
     ),
     model_coefficients=[
         _model_coefficient("ionic_region_relative_permittivity", 8.0),
@@ -511,8 +480,84 @@ MULTINEUTRAL_REACTIVE["domains"] = [
     }
 ]
 
+MULTISOLVENT_MULTIION = deepcopy(MULTINEUTRAL_REACTIVE)
+MULTISOLVENT_MULTIION["document_id"] = "multisolvent-multiion-fixture"
+next(
+    family
+    for family in MULTISOLVENT_MULTIION["model_families"]
+    if family["kind"] == "permittivity"
+)["choice"] = "component-permittivity-mixing"
+MULTISOLVENT_MULTIION["model_coefficients"] = [
+    coefficient
+    for coefficient in MULTISOLVENT_MULTIION["model_coefficients"]
+    if coefficient["family"] != "ion_fraction_suppression_coefficient"
+]
+MULTISOLVENT_MULTIION["correlations"] = [
+    correlation
+    for correlation in MULTISOLVENT_MULTIION["correlations"]
+    if correlation["family"] != "relative_permittivity"
+]
+MULTISOLVENT_MULTIION["components"].extend(
+    [
+        _component(
+            "divalent-cation",
+            charge_number=2,
+            segment_count=1.0,
+            segment_diameter=3.0,
+            dispersion_energy_over_k=210.0,
+            packing_diameter=2.64,
+            debye_huckel_diameter=2.64,
+            born_diameter=3.2,
+            solvation_factor=1.1,
+        ),
+        _component(
+            "iodide-anion",
+            charge_number=-1,
+            segment_count=1.0,
+            segment_diameter=3.2,
+            dispersion_energy_over_k=160.0,
+            packing_diameter=2.816,
+            debye_huckel_diameter=2.816,
+            born_diameter=4.4,
+            solvation_factor=0.95,
+        ),
+    ]
+)
+for _component_id, _permittivity in (
+    ("solvent", 78.0),
+    ("cosolvent", 40.0),
+    ("cation", 8.0),
+    ("anion", 8.0),
+    ("divalent-cation", 8.0),
+    ("iodide-anion", 8.0),
+):
+    _record = next(
+        component
+        for component in MULTISOLVENT_MULTIION["components"]
+        if component["component_id"] == _component_id
+    )
+    _record["coefficients"].extend(
+        _component(_component_id, relative_permittivity=_permittivity)["coefficients"]
+    )
+    _record["coefficients"].sort(key=lambda item: str(item["family"]))
+MULTISOLVENT_MULTIION["pairs"].extend(
+    [
+        _pair("divalent-cation", component_id, k_ij=0.0)
+        for component_id in ("solvent", "cosolvent", "anion", "iodide-anion")
+    ]
+    + [
+        _pair("iodide-anion", component_id, k_ij=0.0)
+        for component_id in ("solvent", "cosolvent", "cation")
+    ]
+)
+
 DIPOLAR_PERMITTIVITY_ELECTROLYTE = deepcopy(AQUEOUS_ELECTROLYTE)
 DIPOLAR_PERMITTIVITY_ELECTROLYTE["document_id"] = "dipolar-permittivity-electrolyte-fixture"
+DIPOLAR_PERMITTIVITY_ELECTROLYTE["correlations"] = [
+    correlation
+    for correlation in DIPOLAR_PERMITTIVITY_ELECTROLYTE["correlations"]
+    if correlation["family"] != "relative_permittivity"
+]
 for _family, _magnitudes in (
     ("dipole_scaling", (1.0, 0.0, 0.0)),
     ("polarizability_scaling", (1.0, 0.0, 0.0)),
@@ -642,9 +687,7 @@ def pair_matrix(mapping: dict[str, object], family: str) -> tuple[tuple[float, .
 
 def set_binary_pair_value(mapping: dict[str, object], family: str, magnitude: float) -> None:
     pair = mapping["pairs"][0]
-    pair["coefficients"] = [
-        item for item in pair["coefficients"] if item["family"] != family
-    ]
+    pair["coefficients"] = [item for item in pair["coefficients"] if item["family"] != family]
     component_a = pair["component_id_a"]
     component_b = pair["component_id_b"]
     pair["coefficients"].append(
@@ -662,8 +705,8 @@ __all__ = (
     "ASSOCIATING_PURE",
     "DIPOLAR_PERMITTIVITY_ELECTROLYTE",
     "MULTINEUTRAL_REACTIVE",
+    "MULTISOLVENT_MULTIION",
     "NEUTRAL_BINARY",
-    "ORIGINAL_BORN_ELECTROLYTE",
     "POLAR_BINARY",
     "POLAR_PURE",
     "component_values",

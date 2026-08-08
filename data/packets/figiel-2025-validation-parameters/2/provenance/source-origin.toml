@@ -12,4 +12,4 @@ source_packet_fingerprint = "373f3e74858eba2dc32a244d0da2eb62c24c35f3cb784b5dc7b
 [[files]]
 retained_path = "parameters/parameters.json"
 origin_path = "packets/figiel-2025-validation-parameters/1/parameters/{association.csv,bundle.toml,components.csv,correlations.toml,model.csv,pair.csv,single.csv,sites.csv}"
-sha256 = "9e0ebf9571ff2d087ee4e47b71d24ca7a977ccd9115a1f75883293e3b2afafdd"
+sha256 = "cd376b22156060a04dce1ef6739b4113e058151bee820f44ed02dd956d9d0d85"

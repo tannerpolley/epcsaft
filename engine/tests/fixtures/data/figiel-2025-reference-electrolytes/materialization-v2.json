@@ -5,21 +5,21 @@
   "packet_id": "figiel-2025-reference-electrolytes",
   "packet_version": "2",
   "packet_path": "data/packets/figiel-2025-reference-electrolytes/2",
-  "packet_fingerprint": "419612d5964646d3f0699b9d8e56524c7007b9e37812eafbe8c93138d8971ac9",
+  "packet_fingerprint": "6d92f0e136eafcf4805d1c553207ba701fd272a58e06db0fbc081e204c93f78a",
   "materialization_mode": "byte-for-byte-test-fixture",
   "destination": "engine/tests/fixtures/data/figiel-2025-reference-electrolytes/2",
   "files": [
     {
       "path": "packet.toml",
-      "sha256": "92e780318bb55f0b24398d8abd87d6480cd0dd689074d0a35251cbebd4c37759"
+      "sha256": "4a5fa0d772ff775b6bf36b706e2a0fbb26c5dcc3a9643db1940a3e3cf0c495ef"
     },
     {
       "path": "parameters/parameters.json",
-      "sha256": "7c94ba2dcdee4395be94451918b9cbad482be7da8c05c820fd21cd020e4ed7c6"
+      "sha256": "23b67caf1fdbf3dd6b6dd09d0d713782ca0b6b3fb5adca200e6b06ce21e15f2b"
     },
     {
       "path": "provenance/source-origin.toml",
-      "sha256": "596556cc1c5986dd4877a689312db2a7ff3b4b9ef21ddb202e3a4fe856a773a1"
+      "sha256": "bb880e0a391dcdcb3b61a047fd53c978b7040b12f5bf67e2aca181fb65060e03"
     }
   ],
   "accepted_by": "unified-engine-direct-cutover-g3"

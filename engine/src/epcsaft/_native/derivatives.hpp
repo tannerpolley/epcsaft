@@ -241,27 +241,6 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     const auto diameter = segment_diameter(
         independent[0], parameters, sigma, &active_dispersion_energy
     );
-    auto reference_sigma = segment_sigma(ADScalar(temperature), parameters);
-    for (std::size_t coordinate = 0;
-         coordinate < component_parameter_coordinates;
-         ++coordinate) {
-        const auto& parameter = active_component_parameters[coordinate];
-        if (parameter.family == ActiveComponentParameter::SegmentDiameter) {
-            reference_sigma[parameter.component] +=
-                independent[component_parameter_offset + coordinate]
-                - parameters.sigma_constant[parameter.component];
-        }
-    }
-    const auto reference_diameter = segment_diameter(
-        ADScalar(temperature),
-        parameters,
-        reference_sigma,
-        &active_dispersion_energy
-    );
-    const auto branch_reference_sigma = segment_sigma(temperature, parameters);
-    const auto branch_reference_diameter = segment_diameter(
-        temperature, parameters, branch_reference_sigma
-    );
     const auto electrolyte = electrolyte_contribution(
         independent[0],
         independent[1],
@@ -269,15 +248,11 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         molar_density,
         composition,
         mole_fractions,
-        parameters,
-        diameter,
-        reference_diameter,
-        static_cast<const std::vector<ADScalar>*>(nullptr),
-        &branch_reference_diameter
+        parameters
     );
     const auto born = born_contribution(
         independent[0], composition, parameters,
-        electrolyte.bulk_relative_permittivity, sigma
+        electrolyte.bulk_relative_permittivity
     );
     const auto contributions = residual_helmholtz(
         independent[0],
@@ -306,7 +281,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         contributions.hard_chain + contributions.dispersion
             + contributions.association + contributions.polar
             + contributions.debye_huckel
-            + contributions.born_ssm_ds,
+            + contributions.born,
     };
     dependent.insert(dependent.end(), mass_action.begin(), mass_action.end());
     CppAD::ADFun<double> function(independent, dependent);

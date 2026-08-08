@@ -18,7 +18,7 @@ class NativeResult:
     association: float
     ares_polar: float
     debye_huckel: float
-    born_ssm_ds: float
+    born: float
     bulk_relative_permittivity: float
     residual_helmholtz: float
     compressibility_factor: float
