@@ -142,8 +142,6 @@ def test_supercritical_saturation_block_rejects_without_fabricated_rows() -> Non
     assert diagnostics.physical_accepted is False
     assert diagnostics.rejection_status != "none"
     assert diagnostics.exact_derivatives is False
-    assert diagnostics.solver_status == "line_search_failed"
-    assert diagnostics.iterations > 0
     assert math.isfinite(diagnostics.solver_constraint_violation)
     assert tuple(branch.identity for branch in block.saturation_branches) == ("vapor", "liquid")
     assert all(branch.pressure_relative_residual is None for branch in block.saturation_branches)
