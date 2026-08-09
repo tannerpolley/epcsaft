@@ -12,6 +12,7 @@ from tests.eos._raw_cases import (
     AQUEOUS_ELECTROLYTE,
     ASSOCIATING_PURE,
     MULTISOLVENT_MULTIION,
+    NEUTRAL_ASSOCIATING_MIXTURE,
     POLAR_BINARY,
     POLAR_PURE,
     _component,
@@ -90,22 +91,7 @@ def _fixed_state_values(
 
 
 def _neutral_associating_mixture() -> dict[str, object]:
-    mapping = deepcopy(ASSOCIATING_PURE)
-    mapping["document_id"] = "neutral-associating-mixture-fixture"
-    components = mapping["components"]
-    pairs = mapping["pairs"]
-    assert isinstance(components, list)
-    assert isinstance(pairs, list)
-    components.append(
-        _component(
-            "inert-fluid",
-            segment_count=1.4,
-            segment_diameter=3.4,
-            dispersion_energy_over_k=180.0,
-        )
-    )
-    pairs.append(_pair("associating-fluid", "inert-fluid", k_ij=0.04))
-    return mapping
+    return deepcopy(NEUTRAL_ASSOCIATING_MIXTURE)
 
 
 def _neutral_ternary_pairs() -> dict[str, object]:

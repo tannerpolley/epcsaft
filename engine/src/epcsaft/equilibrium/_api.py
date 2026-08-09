@@ -17,64 +17,102 @@ from epcsaft.eos import _native_transport
 from . import _equilibrium
 
 
+PhaseRole = Literal["liquid", "vapor"]
+
+
+@dataclass(frozen=True)
+class PhaseHint:
+    """Optional ordering hint for the unchanged finite start set."""
+
+    role: PhaseRole
+    mole_fractions: tuple[float, ...]
+    molar_density_mol_m3: float
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "mole_fractions", tuple(self.mole_fractions))
+
+
+@dataclass(frozen=True)
+class PhaseEquilibriumProblem:
+    """Source-neutral fixed-T,P discovery or constrained phase problem."""
+
+    temperature: Quantity[Any]
+    pressure: Quantity[Any]
+    feed_amounts_mol: tuple[float, ...]
+    mode: Literal["discovery", "constrained"] = "discovery"
+    phase_roles: tuple[PhaseRole, ...] = ()
+    hints: tuple[PhaseHint, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "feed_amounts_mol", tuple(self.feed_amounts_mol))
+        object.__setattr__(self, "phase_roles", tuple(self.phase_roles))
+        object.__setattr__(self, "hints", tuple(self.hints))
+
+
 @dataclass(frozen=True)
 class PhaseState:
-    """One explicit phase state returned by a bounded equilibrium route."""
+    """One certified phase in the canonical amount-packing representation."""
 
+    role: PhaseRole
     amount_mol: float
+    amounts_mol: tuple[float, ...]
     mole_fractions: tuple[float, ...]
     volume_m3: float
     molar_density_mol_m3: float
+    packing_fraction: float
     pressure_pa: float
     chemical_potential_over_rt: tuple[float, ...]
 
 
 @dataclass(frozen=True)
-class HeldDiagnostics:
-    """Compact evidence from the bounded HELD search and local refinement."""
+class PhaseEquilibriumDiagnostics:
+    """Finite-search scope plus independent numerical and physical evidence."""
 
-    outcome: str
-    search_status: str
     solver_status: str
     numerical_status: str
     physical_status: str
-    attempts: int
-    major_iterations: int
-    best_tpd: float
-    lower_bound: float | None
-    upper_bound: float | None
-    held_gap: float | None
-    material_balance_max_abs: float | None
-    pressure_stationarity_max_relative: float | None
-    kkt_stationarity_max_abs: float | None
-    chemical_potential_max_relative: float | None
-    confirmation_succeeded: bool
-    confirmation_max_difference: float | None
-    search_profiles: tuple[str, ...]
-    globality_certificate: str
-    failure_reason: str
-
-
-@dataclass(frozen=True)
-class Held2Diagnostics:
-    """Compact evidence from the Perdomo HELD2 paper controller."""
-
-    outcome: str
     failure_stage: str | None
-    solver_status: str
-    numerical_status: str
-    physical_status: str
-    optimizer_solves: int
-    optimizer_iterations: int
-    major_iterations: int
-    best_tpd: float
-    held_gap: float | None
-    material_balance_max_abs: float | None
-    pressure_stationarity_max_relative: float | None
-    kkt_stationarity_max_abs: float | None
-    confirmation_succeeded: bool
-    globality_certificate: str
-    failure_reason: str
+    failure_reason: str | None
+    failure_detail: str | None
+    certificate_scope: str
+    phase_selection_claim: str
+    globality_claim: str
+    completeness_criterion: str
+    searched_topologies: tuple[str, ...]
+    excluded_topologies: tuple[str, ...]
+    equation_state_identities: tuple[str, ...]
+    equation_residual_identities: tuple[str, ...]
+    tensor_layout: Literal["row-major"]
+    solver_derivative_contract: str
+    sensitivity_derivative_contract: str
+    parameter_parameter_requirement: str
+    topology_budget: int
+    topology_count: int
+    start_budget_per_topology: int
+    attempted_start_count: int
+    certified_candidate_count: int
+    optimizer_iteration_count: int
+    hint_count: int
+    hint_reordered_start_count: int
+    material_balance_inf: float
+    electroneutrality_inf: float
+    pressure_residual_inf: float
+    chemical_potential_residual_inf: float
+    kkt_stationarity_inf: float
+    minimum_reduced_hessian_eigenvalue: float | None
+    kkt_dimension: int
+    kkt_rank: int
+    scaled_kkt_condition_number_2: float | None
+    material_balance_tolerance_mol: float
+    electroneutrality_tolerance_mol: float
+    pressure_relative_tolerance: float
+    chemical_potential_tolerance_over_rt: float
+    kkt_stationarity_tolerance: float
+    phase_distinct_tolerance: float
+    liquid_compressibility_factor_maximum: float
+    vapor_compressibility_factor_minimum: float
+    reduced_hessian_relative_tolerance: float
+    kkt_condition_number_maximum: float
 
 
 @dataclass(frozen=True)
@@ -103,30 +141,29 @@ class PhaseEquilibriumSensitivity:
 
 
 @dataclass(frozen=True)
-class TpFlashResult:
-    """Certified phase result from the bounded HELD or HELD2 controller."""
+class PhaseEquilibriumResult:
+    """Certified local phase state selected from the declared finite scope."""
 
-    temperature_k: float
-    pressure_pa: float
-    overall_mole_fractions: tuple[float, ...]
+    problem: PhaseEquilibriumProblem
     phases: tuple[PhaseState, ...]
-    phase_fractions: tuple[float, ...]
     total_free_energy_over_rt: float
     parameter_fingerprint: str
-    diagnostics: HeldDiagnostics | Held2Diagnostics
+    diagnostics: PhaseEquilibriumDiagnostics
     sensitivity: PhaseEquilibriumSensitivity | None
 
 
-class FlashError(RuntimeError):
-    """Raised when the bounded HELD search cannot return an accepted result."""
+class PhaseEquilibriumError(RuntimeError):
+    """Raised when the finite phase search has no certified candidate."""
 
     def __init__(
         self,
         message: str,
-        diagnostics: HeldDiagnostics | Held2Diagnostics,
+        diagnostics: PhaseEquilibriumDiagnostics,
+        best_candidate: tuple[PhaseState, ...],
     ) -> None:
         super().__init__(message)
         self.diagnostics = diagnostics
+        self.best_candidate = best_candidate
 
 
 @dataclass(frozen=True)
@@ -173,7 +210,9 @@ class ChemicalStandardState:
             "source_reference_solvent_composition",
             tuple(self.source_reference_solvent_composition),
         )
-        object.__setattr__(self, "source_reference_ion_pairs", tuple(self.source_reference_ion_pairs))
+        object.__setattr__(
+            self, "source_reference_ion_pairs", tuple(self.source_reference_ion_pairs)
+        )
 
 
 @dataclass(frozen=True)
@@ -497,12 +536,6 @@ class ChemicalEquilibriumError(RuntimeError):
         self.diagnostics = diagnostics
 
 
-_FLASH_FINGERPRINT = "sha256:9e63656093548f1f64bec8cc5129421f6e1bc452b2ec3632ded65f5ac538b8e7"
-_FLASH_TEMPERATURE_DOMAIN_K = (203.22, 243.61)
-_FLASH_PRESSURE_DOMAIN_PA = (2_124_000.0, 6_885_000.0)
-_FLASH_METHANE_FEED_DOMAIN = (0.4661, 0.66705)
-
-
 def _float_tuple(payload: object) -> tuple[float, ...]:
     if isinstance(payload, (int, float)):
         return (float(payload),)
@@ -517,21 +550,28 @@ def _vector(payload: object, size: int, name: str) -> tuple[float, ...]:
     return values
 
 
-def _phase(payload: Mapping[str, object]) -> PhaseState:
-    mole_fractions = _float_tuple(payload.get("mole_fractions", (1.0,)))
+def _phase(payload: Mapping[str, object], component_count: int) -> PhaseState:
+    role = str(payload["role"])
+    if role not in {"liquid", "vapor"}:
+        raise ValueError("native phase role is invalid")
+    mole_fractions = _vector(payload["mole_fractions"], component_count, "phase composition")
     chemical_potential = _vector(
         payload["chemical_potential_over_rt"],
-        len(mole_fractions),
+        component_count,
         "phase chemical-potential vector",
     )
     return PhaseState(
+        role=cast(PhaseRole, role),
         amount_mol=float(cast(float, payload["amount_mol"])),
+        amounts_mol=_vector(payload["amounts_mol"], component_count, "phase amounts"),
         mole_fractions=mole_fractions,
         volume_m3=float(cast(float, payload["volume_m3"])),
         molar_density_mol_m3=float(cast(float, payload["molar_density_mol_m3"])),
+        packing_fraction=float(cast(float, payload["packing_fraction"])),
         pressure_pa=float(cast(float, payload["pressure_pa"])),
         chemical_potential_over_rt=chemical_potential,
     )
+
 
 def _quantity(quantity: object, units: str, name: str, operation: str) -> float:
     if not isinstance(quantity, Quantity):
@@ -547,236 +587,26 @@ def _quantity(quantity: object, units: str, name: str, operation: str) -> float:
     return value
 
 
-def _tp_flash_feed(
-    overall_mole_fractions: Sequence[float],
+def _phase_feed(
+    feed_amounts_mol: Sequence[float],
     component_count: int,
 ) -> tuple[float, ...]:
-    if isinstance(overall_mole_fractions, (str, bytes)):
-        raise TypeError("overall mole fractions must be a numeric sequence")
+    if isinstance(feed_amounts_mol, (str, bytes)):
+        raise TypeError("feed amounts must be a numeric sequence")
     try:
-        values = tuple(float(value) for value in overall_mole_fractions)
+        values = tuple(float(value) for value in feed_amounts_mol)
     except (TypeError, ValueError) as error:
-        raise TypeError("overall mole fractions must be a numeric sequence") from error
+        raise TypeError("feed amounts must be a numeric sequence") from error
     if len(values) != component_count:
-        raise ValueError(f"tp_flash requires exactly {component_count} components")
+        raise ValueError(f"phase_equilibrium requires exactly {component_count} components")
     if not all(math.isfinite(value) and value > 0.0 for value in values):
-        raise ValueError("overall mole fractions must be positive and finite")
-    if not math.isclose(sum(values), 1.0, rel_tol=0.0, abs_tol=1.0e-12):
-        raise ValueError("overall mole fractions must sum to one within 1e-12")
+        raise ValueError("feed amounts must be positive and finite")
     return values
 
 
 def _optional_float(payload: Mapping[str, object], name: str) -> float | None:
     value = payload[name]
     return None if value is None else float(cast(float, value))
-
-
-def _held_diagnostics(payload: Mapping[str, object]) -> HeldDiagnostics:
-    profiles = cast(Sequence[object], payload["search_profiles"])
-    statuses = tuple(
-        payload[name] for name in ("solver_status", "numerical_status", "physical_status")
-    )
-    if not all(
-        isinstance(status, str) and status in {"passed", "failed", "not_adjudicated"}
-        for status in statuses
-    ):
-        raise ValueError("native HELD payload has an invalid status vocabulary")
-    typed_statuses = cast(tuple[str, str, str], statuses)
-    return HeldDiagnostics(
-        outcome=str(payload["outcome"]),
-        search_status=str(payload["search_status"]),
-        solver_status=typed_statuses[0],
-        numerical_status=typed_statuses[1],
-        physical_status=typed_statuses[2],
-        attempts=int(cast(int, payload["attempts"])),
-        major_iterations=int(cast(int, payload["major_iterations"])),
-        best_tpd=float(cast(float, payload["best_tpd"])),
-        lower_bound=_optional_float(payload, "lower_bound"),
-        upper_bound=_optional_float(payload, "upper_bound"),
-        held_gap=_optional_float(payload, "held_gap"),
-        material_balance_max_abs=_optional_float(payload, "material_balance_max_abs"),
-        pressure_stationarity_max_relative=_optional_float(
-            payload, "pressure_stationarity_max_relative"
-        ),
-        kkt_stationarity_max_abs=_optional_float(payload, "kkt_stationarity_max_abs"),
-        chemical_potential_max_relative=_optional_float(payload, "chemical_potential_max_relative"),
-        confirmation_succeeded=bool(payload["confirmation_succeeded"]),
-        confirmation_max_difference=_optional_float(payload, "confirmation_max_difference"),
-        search_profiles=tuple(str(profile) for profile in profiles),
-        globality_certificate=str(payload["globality_certificate"]),
-        failure_reason=str(payload["failure_reason"]),
-    )
-
-
-def _failed_held_diagnostics(outcome: str, search_status: str, reason: str) -> HeldDiagnostics:
-    return HeldDiagnostics(
-        outcome=outcome,
-        search_status=search_status,
-        solver_status="not_adjudicated",
-        numerical_status="not_adjudicated",
-        physical_status="not_adjudicated",
-        attempts=0,
-        major_iterations=0,
-        best_tpd=0.0,
-        lower_bound=None,
-        upper_bound=None,
-        held_gap=None,
-        material_balance_max_abs=None,
-        pressure_stationarity_max_relative=None,
-        kkt_stationarity_max_abs=None,
-        chemical_potential_max_relative=None,
-        confirmation_succeeded=False,
-        confirmation_max_difference=None,
-        search_profiles=(),
-        globality_certificate="not_guaranteed",
-        failure_reason=reason,
-    )
-
-
-def _held2_diagnostics(payload: Mapping[str, object]) -> Held2Diagnostics:
-    outcome = str(payload["outcome"])
-    accepted = outcome == "physical_equilibrium_accepted"
-    one_phase = outcome == "one_phase_no_negative_witness_detected"
-    step2 = cast(Mapping[str, object], payload["step2"])
-    step9_history = cast(Sequence[Mapping[str, object]], payload["step9_history"])
-    step4_history = cast(Sequence[Mapping[str, object]], payload["step4_history"])
-    step_timings = cast(Sequence[Mapping[str, object]], payload["step_timings"])
-    step10_value = payload.get("step10")
-    step10 = cast(Mapping[str, object], step10_value) if isinstance(step10_value, Mapping) else None
-    certificate_value = step10.get("final_certificate") if step10 else None
-    certificate = (
-        cast(Mapping[str, object], certificate_value)
-        if isinstance(certificate_value, Mapping)
-        else None
-    )
-    failure = payload.get("failure_reason")
-    gap = step9_history[-1].get("free_energy_gap") if step9_history else None
-    completed = accepted or one_phase
-    adjudication_status = "passed" if completed else "not_adjudicated"
-    physical_status = (
-        "passed" if completed else "failed" if certificate is not None else "not_adjudicated"
-    )
-    return Held2Diagnostics(
-        outcome=outcome,
-        failure_stage=(
-            None if payload.get("failure_stage") is None else str(payload["failure_stage"])
-        ),
-        solver_status=adjudication_status,
-        numerical_status=adjudication_status,
-        physical_status=physical_status,
-        optimizer_solves=sum(int(cast(int, timing["optimizer_solves"])) for timing in step_timings),
-        optimizer_iterations=sum(
-            int(cast(int, timing["optimizer_iterations"])) for timing in step_timings
-        ),
-        major_iterations=(
-            0
-            if not step4_history
-            else 1
-            + max(int(cast(int, step["major_iteration"])) for step in step4_history)
-        ),
-        best_tpd=float(cast(float, step2["minimum_tpd"])),
-        held_gap=None if gap is None else float(cast(float, gap)),
-        material_balance_max_abs=(
-            None
-            if certificate is None
-            else max(
-                float(cast(float, certificate["modified_balance_inf"])),
-                float(cast(float, certificate["ordinary_balance_inf"])),
-            )
-        ),
-        pressure_stationarity_max_relative=(
-            None
-            if certificate is None
-            else float(cast(float, certificate["pressure_residual_inf"]))
-        ),
-        kkt_stationarity_max_abs=(
-            None if certificate is None else float(cast(float, certificate["kkt_residual_inf"]))
-        ),
-        confirmation_succeeded=bool(step10 and step10["status"] == "complete"),
-        globality_certificate=str(payload["globality_certificate"]),
-        failure_reason="" if failure is None else str(failure),
-    )
-
-
-def _held2_phase_state(
-    component_count: int,
-    payload: Mapping[str, object],
-) -> PhaseState:
-    fractions = _vector(payload["mole_fractions"], component_count, "HELD2 phase composition")
-    phase_fraction = float(cast(float, payload["phase_fraction"]))
-    molar_volume = float(cast(float, payload["molar_volume_m3_mol"]))
-    if not math.isfinite(phase_fraction) or phase_fraction <= 0.0:
-        raise ValueError("native HELD2 phase fraction must be positive and finite")
-    if not math.isfinite(molar_volume) or molar_volume <= 0.0:
-        raise ValueError("native HELD2 phase volume must be positive and finite")
-    pressure_pa = float(cast(float, payload["pressure_pa"]))
-    if not math.isfinite(pressure_pa):
-        raise ValueError("native HELD2 phase pressure must be finite")
-    return PhaseState(
-        amount_mol=phase_fraction,
-        mole_fractions=fractions,
-        volume_m3=phase_fraction * molar_volume,
-        molar_density_mol_m3=1.0 / molar_volume,
-        pressure_pa=pressure_pa,
-        chemical_potential_over_rt=_vector(
-            payload["chemical_potential_over_rt"],
-            component_count,
-            "HELD2 chemical-potential vector",
-        ),
-    )
-
-
-def _held2_result(
-    temperature_k: float,
-    pressure_pa: float,
-    feed: tuple[float, ...],
-    fingerprint: str,
-    native: Mapping[str, object],
-    active_parameters: epcsaft.ActiveParameterSet | None,
-) -> TpFlashResult:
-    diagnostics = _held2_diagnostics(native)
-    if diagnostics.globality_certificate != "not_guaranteed":
-        raise ValueError("native HELD2 result has an invalid globality certificate")
-    if diagnostics.outcome not in {
-        "one_phase_no_negative_witness_detected",
-        "physical_equilibrium_accepted",
-    }:
-        reason = diagnostics.failure_reason or "HELD2 did not return a certified equilibrium"
-        raise FlashError(reason, diagnostics)
-    if str(native["parameter_fingerprint"]) != fingerprint:
-        raise ValueError("native HELD2 result has the wrong Provider fingerprint")
-    sensitivity = _phase_equilibrium_sensitivity(
-        native.get("sensitivity"), active_parameters
-    )
-
-    phase_payloads = cast(Sequence[Mapping[str, object]], native["phases"])
-    phases = tuple(
-        _held2_phase_state(
-            len(feed),
-            payload,
-        )
-        for payload in phase_payloads
-    )
-    phase_fractions = tuple(phase.amount_mol for phase in phases)
-    expected_phase_count = 1 if diagnostics.outcome.startswith("one_phase") else 2
-    if len(phases) != expected_phase_count or not math.isclose(
-        math.fsum(phase_fractions), 1.0, rel_tol=0.0, abs_tol=1.0e-10
-    ):
-        raise ValueError("native HELD2 phase result is incomplete")
-    total_gibbs = float(cast(float, native["total_free_energy_over_rt"]))
-    if not math.isfinite(total_gibbs):
-        raise ValueError("native HELD2 objective must be finite")
-    return TpFlashResult(
-        temperature_k=temperature_k,
-        pressure_pa=pressure_pa,
-        overall_mole_fractions=feed,
-        phases=tuple(phases),
-        phase_fractions=phase_fractions,
-        total_free_energy_over_rt=total_gibbs,
-        parameter_fingerprint=fingerprint,
-        diagnostics=diagnostics,
-        sensitivity=sensitivity,
-    )
 
 
 def _row_major_matrix(
@@ -794,10 +624,7 @@ def _row_major_matrix(
         raise ValueError(f"native {field} has the wrong row-major shape")
     if any(not math.isfinite(entry) for entry in flat):
         raise ValueError(f"native {field} must be finite")
-    return tuple(
-        flat[row * columns : (row + 1) * columns]
-        for row in range(rows)
-    )
+    return tuple(flat[row * columns : (row + 1) * columns] for row in range(rows))
 
 
 def _phase_equilibrium_sensitivity(
@@ -815,13 +642,10 @@ def _phase_equilibrium_sensitivity(
         raise ValueError("native phase sensitivity status is invalid")
     unavailable = status == "unavailable"
     failure = value["failure_reason"]
-    if (unavailable and not isinstance(failure, str)) or (
-        not unavailable and failure is not None
-    ):
+    if (unavailable and not isinstance(failure, str)) or (not unavailable and failure is not None):
         raise ValueError("native phase sensitivity failure state is invalid")
     parameter_identities = tuple(
-        str(item)
-        for item in cast(Sequence[object], value["parameter_identities"])
+        str(item) for item in cast(Sequence[object], value["parameter_identities"])
     )
     if parameter_identities != active_parameters.identities:
         raise ValueError("native phase sensitivity parameter identity or order changed")
@@ -836,9 +660,10 @@ def _phase_equilibrium_sensitivity(
     parameter_count = int(cast(int, value["parameter_count"]))
     output_count = int(cast(int, value["output_count"]))
     rank = int(cast(int, value["rank"]))
-    if parameter_count != len(active_parameters.coordinates) or min(
-        dimension, output_count, rank
-    ) < 0:
+    if (
+        parameter_count != len(active_parameters.coordinates)
+        or min(dimension, output_count, rank) < 0
+    ):
         raise ValueError("native phase sensitivity dimensions are invalid")
     residual_identities = tuple(
         str(item) for item in cast(Sequence[object], value["residual_identities"])
@@ -913,116 +738,162 @@ def _phase_equilibrium_sensitivity(
     )
 
 
-def tp_flash(
+def _phase_diagnostics(payload: Mapping[str, object]) -> PhaseEquilibriumDiagnostics:
+    tensor_layout = str(payload["tensor_layout"])
+    if tensor_layout != "row-major":
+        raise ValueError("native phase-equilibrium tensor layout is invalid")
+    return PhaseEquilibriumDiagnostics(
+        solver_status=str(payload["solver_status"]),
+        numerical_status=str(payload["numerical_status"]),
+        physical_status=str(payload["physical_status"]),
+        failure_stage=None if payload["failure_stage"] is None else str(payload["failure_stage"]),
+        failure_reason=(
+            None if payload["failure_reason"] is None else str(payload["failure_reason"])
+        ),
+        failure_detail=(
+            None if payload["failure_detail"] is None else str(payload["failure_detail"])
+        ),
+        certificate_scope=str(payload["certificate_scope"]),
+        phase_selection_claim=str(payload["phase_selection_claim"]),
+        globality_claim=str(payload["globality_claim"]),
+        completeness_criterion=str(payload["completeness_criterion"]),
+        searched_topologies=tuple(
+            str(value) for value in cast(Sequence[object], payload["searched_topologies"])
+        ),
+        excluded_topologies=tuple(
+            str(value) for value in cast(Sequence[object], payload["excluded_topologies"])
+        ),
+        equation_state_identities=tuple(
+            str(value) for value in cast(Sequence[object], payload["equation_state_identities"])
+        ),
+        equation_residual_identities=tuple(
+            str(value) for value in cast(Sequence[object], payload["equation_residual_identities"])
+        ),
+        tensor_layout=cast(Literal["row-major"], tensor_layout),
+        solver_derivative_contract=str(payload["solver_derivative_contract"]),
+        sensitivity_derivative_contract=str(payload["sensitivity_derivative_contract"]),
+        parameter_parameter_requirement=str(payload["parameter_parameter_requirement"]),
+        topology_budget=int(cast(int, payload["topology_budget"])),
+        topology_count=int(cast(int, payload["topology_count"])),
+        start_budget_per_topology=int(cast(int, payload["start_budget_per_topology"])),
+        attempted_start_count=int(cast(int, payload["attempted_start_count"])),
+        certified_candidate_count=int(cast(int, payload["certified_candidate_count"])),
+        optimizer_iteration_count=int(cast(int, payload["optimizer_iteration_count"])),
+        hint_count=int(cast(int, payload["hint_count"])),
+        hint_reordered_start_count=int(cast(int, payload["hint_reordered_start_count"])),
+        material_balance_inf=float(cast(float, payload["material_balance_inf"])),
+        electroneutrality_inf=float(cast(float, payload["electroneutrality_inf"])),
+        pressure_residual_inf=float(cast(float, payload["pressure_residual_inf"])),
+        chemical_potential_residual_inf=float(
+            cast(float, payload["chemical_potential_residual_inf"])
+        ),
+        kkt_stationarity_inf=float(cast(float, payload["kkt_stationarity_inf"])),
+        minimum_reduced_hessian_eigenvalue=_optional_float(
+            payload, "minimum_reduced_hessian_eigenvalue"
+        ),
+        kkt_dimension=int(cast(int, payload["kkt_dimension"])),
+        kkt_rank=int(cast(int, payload["kkt_rank"])),
+        scaled_kkt_condition_number_2=_optional_float(payload, "scaled_kkt_condition_number_2"),
+        material_balance_tolerance_mol=float(
+            cast(float, payload["material_balance_tolerance_mol"])
+        ),
+        electroneutrality_tolerance_mol=float(
+            cast(float, payload["electroneutrality_tolerance_mol"])
+        ),
+        pressure_relative_tolerance=float(cast(float, payload["pressure_relative_tolerance"])),
+        chemical_potential_tolerance_over_rt=float(
+            cast(float, payload["chemical_potential_tolerance_over_rt"])
+        ),
+        kkt_stationarity_tolerance=float(cast(float, payload["kkt_stationarity_tolerance"])),
+        phase_distinct_tolerance=float(cast(float, payload["phase_distinct_tolerance"])),
+        liquid_compressibility_factor_maximum=float(
+            cast(float, payload["liquid_compressibility_factor_maximum"])
+        ),
+        vapor_compressibility_factor_minimum=float(
+            cast(float, payload["vapor_compressibility_factor_minimum"])
+        ),
+        reduced_hessian_relative_tolerance=float(
+            cast(float, payload["reduced_hessian_relative_tolerance"])
+        ),
+        kkt_condition_number_maximum=float(cast(float, payload["kkt_condition_number_maximum"])),
+    )
+
+
+def phase_equilibrium(
     model: epcsaft.Mixture,
-    temperature: Quantity[Any],
-    pressure: Quantity[Any],
-    overall_mole_fractions: Sequence[float],
+    problem: PhaseEquilibriumProblem,
     *,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
-    trace: bool = False,
-) -> TpFlashResult:
-    """Run the bounded HELD or strong-electrolyte HELD2 controller."""
+) -> PhaseEquilibriumResult:
+    """Solve one source-neutral, finite fixed-T,P phase-equilibrium problem."""
 
+    if not isinstance(model, epcsaft.Mixture):
+        raise TypeError("phase_equilibrium requires an epcsaft.Mixture")
+    if type(problem) is not PhaseEquilibriumProblem:
+        raise TypeError("problem must be a PhaseEquilibriumProblem")
+    if active_parameters is not None and type(active_parameters) is not epcsaft.ActiveParameterSet:
+        raise TypeError("active_parameters must be an epcsaft.ActiveParameterSet")
+    temperature_k = _quantity(problem.temperature, "kelvin", "temperature", "phase_equilibrium")
+    pressure_pa = _quantity(problem.pressure, "pascal", "pressure", "phase_equilibrium")
+    component_count = len(model.component_ids)
+    feed = _phase_feed(problem.feed_amounts_mol, component_count)
+    if problem.mode not in {"discovery", "constrained"}:
+        raise ValueError("phase-equilibrium mode must be 'discovery' or 'constrained'")
+    if any(role not in {"liquid", "vapor"} for role in problem.phase_roles):
+        raise ValueError("phase roles must be 'liquid' or 'vapor'")
+    if any(type(hint) is not PhaseHint for hint in problem.hints):
+        raise TypeError("hints must contain PhaseHint values")
+
+    native = cast(
+        Mapping[str, object],
+        _equilibrium._phase_equilibrium(
+            _native_transport(model, active_parameters),
+            temperature_k,
+            pressure_pa,
+            feed,
+            problem.mode,
+            problem.phase_roles,
+            tuple(hint.role for hint in problem.hints),
+            tuple(hint.mole_fractions for hint in problem.hints),
+            tuple(hint.molar_density_mol_m3 for hint in problem.hints),
+        ),
+    )
     try:
-        if not isinstance(model, epcsaft.Mixture):
-            raise TypeError("tp_flash requires an epcsaft.Mixture")
+        diagnostics = _phase_diagnostics(cast(Mapping[str, object], native["diagnostics"]))
+        phase_payloads = cast(Sequence[Mapping[str, object]], native["phases"])
+        best_payloads = cast(Sequence[Mapping[str, object]], native["best_candidate"])
+        phases = tuple(_phase(payload, component_count) for payload in phase_payloads)
+        best_candidate = tuple(_phase(payload, component_count) for payload in best_payloads)
+        if diagnostics.globality_claim != "not_established":
+            raise ValueError("native phase equilibrium made an unsupported globality claim")
         if (
-            active_parameters is not None
-            and type(active_parameters) is not epcsaft.ActiveParameterSet
+            diagnostics.numerical_status != "certified"
+            or diagnostics.physical_status != "certified"
         ):
-            raise TypeError("active_parameters must be an epcsaft.ActiveParameterSet")
-        temperature_k = _quantity(temperature, "kelvin", "temperature", "tp_flash")
-        pressure_pa = _quantity(pressure, "pascal", "pressure", "tp_flash")
-        component_count = len(model.component_ids)
-        feed = _tp_flash_feed(overall_mole_fractions, component_count)
-        if model.parameter_fingerprint == _FLASH_FINGERPRINT and not (
-            _FLASH_TEMPERATURE_DOMAIN_K[0] <= temperature_k <= _FLASH_TEMPERATURE_DOMAIN_K[1]
-        ):
-            raise ValueError("temperature is outside the audited May 2015 source domain")
-        if model.parameter_fingerprint == _FLASH_FINGERPRINT and not (
-            _FLASH_PRESSURE_DOMAIN_PA[0] <= pressure_pa <= _FLASH_PRESSURE_DOMAIN_PA[1]
-        ):
-            raise ValueError("pressure is outside the audited May 2015 source domain")
-        if model.parameter_fingerprint == _FLASH_FINGERPRINT and not (
-            _FLASH_METHANE_FEED_DOMAIN[0] <= feed[0] <= _FLASH_METHANE_FEED_DOMAIN[1]
-        ):
-            raise ValueError("composition is outside the audited May 2015 source domain")
-        capsule = _native_transport(model, active_parameters)
-    except (TypeError, ValueError) as error:
-        diagnostics = _failed_held_diagnostics("invalid_input", "input_rejected", str(error))
-        raise FlashError(str(error), diagnostics) from error
-
-    try:
-        native = cast(
-            Mapping[str, object],
-            _equilibrium._solve_tp_flash(
-                capsule,
-                temperature_k,
-                pressure_pa,
-                feed,
-                trace=trace,
+            reason = diagnostics.failure_reason or "finite phase search was not certified"
+            raise PhaseEquilibriumError(reason, diagnostics, best_candidate)
+        if not 1 <= len(phases) <= 3:
+            raise ValueError("native phase equilibrium returned an invalid phase count")
+        if str(native["parameter_fingerprint"]) != model.parameter_fingerprint:
+            raise ValueError("native phase equilibrium changed the provider fingerprint")
+        total_free_energy = float(cast(float, native["total_free_energy_over_rt"]))
+        if not math.isfinite(total_free_energy):
+            raise ValueError("native phase-equilibrium objective must be finite")
+        return PhaseEquilibriumResult(
+            problem=problem,
+            phases=phases,
+            total_free_energy_over_rt=total_free_energy,
+            parameter_fingerprint=model.parameter_fingerprint,
+            diagnostics=diagnostics,
+            sensitivity=_phase_equilibrium_sensitivity(
+                native.get("sensitivity"), active_parameters
             ),
         )
-    except (RuntimeError, TypeError, ValueError) as error:
-        diagnostics = _failed_held_diagnostics("error", "native_exception", str(error))
-        raise FlashError(str(error), diagnostics) from error
-
-    if native.get("controller") == "perdomo_held2_paper_steps_1_to_10_v1":
-        try:
-            return _held2_result(
-                temperature_k,
-                pressure_pa,
-                feed,
-                model.parameter_fingerprint,
-                native,
-                active_parameters,
-            )
-        except FlashError:
-            raise
-        except (KeyError, TypeError, ValueError) as error:
-            diagnostics = _failed_held_diagnostics("error", "payload_error", str(error))
-            raise FlashError(
-                "native HELD2 payload does not match the typed contract", diagnostics
-            ) from error
-
-    try:
-        diagnostics = _held_diagnostics(native)
-        if diagnostics.globality_certificate != "not_guaranteed":
-            raise ValueError("native HELD result has an invalid globality certificate")
-        if diagnostics.outcome not in {"one_phase", "accepted"}:
-            reason = diagnostics.failure_reason or "HELD search did not return an accepted result"
-            raise FlashError(reason, diagnostics)
-        overall = _vector(native["overall_mole_fractions"], len(feed), "overall composition")
-        phase_payloads = cast(Sequence[Mapping[str, object]], native["phases"])
-        phases = tuple(_phase(payload) for payload in phase_payloads)
-        phase_fractions = _float_tuple(native["phase_fractions"])
-        if len(phases) != len(phase_fractions):
-            raise ValueError("native HELD phase count does not match its outcome")
-        if not math.isclose(sum(phase_fractions), 1.0, rel_tol=0.0, abs_tol=1.0e-10):
-            raise ValueError("native HELD phase fractions do not sum to one")
-        if str(native["parameter_fingerprint"]) != model.parameter_fingerprint:
-            raise ValueError("native HELD result has the wrong provider fingerprint")
-        sensitivity = _phase_equilibrium_sensitivity(
-            native.get("sensitivity"), active_parameters
-        )
-        return TpFlashResult(
-            temperature_k=float(cast(float, native["temperature_k"])),
-            pressure_pa=float(cast(float, native["pressure_pa"])),
-            overall_mole_fractions=overall,
-            phases=phases,
-            phase_fractions=phase_fractions,
-            total_free_energy_over_rt=float(cast(float, native["total_free_energy_over_rt"])),
-            parameter_fingerprint=str(native["parameter_fingerprint"]),
-            diagnostics=diagnostics,
-            sensitivity=sensitivity,
-        )
-    except FlashError:
+    except PhaseEquilibriumError:
         raise
     except (KeyError, TypeError, ValueError) as error:
-        diagnostics = _failed_held_diagnostics("error", "payload_error", str(error))
-        raise FlashError(
-            "native HELD payload does not match the typed contract", diagnostics
+        raise ValueError(
+            "native phase-equilibrium payload does not match the typed contract"
         ) from error
 
 
@@ -2214,9 +2085,7 @@ def chemical_equilibrium(
             active_parameter_set, epcsaft.ActiveParameterSet
         ):
             raise TypeError("active_parameters must be a canonical ActiveParameterSet")
-        active_parameters = (
-            () if active_parameter_set is None else active_parameter_set.coordinates
-        )
+        active_parameters = () if active_parameter_set is None else active_parameter_set.coordinates
         temperature_k = _quantity(temperature, "kelvin", "temperature", "chemical_equilibrium")
         pressure_pa = _quantity(pressure, "pascal", "pressure", "chemical_equilibrium")
         standard_state = problem.source_standard_state

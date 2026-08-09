@@ -2,10 +2,12 @@
 
 #include <string>
 
-#include "flash.hpp"
+#include "phase_equilibrium.hpp"
 
 namespace epcsaft_engine::equilibrium {
 
-[[nodiscard]] std::string flash_result_to_json(const FlashResult& result);
+[[nodiscard]] std::string phase_equilibrium_result_to_json(
+    const PhaseEquilibriumResult& result
+);
 
 }  // namespace epcsaft_engine::equilibrium

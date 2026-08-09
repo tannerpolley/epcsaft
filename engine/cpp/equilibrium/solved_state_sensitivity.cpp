@@ -272,8 +272,9 @@ RankRevealingSolve solve_total_derivatives(
             + partials.cwiseAbs().maxCoeff()
     );
     result.backward_error = numerator / denominator;
-    const double tolerance = 8192.0 * std::numeric_limits<double>::epsilon()
-        * static_cast<double>(dimension);
+    const double tolerance = solved_state_sensitivity_backward_error_max(
+        dimension
+    );
     if (!std::isfinite(result.backward_error)
         || result.backward_error > tolerance || !solution.allFinite()) {
         return result;

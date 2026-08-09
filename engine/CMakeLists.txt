@@ -215,27 +215,8 @@ add_library(
     cpp/equilibrium/chemical_equilibrium_solver.cpp
     cpp/equilibrium/provider.cpp
     cpp/equilibrium/solved_state_sensitivity.cpp
-    cpp/equilibrium/flash.cpp
+    cpp/equilibrium/phase_equilibrium.cpp
     cpp/equilibrium/result_json.cpp
-    cpp/equilibrium/held.cpp
-    cpp/equilibrium/held_stage_i.cpp
-    cpp/equilibrium/held_stage_ii.cpp
-    cpp/equilibrium/held_stage_iii.cpp
-    cpp/equilibrium/held2.cpp
-    cpp/equilibrium/held2_certificates.cpp
-    cpp/equilibrium/held2_algorithm.cpp
-    cpp/equilibrium/held2_progress.cpp
-    cpp/equilibrium/held2_step1.cpp
-    cpp/equilibrium/held2_step2.cpp
-    cpp/equilibrium/held2_step3.cpp
-    cpp/equilibrium/held2_step4.cpp
-    cpp/equilibrium/held2_step5.cpp
-    cpp/equilibrium/held2_step6.cpp
-    cpp/equilibrium/held2_step7.cpp
-    cpp/equilibrium/held2_step8.cpp
-    cpp/equilibrium/held2_step9.cpp
-    cpp/equilibrium/held2_step10.cpp
-    cpp/equilibrium/held2_step8_nlp.cpp
 )
 set_target_properties(epcsaft_engine_equilibrium_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(epcsaft_engine_equilibrium_core PUBLIC cxx_std_17)
@@ -245,7 +226,9 @@ target_include_directories(
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/epcsaft/_native"
 )
 target_include_directories(
-    epcsaft_engine_equilibrium_core SYSTEM PRIVATE "${boost_headers_SOURCE_DIR}"
+    epcsaft_engine_equilibrium_core SYSTEM PRIVATE
+    "${boost_headers_SOURCE_DIR}"
+    "${nlohmann_json_SOURCE_DIR}/single_include"
 )
 target_link_libraries(
     epcsaft_engine_equilibrium_core
