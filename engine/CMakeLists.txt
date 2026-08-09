@@ -214,6 +214,7 @@ add_library(
     cpp/equilibrium/chemical_equilibrium_support.cpp
     cpp/equilibrium/chemical_equilibrium_solver.cpp
     cpp/equilibrium/provider.cpp
+    cpp/equilibrium/solved_state_sensitivity.cpp
     cpp/equilibrium/flash.cpp
     cpp/equilibrium/result_json.cpp
     cpp/equilibrium/held.cpp
@@ -249,7 +250,7 @@ target_include_directories(
 target_link_libraries(
     epcsaft_engine_equilibrium_core
     PUBLIC epcsaft_engine_eos_core
-    PRIVATE PkgConfig::Ipopt highs nlopt
+    PRIVATE PkgConfig::Ipopt highs nlopt Eigen3::Eigen
 )
 
 pybind11_add_module(

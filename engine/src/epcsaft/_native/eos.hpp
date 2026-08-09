@@ -196,7 +196,7 @@ public:
         double volume,
         double ion_mole_fraction_max
     ) const;
-    NativeMixturePhaseBlock evaluate_reacting_phase_parameters(
+    NativeMixturePhaseBlock evaluate_parameterized_phase(
         double temperature,
         const std::vector<double>& amounts,
         double volume,

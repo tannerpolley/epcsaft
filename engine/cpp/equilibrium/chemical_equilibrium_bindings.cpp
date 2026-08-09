@@ -40,7 +40,9 @@ const epcsaft_native_transport& checked_chemical_transport(
         || transport->evaluate_electrolyte_phase == nullptr
         || transport->evaluate_molar_volume_bounds == nullptr
         || transport->evaluate_packing_fraction == nullptr) {
-        throw py::value_error("Provider capsule is missing the reacting-phase callbacks");
+        throw py::value_error(
+            "Provider capsule is missing the chemical-equilibrium phase callbacks"
+        );
     }
     if (!std::isfinite(transport->source_temperature_min_k)
         || !std::isfinite(transport->source_temperature_max_k)
@@ -1024,7 +1026,7 @@ py::dict solve_provider_source(
     const ProviderContext provider(transport);
     input.provider_fingerprint = provider.fingerprint();
     const std::string provider_topology_fingerprint =
-        provider.reacting_topology_fingerprint();
+        provider.parameterized_topology_fingerprint();
     const SourceReferenceTransferEvidence reference =
         source_reference_transfer_evidence(
             source_standard_state, "provider_transfer"

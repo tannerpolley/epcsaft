@@ -58,7 +58,7 @@ class ProviderContext {
 public:
     explicit ProviderContext(const epcsaft_native_transport& transport);
 
-    [[nodiscard]] std::string reacting_topology_fingerprint() const;
+    [[nodiscard]] std::string parameterized_topology_fingerprint() const;
 
     [[nodiscard]] PhaseEvaluation evaluate(
         double temperature_k,
@@ -93,7 +93,7 @@ public:
 
     [[nodiscard]] ProviderActiveParameterSet active_parameters() const;
 
-    [[nodiscard]] ParameterizedPhaseEvaluation evaluate_reacting_phase_parameters(
+    [[nodiscard]] ParameterizedPhaseEvaluation evaluate_parameterized_phase(
         double temperature_k,
         const std::vector<double>& amounts_mol,
         double volume_m3,

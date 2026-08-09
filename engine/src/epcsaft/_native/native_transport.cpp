@@ -246,6 +246,7 @@ struct NativeTransportEndpoint final {
           phase_callbacks_admitted(
               source_model.supports_pure_transport()
               || source_model.supports_mixture_transport()
+              || source_model.supports_fixed_topology_associating_mixture()
               || source_model.supports_electrolyte_transport()
           ),
           neutral_reference_admitted(
@@ -299,9 +300,10 @@ struct NativeTransportEndpoint final {
               phase_callbacks_admitted
                   ? &NativeTransportEndpoint::evaluate_packing_fraction
                   : nullptr,
-              source_model.supports_electrolyte_transport()
+              phase_callbacks_admitted
+                      && !active_coordinates.empty()
                       && !topology_fingerprint.empty()
-                  ? &NativeTransportEndpoint::evaluate_reacting_phase_parameters
+                  ? &NativeTransportEndpoint::evaluate_parameterized_phase
                   : nullptr,
               source_model.supports_electrolyte_transport()
                       && !topology_fingerprint.empty()
@@ -459,7 +461,7 @@ struct NativeTransportEndpoint final {
     }
 
     // EqID: neutral_reference_stoichiometric_basis
-    static int evaluate_reacting_phase_parameters(
+    static int evaluate_parameterized_phase(
         const void* context,
         double temperature_k,
         const double* amounts_mol,
@@ -467,13 +469,13 @@ struct NativeTransportEndpoint final {
         double volume_m3,
         double packing_fraction_min,
         double packing_fraction_max,
-        epcsaft_reacting_phase_parameter_result* result
+        epcsaft_parameterized_phase_result* result
     ) noexcept {
         if (result == nullptr) {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT;
         }
         if (result->struct_size
-            != sizeof(epcsaft_reacting_phase_parameter_result)) {
+            != sizeof(epcsaft_parameterized_phase_result)) {
             return EPCSAFT_NATIVE_STATUS_BUFFER_ERROR;
         }
         const double nan = std::numeric_limits<double>::quiet_NaN();
@@ -498,18 +500,18 @@ struct NativeTransportEndpoint final {
         if (context == nullptr || amounts_mol == nullptr) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT,
-                "reacting phase required pointer is null"
+                "parameterized phase required pointer is null"
             );
         }
         const auto& endpoint =
             *static_cast<const NativeTransportEndpoint*>(context);
         const std::size_t request_count = endpoint.active_coordinates.size();
         if (!endpoint.phase_callbacks_admitted
-            || !endpoint.model.supports_electrolyte_transport()
+            || endpoint.active_coordinates.empty()
             || endpoint.topology_fingerprint.empty()) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL,
-                "reacting phase model identity is unsupported"
+                "parameterized phase model identity is unsupported"
             );
         }
         if (!std::isfinite(temperature_k)
@@ -517,7 +519,7 @@ struct NativeTransportEndpoint final {
             || temperature_k > endpoint.temperature_max_k) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR,
-                "reacting phase temperature is outside the source domain"
+                "parameterized phase temperature is outside the source domain"
             );
         }
         const std::size_t state_count = endpoint.component_ids.size() + 1;
@@ -551,7 +553,7 @@ struct NativeTransportEndpoint final {
                 == nullptr) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_BUFFER_ERROR,
-                "reacting phase buffers do not match immutable dimensions"
+                "parameterized phase buffers do not match immutable dimensions"
             );
         }
         try {
@@ -576,7 +578,7 @@ struct NativeTransportEndpoint final {
                     endpoint.ion_mole_fraction_max,
                     endpoint.active_coordinates
                 );
-            const auto phase = endpoint.model.evaluate_reacting_phase_parameters(
+            const auto phase = endpoint.model.evaluate_parameterized_phase(
                 temperature_k,
                 amounts,
                 volume_m3,
@@ -598,7 +600,7 @@ struct NativeTransportEndpoint final {
                 || packing.gradient.size() != joint_count
                 || packing.hessian.size() != joint_count * joint_count) {
                 throw std::runtime_error(
-                    "reacting phase tensor dimensions changed"
+                    "parameterized phase tensor dimensions changed"
                 );
             }
             std::vector<double> state_gradient(state_count);
@@ -675,7 +677,7 @@ struct NativeTransportEndpoint final {
                 || !std::isfinite(phase.pressure_pa)
                 || !std::isfinite(packing.packing_fraction)) {
                 throw std::runtime_error(
-                    "reacting phase result contains nonfinite values"
+                    "parameterized phase result contains nonfinite values"
                 );
             }
             std::copy(
@@ -773,7 +775,7 @@ struct NativeTransportEndpoint final {
         } catch (...) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR,
-                "unknown reacting phase parameter failure"
+                "unknown parameterized phase evaluation failure"
             );
         }
     }
@@ -1656,6 +1658,7 @@ const epcsaft_native_transport* create_native_transport(
 ) {
     if (!model.supports_pure_transport()
         && !model.supports_mixture_transport()
+        && !model.supports_fixed_topology_associating_mixture()
         && !model.supports_electrolyte_transport()) {
         throw std::invalid_argument(
             "native transport requires a supported phase-block model"

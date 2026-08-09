@@ -1152,26 +1152,68 @@ JsonValue paper_algorithm_to_json(
     return result;
 }
 
+JsonValue solved_state_sensitivity_to_json(
+    const SolvedStateSensitivity& sensitivity
+) {
+    JsonValue result = JsonValue::object();
+    result["status"] = sensitivity.status;
+    result["failure_reason"] = sensitivity.failure_reason.empty()
+        ? JsonValue(nullptr)
+        : JsonValue(sensitivity.failure_reason);
+    result["derivative_order"] = 1;
+    result["higher_order_status"] = "unavailable";
+    result["higher_order_reason"] = "higher_order_total_derivatives_not_implemented";
+    result["tensor_layout"] = "row-major";
+    result["residual_identities"] = sensitivity.residual_identities;
+    result["state_identities"] = sensitivity.state_identities;
+    result["output_identities"] = sensitivity.output_identities;
+    result["parameter_identities"] = sensitivity.parameter_identities;
+    result["residual_state_jacobian"] =
+        sensitivity.residual_state_jacobian;
+    result["residual_parameter_jacobian"] =
+        sensitivity.residual_parameter_jacobian;
+    result["state_parameter_jacobian"] =
+        sensitivity.state_parameter_jacobian;
+    result["output_parameter_jacobian"] =
+        sensitivity.output_parameter_jacobian;
+    result["dimension"] = sensitivity.dimension;
+    result["parameter_count"] = sensitivity.parameter_identities.size();
+    result["output_count"] = sensitivity.output_identities.size();
+    result["rank"] = sensitivity.rank;
+    result["scaled_condition_number_2"] =
+        std::isfinite(sensitivity.scaled_condition_number_2)
+            ? JsonValue(sensitivity.scaled_condition_number_2)
+            : JsonValue(nullptr);
+    result["linear_solve_backward_error"] =
+        std::isfinite(sensitivity.linear_solve_backward_error)
+            ? JsonValue(sensitivity.linear_solve_backward_error)
+            : JsonValue(nullptr);
+    result["reference_phase_index"] = sensitivity.reference_phase_index;
+    return result;
+}
+
 }  // namespace
 
 std::string flash_result_to_json(const FlashResult& result) {
     std::ostringstream output;
+    JsonValue payload;
     if (const auto* held2 = std::get_if<Held2AlgorithmResult>(&result.solve)) {
-        write_json(
-            output,
-            paper_algorithm_to_json(
-                *held2,
-                {
-                    result.input.temperature_k,
-                    result.input.pressure_pa,
-                    result.input.overall_mole_fractions,
-                },
-                result.parameter_fingerprint
-            )
+        payload = paper_algorithm_to_json(
+            *held2,
+            {
+                result.input.temperature_k,
+                result.input.pressure_pa,
+                result.input.overall_mole_fractions,
+            },
+            result.parameter_fingerprint
         );
     } else {
-        write_json(output, neutral_flash_to_json(result));
+        payload = neutral_flash_to_json(result);
     }
+    payload["sensitivity"] = result.sensitivity
+        ? solved_state_sensitivity_to_json(*result.sensitivity)
+        : JsonValue(nullptr);
+    write_json(output, payload);
     output << '\n';
     return output.str();
 }

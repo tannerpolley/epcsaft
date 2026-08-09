@@ -44,7 +44,7 @@ def _assert_provider_matches_direct_partials(
     direct = model._native.evaluate_phase_derivatives(
         298.15, amounts, volume, coordinates, 2
     )
-    provider = _equilibrium.evaluate_reacting_phase(
+    provider = _equilibrium.evaluate_parameterized_phase(
         _native_transport(model, active),
         298.15,
         amounts,
