@@ -157,7 +157,6 @@ struct ThermodynamicDerivatives final {
     double temperature_density;
     double density_density;
     double residual_helmholtz;
-    std::vector<double> active_component_parameters;
     std::vector<double> hessian;
 };
 
@@ -183,18 +182,13 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     double molar_density,
     const std::vector<double>& mole_fractions,
     const NativeParameters& parameters,
-    const std::vector<double>& site_fractions,
-    const std::vector<NativeActiveParameter>& active_component_parameters = {}
+    const std::vector<double>& site_fractions
 ) {
     CppAdSerialGuard cppad_guard;
     using ADScalar = CppAD::AD<double>;
     const std::size_t components = mole_fractions.size();
     const std::size_t sites = site_fractions.size();
-    const std::size_t component_parameter_coordinates =
-        active_component_parameters.size();
-    const std::size_t component_parameter_offset = 2 + components;
-    const std::size_t coordinates =
-        component_parameter_offset + component_parameter_coordinates;
+    const std::size_t coordinates = 2 + components;
     const std::size_t width = coordinates + sites;
 
     std::vector<ADScalar> independent(width);
@@ -202,12 +196,6 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     independent[1] = molar_density;
     for (std::size_t component = 0; component < components; ++component) {
         independent[2 + component] = mole_fractions[component];
-    }
-    for (std::size_t coordinate = 0;
-         coordinate < component_parameter_coordinates;
-         ++coordinate) {
-        independent[component_parameter_offset + coordinate] =
-            active_component_parameters[coordinate].value;
     }
     for (std::size_t site = 0; site < sites; ++site) {
         independent[coordinates + site] = site_fractions[site];
@@ -220,27 +208,8 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
     const std::vector<ADScalar> fractions(
         independent.begin() + coordinates, independent.end()
     );
-    auto sigma = segment_sigma(independent[0], parameters);
-    std::vector<ADScalar> active_dispersion_energy(
-        parameters.dispersion_energy_over_k.begin(),
-        parameters.dispersion_energy_over_k.end()
-    );
-    for (std::size_t coordinate = 0;
-         coordinate < component_parameter_coordinates;
-         ++coordinate) {
-        const auto& parameter = active_component_parameters[coordinate];
-        if (parameter.family == ActiveComponentParameter::SegmentDiameter) {
-            sigma[parameter.component] +=
-                independent[component_parameter_offset + coordinate]
-                - parameters.sigma_constant[parameter.component];
-        } else {
-            active_dispersion_energy[parameter.component] =
-                independent[component_parameter_offset + coordinate];
-        }
-    }
-    const auto diameter = segment_diameter(
-        independent[0], parameters, sigma, &active_dispersion_energy
-    );
+    const auto sigma = segment_sigma(independent[0], parameters);
+    const auto diameter = segment_diameter(independent[0], parameters, sigma);
     const auto electrolyte = electrolyte_contribution(
         independent[0],
         independent[1],
@@ -263,8 +232,7 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         diameter,
         fractions,
         electrolyte.debye_huckel,
-        born,
-        &active_dispersion_energy
+        born
     );
     const auto delta = association_delta(
         independent[0],
@@ -288,9 +256,6 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
 
     std::vector<double> point = {temperature, molar_density};
     point.insert(point.end(), mole_fractions.begin(), mole_fractions.end());
-    for (const auto& parameter : active_component_parameters) {
-        point.push_back(parameter.value);
-    }
     point.insert(point.end(), site_fractions.begin(), site_fractions.end());
     const auto jacobian = function.Jacobian(point);
 
@@ -384,14 +349,6 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         reduced_hessian[1],
         reduced_hessian[coordinates + 1],
         residual_helmholtz,
-        std::vector<double>(
-            gradient.begin()
-                + static_cast<std::ptrdiff_t>(component_parameter_offset),
-            gradient.begin()
-                + static_cast<std::ptrdiff_t>(
-                    component_parameter_offset + component_parameter_coordinates
-                )
-        ),
         std::move(reduced_hessian),
     };
 }
@@ -410,25 +367,6 @@ inline ThermodynamicDerivatives thermodynamic_derivatives(
         mole_fractions,
         parameters,
         site_fractions
-    );
-}
-
-// EqExclude: CppAD-generated derivative machinery
-inline ThermodynamicDerivatives thermodynamic_derivatives_active_components(
-    double temperature,
-    double molar_density,
-    const std::vector<double>& mole_fractions,
-    const NativeParameters& parameters,
-    const std::vector<double>& site_fractions,
-    const std::vector<NativeActiveParameter>& active_parameters
-) {
-    return thermodynamic_derivatives_impl(
-        temperature,
-        molar_density,
-        mole_fractions,
-        parameters,
-        site_fractions,
-        active_parameters
     );
 }
 

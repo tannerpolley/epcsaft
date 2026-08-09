@@ -22,17 +22,20 @@ pybind11::capsule make_native_transport(
     const std::string& topology_fingerprint,
     const std::string& component_order_fingerprint,
     const std::string& domain_fingerprint,
-    const std::string& artifact_fingerprint
+    const std::string& artifact_fingerprint,
+    const std::vector<NativeActiveCoordinate>& active_parameters
 );
 
 pybind11::dict evaluate_source_reference_transfer(
     const pybind11::capsule& capsule,
-    const std::string& expected_parameter_fingerprint,
-    const std::string& expected_topology_fingerprint,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::string>& component_ids,
     const std::vector<double>& source_solvent_mole_fractions,
+    const std::vector<std::array<std::size_t, 2>>& ion_pair_indices,
+    const std::vector<std::array<int, 2>>& ion_pair_stoichiometry,
+    const std::string& phase,
+    const std::string& reference_convention,
     const std::string& reference_state_id,
     const std::string& activity_convention_id,
     const std::string& reference_state_fingerprint,

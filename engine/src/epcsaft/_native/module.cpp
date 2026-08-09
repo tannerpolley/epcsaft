@@ -361,18 +361,21 @@ PYBIND11_MODULE(_core, module) {
         py::arg("topology_fingerprint") = "",
         py::arg("component_order_fingerprint") = "",
         py::arg("domain_fingerprint") = "",
-        py::arg("artifact_fingerprint") = ""
+        py::arg("artifact_fingerprint") = "",
+        py::arg("active_parameters") = std::vector<epcsaft::NativeActiveCoordinate>{}
     );
     module.def(
         "source_reference_transfer",
         &epcsaft::evaluate_source_reference_transfer,
         py::arg("capsule"),
-        py::arg("expected_parameter_fingerprint"),
-        py::arg("expected_topology_fingerprint"),
         py::arg("temperature_k"),
         py::arg("pressure_pa"),
         py::arg("component_ids"),
         py::arg("source_solvent_mole_fractions"),
+        py::arg("ion_pair_indices"),
+        py::arg("ion_pair_stoichiometry"),
+        py::arg("phase"),
+        py::arg("reference_convention"),
         py::arg("reference_state_id"),
         py::arg("activity_convention_id"),
         py::arg("reference_state_fingerprint"),

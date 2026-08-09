@@ -30,8 +30,7 @@ const epcsaft_native_transport& checked_transport(const py::capsule& capsule) {
         throw py::value_error("expected private Engine native transport");
     }
     const auto* transport = capsule.get_pointer<epcsaft_native_transport>();
-    if (transport == nullptr || transport->model_context == nullptr
-        || transport->evaluate_pure_phase == nullptr) {
+    if (transport == nullptr || transport->model_context == nullptr) {
         throw py::value_error("native transport is incomplete");
     }
     return *transport;
@@ -78,28 +77,72 @@ py::dict evaluate_mixture_phase(
     const py::capsule& capsule,
     double temperature_k,
     const std::vector<double>& amounts_mol,
-    double volume_m3,
-    const std::string& expected_fingerprint
+    double volume_m3
 ) {
     const epcsaft_engine::equilibrium::ProviderContext provider(
-        checked_mixture_transport(capsule), expected_fingerprint
+        checked_mixture_transport(capsule)
     );
     return mixture_phase_to_dict(
         provider.evaluate_mixture(temperature_k, amounts_mol, volume_m3)
     );
 }
 
+py::dict evaluate_reacting_phase(
+    const py::capsule& capsule,
+    double temperature_k,
+    const std::vector<double>& amounts_mol,
+    double volume_m3,
+    double packing_fraction_min,
+    double packing_fraction_max
+) {
+    const epcsaft_native_transport& transport = checked_transport(capsule);
+    const epcsaft_engine::equilibrium::ProviderContext provider(transport);
+    const auto active_parameters = provider.active_parameters();
+    const auto evaluation = provider.evaluate_reacting_phase_parameters(
+        temperature_k,
+        amounts_mol,
+        volume_m3,
+        packing_fraction_min,
+        packing_fraction_max,
+        active_parameters
+    );
+    py::dict result;
+    result["active_parameter_identities"] = active_parameters.identities;
+    result["value"] = evaluation.phase.value;
+    result["state_gradient"] = evaluation.phase.gradient;
+    result["state_hessian"] = evaluation.phase.hessian;
+    result["parameter_derivatives"] = evaluation.parameter_derivatives;
+    result["state_parameter_derivatives"] =
+        evaluation.state_parameter_derivatives;
+    result["pressure_pa"] = evaluation.phase.pressure_pa;
+    result["pressure_parameter_derivatives_pa"] =
+        evaluation.pressure_parameter_derivatives_pa;
+    result["chemical_potential_parameter_derivatives_over_rt"] =
+        evaluation.chemical_potential_parameter_derivatives_over_rt;
+    result["packing_fraction"] = evaluation.packing.value;
+    result["packing_state_gradient"] = evaluation.packing.gradient;
+    result["packing_state_hessian"] = evaluation.packing.hessian;
+    result["packing_parameter_derivatives"] =
+        evaluation.packing_parameter_derivatives;
+    result["molar_volume_bounds_m3_per_mol"] =
+        evaluation.molar_volume_bounds_m3_per_mol;
+    result["molar_volume_bound_parameter_derivatives_m3_per_mol"] =
+        evaluation.molar_volume_bound_parameter_derivatives_m3_per_mol;
+    result["topology_fingerprint"] = evaluation.topology_fingerprint;
+    return result;
+}
+
 py::dict evaluate_phase(
     const py::capsule& capsule,
     double temperature_k,
     double amount_mol,
-    double volume_m3,
-    const std::string& expected_fingerprint
+    double volume_m3
 ) {
     const epcsaft_native_transport& transport = checked_transport(capsule);
-    const epcsaft_engine::equilibrium::ProviderContext provider(
-        transport, expected_fingerprint
-    );
+    if (transport.evaluate_pure_phase == nullptr) {
+        throw py::value_error("provider capsule is missing its pure phase evaluator");
+    }
+    const epcsaft_engine::equilibrium::ProviderContext provider(transport);
     const epcsaft_engine::equilibrium::PhaseEvaluation evaluation =
         provider.evaluate(temperature_k, amount_mol, volume_m3);
     const epcsaft_phase_block_result& phase = evaluation.provider;
@@ -128,12 +171,10 @@ py::dict solve_tp_flash(
     double temperature_k,
     double pressure_pa,
     const std::vector<double>& overall_mole_fractions,
-    const std::string& expected_fingerprint,
     bool trace
 ) {
     const epcsaft_engine::equilibrium::ProviderContext provider(
-            checked_transport(capsule),
-        expected_fingerprint
+        checked_transport(capsule)
     );
     epcsaft_engine::equilibrium::Held2TerminalProgress terminal_progress(std::cout);
     epcsaft_engine::equilibrium::FlashResult flash;
@@ -250,8 +291,17 @@ PYBIND11_MODULE(_equilibrium, module) {
         py::arg("capsule"),
         py::arg("temperature_k"),
         py::arg("amounts_mol"),
+        py::arg("volume_m3")
+    );
+    module.def(
+        "evaluate_reacting_phase",
+        &evaluate_reacting_phase,
+        py::arg("capsule"),
+        py::arg("temperature_k"),
+        py::arg("amounts_mol"),
         py::arg("volume_m3"),
-        py::arg("expected_fingerprint")
+        py::arg("packing_fraction_min"),
+        py::arg("packing_fraction_max")
     );
     module.def(
         "_solve_tp_flash",
@@ -260,7 +310,6 @@ PYBIND11_MODULE(_equilibrium, module) {
         py::arg("temperature_k"),
         py::arg("pressure_pa"),
         py::arg("overall_mole_fractions"),
-        py::arg("expected_fingerprint"),
         py::kw_only(),
         py::arg("trace") = false
     );
@@ -299,7 +348,6 @@ PYBIND11_MODULE(_equilibrium, module) {
         py::arg("capsule"),
         py::arg("temperature_k"),
         py::arg("amount_mol"),
-        py::arg("volume_m3"),
-        py::arg("expected_fingerprint")
+        py::arg("volume_m3")
     );
 }

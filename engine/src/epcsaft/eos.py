@@ -1709,9 +1709,15 @@ def _native_transport_configuration(
     }
 
 
-def _native_transport(model: _EosModel) -> object:
+def _native_transport(
+    model: _EosModel,
+    active_parameters: ActiveParameterSet | None = None,
+) -> object:
     """Return the model-bound capsule used only by Engine's native modules."""
     configuration = _native_transport_configuration(model, _python_native_artifact_fingerprint())
+    configuration["active_parameters"] = (
+        () if active_parameters is None else model._active_coordinates(active_parameters)
+    )
     try:
         return _native_transport_factory(model._native, **configuration)
     except (RuntimeError, ValueError) as exc:

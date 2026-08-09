@@ -117,19 +117,6 @@ private:
     const std::uint64_t deadline_ns_;
 };
 
-enum class ActiveComponentParameter {
-    SegmentDiameter,
-    DispersionEnergyOverK,
-};
-
-// Retained only for Equilibrium provider transport; CAP-07 replaces this
-// family-limited request with the canonical active-coordinate descriptor.
-struct NativeActiveParameter final {
-    ActiveComponentParameter family;
-    std::size_t component;
-    double value;
-};
-
 struct NativeMolarVolumeBoundsParameterBlock final {
     std::array<double, 2> bounds_m3_per_mol;
     std::vector<double> parameter_derivatives_m3_per_mol;
@@ -214,7 +201,7 @@ public:
         const std::vector<double>& amounts,
         double volume,
         double ion_mole_fraction_max,
-        const std::vector<NativeActiveParameter>& active_parameters
+        const std::vector<NativeActiveCoordinate>& active_parameters
     ) const;
     double evaluate_electrolyte_phase_value(
         double temperature,
@@ -244,13 +231,13 @@ public:
         const std::vector<double>& amounts,
         double volume,
         double ion_mole_fraction_max,
-        const std::vector<NativeActiveParameter>& active_parameters
+        const std::vector<NativeActiveCoordinate>& active_parameters
     ) const;
     NativeInversePackingGeometryBlock evaluate_inverse_packing_geometry(
         double temperature,
         const std::vector<double>& amounts,
         double log_packing_fraction,
-        const std::vector<NativeActiveParameter>& active_parameters
+        const std::vector<NativeActiveCoordinate>& active_parameters
     ) const;
     NativeMolarVolumeBoundsParameterBlock molar_volume_bounds_parameters(
         double temperature,
@@ -258,7 +245,7 @@ public:
         double packing_fraction_min,
         double packing_fraction_max,
         double ion_mole_fraction_max,
-        const std::vector<NativeActiveParameter>& active_parameters
+        const std::vector<NativeActiveCoordinate>& active_parameters
     ) const;
     std::vector<double> reference_composition(
         const std::vector<double>& solvent_fractions,

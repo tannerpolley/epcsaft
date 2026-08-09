@@ -92,11 +92,14 @@ bool full_row_rank(
 // EqID: neutral_reference_stoichiometric_basis
 NeutralReferenceBasis make_neutral_reference_basis(
     const std::vector<std::string>& component_ids,
-    const std::vector<int>& charges
+    const std::vector<int>& charges,
+    const std::vector<double>& reference_composition,
+    const std::vector<NeutralReferenceBasis::IonPair>& ion_pairs
 ) {
     NeutralReferenceBasis result;
     const std::size_t components = component_ids.size();
     if (components < 3 || components != charges.size()
+        || reference_composition.size() != components
         || std::any_of(
             component_ids.begin(), component_ids.end(), [](const auto& value) {
                 return value.empty();
@@ -108,8 +111,6 @@ NeutralReferenceBasis make_neutral_reference_basis(
         return result;
     }
     std::vector<std::size_t> order(components);
-    std::vector<std::size_t> cations;
-    std::vector<std::size_t> anions;
     std::iota(order.begin(), order.end(), 0u);
     std::sort(order.begin(), order.end(), [&](std::size_t left, std::size_t right) {
         return component_ids[left] < component_ids[right];
@@ -122,22 +123,12 @@ NeutralReferenceBasis make_neutral_reference_basis(
     for (std::size_t component : order) {
         if (charges[component] == 0) {
             result.neutral_components.push_back(component);
-        } else if (charges[component] > 0) {
-            cations.push_back(component);
-        } else {
-            anions.push_back(component);
         }
     }
-    if (result.neutral_components.empty() || cations.empty()
-        || anions.empty()) {
+    if (result.neutral_components.empty() || ion_pairs.empty()) {
         return {};
     }
-    result.reference_composition.assign(components, 0.0);
-    const double neutral_fraction =
-        1.0 / static_cast<double>(result.neutral_components.size());
-    for (std::size_t component : result.neutral_components) {
-        result.reference_composition[component] = neutral_fraction;
-    }
+    result.reference_composition = reference_composition;
     auto append_row = [&](std::size_t left, double left_value,
                           std::size_t right = 0u, double right_value = 0.0) {
         result.rows.resize(result.rows.size() + components, 0.0);
@@ -150,27 +141,27 @@ NeutralReferenceBasis make_neutral_reference_basis(
     for (std::size_t component : result.neutral_components) {
         append_row(component, 1.0);
     }
-    auto append_pair = [&](std::size_t cation, std::size_t anion) {
-        const int divisor = std::gcd(
-            std::abs(charges[cation]), std::abs(charges[anion])
-        );
-        const std::array<int, 2> stoichiometry{
-            std::abs(charges[anion]) / divisor,
-            std::abs(charges[cation]) / divisor,
-        };
-        result.ion_pairs.push_back({cation, anion, stoichiometry});
+    for (const auto& pair : ion_pairs) {
+        if (pair.cation >= components || pair.anion >= components
+            || charges[pair.cation] <= 0 || charges[pair.anion] >= 0
+            || pair.stoichiometry[0] <= 0 || pair.stoichiometry[1] <= 0) {
+            return {};
+        }
+        const std::int64_t charge_balance =
+            static_cast<std::int64_t>(pair.stoichiometry[0])
+                * static_cast<std::int64_t>(charges[pair.cation])
+            + static_cast<std::int64_t>(pair.stoichiometry[1])
+                * static_cast<std::int64_t>(charges[pair.anion]);
+        if (charge_balance != 0) {
+            return {};
+        }
+        result.ion_pairs.push_back(pair);
         append_row(
-            cation,
-            static_cast<double>(stoichiometry[0]),
-            anion,
-            static_cast<double>(stoichiometry[1])
+            pair.cation,
+            static_cast<double>(pair.stoichiometry[0]),
+            pair.anion,
+            static_cast<double>(pair.stoichiometry[1])
         );
-    };
-    for (std::size_t anion : anions) {
-        append_pair(cations.front(), anion);
-    }
-    for (std::size_t index = 1; index < cations.size(); ++index) {
-        append_pair(cations[index], anions.front());
     }
     const std::size_t expected_rows = components - 1u;
     if (result.row_count() != expected_rows
@@ -220,7 +211,8 @@ struct NativeTransportEndpoint final {
     std::vector<std::string> component_ids;
     std::vector<const char*> component_id_pointers;
     std::vector<std::int32_t> component_charges;
-    NeutralReferenceBasis neutral_reference_basis;
+    std::vector<NativeActiveCoordinate> active_coordinates;
+    std::vector<const char*> active_identity_pointers;
     epcsaft_native_transport table;
 
     NativeTransportEndpoint(
@@ -235,9 +227,12 @@ struct NativeTransportEndpoint final {
         std::string topology_identity,
         std::string component_order_identity,
         std::string domain_identity,
-        std::string artifact_identity
+        std::string artifact_identity,
+        std::vector<NativeActiveCoordinate> coordinates
     )
-        : model(source_model),
+        : model(coordinates.empty()
+              ? source_model
+              : source_model.with_active_coordinates(coordinates)),
           parameter_fingerprint(std::move(fingerprint)),
           topology_fingerprint(std::move(topology_identity)),
           component_order_fingerprint(std::move(component_order_identity)),
@@ -254,9 +249,7 @@ struct NativeTransportEndpoint final {
               || source_model.supports_electrolyte_transport()
           ),
           neutral_reference_admitted(
-              make_neutral_reference_basis(
-                  identifiers, source_model.charge_numbers()
-              ).row_count() == identifiers.size() - 1u
+              source_model.supports_electrolyte_transport()
               && sha256_fingerprint_valid(topology_fingerprint)
               && sha256_fingerprint_valid(component_order_fingerprint)
               && sha256_fingerprint_valid(domain_fingerprint)
@@ -279,9 +272,15 @@ struct NativeTransportEndpoint final {
               source_model.charge_numbers().begin(),
               source_model.charge_numbers().end()
           ),
-          neutral_reference_basis(make_neutral_reference_basis(
-              component_ids, source_model.charge_numbers()
-          )),
+          active_coordinates(std::move(coordinates)),
+          active_identity_pointers([&] {
+              std::vector<const char*> pointers;
+              pointers.reserve(active_coordinates.size());
+              for (const auto& coordinate : active_coordinates) {
+                  pointers.push_back(coordinate.identity.c_str());
+              }
+              return pointers;
+          }()),
           table{
               this,
               source_model.supports_pure_transport()
@@ -313,103 +312,23 @@ struct NativeTransportEndpoint final {
                   : nullptr,
               component_id_pointers.data(),
               component_charges.data(),
+              active_coordinates.size(),
+              active_identity_pointers.data(),
               parameter_fingerprint.c_str(),
               topology_fingerprint.c_str(),
               temperature_min_k,
               temperature_max_k,
               ion_mole_fraction_max,
-              neutral_reference_admitted
-                  ? neutral_reference_basis.row_count()
-                  : 0u,
           } {}
-
-    // EqExclude: transport and buffer mechanics
-    static std::vector<NativeActiveParameter> active_parameters(
-        const NativeTransportEndpoint& endpoint,
-        const epcsaft_active_parameter_request* requests,
-        std::size_t request_count
-    ) {
-        if (request_count == 0) {
-            return {};
-        }
-        if (requests == nullptr) {
-            throw std::invalid_argument(
-                "active parameter request pointer is null"
-            );
-        }
-        std::vector<NativeActiveParameter> result;
-        result.reserve(request_count);
-        for (std::size_t index = 0; index < request_count; ++index) {
-            const auto& request = requests[index];
-            if (request.parameter_identity
-                    != EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT
-                || request.component_index < 0
-                || static_cast<std::size_t>(request.component_index)
-                    >= endpoint.component_ids.size()
-                || request.unit == nullptr || !std::isfinite(request.value)
-                || request.value <= 0.0) {
-                throw std::invalid_argument(
-                    "active parameter request is malformed"
-                );
-            }
-            ActiveComponentParameter family;
-            const char* expected_unit = nullptr;
-            if (request.parameter_family
-                == EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER) {
-                family = ActiveComponentParameter::SegmentDiameter;
-                expected_unit = "angstrom";
-            } else if (
-                request.parameter_family
-                == EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K
-            ) {
-                family = ActiveComponentParameter::DispersionEnergyOverK;
-                expected_unit = "kelvin";
-            } else {
-                throw std::logic_error(
-                    "active parameter family is unsupported"
-                );
-            }
-            if (std::strcmp(request.unit, expected_unit) != 0) {
-                throw std::invalid_argument(
-                    "active parameter unit does not match its family"
-                );
-            }
-            if (std::any_of(
-                    result.begin(),
-                    result.end(),
-                    [&](const NativeActiveParameter& item) {
-                        return item.family == family
-                            && item.component
-                                == static_cast<std::size_t>(
-                                    request.component_index
-                                );
-                    }
-                )) {
-                throw std::invalid_argument(
-                    "active parameter request is duplicated"
-                );
-            }
-            result.push_back({
-                family,
-                static_cast<std::size_t>(request.component_index),
-                request.value,
-            });
-        }
-        return result;
-    }
 
     // EqID: phase_packing_fraction
     // EqExclude: transport and buffer mechanics
     static int evaluate_inverse_packing_geometry(
         const void* context,
-        const char* expected_fingerprint,
-        const char* expected_topology_fingerprint,
         double temperature_k,
         const double* amounts_mol,
         size_t amount_count,
         double log_packing_fraction,
-        const epcsaft_active_parameter_request* requests,
-        size_t request_count,
         epcsaft_inverse_packing_geometry_result* result
     ) noexcept {
         if (result == nullptr) {
@@ -429,9 +348,7 @@ struct NativeTransportEndpoint final {
             std::snprintf(result->error, sizeof(result->error), "%s", message);
             return status;
         };
-        if (context == nullptr || expected_fingerprint == nullptr
-            || expected_topology_fingerprint == nullptr
-            || amounts_mol == nullptr) {
+        if (context == nullptr || amounts_mol == nullptr) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT,
                 "inverse packing required pointer is null"
@@ -439,24 +356,11 @@ struct NativeTransportEndpoint final {
         }
         const auto& endpoint =
             *static_cast<const NativeTransportEndpoint*>(context);
-        if (endpoint.topology_fingerprint.empty()
-            || std::strcmp(
-                expected_fingerprint,
-                endpoint.parameter_fingerprint.c_str()
-            ) != 0
-            || std::strcmp(
-                expected_topology_fingerprint,
-                endpoint.topology_fingerprint.c_str()
-            ) != 0) {
+        const std::size_t request_count = endpoint.active_coordinates.size();
+        if (endpoint.topology_fingerprint.empty()) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL,
                 "inverse packing model or topology is not admitted"
-            );
-        }
-        if (request_count > 2 * endpoint.table.component_count) {
-            return fail(
-                EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT,
-                "inverse packing active parameter count exceeds model maximum"
             );
         }
         const std::size_t coordinate_count =
@@ -506,8 +410,6 @@ struct NativeTransportEndpoint final {
         }
 
         try {
-            const auto parameters =
-                active_parameters(endpoint, requests, request_count);
             const std::vector<double> amounts(
                 amounts_mol, amounts_mol + amount_count
             );
@@ -516,7 +418,7 @@ struct NativeTransportEndpoint final {
                     temperature_k,
                     amounts,
                     log_packing_fraction,
-                    parameters
+                    endpoint.active_coordinates
                 );
             std::copy(
                 block.gradient.begin(),
@@ -559,16 +461,12 @@ struct NativeTransportEndpoint final {
     // EqID: neutral_reference_stoichiometric_basis
     static int evaluate_reacting_phase_parameters(
         const void* context,
-        const char* expected_fingerprint,
-        const char* expected_topology_fingerprint,
         double temperature_k,
         const double* amounts_mol,
         size_t amount_count,
         double volume_m3,
         double packing_fraction_min,
         double packing_fraction_max,
-        const epcsaft_active_parameter_request* requests,
-        size_t request_count,
         epcsaft_reacting_phase_parameter_result* result
     ) noexcept {
         if (result == nullptr) {
@@ -597,9 +495,7 @@ struct NativeTransportEndpoint final {
             std::snprintf(result->error, sizeof(result->error), "%s", message);
             return status;
         };
-        if (context == nullptr || expected_fingerprint == nullptr
-            || expected_topology_fingerprint == nullptr
-            || amounts_mol == nullptr) {
+        if (context == nullptr || amounts_mol == nullptr) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT,
                 "reacting phase required pointer is null"
@@ -607,17 +503,10 @@ struct NativeTransportEndpoint final {
         }
         const auto& endpoint =
             *static_cast<const NativeTransportEndpoint*>(context);
+        const std::size_t request_count = endpoint.active_coordinates.size();
         if (!endpoint.phase_callbacks_admitted
             || !endpoint.model.supports_electrolyte_transport()
-            || endpoint.topology_fingerprint.empty()
-            || std::strcmp(
-                expected_fingerprint,
-                endpoint.parameter_fingerprint.c_str()
-            ) != 0
-            || std::strcmp(
-                expected_topology_fingerprint,
-                endpoint.topology_fingerprint.c_str()
-            ) != 0) {
+            || endpoint.topology_fingerprint.empty()) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL,
                 "reacting phase model identity is unsupported"
@@ -666,9 +555,6 @@ struct NativeTransportEndpoint final {
             );
         }
         try {
-            const auto parameters = active_parameters(
-                endpoint, requests, request_count
-            );
             const std::vector<double> amounts(
                 amounts_mol, amounts_mol + amount_count
             );
@@ -688,14 +574,14 @@ struct NativeTransportEndpoint final {
                     amounts,
                     volume_m3,
                     endpoint.ion_mole_fraction_max,
-                    parameters
+                    endpoint.active_coordinates
                 );
             const auto phase = endpoint.model.evaluate_reacting_phase_parameters(
                 temperature_k,
                 amounts,
                 volume_m3,
                 endpoint.ion_mole_fraction_max,
-                parameters
+                endpoint.active_coordinates
             );
             const auto volume_bounds =
                 endpoint.model.molar_volume_bounds_parameters(
@@ -704,7 +590,7 @@ struct NativeTransportEndpoint final {
                     packing_fraction_min,
                     packing_fraction_max,
                     endpoint.ion_mole_fraction_max,
-                    parameters
+                    endpoint.active_coordinates
                 );
             const std::size_t joint_count = state_count + request_count;
             if (phase.gradient.size() != joint_count
@@ -895,8 +781,6 @@ struct NativeTransportEndpoint final {
     // EqID: declared_solvent_source_reference_transfer
     static int evaluate_source_reference_transfer(
         const void* context,
-        const char* expected_fingerprint,
-        const char* expected_topology_fingerprint,
         double temperature_k,
         double pressure_pa,
         const epcsaft_source_reference_request* request,
@@ -918,8 +802,7 @@ struct NativeTransportEndpoint final {
             std::snprintf(result->error, sizeof(result->error), "%s", message);
             return status;
         };
-        if (context == nullptr || expected_fingerprint == nullptr
-            || expected_topology_fingerprint == nullptr || request == nullptr) {
+        if (context == nullptr || request == nullptr) {
             return fail(
                 EPCSAFT_SOURCE_REFERENCE_MISSING_MODEL,
                 "source-reference model contract is incomplete"
@@ -933,14 +816,7 @@ struct NativeTransportEndpoint final {
         }
         const auto& endpoint = *static_cast<const NativeTransportEndpoint*>(context);
         if (!endpoint.neutral_reference_admitted
-            || endpoint.topology_fingerprint.empty()
-            || std::strcmp(
-                expected_fingerprint, endpoint.parameter_fingerprint.c_str()
-            ) != 0
-            || std::strcmp(
-                expected_topology_fingerprint,
-                endpoint.topology_fingerprint.c_str()
-            ) != 0) {
+            || endpoint.topology_fingerprint.empty()) {
             return fail(
                 EPCSAFT_SOURCE_REFERENCE_MISSING_MODEL,
                 "source-reference model identity is incompatible"
@@ -963,12 +839,16 @@ struct NativeTransportEndpoint final {
             );
         }
         const std::size_t component_count = endpoint.component_ids.size();
-        const auto& reference_basis = endpoint.neutral_reference_basis;
-        const std::size_t row_count = reference_basis.row_count();
+        const std::size_t row_count = component_count - 1u;
         if (request->component_count != component_count
             || request->source_composition_count != component_count
             || request->component_ids == nullptr
-            || request->source_solvent_mole_fractions == nullptr) {
+            || request->source_solvent_mole_fractions == nullptr
+            || request->ion_pair_count == 0
+            || request->ion_pair_cation_indices == nullptr
+            || request->ion_pair_anion_indices == nullptr
+            || request->ion_pair_cation_stoichiometry == nullptr
+            || request->ion_pair_anion_stoichiometry == nullptr) {
             return fail(
                 EPCSAFT_SOURCE_REFERENCE_COMPONENT_MISMATCH,
                 "source-reference component dimensions do not match"
@@ -991,6 +871,13 @@ struct NativeTransportEndpoint final {
                 request->activity_convention_id,
                 EPCSAFT_SOURCE_REFERENCE_ACTIVITY_MOLALITY_INFINITE_DILUTION
             ) != 0
+            || request->phase == nullptr
+            || std::strcmp(request->phase, "liquid") != 0
+            || request->reference_convention == nullptr
+            || std::strcmp(
+                   request->reference_convention,
+                   "molality-infinite-dilution"
+               ) != 0
             || request->reference_state_fingerprint == nullptr
             || !sha256_fingerprint_valid(request->reference_state_fingerprint)
             || !std::isfinite(request->standard_molality_mol_per_kg)
@@ -1047,6 +934,30 @@ struct NativeTransportEndpoint final {
                 return fail(
                     EPCSAFT_SOURCE_REFERENCE_INVALID_SOURCE,
                     "source composition must sum to one"
+                );
+            }
+            std::vector<NeutralReferenceBasis::IonPair> ion_pairs;
+            ion_pairs.reserve(request->ion_pair_count);
+            for (std::size_t index = 0; index < request->ion_pair_count; ++index) {
+                ion_pairs.push_back({
+                    request->ion_pair_cation_indices[index],
+                    request->ion_pair_anion_indices[index],
+                    {
+                        request->ion_pair_cation_stoichiometry[index],
+                        request->ion_pair_anion_stoichiometry[index],
+                    },
+                });
+            }
+            const auto reference_basis = make_neutral_reference_basis(
+                endpoint.component_ids,
+                endpoint.model.charge_numbers(),
+                source_composition,
+                ion_pairs
+            );
+            if (reference_basis.row_count() != row_count) {
+                return fail(
+                    EPCSAFT_SOURCE_REFERENCE_INVALID_SOURCE,
+                    "source-reference ion pairs do not define a full neutral basis"
                 );
             }
             const auto& molar_masses = endpoint.model.molar_masses_kg_per_mol();
@@ -1158,10 +1069,9 @@ struct NativeTransportEndpoint final {
                     [&](double molality) {
                         const double solvent_moles = 1.0 / solvent_molar_mass;
                         const double added_moles = molality
-                            * static_cast<double>(
-                                stoichiometry[0] + stoichiometry[1]
-                                + neutral_solutes.size()
-                            );
+                            * (static_cast<double>(stoichiometry[0])
+                               + static_cast<double>(stoichiometry[1])
+                               + static_cast<double>(neutral_solutes.size()));
                         const double total_moles = solvent_moles + added_moles;
                         std::vector<double> composition(component_count, 0.0);
                         for (std::size_t component = 0;
@@ -1198,7 +1108,8 @@ struct NativeTransportEndpoint final {
                     stoichiometry[0] * sequence.values[0]
                     + stoichiometry[1] * sequence.values[1];
                 activity[row] =
-                    static_cast<double>(stoichiometry[0] + stoichiometry[1])
+                    (static_cast<double>(stoichiometry[0])
+                     + static_cast<double>(stoichiometry[1]))
                     * solute_scale;
                 transfer[row] = fugacity[row] + activity[row];
                 reference_molality = sequence.molality;
@@ -1606,7 +1517,6 @@ struct NativeTransportEndpoint final {
     // EqExclude: transport and buffer mechanics
     static int evaluate_molar_volume_bounds(
         const void* context,
-        const char* expected_parameter_fingerprint,
         double temperature_k,
         const double* mole_fractions,
         size_t component_count,
@@ -1618,19 +1528,12 @@ struct NativeTransportEndpoint final {
         if (bound_count != 2u) {
             return EPCSAFT_NATIVE_STATUS_BUFFER_ERROR;
         }
-        if (context == nullptr || expected_parameter_fingerprint == nullptr
-            || mole_fractions == nullptr
+        if (context == nullptr || mole_fractions == nullptr
             || molar_volume_bounds_m3_per_mol == nullptr) {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT;
         }
         const auto& endpoint = *static_cast<const NativeTransportEndpoint*>(context);
         if (!endpoint.phase_callbacks_admitted) {
-            return EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL;
-        }
-        if (std::strcmp(
-                expected_parameter_fingerprint,
-                endpoint.parameter_fingerprint.c_str()
-            ) != 0) {
             return EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL;
         }
         if (component_count != endpoint.table.component_count
@@ -1673,7 +1576,6 @@ struct NativeTransportEndpoint final {
     // EqExclude: transport and buffer mechanics
     static int evaluate_packing_fraction(
         const void* context,
-        const char* expected_parameter_fingerprint,
         double temperature_k,
         const double* amounts_mol,
         size_t amount_count,
@@ -1684,8 +1586,7 @@ struct NativeTransportEndpoint final {
         double* hessian,
         size_t hessian_capacity
     ) noexcept {
-        if (context == nullptr || expected_parameter_fingerprint == nullptr
-            || amounts_mol == nullptr || packing_fraction == nullptr
+        if (context == nullptr || amounts_mol == nullptr || packing_fraction == nullptr
             || gradient == nullptr || hessian == nullptr) {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT;
         }
@@ -1697,12 +1598,6 @@ struct NativeTransportEndpoint final {
         if (gradient_capacity != coordinate_count
             || hessian_capacity != coordinate_count * coordinate_count) {
             return EPCSAFT_NATIVE_STATUS_BUFFER_ERROR;
-        }
-        if (std::strcmp(
-                expected_parameter_fingerprint,
-                endpoint.parameter_fingerprint.c_str()
-            ) != 0) {
-            return EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL;
         }
         if (amount_count != endpoint.table.component_count
             || !std::isfinite(temperature_k) || temperature_k <= 0.0
@@ -1756,7 +1651,8 @@ const epcsaft_native_transport* create_native_transport(
     const std::string& topology_fingerprint,
     const std::string& component_order_fingerprint,
     const std::string& domain_fingerprint,
-    const std::string& artifact_fingerprint
+    const std::string& artifact_fingerprint,
+    const std::vector<NativeActiveCoordinate>& active_parameters
 ) {
     if (!model.supports_pure_transport()
         && !model.supports_mixture_transport()
@@ -1814,6 +1710,22 @@ const epcsaft_native_transport* create_native_transport(
             && pressure_min_pa > pressure_max_pa)) {
         throw std::invalid_argument("invalid transport pressure domain");
     }
+    if (!active_parameters.empty()) {
+        static_cast<void>(model.with_active_coordinates(active_parameters));
+        std::vector<std::string> identities;
+        identities.reserve(active_parameters.size());
+        for (const auto& coordinate : active_parameters) {
+            if (coordinate.identity.empty()
+                || std::find(
+                       identities.begin(), identities.end(), coordinate.identity
+                   ) != identities.end()) {
+                throw std::invalid_argument(
+                    "active parameter identities must be nonempty and unique"
+                );
+            }
+            identities.push_back(coordinate.identity);
+        }
+    }
     auto* endpoint = new NativeTransportEndpoint(
         model,
         parameter_fingerprint,
@@ -1826,7 +1738,8 @@ const epcsaft_native_transport* create_native_transport(
         topology_fingerprint,
         component_order_fingerprint,
         domain_fingerprint,
-        artifact_fingerprint
+        artifact_fingerprint,
+        active_parameters
     );
     return &endpoint->table;
 }
