@@ -866,6 +866,10 @@ NativeMixturePhaseBlock
 NativeModel::evaluate_mixture_phase(double temperature,
                                     const std::vector<double> &amounts,
                                     double volume) const {
+  if (supports_fixed_topology_associating_mixture()) {
+    return detail::fixed_topology_parameterized_mixture_phase_block(
+        temperature, amounts, volume, {}, parameters_);
+  }
   return detail::mixture_phase_block(temperature, amounts, volume, parameters_);
 }
 

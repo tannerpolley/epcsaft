@@ -288,7 +288,8 @@ struct NativeTransportEndpoint final {
                   ? &NativeTransportEndpoint::evaluate
                   : nullptr,
               component_ids.size(),
-              source_model.supports_mixture_transport()
+              (source_model.supports_mixture_transport()
+                  || source_model.supports_fixed_topology_associating_mixture())
                   ? &NativeTransportEndpoint::evaluate_mixture
                   : nullptr,
               source_model.supports_electrolyte_transport()
@@ -305,8 +306,7 @@ struct NativeTransportEndpoint final {
                       && !topology_fingerprint.empty()
                   ? &NativeTransportEndpoint::evaluate_parameterized_phase
                   : nullptr,
-              source_model.supports_electrolyte_transport()
-                      && !topology_fingerprint.empty()
+              phase_callbacks_admitted && !topology_fingerprint.empty()
                   ? &NativeTransportEndpoint::evaluate_inverse_packing_geometry
                   : nullptr,
               neutral_reference_admitted

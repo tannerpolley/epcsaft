@@ -1,6 +1,5 @@
 #include <array>
 #include <cstddef>
-#include <iostream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -11,8 +10,7 @@
 
 #include "native_transport.hpp"
 
-#include "held2_certificates.hpp"
-#include "flash.hpp"
+#include "phase_equilibrium.hpp"
 #include "result_json.hpp"
 #include "solved_state_sensitivity.hpp"
 
@@ -41,11 +39,12 @@ const epcsaft_native_transport& checked_mixture_transport(
     const py::capsule& capsule
 ) {
     const epcsaft_native_transport& transport = checked_transport(capsule);
-    if (transport.component_count != 2) {
-        throw py::value_error("provider capsule mixture component count must be two");
+    if (transport.component_count < 2) {
+        throw py::value_error("provider capsule must contain at least two components");
     }
-    if (transport.evaluate_mixture_phase == nullptr) {
-        throw py::value_error("provider capsule is missing its mixture phase evaluator");
+    if (transport.evaluate_mixture_phase == nullptr
+        && transport.evaluate_electrolyte_phase == nullptr) {
+        throw py::value_error("provider capsule is missing its phase evaluator");
     }
     return transport;
 }
@@ -237,117 +236,69 @@ py::dict evaluate_phase(
     return result;
 }
 
-py::dict solve_tp_flash(
+epcsaft_engine::equilibrium::PhaseRole parse_phase_role(
+    const std::string& value
+) {
+    if (value == "liquid") {
+        return epcsaft_engine::equilibrium::PhaseRole::Liquid;
+    }
+    if (value == "vapor") {
+        return epcsaft_engine::equilibrium::PhaseRole::Vapor;
+    }
+    throw py::value_error("phase role must be 'liquid' or 'vapor'");
+}
+
+py::dict phase_equilibrium(
     const py::capsule& capsule,
     double temperature_k,
     double pressure_pa,
-    const std::vector<double>& overall_mole_fractions,
-    bool trace
+    const std::vector<double>& feed_amounts_mol,
+    const std::string& mode,
+    const std::vector<std::string>& constrained_roles,
+    const std::vector<std::string>& hint_roles,
+    const std::vector<std::vector<double>>& hint_mole_fractions,
+    const std::vector<double>& hint_molar_densities_mol_m3
 ) {
+    if (hint_roles.size() != hint_mole_fractions.size()
+        || hint_roles.size() != hint_molar_densities_mol_m3.size()) {
+        throw py::value_error("phase hint fields must have equal lengths");
+    }
+    epcsaft_engine::equilibrium::PhaseEquilibriumProblem problem;
+    problem.temperature_k = temperature_k;
+    problem.pressure_pa = pressure_pa;
+    problem.feed_amounts_mol = feed_amounts_mol;
+    if (mode == "discovery") {
+        problem.mode = epcsaft_engine::equilibrium::PhaseEquilibriumMode::Discovery;
+    } else if (mode == "constrained") {
+        problem.mode = epcsaft_engine::equilibrium::PhaseEquilibriumMode::Constrained;
+    } else {
+        throw py::value_error("phase equilibrium mode must be 'discovery' or 'constrained'");
+    }
+    for (const auto& role : constrained_roles) {
+        problem.constrained_roles.push_back(parse_phase_role(role));
+    }
+    for (std::size_t index = 0; index < hint_roles.size(); ++index) {
+        problem.hints.push_back({
+            parse_phase_role(hint_roles[index]),
+            hint_mole_fractions[index],
+            hint_molar_densities_mol_m3[index],
+        });
+    }
+
     const epcsaft_engine::equilibrium::ProviderContext provider(
-        checked_transport(capsule)
+        checked_mixture_transport(capsule)
     );
-    epcsaft_engine::equilibrium::Held2TerminalProgress terminal_progress(std::cout);
-    epcsaft_engine::equilibrium::FlashResult flash;
+    epcsaft_engine::equilibrium::PhaseEquilibriumResult result;
     {
         py::gil_scoped_release release;
-        flash = epcsaft_engine::equilibrium::solve_tp_flash(
-            provider,
-            {
-                temperature_k,
-                pressure_pa,
-                overall_mole_fractions,
-            },
-            trace ? &terminal_progress : nullptr
+        result = epcsaft_engine::equilibrium::solve_phase_equilibrium(
+            provider, problem
         );
     }
     return py::module_::import("json")
         .attr("loads")(
-            epcsaft_engine::equilibrium::flash_result_to_json(flash)
+            epcsaft_engine::equilibrium::phase_equilibrium_result_to_json(result)
         ).cast<py::dict>();
-}
-
-py::dict held2_audit_farkas_certificate(
-    const std::vector<std::vector<double>>& matrix,
-    const std::vector<double>& row_lower,
-    const std::vector<double>& row_upper,
-    const std::vector<double>& column_lower,
-    const std::vector<double>& column_upper,
-    const std::vector<double>& row_ray
-) {
-    const auto audit =
-        epcsaft_engine::equilibrium::audit_held2_farkas_certificate(
-            matrix,
-            row_lower,
-            row_upper,
-            column_lower,
-            column_upper,
-            row_ray
-        );
-    py::dict result;
-    result["reason"] = audit.reason;
-    result["row_multipliers"] = audit.row_multipliers;
-    result["normalization"] = audit.normalization;
-    result["row_sign_violation_inf"] = audit.row_sign_violation_inf;
-    result["dual_feasibility_violation_inf"] =
-        audit.dual_feasibility_violation_inf;
-    result["contradiction_margin"] = audit.contradiction_margin;
-    result["contradiction_scale"] = audit.contradiction_scale;
-    result["contradiction_threshold"] = audit.contradiction_threshold;
-    result["solver_ray_recovered_without_presolve"] =
-        audit.solver_ray_recovered_without_presolve;
-    result["accepted"] = audit.accepted;
-    return result;
-}
-
-py::dict held2_audit_step5_kkt(
-    const std::vector<double>& variables,
-    const std::vector<double>& lower,
-    const std::vector<double>& upper,
-    const std::vector<double>& objective_gradient,
-    const std::vector<std::vector<double>>& constraints,
-    const std::vector<double>& constraint_upper,
-    const std::vector<double>& lower_bound_multipliers,
-    const std::vector<double>& upper_bound_multipliers,
-    const std::vector<double>& constraint_multipliers,
-    double pullback_residual,
-    double pullback_scale,
-    double pressure_residual,
-    bool same_major_iteration,
-    bool step4_binding_valid,
-    bool pressure_branch_valid
-) {
-    const auto audit = epcsaft_engine::equilibrium::audit_held2_step5_kkt(
-        variables,
-        lower,
-        upper,
-        objective_gradient,
-        constraints,
-        constraint_upper,
-        lower_bound_multipliers,
-        upper_bound_multipliers,
-        constraint_multipliers,
-        pullback_residual,
-        pullback_scale,
-        pressure_residual,
-        same_major_iteration,
-        step4_binding_valid,
-        pressure_branch_valid
-    );
-    py::dict result;
-    result["reason"] = audit.reason;
-    result["primal_residual_inf"] = audit.primal_residual_inf;
-    result["dual_sign_violation_inf"] = audit.dual_sign_violation_inf;
-    result["pullback_residual_inf"] = audit.pullback_residual_inf;
-    result["pullback_scale"] = audit.pullback_scale;
-    result["pressure_residual"] = audit.pressure_residual;
-    result["stationarity_residual_inf"] =
-        audit.stationarity_residual_inf;
-    result["complementarity_inf"] = audit.complementarity_inf;
-    result["active_constraint_count"] = audit.active_constraint_count;
-    result["active_jacobian_rank"] = audit.active_jacobian_rank;
-    result["accepted"] = audit.accepted;
-    return result;
 }
 
 }  // namespace
@@ -385,43 +336,17 @@ PYBIND11_MODULE(_equilibrium, module) {
         py::arg("phase_volumes_m3")
     );
     module.def(
-        "_solve_tp_flash",
-        &solve_tp_flash,
+        "_phase_equilibrium",
+        &phase_equilibrium,
         py::arg("capsule"),
         py::arg("temperature_k"),
         py::arg("pressure_pa"),
-        py::arg("overall_mole_fractions"),
-        py::kw_only(),
-        py::arg("trace") = false
-    );
-    module.def(
-        "_held2_audit_farkas_certificate",
-        &held2_audit_farkas_certificate,
-        py::arg("matrix"),
-        py::arg("row_lower"),
-        py::arg("row_upper"),
-        py::arg("column_lower"),
-        py::arg("column_upper"),
-        py::arg("row_ray")
-    );
-    module.def(
-        "_held2_audit_step5_kkt",
-        &held2_audit_step5_kkt,
-        py::arg("variables"),
-        py::arg("lower"),
-        py::arg("upper"),
-        py::arg("objective_gradient"),
-        py::arg("constraints"),
-        py::arg("constraint_upper"),
-        py::arg("lower_bound_multipliers"),
-        py::arg("upper_bound_multipliers"),
-        py::arg("constraint_multipliers"),
-        py::arg("pullback_residual"),
-        py::arg("pullback_scale"),
-        py::arg("pressure_residual"),
-        py::arg("same_major_iteration"),
-        py::arg("step4_binding_valid"),
-        py::arg("pressure_branch_valid")
+        py::arg("feed_amounts_mol"),
+        py::arg("mode"),
+        py::arg("constrained_roles"),
+        py::arg("hint_roles"),
+        py::arg("hint_mole_fractions"),
+        py::arg("hint_molar_densities_mol_m3")
     );
     module.def(
         "evaluate_phase",

@@ -11,6 +11,13 @@ namespace epcsaft_engine::equilibrium {
 
 inline constexpr double kSolvedStateSensitivityConditionNumberMax = 1.0e8;
 
+[[nodiscard]] inline double solved_state_sensitivity_backward_error_max(
+    std::size_t dimension
+) {
+    return 8192.0 * std::numeric_limits<double>::epsilon()
+        * static_cast<double>(dimension);
+}
+
 struct SolvedPhaseState {
     std::vector<double> amounts_mol;
     double volume_m3 = 0.0;

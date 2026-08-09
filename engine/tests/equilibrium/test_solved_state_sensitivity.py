@@ -10,7 +10,11 @@ from scipy.optimize import least_squares
 from epcsaft import ActiveParameterSet, Mixture, Parameters
 from epcsaft import unit_registry as u
 from epcsaft.eos import _native_transport
-from epcsaft.equilibrium import _equilibrium, tp_flash
+from epcsaft.equilibrium import (
+    PhaseEquilibriumProblem,
+    _equilibrium,
+    phase_equilibrium,
+)
 from tests.eos._raw_cases import AQUEOUS_ELECTROLYTE, NEUTRAL_BINARY
 
 _TEMPERATURE_K = 243.58
@@ -126,21 +130,14 @@ def _matrix(
 ) -> tuple[tuple[float, ...], ...]:
     values = tuple(float(value) for value in cast(Sequence[object], sensitivity[name]))
     assert len(values) == rows * columns
-    return tuple(
-        values[row * columns : (row + 1) * columns]
-        for row in range(rows)
-    )
+    return tuple(values[row * columns : (row + 1) * columns] for row in range(rows))
 
 
 def _outputs(
     amounts: tuple[tuple[float, float], tuple[float, float]],
     volumes: tuple[float, float],
 ) -> tuple[float, ...]:
-    return tuple(
-        value
-        for phase in range(2)
-        for value in (*amounts[phase], volumes[phase])
-    )
+    return tuple(value for phase in range(2) for value in (*amounts[phase], volumes[phase]))
 
 
 def test_exact_two_phase_sensitivity_matches_independent_centered_resolves() -> None:
@@ -161,9 +158,7 @@ def test_exact_two_phase_sensitivity_matches_independent_centered_resolves() -> 
     parameters = Parameters.from_mapping(NEUTRAL_BINARY)
     selected = ActiveParameterSet(parameters, _PARAMETER_IDENTITIES)
     values = selected.values
-    amounts, volumes = _solve_two_phase_state(
-        parameters, _PARAMETER_IDENTITIES, values
-    )
+    amounts, volumes = _solve_two_phase_state(parameters, _PARAMETER_IDENTITIES, values)
     sensitivity = _sensitivity(
         parameters,
         _PARAMETER_IDENTITIES,
@@ -176,9 +171,7 @@ def test_exact_two_phase_sensitivity_matches_independent_centered_resolves() -> 
     assert sensitivity["failure_reason"] == ""
     assert sensitivity["derivative_order"] == 1
     assert sensitivity["higher_order_status"] == "unavailable"
-    assert sensitivity["higher_order_reason"] == (
-        "higher_order_total_derivatives_not_implemented"
-    )
+    assert sensitivity["higher_order_reason"] == ("higher_order_total_derivatives_not_implemented")
     assert sensitivity["tensor_layout"] == "row-major"
     assert tuple(cast(Sequence[object], sensitivity["parameter_identities"])) == (
         _PARAMETER_IDENTITIES
@@ -228,13 +221,9 @@ def test_exact_two_phase_sensitivity_matches_independent_centered_resolves() -> 
         tuple(reversed(amounts)),
         tuple(reversed(volumes)),
     )
-    phase_permuted_jacobian = _matrix(
-        phase_permuted, "output_parameter_jacobian", 6, 2
-    )
+    phase_permuted_jacobian = _matrix(phase_permuted, "output_parameter_jacobian", 6, 2)
     expected_phase_permutation = exact[3:] + exact[:3]
-    for observed, expected in zip(
-        phase_permuted_jacobian, expected_phase_permutation, strict=True
-    ):
+    for observed, expected in zip(phase_permuted_jacobian, expected_phase_permutation, strict=True):
         assert observed == pytest.approx(expected, rel=2.0e-12, abs=2.0e-12)
 
     reversed_parameters = parameters.select(("ethane", "methane"))
@@ -249,8 +238,7 @@ def test_exact_two_phase_sensitivity_matches_independent_centered_resolves() -> 
     )
     reordered_jacobian = _matrix(reordered, "output_parameter_jacobian", 6, 2)
     expected_reordering = tuple(
-        tuple(reversed(row))
-        for row in (exact[1], exact[0], exact[2], exact[4], exact[3], exact[5])
+        tuple(reversed(row)) for row in (exact[1], exact[0], exact[2], exact[4], exact[3], exact[5])
     )
     for observed, expected in zip(reordered_jacobian, expected_reordering, strict=True):
         assert observed == pytest.approx(expected, rel=2.0e-12, abs=2.0e-12)
@@ -291,11 +279,15 @@ def test_exact_two_phase_sensitivity_matches_independent_centered_resolves() -> 
     assert boundary["status"] == "unavailable"
     assert boundary["failure_reason"] == "phase_boundary_not_differentiable"
 
-    public = tp_flash(
+    public = phase_equilibrium(
         Mixture(parameters),
-        300.0 * u.kelvin,
-        1.0e5 * u.pascal,
-        (0.5, 0.5),
+        PhaseEquilibriumProblem(
+            300.0 * u.kelvin,
+            1.0e5 * u.pascal,
+            (0.5, 0.5),
+            mode="constrained",
+            phase_roles=("vapor",),
+        ),
         active_parameters=selected,
     )
     assert public.sensitivity is not None
@@ -381,9 +373,7 @@ def test_one_phase_association_and_model_sensitivity_match_centered_resolves() -
             assert abs(float(solved.fun[0])) <= 1.0e-12
             volumes.append(float(np.exp(solved.x[0])))
         centered = (volumes[1] - volumes[0]) / (2.0 * step)
-        assert exact[3][parameter] == pytest.approx(
-            centered, rel=2.0e-6, abs=1.0e-12
-        )
+        assert exact[3][parameter] == pytest.approx(centered, rel=2.0e-6, abs=1.0e-12)
 
     charged_multiphase = _equilibrium.evaluate_solved_state_sensitivity(
         base,
@@ -397,6 +387,4 @@ def test_one_phase_association_and_model_sensitivity_match_centered_resolves() -
         (volume_m3 / 4.0, 3.0 * volume_m3 / 4.0),
     )
     assert charged_multiphase["status"] == "unavailable"
-    assert charged_multiphase["failure_reason"] == (
-        "unsupported_charged_multiphase_constraints"
-    )
+    assert charged_multiphase["failure_reason"] == ("unsupported_charged_multiphase_constraints")

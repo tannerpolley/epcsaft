@@ -337,6 +337,24 @@ ASSOCIATING_PURE = _document(
     topology=_association_topology("associating-fluid", 2400.0, 0.03),
 )
 
+NEUTRAL_ASSOCIATING_MIXTURE = deepcopy(ASSOCIATING_PURE)
+NEUTRAL_ASSOCIATING_MIXTURE["document_id"] = "neutral-associating-mixture-fixture"
+_neutral_associating_components = NEUTRAL_ASSOCIATING_MIXTURE["components"]
+_neutral_associating_pairs = NEUTRAL_ASSOCIATING_MIXTURE["pairs"]
+assert isinstance(_neutral_associating_components, list)
+assert isinstance(_neutral_associating_pairs, list)
+_neutral_associating_components.append(
+    _component(
+        "inert-fluid",
+        segment_count=1.4,
+        segment_diameter=3.4,
+        dispersion_energy_over_k=180.0,
+    )
+)
+_neutral_associating_pairs.append(
+    _pair("associating-fluid", "inert-fluid", k_ij=0.04)
+)
+
 AQUEOUS_ELECTROLYTE = _document(
     "aqueous-electrolyte-fixture",
     [
@@ -706,6 +724,7 @@ __all__ = (
     "DIPOLAR_PERMITTIVITY_ELECTROLYTE",
     "MULTINEUTRAL_REACTIVE",
     "MULTISOLVENT_MULTIION",
+    "NEUTRAL_ASSOCIATING_MIXTURE",
     "NEUTRAL_BINARY",
     "POLAR_BINARY",
     "POLAR_PURE",
