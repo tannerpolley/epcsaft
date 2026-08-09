@@ -161,10 +161,13 @@ fitted_parameters = result.to_parameters()
 
 `ParameterFit` declares one parameter document, model kind, active selectors,
 bounds, scales, ties, observations, source hashes, residuals, and multistart
-policy. `fit` resolves that declaration, executes the private native Ceres
-owner against exact EOS derivatives, and returns every start without mutating
-the input parameters. `FitResult.to_parameters()` creates a new immutable
-parameter document with fit provenance.
+policy. `fit` resolves each observation against an EOS-owned descriptor, sends
+the owner's values and exact ordered Jacobian blocks through the private native
+Ceres core, and returns every start without mutating the input parameters.
+Each start retains predictions, scaled residuals and Jacobians, rank and
+conditioning, active bounds, and typed owner-evaluation failures.
+`FitResult.to_parameters()` creates a new immutable parameter document with fit
+provenance.
 
 This cutover admits `pure_saturation` and `fixed_state_pressure` observation
 families. Selectable coordinates include continuous component and association

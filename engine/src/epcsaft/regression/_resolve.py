@@ -12,13 +12,22 @@ from typing import SupportsFloat, cast
 
 import pint
 
-from ..eos import EosError, Mixture, ObservableDescriptor, Pure, SaturationError
+from ..eos import (
+    OBSERVABLE_FAMILIES,
+    OBSERVABLE_TARGETS,
+    EosError,
+    Mixture,
+    ObservableDescriptor,
+    ObservableFamily,
+    Pure,
+    SaturationError,
+    evaluate_observable,
+)
 from ..parameters import ActiveParameterSet, Parameters
 from ..units import unit_registry
 from ._model import (
-    SCHEMA_REGISTRY,
+    _CORRELATIONS,
     ActiveSelection,
-    ObservationDefinition,
     ObservationSpec,
     ParameterFit,
     PublishedObservationCorrelation,
@@ -385,7 +394,7 @@ def _table_rows(
     source: TableSource,
     *,
     root: Path,
-    definition: ObservationDefinition,
+    definition: ObservableFamily,
     targets: tuple[str, ...],
 ) -> tuple[TableRow, ...]:
     if source.rows is not None:
@@ -454,7 +463,7 @@ def _validate_rows(rows: Sequence[TableRow], source: TableSource, targets: tuple
                 )
         for target in targets:
             value = row.value(target)
-            if SCHEMA_REGISTRY.targets[target].positive and value <= 0:
+            if OBSERVABLE_TARGETS[target].positive and value <= 0:
                 raise FitResolutionError(
                     "nonpositive-target", f"{source.path}[{index}].{target}", value
                 )
@@ -470,7 +479,7 @@ def _validate_observation(
     unsupported_targets = tuple(
         target
         for target in observation.targets
-        if SCHEMA_REGISTRY.targets[target].observable_row_identity not in descriptor_rows
+        if OBSERVABLE_TARGETS[target].row_identity not in descriptor_rows
     )
     if unsupported_targets:
         raise FitResolutionError(
@@ -497,7 +506,7 @@ def _validate_observation(
     canonical_units: list[tuple[str, str]] = []
     factors: list[tuple[str, float]] = []
     for target, unit in observation.units:
-        canonical_unit = descriptor_rows[SCHEMA_REGISTRY.targets[target].observable_row_identity]
+        canonical_unit = descriptor_rows[OBSERVABLE_TARGETS[target].row_identity]
         try:
             zero = float(unit_registry.Quantity(0, unit).to(canonical_unit).magnitude)
             factor = float(unit_registry.Quantity(1, unit).to(canonical_unit).magnitude)
@@ -579,7 +588,7 @@ def _correlation_value_derivative(
     observation: ObservationSpec,
     temperature_k: float,
 ) -> tuple[float, float]:
-    definition = SCHEMA_REGISTRY.correlations[source.correlation]
+    definition = _CORRELATIONS[source.correlation]
     transformation = dict(observation.transformation)[observation.targets[0]]
     try:
         independent, independent_derivative = _transformed_input(
@@ -600,7 +609,7 @@ def _correlation_value_derivative(
         ) from exc
     if not math.isfinite(observed) or not math.isfinite(derivative):
         raise FitResolutionError("correlation-nonfinite", source.correlation, temperature_k)
-    target = SCHEMA_REGISTRY.targets[observation.targets[0]]
+    target = OBSERVABLE_TARGETS[observation.targets[0]]
     if target.positive and observed <= 0:
         raise FitResolutionError("correlation-nonpositive", source.correlation, temperature_k)
     return observed, derivative
@@ -613,28 +622,51 @@ def _quadrature_objective(
     active_parameters: ActiveParameterSet,
 ) -> tuple[float, tuple[float, ...]]:
     target = observation.targets[0]
-    label = SCHEMA_REGISTRY.targets[target].observable_row_identity
+    label = OBSERVABLE_TARGETS[target].row_identity
     residual_kind = dict(observation.residuals)[target]
     if residual_kind != "log_ratio":
         raise RuntimeError(f"unhandled residual: {residual_kind}")
+    try:
+        descriptor = model.observable_descriptor(
+            active_parameters,
+            identity=OBSERVABLE_FAMILIES[observation.family].descriptor_identity,
+        )
+    except EosError as exc:
+        raise FitResolutionError(
+            "quadrature-evaluation", observation.source.path, "descriptor"
+        ) from exc
     residuals: list[float] = []
     jacobian: list[tuple[float, ...]] = []
     for temperature_k, observed in zip(rule.nodes, rule.observed_values, strict=True):
         try:
-            result = model.observable_block(
+            result = evaluate_observable(
+                model,
                 active_parameters,
-                identity="eos.pure-saturation",
-                T=temperature_k * unit_registry.kelvin,
+                descriptor,
+                {"temperature_k": temperature_k},
+                composition=observation.composition,
             )
-            index = result.descriptor.row_identities.index(label)
+            rows = {
+                identity: (value, derivatives, status)
+                for identity, value, derivatives, status in zip(
+                    result.descriptor.row_identities,
+                    result.values,
+                    result.jacobian,
+                    result.row_statuses,
+                    strict=True,
+                )
+            }
         except (EosError, SaturationError, ValueError) as exc:
             raise FitResolutionError(
                 "quadrature-evaluation", observation.source.path, temperature_k
             ) from exc
-        predicted = result.values[index]
-        derivative_row = result.jacobian[index]
+        row = rows.get(label)
+        predicted = None if row is None else row[0]
+        derivative_row = None if row is None else row[1]
         if (
             result.status.status != "accepted"
+            or row is None
+            or row[2].status != "accepted"
             or predicted is None
             or derivative_row is None
             or not math.isfinite(predicted)
@@ -784,15 +816,11 @@ def resolve_fit(
             raise FitResolutionError(
                 "invalid-composition", f"$.observations[{index}].composition", "pure model"
             )
-        definition = SCHEMA_REGISTRY.observations[observation.family]
+        definition = OBSERVABLE_FAMILIES[observation.family]
         try:
             descriptor = model.observable_descriptor(
                 active_parameters,
-                identity=(
-                    "eos.fixed-state"
-                    if observation.family == "fixed_state_pressure"
-                    else "eos.pure-saturation"
-                ),
+                identity=definition.descriptor_identity,
             )
         except EosError as exc:
             raise FitResolutionError(

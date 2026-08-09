@@ -12,6 +12,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal, cast
 
+from ..eos import OBSERVABLE_FAMILIES, OBSERVABLE_TARGETS, ObservableFamily
 from ..parameters import Parameters
 
 if TYPE_CHECKING:
@@ -50,22 +51,6 @@ class _Fields:
 
 
 @dataclass(frozen=True, slots=True)
-class TargetDefinition:
-    positive: bool
-    observable_row_identity: str
-    unit: str
-    bases: tuple[str, ...]
-    references: tuple[str, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class ObservationDefinition:
-    targets: tuple[str, ...]
-    state_fields: tuple[str, ...]
-    model_kinds: tuple[Literal["pure", "mixture"], ...]
-
-
-@dataclass(frozen=True, slots=True)
 class ResidualDefinition:
     positive: bool
 
@@ -77,135 +62,68 @@ class CorrelationDefinition:
     independent_fields: tuple[str, ...]
 
 
-@dataclass(frozen=True, slots=True)
-class _Registry:
-    fields: Mapping[str, _Fields]
-    targets: Mapping[str, TargetDefinition]
-    observations: Mapping[str, ObservationDefinition]
-    residuals: Mapping[str, ResidualDefinition]
-    correlations: Mapping[str, CorrelationDefinition]
-    bases: frozenset[str]
-    references: frozenset[str]
-    transformations: frozenset[str]
-    model_kinds: tuple[str, ...]
-    source_kinds: tuple[str, ...]
-    quadrature_orders: tuple[int, ...]
-
-
-_TARGETS = MappingProxyType(
-    {
-        "pressure": TargetDefinition(True, "pressure_pa", "pascal", ("absolute",), ("absolute",)),
-        "saturation_pressure": TargetDefinition(
-            True, "saturation_pressure_pa", "pascal", ("absolute",), ("absolute",)
-        ),
-        "saturated_liquid_mass_density": TargetDefinition(
-            True,
-            "liquid_mass_density_kg_per_m3",
-            "kilogram / meter**3",
-            ("mass",),
-            ("saturated_liquid",),
-        ),
-        "saturated_liquid_molar_density": TargetDefinition(
-            True,
-            "liquid_molar_density_mol_per_m3",
-            "mole / meter**3",
-            ("molar",),
-            ("saturated_liquid",),
-        ),
-        "saturated_vapor_mass_density": TargetDefinition(
-            True,
-            "vapor_mass_density_kg_per_m3",
-            "kilogram / meter**3",
-            ("mass",),
-            ("saturated_vapor",),
-        ),
-        "saturated_vapor_molar_density": TargetDefinition(
-            True,
-            "vapor_molar_density_mol_per_m3",
-            "mole / meter**3",
-            ("molar",),
-            ("saturated_vapor",),
-        ),
-    }
-)
-
-_OBSERVATIONS = MappingProxyType(
-    {
-        "fixed_state_pressure": ObservationDefinition(
-            ("pressure",),
-            ("temperature_k", "molar_density_mol_per_m3"),
-            ("pure", "mixture"),
-        ),
-        "pure_saturation": ObservationDefinition(
-            tuple(target for target in _TARGETS if target != "pressure"),
-            ("temperature_k",),
-            ("pure",),
-        ),
-    }
-)
-
 _CORRELATIONS = MappingProxyType(
     {
         "power_series_temperature": CorrelationDefinition("power_series", None, ("temperature_k",)),
     }
 )
 
-SCHEMA_REGISTRY = _Registry(
-    fields=MappingProxyType(
-        {
-            "fit": _Fields(
-                ("schema_version", "parameters", "model", "active", "observations", "solver")
+_FIELDS = MappingProxyType(
+    {
+        "fit": _Fields(
+            ("schema_version", "parameters", "model", "active", "observations", "solver")
+        ),
+        "parameters": _Fields(("path", "sha256")),
+        "model": _Fields(("kind",)),
+        "active": _Fields(("identities", "coordinates", "ties")),
+        "coordinate": _Fields(("bounds", "scale"), ("unit",)),
+        "tie": _Fields(("identities",)),
+        "observation": _Fields(
+            (
+                "family",
+                "source",
+                "targets",
+                "residuals",
+                "units",
+                "basis",
+                "reference_convention",
+                "transformation",
+                "multiplier",
             ),
-            "parameters": _Fields(("path", "sha256")),
-            "model": _Fields(("kind",)),
-            "active": _Fields(("identities", "coordinates", "ties")),
-            "coordinate": _Fields(("bounds", "scale"), ("unit",)),
-            "tie": _Fields(("identities",)),
-            "observation": _Fields(
-                (
-                    "family",
-                    "source",
-                    "targets",
-                    "residuals",
-                    "units",
-                    "basis",
-                    "reference_convention",
-                    "transformation",
-                    "multiplier",
-                ),
-                ("quadrature", "composition"),
-            ),
-            "table_source": _Fields(("kind", "path", "sha256", "citation", "domain"), ("rows",)),
-            "correlation_source": _Fields(
-                (
-                    "kind",
-                    "correlation",
-                    "coefficients",
-                    "path",
-                    "sha256",
-                    "citation",
-                    "domain",
-                )
-            ),
-            "transformation": _Fields(("input", "output")),
-            "quadrature": _Fields(("initial_order", "max_order", "tolerance")),
-            "solver": _Fields(("multistart",)),
-            "multistart": _Fields(("count", "include_input")),
-        }
-    ),
-    targets=_TARGETS,
-    observations=_OBSERVATIONS,
-    residuals=MappingProxyType({"log_ratio": ResidualDefinition(True)}),
-    correlations=_CORRELATIONS,
-    bases=frozenset({base for target in _TARGETS.values() for base in target.bases}),
-    references=frozenset(
-        {reference for target in _TARGETS.values() for reference in target.references}
-    ),
-    transformations=frozenset({"identity", "log", "log10"}),
-    model_kinds=("pure", "mixture"),
-    source_kinds=("table", "published_observation_correlation"),
-    quadrature_orders=(2, 4, 8, 16, 32, 64),
+            ("quadrature", "composition"),
+        ),
+        "table_source": _Fields(("kind", "path", "sha256", "citation", "domain"), ("rows",)),
+        "correlation_source": _Fields(
+            (
+                "kind",
+                "correlation",
+                "coefficients",
+                "path",
+                "sha256",
+                "citation",
+                "domain",
+            )
+        ),
+        "transformation": _Fields(("input", "output")),
+        "quadrature": _Fields(("initial_order", "max_order", "tolerance")),
+        "solver": _Fields(("multistart",)),
+        "multistart": _Fields(("count", "include_input")),
+    }
 )
+_RESIDUALS = MappingProxyType(
+    {
+        "log_ratio": ResidualDefinition(True),
+        "scaled_difference": ResidualDefinition(False),
+    }
+)
+_BASES = frozenset(base for target in OBSERVABLE_TARGETS.values() for base in target.bases)
+_REFERENCES = frozenset(
+    reference for target in OBSERVABLE_TARGETS.values() for reference in target.references
+)
+_TRANSFORMATIONS = frozenset({"identity", "log", "log10"})
+_MODEL_KINDS = ("pure", "mixture")
+_SOURCE_KINDS = ("table", "published_observation_correlation")
+_QUADRATURE_ORDERS = (2, 4, 8, 16, 32, 64)
 
 
 def _canonical(value: object) -> bytes:
@@ -225,7 +143,7 @@ def _mapping(value: object, path: str) -> Mapping[str, object]:
 
 
 def _keys(value: Mapping[str, object], name: str, path: str) -> None:
-    fields = SCHEMA_REGISTRY.fields[name]
+    fields = _FIELDS[name]
     allowed = frozenset((*fields.required, *fields.optional))
     unknown = tuple(sorted(set(value) - allowed))
     missing = tuple(field for field in fields.required if field not in value)
@@ -437,7 +355,7 @@ class ParameterFit:
         if not observations:
             raise FitSchemaError("missing-value", "$.observations", "at least one required")
         for index, observation in enumerate(observations):
-            if model.kind not in SCHEMA_REGISTRY.observations[observation.family].model_kinds:
+            if model.kind not in OBSERVABLE_FAMILIES[observation.family].model_kinds:
                 raise FitSchemaError(
                     "unsupported-model-domain",
                     f"$.observations[{index}].family",
@@ -540,7 +458,7 @@ def _parse_parameters(value: object, path: str) -> ParameterReference:
 def _parse_model(value: object, path: str) -> ModelSpec:
     mapping = _mapping(value, path)
     _keys(mapping, "model", path)
-    kind = _enum(mapping["kind"], SCHEMA_REGISTRY.model_kinds, f"{path}.kind")
+    kind = _enum(mapping["kind"], _MODEL_KINDS, f"{path}.kind")
     return ModelSpec(cast(Literal["pure", "mixture"], kind))
 
 
@@ -620,7 +538,7 @@ def _parse_domain(value: object, path: str, allowed: Sequence[str]) -> SourceDom
 def _row(
     value: object,
     path: str,
-    definition: ObservationDefinition,
+    definition: ObservableFamily,
     targets: tuple[str, ...],
     domain: SourceDomain,
 ) -> TableRow:
@@ -637,7 +555,7 @@ def _row(
         if not lower <= current <= upper:
             raise FitSchemaError("row-outside-domain", f"{path}.{field}", current)
     for target in targets:
-        if SCHEMA_REGISTRY.targets[target].positive and row.value(target) <= 0:
+        if OBSERVABLE_TARGETS[target].positive and row.value(target) <= 0:
             raise FitSchemaError("nonpositive-target", f"{path}.{target}", row.value(target))
     return row
 
@@ -645,7 +563,7 @@ def _row(
 def _parse_table_source(
     value: object,
     path: str,
-    definition: ObservationDefinition,
+    definition: ObservableFamily,
     targets: tuple[str, ...],
 ) -> TableSource:
     mapping = _mapping(value, path)
@@ -672,15 +590,13 @@ def _parse_table_source(
 def _parse_correlation_source(
     value: object,
     path: str,
-    definition: ObservationDefinition,
+    definition: ObservableFamily,
     targets: tuple[str, ...],
 ) -> PublishedObservationCorrelation:
     mapping = _mapping(value, path)
     _keys(mapping, "correlation_source", path)
-    name = _enum(
-        mapping["correlation"], tuple(sorted(SCHEMA_REGISTRY.correlations)), f"{path}.correlation"
-    )
-    correlation = SCHEMA_REGISTRY.correlations[name]
+    name = _enum(mapping["correlation"], tuple(sorted(_CORRELATIONS)), f"{path}.correlation")
+    correlation = _CORRELATIONS[name]
     if len(targets) != 1:
         raise FitSchemaError(
             "invalid-value", f"{path}.correlation", "correlation source requires one target"
@@ -711,12 +627,12 @@ def _parse_correlation_source(
 def _parse_source(
     value: object,
     path: str,
-    definition: ObservationDefinition,
+    definition: ObservableFamily,
     targets: tuple[str, ...],
 ) -> Source:
     mapping = _mapping(value, path)
-    kind = _enum(mapping.get("kind"), SCHEMA_REGISTRY.source_kinds, f"{path}.kind")
-    if kind == SCHEMA_REGISTRY.source_kinds[0]:
+    kind = _enum(mapping.get("kind"), _SOURCE_KINDS, f"{path}.kind")
+    if kind == _SOURCE_KINDS[0]:
         return _parse_table_source(value, path, definition, targets)
     return _parse_correlation_source(value, path, definition, targets)
 
@@ -759,7 +675,7 @@ def _parse_transformations(
             "invalid-keys", path, {"expected": targets, "actual": tuple(sorted(mapping))}
         )
     transformations: list[tuple[str, Transformation]] = []
-    allowed = tuple(sorted(SCHEMA_REGISTRY.transformations))
+    allowed = tuple(sorted(_TRANSFORMATIONS))
     for target in targets:
         item = _mapping(mapping[target], f"{path}.{target}")
         _keys(item, "transformation", f"{path}.{target}")
@@ -778,8 +694,8 @@ def _parse_transformations(
 def _parse_observation(value: object, path: str) -> ObservationSpec:
     mapping = _mapping(value, path)
     _keys(mapping, "observation", path)
-    family = _enum(mapping["family"], tuple(sorted(SCHEMA_REGISTRY.observations)), f"{path}.family")
-    definition = SCHEMA_REGISTRY.observations[family]
+    family = _enum(mapping["family"], tuple(sorted(OBSERVABLE_FAMILIES)), f"{path}.family")
+    definition = OBSERVABLE_FAMILIES[family]
     targets = tuple(
         _enum(item, definition.targets, f"{path}.targets[{index}]")
         for index, item in enumerate(_list(mapping["targets"], f"{path}.targets"))
@@ -810,23 +726,21 @@ def _parse_observation(value: object, path: str) -> ObservationSpec:
         mapping["residuals"],
         f"{path}.residuals",
         targets,
-        tuple(sorted(SCHEMA_REGISTRY.residuals)),
+        tuple(sorted(_RESIDUALS)),
     )
     units = _parse_units(mapping["units"], f"{path}.units", targets)
-    basis = _parse_target_map(
-        mapping["basis"], f"{path}.basis", targets, tuple(sorted(SCHEMA_REGISTRY.bases))
-    )
+    basis = _parse_target_map(mapping["basis"], f"{path}.basis", targets, tuple(sorted(_BASES)))
     references = _parse_target_map(
         mapping["reference_convention"],
         f"{path}.reference_convention",
         targets,
-        tuple(sorted(SCHEMA_REGISTRY.references)),
+        tuple(sorted(_REFERENCES)),
     )
     for target, declared in basis:
-        if declared not in SCHEMA_REGISTRY.targets[target].bases:
+        if declared not in OBSERVABLE_TARGETS[target].bases:
             raise FitSchemaError("invalid-basis", f"{path}.basis.{target}", declared)
     for target, declared in references:
-        if declared not in SCHEMA_REGISTRY.targets[target].references:
+        if declared not in OBSERVABLE_TARGETS[target].references:
             raise FitSchemaError(
                 "invalid-reference", f"{path}.reference_convention.{target}", declared
             )
@@ -852,11 +766,7 @@ def _parse_observation(value: object, path: str) -> ObservationSpec:
         initial = _integer(item["initial_order"], f"{path}.quadrature.initial_order")
         maximum = _integer(item["max_order"], f"{path}.quadrature.max_order")
         tolerance = _number(item["tolerance"], f"{path}.quadrature.tolerance")
-        if (
-            initial not in SCHEMA_REGISTRY.quadrature_orders
-            or maximum not in SCHEMA_REGISTRY.quadrature_orders
-            or tolerance <= 0
-        ):
+        if initial not in _QUADRATURE_ORDERS or maximum not in _QUADRATURE_ORDERS or tolerance <= 0:
             raise FitSchemaError("invalid-value", f"{path}.quadrature", "orders or tolerance")
         quadrature = QuadratureSpec(initial, maximum, tolerance)
     if isinstance(source, PublishedObservationCorrelation) and quadrature is None:
@@ -910,7 +820,7 @@ def _domain_mapping(domain: SourceDomain) -> dict[str, object]:
 def _source_mapping(source: Source) -> dict[str, object]:
     if isinstance(source, TableSource):
         result: dict[str, object] = {
-            "kind": SCHEMA_REGISTRY.source_kinds[0],
+            "kind": _SOURCE_KINDS[0],
             "path": source.path,
             "sha256": source.sha256,
             "citation": source.citation,
@@ -920,7 +830,7 @@ def _source_mapping(source: Source) -> dict[str, object]:
             result["rows"] = [{name: value for name, value in row.values} for row in source.rows]
         return result
     return {
-        "kind": SCHEMA_REGISTRY.source_kinds[1],
+        "kind": _SOURCE_KINDS[1],
         "correlation": source.correlation,
         "coefficients": list(source.coefficients),
         "path": source.path,
@@ -1017,7 +927,7 @@ def _correlation_schema(
         coefficients["minItems"] = definition.coefficient_count
     return _object_schema(
         {
-            "kind": {"const": SCHEMA_REGISTRY.source_kinds[1]},
+            "kind": {"const": _SOURCE_KINDS[1]},
             "correlation": {"const": name},
             "coefficients": coefficients,
             **base,
@@ -1037,14 +947,14 @@ def _target_array_schema(targets: Sequence[str]) -> dict[str, object]:
 
 
 def _table_source_schema(
-    definition: ObservationDefinition,
+    definition: ObservableFamily,
     targets: Sequence[str],
     number: dict[str, object],
 ) -> dict[str, object]:
     row_fields = (*definition.state_fields, *targets)
     return _object_schema(
         {
-            "kind": {"const": SCHEMA_REGISTRY.source_kinds[0]},
+            "kind": {"const": _SOURCE_KINDS[0]},
             **_source_base_schema(definition.state_fields),
             "rows": {
                 "type": "array",
@@ -1055,24 +965,24 @@ def _table_source_schema(
                 "minItems": 1,
             },
         },
-        SCHEMA_REGISTRY.fields["table_source"].required,
+        _FIELDS["table_source"].required,
     )
 
 
 def _quadrature_schema() -> dict[str, object]:
     return _object_schema(
         {
-            "initial_order": {"enum": list(SCHEMA_REGISTRY.quadrature_orders)},
-            "max_order": {"enum": list(SCHEMA_REGISTRY.quadrature_orders)},
+            "initial_order": {"enum": list(_QUADRATURE_ORDERS)},
+            "max_order": {"enum": list(_QUADRATURE_ORDERS)},
             "tolerance": {"type": "number", "exclusiveMinimum": 0},
         },
-        SCHEMA_REGISTRY.fields["quadrature"].required,
+        _FIELDS["quadrature"].required,
     )
 
 
 def _observation_schema(
     family: str,
-    definition: ObservationDefinition,
+    definition: ObservableFamily,
     targets: tuple[str, ...],
     source: dict[str, object],
     *,
@@ -1080,11 +990,11 @@ def _observation_schema(
     strings: dict[str, object],
     transformation: dict[str, object],
 ) -> dict[str, object]:
-    residual = {target: {"enum": sorted(SCHEMA_REGISTRY.residuals)} for target in targets}
+    residual = {target: {"enum": sorted(_RESIDUALS)} for target in targets}
     unit = {target: strings for target in targets}
-    basis = {target: {"enum": list(SCHEMA_REGISTRY.targets[target].bases)} for target in targets}
+    basis = {target: {"enum": list(OBSERVABLE_TARGETS[target].bases)} for target in targets}
     reference = {
-        target: {"enum": list(SCHEMA_REGISTRY.targets[target].references)} for target in targets
+        target: {"enum": list(OBSERVABLE_TARGETS[target].references)} for target in targets
     }
     transformations = {target: transformation for target in targets}
     properties: dict[str, object] = {
@@ -1103,7 +1013,7 @@ def _observation_schema(
             "minItems": 1,
         },
     }
-    required = list(SCHEMA_REGISTRY.fields["observation"].required)
+    required = list(_FIELDS["observation"].required)
     if correlated:
         properties["quadrature"] = _quadrature_schema()
         required.append("quadrature")
@@ -1118,9 +1028,9 @@ def _observation_schemas(
     schemas: list[dict[str, object]] = []
     table_transformation = _object_schema(
         {"input": {"const": "identity"}, "output": {"const": "identity"}},
-        SCHEMA_REGISTRY.fields["transformation"].required,
+        _FIELDS["transformation"].required,
     )
-    for family, definition in SCHEMA_REGISTRY.observations.items():
+    for family, definition in OBSERVABLE_FAMILIES.items():
         for count in range(1, len(definition.targets) + 1):
             for targets in combinations(definition.targets, count):
                 schemas.append(
@@ -1135,7 +1045,7 @@ def _observation_schemas(
                     )
                 )
         for target in definition.targets:
-            for name, correlation in SCHEMA_REGISTRY.correlations.items():
+            for name, correlation in _CORRELATIONS.items():
                 if correlation.independent_fields != definition.state_fields:
                     continue
                 schemas.append(
@@ -1173,22 +1083,18 @@ def parameter_fit_json_schema() -> dict[str, object]:
             "scale": {"type": "number", "exclusiveMinimum": 0},
             "unit": strings,
         },
-        SCHEMA_REGISTRY.fields["coordinate"].required,
+        _FIELDS["coordinate"].required,
     )
     transformation = _object_schema(
         {
-            "input": {"enum": sorted(SCHEMA_REGISTRY.transformations)},
-            "output": {"enum": sorted(SCHEMA_REGISTRY.transformations)},
+            "input": {"enum": sorted(_TRANSFORMATIONS)},
+            "output": {"enum": sorted(_TRANSFORMATIONS)},
         },
-        SCHEMA_REGISTRY.fields["transformation"].required,
+        _FIELDS["transformation"].required,
     )
     observation_schemas = _observation_schemas(strings, number, transformation)
     valid_model_kinds = sorted(
-        {
-            kind
-            for definition in SCHEMA_REGISTRY.observations.values()
-            for kind in definition.model_kinds
-        }
+        {kind for definition in OBSERVABLE_FAMILIES.values() for kind in definition.model_kinds}
     )
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1198,11 +1104,11 @@ def parameter_fit_json_schema() -> dict[str, object]:
                 "schema_version": {"const": SCHEMA_VERSION, "type": "integer"},
                 "parameters": _object_schema(
                     {"path": strings, "sha256": digest},
-                    SCHEMA_REGISTRY.fields["parameters"].required,
+                    _FIELDS["parameters"].required,
                 ),
                 "model": _object_schema(
                     {"kind": {"enum": valid_model_kinds}},
-                    SCHEMA_REGISTRY.fields["model"].required,
+                    _FIELDS["model"].required,
                 ),
                 "active": _object_schema(
                     {
@@ -1229,12 +1135,12 @@ def parameter_fit_json_schema() -> dict[str, object]:
                                         "uniqueItems": True,
                                     }
                                 },
-                                SCHEMA_REGISTRY.fields["tie"].required,
+                                _FIELDS["tie"].required,
                             ),
                             "uniqueItems": True,
                         },
                     },
-                    SCHEMA_REGISTRY.fields["active"].required,
+                    _FIELDS["active"].required,
                 ),
                 "observations": {
                     "type": "array",
@@ -1252,12 +1158,12 @@ def parameter_fit_json_schema() -> dict[str, object]:
                                 },
                                 "include_input": {"type": "boolean"},
                             },
-                            SCHEMA_REGISTRY.fields["multistart"].required,
+                            _FIELDS["multistart"].required,
                         ),
                     },
-                    SCHEMA_REGISTRY.fields["solver"].required,
+                    _FIELDS["solver"].required,
                 ),
             },
-            SCHEMA_REGISTRY.fields["fit"].required,
+            _FIELDS["fit"].required,
         ),
     }

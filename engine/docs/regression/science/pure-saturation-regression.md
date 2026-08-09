@@ -6,9 +6,9 @@ generic native residual engine, and `FitResult` retains every start and the
 exact fitted parameter transfer.
 
 The EOS owns coexistence through `Pure.saturation` and its exact selected-
-parameter derivatives. Regression supplies no saturation solver, callback,
-paper-specific route, packaged literature table, or alternate parameter
-record.
+parameter derivatives. Regression supplies no saturation solver, equation,
+target index, paper-specific route, packaged literature table, or alternate
+parameter record; it consumes the EOS-owned observable block.
 
 For each admitted temperature, the generic `pure_saturation` observation may
 compare saturation pressure and saturated liquid or vapor density. Positive
