@@ -7,6 +7,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal, SupportsFloat, cast, overload
 
 import pint
@@ -34,6 +35,82 @@ type ObservableIdentity = Literal[
     "eos.fixed-state",
     "eos.pure-saturation",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class ObservableTarget:
+    """One source-facing target resolved to an EOS observable row."""
+
+    positive: bool
+    row_identity: str
+    unit: str
+    bases: tuple[str, ...]
+    references: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ObservableFamily:
+    """One EOS-owned observation family admitted to Parameter Fit."""
+
+    descriptor_identity: ObservableIdentity
+    targets: tuple[str, ...]
+    state_fields: tuple[str, ...]
+    model_kinds: tuple[Literal["pure", "mixture"], ...]
+
+
+OBSERVABLE_TARGETS: Mapping[str, ObservableTarget] = MappingProxyType(
+    {
+        "pressure": ObservableTarget(True, "pressure_pa", "pascal", ("absolute",), ("absolute",)),
+        "saturation_pressure": ObservableTarget(
+            True, "saturation_pressure_pa", "pascal", ("absolute",), ("absolute",)
+        ),
+        "saturated_liquid_mass_density": ObservableTarget(
+            True,
+            "liquid_mass_density_kg_per_m3",
+            "kilogram / meter**3",
+            ("mass",),
+            ("saturated_liquid",),
+        ),
+        "saturated_liquid_molar_density": ObservableTarget(
+            True,
+            "liquid_molar_density_mol_per_m3",
+            "mole / meter**3",
+            ("molar",),
+            ("saturated_liquid",),
+        ),
+        "saturated_vapor_mass_density": ObservableTarget(
+            True,
+            "vapor_mass_density_kg_per_m3",
+            "kilogram / meter**3",
+            ("mass",),
+            ("saturated_vapor",),
+        ),
+        "saturated_vapor_molar_density": ObservableTarget(
+            True,
+            "vapor_molar_density_mol_per_m3",
+            "mole / meter**3",
+            ("molar",),
+            ("saturated_vapor",),
+        ),
+    }
+)
+
+OBSERVABLE_FAMILIES: Mapping[str, ObservableFamily] = MappingProxyType(
+    {
+        "fixed_state_pressure": ObservableFamily(
+            "eos.fixed-state",
+            ("pressure",),
+            ("temperature_k", "molar_density_mol_per_m3"),
+            ("pure", "mixture"),
+        ),
+        "pure_saturation": ObservableFamily(
+            "eos.pure-saturation",
+            tuple(target for target in OBSERVABLE_TARGETS if target != "pressure"),
+            ("temperature_k",),
+            ("pure",),
+        ),
+    }
+)
 _MOLAR_GAS_CONSTANT = 8.31446261815324
 _native_transport_factory = _native_core.native_transport
 
@@ -1358,6 +1435,63 @@ class Mixture(_EosModel):
         )
 
 
+def evaluate_observable(
+    model: Pure | Mixture,
+    active_parameters: ActiveParameterSet,
+    descriptor: ObservableDescriptor,
+    state: Mapping[str, float],
+    *,
+    composition: tuple[float, ...] | None,
+) -> ObservableBlock:
+    """Evaluate an EOS-owned block from canonical source-state fields."""
+
+    if descriptor.parameter_fingerprint != model.parameter_fingerprint:
+        raise _eos_error("invalid-observable-descriptor", reason="different-parameters")
+    if descriptor.active_parameter_identities != active_parameters.identities:
+        raise _eos_error("invalid-active-parameter-set", reason="different-identities")
+    family = next(
+        (
+            candidate
+            for candidate in OBSERVABLE_FAMILIES.values()
+            if candidate.descriptor_identity == descriptor.identity
+            and ("pure" if isinstance(model, Pure) else "mixture") in candidate.model_kinds
+        ),
+        None,
+    )
+    if family is None or set(state) != set(family.state_fields):
+        raise _eos_error(
+            "invalid-observable-inputs",
+            identity=descriptor.identity,
+            fields=tuple(sorted(state)),
+        )
+    temperature = state["temperature_k"] * unit_registry.kelvin
+    if descriptor.identity == "eos.pure-saturation":
+        if not isinstance(model, Pure) or composition is not None:
+            raise _eos_error("invalid-observable-inputs", identity=descriptor.identity)
+        return model.observable_block(
+            active_parameters, identity=descriptor.identity, T=temperature
+        )
+    density = state["molar_density_mol_per_m3"] * unit_registry.mole / unit_registry.meter**3
+    if isinstance(model, Pure):
+        if composition is not None:
+            raise _eos_error("invalid-observable-inputs", identity=descriptor.identity)
+        return model.observable_block(
+            active_parameters,
+            identity=descriptor.identity,
+            T=temperature,
+            rho=density,
+        )
+    if composition is None:
+        raise _eos_error("invalid-observable-inputs", identity=descriptor.identity)
+    return model.observable_block(
+        active_parameters,
+        identity=descriptor.identity,
+        T=temperature,
+        rho=density,
+        x=composition,
+    )
+
+
 def _saturation_triple(payload: object) -> tuple[float, float, float]:
     values = tuple(float(value) for value in cast(Iterable[SupportsFloat], payload))
     if len(values) != 3:
@@ -1809,6 +1943,8 @@ class DensityDiagnostics:
 
 
 __all__ = (
+    "OBSERVABLE_FAMILIES",
+    "OBSERVABLE_TARGETS",
     "DensityDiagnostics",
     "EosError",
     "Fugacity",
@@ -1817,9 +1953,11 @@ __all__ = (
     "ObservableBlock",
     "ObservableBlockStatus",
     "ObservableDescriptor",
+    "ObservableFamily",
     "ObservableIdentity",
     "ObservableRowStatus",
     "ObservableState",
+    "ObservableTarget",
     "Phase",
     "PropertyBasis",
     "Pure",
@@ -1830,4 +1968,5 @@ __all__ = (
     "SaturationPhase",
     "SaturationResult",
     "State",
+    "evaluate_observable",
 )

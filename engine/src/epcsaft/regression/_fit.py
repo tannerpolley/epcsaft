@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from importlib import metadata
 from os import PathLike
 from pathlib import Path
@@ -11,9 +12,18 @@ from typing import Any, SupportsFloat, cast
 import pint
 
 from .. import _core
-from ..eos import Mixture, Pure, _python_native_artifact_fingerprint
-from ..parameters import Parameters
-from ._model import SCHEMA_REGISTRY, ParameterFit, TableRow
+from ..eos import (
+    OBSERVABLE_TARGETS,
+    EosError,
+    Mixture,
+    ObservableDescriptor,
+    Pure,
+    SaturationError,
+    _python_native_artifact_fingerprint,
+    evaluate_observable,
+)
+from ..parameters import ActiveParameterSet, Parameters
+from ._model import ParameterFit, TableRow
 from ._resolve import ResolvedFit, ResolvedObservation
 from ._result import FitResult
 
@@ -51,80 +61,150 @@ def _parameter_input(resolved: ResolvedFit, identity: str, unit: str) -> float:
     )
 
 
-def _target(
-    model: Pure | Mixture,
+@dataclass(frozen=True, slots=True)
+class _OwnerRequest:
+    descriptor: ObservableDescriptor
+    state: tuple[tuple[str, float], ...]
+    composition: tuple[float, ...] | None
+    row_identities: tuple[str, ...]
+
+
+def _rows(
     observation: ResolvedObservation,
-    row: TableRow,
-    target: str,
-) -> dict[str, object]:
-    label = SCHEMA_REGISTRY.targets[target].observable_row_identity
-    factor = 1.0
-    if label.endswith("_mass_density_kg_per_m3"):
-        molar_masses = model._model.molar_mass_kg_per_mol
-        if len(molar_masses) != 1 or molar_masses[0] is None:
-            raise ValueError("pure mass-density fitting requires one declared molar mass")
-        factor = molar_masses[0]
-        label = label.replace("_mass_density_kg_per_m3", "_molar_density_mol_per_m3")
-    observed = row.value(target)
-    return {
-        "label": label,
-        "observed": observed,
-        "residual": dict(observation.specification.residuals)[target],
-        "scale": observed,
-        "value_factor": factor,
-    }
-
-
-def _observation(
-    model: Pure | Mixture,
-    resolved: ResolvedObservation,
-    row: TableRow,
-    multiplier: float,
-) -> dict[str, object]:
-    specification = resolved.specification
-    temperature = row.value("temperature_k")
-    result: dict[str, object] = {
-        "family": specification.family,
-        "temperature_k": temperature,
-        "multiplier": multiplier,
-        "targets": [_target(model, resolved, row, target) for target in specification.targets],
-    }
-    if specification.family == "pure_saturation":
-        result["liquid_density_upper_mol_m3"] = model._native.molar_density_upper_bound(
-            temperature, [1.0]
+) -> tuple[tuple[TableRow, float], ...]:
+    if observation.rows is not None:
+        return tuple((row, observation.specification.multiplier) for row in observation.rows)
+    if observation.quadrature is None:
+        raise RuntimeError("resolved observation has neither rows nor quadrature")
+    rule = observation.quadrature.rules[-1]
+    target = observation.specification.targets[0]
+    return tuple(
+        (
+            TableRow((("temperature_k", temperature), (target, observed))),
+            observation.specification.multiplier * math.sqrt(weight),
         )
-    else:
-        result["molar_density_mol_m3"] = row.value("molar_density_mol_per_m3")
-        result["composition"] = specification.composition
-    return result
-
-
-def _observations(model: Pure | Mixture, resolved: ResolvedFit) -> list[dict[str, object]]:
-    result: list[dict[str, object]] = []
-    for observation in resolved.observations:
-        if observation.rows is not None:
-            result.extend(
-                _observation(model, observation, row, observation.specification.multiplier)
-                for row in observation.rows
-            )
-            continue
-        if observation.quadrature is None:
-            raise RuntimeError("resolved observation has neither rows nor quadrature")
-        rule = observation.quadrature.rules[-1]
-        target = observation.specification.targets[0]
         for temperature, weight, observed in zip(
             rule.nodes, rule.weights, rule.observed_values, strict=True
-        ):
-            row = TableRow((("temperature_k", temperature), (target, observed)))
-            result.append(
-                _observation(
-                    model,
-                    observation,
-                    row,
-                    observation.specification.multiplier * math.sqrt(weight),
+        )
+    )
+
+
+def _owner_requests(
+    resolved: ResolvedFit,
+) -> tuple[tuple[_OwnerRequest, ...], list[dict[str, object]]]:
+    requests: list[_OwnerRequest] = []
+    residual_blocks: list[dict[str, object]] = []
+    for observation in resolved.observations:
+        specification = observation.specification
+        state_fields = tuple(name for name, _ in specification.source.domain.bounds)
+        residuals = dict(specification.residuals)
+        row_identities = tuple(
+            OBSERVABLE_TARGETS[target].row_identity for target in specification.targets
+        )
+        for row, multiplier in _rows(observation):
+            requests.append(
+                _OwnerRequest(
+                    observation.descriptor,
+                    tuple((name, row.value(name)) for name in state_fields),
+                    specification.composition,
+                    row_identities,
                 )
             )
-    return result
+            residual_blocks.append(
+                {
+                    "multiplier": multiplier,
+                    "targets": [
+                        {
+                            "observed": row.value(target),
+                            "residual": residuals[target],
+                            "scale": row.value(target),
+                        }
+                        for target in specification.targets
+                    ],
+                }
+            )
+    return tuple(requests), residual_blocks
+
+
+class _OwnerEvaluator:
+    __slots__ = ("_model", "_parameters", "_requests", "_selected_identities")
+
+    def __init__(
+        self,
+        model: Pure | Mixture,
+        resolved: ResolvedFit,
+        requests: Sequence[_OwnerRequest],
+    ) -> None:
+        self._model = model
+        self._parameters = resolved.parameters
+        self._selected_identities = resolved.selected_identities
+        self._requests = tuple(requests)
+
+    @staticmethod
+    def _rejected(code: str, reason: str) -> dict[str, object]:
+        return {
+            "status": "rejected",
+            "failure": {"code": code, "reason": reason},
+        }
+
+    def __call__(self, index: int, values: Sequence[float]) -> dict[str, object]:
+        request = self._requests[index]
+        try:
+            active_parameters = ActiveParameterSet(
+                self._parameters,
+                self._selected_identities,
+                values=values,
+            )
+            block = evaluate_observable(
+                self._model,
+                active_parameters,
+                request.descriptor,
+                dict(request.state),
+                composition=request.composition,
+            )
+        except EosError as exc:
+            return self._rejected(exc.code, str(exc))
+        except SaturationError as exc:
+            return self._rejected(f"saturation-{exc.diagnostics.rejection_status}", str(exc))
+        except (TypeError, ValueError) as exc:
+            return self._rejected("invalid-active-parameter-value", str(exc))
+        if block.status.status != "accepted":
+            code = (
+                f"saturation-{block.saturation_diagnostics.rejection_status}"
+                if block.saturation_diagnostics is not None
+                else f"observable-{block.status.scope}-rejected"
+            )
+            return self._rejected(code, block.status.reason)
+        if block.descriptor.active_parameter_identities != self._selected_identities:
+            return self._rejected(
+                "owner-parameter-order-mismatch",
+                "owner block did not preserve the selected parameter order",
+            )
+        rows = {
+            identity: (value, jacobian, status)
+            for identity, value, jacobian, status in zip(
+                block.descriptor.row_identities,
+                block.values,
+                block.jacobian,
+                block.row_statuses,
+                strict=True,
+            )
+        }
+        selected = tuple(rows.get(identity) for identity in request.row_identities)
+        if any(
+            row is None or row[0] is None or row[1] is None or row[2].status != "accepted"
+            for row in selected
+        ):
+            return self._rejected(
+                "owner-row-rejected",
+                "owner block did not return every selected row",
+            )
+        accepted = cast(tuple[tuple[float, tuple[float, ...], object], ...], selected)
+        return {
+            "status": "accepted",
+            "predictions": [row[0] for row in accepted],
+            "jacobian": [value for row in accepted for value in row[1]],
+        }
 
 
 def _package_fingerprint() -> str:
@@ -156,9 +236,10 @@ def fit(
         for index, coordinate in enumerate(resolved.coordinates)
         for identity in coordinate.tied_identities
     }
+    requests, residual_blocks = _owner_requests(resolved)
     native = _core._fit_resolved(
-        model._native,
-        model._active_coordinates(resolved.active_parameters),
+        _OwnerEvaluator(model, resolved, requests),
+        len(resolved.selected_identities),
         [coordinate_indices[identity] for identity in resolved.selected_identities],
         [
             {
@@ -169,7 +250,7 @@ def fit(
             }
             for coordinate in resolved.coordinates
         ],
-        _observations(model, resolved),
+        residual_blocks,
         {
             "start_count": specification.solver.multistart.count,
             "include_input": specification.solver.multistart.include_input,

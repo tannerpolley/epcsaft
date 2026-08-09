@@ -33,11 +33,26 @@ def _finite_values(values: Sequence[float]) -> list[float | None]:
 
 
 @dataclass(frozen=True, slots=True)
+class OwnerFailure:
+    code: str
+    reason: str
+    count: int
+
+    @classmethod
+    def from_native(cls, value: Mapping[str, Any]) -> OwnerFailure:
+        return cls(str(value["code"]), str(value["reason"]), int(value["count"]))
+
+    def to_mapping(self) -> dict[str, object]:
+        return {"code": self.code, "reason": self.reason, "count": self.count}
+
+
+@dataclass(frozen=True, slots=True)
 class FitStart:
     index: int
     initial_physical: tuple[float, ...]
     final_physical: tuple[float, ...]
     final_affine: tuple[float, ...]
+    predictions: tuple[float, ...]
     residuals: tuple[float, ...]
     physical_jacobian: tuple[float, ...]
     affine_jacobian: tuple[float, ...]
@@ -49,6 +64,7 @@ class FitStart:
     failure_reason: str
     iterations: int
     non_evaluable_count: int
+    owner_failures: tuple[OwnerFailure, ...]
     cost: float
     usable: bool
     basin: int | None
@@ -63,6 +79,7 @@ class FitStart:
             initial_physical=tuple(float(item) for item in value["initial_physical"]),
             final_physical=tuple(float(item) for item in value["final_physical"]),
             final_affine=tuple(float(item) for item in value["final_affine"]),
+            predictions=tuple(float(item) for item in value["predictions"]),
             residuals=tuple(float(item) for item in value["residuals"]),
             physical_jacobian=tuple(float(item) for item in value["physical_jacobian"]),
             affine_jacobian=tuple(float(item) for item in value["affine_jacobian"]),
@@ -74,6 +91,9 @@ class FitStart:
             failure_reason=str(value["failure_reason"]),
             iterations=int(value["iterations"]),
             non_evaluable_count=int(value["non_evaluable_count"]),
+            owner_failures=tuple(
+                OwnerFailure.from_native(item) for item in value["owner_failures"]
+            ),
             cost=float(value["cost"]),
             usable=bool(value["usable"]),
             basin=None if value["basin"] is None else int(value["basin"]),
@@ -95,6 +115,7 @@ class FitStart:
             "initial_physical": _finite_values(self.initial_physical),
             "final_physical": _finite_values(self.final_physical),
             "final_affine": _finite_values(self.final_affine),
+            "predictions": _finite_values(self.predictions),
             "residuals": _finite_values(self.residuals),
             "block_contributions": contributions,
             "physical_jacobian": _finite_values(self.physical_jacobian),
@@ -107,6 +128,7 @@ class FitStart:
             "failure_reason": self.failure_reason,
             "iterations": self.iterations,
             "non_evaluable_count": self.non_evaluable_count,
+            "owner_failures": [failure.to_mapping() for failure in self.owner_failures],
             "cost": _finite_or_none(self.cost),
             "usable": self.usable,
             "basin": self.basin,
