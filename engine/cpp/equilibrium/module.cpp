@@ -14,6 +14,7 @@
 #include "held2_certificates.hpp"
 #include "flash.hpp"
 #include "result_json.hpp"
+#include "solved_state_sensitivity.hpp"
 
 namespace py = pybind11;
 
@@ -87,7 +88,7 @@ py::dict evaluate_mixture_phase(
     );
 }
 
-py::dict evaluate_reacting_phase(
+py::dict evaluate_parameterized_phase(
     const py::capsule& capsule,
     double temperature_k,
     const std::vector<double>& amounts_mol,
@@ -98,7 +99,7 @@ py::dict evaluate_reacting_phase(
     const epcsaft_native_transport& transport = checked_transport(capsule);
     const epcsaft_engine::equilibrium::ProviderContext provider(transport);
     const auto active_parameters = provider.active_parameters();
-    const auto evaluation = provider.evaluate_reacting_phase_parameters(
+    const auto evaluation = provider.evaluate_parameterized_phase(
         temperature_k,
         amounts_mol,
         volume_m3,
@@ -129,6 +130,76 @@ py::dict evaluate_reacting_phase(
     result["molar_volume_bound_parameter_derivatives_m3_per_mol"] =
         evaluation.molar_volume_bound_parameter_derivatives_m3_per_mol;
     result["topology_fingerprint"] = evaluation.topology_fingerprint;
+    return result;
+}
+
+py::dict evaluate_solved_state_sensitivity(
+    const py::capsule& capsule,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<double>& feed_amounts_mol,
+    const std::vector<std::vector<double>>& phase_amounts_mol,
+    const std::vector<double>& phase_volumes_m3
+) {
+    const epcsaft_native_transport& transport = checked_transport(capsule);
+    if (phase_amounts_mol.size() != phase_volumes_m3.size()) {
+        throw py::value_error("phase amount and volume counts must match");
+    }
+    std::vector<std::string> component_ids;
+    component_ids.reserve(transport.component_count);
+    for (
+        std::size_t component = 0;
+        component < transport.component_count;
+        ++component
+    ) {
+        const char* identity = transport.component_ids[component];
+        if (identity == nullptr || identity[0] == '\0') {
+            throw py::value_error("Provider component identity is incomplete");
+        }
+        component_ids.emplace_back(identity);
+    }
+    std::vector<epcsaft_engine::equilibrium::SolvedPhaseState> phases;
+    phases.reserve(phase_amounts_mol.size());
+    for (std::size_t phase = 0; phase < phase_amounts_mol.size(); ++phase) {
+        phases.push_back({phase_amounts_mol[phase], phase_volumes_m3[phase]});
+    }
+    const epcsaft_engine::equilibrium::ProviderContext provider(transport);
+    const auto sensitivity =
+        epcsaft_engine::equilibrium::evaluate_solved_state_sensitivity(
+            provider,
+            temperature_k,
+            pressure_pa,
+            component_ids,
+            feed_amounts_mol,
+            phases
+        );
+    py::dict result;
+    result["status"] = sensitivity.status;
+    result["failure_reason"] = sensitivity.failure_reason;
+    result["derivative_order"] = 1;
+    result["higher_order_status"] = "unavailable";
+    result["higher_order_reason"] =
+        "higher_order_total_derivatives_not_implemented";
+    result["tensor_layout"] = "row-major";
+    result["residual_identities"] = sensitivity.residual_identities;
+    result["state_identities"] = sensitivity.state_identities;
+    result["output_identities"] = sensitivity.output_identities;
+    result["parameter_identities"] = sensitivity.parameter_identities;
+    result["residual_state_jacobian"] =
+        sensitivity.residual_state_jacobian;
+    result["residual_parameter_jacobian"] =
+        sensitivity.residual_parameter_jacobian;
+    result["state_parameter_jacobian"] =
+        sensitivity.state_parameter_jacobian;
+    result["output_parameter_jacobian"] =
+        sensitivity.output_parameter_jacobian;
+    result["rank"] = sensitivity.rank;
+    result["dimension"] = sensitivity.dimension;
+    result["scaled_condition_number_2"] =
+        sensitivity.scaled_condition_number_2;
+    result["linear_solve_backward_error"] =
+        sensitivity.linear_solve_backward_error;
+    result["reference_phase_index"] = sensitivity.reference_phase_index;
     return result;
 }
 
@@ -294,14 +365,24 @@ PYBIND11_MODULE(_equilibrium, module) {
         py::arg("volume_m3")
     );
     module.def(
-        "evaluate_reacting_phase",
-        &evaluate_reacting_phase,
+        "evaluate_parameterized_phase",
+        &evaluate_parameterized_phase,
         py::arg("capsule"),
         py::arg("temperature_k"),
         py::arg("amounts_mol"),
         py::arg("volume_m3"),
         py::arg("packing_fraction_min"),
         py::arg("packing_fraction_max")
+    );
+    module.def(
+        "evaluate_solved_state_sensitivity",
+        &evaluate_solved_state_sensitivity,
+        py::arg("capsule"),
+        py::arg("temperature_k"),
+        py::arg("pressure_pa"),
+        py::arg("feed_amounts_mol"),
+        py::arg("phase_amounts_mol"),
+        py::arg("phase_volumes_m3")
     );
     module.def(
         "_solve_tp_flash",

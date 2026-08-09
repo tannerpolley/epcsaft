@@ -902,12 +902,17 @@ NativeMixturePhaseBlock NativeModel::evaluate_electrolyte_phase(
 }
 
 // EqExclude: transport and buffer mechanics
-NativeMixturePhaseBlock NativeModel::evaluate_reacting_phase_parameters(
+NativeMixturePhaseBlock NativeModel::evaluate_parameterized_phase(
     double temperature, const std::vector<double> &amounts, double volume,
     double ion_mole_fraction_max,
     const std::vector<NativeActiveCoordinate> &active_parameters) const {
-  detail::validate_electrolyte_phase_state(
-      temperature, amounts, volume, ion_mole_fraction_max, parameters_);
+  if (supports_electrolyte_transport()) {
+    detail::validate_electrolyte_phase_state(
+        temperature, amounts, volume, ion_mole_fraction_max, parameters_);
+  } else {
+    detail::validate_mixture_phase_state(temperature, amounts, volume,
+                                         parameters_);
+  }
   return evaluate_phase_derivatives(temperature, amounts, volume,
                                     active_parameters, 2);
 }

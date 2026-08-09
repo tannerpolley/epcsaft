@@ -123,11 +123,11 @@ ProviderContext::ProviderContext(const epcsaft_native_transport& transport)
     }
 }
 
-std::string ProviderContext::reacting_topology_fingerprint() const {
+std::string ProviderContext::parameterized_topology_fingerprint() const {
     if (transport_.topology_fingerprint == nullptr
         || transport_.topology_fingerprint[0] == '\0') {
         throw std::invalid_argument(
-            "Provider reacting-phase topology metadata is incompatible"
+            "Provider parameterized-phase topology metadata is incompatible"
         );
     }
     return transport_.topology_fingerprint;
@@ -310,7 +310,7 @@ ProviderActiveParameterSet ProviderContext::active_parameters() const {
     ProviderActiveParameterSet result;
     if (transport_.active_parameter_count != 0
         && (transport_.active_parameter_identities == nullptr
-            || transport_.evaluate_reacting_phase_parameters == nullptr)) {
+            || transport_.evaluate_parameterized_phase == nullptr)) {
         throw std::invalid_argument(
             "Provider active-parameter transport is incomplete"
         );
@@ -330,7 +330,7 @@ ProviderActiveParameterSet ProviderContext::active_parameters() const {
     return result;
 }
 
-ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters(
+ParameterizedPhaseEvaluation ProviderContext::evaluate_parameterized_phase(
     double temperature_k,
     const std::vector<double>& amounts_mol,
     double volume_m3,
@@ -339,10 +339,10 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
     const ProviderActiveParameterSet& active_parameters
 ) const {
     if (active_parameters.identities.empty()
-        || transport_.evaluate_reacting_phase_parameters == nullptr
+        || transport_.evaluate_parameterized_phase == nullptr
         || amounts_mol.size() != transport_.component_count) {
         throw std::invalid_argument(
-            "Provider atomic active reacting-phase contract is incomplete"
+            "Provider atomic parameterized-phase contract is incomplete"
         );
     }
     const std::size_t state_count = amounts_mol.size() + 1;
@@ -362,7 +362,7 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
     result.chemical_potential_parameter_derivatives_over_rt.resize(
         amounts_mol.size() * parameter_count
     );
-    epcsaft_reacting_phase_parameter_result native{};
+    epcsaft_parameterized_phase_result native{};
     native.struct_size = sizeof(native);
     native.state_coordinate_count = state_count;
     native.active_parameter_count = parameter_count;
@@ -394,7 +394,7 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
     native.packing_state_hessian_capacity = result.packing.hessian.size();
     native.packing_state_gradient = result.packing.gradient.data();
     native.packing_state_hessian = result.packing.hessian.data();
-    const int status = transport_.evaluate_reacting_phase_parameters(
+    const int status = transport_.evaluate_parameterized_phase(
         transport_.model_context,
         temperature_k,
         amounts_mol.data(),
@@ -406,16 +406,16 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
     );
     if (status != native.status) {
         throw std::runtime_error(
-            "Provider active reacting-phase evaluation returned inconsistent status values"
+            "Provider parameterized-phase evaluation returned inconsistent status values"
         );
     }
     if (status != EPCSAFT_NATIVE_STATUS_OK) {
         throw std::domain_error(
-            "Provider active reacting-phase evaluation failed: "
+            "Provider parameterized-phase evaluation failed: "
             + decode_provider_char_array(
                 native.error,
                 sizeof(native.error),
-                "Provider active reacting-phase error"
+                "Provider parameterized-phase error"
             )
         );
     }
@@ -455,7 +455,7 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
         || native.packing_state_gradient != result.packing.gradient.data()
         || native.packing_state_hessian != result.packing.hessian.data()) {
         throw std::invalid_argument(
-            "Provider active reacting-phase result buffer contract changed"
+            "Provider parameterized-phase result buffer contract changed"
         );
     }
     const auto finite = [](const std::vector<double>& values) {
@@ -480,7 +480,7 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
         || native.molar_volume_bounds_m3_per_mol[1]
             <= native.molar_volume_bounds_m3_per_mol[0]) {
         throw std::invalid_argument(
-            "Provider active reacting-phase tensors or bounds are invalid"
+            "Provider parameterized-phase tensors or bounds are invalid"
         );
     }
     result.phase.value = native.helmholtz_over_rt_reference_amount;
@@ -489,23 +489,23 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
     result.phase.parameter_fingerprint = decode_provider_char_array(
         native.parameter_fingerprint,
         sizeof(native.parameter_fingerprint),
-        "Provider active reacting-phase fingerprint"
+        "Provider parameterized-phase fingerprint"
     );
     result.topology_fingerprint = decode_provider_char_array(
         native.topology_fingerprint,
         sizeof(native.topology_fingerprint),
-        "Provider active reacting-phase topology"
+        "Provider parameterized-phase topology"
     );
     const std::string basis = decode_provider_char_array(
         native.helmholtz_basis_id,
         sizeof(native.helmholtz_basis_id),
-        "Provider active reacting-phase basis"
+        "Provider parameterized-phase basis"
     );
     if (result.phase.parameter_fingerprint != fingerprint_
-        || result.topology_fingerprint != reacting_topology_fingerprint()
+        || result.topology_fingerprint != parameterized_topology_fingerprint()
         || basis != EPCSAFT_NATIVE_HELMHOLTZ_BASIS_ID) {
         throw std::invalid_argument(
-            "Provider active reacting-phase identity changed"
+            "Provider parameterized-phase identity changed"
         );
     }
     result.molar_volume_bounds_m3_per_mol = {
@@ -572,7 +572,7 @@ InversePackingGeometryEvaluation ProviderContext::evaluate_inverse_packing_geome
             "inverse-packing geometry state must be finite and positive"
         );
     }
-    const std::string topology = reacting_topology_fingerprint();
+    const std::string topology = parameterized_topology_fingerprint();
     const std::size_t coordinate_count = amounts_mol.size() + 1
         + active_parameters.identities.size();
     InversePackingGeometryEvaluation result;

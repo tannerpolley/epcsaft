@@ -13,13 +13,21 @@ def evaluate_mixture_phase(
     amounts_mol: tuple[float, ...],
     volume_m3: float,
 ) -> dict[str, object]: ...
-def evaluate_reacting_phase(
+def evaluate_parameterized_phase(
     capsule: object,
     temperature_k: float,
     amounts_mol: tuple[float, ...],
     volume_m3: float,
     packing_fraction_min: float,
     packing_fraction_max: float,
+) -> dict[str, object]: ...
+def evaluate_solved_state_sensitivity(
+    capsule: object,
+    temperature_k: float,
+    pressure_pa: float,
+    feed_amounts_mol: tuple[float, ...],
+    phase_amounts_mol: tuple[tuple[float, ...], ...],
+    phase_volumes_m3: tuple[float, ...],
 ) -> dict[str, object]: ...
 def _solve_tp_flash(
     capsule: object,

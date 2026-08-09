@@ -78,6 +78,31 @@ class Held2Diagnostics:
 
 
 @dataclass(frozen=True)
+class PhaseEquilibriumSensitivity:
+    """Exact first-order derivative of one accepted fixed-topology phase result."""
+
+    status: Literal["available", "unavailable"]
+    failure_reason: str | None
+    derivative_order: Literal[1]
+    higher_order_status: Literal["unavailable"]
+    higher_order_reason: str
+    tensor_layout: Literal["row-major"]
+    parameters: tuple[epcsaft.ActiveParameter, ...]
+    residual_identities: tuple[str, ...]
+    state_identities: tuple[str, ...]
+    output_identities: tuple[str, ...]
+    residual_state_jacobian: tuple[tuple[float, ...], ...]
+    residual_parameter_jacobian: tuple[tuple[float, ...], ...]
+    state_parameter_jacobian: tuple[tuple[float, ...], ...]
+    output_parameter_jacobian: tuple[tuple[float, ...], ...]
+    rank: int
+    dimension: int
+    scaled_condition_number_2: float | None
+    linear_solve_backward_error: float | None
+    reference_phase_index: int
+
+
+@dataclass(frozen=True)
 class TpFlashResult:
     """Certified phase result from the bounded HELD or HELD2 controller."""
 
@@ -89,6 +114,7 @@ class TpFlashResult:
     total_free_energy_over_rt: float
     parameter_fingerprint: str
     diagnostics: HeldDiagnostics | Held2Diagnostics
+    sensitivity: PhaseEquilibriumSensitivity | None
 
 
 class FlashError(RuntimeError):
@@ -706,6 +732,7 @@ def _held2_result(
     feed: tuple[float, ...],
     fingerprint: str,
     native: Mapping[str, object],
+    active_parameters: epcsaft.ActiveParameterSet | None,
 ) -> TpFlashResult:
     diagnostics = _held2_diagnostics(native)
     if diagnostics.globality_certificate != "not_guaranteed":
@@ -718,6 +745,9 @@ def _held2_result(
         raise FlashError(reason, diagnostics)
     if str(native["parameter_fingerprint"]) != fingerprint:
         raise ValueError("native HELD2 result has the wrong Provider fingerprint")
+    sensitivity = _phase_equilibrium_sensitivity(
+        native.get("sensitivity"), active_parameters
+    )
 
     phase_payloads = cast(Sequence[Mapping[str, object]], native["phases"])
     phases = tuple(
@@ -745,6 +775,141 @@ def _held2_result(
         total_free_energy_over_rt=total_gibbs,
         parameter_fingerprint=fingerprint,
         diagnostics=diagnostics,
+        sensitivity=sensitivity,
+    )
+
+
+def _row_major_matrix(
+    value: object,
+    rows: int,
+    columns: int,
+    field: str,
+    *,
+    unavailable: bool,
+) -> tuple[tuple[float, ...], ...]:
+    flat = _float_tuple(value)
+    if unavailable and not flat:
+        return ()
+    if len(flat) != rows * columns:
+        raise ValueError(f"native {field} has the wrong row-major shape")
+    if any(not math.isfinite(entry) for entry in flat):
+        raise ValueError(f"native {field} must be finite")
+    return tuple(
+        flat[row * columns : (row + 1) * columns]
+        for row in range(rows)
+    )
+
+
+def _phase_equilibrium_sensitivity(
+    value: object,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+) -> PhaseEquilibriumSensitivity | None:
+    if active_parameters is None:
+        if value is not None:
+            raise ValueError("native phase sensitivity was not requested")
+        return None
+    if not isinstance(value, Mapping):
+        raise TypeError("native phase sensitivity is missing")
+    status = str(value["status"])
+    if status not in {"available", "unavailable"}:
+        raise ValueError("native phase sensitivity status is invalid")
+    unavailable = status == "unavailable"
+    failure = value["failure_reason"]
+    if (unavailable and not isinstance(failure, str)) or (
+        not unavailable and failure is not None
+    ):
+        raise ValueError("native phase sensitivity failure state is invalid")
+    parameter_identities = tuple(
+        str(item)
+        for item in cast(Sequence[object], value["parameter_identities"])
+    )
+    if parameter_identities != active_parameters.identities:
+        raise ValueError("native phase sensitivity parameter identity or order changed")
+    derivative_order = int(cast(int, value["derivative_order"]))
+    higher_order_status = str(value["higher_order_status"])
+    tensor_layout = str(value["tensor_layout"])
+    if derivative_order != 1 or higher_order_status != "unavailable":
+        raise ValueError("native phase sensitivity derivative-order declaration is invalid")
+    if tensor_layout != "row-major":
+        raise ValueError("native phase sensitivity tensor layout is invalid")
+    dimension = int(cast(int, value["dimension"]))
+    parameter_count = int(cast(int, value["parameter_count"]))
+    output_count = int(cast(int, value["output_count"]))
+    rank = int(cast(int, value["rank"]))
+    if parameter_count != len(active_parameters.coordinates) or min(
+        dimension, output_count, rank
+    ) < 0:
+        raise ValueError("native phase sensitivity dimensions are invalid")
+    residual_identities = tuple(
+        str(item) for item in cast(Sequence[object], value["residual_identities"])
+    )
+    state_identities = tuple(
+        str(item) for item in cast(Sequence[object], value["state_identities"])
+    )
+    output_identities = tuple(
+        str(item) for item in cast(Sequence[object], value["output_identities"])
+    )
+    if len(residual_identities) != dimension or len(state_identities) != dimension:
+        raise ValueError("native phase sensitivity residual/state identities are incomplete")
+    if len(output_identities) != output_count:
+        raise ValueError("native phase sensitivity output identities are incomplete")
+    condition_value = value["scaled_condition_number_2"]
+    backward_value = value["linear_solve_backward_error"]
+    condition = None if condition_value is None else float(cast(float, condition_value))
+    backward = None if backward_value is None else float(cast(float, backward_value))
+    if not unavailable and (
+        rank != dimension
+        or condition is None
+        or not math.isfinite(condition)
+        or condition > 1.0e8
+        or backward is None
+        or not math.isfinite(backward)
+    ):
+        raise ValueError("native phase sensitivity linear solve is uncertified")
+    return PhaseEquilibriumSensitivity(
+        status=cast(Literal["available", "unavailable"], status),
+        failure_reason=None if failure is None else str(failure),
+        derivative_order=cast(Literal[1], derivative_order),
+        higher_order_status=cast(Literal["unavailable"], higher_order_status),
+        higher_order_reason=str(value["higher_order_reason"]),
+        tensor_layout=cast(Literal["row-major"], tensor_layout),
+        parameters=active_parameters.coordinates,
+        residual_identities=residual_identities,
+        state_identities=state_identities,
+        output_identities=output_identities,
+        residual_state_jacobian=_row_major_matrix(
+            value["residual_state_jacobian"],
+            dimension,
+            dimension,
+            "residual-state Jacobian",
+            unavailable=unavailable,
+        ),
+        residual_parameter_jacobian=_row_major_matrix(
+            value["residual_parameter_jacobian"],
+            dimension,
+            parameter_count,
+            "residual-parameter Jacobian",
+            unavailable=unavailable,
+        ),
+        state_parameter_jacobian=_row_major_matrix(
+            value["state_parameter_jacobian"],
+            dimension,
+            parameter_count,
+            "state-parameter Jacobian",
+            unavailable=unavailable,
+        ),
+        output_parameter_jacobian=_row_major_matrix(
+            value["output_parameter_jacobian"],
+            output_count,
+            parameter_count,
+            "output-parameter Jacobian",
+            unavailable=unavailable,
+        ),
+        rank=rank,
+        dimension=dimension,
+        scaled_condition_number_2=condition,
+        linear_solve_backward_error=backward,
+        reference_phase_index=int(cast(int, value["reference_phase_index"])),
     )
 
 
@@ -754,6 +919,7 @@ def tp_flash(
     pressure: Quantity[Any],
     overall_mole_fractions: Sequence[float],
     *,
+    active_parameters: epcsaft.ActiveParameterSet | None = None,
     trace: bool = False,
 ) -> TpFlashResult:
     """Run the bounded HELD or strong-electrolyte HELD2 controller."""
@@ -761,6 +927,11 @@ def tp_flash(
     try:
         if not isinstance(model, epcsaft.Mixture):
             raise TypeError("tp_flash requires an epcsaft.Mixture")
+        if (
+            active_parameters is not None
+            and type(active_parameters) is not epcsaft.ActiveParameterSet
+        ):
+            raise TypeError("active_parameters must be an epcsaft.ActiveParameterSet")
         temperature_k = _quantity(temperature, "kelvin", "temperature", "tp_flash")
         pressure_pa = _quantity(pressure, "pascal", "pressure", "tp_flash")
         component_count = len(model.component_ids)
@@ -777,7 +948,7 @@ def tp_flash(
             _FLASH_METHANE_FEED_DOMAIN[0] <= feed[0] <= _FLASH_METHANE_FEED_DOMAIN[1]
         ):
             raise ValueError("composition is outside the audited May 2015 source domain")
-        capsule = _native_transport(model)
+        capsule = _native_transport(model, active_parameters)
     except (TypeError, ValueError) as error:
         diagnostics = _failed_held_diagnostics("invalid_input", "input_rejected", str(error))
         raise FlashError(str(error), diagnostics) from error
@@ -805,6 +976,7 @@ def tp_flash(
                 feed,
                 model.parameter_fingerprint,
                 native,
+                active_parameters,
             )
         except FlashError:
             raise
@@ -831,6 +1003,9 @@ def tp_flash(
             raise ValueError("native HELD phase fractions do not sum to one")
         if str(native["parameter_fingerprint"]) != model.parameter_fingerprint:
             raise ValueError("native HELD result has the wrong provider fingerprint")
+        sensitivity = _phase_equilibrium_sensitivity(
+            native.get("sensitivity"), active_parameters
+        )
         return TpFlashResult(
             temperature_k=float(cast(float, native["temperature_k"])),
             pressure_pa=float(cast(float, native["pressure_pa"])),
@@ -840,6 +1015,7 @@ def tp_flash(
             total_free_energy_over_rt=float(cast(float, native["total_free_energy_over_rt"])),
             parameter_fingerprint=str(native["parameter_fingerprint"]),
             diagnostics=diagnostics,
+            sensitivity=sensitivity,
         )
     except FlashError:
         raise

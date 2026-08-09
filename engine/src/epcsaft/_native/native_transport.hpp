@@ -89,7 +89,7 @@ using epcsaft_evaluate_packing_fraction = int (*)(
     std::size_t hessian_capacity
 );
 
-struct epcsaft_reacting_phase_parameter_result final {
+struct epcsaft_parameterized_phase_result final {
     std::uint32_t struct_size;
     std::int32_t status;
     std::size_t state_coordinate_count;
@@ -124,7 +124,7 @@ struct epcsaft_reacting_phase_parameter_result final {
     double* packing_state_hessian;
 };
 
-using epcsaft_evaluate_reacting_phase_parameters = int (*)(
+using epcsaft_evaluate_parameterized_phase = int (*)(
     const void* model_context,
     double temperature_k,
     const double* amounts_mol,
@@ -132,7 +132,7 @@ using epcsaft_evaluate_reacting_phase_parameters = int (*)(
     double volume_m3,
     double packing_fraction_min,
     double packing_fraction_max,
-    epcsaft_reacting_phase_parameter_result* result
+    epcsaft_parameterized_phase_result* result
 );
 
 struct epcsaft_inverse_packing_geometry_result final {
@@ -252,7 +252,7 @@ struct epcsaft_native_transport final {
     epcsaft_evaluate_mixture_phase evaluate_electrolyte_phase;
     epcsaft_evaluate_molar_volume_bounds evaluate_molar_volume_bounds;
     epcsaft_evaluate_packing_fraction evaluate_packing_fraction;
-    epcsaft_evaluate_reacting_phase_parameters evaluate_reacting_phase_parameters;
+    epcsaft_evaluate_parameterized_phase evaluate_parameterized_phase;
     epcsaft_evaluate_inverse_packing_geometry evaluate_inverse_packing_geometry;
     epcsaft_evaluate_source_reference_transfer evaluate_source_reference_transfer;
     const char* const* component_ids;

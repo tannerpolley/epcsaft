@@ -5774,7 +5774,7 @@ ChemicalSolveResult solve_provider_reaction(
     };
     const auto pressure_residual = [&](double volume) {
         if (parameterized) {
-            return provider.evaluate_reacting_phase_parameters(
+            return provider.evaluate_parameterized_phase(
                 temperature_k,
                 starting_amounts,
                 volume,
@@ -5809,7 +5809,7 @@ ChemicalSolveResult solve_provider_reaction(
         std::log(packing_fraction_max), -std::numeric_limits<double>::infinity()
     );
     const double initial_packing_fraction = parameterized
-        ? provider.evaluate_reacting_phase_parameters(
+        ? provider.evaluate_parameterized_phase(
             temperature_k,
             starting_amounts,
             initial_volume,
@@ -5891,7 +5891,7 @@ ChemicalSolveResult solve_provider_reaction(
     ) {
         if (parameterized) {
             const ParameterizedPhaseEvaluation block =
-                provider.evaluate_reacting_phase_parameters(
+                provider.evaluate_parameterized_phase(
                     temperature,
                     amounts,
                     volume,
@@ -5982,7 +5982,7 @@ ChemicalSolveResult solve_provider_reaction(
         }
         const auto residual = [&](double volume) {
             if (parameterized) {
-                return provider.evaluate_reacting_phase_parameters(
+                return provider.evaluate_parameterized_phase(
                     temperature_k,
                     amounts,
                     volume,
@@ -6002,7 +6002,7 @@ ChemicalSolveResult solve_provider_reaction(
         geometries.reserve(seed_volumes.size());
         for (const double seed_volume : seed_volumes) {
             const double packing = parameterized
-                ? provider.evaluate_reacting_phase_parameters(
+                ? provider.evaluate_parameterized_phase(
                     temperature_k,
                     amounts,
                     seed_volume,

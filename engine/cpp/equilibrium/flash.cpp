@@ -214,6 +214,21 @@ private:
     double pressure_over_rt_;
 };
 
+std::vector<std::string> component_ids(const ProviderContext& provider) {
+    std::vector<std::string> result;
+    result.reserve(provider.transport().component_count);
+    for (std::size_t component = 0;
+         component < provider.transport().component_count;
+         ++component) {
+        const char* identity = provider.transport().component_ids[component];
+        if (identity == nullptr || identity[0] == '\0') {
+            throw std::invalid_argument("Provider component identity is incomplete");
+        }
+        result.emplace_back(identity);
+    }
+    return result;
+}
+
 Held2ThermodynamicAccess make_installed_held2_access(
     const ProviderContext& provider,
     const FlashInput& input
@@ -225,18 +240,11 @@ Held2ThermodynamicAccess make_installed_held2_access(
     );
     Held2ThermodynamicAccess result;
     result.provider_fingerprint = provider.fingerprint();
-    result.component_ids.reserve(provider.transport().component_count);
+    result.component_ids = component_ids(provider);
     result.charges.reserve(provider.transport().component_count);
     for (std::size_t component = 0;
          component < provider.transport().component_count;
          ++component) {
-        const char* id = provider.transport().component_ids[component];
-        if (id == nullptr || id[0] == '\0') {
-            throw std::invalid_argument(
-                "Provider electrolyte component ID must not be empty"
-            );
-        }
-        result.component_ids.emplace_back(id);
         result.charges.push_back(static_cast<double>(
             provider.transport().component_charges[component]
         ));
@@ -262,6 +270,83 @@ Held2ThermodynamicAccess make_installed_held2_access(
     return result;
 }
 
+void attach_neutral_sensitivity(
+    const ProviderContext& provider,
+    FlashResult& result,
+    const HeldResult& solve
+) {
+    if (provider.active_parameters().identities.empty()) {
+        return;
+    }
+    std::vector<SolvedPhaseState> phases;
+    if (solve.outcome == "one_phase" && solve.stage_i.has_reference) {
+        phases.push_back({
+            std::vector<double>(
+                solve.stage_i.reference.amounts_mol.begin(),
+                solve.stage_i.reference.amounts_mol.end()
+            ),
+            solve.stage_i.reference.volume_m3,
+        });
+    } else if (solve.outcome == "accepted" && !solve.stage_iii_attempts.empty()) {
+        const auto& local = solve.stage_iii_attempts.back().result.local;
+        if (local.accepted) {
+            for (const auto* phase : {
+                     &local.evaluation.liquid,
+                     &local.evaluation.vapor,
+                 }) {
+                phases.push_back({
+                    std::vector<double>(
+                        phase->amounts_mol.begin(), phase->amounts_mol.end()
+                    ),
+                    phase->volume_m3,
+                });
+            }
+        }
+    }
+    if (!phases.empty()) {
+        result.sensitivity = evaluate_solved_state_sensitivity(
+            provider,
+            result.input.temperature_k,
+            result.input.pressure_pa,
+            component_ids(provider),
+            result.input.overall_mole_fractions,
+            phases
+        );
+    }
+}
+
+void attach_electrolyte_sensitivity(
+    const ProviderContext& provider,
+    FlashResult& result,
+    const Held2AlgorithmResult& solve
+) {
+    const bool accepted =
+        solve.outcome == "one_phase_no_negative_witness_detected"
+        || solve.outcome == "physical_equilibrium_accepted";
+    if (!accepted || provider.active_parameters().identities.empty()
+        || solve.phases.empty()) {
+        return;
+    }
+    std::vector<SolvedPhaseState> phases;
+    phases.reserve(solve.phases.size());
+    for (const Held2Phase& phase : solve.phases) {
+        std::vector<double> amounts;
+        amounts.reserve(phase.physical_fractions_provider_order.size());
+        for (double fraction : phase.physical_fractions_provider_order) {
+            amounts.push_back(phase.phase_fraction * fraction);
+        }
+        phases.push_back({std::move(amounts), phase.phase_fraction * phase.volume});
+    }
+    result.sensitivity = evaluate_solved_state_sensitivity(
+        provider,
+        result.input.temperature_k,
+        result.input.pressure_pa,
+        component_ids(provider),
+        result.input.overall_mole_fractions,
+        phases
+    );
+}
+
 }  // namespace
 
 FlashResult solve_tp_flash(
@@ -282,12 +367,14 @@ FlashResult solve_tp_flash(
         );
     if (electrolyte) {
         require_held2_transport(provider.transport());
-        result.solve = run_held2_algorithm(
+        Held2AlgorithmResult solve = run_held2_algorithm(
             make_installed_held2_access(provider, input),
             input,
             {},
             observer
         );
+        attach_electrolyte_sensitivity(provider, result, solve);
+        result.solve = std::move(solve);
         return result;
     }
     require_mixture_transport(provider.transport());
@@ -297,12 +384,14 @@ FlashResult solve_tp_flash(
             "neutral tp_flash requires a two-component model"
         );
     }
-    result.solve = solve_held(
+    HeldResult solve = solve_held(
         provider,
         input.temperature_k,
         input.pressure_pa,
         input.overall_mole_fractions.front()
     );
+    attach_neutral_sensitivity(provider, result, solve);
+    result.solve = std::move(solve);
     return result;
 }
 
