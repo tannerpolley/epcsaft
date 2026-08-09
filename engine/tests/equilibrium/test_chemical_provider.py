@@ -5,7 +5,9 @@ import functools
 import hashlib
 import json
 import math
+from collections.abc import Sequence
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -13,7 +15,7 @@ import epcsaft
 from epcsaft import equilibrium
 from epcsaft.eos import _native_transport
 from epcsaft.equilibrium import _equilibrium
-from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE
+from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE, MULTISOLVENT_MULTIION
 
 from .chemical_equilibrium_cases import bind_records as _bind_record
 from .chemical_equilibrium_cases import typed_problem as _typed_problem
@@ -28,6 +30,163 @@ def _packet_fingerprint(packet_root: Path) -> str:
         digest.update(path.stat().st_size.to_bytes(8, "big"))
         digest.update(path.read_bytes())
     return digest.hexdigest()
+
+
+def _assert_provider_matches_direct_partials(
+    parameters: epcsaft.Parameters,
+    identities: tuple[str, ...],
+    amounts: tuple[float, ...],
+) -> None:
+    model = epcsaft.Mixture(parameters)
+    active = epcsaft.ActiveParameterSet(parameters, identities)
+    volume = math.fsum(amounts) / 2000.0
+    coordinates = model._active_coordinates(active)
+    direct = model._native.evaluate_phase_derivatives(
+        298.15, amounts, volume, coordinates, 2
+    )
+    provider = _equilibrium.evaluate_reacting_phase(
+        _native_transport(model, active),
+        298.15,
+        amounts,
+        volume,
+        1.0e-8,
+        0.74,
+    )
+
+    state_count = len(amounts) + 1
+    parameter_count = len(identities)
+    joint_count = state_count + parameter_count
+    direct_gradient = tuple(direct.gradient)
+    direct_hessian = tuple(direct.hessian)
+    state_hessian = tuple(
+        direct_hessian[row * joint_count + column]
+        for row in range(state_count)
+        for column in range(state_count)
+    )
+    mixed = tuple(
+        direct_hessian[row * joint_count + state_count + parameter]
+        for row in range(state_count)
+        for parameter in range(parameter_count)
+    )
+    def provider_values(key: str) -> tuple[float, ...]:
+        return tuple(float(value) for value in cast(Sequence[object], provider[key]))
+
+    assert tuple(cast(Sequence[object], provider["active_parameter_identities"])) == identities
+    assert float(provider["value"]) == pytest.approx(
+        direct.helmholtz_over_rt_reference_amount, rel=2.0e-12, abs=2.0e-12
+    )
+    assert provider_values("state_gradient") == pytest.approx(
+        direct_gradient[:state_count], rel=2.0e-12, abs=2.0e-12
+    )
+    assert provider_values("state_hessian") == pytest.approx(
+        state_hessian, rel=2.0e-12, abs=2.0e-12
+    )
+    assert provider_values("parameter_derivatives") == pytest.approx(
+        direct_gradient[state_count:], rel=2.0e-12, abs=2.0e-12
+    )
+    assert provider_values("state_parameter_derivatives") == pytest.approx(
+        mixed, rel=2.0e-12, abs=2.0e-12
+    )
+    assert provider_values("pressure_parameter_derivatives_pa") == pytest.approx(
+        tuple(
+            -8.31446261815324 * 298.15 * mixed[-parameter_count + parameter]
+            for parameter in range(parameter_count)
+        ),
+        rel=2.0e-12,
+        abs=2.0e-8,
+    )
+    assert provider_values("chemical_potential_parameter_derivatives_over_rt") == pytest.approx(
+        mixed[: len(amounts) * parameter_count], rel=2.0e-12, abs=2.0e-12
+    )
+
+
+def test_provider_preserves_reordered_mixed_active_parameter_partials() -> None:
+    """Falsify identity loss or family filtering at the EOS/Equilibrium seam."""
+
+    _assert_provider_matches_direct_partials(
+        epcsaft.Parameters.from_mapping(MULTISOLVENT_MULTIION),
+        tuple(
+            reversed(
+                (
+                    "component/solvent/segment_count",
+                    "component/iodide-anion/dispersion_energy_over_k",
+                    "component/solvent/segment_diameter",
+                    "association/solvent/a/solvent/b/energy_over_k",
+                    "pair/iodide-anion/solvent/k_ij",
+                    "component/solvent/relative_permittivity",
+                    "component/divalent-cation/born_diameter",
+                    "component/cosolvent/solvation_factor",
+                    "model/relative_permittivity/ionic_region_relative_permittivity",
+                )
+            )
+        ),
+        (0.60, 0.33, 0.02, 0.02, 0.01, 0.02),
+    )
+
+
+def test_provider_preserves_typed_correlation_coordinate_partials() -> None:
+    """Falsify typed-correlation filtering at the EOS/Equilibrium seam."""
+
+    _assert_provider_matches_direct_partials(
+        epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE),
+        (
+            "pair/anion/solvent/k_ij",
+            "component/solvent/relative_permittivity/constant/constant",
+        ),
+        (0.70, 0.10, 0.10, 0.10),
+    )
+
+
+@pytest.mark.slow
+def test_source_reference_uses_declared_multisolvent_multiion_basis() -> None:
+    """Falsify equal-solvent and fixed-ion-position reference conventions."""
+
+    component_ids = (
+        "iodide-anion",
+        "cosolvent",
+        "divalent-cation",
+        "solvent",
+        "anion",
+        "cation",
+    )
+    model = epcsaft.Mixture(
+        epcsaft.Parameters.from_mapping(MULTISOLVENT_MULTIION, components=component_ids)
+    )
+    transfer = epcsaft.source_reference_transfer(
+        model,
+        epcsaft.SourceReferenceDeclaration(
+            reference_state_id="multisolvent-multiion-fixture",
+            component_ids=component_ids,
+            solvent_mole_fractions=(0.0, 0.3, 0.0, 0.7, 0.0, 0.0),
+            ion_pairs=(
+                epcsaft.SourceReferenceIonPair(("cation", "anion"), (1, 1)),
+                epcsaft.SourceReferenceIonPair(
+                    ("cation", "iodide-anion"), (1, 1)
+                ),
+                epcsaft.SourceReferenceIonPair(
+                    ("divalent-cation", "anion"), (1, 2)
+                ),
+            ),
+            phase="liquid",
+            reference_convention="molality-infinite-dilution",
+            activity_convention_id="molality-infinite-dilution-v1",
+            standard_molality_mol_per_kg=1.0,
+            reference_pressure_pa=100_000.0,
+            required_derivatives=(),
+        ),
+        T=298.15 * epcsaft.unit_registry.kelvin,
+        P=100_000.0 * epcsaft.unit_registry.pascal,
+    )
+
+    assert transfer.source_composition == (0.0, 0.3, 0.0, 0.7, 0.0, 0.0)
+    assert transfer.neutral_basis == (
+        (0.0, 1.0, 0.0, 0.0, 0.0, 0.0),
+        (0.0, 0.0, 0.0, 1.0, 0.0, 0.0),
+        (0.0, 0.0, 0.0, 0.0, 1.0, 1.0),
+        (1.0, 0.0, 0.0, 0.0, 0.0, 1.0),
+        (0.0, 0.0, 1.0, 0.0, 2.0, 0.0),
+    )
+    assert all(math.isfinite(value) for value in transfer.transfer_log_contractions)
 
 
 @functools.cache
@@ -102,12 +261,9 @@ def _figiel_provider_model(
     return epcsaft.Mixture(parameters)
 
 
-def test_provider_certifies_multineutral_reactive_minimum() -> None:
-    components = ("solvent", "cosolvent", "cation", "anion")
-    model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE))
-    phase = equilibrium.ProviderPhase(model, model.parameter_fingerprint, (1.0e-6, 0.74))
-    problem = equilibrium.ChemicalEquilibriumProblem(
-        species_ids=components,
+def _multineutral_problem() -> equilibrium.ChemicalEquilibriumProblem:
+    return equilibrium.ChemicalEquilibriumProblem(
+        species_ids=("solvent", "cosolvent", "cation", "anion"),
         charges=(0, 0, 1, -1),
         molar_masses_kg_per_mol=(0.018, 0.030, 0.009, 0.009),
         balance_matrix=(
@@ -131,6 +287,12 @@ def test_provider_certifies_multineutral_reactive_minimum() -> None:
         strict_interior_amount_floor_mol=1.0e-30,
     )
 
+
+def test_provider_certifies_multineutral_reactive_minimum() -> None:
+    model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE))
+    phase = equilibrium.ProviderPhase(model, (1.0e-6, 0.74))
+    problem = _multineutral_problem()
+
     result = equilibrium.chemical_equilibrium(
         phase,
         313.15 * epcsaft.unit_registry.kelvin,
@@ -143,6 +305,42 @@ def test_provider_certifies_multineutral_reactive_minimum() -> None:
     assert result.amounts_mol[2] == pytest.approx(result.amounts_mol[3], abs=2.0e-10)
     assert result.diagnostics.reaction_affinity_inf_norm <= 2.0e-7
     assert result.diagnostics.kkt_stationarity_inf_norm <= 2.0e-7
+
+
+def test_active_parameter_values_own_reaction_setup_geometry() -> None:
+    """Falsify seeding an active solve from the inactive packing geometry."""
+
+    parameters = epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE)
+    model = epcsaft.Mixture(parameters)
+    identity = "component/solvent/segment_diameter"
+    active = epcsaft.ActiveParameterSet(
+        parameters,
+        (identity,),
+        values=(100.0 * epcsaft.unit_registry.angstrom,),
+    )
+    result = equilibrium.chemical_equilibrium(
+        equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
+        313.15 * epcsaft.unit_registry.kelvin,
+        119_199.78746707023 * epcsaft.unit_registry.pascal,
+        _multineutral_problem(),
+        sensitivity_request=equilibrium.ChemicalEquilibriumSensitivityRequest(
+            active_parameters=active
+        ),
+    )
+
+    assert result.sensitivity is not None
+    assert result.sensitivity.parameters[-1].identity == identity
+    active_model = model._native.with_active_coordinates(model._active_coordinates(active))
+    molar_bounds = active_model.molar_volume_bounds(
+        313.15,
+        result.mole_fractions,
+        1.0e-6,
+        0.74,
+        math.nan,
+    )
+    total_amount = math.fsum(result.amounts_mol)
+    molar_volume = result.volume_m3 / total_amount
+    assert molar_bounds[0] < molar_volume < molar_bounds[1]
 
 
 def _held_water_ionization_problem() -> tuple[
@@ -193,6 +391,13 @@ def _held_water_ionization_problem() -> tuple[
             "reference_pressure_pa": state["pressure_pa"],
             "source_reference_component_ids": components,
             "source_reference_solvent_composition": (1.0, 0.0, 0.0),
+            "source_reference_ion_pairs": (
+                epcsaft.SourceReferenceIonPair(
+                    ("hydronium-cation", "hydroxide-anion"), (1, 1)
+                ),
+            ),
+            "source_reference_phase": "liquid",
+            "source_reference_convention": "molality-infinite-dilution",
             "source_reference_activity_convention_id": ("molality-infinite-dilution-v1"),
             "source_reference_standard_molality_mol_per_kg": 1.0,
         },
@@ -213,6 +418,9 @@ def _typed_standard_state(
         source_reference_solvent_composition=tuple(
             source_standard_state["source_reference_solvent_composition"]
         ),
+        source_reference_ion_pairs=tuple(source_standard_state["source_reference_ion_pairs"]),
+        source_reference_phase=source_standard_state["source_reference_phase"],
+        source_reference_convention=source_standard_state["source_reference_convention"],
         source_reference_activity_convention_id=source_standard_state[
             "source_reference_activity_convention_id"
         ],
@@ -234,7 +442,6 @@ def _provider_solve(
     return equilibrium.chemical_equilibrium(
         equilibrium.ProviderPhase(
             model=model,
-            expected_parameter_fingerprint=spec["provider_fingerprint"],
             admissible_packing_fraction_interval=(1.0e-6, 0.74),
         ),
         spec["temperature_k"] * epcsaft.unit_registry.kelvin,

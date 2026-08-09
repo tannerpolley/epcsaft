@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from functools import cache
 from importlib import metadata
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from pint import Quantity
 from pint.errors import DimensionalityError
@@ -125,6 +125,9 @@ class ChemicalStandardState:
     reference_pressure_pa: float
     source_reference_component_ids: tuple[str, ...]
     source_reference_solvent_composition: tuple[float, ...]
+    source_reference_ion_pairs: tuple[epcsaft.SourceReferenceIonPair, ...]
+    source_reference_phase: Literal["liquid"]
+    source_reference_convention: Literal["molality-infinite-dilution"]
     source_reference_activity_convention_id: str
     source_reference_standard_molality_mol_per_kg: float
 
@@ -144,6 +147,7 @@ class ChemicalStandardState:
             "source_reference_solvent_composition",
             tuple(self.source_reference_solvent_composition),
         )
+        object.__setattr__(self, "source_reference_ion_pairs", tuple(self.source_reference_ion_pairs))
 
 
 @dataclass(frozen=True)
@@ -159,7 +163,6 @@ class ProviderPhase:
     """Installed Provider model and application-admitted physical packing domain."""
 
     model: epcsaft.Mixture
-    expected_parameter_fingerprint: str
     admissible_packing_fraction_interval: tuple[float, float]
 
 
@@ -373,21 +376,10 @@ class ChemicalEquilibriumDiagnostics:
 
 
 @dataclass(frozen=True)
-class ChemicalEquilibriumActiveParameter:
-    """One exact coordinate resolved from the installed Provider descriptor table."""
-
-    family: str
-    identity: str
-    component_ids: tuple[str, ...]
-    value: float
-    unit: str
-
-
-@dataclass(frozen=True)
 class ChemicalEquilibriumSensitivityRequest:
     """Request exact operation columns and ordered installed-Provider coordinates."""
 
-    active_parameters: tuple[ChemicalEquilibriumActiveParameter, ...] = ()
+    active_parameters: epcsaft.ActiveParameterSet | None = None
 
 
 @dataclass(frozen=True)
@@ -798,7 +790,6 @@ def tp_flash(
                 temperature_k,
                 pressure_pa,
                 feed,
-                model.parameter_fingerprint,
                 trace=trace,
             ),
         )
@@ -1741,16 +1732,13 @@ def _chemical_artifact_identity(
     )
 
 
-def _active_parameter_name(parameter: ChemicalEquilibriumActiveParameter) -> str:
-    return (
-        f"provider_parameter[{parameter.family};{parameter.identity};"
-        f"{','.join(parameter.component_ids)}]"
-    )
+def _active_parameter_name(parameter: epcsaft.ActiveParameter) -> str:
+    return f"provider_parameter[{parameter.identity}]"
 
 
 def _sensitivity_parameter(
     name: str,
-    active_parameters: tuple[ChemicalEquilibriumActiveParameter, ...] = (),
+    active_parameters: tuple[epcsaft.ActiveParameter, ...] = (),
 ) -> ChemicalEquilibriumSensitivityParameter:
     if name == "pressure_pa":
         return ChemicalEquilibriumSensitivityParameter(
@@ -1790,15 +1778,17 @@ def _sensitivity_parameter(
                 )
     for parameter in active_parameters:
         if name == _active_parameter_name(parameter):
+            applicability = parameter.applicability
+            component_ids = () if applicability is None else applicability.component_ids
             return ChemicalEquilibriumSensitivityParameter(
                 name=name,
-                kind=f"provider_{parameter.identity}_{parameter.family}",
+                kind=f"provider_{parameter.family}",
                 source_index=None,
                 input_unit=parameter.unit,
                 amount_derivative_unit=f"mol/{parameter.unit}",
                 volume_derivative_unit=f"m^3/{parameter.unit}",
                 identity=parameter.identity,
-                component_ids=parameter.component_ids,
+                component_ids=component_ids,
                 value=parameter.value,
             )
     raise ValueError(f"native sensitivity parameter identity is unsupported: {name}")
@@ -1816,7 +1806,7 @@ def _chemical_sensitivity(
     *,
     species_ids: tuple[str, ...],
     model_fingerprint: str,
-    active_parameters: tuple[ChemicalEquilibriumActiveParameter, ...],
+    active_parameters: tuple[epcsaft.ActiveParameter, ...],
 ) -> ChemicalEquilibriumSensitivity:
     payload = cast(Mapping[str, object], native["sensitivities"])
     status = str(payload["status"])
@@ -1959,6 +1949,9 @@ def _source_reference_transfer(
             reference_state_id=standard_state.id,
             component_ids=standard_state.source_reference_component_ids,
             solvent_mole_fractions=(standard_state.source_reference_solvent_composition),
+            ion_pairs=standard_state.source_reference_ion_pairs,
+            phase=standard_state.source_reference_phase,
+            reference_convention=standard_state.source_reference_convention,
             activity_convention_id=(standard_state.source_reference_activity_convention_id),
             standard_molality_mol_per_kg=(
                 standard_state.source_reference_standard_molality_mol_per_kg
@@ -1976,7 +1969,7 @@ def _source_reference_transfer(
         or transfer.component_ids != species_ids
         or transfer.reference_state_id != standard_state.id
         or transfer.activity_convention_id != standard_state.source_reference_activity_convention_id
-        or transfer.parameter_fingerprint != phase.expected_parameter_fingerprint
+        or transfer.parameter_fingerprint != phase.model.parameter_fingerprint
         or transfer.temperature_k != temperature_k
         or transfer.pressure_pa != pressure_pa
         or transfer.source_reference_pressure_pa != standard_state.reference_pressure_pa
@@ -2038,43 +2031,16 @@ def chemical_equilibrium(
             sensitivity_request, ChemicalEquilibriumSensitivityRequest
         ):
             raise TypeError("sensitivity_request must be a typed sensitivity request")
-        active_parameters = (
-            () if sensitivity_request is None else sensitivity_request.active_parameters
+        active_parameter_set = (
+            None if sensitivity_request is None else sensitivity_request.active_parameters
         )
-        if any(
-            not isinstance(parameter, ChemicalEquilibriumActiveParameter)
-            for parameter in active_parameters
+        if active_parameter_set is not None and not isinstance(
+            active_parameter_set, epcsaft.ActiveParameterSet
         ):
-            raise TypeError("active parameters must use the typed request record")
-        active_parameter_payload = tuple(
-            {
-                "family": parameter.family,
-                "identity": parameter.identity,
-                "component_ids": parameter.component_ids,
-                "value": parameter.value,
-                "unit": parameter.unit,
-            }
-            for parameter in active_parameters
+            raise TypeError("active_parameters must be a canonical ActiveParameterSet")
+        active_parameters = (
+            () if active_parameter_set is None else active_parameter_set.coordinates
         )
-        for parameter in active_parameters:
-            component_shape_valid = (
-                (parameter.identity == "component" and len(parameter.component_ids) == 1)
-                or (
-                    parameter.identity == "unordered_component_pair"
-                    and len(parameter.component_ids) == 2
-                    and parameter.component_ids[0] != parameter.component_ids[1]
-                )
-                or (parameter.identity == "model" and not parameter.component_ids)
-            )
-            if (
-                not parameter.family
-                or not parameter.identity
-                or not component_shape_valid
-                or any(not component_id for component_id in parameter.component_ids)
-                or not math.isfinite(parameter.value)
-                or not parameter.unit
-            ):
-                raise ValueError("active Provider parameter request is incomplete")
         temperature_k = _quantity(temperature, "kelvin", "temperature", "chemical_equilibrium")
         pressure_pa = _quantity(pressure, "pascal", "pressure", "chemical_equilibrium")
         standard_state = problem.source_standard_state
@@ -2130,7 +2096,7 @@ def chemical_equilibrium(
         packing_bounds: tuple[float, float] | None
         source_transfer: epcsaft.SourceReferenceTransfer | None = None
         if isinstance(phase, IdealGasPhase):
-            if active_parameters:
+            if active_parameter_set is not None:
                 raise ValueError("ideal-gas sensitivity cannot request Provider coordinates")
             if problem.source_standard_state is not None:
                 raise ValueError("ideal-gas problems cannot request Provider reference transport")
@@ -2151,11 +2117,6 @@ def chemical_equilibrium(
         elif isinstance(phase, ProviderPhase):
             if not isinstance(phase.model, epcsaft.Mixture):
                 raise TypeError("ProviderPhase requires an epcsaft.Mixture")
-            if (
-                not phase.expected_parameter_fingerprint
-                or phase.expected_parameter_fingerprint != phase.model.parameter_fingerprint
-            ):
-                raise ValueError("installed Provider fingerprint does not match the problem")
             packing_bounds = (
                 float(phase.admissible_packing_fraction_interval[0]),
                 float(phase.admissible_packing_fraction_interval[1]),
@@ -2165,9 +2126,8 @@ def chemical_equilibrium(
                 or not 0.0 < packing_bounds[0] < packing_bounds[1]
             ):
                 raise ValueError("packing-fraction bounds must be finite and increasing")
-            model_fingerprint = phase.expected_parameter_fingerprint
-            spec["provider_fingerprint"] = model_fingerprint
-            capsule = _native_transport(phase.model)
+            model_fingerprint = phase.model.parameter_fingerprint
+            capsule = _native_transport(phase.model, active_parameter_set)
             thermodynamic_model = "engine_model"
             provider_ids = tuple(phase.model.component_ids)
             provider_fingerprint = model_fingerprint
@@ -2212,7 +2172,7 @@ def chemical_equilibrium(
                 native_standard_state,
                 packing_bounds,
                 problem.strict_interior_amount_floor_mol,
-                None if sensitivity_request is None else active_parameter_payload,
+                active_parameter_set is not None,
             ),
         )
         diagnostics = _chemical_diagnostics(native)

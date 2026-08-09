@@ -112,31 +112,13 @@ std::vector<EquilibriumConstantRecord> equilibrium_constant_records(
     return result;
 }
 
-std::vector<ProviderActiveParameterInput> active_parameter_inputs(
-    const py::object& value
-) {
-    std::vector<ProviderActiveParameterInput> result;
-    if (value.is_none()) {
-        return result;
-    }
-    for (const py::handle item : py::cast<py::tuple>(value)) {
-        const py::dict request = py::cast<py::dict>(item);
-        result.push_back({
-            py::cast<std::string>(request["family"]),
-            py::cast<std::string>(request["identity"]),
-            py::cast<std::vector<std::string>>(request["component_ids"]),
-            py::cast<double>(request["value"]),
-            py::cast<std::string>(request["unit"]),
-        });
-    }
-    return result;
-}
-
 ReactionSystemInput reaction_system_input(const py::dict& spec) {
     ReactionSystemInput input;
     input.species_ids = py::cast<std::vector<std::string>>(spec["species_ids"]);
     input.charges = py::cast<std::vector<int>>(spec["charges"]);
-    input.provider_fingerprint = py::cast<std::string>(spec["provider_fingerprint"]);
+    if (spec.contains("provider_fingerprint")) {
+        input.provider_fingerprint = py::cast<std::string>(spec["provider_fingerprint"]);
+    }
     input.molar_masses_kg_per_mol = py::cast<std::vector<double>>(
         spec["molar_masses_kg_per_mol"]
     );
@@ -779,7 +761,7 @@ py::dict solve_provider_input(
     std::vector<double> compiled_ln_k_parameter_derivatives;
     const std::size_t active_parameter_count = active_parameters == nullptr
         ? 0
-        : active_parameters->parameters.size();
+        : active_parameters->identities.size();
     if (!ln_k_parameter_derivatives.empty()) {
         if (active_parameter_count == 0
             || ln_k_parameter_derivatives.size()
@@ -1039,7 +1021,8 @@ py::dict solve_provider_source(
             );
         }
     }
-    const ProviderContext provider(transport, input.provider_fingerprint);
+    const ProviderContext provider(transport);
+    input.provider_fingerprint = provider.fingerprint();
     const std::string provider_topology_fingerprint =
         provider.reacting_topology_fingerprint();
     const SourceReferenceTransferEvidence reference =
@@ -1122,10 +1105,8 @@ py::dict solve_chemical_equilibrium(
     const py::object& source_standard_state,
     const py::object& packing_fraction_bounds,
     double trace_floor,
-    const py::object& active_parameters
+    bool active_parameters_requested
 ) {
-    const std::vector<ProviderActiveParameterInput> active_requests =
-        active_parameter_inputs(active_parameters);
     if (capsule.is_none()) {
         if (!source_standard_state.is_none() || !packing_fraction_bounds.is_none()) {
             throw py::value_error(
@@ -1146,10 +1127,15 @@ py::dict solve_chemical_equilibrium(
         const epcsaft_native_transport& transport =
             checked_chemical_transport(provider_capsule);
         const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
-        const ReactionSystemInput input = reaction_system_input(spec);
-        const ProviderContext provider(transport, input.provider_fingerprint);
-        const ProviderActiveParameterSet resolved =
-            provider.resolve_active_parameters(input.temperature_k, active_requests);
+        ReactionSystemInput input = reaction_system_input(spec);
+        const ProviderContext provider(transport);
+        input.provider_fingerprint = provider.fingerprint();
+        const ProviderActiveParameterSet resolved = provider.active_parameters();
+        if (active_parameters_requested != !resolved.identities.empty()) {
+            throw py::value_error(
+                "Provider capsule active-parameter identity does not match the request"
+            );
+        }
         return solve_provider_input(
             transport,
             metadata,
@@ -1159,23 +1145,26 @@ py::dict solve_chemical_equilibrium(
             trace_floor,
             {},
             {},
-            resolved.parameters.empty() ? nullptr : &resolved
+            resolved.identities.empty() ? nullptr : &resolved
         );
     }
     const epcsaft_native_transport& transport =
         checked_chemical_transport(provider_capsule);
-    const ReactionSystemInput input = reaction_system_input(spec);
-    const ProviderContext provider(transport, input.provider_fingerprint);
-    const ProviderActiveParameterSet resolved =
-        provider.resolve_active_parameters(input.temperature_k, active_requests);
+    const ProviderContext provider(transport);
+    const ProviderActiveParameterSet resolved = provider.active_parameters();
+    if (active_parameters_requested != !resolved.identities.empty()) {
+        throw py::value_error(
+            "Provider capsule active-parameter identity does not match the request"
+        );
+    }
     return solve_provider_source(
         provider_capsule,
         spec,
         py::cast<py::dict>(source_standard_state),
         packing_bounds,
         trace_floor,
-        !active_parameters.is_none(),
-        resolved.parameters.empty() ? nullptr : &resolved
+        active_parameters_requested,
+        resolved.identities.empty() ? nullptr : &resolved
     );
 }
 
@@ -1190,7 +1179,7 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("source_standard_state"),
         py::arg("packing_fraction_bounds"),
         py::arg("trace_floor"),
-        py::arg("active_parameters") = py::none()
+        py::arg("active_parameters_requested") = false
     );
 }
 

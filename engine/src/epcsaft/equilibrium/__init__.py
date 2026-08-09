@@ -2,7 +2,6 @@
 
 from ._api import (
     ChemicalArtifactIdentity,
-    ChemicalEquilibriumActiveParameter,
     ChemicalEquilibriumAttempt,
     ChemicalEquilibriumBasin,
     ChemicalEquilibriumBudgetPrefix,
@@ -30,7 +29,6 @@ from ._api import (
 
 __all__ = [
     "ChemicalArtifactIdentity",
-    "ChemicalEquilibriumActiveParameter",
     "ChemicalEquilibriumAttempt",
     "ChemicalEquilibriumBasin",
     "ChemicalEquilibriumBudgetPrefix",

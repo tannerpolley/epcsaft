@@ -14,7 +14,6 @@ import epcsaft._core as _native_core
 from .eos import (
     EosError,
     _eos_error,
-    _native_topology_fingerprint,
     _native_transport,
     _state_magnitude,
 )
@@ -93,12 +92,34 @@ class TransferFreeEnergy:
 
 
 @dataclass(frozen=True, slots=True)
+class SourceReferenceIonPair:
+    """One caller-declared electroneutral formula-unit basis row."""
+
+    component_ids: tuple[str, str]
+    stoichiometry: tuple[int, int]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "component_ids", tuple(self.component_ids))
+        object.__setattr__(self, "stoichiometry", tuple(self.stoichiometry))
+        if (
+            len(self.component_ids) != 2
+            or len(self.stoichiometry) != 2
+            or any(type(value) is not int for value in self.stoichiometry)
+            or any(value <= 0 or value > 2**31 - 1 for value in self.stoichiometry)
+        ):
+            raise ValueError("source-reference stoichiometry must contain two positive int32 values")
+
+
+@dataclass(frozen=True, slots=True)
 class SourceReferenceDeclaration:
     """Exact caller-owned source standard state in installed component order."""
 
     reference_state_id: str
     component_ids: tuple[str, ...]
     solvent_mole_fractions: tuple[float, ...]
+    ion_pairs: tuple[SourceReferenceIonPair, ...]
+    phase: Literal["liquid"]
+    reference_convention: Literal["molality-infinite-dilution"]
     activity_convention_id: str
     standard_molality_mol_per_kg: float
     reference_pressure_pa: float
@@ -107,6 +128,7 @@ class SourceReferenceDeclaration:
     def __post_init__(self) -> None:
         object.__setattr__(self, "component_ids", tuple(self.component_ids))
         object.__setattr__(self, "solvent_mole_fractions", tuple(self.solvent_mole_fractions))
+        object.__setattr__(self, "ion_pairs", tuple(self.ion_pairs))
         object.__setattr__(self, "required_derivatives", tuple(self.required_derivatives))
 
 
@@ -192,6 +214,11 @@ def source_reference_transfer(
             "reference_state_id": declaration.reference_state_id,
             "component_ids": component_ids,
             "solvent_mole_fractions": solvent_mole_fractions,
+            "ion_pairs": tuple(
+                (pair.component_ids, pair.stoichiometry) for pair in declaration.ion_pairs
+            ),
+            "phase": declaration.phase,
+            "reference_convention": declaration.reference_convention,
             "activity_convention_id": declaration.activity_convention_id,
             "standard_molality_mol_per_kg": standard_molality_mol_per_kg,
             "reference_pressure_pa": reference_pressure_pa,
@@ -210,12 +237,17 @@ def source_reference_transfer(
         )
         value = _native_core.source_reference_transfer(
             _native_transport(model),
-            model.parameter_fingerprint,
-            _native_topology_fingerprint(model),
             temperature_k,
             pressure_pa,
             component_ids,
             solvent_mole_fractions,
+            tuple(
+                tuple(component_ids.index(component_id) for component_id in pair.component_ids)
+                for pair in declaration.ion_pairs
+            ),
+            tuple(pair.stoichiometry for pair in declaration.ion_pairs),
+            declaration.phase,
+            declaration.reference_convention,
             declaration.reference_state_id,
             declaration.activity_convention_id,
             reference_fingerprint,
@@ -566,6 +598,7 @@ __all__ = (
     "Activity",
     "ElectrolyteReference",
     "SourceReferenceDeclaration",
+    "SourceReferenceIonPair",
     "SourceReferenceTransfer",
     "TransferFreeEnergy",
     "source_reference_transfer",

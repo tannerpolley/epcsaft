@@ -386,234 +386,6 @@ mixture_phase_block(double temperature, const std::vector<double> &amounts,
       });
 }
 
-// EqExclude: transport and buffer mechanics
-inline NativeParameters active_component_parameter_values(
-    const NativeParameters &parameters,
-    const std::vector<NativeActiveParameter> &active_parameters) {
-  NativeParameters values = parameters;
-  for (const auto &active : active_parameters) {
-    if (active.component >= values.segment_count.size() ||
-        !std::isfinite(active.value) || active.value <= 0.0) {
-      throw std::invalid_argument(
-          "active component parameter is outside its domain");
-    }
-    if (active.family == ActiveComponentParameter::SegmentDiameter) {
-      values.sigma_constant[active.component] = active.value;
-    } else {
-      values.dispersion_energy_over_k[active.component] = active.value;
-    }
-  }
-  return values;
-}
-
-template <typename Scalar>
-// EqExclude: scalar utility dispatch
-std::vector<Scalar> active_packing_diameters(
-    double temperature, const NativeParameters &parameters,
-    const std::vector<NativeActiveParameter> &active_parameters,
-    const std::vector<Scalar> &active_values) {
-  auto sigma = segment_sigma(Scalar(temperature), parameters);
-  std::vector<Scalar> dispersion(parameters.dispersion_energy_over_k.begin(),
-                                 parameters.dispersion_energy_over_k.end());
-  for (std::size_t coordinate = 0; coordinate < active_parameters.size();
-       ++coordinate) {
-    const auto &parameter = active_parameters[coordinate];
-    if (parameter.family == ActiveComponentParameter::SegmentDiameter) {
-      sigma[parameter.component] +=
-          active_values[coordinate] -
-          parameters.sigma_constant[parameter.component];
-    } else {
-      dispersion[parameter.component] = active_values[coordinate];
-    }
-  }
-  return segment_diameter(Scalar(temperature), parameters, sigma, &dispersion);
-}
-
-// EqID: electrolyte_phase_coordinate_jacobian
-// EqID: electrolyte_phase_hessian_chain_rule
-inline NativeMixturePhaseBlock electrolyte_phase_block_impl(
-    double temperature, const std::vector<double> &amounts, double volume,
-    double ion_mole_fraction_max, const NativeParameters &parameters,
-    const std::vector<NativeActiveParameter> &active_parameters) {
-  if (!supports_electrolyte_phase_block(parameters)) {
-    throw std::logic_error(
-        "electrolyte phase block requires an ionic associating model");
-  }
-  const NativeParameters value_parameters =
-      active_component_parameter_values(parameters, active_parameters);
-  validate_electrolyte_phase_state(temperature, amounts, volume,
-                                   ion_mole_fraction_max, value_parameters);
-  // Keep the analytic phase objective available to constrained-optimizer
-  // trial points. Packing admissibility is owned by the separate packing
-  // and molar-volume-bound callbacks.
-
-  const std::size_t components = amounts.size();
-  const std::size_t parameter_count = active_parameters.size();
-  const std::size_t coordinates = components + 1 + parameter_count;
-  const std::size_t state_count = 1 + components + parameter_count;
-  const std::size_t derivative_coordinates = 2 + components + parameter_count;
-  // EqID: phase_total_amount
-  double total_amount = 0.0;
-  for (std::size_t component = 0; component < components; ++component) {
-    total_amount += amounts[component];
-  }
-
-  // EqID: phase_molar_density
-  const double density = total_amount / volume;
-  std::vector<double> composition(components);
-  for (std::size_t component = 0; component < components; ++component) {
-    // EqID: phase_mole_fraction
-    composition[component] = amounts[component] / total_amount;
-  }
-  const auto sigma = segment_sigma(temperature, value_parameters);
-  const auto diameter = segment_diameter(temperature, value_parameters, sigma);
-  const auto site_fractions = solve_site_fractions(
-      temperature, density, composition, value_parameters, sigma, diameter);
-  const auto derivatives =
-      active_parameters.empty()
-          ? thermodynamic_derivatives(temperature, density, composition,
-                                      value_parameters, site_fractions)
-          : thermodynamic_derivatives_active_components(
-                temperature, density, composition, value_parameters,
-                site_fractions, active_parameters);
-
-  std::vector<double> state_gradient(state_count);
-  state_gradient[0] = derivatives.density;
-  std::copy(derivatives.composition.begin(), derivatives.composition.end(),
-            state_gradient.begin() + 1);
-  std::copy(derivatives.active_component_parameters.begin(),
-            derivatives.active_component_parameters.end(),
-            state_gradient.begin() + 1 +
-                static_cast<std::ptrdiff_t>(components));
-  std::vector<double> state_jacobian(state_count * coordinates, 0.0);
-  for (std::size_t amount = 0; amount < components; ++amount) {
-    state_jacobian[amount] = 1.0 / volume;
-    for (std::size_t component = 0; component < components; ++component) {
-      state_jacobian[(1 + component) * coordinates + amount] =
-          ((component == amount ? 1.0 : 0.0) - composition[component]) /
-          total_amount;
-    }
-  }
-  state_jacobian[components] = -total_amount / (volume * volume);
-  for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
-    state_jacobian[(1 + components + parameter) * coordinates + components + 1 +
-                   parameter] = 1.0;
-  }
-
-  std::vector<double> gradient(coordinates, 0.0);
-  std::vector<double> hessian(coordinates * coordinates, 0.0);
-  double ideal = 0.0;
-  for (std::size_t amount = 0; amount < components; ++amount) {
-    ideal += amounts[amount] * (std::log(amounts[amount] / volume) - 1.0);
-    gradient[amount] = std::log(amounts[amount] / volume);
-    hessian[amount * coordinates + amount] = 1.0 / amounts[amount];
-    hessian[amount * coordinates + components] = -1.0 / volume;
-    hessian[components * coordinates + amount] = -1.0 / volume;
-  }
-  gradient[components] = -total_amount / volume;
-  hessian[components * coordinates + components] =
-      total_amount / (volume * volume);
-
-  auto state_second = [&](std::size_t state, std::size_t left,
-                          std::size_t right) {
-    if (state > components) {
-      return 0.0;
-    }
-    if (state == 0) {
-      if (left == components && right == components) {
-        return 2.0 * total_amount / (volume * volume * volume);
-      }
-      if ((left == components && right < components) ||
-          (right == components && left < components)) {
-        return -1.0 / (volume * volume);
-      }
-      return 0.0;
-    }
-    if (left >= components || right >= components) {
-      return 0.0;
-    }
-    const std::size_t component = state - 1;
-    return (2.0 * composition[component] - (component == left ? 1.0 : 0.0) -
-            (component == right ? 1.0 : 0.0)) /
-           (total_amount * total_amount);
-  };
-
-  for (std::size_t left = 0; left < coordinates; ++left) {
-    const double total_left = left < components ? 1.0 : 0.0;
-    double residual_gradient = total_left * derivatives.residual_helmholtz;
-    for (std::size_t state = 0; state < state_count; ++state) {
-      residual_gradient += total_amount * state_gradient[state] *
-                           state_jacobian[state * coordinates + left];
-    }
-    gradient[left] += residual_gradient;
-
-    for (std::size_t right = 0; right < coordinates; ++right) {
-      const double total_right = right < components ? 1.0 : 0.0;
-      double residual_hessian = 0.0;
-      for (std::size_t state = 0; state < state_count; ++state) {
-        const double left_derivative =
-            state_jacobian[state * coordinates + left];
-        const double right_derivative =
-            state_jacobian[state * coordinates + right];
-        residual_hessian +=
-            state_gradient[state] *
-            (total_left * right_derivative + total_right * left_derivative +
-             total_amount * state_second(state, left, right));
-        for (std::size_t other = 0; other < state_count; ++other) {
-          residual_hessian +=
-              total_amount *
-              derivatives
-                  .hessian[(1 + state) * derivative_coordinates + 1 + other] *
-              left_derivative * state_jacobian[other * coordinates + right];
-        }
-      }
-      hessian[left * coordinates + right] += residual_hessian;
-    }
-  }
-
-  // EqID: phase_dimensionless_helmholtz
-  const double value = ideal + total_amount * derivatives.residual_helmholtz;
-  if (!std::isfinite(value) ||
-      !std::all_of(gradient.begin(), gradient.end(),
-                   [](double item) { return std::isfinite(item); }) ||
-      !std::all_of(hessian.begin(), hessian.end(),
-                   [](double item) { return std::isfinite(item); })) {
-    throw std::runtime_error(
-        "electrolyte phase block contains nonfinite values");
-  }
-  // EqID: phase_pressure
-  const double pressure = -GAS_CONSTANT * temperature * gradient[components];
-  return {
-      value,
-      std::move(gradient),
-      std::move(hessian),
-      pressure,
-  };
-}
-
-// EqExclude: transport and buffer mechanics
-inline NativeMixturePhaseBlock
-electrolyte_phase_block(double temperature, const std::vector<double> &amounts,
-                        double volume, double ion_mole_fraction_max,
-                        const NativeParameters &parameters) {
-  return electrolyte_phase_block_impl(temperature, amounts, volume,
-                                      ion_mole_fraction_max, parameters, {});
-}
-
-// EqExclude: transport and buffer mechanics
-inline NativeMixturePhaseBlock electrolyte_phase_block_active_parameters(
-    double temperature, const std::vector<double> &amounts, double volume,
-    double ion_mole_fraction_max, const NativeParameters &parameters,
-    const std::vector<NativeActiveParameter> &active_parameters) {
-  if (active_parameters.empty()) {
-    throw std::invalid_argument(
-        "reacting phase requires at least one active parameter");
-  }
-  return electrolyte_phase_block_impl(temperature, amounts, volume,
-                                      ion_mole_fraction_max, parameters,
-                                      active_parameters);
-}
-
 // EqID: phase_pressure
 // EqID: association_mass_action
 // EqExclude: CppAD-generated derivative machinery
@@ -667,22 +439,88 @@ packing_fraction_block(double temperature, const std::vector<double> &amounts,
   return {value, gradient, hessian};
 }
 
+template <typename Scalar>
+// EqExclude: scalar utility dispatch
+void apply_active_packing_parameters(
+    PhaseBlockParameters<Scalar> &parameters,
+    const std::vector<NativeFixedTopologyParameter> &active_parameters,
+    const std::vector<Scalar> &active_values) {
+  for (std::size_t index = 0; index < active_parameters.size(); ++index) {
+    const auto &parameter = active_parameters[index];
+    const auto &value = active_values[index];
+    switch (parameter.kind) {
+    case NativeFixedTopologyParameterKind::SegmentCount:
+      parameters.segment_count[parameter.component] = value;
+      break;
+    case NativeFixedTopologyParameterKind::SegmentDiameter:
+    case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationConstant:
+      parameters.sigma_constant[parameter.component] = value;
+      break;
+    case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationAmplitude:
+      parameters.sigma_term_amplitude[parameter.correlation_term] = value;
+      break;
+    case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationExponent:
+      parameters.sigma_term_exponent[parameter.correlation_term] = value;
+      break;
+    case NativeFixedTopologyParameterKind::DispersionEnergyOverK:
+      parameters.dispersion_energy_over_k[parameter.component] = value;
+      break;
+    case NativeFixedTopologyParameterKind::AssociationEnergyOverK:
+    case NativeFixedTopologyParameterKind::AssociationVolume:
+    case NativeFixedTopologyParameterKind::PairDispersion:
+    case NativeFixedTopologyParameterKind::PairSize:
+    case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection:
+    case NativeFixedTopologyParameterKind::RelativePermittivity:
+    case NativeFixedTopologyParameterKind::BornDiameter:
+    case NativeFixedTopologyParameterKind::SolvationFactor:
+    case NativeFixedTopologyParameterKind::SolvationFactorCorrelationConstant:
+    case NativeFixedTopologyParameterKind::IonFractionSuppressionCoefficient:
+    case NativeFixedTopologyParameterKind::IonicRegionRelativePermittivity:
+      break;
+    }
+  }
+}
+
+template <typename Scalar>
+std::vector<Scalar> active_packing_diameters(
+    double temperature, const NativeParameters &base_parameters,
+    const std::vector<NativeFixedTopologyParameter> &active_parameters,
+    const std::vector<Scalar> &active_values,
+    PhaseBlockParameters<Scalar> &parameters) {
+  parameters = phase_block_parameters<Scalar>(base_parameters);
+  apply_active_packing_parameters(parameters, active_parameters, active_values);
+  const auto sigma = segment_sigma(Scalar(temperature), parameters);
+  return segment_diameter(Scalar(temperature), parameters, sigma);
+}
+
 // EqID: phase_packing_fraction
 // EqExclude: CppAD-generated derivative machinery
 inline NativePackingFractionBlock packing_fraction_block_active_parameters(
     double temperature, const std::vector<double> &amounts, double volume,
     double ion_mole_fraction_max, const NativeParameters &parameters,
-    const std::vector<NativeActiveParameter> &active_parameters) {
+    const std::vector<NativeFixedTopologyParameter> &active_parameters) {
   if (active_parameters.empty()) {
     throw std::invalid_argument(
         "active packing fraction requires at least one parameter");
   }
-  const NativeParameters value_parameters =
-      active_component_parameter_values(parameters, active_parameters);
   validate_electrolyte_phase_state(temperature, amounts, volume,
-                                   ion_mole_fraction_max, value_parameters);
-  const double checked_value =
-      phase_packing_fraction(temperature, amounts, volume, value_parameters);
+                                   ion_mole_fraction_max, parameters);
+  std::vector<double> values;
+  values.reserve(active_parameters.size());
+  for (const auto &parameter : active_parameters) {
+    values.push_back(parameter.value);
+  }
+  auto value_parameters = phase_block_parameters<double>(parameters);
+  const auto value_diameter = active_packing_diameters(
+      temperature, parameters, active_parameters, values, value_parameters);
+  const double value_total = std::accumulate(amounts.begin(), amounts.end(), 0.0);
+  std::vector<double> value_composition;
+  value_composition.reserve(amounts.size());
+  for (const auto amount : amounts) {
+    value_composition.push_back(amount / value_total);
+  }
+  const double checked_value = packing_fraction_from_geometry(
+      value_total / volume, value_composition, value_parameters, value_diameter);
   if (!std::isfinite(checked_value) ||
       checked_value >= close_packing_fraction()) {
     throw std::invalid_argument("packing fraction is outside the model domain");
@@ -712,10 +550,13 @@ inline NativePackingFractionBlock packing_fraction_block_active_parameters(
   }
   const std::vector<ADScalar> active_values(
       independent.begin() + parameter_offset, independent.end());
+  auto active_parameters_values = phase_block_parameters<ADScalar>(parameters);
   const auto diameter = active_packing_diameters(
-      temperature, parameters, active_parameters, active_values);
+      temperature, parameters, active_parameters, active_values,
+      active_parameters_values);
   const ADScalar active_value = packing_fraction_from_geometry(
-      total / independent[components], composition, parameters, diameter);
+      total / independent[components], composition, active_parameters_values,
+      diameter);
   CppAD::ADFun<double> function(independent, {active_value});
   const double value = function.Forward(0, point)[0];
   const auto gradient = function.Jacobian(point);
@@ -736,16 +577,10 @@ inline NativePackingFractionBlock packing_fraction_block_active_parameters(
 inline NativeInversePackingGeometryBlock inverse_packing_geometry_block(
     double temperature, const std::vector<double> &amounts,
     double log_packing_fraction, const NativeParameters &parameters,
-    const std::vector<NativeActiveParameter> &active_parameters) {
+    const std::vector<NativeFixedTopologyParameter> &active_parameters) {
   if (!supports_packing_geometry(parameters)) {
     throw std::logic_error(
         "inverse packing geometry requires compatible component parameters");
-  }
-  const NativeParameters value_parameters =
-      active_component_parameter_values(parameters, active_parameters);
-  if (!supports_packing_geometry(value_parameters)) {
-    throw std::invalid_argument(
-        "active inverse packing parameters are outside the geometry domain");
   }
   if (!std::isfinite(temperature) || temperature <= 0.0 ||
       amounts.size() != parameters.segment_count.size() ||
@@ -788,10 +623,13 @@ inline NativeInversePackingGeometryBlock inverse_packing_geometry_block(
   }
   const std::vector<ADScalar> active_values(
       independent.begin() + parameter_offset, independent.end());
+  auto active_parameters_values = phase_block_parameters<ADScalar>(parameters);
   const auto diameter = active_packing_diameters(
-      temperature, parameters, active_parameters, active_values);
+      temperature, parameters, active_parameters, active_values,
+      active_parameters_values);
   const ADScalar coefficient =
-      packing_fraction_from_geometry(total, composition, parameters, diameter);
+      packing_fraction_from_geometry(total, composition,
+                                     active_parameters_values, diameter);
   const ADScalar volume = coefficient / scalar_exp(independent[components]);
   CppAD::ADFun<double> function(independent, {volume});
   const double value = function.Forward(0, point)[0];
@@ -1450,6 +1288,21 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
       block.pressure_pa,
       block.gradient[0],
   };
+}
+
+// EqExclude: transport and buffer mechanics
+inline NativeMixturePhaseBlock
+electrolyte_phase_block(double temperature, const std::vector<double> &amounts,
+                        double volume, double ion_mole_fraction_max,
+                        const NativeParameters &parameters) {
+  if (!supports_electrolyte_phase_block(parameters)) {
+    throw std::logic_error(
+        "electrolyte phase block requires an ionic associating model");
+  }
+  validate_electrolyte_phase_state(temperature, amounts, volume,
+                                   ion_mole_fraction_max, parameters);
+  return fixed_topology_parameterized_mixture_phase_block(
+      temperature, amounts, volume, {}, parameters);
 }
 
 } // namespace detail

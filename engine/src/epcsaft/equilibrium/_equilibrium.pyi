@@ -6,21 +6,26 @@ def evaluate_phase(
     temperature_k: float,
     amount_mol: float,
     volume_m3: float,
-    expected_fingerprint: str,
 ) -> dict[str, object]: ...
 def evaluate_mixture_phase(
     capsule: object,
     temperature_k: float,
     amounts_mol: tuple[float, ...],
     volume_m3: float,
-    expected_fingerprint: str,
+) -> dict[str, object]: ...
+def evaluate_reacting_phase(
+    capsule: object,
+    temperature_k: float,
+    amounts_mol: tuple[float, ...],
+    volume_m3: float,
+    packing_fraction_min: float,
+    packing_fraction_max: float,
 ) -> dict[str, object]: ...
 def _solve_tp_flash(
     capsule: object,
     temperature_k: float,
     pressure_pa: float,
     overall_mole_fractions: tuple[float, ...],
-    expected_fingerprint: str,
     *,
     trace: bool = ...,
 ) -> dict[str, Any]: ...
@@ -55,5 +60,5 @@ def _chemical_equilibrium(
     source_standard_state: dict[str, object] | None,
     packing_fraction_bounds: tuple[float, float] | None,
     trace_floor: float,
-    active_parameters: tuple[dict[str, object], ...] | None = ...,
+    active_parameters_requested: bool = ...,
 ) -> dict[str, Any]: ...

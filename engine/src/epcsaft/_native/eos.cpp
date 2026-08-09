@@ -905,10 +905,11 @@ NativeMixturePhaseBlock NativeModel::evaluate_electrolyte_phase(
 NativeMixturePhaseBlock NativeModel::evaluate_reacting_phase_parameters(
     double temperature, const std::vector<double> &amounts, double volume,
     double ion_mole_fraction_max,
-    const std::vector<NativeActiveParameter> &active_parameters) const {
-  return detail::electrolyte_phase_block_active_parameters(
-      temperature, amounts, volume, ion_mole_fraction_max, parameters_,
-      active_parameters);
+    const std::vector<NativeActiveCoordinate> &active_parameters) const {
+  detail::validate_electrolyte_phase_state(
+      temperature, amounts, volume, ion_mole_fraction_max, parameters_);
+  return evaluate_phase_derivatives(temperature, amounts, volume,
+                                    active_parameters, 2);
 }
 
 // EqExclude: transport and buffer mechanics
@@ -932,10 +933,15 @@ NativePackingFractionBlock NativeModel::evaluate_packing_fraction(
 NativePackingFractionBlock NativeModel::evaluate_packing_fraction_parameters(
     double temperature, const std::vector<double> &amounts, double volume,
     double ion_mole_fraction_max,
-    const std::vector<NativeActiveParameter> &active_parameters) const {
+    const std::vector<NativeActiveCoordinate> &active_parameters) const {
+  std::vector<NativeFixedTopologyParameter> resolved;
+  resolved.reserve(active_parameters.size());
+  for (const auto &coordinate : active_parameters) {
+    resolved.push_back(resolve_active_coordinate(coordinate));
+  }
   return detail::packing_fraction_block_active_parameters(
       temperature, amounts, volume, ion_mole_fraction_max, parameters_,
-      active_parameters);
+      resolved);
 }
 
 // EqExclude: transport and buffer mechanics
@@ -943,10 +949,15 @@ NativeInversePackingGeometryBlock
 NativeModel::evaluate_inverse_packing_geometry(
     double temperature, const std::vector<double> &amounts,
     double log_packing_fraction,
-    const std::vector<NativeActiveParameter> &active_parameters) const {
+    const std::vector<NativeActiveCoordinate> &active_parameters) const {
+  std::vector<NativeFixedTopologyParameter> resolved;
+  resolved.reserve(active_parameters.size());
+  for (const auto &coordinate : active_parameters) {
+    resolved.push_back(resolve_active_coordinate(coordinate));
+  }
   return detail::inverse_packing_geometry_block(temperature, amounts,
                                                 log_packing_fraction,
-                                                parameters_, active_parameters);
+                                                parameters_, resolved);
 }
 
 // EqID: packing_volume_bounds
@@ -955,15 +966,14 @@ NativeModel::molar_volume_bounds_parameters(
     double temperature, const std::vector<double> &mole_fractions,
     double packing_fraction_min, double packing_fraction_max,
     double ion_mole_fraction_max,
-    const std::vector<NativeActiveParameter> &active_parameters) const {
-  const NativeParameters active_values =
-      detail::active_component_parameter_values(parameters_, active_parameters);
-  const auto bounds = NativeModel(active_values)
-                          .molar_volume_bounds(
-                              temperature, mole_fractions, packing_fraction_min,
-                              packing_fraction_max, ion_mole_fraction_max);
-  const auto coefficient = detail::packing_fraction_block_active_parameters(
-      temperature, mole_fractions, 1.0, ion_mole_fraction_max, parameters_,
+    const std::vector<NativeActiveCoordinate> &active_parameters) const {
+  const auto bounds = with_active_coordinates(active_parameters)
+                          .molar_volume_bounds(temperature, mole_fractions,
+                                               packing_fraction_min,
+                                               packing_fraction_max,
+                                               ion_mole_fraction_max);
+  const auto coefficient = evaluate_packing_fraction_parameters(
+      temperature, mole_fractions, 1.0, ion_mole_fraction_max,
       active_parameters);
   const std::size_t parameter_offset = mole_fractions.size() + 1;
   std::vector<double> derivatives(2 * active_parameters.size());

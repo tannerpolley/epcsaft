@@ -4,9 +4,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstring>
-#include <set>
 #include <stdexcept>
-#include <string_view>
 #include <utility>
 
 namespace epcsaft_engine::equilibrium {
@@ -29,66 +27,6 @@ void require_finite(double value, const char* name) {
     if (!std::isfinite(value)) {
         throw std::invalid_argument(std::string(name) + " must be finite");
     }
-}
-
-std::uint32_t parameter_family_code(std::string_view family) {
-    if (family == "segment_diameter") {
-        return EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER;
-    }
-    if (family == "dispersion_energy_over_k") {
-        return EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K;
-    }
-    throw std::invalid_argument("Provider active-parameter family is unsupported");
-}
-
-std::uint32_t parameter_identity_code(std::string_view identity) {
-    if (identity == "component") {
-        return EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT;
-    }
-    throw std::invalid_argument("Provider active-parameter identity is unsupported");
-}
-
-std::int32_t component_index(
-    const epcsaft_native_transport& transport,
-    const std::string& component_id
-) {
-    std::int32_t found = -1;
-    for (std::size_t index = 0; index < transport.component_count; ++index) {
-        if (transport.component_ids[index] != nullptr
-            && component_id == transport.component_ids[index]) {
-            if (found >= 0) {
-                throw std::invalid_argument(
-                    "Provider component identity is ambiguous"
-                );
-            }
-            found = static_cast<std::int32_t>(index);
-        }
-    }
-    if (found < 0) {
-        throw std::invalid_argument(
-            "Provider active-parameter component identity is missing"
-        );
-    }
-    return found;
-}
-
-std::vector<epcsaft_active_parameter_request> native_active_requests(
-    const ProviderActiveParameterSet& active_parameters
-) {
-    std::vector<epcsaft_active_parameter_request> result(
-        active_parameters.parameters.size()
-    );
-    for (std::size_t index = 0; index < result.size(); ++index) {
-        const ProviderActiveParameter& source = active_parameters.parameters[index];
-        result[index] = {
-            source.family_code,
-            source.identity_code,
-            source.component_index,
-            source.value,
-            source.unit.c_str(),
-        };
-    }
-    return result;
 }
 
 MixturePhaseEvaluation evaluate_mixture_callback(
@@ -175,12 +113,13 @@ MixturePhaseEvaluation evaluate_mixture_callback(
 
 }  // namespace
 
-ProviderContext::ProviderContext(const epcsaft_native_transport& transport, std::string fingerprint)
-    : transport_(transport), fingerprint_(std::move(fingerprint)) {
-    if (fingerprint_.empty() || transport_.model_context == nullptr
-        || transport_.parameter_fingerprint == nullptr
-        || fingerprint_ != transport_.parameter_fingerprint) {
-        throw std::invalid_argument("expected provider fingerprint must not be empty");
+ProviderContext::ProviderContext(const epcsaft_native_transport& transport)
+    : transport_(transport),
+      fingerprint_(transport.parameter_fingerprint == nullptr
+          ? ""
+          : transport.parameter_fingerprint) {
+    if (fingerprint_.empty() || transport_.model_context == nullptr) {
+        throw std::invalid_argument("provider capsule model identity is incomplete");
     }
 }
 
@@ -290,7 +229,6 @@ std::array<double, 2> ProviderContext::evaluate_molar_volume_bounds(
     std::array<double, 2> bounds{};
     const int status = transport_.evaluate_molar_volume_bounds(
         transport_.model_context,
-        fingerprint_.c_str(),
         temperature_k,
         mole_fractions.data(),
         mole_fractions.size(),
@@ -340,7 +278,6 @@ PackingFractionEvaluation ProviderContext::evaluate_packing_fraction(
     result.hessian.resize(coordinate_count * coordinate_count);
     const int status = transport_.evaluate_packing_fraction(
         transport_.model_context,
-        fingerprint_.c_str(),
         temperature_k,
         amounts_mol.data(),
         amounts_mol.size(),
@@ -369,55 +306,26 @@ PackingFractionEvaluation ProviderContext::evaluate_packing_fraction(
     return result;
 }
 
-ProviderActiveParameterSet ProviderContext::resolve_active_parameters(
-    double temperature_k,
-    const std::vector<ProviderActiveParameterInput>& requests
-) const {
+ProviderActiveParameterSet ProviderContext::active_parameters() const {
     ProviderActiveParameterSet result;
-    if (requests.empty()) {
-        return result;
-    }
-    if (transport_.component_ids == nullptr
-        || transport_.evaluate_reacting_phase_parameters == nullptr) {
+    if (transport_.active_parameter_count != 0
+        && (transport_.active_parameter_identities == nullptr
+            || transport_.evaluate_reacting_phase_parameters == nullptr)) {
         throw std::invalid_argument(
             "Provider active-parameter transport is incomplete"
         );
     }
-    require_finite(temperature_k, "active-parameter temperature");
-    std::set<std::string> selected_coordinates;
-    result.parameters.reserve(requests.size());
-    for (const ProviderActiveParameterInput& request : requests) {
-        require_finite(request.value, "active-parameter value");
-        if (request.family.empty() || request.identity.empty() || request.unit.empty()) {
-            throw std::invalid_argument("Provider active-parameter request is incomplete");
-        }
-        ProviderActiveParameter parameter;
-        parameter.family = request.family;
-        parameter.identity = request.identity;
-        parameter.component_ids = request.component_ids;
-        parameter.value = request.value;
-        parameter.unit = request.unit;
-        parameter.family_code = parameter_family_code(parameter.family);
-        parameter.identity_code = parameter_identity_code(parameter.identity);
-        if (parameter.component_ids.size() != 1) {
+    result.identities.reserve(transport_.active_parameter_count);
+    for (std::size_t index = 0; index < transport_.active_parameter_count; ++index) {
+        const char* identity = transport_.active_parameter_identities[index];
+        if (identity == nullptr || identity[0] == '\0'
+            || std::find(result.identities.begin(), result.identities.end(), identity)
+                != result.identities.end()) {
             throw std::invalid_argument(
-                "Provider component parameter requires exactly one component id"
+                "Provider active-parameter identity metadata is invalid"
             );
         }
-        parameter.component_index = component_index(
-            transport_, parameter.component_ids.front()
-        );
-        result.topology_fingerprint = reacting_topology_fingerprint();
-        const std::string coordinate_key =
-            std::to_string(parameter.family_code) + ":"
-            + std::to_string(parameter.identity_code) + ":"
-            + std::to_string(parameter.component_index);
-        if (!selected_coordinates.insert(coordinate_key).second) {
-            throw std::invalid_argument(
-                "Provider active-parameter coordinate is duplicated"
-            );
-        }
-        result.parameters.push_back(std::move(parameter));
+        result.identities.emplace_back(identity);
     }
     return result;
 }
@@ -430,8 +338,7 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
     double packing_fraction_max,
     const ProviderActiveParameterSet& active_parameters
 ) const {
-    if (active_parameters.parameters.empty()
-        || active_parameters.topology_fingerprint.empty()
+    if (active_parameters.identities.empty()
         || transport_.evaluate_reacting_phase_parameters == nullptr
         || amounts_mol.size() != transport_.component_count) {
         throw std::invalid_argument(
@@ -439,45 +346,46 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
         );
     }
     const std::size_t state_count = amounts_mol.size() + 1;
-    const std::size_t parameter_count = active_parameters.parameters.size();
+    const std::size_t parameter_count = active_parameters.identities.size();
     ParameterizedPhaseEvaluation result;
     result.phase.gradient.resize(state_count);
     result.phase.hessian.resize(state_count * state_count);
     result.packing.gradient.resize(state_count);
     result.packing.hessian.resize(state_count * state_count);
+    result.parameter_derivatives.resize(parameter_count);
     result.state_parameter_derivatives.resize(state_count * parameter_count);
-    std::vector<double> parameter_gradient(parameter_count);
-    std::vector<double> packing_parameter_derivatives(parameter_count);
-    std::vector<double> bound_derivatives(2 * parameter_count);
+    result.packing_parameter_derivatives.resize(parameter_count);
+    result.molar_volume_bound_parameter_derivatives_m3_per_mol.resize(
+        2 * parameter_count
+    );
     result.pressure_parameter_derivatives_pa.resize(parameter_count);
     result.chemical_potential_parameter_derivatives_over_rt.resize(
         amounts_mol.size() * parameter_count
     );
-    const std::vector<epcsaft_active_parameter_request> native_requests =
-        native_active_requests(active_parameters);
     epcsaft_reacting_phase_parameter_result native{};
     native.struct_size = sizeof(native);
     native.state_coordinate_count = state_count;
     native.active_parameter_count = parameter_count;
     native.state_gradient_capacity = result.phase.gradient.size();
     native.state_hessian_capacity = result.phase.hessian.size();
-    native.parameter_gradient_capacity = parameter_gradient.size();
+    native.parameter_gradient_capacity = result.parameter_derivatives.size();
     native.state_parameter_capacity = result.state_parameter_derivatives.size();
-    native.packing_parameter_capacity = packing_parameter_derivatives.size();
-    native.molar_volume_bound_parameter_capacity = bound_derivatives.size();
+    native.packing_parameter_capacity = result.packing_parameter_derivatives.size();
+    native.molar_volume_bound_parameter_capacity =
+        result.molar_volume_bound_parameter_derivatives_m3_per_mol.size();
     native.pressure_parameter_capacity =
         result.pressure_parameter_derivatives_pa.size();
     native.chemical_potential_parameter_capacity =
         result.chemical_potential_parameter_derivatives_over_rt.size();
     native.state_gradient = result.phase.gradient.data();
     native.state_hessian = result.phase.hessian.data();
-    native.parameter_gradient = parameter_gradient.data();
+    native.parameter_gradient = result.parameter_derivatives.data();
     native.state_parameter_derivatives =
         result.state_parameter_derivatives.data();
     native.packing_parameter_derivatives =
-        packing_parameter_derivatives.data();
+        result.packing_parameter_derivatives.data();
     native.molar_volume_bound_parameter_derivatives_m3_per_mol =
-        bound_derivatives.data();
+        result.molar_volume_bound_parameter_derivatives_m3_per_mol.data();
     native.pressure_parameter_derivatives_pa =
         result.pressure_parameter_derivatives_pa.data();
     native.chemical_potential_parameter_derivatives_over_rt =
@@ -488,16 +396,12 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
     native.packing_state_hessian = result.packing.hessian.data();
     const int status = transport_.evaluate_reacting_phase_parameters(
         transport_.model_context,
-        fingerprint_.c_str(),
-        active_parameters.topology_fingerprint.c_str(),
         temperature_k,
         amounts_mol.data(),
         amounts_mol.size(),
         volume_m3,
         packing_fraction_min,
         packing_fraction_max,
-        native_requests.data(),
-        native_requests.size(),
         &native
     );
     if (status != native.status) {
@@ -520,13 +424,13 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
         || native.active_parameter_count != parameter_count
         || native.state_gradient_capacity != result.phase.gradient.size()
         || native.state_hessian_capacity != result.phase.hessian.size()
-        || native.parameter_gradient_capacity != parameter_gradient.size()
+        || native.parameter_gradient_capacity != result.parameter_derivatives.size()
         || native.state_parameter_capacity
             != result.state_parameter_derivatives.size()
         || native.packing_parameter_capacity
-            != packing_parameter_derivatives.size()
+            != result.packing_parameter_derivatives.size()
         || native.molar_volume_bound_parameter_capacity
-            != bound_derivatives.size()
+            != result.molar_volume_bound_parameter_derivatives_m3_per_mol.size()
         || native.pressure_parameter_capacity
             != result.pressure_parameter_derivatives_pa.size()
         || native.chemical_potential_parameter_capacity
@@ -537,13 +441,13 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
             != result.packing.hessian.size()
         || native.state_gradient != result.phase.gradient.data()
         || native.state_hessian != result.phase.hessian.data()
-        || native.parameter_gradient != parameter_gradient.data()
+        || native.parameter_gradient != result.parameter_derivatives.data()
         || native.state_parameter_derivatives
             != result.state_parameter_derivatives.data()
         || native.packing_parameter_derivatives
-            != packing_parameter_derivatives.data()
+            != result.packing_parameter_derivatives.data()
         || native.molar_volume_bound_parameter_derivatives_m3_per_mol
-            != bound_derivatives.data()
+            != result.molar_volume_bound_parameter_derivatives_m3_per_mol.data()
         || native.pressure_parameter_derivatives_pa
             != result.pressure_parameter_derivatives_pa.data()
         || native.chemical_potential_parameter_derivatives_over_rt
@@ -561,9 +465,10 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
     };
     if (!finite(result.phase.gradient) || !finite(result.phase.hessian)
         || !finite(result.packing.gradient) || !finite(result.packing.hessian)
-        || !finite(parameter_gradient)
+        || !finite(result.parameter_derivatives)
         || !finite(result.state_parameter_derivatives)
-        || !finite(packing_parameter_derivatives) || !finite(bound_derivatives)
+        || !finite(result.packing_parameter_derivatives)
+        || !finite(result.molar_volume_bound_parameter_derivatives_m3_per_mol)
         || !finite(result.pressure_parameter_derivatives_pa)
         || !finite(result.chemical_potential_parameter_derivatives_over_rt)
         || !std::isfinite(native.helmholtz_over_rt_reference_amount)
@@ -597,8 +502,7 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_reacting_phase_parameters
         "Provider active reacting-phase basis"
     );
     if (result.phase.parameter_fingerprint != fingerprint_
-        || result.topology_fingerprint
-            != active_parameters.topology_fingerprint
+        || result.topology_fingerprint != reacting_topology_fingerprint()
         || basis != EPCSAFT_NATIVE_HELMHOLTZ_BASIS_ID) {
         throw std::invalid_argument(
             "Provider active reacting-phase identity changed"
@@ -668,35 +572,26 @@ InversePackingGeometryEvaluation ProviderContext::evaluate_inverse_packing_geome
             "inverse-packing geometry state must be finite and positive"
         );
     }
-    std::string topology = active_parameters.topology_fingerprint;
-    if (topology.empty()) {
-        topology = reacting_topology_fingerprint();
-    }
+    const std::string topology = reacting_topology_fingerprint();
     const std::size_t coordinate_count = amounts_mol.size() + 1
-        + active_parameters.parameters.size();
+        + active_parameters.identities.size();
     InversePackingGeometryEvaluation result;
     result.gradient.resize(coordinate_count);
     result.hessian.resize(coordinate_count * coordinate_count);
-    const std::vector<epcsaft_active_parameter_request> native_requests =
-        native_active_requests(active_parameters);
     epcsaft_inverse_packing_geometry_result native{};
     native.struct_size = sizeof(native);
     native.coordinate_count = coordinate_count;
-    native.active_parameter_count = active_parameters.parameters.size();
+    native.active_parameter_count = active_parameters.identities.size();
     native.gradient_capacity = result.gradient.size();
     native.hessian_capacity = result.hessian.size();
     native.gradient = result.gradient.data();
     native.hessian = result.hessian.data();
     const int status = transport_.evaluate_inverse_packing_geometry(
         transport_.model_context,
-        fingerprint_.c_str(),
-        topology.c_str(),
         temperature_k,
         amounts_mol.data(),
         amounts_mol.size(),
         log_packing_fraction,
-        native_requests.empty() ? nullptr : native_requests.data(),
-        native_requests.size(),
         &native
     );
     if (status != native.status) {
@@ -716,7 +611,7 @@ InversePackingGeometryEvaluation ProviderContext::evaluate_inverse_packing_geome
     }
     if (native.struct_size != sizeof(native)
         || native.coordinate_count != coordinate_count
-        || native.active_parameter_count != active_parameters.parameters.size()
+        || native.active_parameter_count != active_parameters.identities.size()
         || native.gradient_capacity != result.gradient.size()
         || native.hessian_capacity != result.hessian.size()
         || native.gradient != result.gradient.data()

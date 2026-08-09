@@ -67,7 +67,6 @@ using epcsaft_evaluate_mixture_phase = int (*)(
 
 using epcsaft_evaluate_molar_volume_bounds = int (*)(
     const void* model_context,
-    const char* expected_parameter_fingerprint,
     double temperature_k,
     const double* mole_fractions,
     std::size_t component_count,
@@ -79,7 +78,6 @@ using epcsaft_evaluate_molar_volume_bounds = int (*)(
 
 using epcsaft_evaluate_packing_fraction = int (*)(
     const void* model_context,
-    const char* expected_parameter_fingerprint,
     double temperature_k,
     const double* amounts_mol,
     std::size_t amount_count,
@@ -90,24 +88,6 @@ using epcsaft_evaluate_packing_fraction = int (*)(
     double* hessian,
     std::size_t hessian_capacity
 );
-
-// CAP-07 transport-only surface; this is not the EOS derivative interface.
-enum epcsaft_native_parameter_family {
-    EPCSAFT_NATIVE_PARAMETER_FAMILY_SEGMENT_DIAMETER = 4u,
-    EPCSAFT_NATIVE_PARAMETER_FAMILY_DISPERSION_ENERGY_OVER_K = 5u,
-};
-
-enum epcsaft_native_parameter_identity {
-    EPCSAFT_NATIVE_PARAMETER_IDENTITY_COMPONENT = 2u,
-};
-
-struct epcsaft_active_parameter_request final {
-    std::uint32_t parameter_family;
-    std::uint32_t parameter_identity;
-    std::int32_t component_index;
-    double value;
-    const char* unit;
-};
 
 struct epcsaft_reacting_phase_parameter_result final {
     std::uint32_t struct_size;
@@ -146,16 +126,12 @@ struct epcsaft_reacting_phase_parameter_result final {
 
 using epcsaft_evaluate_reacting_phase_parameters = int (*)(
     const void* model_context,
-    const char* expected_parameter_fingerprint,
-    const char* expected_topology_fingerprint,
     double temperature_k,
     const double* amounts_mol,
     std::size_t amount_count,
     double volume_m3,
     double packing_fraction_min,
     double packing_fraction_max,
-    const epcsaft_active_parameter_request* active_parameters,
-    std::size_t active_parameter_count,
     epcsaft_reacting_phase_parameter_result* result
 );
 
@@ -176,14 +152,10 @@ struct epcsaft_inverse_packing_geometry_result final {
 
 using epcsaft_evaluate_inverse_packing_geometry = int (*)(
     const void* model_context,
-    const char* expected_parameter_fingerprint,
-    const char* expected_topology_fingerprint,
     double temperature_k,
     const double* amounts_mol,
     std::size_t amount_count,
     double log_packing_fraction,
-    const epcsaft_active_parameter_request* active_parameters,
-    std::size_t active_parameter_count,
     epcsaft_inverse_packing_geometry_result* result
 );
 
@@ -212,6 +184,13 @@ struct epcsaft_source_reference_request final {
     const char* const* component_ids;
     std::size_t source_composition_count;
     const double* source_solvent_mole_fractions;
+    std::size_t ion_pair_count;
+    const std::size_t* ion_pair_cation_indices;
+    const std::size_t* ion_pair_anion_indices;
+    const std::int32_t* ion_pair_cation_stoichiometry;
+    const std::int32_t* ion_pair_anion_stoichiometry;
+    const char* phase;
+    const char* reference_convention;
     const char* reference_state_id;
     const char* activity_convention_id;
     const char* reference_state_fingerprint;
@@ -259,8 +238,6 @@ struct epcsaft_source_reference_transfer_result final {
 
 using epcsaft_evaluate_source_reference_transfer = int (*)(
     const void* model_context,
-    const char* expected_parameter_fingerprint,
-    const char* expected_topology_fingerprint,
     double temperature_k,
     double pressure_pa,
     const epcsaft_source_reference_request* request,
@@ -280,12 +257,13 @@ struct epcsaft_native_transport final {
     epcsaft_evaluate_source_reference_transfer evaluate_source_reference_transfer;
     const char* const* component_ids;
     const std::int32_t* component_charges;
+    std::size_t active_parameter_count;
+    const char* const* active_parameter_identities;
     const char* parameter_fingerprint;
     const char* topology_fingerprint;
     double source_temperature_min_k;
     double source_temperature_max_k;
     double total_ion_mole_fraction_max;
-    std::size_t neutral_reference_basis_row_count;
 };
 
 namespace epcsaft {
@@ -302,7 +280,8 @@ const epcsaft_native_transport* create_native_transport(
     const std::string& topology_fingerprint,
     const std::string& component_order_fingerprint,
     const std::string& domain_fingerprint,
-    const std::string& artifact_fingerprint
+    const std::string& artifact_fingerprint,
+    const std::vector<NativeActiveCoordinate>& active_parameters
 );
 
 void destroy_native_transport(const epcsaft_native_transport* transport) noexcept;

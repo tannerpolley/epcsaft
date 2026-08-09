@@ -269,7 +269,6 @@ FlashResult solve_tp_flash(
     const FlashInput& input,
     Held2ProgressObserver* observer
 ) {
-    require_mixture_transport(provider.transport());
     validate_input(provider, input);
     FlashResult result;
     result.input = input;
@@ -291,6 +290,7 @@ FlashResult solve_tp_flash(
         );
         return result;
     }
+    require_mixture_transport(provider.transport());
     if (input.overall_mole_fractions.size() != 2
         || provider.transport().component_count != 2) {
         throw std::invalid_argument(

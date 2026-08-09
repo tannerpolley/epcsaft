@@ -5760,25 +5760,11 @@ ChemicalSolveResult solve_provider_reaction(
     for (std::size_t species = 0; species < mole_fractions.size(); ++species) {
         mole_fractions[species] = starting_amounts[species] / total;
     }
-    const std::array<double, 2> seed_molar_bounds = provider.evaluate_molar_volume_bounds(
+    const std::array<double, 2> molar_bounds = provider.evaluate_molar_volume_bounds(
         temperature_k, mole_fractions, packing_fraction_min, packing_fraction_max
     );
     const bool parameterized = active_parameters != nullptr
-        && !active_parameters->parameters.empty();
-    std::array<double, 2> molar_bounds = seed_molar_bounds;
-    if (parameterized) {
-        const double seed_volume = std::sqrt(
-            total * seed_molar_bounds[0] * total * seed_molar_bounds[1]
-        );
-        molar_bounds = provider.evaluate_reacting_phase_parameters(
-            temperature_k,
-            starting_amounts,
-            seed_volume,
-            packing_fraction_min,
-            packing_fraction_max,
-            *active_parameters
-        ).molar_volume_bounds_m3_per_mol;
-    }
+        && !active_parameters->identities.empty();
     double lower_volume = std::nextafter(
         total * molar_bounds[0], std::numeric_limits<double>::infinity()
     );
@@ -5861,7 +5847,7 @@ ChemicalSolveResult solve_provider_reaction(
                 inverse_parameters
             );
         const std::size_t state_count = amounts.size() + 1;
-        const std::size_t parameter_count = inverse_parameters.parameters.size();
+        const std::size_t parameter_count = inverse_parameters.identities.size();
         if (block.gradient.size() != state_count + parameter_count
             || block.hessian.size()
                 != (state_count + parameter_count) * (state_count + parameter_count)) {
@@ -5933,21 +5919,12 @@ ChemicalSolveResult solve_provider_reaction(
             result.chemical_potential_parameter_derivatives_over_rt =
                 block.chemical_potential_parameter_derivatives_over_rt;
             result.active_parameter_names.reserve(
-                active_parameters->parameters.size()
+                active_parameters->identities.size()
             );
-            for (const ProviderActiveParameter& parameter
-                 : active_parameters->parameters) {
-                std::string name = "provider_parameter["
-                    + parameter.family + ";" + parameter.identity + ";";
-                for (std::size_t index = 0;
-                     index < parameter.component_ids.size();
-                     ++index) {
-                    if (index != 0) {
-                        name += ",";
-                    }
-                    name += parameter.component_ids[index];
-                }
-                result.active_parameter_names.push_back(name + "]");
+            for (const std::string& identity : active_parameters->identities) {
+                result.active_parameter_names.push_back(
+                    "provider_parameter[" + identity + "]"
+                );
             }
             return result;
         }
@@ -5983,26 +5960,13 @@ ChemicalSolveResult solve_provider_reaction(
         for (std::size_t species = 0; species < amounts.size(); ++species) {
             composition[species] = amounts[species] / amount_total;
         }
-        std::array<double, 2> start_molar_bounds =
+        const std::array<double, 2> start_molar_bounds =
             provider.evaluate_molar_volume_bounds(
                 temperature_k,
                 composition,
                 packing_fraction_min,
                 packing_fraction_max
             );
-        if (parameterized) {
-            const double seed_volume = amount_total * std::sqrt(
-                start_molar_bounds[0] * start_molar_bounds[1]
-            );
-            start_molar_bounds = provider.evaluate_reacting_phase_parameters(
-                temperature_k,
-                amounts,
-                seed_volume,
-                packing_fraction_min,
-                packing_fraction_max,
-                *active_parameters
-            ).molar_volume_bounds_m3_per_mol;
-        }
         double lower = std::nextafter(
             amount_total * start_molar_bounds[0],
             std::numeric_limits<double>::infinity()

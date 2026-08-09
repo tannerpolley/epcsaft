@@ -19,7 +19,8 @@ pybind11::capsule make_native_transport(
     const std::string& topology_fingerprint,
     const std::string& component_order_fingerprint,
     const std::string& domain_fingerprint,
-    const std::string& artifact_fingerprint
+    const std::string& artifact_fingerprint,
+    const std::vector<NativeActiveCoordinate>& active_parameters
 ) {
     const epcsaft_native_transport* transport = create_native_transport(
         model,
@@ -33,7 +34,8 @@ pybind11::capsule make_native_transport(
         topology_fingerprint,
         component_order_fingerprint,
         domain_fingerprint,
-        artifact_fingerprint
+        artifact_fingerprint,
+        active_parameters
     );
     return pybind11::capsule(
         const_cast<epcsaft_native_transport*>(transport),
@@ -55,12 +57,14 @@ pybind11::capsule make_native_transport(
 
 pybind11::dict evaluate_source_reference_transfer(
     const pybind11::capsule& capsule,
-    const std::string& expected_parameter_fingerprint,
-    const std::string& expected_topology_fingerprint,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::string>& component_ids,
     const std::vector<double>& source_solvent_mole_fractions,
+    const std::vector<std::array<std::size_t, 2>>& ion_pair_indices,
+    const std::vector<std::array<int, 2>>& ion_pair_stoichiometry,
+    const std::string& phase,
+    const std::string& reference_convention,
     const std::string& reference_state_id,
     const std::string& activity_convention_id,
     const std::string& reference_state_fingerprint,
@@ -85,18 +89,40 @@ pybind11::dict evaluate_source_reference_transfer(
     for (const auto& component_id : component_ids) {
         component_id_pointers.push_back(component_id.c_str());
     }
-    const std::size_t row_count = transport.neutral_reference_basis_row_count;
+    const std::size_t row_count = component_ids.size() - 1u;
     std::vector<double> basis(row_count * component_ids.size());
     std::vector<double> fugacity(row_count);
     std::vector<double> activity(row_count);
     std::vector<double> transfer(row_count);
     std::vector<double> composition(component_ids.size());
+    if (ion_pair_indices.size() != ion_pair_stoichiometry.size()) {
+        throw pybind11::value_error(
+            "source-reference ion pair and stoichiometry counts differ"
+        );
+    }
+    std::vector<std::size_t> cations;
+    std::vector<std::size_t> anions;
+    std::vector<std::int32_t> cation_stoichiometry;
+    std::vector<std::int32_t> anion_stoichiometry;
+    for (std::size_t index = 0; index < ion_pair_indices.size(); ++index) {
+        cations.push_back(ion_pair_indices[index][0]);
+        anions.push_back(ion_pair_indices[index][1]);
+        cation_stoichiometry.push_back(ion_pair_stoichiometry[index][0]);
+        anion_stoichiometry.push_back(ion_pair_stoichiometry[index][1]);
+    }
     epcsaft_source_reference_request request{
         sizeof(epcsaft_source_reference_request),
         component_ids.size(),
         component_id_pointers.data(),
         source_solvent_mole_fractions.size(),
         source_solvent_mole_fractions.data(),
+        ion_pair_indices.size(),
+        cations.data(),
+        anions.data(),
+        cation_stoichiometry.data(),
+        anion_stoichiometry.data(),
+        phase.c_str(),
+        reference_convention.c_str(),
         reference_state_id.c_str(),
         activity_convention_id.c_str(),
         reference_state_fingerprint.c_str(),
@@ -121,8 +147,6 @@ pybind11::dict evaluate_source_reference_transfer(
     result.pressure_derivatives_per_pa = nullptr;
     const int status = transport.evaluate_source_reference_transfer(
         transport.model_context,
-        expected_parameter_fingerprint.c_str(),
-        expected_topology_fingerprint.c_str(),
         temperature_k,
         pressure_pa,
         &request,
