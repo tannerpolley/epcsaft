@@ -16,6 +16,10 @@ from ._api import (
     ChemicalEquilibriumSensitivityParameter,
     ChemicalEquilibriumSensitivityRequest,
     ChemicalStandardState,
+    EquilibriumPhaseState,
+    FlashError,
+    Held2Diagnostics,
+    HeldDiagnostics,
     IdealGasPhase,
     PhaseEquilibriumDiagnostics,
     PhaseEquilibriumError,
@@ -26,8 +30,10 @@ from ._api import (
     PhaseRole,
     PhaseState,
     ProviderPhase,
+    TpFlashResult,
     chemical_equilibrium,
     phase_equilibrium,
+    tp_flash,
 )
 
 __all__ = [
@@ -46,6 +52,10 @@ __all__ = [
     "ChemicalEquilibriumSensitivityParameter",
     "ChemicalEquilibriumSensitivityRequest",
     "ChemicalStandardState",
+    "EquilibriumPhaseState",
+    "FlashError",
+    "Held2Diagnostics",
+    "HeldDiagnostics",
     "IdealGasPhase",
     "PhaseEquilibriumDiagnostics",
     "PhaseEquilibriumError",
@@ -56,6 +66,8 @@ __all__ = [
     "PhaseRole",
     "PhaseState",
     "ProviderPhase",
+    "TpFlashResult",
     "chemical_equilibrium",
     "phase_equilibrium",
+    "tp_flash",
 ]

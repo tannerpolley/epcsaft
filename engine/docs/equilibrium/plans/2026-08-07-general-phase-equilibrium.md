@@ -1,15 +1,16 @@
 # General Phase-Equilibrium Plan
 
-- Status: canonical owner plan; execution is tracked by GitHub root issue #10 and its native CAP subissues
+- Status: canonical target plan; protected transition is governed by ADR 0002
 - Date: 2026-08-07
 - Owner: Equilibrium
 - Parent: [General scientific capability hard cutover](../../plans/2026-08-07-general-scientific-capability-hard-cutover.md)
-- Decision: [one general phase-equilibrium owner](../adr/0001-one-general-phase-equilibrium-owner.md)
+- Decisions: [one general phase-equilibrium owner](../adr/0001-one-general-phase-equilibrium-owner.md), [protected HELD promotion](../adr/0002-protect-held-until-phase-equilibrium-promotion.md)
 
 ## Outcome
 
-Replace the separate neutral and electrolyte source-derived controllers with
-one nonreactive `phase_equilibrium` owner. It accepts explicit components,
+After the protected promotion gate passes, replace the separate neutral and
+electrolyte source-derived interfaces with one nonreactive `phase_equilibrium`
+owner. It accepts explicit components,
 species, charge, feed, thermodynamic specification, and optional phase
 information. The same physical algorithm handles neutral and charged systems;
 neutral systems naturally skip charge/electrolyte operations. Source cases,
@@ -19,6 +20,16 @@ The first owner supports one to three liquid/vapor phases. Solids are excluded.
 Homogeneous chemical equilibrium remains a separate owner. This plan defines a
 shared state/phase/parameter/sensitivity seam for future reactive phase
 equilibrium but does not implement that coupled problem.
+
+## Protected transition
+
+The exact `tp_flash` HELD/HELD2 implementation is the incumbent and remains
+public until the HELD-derived `phase_equilibrium` candidate proves every
+admitted incumbent workflow as good or better and completes the additional
+constrained-phase claims. The current candidate preserves discovery results and
+fails closed on a declared role mismatch. It does not yet solve arbitrary
+declared one-to-three-phase topologies or apply hints, so public cutover remains
+blocked. No route automatically falls back to the other.
 
 ## Public problem modes
 
@@ -161,9 +172,11 @@ Equilibrium observation family is admitted to Regression by this plan.
    operations and reproduce neutral numerical invariants without a route split.
 7. **Solved-state sensitivities.** Add exact implicit sensitivities in canonical
    active-set order with rank/conditioning diagnostics.
-8. **Public cutover.** Make `phase_equilibrium` the sole nonreactive public
-   owner; remove HELD1/HELD2, fixed flash, source bounds, old schemas, aliases,
-   and compatibility tests atomically.
+8. **Reviewed promotion.** Compare one installed candidate wheel against the
+   protected `tp_flash` incumbent over every admitted workflow, then require
+   independent phase-science and solver-architecture review plus user approval.
+   Only that receipt may make `phase_equilibrium` the sole public owner and
+   retire HELD1/HELD2, fixed flash, source bounds, and incumbent schemas.
 9. **Validation relocation.** Keep named literature and application campaigns
    in Validation against the installed wheel; Engine retains only compact
    algorithmic/numerical evidence.
@@ -219,12 +232,13 @@ Do not publish these units until the four canonical plans are approved.
 | EQ-05 | Constrained 1–3 phase solve | EQ-04 | Declared liquid/vapor topologies solve and certify only their claim |
 | EQ-06 | Discovery 1–3 phase solve | EQ-05 | Stable one-phase and two-/three-phase outcomes carry evidence |
 | EQ-07 | Exact solved-state sensitivities | EQ-05, EOS-07 | Active-set ordered Jacobians pass independent differences |
-| EQ-08 | Atomic public cutover and dead-surface audit | EQ-06, EQ-07 | Only `phase_equilibrium` remains for nonreactive phase equilibrium |
+| EQ-08 | Reviewed public promotion and dead-surface audit | EQ-06, EQ-07 | The candidate is no worse over every admitted incumbent workflow; only the approved receipt may retire `tp_flash` |
 | EQ-09 | Reactive-phase seam note | EQ-08 | Future state/phase/sensitivity boundary is explicit; no dormant solver exists |
 
 ## Done definition
 
-Equilibrium has one source-neutral nonreactive phase owner for one to three
+After the ADR 0002 promotion gate, Equilibrium has one source-neutral
+nonreactive phase owner for one to three
 liquid/vapor phases, explicit discovery/constrained semantics, generic active
 parameter transport, exact solved-state sensitivity diagnostics, and no
 neutral/electrolyte author-route split. Homogeneous chemical equilibrium still

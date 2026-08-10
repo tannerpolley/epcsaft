@@ -5,6 +5,16 @@ program is [root issue #10](https://github.com/tannerpolley/ePC-SAFT/issues/10);
 native subissues and blocked-by relationships define the live frontier. Read the
 selected issue and its comments with `gh` before implementation.
 
+## CAP-09 correction
+
+The closed state of issue #18 records the rejected scratch replacement and does
+not authorize retirement of `tp_flash`. Governance D-029 and Equilibrium ADR
+0002 protect the exact HELD/HELD2 incumbent until a HELD-derived
+`phase_equilibrium` candidate completes actual constrained one-to-three-phase
+solving and passes the reviewed as-good-or-better promotion gate. Do not infer
+current sole-owner capability from #18 or advance a dependent phase capability
+on that basis.
+
 ## Task strategy
 
 Run each unblocked CAP leaf in a fresh user-visible Codex task attached to this

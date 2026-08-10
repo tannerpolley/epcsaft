@@ -1,106 +1,116 @@
 # Phase-Equilibrium Documentation Authority
 
-Status: canonical package overview
+Status: protected HELD transition; candidate not promoted
 
-This document describes the implemented nonreactive phase-equilibrium owner and
-its deliberately bounded scientific claim.
+This document describes the implemented nonreactive phase-equilibrium boundary
+and the evidence required before the incumbent may be retired.
 
 ## Authority
 
-The active decision is
-[one general nonreactive phase-equilibrium owner](adr/0001-one-general-phase-equilibrium-owner.md).
-The complete implementation sequence and acceptance criteria are in the
+The active transition decision is
+[protect HELD until the phase-equilibrium promotion gate passes](adr/0002-protect-held-until-phase-equilibrium-promotion.md).
+The destination remains
+[one general nonreactive phase-equilibrium owner](adr/0001-one-general-phase-equilibrium-owner.md),
+but its atomic-retirement sequence is superseded. The complete target design is
+in the
 [General Phase-Equilibrium Plan](plans/2026-08-07-general-phase-equilibrium.md).
-`CONTEXT.md` defines shared language and `ARCHITECTURE.yaml` records the
-machine-readable ownership boundary.
+`CONTEXT.md` defines shared language and `ARCHITECTURE.yaml` records the current
+machine-readable boundary.
 
-Superseded source-specific designs and execution plans have been removed.
-Primary-source research, citations, source locators, raw data, receipts,
-results, and still-relevant numerical evidence remain provenance; none selects
-a runtime route.
+Historical research, source locators, results, and receipts keep their original
+HELD/HELD2 names as provenance. During this protected transition the same names
+also identify the exact incumbent implementation whose evidence remains live.
 
 ## Ownership
 
-| Problem | Owner | Boundary |
+| Problem | Current route | Boundary |
 | --- | --- | --- |
 | Pure-fluid saturation | EOS `Pure.saturation` | Pure vapor--liquid boundary and exact selected-parameter sensitivities |
-| Nonreactive phase equilibrium | Equilibrium `phase_equilibrium` | Discovery or constrained specification for one to three liquid/vapor phases |
+| Nonreactive incumbent | Equilibrium `tp_flash` | Exact retained HELD/HELD2 discovery workflow and certificates |
+| Nonreactive candidate | Equilibrium `phase_equilibrium` | HELD-derived amount-feed interface and declared-role admission over the retained result |
 | Homogeneous chemical equilibrium | Equilibrium `chemical_equilibrium` | One homogeneous reacting state over explicit species, reactions, balances, and charge |
 | Reactive multiphase equilibrium | Deferred | Shared state/phase/parameter/sensitivity seam only; no runtime route |
 | Solid equilibrium | Excluded | Requires a separate physical model and plan |
 
-The destination `phase_equilibrium` owner is not a facade over author-named
-neutral and electrolyte controllers. Neutral systems use the same owner and
-omit charge-specific operations because their topology has no charge.
+`tp_flash` and `phase_equilibrium` are two explicit interfaces over one
+HELD/HELD2 numerical core. Neither is an alias or fallback, and neither silently
+substitutes the other. The candidate must evolve this core; an unrelated
+Gibbs-minimization solver cannot claim incumbent lineage.
 
-## Problem modes
+## Implemented candidate modes
 
-`discovery` evaluates the recorded finite one-/two-/three-phase role topologies
-and deterministic start set. It returns the lowest certified local candidate
-found in that scope and explicitly reports that globality is not established.
-Search exhaustion without a certified candidate fails closed.
+`discovery` runs the retained HELD or HELD2 calculation and reports its exact
+bounded claim. It does not upgrade the incumbent's `not_guaranteed` globality
+certificate.
 
-`constrained` accepts one to three declared liquid/vapor roles,
-solves only that topology, and certifies only that claim. A constrained success
-does not prove that another topology is absent.
+`constrained` currently declares one or two liquid/vapor roles, runs the
+retained calculation, classifies returned phases through the recorded
+compressibility-factor limits, and accepts only an equal role multiset. A
+mismatch fails closed with the retained state as the best candidate. This is a
+declared-role constraint over the retained discovery result; it is not yet an
+arbitrary constrained-topology solve. Three-role requests are rejected before
+the incumbent runs, so the candidate cannot complete the target
+one-to-three-phase owner claim.
 
-Hints may supply initialization, continuation, composition, density, or phase
-ordering. They reorder work but cannot alter equations, tolerances,
-certificates, or the scientific claim.
+Hints are type- and domain-validated but are not applied to HELD/HELD2 work
+ordering. Diagnostics report `hints_applied=False`. Applying hints without
+changing equations, tolerances, candidates, certificates, or results remains a
+promotion requirement.
 
 ## Inputs and results
 
-Inputs make model component order, feed amounts, temperature, pressure, phase
-mode/roles, hints, and optional `ActiveParameterSet` explicit. Charge belongs to
-the resolved model topology. No literal component name, fingerprint, paper,
-campaign, or fixed position carries behavior.
+The incumbent retains its exact normalized-feed input, source-domain admission,
+typed `PhaseState`, HELD/HELD2 diagnostics, certificates, and selected-parameter
+sensitivity. These are protected scientific behavior, not a compatibility
+facade.
 
-Results contain ordered phase states and amounts, compositions, densities,
-equilibrium quantities, balance/stationarity residuals, certificate scope,
-conditioning, deterministic diagnostics, and structured failure. When active
-parameters are requested, Equilibrium forms exact total solved-state
-sensitivities from EOS CppAD partials by implicit linear algebra in the same
-active-set order.
+The candidate accepts explicit feed amounts, temperature, pressure, mode,
+roles, hints, and optional `ActiveParameterSet`. It rescales the normalized
+incumbent result to the declared total amount, preserves phase compositions,
+volumes, pressures, chemical potentials, objective, parameter fingerprint, and
+sensitivity order, and adds typed roles, component amounts, packing fraction,
+and transition diagnostics. A candidate failure never becomes an incumbent
+success automatically.
 
-## Implemented numerical boundary
+## Numerical boundary
 
-The native owner minimizes fixed-temperature, fixed-pressure Gibbs energy in
-amount--log-packing coordinates. Charged phases use an exact electroneutral
-chart: neutral amounts, total charge equivalents, and positive/negative ionic
-log-ratios. This keeps every provider evaluation in the electrolyte EOS domain;
-neutral phases omit the chart operations naturally. Material constraints,
-objective and constraint Hessians, and selected-parameter partials are composed
-into the declared KKT `F_y` and `F_p` blocks.
+The restored neutral HELD and strong-electrolyte HELD2 sources are the exact
+pre-CAP-09 files. Neutral and charged selection inside that incumbent remains
+the retained model-topology behavior, including the audited source-domain gate
+and HELD2 ten-step controller. The candidate does not change those equations,
+start sets, tolerances, local optimizers, physical certificates, or exact
+solved-state sensitivity route.
 
-Model temperature and ion-fraction domains are rejected before candidate
-generation. For charged multiphase states, the reported chemical-potential
-residual uses the charge-reduced basis obtained by eliminating one ionic
-potential; a literal cross-phase ionic chemical-potential difference would be
-gauge-dependent. Accepted states are strictly interior to every numerical
-chart bound, so the equality-constrained KKT system is also the sensitivity
-system. An implicit Jacobian is available only when its rank, condition number,
-and dimension-scaled backward-error certificate all pass.
+Liquid and vapor labels use explicit compressibility-factor bounds with a
+fail-closed gap. This classification is an adapter claim only; it does not
+rewrite or preselect HELD2 candidates, is not route-native phase-identity
+evidence, and is insufficient for promotion. Candidate phases retain incumbent
+native order so phase-indexed sensitivities cannot be desynchronized. Current
+accepted HELD2 public results contain one or two phases. Three-phase constrained
+solving remains unimplemented and is rejected explicitly.
 
-Liquid and vapor roles are physical claims, not initialization labels. The
-certificate classifies them with the result's explicit compressibility-factor
-limits and leaves a fail-closed gap between the liquid and vapor ranges. Hints
-stable-sort the unchanged finite starts using role, composition, and density.
-They do not remove a start or alter a certificate.
+The unrelated native CAP-09 scratch phase solver has been removed. The exact
+`tp_flash`, HELD/HELD2 sources, diagnostic payloads, certificate audits, and
+compact certificate evidence are restored and remain protected until
+promotion.
 
-The former `tp_flash`, HELD/HELD2 runtime symbols, source bounds, fingerprint
-dispatch, binary result fields, and their compatibility/audit tests have been
-removed. Historical research, packets, results, and source locators retain
-their original names as provenance.
+## Promotion evidence
 
-`chemical_equilibrium` remains separate during this work. Its arbitrary
-species/reaction/balance/charge compiler and solver should be preserved and
-revised only for a demonstrated defect or the later reactive-phase design.
+Engine retains compact numerical checks for HELD/HELD2 certificates and exact
+incumbent/candidate state parity. Validation replays all eight accepted
+Khudaida Figure 2 feeds through the installed wheel. It compares independent
+`tp_flash` and `phase_equilibrium` solves at the incumbent's historical state,
+physical, pressure, and KKT tolerances and requires the candidate's descriptive
+paper error to be no worse beyond numerical tolerance.
 
-## Evidence boundary
+This proves recovery and present lineage; it does not prove the missing
+arbitrary constrained one-to-three-phase behavior. Retirement additionally
+requires that behavior, route-native neutral and charged phase-role evidence,
+applied-hint invariance, exact multiphase sensitivity/order evidence,
+deterministic failure semantics, independent phase-science and
+solver-architecture review, and explicit user approval bound to one accepted
+receipt.
 
-Engine retains compact numerical checks for balances, stationarity, stability,
-phase permutation, derivative correctness, conditioning, and one-/two-/three-
-phase algorithm behavior. Named publication cases, broad phase envelopes, and
-application acceptance run against the installed wheel in Validation. A match
-to literature cannot substitute for local mathematical certificates, and a
-local optimum cannot be reported as a global phase result.
+`chemical_equilibrium` remains separate. Its arbitrary
+species/reaction/balance/charge compiler and solver are unchanged by this
+transition.

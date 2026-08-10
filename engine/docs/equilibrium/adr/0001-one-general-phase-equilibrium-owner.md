@@ -1,9 +1,15 @@
 ---
 status: accepted
 date: 2026-08-07
+amended_by: 0002-protect-held-until-phase-equilibrium-promotion.md
 ---
 
 # Use one general nonreactive phase-equilibrium owner
+
+The destination remains accepted. Its atomic-retirement sequencing is amended
+by [ADR 0002](0002-protect-held-until-phase-equilibrium-promotion.md): the exact
+HELD/HELD2 incumbent remains live until the HELD-derived candidate passes the
+reviewed promotion gate.
 
 ## Context
 

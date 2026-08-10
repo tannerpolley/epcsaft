@@ -1,0 +1,241 @@
+from __future__ import annotations
+
+import pytest
+
+from epcsaft.equilibrium import _equilibrium
+
+
+def _farkas(
+    matrix: list[list[float]],
+    row_lower: list[float],
+    row_upper: list[float],
+    column_lower: list[float],
+    column_upper: list[float],
+    ray: list[float],
+) -> dict[str, object]:
+    return _equilibrium._held2_audit_farkas_certificate(
+        matrix,
+        row_lower,
+        row_upper,
+        column_lower,
+        column_upper,
+        ray,
+    )
+
+
+@pytest.mark.parametrize(
+    ("matrix", "row_lower", "row_upper", "column_lower", "column_upper", "ray"),
+    (
+        ([[1.0]], [2.0], [float("inf")], [0.0], [1.0], [-1.0]),
+        ([[1.0]], [float("-inf")], [-1.0], [0.0], [1.0], [1.0]),
+        (
+            [[1.0], [1.0]],
+            [float("-inf"), 1.0],
+            [0.0, float("inf")],
+            [0.0],
+            [1.0],
+            [1.0, -1.0],
+        ),
+        (
+            [[3.0], [2.0]],
+            [3.0, float("-inf")],
+            [float("inf"), 0.0],
+            [0.0],
+            [1.0],
+            [-1.0 / 3.0, 0.5],
+        ),
+    ),
+)
+def test_farkas_audit_certifies_infeasibility_across_bound_and_scaling_conventions(
+    matrix: list[list[float]],
+    row_lower: list[float],
+    row_upper: list[float],
+    column_lower: list[float],
+    column_upper: list[float],
+    ray: list[float],
+) -> None:
+    audit = _farkas(
+        matrix,
+        row_lower,
+        row_upper,
+        column_lower,
+        column_upper,
+        ray,
+    )
+    assert audit["accepted"] is True
+    assert audit["contradiction_margin"] > audit["contradiction_threshold"]
+
+
+def test_farkas_audit_is_invariant_to_row_permutation() -> None:
+    first = _farkas(
+        [[1.0], [1.0]],
+        [float("-inf"), 1.0],
+        [0.0, float("inf")],
+        [0.0],
+        [1.0],
+        [1.0, -1.0],
+    )
+    second = _farkas(
+        [[1.0], [1.0]],
+        [1.0, float("-inf")],
+        [float("inf"), 0.0],
+        [0.0],
+        [1.0],
+        [-1.0, 1.0],
+    )
+    assert first["accepted"] is second["accepted"] is True
+    assert first["contradiction_margin"] == pytest.approx(second["contradiction_margin"])
+
+
+def test_farkas_audit_is_invariant_to_column_permutation() -> None:
+    first = _farkas(
+        [[1.0, 2.0]],
+        [1.0],
+        [float("inf")],
+        [float("-inf"), 0.0],
+        [0.0, 0.0],
+        [-1.0],
+    )
+    second = _farkas(
+        [[2.0, 1.0]],
+        [1.0],
+        [float("inf")],
+        [0.0, float("-inf")],
+        [0.0, 0.0],
+        [-1.0],
+    )
+    assert first["accepted"] is second["accepted"] is True
+    assert first["contradiction_margin"] == pytest.approx(second["contradiction_margin"])
+
+
+def test_farkas_audit_rejects_tiny_wrong_sign_on_unbounded_column_side() -> None:
+    audit = _farkas(
+        [[2.0e-10]],
+        [float("-inf")],
+        [-1.0],
+        [float("-inf")],
+        [-1.0e11],
+        [1.0],
+    )
+    assert audit["accepted"] is False
+
+
+def test_farkas_audit_projects_row_roundoff_but_rejects_unbounded_dual() -> None:
+    row_audit = _farkas(
+        [[1.0], [1.0], [0.0]],
+        [float("-inf"), 1.0, 0.0],
+        [0.0, float("inf"), float("inf")],
+        [0.0],
+        [1.0],
+        [1.0, -1.0, 5.0e-11],
+    )
+    dual_audit = _farkas(
+        [[5.0e-11]],
+        [float("-inf")],
+        [-1.0],
+        [float("-inf")],
+        [-1.0e12],
+        [1.0],
+    )
+
+    assert row_audit["accepted"] is True
+    assert row_audit["row_sign_violation_inf"] == pytest.approx(5.0e-11)
+    assert row_audit["row_multipliers"][2] == 0.0
+    assert dual_audit["accepted"] is False
+    assert dual_audit["dual_feasibility_violation_inf"] == pytest.approx(5.0e-11)
+
+
+def _kkt(
+    *,
+    variables: list[float],
+    lower: list[float],
+    upper: list[float],
+    gradient: list[float],
+    constraints: list[list[float]] | None = None,
+    constraint_upper: list[float] | None = None,
+    z_lower: list[float] | None = None,
+    z_upper: list[float] | None = None,
+    multipliers: list[float] | None = None,
+    pullback_residual: float = 0.0,
+    pullback_scale: float = 1.0,
+    pressure_residual: float = 0.0,
+    same_major: bool = True,
+    step4_binding: bool = True,
+    pressure_branch: bool = True,
+) -> dict[str, object]:
+    return _equilibrium._held2_audit_step5_kkt(
+        variables,
+        lower,
+        upper,
+        gradient,
+        constraints or [],
+        constraint_upper or [],
+        z_lower or [0.0] * len(variables),
+        z_upper or [0.0] * len(variables),
+        multipliers or [],
+        pullback_residual,
+        pullback_scale,
+        pressure_residual,
+        same_major,
+        step4_binding,
+        pressure_branch,
+    )
+
+
+@pytest.mark.parametrize(
+    "audit",
+    (
+        _kkt(
+            variables=[0.5, 2.0],
+            lower=[0.0, 1.0],
+            upper=[1.0, 3.0],
+            gradient=[0.0, 0.0],
+        ),
+        _kkt(
+            variables=[0.0],
+            lower=[0.0],
+            upper=[1.0],
+            gradient=[1.0],
+            z_lower=[1.0],
+        ),
+        _kkt(
+            variables=[1.0],
+            lower=[0.0],
+            upper=[1.0],
+            gradient=[-1.0],
+            z_upper=[1.0],
+        ),
+        _kkt(
+            variables=[0.0],
+            lower=[-1.0],
+            upper=[1.0],
+            gradient=[-1.0],
+            constraints=[[1.0]],
+            constraint_upper=[0.0],
+            multipliers=[1.0],
+        ),
+    ),
+)
+def test_step5_kkt_audit_accepts_interior_and_active_bound_terminals(
+    audit: dict[str, object],
+) -> None:
+    assert audit["accepted"] is True
+
+
+def test_step5_kkt_audit_is_invariant_to_coordinate_permutation() -> None:
+    first = _kkt(
+        variables=[0.0, 0.5],
+        lower=[0.0, 0.0],
+        upper=[1.0, 1.0],
+        gradient=[1.0, 0.0],
+        z_lower=[1.0, 0.0],
+    )
+    second = _kkt(
+        variables=[0.5, 0.0],
+        lower=[0.0, 0.0],
+        upper=[1.0, 1.0],
+        gradient=[0.0, 1.0],
+        z_lower=[0.0, 1.0],
+    )
+    assert first["accepted"] is second["accepted"] is True
+    assert first["stationarity_residual_inf"] == pytest.approx(second["stationarity_residual_inf"])

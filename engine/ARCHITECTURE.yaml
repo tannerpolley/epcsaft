@@ -1,6 +1,6 @@
-version: 3
+version: 4
 status: unified-monorepo-active
-governance_doctrine_revision: 13
+governance_doctrine_revision: 14
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -33,10 +33,20 @@ owners:
     public_module: epcsaft.equilibrium
     python_api: src/epcsaft/equilibrium/_api.py
     native_sources: cpp/equilibrium
-    nonreactive_owner: phase_equilibrium
-    phase_modes: [discovery, constrained_specification]
+    nonreactive_numerical_core: held_held2
+    incumbent_public_route: tp_flash
+    candidate_public_route: phase_equilibrium
+    candidate_status: transition_not_promoted
+    transition_decision: docs/equilibrium/adr/0002-protect-held-until-phase-equilibrium-promotion.md
+    phase_modes: [discovery, declared_role_constraint_over_retained_result]
     phase_kinds: [liquid, vapor]
-    maximum_phase_count: 3
+    phase_order: incumbent_native_order
+    role_classification: provisional_compressibility_bounds_fail_closed
+    maximum_certified_phase_count: 2
+    target_maximum_phase_count: 3
+    rejected_phase_counts: [3]
+    hints: validated_not_applied
+    automatic_fallback: forbidden
     active_parameters: epcsaft.ActiveParameterSet
     solved_state_sensitivity: exact_implicit_from_eos_partials
   regression:
@@ -90,5 +100,6 @@ validation:
   required_module_origins: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
   installed_wheel_readiness: ../tools/verify-installed-wheel.py
   phase_equilibrium_campaign: ../validation/campaigns/2026-khudaida/tests/test_khudaida_phase_equilibrium.py
+  phase_equilibrium_promotion: blocked_until_adr_0002_gate
   materialized_packet_receipts: tests/fixtures/data/*/materialization-v2.json
   external_authority_gate: governance_g7

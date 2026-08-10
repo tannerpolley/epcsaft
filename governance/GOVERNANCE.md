@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 13
+Doctrine revision: 14
 
-Approved: 2026-08-07
+Approved: 2026-08-10
 
 Owner: `tannerpolley/ePC-SAFT:governance/`
 
@@ -79,6 +79,18 @@ authority. The lab MAY investigate such a capability, but production and
 validation repositories MUST NOT depend on it. Promotion distills a clean,
 independently evidenced slice into its unique package owner rather than
 transferring authority from a runnable archive.
+
+D-029 establishes one narrow nonreactive-phase transition inside Engine. The
+exact `tp_flash` HELD/HELD2 calculation is the protected incumbent while the
+HELD-derived `phase_equilibrium` interface gains explicit phase-selection
+semantics and is independently compared against the incumbent. This is one
+numerical core with an incumbent and a candidate interface, not two physical
+owners, an alias, or an automatic fallback. Callers select a route explicitly;
+neither route may silently substitute the other. An unrelated replacement
+solver cannot claim HELD lineage. `tp_flash` and its HELD/HELD2 evidence may be
+retired only after a reviewed, user-approved promotion receipt proves that the
+candidate preserves every admitted incumbent workflow within its declared
+tolerances and satisfies its additional constrained-phase claims.
 
 The complete pre-migration monorepo and related historical repositories live
 outside the authority topology under the local `ePC-SAFT-legacy` container.
@@ -446,6 +458,11 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 14 records the user-approved recovery and protected promotion of the
+HELD/HELD2 nonreactive phase workflow. D-029 restores `tp_flash` as the exact
+incumbent, requires `phase_equilibrium` to evolve from that numerical lineage,
+and forbids incumbent retirement before reviewed as-good-or-better evidence.
+
 Revision 13 records the user-approved pre-CAP execution hygiene amendment.
 D-028 removes the retired integration-test shape, makes the native CAP issue
 graph the execution authority, and assigns each CAP leaf to one fresh,
@@ -510,3 +527,4 @@ Historical plans and receipts retain their original names.
 | D-026 Single private monorepo | Explicit user instruction on 2026-08-05 after package-management and agent-friction review | Move Governance, Engine, Data, Validation, and Lab main histories into private `tannerpolley/ePC-SAFT`; use one Git root, root Codex environment, issue tracker, and Engine-accountable vertical-slice branch while retaining strict directory ownership; archive rather than delete source repositories | Removes cross-repository branch, worktree, wheel, and version coordination while preserving scientific independence and recoverable history | No | Root Management role and directory owners |
 | D-027 Zero-test Lab playground | Explicit user instruction on 2026-08-05 after reviewing all 51 Lab oracle checks | Make Lab a temporary playground with no persistent tests, test framework, or root verification gate; delete self-testing manufactured oracle implementations; distill any future durable numerical claim into Engine or installed-wheel Validation evidence | Removes a parallel 3,945-line toy implementation and prevents Lab experiments from becoming permanent maintenance contracts | No | Lab, Engine, Validation, and Management owners |
 | D-028 CAP execution hygiene | Explicit user instruction on 2026-08-07 to fix live pre-CAP guidance and establish one model, task, order, and review strategy | Remove `tests/integration/` from the normative package shape; use GitHub root issue #10 and native blockers for lifecycle state; execute each CAP leaf in a fresh single-writer task using the canonical Engine task map and proportionate read-only review | Prevents retired test structure, stale polyrepo routing, context-overloaded implementation, and per-task execution-setting drift from re-entering the cutover | No | Engine and Management |
+| D-029 Protected HELD promotion | Explicit user correction on 2026-08-10 that CAP-09 was intended to rename and extend the HELD/HELD2 workflow, not replace it with an unrelated solver | Restore exact `tp_flash` HELD/HELD2 as the protected incumbent; require `phase_equilibrium` to share that numerical lineage while adding explicit phase selection; prohibit automatic fallback and retire the incumbent only after reviewed, user-approved as-good-or-better promotion evidence | Recovers the validated HELD2 workflow, makes the mistaken scratch replacement non-authoritative, and prevents another destructive phase-owner cutover before equivalence and new constrained claims are demonstrated | Yes: full constrained one-to-three-phase promotion | Engine and Management |
