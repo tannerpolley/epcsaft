@@ -777,26 +777,9 @@ NativeFixedTopologyParameter NativeModel::resolve_active_coordinate(
   return resolved;
 }
 
-bool NativeModel::has_temperature_independent_segment_diameter(
-    std::size_t component) const {
-  if (component >= parameters_.sigma_constant.size()) {
-    throw std::out_of_range("segment-diameter component is out of range");
-  }
-  return std::none_of(parameters_.sigma_term_component.begin(),
-                      parameters_.sigma_term_component.end(),
-                      [component](int term_component) {
-                        return term_component == static_cast<int>(component);
-                      });
-}
-
 // EqExclude: input and domain validation
 bool NativeModel::supports_pure_transport() const {
   return detail::supports_pure_phase_block(parameters_);
-}
-
-// EqExclude: input and domain validation
-bool NativeModel::supports_fixed_topology_association() const {
-  return detail::supports_fixed_topology_associating_phase_block(parameters_);
 }
 
 // EqExclude: input and domain validation
@@ -922,15 +905,6 @@ NativeMixturePhaseBlock NativeModel::evaluate_parameterized_phase(
 }
 
 // EqExclude: transport and buffer mechanics
-double NativeModel::evaluate_electrolyte_phase_value(
-    double temperature, const std::vector<double> &amounts, double volume,
-    double ion_mole_fraction_max) const {
-  return evaluate_electrolyte_phase(temperature, amounts, volume,
-                                    ion_mole_fraction_max)
-      .helmholtz_over_rt_reference_amount;
-}
-
-// EqExclude: transport and buffer mechanics
 NativePackingFractionBlock NativeModel::evaluate_packing_fraction(
     double temperature, const std::vector<double> &amounts, double volume,
     double ion_mole_fraction_max) const {
@@ -1012,13 +986,8 @@ NativeReferenceSequence NativeModel::electrolyte_reference_sequence(
     double temperature, double pressure,
     const std::vector<double> &solvent_fractions,
     const std::array<std::size_t, 2> &ion_indices,
-    const std::array<int, 2> &stoichiometry, const std::string &phase,
-    NativeEvaluationBudget *budget) const {
-  auto checkpoint = [budget] {
-    if (budget != nullptr) {
-      budget->checkpoint();
-    }
-  };
+    const std::array<int, 2> &stoichiometry,
+    const std::string &phase) const {
   const auto result = detail::electrolyte_reference_sequence(
       solvent_fractions, parameters_.molar_mass_kg_per_mol, ion_indices,
       stoichiometry,
@@ -1029,15 +998,11 @@ NativeReferenceSequence NativeModel::electrolyte_reference_sequence(
         if (!state.log_fugacity_coefficient.has_value()) {
           throw std::runtime_error("reference fugacity is unavailable");
         }
-        return detail::ReferenceObservation{
-            {
-                (*state.log_fugacity_coefficient)[ion_indices[0]],
-                (*state.log_fugacity_coefficient)[ion_indices[1]],
-            },
-            std::nullopt,
+        return std::array<double, 2>{
+            (*state.log_fugacity_coefficient)[ion_indices[0]],
+            (*state.log_fugacity_coefficient)[ion_indices[1]],
         };
-      },
-      checkpoint);
+      });
   const auto pure_solvent_log_fugacity = single_solvent_log_fugacity(
       *this, temperature, pressure, solvent_fractions, phase);
   return {

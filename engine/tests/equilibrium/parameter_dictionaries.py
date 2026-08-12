@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from copy import deepcopy
-
 from tests.eos._raw_cases import (
-    AQUEOUS_ELECTROLYTE,
     neutral_pure,
     set_component_values,
 )
@@ -18,8 +15,3 @@ PURE_SATURATION_PARAMETERS = {
     "ethane": ETHANE_PARAMETERS,
     "propane": PROPANE_PARAMETERS,
 }
-
-FIGIEL_REFERENCE_ELECTROLYTE_PARAMETERS = deepcopy(AQUEOUS_ELECTROLYTE)
-FIGIEL_REFERENCE_ELECTROLYTE_PARAMETERS["document_id"] = (
-    "figiel-reference-electrolyte-test-fixture"
-)

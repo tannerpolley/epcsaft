@@ -31,8 +31,6 @@ struct Held2AlgorithmResult {
     std::string failure_stage;
     std::string failure_reason;
     std::string globality_certificate = "not_guaranteed";
-    std::string phase_enumeration_certificate =
-        "completeness_not_guaranteed";
     Held2Step1Result step1;
     std::optional<Held2Step2Result> step2;
     std::optional<Held2Step3Result> step3;
@@ -44,11 +42,9 @@ struct Held2AlgorithmResult {
     std::vector<Held2Step9Result> step9_history;
     std::vector<Held2Step10Result> step10_history;
     std::optional<Held2Step10Result> step10;
-    std::optional<Held2PersistentState> final_state;
     std::vector<Held2Phase> phases;
     std::optional<double> total_free_energy_over_rt;
     std::vector<Held2StepTiming> step_timings;
-    int upper_solve_count = 0;
 };
 
 [[nodiscard]] bool held2_step8_failure_returns_to_stage_ii(

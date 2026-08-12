@@ -3,13 +3,8 @@
 #include "model.hpp"
 
 #include <array>
-#include <atomic>
-#include <chrono>
 #include <cstddef>
-#include <cstdint>
-#include <limits>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -64,59 +59,6 @@ struct NativeReferenceSequence final {
     double convergence_error;
 };
 
-class NativeEvaluationCancelled final : public std::runtime_error {
-public:
-    NativeEvaluationCancelled()
-        : std::runtime_error("aqueous MIAC evaluation work budget exhausted") {}
-};
-
-class NativeEvaluationDeadlineExceeded final : public std::runtime_error {
-public:
-    NativeEvaluationDeadlineExceeded()
-        : std::runtime_error("aqueous MIAC evaluation deadline exceeded") {}
-};
-
-class NativeEvaluationBudget final {
-public:
-    NativeEvaluationBudget(std::uint64_t work_budget, std::uint64_t deadline_ns)
-        : remaining_work_(work_budget), deadline_ns_(deadline_ns) {}
-
-    void checkpoint() {
-        if (deadline_ns_ != 0 && monotonic_now_ns() >= deadline_ns_) {
-            throw NativeEvaluationDeadlineExceeded();
-        }
-        if (remaining_work_.load(std::memory_order_relaxed)
-            == std::numeric_limits<std::uint64_t>::max()) {
-            return;
-        }
-        std::uint64_t remaining = remaining_work_.load(
-            std::memory_order_relaxed
-        );
-        while (remaining != 0) {
-            if (remaining_work_.compare_exchange_weak(
-                    remaining,
-                    remaining - 1,
-                    std::memory_order_relaxed,
-                    std::memory_order_relaxed
-                )) {
-                return;
-            }
-        }
-        throw NativeEvaluationCancelled();
-    }
-
-private:
-    static std::uint64_t monotonic_now_ns() {
-        const auto now = std::chrono::steady_clock::now().time_since_epoch();
-        return static_cast<std::uint64_t>(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(now).count()
-        );
-    }
-
-    std::atomic<std::uint64_t> remaining_work_;
-    const std::uint64_t deadline_ns_;
-};
-
 struct NativeMolarVolumeBoundsParameterBlock final {
     std::array<double, 2> bounds_m3_per_mol;
     std::vector<double> parameter_derivatives_m3_per_mol;
@@ -147,7 +89,6 @@ public:
         const std::string& phase
     ) const;
     bool supports_pure_transport() const;
-    bool supports_fixed_topology_association() const;
     bool supports_fixed_topology_associating_mixture() const;
     bool supports_mixture_transport() const;
     bool supports_electrolyte_transport() const;
@@ -156,9 +97,6 @@ public:
     const std::vector<int>& site_components() const;
     const std::vector<int>& site_multiplicities() const;
     const std::vector<int>& association_active_pairs() const;
-    bool has_temperature_independent_segment_diameter(
-        std::size_t component
-    ) const;
     const std::vector<double>& molar_masses_kg_per_mol() const;
     NativePurePhaseBlock evaluate_pure_phase(
         double temperature,
@@ -202,12 +140,6 @@ public:
         double volume,
         double ion_mole_fraction_max,
         const std::vector<NativeActiveCoordinate>& active_parameters
-    ) const;
-    double evaluate_electrolyte_phase_value(
-        double temperature,
-        const std::vector<double>& amounts,
-        double volume,
-        double ion_mole_fraction_max
     ) const;
     std::array<double, 2> molar_volume_bounds(
         double temperature,
@@ -259,8 +191,7 @@ public:
         const std::vector<double>& solvent_fractions,
         const std::array<std::size_t, 2>& ion_indices,
         const std::array<int, 2>& stoichiometry,
-        const std::string& phase,
-        NativeEvaluationBudget* budget = nullptr
+        const std::string& phase
     ) const;
 private:
     NativeFixedTopologyParameter resolve_fixed_topology_parameter(

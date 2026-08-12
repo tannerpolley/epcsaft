@@ -40,9 +40,12 @@ if grep -q '^engine/' <<<"$paths"; then
             engine/tests/eos/*) engine_eos=true ;;
             engine/tests/equilibrium/*) engine_equilibrium=true ;;
             engine/tests/regression/*) engine_regression=true ;;
-            engine/cpp/equilibrium/*|engine/src/epcsaft/equilibrium/*|engine/data/reference/*)
+            engine/cpp/equilibrium/*|engine/src/epcsaft/equilibrium/*)
                 engine_equilibrium=true
-                engine_regression=true
+                ;;
+            engine/data/reference/*)
+                engine_eos=true
+                engine_equilibrium=true
                 ;;
             engine/src/epcsaft/regression/*) engine_regression=true ;;
             engine/AGENTS.md|engine/ARCHITECTURE.yaml|engine/CONTEXT.md|engine/README.md|engine/CMakeLists.txt|engine/pyproject.toml|engine/cpp/*|engine/src/*|engine/data/*|engine/tests/*)

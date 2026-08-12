@@ -46,6 +46,9 @@ stamp="$wheelhouse/source.sha256"
 cache_root="${XDG_CACHE_HOME:-$HOME/.cache}/epcsaft/wheels"
 cache_key="${source_sha256}-${runtime_id}-${toolchain_sha256}"
 cache_entry="$cache_root/$cache_key"
+cmake -E make_directory "$cache_root"
+exec {wheelhouse_lock_fd}>"$cache_root/wheelhouse.lock"
+flock "$wheelhouse_lock_fd"
 mapfile -t wheels < <(find "$wheelhouse" -maxdepth 1 -type f -name 'epcsaft-*.whl' -print 2>/dev/null)
 wheel_current=false
 if ((${#wheels[@]} == 1)) && [[ -f "$stamp" ]] && [[ "$(<"$stamp")" == "$source_sha256" ]]; then
@@ -63,12 +66,11 @@ fi
 
 wheel_origin="local"
 if [[ "$wheel_current" != true ]]; then
-    cmake -E remove_directory "$wheelhouse"
-    cmake -E make_directory "$wheelhouse"
-
-    cmake -E make_directory "$cache_root"
     exec {cache_lock_fd}>"$cache_root/$cache_key.lock"
     flock "$cache_lock_fd"
+
+    cmake -E remove_directory "$wheelhouse"
+    cmake -E make_directory "$wheelhouse"
 
     mapfile -t cached_wheels < <(
         find "$cache_entry" -maxdepth 1 -type f -name 'epcsaft-*.whl' -print 2>/dev/null
@@ -99,8 +101,6 @@ if [[ "$wheel_current" != true ]]; then
         sha256sum "${built_wheels[0]}" | cut -d ' ' -f 1 >"$cache_entry/wheel.sha256"
         wheel_origin="rebuilt"
     fi
-    flock -u "$cache_lock_fd"
-
     mapfile -t wheels < <(find "$wheelhouse" -maxdepth 1 -type f -name 'epcsaft-*.whl' -print)
     if ((${#wheels[@]} != 1)); then
         echo "expected exactly one Engine wheel, found ${#wheels[@]}" >&2
@@ -112,6 +112,11 @@ wheel="${wheels[0]}"
 uv pip install --python "$python" --reinstall-package epcsaft "$wheel"
 "$python" tools/verify-installed-wheel.py --wheel "$wheel"
 printf '%s\n' "$source_sha256" >"$stamp"
+
+if [[ -n "${cache_lock_fd:-}" ]]; then
+    flock -u "$cache_lock_fd"
+fi
+flock -u "$wheelhouse_lock_fd"
 
 case "$wheel_origin" in
     cache) echo "Engine wheel restored from shared cache for source $source_sha256" ;;

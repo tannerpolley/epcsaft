@@ -452,25 +452,6 @@ def _provider_solve(
     )
 
 
-def _provider_basis_spec(
-    model: epcsaft.Mixture,
-    source_spec: dict[str, object],
-    source_standard_state: dict[str, object],
-) -> tuple[dict[str, object], equilibrium.ChemicalEquilibriumResult]:
-    transformed = _provider_solve(model, source_spec, source_standard_state)
-    spec = copy.deepcopy(source_spec)
-    spec["ln_k"] = transformed.ln_k_provider_basis
-    spec["equilibrium_constant_records"] = tuple(
-        {
-            **record,
-            "reference_id": "provider-helmholtz-coordinate-basis",
-            "conversion_id": "already-provider-basis",
-        }
-        for record in spec["equilibrium_constant_records"]  # type: ignore[union-attr]
-    )
-    return spec, transformed
-
-
 def _provider_native(
     model: epcsaft.Mixture,
     spec: dict[str, object],

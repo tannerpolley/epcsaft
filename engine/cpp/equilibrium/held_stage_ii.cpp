@@ -935,9 +935,6 @@ HeldStageIIResult solve_held_stage_ii_impl(
     if (controller != nullptr) {
         controller->stage_i = stage_i;
     }
-    result.stage_i_outcome = stage_i.outcome;
-    result.stage_i_search_status = stage_i.search_status;
-    result.best_tpd = stage_i.best_tpd;
     if (stage_i.outcome == "no_negative_found") {
         result.outcome = "not_required";
         result.search_status = "stage_i_no_negative";
@@ -1098,10 +1095,7 @@ HeldStageIIResult solve_held_stage_ii_impl(
             );
             result.trace.back().stage_iii_outcome = refinement.outcome;
             result.trace.back().stage_iii_failure_reason = refinement.failure_reason;
-            controller->stage_iii_attempts.push_back({
-                result.major_iterations,
-                std::move(refinement),
-            });
+            controller->stage_iii_attempts.push_back({std::move(refinement)});
             const HeldStageIIIResult& retained = controller->stage_iii_attempts.back().result;
             if (retained.outcome == "accepted") {
                 result.outcome = "accepted";

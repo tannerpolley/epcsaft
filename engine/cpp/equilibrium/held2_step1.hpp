@@ -9,8 +9,6 @@ namespace epcsaft_engine::equilibrium {
 struct Held2Step1Result {
     std::string status = "indeterminate";
     std::string reason = "not_run";
-    double temperature_k = 0.0;
-    double pressure_pa = 0.0;
     double total_ion_mole_fraction_max =
         std::numeric_limits<double>::quiet_NaN();
     std::string provider_fingerprint;

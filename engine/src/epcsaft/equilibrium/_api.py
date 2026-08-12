@@ -40,18 +40,13 @@ class HeldDiagnostics:
     physical_status: str
     attempts: int
     major_iterations: int
-    best_tpd: float
-    lower_bound: float | None
-    upper_bound: float | None
-    held_gap: float | None
     material_balance_max_abs: float | None
     pressure_stationarity_max_relative: float | None
     kkt_stationarity_max_abs: float | None
     chemical_potential_max_relative: float | None
-    confirmation_succeeded: bool
-    confirmation_max_difference: float | None
     search_profiles: tuple[str, ...]
     globality_certificate: str
+    provider_evaluation_count: int
     failure_reason: str
 
 
@@ -67,13 +62,12 @@ class Held2Diagnostics:
     optimizer_solves: int
     optimizer_iterations: int
     major_iterations: int
-    best_tpd: float
-    held_gap: float | None
     material_balance_max_abs: float | None
+    electroneutrality_inf: float | None
     pressure_stationarity_max_relative: float | None
     kkt_stationarity_max_abs: float | None
-    confirmation_succeeded: bool
     globality_certificate: str
+    provider_evaluation_count: int
     failure_reason: str
 
 
@@ -772,20 +766,15 @@ def _held_diagnostics(payload: Mapping[str, object]) -> HeldDiagnostics:
         physical_status=typed_statuses[2],
         attempts=int(cast(int, payload["attempts"])),
         major_iterations=int(cast(int, payload["major_iterations"])),
-        best_tpd=float(cast(float, payload["best_tpd"])),
-        lower_bound=_optional_float(payload, "lower_bound"),
-        upper_bound=_optional_float(payload, "upper_bound"),
-        held_gap=_optional_float(payload, "held_gap"),
         material_balance_max_abs=_optional_float(payload, "material_balance_max_abs"),
         pressure_stationarity_max_relative=_optional_float(
             payload, "pressure_stationarity_max_relative"
         ),
         kkt_stationarity_max_abs=_optional_float(payload, "kkt_stationarity_max_abs"),
         chemical_potential_max_relative=_optional_float(payload, "chemical_potential_max_relative"),
-        confirmation_succeeded=bool(payload["confirmation_succeeded"]),
-        confirmation_max_difference=_optional_float(payload, "confirmation_max_difference"),
         search_profiles=tuple(str(profile) for profile in profiles),
         globality_certificate=str(payload["globality_certificate"]),
+        provider_evaluation_count=int(cast(int, payload["provider_evaluation_count"])),
         failure_reason=str(payload["failure_reason"]),
     )
 
@@ -799,18 +788,13 @@ def _failed_held_diagnostics(outcome: str, search_status: str, reason: str) -> H
         physical_status="not_adjudicated",
         attempts=0,
         major_iterations=0,
-        best_tpd=0.0,
-        lower_bound=None,
-        upper_bound=None,
-        held_gap=None,
         material_balance_max_abs=None,
         pressure_stationarity_max_relative=None,
         kkt_stationarity_max_abs=None,
         chemical_potential_max_relative=None,
-        confirmation_succeeded=False,
-        confirmation_max_difference=None,
         search_profiles=(),
         globality_certificate="not_guaranteed",
+        provider_evaluation_count=0,
         failure_reason=reason,
     )
 
@@ -819,24 +803,15 @@ def _held2_diagnostics(payload: Mapping[str, object]) -> Held2Diagnostics:
     outcome = str(payload["outcome"])
     accepted = outcome == "physical_equilibrium_accepted"
     one_phase = outcome == "one_phase_no_negative_witness_detected"
-    step2 = cast(Mapping[str, object], payload["step2"])
-    step9_history = cast(Sequence[Mapping[str, object]], payload["step9_history"])
-    step4_history = cast(Sequence[Mapping[str, object]], payload["step4_history"])
-    step_timings = cast(Sequence[Mapping[str, object]], payload["step_timings"])
-    step10_value = payload.get("step10")
-    step10 = cast(Mapping[str, object], step10_value) if isinstance(step10_value, Mapping) else None
-    certificate_value = step10.get("final_certificate") if step10 else None
-    certificate = (
-        cast(Mapping[str, object], certificate_value)
-        if isinstance(certificate_value, Mapping)
-        else None
-    )
     failure = payload.get("failure_reason")
-    gap = step9_history[-1].get("free_energy_gap") if step9_history else None
     completed = accepted or one_phase
     adjudication_status = "passed" if completed else "not_adjudicated"
     physical_status = (
-        "passed" if completed else "failed" if certificate is not None else "not_adjudicated"
+        "passed"
+        if completed
+        else "failed"
+        if payload["material_balance_max_abs"] is not None
+        else "not_adjudicated"
     )
     return Held2Diagnostics(
         outcome=outcome,
@@ -846,35 +821,17 @@ def _held2_diagnostics(payload: Mapping[str, object]) -> Held2Diagnostics:
         solver_status=adjudication_status,
         numerical_status=adjudication_status,
         physical_status=physical_status,
-        optimizer_solves=sum(int(cast(int, timing["optimizer_solves"])) for timing in step_timings),
-        optimizer_iterations=sum(
-            int(cast(int, timing["optimizer_iterations"])) for timing in step_timings
+        optimizer_solves=int(cast(int, payload["optimizer_solves"])),
+        optimizer_iterations=int(cast(int, payload["optimizer_iterations"])),
+        major_iterations=int(cast(int, payload["major_iterations"])),
+        material_balance_max_abs=_optional_float(payload, "material_balance_max_abs"),
+        electroneutrality_inf=_optional_float(payload, "electroneutrality_inf"),
+        pressure_stationarity_max_relative=_optional_float(
+            payload, "pressure_stationarity_max_relative"
         ),
-        major_iterations=(
-            0
-            if not step4_history
-            else 1 + max(int(cast(int, step["major_iteration"])) for step in step4_history)
-        ),
-        best_tpd=float(cast(float, step2["minimum_tpd"])),
-        held_gap=None if gap is None else float(cast(float, gap)),
-        material_balance_max_abs=(
-            None
-            if certificate is None
-            else max(
-                float(cast(float, certificate["modified_balance_inf"])),
-                float(cast(float, certificate["ordinary_balance_inf"])),
-            )
-        ),
-        pressure_stationarity_max_relative=(
-            None
-            if certificate is None
-            else float(cast(float, certificate["pressure_residual_inf"]))
-        ),
-        kkt_stationarity_max_abs=(
-            None if certificate is None else float(cast(float, certificate["kkt_residual_inf"]))
-        ),
-        confirmation_succeeded=bool(step10 and step10["status"] == "complete"),
+        kkt_stationarity_max_abs=_optional_float(payload, "kkt_stationarity_max_abs"),
         globality_certificate=str(payload["globality_certificate"]),
+        provider_evaluation_count=int(cast(int, payload["provider_evaluation_count"])),
         failure_reason="" if failure is None else str(failure),
     )
 
@@ -1105,7 +1062,8 @@ def _held_discovery(
         diagnostics = _failed_held_diagnostics("error", "native_exception", str(error))
         raise _HeldDiscoveryError(str(error), diagnostics) from error
 
-    if native.get("controller") == "held2_steps_1_to_10_v1":
+    controller = native.get("controller")
+    if controller == "held2_steps_1_to_10_v1":
         try:
             return _held2_result(
                 feed,
@@ -1120,6 +1078,17 @@ def _held_discovery(
             raise _HeldDiscoveryError(
                 "native HELD2 payload does not match the typed contract", diagnostics
             ) from error
+
+    if controller != "held_binary_v1":
+        diagnostics = _failed_held_diagnostics(
+            "error",
+            "payload_error",
+            f"unknown native HELD controller: {controller!r}",
+        )
+        raise _HeldDiscoveryError(
+            "native HELD payload has an unknown controller",
+            diagnostics,
+        )
 
     try:
         diagnostics = _held_diagnostics(native)
@@ -1173,13 +1142,11 @@ def _native_phase_diagnostics(
         search_scope=str(payload["search_scope"]),
         search_budget=str(payload["search_budget"]),
         search_exclusions=tuple(
-            str(value)
-            for value in cast(Sequence[object], payload["search_exclusions"])
+            str(value) for value in cast(Sequence[object], payload["search_exclusions"])
         ),
         completeness_criterion=str(payload["completeness_criterion"]),
         role_evidence=tuple(
-            str(value)
-            for value in cast(Sequence[object], payload["role_evidence"])
+            str(value) for value in cast(Sequence[object], payload["role_evidence"])
         ),
         optimizer_solve_count=int(cast(int, payload["optimizer_solve_count"])),
         optimizer_iteration_count=int(cast(int, payload["optimizer_iteration_count"])),
@@ -1309,7 +1276,6 @@ def _protected_discovery_diagnostics(
     failure_reason: str | None = None,
     phase_selection_claim: str,
     role_evidence: tuple[str, ...] = (),
-    provider_evaluation_count: int = 0,
 ) -> PhaseEquilibriumDiagnostics:
     search_exclusions: tuple[str, ...]
     if isinstance(retained, Held2Diagnostics):
@@ -1331,10 +1297,7 @@ def _protected_discovery_diagnostics(
         route = "held_discovery"
         native_failure_stage = None
         search_scope = "retained_held_profiles:" + ",".join(retained.search_profiles)
-        search_budget = (
-            f"attempts={retained.attempts};"
-            f"major_iterations={retained.major_iterations}"
-        )
+        search_budget = f"attempts={retained.attempts};major_iterations={retained.major_iterations}"
         search_exclusions = (
             "charged_topologies",
             "three_or_more_phase_topologies",
@@ -1345,18 +1308,10 @@ def _protected_discovery_diagnostics(
         route=route,
         solver_status=retained.solver_status,
         numerical_status=(
-            retained.numerical_status
-            if numerical_status is None
-            else numerical_status
+            retained.numerical_status if numerical_status is None else numerical_status
         ),
-        physical_status=(
-            retained.physical_status
-            if physical_status is None
-            else physical_status
-        ),
-        failure_stage=(
-            native_failure_stage if failure_stage is None else failure_stage
-        ),
+        physical_status=(retained.physical_status if physical_status is None else physical_status),
+        failure_stage=(native_failure_stage if failure_stage is None else failure_stage),
         failure_reason=failure_reason,
         certificate_scope="protected_held_finite_discovery",
         phase_selection_claim=phase_selection_claim,
@@ -1370,13 +1325,19 @@ def _protected_discovery_diagnostics(
         role_evidence=role_evidence,
         optimizer_solve_count=optimizer_solve_count,
         optimizer_iteration_count=optimizer_iteration_count,
-        provider_evaluation_count=provider_evaluation_count,
+        provider_evaluation_count=retained.provider_evaluation_count,
         hint_count=hint_count,
         hint_reordered_start_count=0,
         material_balance_inf=retained.material_balance_max_abs or 0.0,
-        electroneutrality_inf=0.0,
+        electroneutrality_inf=(
+            retained.electroneutrality_inf or 0.0 if isinstance(retained, Held2Diagnostics) else 0.0
+        ),
         pressure_residual_inf=retained.pressure_stationarity_max_relative or 0.0,
-        chemical_potential_residual_inf=0.0,
+        chemical_potential_residual_inf=(
+            retained.chemical_potential_max_relative or 0.0
+            if isinstance(retained, HeldDiagnostics)
+            else 0.0
+        ),
         kkt_stationarity_inf=retained.kkt_stationarity_max_abs or 0.0,
         dual_sign_violation_inf=0.0,
         complementarity_inf=0.0,
@@ -1425,8 +1386,7 @@ def _discovery_result(
         sensitivity = replace(
             sensitivity,
             residual_state_jacobian=tuple(
-                tuple(value / total for value in row)
-                for row in sensitivity.residual_state_jacobian
+                tuple(value / total for value in row) for row in sensitivity.residual_state_jacobian
             ),
             state_parameter_jacobian=tuple(
                 tuple(total * value for value in row)
@@ -1519,7 +1479,6 @@ def _discovery_result(
             "native_pressure_derivative_strict_stability",
             "compressibility_branch_with_fail_closed_gap",
         ),
-        provider_evaluation_count=2 * len(phases),
     )
     return PhaseEquilibriumResult(
         problem=problem,
@@ -1669,9 +1628,7 @@ def phase_equilibrium(
             _native_transport(model, active_parameters),
             _native_transport(
                 partner_model,
-                _support_active_parameters(
-                    partner_model._parameters, active_parameters
-                ),
+                _support_active_parameters(partner_model._parameters, active_parameters),
             ),
             temperature_k,
             tuple(phase.role for phase in topology.phases),

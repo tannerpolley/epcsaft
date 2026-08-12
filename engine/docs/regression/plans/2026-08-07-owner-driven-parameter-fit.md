@@ -1,10 +1,13 @@
 # Owner-Driven Parameter Fit Plan
 
-- Status: canonical owner plan; execution is tracked by GitHub root issue #10 and its native CAP subissues
+- Status: completed owner contract retained after CAP-06 and CAP-10
 - Date: 2026-08-07
 - Owner: Regression
 - Parent: [General scientific capability hard cutover](../../plans/2026-08-07-general-scientific-capability-hard-cutover.md)
 - Decision: [ADR 0004](../../adr/0004-one-active-parameter-and-observable-system.md)
+
+This document is the retained scientific owner contract and CAP provenance. It
+is not a live execution queue; current work is selected from GitHub Issues.
 
 ## Outcome
 

@@ -686,8 +686,6 @@ Held2Step1Result run_held2_step1(
     const auto wall_start = std::chrono::steady_clock::now();
     const std::clock_t cpu_start = std::clock();
     Held2Step1Result result;
-    result.temperature_k = temperature_k;
-    result.pressure_pa = pressure_pa;
     result.total_ion_mole_fraction_max =
         total_ion_mole_fraction_max;
     result.provider_fingerprint = std::move(provider_fingerprint);

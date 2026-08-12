@@ -742,14 +742,6 @@ py::dict fit_resolved(const py::function &owner_evaluator,
   }
   py::dict output;
   output["starts"] = starts_result;
-  output["coordinate_count"] = coordinates.size();
-  output["residual_count"] =
-      std::accumulate(observations.begin(), observations.end(), std::size_t{0},
-                      [](std::size_t count, const Observation &observation) {
-                        return count + observation.targets.size();
-                      });
-  output["owner_callbacks_serialized"] = true;
-  output["start_order"] = "halton";
   return output;
 }
 

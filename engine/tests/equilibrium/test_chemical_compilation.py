@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
 
 import pytest
 
@@ -114,19 +113,6 @@ def test_scaled_nearly_dependent_reactions_are_stable_within_condition_limit() -
 
     with pytest.raises(equilibrium.ChemicalEquilibriumError):
         _solve(_nearly_dependent_system(1.0, 1.0e-14))
-
-
-def _change(path: str, value: object) -> Callable[[dict[str, object]], None]:
-    def apply(spec: dict[str, object]) -> None:
-        if "." not in path:
-            spec[path] = value
-            return
-        outer, inner = path.split(".", maxsplit=1)
-        records = [dict(record) for record in spec[outer]]  # type: ignore[arg-type]
-        records[0][inner] = value
-        spec[outer] = tuple(records)
-
-    return apply
 
 
 def test_reaction_system_rejects_charge_inconsistency() -> None:

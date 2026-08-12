@@ -11,11 +11,6 @@
 
 namespace epcsaft::detail {
 
-struct NoopReferenceCheckpoint final {
-    // EqExclude: transport and buffer mechanics
-    void operator()() const {}
-};
-
 inline constexpr std::array<double, 4> REFERENCE_MOLALITIES = {
     1.0e-6, 1.0e-8, 1.0e-10, 1.0e-12,
 };
@@ -24,17 +19,10 @@ inline constexpr std::array<double, 4> REFERENCE_MOLALITIES = {
 inline constexpr double REFERENCE_CONVERGENCE_WITNESS_MOLALITY = 1.0e-14;
 inline constexpr double REFERENCE_CONVERGENCE_TOLERANCE = 5.0e-5;
 
-struct ReferenceObservation final {
-    std::array<double, 2> log_fugacity;
-    std::optional<std::vector<double>> derivative;
-};
-
 struct ReferenceSequenceResult final {
     std::array<double, 2> log_fugacity;
-    std::optional<std::vector<double>> derivative;
     double molality;
     double convergence_error;
-    std::optional<double> derivative_convergence_error;
 };
 
 struct VectorReferenceSequenceResult final {
@@ -159,20 +147,17 @@ inline std::vector<double> formula_composition(
     return composition;
 }
 
-template <typename Evaluator, typename Checkpoint = NoopReferenceCheckpoint>
+template <typename Evaluator>
 // EqID: reference_molality_sequence
 ReferenceSequenceResult electrolyte_reference_sequence(
     const std::vector<double>& solvent_fractions,
     const std::vector<double>& molar_masses_kg_per_mol,
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
-    Evaluator evaluator,
-    Checkpoint checkpoint = {}
+    Evaluator evaluator
 ) {
-    std::optional<std::size_t> derivative_size;
     const auto sequence = reference_limit_sequence(
         [&](double molality) {
-            checkpoint();
             const auto observation = evaluator(
                 formula_composition(
                     solvent_fractions,
@@ -182,26 +167,7 @@ ReferenceSequenceResult electrolyte_reference_sequence(
                     molality
                 )
             );
-            const std::size_t observed_derivative_size =
-                observation.derivative.has_value()
-                ? observation.derivative->size()
-                : 0u;
-            if (derivative_size.has_value()
-                && *derivative_size != observed_derivative_size) {
-                throw std::runtime_error("reference derivative size changed");
-            }
-            derivative_size = observed_derivative_size;
-            std::vector<double> values{
-                observation.log_fugacity[0], observation.log_fugacity[1]
-            };
-            if (observation.derivative.has_value()) {
-                values.insert(
-                    values.end(),
-                    observation.derivative->begin(),
-                    observation.derivative->end()
-                );
-            }
-            return values;
+            return std::vector<double>{observation[0], observation[1]};
         },
         [](const std::vector<double>&, const std::vector<double>& errors) {
             return errors.size() < 2
@@ -212,31 +178,10 @@ ReferenceSequenceResult electrolyte_reference_sequence(
     const double convergence_error = std::max(
         sequence.convergence_errors[0], sequence.convergence_errors[1]
     );
-    std::optional<std::vector<double>> derivative;
-    std::optional<double> derivative_convergence_error;
-    if (sequence.values.size() > 2) {
-        derivative = std::vector<double>(
-            sequence.values.begin() + 2, sequence.values.end()
-        );
-        derivative_convergence_error = *std::max_element(
-            sequence.convergence_errors.begin() + 2,
-            sequence.convergence_errors.end()
-        );
-        double derivative_scale = 1.0;
-        for (double value : *derivative) {
-            derivative_scale = std::max(derivative_scale, std::abs(value));
-        }
-        if (*derivative_convergence_error
-            > REFERENCE_CONVERGENCE_TOLERANCE * derivative_scale) {
-            throw std::runtime_error("reference derivative limit did not converge");
-        }
-    }
     return {
         {sequence.values[0], sequence.values[1]},
-        derivative,
         REFERENCE_MOLALITIES.back(),
         convergence_error,
-        derivative_convergence_error,
     };
 }
 

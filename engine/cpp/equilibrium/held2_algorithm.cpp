@@ -209,9 +209,7 @@ Held2AlgorithmResult run_held2_algorithm(
         }));
         result.step_timings.push_back(result.step4_history.back().timing);
         const Held2Step4Result& step4 = result.step4_history.back();
-        result.upper_solve_count = state.upper_solve_count;
         if (step4.status != "complete") {
-            result.final_state = state;
             return fail("step4", step4.reason);
         }
         result.step5_history.push_back(run_cached_thermodynamic_step(5, [&] {
@@ -226,7 +224,6 @@ Held2AlgorithmResult run_held2_algorithm(
         result.step_timings.push_back(result.step5_history.back().timing);
         const Held2Step5Result& step5 = result.step5_history.back();
         if (step5.status != "complete") {
-            result.final_state = state;
             return fail("step5", step5.reason);
         }
         result.step6_history.push_back(run_cached_thermodynamic_step(6, [&] {
@@ -234,14 +231,12 @@ Held2AlgorithmResult run_held2_algorithm(
                 cached_step1,
                 step4,
                 state,
-                packing_fraction,
-                {false}
+                packing_fraction
             );
         }, cache));
         result.step_timings.push_back(result.step6_history.back().timing);
         const Held2Step6Result& step6 = result.step6_history.back();
         if (step6.status != "complete") {
-            result.final_state = state;
             return fail("step6", step6.reason);
         }
         const auto continue_stage_ii = [&] {
@@ -264,7 +259,6 @@ Held2AlgorithmResult run_held2_algorithm(
                     step5.reason, step6.candidates.size()
                 );
             if (!continue_stage_ii()) {
-                result.final_state = state;
                 return fail("step7", result.step7_history.back().reason);
             }
             continue;
@@ -284,7 +278,6 @@ Held2AlgorithmResult run_held2_algorithm(
         const Held2Step8Result& step8 = result.step8_history.back();
         if (step8.outcome == Held2Step8Outcome::Indeterminate
             && !held2_step8_failure_returns_to_stage_ii(step8.reason)) {
-            result.final_state = state;
             return fail("step8", step8.reason);
         }
         if (step8.outcome == Held2Step8Outcome::Indeterminate) {
@@ -292,7 +285,6 @@ Held2AlgorithmResult run_held2_algorithm(
                 kHeld2Problem67ExpandedRadius;
             state.step5_requires_new_member = true;
             if (!continue_stage_ii()) {
-                result.final_state = state;
                 return fail(
                     "step7", result.step7_history.back().reason
                 );
@@ -303,7 +295,6 @@ Held2AlgorithmResult run_held2_algorithm(
             || step8.outcome == Held2Step8Outcome::InsufficientCandidates) {
             state.step5_requires_new_member = true;
             if (!continue_stage_ii()) {
-                result.final_state = state;
                 return fail(
                     "step7", result.step7_history.back().reason
                 );
@@ -317,7 +308,6 @@ Held2AlgorithmResult run_held2_algorithm(
         const Held2Step9Result& step9 = result.step9_history.back();
         if (step9.next_action
             == Held2Step9Action::TerminateIndeterminate) {
-            result.final_state = state;
             return fail("step9", step9.reason);
         }
         if (step9.next_action == Held2Step9Action::ReturnStageII) {
@@ -326,7 +316,6 @@ Held2AlgorithmResult run_held2_algorithm(
             state.step5_requires_new_member =
                 !retain_held2_step8_feedback(state, step8);
             if (!continue_stage_ii()) {
-                result.final_state = state;
                 return fail(
                     "step7", result.step7_history.back().reason
                 );
@@ -357,15 +346,12 @@ Held2AlgorithmResult run_held2_algorithm(
             static_cast<void>(retain_held2_step8_feedback(state, step8));
             state.step5_requires_new_member = true;
             if (!continue_stage_ii()) {
-                result.final_state = state;
                 return fail(
                     "step7", result.step7_history.back().reason
                 );
             }
             continue;
         }
-        result.final_state = state;
-        result.upper_solve_count = state.upper_solve_count;
         if (result.step10->status != "complete") {
             return fail("step10", result.step10->reason);
         }

@@ -218,7 +218,6 @@ add_library(
     cpp/equilibrium/phase_state.cpp
     cpp/equilibrium/coexistence.cpp
     cpp/equilibrium/flash.cpp
-    cpp/equilibrium/result_json.cpp
     cpp/equilibrium/held.cpp
     cpp/equilibrium/held_stage_i.cpp
     cpp/equilibrium/held_stage_ii.cpp

@@ -28,35 +28,6 @@ struct DensityRoot final {
     std::size_t selected_stable_root_index;
 };
 
-struct DensityRootIdentity final {
-    double molar_density;
-    std::size_t stable_root_count;
-    std::size_t selected_stable_root_index;
-    std::string branch;
-};
-
-// EqExclude: input and domain validation
-inline bool same_continuous_density_root(
-    const DensityRootIdentity& previous,
-    const DensityRootIdentity& current,
-    double maximum_relative_density_step
-) {
-    if (!std::isfinite(previous.molar_density)
-        || !std::isfinite(current.molar_density)
-        || previous.molar_density <= 0.0 || current.molar_density <= 0.0
-        || !std::isfinite(maximum_relative_density_step)
-        || maximum_relative_density_step <= 0.0) {
-        return false;
-    }
-    return previous.branch == current.branch
-        && previous.stable_root_count == current.stable_root_count
-        && previous.selected_stable_root_index
-            == current.selected_stable_root_index
-        && std::abs(current.molar_density - previous.molar_density)
-                / std::max(1.0, previous.molar_density)
-            <= maximum_relative_density_step;
-}
-
 template <typename Evaluate>
 // EqID: density_residual
 // EqExclude: numerical iteration mechanics

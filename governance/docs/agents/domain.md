@@ -5,7 +5,7 @@ Before Governance planning or authority changes, read root `CONTEXT.md`,
 `governance/CONTEXT.md`, and `governance/GOVERNANCE.md`. Engine design decisions
 remain under `engine/docs/adr/`; Governance does not create a parallel ADR tree.
 
-Use these revision-13 terms:
+Use the current Governance doctrine terms:
 
 - **Management**: the coordination role performed by the root task, not a
   repository, directory, or runtime owner.

@@ -10,144 +10,26 @@
 
 #include <algorithm>
 #include <array>
-#include <atomic>
 #include <cstddef>
-#include <exception>
 #include <mutex>
 #include <optional>
 #include <stdexcept>
-#include <thread>
 #include <utility>
 #include <vector>
 
 namespace epcsaft::detail {
 
-namespace cppad_parallel {
-
-inline std::recursive_mutex execution_mutex;
-inline std::atomic<bool> active{false};
-inline thread_local std::size_t thread_index = 0;
-inline thread_local bool worker = false;
-
-// EqExclude: transport and buffer mechanics
-inline bool in_parallel() {
-    return active.load(std::memory_order_acquire);
-}
-
-// EqExclude: transport and buffer mechanics
-inline std::size_t thread_number() {
-    return thread_index;
-}
-
-}  // namespace cppad_parallel
+inline std::recursive_mutex cppad_execution_mutex;
 
 class CppAdSerialGuard final {
 public:
     // EqExclude: transport and buffer mechanics
     CppAdSerialGuard()
-        : lock_(cppad_parallel::execution_mutex, std::defer_lock) {
-        if (!cppad_parallel::worker) {
-            lock_.lock();
-        }
-    }
+        : lock_(cppad_execution_mutex) {}
 
 private:
     std::unique_lock<std::recursive_mutex> lock_;
 };
-
-template <typename Function>
-// EqExclude: transport and buffer mechanics
-void cppad_parallel_for(std::size_t count, Function&& function) {
-    if (count == 0) {
-        return;
-    }
-    const unsigned int hardware_threads = std::thread::hardware_concurrency();
-    const std::size_t physical_thread_estimate = std::max<std::size_t>(
-        1, hardware_threads == 0 ? 1 : hardware_threads / 2
-    );
-    const std::size_t thread_count = std::min(
-        {count,
-         physical_thread_estimate,
-         static_cast<std::size_t>(CPPAD_MAX_NUM_THREADS)}
-    );
-    if (thread_count == 1) {
-        CppAdSerialGuard guard;
-        for (std::size_t index = 0; index < count; ++index) {
-            function(index);
-        }
-        return;
-    }
-
-    std::unique_lock<std::recursive_mutex> execution_lock(
-        cppad_parallel::execution_mutex
-    );
-    CppAD::thread_alloc::parallel_setup(
-        thread_count,
-        cppad_parallel::in_parallel,
-        cppad_parallel::thread_number
-    );
-    CppAD::thread_alloc::hold_memory(true);
-    CppAD::parallel_ad<double>();
-
-    std::atomic<std::size_t> next_index{0};
-    std::mutex exception_mutex;
-    std::exception_ptr first_exception;
-    cppad_parallel::active.store(true, std::memory_order_release);
-    auto run = [&](std::size_t worker_index) {
-        cppad_parallel::thread_index = worker_index;
-        cppad_parallel::worker = true;
-        try {
-            while (true) {
-                const std::size_t index = next_index.fetch_add(
-                    1, std::memory_order_relaxed
-                );
-                if (index >= count) {
-                    break;
-                }
-                function(index);
-            }
-        } catch (...) {
-            std::lock_guard<std::mutex> exception_lock(exception_mutex);
-            if (first_exception == nullptr) {
-                first_exception = std::current_exception();
-            }
-            next_index.store(count, std::memory_order_relaxed);
-        }
-        cppad_parallel::worker = false;
-        cppad_parallel::thread_index = 0;
-    };
-
-    auto reset_cppad = [] {
-        cppad_parallel::active.store(false, std::memory_order_release);
-        CppAD::thread_alloc::parallel_setup(1, nullptr, nullptr);
-        CppAD::thread_alloc::hold_memory(false);
-        CppAD::parallel_ad<double>();
-    };
-    std::vector<std::thread> workers;
-    try {
-        workers.reserve(thread_count - 1);
-        for (std::size_t index = 1; index < thread_count; ++index) {
-            workers.emplace_back(run, index);
-        }
-        run(0);
-        for (auto& thread : workers) {
-            thread.join();
-        }
-    } catch (...) {
-        next_index.store(count, std::memory_order_relaxed);
-        for (auto& thread : workers) {
-            if (thread.joinable()) {
-                thread.join();
-            }
-        }
-        reset_cppad();
-        throw;
-    }
-    reset_cppad();
-    if (first_exception != nullptr) {
-        std::rethrow_exception(first_exception);
-    }
-}
 
 struct ThermodynamicDerivatives final {
     double temperature;
@@ -177,7 +59,7 @@ inline double directional_second(
 }
 
 // EqExclude: CppAD-generated derivative machinery
-inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
+inline ThermodynamicDerivatives thermodynamic_derivatives(
     double temperature,
     double molar_density,
     const std::vector<double>& mole_fractions,
@@ -351,23 +233,6 @@ inline ThermodynamicDerivatives thermodynamic_derivatives_impl(
         residual_helmholtz,
         std::move(reduced_hessian),
     };
-}
-
-// EqExclude: CppAD-generated derivative machinery
-inline ThermodynamicDerivatives thermodynamic_derivatives(
-    double temperature,
-    double molar_density,
-    const std::vector<double>& mole_fractions,
-    const NativeParameters& parameters,
-    const std::vector<double>& site_fractions
-) {
-    return thermodynamic_derivatives_impl(
-        temperature,
-        molar_density,
-        mole_fractions,
-        parameters,
-        site_fractions
-    );
 }
 
 }  // namespace epcsaft::detail

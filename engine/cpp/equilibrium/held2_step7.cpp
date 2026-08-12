@@ -20,11 +20,10 @@ Held2Step7Result run_held2_step7(
     } else {
         result.status = "complete";
         result.reason = "continue_stage_ii";
-        result.next_step = 4;
     }
     result.timing.terminal_status = result.status;
     result.timing.terminal_reason = result.reason;
-    result.timing.next_step = result.next_step.value_or(0);
+    result.timing.next_step = result.status == "complete" ? 4 : 0;
     return result;
 }
 

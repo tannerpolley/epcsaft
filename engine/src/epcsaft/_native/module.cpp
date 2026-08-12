@@ -143,42 +143,6 @@ PYBIND11_MODULE(_core, module) {
         )
         .def_readonly("value", &epcsaft::NativeActiveCoordinate::value);
 
-    py::class_<epcsaft::NativePurePhaseBlock>(module, "NativePurePhaseBlock")
-        .def_readonly(
-            "helmholtz_over_rt_reference_amount",
-            &epcsaft::NativePurePhaseBlock::helmholtz_over_rt_reference_amount
-        )
-        .def_readonly("gradient", &epcsaft::NativePurePhaseBlock::gradient)
-        .def_readonly("hessian", &epcsaft::NativePurePhaseBlock::hessian)
-        .def_readonly("third", &epcsaft::NativePurePhaseBlock::third)
-        .def_readonly("pressure_pa", &epcsaft::NativePurePhaseBlock::pressure_pa)
-        .def_readonly(
-            "chemical_potential_over_rt",
-            &epcsaft::NativePurePhaseBlock::chemical_potential_over_rt
-        );
-
-    py::class_<epcsaft::NativeFixedTopologyPhaseBlock>(
-        module, "NativeFixedTopologyPhaseBlock"
-    )
-        .def_readonly(
-            "helmholtz_over_rt_reference_amount",
-            &epcsaft::NativeFixedTopologyPhaseBlock::
-                helmholtz_over_rt_reference_amount
-        )
-        .def_readonly(
-            "gradient", &epcsaft::NativeFixedTopologyPhaseBlock::gradient
-        )
-        .def_readonly(
-            "hessian", &epcsaft::NativeFixedTopologyPhaseBlock::hessian
-        )
-        .def_readonly(
-            "pressure_pa", &epcsaft::NativeFixedTopologyPhaseBlock::pressure_pa
-        )
-        .def_readonly(
-            "chemical_potential_over_rt",
-            &epcsaft::NativeFixedTopologyPhaseBlock::chemical_potential_over_rt
-        );
-
     py::class_<epcsaft::NativeMixturePhaseBlock>(module, "NativeMixturePhaseBlock")
         .def_readonly(
             "helmholtz_over_rt_reference_amount",
@@ -187,41 +151,6 @@ PYBIND11_MODULE(_core, module) {
         .def_readonly("gradient", &epcsaft::NativeMixturePhaseBlock::gradient)
         .def_readonly("hessian", &epcsaft::NativeMixturePhaseBlock::hessian)
         .def_readonly("pressure_pa", &epcsaft::NativeMixturePhaseBlock::pressure_pa);
-
-    py::class_<epcsaft::NativePackingFractionBlock>(
-        module, "NativePackingFractionBlock"
-    )
-        .def_readonly(
-            "packing_fraction", &epcsaft::NativePackingFractionBlock::packing_fraction
-        )
-        .def_readonly("gradient", &epcsaft::NativePackingFractionBlock::gradient)
-        .def_readonly("hessian", &epcsaft::NativePackingFractionBlock::hessian);
-
-    py::class_<epcsaft::NativeInversePackingGeometryBlock>(
-        module, "NativeInversePackingGeometryBlock"
-    )
-        .def_readonly(
-            "volume_m3", &epcsaft::NativeInversePackingGeometryBlock::volume_m3
-        )
-        .def_readonly(
-            "gradient", &epcsaft::NativeInversePackingGeometryBlock::gradient
-        )
-        .def_readonly(
-            "hessian", &epcsaft::NativeInversePackingGeometryBlock::hessian
-        );
-
-    py::class_<epcsaft::NativeMolarVolumeBoundsParameterBlock>(
-        module, "NativeMolarVolumeBoundsParameterBlock"
-    )
-        .def_readonly(
-            "bounds_m3_per_mol",
-            &epcsaft::NativeMolarVolumeBoundsParameterBlock::bounds_m3_per_mol
-        )
-        .def_readonly(
-            "parameter_derivatives_m3_per_mol",
-            &epcsaft::NativeMolarVolumeBoundsParameterBlock::
-                parameter_derivatives_m3_per_mol
-        );
 
     py::class_<epcsaft::NativeModel>(module, "NativeModel")
         .def(py::init([](

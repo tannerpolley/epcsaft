@@ -7,7 +7,6 @@ namespace epcsaft_engine::equilibrium {
 struct Held2Step7Result {
     std::string status = "indeterminate";
     std::string reason = "not_run";
-    std::optional<int> next_step;
     Held2StepTiming timing;
 };
 

@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -13,7 +15,6 @@
 #include "flash.hpp"
 #include "held2_certificates.hpp"
 #include "phase_equilibrium.hpp"
-#include "result_json.hpp"
 #include "solved_state_sensitivity.hpp"
 
 namespace py = pybind11;
@@ -49,44 +50,6 @@ const epcsaft_native_transport& checked_mixture_transport(
         throw py::value_error("provider capsule is missing its phase evaluator");
     }
     return transport;
-}
-
-py::dict transport_info(const py::capsule& capsule) {
-    const epcsaft_native_transport& transport = checked_transport(capsule);
-    py::dict result;
-    result["capsule_name"] = EPCSAFT_NATIVE_TRANSPORT_CAPSULE_NAME;
-    result["has_model_context"] = transport.model_context != nullptr;
-    result["has_evaluate_pure_phase"] = transport.evaluate_pure_phase != nullptr;
-    result["component_count"] = transport.component_count;
-    result["has_evaluate_mixture_phase"] =
-        transport.evaluate_mixture_phase != nullptr;
-    return result;
-}
-
-py::dict mixture_phase_to_dict(
-    const epcsaft_engine::equilibrium::MixturePhaseEvaluation& phase
-) {
-    py::dict result;
-    result["helmholtz_over_rt_reference_amount"] = phase.value;
-    result["gradient"] = phase.gradient;
-    result["hessian"] = phase.hessian;
-    result["pressure_pa"] = phase.pressure_pa;
-    result["parameter_fingerprint"] = phase.parameter_fingerprint;
-    return result;
-}
-
-py::dict evaluate_mixture_phase(
-    const py::capsule& capsule,
-    double temperature_k,
-    const std::vector<double>& amounts_mol,
-    double volume_m3
-) {
-    const epcsaft_engine::equilibrium::ProviderContext provider(
-        checked_mixture_transport(capsule)
-    );
-    return mixture_phase_to_dict(
-        provider.evaluate_mixture(temperature_k, amounts_mol, volume_m3)
-    );
 }
 
 py::dict evaluate_parameterized_phase(
@@ -132,22 +95,6 @@ py::dict evaluate_parameterized_phase(
         evaluation.molar_volume_bound_parameter_derivatives_m3_per_mol;
     result["topology_fingerprint"] = evaluation.topology_fingerprint;
     return result;
-}
-
-double evaluate_packing_fraction(
-    const py::capsule& capsule,
-    double temperature_k,
-    const std::vector<double>& amounts_mol,
-    double volume_m3
-) {
-    const epcsaft_engine::equilibrium::ProviderContext provider(
-        checked_mixture_transport(capsule)
-    );
-    return provider.evaluate_packing_fraction(
-        temperature_k,
-        amounts_mol,
-        volume_m3
-    ).value;
 }
 
 py::dict evaluate_solved_state_sensitivity(
@@ -382,11 +329,279 @@ py::dict solved_sensitivity_to_dict(
     result["dimension"] = value.dimension;
     result["parameter_count"] = value.parameter_identities.size();
     result["output_count"] = value.output_identities.size();
-    result["scaled_condition_number_2"] =
-        value.scaled_condition_number_2;
-    result["linear_solve_backward_error"] =
-        value.linear_solve_backward_error;
+    if (std::isfinite(value.scaled_condition_number_2)) {
+        result["scaled_condition_number_2"] = value.scaled_condition_number_2;
+    } else {
+        result["scaled_condition_number_2"] = py::none();
+    }
+    if (std::isfinite(value.linear_solve_backward_error)) {
+        result["linear_solve_backward_error"] = value.linear_solve_backward_error;
+    } else {
+        result["linear_solve_backward_error"] = py::none();
+    }
     result["reference_phase_index"] = value.reference_phase_index;
+    return result;
+}
+
+void set_optional_double(
+    py::dict& result,
+    const char* name,
+    const std::optional<double>& value
+) {
+    result[name] = value ? py::cast(*value) : py::none();
+}
+
+py::dict neutral_phase_to_dict(
+    const epcsaft_engine::equilibrium::HeldStageIIIPhaseEvaluation& phase
+) {
+    const double amount_mol = phase.amounts_mol[0] + phase.amounts_mol[1];
+    py::dict result;
+    result["amount_mol"] = amount_mol;
+    result["mole_fractions"] = std::array<double, 2>{
+        phase.amounts_mol[0] / amount_mol,
+        phase.amounts_mol[1] / amount_mol,
+    };
+    result["volume_m3"] = phase.volume_m3;
+    result["molar_density_mol_m3"] = amount_mol / phase.volume_m3;
+    result["pressure_pa"] = phase.provider.pressure_pa;
+    result["chemical_potential_over_rt"] = std::array<double, 2>{
+        phase.provider.gradient[0],
+        phase.provider.gradient[1],
+    };
+    return result;
+}
+
+py::dict neutral_discovery_to_dict(
+    const epcsaft_engine::equilibrium::FlashResult& flash,
+    int provider_evaluation_count
+) {
+    using epcsaft_engine::equilibrium::HeldResult;
+    const HeldResult& solve = std::get<HeldResult>(flash.solve);
+    int attempts = static_cast<int>(
+        solve.stage_i.reference_attempts.size()
+        + solve.stage_i.attempt_log.size()
+        + solve.stage_ii.endpoint_attempts.size()
+    );
+    for (const auto& trace : solve.stage_ii.trace) {
+        attempts += trace.lower_starts_completed;
+    }
+    for (const auto& refinement : solve.stage_iii_attempts) {
+        attempts += refinement.result.local.attempts;
+    }
+
+    py::list profiles;
+    profiles.append(solve.stage_i.search_profile);
+    if (solve.stage_i.outcome == "negative_tpd") {
+        profiles.append(solve.stage_ii.search_profile);
+    }
+    if (!solve.stage_iii_attempts.empty()) {
+        profiles.append(solve.stage_iii_attempts.front().result.search_profile);
+    }
+
+    py::dict result;
+    result["controller"] = "held_binary_v1";
+    result["outcome"] = solve.outcome;
+    result["search_status"] = solve.search_status;
+    result["failure_reason"] = solve.failure_reason;
+    result["attempts"] = attempts;
+    result["major_iterations"] = solve.stage_ii.major_iterations;
+    result["material_balance_max_abs"] = py::none();
+    result["pressure_stationarity_max_relative"] = py::none();
+    result["kkt_stationarity_max_abs"] = py::none();
+    result["chemical_potential_max_relative"] = py::none();
+    result["search_profiles"] = std::move(profiles);
+    result["globality_certificate"] = "not_guaranteed";
+    result["provider_evaluation_count"] = provider_evaluation_count;
+    result["solver_status"] = "not_adjudicated";
+    result["numerical_status"] = "not_adjudicated";
+    result["physical_status"] = "not_adjudicated";
+
+    const bool accepted_reference = solve.stage_i.has_reference
+        && std::any_of(
+            solve.stage_i.reference_attempts.begin(),
+            solve.stage_i.reference_attempts.end(),
+            [](const auto& attempt) { return attempt.accepted; }
+        );
+    const bool reference_solver_failed = std::any_of(
+        solve.stage_i.reference_attempts.begin(),
+        solve.stage_i.reference_attempts.end(),
+        [](const auto& attempt) {
+            return !attempt.solver_converged || !attempt.callback_error.empty();
+        }
+    );
+    const bool reference_failed = std::any_of(
+        solve.stage_i.reference_attempts.begin(),
+        solve.stage_i.reference_attempts.end(),
+        [](const auto& attempt) { return !attempt.accepted; }
+    );
+    const bool stage_i_solver_failed = std::any_of(
+        solve.stage_i.attempt_log.begin(),
+        solve.stage_i.attempt_log.end(),
+        [](const auto& attempt) {
+            return !attempt.solver_converged || !attempt.callback_error.empty();
+        }
+    );
+    const bool stage_i_search_failed = std::any_of(
+        solve.stage_i.attempt_log.begin(),
+        solve.stage_i.attempt_log.end(),
+        [](const auto& attempt) {
+            return !attempt.solver_converged || !attempt.callback_error.empty()
+                || !attempt.accepted;
+        }
+    );
+    const bool completed_one_phase = accepted_reference
+        && solve.stage_i.planned_starts.size() == 20
+        && solve.stage_i.starts_completed == 20
+        && solve.stage_i.negative_confirmations == 0
+        && std::none_of(
+            solve.stage_i.attempt_log.begin(),
+            solve.stage_i.attempt_log.end(),
+            [](const auto& attempt) { return attempt.kind == "confirmation"; }
+        )
+        && std::isfinite(solve.stage_i.best_tpd)
+        && solve.stage_i.best_tpd >= -1.0e-8;
+    if (completed_one_phase) {
+        const bool solver_passed = !reference_solver_failed
+            && !stage_i_solver_failed;
+        const bool numerical_passed = solver_passed
+            && !reference_failed && !stage_i_search_failed;
+        result["solver_status"] = solver_passed ? "passed" : "failed";
+        result["numerical_status"] = numerical_passed ? "passed" : "failed";
+        result["physical_status"] =
+            numerical_passed ? "passed" : "not_adjudicated";
+    } else if (solve.outcome == "accepted" && !solve.stage_iii_attempts.empty()) {
+        const auto& local = solve.stage_iii_attempts.back().result.local;
+        result["solver_status"] = local.solver_converged ? "passed" : "failed";
+        result["numerical_status"] = local.numerical_converged ? "passed" : "failed";
+        result["physical_status"] = local.physical_accepted ? "passed" : "failed";
+    }
+
+    py::list phases;
+    py::list phase_fractions;
+    if (solve.outcome == "one_phase" && solve.stage_i.has_reference) {
+        const auto& state = solve.stage_i.reference;
+        py::dict phase;
+        phase["amount_mol"] = 1.0;
+        phase["mole_fractions"] = state.amounts_mol;
+        phase["volume_m3"] = state.volume_m3;
+        phase["molar_density_mol_m3"] = 1.0 / state.volume_m3;
+        phase["pressure_pa"] = state.provider.pressure_pa;
+        phase["chemical_potential_over_rt"] = std::array<double, 2>{
+            state.provider.gradient[0], state.provider.gradient[1]
+        };
+        phases.append(std::move(phase));
+        phase_fractions.append(1.0);
+        result["total_free_energy_over_rt"] = state.g_bar;
+        result["pressure_stationarity_max_relative"] =
+            std::abs(state.pressure_stationarity_relative);
+    } else if (!solve.stage_iii_attempts.empty()) {
+        const auto& refinement = solve.stage_iii_attempts.back().result;
+        const auto& local = refinement.local;
+        if (local.solver_converged) {
+            result["material_balance_max_abs"] = local.material_balance_max_abs;
+            result["pressure_stationarity_max_relative"] =
+                local.pressure_stationarity_max_relative;
+            result["kkt_stationarity_max_abs"] = local.kkt_stationarity_max_abs;
+            result["chemical_potential_max_relative"] =
+                refinement.chemical_potential_max_relative;
+        }
+        if (solve.outcome == "accepted") {
+            phases.append(neutral_phase_to_dict(local.evaluation.liquid));
+            phases.append(neutral_phase_to_dict(local.evaluation.vapor));
+            phase_fractions.append(
+                local.evaluation.liquid.amounts_mol[0]
+                + local.evaluation.liquid.amounts_mol[1]
+            );
+            phase_fractions.append(
+                local.evaluation.vapor.amounts_mol[0]
+                + local.evaluation.vapor.amounts_mol[1]
+            );
+            result["total_free_energy_over_rt"] = local.evaluation.objective;
+        }
+    }
+    result["phases"] = std::move(phases);
+    result["phase_fractions"] = std::move(phase_fractions);
+    result["parameter_fingerprint"] = flash.parameter_fingerprint;
+    if (flash.sensitivity) {
+        result["sensitivity"] = solved_sensitivity_to_dict(*flash.sensitivity);
+    } else {
+        result["sensitivity"] = py::none();
+    }
+    return result;
+}
+
+py::dict held2_phase_to_dict(
+    const epcsaft_engine::equilibrium::Held2Phase& phase
+) {
+    py::dict result;
+    result["phase_fraction"] = phase.phase_fraction;
+    result["mole_fractions"] = phase.physical_fractions_provider_order;
+    result["molar_volume_m3_mol"] = phase.volume;
+    result["pressure_pa"] = phase.pressure_pa;
+    result["chemical_potential_over_rt"] = phase.chemical_potentials_over_rt;
+    return result;
+}
+
+py::dict held2_discovery_to_dict(
+    const epcsaft_engine::equilibrium::FlashResult& flash,
+    int provider_evaluation_count
+) {
+    using epcsaft_engine::equilibrium::Held2AlgorithmResult;
+    const Held2AlgorithmResult& solve =
+        std::get<Held2AlgorithmResult>(flash.solve);
+    py::dict result;
+    result["controller"] = "held2_steps_1_to_10_v1";
+    result["parameter_fingerprint"] = flash.parameter_fingerprint;
+    result["outcome"] = solve.outcome;
+    result["failure_stage"] = solve.failure_stage.empty()
+        ? py::none() : py::cast(solve.failure_stage);
+    result["failure_reason"] = solve.failure_reason.empty()
+        ? py::none() : py::cast(solve.failure_reason);
+    result["globality_certificate"] = solve.globality_certificate;
+    result["provider_evaluation_count"] = provider_evaluation_count;
+    std::uint64_t optimizer_solves = 0;
+    std::uint64_t optimizer_iterations = 0;
+    for (const auto& timing : solve.step_timings) {
+        optimizer_solves += timing.optimizer_solves;
+        optimizer_iterations += timing.optimizer_iterations;
+    }
+    result["optimizer_solves"] = optimizer_solves;
+    result["optimizer_iterations"] = optimizer_iterations;
+    int major_iterations = 0;
+    for (const auto& step : solve.step4_history) {
+        major_iterations = std::max(major_iterations, step.major_iteration + 1);
+    }
+    result["major_iterations"] = major_iterations;
+    result["material_balance_max_abs"] = py::none();
+    result["electroneutrality_inf"] = py::none();
+    result["pressure_stationarity_max_relative"] = py::none();
+    result["kkt_stationarity_max_abs"] = py::none();
+    if (solve.step10 && solve.step10->final_certificate) {
+        const auto& certificate = *solve.step10->final_certificate;
+        result["material_balance_max_abs"] = std::max(
+            certificate.modified_balance_inf,
+            certificate.ordinary_balance_inf
+        );
+        result["electroneutrality_inf"] = certificate.electroneutrality_inf;
+        result["pressure_stationarity_max_relative"] =
+            certificate.pressure_residual_inf;
+        result["kkt_stationarity_max_abs"] = certificate.kkt_residual_inf;
+    }
+    py::list phases;
+    for (const auto& phase : solve.phases) {
+        phases.append(held2_phase_to_dict(phase));
+    }
+    result["phases"] = std::move(phases);
+    set_optional_double(
+        result,
+        "total_free_energy_over_rt",
+        solve.total_free_energy_over_rt
+    );
+    if (flash.sensitivity) {
+        result["sensitivity"] = solved_sensitivity_to_dict(*flash.sensitivity);
+    } else {
+        result["sensitivity"] = py::none();
+    }
     return result;
 }
 
@@ -529,40 +744,6 @@ py::dict solve_fixed_t_coexistence(
     }
     return result;
 }
-py::dict evaluate_phase(
-    const py::capsule& capsule,
-    double temperature_k,
-    double amount_mol,
-    double volume_m3
-) {
-    const epcsaft_native_transport& transport = checked_transport(capsule);
-    if (transport.evaluate_pure_phase == nullptr) {
-        throw py::value_error("provider capsule is missing its pure phase evaluator");
-    }
-    const epcsaft_engine::equilibrium::ProviderContext provider(transport);
-    const epcsaft_engine::equilibrium::PhaseEvaluation evaluation =
-        provider.evaluate(temperature_k, amount_mol, volume_m3);
-    const epcsaft_phase_block_result& phase = evaluation.provider;
-
-    py::dict result;
-    result["status"] = phase.status;
-    result["amount_mol"] = amount_mol;
-    result["volume_m3"] = volume_m3;
-    result["helmholtz_over_rt_reference_amount"] = phase.helmholtz_over_rt_reference_amount;
-    result["gradient"] = std::array<double, 2>{phase.gradient[0], phase.gradient[1]};
-    result["hessian"] = std::array<double, 4>{
-        phase.hessian[0], phase.hessian[1], phase.hessian[2], phase.hessian[3]
-    };
-    result["third"] = std::array<double, 8>{
-        phase.third[0], phase.third[1], phase.third[2], phase.third[3],
-        phase.third[4], phase.third[5], phase.third[6], phase.third[7]
-    };
-    result["pressure_pa"] = phase.pressure_pa;
-    result["chemical_potential_over_rt"] = phase.chemical_potential_over_rt;
-    result["parameter_fingerprint"] = evaluation.parameter_fingerprint;
-    return result;
-}
-
 py::dict solve_held_discovery(
     const py::capsule& capsule,
     double temperature_k,
@@ -584,10 +765,13 @@ py::dict solve_held_discovery(
             }
         );
     }
-    return py::module_::import("json")
-        .attr("loads")(
-            epcsaft_engine::equilibrium::flash_result_to_json(flash)
-        ).cast<py::dict>();
+    const int provider_evaluation_count = provider.evaluation_count();
+    if (std::holds_alternative<
+            epcsaft_engine::equilibrium::Held2AlgorithmResult
+        >(flash.solve)) {
+        return held2_discovery_to_dict(flash, provider_evaluation_count);
+    }
+    return neutral_discovery_to_dict(flash, provider_evaluation_count);
 }
 
 py::dict held2_audit_farkas_certificate(
@@ -678,15 +862,6 @@ py::dict held2_audit_step5_kkt(
 PYBIND11_MODULE(_equilibrium, module) {
     module.doc() = "Native local equilibrium formulation";
     epcsaft_engine::equilibrium::bind_chemical_equilibrium(module);
-    module.def("transport_info", &transport_info, py::arg("capsule"));
-    module.def(
-        "evaluate_mixture_phase",
-        &evaluate_mixture_phase,
-        py::arg("capsule"),
-        py::arg("temperature_k"),
-        py::arg("amounts_mol"),
-        py::arg("volume_m3")
-    );
     module.def(
         "evaluate_parameterized_phase",
         &evaluate_parameterized_phase,
@@ -696,14 +871,6 @@ PYBIND11_MODULE(_equilibrium, module) {
         py::arg("volume_m3"),
         py::arg("packing_fraction_min"),
         py::arg("packing_fraction_max")
-    );
-    module.def(
-        "evaluate_packing_fraction",
-        &evaluate_packing_fraction,
-        py::arg("capsule"),
-        py::arg("temperature_k"),
-        py::arg("amounts_mol"),
-        py::arg("volume_m3")
     );
     module.def(
         "evaluate_solved_state_sensitivity",
@@ -787,13 +954,5 @@ PYBIND11_MODULE(_equilibrium, module) {
         py::arg("same_major_iteration"),
         py::arg("step4_binding_valid"),
         py::arg("pressure_branch_valid")
-    );
-    module.def(
-        "evaluate_phase",
-        &evaluate_phase,
-        py::arg("capsule"),
-        py::arg("temperature_k"),
-        py::arg("amount_mol"),
-        py::arg("volume_m3")
     );
 }

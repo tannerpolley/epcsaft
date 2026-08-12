@@ -58,13 +58,6 @@ class NativeActiveCoordinate:
         value: float,
     ) -> None: ...
 
-class NativeFixedTopologyPhaseBlock:
-    helmholtz_over_rt_reference_amount: float
-    gradient: Sequence[float]
-    hessian: Sequence[float]
-    pressure_pa: float
-    chemical_potential_over_rt: float
-
 class NativeMixturePhaseBlock:
     helmholtz_over_rt_reference_amount: float
     gradient: Sequence[float]

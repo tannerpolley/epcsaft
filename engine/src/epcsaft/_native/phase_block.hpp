@@ -137,13 +137,6 @@ inline bool supports_fixed_topology_associating_phase_block(
 }
 
 // EqExclude: input and domain validation
-inline bool supports_fixed_topology_associating_pure_phase_block(
-    const NativeParameters &parameters) {
-  return parameters.segment_count.size() == 1 &&
-         supports_fixed_topology_associating_phase_block(parameters);
-}
-
-// EqExclude: input and domain validation
 inline bool supports_fixed_topology_associating_mixture_phase_block(
     const NativeParameters &parameters) {
   return !parameters.segment_count.empty() &&
@@ -757,6 +750,8 @@ pure_phase_block(double temperature, double amount, double volume,
 
 // EqID: phase_pressure
 // EqID: association_mass_action
+// EqID: electrolyte_phase_coordinate_jacobian
+// EqID: electrolyte_phase_hessian_chain_rule
 // EqExclude: CppAD-generated derivative machinery
 inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
     double temperature, const std::vector<double> &amounts, double volume,
@@ -1291,10 +1286,9 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
 }
 
 // EqExclude: transport and buffer mechanics
-inline NativeMixturePhaseBlock
-electrolyte_phase_block(double temperature, const std::vector<double> &amounts,
-                        double volume, double ion_mole_fraction_max,
-                        const NativeParameters &parameters) {
+inline NativeMixturePhaseBlock electrolyte_phase_block(
+    double temperature, const std::vector<double> &amounts, double volume,
+    double ion_mole_fraction_max, const NativeParameters &parameters) {
   if (!supports_electrolyte_phase_block(parameters)) {
     throw std::logic_error(
         "electrolyte phase block requires an ionic associating model");

@@ -1,18 +1,5 @@
 from typing import Any
 
-def transport_info(capsule: object) -> dict[str, object]: ...
-def evaluate_phase(
-    capsule: object,
-    temperature_k: float,
-    amount_mol: float,
-    volume_m3: float,
-) -> dict[str, object]: ...
-def evaluate_mixture_phase(
-    capsule: object,
-    temperature_k: float,
-    amounts_mol: tuple[float, ...],
-    volume_m3: float,
-) -> dict[str, object]: ...
 def evaluate_parameterized_phase(
     capsule: object,
     temperature_k: float,
@@ -21,12 +8,6 @@ def evaluate_parameterized_phase(
     packing_fraction_min: float,
     packing_fraction_max: float,
 ) -> dict[str, object]: ...
-def evaluate_packing_fraction(
-    capsule: object,
-    temperature_k: float,
-    amounts_mol: tuple[float, ...],
-    volume_m3: float,
-) -> float: ...
 def _audit_phase_state(
     capsule: object,
     role: str,

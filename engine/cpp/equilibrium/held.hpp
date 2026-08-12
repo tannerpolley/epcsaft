@@ -298,9 +298,6 @@ struct HeldStageIIResult {
     std::string search_status = "not_started";
     std::string search_profile = "held-stage-ii-binary-v1";
     std::string failure_reason;
-    std::string stage_i_outcome;
-    std::string stage_i_search_status;
-    double best_tpd = 0.0;
     int major_iterations = 0;
     double upper_bound = 0.0;
     std::vector<HeldStageIIAttempt> endpoint_attempts;
@@ -361,7 +358,6 @@ struct HeldStageIIIResult {
 };
 
 struct HeldStageIIIAttempt {
-    int major_iteration = 0;
     HeldStageIIIResult result{};
 };
 
