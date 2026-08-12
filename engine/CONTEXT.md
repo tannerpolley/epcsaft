@@ -1,6 +1,6 @@
 # Engine Context
 
-`governance_doctrine_revision: 15`
+`governance_doctrine_revision: 16`
 
 `engine/` is the sole runtime owner inside `tannerpolley/ePC-SAFT`. It
 builds one Python 3.13 distribution, `epcsaft`, containing EOS, equilibrium,
@@ -254,11 +254,12 @@ _Avoid_: Regression property implementation, Regression-owned thermodynamic
 derivative, duplicated observation solver
 
 **Regression Cutover Boundary**:
-The first hard cutover admits EOS-owned fixed-state and Pure Saturation State
+The hard cutover admits EOS-owned fixed-state and Pure Saturation State
 Observation Families only. It excludes every mixture phase-equilibrium, flash,
 and reactive Observation Family, as well as every reaction-model coefficient.
-Equilibrium capabilities remain future work until Equilibrium receives its own
-interface, derivative, and numerical-failure review.
+Governance D-031 defers every current Equilibrium Observation Family after the
+owner interface, exact sensitivity, and numerical-failure review; later
+admission requires a separately shaped implementation issue and evidence.
 _Avoid_: Premature Equilibrium dependency, reaction fit coordinate, eventual-
 architecture claim presented as current support
 

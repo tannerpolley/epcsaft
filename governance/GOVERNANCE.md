@@ -2,7 +2,7 @@
 
 Status: canonical
 
-Doctrine revision: 15
+Doctrine revision: 16
 
 Approved: 2026-08-12
 
@@ -103,6 +103,21 @@ its dedicated Python result, error, state, and discovery-marker surface are
 retired. The accepted CAP-09 promotion receipt records the user-approved
 `1e-4` historical lineage comparison while preserving the stricter physical,
 certificate, and derivative gates.
+
+D-031 keeps the Regression cutover boundary EOS-only after the CAP-10
+Equilibrium-observation admission review. Omitted-topology discovery is not an
+ordinary differentiable Observation Family because its phase count and output
+rows may change and its finite search does not establish globality. Declared
+fixed-T,P splits and fixed-T coexistence boundaries expose exact local
+sensitivities only for certified, fixed-topology, nonsingular branches; their
+current interfaces do not provide the owner-published batch descriptor,
+optimizer-domain branch policy, nonuniqueness policy, or family-level
+Non-Evaluable Trial semantics required by Regression. No dormant Equilibrium
+Observation Family schema, enum, resolver branch, or evaluator is admitted
+into Regression. The live `phase_equilibrium` problem/result interface and
+internal HELD/HELD2 discovery and start-generation implementation remain
+Equilibrium-owned. A later family requires a new implementation issue and
+independent numerical evidence rather than silently expanding Regression.
 
 The complete pre-migration monorepo and related historical repositories live
 outside the authority topology under the local `ePC-SAFT-legacy` container.
@@ -470,6 +485,11 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 16 records the user-approved CAP-10 admission decision. D-031 defers
+all current mixture phase-equilibrium Observation Families, keeps Regression
+EOS-only, and defines the evidence required before a later family may be
+admitted.
+
 Revision 15 records the user-approved completion of the protected HELD/HELD2
 promotion. D-030 makes `phase_equilibrium` the sole public nonreactive owner,
 uses omitted topology for internal HELD/HELD2 discovery, requires explicit
@@ -547,3 +567,4 @@ Historical plans and receipts retain their original names.
 | D-028 CAP execution hygiene | Explicit user instruction on 2026-08-07 to fix live pre-CAP guidance and establish one model, task, order, and review strategy | Remove `tests/integration/` from the normative package shape; use GitHub root issue #10 and native blockers for lifecycle state; execute each CAP leaf in a fresh single-writer task using the canonical Engine task map and proportionate read-only review | Prevents retired test structure, stale polyrepo routing, context-overloaded implementation, and per-task execution-setting drift from re-entering the cutover | No | Engine and Management |
 | D-029 Protected HELD promotion | Explicit user correction on 2026-08-10 that CAP-09 was intended to rename and extend the HELD/HELD2 workflow, not replace it with an unrelated solver | Restore exact `tp_flash` HELD/HELD2 as the protected incumbent; require `phase_equilibrium` to share that numerical lineage while adding explicit phase selection; prohibit automatic fallback and retire the incumbent only after reviewed, user-approved as-good-or-better promotion evidence | Recovers the validated HELD2 workflow, makes the mistaken scratch replacement non-authoritative, and prevents another destructive phase-owner cutover before equivalence and new constrained claims are demonstrated | Yes: full constrained one-to-three-phase promotion | Engine and Management |
 | D-030 Sole phase-equilibrium promotion | Explicit user approval on 2026-08-12 of a `1e-4` lineage-only tolerance, one public `phase_equilibrium` route, omitted-topology HELD/HELD2 discovery, and explicit declared phase count/types | Accept the CAP-09 promotion receipt; retain HELD/HELD2 internally; remove public `tp_flash` and its dedicated Python types; interpret absent fixed-T,P topology as discovery and declared topology as a no-fallback constrained solve | Completes D-029 without discarding the validated HELD2 algorithm, removes the transitional duplicate API and source-specific Python gate, and keeps physical/certificate tolerances strict | No | Engine and Management |
+| D-031 Defer Equilibrium Observation Families | Explicit user instruction on 2026-08-12 to apply the reviewed CAP-10 sequence after the general phase owner and exact sensitivities were complete | Admit no current mixture phase-equilibrium Observation Family; keep Regression EOS-only; require a new implementation issue for any future Equilibrium-owned batch descriptor and numerical admission evidence | Prevents variable-topology discovery, local branch sensitivities, and incomplete optimizer-domain semantics from becoming a misleading differentiable fit interface while preserving the exact Equilibrium sensitivity seam for its current owner | Yes: future Equilibrium observation admission | Engine and Management |

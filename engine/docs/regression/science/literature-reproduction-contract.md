@@ -226,7 +226,9 @@ The compact matrix covers:
 3. joint pure `(m, sigma, epsilon/k)` recovery;
 4. fixed-topology association parameter recovery for scientifically distinct
    active-parameter cases; and
-5. constant `k_ij` and `l_ij` fixed-composition VLE recovery.
+5. unordered-pair `k_ij` and `l_ij` recovery through currently admitted EOS
+   fixed-state Observation Families; historical fixed-composition VLE evidence
+   does not admit an Equilibrium Observation Family.
 
 Each retained numerical sentinel:
 

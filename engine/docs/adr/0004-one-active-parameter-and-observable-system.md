@@ -43,7 +43,9 @@ schemas, aliases, and fallbacks are deleted with their replacement.
 - Mixed component, pair, association, Born/solvation, auxiliary-model, and typed
   correlation coefficients can share one active set when EOS supports them.
 - Regression cannot implement EOS or Equilibrium observation families.
-- Equilibrium families remain outside Regression until separately reviewed.
+- Equilibrium families remain outside Regression. Governance D-031 completes
+  the separate review, defers every current family, and requires a new issue
+  and evidence for any later admission.
 - Generated templates provide explicit required neutral identity values;
   loaders do not infer omissions.
 - Engine tests falsify numerical claims; literature acceptance remains in

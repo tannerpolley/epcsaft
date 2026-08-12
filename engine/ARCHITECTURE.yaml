@@ -1,6 +1,6 @@
 version: 4
 status: unified-monorepo-active
-governance_doctrine_revision: 15
+governance_doctrine_revision: 16
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -67,6 +67,8 @@ owners:
     native_sources: src/epcsaft/regression/native
     scientific_values: owner_provided_only
     current_observation_boundary: [eos_fixed_state, eos_pure_saturation]
+    equilibrium_observation_admission: deferred_by_governance_D-031
+    equilibrium_observation_families: []
   native_transport:
     implementation: src/epcsaft/_native
     public_cpp_abi: forbidden

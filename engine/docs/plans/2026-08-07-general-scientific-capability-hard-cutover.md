@@ -2,7 +2,7 @@
 
 - Status: canonical plan; execution is tracked by GitHub root issue #10 and its native CAP subissues
 - Date: 2026-08-07
-- Doctrine: Governance revision 15, Numerical Verification-Driven Development
+- Doctrine: Governance revision 16, Numerical Verification-Driven Development
 - Scope: `engine/` EOS, Equilibrium, and Regression
 - Decision authority: ADR 0004 and the three owner plans linked below
 
@@ -37,9 +37,10 @@ The pair-parameter scientific basis is recorded in
 3. EOS and Equilibrium advertise typed observable capabilities. Regression
    consumes their values and Jacobians; it does not implement thermodynamics or
    phase equilibrium.
-4. The initial Regression boundary remains EOS fixed-state and pure-saturation
-   observations. Equilibrium observations require a later numerical-failure
-   review after the general Equilibrium owner is complete.
+4. The Regression boundary remains EOS fixed-state and pure-saturation
+   observations. Governance D-031 completes the Equilibrium numerical-failure
+   review and defers every current Equilibrium Observation Family; later
+   admission requires a new implementation issue and evidence.
 5. The sole solvation formulation is `born`. Its explicit correction
    coefficients admit exactly `(0, 0)`, `(1, 0)`, and `(1, 1)` as the
    uncorrected, shell-only SSM, and SSM+DS models. Parameters resolution rejects
@@ -122,7 +123,7 @@ Regression EOS cutover      Equilibrium provider/sensitivity cutover
                          one phase_equilibrium owner
                                   |
                                   v
-                 later Equilibrium-observation admission review
+                 D-031 admission decision: current families deferred
 ```
 
 Work must follow that order. In particular, Regression must not invent a
@@ -304,13 +305,13 @@ blocked-by state is the lifecycle authority; this table defines scope and order.
 | CAP-07 | Equilibrium provider parameter transport | CAP-03, CAP-04 | Same active set and explicit Born/reference inputs reach all EOS provider calls |
 | CAP-08 | Equilibrium exact solved-state sensitivities | CAP-07 | Implicit Jacobians match independent differences away from singularities |
 | CAP-09 | Protected HELD-derived `phase_equilibrium` promotion | CAP-07 | Completed by Governance D-030: the campaign and constrained claims pass, `phase_equilibrium` is sole public, and HELD/HELD2 remains internal discovery |
-| CAP-10 | Equilibrium observation admission review | CAP-08, CAP-09 | Explicit admit/defer decision with numerical-failure evidence |
+| CAP-10 | Equilibrium observation admission review | CAP-08, CAP-09 | Completed by Governance D-031: discovery, declared fixed-T,P splits, and fixed-T coexistence remain deferred from Regression |
 | CAP-11 | Final dead-surface and documentation audit | CAP-04, CAP-06, CAP-10 | The Cython experiment and retired surfaces are absent, and one final receipt binds the clean cutover tree and bounded scan |
 
 ## Done definition
 
-The cutover is complete only when all three owner plans and the D-030 phase
-promotion are complete, the wheel
+The cutover is complete only when all three owner plans, the D-030 phase
+promotion, and the D-031 Equilibrium-observation decision are complete, the wheel
 contains one parameter and derivative system, source- or case-specific runtime
 routes are absent, compact numerical evidence passes, installed-wheel
 Validation owns literature acceptance, and the final Governance receipt proves

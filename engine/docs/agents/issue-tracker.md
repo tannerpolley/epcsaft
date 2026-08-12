@@ -17,6 +17,13 @@ topology runs the retained internal HELD/HELD2 discovery algorithm and declared
 topology never falls back. Issue #18 closes after the final checks, independent
 reviews, clean push, and main synchronization complete.
 
+## CAP-10 admission decision
+
+Governance D-031 defers omitted-topology discovery, declared fixed-T,P phase
+splits, and fixed-T coexistence boundaries from the Regression Observation
+Family catalog. Regression remains EOS-only and no CAP-10A issue is created.
+CAP-11 issue #20 is therefore the direct native frontier after issue #19.
+
 ## Task strategy
 
 Run each unblocked CAP leaf in a fresh user-visible Codex task attached to this
