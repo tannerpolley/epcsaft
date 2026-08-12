@@ -2,7 +2,7 @@
 
 Repository Profile: scientific-computing
 
-Governance doctrine revision 16 applies.
+Governance doctrine revision 18 applies.
 
 This private repository is the single Git and Codex home for the ePC-SAFT
 project. Read `governance/GOVERNANCE.md`, `governance/manifests/management.json`,
@@ -28,11 +28,16 @@ Directory ownership remains strict:
 
 The root `.codex/environments/environment.toml` is the only Codex environment.
 It creates one root `.venv`, builds `engine/` into one non-editable wheel, and
-rejects split or legacy ePC-SAFT distributions. Use `tools/check-affected.sh`
-for normal work, `tools/check-all.sh` for full verification, and
-`tools/run-slice.sh khudaida|figiel` for the two canonical vertical slices.
-Normal Engine checks route to affected EOS, Equilibrium, or Regression
-evidence; full verification also runs the retained slow numerical tier.
+rejects split or legacy ePC-SAFT distributions. This is a private,
+in-development scientific engine used by downstream applications, so the
+wheel is built and installed before any test process starts. Use
+`tools/check-affected.sh` for normal work and `tools/check-all.sh` for the
+parallel fast installed-wheel gate, with a warm-wheel target below ten seconds.
+Slow or expensive Engine evidence, Validation campaigns, full native
+clang-tidy, and sanitizers run only by an explicit owner command when their
+specific risk or scientific claim requires them; a changed tool or document
+must not silently invoke them. `tools/run-slice.sh khudaida|figiel` owns the two
+canonical vertical slices.
 
 Use Numerical Verification-Driven Development from Governance section 7.
 Persistent tests must falsify numerical claims; expensive installed-artifact

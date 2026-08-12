@@ -1,6 +1,6 @@
-version: 4
+version: 6
 status: unified-monorepo-active
-governance_doctrine_revision: 16
+governance_doctrine_revision: 18
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -80,6 +80,13 @@ canonical_plans:
   regression: docs/regression/plans/2026-08-07-owner-driven-parameter-fit.md
   equilibrium: docs/equilibrium/plans/2026-08-07-general-phase-equilibrium.md
 
+final_cutover:
+  status: accepted
+  decision: governance_D-032
+  subject_commit: a8efa571d52c32f5a697f15dd7f4623b7e3613fd
+  subject_tree: c710bec469f7442952979e096a260cccb5a84246
+  receipt: ../governance/receipts/cap-11-hard-cutover-retirement.json
+
 scientific_boundaries:
   reusable_packets: data
   installed_artifact_evidence: validation
@@ -111,4 +118,8 @@ validation:
   phase_equilibrium_campaign: ../validation/campaigns/2026-khudaida/tests/test_khudaida_phase_equilibrium.py
   phase_equilibrium_promotion: accepted_cap_09_receipt
   materialized_packet_receipts: tests/fixtures/data/*/materialization-v2.json
+  developer_gate: build_first_parallel_installed_wheel_under_10_seconds_warm
+  slow_numerical_evidence: explicit_owner_command
+  installed_wheel_campaigns: explicit_validation_owner_command
+  native_quality_and_sanitizers: explicit_risk_based_owner_command
   external_authority_gate: governance_g7

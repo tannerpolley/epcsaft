@@ -1,7 +1,7 @@
 # Project Context
 
 `tannerpolley/ePC-SAFT` is the private, single-repository home of the active
-ePC-SAFT scientific project. Governance doctrine revision 16 applies. Agents
+ePC-SAFT scientific project. Governance doctrine revision 18 applies. Agents
 operate only in the checkout or worktree attached to their Codex task; no
 absolute filesystem path grants project or Git authority.
 
@@ -14,6 +14,11 @@ branch, one root environment, and one issue tracker.
 Current priorities are rapid scientific revision, end-to-end vertical slices,
 and low-friction Codex worktrees. Durable release baselines, CI/CD, public ABI
 compatibility, and legacy package routes are out of scope.
+
+Developer feedback is build-first and latency-bounded: setup installs the
+current wheel before tests, the default installed-wheel gate targets less than
+ten seconds on a warm checkout, and publication-grade campaigns or exhaustive
+native analysis run only through explicit owner commands.
 
 The current Engine program is the
 [General Scientific Capability Hard-Cutover Plan](engine/docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md).

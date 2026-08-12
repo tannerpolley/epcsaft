@@ -24,6 +24,27 @@ splits, and fixed-T coexistence boundaries from the Regression Observation
 Family catalog. Regression remains EOS-only and no CAP-10A issue is created.
 CAP-11 issue #20 is therefore the direct native frontier after issue #19.
 
+## CAP-11 completion
+
+Governance D-032 accepts the exact CAP-11 implementation tree and final
+retirement receipt. Superseded live designs, the executable Cython experiment,
+split-header packaging remnants, literal-component HELD coordinates, and dead
+legacy switches are removed. The internal HELD/HELD2 numerical core remains
+the canonical omitted-topology discovery implementation behind
+`phase_equilibrium`. Issue #20 and root issue #10 close after the receipt commit
+is synchronized. Issue #6 remains a separate post-cutover Validation campaign;
+issues #30 and #31 are detached post-cutover reactive-observation follow-ons
+and retain the dependency chain #20 -> #30 -> #31 without extending root #10.
+
+## Private development feedback
+
+Governance D-033 makes wheel iteration build-first and latency-bounded. Setup
+builds and installs before tests. `tools/check-all.sh` is the parallel fast
+installed-wheel gate with a warm target below ten seconds; it does not run slow
+Engine stress cases, Validation campaigns or figure reproduction, full native
+clang-tidy, or sanitizers. Those remain explicit owner commands selected by the
+scientific claim or native risk, not automatic completion ritual.
+
 ## Task strategy
 
 Run each unblocked CAP leaf in a fresh user-visible Codex task attached to this

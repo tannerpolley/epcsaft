@@ -1,8 +1,8 @@
 # General Scientific Capability Hard-Cutover Plan
 
-- Status: canonical plan; execution is tracked by GitHub root issue #10 and its native CAP subissues
+- Status: completed by Governance D-032; historical execution is tracked by GitHub root issue #10 and its native CAP subissues
 - Date: 2026-08-07
-- Doctrine: Governance revision 16, Numerical Verification-Driven Development
+- Doctrine: Governance revision 18, Numerical Verification-Driven Development
 - Scope: `engine/` EOS, Equilibrium, and Regression
 - Decision authority: ADR 0004 and the three owner plans linked below
 
@@ -284,10 +284,13 @@ bash tools/check-all.sh
 bash "$HOME/.codex/hooks/codex-cleanup.sh" --repo-root .
 ```
 
-Also run focused schema/JSON/YAML checks, Ruff, strict mypy, native compiler
-warnings, clang-tidy on changed native translation units, sanitizers for native
-memory-risk changes, wheel build/origin verification, and the relevant
-installed-wheel Validation campaign. Readiness checks are not scientific tests.
+Both root checks build and install the wheel before tests; `check-all.sh` is the
+parallel, latency-bounded installed-wheel gate, not a publication replay.
+Select slow Engine stress cases, the exact installed-wheel Validation campaign,
+clang-tidy on changed native translation units, or sanitizers only when the
+changed claim or native risk requires that explicit owner evidence. Figure
+reproduction and broad campaigns never run implicitly. Readiness checks are
+not scientific tests.
 
 ## Issue-ready decomposition
 
@@ -306,14 +309,14 @@ blocked-by state is the lifecycle authority; this table defines scope and order.
 | CAP-08 | Equilibrium exact solved-state sensitivities | CAP-07 | Implicit Jacobians match independent differences away from singularities |
 | CAP-09 | Protected HELD-derived `phase_equilibrium` promotion | CAP-07 | Completed by Governance D-030: the campaign and constrained claims pass, `phase_equilibrium` is sole public, and HELD/HELD2 remains internal discovery |
 | CAP-10 | Equilibrium observation admission review | CAP-08, CAP-09 | Completed by Governance D-031: discovery, declared fixed-T,P splits, and fixed-T coexistence remain deferred from Regression |
-| CAP-11 | Final dead-surface and documentation audit | CAP-04, CAP-06, CAP-10 | The Cython experiment and retired surfaces are absent, and one final receipt binds the clean cutover tree and bounded scan |
+| CAP-11 | Final dead-surface and documentation audit | CAP-04, CAP-06, CAP-10 | Completed by Governance D-032: retired surfaces are absent and the final receipt binds the clean cutover tree and bounded scan |
 
 ## Done definition
 
-The cutover is complete only when all three owner plans, the D-030 phase
-promotion, and the D-031 Equilibrium-observation decision are complete, the wheel
-contains one parameter and derivative system, source- or case-specific runtime
-routes are absent, compact numerical evidence passes, installed-wheel
-Validation owns literature acceptance, and the final Governance receipt proves
-that its exact cutover tree has no live dependency on retired guidance or
-implementations.
+Governance D-032 completes the cutover. All three owner plans, the D-030 phase
+promotion, and the D-031 Equilibrium-observation decision are complete. The
+single wheel contains one parameter and derivative system, source- or
+case-specific runtime routes are absent, compact numerical evidence passes,
+installed-wheel Validation owns literature acceptance, and the final
+Governance receipt binds the exact accepted tree and its justified provenance
+exceptions.

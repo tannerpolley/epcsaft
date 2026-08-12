@@ -2,7 +2,7 @@
 
 Status: canonical
 
-Doctrine revision: 16
+Doctrine revision: 18
 
 Approved: 2026-08-12
 
@@ -118,6 +118,33 @@ into Regression. The live `phase_equilibrium` problem/result interface and
 internal HELD/HELD2 discovery and start-generation implementation remain
 Equilibrium-owned. A later family requires a new implementation issue and
 independent numerical evidence rather than silently expanding Regression.
+
+D-032 completes the general scientific capability hard cutover. The accepted
+CAP-11 subject commit removes the superseded live permittivity design, the
+executable Cython HELD2 experiment, retired split-header packaging entries,
+literal-component private HELD coordinates, and dead legacy switches while
+retaining the HELD/HELD2 numerical algorithms selected by charge topology and
+conditioning. One exact-commit retirement scan records every match and
+justified provenance exception; one installed wheel passes the complete root,
+native, sanitizer, and installed-wheel Validation matrix. The receipt at
+`governance/receipts/cap-11-hard-cutover-retirement.json` is the final program
+acceptance record. Future scientific campaigns, including issue #6, are
+separate post-cutover Validation work rather than CAP blockers. Issues #30 and
+#31 are likewise detached post-cutover reactive-observation follow-ons, not
+children or acceptance gates of root issue #10.
+
+D-033 makes low-latency private development an explicit project invariant.
+Environment setup builds and installs the sole non-editable Engine wheel before
+any test process starts. The default affected and all-owner developer gates use
+that installed wheel and target less than ten seconds on a warm checkout by
+running independent compact numerical and readiness checks concurrently.
+Slow/expensive Engine stress evidence, installed-wheel Validation campaigns or
+figure reproduction, full native clang-tidy, and sanitizer builds run only by
+an explicit accountable-owner command when the changed scientific claim or
+native risk requires them. Documentation or tool changes do not silently
+escalate into those evidence workflows. This project is private and under
+active development for downstream applications; broad publication-grade replay
+must not obstruct wheel iteration.
 
 The complete pre-migration monorepo and related historical repositories live
 outside the authority topology under the local `ePC-SAFT-legacy` container.
@@ -485,6 +512,16 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 18 records the user-approved build-first, latency-bounded private
+development workflow. D-033 separates the sub-ten-second warm developer gate
+from explicit owner-run stress, campaign, native-quality, and sanitizer
+evidence without deleting any numerical falsifier.
+
+Revision 17 records the user-approved final CAP execution sequence. D-032
+accepts the exact CAP-11 cutover tree, bounded retirement scan, one-wheel
+verification, and cleanup evidence and closes the general scientific
+capability hard-cutover program without absorbing later Validation campaigns.
+
 Revision 16 records the user-approved CAP-10 admission decision. D-031 defers
 all current mixture phase-equilibrium Observation Families, keeps Regression
 EOS-only, and defines the evidence required before a later family may be
@@ -568,3 +605,5 @@ Historical plans and receipts retain their original names.
 | D-029 Protected HELD promotion | Explicit user correction on 2026-08-10 that CAP-09 was intended to rename and extend the HELD/HELD2 workflow, not replace it with an unrelated solver | Restore exact `tp_flash` HELD/HELD2 as the protected incumbent; require `phase_equilibrium` to share that numerical lineage while adding explicit phase selection; prohibit automatic fallback and retire the incumbent only after reviewed, user-approved as-good-or-better promotion evidence | Recovers the validated HELD2 workflow, makes the mistaken scratch replacement non-authoritative, and prevents another destructive phase-owner cutover before equivalence and new constrained claims are demonstrated | Yes: full constrained one-to-three-phase promotion | Engine and Management |
 | D-030 Sole phase-equilibrium promotion | Explicit user approval on 2026-08-12 of a `1e-4` lineage-only tolerance, one public `phase_equilibrium` route, omitted-topology HELD/HELD2 discovery, and explicit declared phase count/types | Accept the CAP-09 promotion receipt; retain HELD/HELD2 internally; remove public `tp_flash` and its dedicated Python types; interpret absent fixed-T,P topology as discovery and declared topology as a no-fallback constrained solve | Completes D-029 without discarding the validated HELD2 algorithm, removes the transitional duplicate API and source-specific Python gate, and keeps physical/certificate tolerances strict | No | Engine and Management |
 | D-031 Defer Equilibrium Observation Families | Explicit user instruction on 2026-08-12 to apply the reviewed CAP-10 sequence after the general phase owner and exact sensitivities were complete | Admit no current mixture phase-equilibrium Observation Family; keep Regression EOS-only; require a new implementation issue for any future Equilibrium-owned batch descriptor and numerical admission evidence | Prevents variable-topology discovery, local branch sensitivities, and incomplete optimizer-domain semantics from becoming a misleading differentiable fit interface while preserving the exact Equilibrium sensitivity seam for its current owner | Yes: future Equilibrium observation admission | Engine and Management |
+| D-032 Complete the scientific capability hard cutover | Explicit user instruction on 2026-08-12 to apply the recommended CAP sequence through final closure | Accept CAP-11 subject `a8efa571d52c32f5a697f15dd7f4623b7e3613fd`, its bounded retirement scan, one-wheel verification, independent reviews, and final receipt; close CAP root #10 while leaving issues #6, #30, and #31 as detached post-cutover work | Removes the last superseded live design, executable Lab duplicate, split-header remnants, literal-component internal names, author-named live diagnostics, and dead legacy switches without deleting canonical HELD/HELD2 discovery or historical provenance | No | Engine and Management |
+| D-033 Build first and keep developer verification fast | Explicit user instruction on 2026-08-12 that the private in-development Engine must support rapid downstream iteration and that tests must not block wheel build/install | Build and install the sole wheel before tests; make `check-affected.sh` and `check-all.sh` latency-bounded installed-wheel gates with a warm target below ten seconds; keep slow Engine stress evidence, Validation campaigns/figures, full native analysis, and sanitizers behind explicit owner commands | Reduces the measured warm gate from 821.09 seconds to 8.96 seconds while retaining every slow scientific falsifier in its owner tier | No | Engine, Validation, and Management |
