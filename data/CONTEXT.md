@@ -1,6 +1,6 @@
 # Data Context
 
-Governance doctrine revision 14 applies. `data/` is the canonical home for
+Governance doctrine revision 15 applies. `data/` is the canonical home for
 reusable reviewed scientific packets inside `tannerpolley/ePC-SAFT`.
 
 A packet is self-contained, versioned, hash-bound, source-traceable, and

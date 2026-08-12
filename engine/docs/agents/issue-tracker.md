@@ -5,21 +5,17 @@ program is [root issue #10](https://github.com/tannerpolley/ePC-SAFT/issues/10);
 native subissues and blocked-by relationships define the live frontier. Read the
 selected issue and its comments with `gh` before implementation.
 
-## CAP-09 correction
+## CAP-09 promotion
 
-Issue #18 remains open at the promotion gate. Governance D-029 and Equilibrium
-ADR 0002 protect the exact HELD/HELD2 incumbent while the HELD-derived
-`phase_equilibrium` candidate accumulates constrained one-to-three-phase
-all-component fixed-T,P, structural-support coexistence, sensitivity,
-performance, and independent-review evidence. Do not
-retire `tp_flash` or infer sole-owner promotion until the accepted receipt also
-records explicit user approval.
-
-The current installed-wheel promotion run passes seven of eight Khudaida
-Figure 2 feed rows. Feed 6 differs from protected `tp_flash` by
-`1.2822961027e-6 mol` in its first phase amount, outside the unchanged
-`1e-7 mol` lineage tolerance. The blocked receipt is
-`validation/campaigns/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion-blocked.json`.
+Governance D-030 completes the D-029 protected transition. The user-approved
+`1e-4` lineage-only comparison passes all eight Khudaida Figure 2 feeds while
+the stricter physical and derivative gates remain unchanged. The accepted
+receipt is
+`validation/campaigns/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json`.
+`phase_equilibrium` is the sole public nonreactive route; omitted fixed-T,P
+topology runs the retained internal HELD/HELD2 discovery algorithm and declared
+topology never falls back. Issue #18 closes after the final checks, independent
+reviews, clean push, and main synchronization complete.
 
 ## Task strategy
 

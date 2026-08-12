@@ -7,7 +7,6 @@ from epcsaft import unit_registry as u
 from epcsaft.equilibrium import (
     AllComponents,
     DeclaredTopology,
-    DiscoverPhases,
     EquilibriumPhaseState,
     FeedSplit,
     FixedTCoexistence,
@@ -21,7 +20,6 @@ from epcsaft.equilibrium import (
     PhaseRole,
     PhaseSpecification,
     phase_equilibrium,
-    tp_flash,
 )
 from tests.eos._raw_cases import (
     AQUEOUS_ELECTROLYTE,
@@ -39,16 +37,8 @@ _TOTAL_AMOUNT_MOL = 2.0
 _AMOUNT_FEED = tuple(_TOTAL_AMOUNT_MOL * value for value in _FEED)
 
 
-def test_discovery_preserves_protected_held_state_and_parameter_order() -> None:
-    """Falsify state or exact selected-parameter drift from protected HELD discovery.
-
-    Oracle: the retained public tp_flash result at identical Parameters,
-    temperature, pressure, and normalized feed. Phase intensive states use
-    2e-12 relative/absolute agreement; the amount-feed sensitivity carries the
-    exact incumbent parameter identity/order and its established extensive
-    coordinate scaling. Failure means the new typed discovery seam changed the
-    protected numerical workflow.
-    """
+def test_discovery_preserves_amount_scaling_and_parameter_order() -> None:
+    """Falsify extensive scaling or parameter-order drift in HELD discovery."""
     parameters = Parameters.from_mapping(NEUTRAL_BINARY)
     active = ActiveParameterSet(
         parameters,
@@ -58,66 +48,59 @@ def test_discovery_preserves_protected_held_state_and_parameter_order() -> None:
         ),
     )
     model = Mixture(parameters)
-    retained = tp_flash(
+    normalized = phase_equilibrium(
         model,
-        _TEMPERATURE,
-        _PRESSURE,
-        _FEED,
+        PhaseEquilibriumProblem(FixedTPFeed(_TEMPERATURE, _PRESSURE, _FEED)),
         active_parameters=active,
     )
-    problem = PhaseEquilibriumProblem(
-        FixedTPFeed(
-            _TEMPERATURE,
-            _PRESSURE,
-            _AMOUNT_FEED,
-            DiscoverPhases(),
-        )
+    discovered = phase_equilibrium(
+        model,
+        PhaseEquilibriumProblem(
+            FixedTPFeed(_TEMPERATURE, _PRESSURE, _AMOUNT_FEED)
+        ),
+        active_parameters=active,
     )
-    discovered = phase_equilibrium(model, problem, active_parameters=active)
 
     assert discovered.diagnostics.route == "held_discovery"
     assert discovered.diagnostics.globality_claim == "not_established"
     assert discovered.diagnostics.provider_evaluation_count > 0
     assert isinstance(discovered.extent, FeedSplit)
+    assert isinstance(normalized.extent, FeedSplit)
     assert discovered.extent.total_free_energy_over_rt == pytest.approx(
-        _TOTAL_AMOUNT_MOL * retained.total_free_energy_over_rt,
+        _TOTAL_AMOUNT_MOL * normalized.extent.total_free_energy_over_rt,
         rel=2.0e-12,
         abs=2.0e-12,
     )
     assert discovered.extent.phase_amounts_mol == pytest.approx(
-        tuple(_TOTAL_AMOUNT_MOL * value for value in retained.phase_fractions),
+        tuple(
+            _TOTAL_AMOUNT_MOL * value
+            for value in normalized.extent.phase_fractions
+        ),
         rel=2.0e-12,
         abs=2.0e-12,
     )
-    for phase, expected in zip(discovered.phases, retained.phases, strict=True):
-        assert phase.mole_fractions == pytest.approx(
-            expected.mole_fractions, rel=2.0e-12, abs=2.0e-12
-        )
+    for phase, expected in zip(discovered.phases, normalized.phases, strict=True):
+        assert phase.mole_fractions == pytest.approx(expected.mole_fractions, abs=2.0e-12)
         assert phase.molar_volume_m3_per_mol == pytest.approx(
-            expected.volume_m3 / expected.amount_mol,
+            expected.molar_volume_m3_per_mol,
             rel=2.0e-12,
             abs=2.0e-12,
         )
-        assert phase.pressure_pa == pytest.approx(
-            expected.pressure_pa, rel=2.0e-12, abs=2.0e-12
-        )
+        assert phase.pressure_pa == pytest.approx(expected.pressure_pa, rel=2.0e-12)
 
     selected = discovered.sensitivity
-    incumbent = retained.sensitivity
+    unit = normalized.sensitivity
     assert selected is not None
-    assert incumbent is not None
-    assert selected.parameters == incumbent.parameters
-    assert (
-        selected.residual_parameter_jacobian
-        == incumbent.residual_parameter_jacobian
-    )
-    for selected_row, incumbent_row in zip(
+    assert unit is not None
+    assert selected.parameters == unit.parameters
+    assert selected.residual_parameter_jacobian == unit.residual_parameter_jacobian
+    for selected_row, unit_row in zip(
         selected.residual_state_jacobian,
-        incumbent.residual_state_jacobian,
+        unit.residual_state_jacobian,
         strict=True,
     ):
         assert selected_row == pytest.approx(
-            tuple(value / _TOTAL_AMOUNT_MOL for value in incumbent_row),
+            tuple(value / _TOTAL_AMOUNT_MOL for value in unit_row),
             rel=2.0e-12,
             abs=2.0e-12,
         )
@@ -142,7 +125,6 @@ def test_declared_single_phase_solves_role_and_hints_do_not_change_root() -> Non
                 _TEMPERATURE,
                 _PRESSURE,
                 _AMOUNT_FEED,
-                DiscoverPhases(),
             )
         ),
     )

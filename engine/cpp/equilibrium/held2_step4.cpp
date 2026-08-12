@@ -195,10 +195,7 @@ UpperResult solve_upper_highs(
 
 }  // namespace
 
-Held2Step4Result run_held2_step4(
-    Held2PersistentState& state,
-    Held2ProgressObserver* observer
-) {
+Held2Step4Result run_held2_step4(Held2PersistentState& state) {
     Held2Step4Result result;
     result.major_iteration = state.major_iteration;
     result.coordinate_snapshot = state.coordinates;
@@ -254,15 +251,6 @@ Held2Step4Result run_held2_step4(
     result.timing.terminal_status = result.status;
     result.timing.terminal_reason = result.reason;
     result.timing.next_step = 5;
-    Held2ProgressEvent progress;
-    progress.kind = Held2ProgressKind::StageIIUpper;
-    progress.major_iteration = state.major_iteration;
-    progress.upper_bound = upper.upper_bound;
-    progress.primal_residual = upper.primal_residual_inf;
-    progress.dual_residual = upper.dual_residual_inf;
-    progress.count = static_cast<int>(state.M.size());
-    progress.status = "certified";
-    observe_held2(observer, progress);
     return result;
 }
 

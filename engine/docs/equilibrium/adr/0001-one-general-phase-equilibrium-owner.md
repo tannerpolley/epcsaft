@@ -6,10 +6,9 @@ amended_by: 0002-protect-held-until-phase-equilibrium-promotion.md
 
 # Use one general nonreactive phase-equilibrium owner
 
-The destination remains accepted. Its atomic-retirement sequencing is amended
-by [ADR 0002](0002-protect-held-until-phase-equilibrium-promotion.md): the exact
-HELD/HELD2 incumbent remains live until the HELD-derived candidate passes the
-reviewed promotion gate.
+The destination is implemented. [ADR 0002](0002-protect-held-until-phase-equilibrium-promotion.md)
+protected the HELD/HELD2 transition until Governance D-030 accepted the
+promotion receipt and made `phase_equilibrium` the sole public route.
 
 ## Context
 
@@ -20,11 +19,13 @@ and source-case assumptions.
 
 ## Decision
 
-`phase_equilibrium` is the sole nonreactive phase-equilibrium owner. It supports
-one to three liquid/vapor phases in discovery and constrained-specification
-modes. Hints may reorder work but cannot change the scientific claim. Neutral
-and charged systems use the same physical owner; neutral topology simply omits
-charge/electrolyte operations.
+`phase_equilibrium` is the sole nonreactive phase-equilibrium owner. Omitted
+fixed-T,P topology retains the admitted HELD/HELD2 discovery boundary: binary
+neutral mixtures and one- or two-phase charged results. Declared fixed-T,P
+topology supports one to three ordered liquid/vapor phases. Hints may reorder
+work but cannot change the scientific claim. Neutral and charged systems use
+the same physical owner; neutral topology simply omits charge/electrolyte
+operations.
 
 Physical formulations and specialized numerical kernels may remain distinct
 internally when selected by typed topology or conditioning. Author, paper,
@@ -39,8 +40,8 @@ electrolyte routes.
 
 ## Consequences
 
-- The neutral HELD1/electrolyte HELD2 split and fingerprint-qualified flash
-  routes are removed during implementation.
+- HELD/HELD2 remain internal topology-appropriate numerical kernels; their
+  fingerprint-qualified Python route and duplicate public schema are removed.
 - Callers may supply expected phase count/types when known or request discovery.
 - Equilibrium consumes the canonical `ActiveParameterSet` and obtains EOS
   partials for exact implicit solved-state sensitivities.

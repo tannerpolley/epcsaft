@@ -227,7 +227,6 @@ add_library(
     cpp/equilibrium/held2.cpp
     cpp/equilibrium/held2_certificates.cpp
     cpp/equilibrium/held2_algorithm.cpp
-    cpp/equilibrium/held2_progress.cpp
     cpp/equilibrium/held2_step1.cpp
     cpp/equilibrium/held2_step2.cpp
     cpp/equilibrium/held2_step3.cpp

@@ -9,15 +9,7 @@ namespace epcsaft_engine::equilibrium {
 namespace {
 
 template <typename Callable>
-auto run_step(
-    int step,
-    Callable&& callable,
-    Held2ProgressObserver* observer
-) {
-    Held2ProgressEvent progress;
-    progress.kind = Held2ProgressKind::StageStart;
-    progress.stage = "STEP " + std::to_string(step);
-    observe_held2(observer, progress);
+auto run_step(int step, Callable&& callable) {
     const auto wall_start = std::chrono::steady_clock::now();
     const std::clock_t cpu_start = std::clock();
     auto result = callable();
@@ -28,17 +20,6 @@ auto run_step(
     result.timing.cpu_seconds = static_cast<double>(
         std::clock() - cpu_start
     ) / static_cast<double>(CLOCKS_PER_SEC);
-    progress = {};
-    progress.kind = Held2ProgressKind::Certificate;
-    progress.stage = "STEP " + std::to_string(step);
-    progress.status = result.timing.terminal_status;
-    progress.reason = result.timing.terminal_reason;
-    progress.wall_seconds = result.timing.wall_seconds;
-    progress.cpu_seconds = result.timing.cpu_seconds;
-    progress.provider_evaluations = result.timing.provider_evaluations;
-    progress.optimizer_solves = result.timing.optimizer_solves;
-    progress.optimizer_iterations = result.timing.optimizer_iterations;
-    observe_held2(observer, progress);
     return result;
 }
 
@@ -46,8 +27,7 @@ template <typename Callable>
 auto run_cached_thermodynamic_step(
     int step,
     Callable&& callable,
-    Held2AlgorithmCache& cache,
-    Held2ProgressObserver* observer
+    Held2AlgorithmCache& cache
 ) {
     const std::uint64_t states_before =
         cache.provider_state_evaluations();
@@ -62,7 +42,7 @@ auto run_cached_thermodynamic_step(
             + cache.provider_volume_bound_evaluations() - bounds_before
             + cache.provider_packing_evaluations() - packing_before;
         return result;
-    }, observer);
+    });
 }
 
 }  // namespace
@@ -104,16 +84,9 @@ bool held2_insufficient_candidate_recovery_required(
 Held2AlgorithmResult run_held2_algorithm(
     const Held2ThermodynamicAccess& thermodynamics,
     const FlashInput& input,
-    const Held2ResourceProfile& resources,
-    Held2ProgressObserver* observer
+    const Held2ResourceProfile& resources
 ) {
     Held2AlgorithmResult result;
-    Held2ProgressEvent progress;
-    progress.kind = Held2ProgressKind::CaseStart;
-    progress.case_id = "installed-held2-paper-rewrite";
-    progress.temperature_k = input.temperature_k;
-    progress.pressure_pa = input.pressure_pa;
-    observe_held2(observer, progress);
     const auto fail = [&](const char* stage, const std::string& reason) {
         result.failure_stage = stage;
         result.failure_reason = reason;
@@ -136,7 +109,7 @@ Held2AlgorithmResult run_held2_algorithm(
             thermodynamics.provider_fingerprint,
             thermodynamics.total_ion_mole_fraction_max
         );
-    }, observer);
+    });
     result.step_timings.push_back(result.step1.timing);
     if (result.step1.status != "complete") {
         return fail("step1", result.step1.reason);
@@ -173,10 +146,9 @@ Held2AlgorithmResult run_held2_algorithm(
         return run_held2_step2(
             cached_step1,
             evaluate,
-            resources.step2_search_work_budget,
-            observer
+            resources.step2_search_work_budget
         );
-    }, cache, observer);
+    }, cache);
     result.step_timings.push_back(result.step2->timing);
     if (result.step2->outcome == Held2Step2Outcome::Indeterminate) {
         return fail("step2", result.step2->reason);
@@ -218,13 +190,13 @@ Held2AlgorithmResult run_held2_algorithm(
         const std::uint64_t bounds_before =
             cache.provider_volume_bound_evaluations();
         Held2Step3Result step3 = run_held2_step3(
-            cached_step1, *result.step2, pressure_roots, observer
+            cached_step1, *result.step2, pressure_roots
         );
         step3.timing.provider_evaluations =
             cache.provider_state_evaluations() - states_before
             + cache.provider_volume_bound_evaluations() - bounds_before;
         return step3;
-    }, observer);
+    });
     result.step_timings.push_back(result.step3->timing);
     if (result.step3->status != "complete" || !result.step3->state) {
         return fail("step3", result.step3->reason);
@@ -233,8 +205,8 @@ Held2AlgorithmResult run_held2_algorithm(
     double step8_neighborhood_radius = kHeld2Problem67InitialRadius;
     while (true) {
         result.step4_history.push_back(run_step(4, [&] {
-            return run_held2_step4(state, observer);
-        }, observer));
+            return run_held2_step4(state);
+        }));
         result.step_timings.push_back(result.step4_history.back().timing);
         const Held2Step4Result& step4 = result.step4_history.back();
         result.upper_solve_count = state.upper_solve_count;
@@ -248,10 +220,9 @@ Held2AlgorithmResult run_held2_algorithm(
                 step4,
                 state,
                 evaluate,
-                resources,
-                observer
+                resources
             );
-        }, cache, observer));
+        }, cache));
         result.step_timings.push_back(result.step5_history.back().timing);
         const Held2Step5Result& step5 = result.step5_history.back();
         if (step5.status != "complete") {
@@ -264,10 +235,9 @@ Held2AlgorithmResult run_held2_algorithm(
                 step4,
                 state,
                 packing_fraction,
-                observer,
                 {false}
             );
-        }, cache, observer));
+        }, cache));
         result.step_timings.push_back(result.step6_history.back().timing);
         const Held2Step6Result& step6 = result.step6_history.back();
         if (step6.status != "complete") {
@@ -280,10 +250,9 @@ Held2AlgorithmResult run_held2_algorithm(
                     state,
                     step5,
                     step6,
-                    resources,
-                    observer
+                    resources
                 );
-            }, observer));
+            }));
             result.step_timings.push_back(
                 result.step7_history.back().timing
             );
@@ -310,7 +279,7 @@ Held2AlgorithmResult run_held2_algorithm(
                 previous,
                 step8_neighborhood_radius
             );
-        }, observer));
+        }));
         result.step_timings.push_back(result.step8_history.back().timing);
         const Held2Step8Result& step8 = result.step8_history.back();
         if (step8.outcome == Held2Step8Outcome::Indeterminate
@@ -342,10 +311,8 @@ Held2AlgorithmResult run_held2_algorithm(
             continue;
         }
         result.step9_history.push_back(run_cached_thermodynamic_step(9, [&] {
-            return run_held2_step9(
-                step4, step8, evaluate, observer
-            );
-        }, cache, observer));
+            return run_held2_step9(step4, step8, evaluate);
+        }, cache));
         result.step_timings.push_back(result.step9_history.back().timing);
         const Held2Step9Result& step9 = result.step9_history.back();
         if (step9.next_action
@@ -373,14 +340,13 @@ Held2AlgorithmResult run_held2_algorithm(
                 step9,
                 thermodynamics.evaluate_trace
                     ? thermodynamics.evaluate_trace
-                    : evaluate,
-                observer
+                    : evaluate
             );
         };
         result.step10_history.push_back(
             thermodynamics.evaluate_trace
-            ? run_step(10, run_step10, observer)
-            : run_cached_thermodynamic_step(10, run_step10, cache, observer)
+            ? run_step(10, run_step10)
+            : run_cached_thermodynamic_step(10, run_step10, cache)
         );
         result.step10 = result.step10_history.back();
         result.step_timings.push_back(result.step10->timing);

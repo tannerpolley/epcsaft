@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 
-#include "held2_progress.hpp"
 #include "held2_step1.hpp"
 
 namespace epcsaft_engine::equilibrium {
@@ -42,8 +41,7 @@ struct Held2Step2Result {
 [[nodiscard]] Held2Step2Result run_held2_step2(
     const Held2Step1Result& step1,
     const Held2StateEvaluator& evaluator,
-    int search_work_budget,
-    Held2ProgressObserver* observer = nullptr
+    int search_work_budget
 );
 
 }  // namespace epcsaft_engine::equilibrium

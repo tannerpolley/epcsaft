@@ -15,8 +15,7 @@ struct Held2Step7Result {
     Held2PersistentState& state,
     const Held2Step5Result& step5,
     const Held2Step6Result& step6,
-    const Held2ResourceProfile& resources,
-    Held2ProgressObserver* observer = nullptr
+    const Held2ResourceProfile& resources
 );
 
 }  // namespace epcsaft_engine::equilibrium

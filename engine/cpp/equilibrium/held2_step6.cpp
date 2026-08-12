@@ -11,7 +11,6 @@ Held2Step6Result run_held2_step6(
     const Held2Step4Result& step4,
     const Held2PersistentState& state,
     const Held2PackingFractionEvaluator& packing_fraction,
-    Held2ProgressObserver*,
     Held2ThermodynamicAccessPolicy access_policy
 ) {
     Held2Step6Result result;

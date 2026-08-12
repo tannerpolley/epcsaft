@@ -1,6 +1,6 @@
 version: 4
 status: unified-monorepo-active
-governance_doctrine_revision: 14
+governance_doctrine_revision: 15
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -34,12 +34,13 @@ owners:
     python_api: src/epcsaft/equilibrium/_api.py
     native_sources: cpp/equilibrium
     nonreactive_numerical_core: held_held2
-    incumbent_public_route: tp_flash
-    candidate_public_route: phase_equilibrium
-    candidate_status: transition_not_promoted
+    public_route: phase_equilibrium
+    promotion_status: accepted
+    promotion_receipt: ../validation/campaigns/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json
     transition_decision: docs/equilibrium/adr/0002-protect-held-until-phase-equilibrium-promotion.md
+    promotion_decision: governance_D-030
     phase_specifications: [fixed_tp_feed, fixed_t_coexistence]
-    phase_modes: [protected_discovery, declared_topology_solve]
+    phase_modes: [omitted_topology_discovery, declared_topology_solve]
     phase_kinds: [liquid, vapor]
     component_support: [all_components, neutral_components]
     fixed_tp_component_support: all_components
@@ -47,11 +48,12 @@ owners:
     coexistence_partner_support: [all_components, neutral_components]
     phase_order: declared_topology_order
     role_classification: native_mechanical_stability_and_volume_branch_order
+    discovery_maximum_phase_count: 2
     maximum_certified_phase_count: 3
     target_maximum_phase_count: 3
     hints: non_authoritative_order_over_fixed_candidate_set
-    discovery_hints: rejected
-    automatic_fallback: forbidden
+    discovery_hints: forbidden_without_declared_topology
+    declared_topology_fallback: forbidden
     active_parameters: epcsaft.ActiveParameterSet
     solved_state_sensitivity: exact_implicit_from_eos_partials
   regression:
@@ -105,6 +107,6 @@ validation:
   required_module_origins: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
   installed_wheel_readiness: ../tools/verify-installed-wheel.py
   phase_equilibrium_campaign: ../validation/campaigns/2026-khudaida/tests/test_khudaida_phase_equilibrium.py
-  phase_equilibrium_promotion: blocked_until_adr_0002_gate
+  phase_equilibrium_promotion: accepted_cap_09_receipt
   materialized_packet_receipts: tests/fixtures/data/*/materialization-v2.json
   external_authority_gate: governance_g7

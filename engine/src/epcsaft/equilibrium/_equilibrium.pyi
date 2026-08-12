@@ -65,13 +65,11 @@ def _solve_fixed_t_coexistence(
     hint_compositions: tuple[tuple[float, ...], ...],
     hint_densities_mol_m3: tuple[float, ...],
 ) -> dict[str, Any]: ...
-def _solve_tp_flash(
+def _solve_held_discovery(
     capsule: object,
     temperature_k: float,
     pressure_pa: float,
     overall_mole_fractions: tuple[float, ...],
-    *,
-    trace: bool = ...,
 ) -> dict[str, Any]: ...
 def _held2_audit_farkas_certificate(
     matrix: list[list[float]],

@@ -7,7 +7,6 @@
 
 #include "held.hpp"
 #include "held2_algorithm.hpp"
-#include "held2_progress.hpp"
 #include "provider.hpp"
 #include "solved_state_sensitivity.hpp"
 
@@ -22,8 +21,7 @@ struct FlashResult {
 
 [[nodiscard]] FlashResult solve_tp_flash(
     const ProviderContext& provider,
-    const FlashInput& input,
-    Held2ProgressObserver* observer = nullptr
+    const FlashInput& input
 );
 
 }  // namespace epcsaft_engine::equilibrium

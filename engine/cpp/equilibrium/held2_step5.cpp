@@ -1381,8 +1381,7 @@ Held2Step5Result run_held2_step5(
     const Held2Step4Result& step4,
     Held2PersistentState& state,
     const Held2StateEvaluator& evaluator,
-    const Held2ResourceProfile& resources,
-    Held2ProgressObserver* observer
+    const Held2ResourceProfile& resources
 ) {
     Held2Step5Result result;
     result.timing.invocation_count = 1;
@@ -1917,19 +1916,6 @@ Held2Step5Result run_held2_step5(
             }
         }
         result.attempts.push_back(certificate);
-        Held2ProgressEvent progress;
-        progress.kind = Held2ProgressKind::Certificate;
-        progress.stage = "STEP 5 LOCAL";
-        progress.major_iteration = state.major_iteration;
-        progress.attempt = static_cast<int>(ordinal);
-        progress.status = certificate.accepted ? "accepted" : "rejected";
-        progress.reason = run.status;
-        progress.pressure_residual =
-            terminal.pressure_stationarity_relative;
-        progress.objective = value;
-        progress.upper_bound = state.upper_bound;
-        progress.gap = state.upper_bound - value;
-        observe_held2(observer, progress);
         if (!assess_step5(
                 state.upper_bound, value, certificate.accepted
             ).qualified) {

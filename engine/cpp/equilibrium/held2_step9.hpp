@@ -49,8 +49,7 @@ struct Held2Step9Result {
 [[nodiscard]] Held2Step9Result run_held2_step9(
     const Held2Step4Result& step4,
     const Held2Step8Result& step8,
-    const Held2StateEvaluator& evaluator,
-    Held2ProgressObserver* observer = nullptr
+    const Held2StateEvaluator& evaluator
 );
 
 }  // namespace epcsaft_engine::equilibrium

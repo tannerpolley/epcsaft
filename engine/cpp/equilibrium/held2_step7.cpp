@@ -6,8 +6,7 @@ Held2Step7Result run_held2_step7(
     Held2PersistentState& state,
     const Held2Step5Result& step5,
     const Held2Step6Result& step6,
-    const Held2ResourceProfile& resources,
-    Held2ProgressObserver*
+    const Held2ResourceProfile& resources
 ) {
     Held2Step7Result result;
     result.timing.invocation_count = 1;

@@ -51,8 +51,7 @@ Held2Step10Result run_held2_step10(
     const Held2Step1Result& step1,
     const Held2Step8Result& step8,
     const Held2Step9Result& step9,
-    const Held2StateEvaluator& evaluator,
-    Held2ProgressObserver* observer
+    const Held2StateEvaluator& evaluator
 ) {
     Held2Step10Result result;
     result.timing.invocation_count = 1;
@@ -339,12 +338,6 @@ Held2Step10Result run_held2_step10(
     result.timing.terminal_status = result.status;
     result.timing.terminal_reason = result.reason;
     result.timing.next_step = 0;
-    Held2ProgressEvent progress;
-    progress.kind = Held2ProgressKind::Certificate;
-    progress.stage = "STEP 10";
-    progress.status = "passed";
-    progress.count = static_cast<int>(result.refinements.size());
-    observe_held2(observer, progress);
     return result;
 }
 

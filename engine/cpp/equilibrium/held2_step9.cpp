@@ -10,8 +10,7 @@ namespace epcsaft_engine::equilibrium {
 Held2Step9Result run_held2_step9(
     const Held2Step4Result& step4,
     const Held2Step8Result& step8,
-    const Held2StateEvaluator& evaluator,
-    Held2ProgressObserver* observer
+    const Held2StateEvaluator& evaluator
 ) {
     Held2Step9Result result;
     result.timing.invocation_count = 1;
@@ -99,14 +98,6 @@ Held2Step9Result run_held2_step9(
     result.free_energy_gap = gap;
     const bool gap_passed = gap >= -kHeld2PaperFreeEnergyGap.atol
         && audit_held2_tolerance(kHeld2PaperFreeEnergyGap, gap).passed;
-    Held2ProgressEvent progress;
-    progress.kind = Held2ProgressKind::Certificate;
-    progress.stage = "STEP 9";
-    progress.status = gap_passed && potentials_passed ? "passed" : "failed";
-    progress.objective = *step8.total_reduced_gibbs;
-    progress.upper_bound = *step4.upper_bound;
-    progress.gap = gap;
-    observe_held2(observer, progress);
     if (!gap_passed || !potentials_passed) {
         result.outcome = Held2Step9Outcome::PaperConvergenceFailed;
         result.next_action = !gap_passed

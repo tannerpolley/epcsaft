@@ -48,8 +48,7 @@ struct Held2Step3Result {
 [[nodiscard]] Held2Step3Result run_held2_step3(
     const Held2Step1Result& step1,
     const Held2Step2Result& step2,
-    const Held2PressureRootEvaluator& pressure_roots,
-    Held2ProgressObserver* observer = nullptr
+    const Held2PressureRootEvaluator& pressure_roots
 );
 
 }  // namespace epcsaft_engine::equilibrium

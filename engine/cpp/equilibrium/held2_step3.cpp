@@ -52,8 +52,7 @@ std::vector<double> bounding_point(
 Held2Step3Result run_held2_step3(
     const Held2Step1Result& step1,
     const Held2Step2Result& step2,
-    const Held2PressureRootEvaluator& pressure_roots,
-    Held2ProgressObserver*
+    const Held2PressureRootEvaluator& pressure_roots
 ) {
     Held2Step3Result result;
     result.timing.invocation_count = 1;

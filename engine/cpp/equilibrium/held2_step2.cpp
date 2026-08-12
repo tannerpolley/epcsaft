@@ -41,7 +41,6 @@ struct DirectContext {
     const Held2StageIJointEvaluator* evaluator = nullptr;
     Held2StageIDirectResult* result = nullptr;
     nlopt::opt* optimizer = nullptr;
-    Held2ProgressObserver* observer = nullptr;
     bool stop_requested = false;
 };
 
@@ -98,28 +97,8 @@ double direct_objective(
     }
     Held2StageIJointEvaluation evaluation =
         (*context.evaluator)(chart_coordinates);
-    const int evaluation_index = context.result->evaluation_count++;
-    Held2ProgressEvent progress;
-    progress.kind = Held2ProgressKind::StageIEvaluation;
-    progress.iteration = evaluation_index + 1;
-    progress.objective = evaluation.tpd;
-    progress.physical_total_ion_mole_fraction =
-        evaluation.physical_total_ion_mole_fraction;
-    progress.total_ion_mole_fraction_max =
-        evaluation.total_ion_mole_fraction_max;
-    progress.status = is_valid(evaluation) ? "admissible" : "failed";
-    progress.reason = is_valid(evaluation) ? "" : "trial_evaluation_failed";
-    if (evaluation.state.volume > 0.0) {
-        progress.volume = evaluation.state.volume;
-        progress.pressure_residual = pressure_residual(evaluation);
-    }
-    observe_held2(context.observer, progress);
+    ++context.result->evaluation_count;
     if (!is_valid(evaluation)) {
-        Held2ProgressEvent failure;
-        failure.kind = Held2ProgressKind::Failure;
-        failure.stage = "STAGE I";
-        failure.reason = "required_joint_evaluation_failed";
-        observe_held2(context.observer, failure);
         context.result->failure_reason =
             "required_joint_evaluation_failed";
         context.stop_requested = true;
@@ -143,12 +122,11 @@ Held2StageIDirectResult run_direct_search(
     std::size_t joint_dimension,
     int search_work_budget,
     int provider_evaluations_per_trial,
-    const Held2StageIJointEvaluator& evaluator,
-    Held2ProgressObserver* observer
+    const Held2StageIJointEvaluator& evaluator
 ) {
     Held2StageIDirectResult result;
     nlopt::opt optimizer(nlopt::GN_DIRECT_L, joint_dimension);
-    DirectContext context{&evaluator, &result, &optimizer, observer, false};
+    DirectContext context{&evaluator, &result, &optimizer, false};
     optimizer.set_lower_bounds(std::vector<double>(joint_dimension, 0.0));
     optimizer.set_upper_bounds(std::vector<double>(joint_dimension, 1.0));
     optimizer.set_maxeval(
@@ -201,8 +179,7 @@ Held2TpdEvaluation evaluate_held2_tpd(
 Held2Step2Result run_held2_step2(
     const Held2Step1Result& step1,
     const Held2StateEvaluator& evaluator,
-    int search_work_budget,
-    Held2ProgressObserver* observer
+    int search_work_budget
 ) {
     constexpr int kPressureIntervals = 64;
     constexpr int kPressureSubdivisionDepth = 8;
@@ -263,9 +240,6 @@ Held2Step2Result run_held2_step2(
         );
     };
 
-    Held2ProgressEvent progress;
-    progress.kind = Held2ProgressKind::ReferenceStart;
-    observe_held2(observer, progress);
     try {
         result.reference_envelope = enumerate_pressure_roots(feed);
     } catch (...) {
@@ -273,20 +247,6 @@ Held2Step2Result run_held2_step2(
             Held2Step2Outcome::Indeterminate,
             "reference_evaluation_failed"
         );
-    }
-    for (std::size_t index = 0;
-         index < result.reference_envelope->roots.size();
-         ++index) {
-        const Held2PressureRoot& root =
-            result.reference_envelope->roots[index];
-        progress = {};
-        progress.kind = Held2ProgressKind::ReferenceRoot;
-        progress.count = static_cast<int>(index);
-        progress.volume = root.volume;
-        progress.objective = root.objective;
-        progress.pressure_residual = root.pressure_residual;
-        progress.mechanical_class = root.mechanical_class;
-        observe_held2(observer, progress);
     }
     const Held2PressureEnvelopeResult& reference_envelope =
         *result.reference_envelope;
@@ -346,11 +306,6 @@ Held2Step2Result run_held2_step2(
             Held2Step2Outcome::Indeterminate, "reference_tpd_nonzero"
         );
     }
-    progress = {};
-    progress.kind = Held2ProgressKind::ReferenceSelected;
-    progress.count = reference_envelope.selected_root_index;
-    progress.status = "selected";
-    observe_held2(observer, progress);
     const std::size_t dimension =
         step1.coordinates->independent_indices.size();
     const auto volume_bounds = [&](const auto& independent) {
@@ -553,14 +508,6 @@ Held2Step2Result run_held2_step2(
                 );
             }
             record_minimum(boundary.tpd);
-            progress = {};
-            progress.kind = Held2ProgressKind::StageIEvaluation;
-            progress.iteration = sample + 1;
-            progress.objective = boundary.tpd;
-            progress.status = "admissible_trace_boundary";
-            progress.volume = boundary.state.volume;
-            progress.pressure_residual = pressure_residual(boundary);
-            observe_held2(observer, progress);
             if (!is_strict_negative(boundary)) {
                 continue;
             }
@@ -624,8 +571,7 @@ Held2Step2Result run_held2_step2(
             dimension + 1,
             search_work_budget,
             2,
-            complete_joint,
-            observer
+            complete_joint
         )
     );
     if (is_valid(complete_witness)) {
@@ -765,8 +711,7 @@ Held2Step2Result run_held2_step2(
                     dimension,
                     preparation_budget,
                     kPreparationProviderEvaluations,
-                    prepare_composition,
-                    observer
+                    prepare_composition
                 );
             prepared_witness = assess_search(
                 preparation_search

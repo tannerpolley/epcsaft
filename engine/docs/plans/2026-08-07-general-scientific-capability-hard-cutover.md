@@ -2,7 +2,7 @@
 
 - Status: canonical plan; execution is tracked by GitHub root issue #10 and its native CAP subissues
 - Date: 2026-08-07
-- Doctrine: Governance revision 14, Numerical Verification-Driven Development
+- Doctrine: Governance revision 15, Numerical Verification-Driven Development
 - Scope: `engine/` EOS, Equilibrium, and Regression
 - Decision authority: ADR 0004 and the three owner plans linked below
 
@@ -12,11 +12,11 @@ Replace source-, campaign-, component-, and fixed-topology runtime routes with
 one source-neutral capability system. `Parameters` resolves parameter identity,
 EOS evaluates thermodynamic quantities and exact partial derivatives,
 Equilibrium owns solved-state quantities and sensitivities, and Regression forms
-residuals from owner-provided observable blocks. The cutover is direct except
-for the D-029 protected nonreactive-phase promotion: `tp_flash` remains the
-explicit HELD/HELD2 incumbent until its HELD-derived candidate passes the
-reviewed as-good-or-better gate. No automatic fallback, inferred default, or
-compatibility implementation is admitted.
+residuals from owner-provided observable blocks. Governance D-030 completed the
+D-029 protected nonreactive-phase promotion: `phase_equilibrium` is the sole
+public route and retains HELD/HELD2 internally for omitted-topology discovery.
+Declared topology never falls back to discovery. No compatibility
+implementation is admitted.
 
 The owner plans are:
 
@@ -47,9 +47,9 @@ The pair-parameter scientific basis is recorded in
    or SSM+DS runtime selector.
 6. The destination nonreactive phase owner is `phase_equilibrium`, with
    discovery, hint, and constrained-specification modes for one to three
-   liquid/vapor phases. Under D-029, exact `tp_flash` HELD/HELD2 remains the
-   protected incumbent until a reviewed promotion receipt proves that
-   destination and authorizes retirement.
+   liquid/vapor phases. Governance D-030 accepts the reviewed promotion
+   receipt, retains exact HELD/HELD2 internally for discovery, and retires its
+   redundant public Python route.
 7. Homogeneous chemical equilibrium remains separate. This plan defines only
    the state, phase, parameter, and sensitivity seam needed by a future coupled
    reactive-phase design.
@@ -302,13 +302,13 @@ blocked-by state is the lifecycle authority; this table defines scope and order.
 | CAP-06 | Regression consumes owner blocks | CAP-05 | No thermodynamic dispatch or EOS implementation remains in Regression |
 | CAP-07 | Equilibrium provider parameter transport | CAP-03, CAP-04 | Same active set and explicit Born/reference inputs reach all EOS provider calls |
 | CAP-08 | Equilibrium exact solved-state sensitivities | CAP-07 | Implicit Jacobians match independent differences away from singularities |
-| CAP-09 | Protected HELD-derived `phase_equilibrium` promotion | CAP-07 | The exact incumbent is restored; candidate lineage passes the complete retained campaign; retirement remains blocked until actual constrained 1–3 phase solves and the ADR 0002 review gate pass |
+| CAP-09 | Protected HELD-derived `phase_equilibrium` promotion | CAP-07 | Completed by Governance D-030: the campaign and constrained claims pass, `phase_equilibrium` is sole public, and HELD/HELD2 remains internal discovery |
 | CAP-10 | Equilibrium observation admission review | CAP-08, CAP-09 | Explicit admit/defer decision with numerical-failure evidence |
 | CAP-11 | Final dead-surface and documentation audit | CAP-04, CAP-06, CAP-10 | The Cython experiment and retired surfaces are absent, and one final receipt binds the clean cutover tree and bounded scan |
 
 ## Done definition
 
-The cutover is complete only when all three owner plans and the D-029 phase
+The cutover is complete only when all three owner plans and the D-030 phase
 promotion are complete, the wheel
 contains one parameter and derivative system, source- or case-specific runtime
 routes are absent, compact numerical evidence passes, installed-wheel

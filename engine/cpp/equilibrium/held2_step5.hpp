@@ -69,8 +69,7 @@ struct Held2Step5Result {
     const Held2Step4Result& step4,
     Held2PersistentState& state,
     const Held2StateEvaluator& evaluator,
-    const Held2ResourceProfile& resources,
-    Held2ProgressObserver* observer = nullptr
+    const Held2ResourceProfile& resources
 );
 
 }  // namespace epcsaft_engine::equilibrium

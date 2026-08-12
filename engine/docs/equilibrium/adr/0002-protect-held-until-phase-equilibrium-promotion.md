@@ -1,7 +1,8 @@
 ---
-status: accepted
+status: fulfilled
 date: 2026-08-10
 amends: 0001-one-general-phase-equilibrium-owner.md
+fulfilled_by: governance D-030 and CAP-09 promotion receipt
 ---
 
 # Protect HELD until the phase-equilibrium promotion gate passes
@@ -78,3 +79,13 @@ gate; its atomic-retirement sequencing is superseded by this decision.
   a compatibility promise.
 - The one-owner target remains unchanged, but current capability claims are
   limited to what the installed-wheel evidence proves.
+
+## Fulfillment
+
+On 2026-08-12 the complete installed-wheel Khudaida promotion campaign passed
+under the user-approved `1e-4` lineage-only tolerance while every stricter
+physical and derivative gate remained unchanged. Governance D-030 therefore
+made `phase_equilibrium` the sole public route, mapped omitted fixed-T,P
+topology to the retained internal discovery controller, prohibited fallback
+for declared topology, and retired the transitional Python `tp_flash` surface.
+The HELD/HELD2 numerical core remains live internally as required by this ADR.

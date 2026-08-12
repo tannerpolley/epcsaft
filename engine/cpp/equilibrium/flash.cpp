@@ -51,7 +51,7 @@ void validate_input(const ProviderContext& provider, const FlashInput& input) {
             [](double value) { return std::isfinite(value) && value > 0.0; }
         )) {
         throw std::invalid_argument(
-            "tp_flash inputs must be positive, finite, and match the Provider model"
+            "HELD discovery inputs must be positive, finite, and match the Provider model"
         );
     }
     double total = 0.0;
@@ -59,7 +59,7 @@ void validate_input(const ProviderContext& provider, const FlashInput& input) {
         total += value;
     }
     if (std::abs(total - 1.0) > 1.0e-12) {
-        throw std::invalid_argument("tp_flash composition must be normalized");
+        throw std::invalid_argument("HELD discovery composition must be normalized");
     }
 }
 
@@ -351,8 +351,7 @@ void attach_electrolyte_sensitivity(
 
 FlashResult solve_tp_flash(
     const ProviderContext& provider,
-    const FlashInput& input,
-    Held2ProgressObserver* observer
+    const FlashInput& input
 ) {
     validate_input(provider, input);
     FlashResult result;
@@ -370,8 +369,7 @@ FlashResult solve_tp_flash(
         Held2AlgorithmResult solve = run_held2_algorithm(
             make_installed_held2_access(provider, input),
             input,
-            {},
-            observer
+            {}
         );
         attach_electrolyte_sensitivity(provider, result, solve);
         result.solve = std::move(solve);
@@ -381,7 +379,7 @@ FlashResult solve_tp_flash(
     if (input.overall_mole_fractions.size() != 2
         || provider.transport().component_count != 2) {
         throw std::invalid_argument(
-            "neutral tp_flash requires a two-component model"
+            "neutral HELD discovery requires a two-component model"
         );
     }
     HeldResult solve = solve_held(

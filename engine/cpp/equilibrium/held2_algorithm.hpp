@@ -68,8 +68,7 @@ struct Held2AlgorithmResult {
 [[nodiscard]] Held2AlgorithmResult run_held2_algorithm(
     const Held2ThermodynamicAccess& thermodynamics,
     const FlashInput& input,
-    const Held2ResourceProfile& resources,
-    Held2ProgressObserver* observer = nullptr
+    const Held2ResourceProfile& resources
 );
 
 }  // namespace epcsaft_engine::equilibrium

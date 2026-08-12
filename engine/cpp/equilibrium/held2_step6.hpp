@@ -30,7 +30,6 @@ struct Held2Step6Result {
     const Held2Step4Result& step4,
     const Held2PersistentState& state,
     const Held2PackingFractionEvaluator& packing_fraction,
-    Held2ProgressObserver* observer = nullptr,
     Held2ThermodynamicAccessPolicy access_policy = {}
 );
 

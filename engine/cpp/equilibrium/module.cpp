@@ -1,6 +1,5 @@
 #include <array>
 #include <cstddef>
-#include <iostream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -564,17 +563,15 @@ py::dict evaluate_phase(
     return result;
 }
 
-py::dict solve_tp_flash(
+py::dict solve_held_discovery(
     const py::capsule& capsule,
     double temperature_k,
     double pressure_pa,
-    const std::vector<double>& overall_mole_fractions,
-    bool trace
+    const std::vector<double>& overall_mole_fractions
 ) {
     const epcsaft_engine::equilibrium::ProviderContext provider(
         checked_transport(capsule)
     );
-    epcsaft_engine::equilibrium::Held2TerminalProgress terminal_progress(std::cout);
     epcsaft_engine::equilibrium::FlashResult flash;
     {
         py::gil_scoped_release release;
@@ -584,8 +581,7 @@ py::dict solve_tp_flash(
                 temperature_k,
                 pressure_pa,
                 overall_mole_fractions,
-            },
-            trace ? &terminal_progress : nullptr
+            }
         );
     }
     return py::module_::import("json")
@@ -756,14 +752,12 @@ PYBIND11_MODULE(_equilibrium, module) {
         py::arg("hint_densities_mol_m3")
     );
     module.def(
-        "_solve_tp_flash",
-        &solve_tp_flash,
+        "_solve_held_discovery",
+        &solve_held_discovery,
         py::arg("capsule"),
         py::arg("temperature_k"),
         py::arg("pressure_pa"),
-        py::arg("overall_mole_fractions"),
-        py::kw_only(),
-        py::arg("trace") = false
+        py::arg("overall_mole_fractions")
     );
     module.def(
         "_held2_audit_farkas_certificate",

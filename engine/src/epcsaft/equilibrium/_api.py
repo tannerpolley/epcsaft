@@ -18,7 +18,7 @@ from . import _equilibrium
 
 
 @dataclass(frozen=True)
-class PhaseState:
+class _HeldPhaseState:
     """One explicit phase state returned by the retained HELD route."""
 
     amount_mol: float
@@ -112,18 +112,13 @@ class DeclaredTopology:
 
 
 @dataclass(frozen=True, slots=True)
-class DiscoverPhases:
-    """Request the protected HELD/HELD2 finite discovery controller."""
-
-
-@dataclass(frozen=True, slots=True)
 class FixedTPFeed:
-    """Fixed-temperature, fixed-pressure, fixed-feed phase specification."""
+    """Fixed-T,P feed; omitted topology selects HELD/HELD2 discovery."""
 
     temperature: Quantity[Any]
     pressure: Quantity[Any]
     feed_amounts_mol: tuple[float, ...]
-    selection: DiscoverPhases | DeclaredTopology
+    topology: DeclaredTopology | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "feed_amounts_mol", tuple(self.feed_amounts_mol))
@@ -244,13 +239,10 @@ class PhaseEquilibriumSensitivity:
 
 
 @dataclass(frozen=True)
-class TpFlashResult:
-    """Certified phase result from the retained HELD or HELD2 controller."""
+class _HeldDiscoveryResult:
+    """Internal certified result from the HELD or HELD2 controller."""
 
-    temperature_k: float
-    pressure_pa: float
-    overall_mole_fractions: tuple[float, ...]
-    phases: tuple[PhaseState, ...]
+    phases: tuple[_HeldPhaseState, ...]
     phase_fractions: tuple[float, ...]
     total_free_energy_over_rt: float
     parameter_fingerprint: str
@@ -258,8 +250,8 @@ class TpFlashResult:
     sensitivity: PhaseEquilibriumSensitivity | None
 
 
-class FlashError(RuntimeError):
-    """Raised when the retained HELD search cannot return an accepted result."""
+class _HeldDiscoveryError(RuntimeError):
+    """Raised when internal HELD discovery cannot return an accepted result."""
 
     def __init__(
         self,
@@ -687,10 +679,6 @@ class ChemicalEquilibriumError(RuntimeError):
         self.diagnostics = diagnostics
 
 
-_FLASH_FINGERPRINT = "sha256:9e63656093548f1f64bec8cc5129421f6e1bc452b2ec3632ded65f5ac538b8e7"
-_FLASH_TEMPERATURE_DOMAIN_K = (203.22, 243.61)
-_FLASH_PRESSURE_DOMAIN_PA = (2_124_000.0, 6_885_000.0)
-_FLASH_METHANE_FEED_DOMAIN = (0.4661, 0.66705)
 _GAS_CONSTANT_J_MOL_K = 8.31446261815324
 _LIQUID_COMPRESSIBILITY_FACTOR_MAXIMUM = 0.25
 _VAPOR_COMPRESSIBILITY_FACTOR_MINIMUM = 0.45
@@ -712,14 +700,14 @@ def _vector(payload: object, size: int, name: str) -> tuple[float, ...]:
     return values
 
 
-def _phase(payload: Mapping[str, object]) -> PhaseState:
+def _phase(payload: Mapping[str, object]) -> _HeldPhaseState:
     mole_fractions = _float_tuple(payload.get("mole_fractions", (1.0,)))
     chemical_potential = _vector(
         payload["chemical_potential_over_rt"],
         len(mole_fractions),
         "phase chemical-potential vector",
     )
-    return PhaseState(
+    return _HeldPhaseState(
         amount_mol=float(cast(float, payload["amount_mol"])),
         mole_fractions=mole_fractions,
         volume_m3=float(cast(float, payload["volume_m3"])),
@@ -757,25 +745,6 @@ def _phase_feed(
         raise ValueError(f"phase_equilibrium requires exactly {component_count} components")
     if not all(math.isfinite(value) and value > 0.0 for value in values):
         raise ValueError("feed amounts must be positive and finite")
-    return values
-
-
-def _tp_flash_feed(
-    overall_mole_fractions: Sequence[float],
-    component_count: int,
-) -> tuple[float, ...]:
-    if isinstance(overall_mole_fractions, (str, bytes)):
-        raise TypeError("overall mole fractions must be a numeric sequence")
-    try:
-        values = tuple(float(value) for value in overall_mole_fractions)
-    except (TypeError, ValueError) as error:
-        raise TypeError("overall mole fractions must be a numeric sequence") from error
-    if len(values) != component_count:
-        raise ValueError(f"tp_flash requires exactly {component_count} components")
-    if not all(math.isfinite(value) and value > 0.0 for value in values):
-        raise ValueError("overall mole fractions must be positive and finite")
-    if not math.isclose(sum(values), 1.0, rel_tol=0.0, abs_tol=1.0e-12):
-        raise ValueError("overall mole fractions must sum to one within 1e-12")
     return values
 
 
@@ -913,7 +882,7 @@ def _held2_diagnostics(payload: Mapping[str, object]) -> Held2Diagnostics:
 def _held2_phase_state(
     component_count: int,
     payload: Mapping[str, object],
-) -> PhaseState:
+) -> _HeldPhaseState:
     fractions = _vector(payload["mole_fractions"], component_count, "HELD2 phase composition")
     phase_fraction = float(cast(float, payload["phase_fraction"]))
     molar_volume = float(cast(float, payload["molar_volume_m3_mol"]))
@@ -924,7 +893,7 @@ def _held2_phase_state(
     pressure_pa = float(cast(float, payload["pressure_pa"]))
     if not math.isfinite(pressure_pa):
         raise ValueError("native HELD2 phase pressure must be finite")
-    return PhaseState(
+    return _HeldPhaseState(
         amount_mol=phase_fraction,
         mole_fractions=fractions,
         volume_m3=phase_fraction * molar_volume,
@@ -939,13 +908,11 @@ def _held2_phase_state(
 
 
 def _held2_result(
-    temperature_k: float,
-    pressure_pa: float,
     feed: tuple[float, ...],
     fingerprint: str,
     native: Mapping[str, object],
     active_parameters: epcsaft.ActiveParameterSet | None,
-) -> TpFlashResult:
+) -> _HeldDiscoveryResult:
     diagnostics = _held2_diagnostics(native)
     if diagnostics.globality_certificate != "not_guaranteed":
         raise ValueError("native HELD2 result has an invalid globality certificate")
@@ -954,7 +921,7 @@ def _held2_result(
         "physical_equilibrium_accepted",
     }:
         reason = diagnostics.failure_reason or "HELD2 did not return a certified equilibrium"
-        raise FlashError(reason, diagnostics)
+        raise _HeldDiscoveryError(reason, diagnostics)
     if str(native["parameter_fingerprint"]) != fingerprint:
         raise ValueError("native HELD2 result has the wrong Provider fingerprint")
     sensitivity = _phase_equilibrium_sensitivity(native.get("sensitivity"), active_parameters)
@@ -970,10 +937,7 @@ def _held2_result(
     total_gibbs = float(cast(float, native["total_free_energy_over_rt"]))
     if not math.isfinite(total_gibbs):
         raise ValueError("native HELD2 objective must be finite")
-    return TpFlashResult(
-        temperature_k=temperature_k,
-        pressure_pa=pressure_pa,
-        overall_mole_fractions=feed,
+    return _HeldDiscoveryResult(
         phases=phases,
         phase_fractions=phase_fractions,
         total_free_energy_over_rt=total_gibbs,
@@ -1112,76 +1076,48 @@ def _phase_equilibrium_sensitivity(
     )
 
 
-def tp_flash(
+def _held_discovery(
     model: epcsaft.Mixture,
-    temperature: Quantity[Any],
-    pressure: Quantity[Any],
-    overall_mole_fractions: Sequence[float],
-    *,
+    temperature_k: float,
+    pressure_pa: float,
+    feed: tuple[float, ...],
     active_parameters: epcsaft.ActiveParameterSet | None = None,
-    trace: bool = False,
-) -> TpFlashResult:
-    """Run the retained bounded HELD or strong-electrolyte HELD2 controller."""
+) -> _HeldDiscoveryResult:
+    """Run the internal bounded HELD or strong-electrolyte HELD2 controller."""
 
     try:
-        if not isinstance(model, epcsaft.Mixture):
-            raise TypeError("tp_flash requires an epcsaft.Mixture")
-        if (
-            active_parameters is not None
-            and type(active_parameters) is not epcsaft.ActiveParameterSet
-        ):
-            raise TypeError("active_parameters must be an epcsaft.ActiveParameterSet")
-        temperature_k = _quantity(temperature, "kelvin", "temperature", "tp_flash")
-        pressure_pa = _quantity(pressure, "pascal", "pressure", "tp_flash")
-        component_count = len(model.component_ids)
-        feed = _tp_flash_feed(overall_mole_fractions, component_count)
-        if model.parameter_fingerprint == _FLASH_FINGERPRINT and not (
-            _FLASH_TEMPERATURE_DOMAIN_K[0] <= temperature_k <= _FLASH_TEMPERATURE_DOMAIN_K[1]
-        ):
-            raise ValueError("temperature is outside the audited May 2015 source domain")
-        if model.parameter_fingerprint == _FLASH_FINGERPRINT and not (
-            _FLASH_PRESSURE_DOMAIN_PA[0] <= pressure_pa <= _FLASH_PRESSURE_DOMAIN_PA[1]
-        ):
-            raise ValueError("pressure is outside the audited May 2015 source domain")
-        if model.parameter_fingerprint == _FLASH_FINGERPRINT and not (
-            _FLASH_METHANE_FEED_DOMAIN[0] <= feed[0] <= _FLASH_METHANE_FEED_DOMAIN[1]
-        ):
-            raise ValueError("composition is outside the audited May 2015 source domain")
         capsule = _native_transport(model, active_parameters)
     except (TypeError, ValueError) as error:
         diagnostics = _failed_held_diagnostics("invalid_input", "input_rejected", str(error))
-        raise FlashError(str(error), diagnostics) from error
+        raise _HeldDiscoveryError(str(error), diagnostics) from error
 
     try:
         native = cast(
             Mapping[str, object],
-            _equilibrium._solve_tp_flash(
+            _equilibrium._solve_held_discovery(
                 capsule,
                 temperature_k,
                 pressure_pa,
                 feed,
-                trace=trace,
             ),
         )
     except (RuntimeError, TypeError, ValueError) as error:
         diagnostics = _failed_held_diagnostics("error", "native_exception", str(error))
-        raise FlashError(str(error), diagnostics) from error
+        raise _HeldDiscoveryError(str(error), diagnostics) from error
 
     if native.get("controller") == "perdomo_held2_paper_steps_1_to_10_v1":
         try:
             return _held2_result(
-                temperature_k,
-                pressure_pa,
                 feed,
                 model.parameter_fingerprint,
                 native,
                 active_parameters,
             )
-        except FlashError:
+        except _HeldDiscoveryError:
             raise
         except (KeyError, TypeError, ValueError) as error:
             diagnostics = _failed_held_diagnostics("error", "payload_error", str(error))
-            raise FlashError(
+            raise _HeldDiscoveryError(
                 "native HELD2 payload does not match the typed contract", diagnostics
             ) from error
 
@@ -1191,8 +1127,7 @@ def tp_flash(
             raise ValueError("native HELD result has an invalid globality certificate")
         if diagnostics.outcome not in {"one_phase", "accepted"}:
             reason = diagnostics.failure_reason or "HELD search did not return an accepted result"
-            raise FlashError(reason, diagnostics)
-        overall = _vector(native["overall_mole_fractions"], len(feed), "overall composition")
+            raise _HeldDiscoveryError(reason, diagnostics)
         phase_payloads = cast(Sequence[Mapping[str, object]], native["phases"])
         phases = tuple(_phase(payload) for payload in phase_payloads)
         phase_fractions = _float_tuple(native["phase_fractions"])
@@ -1203,10 +1138,7 @@ def tp_flash(
         if str(native["parameter_fingerprint"]) != model.parameter_fingerprint:
             raise ValueError("native HELD result has the wrong provider fingerprint")
         sensitivity = _phase_equilibrium_sensitivity(native.get("sensitivity"), active_parameters)
-        return TpFlashResult(
-            temperature_k=float(cast(float, native["temperature_k"])),
-            pressure_pa=float(cast(float, native["pressure_pa"])),
-            overall_mole_fractions=overall,
+        return _HeldDiscoveryResult(
             phases=phases,
             phase_fractions=phase_fractions,
             total_free_energy_over_rt=float(cast(float, native["total_free_energy_over_rt"])),
@@ -1214,11 +1146,11 @@ def tp_flash(
             diagnostics=diagnostics,
             sensitivity=sensitivity,
         )
-    except FlashError:
+    except _HeldDiscoveryError:
         raise
     except (KeyError, TypeError, ValueError) as error:
         diagnostics = _failed_held_diagnostics("error", "payload_error", str(error))
-        raise FlashError(
+        raise _HeldDiscoveryError(
             "native HELD payload does not match the typed contract", diagnostics
         ) from error
 
@@ -1466,14 +1398,14 @@ def _discovery_result(
     total = math.fsum(feed)
     normalized = tuple(value / total for value in feed)
     try:
-        retained = tp_flash(
+        retained = _held_discovery(
             model,
-            specification.temperature,
-            specification.pressure,
+            temperature_k,
+            pressure_pa,
             normalized,
-            active_parameters=active_parameters,
+            active_parameters,
         )
-    except FlashError as error:
+    except _HeldDiscoveryError as error:
         retained_diagnostics = error.diagnostics
         diagnostics = _protected_discovery_diagnostics(
             retained_diagnostics,
@@ -1620,13 +1552,13 @@ def phase_equilibrium(
         raise TypeError("active_parameters must be an epcsaft.ActiveParameterSet")
     specification = problem.specification
     if isinstance(specification, FixedTPFeed):
-        if isinstance(specification.selection, DiscoverPhases):
+        if specification.topology is None:
             if problem.hints:
-                raise ValueError("discovery hints are not authoritative and are not consumed")
+                raise ValueError("phase hints require a declared topology")
             return _discovery_result(model, problem, specification, active_parameters)
-        if not isinstance(specification.selection, DeclaredTopology):
-            raise TypeError("fixed-T,P selection must be DiscoverPhases or DeclaredTopology")
-        topology = specification.selection
+        if not isinstance(specification.topology, DeclaredTopology):
+            raise TypeError("fixed-T,P topology must be DeclaredTopology or None")
+        topology = specification.topology
         if not 1 <= len(topology.phases) <= 3:
             raise ValueError("fixed-T,P declared topology requires one to three phases")
         if any(type(phase.support) is not AllComponents for phase in topology.phases):
@@ -1686,6 +1618,8 @@ def phase_equilibrium(
         )
     if not isinstance(specification, FixedTCoexistence):
         raise TypeError("phase-equilibrium specification type is unsupported")
+    if not isinstance(specification.topology, DeclaredTopology):
+        raise TypeError("fixed-T coexistence topology must be DeclaredTopology")
     topology = specification.topology
     if len(topology.phases) != 2 or specification.reference_phase_index not in {0, 1}:
         raise ValueError("fixed-T coexistence requires exactly two phases and one reference index")

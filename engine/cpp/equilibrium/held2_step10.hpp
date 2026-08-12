@@ -38,8 +38,7 @@ struct Held2Step10Result {
     const Held2Step1Result& step1,
     const Held2Step8Result& step8,
     const Held2Step9Result& step9,
-    const Held2StateEvaluator& evaluator,
-    Held2ProgressObserver* observer = nullptr
+    const Held2StateEvaluator& evaluator
 );
 
 }  // namespace epcsaft_engine::equilibrium

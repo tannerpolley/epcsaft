@@ -38,8 +38,7 @@ struct Held2Step4Result {
 };
 
 [[nodiscard]] Held2Step4Result run_held2_step4(
-    Held2PersistentState& state,
-    Held2ProgressObserver* observer = nullptr
+    Held2PersistentState& state
 );
 
 }  // namespace epcsaft_engine::equilibrium
