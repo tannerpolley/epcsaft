@@ -11,7 +11,11 @@ from epcsaft import ActiveParameterSet, Mixture, Parameters
 from epcsaft import unit_registry as u
 from epcsaft.eos import _native_transport
 from epcsaft.equilibrium import (
+    AllComponents,
+    DeclaredTopology,
+    FixedTPFeed,
     PhaseEquilibriumProblem,
+    PhaseSpecification,
     _equilibrium,
     phase_equilibrium,
 )
@@ -282,11 +286,14 @@ def test_exact_two_phase_sensitivity_matches_independent_centered_resolves() -> 
     public = phase_equilibrium(
         Mixture(parameters),
         PhaseEquilibriumProblem(
-            300.0 * u.kelvin,
-            1.0e5 * u.pascal,
-            (0.5, 0.5),
-            mode="constrained",
-            phase_roles=("vapor",),
+            FixedTPFeed(
+                300.0 * u.kelvin,
+                1.0e5 * u.pascal,
+                (0.5, 0.5),
+                DeclaredTopology(
+                    (PhaseSpecification("vapor", AllComponents()),)
+                ),
+            )
         ),
         active_parameters=selected,
     )

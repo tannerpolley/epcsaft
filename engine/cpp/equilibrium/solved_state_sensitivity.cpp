@@ -1,5 +1,7 @@
 #include "solved_state_sensitivity.hpp"
 
+#include "held2.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -283,15 +285,473 @@ RankRevealingSolve solve_total_derivatives(
     return result;
 }
 
-}  // namespace
+std::vector<double> held2_independent(
+    const Held2Coordinates& coordinates,
+    const std::vector<double>& physical
+) {
+    const auto modified = held2_transform_physical_fractions(
+        coordinates, physical
+    );
+    std::vector<double> result;
+    result.reserve(coordinates.independent_indices.size());
+    for (std::size_t provider : coordinates.independent_indices) {
+        const auto retained = std::find(
+            coordinates.retained_indices.begin(),
+            coordinates.retained_indices.end(),
+            provider
+        );
+        result.push_back(modified[static_cast<std::size_t>(
+            retained - coordinates.retained_indices.begin()
+        )]);
+    }
+    return result;
+}
 
-SolvedStateSensitivity evaluate_solved_state_sensitivity(
+std::vector<double> modified_potential_rows(
+    const Held2Coordinates& coordinates
+) {
+    const std::size_t component_count = coordinates.charges.size();
+    std::vector<double> result(
+        coordinates.retained_indices.size() * component_count, 0.0
+    );
+    const double eliminated_charge =
+        coordinates.charges[coordinates.eliminated_index];
+    for (std::size_t row = 0;
+         row < coordinates.retained_indices.size(); ++row) {
+        const std::size_t retained = coordinates.retained_indices[row];
+        result[row * component_count + retained] =
+            1.0 / coordinates.modified_factors[row];
+        result[row * component_count + coordinates.eliminated_index] =
+            -coordinates.charges[retained]
+            / eliminated_charge
+            / coordinates.modified_factors[row];
+    }
+    return result;
+}
+
+SolvedStateSensitivity evaluate_charged_sensitivity(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::string>& component_ids,
     const std::vector<double>& feed_amounts_mol,
-    const std::vector<SolvedPhaseState>& phases
+    const std::vector<SolvedPhaseState>& phases,
+    const ProviderActiveParameterSet& active
+) {
+    SolvedStateSensitivity result;
+    result.parameter_identities = active.identities;
+    const std::size_t component_count = component_ids.size();
+    const std::size_t phase_count = phases.size();
+    const std::size_t parameter_count = active.identities.size();
+    std::vector<double> charges(component_count, 0.0);
+    for (std::size_t component = 0; component < component_count; ++component) {
+        charges[component] = static_cast<double>(
+            provider.transport().component_charges[component]
+        );
+    }
+    Held2Coordinates coordinates;
+    try {
+        coordinates = make_held2_coordinates(charges, component_ids);
+    } catch (const std::exception&) {
+        result.failure_reason = "unsupported_charged_coordinate_chart";
+        return result;
+    }
+    const std::size_t independent_count =
+        coordinates.independent_indices.size();
+    const std::size_t potential_count =
+        coordinates.retained_indices.size();
+    const std::size_t block_size = independent_count + 2;
+    result.dimension = phase_count * block_size;
+    result.reference_phase_index = phase_count - 1;
+    const double feed_total = std::accumulate(
+        feed_amounts_mol.begin(), feed_amounts_mol.end(), 0.0
+    );
+    const auto composition_jacobian =
+        held2_physical_fraction_jacobian(coordinates);
+    const auto potential_rows = modified_potential_rows(coordinates);
+    std::vector<double> phase_amounts;
+    std::vector<double> molar_volumes;
+    std::vector<std::vector<double>> compositions;
+    std::vector<std::vector<double>> independent_values;
+    std::vector<ParameterizedPhaseEvaluation> evaluations;
+    try {
+        for (const auto& phase : phases) {
+            const double amount = std::accumulate(
+                phase.amounts_mol.begin(), phase.amounts_mol.end(), 0.0
+            );
+            std::vector<double> composition = phase.amounts_mol;
+            for (double& value : composition) {
+                value /= amount;
+            }
+            const auto chart = held2_independent(coordinates, composition);
+            static_cast<void>(held2_lift_independent_fractions(
+                coordinates, chart
+            ));
+            const double molar_volume = phase.volume_m3 / amount;
+            phase_amounts.push_back(amount);
+            molar_volumes.push_back(molar_volume);
+            compositions.push_back(composition);
+            independent_values.push_back(chart);
+            evaluations.push_back(provider.evaluate_parameterized_phase(
+                temperature_k,
+                composition,
+                molar_volume,
+                kPackingFractionMinimum,
+                kPackingFractionMaximum,
+                active
+            ));
+        }
+    } catch (const std::exception&) {
+        result.failure_reason = "provider_partial_evaluation_failed";
+        return result;
+    }
+    std::vector<std::vector<double>> modified_potentials;
+    for (const auto& evaluation : evaluations) {
+        modified_potentials.push_back(held2_transform_modified_potentials(
+            coordinates,
+            std::vector<double>(
+                evaluation.phase.gradient.begin(),
+                evaluation.phase.gradient.begin()
+                    + static_cast<std::ptrdiff_t>(component_count)
+            )
+        ));
+    }
+    for (std::size_t phase = 0; phase + 1 < phase_count; ++phase) {
+        for (std::size_t potential = 0;
+             potential < potential_count; ++potential) {
+            if (std::abs(
+                    modified_potentials[phase][potential]
+                    - modified_potentials.back()[potential]
+                ) > kChemicalPotentialResidualMax) {
+                result.failure_reason = "defining_equations_not_satisfied";
+                return result;
+            }
+        }
+    }
+    for (const auto& evaluation : evaluations) {
+        if (std::abs(evaluation.phase.pressure_pa / pressure_pa - 1.0)
+            > kPressureResidualMax) {
+            result.failure_reason = "defining_equations_not_satisfied";
+            return result;
+        }
+    }
+
+    result.residual_state_jacobian.assign(
+        result.dimension * result.dimension, 0.0
+    );
+    result.residual_parameter_jacobian.assign(
+        result.dimension * parameter_count, 0.0
+    );
+    auto beta_index = [block_size](std::size_t phase) {
+        return phase * block_size;
+    };
+    auto composition_index = [block_size](
+        std::size_t phase, std::size_t coordinate
+    ) {
+        return phase * block_size + 1 + coordinate;
+    };
+    auto log_volume_index = [block_size, independent_count](
+        std::size_t phase
+    ) {
+        return phase * block_size + 1 + independent_count;
+    };
+    std::size_t residual = 0;
+    result.residual_identities.push_back("total_phase_amount_balance");
+    for (std::size_t phase = 0; phase < phase_count; ++phase) {
+        result.residual_state_jacobian[
+            residual * result.dimension + beta_index(phase)
+        ] = 1.0;
+    }
+    ++residual;
+    const auto feed_composition = [&] {
+        std::vector<double> value = feed_amounts_mol;
+        for (double& item : value) {
+            item /= feed_total;
+        }
+        return value;
+    }();
+    const auto feed_independent = held2_independent(
+        coordinates, feed_composition
+    );
+    if (std::abs(
+            std::accumulate(
+                phase_amounts.begin(), phase_amounts.end(), 0.0
+            ) - feed_total
+        ) > 2.0e-10 * std::max(1.0, std::abs(feed_total))) {
+        result.failure_reason = "material_balance_mismatch";
+        return result;
+    }
+    for (std::size_t coordinate = 0;
+         coordinate < independent_count; ++coordinate) {
+        result.residual_identities.push_back(
+            "modified_material_balance["
+            + component_ids[coordinates.independent_indices[coordinate]]
+            + "]"
+        );
+        for (std::size_t phase = 0; phase < phase_count; ++phase) {
+            result.residual_state_jacobian[
+                residual * result.dimension + beta_index(phase)
+            ] = independent_values[phase][coordinate];
+            result.residual_state_jacobian[
+                residual * result.dimension
+                + composition_index(phase, coordinate)
+            ] = phase_amounts[phase];
+        }
+        double balance = -feed_total * feed_independent[coordinate];
+        for (std::size_t phase = 0; phase < phase_count; ++phase) {
+            balance += phase_amounts[phase]
+                * independent_values[phase][coordinate];
+        }
+        if (std::abs(balance)
+            > 2.0e-10 * std::max(1.0, std::abs(feed_total))) {
+            result.failure_reason = "material_balance_mismatch";
+            return result;
+        }
+        ++residual;
+    }
+    const std::size_t reference = phase_count - 1;
+    for (std::size_t phase = 0; phase < reference; ++phase) {
+        for (std::size_t potential = 0;
+             potential < potential_count; ++potential) {
+            result.residual_identities.push_back(
+                "phase[" + std::to_string(phase)
+                + "].modified_mu["
+                + component_ids[coordinates.retained_indices[potential]]
+                + "]-phase[" + std::to_string(reference)
+                + "].modified_mu"
+            );
+            for (const std::size_t affected : {phase, reference}) {
+                const double sign = affected == phase ? 1.0 : -1.0;
+                const std::size_t physical_count = component_count + 1;
+                for (std::size_t coordinate = 0;
+                     coordinate < independent_count; ++coordinate) {
+                    double derivative = 0.0;
+                    for (std::size_t raw = 0; raw < component_count; ++raw) {
+                        const double transform = potential_rows[
+                            potential * component_count + raw
+                        ];
+                        for (std::size_t component = 0;
+                             component < component_count; ++component) {
+                            derivative += transform
+                                * evaluations[affected].phase.hessian[
+                                    raw * physical_count + component
+                                ]
+                                * composition_jacobian[
+                                    component * independent_count + coordinate
+                                ];
+                        }
+                    }
+                    result.residual_state_jacobian[
+                        residual * result.dimension
+                        + composition_index(affected, coordinate)
+                    ] += sign * derivative;
+                }
+                double volume_derivative = 0.0;
+                for (std::size_t raw = 0; raw < component_count; ++raw) {
+                    volume_derivative += potential_rows[
+                        potential * component_count + raw
+                    ] * evaluations[affected].phase.hessian[
+                        raw * physical_count + component_count
+                    ] * molar_volumes[affected];
+                }
+                result.residual_state_jacobian[
+                    residual * result.dimension
+                    + log_volume_index(affected)
+                ] += sign * volume_derivative;
+                for (std::size_t parameter = 0;
+                     parameter < parameter_count; ++parameter) {
+                    double derivative = 0.0;
+                    for (std::size_t raw = 0;
+                         raw < component_count; ++raw) {
+                        derivative += potential_rows[
+                            potential * component_count + raw
+                        ] * evaluations[affected]
+                            .chemical_potential_parameter_derivatives_over_rt[
+                                raw * parameter_count + parameter
+                            ];
+                    }
+                    result.residual_parameter_jacobian[
+                        residual * parameter_count + parameter
+                    ] += sign * derivative;
+                }
+            }
+            ++residual;
+        }
+    }
+    const double rt = kGasConstantJPerMolK * temperature_k;
+    for (std::size_t phase = 0; phase < phase_count; ++phase) {
+        result.residual_identities.push_back(
+            "phase[" + std::to_string(phase)
+            + "].pressure_over_target_minus_one"
+        );
+        const std::size_t physical_count = component_count + 1;
+        for (std::size_t coordinate = 0;
+             coordinate < independent_count; ++coordinate) {
+            double derivative = 0.0;
+            for (std::size_t component = 0;
+                 component < component_count; ++component) {
+                derivative += -rt * evaluations[phase].phase.hessian[
+                    component_count * physical_count + component
+                ] * composition_jacobian[
+                    component * independent_count + coordinate
+                ] / pressure_pa;
+            }
+            result.residual_state_jacobian[
+                residual * result.dimension
+                + composition_index(phase, coordinate)
+            ] = derivative;
+        }
+        result.residual_state_jacobian[
+            residual * result.dimension + log_volume_index(phase)
+        ] = -rt * evaluations[phase].phase.hessian[
+            component_count * physical_count + component_count
+        ] * molar_volumes[phase] / pressure_pa;
+        for (std::size_t parameter = 0;
+             parameter < parameter_count; ++parameter) {
+            result.residual_parameter_jacobian[
+                residual * parameter_count + parameter
+            ] = evaluations[phase]
+                .pressure_parameter_derivatives_pa[parameter] / pressure_pa;
+        }
+        ++residual;
+    }
+    if (residual != result.dimension) {
+        result.failure_reason = "charged_residual_layout_incomplete";
+        return result;
+    }
+    for (std::size_t phase = 0; phase < phase_count; ++phase) {
+        result.state_identities.push_back(
+            "phase[" + std::to_string(phase) + "].amount_mol"
+        );
+        for (std::size_t coordinate = 0;
+             coordinate < independent_count; ++coordinate) {
+            result.state_identities.push_back(
+                "phase[" + std::to_string(phase) + "].modified_fraction["
+                + component_ids[coordinates.independent_indices[coordinate]]
+                + "]"
+            );
+        }
+        result.state_identities.push_back(
+            "phase[" + std::to_string(phase) + "].log_molar_volume"
+        );
+        for (const auto& component : component_ids) {
+            result.output_identities.push_back(
+                "phase[" + std::to_string(phase) + "].amount["
+                + component + "]"
+            );
+        }
+        result.output_identities.push_back(
+            "phase[" + std::to_string(phase) + "].volume_m3"
+        );
+    }
+    const RankRevealingSolve solved = solve_total_derivatives(
+        result.residual_state_jacobian,
+        result.residual_parameter_jacobian,
+        result.dimension,
+        parameter_count
+    );
+    result.rank = solved.rank;
+    result.scaled_condition_number_2 = solved.condition_number;
+    result.linear_solve_backward_error = solved.backward_error;
+    if (solved.rank != result.dimension) {
+        result.failure_reason = "singular_residual_jacobian";
+        return result;
+    }
+    if (!std::isfinite(solved.condition_number)
+        || solved.condition_number > kSolvedStateSensitivityConditionNumberMax) {
+        result.failure_reason = "ill_conditioned_residual_jacobian";
+        return result;
+    }
+    if (solved.solution.empty()) {
+        result.failure_reason = "implicit_linear_solve_failed";
+        return result;
+    }
+    result.state_parameter_jacobian = solved.solution;
+    const std::size_t output_count = phase_count * (component_count + 1);
+    result.output_parameter_jacobian.assign(
+        output_count * parameter_count, 0.0
+    );
+    for (std::size_t phase = 0; phase < phase_count; ++phase) {
+        for (std::size_t parameter = 0;
+             parameter < parameter_count; ++parameter) {
+            for (std::size_t component = 0;
+                 component < component_count; ++component) {
+                double derivative = compositions[phase][component]
+                    * solved.solution[
+                        beta_index(phase) * parameter_count + parameter
+                    ];
+                for (std::size_t coordinate = 0;
+                     coordinate < independent_count; ++coordinate) {
+                    derivative += phase_amounts[phase]
+                        * composition_jacobian[
+                            component * independent_count + coordinate
+                        ] * solved.solution[
+                            composition_index(phase, coordinate)
+                                * parameter_count + parameter
+                        ];
+                }
+                result.output_parameter_jacobian[
+                    output_amount_index(
+                        phase, component, component_count
+                    ) * parameter_count + parameter
+                ] = derivative;
+            }
+            result.output_parameter_jacobian[
+                output_volume_index(phase, component_count)
+                    * parameter_count + parameter
+            ] = molar_volumes[phase] * solved.solution[
+                    beta_index(phase) * parameter_count + parameter
+                ] + phase_amounts[phase] * molar_volumes[phase]
+                    * solved.solution[
+                        log_volume_index(phase) * parameter_count + parameter
+                    ];
+        }
+    }
+    result.status = "available";
+    result.failure_reason.clear();
+    return result;
+}
+
+}  // namespace
+
+bool solve_sensitivity_linear_system(
+    SolvedStateSensitivity& result,
+    std::size_t parameter_count
+) {
+    const RankRevealingSolve solved = solve_total_derivatives(
+        result.residual_state_jacobian,
+        result.residual_parameter_jacobian,
+        result.dimension,
+        parameter_count
+    );
+    result.rank = solved.rank;
+    result.scaled_condition_number_2 = solved.condition_number;
+    result.linear_solve_backward_error = solved.backward_error;
+    if (solved.rank != result.dimension) {
+        result.failure_reason = "singular_residual_jacobian";
+        return false;
+    }
+    if (!std::isfinite(solved.condition_number)
+        || solved.condition_number > kSolvedStateSensitivityConditionNumberMax) {
+        result.failure_reason = "ill_conditioned_residual_jacobian";
+        return false;
+    }
+    if (solved.solution.empty()) {
+        result.failure_reason = "implicit_linear_solve_failed";
+        return false;
+    }
+    result.state_parameter_jacobian = solved.solution;
+    return true;
+}
+
+static SolvedStateSensitivity evaluate_state_sensitivity(
+    const ProviderContext& provider,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<std::string>& component_ids,
+    const std::vector<double>& feed_amounts_mol,
+    const std::vector<SolvedPhaseState>& phases,
+    bool allow_charged_multiphase
 ) {
     SolvedStateSensitivity result;
     const ProviderActiveParameterSet active = provider.active_parameters();
@@ -318,8 +778,20 @@ SolvedStateSensitivity evaluate_solved_state_sensitivity(
             provider.transport().component_charges + component_count,
             [](std::int32_t charge) { return charge != 0; }
         )) {
-        result.failure_reason = "unsupported_charged_multiphase_constraints";
-        return result;
+        if (!allow_charged_multiphase) {
+            result.failure_reason =
+                "unsupported_charged_multiphase_constraints";
+            return result;
+        }
+        return evaluate_charged_sensitivity(
+            provider,
+            temperature_k,
+            pressure_pa,
+            component_ids,
+            feed_amounts_mol,
+            phases,
+            active
+        );
     }
     result.reference_phase_index = phase_count - 1;
     result.dimension = (phase_count - 1) * component_count + phase_count;
@@ -494,6 +966,44 @@ SolvedStateSensitivity evaluate_solved_state_sensitivity(
     result.status = "available";
     result.failure_reason.clear();
     return result;
+}
+
+SolvedStateSensitivity evaluate_solved_state_sensitivity(
+    const ProviderContext& provider,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<std::string>& component_ids,
+    const std::vector<double>& feed_amounts_mol,
+    const std::vector<SolvedPhaseState>& phases
+) {
+    return evaluate_state_sensitivity(
+        provider,
+        temperature_k,
+        pressure_pa,
+        component_ids,
+        feed_amounts_mol,
+        phases,
+        false
+    );
+}
+
+SolvedStateSensitivity evaluate_declared_state_sensitivity(
+    const ProviderContext& provider,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<std::string>& component_ids,
+    const std::vector<double>& feed_amounts_mol,
+    const std::vector<SolvedPhaseState>& phases
+) {
+    return evaluate_state_sensitivity(
+        provider,
+        temperature_k,
+        pressure_pa,
+        component_ids,
+        feed_amounts_mol,
+        phases,
+        true
+    );
 }
 
 }  // namespace epcsaft_engine::equilibrium

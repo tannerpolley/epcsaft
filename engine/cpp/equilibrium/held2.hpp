@@ -78,6 +78,10 @@ struct Held2StateEvaluation;
     Held2CompositionDomain domain = Held2CompositionDomain::FiniteSearch
 );
 
+[[nodiscard]] std::vector<double> held2_physical_fraction_jacobian(
+    const Held2Coordinates& coordinates
+);
+
 [[nodiscard]] std::vector<double> held2_map_unit_cube_to_independent_fractions(
     const Held2Coordinates& coordinates,
     const std::vector<double>& unit_cube_coordinates,

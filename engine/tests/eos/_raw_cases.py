@@ -286,6 +286,109 @@ NEUTRAL_BINARY = _document(
     pairs=[_pair("methane", "ethane", k_ij=0.0)],
 )
 
+NEUTRAL_TERNARY_IMMISCIBLE = _document(
+    "neutral-ternary-immiscible-fixture",
+    [
+        _component(
+            component_id,
+            molar_mass=0.030,
+            segment_count=1.5,
+            segment_diameter=segment_diameter,
+            dispersion_energy_over_k=300.0,
+        )
+        for component_id, segment_diameter in zip(
+            ("alpha", "beta", "gamma"),
+            (3.5, 3.7, 3.9),
+            strict=True,
+        )
+    ],
+    pairs=[
+        _pair(left, right, k_ij=0.20)
+        for left, right in (
+            ("alpha", "beta"),
+            ("alpha", "gamma"),
+            ("beta", "gamma"),
+        )
+    ],
+)
+
+CHARGED_TERNARY_IMMISCIBLE = _document(
+    "charged-ternary-immiscible-fixture",
+    [
+        _component(
+            component_id,
+            molar_mass=0.030,
+            charge_number=0,
+            segment_count=1.5,
+            segment_diameter=segment_diameter,
+            dispersion_energy_over_k=300.0,
+            solvation_factor=1.2,
+        )
+        for component_id, segment_diameter in zip(
+            ("alpha", "beta", "gamma"),
+            (3.5, 3.7, 3.9),
+            strict=True,
+        )
+    ]
+    + [
+        _component(
+            "cation",
+            charge_number=1,
+            segment_count=1.0,
+            segment_diameter=2.8,
+            dispersion_energy_over_k=230.0,
+            packing_diameter=2.464,
+            debye_huckel_diameter=2.464,
+            born_diameter=3.4,
+            solvation_factor=1.0,
+        ),
+        _component(
+            "anion",
+            charge_number=-1,
+            segment_count=1.0,
+            segment_diameter=2.8,
+            dispersion_energy_over_k=170.0,
+            packing_diameter=2.464,
+            debye_huckel_diameter=2.464,
+            born_diameter=4.1,
+            solvation_factor=1.0,
+        ),
+    ],
+    pairs=[
+        _pair(
+            left,
+            right,
+            k_ij=(
+                0.20
+                if left in {"alpha", "beta", "gamma"}
+                and right in {"alpha", "beta", "gamma"}
+                else 0.0
+            ),
+        )
+        for index, left in enumerate(("alpha", "beta", "gamma", "cation", "anion"))
+        for right in ("alpha", "beta", "gamma", "cation", "anion")[index + 1 :]
+    ],
+    model_families=_model_families(
+        association="general-site",
+        electrolyte="born",
+        permittivity="ion-fraction-suppression",
+        born_corrections=(1.0, 1.0),
+    ),
+    model_coefficients=[
+        _model_coefficient("ionic_region_relative_permittivity", 8.0),
+        _model_coefficient("ion_fraction_suppression_coefficient", 7.01),
+    ],
+    correlations=[
+        _constant_correlation(component_id, "relative_permittivity", permittivity)
+        for component_id, permittivity in (
+            ("alpha", 78.0),
+            ("beta", 55.0),
+            ("gamma", 35.0),
+        )
+    ],
+    topology=_association_topology("alpha", 2200.0, 0.03),
+)
+
 POLAR_BINARY = _document(
     "polar-binary-fixture",
     [
@@ -726,6 +829,7 @@ __all__ = (
     "MULTISOLVENT_MULTIION",
     "NEUTRAL_ASSOCIATING_MIXTURE",
     "NEUTRAL_BINARY",
+    "NEUTRAL_TERNARY_IMMISCIBLE",
     "POLAR_BINARY",
     "POLAR_PURE",
     "component_values",

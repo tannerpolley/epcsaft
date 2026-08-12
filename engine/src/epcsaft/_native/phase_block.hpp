@@ -146,7 +146,7 @@ inline bool supports_fixed_topology_associating_pure_phase_block(
 // EqExclude: input and domain validation
 inline bool supports_fixed_topology_associating_mixture_phase_block(
     const NativeParameters &parameters) {
-  return parameters.segment_count.size() >= 2 &&
+  return !parameters.segment_count.empty() &&
          supports_fixed_topology_associating_phase_block(parameters);
 }
 

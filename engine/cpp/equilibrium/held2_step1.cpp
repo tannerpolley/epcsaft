@@ -243,8 +243,10 @@ Held2Coordinates make_held2_coordinates(
     const std::vector<double>& charges,
     const std::vector<std::string>& component_ids
 ) {
-    if (charges.size() < 3) {
-        throw std::invalid_argument("HELD2 requires at least three species");
+    if (charges.empty()) {
+        throw std::invalid_argument(
+            "phase coordinates require at least one species"
+        );
     }
     if (!component_ids.empty() && component_ids.size() != charges.size()) {
         throw std::invalid_argument(
@@ -262,6 +264,59 @@ Held2Coordinates make_held2_coordinates(
             ++charged_count;
             largest_abs_charge = std::max(largest_abs_charge, std::abs(charge));
         }
+    }
+    if (charged_count == 0) {
+        constexpr double neutral_lower_scale = 1.0e-14;
+        Held2Coordinates result;
+        result.charges = charges;
+        result.eliminated_index = charges.size();
+        result.dependent_index = charges.size() - 1;
+        result.paper_to_provider_indices.resize(charges.size());
+        result.provider_to_paper_indices.resize(charges.size());
+        result.retained_indices.resize(charges.size());
+        std::iota(
+            result.paper_to_provider_indices.begin(),
+            result.paper_to_provider_indices.end(),
+            std::size_t{0}
+        );
+        result.provider_to_paper_indices = result.paper_to_provider_indices;
+        result.retained_indices = result.paper_to_provider_indices;
+        result.modified_factors.assign(charges.size(), 1.0);
+        for (std::size_t component = 0;
+             component + 1 < charges.size(); ++component) {
+            result.compact_to_paper_indices.push_back(component);
+            result.independent_indices.push_back(component);
+            result.independent_lower_bounds.push_back(
+                neutral_lower_scale
+            );
+            result.independent_upper_bounds.push_back(1.0);
+        }
+        const std::size_t dimension = result.independent_indices.size();
+        for (std::size_t compact = 0; compact < dimension; ++compact) {
+            const std::string coordinate_name = component_ids.empty()
+                ? std::to_string(compact)
+                : component_ids[compact];
+            std::vector<double> lower(dimension, 0.0);
+            lower[compact] = -1.0;
+            result.polytope_constraints.push_back({
+                "lower_bound:" + coordinate_name,
+                std::move(lower),
+                -neutral_lower_scale,
+            });
+            std::vector<double> upper(dimension, 0.0);
+            upper[compact] = 1.0;
+            result.polytope_constraints.push_back({
+                "upper_bound:" + coordinate_name,
+                std::move(upper),
+                1.0,
+            });
+        }
+        result.polytope_constraints.push_back({
+            "closure_species_lower_bound",
+            std::vector<double>(dimension, 1.0),
+            1.0 - neutral_lower_scale,
+        });
+        return result;
     }
     if (charged_count < 2 || neutral_count < 1) {
         throw std::invalid_argument(
@@ -508,6 +563,9 @@ static std::vector<double> held2_lift_modified_fractions(
             modified_fractions[retained]
             / coordinates.modified_factors[retained];
     }
+    if (coordinates.eliminated_index == coordinates.charges.size()) {
+        return physical;
+    }
     double eliminated = 0.0;
     const double eliminated_charge =
         coordinates.charges[coordinates.eliminated_index];
@@ -567,6 +625,52 @@ std::vector<double> held2_lift_independent_fractions(
     return held2_lift_modified_fractions(
         coordinates, modified_fractions
     );
+}
+
+std::vector<double> held2_physical_fraction_jacobian(
+    const Held2Coordinates& coordinates
+) {
+    const std::size_t component_count = coordinates.charges.size();
+    const std::size_t independent_count =
+        coordinates.independent_indices.size();
+    std::vector<double> jacobian(
+        component_count * independent_count, 0.0
+    );
+    for (std::size_t independent = 0;
+         independent < independent_count; ++independent) {
+        for (std::size_t retained = 0;
+             retained < coordinates.retained_indices.size(); ++retained) {
+            const std::size_t component =
+                coordinates.retained_indices[retained];
+            double modified_derivative = 0.0;
+            if (component
+                == coordinates.independent_indices[independent]) {
+                modified_derivative = 1.0;
+            } else if (component == coordinates.dependent_index) {
+                modified_derivative = -1.0;
+            }
+            jacobian[component * independent_count + independent] =
+                modified_derivative
+                / coordinates.modified_factors[retained];
+        }
+        if (coordinates.eliminated_index != component_count) {
+            const double eliminated_charge =
+                coordinates.charges[coordinates.eliminated_index];
+            double derivative = 0.0;
+            for (std::size_t component : coordinates.retained_indices) {
+                derivative -= coordinates.charges[component]
+                    / eliminated_charge
+                    * jacobian[
+                        component * independent_count + independent
+                    ];
+            }
+            jacobian[
+                coordinates.eliminated_index * independent_count
+                    + independent
+            ] = derivative;
+        }
+    }
+    return jacobian;
 }
 
 Held2Step1Result run_held2_step1(
@@ -802,6 +906,9 @@ std::vector<double> held2_transform_modified_potentials(
         );
     }
     require_finite_vector(chemical_potentials, "chemical potentials");
+    if (coordinates.eliminated_index == coordinates.charges.size()) {
+        return chemical_potentials;
+    }
     const double eliminated_potential =
         chemical_potentials[coordinates.eliminated_index];
     const double eliminated_charge =
@@ -929,20 +1036,22 @@ Held2StateEvaluation evaluate_held2_phase_block(
             ] = modified_derivative
                 / coordinates.modified_factors[retained];
         }
-        double eliminated_derivative = 0.0;
-        const double eliminated_charge =
-            coordinates.charges[coordinates.eliminated_index];
-        for (std::size_t component : coordinates.retained_indices) {
-            eliminated_derivative -=
-                coordinates.charges[component] / eliminated_charge
-                * jacobian[
-                    component * reduced_coordinate_count + independent
-                ];
+        if (coordinates.eliminated_index != component_count) {
+            double eliminated_derivative = 0.0;
+            const double eliminated_charge =
+                coordinates.charges[coordinates.eliminated_index];
+            for (std::size_t component : coordinates.retained_indices) {
+                eliminated_derivative -=
+                    coordinates.charges[component] / eliminated_charge
+                    * jacobian[
+                        component * reduced_coordinate_count + independent
+                    ];
+            }
+            jacobian[
+                coordinates.eliminated_index * reduced_coordinate_count
+                    + independent
+            ] = eliminated_derivative;
         }
-        jacobian[
-            coordinates.eliminated_index * reduced_coordinate_count
-                + independent
-        ] = eliminated_derivative;
     }
     jacobian[
         component_count * reduced_coordinate_count + independent_count

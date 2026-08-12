@@ -7,13 +7,19 @@ selected issue and its comments with `gh` before implementation.
 
 ## CAP-09 correction
 
-The closed state of issue #18 records the rejected scratch replacement and does
-not authorize retirement of `tp_flash`. Governance D-029 and Equilibrium ADR
-0002 protect the exact HELD/HELD2 incumbent until a HELD-derived
-`phase_equilibrium` candidate completes actual constrained one-to-three-phase
-solving and passes the reviewed as-good-or-better promotion gate. Do not infer
-current sole-owner capability from #18 or advance a dependent phase capability
-on that basis.
+Issue #18 remains open at the promotion gate. Governance D-029 and Equilibrium
+ADR 0002 protect the exact HELD/HELD2 incumbent while the HELD-derived
+`phase_equilibrium` candidate accumulates constrained one-to-three-phase
+all-component fixed-T,P, structural-support coexistence, sensitivity,
+performance, and independent-review evidence. Do not
+retire `tp_flash` or infer sole-owner promotion until the accepted receipt also
+records explicit user approval.
+
+The current installed-wheel promotion run passes seven of eight Khudaida
+Figure 2 feed rows. Feed 6 differs from protected `tp_flash` by
+`1.2822961027e-6 mol` in its first phase amount, outside the unchanged
+`1e-7 mol` lineage tolerance. The blocked receipt is
+`validation/campaigns/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion-blocked.json`.
 
 ## Task strategy
 

@@ -215,6 +215,9 @@ add_library(
     cpp/equilibrium/chemical_equilibrium_solver.cpp
     cpp/equilibrium/provider.cpp
     cpp/equilibrium/solved_state_sensitivity.cpp
+    cpp/equilibrium/phase_equilibrium.cpp
+    cpp/equilibrium/phase_state.cpp
+    cpp/equilibrium/coexistence.cpp
     cpp/equilibrium/flash.cpp
     cpp/equilibrium/result_json.cpp
     cpp/equilibrium/held.cpp

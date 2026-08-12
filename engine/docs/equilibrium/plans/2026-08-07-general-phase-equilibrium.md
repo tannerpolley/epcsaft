@@ -26,10 +26,15 @@ equilibrium but does not implement that coupled problem.
 The exact `tp_flash` HELD/HELD2 implementation is the incumbent and remains
 public until the HELD-derived `phase_equilibrium` candidate proves every
 admitted incumbent workflow as good or better and completes the additional
-constrained-phase claims. The current candidate preserves discovery results and
-fails closed on a declared role mismatch. It does not yet solve arbitrary
-declared one-to-three-phase topologies or apply hints, so public cutover remains
-blocked. No route automatically falls back to the other.
+constrained-phase claims. The current candidate preserves the incumbent's
+one-/two-phase discovery scope and adds declared one-to-three-phase
+all-component fixed-T,P solves with at most one vapor, fixed-T coexistence with
+all- or neutral-component partner support, non-authoritative deterministic
+start ordering, and exact fixed-topology sensitivities. The broader discovery
+and support model below remains the post-promotion target rather than a current
+claim. Public cutover remains blocked on the installed-wheel promotion
+receipt, independent reviews, remaining-tree audit, and explicit user
+approval. No route automatically falls back to the other.
 
 ## Public problem modes
 
@@ -97,15 +102,19 @@ global result.
 `phase_equilibrium` receives:
 
 - immutable resolved `Parameters` and the exact EOS model topology;
-- temperature plus pressure/volume/other supported ensemble specification;
+- either fixed temperature and pressure with feed amounts, or fixed temperature
+  and one reference-phase composition for a coexistence boundary;
 - ordered feed amounts and explicit species/component identities;
 - charges and electroneutrality/formula-unit information where applicable;
 - mode: discovery or constrained specification;
-- zero to three typed phase roles (`liquid` or `vapor`) for constrained mode;
+- one to three typed phase roles (`liquid` or `vapor`) for constrained mode;
+- explicit all-component or neutral-component phase support;
 - optional non-authoritative hints; and
 - optional `ActiveParameterSet` for exact solved-state sensitivities.
 
-It returns ordered phase states, fractions/amounts, compositions, densities,
+It returns ordered intensive phase states and a typed feed-split or incipient
+boundary extent, including fractions/amounts only where thermodynamically
+defined, plus compositions, densities,
 chemical potentials/fugacities as applicable, balance and stationarity
 residuals, stability/globality certificates, numerical diagnostics, and exact
 selected-parameter sensitivities when requested.

@@ -37,7 +37,7 @@ MixturePhaseEvaluation evaluate_mixture_callback(
     const std::vector<double>& amounts_mol,
     double volume_m3
 ) {
-    if (transport.component_count < 2 || amounts_mol.size() != transport.component_count) {
+    if (transport.component_count == 0 || amounts_mol.size() != transport.component_count) {
         throw std::invalid_argument("provider mixture component count mismatch");
     }
     if (callback == nullptr) {
@@ -138,6 +138,7 @@ PhaseEvaluation ProviderContext::evaluate(
     double amount_mol,
     double volume_m3
 ) const {
+    ++evaluation_count_;
     epcsaft_phase_block_result phase{};
     phase.struct_size = sizeof(phase);
     const int status = transport_.evaluate_pure_phase(
@@ -179,6 +180,7 @@ MixturePhaseEvaluation ProviderContext::evaluate_mixture(
     const std::vector<double>& amounts_mol,
     double volume_m3
 ) const {
+    ++evaluation_count_;
     return evaluate_mixture_callback(
         transport_, transport_.evaluate_mixture_phase, fingerprint_, temperature_k, amounts_mol, volume_m3
     );
@@ -189,6 +191,7 @@ MixturePhaseEvaluation ProviderContext::evaluate_electrolyte(
     const std::vector<double>& amounts_mol,
     double volume_m3
 ) const {
+    ++evaluation_count_;
     return evaluate_mixture_callback(
         transport_, transport_.evaluate_electrolyte_phase, fingerprint_, temperature_k, amounts_mol, volume_m3
     );
@@ -200,6 +203,7 @@ std::array<double, 2> ProviderContext::evaluate_molar_volume_bounds(
     double packing_fraction_min,
     double packing_fraction_max
 ) const {
+    ++evaluation_count_;
     if (transport_.evaluate_molar_volume_bounds == nullptr
         || mole_fractions.size() != transport_.component_count) {
         throw std::invalid_argument(
@@ -257,6 +261,7 @@ PackingFractionEvaluation ProviderContext::evaluate_packing_fraction(
     const std::vector<double>& amounts_mol,
     double volume_m3
 ) const {
+    ++evaluation_count_;
     if (transport_.evaluate_packing_fraction == nullptr
         || amounts_mol.size() != transport_.component_count) {
         throw std::invalid_argument("provider capsule is missing the packing-fraction contract");
@@ -338,6 +343,7 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_parameterized_phase(
     double packing_fraction_max,
     const ProviderActiveParameterSet& active_parameters
 ) const {
+    ++evaluation_count_;
     if (active_parameters.identities.empty()
         || transport_.evaluate_parameterized_phase == nullptr
         || amounts_mol.size() != transport_.component_count) {
@@ -556,6 +562,7 @@ InversePackingGeometryEvaluation ProviderContext::evaluate_inverse_packing_geome
     double log_packing_fraction,
     const ProviderActiveParameterSet& active_parameters
 ) const {
+    ++evaluation_count_;
     if (transport_.evaluate_inverse_packing_geometry == nullptr
         || amounts_mol.size() != transport_.component_count) {
         throw std::invalid_argument(
@@ -655,6 +662,10 @@ const std::string& ProviderContext::fingerprint() const {
 
 const epcsaft_native_transport& ProviderContext::transport() const noexcept {
     return transport_;
+}
+
+int ProviderContext::evaluation_count() const noexcept {
+    return evaluation_count_;
 }
 
 }  // namespace epcsaft_engine::equilibrium

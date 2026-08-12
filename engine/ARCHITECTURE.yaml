@@ -38,14 +38,19 @@ owners:
     candidate_public_route: phase_equilibrium
     candidate_status: transition_not_promoted
     transition_decision: docs/equilibrium/adr/0002-protect-held-until-phase-equilibrium-promotion.md
-    phase_modes: [discovery, declared_role_constraint_over_retained_result]
+    phase_specifications: [fixed_tp_feed, fixed_t_coexistence]
+    phase_modes: [protected_discovery, declared_topology_solve]
     phase_kinds: [liquid, vapor]
-    phase_order: incumbent_native_order
-    role_classification: provisional_compressibility_bounds_fail_closed
-    maximum_certified_phase_count: 2
+    component_support: [all_components, neutral_components]
+    fixed_tp_component_support: all_components
+    fixed_tp_maximum_vapor_count: 1
+    coexistence_partner_support: [all_components, neutral_components]
+    phase_order: declared_topology_order
+    role_classification: native_mechanical_stability_and_volume_branch_order
+    maximum_certified_phase_count: 3
     target_maximum_phase_count: 3
-    rejected_phase_counts: [3]
-    hints: validated_not_applied
+    hints: non_authoritative_order_over_fixed_candidate_set
+    discovery_hints: rejected
     automatic_fallback: forbidden
     active_parameters: epcsaft.ActiveParameterSet
     solved_state_sensitivity: exact_implicit_from_eos_partials

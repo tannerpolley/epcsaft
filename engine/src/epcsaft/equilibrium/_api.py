@@ -80,11 +80,76 @@ class Held2Diagnostics:
 PhaseRole = Literal["liquid", "vapor"]
 
 
-@dataclass(frozen=True)
-class PhaseHint:
-    """Validated candidate hint; HELD work ordering does not yet consume it."""
+@dataclass(frozen=True, slots=True)
+class AllComponents:
+    """Every model component is admitted as a positive phase coordinate."""
+
+
+@dataclass(frozen=True, slots=True)
+class NeutralComponents:
+    """Only the model's neutral components are present in this phase."""
+
+
+PhaseSupport = AllComponents | NeutralComponents
+
+
+@dataclass(frozen=True, slots=True)
+class PhaseSpecification:
+    """One ordered phase identity, role, and structural component support."""
 
     role: PhaseRole
+    support: PhaseSupport
+
+
+@dataclass(frozen=True, slots=True)
+class DeclaredTopology:
+    """Ordered phase specifications; tuple length is the phase count."""
+
+    phases: tuple[PhaseSpecification, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "phases", tuple(self.phases))
+
+
+@dataclass(frozen=True, slots=True)
+class DiscoverPhases:
+    """Request the protected HELD/HELD2 finite discovery controller."""
+
+
+@dataclass(frozen=True, slots=True)
+class FixedTPFeed:
+    """Fixed-temperature, fixed-pressure, fixed-feed phase specification."""
+
+    temperature: Quantity[Any]
+    pressure: Quantity[Any]
+    feed_amounts_mol: tuple[float, ...]
+    selection: DiscoverPhases | DeclaredTopology
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "feed_amounts_mol", tuple(self.feed_amounts_mol))
+
+
+@dataclass(frozen=True, slots=True)
+class FixedTCoexistence:
+    """Fixed-temperature two-phase boundary with one fixed reference composition."""
+
+    temperature: Quantity[Any]
+    topology: DeclaredTopology
+    reference_phase_index: int
+    reference_mole_fractions: tuple[float, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "reference_mole_fractions", tuple(self.reference_mole_fractions))
+
+
+PhaseEquilibriumSpecification = FixedTPFeed | FixedTCoexistence
+
+
+@dataclass(frozen=True, slots=True)
+class PhaseHint:
+    """Non-authoritative start-order hint bound to one phase index."""
+
+    phase_index: int
     mole_fractions: tuple[float, ...]
     molar_density_mol_m3: float
 
@@ -92,43 +157,39 @@ class PhaseHint:
         object.__setattr__(self, "mole_fractions", tuple(self.mole_fractions))
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PhaseEquilibriumProblem:
-    """HELD-lineage fixed-T,P discovery or declared-role problem."""
+    """One typed HELD-lineage feed or coexistence specification."""
 
-    temperature: Quantity[Any]
-    pressure: Quantity[Any]
-    feed_amounts_mol: tuple[float, ...]
-    mode: Literal["discovery", "constrained"] = "discovery"
-    phase_roles: tuple[PhaseRole, ...] = ()
+    specification: PhaseEquilibriumSpecification
     hints: tuple[PhaseHint, ...] = ()
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "feed_amounts_mol", tuple(self.feed_amounts_mol))
-        object.__setattr__(self, "phase_roles", tuple(self.phase_roles))
         object.__setattr__(self, "hints", tuple(self.hints))
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class EquilibriumPhaseState:
-    """One certified phase in the canonical amount-packing representation."""
+    """One intensive phase state on its declared component support."""
 
     role: PhaseRole
-    amount_mol: float
-    amounts_mol: tuple[float, ...]
+    support: Literal["all_components", "neutral_components"]
+    supported_component_ids: tuple[str, ...]
     mole_fractions: tuple[float, ...]
-    volume_m3: float
+    molar_volume_m3_per_mol: float
     molar_density_mol_m3: float
     packing_fraction: float
     pressure_pa: float
+    chemical_potential_component_ids: tuple[str, ...]
     chemical_potential_over_rt: tuple[float, ...]
+    mechanical_class: str
 
 
 @dataclass(frozen=True)
 class PhaseEquilibriumDiagnostics:
-    """HELD-lineage search, topology-selection, and certificate evidence."""
+    """Route-native numerical, physical, support, and selection evidence."""
 
-    route: Literal["held", "held2"]
+    route: str
     solver_status: str
     numerical_status: str
     physical_status: str
@@ -137,18 +198,24 @@ class PhaseEquilibriumDiagnostics:
     certificate_scope: str
     phase_selection_claim: str
     globality_claim: str
-    phase_enumeration_certificate: str
-    requested_roles: tuple[PhaseRole, ...]
-    returned_roles: tuple[PhaseRole, ...]
-    major_iteration_count: int
+    search_scope: str
+    search_budget: str
+    search_exclusions: tuple[str, ...]
+    completeness_criterion: str
+    role_evidence: tuple[str, ...]
+    optimizer_solve_count: int
     optimizer_iteration_count: int
+    provider_evaluation_count: int
     hint_count: int
-    hints_applied: bool
+    hint_reordered_start_count: int
     material_balance_inf: float
+    electroneutrality_inf: float
     pressure_residual_inf: float
-    kkt_stationarity_inf: float | None
-    liquid_compressibility_factor_maximum: float
-    vapor_compressibility_factor_minimum: float
+    chemical_potential_residual_inf: float
+    kkt_stationarity_inf: float
+    dual_sign_violation_inf: float
+    complementarity_inf: float
+    phase_distinctness: float
 
 
 @dataclass(frozen=True)
@@ -203,13 +270,34 @@ class FlashError(RuntimeError):
         self.diagnostics = diagnostics
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
+class FeedSplit:
+    """Extensive fixed-feed split; amounts and fractions preserve phase order."""
+
+    feed_amounts_mol: tuple[float, ...]
+    phase_amounts_mol: tuple[float, ...]
+    phase_fractions: tuple[float, ...]
+    total_free_energy_over_rt: float
+
+
+@dataclass(frozen=True, slots=True)
+class IncipientBoundary:
+    """Two-phase boundary without a thermodynamically determined split fraction."""
+
+    reference_phase_index: int
+    pressure_pa: float
+
+
+EquilibriumExtent = FeedSplit | IncipientBoundary
+
+
+@dataclass(frozen=True, slots=True)
 class PhaseEquilibriumResult:
-    """Retained HELD state admitted by the requested role scope."""
+    """Certified phase states plus the typed extensive or boundary meaning."""
 
     problem: PhaseEquilibriumProblem
     phases: tuple[EquilibriumPhaseState, ...]
-    total_free_energy_over_rt: float
+    extent: EquilibriumExtent
     parameter_fingerprint: str
     diagnostics: PhaseEquilibriumDiagnostics
     sensitivity: PhaseEquilibriumSensitivity | None
@@ -1135,41 +1223,136 @@ def tp_flash(
         ) from error
 
 
-def phase_equilibrium(
-    model: epcsaft.Mixture,
-    problem: PhaseEquilibriumProblem,
-    *,
-    active_parameters: epcsaft.ActiveParameterSet | None = None,
-) -> PhaseEquilibriumResult:
-    """Apply discovery or a declared-role constraint to the retained HELD route."""
+def _native_phase_diagnostics(
+    payload: Mapping[str, object],
+) -> PhaseEquilibriumDiagnostics:
+    return PhaseEquilibriumDiagnostics(
+        route=str(payload["route"]),
+        solver_status=str(payload["solver_status"]),
+        numerical_status=str(payload["numerical_status"]),
+        physical_status=str(payload["physical_status"]),
+        failure_stage=None if payload["failure_stage"] is None else str(payload["failure_stage"]),
+        failure_reason=None
+        if payload["failure_reason"] is None
+        else str(payload["failure_reason"]),
+        certificate_scope=str(payload["certificate_scope"]),
+        phase_selection_claim=str(payload["phase_selection_claim"]),
+        globality_claim=str(payload["globality_claim"]),
+        search_scope=str(payload["search_scope"]),
+        search_budget=str(payload["search_budget"]),
+        search_exclusions=tuple(
+            str(value)
+            for value in cast(Sequence[object], payload["search_exclusions"])
+        ),
+        completeness_criterion=str(payload["completeness_criterion"]),
+        role_evidence=tuple(
+            str(value)
+            for value in cast(Sequence[object], payload["role_evidence"])
+        ),
+        optimizer_solve_count=int(cast(int, payload["optimizer_solve_count"])),
+        optimizer_iteration_count=int(cast(int, payload["optimizer_iteration_count"])),
+        provider_evaluation_count=int(cast(int, payload["provider_evaluation_count"])),
+        hint_count=int(cast(int, payload["hint_count"])),
+        hint_reordered_start_count=int(cast(int, payload["hint_reordered_start_count"])),
+        material_balance_inf=float(cast(float, payload["material_balance_inf"])),
+        electroneutrality_inf=float(cast(float, payload["electroneutrality_inf"])),
+        pressure_residual_inf=float(cast(float, payload["pressure_residual_inf"])),
+        chemical_potential_residual_inf=float(
+            cast(float, payload["chemical_potential_residual_inf"])
+        ),
+        kkt_stationarity_inf=float(cast(float, payload["kkt_stationarity_inf"])),
+        dual_sign_violation_inf=float(cast(float, payload["dual_sign_violation_inf"])),
+        complementarity_inf=float(cast(float, payload["complementarity_inf"])),
+        phase_distinctness=float(cast(float, payload["phase_distinctness"])),
+    )
 
-    if not isinstance(model, epcsaft.Mixture):
-        raise TypeError("phase_equilibrium requires an epcsaft.Mixture")
-    if type(problem) is not PhaseEquilibriumProblem:
-        raise TypeError("problem must be a PhaseEquilibriumProblem")
-    if active_parameters is not None and type(active_parameters) is not epcsaft.ActiveParameterSet:
-        raise TypeError("active_parameters must be an epcsaft.ActiveParameterSet")
-    temperature_k = _quantity(problem.temperature, "kelvin", "temperature", "phase_equilibrium")
-    pressure_pa = _quantity(problem.pressure, "pascal", "pressure", "phase_equilibrium")
-    component_count = len(model.component_ids)
-    feed = _phase_feed(problem.feed_amounts_mol, component_count)
-    if problem.mode not in {"discovery", "constrained"}:
-        raise ValueError("phase-equilibrium mode must be 'discovery' or 'constrained'")
-    if any(role not in {"liquid", "vapor"} for role in problem.phase_roles):
-        raise ValueError("phase roles must be 'liquid' or 'vapor'")
-    if problem.mode == "discovery" and problem.phase_roles:
-        raise ValueError("discovery phase equilibrium cannot contain declared roles")
-    if problem.mode == "constrained" and not 1 <= len(problem.phase_roles) <= 2:
-        raise ValueError(
-            "the protected HELD transition supports one or two declared roles; "
-            "three-phase constrained solving is not implemented"
+
+def _native_equilibrium_phase(payload: Mapping[str, object]) -> EquilibriumPhaseState:
+    role = str(payload["role"])
+    support = str(payload["support"])
+    if role not in {"liquid", "vapor"} or support not in {
+        "all_components",
+        "neutral_components",
+    }:
+        raise ValueError("native phase identity is invalid")
+    component_ids = tuple(
+        str(value) for value in cast(Sequence[object], payload["supported_component_ids"])
+    )
+    chemical_ids = tuple(
+        str(value) for value in cast(Sequence[object], payload["chemical_potential_component_ids"])
+    )
+    return EquilibriumPhaseState(
+        role=cast(PhaseRole, role),
+        support=cast(Literal["all_components", "neutral_components"], support),
+        supported_component_ids=component_ids,
+        mole_fractions=_vector(payload["mole_fractions"], len(component_ids), "phase composition"),
+        molar_volume_m3_per_mol=float(cast(float, payload["molar_volume_m3_per_mol"])),
+        molar_density_mol_m3=float(cast(float, payload["molar_density_mol_m3"])),
+        packing_fraction=float(cast(float, payload["packing_fraction"])),
+        pressure_pa=float(cast(float, payload["pressure_pa"])),
+        chemical_potential_component_ids=chemical_ids,
+        chemical_potential_over_rt=_vector(
+            payload["chemical_potential_over_rt"],
+            len(chemical_ids),
+            "phase chemical potentials",
+        ),
+        mechanical_class=str(payload["mechanical_class"]),
+    )
+
+
+def _phase_support_name(support: PhaseSupport) -> str:
+    if type(support) is AllComponents:
+        return "all_components"
+    if type(support) is NeutralComponents:
+        return "neutral_components"
+    raise TypeError("phase support must be AllComponents or NeutralComponents")
+
+
+def _support_active_parameters(
+    parameters: epcsaft.Parameters,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+) -> epcsaft.ActiveParameterSet | None:
+    if active_parameters is None:
+        return None
+    selected_components = set(parameters.component_ids)
+    coordinates = tuple(
+        coordinate
+        for coordinate in active_parameters.coordinates
+        if coordinate.applicability is not None
+        and (
+            coordinate.applicability.scope == "model"
+            or (
+                bool(coordinate.applicability.component_ids)
+                and all(
+                    component in selected_components
+                    for component in coordinate.applicability.component_ids
+                )
+            )
         )
-    if any(type(hint) is not PhaseHint for hint in problem.hints):
+    )
+    if not coordinates:
+        return None
+    return epcsaft.ActiveParameterSet(
+        parameters,
+        tuple(coordinate.identity for coordinate in coordinates),
+        values=tuple(coordinate.value for coordinate in coordinates),
+    )
+
+
+def _validated_phase_hints(
+    hints: tuple[PhaseHint, ...],
+    phase_count: int,
+    component_counts: tuple[int, ...],
+) -> tuple[tuple[int, ...], tuple[tuple[float, ...], ...], tuple[float, ...]]:
+    if any(type(hint) is not PhaseHint for hint in hints):
         raise TypeError("hints must contain PhaseHint values")
-    for hint in problem.hints:
-        if hint.role not in {"liquid", "vapor"}:
-            raise ValueError("phase hint roles must be 'liquid' or 'vapor'")
-        if len(hint.mole_fractions) != component_count:
+    indices = tuple(hint.phase_index for hint in hints)
+    if len(indices) != len(set(indices)) or any(
+        index < 0 or index >= phase_count for index in indices
+    ):
+        raise ValueError("phase hint indices must be unique and in range")
+    for hint in hints:
+        if len(hint.mole_fractions) != component_counts[hint.phase_index]:
             raise ValueError("phase hint composition has the wrong component count")
         if not all(math.isfinite(value) and value > 0.0 for value in hint.mole_fractions):
             raise ValueError("phase hint composition must be positive and finite")
@@ -1177,217 +1360,420 @@ def phase_equilibrium(
             raise ValueError("phase hint composition must sum to one within 1e-12")
         if not math.isfinite(hint.molar_density_mol_m3) or hint.molar_density_mol_m3 <= 0.0:
             raise ValueError("phase hint density must be positive and finite")
-
-    total_feed = math.fsum(feed)
-    normalized_feed = tuple(amount / total_feed for amount in feed)
-    retained_route: Literal["held", "held2"] = (
-        "held2" if any(model._model.charge_number) else "held"
+    return (
+        indices,
+        tuple(hint.mole_fractions for hint in hints),
+        tuple(hint.molar_density_mol_m3 for hint in hints),
     )
+
+
+def _protected_discovery_diagnostics(
+    retained: HeldDiagnostics | Held2Diagnostics,
+    hint_count: int,
+    *,
+    numerical_status: str | None = None,
+    physical_status: str | None = None,
+    failure_stage: str | None = None,
+    failure_reason: str | None = None,
+    phase_selection_claim: str,
+    role_evidence: tuple[str, ...] = (),
+    provider_evaluation_count: int = 0,
+) -> PhaseEquilibriumDiagnostics:
+    search_exclusions: tuple[str, ...]
+    if isinstance(retained, Held2Diagnostics):
+        route = "held2_discovery"
+        native_failure_stage = retained.failure_stage
+        search_scope = "retained_perdomo_held2_steps_1_to_10_finite_domain"
+        search_budget = (
+            f"optimizer_solves={retained.optimizer_solves};"
+            f"optimizer_iterations={retained.optimizer_iterations}"
+        )
+        search_exclusions = (
+            "three_or_more_phase_topologies",
+            "reactive_phases",
+            "solid_phases",
+        )
+        optimizer_solve_count = retained.optimizer_solves
+        optimizer_iteration_count = retained.optimizer_iterations
+    else:
+        route = "held_discovery"
+        native_failure_stage = None
+        search_scope = "retained_held_profiles:" + ",".join(retained.search_profiles)
+        search_budget = (
+            f"attempts={retained.attempts};"
+            f"major_iterations={retained.major_iterations}"
+        )
+        search_exclusions = (
+            "charged_topologies",
+            "three_or_more_phase_topologies",
+        )
+        optimizer_solve_count = retained.attempts
+        optimizer_iteration_count = retained.major_iterations
+    return PhaseEquilibriumDiagnostics(
+        route=route,
+        solver_status=retained.solver_status,
+        numerical_status=(
+            retained.numerical_status
+            if numerical_status is None
+            else numerical_status
+        ),
+        physical_status=(
+            retained.physical_status
+            if physical_status is None
+            else physical_status
+        ),
+        failure_stage=(
+            native_failure_stage if failure_stage is None else failure_stage
+        ),
+        failure_reason=failure_reason,
+        certificate_scope="protected_held_finite_discovery",
+        phase_selection_claim=phase_selection_claim,
+        globality_claim="not_established",
+        search_scope=search_scope,
+        search_budget=search_budget,
+        search_exclusions=search_exclusions,
+        completeness_criterion=(
+            "retained_controller_terminal_certificate;global_completeness_not_established"
+        ),
+        role_evidence=role_evidence,
+        optimizer_solve_count=optimizer_solve_count,
+        optimizer_iteration_count=optimizer_iteration_count,
+        provider_evaluation_count=provider_evaluation_count,
+        hint_count=hint_count,
+        hint_reordered_start_count=0,
+        material_balance_inf=retained.material_balance_max_abs or 0.0,
+        electroneutrality_inf=0.0,
+        pressure_residual_inf=retained.pressure_stationarity_max_relative or 0.0,
+        chemical_potential_residual_inf=0.0,
+        kkt_stationarity_inf=retained.kkt_stationarity_max_abs or 0.0,
+        dual_sign_violation_inf=0.0,
+        complementarity_inf=0.0,
+        phase_distinctness=0.0,
+    )
+
+
+def _discovery_result(
+    model: epcsaft.Mixture,
+    problem: PhaseEquilibriumProblem,
+    specification: FixedTPFeed,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+) -> PhaseEquilibriumResult:
+    temperature_k = _quantity(
+        specification.temperature, "kelvin", "temperature", "phase_equilibrium"
+    )
+    pressure_pa = _quantity(specification.pressure, "pascal", "pressure", "phase_equilibrium")
+    feed = _phase_feed(specification.feed_amounts_mol, len(model.component_ids))
+    total = math.fsum(feed)
+    normalized = tuple(value / total for value in feed)
     try:
         retained = tp_flash(
             model,
-            problem.temperature,
-            problem.pressure,
-            normalized_feed,
+            specification.temperature,
+            specification.pressure,
+            normalized,
             active_parameters=active_parameters,
         )
     except FlashError as error:
-        diagnostics = PhaseEquilibriumDiagnostics(
-            route=retained_route,
-            solver_status=error.diagnostics.solver_status,
-            numerical_status=error.diagnostics.numerical_status,
-            physical_status=error.diagnostics.physical_status,
+        retained_diagnostics = error.diagnostics
+        diagnostics = _protected_discovery_diagnostics(
+            retained_diagnostics,
+            len(problem.hints),
+            physical_status="rejected",
             failure_stage=(
-                error.diagnostics.failure_stage
-                if isinstance(error.diagnostics, Held2Diagnostics)
-                else retained_route
+                retained_diagnostics.failure_stage
+                if isinstance(retained_diagnostics, Held2Diagnostics)
+                else "protected_discovery"
             ),
-            failure_reason=error.diagnostics.failure_reason or str(error),
-            certificate_scope="none",
-            phase_selection_claim="not_established",
-            globality_claim="not_established",
-            phase_enumeration_certificate="completeness_not_guaranteed",
-            requested_roles=problem.phase_roles,
-            returned_roles=(),
-            major_iteration_count=error.diagnostics.major_iterations,
-            optimizer_iteration_count=(
-                error.diagnostics.optimizer_iterations
-                if isinstance(error.diagnostics, Held2Diagnostics)
-                else 0
-            ),
-            hint_count=len(problem.hints),
-            hints_applied=False,
-            material_balance_inf=math.inf,
-            pressure_residual_inf=math.inf,
-            kkt_stationarity_inf=error.diagnostics.kkt_stationarity_max_abs,
-            liquid_compressibility_factor_maximum=_LIQUID_COMPRESSIBILITY_FACTOR_MAXIMUM,
-            vapor_compressibility_factor_minimum=_VAPOR_COMPRESSIBILITY_FACTOR_MINIMUM,
+            failure_reason=str(error),
+            phase_selection_claim="no_phase_selection_claim",
         )
         raise PhaseEquilibriumError(str(error), diagnostics, ()) from error
-
-    capsule = _native_transport(model, active_parameters)
-    phases: list[EquilibriumPhaseState] = []
-    for retained_phase in retained.phases:
-        amount_mol = total_feed * retained_phase.amount_mol
-        amounts_mol = tuple(amount_mol * fraction for fraction in retained_phase.mole_fractions)
-        volume_m3 = total_feed * retained_phase.volume_m3
-        compressibility = (
-            pressure_pa * volume_m3 / (amount_mol * _GAS_CONSTANT_J_MOL_K * temperature_k)
-        )
-        if compressibility <= _LIQUID_COMPRESSIBILITY_FACTOR_MAXIMUM:
-            role: PhaseRole = "liquid"
-        elif compressibility >= _VAPOR_COMPRESSIBILITY_FACTOR_MINIMUM:
-            role = "vapor"
-        else:
-            diagnostics = PhaseEquilibriumDiagnostics(
-                route=("held2" if isinstance(retained.diagnostics, Held2Diagnostics) else "held"),
-                solver_status=retained.diagnostics.solver_status,
-                numerical_status=retained.diagnostics.numerical_status,
-                physical_status="not_adjudicated",
-                failure_stage="phase_selection",
-                failure_reason="phase_role_classification_inconclusive",
-                certificate_scope="none",
-                phase_selection_claim="not_established",
-                globality_claim="not_established",
-                phase_enumeration_certificate="completeness_not_guaranteed",
-                requested_roles=problem.phase_roles,
-                returned_roles=(),
-                major_iteration_count=retained.diagnostics.major_iterations,
-                optimizer_iteration_count=(
-                    retained.diagnostics.optimizer_iterations
-                    if isinstance(retained.diagnostics, Held2Diagnostics)
-                    else 0
-                ),
-                hint_count=len(problem.hints),
-                hints_applied=False,
-                material_balance_inf=math.inf,
-                pressure_residual_inf=math.inf,
-                kkt_stationarity_inf=retained.diagnostics.kkt_stationarity_max_abs,
-                liquid_compressibility_factor_maximum=_LIQUID_COMPRESSIBILITY_FACTOR_MAXIMUM,
-                vapor_compressibility_factor_minimum=_VAPOR_COMPRESSIBILITY_FACTOR_MINIMUM,
-            )
-            raise PhaseEquilibriumError(
-                "HELD phase role is inside the unclassified compressibility gap",
-                diagnostics,
-                (),
-            )
-        if active_parameters is None:
-            packing_fraction = _equilibrium.evaluate_packing_fraction(
-                capsule,
-                temperature_k,
-                amounts_mol,
-                volume_m3,
-            )
-        else:
-            phase_block = cast(
-                Mapping[str, object],
-                _equilibrium.evaluate_parameterized_phase(
-                    capsule,
-                    temperature_k,
-                    amounts_mol,
-                    volume_m3,
-                    _HELD2_PACKING_FRACTION_MINIMUM,
-                    _HELD2_PACKING_FRACTION_MAXIMUM,
-                ),
-            )
-            packing_fraction = float(cast(float, phase_block["packing_fraction"]))
-        phases.append(
-            EquilibriumPhaseState(
-                role=role,
-                amount_mol=amount_mol,
-                amounts_mol=amounts_mol,
-                mole_fractions=retained_phase.mole_fractions,
-                volume_m3=volume_m3,
-                molar_density_mol_m3=retained_phase.molar_density_mol_m3,
-                packing_fraction=packing_fraction,
-                pressure_pa=retained_phase.pressure_pa,
-                chemical_potential_over_rt=retained_phase.chemical_potential_over_rt,
-            )
-        )
-    typed_phases = tuple(phases)
-    returned_roles = tuple(phase.role for phase in typed_phases)
-    reconstructed = tuple(
-        math.fsum(phase.amounts_mol[index] for phase in typed_phases)
-        for index in range(component_count)
-    )
-    material_balance_inf = max(
-        abs(observed - expected) for observed, expected in zip(reconstructed, feed, strict=True)
-    )
-    pressure_residual_inf = max(
-        abs(phase.pressure_pa - pressure_pa) / pressure_pa for phase in typed_phases
-    )
-    route: Literal["held", "held2"] = (
-        "held2" if isinstance(retained.diagnostics, Held2Diagnostics) else "held"
-    )
-    constrained_match = sorted(returned_roles) == sorted(problem.phase_roles)
-    selection_accepted = problem.mode == "discovery" or constrained_match
-    diagnostics = PhaseEquilibriumDiagnostics(
-        route=route,
-        solver_status=retained.diagnostics.solver_status,
-        numerical_status=retained.diagnostics.numerical_status,
-        physical_status=(retained.diagnostics.physical_status if selection_accepted else "failed"),
-        failure_stage=None if selection_accepted else "phase_selection",
-        failure_reason=None if selection_accepted else "declared_phase_roles_not_returned",
-        certificate_scope=(
-            "retained_held_search"
-            if problem.mode == "discovery"
-            else "declared_roles_over_retained_held_search"
-        ),
-        phase_selection_claim=(
-            "retained_held_search_result"
-            if problem.mode == "discovery"
-            else "retained_held_search_result_satisfies_declared_roles"
-        ),
-        globality_claim="not_established",
-        phase_enumeration_certificate=(
-            "completeness_not_guaranteed" if route == "held2" else "not_guaranteed"
-        ),
-        requested_roles=problem.phase_roles,
-        returned_roles=returned_roles,
-        major_iteration_count=retained.diagnostics.major_iterations,
-        optimizer_iteration_count=(
-            retained.diagnostics.optimizer_iterations
-            if isinstance(retained.diagnostics, Held2Diagnostics)
-            else 0
-        ),
-        hint_count=len(problem.hints),
-        hints_applied=False,
-        material_balance_inf=material_balance_inf,
-        pressure_residual_inf=pressure_residual_inf,
-        kkt_stationarity_inf=retained.diagnostics.kkt_stationarity_max_abs,
-        liquid_compressibility_factor_maximum=_LIQUID_COMPRESSIBILITY_FACTOR_MAXIMUM,
-        vapor_compressibility_factor_minimum=_VAPOR_COMPRESSIBILITY_FACTOR_MINIMUM,
-    )
-    if not selection_accepted:
-        raise PhaseEquilibriumError(
-            "retained HELD result does not satisfy the declared phase roles",
-            diagnostics,
-            typed_phases,
-        )
     sensitivity = retained.sensitivity
-    if sensitivity is not None and total_feed != 1.0:
+    if sensitivity is not None and total != 1.0:
         sensitivity = replace(
             sensitivity,
             residual_state_jacobian=tuple(
-                tuple(value / total_feed for value in row)
+                tuple(value / total for value in row)
                 for row in sensitivity.residual_state_jacobian
             ),
             state_parameter_jacobian=tuple(
-                tuple(total_feed * value for value in row)
+                tuple(total * value for value in row)
                 for row in sensitivity.state_parameter_jacobian
             ),
             output_parameter_jacobian=tuple(
-                tuple(total_feed * value for value in row)
+                tuple(total * value for value in row)
                 for row in sensitivity.output_parameter_jacobian
             ),
         )
+    capsule = _native_transport(model, active_parameters)
+    roles: list[PhaseRole] = []
+    for phase in retained.phases:
+        molar_volume = phase.volume_m3 / phase.amount_mol
+        compressibility = pressure_pa * molar_volume / (_GAS_CONSTANT_J_MOL_K * temperature_k)
+        role: PhaseRole = (
+            "liquid"
+            if compressibility <= _LIQUID_COMPRESSIBILITY_FACTOR_MAXIMUM
+            else "vapor"
+            if compressibility >= _VAPOR_COMPRESSIBILITY_FACTOR_MINIMUM
+            else cast(PhaseRole, "")
+        )
+        if not role:
+            diagnostics = _protected_discovery_diagnostics(
+                retained.diagnostics,
+                len(problem.hints),
+                numerical_status="uncertified",
+                physical_status="rejected",
+                failure_stage="phase_role_certificate",
+                failure_reason="retained HELD phase role is thermodynamically inconclusive",
+                phase_selection_claim="no_phase_role_claim",
+            )
+            raise PhaseEquilibriumError(
+                diagnostics.failure_reason or "phase role was not certified",
+                diagnostics,
+                (),
+            )
+        roles.append(role)
+    try:
+        phases = tuple(
+            _native_equilibrium_phase(
+                cast(
+                    Mapping[str, object],
+                    _equilibrium._audit_phase_state(
+                        capsule,
+                        role,
+                        temperature_k,
+                        retained_phase.mole_fractions,
+                        retained_phase.volume_m3 / retained_phase.amount_mol,
+                    ),
+                )
+            )
+            for role, retained_phase in zip(roles, retained.phases, strict=True)
+        )
+    except (RuntimeError, TypeError, ValueError) as error:
+        diagnostics = _protected_discovery_diagnostics(
+            retained.diagnostics,
+            len(problem.hints),
+            numerical_status="uncertified",
+            physical_status="rejected",
+            failure_stage="phase_role_certificate",
+            failure_reason=f"native phase-role audit failed: {error}",
+            phase_selection_claim="no_phase_role_claim",
+        )
+        raise PhaseEquilibriumError(
+            diagnostics.failure_reason or "phase role audit failed",
+            diagnostics,
+            (),
+        ) from error
+    if any(phase.mechanical_class != "strict_stable" for phase in phases):
+        diagnostics = _protected_discovery_diagnostics(
+            retained.diagnostics,
+            len(problem.hints),
+            numerical_status="uncertified",
+            physical_status="rejected",
+            failure_stage="phase_role_certificate",
+            failure_reason="retained HELD phase is not mechanically strict-stable",
+            phase_selection_claim="no_phase_role_claim",
+        )
+        raise PhaseEquilibriumError(
+            diagnostics.failure_reason or "phase role was not certified",
+            diagnostics,
+            phases,
+        )
+    diagnostics = _protected_discovery_diagnostics(
+        retained.diagnostics,
+        len(problem.hints),
+        phase_selection_claim="protected_held_finite_discovery_result",
+        role_evidence=(
+            "native_pressure_derivative_strict_stability",
+            "compressibility_branch_with_fail_closed_gap",
+        ),
+        provider_evaluation_count=2 * len(phases),
+    )
     return PhaseEquilibriumResult(
         problem=problem,
-        phases=typed_phases,
-        total_free_energy_over_rt=total_feed * retained.total_free_energy_over_rt,
+        phases=phases,
+        extent=FeedSplit(
+            feed_amounts_mol=feed,
+            phase_amounts_mol=tuple(total * value for value in retained.phase_fractions),
+            phase_fractions=retained.phase_fractions,
+            total_free_energy_over_rt=total * retained.total_free_energy_over_rt,
+        ),
         parameter_fingerprint=retained.parameter_fingerprint,
         diagnostics=diagnostics,
         sensitivity=sensitivity,
+    )
+
+
+def phase_equilibrium(
+    model: epcsaft.Mixture,
+    problem: PhaseEquilibriumProblem,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None = None,
+) -> PhaseEquilibriumResult:
+    """Solve one typed HELD-lineage feed or two-phase coexistence specification."""
+
+    if not isinstance(model, epcsaft.Mixture):
+        raise TypeError("phase_equilibrium requires an epcsaft.Mixture")
+    if type(problem) is not PhaseEquilibriumProblem:
+        raise TypeError("problem must be a PhaseEquilibriumProblem")
+    if active_parameters is not None and type(active_parameters) is not epcsaft.ActiveParameterSet:
+        raise TypeError("active_parameters must be an epcsaft.ActiveParameterSet")
+    specification = problem.specification
+    if isinstance(specification, FixedTPFeed):
+        if isinstance(specification.selection, DiscoverPhases):
+            if problem.hints:
+                raise ValueError("discovery hints are not authoritative and are not consumed")
+            return _discovery_result(model, problem, specification, active_parameters)
+        if not isinstance(specification.selection, DeclaredTopology):
+            raise TypeError("fixed-T,P selection must be DiscoverPhases or DeclaredTopology")
+        topology = specification.selection
+        if not 1 <= len(topology.phases) <= 3:
+            raise ValueError("fixed-T,P declared topology requires one to three phases")
+        if any(type(phase.support) is not AllComponents for phase in topology.phases):
+            raise ValueError("fixed-T,P declared topology currently requires AllComponents")
+        if sum(phase.role == "vapor" for phase in topology.phases) > 1:
+            raise ValueError("fixed-T,P declared topology permits at most one vapor phase")
+        temperature_k = _quantity(
+            specification.temperature, "kelvin", "temperature", "phase_equilibrium"
+        )
+        pressure_pa = _quantity(specification.pressure, "pascal", "pressure", "phase_equilibrium")
+        feed = _phase_feed(specification.feed_amounts_mol, len(model.component_ids))
+        hints = _validated_phase_hints(
+            problem.hints,
+            len(topology.phases),
+            tuple(len(model.component_ids) for _ in topology.phases),
+        )
+        native = cast(
+            Mapping[str, object],
+            _equilibrium._solve_declared_fixed_tp(
+                _native_transport(model, active_parameters),
+                temperature_k,
+                pressure_pa,
+                feed,
+                tuple(phase.role for phase in topology.phases),
+                tuple(_phase_support_name(phase.support) for phase in topology.phases),
+                *hints,
+            ),
+        )
+        diagnostics = _native_phase_diagnostics(cast(Mapping[str, object], native["diagnostics"]))
+        if str(native["parameter_fingerprint"]) != model.parameter_fingerprint:
+            raise ValueError("native declared phase result has the wrong parameter fingerprint")
+        native_phases = tuple(
+            _native_equilibrium_phase(cast(Mapping[str, object], value))
+            for value in cast(Sequence[object], native["phases"])
+        )
+        if diagnostics.physical_status != "accepted":
+            raise PhaseEquilibriumError(
+                diagnostics.failure_reason or "declared topology was not certified",
+                diagnostics,
+                native_phases,
+            )
+        extent = FeedSplit(
+            feed_amounts_mol=feed,
+            phase_amounts_mol=_float_tuple(native["phase_amounts_mol"]),
+            phase_fractions=_float_tuple(native["phase_fractions"]),
+            total_free_energy_over_rt=float(cast(float, native["total_free_energy_over_rt"])),
+        )
+        return PhaseEquilibriumResult(
+            problem=problem,
+            phases=native_phases,
+            extent=extent,
+            parameter_fingerprint=str(native["parameter_fingerprint"]),
+            diagnostics=diagnostics,
+            sensitivity=_phase_equilibrium_sensitivity(
+                native.get("sensitivity"), active_parameters
+            ),
+        )
+    if not isinstance(specification, FixedTCoexistence):
+        raise TypeError("phase-equilibrium specification type is unsupported")
+    topology = specification.topology
+    if len(topology.phases) != 2 or specification.reference_phase_index not in {0, 1}:
+        raise ValueError("fixed-T coexistence requires exactly two phases and one reference index")
+    temperature_k = _quantity(
+        specification.temperature, "kelvin", "temperature", "phase_equilibrium"
+    )
+    reference = tuple(float(value) for value in specification.reference_mole_fractions)
+    if len(reference) != len(model.component_ids):
+        raise ValueError("reference composition has the wrong component count")
+    reference_support = topology.phases[specification.reference_phase_index].support
+    if type(reference_support) is not AllComponents:
+        raise ValueError("coexistence reference phase must use AllComponents")
+    partner_index = 1 - specification.reference_phase_index
+    partner_support = topology.phases[partner_index].support
+    if type(partner_support) is NeutralComponents:
+        charges = tuple(model._model.charge_number)
+        neutral_ids = tuple(
+            component
+            for component, charge in zip(model.component_ids, charges, strict=True)
+            if charge == 0
+        )
+        if not neutral_ids:
+            raise ValueError("neutral-component vapor support is empty")
+        partner_parameters = model._parameters.select(neutral_ids)
+        partner_model: epcsaft.Pure | epcsaft.Mixture = (
+            epcsaft.Pure(partner_parameters)
+            if len(neutral_ids) == 1
+            else epcsaft.Mixture(partner_parameters)
+        )
+    elif type(partner_support) is AllComponents:
+        partner_model = model
+    else:
+        raise TypeError("coexistence partner support is invalid")
+    hints = _validated_phase_hints(
+        problem.hints,
+        2,
+        tuple(
+            len(model.component_ids)
+            if index == specification.reference_phase_index
+            else len(partner_model.component_ids)
+            for index in range(2)
+        ),
+    )
+    native = cast(
+        Mapping[str, object],
+        _equilibrium._solve_fixed_t_coexistence(
+            _native_transport(model, active_parameters),
+            _native_transport(
+                partner_model,
+                _support_active_parameters(
+                    partner_model._parameters, active_parameters
+                ),
+            ),
+            temperature_k,
+            tuple(phase.role for phase in topology.phases),
+            tuple(_phase_support_name(phase.support) for phase in topology.phases),
+            specification.reference_phase_index,
+            reference,
+            *hints,
+        ),
+    )
+    diagnostics = _native_phase_diagnostics(cast(Mapping[str, object], native["diagnostics"]))
+    if str(native["parameter_fingerprint"]) != model.parameter_fingerprint:
+        raise ValueError("native coexistence result has the wrong parameter fingerprint")
+    native_phases = tuple(
+        _native_equilibrium_phase(cast(Mapping[str, object], value))
+        for value in cast(Sequence[object], native["phases"])
+    )
+    if diagnostics.physical_status != "accepted":
+        raise PhaseEquilibriumError(
+            diagnostics.failure_reason or "coexistence boundary was not certified",
+            diagnostics,
+            native_phases,
+        )
+    return PhaseEquilibriumResult(
+        problem=problem,
+        phases=native_phases,
+        extent=IncipientBoundary(
+            reference_phase_index=specification.reference_phase_index,
+            pressure_pa=float(cast(float, native["pressure_pa"])),
+        ),
+        parameter_fingerprint=str(native["parameter_fingerprint"]),
+        diagnostics=diagnostics,
+        sensitivity=(
+            None
+            if active_parameters is None
+            else _phase_equilibrium_sensitivity(native.get("sensitivity"), active_parameters)
+        ),
     )
 
 

@@ -112,10 +112,12 @@ public:
 
     [[nodiscard]] const std::string& fingerprint() const;
     [[nodiscard]] const epcsaft_native_transport& transport() const noexcept;
+    [[nodiscard]] int evaluation_count() const noexcept;
 
 private:
     const epcsaft_native_transport& transport_;
     std::string fingerprint_;
+    mutable int evaluation_count_ = 0;
 };
 
 }  // namespace epcsaft_engine::equilibrium

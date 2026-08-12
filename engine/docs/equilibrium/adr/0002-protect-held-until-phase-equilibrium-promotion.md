@@ -38,11 +38,14 @@ separate physical solver. During the transition:
 - historical HELD/HELD2 names remain live only for the protected incumbent and
   its exact evidence, not as selection keys for new numerical algorithms.
 
-The current adapter proves lineage and role admission over a retained result.
-It does not yet solve an arbitrary declared one-to-three-phase topology, and it
-does not apply optional hints. Those are explicit promotion gaps. Until they
-are implemented and evidenced, `phase_equilibrium` is not the sole owner and
-must not claim the completed ADR 0001 boundary.
+The candidate implementation now carries exact protected incumbent discovery,
+declared one-to-three-phase all-component local solves with at most one vapor,
+fixed-T coexistence with all-component or neutral-component partner support,
+non-authoritative start ordering, and exact fixed-topology sensitivities. This implementation status does
+not itself promote the candidate. Until the installed-wheel campaign, two
+independent reviews, remaining-tree audit, and explicit user approval are bound
+to one accepted receipt, `phase_equilibrium` is not the sole owner and must not
+claim the completed ADR 0001 boundary.
 
 ## Promotion gate
 

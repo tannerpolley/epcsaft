@@ -27,6 +27,13 @@ def evaluate_packing_fraction(
     amounts_mol: tuple[float, ...],
     volume_m3: float,
 ) -> float: ...
+def _audit_phase_state(
+    capsule: object,
+    role: str,
+    temperature_k: float,
+    mole_fractions: tuple[float, ...],
+    molar_volume_m3_per_mol: float,
+) -> dict[str, object]: ...
 def evaluate_solved_state_sensitivity(
     capsule: object,
     temperature_k: float,
@@ -35,6 +42,29 @@ def evaluate_solved_state_sensitivity(
     phase_amounts_mol: tuple[tuple[float, ...], ...],
     phase_volumes_m3: tuple[float, ...],
 ) -> dict[str, object]: ...
+def _solve_declared_fixed_tp(
+    capsule: object,
+    temperature_k: float,
+    pressure_pa: float,
+    feed_amounts_mol: tuple[float, ...],
+    roles: tuple[str, ...],
+    supports: tuple[str, ...],
+    hint_indices: tuple[int, ...],
+    hint_compositions: tuple[tuple[float, ...], ...],
+    hint_densities_mol_m3: tuple[float, ...],
+) -> dict[str, Any]: ...
+def _solve_fixed_t_coexistence(
+    reference_capsule: object,
+    partner_capsule: object,
+    temperature_k: float,
+    roles: tuple[str, ...],
+    supports: tuple[str, ...],
+    reference_phase_index: int,
+    reference_mole_fractions: tuple[float, ...],
+    hint_indices: tuple[int, ...],
+    hint_compositions: tuple[tuple[float, ...], ...],
+    hint_densities_mol_m3: tuple[float, ...],
+) -> dict[str, Any]: ...
 def _solve_tp_flash(
     capsule: object,
     temperature_k: float,

@@ -519,7 +519,13 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         for _, family in singles
     )
     if not ionic_topology:
-        if electrolyte_formulation != "none":
+        source_has_ions = any(
+            isinstance(record, SingleParameterRecord)
+            and record.family == "charge_number"
+            and _integer(record) != 0
+            for record in parameters._document.records
+        )
+        if electrolyte_formulation != "none" and not source_has_ions:
             raise _error(
                 "invalid-value",
                 family="electrolyte",

@@ -13,6 +13,7 @@
 
 #include "flash.hpp"
 #include "held2_certificates.hpp"
+#include "phase_equilibrium.hpp"
 #include "result_json.hpp"
 #include "solved_state_sensitivity.hpp"
 
@@ -212,6 +213,8 @@ py::dict evaluate_solved_state_sensitivity(
         sensitivity.output_parameter_jacobian;
     result["rank"] = sensitivity.rank;
     result["dimension"] = sensitivity.dimension;
+    result["parameter_count"] = sensitivity.parameter_identities.size();
+    result["output_count"] = sensitivity.output_identities.size();
     result["scaled_condition_number_2"] =
         sensitivity.scaled_condition_number_2;
     result["linear_solve_backward_error"] =
@@ -220,6 +223,313 @@ py::dict evaluate_solved_state_sensitivity(
     return result;
 }
 
+
+epcsaft_engine::equilibrium::PhaseRole parse_phase_role(
+    const std::string& value
+) {
+    if (value == "liquid") {
+        return epcsaft_engine::equilibrium::PhaseRole::Liquid;
+    }
+    if (value == "vapor") {
+        return epcsaft_engine::equilibrium::PhaseRole::Vapor;
+    }
+    throw py::value_error("phase role must be 'liquid' or 'vapor'");
+}
+
+epcsaft_engine::equilibrium::PhaseSupport parse_phase_support(
+    const std::string& value
+) {
+    if (value == "all_components") {
+        return epcsaft_engine::equilibrium::PhaseSupport::AllComponents;
+    }
+    if (value == "neutral_components") {
+        return epcsaft_engine::equilibrium::PhaseSupport::NeutralComponents;
+    }
+    throw py::value_error(
+        "phase support must be 'all_components' or 'neutral_components'"
+    );
+}
+
+std::vector<epcsaft_engine::equilibrium::DeclaredPhaseSpecification>
+parse_declared_phases(
+    const std::vector<std::string>& roles,
+    const std::vector<std::string>& supports
+) {
+    if (roles.size() != supports.size()) {
+        throw py::value_error("phase role and support counts must match");
+    }
+    std::vector<
+        epcsaft_engine::equilibrium::DeclaredPhaseSpecification
+    > result;
+    result.reserve(roles.size());
+    for (std::size_t phase = 0; phase < roles.size(); ++phase) {
+        result.push_back({
+            parse_phase_role(roles[phase]),
+            parse_phase_support(supports[phase]),
+        });
+    }
+    return result;
+}
+
+std::vector<epcsaft_engine::equilibrium::PhaseHint> parse_phase_hints(
+    const std::vector<std::size_t>& indices,
+    const std::vector<std::vector<double>>& compositions,
+    const std::vector<double>& densities
+) {
+    if (indices.size() != compositions.size()
+        || indices.size() != densities.size()) {
+        throw py::value_error("phase hint arrays must have equal length");
+    }
+    std::vector<epcsaft_engine::equilibrium::PhaseHint> result;
+    result.reserve(indices.size());
+    for (std::size_t hint = 0; hint < indices.size(); ++hint) {
+        result.push_back({
+            indices[hint],
+            compositions[hint],
+            densities[hint],
+        });
+    }
+    return result;
+}
+
+py::dict phase_diagnostics_to_dict(
+    const epcsaft_engine::equilibrium::PhaseEquilibriumDiagnostics& value
+) {
+    py::dict result;
+    result["route"] = value.route;
+    result["solver_status"] = value.solver_status;
+    result["numerical_status"] = value.numerical_status;
+    result["physical_status"] = value.physical_status;
+    result["failure_stage"] = value.failure_stage.empty()
+        ? py::none()
+        : py::cast(value.failure_stage);
+    result["failure_reason"] = value.failure_reason.empty()
+        ? py::none()
+        : py::cast(value.failure_reason);
+    result["certificate_scope"] = value.certificate_scope;
+    result["phase_selection_claim"] = value.phase_selection_claim;
+    result["globality_claim"] = value.globality_claim;
+    result["search_scope"] = value.search_scope;
+    result["search_budget"] = value.search_budget;
+    result["search_exclusions"] = value.search_exclusions;
+    result["completeness_criterion"] = value.completeness_criterion;
+    result["role_evidence"] = value.role_evidence;
+    result["optimizer_solve_count"] = value.optimizer_solve_count;
+    result["optimizer_iteration_count"] = value.optimizer_iteration_count;
+    result["provider_evaluation_count"] = value.provider_evaluation_count;
+    result["hint_count"] = value.hint_count;
+    result["hint_reordered_start_count"] =
+        value.hint_reordered_start_count;
+    result["material_balance_inf"] = value.material_balance_inf;
+    result["electroneutrality_inf"] = value.electroneutrality_inf;
+    result["pressure_residual_inf"] = value.pressure_residual_inf;
+    result["chemical_potential_residual_inf"] =
+        value.chemical_potential_residual_inf;
+    result["kkt_stationarity_inf"] = value.kkt_stationarity_inf;
+    result["dual_sign_violation_inf"] = value.dual_sign_violation_inf;
+    result["complementarity_inf"] = value.complementarity_inf;
+    result["phase_distinctness"] = value.phase_distinctness;
+    return result;
+}
+
+py::dict phase_state_to_dict(
+    const epcsaft_engine::equilibrium::PhaseEquilibriumState& value
+) {
+    py::dict result;
+    result["role"] =
+        epcsaft_engine::equilibrium::phase_role_name(value.role);
+    result["support"] =
+        epcsaft_engine::equilibrium::phase_support_name(value.support);
+    result["supported_component_ids"] = value.supported_component_ids;
+    result["mole_fractions"] = value.mole_fractions;
+    result["molar_volume_m3_per_mol"] = value.molar_volume_m3_per_mol;
+    result["molar_density_mol_m3"] = value.molar_density_mol_m3;
+    result["packing_fraction"] = value.packing_fraction;
+    result["pressure_pa"] = value.pressure_pa;
+    result["chemical_potential_component_ids"] =
+        value.chemical_potential_component_ids;
+    result["chemical_potential_over_rt"] =
+        value.chemical_potential_over_rt;
+    result["mechanical_class"] = value.mechanical_class;
+    return result;
+}
+
+py::dict solved_sensitivity_to_dict(
+    const epcsaft_engine::equilibrium::SolvedStateSensitivity& value
+) {
+    py::dict result;
+    result["status"] = value.status;
+    result["failure_reason"] = value.failure_reason.empty()
+        ? py::none()
+        : py::cast(value.failure_reason);
+    result["derivative_order"] = 1;
+    result["higher_order_status"] = "unavailable";
+    result["higher_order_reason"] =
+        "higher_order_total_derivatives_not_implemented";
+    result["tensor_layout"] = "row-major";
+    result["residual_identities"] = value.residual_identities;
+    result["state_identities"] = value.state_identities;
+    result["output_identities"] = value.output_identities;
+    result["parameter_identities"] = value.parameter_identities;
+    result["residual_state_jacobian"] =
+        value.residual_state_jacobian;
+    result["residual_parameter_jacobian"] =
+        value.residual_parameter_jacobian;
+    result["state_parameter_jacobian"] =
+        value.state_parameter_jacobian;
+    result["output_parameter_jacobian"] =
+        value.output_parameter_jacobian;
+    result["rank"] = value.rank;
+    result["dimension"] = value.dimension;
+    result["parameter_count"] = value.parameter_identities.size();
+    result["output_count"] = value.output_identities.size();
+    result["scaled_condition_number_2"] =
+        value.scaled_condition_number_2;
+    result["linear_solve_backward_error"] =
+        value.linear_solve_backward_error;
+    result["reference_phase_index"] = value.reference_phase_index;
+    return result;
+}
+
+py::dict solve_declared_fixed_tp(
+    const py::capsule& capsule,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<double>& feed_amounts_mol,
+    const std::vector<std::string>& roles,
+    const std::vector<std::string>& supports,
+    const std::vector<std::size_t>& hint_indices,
+    const std::vector<std::vector<double>>& hint_compositions,
+    const std::vector<double>& hint_densities
+) {
+    const epcsaft_engine::equilibrium::ProviderContext provider(
+        checked_mixture_transport(capsule)
+    );
+    const auto declared_phases = parse_declared_phases(roles, supports);
+    const auto phase_hints = parse_phase_hints(
+        hint_indices, hint_compositions, hint_densities
+    );
+    epcsaft_engine::equilibrium::FixedTpPhaseResult solved;
+    {
+        py::gil_scoped_release release;
+        solved = epcsaft_engine::equilibrium::solve_declared_fixed_tp(
+            provider,
+            {
+                temperature_k,
+                pressure_pa,
+                feed_amounts_mol,
+                declared_phases,
+                phase_hints,
+            }
+        );
+    }
+    py::dict result;
+    py::list phases;
+    for (const auto& phase : solved.phases) {
+        phases.append(phase_state_to_dict(phase));
+    }
+    result["phases"] = std::move(phases);
+    result["phase_amounts_mol"] = solved.phase_amounts_mol;
+    result["phase_fractions"] = solved.phase_fractions;
+    result["total_free_energy_over_rt"] =
+        solved.total_free_energy_over_rt;
+    result["parameter_fingerprint"] = solved.parameter_fingerprint;
+    result["diagnostics"] = phase_diagnostics_to_dict(
+        solved.diagnostics
+    );
+    if (solved.sensitivity.has_value()) {
+        result["sensitivity"] = solved_sensitivity_to_dict(
+            *solved.sensitivity
+        );
+    } else {
+        result["sensitivity"] = py::none();
+    }
+    return result;
+}
+
+py::dict audit_phase_state(
+    const py::capsule& capsule,
+    const std::string& role,
+    double temperature_k,
+    const std::vector<double>& mole_fractions,
+    double molar_volume_m3_per_mol
+) {
+    const epcsaft_engine::equilibrium::ProviderContext provider(
+        checked_mixture_transport(capsule)
+    );
+    const auto parsed_role = parse_phase_role(role);
+    epcsaft_engine::equilibrium::PhaseEquilibriumState audited;
+    {
+        py::gil_scoped_release release;
+        audited = epcsaft_engine::equilibrium::audit_phase_state(
+            provider,
+            parsed_role,
+            temperature_k,
+            mole_fractions,
+            molar_volume_m3_per_mol
+        );
+    }
+    return phase_state_to_dict(audited);
+}
+
+py::dict solve_fixed_t_coexistence(
+    const py::capsule& reference_capsule,
+    const py::capsule& partner_capsule,
+    double temperature_k,
+    const std::vector<std::string>& roles,
+    const std::vector<std::string>& supports,
+    std::size_t reference_phase_index,
+    const std::vector<double>& reference_mole_fractions,
+    const std::vector<std::size_t>& hint_indices,
+    const std::vector<std::vector<double>>& hint_compositions,
+    const std::vector<double>& hint_densities
+) {
+    const epcsaft_engine::equilibrium::ProviderContext reference_provider(
+        checked_mixture_transport(reference_capsule)
+    );
+    const epcsaft_engine::equilibrium::ProviderContext partner_provider(
+        checked_transport(partner_capsule)
+    );
+    const auto declared_phases = parse_declared_phases(roles, supports);
+    const auto phase_hints = parse_phase_hints(
+        hint_indices, hint_compositions, hint_densities
+    );
+    epcsaft_engine::equilibrium::FixedTCoexistenceResult solved;
+    {
+        py::gil_scoped_release release;
+        solved = epcsaft_engine::equilibrium::solve_fixed_t_coexistence(
+            reference_provider,
+            partner_provider,
+            {
+                temperature_k,
+                declared_phases,
+                reference_phase_index,
+                reference_mole_fractions,
+                phase_hints,
+            }
+        );
+    }
+    py::dict result;
+    py::list phases;
+    for (const auto& phase : solved.phases) {
+        phases.append(phase_state_to_dict(phase));
+    }
+    result["phases"] = std::move(phases);
+    result["reference_phase_index"] = solved.reference_phase_index;
+    result["pressure_pa"] = solved.pressure_pa;
+    result["parameter_fingerprint"] = solved.parameter_fingerprint;
+    result["diagnostics"] = phase_diagnostics_to_dict(
+        solved.diagnostics
+    );
+    if (solved.sensitivity.has_value()) {
+        result["sensitivity"] = solved_sensitivity_to_dict(
+            *solved.sensitivity
+        );
+    } else {
+        result["sensitivity"] = py::none();
+    }
+    return result;
+}
 py::dict evaluate_phase(
     const py::capsule& capsule,
     double temperature_k,
@@ -408,6 +718,42 @@ PYBIND11_MODULE(_equilibrium, module) {
         py::arg("feed_amounts_mol"),
         py::arg("phase_amounts_mol"),
         py::arg("phase_volumes_m3")
+    );
+    module.def(
+        "_audit_phase_state",
+        &audit_phase_state,
+        py::arg("capsule"),
+        py::arg("role"),
+        py::arg("temperature_k"),
+        py::arg("mole_fractions"),
+        py::arg("molar_volume_m3_per_mol")
+    );
+    module.def(
+        "_solve_declared_fixed_tp",
+        &solve_declared_fixed_tp,
+        py::arg("capsule"),
+        py::arg("temperature_k"),
+        py::arg("pressure_pa"),
+        py::arg("feed_amounts_mol"),
+        py::arg("roles"),
+        py::arg("supports"),
+        py::arg("hint_indices"),
+        py::arg("hint_compositions"),
+        py::arg("hint_densities_mol_m3")
+    );
+    module.def(
+        "_solve_fixed_t_coexistence",
+        &solve_fixed_t_coexistence,
+        py::arg("reference_capsule"),
+        py::arg("partner_capsule"),
+        py::arg("temperature_k"),
+        py::arg("roles"),
+        py::arg("supports"),
+        py::arg("reference_phase_index"),
+        py::arg("reference_mole_fractions"),
+        py::arg("hint_indices"),
+        py::arg("hint_compositions"),
+        py::arg("hint_densities_mol_m3")
     );
     module.def(
         "_solve_tp_flash",

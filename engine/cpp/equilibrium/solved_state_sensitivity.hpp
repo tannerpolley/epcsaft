@@ -41,7 +41,21 @@ struct SolvedStateSensitivity {
     std::size_t reference_phase_index = 0;
 };
 
+[[nodiscard]] bool solve_sensitivity_linear_system(
+    SolvedStateSensitivity& result,
+    std::size_t parameter_count
+);
+
 [[nodiscard]] SolvedStateSensitivity evaluate_solved_state_sensitivity(
+    const ProviderContext& provider,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<std::string>& component_ids,
+    const std::vector<double>& feed_amounts_mol,
+    const std::vector<SolvedPhaseState>& phases
+);
+
+[[nodiscard]] SolvedStateSensitivity evaluate_declared_state_sensitivity(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
