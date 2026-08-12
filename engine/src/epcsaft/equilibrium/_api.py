@@ -57,7 +57,7 @@ class HeldDiagnostics:
 
 @dataclass(frozen=True)
 class Held2Diagnostics:
-    """Compact evidence from the retained Perdomo HELD2 controller."""
+    """Compact evidence from the retained HELD2 controller."""
 
     outcome: str
     failure_stage: str | None
@@ -1105,7 +1105,7 @@ def _held_discovery(
         diagnostics = _failed_held_diagnostics("error", "native_exception", str(error))
         raise _HeldDiscoveryError(str(error), diagnostics) from error
 
-    if native.get("controller") == "perdomo_held2_paper_steps_1_to_10_v1":
+    if native.get("controller") == "held2_steps_1_to_10_v1":
         try:
             return _held2_result(
                 feed,
@@ -1315,7 +1315,7 @@ def _protected_discovery_diagnostics(
     if isinstance(retained, Held2Diagnostics):
         route = "held2_discovery"
         native_failure_stage = retained.failure_stage
-        search_scope = "retained_perdomo_held2_steps_1_to_10_finite_domain"
+        search_scope = "retained_held2_steps_1_to_10_finite_domain"
         search_budget = (
             f"optimizer_solves={retained.optimizer_solves};"
             f"optimizer_iterations={retained.optimizer_iterations}"

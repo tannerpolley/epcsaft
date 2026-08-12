@@ -632,7 +632,7 @@ JsonValue held2_pressure_envelope_to_json(
     return result;
 }
 
-JsonValue paper_timing_to_json(const Held2StepTiming& timing) {
+JsonValue held2_timing_to_json(const Held2StepTiming& timing) {
     JsonValue result = JsonValue::object();
     result["step"] = timing.step;
     result["invocation_count"] = timing.invocation_count;
@@ -678,7 +678,7 @@ JsonValue paper_m_point_to_json(const Held2MPoint& point) {
     return result;
 }
 
-JsonValue paper_physical_certificate_to_json(
+JsonValue held2_physical_certificate_to_json(
     const Held2PhysicalCertificate& value
 ) {
     JsonValue result = JsonValue::object();
@@ -843,7 +843,7 @@ JsonValue paper_step8_to_json(const Held2Step8Result& step) {
     } else {
         result["nlp"] = nullptr;
     }
-    result["timing"] = paper_timing_to_json(step.timing);
+    result["timing"] = held2_timing_to_json(step.timing);
     return result;
 }
 
@@ -859,7 +859,7 @@ JsonValue paper_step9_to_json(const Held2Step9Result& step) {
     result["free_energy_gap"] = step.free_energy_gap
         ? JsonValue(*step.free_energy_gap) : JsonValue(nullptr);
     result["physical"] = step.physical
-        ? paper_physical_certificate_to_json(*step.physical)
+        ? held2_physical_certificate_to_json(*step.physical)
         : JsonValue(nullptr);
     JsonValue comparisons = JsonValue::array();
     for (const Held2PotentialComparison& value : step.potential_comparisons) {
@@ -874,7 +874,7 @@ JsonValue paper_step9_to_json(const Held2Step9Result& step) {
         comparisons.append(std::move(comparison));
     }
     result["potential_comparisons"] = std::move(comparisons);
-    result["timing"] = paper_timing_to_json(step.timing);
+    result["timing"] = held2_timing_to_json(step.timing);
     return result;
 }
 
@@ -904,19 +904,19 @@ JsonValue paper_step10_to_json(const Held2Step10Result& step) {
     }
     result["refinements"] = std::move(refinements);
     result["final_certificate"] = step.final_certificate
-        ? paper_physical_certificate_to_json(*step.final_certificate)
+        ? held2_physical_certificate_to_json(*step.final_certificate)
         : JsonValue(nullptr);
-    result["timing"] = paper_timing_to_json(step.timing);
+    result["timing"] = held2_timing_to_json(step.timing);
     return result;
 }
 
-JsonValue paper_algorithm_to_json(
+JsonValue held2_algorithm_to_json(
     const Held2AlgorithmResult& solve,
     const FlashInput& input,
     const std::string& fingerprint
 ) {
     JsonValue result = JsonValue::object();
-    result["controller"] = "perdomo_held2_paper_steps_1_to_10_v1";
+    result["controller"] = "held2_steps_1_to_10_v1";
     result["route"] = "held2";
     result["parameter_fingerprint"] = fingerprint;
     result["temperature_k"] = input.temperature_k;
@@ -968,7 +968,7 @@ JsonValue paper_algorithm_to_json(
     result["phases"] = std::move(phases);
     JsonValue timings = JsonValue::array();
     for (const Held2StepTiming& timing : solve.step_timings) {
-        timings.append(paper_timing_to_json(timing));
+        timings.append(held2_timing_to_json(timing));
     }
     result["step_timings"] = std::move(timings);
 
@@ -977,7 +977,7 @@ JsonValue paper_algorithm_to_json(
     step1["reason"] = solve.step1.reason;
     step1["independent_feed"] = solve.step1.independent_feed
         ? JsonValue(*solve.step1.independent_feed) : JsonValue(nullptr);
-    step1["timing"] = paper_timing_to_json(solve.step1.timing);
+    step1["timing"] = held2_timing_to_json(solve.step1.timing);
     result["step1"] = std::move(step1);
 
     if (solve.step2) {
@@ -1006,7 +1006,7 @@ JsonValue paper_algorithm_to_json(
             ? held2_pressure_envelope_to_json(
                 *solve.step2->reference_envelope
             ) : JsonValue(nullptr);
-        step2["timing"] = paper_timing_to_json(solve.step2->timing);
+        step2["timing"] = held2_timing_to_json(solve.step2->timing);
         result["step2"] = std::move(step2);
     } else {
         result["step2"] = nullptr;
@@ -1017,7 +1017,7 @@ JsonValue paper_algorithm_to_json(
             JsonValue item = JsonValue::object();
             item["status"] = value.status;
             item["reason"] = value.reason;
-            item["timing"] = paper_timing_to_json(value.timing);
+            item["timing"] = held2_timing_to_json(value.timing);
             items.append(std::move(item));
         }
         return items;
@@ -1035,7 +1035,7 @@ JsonValue paper_algorithm_to_json(
         item["multipliers"] = value.multipliers
             ? JsonValue(*value.multipliers) : JsonValue(nullptr);
         item["active_cut_ids"] = value.active_cut_ids;
-        item["timing"] = paper_timing_to_json(value.timing);
+        item["timing"] = held2_timing_to_json(value.timing);
         step4_history.append(std::move(item));
     }
     result["step4_history"] = std::move(step4_history);
@@ -1097,7 +1097,7 @@ JsonValue paper_algorithm_to_json(
             attempts.append(std::move(certificate));
         }
         item["attempts"] = std::move(attempts);
-        item["timing"] = paper_timing_to_json(value.timing);
+        item["timing"] = held2_timing_to_json(value.timing);
         step5_history.append(std::move(item));
     }
     result["step5_history"] = std::move(step5_history);
@@ -1123,7 +1123,7 @@ JsonValue paper_algorithm_to_json(
             decisions.append(std::move(serialized));
         }
         item["decisions"] = std::move(decisions);
-        item["timing"] = paper_timing_to_json(value.timing);
+        item["timing"] = held2_timing_to_json(value.timing);
         step6_history.append(std::move(item));
     }
     result["step6_history"] = std::move(step6_history);
@@ -1198,7 +1198,7 @@ std::string flash_result_to_json(const FlashResult& result) {
     std::ostringstream output;
     JsonValue payload;
     if (const auto* held2 = std::get_if<Held2AlgorithmResult>(&result.solve)) {
-        payload = paper_algorithm_to_json(
+        payload = held2_algorithm_to_json(
             *held2,
             {
                 result.input.temperature_k,

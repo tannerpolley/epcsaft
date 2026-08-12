@@ -162,22 +162,22 @@ inline constexpr Held2Tolerance kHeld2Step6Gap{
 };
 inline constexpr Held2Tolerance kHeld2PaperStep6Gap{
     "paper_step6_gap", "stage_ii_paper",
-    "Perdomo Eq. (66) upper/lower agreement failed",
+    "HELD2 Eq. (66) upper/lower agreement failed",
     Held2ToleranceRelation::AbsAtMost, 5.0e-2, 0.0,
 };
 inline constexpr Held2Tolerance kHeld2PaperStep6Derivative{
     "paper_step6_derivative", "stage_ii_paper",
-    "Perdomo Eq. (66) derivative agreement failed",
+    "HELD2 Eq. (66) derivative agreement failed",
     Held2ToleranceRelation::AbsAtMost, 1.0e-8, 0.5,
 };
 inline constexpr Held2Tolerance kHeld2PaperStep6PackingDistinct{
     "paper_step6_packing_distinct", "phase_identity",
-    "Perdomo Eq. (66) packing fractions are not distinct",
+    "HELD2 Eq. (66) packing fractions are not distinct",
     Held2ToleranceRelation::AtLeast, 1.0e-3, 0.0,
 };
 inline constexpr Held2Tolerance kHeld2PaperStep6CompositionDistinct{
     "paper_step6_composition_distinct", "phase_identity",
-    "Perdomo Eq. (66) modified compositions are not distinct",
+    "HELD2 Eq. (66) modified compositions are not distinct",
     Held2ToleranceRelation::AtLeast, 1.0e-3, 0.0,
 };
 inline constexpr Held2Tolerance kHeld2MRepresentationEquivalent{
@@ -215,12 +215,12 @@ inline constexpr Held2Tolerance kHeld2Stage3Complementarity{
 };
 inline constexpr Held2Tolerance kHeld2PaperFreeEnergyGap{
     "paper_free_energy_gap", "stage_iii_paper",
-    "Perdomo Eq. (68) free-energy convergence failed",
+    "HELD2 Eq. (68) free-energy convergence failed",
     Held2ToleranceRelation::AbsAtMost, 1.0e-4, 0.0,
 };
 inline constexpr Held2Tolerance kHeld2PaperPotentialRatio{
     "paper_potential_ratio", "stage_iii_paper",
-    "Perdomo Eq. (69) modified-potential convergence failed",
+    "HELD2 Eq. (69) modified-potential convergence failed",
     Held2ToleranceRelation::AbsAtMost, 1.0e-2, 0.0,
 };
 inline constexpr Held2Tolerance kHeld2PhaseRetirementMargin{
