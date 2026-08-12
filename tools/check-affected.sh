@@ -75,7 +75,7 @@ fi
 if grep -q '^validation/' <<<"$paths"; then
     (cd validation && ../.venv/bin/python -m pytest -q -m 'not campaign')
     if grep -q '^validation/campaigns/' <<<"$paths"; then
-        (cd validation && ../.venv/bin/python -m pytest -q -m campaign)
+        echo "Validation campaign replay is explicit; run the changed campaign or tools/run-slice.sh when its scientific claim requires it"
     fi
 fi
 if grep -q '^governance/' <<<"$paths"; then

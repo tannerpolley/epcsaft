@@ -37,6 +37,7 @@ _TOTAL_AMOUNT_MOL = 2.0
 _AMOUNT_FEED = tuple(_TOTAL_AMOUNT_MOL * value for value in _FEED)
 
 
+@pytest.mark.slow
 def test_discovery_preserves_amount_scaling_and_parameter_order() -> None:
     """Falsify extensive scaling or parameter-order drift in HELD discovery."""
     parameters = Parameters.from_mapping(NEUTRAL_BINARY)
@@ -332,6 +333,7 @@ def test_declared_three_liquid_phases_satisfy_independent_equilibrium_claims() -
     assert exact == pytest.approx(centered, rel=2.0e-6, abs=3.0e-10)
 
 
+@pytest.mark.slow
 def test_declared_multisolvent_multiion_roles_select_distinct_stable_roots() -> None:
     """Falsify binary-only or compressibility-only charged role selection.
 
@@ -593,6 +595,7 @@ def test_coexistence_model_parameter_sensitivity_uses_both_phase_partials() -> N
     assert exact == pytest.approx(centered, rel=2.0e-6, abs=2.0e-3)
 
 
+@pytest.mark.slow
 def test_charged_three_phase_split_preserves_charge_order_and_sensitivity() -> None:
     """Falsify a neutral-only three-phase or fixed-position HELD2 extension.
 

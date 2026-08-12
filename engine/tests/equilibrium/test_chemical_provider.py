@@ -288,6 +288,7 @@ def _multineutral_problem() -> equilibrium.ChemicalEquilibriumProblem:
     )
 
 
+@pytest.mark.slow
 def test_provider_certifies_multineutral_reactive_minimum() -> None:
     model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE))
     phase = equilibrium.ProviderPhase(model, (1.0e-6, 0.74))

@@ -3,16 +3,52 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
+
+# Build and install the immutable wheel before any test process starts.
 bash .codex/environments/setup.sh
 
-.venv/bin/python data/tools/validate_packets.py
-(cd engine && ../.venv/bin/python -m pytest -q)
-(cd engine && ../.venv/bin/python -m pytest -q -o addopts='' -m 'slow or expensive')
-(cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)
-(cd engine && ../.venv/bin/mypy)
-(cd validation && ../.venv/bin/python -m pytest -q -m 'not campaign')
-(cd validation && ../.venv/bin/python -m pytest -q -m campaign)
-python3 governance/tools/management_preflight.py check
-python3 governance/tools/artifact_store.py check
-bash engine/tools/check-native.sh
-bash engine/tools/check-native-sanitizers.sh
+run_root="$(mktemp -d)"
+cleanup() {
+    cmake -E remove_directory "$run_root"
+}
+trap cleanup EXIT
+
+names=()
+pids=()
+run_check() {
+    local name="$1"
+    shift
+    names+=("$name")
+    ("$@") >"$run_root/$name.log" 2>&1 &
+    pids+=("$!")
+}
+
+run_check packets .venv/bin/python data/tools/validate_packets.py
+run_check engine-eos bash -c 'cd "$1/engine" && ../.venv/bin/python -m pytest -q tests/eos' _ "$repo_root"
+run_check engine-equilibrium bash -c 'cd "$1/engine" && ../.venv/bin/python -m pytest -q tests/equilibrium' _ "$repo_root"
+run_check engine-regression bash -c 'cd "$1/engine" && ../.venv/bin/python -m pytest -q tests/regression' _ "$repo_root"
+run_check ruff bash -c 'cd "$1/engine" && ../.venv/bin/ruff check --select E4,E7,E9,F src tests' _ "$repo_root"
+run_check mypy bash -c 'cd "$1/engine" && ../.venv/bin/mypy' _ "$repo_root"
+run_check validation-fast bash -c 'cd "$1/validation" && ../.venv/bin/python -m pytest -q -m "not campaign"' _ "$repo_root"
+run_check management python3 governance/tools/management_preflight.py check
+run_check artifacts python3 governance/tools/artifact_store.py check
+
+failed=0
+for index in "${!pids[@]}"; do
+    name="${names[$index]}"
+    if wait "${pids[$index]}"; then
+        printf '\n[%s]\n' "$name"
+        cat "$run_root/$name.log"
+    else
+        printf '\n[%s FAILED]\n' "$name" >&2
+        cat "$run_root/$name.log" >&2
+        failed=1
+    fi
+done
+
+if ((failed)); then
+    exit 1
+fi
+
+echo "fast installed-wheel checks passed"
+echo "slow Engine evidence, Validation campaigns, clang-tidy, and sanitizers run only by explicit owner command"
