@@ -45,11 +45,12 @@ The pair-parameter scientific basis is recorded in
    uncorrected, shell-only SSM, and SSM+DS models. Parameters resolution rejects
    the globally redundant `(0, 1)` identity. There is no `original-born`, SSM,
    or SSM+DS runtime selector.
-6. The destination nonreactive phase owner is `phase_equilibrium`, with
-   discovery, hint, and constrained-specification modes for one to three
-   liquid/vapor phases. Governance D-030 accepts the reviewed promotion
-   receipt, retains exact HELD/HELD2 internally for discovery, and retires its
-   redundant public Python route.
+6. The destination nonreactive phase owner is `phase_equilibrium`. Omitted
+   topology retains the admitted HELD/HELD2 discovery boundary; declared
+   constrained specification supports one to three liquid/vapor phases and
+   indexed non-authoritative hints. Governance D-030 accepts the reviewed
+   promotion receipt, retains exact HELD/HELD2 internally for discovery, and
+   retires its redundant public Python route.
 7. Homogeneous chemical equilibrium remains separate. This plan defines only
    the state, phase, parameter, and sensitivity seam needed by a future coupled
    reactive-phase design.

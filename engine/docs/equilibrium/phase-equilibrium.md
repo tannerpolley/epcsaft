@@ -86,8 +86,9 @@ parameter order.
 The user-approved promotion tolerance is `1e-4` for candidate-versus-incumbent
 historical state lineage only. It does not relax conservation, charge,
 pressure, KKT, modified-potential, stability, or derivative checks. The
-installed-wheel promotion run passed all eight Khudaida Figure 2 feeds and both
-selected-parameter derivative checks (`10 passed in 348.52s`).
+installed-wheel promotion run passed all eight Khudaida Figure 2 feeds, both
+selected-parameter derivative checks, and the other retained campaign evidence
+(`12 passed, 4 deselected in 437.88s`).
 
 Engine evidence separately covers discovery amount scaling and parameter
 order, strict-stable role selection, neutral and charged one-/two-/three-phase
