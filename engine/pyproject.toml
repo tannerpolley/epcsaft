@@ -17,7 +17,6 @@ build-dir = "build/{wheel_tag}"
 wheel.packages = ["src/epcsaft"]
 wheel.exclude = [
   "epcsaft/_native/**",
-  "epcsaft/include/**",
   "epcsaft/regression/native/**",
 ]
 cmake.source-dir = "."

@@ -102,7 +102,7 @@ public:
         double temperature_k,
         double pressure_pa,
         const HeldStateEvaluation& reference,
-        double minimum_x_methane,
+        double minimum_x_component_zero,
         double minimum_tpd,
         StageIObjective objective,
         std::array<double, 2> initial,
@@ -113,7 +113,7 @@ public:
           temperature_k_(temperature_k),
           pressure_pa_(pressure_pa),
           reference_(reference),
-          minimum_x_methane_(minimum_x_methane),
+          minimum_x_component_zero_(minimum_x_component_zero),
           minimum_tpd_(minimum_tpd),
           objective_(objective),
           initial_(initial),
@@ -311,7 +311,7 @@ private:
                 temperature_k_,
                 pressure_pa_,
                 reference_,
-                minimum_x_methane_,
+                minimum_x_component_zero_,
                 minimum_tpd_,
                 x[0],
                 x[1]
@@ -333,7 +333,7 @@ private:
     double temperature_k_;
     double pressure_pa_;
     HeldStateEvaluation reference_;
-    double minimum_x_methane_;
+    double minimum_x_component_zero_;
     double minimum_tpd_;
     StageIObjective objective_;
     std::array<double, 2> initial_;
@@ -348,7 +348,7 @@ SearchRun run_search_ipopt(
     double temperature_k,
     double pressure_pa,
     const HeldStateEvaluation& reference,
-    double minimum_x_methane,
+    double minimum_x_component_zero,
     double minimum_tpd,
     StageIObjective objective,
     const std::array<double, 2>& initial,
@@ -360,7 +360,7 @@ SearchRun run_search_ipopt(
         temperature_k,
         pressure_pa,
         reference,
-        minimum_x_methane,
+        minimum_x_component_zero,
         minimum_tpd,
         objective,
         initial,
@@ -407,7 +407,7 @@ bool locally_accepts(const SearchRun& run, const HeldTpdEvaluation& evaluation) 
 std::vector<HeldStageIStart> make_planned_starts(
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane
+    double feed_x_component_zero
 ) {
     const double liquid_log_volume = std::log(1.0 / 20'000.0);
     const double vapor_volume = std::clamp(
@@ -418,13 +418,13 @@ std::vector<HeldStageIStart> make_planned_starts(
     const double vapor_log_volume = std::log(vapor_volume);
     std::vector<HeldStageIStart> starts;
     starts.reserve(20);
-    const auto append_pair = [&](const std::string& role, double x_methane) {
-        const double bounded_x = std::clamp(x_methane, kCompositionLower, kCompositionUpper);
+    const auto append_pair = [&](const std::string& role, double x_component_zero) {
+        const double bounded_x = std::clamp(x_component_zero, kCompositionLower, kCompositionUpper);
         starts.push_back({role + "_liquid", bounded_x, liquid_log_volume});
         starts.push_back({role + "_vapor", bounded_x, vapor_log_volume});
     };
-    append_pair("feed_near_lower", feed_x_methane - 0.02);
-    append_pair("feed_near_upper", feed_x_methane + 0.02);
+    append_pair("feed_near_lower", feed_x_component_zero - 0.02);
+    append_pair("feed_near_upper", feed_x_component_zero + 0.02);
     append_pair("component_1_rich", 1.0 - 1.0e-4);
     append_pair("component_2_rich", 1.0e-4);
     append_pair("stratified_low", 0.1);
@@ -468,7 +468,7 @@ double confirmation_difference(
 ) {
     return std::max({
         std::abs(candidate.d_bar - confirmation.d_bar),
-        std::abs(candidate.state.x_methane - confirmation.state.x_methane),
+        std::abs(candidate.state.x_component_zero - confirmation.state.x_component_zero),
         std::abs(candidate.state.volume_m3 - confirmation.state.volume_m3)
             / std::max({candidate.state.volume_m3, confirmation.state.volume_m3, 1.0e-12}),
     });
@@ -480,13 +480,13 @@ HeldStageIResult solve_held_stage_i(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane
+    double feed_x_component_zero
 ) {
     HeldStageIResult result;
     if (!std::isfinite(temperature_k) || !std::isfinite(pressure_pa)
-        || !std::isfinite(feed_x_methane) || temperature_k <= 0.0 || pressure_pa <= 0.0
-        || feed_x_methane <= kCompositionLower
-        || feed_x_methane >= kCompositionUpper) {
+        || !std::isfinite(feed_x_component_zero) || temperature_k <= 0.0 || pressure_pa <= 0.0
+        || feed_x_component_zero <= kCompositionLower
+        || feed_x_component_zero >= kCompositionUpper) {
         result.search_status = "invalid_input";
         result.failure_reason = "Stage I requires finite positive T and P and an interior feed";
         return result;
@@ -494,7 +494,7 @@ HeldStageIResult solve_held_stage_i(
     result.planned_starts = make_planned_starts(
         temperature_k,
         pressure_pa,
-        feed_x_methane
+        feed_x_component_zero
     );
 
     const std::array<std::pair<std::string, double>, 2> reference_starts{{
@@ -512,12 +512,12 @@ HeldStageIResult solve_held_stage_i(
             temperature_k,
             pressure_pa,
             {},
-            feed_x_methane,
+            feed_x_component_zero,
             0.0,
             StageIObjective::homogeneous,
-            {feed_x_methane, initial},
-            {feed_x_methane, std::log(kVolumeLowerM3PerMol)},
-            {feed_x_methane, std::log(kVolumeUpperM3PerMol)}
+            {feed_x_component_zero, initial},
+            {feed_x_component_zero, std::log(kVolumeLowerM3PerMol)},
+            {feed_x_component_zero, std::log(kVolumeUpperM3PerMol)}
         );
         HeldReferenceAttempt record;
         record.role = role;
@@ -535,7 +535,7 @@ HeldStageIResult solve_held_stage_i(
                     provider,
                     temperature_k,
                     pressure_pa,
-                    feed_x_methane,
+                    feed_x_component_zero,
                     run.variables[1]
                 );
                 record.g_bar = candidate.g_bar;
@@ -568,24 +568,24 @@ HeldStageIResult solve_held_stage_i(
     const double numerical_pole_distance =
         held_tunnel_minimum_finite_exponential_distance();
     for (const HeldStageIStart& start : result.planned_starts) {
-        const bool lower_side = start.x_methane < result.best_state.x_methane;
+        const bool lower_side = start.x_component_zero < result.best_state.x_component_zero;
         std::array<double, 2> tunnel_lower{
             lower_side
                 ? kCompositionLower
-                : result.best_state.x_methane + numerical_pole_distance,
+                : result.best_state.x_component_zero + numerical_pole_distance,
             std::log(kVolumeLowerM3PerMol),
         };
         std::array<double, 2> tunnel_upper{
             lower_side
-                ? result.best_state.x_methane - numerical_pole_distance
+                ? result.best_state.x_component_zero - numerical_pole_distance
                 : kCompositionUpper,
             std::log(kVolumeUpperM3PerMol),
         };
         if (tunnel_lower[0] >= tunnel_upper[0]
-            || start.x_methane <= tunnel_lower[0]
-            || start.x_methane >= tunnel_upper[0]) {
+            || start.x_component_zero <= tunnel_lower[0]
+            || start.x_component_zero >= tunnel_upper[0]) {
             SearchRun singular;
-            singular.initial_guess = {start.x_methane, start.log_volume};
+            singular.initial_guess = {start.x_component_zero, start.log_volume};
             singular.solver_status = "singular_restart";
             singular.callback_error =
                 "tunneling restart lies in the singular composition neighborhood";
@@ -608,10 +608,10 @@ HeldStageIResult solve_held_stage_i(
             temperature_k,
             pressure_pa,
             result.reference,
-            result.best_state.x_methane,
+            result.best_state.x_component_zero,
             result.best_tpd,
             StageIObjective::tunneling,
-            {start.x_methane, start.log_volume},
+            {start.x_component_zero, start.log_volume},
             tunnel_lower,
             tunnel_upper
         );
@@ -624,7 +624,7 @@ HeldStageIResult solve_held_stage_i(
                     temperature_k,
                     pressure_pa,
                     result.reference,
-                    result.best_state.x_methane,
+                    result.best_state.x_component_zero,
                     result.best_tpd,
                     tunnel.variables[0],
                     tunnel.variables[1]
@@ -671,7 +671,7 @@ HeldStageIResult solve_held_stage_i(
             temperature_k,
             pressure_pa,
             result.reference,
-            result.best_state.x_methane,
+            result.best_state.x_component_zero,
             result.best_tpd,
             StageIObjective::tpd,
             tunnel.variables,
@@ -736,7 +736,7 @@ HeldStageIResult solve_held_stage_i(
             temperature_k,
             pressure_pa,
             result.reference,
-            result.best_state.x_methane,
+            result.best_state.x_component_zero,
             result.best_tpd,
             StageIObjective::tpd,
             confirmation_initial,

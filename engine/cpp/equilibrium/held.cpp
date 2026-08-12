@@ -45,18 +45,18 @@ HeldStateEvaluation evaluate_held_state(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double x_methane,
+    double x_component_zero,
     double log_volume
 ) {
     require_finite(temperature_k, "temperature");
     require_finite(pressure_pa, "pressure");
-    require_finite(x_methane, "methane mole fraction");
+    require_finite(x_component_zero, "component-zero mole fraction");
     require_finite(log_volume, "log volume");
     if (temperature_k <= 0.0 || pressure_pa <= 0.0) {
         throw std::invalid_argument("temperature and pressure must be positive");
     }
-    if (x_methane <= 0.0 || x_methane >= 1.0) {
-        throw std::invalid_argument("methane mole fraction must be strictly between zero and one");
+    if (x_component_zero <= 0.0 || x_component_zero >= 1.0) {
+        throw std::invalid_argument("component-zero mole fraction must be strictly between zero and one");
     }
     const double volume_m3 = std::exp(log_volume);
     require_finite(volume_m3, "molar volume");
@@ -64,7 +64,7 @@ HeldStateEvaluation evaluate_held_state(
         throw std::invalid_argument("molar volume must be positive");
     }
 
-    const std::array<double, 2> amounts{x_methane, 1.0 - x_methane};
+    const std::array<double, 2> amounts{x_component_zero, 1.0 - x_component_zero};
     MixturePhaseEvaluation phase = provider.evaluate_mixture(
         temperature_k,
         {amounts[0], amounts[1]},
@@ -75,7 +75,7 @@ HeldStateEvaluation evaluate_held_state(
     const auto& provider_hessian = phase.hessian;
 
     HeldStateEvaluation result;
-    result.x_methane = x_methane;
+    result.x_component_zero = x_component_zero;
     result.log_volume = log_volume;
     result.volume_m3 = volume_m3;
     result.amounts_mol = amounts;
@@ -106,19 +106,19 @@ HeldTpdEvaluation evaluate_held_tpd(
     double temperature_k,
     double pressure_pa,
     const HeldStateEvaluation& reference,
-    double x_methane,
+    double x_component_zero,
     double log_volume
 ) {
     HeldStateEvaluation state = evaluate_held_state(
         provider,
         temperature_k,
         pressure_pa,
-        x_methane,
+        x_component_zero,
         log_volume
     );
     HeldTpdEvaluation result;
     result.d_bar = state.g_bar - reference.g_bar
-        - reference.gradient[0] * (x_methane - reference.x_methane);
+        - reference.gradient[0] * (x_component_zero - reference.x_component_zero);
     result.gradient = {
         state.gradient[0] - reference.gradient[0],
         state.gradient[1],
@@ -136,14 +136,14 @@ HeldTunnelingEvaluation evaluate_held_tunneling(
     double temperature_k,
     double pressure_pa,
     const HeldStateEvaluation& reference,
-    double minimum_x_methane,
+    double minimum_x_component_zero,
     double minimum_tpd,
-    double x_methane,
+    double x_component_zero,
     double log_volume
 ) {
-    require_finite(minimum_x_methane, "tunneling minimum composition");
+    require_finite(minimum_x_component_zero, "tunneling minimum composition");
     require_finite(minimum_tpd, "tunneling minimum TPD");
-    const double composition_delta = x_methane - minimum_x_methane;
+    const double composition_delta = x_component_zero - minimum_x_component_zero;
     const double composition_distance = std::abs(composition_delta);
     if (composition_distance <= held_tunnel_minimum_finite_exponential_distance()) {
         throw std::invalid_argument(
@@ -155,7 +155,7 @@ HeldTunnelingEvaluation evaluate_held_tunneling(
         temperature_k,
         pressure_pa,
         reference,
-        x_methane,
+        x_component_zero,
         log_volume
     );
     const double exponent = kHeldTunnelPoleStrength / composition_distance;

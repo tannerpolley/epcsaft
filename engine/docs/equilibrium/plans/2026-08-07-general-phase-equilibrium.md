@@ -38,9 +38,9 @@ retired.
 
 ### Discovery
 
-The caller does not declare phase count/types. The owner performs stability and
-phase finding and may certify one stable phase or a two-/three-phase split using
-liquid and vapor phases.
+The caller does not declare phase count/types. The retained HELD/HELD2 owner
+performs stability and phase finding and may certify one stable phase or a
+two-phase split using liquid and vapor phases.
 
 ### Constrained specification
 
@@ -63,24 +63,20 @@ criterion establishes it. A locally converged or search-exhausted but
 uncertified candidate fails closed rather than being promoted to a stable or
 global result.
 
-## Current defects to retire
+## Retained and retired boundary
 
-### Priority 0
+Governance D-030 retains the private HELD/HELD2 numerical implementations for
+omitted-topology discovery and candidate starts. Their selection is determined
+by typed charge topology and numerical conditioning, never a source,
+fingerprint, application, or literal component identity. The binary HELD
+coordinate is source-neutral component-zero composition; component names do
+not participate in dispatch.
 
-- Separate neutral HELD1 and electrolyte HELD2 runtime routing.
-- Exactly-binary neutral flash data and result names such as `x_methane`.
-- `_FLASH_FINGERPRINT` and source T/P/feed bounds.
-- Provider active-parameter transport limited to segment diameter and
-  dispersion-energy component coordinates while Python accepts broader shapes.
-- Parallel provider/native mappings for the same model and parameter identities.
-
-### Priority 1
-
-- Hidden equal-solvent neutral reference construction in native transport.
-- Author/paper-named controller, progress, tolerance, and diagnostic strings.
-- Fixed `{solvent,cation,anion}` order or selected species tuple.
-- Stage names that encode a publication rather than a physical or numerical
-  operation.
+The public flash facade, source admission bounds, fixed species ordering,
+limited parameter transport, duplicate provider mappings, progress lifecycle,
+and paper/source-specific runtime selectors are retired. The remaining staged
+HELD/HELD2 internals are the canonical private implementation behind
+`phase_equilibrium`, not a compatibility or fallback route.
 
 ## Retained physical distinctions
 
@@ -238,7 +234,7 @@ Do not publish these units until the four canonical plans are approved.
 | EQ-03 | Explicit electrolyte reference inputs | EQ-02, EOS-05 | No positional or equal-solvent assumption remains |
 | EQ-04 | General physical kernels | EQ-01, EQ-02 | Kernels select by topology/conditioning, never source identity |
 | EQ-05 | Constrained 1–3 phase solve | EQ-04 | Declared liquid/vapor topologies solve and certify only their claim |
-| EQ-06 | Discovery 1–3 phase solve | EQ-05 | Stable one-phase and two-/three-phase outcomes carry evidence |
+| EQ-06 | Retained one-/two-phase discovery | EQ-05 | Stable one-phase and two-phase outcomes carry bounded search evidence |
 | EQ-07 | Exact solved-state sensitivities | EQ-05, EOS-07 | Active-set ordered Jacobians pass independent differences |
 | EQ-08 | Reviewed public promotion and dead-surface audit | EQ-06, EQ-07 | Completed by Governance D-030 and the accepted CAP-09 promotion receipt |
 | EQ-09 | Reactive-phase seam note | EQ-08 | Future state/phase/sensitivity boundary is explicit; no dormant solver exists |

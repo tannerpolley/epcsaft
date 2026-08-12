@@ -169,7 +169,6 @@ add_library(
 set_target_properties(epcsaft_engine_eos_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(
     epcsaft_engine_eos_core
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src/epcsaft/include"
     PRIVATE src/epcsaft/_native
 )
 target_include_directories(
@@ -266,7 +265,6 @@ pybind11_add_module(
 set_target_properties(epcsaft_engine_equilibrium_native PROPERTIES OUTPUT_NAME _equilibrium)
 target_include_directories(
     epcsaft_engine_equilibrium_native
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/epcsaft/include"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/epcsaft/_native"
 )
 target_link_libraries(epcsaft_engine_equilibrium_native PRIVATE epcsaft_engine_equilibrium_core)

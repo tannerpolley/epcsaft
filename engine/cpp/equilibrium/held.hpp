@@ -13,7 +13,7 @@ inline constexpr double kHeldTunnelPoleStrength = 1.0e-3;
 [[nodiscard]] double held_tunnel_minimum_finite_exponential_distance();
 
 struct HeldStateEvaluation {
-    double x_methane = 0.0;
+    double x_component_zero = 0.0;
     double log_volume = 0.0;
     double volume_m3 = 0.0;
     std::array<double, 2> amounts_mol{};
@@ -102,7 +102,7 @@ struct HeldTunnelingEvaluation {
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double x_methane,
+    double x_component_zero,
     double log_volume
 );
 
@@ -111,7 +111,7 @@ struct HeldTunnelingEvaluation {
     double temperature_k,
     double pressure_pa,
     const HeldStateEvaluation& reference,
-    double x_methane,
+    double x_component_zero,
     double log_volume
 );
 
@@ -120,15 +120,15 @@ struct HeldTunnelingEvaluation {
     double temperature_k,
     double pressure_pa,
     const HeldStateEvaluation& reference,
-    double minimum_x_methane,
+    double minimum_x_component_zero,
     double minimum_tpd,
-    double x_methane,
+    double x_component_zero,
     double log_volume
 );
 
 struct HeldStageIStart {
     std::string role;
-    double x_methane = 0.0;
+    double x_component_zero = 0.0;
     double log_volume = 0.0;
 };
 
@@ -203,9 +203,9 @@ struct HeldLowerEvaluation {
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane,
+    double feed_x_component_zero,
     double multiplier,
-    double x_methane,
+    double x_component_zero,
     double log_volume
 );
 
@@ -224,7 +224,7 @@ struct HeldStageIIAttempt {
 struct HeldStageIIStart {
     std::string start_class;
     std::string role;
-    double x_methane = 0.0;
+    double x_component_zero = 0.0;
     double log_volume = 0.0;
 };
 
@@ -256,7 +256,7 @@ struct HeldStageIILowerSearch {
 struct HeldCandidateInput {
     std::string identity;
     double g_bar = 0.0;
-    double x_methane = 0.0;
+    double x_component_zero = 0.0;
     double volume_m3 = 0.0;
     double composition_gradient = 0.0;
 };
@@ -264,7 +264,7 @@ struct HeldCandidateInput {
 struct HeldStageIICandidate {
     std::string identity;
     double objective = 0.0;
-    double x_methane = 0.0;
+    double x_component_zero = 0.0;
     double volume_m3 = 0.0;
 };
 
@@ -311,7 +311,7 @@ struct HeldStageIIResult {
 
 struct HeldStageIIICandidate {
     std::string identity;
-    double x_methane = 0.0;
+    double x_component_zero = 0.0;
     double volume_m3_per_mol = 0.0;
 };
 
@@ -382,14 +382,14 @@ struct HeldResult {
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane
+    double feed_x_component_zero
 );
 
 [[nodiscard]] HeldStageIILowerSearch search_held_stage_ii_lower(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane,
+    double feed_x_component_zero,
     double multiplier,
     double upper_bound,
     const std::vector<HeldStateEvaluation>& previous_states,
@@ -397,7 +397,7 @@ struct HeldResult {
 );
 
 [[nodiscard]] HeldStageIICandidateResult select_held_stage_ii_candidates(
-    double feed_x_methane,
+    double feed_x_component_zero,
     double upper_bound,
     double multiplier,
     const std::vector<HeldCandidateInput>& points
@@ -413,11 +413,11 @@ struct HeldResult {
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane
+    double feed_x_component_zero
 );
 
 [[nodiscard]] HeldStageIIIInitialization initialize_held_stage_iii(
-    double feed_x_methane,
+    double feed_x_component_zero,
     const std::vector<HeldStageIIICandidate>& candidates
 );
 
@@ -434,7 +434,7 @@ struct HeldResult {
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane,
+    double feed_x_component_zero,
     double upper_bound,
     const std::vector<HeldStageIIICandidate>& candidates
 );
@@ -443,14 +443,14 @@ struct HeldResult {
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane
+    double feed_x_component_zero
 );
 
 [[nodiscard]] HeldStageIResult solve_held_stage_i(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane
+    double feed_x_component_zero
 );
 
 }  // namespace epcsaft_engine::equilibrium

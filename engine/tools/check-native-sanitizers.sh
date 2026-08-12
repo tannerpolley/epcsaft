@@ -65,4 +65,5 @@ UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" \
 PYTHONNOUSERSITE=1 \
     "$run_root/venv/bin/python" -m pytest -q \
         tests/eos/numerical/test_pure_saturation.py \
-        tests/regression/numerical/test_generic_fit.py
+        tests/regression/numerical/test_generic_fit.py \
+        tests/equilibrium/test_phase_equilibrium.py::test_declared_single_phase_solves_role_and_hints_do_not_change_root

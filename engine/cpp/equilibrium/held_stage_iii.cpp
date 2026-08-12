@@ -504,8 +504,6 @@ bool physical_acceptance(
     double pressure_pa,
     const std::array<double, 6>& lower,
     const std::array<double, 6>& upper,
-    bool require_legacy_chemical_potential_tolerance,
-    bool require_density_separation,
     HeldStageIIILocalResult& result
 ) {
     canonicalize_phases(evaluation);
@@ -559,11 +557,7 @@ bool physical_acceptance(
         && finite
         && result.material_balance_max_abs <= kSolverConstraintTolerance
         && result.pressure_stationarity_max_relative <= kPhysicalTolerance
-        && (!require_legacy_chemical_potential_tolerance
-            || result.chemical_potential_max_abs <= kPhysicalTolerance)
         && result.kkt_stationarity_max_abs <= kPhysicalTolerance
-        && (!require_density_separation
-            || result.phase_density_distance >= kPhaseDistanceTolerance)
         && phase_amount(evaluation.liquid) > 0.0
         && phase_amount(evaluation.vapor) > 0.0
         && inside_bounds(attempt.variables, lower, upper);
@@ -663,12 +657,12 @@ HeldStageIIINlpEvaluation evaluate_held_stage_iii_nlp(
 }
 
 HeldStageIIIInitialization initialize_held_stage_iii(
-    double feed_x_methane,
+    double feed_x_component_zero,
     const std::vector<HeldStageIIICandidate>& candidates
 ) {
     HeldStageIIIInitialization result;
-    if (!std::isfinite(feed_x_methane) || feed_x_methane <= 0.0
-        || feed_x_methane >= 1.0) {
+    if (!std::isfinite(feed_x_component_zero) || feed_x_component_zero <= 0.0
+        || feed_x_component_zero >= 1.0) {
         result.failure_reason = "feed composition must be finite and strictly interior";
         return result;
     }
@@ -682,13 +676,13 @@ HeldStageIIIInitialization initialize_held_stage_iii(
         return result;
     }
     for (const HeldStageIIICandidate& candidate : candidates) {
-        if (!std::isfinite(candidate.x_methane)
+        if (!std::isfinite(candidate.x_component_zero)
             || !std::isfinite(candidate.volume_m3_per_mol)
             || candidate.volume_m3_per_mol <= 0.0) {
             result.failure_reason = "candidate composition and volume must be finite and positive";
             return result;
         }
-        if (candidate.x_methane <= 1.0e-8 || candidate.x_methane >= 1.0 - 1.0e-8) {
+        if (candidate.x_component_zero <= 1.0e-8 || candidate.x_component_zero >= 1.0 - 1.0e-8) {
             result.status = "scope_exceeded";
             result.failure_reason = "trace-bound candidate requires a later slice";
             return result;
@@ -696,13 +690,13 @@ HeldStageIIIInitialization initialize_held_stage_iii(
     }
 
     const double composition_difference =
-        candidates[0].x_methane - candidates[1].x_methane;
+        candidates[0].x_component_zero - candidates[1].x_component_zero;
     if (composition_difference == 0.0) {
         result.failure_reason = "candidate lever rule is singular";
         return result;
     }
     const double first_fraction =
-        (feed_x_methane - candidates[1].x_methane) / composition_difference;
+        (feed_x_component_zero - candidates[1].x_component_zero) / composition_difference;
     const double second_fraction = 1.0 - first_fraction;
     if (!std::isfinite(first_fraction) || !std::isfinite(second_fraction)
         || first_fraction <= 0.0 || second_fraction <= 0.0) {
@@ -712,11 +706,11 @@ HeldStageIIIInitialization initialize_held_stage_iii(
 
     result.phase_fractions = {first_fraction, second_fraction};
     result.initial_variables = {
-        first_fraction * candidates[0].x_methane,
-        first_fraction * (1.0 - candidates[0].x_methane),
+        first_fraction * candidates[0].x_component_zero,
+        first_fraction * (1.0 - candidates[0].x_component_zero),
         std::log(first_fraction * candidates[0].volume_m3_per_mol),
-        second_fraction * candidates[1].x_methane,
-        second_fraction * (1.0 - candidates[1].x_methane),
+        second_fraction * candidates[1].x_component_zero,
+        second_fraction * (1.0 - candidates[1].x_component_zero),
         std::log(second_fraction * candidates[1].volume_m3_per_mol),
     };
     result.lower_bounds = {
@@ -735,7 +729,7 @@ HeldStageIIIInitialization initialize_held_stage_iii(
         result.initial_variables[4] + kStageIIICandidateRadiusMol,
         std::log(kVolumeUpperM3),
     };
-    const std::array<double, 2> feed{feed_x_methane, 1.0 - feed_x_methane};
+    const std::array<double, 2> feed{feed_x_component_zero, 1.0 - feed_x_component_zero};
     for (std::size_t component = 0; component < 2; ++component) {
         if (result.lower_bounds[component] + result.lower_bounds[component + 3]
                 > feed[component]
@@ -835,13 +829,13 @@ HeldStageIIIResult solve_held_stage_iii(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane,
+    double feed_x_component_zero,
     double upper_bound,
     const std::vector<HeldStageIIICandidate>& candidates
 ) {
     HeldStageIIIResult result;
     result.upper_bound = upper_bound;
-    result.initialization = initialize_held_stage_iii(feed_x_methane, candidates);
+    result.initialization = initialize_held_stage_iii(feed_x_component_zero, candidates);
     if (result.initialization.status != "initialized") {
         result.outcome = result.initialization.status;
         result.failure_reason = result.initialization.failure_reason;
@@ -853,7 +847,7 @@ HeldStageIIIResult solve_held_stage_iii(
         return result;
     }
 
-    const std::array<double, 2> feed{feed_x_methane, 1.0 - feed_x_methane};
+    const std::array<double, 2> feed{feed_x_component_zero, 1.0 - feed_x_component_zero};
     const auto& lower = result.initialization.lower_bounds;
     const auto& upper = result.initialization.upper_bounds;
     AttemptResult attempt = run_ipopt(
@@ -907,8 +901,6 @@ HeldStageIIIResult solve_held_stage_iii(
         pressure_pa,
         lower,
         upper,
-        false,
-        false,
         result.local
     );
     result.local.equality_multipliers = attempt.equality_multipliers;
@@ -1012,8 +1004,6 @@ HeldStageIIIResult solve_held_stage_iii(
                 pressure_pa,
                 lower,
                 upper,
-                false,
-                false,
                 confirmed_local
             );
         } catch (const std::exception& error) {

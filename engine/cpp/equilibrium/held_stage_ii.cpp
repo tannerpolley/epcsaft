@@ -119,7 +119,7 @@ public:
         const ProviderContext& provider,
         double temperature_k,
         double pressure_pa,
-        double feed_x_methane,
+        double feed_x_component_zero,
         double multiplier,
         std::array<double, 2> initial,
         std::array<double, 2> lower,
@@ -128,7 +128,7 @@ public:
         : provider_(provider),
           temperature_k_(temperature_k),
           pressure_pa_(pressure_pa),
-          feed_x_methane_(feed_x_methane),
+          feed_x_component_zero_(feed_x_component_zero),
           multiplier_(multiplier),
           initial_(initial),
           lower_(lower),
@@ -308,7 +308,7 @@ private:
             provider_,
             temperature_k_,
             pressure_pa_,
-            feed_x_methane_,
+            feed_x_component_zero_,
             multiplier_,
             x[0],
             x[1]
@@ -318,7 +318,7 @@ private:
     const ProviderContext& provider_;
     double temperature_k_;
     double pressure_pa_;
-    double feed_x_methane_;
+    double feed_x_component_zero_;
     double multiplier_;
     std::array<double, 2> initial_;
     std::array<double, 2> lower_;
@@ -331,7 +331,7 @@ LowerRun run_lower_ipopt(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane,
+    double feed_x_component_zero,
     double multiplier,
     const std::array<double, 2>& initial,
     const std::array<double, 2>& lower,
@@ -341,7 +341,7 @@ LowerRun run_lower_ipopt(
         provider,
         temperature_k,
         pressure_pa,
-        feed_x_methane,
+        feed_x_component_zero,
         multiplier,
         initial,
         lower,
@@ -411,7 +411,7 @@ std::string indexed_role(const std::string& start_class, int index) {
 std::vector<HeldStageIIStart> make_lower_starts(
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane,
+    double feed_x_component_zero,
     const std::vector<HeldStateEvaluation>& previous_states
 ) {
     const double liquid_log_volume = std::log(1.0 / 20'000.0);
@@ -434,7 +434,7 @@ std::vector<HeldStageIIStart> make_lower_starts(
                       previous_states.size() - 1
                       - static_cast<std::size_t>(group) % previous_states.size()
                   ];
-            const double base_x = previous == nullptr ? feed_x_methane : previous->x_methane;
+            const double base_x = previous == nullptr ? feed_x_component_zero : previous->x_component_zero;
             const double base_log_volume =
                 previous == nullptr ? liquid_log_volume : previous->log_volume;
             const double shift = group % 2 == 0 ? 0.01 : -0.01;
@@ -477,23 +477,23 @@ HeldLowerEvaluation evaluate_held_lower(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane,
+    double feed_x_component_zero,
     double multiplier,
-    double x_methane,
+    double x_component_zero,
     double log_volume
 ) {
-    if (!std::isfinite(feed_x_methane) || !std::isfinite(multiplier)) {
+    if (!std::isfinite(feed_x_component_zero) || !std::isfinite(multiplier)) {
         throw std::invalid_argument("HELD lower feed and multiplier must be finite");
     }
     HeldStateEvaluation state = evaluate_held_state(
         provider,
         temperature_k,
         pressure_pa,
-        x_methane,
+        x_component_zero,
         log_volume
     );
     HeldLowerEvaluation result;
-    result.objective = state.g_bar + multiplier * (feed_x_methane - x_methane);
+    result.objective = state.g_bar + multiplier * (feed_x_component_zero - x_component_zero);
     result.gradient = {state.gradient[0] - multiplier, state.gradient[1]};
     result.hessian = state.hessian;
     result.state = std::move(state);
@@ -606,13 +606,13 @@ HeldStageIIInitialization initialize_held_stage_ii_cuts(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane
+    double feed_x_component_zero
 ) {
     HeldStageIIInitialization result;
     if (!std::isfinite(temperature_k) || !std::isfinite(pressure_pa)
-        || !std::isfinite(feed_x_methane) || temperature_k <= 0.0 || pressure_pa <= 0.0
-        || feed_x_methane <= kCompositionLower
-        || feed_x_methane >= kCompositionUpper) {
+        || !std::isfinite(feed_x_component_zero) || temperature_k <= 0.0 || pressure_pa <= 0.0
+        || feed_x_component_zero <= kCompositionLower
+        || feed_x_component_zero >= kCompositionUpper) {
         result.status = "invalid_input";
         result.failure_reason =
             "Stage II requires finite positive T and P and an interior feed";
@@ -637,7 +637,7 @@ HeldStageIIInitialization initialize_held_stage_ii_cuts(
             provider,
             temperature_k,
             pressure_pa,
-            feed_x_methane,
+            feed_x_component_zero,
             0.0,
             {composition, initial_log_volume},
             {composition, std::log(kVolumeLowerM3PerMol)},
@@ -657,7 +657,7 @@ HeldStageIIInitialization initialize_held_stage_ii_cuts(
                     provider,
                     temperature_k,
                     pressure_pa,
-                    feed_x_methane,
+                    feed_x_component_zero,
                     0.0,
                     composition,
                     run.variables[1]
@@ -671,7 +671,7 @@ HeldStageIIInitialization initialize_held_stage_ii_cuts(
                         HeldOuterCut outer{
                             role,
                             evaluation.state.g_bar,
-                            feed_x_methane - evaluation.state.x_methane,
+                            feed_x_component_zero - evaluation.state.x_component_zero,
                         };
                         result.cuts.push_back({
                             role,
@@ -722,7 +722,7 @@ HeldStageIILowerSearch search_held_stage_ii_lower(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane,
+    double feed_x_component_zero,
     double multiplier,
     double upper_bound,
     const std::vector<HeldStateEvaluation>& previous_states,
@@ -732,17 +732,17 @@ HeldStageIILowerSearch search_held_stage_ii_lower(
     result.upper_bound = upper_bound;
     result.multiplier = multiplier;
     if (!std::isfinite(temperature_k) || !std::isfinite(pressure_pa)
-        || !std::isfinite(feed_x_methane) || !std::isfinite(multiplier)
+        || !std::isfinite(feed_x_component_zero) || !std::isfinite(multiplier)
         || !std::isfinite(upper_bound) || temperature_k <= 0.0 || pressure_pa <= 0.0
-        || feed_x_methane <= kCompositionLower
-        || feed_x_methane >= kCompositionUpper || identity_prefix.empty()) {
+        || feed_x_component_zero <= kCompositionLower
+        || feed_x_component_zero >= kCompositionUpper || identity_prefix.empty()) {
         result.status = "invalid_input";
         return result;
     }
     result.planned_starts = make_lower_starts(
         temperature_k,
         pressure_pa,
-        feed_x_methane,
+        feed_x_component_zero,
         previous_states
     );
     const std::array<double, 2> lower{
@@ -759,9 +759,9 @@ HeldStageIILowerSearch search_held_stage_ii_lower(
             provider,
             temperature_k,
             pressure_pa,
-            feed_x_methane,
+            feed_x_component_zero,
             multiplier,
-            {start.x_methane, start.log_volume},
+            {start.x_component_zero, start.log_volume},
             lower,
             upper
         );
@@ -779,7 +779,7 @@ HeldStageIILowerSearch search_held_stage_ii_lower(
                     provider,
                     temperature_k,
                     pressure_pa,
-                    feed_x_methane,
+                    feed_x_component_zero,
                     multiplier,
                     run.variables[0],
                     run.variables[1]
@@ -794,7 +794,7 @@ HeldStageIILowerSearch search_held_stage_ii_lower(
                     HeldOuterCut outer{
                         identity,
                         evaluation.state.g_bar,
-                        feed_x_methane - evaluation.state.x_methane,
+                        feed_x_component_zero - evaluation.state.x_component_zero,
                     };
                     result.accepted_cuts.push_back({
                         identity,
@@ -824,7 +824,7 @@ HeldStageIILowerSearch search_held_stage_ii_lower(
 }
 
 HeldStageIICandidateResult select_held_stage_ii_candidates(
-    double feed_x_methane,
+    double feed_x_component_zero,
     double upper_bound,
     double multiplier,
     const std::vector<HeldCandidateInput>& points
@@ -832,7 +832,7 @@ HeldStageIICandidateResult select_held_stage_ii_candidates(
     HeldStageIICandidateResult result;
     for (const HeldCandidateInput& point : points) {
         const double lower_objective =
-            point.g_bar + multiplier * (feed_x_methane - point.x_methane);
+            point.g_bar + multiplier * (feed_x_component_zero - point.x_component_zero);
         if (!std::isfinite(lower_objective) || !std::isfinite(point.volume_m3)
             || point.volume_m3 <= 0.0) {
             result.rejections.push_back({point.identity, "invalid_point"});
@@ -861,14 +861,14 @@ HeldStageIICandidateResult select_held_stage_ii_candidates(
         HeldStageIICandidate candidate{
             point.identity,
             lower_objective,
-            point.x_methane,
+            point.x_component_zero,
             point.volume_m3,
         };
         auto duplicate = std::find_if(
             result.candidates.begin(),
             result.candidates.end(),
             [&candidate](const HeldStageIICandidate& retained) {
-                return std::abs(candidate.x_methane - retained.x_methane)
+                return std::abs(candidate.x_component_zero - retained.x_component_zero)
                         < kCandidateCompositionSeparation
                     && relative_density_difference(
                            candidate.volume_m3,
@@ -922,7 +922,7 @@ HeldStageIIResult solve_held_stage_ii_impl(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane,
+    double feed_x_component_zero,
     HeldResult* controller
 ) {
     HeldStageIIResult result;
@@ -930,7 +930,7 @@ HeldStageIIResult solve_held_stage_ii_impl(
         provider,
         temperature_k,
         pressure_pa,
-        feed_x_methane
+        feed_x_component_zero
     );
     if (controller != nullptr) {
         controller->stage_i = stage_i;
@@ -953,7 +953,7 @@ HeldStageIIResult solve_held_stage_ii_impl(
         provider,
         temperature_k,
         pressure_pa,
-        feed_x_methane
+        feed_x_component_zero
     );
     result.endpoint_attempts = std::move(initialization.attempts);
     result.cuts = std::move(initialization.cuts);
@@ -992,7 +992,7 @@ HeldStageIIResult solve_held_stage_ii_impl(
             provider,
             temperature_k,
             pressure_pa,
-            feed_x_methane,
+            feed_x_component_zero,
             outer.multiplier,
             result.upper_bound,
             previous_states,
@@ -1011,13 +1011,13 @@ HeldStageIIResult solve_held_stage_ii_impl(
             candidate_points.push_back({
                 cut.identity,
                 cut.state.g_bar,
-                cut.state.x_methane,
+                cut.state.x_component_zero,
                 cut.state.volume_m3,
                 cut.state.gradient[0],
             });
         }
         const HeldStageIICandidateResult selection = select_held_stage_ii_candidates(
-            feed_x_methane,
+            feed_x_component_zero,
             result.upper_bound,
             outer.multiplier,
             candidate_points
@@ -1084,7 +1084,7 @@ HeldStageIIResult solve_held_stage_ii_impl(
             for (const HeldStageIICut& candidate : result.candidates) {
                 stage_iii_candidates.push_back({
                     candidate.identity,
-                    candidate.state.x_methane,
+                    candidate.state.x_component_zero,
                     candidate.state.volume_m3,
                 });
             }
@@ -1092,7 +1092,7 @@ HeldStageIIResult solve_held_stage_ii_impl(
                 provider,
                 temperature_k,
                 pressure_pa,
-                feed_x_methane,
+                feed_x_component_zero,
                 result.upper_bound,
                 stage_iii_candidates
             );
@@ -1133,13 +1133,13 @@ HeldStageIIResult solve_held_stage_ii(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane
+    double feed_x_component_zero
 ) {
     return solve_held_stage_ii_impl(
         provider,
         temperature_k,
         pressure_pa,
-        feed_x_methane,
+        feed_x_component_zero,
         nullptr
     );
 }
@@ -1148,14 +1148,14 @@ HeldResult solve_held(
     const ProviderContext& provider,
     double temperature_k,
     double pressure_pa,
-    double feed_x_methane
+    double feed_x_component_zero
 ) {
     HeldResult result;
     result.stage_ii = solve_held_stage_ii_impl(
         provider,
         temperature_k,
         pressure_pa,
-        feed_x_methane,
+        feed_x_component_zero,
         &result
     );
     result.search_status = result.stage_ii.search_status;

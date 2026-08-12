@@ -3059,13 +3059,13 @@ ChemicalSolveResult solve_reaction_attempt(
         // is bounded above, these conservative bounds keep any species above
         // trace_floor away from the coordinate bounds while retaining the
         // neutral coordinates' ten-fold numerical margin.
-        constexpr double kLegacyIonicCoordinateBound = 40.0;
+        constexpr double kIonicLogShareBound = 40.0;
         // Keep the established finite provider-safe envelope and add only
         // the same ten-fold margin used by the trace-floor bounds.  Without
         // this cap an extremely small reference share can send Ipopt into
         // compositions for which Provider cannot evaluate its packing block.
         const double coordinate_envelope =
-            kLegacyIonicCoordinateBound + std::log(10.0);
+            kIonicLogShareBound + std::log(10.0);
         const double log_trace_share_floor = std::max(
             -coordinate_envelope,
             std::log(0.1 * trace_floor) - std::log(charge_equivalent_upper)
