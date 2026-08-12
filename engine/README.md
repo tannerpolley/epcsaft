@@ -11,13 +11,16 @@ Build and install the current source non-editably through the root environment:
 
 ```bash
 bash .codex/environments/setup.sh
-(cd engine && ../.venv/bin/python -m pytest -q)
+bash tools/check-all.sh
 ```
 
 Setup keeps the checkout-local Ninja build warm, uses `ccache` when available,
 and reuses a verified machine-local wheel keyed by source, ABI, platform, and
-toolchain. `tools/check-affected.sh` runs the affected scientific domain;
-`tools/check-all.sh` adds the retained slow numerical tier.
+toolchain. It builds and installs before any test starts. `tools/check-all.sh`
+runs the default EOS, Equilibrium, Regression, static, readiness, and fast
+installed-wheel checks concurrently, targeting less than ten seconds with a
+current wheel. Slow numerical evidence, Validation campaigns, full clang-tidy,
+and sanitizers are explicit owner commands rather than part of that loop.
 
 The package owns one CMake graph and no installed cross-module SDK. Data
 packet materializations are explicit and hash-bound. Installed-wheel campaigns
