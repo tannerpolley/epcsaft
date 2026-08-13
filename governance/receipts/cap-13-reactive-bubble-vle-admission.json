@@ -15,21 +15,22 @@
       "phase": "completed-admission",
       "engine_commit": "82ad8099593ea85d6658debad0e7543caf5f75d0",
       "engine_tree": "d8507eb68fa7764ee8292c3cf1cb501c943873a1",
-      "evidence_commit": "b0676952357eb615ac4b315cadb0e1d7365624c2",
-      "evidence_tree": "bb668914791baf3d3f1a49217773bae9ca191ee6",
+      "evidence_commit": "958eecf2eab620b362c791e70c5218ac5af33f25",
+      "evidence_tree": "913187972cba1a21759a298aa24b0990569fb7e1",
       "wheel_sha256": "22f0277762f27d638567abf11d5634c6b18181bdd2367bd85bf8b03996abb85c",
       "public_signature_identity": "sha256:609167697540c4a16864e2674e4db89d7b779cfc56e233808f64f4420b7ac378",
-      "owner_receipt_identity": "sha256:d973ccb3cd5482c6bd846bff5635fa4232c1398c012b4f81845cbb43bb6800d3",
-      "record_sha256": "85b55623e1d964426481ef284d7d64858f78f66a71b7cfe8b8a4dc79cc812bee"
+      "owner_receipt_identity": "sha256:cb42cfe4042df61b40e57977037b7d24ab1737a9611333479567d7f0166780db",
+      "tracer_sha256": "07e7e4abf3a1426b531ae927264ea5caf9a3c045988ccb51ca179911cffe320c",
+      "record_sha256": "8ff084585fbc946616ec85f6d9f6e8b18a22c0658132ebd305db11d04bf1b9b6"
     },
-    "subject_sha256": "e8feb6d9c7f427d442798bc73573fea83087c538f7e9a2d3e92f3c6be27ea256",
+    "subject_sha256": "019bd0f69efe2dea88b4de9f42db98c3ee3f0a95df756ef40c20f3d6c71e2b0a",
     "validator": {
       "repository": "tannerpolley/ePC-SAFT",
-      "commit": "b0676952357eb615ac4b315cadb0e1d7365624c2",
-      "path": "engine/tests/equilibrium/test_reactive_bubble_observations.py",
-      "sha256": "bb033f6f87a492432544fcfe2cf134e084bc4e597ab5e3599b0288da6c66bdfd"
+      "commit": "958eecf2eab620b362c791e70c5218ac5af33f25",
+      "path": "validation/campaigns/2026-reactive-bubble-observation-tracer/scripts/run_tracer.py",
+      "sha256": "c58f52ce49c4ee1758b00d99c0f882c623583f674f46726dfc8981f48e18a85c"
     },
-    "command": "cd engine && ../.venv/bin/python -m pytest -q -o addopts= tests/equilibrium/test_reactive_bubble_observations.py",
+    "command": "PYTHONPATH= .venv/bin/python validation/campaigns/2026-reactive-bubble-observation-tracer/scripts/run_tracer.py --wheel build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl --engine-commit 82ad8099593ea85d6658debad0e7543caf5f75d0 --engine-tree d8507eb68fa7764ee8292c3cf1cb501c943873a1 --output validation/reports/receipts/reactive-bubble-observation-tracer.json",
     "environment": {
       "captured_at": "2026-08-13T03:00:26-06:00",
       "timezone": "America/Denver",
@@ -45,9 +46,9 @@
         "sha256": "22f0277762f27d638567abf11d5634c6b18181bdd2367bd85bf8b03996abb85c"
       },
       {
-        "kind": "installed-multireaction-tracer",
-        "path": "engine/tests/equilibrium/test_reactive_bubble_observations.py",
-        "sha256": "bb033f6f87a492432544fcfe2cf134e084bc4e597ab5e3599b0288da6c66bdfd"
+        "kind": "installed-multireaction-tracer-receipt",
+        "path": "validation/reports/receipts/reactive-bubble-observation-tracer.json",
+        "sha256": "07e7e4abf3a1426b531ae927264ea5caf9a3c045988ccb51ca179911cffe320c"
       }
     ],
     "producer": {
@@ -64,7 +65,7 @@
     "revoked_by": null,
     "user_approval": {
       "source": "explicit Codex task instruction through issue #31 and guarded CAP-13 course corrections on 2026-08-13",
-      "subject_sha256": "e8feb6d9c7f427d442798bc73573fea83087c538f7e9a2d3e92f3c6be27ea256"
+      "subject_sha256": "019bd0f69efe2dea88b4de9f42db98c3ee3f0a95df756ef40c20f3d6c71e2b0a"
     }
   },
   "record": {
@@ -91,10 +92,10 @@
       {
         "name": "installed_multireaction_tracer",
         "expected": "A charged liquid with multiple reactions and multiple volatile neutrals independently checks the complete total Jacobian from the installed wheel.",
-        "observed": "The five-species, two-reaction, three-volatile-neutral nonideal tracer passed in 72.47 s. Five accepted pressure starts deduplicated to one local branch; the center plus two independent resolves matched every exact total-Jacobian row within 2e-7 scaled error.",
-        "owner_receipt_identity": "sha256:d973ccb3cd5482c6bd846bff5635fa4232c1398c012b4f81845cbb43bb6800d3",
-        "descriptor_fingerprint": "sha256:7aabea35ba5924e0c1f215ba306ea283a38f61ad8beb4b9e0720c8c7ffbd3ec6",
-        "physical_branch_fingerprint": "sha256:5082477cd5f0bd224e4eabbfbdf62752592f0595c50581e8252913f70050581f",
+        "observed": "The standalone five-species, two-reaction, three-volatile-neutral nonideal Validation tracer passed in 73.00 s. It evaluated all three rows with zero rejected, failed, or dropped rows. Five accepted pressure starts deduplicated to one local branch; the center plus two independent resolves had maximum scaled total-Jacobian discrepancy 2.3576784402147626e-8.",
+        "owner_receipt_identity": "sha256:cb42cfe4042df61b40e57977037b7d24ab1737a9611333479567d7f0166780db",
+        "descriptor_fingerprint": "sha256:e133b5d1f6cc9492adfb37b75c5f3cc4748187cbd8d8bb23db051f3ba1e33778",
+        "physical_branch_fingerprint": "sha256:2777c23b4d56349e5649c5e2412f4a860a0ba19edcda14c7e85cf086d30f23f3",
         "provider_evaluation_count": 8310,
         "closure_evaluation_count": 15,
         "globality_claim": "not_established",
