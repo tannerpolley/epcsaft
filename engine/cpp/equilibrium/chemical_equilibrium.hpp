@@ -322,6 +322,9 @@ struct SourceReferenceTransferEvidence {
     std::vector<double> transfer_log_contractions;
     std::vector<double> source_composition;
     std::vector<std::string> derivative_availability;
+    std::vector<double> pressure_derivatives_per_pa;
+    std::vector<std::string> active_parameter_identities;
+    std::vector<double> parameter_derivatives;
     double temperature_k = 0.0;
     double pressure_pa = 0.0;
     double source_reference_pressure_pa = 0.0;
@@ -343,6 +346,8 @@ struct SourceReferenceTransferEvidence {
 struct SourceStandardStateResult {
     std::vector<double> standard_offsets;
     std::vector<double> ln_k_provider_basis;
+    std::vector<double> ln_k_pressure_derivatives_per_pa;
+    std::vector<double> ln_k_parameter_derivatives;
     double representation_residual_inf_norm = 0.0;
 };
 

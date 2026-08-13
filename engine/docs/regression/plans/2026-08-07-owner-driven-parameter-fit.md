@@ -17,10 +17,10 @@ residual scaling, weights, bounds, ties, multistart, Ceres, diagnostics, and
 immutable parameter transfer. EOS and later Equilibrium own all scientific
 values, domains, solves, and exact selected-parameter derivatives.
 
-The hard-cutover boundary remains deliberately narrow: EOS fixed-state and
-pure-saturation observations only. CAP-10 completed the separate numerical-
-failure review after the general phase owner and sensitivity seam stabilized;
-Governance D-031 defers every current Equilibrium Observation Family.
+The hard-cutover boundary began with EOS fixed-state and pure-saturation
+observations. Governance D-034 later admits the issue-#30 fixed-T,P homogeneous
+reactive family after its separate branch, failure, receipt, derivative, and
+installed-artifact evidence. D-031 still defers phase-equilibrium families.
 
 ## What remains
 
@@ -96,12 +96,14 @@ never fabricates a scientific penalty value.
   density/volume, with one shared saturation solve per state.
 - Direct auxiliary EOS quantities only when EOS exposes a complete descriptor,
   domain, and exact selected-parameter derivative.
+- Equilibrium-owned fixed-T,P homogeneous reactive rows with immutable local
+  continuation anchors, exact total Jacobians, and diagnostic-only results.
 
 ### Deferred
 
 - mixture VLE/LLE/flash quantities;
 - phase appearance or phase-count observations;
-- reactive or chemical-equilibrium quantities;
+- coupled reactive-VLE and nonreactive phase-equilibrium quantities;
 - reaction-model coefficients;
 - total caloric properties before an EOS thermochemistry model exists; and
 - arbitrary user callbacks or expressions.
@@ -209,8 +211,9 @@ not preemptively.
    identities, values, residuals, Jacobians, and failures in `FitResult`.
 7. **Dead-surface cleanup.** Remove old source-specific docs/tests and update the
    quickstart/science guide to the owner-driven model.
-8. **Admission gate.** Completed by CAP-10 and Governance D-031: all current
-   Equilibrium families are deferred and no dormant fit surface is added.
+8. **Admission gate.** CAP-10/D-031 deferred phase families; issue #30 and D-034
+   later admit only the homogeneous reactive family with no dormant phase fit
+   surface.
 
 ## Numerical verification
 
@@ -246,12 +249,12 @@ Do not publish these units until the four canonical plans are approved.
 | REG-05 | Native Ceres core reduction | REG-03, REG-04 | Native code owns optimization only |
 | REG-06 | FitResult diagnostics and transfer | REG-05 | Complete identity/value/Jacobian/failure receipt is immutable |
 | REG-07 | Regression dead-surface audit | REG-06 | Duplicated dispatch, source routes, and legacy docs/tests are absent |
-| REG-08 | Equilibrium admission review | EQ-08 | Completed by Governance D-031: all current families deferred; no dormant code |
+| REG-08 | Equilibrium admission review | EQ-08 | D-031 deferred phase families; D-034 admits only fixed-T,P homogeneous reactive observations |
 
 ## Done definition
 
 Regression contains no thermodynamic equation, phase solver, parameter-family
 derivative implementation, native target switch, or source-specific route. It
-optimizes any admitted EOS block over one `ActiveParameterSet`, reports exact
-owner Jacobians transparently, and keeps Equilibrium outside the current fit
-surface until a separately shaped implementation issue satisfies D-031.
+optimizes admitted owner blocks over one `ActiveParameterSet`, reports exact
+owner Jacobians transparently, and admits Equilibrium families only through a
+separately shaped issue and decision such as issue #30/D-034.

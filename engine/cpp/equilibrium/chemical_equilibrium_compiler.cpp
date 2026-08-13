@@ -1059,9 +1059,32 @@ SourceStandardStateResult transform_source_standard_state(
         || reference.convergence_status != "converged-limit") {
         throw std::invalid_argument("Provider source-reference identity is incompatible");
     }
-    if (!reference.derivative_availability.empty()) {
+    const bool pressure_derivative_available = std::find(
+        reference.derivative_availability.begin(),
+        reference.derivative_availability.end(),
+        "pressure"
+    ) != reference.derivative_availability.end();
+    const bool parameter_derivative_available = std::find(
+        reference.derivative_availability.begin(),
+        reference.derivative_availability.end(),
+        "parameters"
+    ) != reference.derivative_availability.end();
+    if (reference.derivative_availability.size()
+            != static_cast<std::size_t>(pressure_derivative_available)
+                + static_cast<std::size_t>(parameter_derivative_available)
+        || reference.pressure_derivatives_per_pa.size()
+            != (pressure_derivative_available
+                    ? reference.neutral_basis_row_count
+                    : 0u)
+        || reference.parameter_derivatives.size()
+            != (parameter_derivative_available
+                    ? reference.neutral_basis_row_count
+                        * reference.active_parameter_identities.size()
+                    : 0u)
+        || (parameter_derivative_available
+            && reference.active_parameter_identities.empty())) {
         throw std::invalid_argument(
-            "Provider source-reference derivative availability is unsupported"
+            "Provider source-reference derivative availability is inconsistent"
         );
     }
     if (temperature_k != reference.temperature_k
@@ -1132,6 +1155,16 @@ SourceStandardStateResult transform_source_standard_state(
     SourceStandardStateResult result{
         std::vector<double>(reaction_matrix.rows, 0.0),
         std::vector<double>(reaction_matrix.rows, 0.0),
+        pressure_derivative_available
+            ? std::vector<double>(reaction_matrix.rows, 0.0)
+            : std::vector<double>{},
+        parameter_derivative_available
+            ? std::vector<double>(
+                reaction_matrix.rows
+                    * reference.active_parameter_identities.size(),
+                0.0
+            )
+            : std::vector<double>{},
         0.0,
     };
     for (std::size_t reaction = 0; reaction < reaction_matrix.rows; ++reaction) {
@@ -1206,6 +1239,35 @@ SourceStandardStateResult transform_source_standard_state(
         }
         result.standard_offsets[reaction] = offset;
         result.ln_k_provider_basis[reaction] = source_ln_k[reaction] + offset;
+        if (pressure_derivative_available) {
+            result.ln_k_pressure_derivatives_per_pa[reaction] =
+                std::inner_product(
+                    coordinates.begin(),
+                    coordinates.end(),
+                    reference.pressure_derivatives_per_pa.begin(),
+                    0.0
+                );
+        }
+        if (parameter_derivative_available) {
+            const std::size_t parameter_count =
+                reference.active_parameter_identities.size();
+            for (std::size_t parameter = 0;
+                 parameter < parameter_count;
+                 ++parameter) {
+                double derivative = 0.0;
+                for (std::size_t basis = 0;
+                     basis < coordinates.size();
+                     ++basis) {
+                    derivative += coordinates[basis]
+                        * reference.parameter_derivatives[
+                            basis * parameter_count + parameter
+                        ];
+                }
+                result.ln_k_parameter_derivatives[
+                    reaction * parameter_count + parameter
+                ] = derivative;
+            }
+        }
         result.representation_residual_inf_norm = std::max(
             result.representation_residual_inf_norm, residual
         );

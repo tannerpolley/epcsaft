@@ -390,15 +390,12 @@ the active quadratic branch. It is a censor penalty, never an experimental
 uncertainty model. These semantics may enter runtime only with a real
 source-bound observation and an authorized evaluator transport.
 
-The package dependency remains EOS-only. Organization decision
-[`ePC-SAFT/.github#1`](https://github.com/ePC-SAFT/.github/issues/1) additionally
-permits a caller to supply one typed process-local evaluator composed from
-installed owner artifacts without creating a Regression-to-Equilibrium
-dependency. Only observations explicitly advertised by that exact handle are
-authorized. Regression still must not import Equilibrium, run a second
-equilibrium implementation, infer phase behavior, or finite-difference a
-black-box solve. Predicted bubble/dew/flash and other unadvertised operations
-remain unsupported.
+Regression remains scientifically owner-driven. D-034 admits the
+Equilibrium-owned fixed-T,P homogeneous reactive family through the canonical
+fit route; Equilibrium supplies every value, total Jacobian, branch receipt,
+and typed rejection. Regression must not reproduce equilibrium equations,
+infer phase behavior, or finite-difference a black-box solve. Predicted
+bubble/dew/flash and other unadmitted operations remain unsupported.
 
 The loader rejects missing units, ambiguous composition bases, duplicate row
 identities, unsupported phases, nonfinite values, missing source identities,

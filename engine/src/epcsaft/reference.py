@@ -17,6 +17,7 @@ from .eos import (
     _native_transport,
     _state_magnitude,
 )
+from .parameters import ActiveParameterSet
 from .units import unit_registry
 
 if TYPE_CHECKING:
@@ -107,7 +108,9 @@ class SourceReferenceIonPair:
             or any(type(value) is not int for value in self.stoichiometry)
             or any(value <= 0 or value > 2**31 - 1 for value in self.stoichiometry)
         ):
-            raise ValueError("source-reference stoichiometry must contain two positive int32 values")
+            raise ValueError(
+                "source-reference stoichiometry must contain two positive int32 values"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -149,6 +152,9 @@ class SourceReferenceTransfer:
     source_composition: tuple[float, ...]
     derivative_availability: tuple[str, ...]
     pressure_derivatives_per_pa: tuple[float, ...]
+    active_parameter_identities: tuple[str, ...]
+    active_parameter_fingerprint: str | None
+    parameter_derivatives: tuple[tuple[float, ...], ...]
     temperature_k: float
     pressure_pa: float
     source_reference_pressure_pa: float
@@ -173,6 +179,7 @@ def source_reference_transfer(
     *,
     T: object,
     P: object,
+    active_parameters: ActiveParameterSet | None = None,
 ) -> SourceReferenceTransfer:
     """Evaluate a declared-solvent source reference through the installed transport."""
     if not isinstance(declaration, SourceReferenceDeclaration):
@@ -191,6 +198,8 @@ def source_reference_transfer(
     ):
         raise _eos_error("nonfinite-source-reference-state")
     required_derivatives = tuple(declaration.required_derivatives)
+    if active_parameters is not None and not isinstance(active_parameters, ActiveParameterSet):
+        raise _eos_error("derivative-unavailable", derivative="parameters")
     if component_ids != tuple(model.component_ids):
         raise _eos_error("component-order-mismatch")
     invalid_derivative = next(
@@ -205,6 +214,8 @@ def source_reference_transfer(
         required_derivatives
     ):
         raise _eos_error("derivative-unavailable", derivative=invalid_derivative or "duplicate")
+    if "parameters" in required_derivatives and active_parameters is None:
+        raise _eos_error("derivative-unavailable", derivative="parameters")
     try:
         derivative_mask = sum(
             _SOURCE_REFERENCE_DERIVATIVES[derivative] for derivative in required_derivatives
@@ -236,7 +247,7 @@ def source_reference_transfer(
             ).hexdigest()
         )
         value = _native_core.source_reference_transfer(
-            _native_transport(model),
+            _native_transport(model, active_parameters),
             temperature_k,
             pressure_pa,
             component_ids,
@@ -270,6 +281,26 @@ def source_reference_transfer(
     component_count = int(value["component_count"])
     row_count = int(value["neutral_basis_row_count"])
     flat_basis = tuple(float(item) for item in value["neutral_basis"])
+    derivative_mask = int(value["derivative_availability"])
+    derivative_availability = tuple(
+        derivative
+        for derivative in required_derivatives
+        if derivative_mask & _SOURCE_REFERENCE_DERIVATIVES[derivative]
+    )
+    if derivative_availability != required_derivatives:
+        raise _eos_error("derivative-unavailable", derivative="incomplete")
+    active_parameter_identities = () if active_parameters is None else active_parameters.identities
+    parameter_count = len(active_parameter_identities)
+    flat_parameter_derivatives = tuple(float(item) for item in value["parameter_derivatives"])
+    pressure_derivatives = tuple(float(item) for item in value["pressure_derivatives_per_pa"])
+    expected_pressure_count = row_count if "pressure" in required_derivatives else 0
+    expected_parameter_count = (
+        row_count * parameter_count if "parameters" in required_derivatives else 0
+    )
+    if len(pressure_derivatives) != expected_pressure_count or (
+        len(flat_parameter_derivatives) != expected_parameter_count
+    ):
+        raise _eos_error("source-reference-evaluation-failure", reason="parameter dimensions")
     return SourceReferenceTransfer(
         status="ok",
         domain_status="admitted-domain",
@@ -285,8 +316,20 @@ def source_reference_transfer(
         activity_scale_log_contractions=tuple(value["activity_scale_log_contractions"]),
         transfer_log_contractions=tuple(value["transfer_log_contractions"]),
         source_composition=tuple(value["source_composition"]),
-        derivative_availability=(),
-        pressure_derivatives_per_pa=(),
+        derivative_availability=derivative_availability,
+        pressure_derivatives_per_pa=pressure_derivatives,
+        active_parameter_identities=active_parameter_identities,
+        active_parameter_fingerprint=(
+            None if active_parameters is None else active_parameters.fingerprint
+        ),
+        parameter_derivatives=(
+            tuple(
+                flat_parameter_derivatives[offset : offset + parameter_count]
+                for offset in range(0, row_count * parameter_count, parameter_count)
+            )
+            if "parameters" in required_derivatives
+            else ()
+        ),
         temperature_k=float(value["temperature_k"]),
         pressure_pa=float(value["pressure_pa"]),
         source_reference_pressure_pa=float(value["source_reference_pressure_pa"]),
@@ -403,10 +446,7 @@ class ElectrolyteReference:
         # EqID: molality_activity_conversion
         mean_molality = mean_mole_fraction / (1.0 + solvent_molar_mass * molality * coefficient_sum)
         osmotic_coefficient = None
-        if (
-            self._pure_solvent_log_fugacity is not None
-            and osmotic_solvent_index is not None
-        ):
+        if self._pure_solvent_log_fugacity is not None and osmotic_solvent_index is not None:
             log_solvent_activity = (
                 math.log(composition[osmotic_solvent_index])
                 + finite_log_fugacity[osmotic_solvent_index]
@@ -522,8 +562,7 @@ def build_reference_state(
     if (
         len(formula_stoichiometry) != 2
         or any(type(value) is not int or value <= 0 for value in formula_stoichiometry)
-        or formula_stoichiometry[0] * charges[cation]
-        + formula_stoichiometry[1] * charges[anion]
+        or formula_stoichiometry[0] * charges[cation] + formula_stoichiometry[1] * charges[anion]
         != 0
     ):
         raise _eos_error("invalid-reference-state", field="formula_stoichiometry")
@@ -567,9 +606,7 @@ def build_reference_state(
     pure_solvent_log_fugacity = None
     if osmotic_solvent_index is not None:
         pure_solvent_log_fugacity = sequence.pure_solvent_log_fugacity_coefficient
-        if pure_solvent_log_fugacity is None or not math.isfinite(
-            pure_solvent_log_fugacity
-        ):
+        if pure_solvent_log_fugacity is None or not math.isfinite(pure_solvent_log_fugacity):
             raise _eos_error("reference-state-failed", reason="pure-solvent-fugacity-unavailable")
 
     return ElectrolyteReference(

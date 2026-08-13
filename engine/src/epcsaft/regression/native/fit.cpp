@@ -23,12 +23,18 @@ namespace py = pybind11;
 namespace epcsaft::regression {
 namespace {
 
-enum class ResidualKind { LogRatio, ScaledDifference };
+enum class ResidualKind {
+  LogRatio,
+  ScaledDifference,
+  LeftCensored,
+  RightCensored,
+};
 
 struct Target final {
   double observed;
   ResidualKind residual;
   double scale;
+  double multiplier;
 };
 
 struct Observation final {
@@ -45,18 +51,24 @@ struct OwnerFailure final {
 struct OwnerEvaluation final {
   std::vector<double> values;
   std::vector<double> derivatives;
+  std::string receipt_json;
 };
 
 struct Coordinate final {
+  double origin;
   double scale;
-  double lower;
-  double upper;
-  double input;
+  double lower_affine;
+  double upper_affine;
+};
+
+struct Start final {
+  std::string identity;
+  std::vector<double> affine;
 };
 
 struct Controls final {
-  std::size_t start_count;
-  bool include_input;
+  std::vector<Start> starts;
+  double affine_bound_margin;
   std::size_t workers;
   int maximum_iterations;
   double function_tolerance;
@@ -66,27 +78,45 @@ struct Controls final {
 
 struct Diagnostics final {
   std::vector<double> singular_values;
+  std::vector<double> affine_covariance;
   int rank{0};
+  int free_subspace_rank{0};
   double condition_number{std::numeric_limits<double>::infinity()};
+  std::size_t degrees_of_freedom{0};
+  std::size_t information_row_count{0};
+  std::vector<std::size_t> free_coordinate_indices;
+  double residual_variance{std::numeric_limits<double>::quiet_NaN()};
+  std::string covariance_status{"not_evaluated"};
+};
+
+struct BatchOutcome final {
+  std::size_t index{0};
+  std::size_t row_count{0};
+  std::string status{"not_evaluated"};
+  std::string failure_code;
 };
 
 struct StartResult final {
   std::size_t index{0};
+  std::string start_identity;
   std::vector<double> initial_affine;
   std::vector<double> final_affine;
   std::vector<double> predictions;
   std::vector<double> residuals;
   std::vector<double> affine_jacobian;
   std::vector<OwnerFailure> owner_failures;
+  std::vector<std::string> owner_receipts_json;
+  std::vector<BatchOutcome> batch_outcomes;
   Diagnostics diagnostics;
   std::vector<std::size_t> active_bounds;
   std::string solver_status;
   std::string failure_reason;
+  std::string trial_failure_code;
   int iterations{0};
   std::size_t non_evaluable_count{0};
   double cost{std::numeric_limits<double>::infinity()};
   bool usable{false};
-  std::size_t basin{std::numeric_limits<std::size_t>::max()};
+  std::size_t optimizer_basin{std::numeric_limits<std::size_t>::max()};
 };
 
 ResidualKind residual_kind(const std::string &value) {
@@ -95,6 +125,12 @@ ResidualKind residual_kind(const std::string &value) {
   }
   if (value == "scaled_difference") {
     return ResidualKind::ScaledDifference;
+  }
+  if (value == "left_censored") {
+    return ResidualKind::LeftCensored;
+  }
+  if (value == "right_censored") {
+    return ResidualKind::RightCensored;
   }
   throw std::invalid_argument("unknown residual kind: " + value);
 }
@@ -117,7 +153,8 @@ std::vector<Observation> parse_observations(const py::iterable &values) {
     };
     if (!(std::isfinite(observation.multiplier) &&
           observation.multiplier > 0.0)) {
-      throw std::invalid_argument("observation multiplier must be positive and finite");
+      throw std::invalid_argument(
+          "observation multiplier must be positive and finite");
     }
     for (const py::handle target_item :
          required<py::iterable>(mapping, "targets")) {
@@ -126,10 +163,15 @@ std::vector<Observation> parse_observations(const py::iterable &values) {
           required<double>(target_mapping, "observed"),
           residual_kind(required<std::string>(target_mapping, "residual")),
           required<double>(target_mapping, "scale"),
+          target_mapping.contains("multiplier")
+              ? py::cast<double>(target_mapping["multiplier"])
+              : 1.0,
       };
       if (!(std::isfinite(target.observed) && std::isfinite(target.scale) &&
-            target.scale > 0.0)) {
-        throw std::invalid_argument("target values and scales must be finite");
+            target.scale > 0.0 && std::isfinite(target.multiplier) &&
+            target.multiplier > 0.0)) {
+        throw std::invalid_argument(
+            "target values, scales, and multipliers must be finite");
       }
       if (target.residual == ResidualKind::LogRatio && target.observed <= 0.0) {
         throw std::invalid_argument(
@@ -153,19 +195,18 @@ std::vector<Coordinate> parse_coordinates(const py::iterable &values) {
   for (const py::handle item : values) {
     const auto mapping = py::cast<py::dict>(item);
     Coordinate coordinate{
+        required<double>(mapping, "origin"),
         required<double>(mapping, "scale"),
-        required<double>(mapping, "lower"),
-        required<double>(mapping, "upper"),
-        required<double>(mapping, "input"),
+        required<double>(mapping, "lower_affine"),
+        required<double>(mapping, "upper_affine"),
     };
-    if (!(std::isfinite(coordinate.scale) && coordinate.scale > 0.0 &&
-          std::isfinite(coordinate.lower) && std::isfinite(coordinate.upper) &&
-          coordinate.lower < coordinate.upper &&
-          std::isfinite(coordinate.input) &&
-          coordinate.input >= coordinate.lower &&
-          coordinate.input <= coordinate.upper)) {
+    if (!(std::isfinite(coordinate.origin) &&
+          std::isfinite(coordinate.scale) && coordinate.scale > 0.0 &&
+          std::isfinite(coordinate.lower_affine) &&
+          std::isfinite(coordinate.upper_affine) &&
+          coordinate.lower_affine < coordinate.upper_affine)) {
       throw std::invalid_argument(
-          "coordinate scale, bounds, and input must be finite and consistent");
+          "coordinate origin, scale, and affine bounds must be finite and consistent");
     }
     coordinates.push_back(coordinate);
   }
@@ -176,18 +217,27 @@ std::vector<Coordinate> parse_coordinates(const py::iterable &values) {
 }
 
 Controls parse_controls(const py::dict &mapping) {
+  const auto raw_starts = required<py::iterable>(mapping, "starts");
+  std::vector<Start> starts;
+  for (const py::handle item : raw_starts) {
+    const auto start = py::cast<py::dict>(item);
+    starts.push_back({required<std::string>(start, "identity"),
+                      required<std::vector<double>>(start, "affine")});
+  }
   Controls controls{
-      required<std::size_t>(mapping, "start_count"),
-      required<bool>(mapping, "include_input"),
+      std::move(starts),
+      required<double>(mapping, "affine_bound_margin"),
       required<std::size_t>(mapping, "workers"),
       required<int>(mapping, "maximum_iterations"),
       required<double>(mapping, "function_tolerance"),
       required<double>(mapping, "gradient_tolerance"),
       required<double>(mapping, "parameter_tolerance"),
   };
-  if (controls.start_count == 0 || controls.workers == 0 ||
+  if (controls.starts.empty() || controls.workers == 0 ||
       controls.maximum_iterations <= 0 ||
-      !(std::isfinite(controls.function_tolerance) &&
+      !(std::isfinite(controls.affine_bound_margin) &&
+        controls.affine_bound_margin >= 0.0 &&
+        std::isfinite(controls.function_tolerance) &&
         controls.function_tolerance > 0.0 &&
         std::isfinite(controls.gradient_tolerance) &&
         controls.gradient_tolerance > 0.0 &&
@@ -211,53 +261,86 @@ private:
 
 class OwnerCost final : public ceres::CostFunction {
 public:
-  OwnerCost(PyObject *owner_evaluator, std::size_t observation_index,
-          std::size_t active_parameter_count,
-          std::vector<std::size_t> identity_coordinates,
-          std::vector<double> coordinate_scales, Observation observation)
-      : owner_evaluator_(owner_evaluator), observation_index_(observation_index),
+  OwnerCost(PyObject *owner_evaluator, std::size_t start_index,
+            std::size_t observation_index, std::size_t active_parameter_count,
+            std::vector<std::size_t> identity_coordinates,
+            std::vector<double> coordinate_origins,
+            std::vector<double> coordinate_scales, Observation observation,
+            std::vector<std::string> failure_codes)
+      : owner_evaluator_(owner_evaluator), start_index_(start_index),
+        observation_index_(observation_index),
         active_parameter_count_(active_parameter_count),
         identity_coordinates_(std::move(identity_coordinates)),
+        coordinate_origins_(std::move(coordinate_origins)),
         coordinate_scales_(std::move(coordinate_scales)),
-        observation_(std::move(observation)) {
+        observation_(std::move(observation)),
+        failure_codes_(std::move(failure_codes)) {
     set_num_residuals(static_cast<int>(observation_.targets.size()));
     mutable_parameter_block_sizes()->assign(coordinate_scales_.size(), 1);
   }
 
   bool Evaluate(double const *const *parameters, double *residuals,
                 double **jacobians) const override {
-    return evaluate(parameters, residuals, jacobians, nullptr);
+    return evaluate(parameters, residuals, jacobians, nullptr, false, nullptr);
   }
 
   bool evaluate(double const *const *parameters, double *residuals,
-                double **jacobians, double *predictions) const {
+                double **jacobians, double *predictions, bool receipt_requested,
+                std::string *receipt_json) const {
     try {
       std::vector<double> active(active_parameter_count_);
       for (std::size_t index = 0; index < active_parameter_count_; ++index) {
         const std::size_t coordinate = identity_coordinates_[index];
-        active[index] =
-            parameters[coordinate][0] * coordinate_scales_[coordinate];
+        active[index] = coordinate_origins_[coordinate] +
+                        parameters[coordinate][0] *
+                            coordinate_scales_[coordinate];
       }
-      const OwnerEvaluation evaluation = evaluate_owner(active);
+      const OwnerEvaluation evaluation =
+          evaluate_owner(active, receipt_requested);
+      if (receipt_json != nullptr) {
+        *receipt_json = evaluation.receipt_json;
+      }
       for (std::size_t row = 0; row < observation_.targets.size(); ++row) {
         const auto &target = observation_.targets[row];
         const double predicted = evaluation.values[row];
         if (!std::isfinite(predicted) ||
             (target.residual == ResidualKind::LogRatio && predicted <= 0.0)) {
-          return reject("owner-inadmissible-value",
+          return reject("observation_out_of_support",
                         "owner returned an inadmissible target value");
         }
         if (predictions != nullptr) {
           predictions[row] = predicted;
         }
-        const double factor = target.residual == ResidualKind::LogRatio
-                                  ? observation_.multiplier / predicted
-                                  : observation_.multiplier / target.scale;
-        residuals[row] = target.residual == ResidualKind::LogRatio
-                             ? observation_.multiplier *
-                                   std::log(predicted / target.observed)
-                             : observation_.multiplier *
-                                   (predicted - target.observed) / target.scale;
+        const double multiplier = observation_.multiplier * target.multiplier;
+        double factor = multiplier / target.scale;
+        switch (target.residual) {
+        case ResidualKind::LogRatio:
+          factor = multiplier / predicted;
+          residuals[row] = multiplier * std::log(predicted / target.observed);
+          break;
+        case ResidualKind::ScaledDifference:
+          residuals[row] =
+              multiplier * (predicted - target.observed) / target.scale;
+          break;
+        case ResidualKind::LeftCensored:
+          if (predicted <= target.observed) {
+            factor = 0.0;
+            residuals[row] = 0.0;
+          } else {
+            residuals[row] =
+                multiplier * (predicted - target.observed) / target.scale;
+          }
+          break;
+        case ResidualKind::RightCensored:
+          if (predicted >= target.observed) {
+            factor = 0.0;
+            residuals[row] = 0.0;
+          } else {
+            residuals[row] =
+                multiplier * (predicted - target.observed) / target.scale;
+          }
+          break;
+        }
         if (jacobians == nullptr) {
           continue;
         }
@@ -271,72 +354,120 @@ public:
                ++identity) {
             if (identity_coordinates_[identity] == coordinate) {
               derivative +=
-                  evaluation.derivatives[row * active_parameter_count_ + identity];
+                  evaluation
+                      .derivatives[row * active_parameter_count_ + identity];
             }
           }
-          jacobians[coordinate][row] = factor * derivative *
-                                       coordinate_scales_[coordinate];
+          jacobians[coordinate][row] =
+              factor * derivative * coordinate_scales_[coordinate];
         }
       }
       if (!std::all_of(residuals, residuals + observation_.targets.size(),
                        [](double value) { return std::isfinite(value); })) {
-        return reject("nonfinite-residual", "residual evaluation was nonfinite");
+        return reject("native_residual_failure",
+                      "residual evaluation was nonfinite");
       }
       return true;
     } catch (const OwnerEvaluationError &error) {
       return reject(error.code(), error.what());
     } catch (const std::exception &error) {
-      return reject("owner-evaluation-error", error.what());
+      return reject("owner_contract_failure", error.what());
     }
   }
 
   std::size_t rejection_count() const noexcept {
-    return std::accumulate(
-        owner_failures_.begin(), owner_failures_.end(), std::size_t{0},
-        [](std::size_t count, const OwnerFailure &failure) {
-          return count + failure.count;
-        });
+    return std::accumulate(owner_failures_.begin(), owner_failures_.end(),
+                           std::size_t{0},
+                           [](std::size_t count, const OwnerFailure &failure) {
+                             return count + failure.count;
+                           });
   }
   const std::vector<OwnerFailure> &owner_failures() const noexcept {
     return owner_failures_;
   }
 
+  bool information_bearing(std::size_t row, double predicted) const noexcept {
+    const auto &target = observation_.targets[row];
+    if (target.residual == ResidualKind::LeftCensored) {
+      return predicted > target.observed;
+    }
+    if (target.residual == ResidualKind::RightCensored) {
+      return predicted < target.observed;
+    }
+    return true;
+  }
+
+  bool censor_kink(std::size_t row, double predicted) const noexcept {
+    const auto &target = observation_.targets[row];
+    if (target.residual != ResidualKind::LeftCensored &&
+        target.residual != ResidualKind::RightCensored) {
+      return false;
+    }
+    const double tolerance = 1.0e-12 * std::max({1.0, std::abs(predicted),
+                                                 std::abs(target.observed)});
+    return std::abs(predicted - target.observed) <= tolerance;
+  }
+
 private:
-  OwnerEvaluation evaluate_owner(const std::vector<double> &active) const {
+  OwnerEvaluation evaluate_owner(const std::vector<double> &active,
+                                 bool receipt_requested) const {
     py::gil_scoped_acquire acquire;
-    const auto evaluator = py::reinterpret_borrow<py::function>(
-        py::handle(owner_evaluator_));
+    const auto evaluator =
+        py::reinterpret_borrow<py::function>(py::handle(owner_evaluator_));
     const py::dict result = py::cast<py::dict>(
-        evaluator(observation_index_, active));
+        evaluator(start_index_, observation_index_, active, receipt_requested));
     const std::string status = required<std::string>(result, "status");
     if (status == "rejected") {
       const auto failure = required<py::dict>(result, "failure");
       const std::string code = required<std::string>(failure, "code");
       const std::string reason = required<std::string>(failure, "reason");
+      if (std::find(failure_codes_.begin(), failure_codes_.end(), code) ==
+          failure_codes_.end()) {
+        throw OwnerEvaluationError("owner_contract_failure",
+                                   "owner returned unknown failure code '" +
+                                       code + "': " + reason);
+      }
       throw OwnerEvaluationError(code, reason);
     }
     if (status != "accepted") {
-      throw OwnerEvaluationError("owner-status", "unknown owner evaluation status");
+      throw OwnerEvaluationError("owner_contract_failure",
+                                 "unknown owner evaluation status");
     }
     OwnerEvaluation evaluation{
         required<std::vector<double>>(result, "predictions"),
         required<std::vector<double>>(result, "jacobian"),
+        result.contains("receipt_json")
+            ? py::cast<std::string>(result["receipt_json"])
+            : std::string{},
     };
     if (evaluation.values.size() != observation_.targets.size() ||
         evaluation.derivatives.size() !=
             observation_.targets.size() * active_parameter_count_) {
       throw OwnerEvaluationError(
-          "owner-shape-mismatch", "owner block has the wrong value or Jacobian shape");
+          "owner_contract_failure",
+          "owner block has the wrong value or Jacobian shape");
+    }
+    if (!std::all_of(evaluation.derivatives.begin(),
+                     evaluation.derivatives.end(),
+                     [](double value) { return std::isfinite(value); })) {
+      throw OwnerEvaluationError(
+          "owner_contract_failure",
+          "owner block contains a nonfinite Jacobian derivative");
+    }
+    if (!receipt_requested && !evaluation.receipt_json.empty()) {
+      throw OwnerEvaluationError(
+          "owner_contract_failure",
+          "owner returned a receipt for an ordinary trial evaluation");
     }
     return evaluation;
   }
 
   bool reject(const std::string &code, const std::string &reason) const {
-    const auto match = std::find_if(
-        owner_failures_.begin(), owner_failures_.end(),
-        [&](const OwnerFailure &failure) {
-          return failure.code == code && failure.reason == reason;
-        });
+    const auto match =
+        std::find_if(owner_failures_.begin(), owner_failures_.end(),
+                     [&](const OwnerFailure &failure) {
+                       return failure.code == code && failure.reason == reason;
+                     });
     if (match == owner_failures_.end()) {
       owner_failures_.push_back({code, reason, 1});
     } else {
@@ -346,90 +477,64 @@ private:
   }
 
   PyObject *owner_evaluator_;
+  std::size_t start_index_;
   std::size_t observation_index_;
   std::size_t active_parameter_count_;
   std::vector<std::size_t> identity_coordinates_;
+  std::vector<double> coordinate_origins_;
   std::vector<double> coordinate_scales_;
   Observation observation_;
+  std::vector<std::string> failure_codes_;
   mutable std::vector<OwnerFailure> owner_failures_;
 };
 
-double radical_inverse(std::size_t index, std::size_t base) {
-  double result = 0.0;
-  double factor = 1.0 / static_cast<double>(base);
-  while (index > 0) {
-    result += factor * static_cast<double>(index % base);
-    index /= base;
-    factor /= static_cast<double>(base);
-  }
-  return result;
-}
-
-std::size_t prime(std::size_t ordinal) {
-  std::size_t candidate = 2;
-  for (std::size_t found = 0;; ++candidate) {
-    bool is_prime = true;
-    for (std::size_t divisor = 2; divisor * divisor <= candidate; ++divisor) {
-      if (candidate % divisor == 0) {
-        is_prime = false;
-        break;
-      }
-    }
-    if (is_prime && found++ == ordinal) {
-      return candidate;
-    }
-  }
-}
-
-std::vector<std::vector<double>>
-starts(const std::vector<Coordinate> &coordinates, const Controls &controls) {
-  std::vector<std::vector<double>> result;
-  result.reserve(controls.start_count);
-  if (controls.include_input) {
-    std::vector<double> input;
-    input.reserve(coordinates.size());
-    for (const auto &coordinate : coordinates) {
-      input.push_back(coordinate.input / coordinate.scale);
-    }
-    result.push_back(std::move(input));
-  }
-  for (std::size_t sequence = 1; result.size() < controls.start_count;
-       ++sequence) {
-    std::vector<double> point;
-    point.reserve(coordinates.size());
-    for (std::size_t coordinate = 0; coordinate < coordinates.size();
-         ++coordinate) {
-      const double fraction = radical_inverse(sequence, prime(coordinate));
-      const double physical = coordinates[coordinate].lower +
-                              fraction * (coordinates[coordinate].upper -
-                                          coordinates[coordinate].lower);
-      point.push_back(physical / coordinates[coordinate].scale);
-    }
-    result.push_back(std::move(point));
-  }
-  return result;
-}
-
-Diagnostics diagnose(const std::vector<double> &jacobian, std::size_t rows,
-                     std::size_t columns) {
-  using RowMajor =
-      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-  const Eigen::Map<const RowMajor> matrix(jacobian.data(),
-                                          static_cast<Eigen::Index>(rows),
-                                          static_cast<Eigen::Index>(columns));
-  const Eigen::JacobiSVD<Eigen::MatrixXd> svd(matrix, Eigen::ComputeThinU |
-                                                          Eigen::ComputeThinV);
+Diagnostics diagnose(const std::vector<double> &jacobian,
+                     const std::vector<double> &residuals, std::size_t rows,
+                     std::size_t columns,
+                     const std::vector<std::size_t> &active_bounds,
+                     const std::vector<bool> &information_rows,
+                     bool censor_kink) {
   Diagnostics result;
+  for (std::size_t coordinate = 0; coordinate < columns; ++coordinate) {
+    if (std::find(active_bounds.begin(), active_bounds.end(), coordinate) ==
+        active_bounds.end()) {
+      result.free_coordinate_indices.push_back(coordinate);
+    }
+  }
+  result.information_row_count = static_cast<std::size_t>(
+      std::count(information_rows.begin(), information_rows.end(), true));
+  if (result.information_row_count == 0) {
+    result.covariance_status = "unavailable_no_information_rows";
+    return result;
+  }
+  Eigen::MatrixXd information_matrix(
+      static_cast<Eigen::Index>(result.information_row_count),
+      static_cast<Eigen::Index>(columns));
+  Eigen::Index information_row = 0;
+  for (std::size_t row = 0; row < rows; ++row) {
+    if (!information_rows[row]) {
+      continue;
+    }
+    for (std::size_t column = 0; column < columns; ++column) {
+      information_matrix(information_row, static_cast<Eigen::Index>(column)) =
+          jacobian[row * columns + column];
+    }
+    ++information_row;
+  }
+  const Eigen::JacobiSVD<Eigen::MatrixXd> svd(
+      information_matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
   result.singular_values.assign(svd.singularValues().data(),
                                 svd.singularValues().data() +
                                     svd.singularValues().size());
   if (result.singular_values.empty()) {
     result.condition_number = 1.0;
+    result.covariance_status = "unavailable_rank_deficient";
     return result;
   }
-  const double threshold = 100.0 * std::numeric_limits<double>::epsilon() *
-                           static_cast<double>(std::max(rows, columns)) *
-                           result.singular_values.front();
+  const double threshold =
+      100.0 * std::numeric_limits<double>::epsilon() *
+      static_cast<double>(std::max(result.information_row_count, columns)) *
+      result.singular_values.front();
   result.rank = static_cast<int>(std::count_if(
       result.singular_values.begin(), result.singular_values.end(),
       [threshold](double value) { return value > threshold; }));
@@ -438,6 +543,80 @@ Diagnostics diagnose(const std::vector<double> &jacobian, std::size_t rows,
         result.singular_values.front() /
         result.singular_values[static_cast<std::size_t>(result.rank - 1)];
   }
+  Eigen::MatrixXd free_matrix(
+      static_cast<Eigen::Index>(result.information_row_count),
+      static_cast<Eigen::Index>(result.free_coordinate_indices.size()));
+  for (std::size_t column = 0; column < result.free_coordinate_indices.size();
+       ++column) {
+    free_matrix.col(static_cast<Eigen::Index>(column)) = information_matrix.col(
+        static_cast<Eigen::Index>(result.free_coordinate_indices[column]));
+  }
+  if (result.free_coordinate_indices.empty()) {
+    result.degrees_of_freedom = result.information_row_count;
+    result.covariance_status = "unavailable_active_bounds";
+    return result;
+  }
+  Eigen::JacobiSVD<Eigen::MatrixXd> free_svd(
+      free_matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  if (!result.free_coordinate_indices.empty()) {
+    const double free_threshold =
+        100.0 * std::numeric_limits<double>::epsilon() *
+        static_cast<double>(std::max(result.information_row_count,
+                                     result.free_coordinate_indices.size())) *
+        free_svd.singularValues()[0];
+    result.free_subspace_rank = static_cast<int>(std::count_if(
+        free_svd.singularValues().data(),
+        free_svd.singularValues().data() + free_svd.singularValues().size(),
+        [free_threshold](double value) { return value > free_threshold; }));
+  }
+  result.degrees_of_freedom =
+      result.information_row_count >
+              static_cast<std::size_t>(result.free_subspace_rank)
+          ? result.information_row_count -
+                static_cast<std::size_t>(result.free_subspace_rank)
+          : 0;
+  if (!active_bounds.empty()) {
+    result.covariance_status = "unavailable_active_bounds";
+    return result;
+  }
+  if (censor_kink) {
+    result.covariance_status = "unavailable_censor_kink";
+    return result;
+  }
+  if (result.free_subspace_rank !=
+      static_cast<int>(result.free_coordinate_indices.size())) {
+    result.covariance_status = "unavailable_rank_deficient";
+    return result;
+  }
+  if (result.degrees_of_freedom == 0) {
+    result.covariance_status = "unavailable_insufficient_degrees_of_freedom";
+    return result;
+  }
+  double information_sum_squares = 0.0;
+  for (std::size_t row = 0; row < rows; ++row) {
+    if (information_rows[row]) {
+      information_sum_squares += residuals[row] * residuals[row];
+    }
+  }
+  result.residual_variance =
+      information_sum_squares / static_cast<double>(result.degrees_of_freedom);
+  const Eigen::VectorXd inverse_variances =
+      free_svd.singularValues().array().square().inverse() *
+      result.residual_variance;
+  const Eigen::MatrixXd covariance = free_svd.matrixV() *
+                                     inverse_variances.asDiagonal() *
+                                     free_svd.matrixV().transpose();
+  result.affine_covariance.reserve(result.free_coordinate_indices.size() *
+                                   result.free_coordinate_indices.size());
+  for (std::size_t row = 0; row < result.free_coordinate_indices.size();
+       ++row) {
+    for (std::size_t column = 0; column < result.free_coordinate_indices.size();
+         ++column) {
+      result.affine_covariance.push_back(covariance(
+          static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column)));
+    }
+  }
+  result.covariance_status = "available";
   return result;
 }
 
@@ -459,14 +638,19 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
                         const std::vector<Coordinate> &coordinates,
                         const std::vector<Observation> &observations,
                         const Controls &controls,
-                        const std::vector<double> &initial) {
+                        const Start &start,
+                        const std::vector<std::string> &failure_codes) {
   StartResult result;
   result.index = index;
-  result.initial_affine = initial;
-  result.final_affine = initial;
+  result.start_identity = start.identity;
+  result.initial_affine = start.affine;
+  result.final_affine = start.affine;
+  std::vector<double> origins;
   std::vector<double> scales;
+  origins.reserve(coordinates.size());
   scales.reserve(coordinates.size());
   for (const auto &coordinate : coordinates) {
+    origins.push_back(coordinate.origin);
     scales.push_back(coordinate.scale);
   }
   std::vector<std::unique_ptr<OwnerCost>> costs;
@@ -482,18 +666,17 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
   for (std::size_t observation_index = 0;
        observation_index < observations.size(); ++observation_index) {
     costs.push_back(std::make_unique<OwnerCost>(
-        owner_evaluator, observation_index, active_parameter_count,
-        identity_coordinates, scales, observations[observation_index]));
+        owner_evaluator, index, observation_index, active_parameter_count,
+        identity_coordinates, origins, scales, observations[observation_index],
+        failure_codes));
     problem.AddResidualBlock(costs.back().get(), nullptr, blocks);
   }
   for (std::size_t coordinate = 0; coordinate < coordinates.size();
        ++coordinate) {
     problem.SetParameterLowerBound(blocks[coordinate], 0,
-                                   coordinates[coordinate].lower /
-                                       coordinates[coordinate].scale);
+                                   coordinates[coordinate].lower_affine);
     problem.SetParameterUpperBound(blocks[coordinate], 0,
-                                   coordinates[coordinate].upper /
-                                       coordinates[coordinate].scale);
+                                   coordinates[coordinate].upper_affine);
   }
   ceres::Solver::Summary summary;
   ceres::Solve(solver_options(controls), &problem, &summary);
@@ -509,6 +692,15 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
   result.residuals.assign(residual_count,
                           std::numeric_limits<double>::quiet_NaN());
   result.affine_jacobian.assign(residual_count * coordinates.size(), 0.0);
+  std::vector<bool> information_rows(residual_count, true);
+  result.batch_outcomes.reserve(costs.size());
+  for (std::size_t batch_index = 0; batch_index < costs.size(); ++batch_index) {
+    result.batch_outcomes.push_back(
+        {batch_index,
+         static_cast<std::size_t>(costs[batch_index]->num_residuals()),
+         "not_evaluated", ""});
+  }
+  bool censor_kink = false;
   std::vector<const double *> final_blocks;
   final_blocks.reserve(blocks.size());
   for (const double *block : blocks) {
@@ -516,7 +708,9 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
   }
   std::size_t offset = 0;
   bool final_evaluable = true;
-  for (const auto &cost : costs) {
+  const bool request_receipts = summary.IsSolutionUsable();
+  for (std::size_t batch_index = 0; batch_index < costs.size(); ++batch_index) {
+    const auto &cost = costs[batch_index];
     const std::size_t rows = static_cast<std::size_t>(cost->num_residuals());
     std::vector<std::vector<double>> jacobian_blocks(coordinates.size(),
                                                      std::vector<double>(rows));
@@ -525,13 +719,27 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
     for (auto &block : jacobian_blocks) {
       jacobian_pointers.push_back(block.data());
     }
+    std::string receipt_json;
     if (!cost->evaluate(final_blocks.data(), result.residuals.data() + offset,
                         jacobian_pointers.data(),
-                        result.predictions.data() + offset)) {
+                        result.predictions.data() + offset, request_receipts,
+                        &receipt_json)) {
+      result.batch_outcomes[batch_index].status = "rejected";
+      const auto &failures = cost->owner_failures();
+      result.batch_outcomes[batch_index].failure_code =
+          failures.empty() ? "owner_contract_failure" : failures.back().code;
       final_evaluable = false;
       break;
     }
+    result.batch_outcomes[batch_index].status = "evaluated";
+    if (!receipt_json.empty()) {
+      result.owner_receipts_json.push_back(std::move(receipt_json));
+    }
     for (std::size_t row = 0; row < rows; ++row) {
+      information_rows[offset + row] =
+          cost->information_bearing(row, result.predictions[offset + row]);
+      censor_kink = censor_kink ||
+                    cost->censor_kink(row, result.predictions[offset + row]);
       for (std::size_t coordinate = 0; coordinate < coordinates.size();
            ++coordinate) {
         result
@@ -542,6 +750,9 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
     offset += rows;
   }
   result.usable = summary.IsSolutionUsable() && final_evaluable;
+  if (!result.usable) {
+    result.owner_receipts_json.clear();
+  }
   result.non_evaluable_count = 0;
   for (const auto &cost : costs) {
     result.non_evaluable_count += cost->rejection_count();
@@ -561,34 +772,39 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
   }
   if (!result.owner_failures.empty()) {
     result.failure_reason = result.owner_failures.front().reason;
+    result.trial_failure_code = result.owner_failures.front().code;
   }
   if (result.usable) {
     result.failure_reason.clear();
-    result.diagnostics =
-        diagnose(result.affine_jacobian, residual_count, coordinates.size());
     for (std::size_t coordinate = 0; coordinate < coordinates.size();
          ++coordinate) {
-      const double physical =
-          result.final_affine[coordinate] * coordinates[coordinate].scale;
-      const double tolerance =
-          1.0e-10 * std::max(1.0, coordinates[coordinate].upper -
-                                      coordinates[coordinate].lower);
-      if (std::abs(physical - coordinates[coordinate].lower) <= tolerance ||
-          std::abs(physical - coordinates[coordinate].upper) <= tolerance) {
+      const double affine = result.final_affine[coordinate];
+      if (std::abs(affine - coordinates[coordinate].lower_affine) <=
+              controls.affine_bound_margin ||
+          std::abs(affine - coordinates[coordinate].upper_affine) <=
+              controls.affine_bound_margin) {
         result.active_bounds.push_back(coordinate);
       }
     }
+    result.diagnostics =
+        diagnose(result.affine_jacobian, result.residuals, residual_count,
+                 coordinates.size(), result.active_bounds, information_rows,
+                 censor_kink);
+    result.trial_failure_code.clear();
   } else {
     if (result.failure_reason.empty()) {
       result.failure_reason = summary.message;
+    }
+    if (result.trial_failure_code.empty()) {
+      result.trial_failure_code = "optimizer_failure";
     }
     result.cost = std::numeric_limits<double>::infinity();
   }
   return result;
 }
 
-void assign_basins(std::vector<StartResult> &results,
-                   const std::vector<Coordinate> &coordinates) {
+void assign_optimizer_basins(std::vector<StartResult> &results,
+                             const std::vector<Coordinate> &coordinates) {
   std::vector<std::size_t> representatives;
   for (auto &result : results) {
     if (!result.usable) {
@@ -599,22 +815,22 @@ void assign_basins(std::vector<StartResult> &results,
       bool same = true;
       for (std::size_t coordinate = 0; coordinate < coordinates.size();
            ++coordinate) {
-        const double span =
-            coordinates[coordinate].upper - coordinates[coordinate].lower;
+        const double span = coordinates[coordinate].upper_affine -
+                            coordinates[coordinate].lower_affine;
         const double distance = std::abs(result.final_affine[coordinate] -
-                                         other.final_affine[coordinate]) *
-                                coordinates[coordinate].scale / span;
+                                         other.final_affine[coordinate]) /
+                                span;
         same = same && distance <= 1.0e-6;
       }
       const double cost_scale =
           std::max({1.0, std::abs(result.cost), std::abs(other.cost)});
       if (same && std::abs(result.cost - other.cost) <= 1.0e-8 * cost_scale) {
-        result.basin = basin;
+        result.optimizer_basin = basin;
         break;
       }
     }
-    if (result.basin == std::numeric_limits<std::size_t>::max()) {
-      result.basin = representatives.size();
+    if (result.optimizer_basin == std::numeric_limits<std::size_t>::max()) {
+      result.optimizer_basin = representatives.size();
       representatives.push_back(result.index);
     }
   }
@@ -624,7 +840,14 @@ py::dict diagnostics_mapping(const Diagnostics &value) {
   py::dict result;
   result["singular_values"] = value.singular_values;
   result["rank"] = value.rank;
+  result["free_subspace_rank"] = value.free_subspace_rank;
   result["condition_number"] = value.condition_number;
+  result["affine_covariance"] = value.affine_covariance;
+  result["degrees_of_freedom"] = value.degrees_of_freedom;
+  result["information_row_count"] = value.information_row_count;
+  result["free_coordinate_indices"] = value.free_coordinate_indices;
+  result["residual_variance"] = value.residual_variance;
+  result["covariance_status"] = value.covariance_status;
   return result;
 }
 
@@ -636,6 +859,15 @@ py::dict owner_failure_mapping(const OwnerFailure &value) {
   return result;
 }
 
+py::dict batch_outcome_mapping(const BatchOutcome &value) {
+  py::dict result;
+  result["index"] = value.index;
+  result["row_count"] = value.row_count;
+  result["status"] = value.status;
+  result["failure_code"] = value.failure_code;
+  return result;
+}
+
 py::dict result_mapping(const StartResult &value,
                         const std::vector<Coordinate> &coordinates) {
   py::dict result;
@@ -644,16 +876,20 @@ py::dict result_mapping(const StartResult &value,
   std::vector<double> physical_jacobian = value.affine_jacobian;
   for (std::size_t coordinate = 0; coordinate < coordinates.size();
        ++coordinate) {
-    initial_physical.push_back(value.initial_affine[coordinate] *
-                               coordinates[coordinate].scale);
-    final_physical.push_back(value.final_affine[coordinate] *
-                             coordinates[coordinate].scale);
+    initial_physical.push_back(coordinates[coordinate].origin +
+                               value.initial_affine[coordinate] *
+                                   coordinates[coordinate].scale);
+    final_physical.push_back(coordinates[coordinate].origin +
+                             value.final_affine[coordinate] *
+                                 coordinates[coordinate].scale);
     for (std::size_t row = 0; row < value.residuals.size(); ++row) {
       physical_jacobian[row * coordinates.size() + coordinate] /=
           coordinates[coordinate].scale;
     }
   }
   result["index"] = value.index;
+  result["start_identity"] = value.start_identity;
+  result["initial_affine"] = value.initial_affine;
   result["initial_physical"] = initial_physical;
   result["final_physical"] = final_physical;
   result["final_affine"] = value.final_affine;
@@ -665,6 +901,7 @@ py::dict result_mapping(const StartResult &value,
   result["active_bounds"] = value.active_bounds;
   result["solver_status"] = value.solver_status;
   result["failure_reason"] = value.failure_reason;
+  result["trial_failure_code"] = value.trial_failure_code;
   result["iterations"] = value.iterations;
   result["non_evaluable_count"] = value.non_evaluable_count;
   py::list owner_failures;
@@ -672,12 +909,18 @@ py::dict result_mapping(const StartResult &value,
     owner_failures.append(owner_failure_mapping(failure));
   }
   result["owner_failures"] = owner_failures;
+  result["owner_receipts_json"] = value.owner_receipts_json;
+  py::list batch_outcomes;
+  for (const auto &outcome : value.batch_outcomes) {
+    batch_outcomes.append(batch_outcome_mapping(outcome));
+  }
+  result["batch_outcomes"] = batch_outcomes;
   result["cost"] = value.cost;
   result["usable"] = value.usable;
   if (value.usable) {
-    result["basin"] = value.basin;
+    result["optimizer_basin"] = value.optimizer_basin;
   } else {
-    result["basin"] = py::none();
+    result["optimizer_basin"] = py::none();
   }
   return result;
 }
@@ -687,7 +930,8 @@ py::dict fit_resolved(const py::function &owner_evaluator,
                       const std::vector<std::size_t> &identity_coordinates,
                       const py::iterable &coordinate_values,
                       const py::iterable &observation_values,
-                      const py::dict &control_values) {
+                      const py::dict &control_values,
+                      const std::vector<std::string> &failure_codes) {
   const auto coordinates = parse_coordinates(coordinate_values);
   const auto observations = parse_observations(observation_values);
   const auto controls = parse_controls(control_values);
@@ -700,7 +944,36 @@ py::dict fit_resolved(const py::function &owner_evaluator,
     throw std::invalid_argument("identity coordinates must bind every active "
                                 "identity to one coordinate");
   }
-  const auto start_values = starts(coordinates, controls);
+  if (controls.starts.size() == 0) {
+    throw std::invalid_argument("at least one explicit start is required");
+  }
+  if (failure_codes.empty()) {
+    throw std::invalid_argument("the owner failure vocabulary must be nonempty");
+  }
+  std::vector<std::string> start_identities;
+  start_identities.reserve(controls.starts.size());
+  for (const auto &start : controls.starts) {
+    if (start.identity.empty() || start.affine.size() != coordinates.size() ||
+        !std::all_of(start.affine.begin(), start.affine.end(),
+                     [](double value) { return std::isfinite(value); })) {
+      throw std::invalid_argument(
+          "each explicit start needs an identity and one finite affine value per coordinate");
+    }
+    for (std::size_t coordinate = 0; coordinate < coordinates.size();
+         ++coordinate) {
+      if (start.affine[coordinate] < coordinates[coordinate].lower_affine ||
+          start.affine[coordinate] > coordinates[coordinate].upper_affine) {
+        throw std::invalid_argument("explicit affine start lies outside its bounds");
+      }
+    }
+    start_identities.push_back(start.identity);
+  }
+  std::sort(start_identities.begin(), start_identities.end());
+  if (std::adjacent_find(start_identities.begin(), start_identities.end()) !=
+      start_identities.end()) {
+    throw std::invalid_argument("explicit start identities must be unique");
+  }
+  const auto &start_values = controls.starts;
   std::vector<StartResult> results(start_values.size());
   std::atomic<std::size_t> next{0};
   const std::size_t worker_count =
@@ -714,15 +987,22 @@ py::dict fit_resolved(const py::function &owner_evaluator,
           return;
         }
         try {
-          results[index] = solve_start(
-              index, owner_evaluator.ptr(), active_parameter_count,
-              identity_coordinates, coordinates, observations, controls,
-              start_values[index]);
+          results[index] =
+              solve_start(index, owner_evaluator.ptr(), active_parameter_count,
+                          identity_coordinates, coordinates, observations,
+                          controls, start_values[index], failure_codes);
         } catch (const std::exception &error) {
           results[index].index = index;
-          results[index].initial_affine = start_values[index];
-          results[index].final_affine = start_values[index];
+          results[index].start_identity = start_values[index].identity;
+          results[index].initial_affine = start_values[index].affine;
+          results[index].final_affine = start_values[index].affine;
           results[index].failure_reason = error.what();
+          results[index].trial_failure_code = "optimizer_failure";
+          for (std::size_t batch = 0; batch < observations.size(); ++batch) {
+            results[index].batch_outcomes.push_back(
+                {batch, observations[batch].targets.size(), "not_evaluated",
+                 "optimizer_failure"});
+          }
         }
       }
     };
@@ -735,7 +1015,7 @@ py::dict fit_resolved(const py::function &owner_evaluator,
       worker.join();
     }
   }
-  assign_basins(results, coordinates);
+  assign_optimizer_basins(results, coordinates);
   py::list starts_result;
   for (const auto &result : results) {
     starts_result.append(result_mapping(result, coordinates));
@@ -752,5 +1032,6 @@ void bind_parameter_fit(py::module_ &module) {
   module.def("_fit_resolved", &epcsaft::regression::fit_resolved,
              py::arg("owner_evaluator"), py::arg("active_parameter_count"),
              py::arg("identity_coordinates"), py::arg("coordinates"),
-             py::arg("observations"), py::arg("controls"));
+             py::arg("observations"), py::arg("controls"),
+             py::arg("failure_codes"));
 }

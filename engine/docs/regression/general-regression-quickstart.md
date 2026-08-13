@@ -30,11 +30,19 @@ Path("propane-fitted.parameters.json").write_text(
 ```
 
 `fit` also accepts a strict `ParameterFit` or matching in-memory mapping.
+Each declared optimizer coordinate uses
+`physical = origin + scale * affine`; callers provide the exact ordered set of
+physical starts with units implied by their parameter coordinates and stable
+start identities. Regression performs the affine conversion once internally.
+No starts are generated implicitly.
 `FitResult` retains every start, residuals, exact Jacobians, rank, conditioning,
-active bounds, basin identity, and artifact fingerprints. The sole public
-exports are `ParameterFit`, `FitResult`, and `fit`.
+active bounds, parameter-space optimizer basin/cluster identity, and artifact
+fingerprints. This optimizer cluster is not a thermodynamic physical-branch
+identity.
 
-The initial cutover admits pure-saturation and fixed-state-pressure
-observations backed by exact EOS selected-parameter derivatives. It does not
-admit mixture phase-equilibrium, charged/electrolyte, direct permittivity or
-Born, or reaction observations.
+The admitted families are EOS pure-saturation/fixed-state observations and the
+fixed-T,P homogeneous reactive family. The latter is Equilibrium-owned, uses a
+role-certified immutable local continuation anchor and exact total parameter
+Jacobians, and remains diagnostic/non-promotable. Mixture phase-equilibrium,
+coupled reactive VLE, direct permittivity, and standalone Born observations are
+not admitted.

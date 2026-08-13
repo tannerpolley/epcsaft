@@ -172,6 +172,17 @@ def test_declared_single_phase_solves_role_and_hints_do_not_change_root() -> Non
     )
     for result in solved:
         assert result.diagnostics.certificate_scope == "fixed_tp_declared_topology"
+        assert result.diagnostics.phase_selection_claim == (
+            "mechanically_certified_declared_single_phase"
+        )
+        assert result.diagnostics.globality_claim == "not_established"
+        assert result.diagnostics.completeness_criterion == (
+            "detected_roots_only;pressure_envelope_root_completeness_not_proven"
+        )
+        assert (
+            "detected_strict_stable_volume_extreme_for_declared_role"
+            in result.diagnostics.role_evidence
+        )
         assert result.phases[0].mechanical_class == "strict_stable"
         assert result.phases[0].role == role
         assert result.phases[0].molar_volume_m3_per_mol == pytest.approx(

@@ -141,6 +141,13 @@ public:
         double ion_mole_fraction_max,
         const std::vector<NativeActiveCoordinate>& active_parameters
     ) const;
+    NativeMixturePhaseBlock evaluate_supported_phase_derivatives(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume,
+        double ion_mole_fraction_max,
+        const std::vector<NativeActiveCoordinate>& active_parameters
+    ) const;
     std::array<double, 2> molar_volume_bounds(
         double temperature,
         const std::vector<double>& mole_fractions,

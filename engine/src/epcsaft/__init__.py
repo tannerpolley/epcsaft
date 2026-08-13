@@ -1,3 +1,4 @@
+from ._trials import NON_EVALUABLE_TRIAL_CODES, NonEvaluableTrial, NonEvaluableTrialCode
 from .eos import (
     DensityDiagnostics,
     EosError,
@@ -39,6 +40,7 @@ from .reference import (
 from .units import ParameterError, unit_registry
 
 __all__ = (
+    "NON_EVALUABLE_TRIAL_CODES",
     "ActiveParameter",
     "ActiveParameterApplicability",
     "ActiveParameterDomain",
@@ -49,6 +51,8 @@ __all__ = (
     "EosError",
     "Fugacity",
     "Mixture",
+    "NonEvaluableTrial",
+    "NonEvaluableTrialCode",
     "ObservableBlock",
     "ObservableBlockStatus",
     "ObservableDescriptor",

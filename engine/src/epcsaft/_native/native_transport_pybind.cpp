@@ -95,6 +95,16 @@ pybind11::dict evaluate_source_reference_transfer(
     std::vector<double> activity(row_count);
     std::vector<double> transfer(row_count);
     std::vector<double> composition(component_ids.size());
+    const bool pressure_derivatives_requested = (required_derivatives & 2u) != 0u;
+    const bool parameter_derivatives_requested = (required_derivatives & 8u) != 0u;
+    std::vector<double> pressure_derivatives(
+        pressure_derivatives_requested ? row_count : 0u
+    );
+    std::vector<double> parameter_derivatives(
+        parameter_derivatives_requested
+            ? row_count * transport.active_parameter_count
+            : 0u
+    );
     if (ion_pair_indices.size() != ion_pair_stoichiometry.size()) {
         throw pybind11::value_error(
             "source-reference ion pair and stoichiometry counts differ"
@@ -138,13 +148,15 @@ pybind11::dict evaluate_source_reference_transfer(
     result.neutral_basis_capacity = basis.size();
     result.contraction_capacity = row_count;
     result.source_composition_capacity = composition.size();
-    result.pressure_derivative_capacity = 0;
+    result.pressure_derivative_capacity = pressure_derivatives.size();
+    result.parameter_derivative_capacity = parameter_derivatives.size();
     result.neutral_basis = basis.data();
     result.log_fugacity_contractions = fugacity.data();
     result.activity_scale_log_contractions = activity.data();
     result.transfer_log_contractions = transfer.data();
     result.source_composition = composition.data();
-    result.pressure_derivatives_per_pa = nullptr;
+    result.pressure_derivatives_per_pa = pressure_derivatives.data();
+    result.parameter_derivatives = parameter_derivatives.data();
     const int status = transport.evaluate_source_reference_transfer(
         transport.model_context,
         temperature_k,
@@ -166,6 +178,8 @@ pybind11::dict evaluate_source_reference_transfer(
     value["transfer_log_contractions"] = transfer;
     value["source_composition"] = composition;
     value["derivative_availability"] = result.derivative_availability;
+    value["pressure_derivatives_per_pa"] = pressure_derivatives;
+    value["parameter_derivatives"] = parameter_derivatives;
     value["temperature_k"] = result.temperature_k;
     value["pressure_pa"] = result.pressure_pa;
     value["source_reference_pressure_pa"] =

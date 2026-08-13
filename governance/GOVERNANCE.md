@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 18
+Doctrine revision: 19
 
-Approved: 2026-08-12
+Approved: 2026-08-13
 
 Owner: `tannerpolley/ePC-SAFT:governance/`
 
@@ -118,6 +118,19 @@ into Regression. The live `phase_equilibrium` problem/result interface and
 internal HELD/HELD2 discovery and start-generation implementation remain
 Equilibrium-owned. A later family requires a new implementation issue and
 independent numerical evidence rather than silently expanding Regression.
+
+D-034 admits the fixed-T,P homogeneous reactive Observation Family implemented
+by issue #30. Equilibrium owns its closed descriptor, exact total derivatives,
+source-reference transfer, certified local-state and immutable continuation
+receipts, physical branch-family identity, and typed Non-Evaluable Trial
+outcomes. Regression consumes those owner values and Jacobians through the one
+`ParameterFit`/`FitResult` route and owns residuals, weights, bounds, affine
+coordinates, starts, and optimizer accounting. The admission is local and
+source-neutral: it makes no global-equilibrium claim, does not admit
+nonreactive phase-equilibrium or coupled reactive-VLE observations, and does
+not authorize parameter promotion from diagnostic or manufactured evidence.
+The accepted receipt is
+`governance/receipts/cap-12-homogeneous-reactive-observation-admission.json`.
 
 D-032 completes the general scientific capability hard cutover. The accepted
 CAP-11 subject commit removes the superseded live permittivity design, the
@@ -512,6 +525,12 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 19 records the user-approved issue-#30 admission. D-034 admits only
+the fixed-T,P homogeneous reactive Observation Family, its exact total
+Jacobian and typed local-branch contracts, and its canonical Regression fit
+integration. Coupled reactive-VLE and nonreactive phase-equilibrium Observation
+Families remain outside Regression.
+
 Revision 18 records the user-approved build-first, latency-bounded private
 development workflow. D-033 separates the sub-ten-second warm developer gate
 from explicit owner-run stress, campaign, native-quality, and sanitizer
@@ -607,3 +626,4 @@ Historical plans and receipts retain their original names.
 | D-031 Defer Equilibrium Observation Families | Explicit user instruction on 2026-08-12 to apply the reviewed CAP-10 sequence after the general phase owner and exact sensitivities were complete | Admit no current mixture phase-equilibrium Observation Family; keep Regression EOS-only; require a new implementation issue for any future Equilibrium-owned batch descriptor and numerical admission evidence | Prevents variable-topology discovery, local branch sensitivities, and incomplete optimizer-domain semantics from becoming a misleading differentiable fit interface while preserving the exact Equilibrium sensitivity seam for its current owner | Yes: future Equilibrium observation admission | Engine and Management |
 | D-032 Complete the scientific capability hard cutover | Explicit user instruction on 2026-08-12 to apply the recommended CAP sequence through final closure | Accept CAP-11 subject `a8efa571d52c32f5a697f15dd7f4623b7e3613fd`, its bounded retirement scan, one-wheel verification, independent reviews, and final receipt; close CAP root #10 while leaving issues #6, #30, and #31 as detached post-cutover work | Removes the last superseded live design, executable Lab duplicate, split-header remnants, literal-component internal names, author-named live diagnostics, and dead legacy switches without deleting canonical HELD/HELD2 discovery or historical provenance | No | Engine and Management |
 | D-033 Build first and keep developer verification fast | Explicit user instruction on 2026-08-12 that the private in-development Engine must support rapid downstream iteration and that tests must not block wheel build/install | Build and install the sole wheel before tests; make `check-affected.sh` and `check-all.sh` latency-bounded installed-wheel gates with a warm target below ten seconds; keep slow Engine stress evidence, Validation campaigns/figures, full native analysis, and sanitizers behind explicit owner commands | Reduces the measured warm gate from 821.09 seconds to 8.96 seconds while retaining every slow scientific falsifier in its owner tier | No | Engine, Validation, and Management |
+| D-034 Admit homogeneous reactive observations | Explicit user instruction through issue #30 and the reviewed CAP-12 correction/admission gates on 2026-08-13 | Admit only the fixed-T,P homogeneous reactive Observation Family and its canonical Regression integration; require immutable role-certified continuation anchors, exact total Jacobians, closed typed failures, exact trial/branch receipts, and local/no-global semantics; retain phase-equilibrium and coupled reactive-VLE families as unadmitted | Enables the first source-neutral reactive regression tracer without weakening D-031's prohibition on variable-topology or insufficiently certified phase-equilibrium fitting | No | Engine, Validation, Regression, and Management |
