@@ -191,8 +191,11 @@ epcsaft_engine::equilibrium::PhaseSupport parse_phase_support(
     if (value == "neutral_components") {
         return epcsaft_engine::equilibrium::PhaseSupport::NeutralComponents;
     }
+    if (value == "declared_neutral_components") {
+        return epcsaft_engine::equilibrium::PhaseSupport::DeclaredNeutralComponents;
+    }
     throw py::value_error(
-        "phase support must be 'all_components' or 'neutral_components'"
+        "phase support must be 'all_components', 'neutral_components', or 'declared_neutral_components'"
     );
 }
 
@@ -266,6 +269,8 @@ py::dict phase_diagnostics_to_dict(
     result["hint_count"] = value.hint_count;
     result["hint_reordered_start_count"] =
         value.hint_reordered_start_count;
+    result["accepted_start_count"] = value.accepted_start_count;
+    result["distinct_root_count"] = value.distinct_root_count;
     result["material_balance_inf"] = value.material_balance_inf;
     result["electroneutrality_inf"] = value.electroneutrality_inf;
     result["pressure_residual_inf"] = value.pressure_residual_inf;
@@ -694,6 +699,8 @@ py::dict solve_fixed_t_coexistence(
     const std::vector<std::string>& supports,
     std::size_t reference_phase_index,
     const std::vector<double>& reference_mole_fractions,
+    const std::vector<std::string>& reference_direction_identities,
+    const std::vector<std::vector<double>>& reference_composition_directions,
     const std::vector<std::size_t>& hint_indices,
     const std::vector<std::vector<double>>& hint_compositions,
     const std::vector<double>& hint_densities
@@ -719,6 +726,8 @@ py::dict solve_fixed_t_coexistence(
                 declared_phases,
                 reference_phase_index,
                 reference_mole_fractions,
+                reference_direction_identities,
+                reference_composition_directions,
                 phase_hints,
             }
         );
@@ -732,6 +741,9 @@ py::dict solve_fixed_t_coexistence(
     result["reference_phase_index"] = solved.reference_phase_index;
     result["pressure_pa"] = solved.pressure_pa;
     result["parameter_fingerprint"] = solved.parameter_fingerprint;
+    result["partner_parameter_fingerprint"] =
+        solved.partner_parameter_fingerprint;
+    result["partner_component_ids"] = solved.partner_component_ids;
     result["diagnostics"] = phase_diagnostics_to_dict(
         solved.diagnostics
     );
@@ -741,6 +753,14 @@ py::dict solve_fixed_t_coexistence(
         );
     } else {
         result["sensitivity"] = py::none();
+    }
+    if (solved.reference_direction_sensitivity.has_value()) {
+        result["reference_direction_sensitivity"] =
+            solved_sensitivity_to_dict(
+                *solved.reference_direction_sensitivity
+            );
+    } else {
+        result["reference_direction_sensitivity"] = py::none();
     }
     return result;
 }
@@ -914,6 +934,8 @@ PYBIND11_MODULE(_equilibrium, module) {
         py::arg("supports"),
         py::arg("reference_phase_index"),
         py::arg("reference_mole_fractions"),
+        py::arg("reference_direction_identities"),
+        py::arg("reference_composition_directions"),
         py::arg("hint_indices"),
         py::arg("hint_compositions"),
         py::arg("hint_densities_mol_m3")

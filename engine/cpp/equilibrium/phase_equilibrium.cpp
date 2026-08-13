@@ -573,9 +573,12 @@ const char* phase_role_name(PhaseRole role) noexcept {
 }
 
 const char* phase_support_name(PhaseSupport support) noexcept {
-    return support == PhaseSupport::AllComponents
-        ? "all_components"
-        : "neutral_components";
+    if (support == PhaseSupport::AllComponents) {
+        return "all_components";
+    }
+    return support == PhaseSupport::NeutralComponents
+        ? "neutral_components"
+        : "declared_neutral_components";
 }
 
 PhaseEquilibriumState audit_phase_state(

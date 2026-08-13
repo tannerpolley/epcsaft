@@ -900,8 +900,12 @@ NativeMixturePhaseBlock NativeModel::evaluate_parameterized_phase(
     detail::validate_mixture_phase_state(temperature, amounts, volume,
                                          parameters_);
   }
-  return evaluate_phase_derivatives(temperature, amounts, volume,
-                                    active_parameters, 2);
+  return active_parameters.empty()
+             ? evaluate_supported_phase_derivatives(
+                   temperature, amounts, volume, ion_mole_fraction_max,
+                   active_parameters)
+             : evaluate_phase_derivatives(temperature, amounts, volume,
+                                          active_parameters, 2);
 }
 
 // EqExclude: transport and buffer mechanics
@@ -969,6 +973,12 @@ NativeModel::molar_volume_bounds_parameters(
     double packing_fraction_min, double packing_fraction_max,
     double ion_mole_fraction_max,
     const std::vector<NativeActiveCoordinate> &active_parameters) const {
+  if (active_parameters.empty()) {
+    return {molar_volume_bounds(temperature, mole_fractions,
+                                packing_fraction_min, packing_fraction_max,
+                                ion_mole_fraction_max),
+            {}};
+  }
   const auto bounds = with_active_coordinates(active_parameters)
                           .molar_volume_bounds(temperature, mole_fractions,
                                                packing_fraction_min,

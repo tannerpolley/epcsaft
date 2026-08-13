@@ -2,7 +2,7 @@
 
 - Status: completed by Governance D-032; historical execution is tracked by GitHub root issue #10 and its native CAP subissues
 - Date: 2026-08-07
-- Doctrine: Governance revision 19, Numerical Verification-Driven Development
+- Doctrine: Governance revision 20, Numerical Verification-Driven Development
 - Scope: `engine/` EOS, Equilibrium, and Regression
 - Decision authority: ADR 0004 and the three owner plans linked below
 

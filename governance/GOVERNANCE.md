@@ -2,7 +2,7 @@
 
 Status: canonical
 
-Doctrine revision: 19
+Doctrine revision: 20
 
 Approved: 2026-08-13
 
@@ -131,6 +131,21 @@ nonreactive phase-equilibrium or coupled reactive-VLE observations, and does
 not authorize parameter promotion from diagnostic or manufactured evidence.
 The accepted receipt is
 `governance/receipts/cap-12-homogeneous-reactive-observation-admission.json`.
+
+D-035 admits the fixed-topology reactive bubble/VLE Observation Family
+implemented by issue #31. Equilibrium owns the coupled liquid-reaction,
+liquid-state, vapor-state, and bubble-pressure value problem; exact total
+Schur-complement derivatives; ordered neutral vapor support; immutable local
+branch and exact-trial receipts; certification; and typed Non-Evaluable Trial
+outcomes. The primary vapor path is a nonideal Provider EOS. An ideal-gas vapor
+is available only as an explicitly typed comparison model. Regression consumes
+the owner values and exact Jacobians through the existing
+`ParameterFit`/`FitResult` route. Admission is source-neutral and local: it
+makes no global-equilibrium or parameter-promotion claim, and it fails closed
+on unresolved branches, disappearing liquid support, no incipient vapor,
+Provider-domain rejection, or singular/ill-conditioned coupled sensitivity.
+The accepted receipt is
+`governance/receipts/cap-13-reactive-bubble-vle-admission.json`.
 
 D-032 completes the general scientific capability hard cutover. The accepted
 CAP-11 subject commit removes the superseded live permittivity design, the
@@ -525,6 +540,13 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 20 records the user-approved issue-#31 admission. D-035 admits the
+fixed-topology reactive bubble/VLE Observation Family, its nonideal Provider
+vapor path, exact total Schur Jacobian, local branch/support certification, and
+canonical Regression integration. It does not admit nonreactive
+phase-equilibrium observations or any global-equilibrium or parameter-promotion
+claim.
+
 Revision 19 records the user-approved issue-#30 admission. D-034 admits only
 the fixed-T,P homogeneous reactive Observation Family, its exact total
 Jacobian and typed local-branch contracts, and its canonical Regression fit
@@ -627,3 +649,4 @@ Historical plans and receipts retain their original names.
 | D-032 Complete the scientific capability hard cutover | Explicit user instruction on 2026-08-12 to apply the recommended CAP sequence through final closure | Accept CAP-11 subject `a8efa571d52c32f5a697f15dd7f4623b7e3613fd`, its bounded retirement scan, one-wheel verification, independent reviews, and final receipt; close CAP root #10 while leaving issues #6, #30, and #31 as detached post-cutover work | Removes the last superseded live design, executable Lab duplicate, split-header remnants, literal-component internal names, author-named live diagnostics, and dead legacy switches without deleting canonical HELD/HELD2 discovery or historical provenance | No | Engine and Management |
 | D-033 Build first and keep developer verification fast | Explicit user instruction on 2026-08-12 that the private in-development Engine must support rapid downstream iteration and that tests must not block wheel build/install | Build and install the sole wheel before tests; make `check-affected.sh` and `check-all.sh` latency-bounded installed-wheel gates with a warm target below ten seconds; keep slow Engine stress evidence, Validation campaigns/figures, full native analysis, and sanitizers behind explicit owner commands | Reduces the measured warm gate from 821.09 seconds to 8.96 seconds while retaining every slow scientific falsifier in its owner tier | No | Engine, Validation, and Management |
 | D-034 Admit homogeneous reactive observations | Explicit user instruction through issue #30 and the reviewed CAP-12 correction/admission gates on 2026-08-13 | Admit only the fixed-T,P homogeneous reactive Observation Family and its canonical Regression integration; require immutable role-certified continuation anchors, exact total Jacobians, closed typed failures, exact trial/branch receipts, and local/no-global semantics; retain phase-equilibrium and coupled reactive-VLE families as unadmitted | Enables the first source-neutral reactive regression tracer without weakening D-031's prohibition on variable-topology or insufficiently certified phase-equilibrium fitting | No | Engine, Validation, Regression, and Management |
+| D-035 Admit reactive bubble/VLE observations | Explicit user instruction through issue #31 and the reviewed CAP-13 correction/admission gates on 2026-08-13 | Admit only the fixed-topology reactive bubble/VLE Observation Family and its canonical Regression integration; require exact same-liquid-state binding, ordered neutral vapor support, nonideal Provider vapor as the primary path, exact total Schur derivatives, immutable local branch receipts, and typed fail-closed outcomes | Enables coupled pressure/speciation regression without weakening D-031's prohibition on unqualified variable-topology phase-equilibrium fitting or making a global-equilibrium claim | No | Engine, Validation, Regression, and Management |

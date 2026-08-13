@@ -84,7 +84,22 @@ class NeutralComponents:
     """Only the model's neutral components are present in this phase."""
 
 
-PhaseSupport = AllComponents | NeutralComponents
+@dataclass(frozen=True, slots=True)
+class DeclaredNeutralComponents:
+    """An ordered caller-declared nonempty subset of neutral model components."""
+
+    component_ids: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        component_ids = tuple(self.component_ids)
+        if not component_ids or any(not identity for identity in component_ids):
+            raise ValueError("declared neutral component support must be nonempty")
+        if len(set(component_ids)) != len(component_ids):
+            raise ValueError("declared neutral component support contains duplicates")
+        object.__setattr__(self, "component_ids", component_ids)
+
+
+PhaseSupport = AllComponents | NeutralComponents | DeclaredNeutralComponents
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,7 +177,9 @@ class EquilibriumPhaseState:
     """One intensive phase state on its declared component support."""
 
     role: PhaseRole
-    support: Literal["all_components", "neutral_components"]
+    support: Literal[
+        "all_components", "neutral_components", "declared_neutral_components"
+    ]
     supported_component_ids: tuple[str, ...]
     mole_fractions: tuple[float, ...]
     molar_volume_m3_per_mol: float
@@ -197,6 +214,8 @@ class PhaseEquilibriumDiagnostics:
     provider_evaluation_count: int
     hint_count: int
     hint_reordered_start_count: int
+    accepted_start_count: int
+    distinct_root_count: int
     material_balance_inf: float
     electroneutrality_inf: float
     pressure_residual_inf: float
@@ -225,6 +244,27 @@ class PhaseEquilibriumSensitivity:
     residual_parameter_jacobian: tuple[tuple[float, ...], ...]
     state_parameter_jacobian: tuple[tuple[float, ...], ...]
     output_parameter_jacobian: tuple[tuple[float, ...], ...]
+    rank: int
+    dimension: int
+    scaled_condition_number_2: float | None
+    linear_solve_backward_error: float | None
+    reference_phase_index: int
+
+
+@dataclass(frozen=True)
+class _ReferenceDirectionSensitivity:
+    """Exact coexistence response to admissible reference-composition directions."""
+
+    status: Literal["available", "unavailable"]
+    failure_reason: str | None
+    identities: tuple[str, ...]
+    residual_identities: tuple[str, ...]
+    state_identities: tuple[str, ...]
+    output_identities: tuple[str, ...]
+    residual_state_jacobian: tuple[tuple[float, ...], ...]
+    residual_direction_jacobian: tuple[tuple[float, ...], ...]
+    state_direction_jacobian: tuple[tuple[float, ...], ...]
+    output_direction_jacobian: tuple[tuple[float, ...], ...]
     rank: int
     dimension: int
     scaled_condition_number_2: float | None
@@ -1033,6 +1073,101 @@ def _phase_equilibrium_sensitivity(
     )
 
 
+def _reference_direction_sensitivity(
+    value: object,
+    identities: tuple[str, ...],
+) -> _ReferenceDirectionSensitivity:
+    if not isinstance(value, Mapping):
+        raise TypeError("native reference-direction sensitivity is missing")
+    status = str(value["status"])
+    if status not in {"available", "unavailable"}:
+        raise ValueError("native reference-direction sensitivity status is invalid")
+    unavailable = status == "unavailable"
+    failure = value["failure_reason"]
+    if (unavailable and not isinstance(failure, str)) or (
+        not unavailable and failure is not None
+    ):
+        raise ValueError("native reference-direction sensitivity failure state is invalid")
+    native_identities = tuple(
+        str(item) for item in cast(Sequence[object], value["parameter_identities"])
+    )
+    if native_identities != identities:
+        raise ValueError("native reference-direction identity or order changed")
+    dimension = int(cast(int, value["dimension"]))
+    direction_count = int(cast(int, value["parameter_count"]))
+    output_count = int(cast(int, value["output_count"]))
+    rank = int(cast(int, value["rank"]))
+    if direction_count != len(identities) or min(dimension, output_count, rank) < 0:
+        raise ValueError("native reference-direction sensitivity dimensions are invalid")
+    residual_identities = tuple(
+        str(item) for item in cast(Sequence[object], value["residual_identities"])
+    )
+    state_identities = tuple(
+        str(item) for item in cast(Sequence[object], value["state_identities"])
+    )
+    output_identities = tuple(
+        str(item) for item in cast(Sequence[object], value["output_identities"])
+    )
+    if len(residual_identities) != dimension or len(state_identities) != dimension:
+        raise ValueError("native reference-direction residual/state identities are incomplete")
+    if len(output_identities) != output_count:
+        raise ValueError("native reference-direction output identities are incomplete")
+    condition_value = value["scaled_condition_number_2"]
+    backward_value = value["linear_solve_backward_error"]
+    condition = None if condition_value is None else float(cast(float, condition_value))
+    backward = None if backward_value is None else float(cast(float, backward_value))
+    if not unavailable and (
+        rank != dimension
+        or condition is None
+        or not math.isfinite(condition)
+        or condition > 1.0e8
+        or backward is None
+        or not math.isfinite(backward)
+    ):
+        raise ValueError("native reference-direction linear solve is uncertified")
+    return _ReferenceDirectionSensitivity(
+        status=cast(Literal["available", "unavailable"], status),
+        failure_reason=None if failure is None else str(failure),
+        identities=identities,
+        residual_identities=residual_identities,
+        state_identities=state_identities,
+        output_identities=output_identities,
+        residual_state_jacobian=_row_major_matrix(
+            value["residual_state_jacobian"],
+            dimension,
+            dimension,
+            "reference-direction residual-state Jacobian",
+            unavailable=unavailable,
+        ),
+        residual_direction_jacobian=_row_major_matrix(
+            value["residual_parameter_jacobian"],
+            dimension,
+            direction_count,
+            "reference-direction residual-direction Jacobian",
+            unavailable=unavailable,
+        ),
+        state_direction_jacobian=_row_major_matrix(
+            value["state_parameter_jacobian"],
+            dimension,
+            direction_count,
+            "reference-direction state-direction Jacobian",
+            unavailable=unavailable,
+        ),
+        output_direction_jacobian=_row_major_matrix(
+            value["output_parameter_jacobian"],
+            output_count,
+            direction_count,
+            "reference-direction output-direction Jacobian",
+            unavailable=unavailable,
+        ),
+        rank=rank,
+        dimension=dimension,
+        scaled_condition_number_2=condition,
+        linear_solve_backward_error=backward,
+        reference_phase_index=int(cast(int, value["reference_phase_index"])),
+    )
+
+
 def _held_discovery(
     model: epcsaft.Mixture,
     temperature_k: float,
@@ -1153,6 +1288,8 @@ def _native_phase_diagnostics(
         provider_evaluation_count=int(cast(int, payload["provider_evaluation_count"])),
         hint_count=int(cast(int, payload["hint_count"])),
         hint_reordered_start_count=int(cast(int, payload["hint_reordered_start_count"])),
+        accepted_start_count=int(cast(int, payload["accepted_start_count"])),
+        distinct_root_count=int(cast(int, payload["distinct_root_count"])),
         material_balance_inf=float(cast(float, payload["material_balance_inf"])),
         electroneutrality_inf=float(cast(float, payload["electroneutrality_inf"])),
         pressure_residual_inf=float(cast(float, payload["pressure_residual_inf"])),
@@ -1172,6 +1309,7 @@ def _native_equilibrium_phase(payload: Mapping[str, object]) -> EquilibriumPhase
     if role not in {"liquid", "vapor"} or support not in {
         "all_components",
         "neutral_components",
+        "declared_neutral_components",
     }:
         raise ValueError("native phase identity is invalid")
     component_ids = tuple(
@@ -1182,7 +1320,12 @@ def _native_equilibrium_phase(payload: Mapping[str, object]) -> EquilibriumPhase
     )
     return EquilibriumPhaseState(
         role=cast(PhaseRole, role),
-        support=cast(Literal["all_components", "neutral_components"], support),
+        support=cast(
+            Literal[
+                "all_components", "neutral_components", "declared_neutral_components"
+            ],
+            support,
+        ),
         supported_component_ids=component_ids,
         mole_fractions=_vector(payload["mole_fractions"], len(component_ids), "phase composition"),
         molar_volume_m3_per_mol=float(cast(float, payload["molar_volume_m3_per_mol"])),
@@ -1204,7 +1347,11 @@ def _phase_support_name(support: PhaseSupport) -> str:
         return "all_components"
     if type(support) is NeutralComponents:
         return "neutral_components"
-    raise TypeError("phase support must be AllComponents or NeutralComponents")
+    if type(support) is DeclaredNeutralComponents:
+        return "declared_neutral_components"
+    raise TypeError(
+        "phase support must be AllComponents, NeutralComponents, or DeclaredNeutralComponents"
+    )
 
 
 def _support_active_parameters(
@@ -1328,6 +1475,8 @@ def _protected_discovery_diagnostics(
         provider_evaluation_count=retained.provider_evaluation_count,
         hint_count=hint_count,
         hint_reordered_start_count=0,
+        accepted_start_count=0,
+        distinct_root_count=0,
         material_balance_inf=retained.material_balance_max_abs or 0.0,
         electroneutrality_inf=(
             retained.electroneutrality_inf or 0.0 if isinstance(retained, Held2Diagnostics) else 0.0
@@ -1577,11 +1726,72 @@ def phase_equilibrium(
         )
     if not isinstance(specification, FixedTCoexistence):
         raise TypeError("phase-equilibrium specification type is unsupported")
-    if not isinstance(specification.topology, DeclaredTopology):
-        raise TypeError("fixed-T coexistence topology must be DeclaredTopology")
+    result, directions, _, _ = _fixed_t_coexistence_core(
+        model,
+        problem,
+        active_parameters=active_parameters,
+        direction_identities=(),
+        reference_composition_directions=(),
+    )
+    if directions is not None:
+        raise ValueError("public coexistence unexpectedly returned direction sensitivities")
+    return result
+
+
+def _fixed_t_coexistence_with_reference_directions(
+    model: epcsaft.Mixture,
+    problem: PhaseEquilibriumProblem,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+    direction_identities: tuple[str, ...],
+    reference_composition_directions: tuple[tuple[float, ...], ...],
+) -> tuple[
+    PhaseEquilibriumResult,
+    _ReferenceDirectionSensitivity,
+    str,
+    tuple[str, ...],
+]:
+    """Solve coexistence and differentiate exact admissible liquid-composition directions."""
+
+    result, directions, partner_fingerprint, partner_ids = _fixed_t_coexistence_core(
+        model,
+        problem,
+        active_parameters=active_parameters,
+        direction_identities=direction_identities,
+        reference_composition_directions=reference_composition_directions,
+    )
+    if directions is None:
+        raise TypeError("reference-direction coexistence returned no direction sensitivity")
+    return result, directions, partner_fingerprint, partner_ids
+
+
+def _fixed_t_coexistence_core(
+    model: epcsaft.Mixture,
+    problem: PhaseEquilibriumProblem,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+    direction_identities: tuple[str, ...],
+    reference_composition_directions: tuple[tuple[float, ...], ...],
+) -> tuple[
+    PhaseEquilibriumResult,
+    _ReferenceDirectionSensitivity | None,
+    str,
+    tuple[str, ...],
+]:
+    """One fixed-T setup/result boundary with optional exact composition directions."""
+
+    if not isinstance(model, epcsaft.Mixture):
+        raise TypeError("reference-direction coexistence requires an epcsaft.Mixture")
+    if type(problem) is not PhaseEquilibriumProblem or not isinstance(
+        problem.specification, FixedTCoexistence
+    ):
+        raise TypeError("reference-direction solve requires FixedTCoexistence")
+    specification = problem.specification
     topology = specification.topology
     if len(topology.phases) != 2 or specification.reference_phase_index not in {0, 1}:
         raise ValueError("fixed-T coexistence requires exactly two phases and one reference index")
+    if len(direction_identities) != len(reference_composition_directions):
+        raise ValueError("reference-direction identities and rows must be aligned")
     temperature_k = _quantity(
         specification.temperature, "kelvin", "temperature", "phase_equilibrium"
     )
@@ -1593,19 +1803,23 @@ def phase_equilibrium(
         raise ValueError("coexistence reference phase must use AllComponents")
     partner_index = 1 - specification.reference_phase_index
     partner_support = topology.phases[partner_index].support
-    if type(partner_support) is NeutralComponents:
+    if type(partner_support) in {NeutralComponents, DeclaredNeutralComponents}:
         charges = tuple(model._model.charge_number)
-        neutral_ids = tuple(
-            component
-            for component, charge in zip(model.component_ids, charges, strict=True)
+        all_neutral_ids = tuple(
+            component for component, charge in zip(model.component_ids, charges, strict=True)
             if charge == 0
         )
-        if not neutral_ids:
-            raise ValueError("neutral-component vapor support is empty")
-        partner_parameters = model._parameters.select(neutral_ids)
+        partner_ids = (
+            all_neutral_ids
+            if type(partner_support) is NeutralComponents
+            else cast(DeclaredNeutralComponents, partner_support).component_ids
+        )
+        if not partner_ids or any(component not in all_neutral_ids for component in partner_ids):
+            raise ValueError("declared vapor support contains a charged or unknown component")
+        partner_parameters = model._parameters.select(partner_ids)
         partner_model: epcsaft.Pure | epcsaft.Mixture = (
             epcsaft.Pure(partner_parameters)
-            if len(neutral_ids) == 1
+            if len(partner_ids) == 1
             else epcsaft.Mixture(partner_parameters)
         )
     elif type(partner_support) is AllComponents:
@@ -1635,12 +1849,18 @@ def phase_equilibrium(
             tuple(_phase_support_name(phase.support) for phase in topology.phases),
             specification.reference_phase_index,
             reference,
+            direction_identities,
+            reference_composition_directions,
             *hints,
         ),
     )
     diagnostics = _native_phase_diagnostics(cast(Mapping[str, object], native["diagnostics"]))
     if str(native["parameter_fingerprint"]) != model.parameter_fingerprint:
-        raise ValueError("native coexistence result has the wrong parameter fingerprint")
+        raise ValueError("native coexistence result has the wrong reference fingerprint")
+    if str(native["partner_parameter_fingerprint"]) != partner_model.parameter_fingerprint:
+        raise ValueError("native coexistence result has the wrong partner fingerprint")
+    if tuple(cast(Sequence[str], native["partner_component_ids"])) != partner_model.component_ids:
+        raise ValueError("native coexistence result changed ordered partner support")
     native_phases = tuple(
         _native_equilibrium_phase(cast(Mapping[str, object], value))
         for value in cast(Sequence[object], native["phases"])
@@ -1651,7 +1871,7 @@ def phase_equilibrium(
             diagnostics,
             native_phases,
         )
-    return PhaseEquilibriumResult(
+    result = PhaseEquilibriumResult(
         problem=problem,
         phases=native_phases,
         extent=IncipientBoundary(
@@ -1666,6 +1886,14 @@ def phase_equilibrium(
             else _phase_equilibrium_sensitivity(native.get("sensitivity"), active_parameters)
         ),
     )
+    directions = (
+        None
+        if not direction_identities
+        else _reference_direction_sensitivity(
+            native.get("reference_direction_sensitivity"), direction_identities
+        )
+    )
+    return result, directions, partner_model.parameter_fingerprint, partner_model.component_ids
 
 
 def _empty_chemical_search(status: str = "not_evaluated") -> ChemicalEquilibriumSearch:

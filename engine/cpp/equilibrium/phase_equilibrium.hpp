@@ -18,6 +18,7 @@ enum class PhaseRole {
 enum class PhaseSupport {
     AllComponents,
     NeutralComponents,
+    DeclaredNeutralComponents,
 };
 
 struct DeclaredPhaseSpecification {
@@ -44,6 +45,8 @@ struct FixedTCoexistenceProblem {
     std::vector<DeclaredPhaseSpecification> phases;
     std::size_t reference_phase_index = 0;
     std::vector<double> reference_mole_fractions;
+    std::vector<std::string> reference_direction_identities;
+    std::vector<std::vector<double>> reference_composition_directions;
     std::vector<PhaseHint> hints;
 };
 
@@ -81,6 +84,8 @@ struct PhaseEquilibriumDiagnostics {
     int provider_evaluation_count = 0;
     int hint_count = 0;
     int hint_reordered_start_count = 0;
+    int accepted_start_count = 0;
+    int distinct_root_count = 0;
     double material_balance_inf = 0.0;
     double electroneutrality_inf = 0.0;
     double pressure_residual_inf = 0.0;
@@ -106,8 +111,11 @@ struct FixedTCoexistenceResult {
     std::size_t reference_phase_index = 0;
     double pressure_pa = 0.0;
     std::string parameter_fingerprint;
+    std::string partner_parameter_fingerprint;
+    std::vector<std::string> partner_component_ids;
     PhaseEquilibriumDiagnostics diagnostics;
     std::optional<SolvedStateSensitivity> sensitivity;
+    std::optional<SolvedStateSensitivity> reference_direction_sensitivity;
 };
 
 [[nodiscard]] std::vector<std::string> phase_provider_component_ids(

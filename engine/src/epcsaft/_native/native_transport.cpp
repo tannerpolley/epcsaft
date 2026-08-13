@@ -302,7 +302,6 @@ struct NativeTransportEndpoint final {
                   ? &NativeTransportEndpoint::evaluate_packing_fraction
                   : nullptr,
               phase_callbacks_admitted
-                      && !active_coordinates.empty()
                       && !topology_fingerprint.empty()
                   ? &NativeTransportEndpoint::evaluate_parameterized_phase
                   : nullptr,
@@ -507,7 +506,6 @@ struct NativeTransportEndpoint final {
             *static_cast<const NativeTransportEndpoint*>(context);
         const std::size_t request_count = endpoint.active_coordinates.size();
         if (!endpoint.phase_callbacks_admitted
-            || endpoint.active_coordinates.empty()
             || endpoint.topology_fingerprint.empty()) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL,
@@ -541,16 +539,19 @@ struct NativeTransportEndpoint final {
                 != endpoint.component_ids.size() * request_count
             || result->state_gradient == nullptr
             || result->state_hessian == nullptr
-            || result->parameter_gradient == nullptr
-            || result->state_parameter_derivatives == nullptr
-            || result->packing_parameter_derivatives == nullptr
+            || (request_count != 0 && result->parameter_gradient == nullptr)
+            || (request_count != 0 && result->state_parameter_derivatives == nullptr)
+            || (request_count != 0 && result->packing_parameter_derivatives == nullptr)
             || result->packing_state_gradient == nullptr
             || result->packing_state_hessian == nullptr
-            || result->molar_volume_bound_parameter_derivatives_m3_per_mol
-                == nullptr
-            || result->pressure_parameter_derivatives_pa == nullptr
-            || result->chemical_potential_parameter_derivatives_over_rt
-                == nullptr) {
+            || (request_count != 0
+                && result->molar_volume_bound_parameter_derivatives_m3_per_mol
+                    == nullptr)
+            || (request_count != 0
+                && result->pressure_parameter_derivatives_pa == nullptr)
+            || (request_count != 0
+                && result->chemical_potential_parameter_derivatives_over_rt
+                    == nullptr)) {
             return fail(
                 EPCSAFT_NATIVE_STATUS_BUFFER_ERROR,
                 "parameterized phase buffers do not match immutable dimensions"

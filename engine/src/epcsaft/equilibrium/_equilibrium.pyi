@@ -42,6 +42,8 @@ def _solve_fixed_t_coexistence(
     supports: tuple[str, ...],
     reference_phase_index: int,
     reference_mole_fractions: tuple[float, ...],
+    reference_direction_identities: tuple[str, ...],
+    reference_composition_directions: tuple[tuple[float, ...], ...],
     hint_indices: tuple[int, ...],
     hint_compositions: tuple[tuple[float, ...], ...],
     hint_densities_mol_m3: tuple[float, ...],

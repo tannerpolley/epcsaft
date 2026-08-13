@@ -99,6 +99,35 @@ def _assert_provider_matches_direct_partials(
     )
 
 
+def test_provider_zero_coordinate_state_hessian_matches_value_owner() -> None:
+    """Falsify a dummy-coordinate requirement in exact value/state derivatives."""
+
+    model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE))
+    amounts = (0.70, 0.20, 0.05, 0.05)
+    volume = math.fsum(amounts) / 2000.0
+    provider = _equilibrium.evaluate_parameterized_phase(
+        _native_transport(model), 313.15, amounts, volume, 1.0e-8, 0.74
+    )
+    state = model._state(
+        T=313.15 * epcsaft.unit_registry.kelvin,
+        rho=2000.0 * epcsaft.unit_registry.mole / epcsaft.unit_registry.meter**3,
+        x=amounts,
+    )
+    gradient = tuple(float(value) for value in cast(Sequence[object], provider["state_gradient"]))
+    hessian = tuple(float(value) for value in cast(Sequence[object], provider["state_hessian"]))
+    expected_mu = tuple(
+        math.log(amount / volume) + residual
+        for amount, residual in zip(amounts, state.residual_chemical_potential_over_rt, strict=True)
+    )
+    assert tuple(cast(Sequence[object], provider["active_parameter_identities"])) == ()
+    assert gradient[: len(amounts)] == pytest.approx(expected_mu, rel=2.0e-12, abs=2.0e-12)
+    assert float(provider["pressure_pa"]) == pytest.approx(
+        float(state.pressure.to("pascal").magnitude), rel=2.0e-12, abs=2.0e-8
+    )
+    assert len(hessian) == (len(amounts) + 1) ** 2
+    assert all(math.isfinite(value) for value in hessian)
+
+
 def test_provider_preserves_reordered_mixed_active_parameter_partials() -> None:
     """Falsify identity loss or family filtering at the EOS/Equilibrium seam."""
 
