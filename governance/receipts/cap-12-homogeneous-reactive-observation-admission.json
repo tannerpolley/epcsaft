@@ -1,0 +1,146 @@
+{
+  "envelope": {
+    "schema": {
+      "path": "manifests/operation-receipt-envelope-v1.json",
+      "version": 1,
+      "sha256": "7cc1cbf4b92aaa54a4f7856bab5de4f1d8d2855c63566e5ecfe9660fb6f2061e"
+    },
+    "sequence": 10,
+    "subject": {
+      "operation": "cap-12-homogeneous-reactive-observation-admission",
+      "repository": "tannerpolley/ePC-SAFT",
+      "issue": 30,
+      "decision": "governance_D-034",
+      "doctrine_revision": 19,
+      "phase": "completed-admission",
+      "engine_commit": "41971bbbaf8b1dc482360377ed36d2547e13131e",
+      "engine_tree": "5a2b0bae59dc602317b1810294007619f2c934eb",
+      "evidence_commit": "5444abedb69a1d26331f574acd286d9d3c258ceb",
+      "evidence_tree": "92d10b7ce8b69fef67ae64980957bf42caa38357",
+      "wheel_sha256": "9b768bb769464cdb98efbc94b4bd2c5b1b2ced65fa82c97bd737d7b0f3cf31cf",
+      "tracer_sha256": "2d885b972ee9a80da3019ea792e23ad4224aba9af842fcf4ae48f7f87e5da6eb",
+      "record_sha256": "bbfb09c3f53cc4b56c999df2eb0be5671114470b4b21488072b8ceac5bcec497"
+    },
+    "subject_sha256": "125bf21a5e8cfecc675644d662c9dba7a7d38714724c73eb08950f5d489ae6e8",
+    "validator": {
+      "repository": "tannerpolley/ePC-SAFT",
+      "commit": "5444abedb69a1d26331f574acd286d9d3c258ceb",
+      "path": "validation/campaigns/2026-homogeneous-reactive-observation-tracer/scripts/run_tracer.py",
+      "sha256": "ee9875895652241dc51f8d852b6c8df3d597f96e30ec998aa7bfb17fd50f27e4"
+    },
+    "command": "PYTHONPATH= .venv/bin/python validation/campaigns/2026-homogeneous-reactive-observation-tracer/scripts/run_tracer.py",
+    "environment": {
+      "captured_at": "2026-08-13T01:19:28-06:00",
+      "timezone": "America/Denver",
+      "platform": "linux-x86_64",
+      "python": "3.13",
+      "package_source": "single non-editable installed wheel",
+      "ci": "none; local owner validation"
+    },
+    "artifacts": [
+      {
+        "kind": "engine-wheel",
+        "path": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+        "sha256": "9b768bb769464cdb98efbc94b4bd2c5b1b2ced65fa82c97bd737d7b0f3cf31cf"
+      },
+      {
+        "kind": "installed-reactive-observation-tracer-receipt",
+        "path": "validation/reports/receipts/homogeneous-reactive-observation-tracer.json",
+        "sha256": "2d885b972ee9a80da3019ea792e23ad4224aba9af842fcf4ae48f7f87e5da6eb"
+      }
+    ],
+    "producer": {
+      "kind": "codex-task",
+      "id": "019ff855-d17d-7d52-8f8c-445711013d7b"
+    },
+    "reviewer": {
+      "kind": "read-only-review-task",
+      "id": "019fdeb0-c2fc-7cc1-8d5e-1ba8166126ac",
+      "outcome": "course-corrections-satisfied-by-installed-evidence"
+    },
+    "failed_outcomes": [],
+    "supersedes": null,
+    "revoked_by": null,
+    "user_approval": {
+      "source": "explicit Codex task instruction through issue #30 and guarded course-correction/admission gates on 2026-08-13",
+      "subject_sha256": "125bf21a5e8cfecc675644d662c9dba7a7d38714724c73eb08950f5d489ae6e8"
+    }
+  },
+  "record": {
+    "status": "completed",
+    "observations": [
+      {
+        "name": "immutable_engine_artifact",
+        "expected": "One clean committed Engine tree produces and supplies the installed CAP-12 wheel.",
+        "observed": "Commit 41971bbbaf8b1dc482360377ed36d2547e13131e, tree 5a2b0bae59dc602317b1810294007619f2c934eb, produced epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl with SHA-256 9b768bb769464cdb98efbc94b4bd2c5b1b2ced65fa82c97bd737d7b0f3cf31cf and public-signature identity sha256:85e9649bf699003044cbaca345b28d5d2e0c077e7656bbb2fd5ee72e4aa41bbd.",
+        "source_cache_sha256": "5e2ec4d861d65f563d803831ef0dc8abc2f6d19dbd66d61af40a4a2846e21ddc",
+        "outcome": "pass"
+      },
+      {
+        "name": "source_and_warm_installed_gates",
+        "expected": "Source-only readiness is green and the complete warm installed-wheel gate remains below ten seconds.",
+        "observed": "Source-only affected checks passed in 0.33 s. The warm installed gate passed in 7.69 s: EOS 58, Equilibrium 48 with 16 slow exclusions, Regression 3, and Validation 4 with 12 slow exclusions.",
+        "outcome": "pass"
+      },
+      {
+        "name": "slow_numerical_falsifiers",
+        "expected": "Exact-state fugacity, source-reference derivatives, total observation Jacobians, branch purity, covariance semantics, typed failures, mixed-start accounting, and the admitted CAP-09 multiroot contract pass from the installed wheel.",
+        "observed": "Seven installed scientific tests passed with seven non-target tests deselected in 119.96 s; the CAP-09 multiroot falsifier passed in 8.86 s. The representative reactive fit took 46.19 s and each accepted exact-state Provider callback required one Provider evaluation.",
+        "outcome": "pass"
+      },
+      {
+        "name": "installed_source_neutral_tracer",
+        "expected": "A source-neutral public-API tracer uses real reusable inputs, validates the opaque owner receipt, and independently checks the exact total Jacobian.",
+        "observed": "The Held-2008/IAPWS tracer completed in 6.69 s, retained receipt SHA-256 2d885b972ee9a80da3019ea792e23ad4224aba9af842fcf4ae48f7f87e5da6eb and owner-receipt identity sha256:90f89bfeb100566187d475608bd65f1e9d37e5e90b24be1b255bedf31f98bf78, and had maximum scaled central-difference discrepancy 2.4373233680770526e-10.",
+        "input_parameter_sha256": "9af36562ce26cc8216e5dc128c96e10d83a03e7a1e26cc76d895c9bdee954e84",
+        "input_reaction_source_sha256": "61c2b39566fa5b25e43102b6ad3938e7bf1231900730db0b86bc6d126026fe87",
+        "outcome": "pass"
+      },
+      {
+        "name": "narrow_scientific_scope",
+        "expected": "Admission is limited to fixed-T,P homogeneous reactive observations on an immutable reference-anchored certified local state without a global-equilibrium claim.",
+        "observed": "Equilibrium owns the typed descriptors, values, exact total derivatives, local branch/state/search/phase receipts, source-reference derivative transfer, and canonical opaque receipt validation. Regression consumes those values and Jacobians through ParameterFit/FitResult/fit, owns residual and optimization policy, and does not promote parameters from diagnostic evidence.",
+        "branch_policy": "immutable_reference_anchored_certified_local_state",
+        "globality_claim": "not_established",
+        "failure_vocabulary": "epcsaft.NON_EVALUABLE_TRIAL_CODES",
+        "outcome": "pass"
+      },
+      {
+        "name": "explicit_exclusions",
+        "expected": "CAP-12 does not silently claim coupled VLE, globality, reaction-correlation regression, application-specific behavior, or production finite-difference Jacobians.",
+        "observed": [
+          "nonreactive_phase_equilibrium_observations",
+          "coupled_reactive_vle_observations",
+          "global_equilibrium_claim",
+          "reaction_correlation_fitting",
+          "application_specific_runtime_branches",
+          "finite_difference_production_jacobians"
+        ],
+        "outcome": "pass"
+      }
+    ],
+    "preconditions": [
+      "The exact Engine source and evidence commits remain reachable and unchanged.",
+      "The installed distribution originates only from the recorded non-editable wheel.",
+      "All active coordinates and every admitted row pass derivative and owner-contract preflight.",
+      "The continuation reference is immutable and branch selection remains pure across optimizer evaluation order."
+    ],
+    "expected_postconditions": [
+      "Governance decision D-034 admits only the CAP-12 homogeneous reactive observation family.",
+      "Issue #31 builds on the admitted phase, parameter-receipt, branch, failure, and covariance contracts.",
+      "Downstream applications consume a later committed Engine wheel without source-checkout imports.",
+      "Parameter promotion remains subject to independent rank, validation, branch, and physical certification gates."
+    ],
+    "retry": "Repeat only from an unchanged committed Engine tree and compare wheel, public-signature, input, split, and receipt hashes; any changed subject requires a new receipt and admission review.",
+    "stop_conditions": [
+      "Any admitted row becomes non-evaluable or receives a fabricated numeric penalty.",
+      "Exact total derivatives fail the independent numerical tolerance.",
+      "Continuation becomes evaluation-order dependent or an alternative certified state makes branch selection ambiguous.",
+      "The installed module origin resolves outside site-packages or the wheel hash changes.",
+      "A result implies global phase stability or equilibrium without a supporting globality procedure."
+    ],
+    "reversibility": "D-034 can be superseded by a new doctrine revision and receipt; the private source commits, wheel, and retained tracer remain immutable evidence.",
+    "irreversible_effects": "None. No public release, external data mutation, or downstream parameter promotion is performed by this admission.",
+    "recovery_owner": "The unified Engine owner must fail closed, supersede D-034 with hash-bound corrective evidence, and prevent CAP-13 or downstream use until the corrected installed artifact passes the same gates."
+  }
+}

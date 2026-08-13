@@ -6,16 +6,17 @@ do not replace current issue state.
 
 ## Completed CAP program
 
-Root issue #10 and CAP-01 through CAP-11 are complete under Governance D-030,
-D-031, D-032, and D-033. `phase_equilibrium` is the sole public nonreactive
-route; omitted fixed-T,P topology uses the retained internal HELD/HELD2
-discovery algorithm. Regression remains EOS-only because D-031 defers all
-current Equilibrium Observation Families.
+Root issue #10 and CAP-01 through CAP-11 are complete under Governance D-030
+through D-033. `phase_equilibrium` is the sole public nonreactive route;
+omitted fixed-T,P topology uses the retained internal HELD/HELD2 discovery
+algorithm. D-034 admits only the issue-#30 fixed-T,P homogeneous reactive
+Observation Family into Regression. Nonreactive phase-equilibrium and coupled
+reactive-VLE Observation Families remain unadmitted.
 
 Historical CAP plans, receipts, results, reviews, and source identities remain
 provenance. They are not a live execution queue. Issue #6 is a separate
-post-cutover Validation campaign; issues #30 and #31 are detached
-post-cutover reactive-observation follow-ons.
+post-cutover Validation campaign; issue #31 is the coupled reactive-VLE
+follow-on to admitted issue #30.
 
 ## Private development feedback
 

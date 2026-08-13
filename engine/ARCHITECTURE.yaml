@@ -1,6 +1,6 @@
-version: 6
+version: 7
 status: unified-monorepo-active
-governance_doctrine_revision: 18
+governance_doctrine_revision: 19
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -56,6 +56,14 @@ owners:
     declared_topology_fallback: forbidden
     active_parameters: epcsaft.ActiveParameterSet
     solved_state_sensitivity: exact_implicit_from_eos_partials
+    homogeneous_reactive_observations:
+      descriptor: epcsaft.equilibrium.HomogeneousReactiveObservationDescriptor
+      evaluator: epcsaft.equilibrium.evaluate_homogeneous_reactive_observations
+      continuation_anchor: epcsaft.equilibrium.certify_homogeneous_continuation_reference
+      branch_policy: immutable_reference_anchored_certified_local_state
+      globality_claim: not_established
+      admission_decision: governance_D-034
+      admission_receipt: ../governance/receipts/cap-12-homogeneous-reactive-observation-admission.json
   regression:
     public_module: epcsaft.regression
     parameter_fit: epcsaft.regression.ParameterFit
@@ -66,9 +74,9 @@ owners:
     native_fit: src/epcsaft/regression/native/fit.cpp
     native_sources: src/epcsaft/regression/native
     scientific_values: owner_provided_only
-    current_observation_boundary: [eos_fixed_state, eos_pure_saturation]
-    equilibrium_observation_admission: deferred_by_governance_D-031
-    equilibrium_observation_families: []
+    current_observation_boundary: [eos_fixed_state, eos_pure_saturation, equilibrium_homogeneous_reactive]
+    equilibrium_observation_admission: homogeneous_reactive_only_by_governance_D-034
+    equilibrium_observation_families: [homogeneous_reactive]
   native_transport:
     implementation: src/epcsaft/_native
     public_cpp_abi: forbidden
