@@ -188,7 +188,9 @@ class _OwnerEvaluator:
             return self._rejected("parameter_topology_mismatch", str(exc))
         if block.status.status != "accepted":
             return self._rejected(
-                "observation_out_of_support",
+                "physical_rejection"
+                if block.status.scope in {"shared-solve", "branch"}
+                else "observation_out_of_support",
                 block.status.reason,
             )
         if block.descriptor.active_parameter_identities != self._selected_identities:

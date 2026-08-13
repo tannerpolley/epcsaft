@@ -347,16 +347,27 @@ def test_tied_owner_coordinate_reports_interior_covariance_and_active_bound(
     steps = (1.0e-5, 1.0e-3)
     columns: list[tuple[float, ...]] = []
     for values, step in zip(coordinate_values, steps, strict=True):
+        baseline = {
+            pair_beta_gamma: point[0],
+            pair_alpha_beta: point[0],
+            gamma_energy: point[1],
+        }
         below = _complete_residuals(
             input_parameters,
             states,
-            {identity: value - step for identity, value in values.items()},
+            {
+                **baseline,
+                **{identity: value - step for identity, value in values.items()},
+            },
             residual="scaled_difference",
         )
         above = _complete_residuals(
             input_parameters,
             states,
-            {identity: value + step for identity, value in values.items()},
+            {
+                **baseline,
+                **{identity: value + step for identity, value in values.items()},
+            },
             residual="scaled_difference",
         )
         columns.append(
