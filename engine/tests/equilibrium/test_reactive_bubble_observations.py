@@ -70,9 +70,7 @@ def _multireaction_fixture() -> tuple[
     isomer = deepcopy(components["cosolvent"])
     isomer["component_id"] = "isomer"
     for coefficient in isomer["coefficients"]:
-        coefficient["identity"] = coefficient["identity"].replace(
-            "/cosolvent/", "/isomer/"
-        )
+        coefficient["identity"] = coefficient["identity"].replace("/cosolvent/", "/isomer/")
     provenance = deepcopy(components["solvent"]["fixed"]["molar_mass"]["provenance"])
     for other in ("solvent", "cosolvent", "cation", "anion"):
         left, right = sorted(("isomer", other))
@@ -94,12 +92,12 @@ def _multireaction_fixture() -> tuple[
         if correlation["component_id"] == "cosolvent":
             isomer_correlation = deepcopy(correlation)
             isomer_correlation["component_id"] = "isomer"
-            isomer_correlation["correlation_id"] = isomer_correlation[
-                "correlation_id"
+            isomer_correlation["correlation_id"] = isomer_correlation["correlation_id"].replace(
+                "/cosolvent/", "/isomer/"
+            )
+            isomer_correlation["constant"]["identity"] = isomer_correlation["constant"][
+                "identity"
             ].replace("/cosolvent/", "/isomer/")
-            isomer_correlation["constant"]["identity"] = isomer_correlation[
-                "constant"
-            ]["identity"].replace("/cosolvent/", "/isomer/")
             mapping["correlations"].append(isomer_correlation)
     components["isomer"] = isomer
     component_ids = ("solvent", "cosolvent", "isomer", "cation", "anion")
@@ -213,7 +211,10 @@ def test_nonideal_reactive_bubble_total_jacobian_and_measurement_semantics() -> 
     assert result.certification.globality_claim == "not_established"
     assert result.physical_branch.globality_claim == "not_established"
     assert result.search.distinct_branch_count == 1
-    assert result.search.accepted_candidate_count == len(problem.pressure_starts_pa) + 2
+    assert result.search.accepted_candidate_count == len(problem.pressure_starts_pa)
+    assert tuple(attempt.start_pressure_pa for attempt in result.search.attempts) == (
+        problem.pressure_starts_pa
+    )
     assert result.phases[1].support == "declared_neutral_components"
     assert result.phases[1].supported_component_ids == problem.vapor_component_ids
     assert result.liquid_state is not None
@@ -247,7 +248,10 @@ def test_nonideal_reactive_bubble_total_jacobian_and_measurement_semantics() -> 
     )
 
     value = active.values[0]
-    step = 1.0e-3
+    # The bubble root is certified to an absolute reduced-potential residual.
+    # A 1e-2 K parameter step keeps root stopping error below the derivative
+    # comparison while remaining a 3e-5 relative perturbation here.
+    step = 1.0e-2
     resolved = []
     for sign in (-1.0, 1.0):
         trial = epcsaft.ActiveParameterSet(parameters, (identity,), values=(value + sign * step,))
