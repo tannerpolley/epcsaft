@@ -459,6 +459,34 @@ def test_declared_multisolvent_multiion_roles_select_distinct_stable_roots() -> 
     )
 
 
+@pytest.mark.slow
+def test_declared_one_phase_role_preserves_positive_trace_ions() -> None:
+    """Falsify replacing an exact trace composition by the finite-search floor."""
+
+    model = Mixture(Parameters.from_mapping(MULTISOLVENT_MULTIION))
+    trace = 5.0e-12
+    feed = (0.60, 0.37 - 2.0 * trace, trace, trace, 0.01, 0.02)
+    result = phase_equilibrium(
+        model,
+        PhaseEquilibriumProblem(
+            FixedTPFeed(
+                298.15 * u.kelvin,
+                _PRESSURE,
+                feed,
+                DeclaredTopology(
+                    (PhaseSpecification("liquid", AllComponents()),)
+                ),
+            )
+        ),
+    )
+
+    assert result.diagnostics.physical_status == "accepted"
+    assert result.phases[0].mechanical_class == "strict_stable"
+    assert result.phases[0].mole_fractions == pytest.approx(feed, abs=2.0e-15)
+    assert result.phases[0].mole_fractions[2] < 1.0e-10
+    assert result.phases[0].mole_fractions[3] < 1.0e-10
+
+
 def test_coexistence_structurally_excludes_ions_but_keeps_every_neutral() -> None:
     """Falsify a water-specific or epsilon-ion vapor support implementation.
 

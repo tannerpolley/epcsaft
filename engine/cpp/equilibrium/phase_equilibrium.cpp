@@ -61,11 +61,13 @@ public:
     HeldLocalAccess(
         const ProviderContext& provider,
         double temperature,
-        double pressure
+        double pressure,
+        Held2CompositionDomain domain = Held2CompositionDomain::FiniteSearch
     )
         : provider_(provider),
           temperature_(temperature),
           pressure_(pressure),
+          domain_(domain),
           charges_(phase_provider_component_charges(provider)),
           coordinates_(make_held2_coordinates(
               charges_, phase_provider_component_ids(provider)
@@ -80,7 +82,7 @@ public:
         double log_volume
     ) const {
         const auto physical = held2_lift_independent_fractions(
-            coordinates_, composition
+            coordinates_, composition, domain_
         );
         const auto phase = evaluate_nonreactive_phase(
             provider_, charges_, temperature_, physical, std::exp(log_volume)
@@ -91,7 +93,8 @@ public:
             log_volume,
             pressure_ / (kGasConstant * temperature_),
             pressure_,
-            {phase.value, phase.gradient, phase.hessian, phase.pressure_pa}
+            {phase.value, phase.gradient, phase.hessian, phase.pressure_pa},
+            domain_
         );
     }
 
@@ -100,7 +103,7 @@ public:
     ) const {
         return provider_.evaluate_molar_volume_bounds(
             temperature_,
-            held2_lift_independent_fractions(coordinates_, composition),
+            held2_lift_independent_fractions(coordinates_, composition, domain_),
             kHeld2PackingFractionMinimum,
             kHeld2PackingFractionMaximum
         );
@@ -110,6 +113,7 @@ private:
     const ProviderContext& provider_;
     double temperature_;
     double pressure_;
+    Held2CompositionDomain domain_;
     std::vector<double> charges_;
     Held2Coordinates coordinates_;
 };
@@ -477,7 +481,12 @@ FixedTpPhaseResult one_phase(
         "detected_strict_stable_volume_extreme_for_declared_role",
     };
     result.diagnostics.hint_count = static_cast<int>(problem.hints.size());
-    const HeldLocalAccess access(provider, problem.temperature_k, problem.pressure_pa);
+    const HeldLocalAccess access(
+        provider,
+        problem.temperature_k,
+        problem.pressure_pa,
+        Held2CompositionDomain::TraceRefinement
+    );
     const auto chart = independent(access.coordinates(), feed);
     const auto envelope = evaluate_held2_pressure_envelope(
         chart,
