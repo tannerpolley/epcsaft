@@ -565,6 +565,7 @@ def _homogeneous_problem_from_mapping(
                     "anchor_parameter_fingerprint",
                     "anchor_reaction_fingerprint",
                     "anchor_topology_fingerprint",
+                    "anchor_basin_states",
                 }
             ),
             "reactive continuation reference",
@@ -587,6 +588,23 @@ def _homogeneous_problem_from_mapping(
             str(reference_item["anchor_parameter_fingerprint"]),
             str(reference_item["anchor_reaction_fingerprint"]),
             str(reference_item["anchor_topology_fingerprint"]),
+            tuple(
+                (
+                    _float_tuple(
+                        cast(Mapping[str, object], record)["mole_fractions"],
+                        "anchor basin composition",
+                    ),
+                    _number(
+                        cast(Mapping[str, object], record)[
+                            "molar_volume_m3_per_mol"
+                        ],
+                        "anchor basin molar volume",
+                    ),
+                )
+                for record in cast(
+                    Sequence[object], reference_item["anchor_basin_states"]
+                )
+            ),
         )
     return HomogeneousReactiveObservationProblem(
         identity,

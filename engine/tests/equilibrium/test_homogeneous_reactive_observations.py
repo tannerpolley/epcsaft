@@ -213,6 +213,7 @@ def _continuation_reference(
         result.trial.parameter_fingerprint,
         state.reaction_fingerprint,
         state.topology_fingerprint,
+        ((state.mole_fractions, state.volume_m3 / math.fsum(state.amounts_mol)),),
     )
 
 
@@ -409,11 +410,12 @@ def test_value_only_provider_potential_observation_has_zero_column_jacobian() ->
     assert result.values == pytest.approx((expected,), abs=2.0e-10)
 
     assert result.equilibrium is not None
-    assert len(result.equilibrium.diagnostics.search.basins) == 2
+    assert observation_problem.continuation_reference is not None
+    assert len(observation_problem.continuation_reference.anchor_basin_states) == 2
     ambiguous_problem = replace(
         observation_problem,
-        continuation_reference=_continuation_reference(
-            result,
+        continuation_reference=replace(
+            observation_problem.continuation_reference,
             maximum_log_composition_distance=100.0,
             maximum_log_volume_distance=100.0,
         ),
@@ -490,6 +492,7 @@ def test_homogeneous_observation_total_jacobian_matches_independent_resolves(
     assert evaluated.state is not None
     assert evaluated.trial is not None
     assert evaluated.equilibrium is not None
+    assert not evaluated.equilibrium.diagnostics.derivative_audits_performed
     assert evaluated.descriptor.branch_policy == "local_certified_role_selected_state"
     assert evaluated.state.phase_role == "liquid"
     assert evaluated.state.phase_role_receipt.scope == (
@@ -1155,7 +1158,7 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
     assert accepted.optimizer_basin is not None
     assert accepted_receipt["physical_branch"]["identity"].startswith("sha256:")
     search_certificate = accepted_receipt["certified_state"]["chemical_search_certificate"]
-    assert search_certificate["basin_count"] == 2
+    assert search_certificate["basin_count"] == 1
     continuation_certificate = accepted_receipt["certified_state"][
         "continuation_certificate"
     ]

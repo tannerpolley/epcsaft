@@ -183,6 +183,11 @@ struct ChemicalSearchEvidence {
     std::string selection_label = "lowest_observed_certified_local_value";
 };
 
+struct ChemicalContinuationStart {
+    std::vector<double> amounts;
+    double volume_m3 = std::numeric_limits<double>::quiet_NaN();
+};
+
 struct ChemicalSolveResult {
     bool accepted = false;
     std::string solver_status;
@@ -259,6 +264,7 @@ struct ChemicalSolveResult {
     double chart_stationarity_inf_norm = std::numeric_limits<double>::quiet_NaN();
     std::vector<double> lagrangian_hessian;
     std::vector<double> covariant_lagrangian_hessian;
+    bool derivative_audits_performed = false;
     double derivative_check_step = std::numeric_limits<double>::quiet_NaN();
     double objective_gradient_check_relative_error =
         std::numeric_limits<double>::quiet_NaN();
@@ -421,6 +427,7 @@ struct SourceStandardStateResult {
     const std::vector<double>& ln_k_pressure_derivatives_per_pa = {},
     const std::vector<double>& ln_k_parameter_derivatives = {},
     const ProviderActiveParameterSet* active_parameters = nullptr,
+    const ChemicalContinuationStart* continuation_start = nullptr,
     int max_iterations = 500
 );
 
