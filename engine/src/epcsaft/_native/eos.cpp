@@ -905,6 +905,25 @@ NativeMixturePhaseBlock NativeModel::evaluate_parameterized_phase(
 }
 
 // EqExclude: transport and buffer mechanics
+NativeMixturePhaseBlock NativeModel::evaluate_supported_phase_derivatives(
+    double temperature, const std::vector<double> &amounts, double volume,
+    double ion_mole_fraction_max,
+    const std::vector<NativeActiveCoordinate> &active_parameters) const {
+  if (component_ids_.size() != parameters_.segment_count.size()) {
+    throw std::invalid_argument(
+        "supported phase derivatives require resolved component identities");
+  }
+  std::vector<NativeFixedTopologyParameter> resolved;
+  resolved.reserve(active_parameters.size());
+  for (const auto &coordinate : active_parameters) {
+    resolved.push_back(resolve_active_coordinate(coordinate));
+  }
+  return detail::support_aware_parameterized_mixture_phase_block(
+      temperature, amounts, volume, ion_mole_fraction_max, resolved,
+      parameters_);
+}
+
+// EqExclude: transport and buffer mechanics
 NativePackingFractionBlock NativeModel::evaluate_packing_fraction(
     double temperature, const std::vector<double> &amounts, double volume,
     double ion_mole_fraction_max) const {

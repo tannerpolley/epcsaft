@@ -208,12 +208,14 @@ struct epcsaft_source_reference_transfer_result final {
     std::size_t contraction_capacity;
     std::size_t source_composition_capacity;
     std::size_t pressure_derivative_capacity;
+    std::size_t parameter_derivative_capacity;
     double* neutral_basis;
     double* log_fugacity_contractions;
     double* activity_scale_log_contractions;
     double* transfer_log_contractions;
     double* source_composition;
     double* pressure_derivatives_per_pa;
+    double* parameter_derivatives;
     std::uint32_t derivative_availability;
     double temperature_k;
     double pressure_pa;

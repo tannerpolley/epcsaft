@@ -41,9 +41,7 @@ def _assert_provider_matches_direct_partials(
     active = epcsaft.ActiveParameterSet(parameters, identities)
     volume = math.fsum(amounts) / 2000.0
     coordinates = model._active_coordinates(active)
-    direct = model._native.evaluate_phase_derivatives(
-        298.15, amounts, volume, coordinates, 2
-    )
+    direct = model._native.evaluate_phase_derivatives(298.15, amounts, volume, coordinates, 2)
     provider = _equilibrium.evaluate_parameterized_phase(
         _native_transport(model, active),
         298.15,
@@ -68,6 +66,7 @@ def _assert_provider_matches_direct_partials(
         for row in range(state_count)
         for parameter in range(parameter_count)
     )
+
     def provider_values(key: str) -> tuple[float, ...]:
         return tuple(float(value) for value in cast(Sequence[object], provider[key]))
 
@@ -160,12 +159,8 @@ def test_source_reference_uses_declared_multisolvent_multiion_basis() -> None:
             solvent_mole_fractions=(0.0, 0.3, 0.0, 0.7, 0.0, 0.0),
             ion_pairs=(
                 epcsaft.SourceReferenceIonPair(("cation", "anion"), (1, 1)),
-                epcsaft.SourceReferenceIonPair(
-                    ("cation", "iodide-anion"), (1, 1)
-                ),
-                epcsaft.SourceReferenceIonPair(
-                    ("divalent-cation", "anion"), (1, 2)
-                ),
+                epcsaft.SourceReferenceIonPair(("cation", "iodide-anion"), (1, 1)),
+                epcsaft.SourceReferenceIonPair(("divalent-cation", "anion"), (1, 2)),
             ),
             phase="liquid",
             reference_convention="molality-infinite-dilution",
@@ -393,9 +388,7 @@ def _held_water_ionization_problem() -> tuple[
             "source_reference_component_ids": components,
             "source_reference_solvent_composition": (1.0, 0.0, 0.0),
             "source_reference_ion_pairs": (
-                epcsaft.SourceReferenceIonPair(
-                    ("hydronium-cation", "hydroxide-anion"), (1, 1)
-                ),
+                epcsaft.SourceReferenceIonPair(("hydronium-cation", "hydroxide-anion"), (1, 1)),
             ),
             "source_reference_phase": "liquid",
             "source_reference_convention": "molality-infinite-dilution",
@@ -553,15 +546,15 @@ def test_source_reference_pressure_is_distinct_from_trial_pressure() -> None:
     assert value.source_reference_transfer.pressure_pa == 100_000.0
     assert value.source_standard_state is not None
     assert value.source_standard_state.reference_pressure_pa == 100_001.0
-    with pytest.raises(
-        equilibrium.ChemicalEquilibriumError,
-    ):
-        _provider_solve(
-            model,
-            spec,
-            source_standard_state,
-            equilibrium.ChemicalEquilibriumSensitivityRequest(),
-        )
+    differentiated = _provider_solve(
+        model,
+        spec,
+        source_standard_state,
+        equilibrium.ChemicalEquilibriumSensitivityRequest(),
+    )
+    assert differentiated.sensitivity is not None
+    assert differentiated.sensitivity.status == "available"
+    assert differentiated.diagnostics.reference_derivative_availability == 2
 
 
 @pytest.mark.slow
@@ -608,12 +601,20 @@ def test_held_source_transform_is_coordinate_invariant(variant: str) -> None:
         spec["ln_k"] = tuple(-value for value in spec["ln_k"])
         water_index, cation_index, anion_index = (0, 1, 2)
 
-    result = _provider_solve(model, spec, source_standard_state)
+    result = _provider_solve(
+        model,
+        spec,
+        source_standard_state,
+        equilibrium.ChemicalEquilibriumSensitivityRequest(),
+    )
 
     assert result.amounts_mol[water_index] == pytest.approx(0.9999999963727326, rel=2.0e-10)
     assert result.amounts_mol[cation_index] == pytest.approx(
         result.amounts_mol[anion_index], abs=2.0e-12
     )
+    assert result.sensitivity is not None
+    assert result.sensitivity.status == "available"
+    assert result.sensitivity.pressure.status == "available"
 
 
 def test_engine_model_provider_solve_enforces_balance_affinity_and_domain() -> None:

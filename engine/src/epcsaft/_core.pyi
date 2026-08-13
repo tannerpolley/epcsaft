@@ -117,6 +117,7 @@ class NativeModel:
         stoichiometry: tuple[int, int],
         phase: str,
     ) -> NativeReferenceSequence: ...
+
 def native_transport(*args: object, **kwargs: object) -> object: ...
 def source_reference_transfer(*args: object) -> dict[str, Any]: ...
 def _evaluate_saturation_nlp(
@@ -136,10 +137,11 @@ def _solve_saturation_active(
     active_parameters: Sequence[NativeActiveCoordinate],
 ) -> dict[str, Any]: ...
 def _fit_resolved(
-    owner_evaluator: Callable[[int, Sequence[float]], Mapping[str, object]],
+    owner_evaluator: Callable[[int, int, Sequence[float], bool], Mapping[str, object]],
     active_parameter_count: int,
     identity_coordinates: Sequence[int],
     coordinates: Sequence[Mapping[str, object]],
     observations: Sequence[Mapping[str, object]],
     controls: Mapping[str, object],
+    failure_codes: Sequence[str],
 ) -> dict[str, Any]: ...

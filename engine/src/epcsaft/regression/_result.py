@@ -7,8 +7,9 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+from .._trials import NON_EVALUABLE_TRIAL_CODES, NonEvaluableTrialCode
 from ..parameters import Parameters
 from ..units import unit_registry
 from ._resolve import ResolvedFit
@@ -33,14 +34,214 @@ def _finite_values(values: Sequence[float]) -> list[float | None]:
 
 
 @dataclass(frozen=True, slots=True)
+class OwnerReceipt:
+    canonical_bytes_utf8: str
+    digest: str
+
+    @classmethod
+    def from_canonical_bytes(cls, value: str) -> OwnerReceipt:
+        if not value:
+            raise ValueError("native owner receipts must be nonempty when present")
+        return cls(value, f"sha256:{hashlib.sha256(value.encode('utf-8')).hexdigest()}")
+
+    def to_mapping(self) -> dict[str, str]:
+        return {
+            "canonical_bytes_utf8": self.canonical_bytes_utf8,
+            "digest": self.digest,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class FitCoordinateReceipt:
+    identity: str
+    parameter_identities: tuple[str, ...]
+    unit: str
+    origin: float
+    scale: float
+
+
+@dataclass(frozen=True, slots=True)
+class FitSpecificationReceipt:
+    canonical_bytes_utf8: str
+    digest: str
+    parameters: Parameters
+    coordinates: tuple[FitCoordinateReceipt, ...]
+    row_identities: tuple[str, ...]
+    block_sizes: tuple[int, ...]
+    input_row_count: int
+    dropped_row_count: int
+
+    @classmethod
+    def create(
+        cls,
+        mapping: Mapping[str, object],
+        *,
+        parameters: Parameters,
+        coordinates: Sequence[FitCoordinateReceipt],
+        row_identities: Sequence[str],
+        block_sizes: Sequence[int],
+        input_row_count: int | None = None,
+        dropped_row_count: int = 0,
+        allows_parameter_promotion: bool,
+    ) -> FitSpecificationReceipt:
+        frozen_rows = tuple(row_identities)
+        frozen_blocks = tuple(block_sizes)
+        frozen_coordinates = tuple(coordinates)
+        declared_input_rows = len(frozen_rows) if input_row_count is None else input_row_count
+        if (
+            sum(frozen_blocks) != len(frozen_rows)
+            or declared_input_rows != len(frozen_rows) + dropped_row_count
+            or dropped_row_count < 0
+        ):
+            raise ValueError("fit specification row accounting is inconsistent")
+        receipt_mapping = {
+            "fit": mapping,
+            "input_parameters": parameters.to_mapping(),
+            "coordinates": [
+                {
+                    "identity": coordinate.identity,
+                    "parameter_identities": list(coordinate.parameter_identities),
+                    "unit": coordinate.unit,
+                    "origin": coordinate.origin,
+                    "scale": coordinate.scale,
+                }
+                for coordinate in frozen_coordinates
+            ],
+            "row_identities": list(frozen_rows),
+            "block_sizes": list(frozen_blocks),
+            "input_row_count": declared_input_rows,
+            "dropped_row_count": dropped_row_count,
+            "result_policy": {"allows_parameter_promotion": allows_parameter_promotion},
+        }
+        canonical = _canonical(receipt_mapping).decode("utf-8")
+        return cls(
+            canonical,
+            f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}",
+            parameters,
+            frozen_coordinates,
+            frozen_rows,
+            frozen_blocks,
+            declared_input_rows,
+            dropped_row_count,
+        )
+
+    @classmethod
+    def from_resolved_fit(cls, resolved: ResolvedFit) -> FitSpecificationReceipt:
+        row_identities: list[str] = []
+        block_sizes: list[int] = []
+        for observation_index, observation in enumerate(resolved.observations):
+            states = (
+                len(observation.rows)
+                if observation.rows is not None
+                else len(observation.quadrature.rules[-1].nodes)
+                if observation.quadrature is not None
+                else 0
+            )
+            for state_index in range(states):
+                block_sizes.append(len(observation.specification.targets))
+                row_identities.extend(
+                    f"observation/{observation_index}/state/{state_index}/{target}"
+                    for target in observation.specification.targets
+                )
+        return cls.create(
+            resolved.to_mapping(),
+            parameters=resolved.parameters,
+            coordinates=tuple(
+                FitCoordinateReceipt(
+                    coordinate.identity,
+                    coordinate.tied_identities,
+                    coordinate.unit,
+                    coordinate.origin,
+                    coordinate.scale,
+                )
+                for coordinate in resolved.coordinates
+            ),
+            row_identities=row_identities,
+            block_sizes=block_sizes,
+            input_row_count=len(row_identities),
+            allows_parameter_promotion=True,
+        )
+
+    def to_mapping(self) -> Mapping[str, object]:
+        value = json.loads(self.canonical_bytes_utf8)
+        if not isinstance(value, Mapping):
+            raise TypeError("canonical fit specification receipt is not an object")
+        return cast(Mapping[str, object], value)
+
+    @property
+    def allows_parameter_promotion(self) -> bool:
+        policy = self.to_mapping().get("result_policy")
+        if not isinstance(policy, Mapping) or not isinstance(
+            policy.get("allows_parameter_promotion"), bool
+        ):
+            raise TypeError("fit specification receipt has no canonical result policy")
+        return cast(bool, policy["allows_parameter_promotion"])
+
+
+@dataclass(frozen=True, slots=True)
+class BatchOutcome:
+    index: int
+    row_count: int
+    status: str
+    failure_code: NonEvaluableTrialCode | None
+
+    @classmethod
+    def from_native(cls, value: Mapping[str, Any]) -> BatchOutcome:
+        status = str(value["status"])
+        if status not in {"evaluated", "rejected", "not_evaluated"}:
+            raise ValueError("native batch outcome status is outside the public vocabulary")
+        raw_code = str(value["failure_code"])
+        if raw_code and raw_code not in NON_EVALUABLE_TRIAL_CODES:
+            raise ValueError("native batch failure code is outside the public vocabulary")
+        return cls(
+            int(value["index"]),
+            int(value["row_count"]),
+            status,
+            None if not raw_code else cast(NonEvaluableTrialCode, raw_code),
+        )
+
+    def to_mapping(self) -> dict[str, object]:
+        return {
+            "index": self.index,
+            "row_count": self.row_count,
+            "status": self.status,
+            "failure_code": self.failure_code,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class FitAccounting:
+    input_rows: int
+    included_rows: int
+    dropped_rows: int
+    attempted_starts: int
+    accepted_starts: int
+    failed_starts: int
+    evaluated_row_trials: int
+    rejected_row_trials: int
+    failed_row_trials: int
+    non_evaluable_trials: int
+
+    def to_mapping(self) -> dict[str, int]:
+        return {field: int(getattr(self, field)) for field in self.__dataclass_fields__}
+
+
+@dataclass(frozen=True, slots=True)
 class OwnerFailure:
-    code: str
+    code: NonEvaluableTrialCode
     reason: str
     count: int
 
     @classmethod
     def from_native(cls, value: Mapping[str, Any]) -> OwnerFailure:
-        return cls(str(value["code"]), str(value["reason"]), int(value["count"]))
+        code = str(value["code"])
+        if code not in NON_EVALUABLE_TRIAL_CODES:
+            raise ValueError("native owner failure code is outside the public vocabulary")
+        return cls(
+            cast(NonEvaluableTrialCode, code),
+            str(value["reason"]),
+            int(value["count"]),
+        )
 
     def to_mapping(self) -> dict[str, object]:
         return {"code": self.code, "reason": self.reason, "count": self.count}
@@ -49,6 +250,8 @@ class OwnerFailure:
 @dataclass(frozen=True, slots=True)
 class FitStart:
     index: int
+    start_identity: str
+    initial_affine: tuple[float, ...]
     initial_physical: tuple[float, ...]
     final_physical: tuple[float, ...]
     final_affine: tuple[float, ...]
@@ -58,24 +261,42 @@ class FitStart:
     affine_jacobian: tuple[float, ...]
     singular_values: tuple[float, ...]
     rank: int
+    free_subspace_rank: int
     condition_number: float
+    affine_covariance: tuple[float, ...]
+    degrees_of_freedom: int
+    information_row_count: int
+    free_coordinate_indices: tuple[int, ...]
+    residual_variance: float
+    covariance_status: str
     active_bounds: tuple[int, ...]
     solver_status: str
     failure_reason: str
+    trial_failure_code: NonEvaluableTrialCode | None
     iterations: int
     non_evaluable_count: int
     owner_failures: tuple[OwnerFailure, ...]
+    owner_receipts: tuple[OwnerReceipt, ...]
+    batch_outcomes: tuple[BatchOutcome, ...]
     cost: float
     usable: bool
-    basin: int | None
+    optimizer_basin: int | None
 
     @classmethod
     def from_native(cls, value: Mapping[str, Any]) -> FitStart:
         diagnostics = value["diagnostics"]
         if not isinstance(diagnostics, Mapping):
             raise TypeError("native fit diagnostics must be a mapping")
+        raw_trial_failure_code = str(value["trial_failure_code"])
+        if raw_trial_failure_code and raw_trial_failure_code not in NON_EVALUABLE_TRIAL_CODES:
+            raise ValueError("native trial failure code is outside the public vocabulary")
+        owner_receipts = tuple(
+            OwnerReceipt.from_canonical_bytes(str(item)) for item in value["owner_receipts_json"]
+        )
         return cls(
             index=int(value["index"]),
+            start_identity=str(value["start_identity"]),
+            initial_affine=tuple(float(item) for item in value["initial_affine"]),
             initial_physical=tuple(float(item) for item in value["initial_physical"]),
             final_physical=tuple(float(item) for item in value["final_physical"]),
             final_affine=tuple(float(item) for item in value["final_affine"]),
@@ -85,18 +306,38 @@ class FitStart:
             affine_jacobian=tuple(float(item) for item in value["affine_jacobian"]),
             singular_values=tuple(float(item) for item in diagnostics["singular_values"]),
             rank=int(diagnostics["rank"]),
+            free_subspace_rank=int(diagnostics["free_subspace_rank"]),
             condition_number=float(diagnostics["condition_number"]),
+            affine_covariance=tuple(float(item) for item in diagnostics["affine_covariance"]),
+            degrees_of_freedom=int(diagnostics["degrees_of_freedom"]),
+            information_row_count=int(diagnostics["information_row_count"]),
+            free_coordinate_indices=tuple(
+                int(item) for item in diagnostics["free_coordinate_indices"]
+            ),
+            residual_variance=float(diagnostics["residual_variance"]),
+            covariance_status=str(diagnostics["covariance_status"]),
             active_bounds=tuple(int(item) for item in value["active_bounds"]),
             solver_status=str(value["solver_status"]),
             failure_reason=str(value["failure_reason"]),
+            trial_failure_code=(
+                None
+                if not raw_trial_failure_code
+                else cast(NonEvaluableTrialCode, raw_trial_failure_code)
+            ),
             iterations=int(value["iterations"]),
             non_evaluable_count=int(value["non_evaluable_count"]),
             owner_failures=tuple(
                 OwnerFailure.from_native(item) for item in value["owner_failures"]
             ),
+            owner_receipts=owner_receipts,
+            batch_outcomes=tuple(
+                BatchOutcome.from_native(item) for item in value["batch_outcomes"]
+            ),
             cost=float(value["cost"]),
             usable=bool(value["usable"]),
-            basin=None if value["basin"] is None else int(value["basin"]),
+            optimizer_basin=(
+                None if value["optimizer_basin"] is None else int(value["optimizer_basin"])
+            ),
         )
 
     def to_mapping(self, block_sizes: Sequence[int]) -> dict[str, object]:
@@ -112,6 +353,8 @@ class FitStart:
             offset += size
         return {
             "index": self.index,
+            "start_identity": self.start_identity,
+            "initial_affine": _finite_values(self.initial_affine),
             "initial_physical": _finite_values(self.initial_physical),
             "final_physical": _finite_values(self.final_physical),
             "final_affine": _finite_values(self.final_affine),
@@ -122,46 +365,97 @@ class FitStart:
             "affine_jacobian": _finite_values(self.affine_jacobian),
             "singular_values": _finite_values(self.singular_values),
             "rank": self.rank,
+            "free_subspace_rank": self.free_subspace_rank,
             "condition_number": _finite_or_none(self.condition_number),
+            "affine_covariance": _finite_values(self.affine_covariance),
+            "degrees_of_freedom": self.degrees_of_freedom,
+            "information_row_count": self.information_row_count,
+            "free_coordinate_indices": list(self.free_coordinate_indices),
+            "residual_variance": _finite_or_none(self.residual_variance),
+            "covariance_status": self.covariance_status,
             "active_bounds": list(self.active_bounds),
             "solver_status": self.solver_status,
             "failure_reason": self.failure_reason,
+            "trial_failure_code": self.trial_failure_code,
             "iterations": self.iterations,
             "non_evaluable_count": self.non_evaluable_count,
             "owner_failures": [failure.to_mapping() for failure in self.owner_failures],
+            "owner_receipts": [receipt.to_mapping() for receipt in self.owner_receipts],
+            "batch_outcomes": [outcome.to_mapping() for outcome in self.batch_outcomes],
             "cost": _finite_or_none(self.cost),
             "usable": self.usable,
-            "basin": self.basin,
+            "optimizer_basin": self.optimizer_basin,
         }
 
 
 @dataclass(frozen=True, slots=True, init=False)
 class FitResult:
-    resolved_fit: ResolvedFit
+    specification: FitSpecificationReceipt
     starts: tuple[FitStart, ...]
     artifact_fingerprint: str
     package_fingerprint: str
+    accounting: FitAccounting
     digest: str
 
     def __init__(
         self,
-        resolved_fit: ResolvedFit,
+        specification: FitSpecificationReceipt,
         starts: Sequence[FitStart],
         *,
         artifact_fingerprint: str,
         package_fingerprint: str,
     ) -> None:
-        if not isinstance(resolved_fit, ResolvedFit):
-            raise TypeError("resolved_fit must be a ResolvedFit")
+        if not isinstance(specification, FitSpecificationReceipt):
+            raise TypeError("specification must be a FitSpecificationReceipt")
         frozen_starts = tuple(starts)
         if not frozen_starts or any(not isinstance(item, FitStart) for item in frozen_starts):
             raise ValueError("starts must contain every native start")
         if tuple(item.index for item in frozen_starts) != tuple(range(len(frozen_starts))):
             raise ValueError("starts must retain deterministic native order")
-        object.__setattr__(self, "resolved_fit", resolved_fit)
+        if any(
+            tuple(outcome.index for outcome in start.batch_outcomes)
+            != tuple(range(len(specification.block_sizes)))
+            for start in frozen_starts
+        ):
+            raise ValueError("every start must retain ordered final batch outcomes")
+        object.__setattr__(self, "specification", specification)
         object.__setattr__(self, "starts", frozen_starts)
         object.__setattr__(self, "artifact_fingerprint", artifact_fingerprint)
         object.__setattr__(self, "package_fingerprint", package_fingerprint)
+        evaluated = sum(
+            outcome.row_count
+            for start in frozen_starts
+            for outcome in start.batch_outcomes
+            if outcome.status == "evaluated"
+        )
+        rejected = sum(
+            outcome.row_count
+            for start in frozen_starts
+            for outcome in start.batch_outcomes
+            if outcome.status == "rejected"
+        )
+        failed = sum(
+            outcome.row_count
+            for start in frozen_starts
+            for outcome in start.batch_outcomes
+            if outcome.status == "not_evaluated"
+        )
+        object.__setattr__(
+            self,
+            "accounting",
+            FitAccounting(
+                input_rows=specification.input_row_count,
+                included_rows=len(specification.row_identities),
+                dropped_rows=specification.dropped_row_count,
+                attempted_starts=len(frozen_starts),
+                accepted_starts=sum(start.usable for start in frozen_starts),
+                failed_starts=sum(not start.usable for start in frozen_starts),
+                evaluated_row_trials=evaluated,
+                rejected_row_trials=rejected,
+                failed_row_trials=failed,
+                non_evaluable_trials=sum(start.non_evaluable_count for start in frozen_starts),
+            ),
+        )
         object.__setattr__(self, "digest", "")
         object.__setattr__(
             self,
@@ -172,7 +466,7 @@ class FitResult:
     @classmethod
     def from_native(
         cls,
-        resolved_fit: ResolvedFit,
+        specification: FitSpecificationReceipt,
         native: Mapping[str, Any],
         *,
         artifact_fingerprint: str,
@@ -182,7 +476,7 @@ class FitResult:
         if not isinstance(starts, Sequence) or isinstance(starts, (str, bytes)):
             raise TypeError("native fit starts must be a sequence")
         return cls(
-            resolved_fit,
+            specification,
             tuple(FitStart.from_native(item) for item in starts),
             artifact_fingerprint=artifact_fingerprint,
             package_fingerprint=package_fingerprint,
@@ -193,24 +487,31 @@ class FitResult:
         usable = tuple(start for start in self.starts if start.usable)
         return min(usable, key=lambda start: (start.cost, start.index)) if usable else None
 
-    def _observation_layout(self) -> tuple[tuple[str, ...], tuple[int, ...]]:
-        identities: list[str] = []
-        block_sizes: list[int] = []
-        for observation_index, observation in enumerate(self.resolved_fit.observations):
-            states = (
-                len(observation.rows)
-                if observation.rows is not None
-                else len(observation.quadrature.rules[-1].nodes)
-                if observation.quadrature is not None
-                else 0
-            )
-            for state_index in range(states):
-                block_sizes.append(len(observation.specification.targets))
-                identities.extend(
-                    f"observation/{observation_index}/state/{state_index}/{target}"
-                    for target in observation.specification.targets
-                )
-        return tuple(identities), tuple(block_sizes)
+    @property
+    def covariance_coordinate_identities(self) -> tuple[str, ...]:
+        accepted = self.accepted_start
+        if accepted is None or accepted.covariance_status != "available":
+            return ()
+        return tuple(
+            self.specification.coordinates[index].identity
+            for index in accepted.free_coordinate_indices
+        )
+
+    @property
+    def physical_covariance(self) -> tuple[float, ...]:
+        accepted = self.accepted_start
+        if accepted is None or accepted.covariance_status != "available":
+            return ()
+        scales = tuple(
+            self.specification.coordinates[index].scale
+            for index in accepted.free_coordinate_indices
+        )
+        size = len(scales)
+        return tuple(
+            accepted.affine_covariance[row * size + column] * scales[row] * scales[column]
+            for row in range(size)
+            for column in range(size)
+        )
 
     def fitted_values(self) -> tuple[tuple[str, float, str], ...]:
         accepted = self.accepted_start
@@ -218,31 +519,31 @@ class FitResult:
             return ()
         values: list[tuple[str, float, str]] = []
         for coordinate, value in zip(
-            self.resolved_fit.coordinates, accepted.final_physical, strict=True
+            self.specification.coordinates, accepted.final_physical, strict=True
         ):
             values.extend(
-                (identity, value, coordinate.unit) for identity in coordinate.tied_identities
+                (identity, value, coordinate.unit) for identity in coordinate.parameter_identities
             )
         return tuple(values)
 
     def _payload(self) -> dict[str, object]:
-        row_identities, block_sizes = self._observation_layout()
         accepted = self.accepted_start
         return {
             "schema": "epcsaft.fit-result",
-            "schema_version": 1,
-            "resolved_fit_digest": self.resolved_fit.digest,
-            "resolved_fit": self.resolved_fit.to_mapping(),
-            "input_parameters": self.resolved_fit.parameters.to_mapping(),
+            "schema_version": 2,
+            "specification_digest": self.specification.digest,
+            "specification": self.specification.to_mapping(),
             "artifact_fingerprint": self.artifact_fingerprint,
             "package_fingerprint": self.package_fingerprint,
-            "row_identities": list(row_identities),
+            "accounting": self.accounting.to_mapping(),
+            "covariance_coordinate_identities": list(self.covariance_coordinate_identities),
+            "physical_covariance": _finite_values(self.physical_covariance),
             "fitted_values": [
                 {"identity": identity, "value": _finite_or_none(value), "unit": unit}
                 for identity, value, unit in self.fitted_values()
             ],
             "accepted_start": None if accepted is None else accepted.index,
-            "starts": [start.to_mapping(block_sizes) for start in self.starts],
+            "starts": [start.to_mapping(self.specification.block_sizes) for start in self.starts],
         }
 
     def to_mapping(self) -> dict[str, object]:
@@ -257,6 +558,10 @@ class FitResult:
         return target
 
     def to_parameters(self) -> Parameters:
+        if not self.specification.allows_parameter_promotion:
+            raise RuntimeError(
+                "this fit family is diagnostic and cannot promote parameters directly"
+            )
         values = {
             identity: unit_registry.Quantity(value, unit)
             for identity, value, unit in self.fitted_values()
@@ -264,11 +569,19 @@ class FitResult:
         if not values:
             raise RuntimeError("fit has no usable start")
         suffix = self.digest.removeprefix("sha256:")[:16]
-        return self.resolved_fit.parameters.with_values(
+        return self.specification.parameters.with_values(
             values,
             source_id=f"fit-result-{suffix}",
             locator=f"FitResult {self.digest}",
         )
 
 
-__all__ = ("FitResult", "FitStart")
+__all__ = (
+    "BatchOutcome",
+    "FitAccounting",
+    "FitCoordinateReceipt",
+    "FitResult",
+    "FitSpecificationReceipt",
+    "FitStart",
+    "OwnerReceipt",
+)

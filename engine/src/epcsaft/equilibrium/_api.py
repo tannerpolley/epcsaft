@@ -2748,7 +2748,7 @@ def _source_reference_transfer(
     temperature_k: float,
     pressure_pa: float,
     sensitivities_requested: bool,
-    active_parameters_requested: bool,
+    active_parameters: epcsaft.ActiveParameterSet | None,
 ) -> epcsaft.SourceReferenceTransfer:
     if standard_state.source_reference_component_ids != species_ids:
         raise ValueError("source-reference component order does not match the reaction system")
@@ -2759,7 +2759,7 @@ def _source_reference_transfer(
     required_derivatives = (
         ()
         if not sensitivities_requested
-        else (("pressure", "parameters") if active_parameters_requested else ("pressure",))
+        else (("pressure", "parameters") if active_parameters is not None else ("pressure",))
     )
     transfer = epcsaft.source_reference_transfer(
         phase.model,
@@ -2779,6 +2779,7 @@ def _source_reference_transfer(
         ),
         T=temperature_k * epcsaft.unit_registry.kelvin,
         P=pressure_pa * epcsaft.unit_registry.pascal,
+        active_parameters=active_parameters,
     )
     if (
         transfer.status != "ok"
@@ -2813,6 +2814,11 @@ def _source_reference_payload(
         "transfer_log_contractions": transfer.transfer_log_contractions,
         "source_composition": transfer.source_composition,
         "derivative_availability": transfer.derivative_availability,
+        "pressure_derivatives_per_pa": transfer.pressure_derivatives_per_pa,
+        "active_parameter_identities": transfer.active_parameter_identities,
+        "parameter_derivatives": tuple(
+            value for row in transfer.parameter_derivatives for value in row
+        ),
         "temperature_k": transfer.temperature_k,
         "pressure_pa": transfer.pressure_pa,
         "source_reference_pressure_pa": transfer.source_reference_pressure_pa,
@@ -2955,7 +2961,7 @@ def chemical_equilibrium(
                     temperature_k=temperature_k,
                     pressure_pa=pressure_pa,
                     sensitivities_requested=sensitivity_request is not None,
-                    active_parameters_requested=bool(active_parameters),
+                    active_parameters=active_parameter_set,
                 )
         else:
             raise TypeError("chemical_equilibrium requires a typed phase model")
@@ -2988,6 +2994,7 @@ def chemical_equilibrium(
                 native_standard_state,
                 packing_bounds,
                 problem.strict_interior_amount_floor_mol,
+                sensitivity_request is not None,
                 active_parameter_set is not None,
             ),
         )

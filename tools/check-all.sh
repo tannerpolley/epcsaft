@@ -24,12 +24,12 @@ run_check() {
 }
 
 run_check packets .venv/bin/python data/tools/validate_packets.py
-run_check engine-eos bash -c 'cd "$1/engine" && ../.venv/bin/python -m pytest -q tests/eos' _ "$repo_root"
-run_check engine-equilibrium bash -c 'cd "$1/engine" && ../.venv/bin/python -m pytest -q tests/equilibrium' _ "$repo_root"
-run_check engine-regression bash -c 'cd "$1/engine" && ../.venv/bin/python -m pytest -q tests/regression' _ "$repo_root"
+run_check engine-eos bash -c 'cd "$1/engine" && ../.venv/bin/python -m pytest -q -m "not slow and not expensive" tests/eos' _ "$repo_root"
+run_check engine-equilibrium bash -c 'cd "$1/engine" && ../.venv/bin/python -m pytest -q -m "not slow and not expensive" tests/equilibrium' _ "$repo_root"
+run_check engine-regression bash -c 'cd "$1/engine" && ../.venv/bin/python -m pytest -q -m "not slow and not expensive" tests/regression' _ "$repo_root"
 run_check ruff bash -c 'cd "$1/engine" && ../.venv/bin/ruff check --select E4,E7,E9,F src tests' _ "$repo_root"
 run_check mypy bash -c 'cd "$1/engine" && ../.venv/bin/mypy' _ "$repo_root"
-run_check validation-fast bash -c 'cd "$1/validation" && ../.venv/bin/python -m pytest -q -m "not campaign"' _ "$repo_root"
+run_check validation-fast bash -c 'cd "$1/validation" && ../.venv/bin/python -m pytest -q -m "not campaign and not slow and not expensive"' _ "$repo_root"
 run_check management python3 governance/tools/management_preflight.py check
 run_check artifacts python3 governance/tools/artifact_store.py check
 

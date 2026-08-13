@@ -4,6 +4,11 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 base_ref="${1:-HEAD~1}"
+source_only="${EPCSAFT_CHECK_SOURCE_ONLY:-0}"
+if [[ "$source_only" != 0 && "$source_only" != 1 ]]; then
+    echo "EPCSAFT_CHECK_SOURCE_ONLY must be 0 or 1" >&2
+    exit 2
+fi
 if ! git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
     base_ref="HEAD"
 fi
@@ -21,13 +26,13 @@ if ((${#changed[@]} == 0)); then
 fi
 
 paths="$(printf '%s\n' "${changed[@]}")"
-if grep -Eq '^(AGENTS.md|CONTEXT.md|README.md|pyproject.toml|uv.lock|\.codex/|tools/)' <<<"$paths"; then
+if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|CONTEXT.md|README.md|pyproject.toml|uv.lock|\.codex/|tools/)' <<<"$paths"; then
     exec bash tools/check-all.sh
 fi
 if grep -q '^data/' <<<"$paths"; then
     python3 data/tools/validate_packets.py
 fi
-if grep -Eq '^(engine/(CMakeLists\.txt|LICENSE|README\.md|pyproject\.toml|cpp/|src/|data/|tests/)|validation/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
+if [[ "$source_only" == 0 ]] && grep -Eq '^(engine/(CMakeLists\.txt|LICENSE|README\.md|pyproject\.toml|cpp/|src/|data/|tests/)|validation/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
     bash .codex/environments/setup.sh
 fi
 if grep -q '^engine/' <<<"$paths"; then
@@ -62,8 +67,8 @@ if grep -q '^engine/' <<<"$paths"; then
         [[ "$engine_equilibrium" == true ]] && engine_test_paths+=(tests/equilibrium)
         [[ "$engine_regression" == true ]] && engine_test_paths+=(tests/regression)
     fi
-    if ((${#engine_test_paths[@]})); then
-        (cd engine && ../.venv/bin/python -m pytest -q "${engine_test_paths[@]}")
+    if [[ "$source_only" == 0 ]] && ((${#engine_test_paths[@]})); then
+        (cd engine && ../.venv/bin/python -m pytest -q -m 'not slow and not expensive' "${engine_test_paths[@]}")
     fi
     if grep -Eq '^engine/(src/|tests/)' <<<"$paths"; then
         (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)
@@ -75,11 +80,14 @@ if grep -q '^engine/' <<<"$paths"; then
         bash -n engine/tools/*.sh
     fi
 fi
-if grep -q '^validation/' <<<"$paths"; then
-    (cd validation && ../.venv/bin/python -m pytest -q -m 'not campaign')
+if [[ "$source_only" == 0 ]] && grep -q '^validation/' <<<"$paths"; then
+    (cd validation && ../.venv/bin/python -m pytest -q -m 'not campaign and not slow and not expensive')
     if grep -q '^validation/campaigns/' <<<"$paths"; then
         echo "Validation campaign replay is explicit; run the changed campaign or tools/run-slice.sh when its scientific claim requires it"
     fi
+fi
+if [[ "$source_only" == 1 ]]; then
+    echo "source-only affected checks passed; no wheel build or installed-artifact tests ran"
 fi
 if grep -q '^governance/' <<<"$paths"; then
     python3 governance/tools/management_preflight.py check

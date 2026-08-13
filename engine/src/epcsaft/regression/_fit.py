@@ -7,11 +7,10 @@ from dataclasses import dataclass
 from importlib import metadata
 from os import PathLike
 from pathlib import Path
-from typing import Any, SupportsFloat, cast
-
-import pint
+from typing import Any, cast
 
 from .. import _core
+from .._trials import NON_EVALUABLE_TRIAL_CODES, NonEvaluableTrialCode
 from ..eos import (
     OBSERVABLE_TARGETS,
     EosError,
@@ -25,12 +24,34 @@ from ..eos import (
 from ..parameters import ActiveParameterSet, Parameters
 from ._model import ParameterFit, TableRow
 from ._resolve import ResolvedFit, ResolvedObservation
-from ._result import FitResult
+from ._result import FitResult, FitSpecificationReceipt
 
 _MAXIMUM_ITERATIONS = 100
 _FUNCTION_TOLERANCE = 1.0e-12
 _GRADIENT_TOLERANCE = 1.0e-12
 _PARAMETER_TOLERANCE = 1.0e-12
+
+
+class FitPreflightError(ValueError):
+    """A typed non-evaluable exact start encountered before native optimization."""
+
+    def __init__(
+        self,
+        code: NonEvaluableTrialCode,
+        start_identity: str,
+        batch_identity: str,
+        diagnostic: str,
+    ) -> None:
+        if code not in NON_EVALUABLE_TRIAL_CODES:
+            raise ValueError("preflight failure code is outside the public vocabulary")
+        self.code = code
+        self.start_identity = start_identity
+        self.batch_identity = batch_identity
+        self.diagnostic = diagnostic
+        super().__init__(
+            f"{code} during derivative preflight for {start_identity}/{batch_identity}: "
+            f"{diagnostic}"
+        )
 
 
 def _root(base_path: str | PathLike[str] | None, source: Path | None) -> Path:
@@ -47,18 +68,6 @@ def _load(
         return ParameterFit.from_mapping(value), None
     source = Path(value)
     return ParameterFit.from_json(source), source
-
-
-def _parameter_input(resolved: ResolvedFit, identity: str, unit: str) -> float:
-    specification = next(
-        item for item in resolved.parameters.parameter_specs if item.identity == identity
-    )
-    value = specification.value
-    return (
-        float(value.to(unit).magnitude)
-        if isinstance(value, pint.Quantity)
-        else float(cast(SupportsFloat, value))
-    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -147,7 +156,13 @@ class _OwnerEvaluator:
             "failure": {"code": code, "reason": reason},
         }
 
-    def __call__(self, index: int, values: Sequence[float]) -> dict[str, object]:
+    def __call__(
+        self,
+        _start_index: int,
+        index: int,
+        values: Sequence[float],
+        _receipt_requested: bool,
+    ) -> dict[str, object]:
         request = self._requests[index]
         try:
             active_parameters = ActiveParameterSet(
@@ -163,21 +178,22 @@ class _OwnerEvaluator:
                 composition=request.composition,
             )
         except EosError as exc:
-            return self._rejected(exc.code, str(exc))
+            return self._rejected("provider_domain_rejection", f"{exc.code}: {exc}")
         except SaturationError as exc:
-            return self._rejected(f"saturation-{exc.diagnostics.rejection_status}", str(exc))
-        except (TypeError, ValueError) as exc:
-            return self._rejected("invalid-active-parameter-value", str(exc))
-        if block.status.status != "accepted":
-            code = (
-                f"saturation-{block.saturation_diagnostics.rejection_status}"
-                if block.saturation_diagnostics is not None
-                else f"observable-{block.status.scope}-rejected"
+            return self._rejected(
+                "physical_rejection",
+                f"{exc.diagnostics.rejection_status}: {exc}",
             )
-            return self._rejected(code, block.status.reason)
+        except (TypeError, ValueError) as exc:
+            return self._rejected("parameter_topology_mismatch", str(exc))
+        if block.status.status != "accepted":
+            return self._rejected(
+                "observation_out_of_support",
+                block.status.reason,
+            )
         if block.descriptor.active_parameter_identities != self._selected_identities:
             return self._rejected(
-                "owner-parameter-order-mismatch",
+                "owner_contract_failure",
                 "owner block did not preserve the selected parameter order",
             )
         rows = {
@@ -196,7 +212,7 @@ class _OwnerEvaluator:
             for row in selected
         ):
             return self._rejected(
-                "owner-row-rejected",
+                "owner_contract_failure",
                 "owner block did not return every selected row",
             )
         accepted = cast(tuple[tuple[float, tuple[float, ...], object], ...], selected)
@@ -207,6 +223,56 @@ class _OwnerEvaluator:
         }
 
 
+def _preflight(
+    owner: _OwnerEvaluator,
+    resolved: ResolvedFit,
+    requests: Sequence[_OwnerRequest],
+) -> None:
+    coordinate_by_parameter = {
+        identity: index
+        for index, coordinate in enumerate(resolved.coordinates)
+        for identity in coordinate.tied_identities
+    }
+    for start in resolved.fit.solver.multistart.starts:
+        physical = start.values
+        active = tuple(
+            physical[coordinate_by_parameter[identity]] for identity in resolved.selected_identities
+        )
+        for index, request in enumerate(requests):
+            response = owner(0, index, active, False)
+            if response.get("status") != "accepted":
+                failure = response.get("failure")
+                failure_mapping = failure if isinstance(failure, Mapping) else {}
+                raw_code = str(failure_mapping.get("code", "owner_contract_failure"))
+                code = (
+                    raw_code if raw_code in NON_EVALUABLE_TRIAL_CODES else "owner_contract_failure"
+                )
+                raise FitPreflightError(
+                    cast(NonEvaluableTrialCode, code),
+                    start.identity,
+                    f"observation-{index}",
+                    str(failure_mapping.get("reason", failure)),
+                )
+            predictions = response.get("predictions")
+            jacobian = response.get("jacobian")
+            if (
+                not isinstance(predictions, Sequence)
+                or isinstance(predictions, (str, bytes))
+                or not isinstance(jacobian, Sequence)
+                or isinstance(jacobian, (str, bytes))
+                or len(predictions) != len(request.row_identities)
+                or len(jacobian) != len(request.row_identities) * len(active)
+                or any(not math.isfinite(float(value)) for value in predictions)
+                or any(not math.isfinite(float(value)) for value in jacobian)
+            ):
+                raise FitPreflightError(
+                    "owner_contract_failure",
+                    start.identity,
+                    f"observation-{index}",
+                    "owner returned an incomplete value/Jacobian block",
+                )
+
+
 def _package_fingerprint() -> str:
     record = metadata.distribution("epcsaft").read_text("RECORD")
     if record is None or not record.strip():
@@ -215,10 +281,12 @@ def _package_fingerprint() -> str:
 
 
 def fit(
-    value: ParameterFit | Mapping[str, object] | str | PathLike[str],
+    value: object,
     *,
     base_path: str | PathLike[str] | None = None,
 ) -> FitResult:
+    if not isinstance(value, (ParameterFit, Mapping, str, PathLike)):
+        raise TypeError("fit requires a ParameterFit, mapping, or path")
     specification, source = _load(value)
     root = _root(base_path, source)
     parameter_path = Path(specification.parameters.path)
@@ -226,6 +294,10 @@ def fit(
         parameter_path = root / parameter_path
     parameters = Parameters.from_json(parameter_path)
     resolved = specification.resolve(parameters, base_path=root)
+    if not resolved.observations:
+        from ._equilibrium_fit import _fit_homogeneous_parameter_fit
+
+        return _fit_homogeneous_parameter_fit(resolved)
     model: Pure | Mixture = (
         Pure(resolved.parameters)
         if specification.model.kind == "pure"
@@ -237,36 +309,52 @@ def fit(
         for identity in coordinate.tied_identities
     }
     requests, residual_blocks = _owner_requests(resolved)
+    owner = _OwnerEvaluator(model, resolved, requests)
+    _preflight(owner, resolved, requests)
     native = _core._fit_resolved(
-        _OwnerEvaluator(model, resolved, requests),
+        owner,
         len(resolved.selected_identities),
         [coordinate_indices[identity] for identity in resolved.selected_identities],
         [
             {
+                "origin": coordinate.origin,
                 "scale": coordinate.scale,
-                "lower": coordinate.bounds[0],
-                "upper": coordinate.bounds[1],
-                "input": _parameter_input(resolved, coordinate.identity, coordinate.unit),
+                "lower_affine": coordinate.affine_bounds[0],
+                "upper_affine": coordinate.affine_bounds[1],
             }
             for coordinate in resolved.coordinates
         ],
         residual_blocks,
         {
-            "start_count": specification.solver.multistart.count,
-            "include_input": specification.solver.multistart.include_input,
+            "starts": [
+                {
+                    "identity": start.identity,
+                    "affine": [
+                        (value - coordinate.origin) / coordinate.scale
+                        for value, coordinate in zip(
+                            start.values,
+                            resolved.coordinates,
+                            strict=True,
+                        )
+                    ],
+                }
+                for start in specification.solver.multistart.starts
+            ],
+            "affine_bound_margin": specification.solver.multistart.affine_bound_margin,
             "workers": 1,
             "maximum_iterations": _MAXIMUM_ITERATIONS,
             "function_tolerance": _FUNCTION_TOLERANCE,
             "gradient_tolerance": _GRADIENT_TOLERANCE,
             "parameter_tolerance": _PARAMETER_TOLERANCE,
         },
+        tuple(sorted(NON_EVALUABLE_TRIAL_CODES)),
     )
     return FitResult.from_native(
-        resolved,
+        FitSpecificationReceipt.from_resolved_fit(resolved),
         cast(Mapping[str, Any], native),
         artifact_fingerprint=_python_native_artifact_fingerprint(),
         package_fingerprint=_package_fingerprint(),
     )
 
 
-__all__ = ("fit",)
+__all__ = ("FitPreflightError", "fit")

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from ._resolve import ResolvedFit
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 _INTEGER_MAX = 2_147_483_647
 _ERROR_DETAIL_LIMIT = 512
 _DIGEST = re.compile(r"sha256:[0-9a-f]{64}\Z")
@@ -76,7 +76,7 @@ _FIELDS = MappingProxyType(
         "parameters": _Fields(("path", "sha256")),
         "model": _Fields(("kind",)),
         "active": _Fields(("identities", "coordinates", "ties")),
-        "coordinate": _Fields(("bounds", "scale"), ("unit",)),
+        "coordinate": _Fields(("bounds", "origin", "scale"), ("unit",)),
         "tie": _Fields(("identities",)),
         "observation": _Fields(
             (
@@ -91,6 +91,20 @@ _FIELDS = MappingProxyType(
                 "multiplier",
             ),
             ("quadrature", "composition"),
+        ),
+        "reactive_observation": _Fields(
+            (
+                "family",
+                "identity",
+                "phase",
+                "reaction_system",
+                "continuation",
+                "rows",
+                "temperature_k",
+                "pressure_pa",
+                "targets",
+                "multiplier",
+            )
         ),
         "table_source": _Fields(("kind", "path", "sha256", "citation", "domain"), ("rows",)),
         "correlation_source": _Fields(
@@ -107,7 +121,8 @@ _FIELDS = MappingProxyType(
         "transformation": _Fields(("input", "output")),
         "quadrature": _Fields(("initial_order", "max_order", "tolerance")),
         "solver": _Fields(("multistart",)),
-        "multistart": _Fields(("count", "include_input")),
+        "multistart": _Fields(("starts", "affine_bound_margin")),
+        "start": _Fields(("identity", "values")),
     }
 )
 _RESIDUALS = MappingProxyType(
@@ -227,6 +242,7 @@ class ModelSpec:
 @dataclass(frozen=True, slots=True)
 class FitCoordinate:
     bounds: tuple[float, float]
+    origin: float
     scale: float
     unit: str | None
 
@@ -309,9 +325,28 @@ class ObservationSpec:
 
 
 @dataclass(frozen=True, slots=True)
+class HomogeneousReactiveFitObservation:
+    """Canonical JSON-backed declaration validated by its Equilibrium owner."""
+
+    canonical_bytes_utf8: str
+
+    def to_mapping(self) -> dict[str, object]:
+        value = json.loads(self.canonical_bytes_utf8)
+        if not isinstance(value, dict):
+            raise TypeError("reactive fit observation is not a canonical object")
+        return cast(dict[str, object], value)
+
+
+@dataclass(frozen=True, slots=True)
 class MultistartSpec:
-    count: int
-    include_input: bool
+    starts: tuple[FitStartSpec, ...]
+    affine_bound_margin: float
+
+
+@dataclass(frozen=True, slots=True)
+class FitStartSpec:
+    identity: str
+    values: tuple[float, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -332,7 +367,7 @@ class ParameterFit:
     parameters: ParameterReference
     model: ModelSpec
     active: ActiveSelection
-    observations: tuple[ObservationSpec, ...]
+    observations: tuple[ObservationSpec | HomogeneousReactiveFitObservation, ...]
     solver: SolverSpec
 
     def __init__(self) -> None:
@@ -349,12 +384,28 @@ class ParameterFit:
             )
         model = _parse_model(root["model"], "$.model")
         observations = tuple(
-            _parse_observation(item, f"$.observations[{index}]")
+            _parse_fit_observation(item, f"$.observations[{index}]")
             for index, item in enumerate(_list(root["observations"], "$.observations"))
         )
         if not observations:
             raise FitSchemaError("missing-value", "$.observations", "at least one required")
+        families = tuple(
+            "homogeneous_reactive"
+            if isinstance(observation, HomogeneousReactiveFitObservation)
+            else observation.family
+            for observation in observations
+        )
+        if "homogeneous_reactive" in families and (
+            model.kind != "mixture" or any(item != "homogeneous_reactive" for item in families)
+        ):
+            raise FitSchemaError(
+                "unsupported-model-domain",
+                "$.observations",
+                "homogeneous reactive observations require one mixture-only owner family",
+            )
         for index, observation in enumerate(observations):
+            if isinstance(observation, HomogeneousReactiveFitObservation):
+                continue
             if model.kind not in OBSERVABLE_FAMILIES[observation.family].model_kinds:
                 raise FitSchemaError(
                     "unsupported-model-domain",
@@ -418,7 +469,12 @@ class ParameterFit:
                 },
                 "ties": [{"identities": list(tie.identities)} for tie in self.active.ties],
             },
-            "observations": [_observation_mapping(item) for item in self.observations],
+            "observations": [
+                item.to_mapping()
+                if isinstance(item, HomogeneousReactiveFitObservation)
+                else _observation_mapping(item)
+                for item in self.observations
+            ],
             "solver": _solver_mapping(self.solver),
         }
 
@@ -473,7 +529,8 @@ def _parse_coordinate(value: object, path: str) -> FitCoordinate:
     if scale <= 0:
         raise FitSchemaError("invalid-value", f"{path}.scale", "positive required")
     unit = None if "unit" not in mapping else _text(mapping["unit"], f"{path}.unit")
-    return FitCoordinate((lower, upper), scale, unit)
+    origin = _number(mapping["origin"], f"{path}.origin")
+    return FitCoordinate((lower, upper), origin, scale, unit)
 
 
 def _parse_active(value: object, path: str) -> ActiveSelection:
@@ -691,6 +748,29 @@ def _parse_transformations(
     return tuple(transformations)
 
 
+def _parse_fit_observation(
+    value: object,
+    path: str,
+) -> ObservationSpec | HomogeneousReactiveFitObservation:
+    mapping = _mapping(value, path)
+    if mapping.get("family") == "homogeneous_reactive":
+        _keys(mapping, "reactive_observation", path)
+        if _text(mapping["identity"], f"{path}.identity") == "homogeneous_reactive":
+            raise FitSchemaError("invalid-value", f"{path}.identity", "batch identity required")
+        multiplier = _number(mapping["multiplier"], f"{path}.multiplier")
+        if multiplier <= 0.0:
+            raise FitSchemaError("invalid-value", f"{path}.multiplier", "positive required")
+        _number(mapping["temperature_k"], f"{path}.temperature_k")
+        _number(mapping["pressure_pa"], f"{path}.pressure_pa")
+        for field in ("phase", "reaction_system", "continuation"):
+            _mapping(mapping[field], f"{path}.{field}")
+        for field in ("rows", "targets"):
+            if not _list(mapping[field], f"{path}.{field}"):
+                raise FitSchemaError("missing-value", f"{path}.{field}", "non-empty required")
+        return HomogeneousReactiveFitObservation(_canonical(mapping).decode("utf-8"))
+    return _parse_observation(value, path)
+
+
 def _parse_observation(value: object, path: str) -> ObservationSpec:
     mapping = _mapping(value, path)
     _keys(mapping, "observation", path)
@@ -795,19 +875,37 @@ def _parse_solver(value: object, path: str) -> SolverSpec:
     _keys(mapping, "solver", path)
     item = _mapping(mapping["multistart"], f"{path}.multistart")
     _keys(item, "multistart", f"{path}.multistart")
-    count = _integer(item["count"], f"{path}.multistart.count")
-    if count < 1:
-        raise FitSchemaError("invalid-value", f"{path}.multistart.count", "positive required")
-    return SolverSpec(
-        MultistartSpec(
-            count,
-            _boolean(item["include_input"], f"{path}.multistart.include_input"),
-        ),
-    )
+    starts = []
+    for index, raw_start in enumerate(_list(item["starts"], f"{path}.multistart.starts")):
+        start_path = f"{path}.multistart.starts[{index}]"
+        start = _mapping(raw_start, start_path)
+        _keys(start, "start", start_path)
+        values = tuple(
+            _number(raw, f"{start_path}.values[{coordinate}]")
+            for coordinate, raw in enumerate(_list(start["values"], f"{start_path}.values"))
+        )
+        if not values:
+            raise FitSchemaError("invalid-value", f"{start_path}.values", "non-empty required")
+        starts.append(FitStartSpec(_text(start["identity"], f"{start_path}.identity"), values))
+    identities = tuple(start.identity for start in starts)
+    if not starts or len(set(identities)) != len(identities):
+        raise FitSchemaError(
+            "invalid-value", f"{path}.multistart.starts", "unique non-empty identities required"
+        )
+    margin = _number(item["affine_bound_margin"], f"{path}.multistart.affine_bound_margin")
+    if margin < 0.0:
+        raise FitSchemaError(
+            "invalid-value", f"{path}.multistart.affine_bound_margin", "nonnegative required"
+        )
+    return SolverSpec(MultistartSpec(tuple(starts), margin))
 
 
 def _coordinate_mapping(coordinate: FitCoordinate) -> dict[str, object]:
-    result: dict[str, object] = {"bounds": list(coordinate.bounds), "scale": coordinate.scale}
+    result: dict[str, object] = {
+        "bounds": list(coordinate.bounds),
+        "origin": coordinate.origin,
+        "scale": coordinate.scale,
+    }
     if coordinate.unit is not None:
         result["unit"] = coordinate.unit
     return result
@@ -869,8 +967,11 @@ def _observation_mapping(observation: ObservationSpec) -> dict[str, object]:
 def _solver_mapping(solver: SolverSpec) -> dict[str, object]:
     return {
         "multistart": {
-            "count": solver.multistart.count,
-            "include_input": solver.multistart.include_input,
+            "starts": [
+                {"identity": start.identity, "values": list(start.values)}
+                for start in solver.multistart.starts
+            ],
+            "affine_bound_margin": solver.multistart.affine_bound_margin,
         },
     }
 
@@ -1080,6 +1181,7 @@ def parameter_fit_json_schema() -> dict[str, object]:
     coordinate = _object_schema(
         {
             "bounds": {"type": "array", "items": number, "minItems": 2, "maxItems": 2},
+            "origin": number,
             "scale": {"type": "number", "exclusiveMinimum": 0},
             "unit": strings,
         },
@@ -1092,13 +1194,37 @@ def parameter_fit_json_schema() -> dict[str, object]:
         },
         _FIELDS["transformation"].required,
     )
-    observation_schemas = _observation_schemas(strings, number, transformation)
+    observation_schemas = (
+        *_observation_schemas(strings, number, transformation),
+        _object_schema(
+            {
+                "family": {"const": "homogeneous_reactive"},
+                "identity": strings,
+                "phase": {"type": "object"},
+                "reaction_system": {"type": "object"},
+                "continuation": {"type": "object"},
+                "rows": {"type": "array", "items": {"type": "object"}, "minItems": 1},
+                "temperature_k": {"type": "number", "exclusiveMinimum": 0},
+                "pressure_pa": {"type": "number", "exclusiveMinimum": 0},
+                "targets": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "minItems": 1,
+                },
+                "multiplier": {"type": "number", "exclusiveMinimum": 0},
+            },
+            _FIELDS["reactive_observation"].required,
+        ),
+    )
     valid_model_kinds = sorted(
-        {kind for definition in OBSERVABLE_FAMILIES.values() for kind in definition.model_kinds}
+        {
+            "mixture",
+            *(kind for definition in OBSERVABLE_FAMILIES.values() for kind in definition.model_kinds),
+        }
     )
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "$id": "epcsaft.parameter-fit.v1",
+        "$id": "epcsaft.parameter-fit.v2",
         **_object_schema(
             {
                 "schema_version": {"const": SCHEMA_VERSION, "type": "integer"},
@@ -1151,12 +1277,22 @@ def parameter_fit_json_schema() -> dict[str, object]:
                     {
                         "multistart": _object_schema(
                             {
-                                "count": {
-                                    "type": "integer",
-                                    "minimum": 1,
-                                    "maximum": _INTEGER_MAX,
+                                "starts": {
+                                    "type": "array",
+                                    "items": _object_schema(
+                                        {
+                                            "identity": strings,
+                                            "values": {
+                                                "type": "array",
+                                                "items": number,
+                                                "minItems": 1,
+                                            },
+                                        },
+                                        _FIELDS["start"].required,
+                                    ),
+                                    "minItems": 1,
                                 },
-                                "include_input": {"type": "boolean"},
+                                "affine_bound_margin": {"type": "number", "minimum": 0},
                             },
                             _FIELDS["multistart"].required,
                         ),

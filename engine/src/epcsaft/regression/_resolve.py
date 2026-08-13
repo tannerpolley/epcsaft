@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
-from typing import SupportsFloat, cast
+from typing import cast
 
 import pint
 
@@ -28,6 +28,7 @@ from ..units import unit_registry
 from ._model import (
     _CORRELATIONS,
     ActiveSelection,
+    HomogeneousReactiveFitObservation,
     ObservationSpec,
     ParameterFit,
     PublishedObservationCorrelation,
@@ -58,8 +59,16 @@ class ResolvedCoordinate:
     identity: str
     tied_identities: tuple[str, ...]
     bounds: tuple[float, float]
+    origin: float
     scale: float
     unit: str
+
+    @property
+    def affine_bounds(self) -> tuple[float, float]:
+        return (
+            (self.bounds[0] - self.origin) / self.scale,
+            (self.bounds[1] - self.origin) / self.scale,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,6 +138,8 @@ class ResolvedFit:
                     "identity": coordinate.identity,
                     "tied_identities": list(coordinate.tied_identities),
                     "bounds": list(coordinate.bounds),
+                    "origin": coordinate.origin,
+                    "affine_bounds": list(coordinate.affine_bounds),
                     "scale": coordinate.scale,
                     "unit": coordinate.unit,
                 }
@@ -368,25 +379,76 @@ def _resolve_coordinates(
                 f"$.active.coordinates.{representative}.unit",
                 {"declared": unit, "parameter": parameter_units[0]},
             ) from exc
-        if fit.solver.multistart.include_input:
-            value = specs[representative].value
-            try:
-                magnitude = (
-                    float(cast(SupportsFloat, value.to(unit).magnitude))
-                    if isinstance(value, pint.Quantity)
-                    else float(cast(SupportsFloat, value))
-                )
-            except (TypeError, ValueError, pint.errors.PintError) as exc:
-                raise FitResolutionError("invalid-parameter-value", representative, value) from exc
-            if (
-                not math.isfinite(magnitude)
-                or not coordinate.bounds[0] <= magnitude <= coordinate.bounds[1]
-            ):
-                raise FitResolutionError("input-outside-bounds", representative, magnitude)
+        if not coordinate.bounds[0] <= coordinate.origin <= coordinate.bounds[1]:
+            raise FitResolutionError(
+                "origin-outside-bounds", f"$.active.coordinates.{representative}", coordinate.origin
+            )
         independent.append(representative)
         coordinates.append(
-            ResolvedCoordinate(representative, group, coordinate.bounds, coordinate.scale, unit)
+            ResolvedCoordinate(
+                representative,
+                group,
+                coordinate.bounds,
+                coordinate.origin,
+                coordinate.scale,
+                unit,
+            )
         )
+    for start_index, start in enumerate(fit.solver.multistart.starts):
+        if len(start.values) != len(coordinates):
+            raise FitResolutionError(
+                "invalid-start-dimension",
+                f"$.solver.multistart.starts[{start_index}].values",
+                {"expected": len(coordinates), "actual": len(start.values)},
+            )
+        for coordinate_index, (value, start_coordinate) in enumerate(
+            zip(start.values, coordinates, strict=True)
+        ):
+            lower, upper = start_coordinate.bounds
+            if not lower <= value <= upper:
+                raise FitResolutionError(
+                    "start-outside-bounds",
+                    f"$.solver.multistart.starts[{start_index}].values[{coordinate_index}]",
+                    value,
+                )
+    coordinate_by_parameter = {
+        identity: coordinate
+        for coordinate in coordinates
+        for identity in coordinate.tied_identities
+    }
+    for label, values in (
+        ("lower", {item.identity: item.bounds[0] for item in coordinates}),
+        ("origin", {item.identity: item.origin for item in coordinates}),
+        ("upper", {item.identity: item.bounds[1] for item in coordinates}),
+    ):
+        try:
+            ActiveParameterSet(
+                parameters,
+                selected,
+                values=tuple(
+                    values[coordinate_by_parameter[identity].identity] for identity in selected
+                ),
+            )
+        except ValueError as exc:
+            raise FitResolutionError(
+                "coordinate-outside-parameter-domain", f"$.active.coordinates.{label}", str(exc)
+            ) from exc
+    for start_index, start in enumerate(fit.solver.multistart.starts):
+        physical = dict(zip(independent, start.values, strict=True))
+        try:
+            ActiveParameterSet(
+                parameters,
+                selected,
+                values=tuple(
+                    physical[coordinate_by_parameter[identity].identity] for identity in selected
+                ),
+            )
+        except ValueError as exc:
+            raise FitResolutionError(
+                "start-outside-parameter-domain",
+                f"$.solver.multistart.starts[{start_index}]",
+                str(exc),
+            ) from exc
     return tuple(independent), tuple(coordinates)
 
 
@@ -807,6 +869,8 @@ def resolve_fit(
     model = Pure(parameters) if fit.model.kind == "pure" else Mixture(parameters)
     resolved_observations: list[ResolvedObservation] = []
     for index, observation in enumerate(fit.observations):
+        if isinstance(observation, HomogeneousReactiveFitObservation):
+            continue
         if fit.model.kind == "mixture":
             if observation.composition is None or len(observation.composition) != component_count:
                 raise FitResolutionError(

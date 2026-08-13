@@ -891,24 +891,44 @@ struct NativeTransportEndpoint final {
                 "source-reference declaration or activity convention is unsupported"
             );
         }
-        if (request->required_derivatives
-            != 0u) {
+        constexpr std::uint32_t pressure_derivative = 2u;
+        constexpr std::uint32_t parameter_derivative = 8u;
+        constexpr std::uint32_t supported_derivatives =
+            pressure_derivative | parameter_derivative;
+        const bool pressure_derivatives_requested =
+            (request->required_derivatives & pressure_derivative) != 0u;
+        const bool parameter_derivatives_requested =
+            (request->required_derivatives & parameter_derivative) != 0u;
+        if ((request->required_derivatives & ~supported_derivatives) != 0u
+            || (parameter_derivatives_requested
+                && endpoint.active_coordinates.empty())) {
             return fail(
                 EPCSAFT_SOURCE_REFERENCE_DERIVATIVE_UNAVAILABLE,
                 "required source-reference derivative is unavailable"
             );
         }
+        const std::size_t active_parameter_count =
+            endpoint.active_coordinates.size();
         if (result->component_count != component_count
             || result->neutral_basis_row_count != row_count
             || result->neutral_basis_capacity != row_count * component_count
             || result->contraction_capacity != row_count
             || result->source_composition_capacity != component_count
-            || result->pressure_derivative_capacity != 0
+            || result->pressure_derivative_capacity
+                != (pressure_derivatives_requested ? row_count : 0u)
+            || result->parameter_derivative_capacity
+                != (parameter_derivatives_requested
+                        ? row_count * active_parameter_count
+                        : 0u)
             || result->neutral_basis == nullptr
             || result->log_fugacity_contractions == nullptr
             || result->activity_scale_log_contractions == nullptr
             || result->transfer_log_contractions == nullptr
-            || result->source_composition == nullptr) {
+            || result->source_composition == nullptr
+            || (pressure_derivatives_requested
+                && result->pressure_derivatives_per_pa == nullptr)
+            || (parameter_derivatives_requested
+                && result->parameter_derivatives == nullptr)) {
             return fail(
                 EPCSAFT_SOURCE_REFERENCE_BUFFER_ERROR,
                 "source-reference result buffers do not match immutable dimensions"
@@ -979,6 +999,187 @@ struct NativeTransportEndpoint final {
             std::vector<double> fugacity(row_count, 0.0);
             std::vector<double> activity(row_count, 0.0);
             std::vector<double> transfer(row_count, 0.0);
+            std::vector<double> fugacity_pressure_derivatives(
+                pressure_derivatives_requested ? row_count : 0u, 0.0
+            );
+            std::vector<double> fugacity_parameter_derivatives(
+                parameter_derivatives_requested
+                    ? row_count * active_parameter_count
+                    : 0u,
+                0.0
+            );
+            const std::size_t derivative_stride = 1u
+                + (pressure_derivatives_requested ? 1u : 0u)
+                + (parameter_derivatives_requested
+                    ? active_parameter_count
+                    : 0u);
+            const auto phase_fugacity_derivatives =
+                [&](const std::vector<double>& composition) {
+                    const auto state = endpoint.model.evaluate_pressure(
+                        temperature_k, pressure_pa, composition, "liquid"
+                    );
+                    if (!state.log_fugacity_coefficient.has_value()) {
+                        throw std::runtime_error(
+                            "source-reference fugacity is unavailable"
+                        );
+                    }
+                    std::vector<double> values(
+                        component_count * derivative_stride, 0.0
+                    );
+                    for (std::size_t component = 0;
+                         component < component_count;
+                         ++component) {
+                        values[component * derivative_stride] =
+                            (*state.log_fugacity_coefficient)[component];
+                    }
+                    if (!pressure_derivatives_requested
+                        && !parameter_derivatives_requested) {
+                        return values;
+                    }
+                    const auto absent_coordinate =
+                        std::numeric_limits<std::size_t>::max();
+                    std::vector<std::size_t> support_coordinates(
+                        component_count, absent_coordinate
+                    );
+                    std::size_t support_count = 0u;
+                    for (std::size_t component = 0;
+                         component < component_count;
+                         ++component) {
+                        if (composition[component] > 0.0) {
+                            support_coordinates[component] = support_count++;
+                        }
+                        std::fill(
+                            values.begin()
+                                + static_cast<std::ptrdiff_t>(
+                                    component * derivative_stride + 1u
+                                ),
+                            values.begin()
+                                + static_cast<std::ptrdiff_t>(
+                                    (component + 1u) * derivative_stride
+                                ),
+                            std::numeric_limits<double>::quiet_NaN()
+                        );
+                    }
+                    const double volume_m3 = 1.0 / state.molar_density;
+                    const NativeMixturePhaseBlock phase =
+                        endpoint.model.evaluate_supported_phase_derivatives(
+                            temperature_k,
+                            composition,
+                            volume_m3,
+                            endpoint.ion_mole_fraction_max,
+                            endpoint.active_coordinates
+                        );
+                    const std::size_t state_count = support_count + 1u;
+                    const std::size_t width =
+                        state_count + active_parameter_count;
+                    if (phase.hessian.size() != width * width) {
+                        throw std::runtime_error(
+                            "source-reference derivative tensor dimensions changed"
+                        );
+                    }
+                    const std::size_t volume_coordinate = support_count;
+                    const double pressure_volume_derivative =
+                        -detail::GAS_CONSTANT * temperature_k
+                        * phase.hessian[
+                            volume_coordinate * width + volume_coordinate
+                        ];
+                    if (!std::isfinite(pressure_volume_derivative)
+                        || pressure_volume_derivative == 0.0) {
+                        throw std::runtime_error(
+                            "source-reference pressure closure is singular"
+                        );
+                    }
+                    for (std::size_t component = 0;
+                         component < component_count;
+                         ++component) {
+                        const std::size_t component_coordinate =
+                            support_coordinates[component];
+                        if (component_coordinate == absent_coordinate) {
+                            continue;
+                        }
+                        std::size_t offset = component * derivative_stride + 1u;
+                        const double chemical_volume = phase.hessian[
+                            component_coordinate * width + volume_coordinate
+                        ];
+                        if (pressure_derivatives_requested) {
+                            values[offset++] = chemical_volume
+                                / pressure_volume_derivative
+                                - 1.0 / pressure_pa;
+                        }
+                        if (parameter_derivatives_requested) {
+                            for (std::size_t parameter = 0;
+                                 parameter < active_parameter_count;
+                                 ++parameter) {
+                                const std::size_t parameter_coordinate =
+                                    state_count + parameter;
+                                values[offset + parameter] = phase.hessian[
+                                    component_coordinate * width
+                                        + parameter_coordinate
+                                ] - chemical_volume * phase.hessian[
+                                    volume_coordinate * width
+                                        + parameter_coordinate
+                                ] / phase.hessian[
+                                    volume_coordinate * width
+                                        + volume_coordinate
+                                ];
+                            }
+                        }
+                    }
+                    return values;
+                };
+            const auto selected_derivatives = [&] (
+                const std::vector<double>& values,
+                const std::vector<std::size_t>& components
+            ) {
+                std::vector<double> selected;
+                selected.reserve(components.size() * derivative_stride);
+                for (std::size_t component : components) {
+                    const auto first = values.begin()
+                        + static_cast<std::ptrdiff_t>(
+                            component * derivative_stride
+                        );
+                    if (!std::all_of(
+                            first,
+                            first + static_cast<std::ptrdiff_t>(
+                                derivative_stride
+                            ),
+                            [](double value) { return std::isfinite(value); }
+                        )) {
+                        throw std::runtime_error(
+                            "source-reference derivative component is outside "
+                            "the positive limiting support"
+                        );
+                    }
+                    selected.insert(
+                        selected.end(),
+                        first,
+                        first + static_cast<std::ptrdiff_t>(derivative_stride)
+                    );
+                }
+                return selected;
+            };
+            const auto assign_derivatives = [&] (
+                std::size_t target_row,
+                const std::vector<double>& values,
+                std::size_t selected_component
+            ) {
+                std::size_t offset =
+                    selected_component * derivative_stride;
+                fugacity[target_row] = values[offset++];
+                if (pressure_derivatives_requested) {
+                    fugacity_pressure_derivatives[target_row] =
+                        values[offset++];
+                }
+                if (parameter_derivatives_requested) {
+                    for (std::size_t parameter = 0;
+                         parameter < active_parameter_count;
+                         ++parameter) {
+                        fugacity_parameter_derivatives[
+                            target_row * active_parameter_count + parameter
+                        ] = values[offset + parameter];
+                    }
+                }
+            };
             double reference_molality =
                 detail::REFERENCE_MOLALITIES.back();
             double convergence_error = 0.0;
@@ -988,24 +1189,29 @@ struct NativeTransportEndpoint final {
                     neutral_solutes.push_back(component);
                 }
             }
-            std::vector<double> neutral_log_fugacity(component_count, 0.0);
-            if (neutral_solutes.empty()) {
-                const auto state = endpoint.model.evaluate_pressure(
-                    temperature_k, pressure_pa, source_composition, "liquid"
+            std::vector<double> neutral_trace_stoichiometry(component_count, 0.0);
+            for (std::size_t component : neutral_solutes) {
+                neutral_trace_stoichiometry[component] = 1.0;
+            }
+            std::vector<double> neutral_values(
+                reference_basis.neutral_components.size()
+                    * derivative_stride,
+                0.0
+            );
+            const auto reference_limit_derivatives = [&] (
+                const std::vector<std::size_t>& selected_components,
+                const std::vector<double>& trace_stoichiometry
+            ) {
+                const double trace_formula_moles = std::accumulate(
+                    trace_stoichiometry.begin(),
+                    trace_stoichiometry.end(),
+                    0.0
                 );
-                if (!state.log_fugacity_coefficient.has_value()) {
-                    throw std::runtime_error(
-                        "source-reference fugacity is unavailable"
-                    );
-                }
-                neutral_log_fugacity = *state.log_fugacity_coefficient;
-            } else {
-                const auto sequence = detail::reference_limit_sequence(
+                return detail::reference_limit_sequence(
                     [&](double molality) {
                         const double solvent_moles = 1.0 / solvent_molar_mass;
                         const double total_moles = solvent_moles
-                            + molality
-                                * static_cast<double>(neutral_solutes.size());
+                            + molality * trace_formula_moles;
                         std::vector<double> composition(component_count, 0.0);
                         for (std::size_t component = 0;
                              component < component_count;
@@ -1014,37 +1220,36 @@ struct NativeTransportEndpoint final {
                                 source_composition[component] * solvent_moles
                                 / total_moles;
                         }
-                        for (std::size_t component : neutral_solutes) {
-                            composition[component] = molality / total_moles;
+                        for (std::size_t component = 0;
+                             component < component_count;
+                             ++component) {
+                            composition[component] += molality
+                                * trace_stoichiometry[component]
+                                / total_moles;
                         }
-                        const auto state = endpoint.model.evaluate_pressure(
-                            temperature_k, pressure_pa, composition, "liquid"
+                        return selected_derivatives(
+                            phase_fugacity_derivatives(composition),
+                            selected_components
                         );
-                        if (!state.log_fugacity_coefficient.has_value()) {
-                            throw std::runtime_error(
-                                "neutral-solute reference fugacity is unavailable"
-                            );
-                        }
-                        std::vector<double> values;
-                        values.reserve(
-                            reference_basis.neutral_components.size()
-                        );
-                        for (std::size_t component
-                             : reference_basis.neutral_components) {
-                            values.push_back(
-                                (*state.log_fugacity_coefficient)[component]
-                            );
-                        }
-                        return values;
                     }
                 );
-                for (std::size_t index = 0;
-                     index < reference_basis.neutral_components.size();
-                     ++index) {
-                    neutral_log_fugacity[
-                        reference_basis.neutral_components[index]
-                    ] = sequence.values[index];
-                }
+            };
+            const double neutral_trace_formula_moles = std::accumulate(
+                neutral_trace_stoichiometry.begin(),
+                neutral_trace_stoichiometry.end(),
+                0.0
+            );
+            if (neutral_trace_formula_moles == 0.0) {
+                neutral_values = selected_derivatives(
+                    phase_fugacity_derivatives(source_composition),
+                    reference_basis.neutral_components
+                );
+            } else {
+                const auto sequence = reference_limit_derivatives(
+                    reference_basis.neutral_components,
+                    neutral_trace_stoichiometry
+                );
+                neutral_values = sequence.values;
                 reference_molality = sequence.molality;
                 convergence_error = sequence.convergence_error;
             }
@@ -1054,7 +1259,7 @@ struct NativeTransportEndpoint final {
             );
             std::size_t row = 0;
             for (std::size_t component : reference_basis.neutral_components) {
-                fugacity[row] = neutral_log_fugacity[component];
+                assign_derivatives(row, neutral_values, row);
                 if (source_composition[component] > 0.0) {
                     activity[row] = std::log(source_composition[component]);
                 } else {
@@ -1067,48 +1272,34 @@ struct NativeTransportEndpoint final {
                 const std::size_t cation = pair.cation;
                 const std::size_t anion = pair.anion;
                 const auto& stoichiometry = pair.stoichiometry;
-                const auto sequence = detail::reference_limit_sequence(
-                    [&](double molality) {
-                        const double solvent_moles = 1.0 / solvent_molar_mass;
-                        const double added_moles = molality
-                            * (static_cast<double>(stoichiometry[0])
-                               + static_cast<double>(stoichiometry[1])
-                               + static_cast<double>(neutral_solutes.size()));
-                        const double total_moles = solvent_moles + added_moles;
-                        std::vector<double> composition(component_count, 0.0);
-                        for (std::size_t component = 0;
-                             component < component_count;
-                             ++component) {
-                            composition[component] =
-                                source_composition[component] * solvent_moles
-                                / total_moles;
-                        }
-                        for (std::size_t component : neutral_solutes) {
-                            composition[component] = molality / total_moles;
-                        }
-                        composition[cation] =
-                            static_cast<double>(stoichiometry[0]) * molality
-                            / total_moles;
-                        composition[anion] =
-                            static_cast<double>(stoichiometry[1]) * molality
-                            / total_moles;
-                        const auto state = endpoint.model.evaluate_pressure(
-                            temperature_k, pressure_pa, composition, "liquid"
-                        );
-                        if (!state.log_fugacity_coefficient.has_value()) {
-                            throw std::runtime_error(
-                                "ionic source-reference fugacity is unavailable"
-                            );
-                        }
-                        return std::vector<double>{
-                            (*state.log_fugacity_coefficient)[cation],
-                            (*state.log_fugacity_coefficient)[anion],
-                        };
-                    }
+                auto pair_trace_stoichiometry = neutral_trace_stoichiometry;
+                pair_trace_stoichiometry[cation] +=
+                    static_cast<double>(stoichiometry[0]);
+                pair_trace_stoichiometry[anion] +=
+                    static_cast<double>(stoichiometry[1]);
+                const auto sequence = reference_limit_derivatives(
+                    {cation, anion}, pair_trace_stoichiometry
                 );
-                fugacity[row] =
-                    stoichiometry[0] * sequence.values[0]
-                    + stoichiometry[1] * sequence.values[1];
+                for (std::size_t derivative = 0;
+                     derivative < derivative_stride;
+                     ++derivative) {
+                    const double contraction =
+                        stoichiometry[0] * sequence.values[derivative]
+                        + stoichiometry[1]
+                            * sequence.values[derivative_stride + derivative];
+                    if (derivative == 0u) {
+                        fugacity[row] = contraction;
+                    } else if (pressure_derivatives_requested
+                               && derivative == 1u) {
+                        fugacity_pressure_derivatives[row] = contraction;
+                    } else {
+                        const std::size_t parameter = derivative - 1u
+                            - (pressure_derivatives_requested ? 1u : 0u);
+                        fugacity_parameter_derivatives[
+                            row * active_parameter_count + parameter
+                        ] = contraction;
+                    }
+                }
                 activity[row] =
                     (static_cast<double>(stoichiometry[0])
                      + static_cast<double>(stoichiometry[1]))
@@ -1129,7 +1320,10 @@ struct NativeTransportEndpoint final {
                 });
             };
             if (row != row_count || !finite(fugacity) || !finite(activity)
-                || !finite(transfer) || !std::isfinite(convergence_error)) {
+                || !finite(transfer)
+                || !finite(fugacity_pressure_derivatives)
+                || !finite(fugacity_parameter_derivatives)
+                || !std::isfinite(convergence_error)) {
                 return fail(
                     EPCSAFT_SOURCE_REFERENCE_NONFINITE,
                     "source-reference transfer is nonfinite"
@@ -1148,6 +1342,21 @@ struct NativeTransportEndpoint final {
                       result->transfer_log_contractions);
             std::copy(source_composition.begin(), source_composition.end(),
                       result->source_composition);
+            if (pressure_derivatives_requested) {
+                std::copy(
+                    fugacity_pressure_derivatives.begin(),
+                    fugacity_pressure_derivatives.end(),
+                    result->pressure_derivatives_per_pa
+                );
+            }
+            if (parameter_derivatives_requested) {
+                std::copy(
+                    fugacity_parameter_derivatives.begin(),
+                    fugacity_parameter_derivatives.end(),
+                    result->parameter_derivatives
+                );
+            }
+            result->derivative_availability = request->required_derivatives;
             result->temperature_k = temperature_k;
             result->pressure_pa = pressure_pa;
             result->source_reference_pressure_pa =

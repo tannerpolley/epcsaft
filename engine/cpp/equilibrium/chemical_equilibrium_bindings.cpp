@@ -881,6 +881,15 @@ SourceReferenceTransferEvidence source_reference_transfer_evidence(
     result.derivative_availability = py::cast<std::vector<std::string>>(
         payload["derivative_availability"]
     );
+    result.pressure_derivatives_per_pa = py::cast<std::vector<double>>(
+        payload["pressure_derivatives_per_pa"]
+    );
+    result.active_parameter_identities = py::cast<std::vector<std::string>>(
+        payload["active_parameter_identities"]
+    );
+    result.parameter_derivatives = py::cast<std::vector<double>>(
+        payload["parameter_derivatives"]
+    );
     result.temperature_k = py::cast<double>(payload["temperature_k"]);
     result.pressure_pa = py::cast<double>(payload["pressure_pa"]);
     result.source_reference_pressure_pa = py::cast<double>(
@@ -1000,11 +1009,6 @@ py::dict solve_provider_source(
         || source_reference_standard_molality_mol_per_kg <= 0.0) {
         throw py::value_error("source standard molality is invalid");
     }
-    if (sensitivities_requested || active_parameters != nullptr) {
-        throw py::value_error(
-            "installed Provider source-reference derivative is unavailable"
-        );
-    }
     for (const EquilibriumConstantRecord& record : input.equilibrium_constant_records) {
         if (record.conversion_id
                 != "source-standard-state-to-provider-neutral-reference"
@@ -1031,6 +1035,25 @@ py::dict solve_provider_source(
         source_reference_transfer_evidence(
             source_standard_state, "provider_transfer"
         );
+    const bool pressure_derivative_available = std::find(
+        reference.derivative_availability.begin(),
+        reference.derivative_availability.end(),
+        "pressure"
+    ) != reference.derivative_availability.end();
+    const bool parameter_derivative_available = std::find(
+        reference.derivative_availability.begin(),
+        reference.derivative_availability.end(),
+        "parameters"
+    ) != reference.derivative_availability.end();
+    if (sensitivities_requested != pressure_derivative_available
+        || (active_parameters != nullptr) != parameter_derivative_available
+        || (active_parameters != nullptr
+            && reference.active_parameter_identities
+                != active_parameters->identities)) {
+        throw py::value_error(
+            "installed Provider source-reference derivative receipt is incompatible"
+        );
+    }
     if (reference.reference_state_id != source_standard_state_id
         || reference.activity_convention_id
             != source_reference_activity_convention_id
@@ -1079,12 +1102,13 @@ py::dict solve_provider_source(
         provider,
         packing_bounds,
         trace_floor,
-        {},
-        {},
-        nullptr
+        transformed.ln_k_pressure_derivatives_per_pa,
+        transformed.ln_k_parameter_derivatives,
+        active_parameters
     );
     py::dict sensitivities = py::cast<py::dict>(result["sensitivities"]);
-    sensitivities["reference_parameter_status"] = "not_applicable";
+    sensitivities["reference_parameter_status"] =
+        active_parameters == nullptr ? "not_applicable" : "available";
     sensitivities["reference_parameter_failure_reason"] = "";
     result["standard_offsets"] = transformed.standard_offsets;
     result["ln_k_provider_basis"] = transformed.ln_k_provider_basis;
@@ -1093,7 +1117,9 @@ py::dict solve_provider_source(
     result["source_standard_state_id"] = source_standard_state_id;
     result["source_activity_scale_id"] = source_activity_scale_id;
     result["provider_reference_id"] = reference.helmholtz_basis_id;
-    result["reference_derivative_availability"] = 0;
+    result["reference_derivative_availability"] =
+        (pressure_derivative_available ? 2 : 0)
+        | (parameter_derivative_available ? 8 : 0);
     result["reference_convergence_error"] =
         reference.reference_convergence_error;
     result["source_reference_state_fingerprint"] =
@@ -1107,6 +1133,7 @@ py::dict solve_chemical_equilibrium(
     const py::object& source_standard_state,
     const py::object& packing_fraction_bounds,
     double trace_floor,
+    bool sensitivities_requested,
     bool active_parameters_requested
 ) {
     if (capsule.is_none()) {
@@ -1165,7 +1192,7 @@ py::dict solve_chemical_equilibrium(
         py::cast<py::dict>(source_standard_state),
         packing_bounds,
         trace_floor,
-        active_parameters_requested,
+        sensitivities_requested,
         resolved.identities.empty() ? nullptr : &resolved
     );
 }
@@ -1181,6 +1208,7 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("source_standard_state"),
         py::arg("packing_fraction_bounds"),
         py::arg("trace_floor"),
+        py::arg("sensitivities_requested") = false,
         py::arg("active_parameters_requested") = false
     );
 }

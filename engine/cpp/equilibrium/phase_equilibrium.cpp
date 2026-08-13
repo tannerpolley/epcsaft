@@ -468,12 +468,13 @@ FixedTpPhaseResult one_phase(
     result.diagnostics.search_exclusions = {
         "other_compositions",
         "other_phase_counts",
+        "root_completeness_proof",
     };
     result.diagnostics.completeness_criterion =
-        "selected_fail_closed_pressure_envelope_outcome";
+        "detected_roots_only;pressure_envelope_root_completeness_not_proven";
     result.diagnostics.role_evidence = {
         "native_pressure_derivative_strict_stability",
-        "declared_volume_branch",
+        "detected_strict_stable_volume_extreme_for_declared_role",
     };
     result.diagnostics.hint_count = static_cast<int>(problem.hints.size());
     const HeldLocalAccess access(provider, problem.temperature_k, problem.pressure_pa);
@@ -514,13 +515,21 @@ FixedTpPhaseResult one_phase(
         result.diagnostics.numerical_status = "uncertified";
         result.diagnostics.physical_status = "rejected";
         result.diagnostics.failure_stage = "phase_role_certificate";
-        result.diagnostics.failure_reason = envelope.failure_reason;
+        result.diagnostics.failure_reason = "no_detected_strict_stable_root";
         return result;
     }
     const PhaseRole role = problem.phases.front().role;
     const Held2PressureRoot* selected =
         role == PhaseRole::Liquid ? stable.front() : stable.back();
-    if (stable.size() == 1) {
+    result.diagnostics.role_evidence.push_back(
+        role == PhaseRole::Liquid
+            ? "minimum_detected_strict_stable_volume_selected"
+            : "maximum_detected_strict_stable_volume_selected"
+    );
+    if (stable.size() == 1u) {
+        result.diagnostics.role_evidence.push_back(
+            "single_detected_root_compressibility_role_split_z_0.35"
+        );
         const double z = problem.pressure_pa * selected->volume
             / (kGasConstant * problem.temperature_k);
         if ((role == PhaseRole::Liquid && z >= kRoleZSplit)
@@ -530,7 +539,7 @@ FixedTpPhaseResult one_phase(
             result.diagnostics.physical_status = "rejected";
             result.diagnostics.failure_stage = "phase_role_certificate";
             result.diagnostics.failure_reason =
-                "single_stable_root_role_inconclusive";
+                "single_detected_stable_root_role_inconclusive";
             return result;
         }
     }

@@ -320,6 +320,51 @@ inline void validate_electrolyte_phase_state(
   }
 }
 
+// EqExclude: input and domain validation
+inline std::vector<std::size_t> validate_reduced_support_phase_state(
+    double temperature, const std::vector<double> &amounts, double volume,
+    double ion_mole_fraction_max, const NativeParameters &parameters) {
+  if (!std::isfinite(temperature) || temperature <= 0.0 ||
+      !std::isfinite(volume) || volume <= 0.0 ||
+      amounts.size() != parameters.segment_count.size() ||
+      !std::all_of(amounts.begin(), amounts.end(), [](double amount) {
+        return std::isfinite(amount) && amount >= 0.0;
+      })) {
+    throw std::invalid_argument(
+        "temperature, supported amounts, and volume must be nonnegative and finite");
+  }
+  std::vector<std::size_t> support;
+  double total_amount = 0.0;
+  double ionic_amount = 0.0;
+  double charge_amount = 0.0;
+  for (std::size_t component = 0; component < amounts.size(); ++component) {
+    const double amount = amounts[component];
+    total_amount += amount;
+    if (amount > 0.0) {
+      support.push_back(component);
+    }
+    const int charge = parameters.charge_number[component];
+    if (charge != 0) {
+      ionic_amount += amount;
+    }
+    charge_amount += amount * static_cast<double>(charge);
+  }
+  if (!std::isfinite(total_amount) || total_amount <= 0.0 || support.empty()) {
+    throw std::invalid_argument(
+        "reduced-support phase requires a positive finite total amount");
+  }
+  if (std::abs(charge_amount / total_amount) > 1.0e-12) {
+    throw std::invalid_argument(
+        "reduced-support electrolyte phase amounts must be electroneutral");
+  }
+  if (std::isfinite(ion_mole_fraction_max) &&
+      ionic_amount / total_amount > ion_mole_fraction_max + 1.0e-12) {
+    throw std::invalid_argument(
+        "ion mole fraction exceeds the parameter source domain");
+  }
+  return support;
+}
+
 template <typename PhaseFunction>
 // EqID: phase_pressure
 // EqExclude: CppAD-generated derivative machinery
@@ -756,21 +801,31 @@ pure_phase_block(double temperature, double amount, double volume,
 inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
     double temperature, const std::vector<double> &amounts, double volume,
     const std::vector<NativeFixedTopologyParameter> &active_parameters,
-    const NativeParameters &base_parameters) {
+    const NativeParameters &base_parameters,
+    bool reduce_zero_amount_support = false,
+    double ion_mole_fraction_max = std::numeric_limits<double>::infinity()) {
   if (base_parameters.segment_count.empty()) {
     throw std::logic_error("active parameters require at least one component");
   }
+  const std::size_t components = base_parameters.segment_count.size();
   const bool electrolyte = std::any_of(base_parameters.charge_number.begin(),
                                        base_parameters.charge_number.end(),
                                        [](int charge) { return charge != 0; });
-  if (electrolyte) {
+  std::vector<std::size_t> coordinate_components;
+  if (reduce_zero_amount_support) {
+    coordinate_components = validate_reduced_support_phase_state(
+        temperature, amounts, volume, ion_mole_fraction_max, base_parameters);
+  } else if (electrolyte) {
     validate_electrolyte_phase_state(temperature, amounts, volume,
-                                     std::numeric_limits<double>::infinity(),
+                                     ion_mole_fraction_max,
                                      base_parameters);
   } else {
     validate_mixture_phase_state(temperature, amounts, volume, base_parameters);
   }
-  const std::size_t components = base_parameters.segment_count.size();
+  if (!reduce_zero_amount_support) {
+    coordinate_components.resize(components);
+    std::iota(coordinate_components.begin(), coordinate_components.end(), 0u);
+  }
   const std::size_t sites = base_parameters.site_component.size();
   NativeParameters value_parameters = base_parameters;
   std::vector<std::pair<NativeFixedTopologyParameterKind, std::size_t>>
@@ -1019,13 +1074,17 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
 
   CppAdSerialGuard cppad_guard;
   using ADScalar = CppAD::AD<double>;
-  const std::size_t volume_coordinate = components;
+  const std::size_t amount_coordinate_count = coordinate_components.size();
+  const std::size_t volume_coordinate = amount_coordinate_count;
   const std::size_t parameter_coordinate = volume_coordinate + 1;
   const std::size_t coordinates =
       parameter_coordinate + active_parameters.size();
   const std::size_t width = coordinates + sites;
   std::vector<ADScalar> independent(width);
-  std::copy(amounts.begin(), amounts.end(), independent.begin());
+  for (std::size_t coordinate = 0; coordinate < amount_coordinate_count;
+       ++coordinate) {
+    independent[coordinate] = amounts[coordinate_components[coordinate]];
+  }
   independent[volume_coordinate] = volume;
   for (std::size_t index = 0; index < active_parameters.size(); ++index) {
     independent[parameter_coordinate + index] = active_parameters[index].value;
@@ -1134,8 +1193,11 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
     }
   }
 
-  std::vector<ADScalar> active_amounts(independent.begin(),
-                                       independent.begin() + volume_coordinate);
+  std::vector<ADScalar> active_amounts(components, ADScalar(0.0));
+  for (std::size_t coordinate = 0; coordinate < amount_coordinate_count;
+       ++coordinate) {
+    active_amounts[coordinate_components[coordinate]] = independent[coordinate];
+  }
   ADScalar active_total = ADScalar(0.0);
   for (const ADScalar &amount : active_amounts) {
     active_total += amount;
@@ -1166,7 +1228,9 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
       sigma, diameter, active_site_fractions,
       electrolyte_contributions.debye_huckel, born);
   ADScalar ideal = ADScalar(0.0);
-  for (const ADScalar &amount : active_amounts) {
+  for (std::size_t coordinate = 0; coordinate < amount_coordinate_count;
+       ++coordinate) {
+    const ADScalar &amount = independent[coordinate];
     ideal += amount * (scalar_log(amount / independent[volume_coordinate]) -
                        ADScalar(1.0));
   }
@@ -1185,7 +1249,11 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
   dependent.insert(dependent.end(), mass_action.begin(), mass_action.end());
   CppAD::ADFun<double> function(independent, dependent);
 
-  std::vector<double> point(amounts.begin(), amounts.end());
+  std::vector<double> point;
+  point.reserve(coordinates + sites);
+  for (std::size_t component : coordinate_components) {
+    point.push_back(amounts[component]);
+  }
   point.push_back(volume);
   for (const auto &parameter : active_parameters) {
     point.push_back(parameter.value);
@@ -1264,6 +1332,16 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
       hessian,
       -GAS_CONSTANT * temperature * gradient[volume_coordinate],
   };
+}
+
+inline NativeMixturePhaseBlock support_aware_parameterized_mixture_phase_block(
+    double temperature, const std::vector<double> &amounts, double volume,
+    double ion_mole_fraction_max,
+    const std::vector<NativeFixedTopologyParameter> &active_parameters,
+    const NativeParameters &base_parameters) {
+  return fixed_topology_parameterized_mixture_phase_block(
+      temperature, amounts, volume, active_parameters, base_parameters, true,
+      ion_mole_fraction_max);
 }
 
 // EqExclude: transport and buffer mechanics
