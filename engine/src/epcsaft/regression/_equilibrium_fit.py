@@ -551,6 +551,13 @@ def _reactive_fit_problem(resolved: ResolvedFit) -> _ResolvedReactiveFit:
                         "molar_volume_m3_per_mol",
                         "maximum_log_composition_distance",
                         "maximum_log_volume_distance",
+                        "phase_identity",
+                        "phase_role",
+                        "anchor_state_identity",
+                        "anchor_phase_role_receipt_fingerprint",
+                        "anchor_parameter_fingerprint",
+                        "anchor_reaction_fingerprint",
+                        "anchor_topology_fingerprint",
                     }
                 ),
                 "reactive continuation reference",
@@ -566,6 +573,13 @@ def _reactive_fit_problem(resolved: ResolvedFit) -> _ResolvedReactiveFit:
                     reference_item["maximum_log_volume_distance"],
                     "maximum volume distance",
                 ),
+                str(reference_item["phase_identity"]),
+                cast(Any, reference_item["phase_role"]),
+                str(reference_item["anchor_state_identity"]),
+                str(reference_item["anchor_phase_role_receipt_fingerprint"]),
+                str(reference_item["anchor_parameter_fingerprint"]),
+                str(reference_item["anchor_reaction_fingerprint"]),
+                str(reference_item["anchor_topology_fingerprint"]),
             )
         reaction_system = _reaction_system(item["reaction_system"])
         problem = HomogeneousReactiveObservationProblem(
@@ -821,20 +835,7 @@ def _problem_payload(problem: _ResolvedReactiveFit) -> dict[str, object]:
                 "continuation_reference": (
                     None
                     if batch.observation_problem.continuation_reference is None
-                    else {
-                        "mole_fractions": (
-                            batch.observation_problem.continuation_reference.mole_fractions
-                        ),
-                        "molar_volume_m3_per_mol": (
-                            batch.observation_problem.continuation_reference.molar_volume_m3_per_mol
-                        ),
-                        "maximum_log_composition_distance": (
-                            batch.observation_problem.continuation_reference.maximum_log_composition_distance
-                        ),
-                        "maximum_log_volume_distance": (
-                            batch.observation_problem.continuation_reference.maximum_log_volume_distance
-                        ),
-                    }
+                    else batch.observation_problem.continuation_reference.to_mapping()
                 ),
                 "descriptor_fingerprint": batch.descriptor.fingerprint,
                 "problem_fingerprint": batch.descriptor.problem_fingerprint,
@@ -939,14 +940,17 @@ def _preflight(problem: _ResolvedReactiveFit) -> None:
             )
             if result.status != "evaluated":
                 failure = result.failure
-                code = "owner_contract_failure" if failure is None else failure.code
-                detail = "missing typed failure" if failure is None else failure.diagnostic
-                raise FitPreflightError(
-                    code,
-                    start.identity,
-                    batch.identity,
-                    detail,
-                )
+                if failure is None:
+                    raise FitPreflightError(
+                        "owner_contract_failure",
+                        start.identity,
+                        batch.identity,
+                        "missing typed failure",
+                    )
+                # A scientific rejection at an exact caller start is part of
+                # multistart accounting. The pure owner will reproduce it for
+                # native solve accounting; it must not suppress usable starts.
+                continue
             if result.state is None or result.physical_branch is None:
                 raise FitPreflightError(
                     "owner_contract_failure",

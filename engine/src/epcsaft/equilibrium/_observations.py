@@ -135,12 +135,19 @@ class HomogeneousReactiveObservationRow:
 
 @dataclass(frozen=True, slots=True)
 class HomogeneousContinuationReference:
-    """Immutable local branch neighborhood for pure cross-trial evaluation."""
+    """Immutable, role-certified local branch anchor for pure trial evaluation."""
 
     mole_fractions: tuple[float, ...]
     molar_volume_m3_per_mol: float
     maximum_log_composition_distance: float
     maximum_log_volume_distance: float
+    phase_identity: str
+    phase_role: HomogeneousPhaseRole
+    anchor_state_identity: str
+    anchor_phase_role_receipt_fingerprint: str
+    anchor_parameter_fingerprint: str
+    anchor_reaction_fingerprint: str
+    anchor_topology_fingerprint: str
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "mole_fractions", tuple(self.mole_fractions))
@@ -154,21 +161,40 @@ class HomogeneousContinuationReference:
             or self.maximum_log_composition_distance <= 0.0
             or not math.isfinite(self.maximum_log_volume_distance)
             or self.maximum_log_volume_distance <= 0.0
+            or not self.phase_identity
+            or self.phase_role not in {"liquid", "vapor"}
+            or not self.anchor_state_identity.startswith("sha256:")
+            or not self.anchor_phase_role_receipt_fingerprint.startswith("sha256:")
+            or not self.anchor_parameter_fingerprint.startswith("sha256:")
+            or not self.anchor_reaction_fingerprint.startswith("sha256:")
+            or not self.anchor_topology_fingerprint.startswith("sha256:")
         ):
-            raise ValueError("continuation reference requires a positive normalized local state")
+            raise ValueError(
+                "continuation reference requires a positive, role-certified local state"
+            )
+
+    def to_mapping(self) -> dict[str, object]:
+        return {
+            "mole_fractions": self.mole_fractions,
+            "molar_volume_m3_per_mol": self.molar_volume_m3_per_mol,
+            "maximum_log_composition_distance": self.maximum_log_composition_distance,
+            "maximum_log_volume_distance": self.maximum_log_volume_distance,
+            "phase_identity": self.phase_identity,
+            "phase_role": self.phase_role,
+            "anchor_state_identity": self.anchor_state_identity,
+            "anchor_phase_role_receipt_fingerprint": (
+                self.anchor_phase_role_receipt_fingerprint
+            ),
+            "anchor_parameter_fingerprint": self.anchor_parameter_fingerprint,
+            "anchor_reaction_fingerprint": self.anchor_reaction_fingerprint,
+            "anchor_topology_fingerprint": self.anchor_topology_fingerprint,
+        }
 
     @property
     def fingerprint(self) -> str:
         return _canonical_fingerprint(
             "epcsaft.homogeneous-continuation-reference",
-            {
-                "mole_fractions": self.mole_fractions,
-                "molar_volume_m3_per_mol": self.molar_volume_m3_per_mol,
-                "maximum_log_composition_distance": (
-                    self.maximum_log_composition_distance
-                ),
-                "maximum_log_volume_distance": self.maximum_log_volume_distance,
-            },
+            self.to_mapping(),
         )
 
 
@@ -323,6 +349,7 @@ class HomogeneousPhaseRoleReceipt:
     completeness_criterion: str
     role_evidence: tuple[str, ...]
     provider_evaluation_count: int
+    continuation_reference_fingerprint: str
     active_trial_fingerprint: str
     active_parameter_fingerprint: str
     problem_fingerprint: str
@@ -570,18 +597,7 @@ def homogeneous_reactive_observation_descriptor(
             "continuation_reference": (
                 None
                 if problem.continuation_reference is None
-                else {
-                    "mole_fractions": problem.continuation_reference.mole_fractions,
-                    "molar_volume_m3_per_mol": (
-                        problem.continuation_reference.molar_volume_m3_per_mol
-                    ),
-                    "maximum_log_composition_distance": (
-                        problem.continuation_reference.maximum_log_composition_distance
-                    ),
-                    "maximum_log_volume_distance": (
-                        problem.continuation_reference.maximum_log_volume_distance
-                    ),
-                }
+                else problem.continuation_reference.to_mapping()
             ),
             "reaction_system": _problem_payload(reaction_system),
         },
@@ -1163,6 +1179,7 @@ def _phase_role_payload(receipt: HomogeneousPhaseRoleReceipt) -> dict[str, objec
         "completeness_criterion": receipt.completeness_criterion,
         "role_evidence": receipt.role_evidence,
         "provider_evaluation_count": receipt.provider_evaluation_count,
+        "continuation_reference_fingerprint": receipt.continuation_reference_fingerprint,
         "active_trial_fingerprint": receipt.active_trial_fingerprint,
         "active_parameter_fingerprint": receipt.active_parameter_fingerprint,
         "problem_fingerprint": receipt.problem_fingerprint,
@@ -1177,6 +1194,8 @@ def _certify_phase_role(
     equilibrium: ChemicalEquilibriumResult,
     active_parameters: epcsaft.ActiveParameterSet | None,
     trial: ActiveParameterTrialReceipt,
+    pressure_derivative_log_volume_pa: float | None,
+    continuation_reference_fingerprint: str,
 ) -> HomogeneousPhaseRoleReceipt:
     total_amount = math.fsum(equilibrium.amounts_mol)
     if (
@@ -1227,6 +1246,7 @@ def _certify_phase_role(
             completeness_criterion=completeness_criterion,
             role_evidence=role_evidence,
             provider_evaluation_count=provider_evaluation_count,
+            continuation_reference_fingerprint=continuation_reference_fingerprint,
             active_trial_fingerprint=trial.fingerprint,
             active_parameter_fingerprint=trial.active_parameter_fingerprint,
             problem_fingerprint=descriptor.problem_fingerprint,
@@ -1259,6 +1279,54 @@ def _certify_phase_role(
             completeness_criterion="no_global_phase_stability_or_equilibrium_claim",
             role_evidence=("ideal_gas_pressure_volume_identity",),
             provider_evaluation_count=0,
+        )
+    reference = problem.continuation_reference
+    if reference is not None and pressure_derivative_log_volume_pa is not None:
+        mechanical_scale = max(1.0, abs(equilibrium.pressure_pa))
+        if (
+            reference.phase_identity != descriptor.phase_identity
+            or reference.phase_role != descriptor.phase_role
+            or reference.anchor_parameter_fingerprint != trial.parameter_fingerprint
+            or reference.anchor_reaction_fingerprint != descriptor.reaction_fingerprint
+            or reference.anchor_topology_fingerprint != descriptor.topology_fingerprint
+            or not math.isfinite(pressure_derivative_log_volume_pa)
+            or pressure_derivative_log_volume_pa >= -1.0e-6 * mechanical_scale
+        ):
+            raise ValueError(
+                "immutable role anchor does not certify this exact local Provider state"
+            )
+        return receipt(
+            scope="local_reference_anchored_fixed_composition_role",
+            audited_mole_fractions=normalized,
+            audited_molar_volume_m3_per_mol=certified_molar_volume,
+            audited_pressure_pa=equilibrium.pressure_pa,
+            mechanical_class="strict_stable",
+            route="exact_fixed_TnV_provider_hessian",
+            native_certificate_scope=(
+                "exact_state_local_mechanical_stability_plus_role_certified_anchor"
+            ),
+            phase_selection_claim="reference_anchored_locally_certified_declared_role",
+            globality_claim="not_established",
+            search_scope="immutable_role_anchor_and_exact_certified_chemical_state",
+            search_budget="one_exact_state_provider_derivative_evaluation",
+            search_exclusions=(
+                "global_phase_stability",
+                "other_compositions",
+                "other_phase_counts",
+                "root_completeness_proof",
+            ),
+            completeness_criterion=(
+                "one_certified_chemical_basin_inside_declared_reference_region;"
+                "global_phase_stability_not_established"
+            ),
+            role_evidence=(
+                "anchor_state_identity:" + reference.anchor_state_identity,
+                "anchor_phase_role_receipt:"
+                + reference.anchor_phase_role_receipt_fingerprint,
+                "exact_state_negative_pressure_derivative_log_volume",
+                "exact_state_matches_reference_selected_chemical_branch",
+            ),
+            provider_evaluation_count=1,
         )
     role_result = phase_equilibrium(
         problem.phase.model,
@@ -1331,6 +1399,79 @@ def _certify_phase_role(
         completeness_criterion=role_result.diagnostics.completeness_criterion,
         role_evidence=role_result.diagnostics.role_evidence,
         provider_evaluation_count=role_result.diagnostics.provider_evaluation_count,
+    )
+
+
+def certify_homogeneous_continuation_reference(
+    problem: HomogeneousReactiveObservationProblem,
+    temperature: Quantity[Any],
+    pressure: Quantity[Any],
+    *,
+    maximum_log_composition_distance: float,
+    maximum_log_volume_distance: float,
+    active_parameters: epcsaft.ActiveParameterSet | None = None,
+) -> HomogeneousContinuationReference:
+    """Certify one immutable local role anchor using the full detected-root route."""
+
+    if problem.continuation_reference is not None:
+        raise ValueError("continuation anchoring requires an unanchored homogeneous problem")
+    anchor_row = HomogeneousReactiveObservationRow(
+        "continuation-anchor-pressure", "pressure_pa"
+    )
+    descriptor = homogeneous_reactive_observation_descriptor(
+        problem,
+        (anchor_row,),
+        active_parameters=active_parameters,
+    )
+    trial = _trial_receipt(descriptor, active_parameters)
+    equilibrium = chemical_equilibrium(
+        problem.phase,
+        temperature,
+        pressure,
+        problem.reaction_system,
+        sensitivity_request=(
+            None
+            if active_parameters is None
+            else ChemicalEquilibriumSensitivityRequest(active_parameters)
+        ),
+    )
+    role_receipt = _certify_phase_role(
+        problem,
+        descriptor,
+        equilibrium,
+        active_parameters,
+        trial,
+        None,
+        "not_applicable_anchor_construction",
+    )
+    anchor_state_identity = _canonical_fingerprint(
+        "epcsaft.homogeneous-continuation-anchor-state",
+        {
+            "phase_identity": descriptor.phase_identity,
+            "phase_role": descriptor.phase_role,
+            "temperature_k": equilibrium.temperature_k,
+            "pressure_pa": equilibrium.pressure_pa,
+            "amounts_mol": equilibrium.amounts_mol,
+            "mole_fractions": equilibrium.mole_fractions,
+            "volume_m3": equilibrium.volume_m3,
+            "parameter_fingerprint": trial.parameter_fingerprint,
+            "reaction_fingerprint": descriptor.reaction_fingerprint,
+            "topology_fingerprint": descriptor.topology_fingerprint,
+            "phase_role_receipt_fingerprint": role_receipt.fingerprint,
+        },
+    )
+    return HomogeneousContinuationReference(
+        equilibrium.mole_fractions,
+        equilibrium.volume_m3 / math.fsum(equilibrium.amounts_mol),
+        maximum_log_composition_distance,
+        maximum_log_volume_distance,
+        descriptor.phase_identity,
+        descriptor.phase_role,
+        anchor_state_identity,
+        role_receipt.fingerprint,
+        trial.parameter_fingerprint,
+        descriptor.reaction_fingerprint,
+        descriptor.topology_fingerprint,
     )
 
 
@@ -1490,6 +1631,7 @@ def _validate_phase_role_receipt(
         _phase_role_payload(receipt),
     )
     local_detected = receipt.scope == "local_detected_fixed_composition_role"
+    local_anchored = receipt.scope == "local_reference_anchored_fixed_composition_role"
     ideal_gas = receipt.scope == "typed_ideal_gas_fixed_composition_role"
     if (
         receipt.normalized_chemical_mole_fractions != normalized
@@ -1507,7 +1649,9 @@ def _validate_phase_role_receipt(
         or receipt.globality_claim != "not_established"
         or receipt.fingerprint != expected_fingerprint
         or receipt.provider_evaluation_count < 0
-        or not (local_detected or ideal_gas)
+        or receipt.continuation_reference_fingerprint
+        != state.continuation_certificate.reference_fingerprint
+        or not (local_detected or local_anchored or ideal_gas)
         or (
             local_detected
             and (
@@ -1524,6 +1668,28 @@ def _validate_phase_role_receipt(
                 not in receipt.role_evidence
                 or "root_completeness_proof" not in receipt.search_exclusions
                 or receipt.provider_evaluation_count <= 0
+            )
+        )
+        or (
+            local_anchored
+            and (
+                receipt.phase_selection_claim
+                != "reference_anchored_locally_certified_declared_role"
+                or receipt.native_certificate_scope
+                != "exact_state_local_mechanical_stability_plus_role_certified_anchor"
+                or "exact_state_negative_pressure_derivative_log_volume"
+                not in receipt.role_evidence
+                or "exact_state_matches_reference_selected_chemical_branch"
+                not in receipt.role_evidence
+                or not any(
+                    evidence.startswith("anchor_state_identity:sha256:")
+                    for evidence in receipt.role_evidence
+                )
+                or not any(
+                    evidence.startswith("anchor_phase_role_receipt:sha256:")
+                    for evidence in receipt.role_evidence
+                )
+                or receipt.provider_evaluation_count != 1
             )
         )
         or (ideal_gas and receipt.provider_evaluation_count != 0)
@@ -1987,6 +2153,9 @@ def validate_homogeneous_reactive_owner_receipt(
         provider_evaluation_count=_receipt_int(
             role.get("provider_evaluation_count"), "Provider evaluation count"
         ),
+        continuation_reference_fingerprint=str(
+            role.get("continuation_reference_fingerprint")
+        ),
         active_trial_fingerprint=str(role.get("active_trial_fingerprint")),
         active_parameter_fingerprint=str(role.get("active_parameter_fingerprint")),
         problem_fingerprint=str(role.get("problem_fingerprint")),
@@ -2200,6 +2369,7 @@ def evaluate_homogeneous_reactive_observations(
     potential_derivatives: tuple[tuple[float, ...], ...]
     provider_phase = phase if isinstance(phase, ProviderPhase) else None
     if provider_phase is not None:
+        pressure_derivative_log_volume_pa: float | None = None
         try:
             if active_parameters is None:
                 fixed_state = provider_phase.model._state(
@@ -2233,6 +2403,12 @@ def evaluate_homogeneous_reactive_observations(
                 )
                 width = len(amounts) + 1 + parameter_count
                 hessian = tuple(float(value) for value in block.hessian)
+                pressure_derivative_log_volume_pa = (
+                    -8.31446261815324
+                    * equilibrium.temperature_k
+                    * volume
+                    * hessian[len(amounts) * width + len(amounts)]
+                )
                 potential_values = tuple(float(value) for value in block.gradient[: len(amounts)])
                 potential_derivatives = tuple(
                     tuple(
@@ -2259,6 +2435,7 @@ def evaluate_homogeneous_reactive_observations(
                 support_domain_status=equilibrium.diagnostics.provider_domain_status,
             )
     else:
+        pressure_derivative_log_volume_pa = None
         eos_pressure_pa = total_amount * 8.31446261815324 * equilibrium.temperature_k / volume
         potential_values = tuple(math.log(amount / volume) for amount in amounts)
         potential_derivatives = tuple(() for _ in amounts)
@@ -2282,6 +2459,8 @@ def evaluate_homogeneous_reactive_observations(
             equilibrium,
             active_parameters,
             trial,
+            pressure_derivative_log_volume_pa,
+            continuation_certificate.reference_fingerprint,
         )
         state, physical_branch = _make_certified_receipts(
             descriptor,
@@ -2532,6 +2711,7 @@ __all__ = (
     "HomogeneousReactiveObservationRowResult",
     "HomogeneousReactiveOwnerObservation",
     "PhysicalBranchReceipt",
+    "certify_homogeneous_continuation_reference",
     "evaluate_homogeneous_reactive_observations",
     "homogeneous_reactive_observation_descriptor",
     "serialize_homogeneous_reactive_owner_receipt",

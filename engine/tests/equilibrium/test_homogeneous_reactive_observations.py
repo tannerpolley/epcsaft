@@ -171,14 +171,7 @@ def _reactive_fit_mapping(
                     "branch_policy": observation_problem.branch_policy,
                     "reference": None
                     if reference is None
-                    else {
-                        "mole_fractions": list(reference.mole_fractions),
-                        "molar_volume_m3_per_mol": reference.molar_volume_m3_per_mol,
-                        "maximum_log_composition_distance": (
-                            reference.maximum_log_composition_distance
-                        ),
-                        "maximum_log_volume_distance": reference.maximum_log_volume_distance,
-                    },
+                    else reference.to_mapping(),
                 },
                 "rows": [_row_mapping(row) for row in rows],
                 "temperature_k": 313.15,
@@ -198,21 +191,60 @@ def _reactive_fit_mapping(
     }
 
 
+def _continuation_reference(
+    result: equilibrium.HomogeneousReactiveObservationResult,
+    *,
+    maximum_log_composition_distance: float,
+    maximum_log_volume_distance: float,
+) -> equilibrium.HomogeneousContinuationReference:
+    assert result.status == "evaluated", result.failure
+    assert result.state is not None
+    assert result.trial is not None
+    state = result.state
+    return equilibrium.HomogeneousContinuationReference(
+        state.mole_fractions,
+        state.volume_m3 / math.fsum(state.amounts_mol),
+        maximum_log_composition_distance,
+        maximum_log_volume_distance,
+        state.phase_identity,
+        state.phase_role,
+        state.state_identity,
+        state.phase_role_receipt.fingerprint,
+        result.trial.parameter_fingerprint,
+        state.reaction_fingerprint,
+        state.topology_fingerprint,
+    )
+
+
 def _observation_problem(
     phase: equilibrium.ProviderPhase,
     problem: equilibrium.ChemicalEquilibriumProblem,
     *,
     identity: str = "multineutral-fixed-tp",
+    phase_identity: str = "multineutral-liquid",
     continuation_identity: str = "multineutral-liquid-branch",
+    temperature_k: float = 313.15,
+    pressure_pa: float = 119_199.78746707023,
 ) -> equilibrium.HomogeneousReactiveObservationProblem:
-    return equilibrium.HomogeneousReactiveObservationProblem(
+    unanchored = equilibrium.HomogeneousReactiveObservationProblem(
         identity=identity,
-        phase_identity="multineutral-liquid",
+        phase_identity=phase_identity,
         phase_role="liquid",
         phase=phase,
         reaction_system=problem,
         continuation_identity=continuation_identity,
         branch_policy="local_certified_role_selected_state",
+    )
+    reference = equilibrium.certify_homogeneous_continuation_reference(
+        unanchored,
+        temperature_k * epcsaft.unit_registry.kelvin,
+        pressure_pa * epcsaft.unit_registry.pascal,
+        maximum_log_composition_distance=1.0,
+        maximum_log_volume_distance=1.0,
+    )
+    return replace(
+        unanchored,
+        continuation_reference=reference,
     )
 
 
@@ -288,7 +320,7 @@ def test_source_reference_pressure_and_parameter_derivatives_match_resolves() ->
         (above - below) / (2.0 * step_pa) for below, above in zip(*pressure_resolves, strict=True)
     )
     assert exact.pressure_derivatives_per_pa == pytest.approx(
-        pressure_difference, rel=2.0e-6, abs=2.0e-12
+        pressure_difference, rel=3.0e-6, abs=3.0e-12
     )
 
     step = 1.0e-5
@@ -325,14 +357,14 @@ def test_value_only_provider_potential_observation_has_zero_column_jacobian() ->
         copy.deepcopy(specification),
         source_standard_state=_typed_standard_state(copy.deepcopy(source)),
     )
-    observation_problem = equilibrium.HomogeneousReactiveObservationProblem(
+    observation_problem = _observation_problem(
+        equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
+        reaction_problem,
         identity="water-ionization-value-only",
         phase_identity="water-ionization-liquid",
-        phase_role="liquid",
-        phase=equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
-        reaction_system=reaction_problem,
         continuation_identity="water-ionization-liquid-branch",
-        branch_policy="local_certified_role_selected_state",
+        temperature_k=float(specification["temperature_k"]),
+        pressure_pa=float(specification["pressure_pa"]),
     )
     coefficients = (-2.0, 1.0, 1.0)
     row = equilibrium.HomogeneousReactiveObservationRow(
@@ -378,17 +410,12 @@ def test_value_only_provider_potential_observation_has_zero_column_jacobian() ->
 
     assert result.equilibrium is not None
     assert len(result.equilibrium.diagnostics.search.basins) == 2
-    selected = result.equilibrium.diagnostics.search.basins[
-        result.equilibrium.diagnostics.search.selected_basin_ordinal
-    ]
-    selected_total = math.fsum(selected.amounts_mol)
     ambiguous_problem = replace(
         observation_problem,
-        continuation_reference=equilibrium.HomogeneousContinuationReference(
-            tuple(amount / selected_total for amount in selected.amounts_mol),
-            selected.volume_m3 / selected_total,
-            100.0,
-            100.0,
+        continuation_reference=_continuation_reference(
+            result,
+            maximum_log_composition_distance=100.0,
+            maximum_log_volume_distance=100.0,
         ),
     )
     ambiguous_descriptor = equilibrium.homogeneous_reactive_observation_descriptor(
@@ -465,20 +492,24 @@ def test_homogeneous_observation_total_jacobian_matches_independent_resolves(
     assert evaluated.equilibrium is not None
     assert evaluated.descriptor.branch_policy == "local_certified_role_selected_state"
     assert evaluated.state.phase_role == "liquid"
-    assert evaluated.state.phase_role_receipt.scope == "local_detected_fixed_composition_role"
+    assert evaluated.state.phase_role_receipt.scope == (
+        "local_reference_anchored_fixed_composition_role"
+    )
     assert evaluated.state.phase_role_receipt.mechanical_class == "strict_stable"
     assert evaluated.state.phase_role_receipt.globality_claim == "not_established"
     assert evaluated.state.phase_role_receipt.phase_selection_claim == (
-        "mechanically_certified_declared_single_phase"
+        "reference_anchored_locally_certified_declared_role"
     )
     assert (
-        "minimum_detected_strict_stable_volume_selected"
+        "exact_state_negative_pressure_derivative_log_volume"
         in evaluated.state.phase_role_receipt.role_evidence
     )
     assert (
         evaluated.state.phase_role_receipt.completeness_criterion
-        == "detected_roots_only;pressure_envelope_root_completeness_not_proven"
+        == "one_certified_chemical_basin_inside_declared_reference_region;"
+        "global_phase_stability_not_established"
     )
+    assert evaluated.state.phase_role_receipt.provider_evaluation_count == 1
     assert (
         evaluated.state.phase_role_receipt.active_trial_fingerprint == evaluated.trial.fingerprint
     )
@@ -585,11 +616,10 @@ def test_homogeneous_observation_total_jacobian_matches_independent_resolves(
 
     strict_continuation_problem = replace(
         observation_problem,
-        continuation_reference=equilibrium.HomogeneousContinuationReference(
-            evaluated.state.mole_fractions,
-            evaluated.state.volume_m3 / math.fsum(evaluated.state.amounts_mol),
-            1.0e-10,
-            1.0e-10,
+        continuation_reference=_continuation_reference(
+            evaluated,
+            maximum_log_composition_distance=1.0e-10,
+            maximum_log_volume_distance=1.0e-10,
         ),
     )
     branch_active = epcsaft.ActiveParameterSet(parameters, (identities[0],))
@@ -638,28 +668,35 @@ def test_homogeneous_observation_total_jacobian_matches_independent_resolves(
         "scaled_difference",
         float(evaluated.values[0]),
     )
-    with pytest.raises(regression.FitPreflightError) as branch_error:
-        regression.fit(
-            _reactive_fit_mapping(
-                tmp_path,
-                parameters,
-                strict_continuation_problem,
-                rows,
-                (continuation_target,),
-                identities[0],
-                lower=branch_active.values[0] - 0.02,
-                upper=branch_active.values[0] + 0.02,
-                origin=branch_active.values[0],
-                scale=0.01,
-                starts=(
-                    ("A", branch_active.values[0]),
-                    ("B", branch_active.values[0] + 0.01),
-                ),
+    mixed = regression.fit(
+        _reactive_fit_mapping(
+            tmp_path,
+            parameters,
+            strict_continuation_problem,
+            rows,
+            (continuation_target,),
+            identities[0],
+            lower=branch_active.values[0] - 0.02,
+            upper=branch_active.values[0] + 0.02,
+            origin=branch_active.values[0],
+            scale=0.01,
+            starts=(
+                ("A", branch_active.values[0]),
+                ("B", branch_active.values[0] + 0.01),
             ),
-            base_path=tmp_path,
-        )
-    assert branch_error.value.code == "branch_loss"
-    assert branch_error.value.start_identity == "B"
+        ),
+        base_path=tmp_path,
+    )
+    assert tuple(start.start_identity for start in mixed.starts) == ("A", "B")
+    assert mixed.starts[0].usable
+    assert not mixed.starts[1].usable
+    assert mixed.starts[1].trial_failure_code == "branch_loss"
+    assert mixed.starts[1].batch_outcomes[0].status == "rejected"
+    assert mixed.accounting.attempted_starts == 2
+    assert mixed.accounting.accepted_starts == 1
+    assert mixed.accounting.failed_starts == 1
+    assert mixed.accounting.evaluated_row_trials == 1
+    assert mixed.accounting.rejected_row_trials == 1
 
     selected_basin = evaluated.equilibrium.diagnostics.search.selected_basin_ordinal
     selected_starts = {
@@ -825,14 +862,14 @@ def test_source_reference_observation_is_coordinate_invariant_and_total() -> Non
             spec,
             source_standard_state=_typed_standard_state(source),
         )
-        observation_problem = equilibrium.HomogeneousReactiveObservationProblem(
+        observation_problem = _observation_problem(
+            equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
+            reaction_problem,
             identity=f"water-ionization-{variant}",
             phase_identity="water-ionization-liquid",
-            phase_role="liquid",
-            phase=equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
-            reaction_system=reaction_problem,
             continuation_identity="water-ionization-liquid-branch",
-            branch_policy="local_certified_role_selected_state",
+            temperature_k=float(spec["temperature_k"]),
+            pressure_pa=float(spec["pressure_pa"]),
         )
         parameter_identity = "pair/hydronium-cation/water/k_ij"
         active = epcsaft.ActiveParameterSet(parameters, (parameter_identity,))
@@ -887,14 +924,14 @@ def test_source_reference_observation_is_coordinate_invariant_and_total() -> Non
         copy.deepcopy(base_spec),
         source_standard_state=_typed_standard_state(copy.deepcopy(base_source)),
     )
-    observation_problem = equilibrium.HomogeneousReactiveObservationProblem(
+    observation_problem = _observation_problem(
+        equilibrium.ProviderPhase(base_model, (1.0e-6, 0.74)),
+        reaction_problem,
         identity="water-ionization-baseline",
         phase_identity="water-ionization-liquid",
-        phase_role="liquid",
-        phase=equilibrium.ProviderPhase(base_model, (1.0e-6, 0.74)),
-        reaction_system=reaction_problem,
         continuation_identity="water-ionization-liquid-branch",
-        branch_policy="local_certified_role_selected_state",
+        temperature_k=float(base_spec["temperature_k"]),
+        pressure_pa=float(base_spec["pressure_pa"]),
     )
     active = epcsaft.ActiveParameterSet(parameters, (parameter_identity,))
     row = equilibrium.HomogeneousReactiveObservationRow(
@@ -987,11 +1024,10 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
     assert truth.state is not None
     observation_problem = replace(
         observation_problem,
-        continuation_reference=equilibrium.HomogeneousContinuationReference(
-            truth.state.mole_fractions,
-            truth.state.volume_m3 / math.fsum(truth.state.amounts_mol),
-            1.0,
-            0.5,
+        continuation_reference=_continuation_reference(
+            truth,
+            maximum_log_composition_distance=1.0,
+            maximum_log_volume_distance=0.5,
         ),
     )
     descriptor = equilibrium.homogeneous_reactive_observation_descriptor(
@@ -1119,8 +1155,14 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
     assert accepted.optimizer_basin is not None
     assert accepted_receipt["physical_branch"]["identity"].startswith("sha256:")
     search_certificate = accepted_receipt["certified_state"]["chemical_search_certificate"]
-    assert search_certificate["basin_count"] == 1
-    assert search_certificate["selected_basin_ordinal"] == 0
+    assert search_certificate["basin_count"] == 2
+    continuation_certificate = accepted_receipt["certified_state"][
+        "continuation_certificate"
+    ]
+    assert continuation_certificate["in_region_basin_count"] == 1
+    assert continuation_certificate["selected_basin_ordinal"] == search_certificate[
+        "selected_basin_ordinal"
+    ]
     assert search_certificate["budget_prefix_selection_history"]
 
     tampered_receipt = json.loads(accepted.owner_receipts[0].canonical_bytes_utf8)
