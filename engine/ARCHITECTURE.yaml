@@ -1,6 +1,6 @@
 version: 7
 status: unified-monorepo-active
-governance_doctrine_revision: 19
+governance_doctrine_revision: 20
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -42,7 +42,7 @@ owners:
     phase_specifications: [fixed_tp_feed, fixed_t_coexistence]
     phase_modes: [omitted_topology_discovery, declared_topology_solve]
     phase_kinds: [liquid, vapor]
-    component_support: [all_components, neutral_components]
+    component_support: [all_components, neutral_components, declared_neutral_components]
     fixed_tp_component_support: all_components
     fixed_tp_maximum_vapor_count: 1
     coexistence_partner_support: [all_components, neutral_components]
@@ -64,6 +64,15 @@ owners:
       globality_claim: not_established
       admission_decision: governance_D-034
       admission_receipt: ../governance/receipts/cap-12-homogeneous-reactive-observation-admission.json
+    reactive_bubble_vle_observations:
+      descriptor: epcsaft.equilibrium.ReactiveBubbleObservationDescriptor
+      evaluator: epcsaft.equilibrium.evaluate_reactive_bubble_observations
+      continuation_anchor: epcsaft.equilibrium.certify_reactive_bubble_continuation_reference
+      vapor_models: [provider_nonideal, ideal_gas_comparison]
+      branch_policy: immutable_reference_anchored_certified_local_state
+      globality_claim: not_established
+      admission_decision: governance_D-035
+      admission_receipt: ../governance/receipts/cap-13-reactive-bubble-vle-admission.json
   regression:
     public_module: epcsaft.regression
     parameter_fit: epcsaft.regression.ParameterFit
@@ -74,9 +83,9 @@ owners:
     native_fit: src/epcsaft/regression/native/fit.cpp
     native_sources: src/epcsaft/regression/native
     scientific_values: owner_provided_only
-    current_observation_boundary: [eos_fixed_state, eos_pure_saturation, equilibrium_homogeneous_reactive]
-    equilibrium_observation_admission: homogeneous_reactive_only_by_governance_D-034
-    equilibrium_observation_families: [homogeneous_reactive]
+    current_observation_boundary: [eos_fixed_state, eos_pure_saturation, equilibrium_homogeneous_reactive, equilibrium_reactive_bubble_vle]
+    equilibrium_observation_admission: homogeneous_reactive_and_reactive_bubble_vle_by_governance_D-034_D-035
+    equilibrium_observation_families: [homogeneous_reactive, reactive_bubble_vle]
   native_transport:
     implementation: src/epcsaft/_native
     public_cpp_abi: forbidden

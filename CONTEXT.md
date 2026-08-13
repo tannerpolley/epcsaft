@@ -1,7 +1,7 @@
 # Project Context
 
 `tannerpolley/ePC-SAFT` is the private, single-repository home of the active
-ePC-SAFT scientific project. Governance doctrine revision 19 applies. Agents
+ePC-SAFT scientific project. Governance doctrine revision 20 applies. Agents
 operate only in the checkout or worktree attached to their Codex task; no
 absolute filesystem path grants project or Git authority.
 

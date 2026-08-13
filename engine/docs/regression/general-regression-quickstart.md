@@ -41,8 +41,10 @@ fingerprints. This optimizer cluster is not a thermodynamic physical-branch
 identity.
 
 The admitted families are EOS pure-saturation/fixed-state observations and the
-fixed-T,P homogeneous reactive family. The latter is Equilibrium-owned, uses a
-role-certified immutable local continuation anchor and exact total parameter
-Jacobians, and remains diagnostic/non-promotable. Mixture phase-equilibrium,
-coupled reactive VLE, direct permittivity, and standalone Born observations are
-not admitted.
+Equilibrium-owned fixed-T,P homogeneous reactive and fixed-topology reactive
+bubble/VLE families. Both reactive families use immutable local continuation
+anchors, exact total parameter Jacobians, and typed non-evaluable trials. The
+bubble family treats reported partial pressure as `y_i P` while phase
+equilibrium uses the Provider fugacity. Neither family makes a global-equilibrium
+or parameter-promotion claim. Nonreactive mixture phase-equilibrium, direct
+permittivity, and standalone Born observations are not admitted.

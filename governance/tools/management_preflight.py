@@ -416,8 +416,8 @@ def check() -> list[str]:
 
     if config.get("schema_version") != 2:
         errors.append("management schema_version must be 2")
-    if config.get("doctrine_revision") != 19:
-        errors.append("management doctrine_revision must be 19")
+    if config.get("doctrine_revision") != 20:
+        errors.append("management doctrine_revision must be 20")
     if config.get("repository") != "tannerpolley/ePC-SAFT":
         errors.append("management repository must be tannerpolley/ePC-SAFT")
     if config.get("ci_cd") != "disabled":

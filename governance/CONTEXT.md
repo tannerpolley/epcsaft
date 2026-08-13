@@ -1,7 +1,7 @@
 # Governance Context
 
 `governance/` is the doctrine and control-record directory inside the private
-`tannerpolley/ePC-SAFT` monorepo. `GOVERNANCE.md` revision 19 is canonical.
+`tannerpolley/ePC-SAFT` monorepo. `GOVERNANCE.md` revision 20 is canonical.
 
 The repository root coordinates work. `engine/` owns the sole `epcsaft`
 runtime; `data/` owns reusable scientific packets; `validation/` owns

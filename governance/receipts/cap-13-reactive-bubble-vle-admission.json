@@ -1,0 +1,134 @@
+{
+  "envelope": {
+    "schema": {
+      "path": "manifests/operation-receipt-envelope-v1.json",
+      "version": 1,
+      "sha256": "7cc1cbf4b92aaa54a4f7856bab5de4f1d8d2855c63566e5ecfe9660fb6f2061e"
+    },
+    "sequence": 11,
+    "subject": {
+      "operation": "cap-13-reactive-bubble-vle-admission",
+      "repository": "tannerpolley/ePC-SAFT",
+      "issue": 31,
+      "decision": "governance_D-035",
+      "doctrine_revision": 20,
+      "phase": "completed-admission",
+      "engine_commit": "82ad8099593ea85d6658debad0e7543caf5f75d0",
+      "engine_tree": "d8507eb68fa7764ee8292c3cf1cb501c943873a1",
+      "evidence_commit": "b0676952357eb615ac4b315cadb0e1d7365624c2",
+      "evidence_tree": "bb668914791baf3d3f1a49217773bae9ca191ee6",
+      "wheel_sha256": "22f0277762f27d638567abf11d5634c6b18181bdd2367bd85bf8b03996abb85c",
+      "public_signature_identity": "sha256:609167697540c4a16864e2674e4db89d7b779cfc56e233808f64f4420b7ac378",
+      "owner_receipt_identity": "sha256:d973ccb3cd5482c6bd846bff5635fa4232c1398c012b4f81845cbb43bb6800d3",
+      "record_sha256": "85b55623e1d964426481ef284d7d64858f78f66a71b7cfe8b8a4dc79cc812bee"
+    },
+    "subject_sha256": "e8feb6d9c7f427d442798bc73573fea83087c538f7e9a2d3e92f3c6be27ea256",
+    "validator": {
+      "repository": "tannerpolley/ePC-SAFT",
+      "commit": "b0676952357eb615ac4b315cadb0e1d7365624c2",
+      "path": "engine/tests/equilibrium/test_reactive_bubble_observations.py",
+      "sha256": "bb033f6f87a492432544fcfe2cf134e084bc4e597ab5e3599b0288da6c66bdfd"
+    },
+    "command": "cd engine && ../.venv/bin/python -m pytest -q -o addopts= tests/equilibrium/test_reactive_bubble_observations.py",
+    "environment": {
+      "captured_at": "2026-08-13T03:00:26-06:00",
+      "timezone": "America/Denver",
+      "platform": "linux-x86_64",
+      "python": "3.13",
+      "package_source": "single non-editable installed wheel",
+      "ci": "none; local owner validation"
+    },
+    "artifacts": [
+      {
+        "kind": "engine-wheel",
+        "path": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+        "sha256": "22f0277762f27d638567abf11d5634c6b18181bdd2367bd85bf8b03996abb85c"
+      },
+      {
+        "kind": "installed-multireaction-tracer",
+        "path": "engine/tests/equilibrium/test_reactive_bubble_observations.py",
+        "sha256": "bb033f6f87a492432544fcfe2cf134e084bc4e597ab5e3599b0288da6c66bdfd"
+      }
+    ],
+    "producer": {
+      "kind": "codex-task",
+      "id": "019ff855-d17d-7d52-8f8c-445711013d7b"
+    },
+    "reviewer": {
+      "kind": "read-only-review-task",
+      "id": "019fdeb0-c2fc-7cc1-8d5e-1ba8166126ac",
+      "outcome": "course-corrections-satisfied-by-installed-evidence"
+    },
+    "failed_outcomes": [],
+    "supersedes": null,
+    "revoked_by": null,
+    "user_approval": {
+      "source": "explicit Codex task instruction through issue #31 and guarded CAP-13 course corrections on 2026-08-13",
+      "subject_sha256": "e8feb6d9c7f427d442798bc73573fea83087c538f7e9a2d3e92f3c6be27ea256"
+    }
+  },
+  "record": {
+    "status": "completed",
+    "observations": [
+      {
+        "name": "immutable_engine_artifact",
+        "expected": "One runtime tree supplies the installed CAP-13 wheel.",
+        "observed": "Commit 82ad8099593ea85d6658debad0e7543caf5f75d0, tree d8507eb68fa7764ee8292c3cf1cb501c943873a1, supplied epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl with SHA-256 22f0277762f27d638567abf11d5634c6b18181bdd2367bd85bf8b03996abb85c and public-signature identity sha256:609167697540c4a16864e2674e4db89d7b779cfc56e233808f64f4420b7ac378.",
+        "outcome": "pass"
+      },
+      {
+        "name": "source_and_warm_installed_gates",
+        "expected": "Source readiness is green and each concurrent installed warm group remains below ten seconds.",
+        "observed": "Source-only affected checks passed in 0.71 s. The single build/install plus full concurrent gate took 10.34 s; installed warm groups completed in 5.99 s (EOS), 6.71 s (Equilibrium), 1.44 s (Regression), and 0.86 s (Validation).",
+        "outcome": "pass"
+      },
+      {
+        "name": "installed_cap13_matrix",
+        "expected": "The exact installed wheel passes coupled values, exact total derivatives, local branch purity, typed failures, support binding, canonical Regression, and inherited source-reference/multiroot contracts.",
+        "observed": "Eleven installed tests passed in 171.75 s. The matrix covered nonideal and explicit ideal vapor, measured partial-pressure semantics, same-liquid-state binding, A-B-A order invariance, receipt tampering, no incipient phase, Provider domain rejection, support loss, component reorder, reaction reversal, exact source-reference pressure/parameter derivatives, zero-coordinate Provider Hessians, and CAP-09 multiroot role selection.",
+        "outcome": "pass"
+      },
+      {
+        "name": "installed_multireaction_tracer",
+        "expected": "A charged liquid with multiple reactions and multiple volatile neutrals independently checks the complete total Jacobian from the installed wheel.",
+        "observed": "The five-species, two-reaction, three-volatile-neutral nonideal tracer passed in 72.47 s. Five accepted pressure starts deduplicated to one local branch; the center plus two independent resolves matched every exact total-Jacobian row within 2e-7 scaled error.",
+        "owner_receipt_identity": "sha256:d973ccb3cd5482c6bd846bff5635fa4232c1398c012b4f81845cbb43bb6800d3",
+        "descriptor_fingerprint": "sha256:7aabea35ba5924e0c1f215ba306ea283a38f61ad8beb4b9e0720c8c7ffbd3ec6",
+        "physical_branch_fingerprint": "sha256:5082477cd5f0bd224e4eabbfbdf62752592f0595c50581e8252913f70050581f",
+        "provider_evaluation_count": 8310,
+        "closure_evaluation_count": 15,
+        "globality_claim": "not_established",
+        "outcome": "pass"
+      },
+      {
+        "name": "scientific_scope",
+        "expected": "Admission is generic, fixed-topology, locally certified, and does not fabricate penalties or promotion evidence.",
+        "observed": "Equilibrium owns coupled values, exact Schur total derivatives, same-liquid-state and vapor-support binding, local branch/certification receipts, and typed failures. Regression retains its sole ParameterFit/FitResult route and owns residuals, weights, affine coordinates, bounds, starts, and optimizer accounting.",
+        "outcome": "pass"
+      }
+    ],
+    "preconditions": [
+      "The Engine runtime and evidence commits remain reachable and unchanged.",
+      "The installed distribution originates only from the recorded non-editable wheel.",
+      "Every active coordinate and selected row passes derivative and owner-contract preflight.",
+      "The application declares fixed topology, ordered neutral vapor support, starts, and local continuation policy."
+    ],
+    "expected_postconditions": [
+      "Governance D-035 admits the fixed-topology reactive bubble/VLE Observation Family.",
+      "Issue #31 closes only after the admission commit is merged.",
+      "MEA-Thermodynamics consumes the recorded committed Engine wheel without source-checkout imports.",
+      "Downstream parameter promotion remains subject to data, rank, validation, branch, and physical gates."
+    ],
+    "retry": "Repeat only from an unchanged committed Engine runtime tree and compare wheel, public-signature, test, owner-receipt, topology, and branch hashes.",
+    "stop_conditions": [
+      "Any admitted row becomes non-evaluable or receives a fabricated numeric penalty.",
+      "Exact total derivatives fail independent resolves.",
+      "The coexistence liquid state no longer binds the exact chemical state.",
+      "Unresolved branch multiplicity, disappearing support, or no incipient vapor is silently accepted.",
+      "A result implies global equilibrium without a supporting globality procedure."
+    ],
+    "reversibility": "D-035 can be superseded by a new doctrine revision and receipt; the private code commit, wheel, and evidence commit remain immutable evidence.",
+    "irreversible_effects": "None. No public release, external data mutation, or downstream parameter promotion is performed by this admission.",
+    "recovery_owner": "The unified Engine owner must fail closed, supersede D-035 with corrected hash-bound evidence, and block downstream use until the corrected installed artifact passes the same gates."
+  }
+}
