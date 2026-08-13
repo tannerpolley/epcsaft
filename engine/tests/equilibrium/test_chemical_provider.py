@@ -328,6 +328,7 @@ def test_provider_certifies_multineutral_reactive_minimum() -> None:
     assert min(result.amounts_mol) > problem.strict_interior_amount_floor_mol
     assert result.amounts_mol[1] == pytest.approx(0.2, abs=2.0e-10)
     assert result.amounts_mol[2] == pytest.approx(result.amounts_mol[3], abs=2.0e-10)
+    assert result.diagnostics.derivative_audits_performed
     assert result.diagnostics.reaction_affinity_inf_norm <= 2.0e-7
     assert result.diagnostics.kkt_stationarity_inf_norm <= 2.0e-7
 

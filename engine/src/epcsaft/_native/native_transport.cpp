@@ -1014,11 +1014,72 @@ struct NativeTransportEndpoint final {
                 + (parameter_derivatives_requested
                     ? active_parameter_count
                     : 0u);
+            std::vector<std::size_t> neutral_solutes;
+            for (std::size_t component : reference_basis.neutral_components) {
+                if (source_composition[component] == 0.0) {
+                    neutral_solutes.push_back(component);
+                }
+            }
+            std::vector<double> neutral_trace_stoichiometry(
+                component_count, 0.0
+            );
+            for (std::size_t component : neutral_solutes) {
+                neutral_trace_stoichiometry[component] = 1.0;
+            }
+            const auto reference_composition = [&] (
+                const std::vector<double>& trace_stoichiometry,
+                double molality
+            ) {
+                const double trace_formula_moles = std::accumulate(
+                    trace_stoichiometry.begin(),
+                    trace_stoichiometry.end(),
+                    0.0
+                );
+                const double solvent_moles = 1.0 / solvent_molar_mass;
+                const double total_moles = solvent_moles
+                    + molality * trace_formula_moles;
+                std::vector<double> composition(component_count, 0.0);
+                for (std::size_t component = 0;
+                     component < component_count;
+                     ++component) {
+                    composition[component] =
+                        source_composition[component] * solvent_moles
+                        / total_moles
+                        + molality * trace_stoichiometry[component]
+                        / total_moles;
+                }
+                return composition;
+            };
+            std::optional<double> density_anchor;
+            if (pressure_derivatives_requested
+                || parameter_derivatives_requested) {
+                const std::vector<double> density_anchor_composition =
+                    reference_composition(
+                        neutral_trace_stoichiometry,
+                        detail::REFERENCE_MOLALITIES[2]
+                    );
+                density_anchor = endpoint.model.evaluate_pressure(
+                    temperature_k,
+                    pressure_pa,
+                    density_anchor_composition,
+                    "liquid"
+                ).molar_density;
+            }
             const auto phase_fugacity_derivatives =
                 [&](const std::vector<double>& composition) {
-                    const auto state = endpoint.model.evaluate_pressure(
-                        temperature_k, pressure_pa, composition, "liquid"
-                    );
+                    const auto state = density_anchor.has_value()
+                        ? endpoint.model.evaluate_pressure_continuation(
+                            temperature_k,
+                            pressure_pa,
+                            composition,
+                            *density_anchor
+                        )
+                        : endpoint.model.evaluate_pressure(
+                            temperature_k,
+                            pressure_pa,
+                            composition,
+                            "liquid"
+                        );
                     if (!state.log_fugacity_coefficient.has_value()) {
                         throw std::runtime_error(
                             "source-reference fugacity is unavailable"
@@ -1184,16 +1245,6 @@ struct NativeTransportEndpoint final {
             double reference_molality =
                 detail::REFERENCE_MOLALITIES.back();
             double convergence_error = 0.0;
-            std::vector<std::size_t> neutral_solutes;
-            for (std::size_t component : reference_basis.neutral_components) {
-                if (source_composition[component] == 0.0) {
-                    neutral_solutes.push_back(component);
-                }
-            }
-            std::vector<double> neutral_trace_stoichiometry(component_count, 0.0);
-            for (std::size_t component : neutral_solutes) {
-                neutral_trace_stoichiometry[component] = 1.0;
-            }
             std::vector<double> neutral_values(
                 reference_basis.neutral_components.size()
                     * derivative_stride,
@@ -1203,37 +1254,21 @@ struct NativeTransportEndpoint final {
                 const std::vector<std::size_t>& selected_components,
                 const std::vector<double>& trace_stoichiometry
             ) {
-                const double trace_formula_moles = std::accumulate(
-                    trace_stoichiometry.begin(),
-                    trace_stoichiometry.end(),
-                    0.0
-                );
-                return detail::reference_limit_sequence(
+                const auto evaluate_limit =
                     [&](double molality) {
-                        const double solvent_moles = 1.0 / solvent_molar_mass;
-                        const double total_moles = solvent_moles
-                            + molality * trace_formula_moles;
-                        std::vector<double> composition(component_count, 0.0);
-                        for (std::size_t component = 0;
-                             component < component_count;
-                             ++component) {
-                            composition[component] =
-                                source_composition[component] * solvent_moles
-                                / total_moles;
-                        }
-                        for (std::size_t component = 0;
-                             component < component_count;
-                             ++component) {
-                            composition[component] += molality
-                                * trace_stoichiometry[component]
-                                / total_moles;
-                        }
+                        const std::vector<double> composition =
+                            reference_composition(
+                                trace_stoichiometry, molality
+                            );
                         return selected_derivatives(
                             phase_fugacity_derivatives(composition),
                             selected_components
                         );
-                    }
-                );
+                    };
+                return pressure_derivatives_requested
+                        || parameter_derivatives_requested
+                    ? detail::reference_limit_terminal_pair(evaluate_limit)
+                    : detail::reference_limit_sequence(evaluate_limit);
             };
             const double neutral_trace_formula_moles = std::accumulate(
                 neutral_trace_stoichiometry.begin(),

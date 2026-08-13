@@ -535,6 +535,8 @@ class ChemicalEquilibriumDiagnostics:
     trace_status: str
     globality_status: str
     search: ChemicalEquilibriumSearch
+    provider_evaluation_count: int
+    derivative_audits_performed: bool
     amounts_mol: tuple[float, ...]
     volume_m3: float | None
     balance_inf_norm: float | None
@@ -2224,6 +2226,8 @@ def _failed_chemical_diagnostics(
         trace_status="not_adjudicated",
         globality_status="not_adjudicated",
         search=_empty_chemical_search(),
+        provider_evaluation_count=0,
+        derivative_audits_performed=False,
         amounts_mol=(),
         volume_m3=None,
         balance_inf_norm=None,
@@ -2575,6 +2579,9 @@ def _chemical_diagnostics(
         raise ValueError("native empty reduced-Hessian inertia is invalid")
     reported_affinity_norm = float(cast(float, native["reaction_affinity_inf_norm"]))
     reported_stationarity_norm = float(cast(float, native["kkt_stationarity_inf_norm"]))
+    provider_evaluation_count = int(cast(int, native.get("provider_evaluation_count", 0)))
+    if provider_evaluation_count < 0:
+        raise ValueError("native Provider evaluation count is invalid")
     if (
         reaction_affinity_residuals
         and not math.isclose(
@@ -2621,6 +2628,8 @@ def _chemical_diagnostics(
         trace_status=str(native["trace_status"]),
         globality_status=str(native["globality_certificate"]),
         search=search,
+        provider_evaluation_count=provider_evaluation_count,
+        derivative_audits_performed=bool(native["derivative_audits_performed"]),
         amounts_mol=_float_tuple(native["amounts"]),
         volume_m3=_optional_float(native, "volume_m3"),
         balance_inf_norm=float(cast(float, native["balance_inf_norm"])),
@@ -3066,13 +3075,14 @@ def _source_reference_payload(
     }
 
 
-def chemical_equilibrium(
+def _chemical_equilibrium_impl(
     phase: IdealGasPhase | ProviderPhase,
     temperature: Quantity[Any],
     pressure: Quantity[Any],
     problem: ChemicalEquilibriumProblem,
     *,
     sensitivity_request: ChemicalEquilibriumSensitivityRequest | None = None,
+    continuation_start: tuple[tuple[float, ...], float] | None = None,
 ) -> ChemicalEquilibriumResult:
     """Solve and certify one local fixed-T,P homogeneous reacting phase."""
 
@@ -3143,6 +3153,24 @@ def chemical_equilibrium(
             "temperature_k": temperature_k,
             "pressure_pa": pressure_pa,
         }
+        if continuation_start is not None:
+            continuation_amounts, continuation_volume = continuation_start
+            if (
+                len(continuation_amounts) != len(problem.species_ids)
+                or any(
+                    not math.isfinite(amount) or amount <= 0.0
+                    for amount in continuation_amounts
+                )
+                or not math.isfinite(continuation_volume)
+                or continuation_volume <= 0.0
+            ):
+                raise ValueError(
+                    "immutable continuation start must match the positive chemical state"
+                )
+            spec["continuation_start"] = {
+                "amounts": continuation_amounts,
+                "volume_m3": continuation_volume,
+            }
         packing_bounds: tuple[float, float] | None
         source_transfer: epcsaft.SourceReferenceTransfer | None = None
         if isinstance(phase, IdealGasPhase):
@@ -3322,4 +3350,23 @@ def chemical_equilibrium(
         ),
         artifact_identity=artifact_identity,
         sensitivity=sensitivity,
+    )
+
+
+def chemical_equilibrium(
+    phase: IdealGasPhase | ProviderPhase,
+    temperature: Quantity[Any],
+    pressure: Quantity[Any],
+    problem: ChemicalEquilibriumProblem,
+    *,
+    sensitivity_request: ChemicalEquilibriumSensitivityRequest | None = None,
+) -> ChemicalEquilibriumResult:
+    """Solve and certify one local fixed-T,P homogeneous reacting phase."""
+
+    return _chemical_equilibrium_impl(
+        phase,
+        temperature,
+        pressure,
+        problem,
+        sensitivity_request=sensitivity_request,
     )

@@ -34,10 +34,16 @@ struct VectorReferenceSequenceResult final {
 
 template <typename Evaluator, typename NeedsWitness>
 // EqID: reference_molality_sequence
-VectorReferenceSequenceResult reference_limit_sequence(
+VectorReferenceSequenceResult reference_limit_sequence_from(
     Evaluator evaluator,
-    NeedsWitness needs_witness
+    NeedsWitness needs_witness,
+    std::size_t first_molality_index
 ) {
+    if (first_molality_index + 1 >= REFERENCE_MOLALITIES.size()) {
+        throw std::invalid_argument(
+            "reference limit requires a terminal convergence pair"
+        );
+    }
     std::optional<std::vector<double>> previous;
     std::optional<std::vector<double>> current;
     std::vector<double> convergence_errors;
@@ -67,8 +73,10 @@ VectorReferenceSequenceResult reference_limit_sequence(
         }
         previous = current;
     };
-    for (double molality : REFERENCE_MOLALITIES) {
-        observe(molality);
+    for (std::size_t index = first_molality_index;
+         index < REFERENCE_MOLALITIES.size();
+         ++index) {
+        observe(REFERENCE_MOLALITIES[index]);
     }
     if (!current.has_value()) {
         throw std::runtime_error("reference limit did not converge");
@@ -88,6 +96,17 @@ VectorReferenceSequenceResult reference_limit_sequence(
     };
 }
 
+template <typename Evaluator, typename NeedsWitness>
+// EqID: reference_molality_sequence
+VectorReferenceSequenceResult reference_limit_sequence(
+    Evaluator evaluator,
+    NeedsWitness needs_witness
+) {
+    return reference_limit_sequence_from(
+        std::move(evaluator), std::move(needs_witness), 0
+    );
+}
+
 template <typename Evaluator>
 VectorReferenceSequenceResult reference_limit_sequence(Evaluator evaluator) {
     return reference_limit_sequence(
@@ -97,6 +116,20 @@ VectorReferenceSequenceResult reference_limit_sequence(Evaluator evaluator) {
                 || *std::max_element(errors.begin(), errors.end())
                     > REFERENCE_CONVERGENCE_TOLERANCE;
         }
+    );
+}
+
+template <typename Evaluator>
+// EqID: reference_molality_sequence
+VectorReferenceSequenceResult reference_limit_terminal_pair(Evaluator evaluator) {
+    return reference_limit_sequence_from(
+        std::move(evaluator),
+        [](const std::vector<double>&, const std::vector<double>& errors) {
+            return errors.empty()
+                || *std::max_element(errors.begin(), errors.end())
+                    > REFERENCE_CONVERGENCE_TOLERANCE;
+        },
+        2
     );
 }
 

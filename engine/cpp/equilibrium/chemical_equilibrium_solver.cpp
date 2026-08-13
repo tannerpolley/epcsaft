@@ -2946,7 +2946,9 @@ ChemicalSolveResult solve_reaction_attempt(
     const std::vector<double>& ln_k_parameter_derivatives,
     const std::array<double, 2>& volume_bounds,
     const VolumeCoordinateTransform* volume_transform = nullptr,
-    bool allow_negative_curvature_recovery = true
+    bool allow_negative_curvature_recovery = true,
+    bool perform_derivative_audits = true,
+    bool reference_anchored = false
 ) {
     if (!std::isfinite(temperature_k) || temperature_k <= 0.0
         || !std::isfinite(pressure_pa) || pressure_pa <= 0.0
@@ -3123,35 +3125,74 @@ ChemicalSolveResult solve_reaction_attempt(
     const ConstraintRows balances = normalized_constraint_rows(
         system.balance_matrix, system.balance_totals
     );
-    auto* raw_problem = new ReactionTnlp(
-        chart,
-        balances,
-        g_ref,
-        temperature_k,
-        pressure_pa,
-        phase_evaluator,
-        domain,
-        initial,
-        lower,
-        upper,
-        volume_transform
-    );
-    Ipopt::SmartPtr<Ipopt::TNLP> problem = raw_problem;
-    Ipopt::SmartPtr<Ipopt::IpoptApplication> application = IpoptApplicationFactory();
     if (max_iterations < 0) {
         throw std::invalid_argument("reaction solver iteration limit must be nonnegative");
     }
-    configure_ipopt(application, max_iterations);
-    const Ipopt::ApplicationReturnStatus initialize_status = application->Initialize();
-    if (initialize_status != Ipopt::Solve_Succeeded) {
-        result.solver_status = "initialization_" + ipopt_status_name(initialize_status);
-        result.numerical_status = "failed";
-        return result;
-    }
-    const Ipopt::ApplicationReturnStatus status = application->OptimizeTNLP(problem);
-    std::vector<double> variables = raw_problem->solution();
+    ReactionTnlp* raw_problem = nullptr;
+    Ipopt::SmartPtr<Ipopt::TNLP> problem;
+    std::vector<double> variables;
+    bool solve_succeeded = false;
     bool polished = false;
-    if (status == Ipopt::Solve_Succeeded && max_iterations > 0) {
+    if (reference_anchored) {
+        variables = initial;
+        try {
+            polished = max_iterations > 0 && polish_interior_kkt(
+                chart,
+                balances,
+                system.reaction_matrix,
+                g_ref,
+                temperature_k,
+                pressure_pa,
+                phase_evaluator,
+                domain,
+                lower,
+                upper,
+                std::min(max_iterations, 40),
+                variables,
+                volume_transform
+            );
+            solve_succeeded = polished;
+            result.solver_status = polished
+                ? "solve_succeeded"
+                : "reference_anchored_kkt_failed";
+        } catch (const std::exception& error) {
+            result.callback_error = error.what();
+            result.solver_status = "reference_anchored_kkt_failed";
+        }
+    } else {
+        raw_problem = new ReactionTnlp(
+            chart,
+            balances,
+            g_ref,
+            temperature_k,
+            pressure_pa,
+            phase_evaluator,
+            domain,
+            initial,
+            lower,
+            upper,
+            volume_transform
+        );
+        problem = raw_problem;
+        Ipopt::SmartPtr<Ipopt::IpoptApplication> application =
+            IpoptApplicationFactory();
+        configure_ipopt(application, max_iterations);
+        const Ipopt::ApplicationReturnStatus initialize_status =
+            application->Initialize();
+        if (initialize_status != Ipopt::Solve_Succeeded) {
+            result.solver_status =
+                "initialization_" + ipopt_status_name(initialize_status);
+            result.numerical_status = "failed";
+            return result;
+        }
+        const Ipopt::ApplicationReturnStatus status =
+            application->OptimizeTNLP(problem);
+        solve_succeeded = status == Ipopt::Solve_Succeeded;
+        result.solver_status = ipopt_status_name(status);
+        result.callback_error = raw_problem->callback_error();
+        variables = raw_problem->solution();
+    }
+    if (!reference_anchored && solve_succeeded && max_iterations > 0) {
         try {
             const ReactionNlpEvaluation preliminary = evaluate_reaction_nlp(
                 chart,
@@ -3219,8 +3260,6 @@ ChemicalSolveResult solve_reaction_attempt(
             // physical certificates when an interior polish is unavailable.
         }
     }
-    result.solver_status = ipopt_status_name(status);
-    result.callback_error = raw_problem->callback_error();
     ReactionNlpEvaluation evaluation;
     try {
         evaluation = evaluate_reaction_nlp(
@@ -3232,7 +3271,7 @@ ChemicalSolveResult solve_reaction_attempt(
             phase_evaluator,
             domain,
             variables,
-            polished
+            polished || reference_anchored
                 ? std::vector<double>(
                     reaction_constraint_count(balances, domain), 0.0
                 )
@@ -3305,7 +3344,7 @@ ChemicalSolveResult solve_reaction_attempt(
     std::vector<std::size_t> active_constraint_bounds;
     constexpr double kInactiveMargin = 1.0e-7;
     for (std::size_t variable = 0; variable < variables.size(); ++variable) {
-        if (!polished) {
+        if (!polished && !reference_anchored) {
             complementarity = std::max(
                 complementarity,
                 std::abs(raw_problem->lower_multipliers()[variable]
@@ -3329,7 +3368,7 @@ ChemicalSolveResult solve_reaction_attempt(
     }
     for (std::size_t row = balances.matrix.rows; row < evaluation.constraints.size(); ++row) {
         const double value = evaluation.constraints[row];
-        const double multiplier = polished
+        const double multiplier = polished || reference_anchored
             ? 0.0
             : raw_problem->constraint_multipliers()[row];
         const bool has_lower = evaluation.constraint_lower[row] > -0.5 * kInfinity;
@@ -3449,6 +3488,12 @@ ChemicalSolveResult solve_reaction_attempt(
         return result;
     }
     std::vector<double> finite_difference_lagrangian_hessian;
+    if (!perform_derivative_audits) {
+        result.derivative_check_worst_entry =
+            "not_evaluated_reference_anchored_trial";
+        goto derivative_audits_complete;
+    }
+    result.derivative_audits_performed = true;
     try {
         constexpr double kObjectiveGradientCheckTolerance =
             kChemicalObjectiveDerivativeTolerance;
@@ -3747,6 +3792,7 @@ ChemicalSolveResult solve_reaction_attempt(
         result.reduced_hessian_status = "second_order_inconclusive";
         return result;
     }
+derivative_audits_complete:
     std::vector<double> negative_curvature_direction;
     if (sensitivity_interior) {
         ReducedHessianAnalysis curvature;
@@ -3788,56 +3834,58 @@ ChemicalSolveResult solve_reaction_attempt(
         result.reduced_hessian_scale = curvature.hessian_scale;
         result.reduced_hessian_eigenvalue_tolerance =
             curvature.eigenvalue_tolerance;
-        result.reduced_hessian_check_relative_error = 0.0;
-        const std::vector<double> finite_difference_reduced_hessian =
-            project_hessian(
-                curvature.nullspace_basis,
-                curvature.nullspace_rows,
-                curvature.nullspace_columns,
-                finite_difference_lagrangian_hessian
-            );
-        for (std::size_t row = 0; row < curvature.nullspace_rows; ++row) {
-            for (std::size_t column = 0;
-                 column < curvature.nullspace_rows;
-                 ++column) {
-                const double finite_difference =
-                    finite_difference_reduced_hessian[
+        if (perform_derivative_audits) {
+            result.reduced_hessian_check_relative_error = 0.0;
+            const std::vector<double> finite_difference_reduced_hessian =
+                project_hessian(
+                    curvature.nullspace_basis,
+                    curvature.nullspace_rows,
+                    curvature.nullspace_columns,
+                    finite_difference_lagrangian_hessian
+                );
+            for (std::size_t row = 0; row < curvature.nullspace_rows; ++row) {
+                for (std::size_t column = 0;
+                     column < curvature.nullspace_rows;
+                     ++column) {
+                    const double finite_difference =
+                        finite_difference_reduced_hessian[
+                            row * curvature.nullspace_rows + column
+                        ];
+                    const double analytic = curvature.reduced_hessian[
                         row * curvature.nullspace_rows + column
                     ];
-                const double analytic = curvature.reduced_hessian[
-                    row * curvature.nullspace_rows + column
-                ];
-                const double error = std::abs(finite_difference - analytic)
-                    / std::max({
-                        1.0,
-                        std::abs(finite_difference),
-                        std::abs(analytic)
-                    });
-                result.reduced_hessian_check_relative_error = std::max(
-                    result.reduced_hessian_check_relative_error,
-                    error
-                );
-                if (error > result.derivative_check_worst_relative_error) {
-                    result.derivative_check_worst_entry =
-                        "reduced_hessian[row=" + std::to_string(row)
-                        + ",coordinate=" + std::to_string(column) + "]";
-                    result.derivative_check_worst_relative_error = error;
-                    result.derivative_check_worst_analytic_value = analytic;
-                    result.derivative_check_worst_finite_difference_value =
-                        finite_difference;
-                    result.derivative_check_worst_step =
-                        result.derivative_check_step;
+                    const double error = std::abs(finite_difference - analytic)
+                        / std::max({
+                            1.0,
+                            std::abs(finite_difference),
+                            std::abs(analytic)
+                        });
+                    result.reduced_hessian_check_relative_error = std::max(
+                        result.reduced_hessian_check_relative_error,
+                        error
+                    );
+                    if (error > result.derivative_check_worst_relative_error) {
+                        result.derivative_check_worst_entry =
+                            "reduced_hessian[row=" + std::to_string(row)
+                            + ",coordinate=" + std::to_string(column) + "]";
+                        result.derivative_check_worst_relative_error = error;
+                        result.derivative_check_worst_analytic_value = analytic;
+                        result.derivative_check_worst_finite_difference_value =
+                            finite_difference;
+                        result.derivative_check_worst_step =
+                            result.derivative_check_step;
+                    }
                 }
             }
-        }
-        if (result.reduced_hessian_check_relative_error
-            > kChemicalHessianDerivativeTolerance) {
-            result.callback_error =
-                "derivative inconsistency: spanning reduced-Hessian audit failed";
-            result.numerical_status = "failed";
-            result.local_minimum_status = "second_order_inconclusive";
-            result.reduced_hessian_status = "second_order_inconclusive";
-            return result;
+            if (result.reduced_hessian_check_relative_error
+                > kChemicalHessianDerivativeTolerance) {
+                result.callback_error =
+                    "derivative inconsistency: spanning reduced-Hessian audit failed";
+                result.numerical_status = "failed";
+                result.local_minimum_status = "second_order_inconclusive";
+                result.reduced_hessian_status = "second_order_inconclusive";
+                return result;
+            }
         }
         negative_curvature_direction = curvature.negative_direction;
         if (curvature.spectrum_status == "nonfinite") {
@@ -3881,12 +3929,17 @@ ChemicalSolveResult solve_reaction_attempt(
             result.kkt_root_rows = variables.size();
             result.kkt_root_columns = variables.size();
             result.kkt_root_status = "interior_no_active_bounds";
-            result.kkt_root_jacobian_check_relative_error = 0.0;
+            result.kkt_root_jacobian_check_relative_error =
+                perform_derivative_audits
+                ? 0.0
+                : std::numeric_limits<double>::quiet_NaN();
             const auto relative_error = [](double observed, double expected) {
                 return std::abs(observed - expected)
                     / std::max({1.0, std::abs(observed), std::abs(expected)});
             };
-            for (std::size_t column = 0; column < variables.size(); ++column) {
+            for (std::size_t column = 0;
+                 perform_derivative_audits && column < variables.size();
+                 ++column) {
                 double step = std::cbrt(std::numeric_limits<double>::epsilon())
                     * std::max(1.0, std::abs(variables[column]));
                 step = std::min(
@@ -3940,7 +3993,8 @@ ChemicalSolveResult solve_reaction_attempt(
                     }
                 }
             }
-            if (result.kkt_root_jacobian_check_relative_error
+            if (perform_derivative_audits
+                && result.kkt_root_jacobian_check_relative_error
                 > kChemicalHessianDerivativeTolerance) {
                 throw std::runtime_error(
                     "spanning KKT-root Jacobian audit failed"
@@ -3969,7 +4023,7 @@ ChemicalSolveResult solve_reaction_attempt(
         result.local_minimum_status = "second_order_inconclusive";
         result.reduced_hessian_status = "second_order_inconclusive";
     }
-    result.numerical_status = status == Ipopt::Solve_Succeeded
+    result.numerical_status = solve_succeeded
             && result.callback_error.empty()
             && result.balance_inf_norm <= kBalanceTolerance
             && result.kkt_stationarity_inf_norm <= kKktTolerance
@@ -3999,7 +4053,7 @@ ChemicalSolveResult solve_reaction_attempt(
         && result.local_minimum_status == "passed";
     std::vector<ChemicalSearchAttempt> recovery_attempts;
     if (allow_negative_curvature_recovery
-        && status == Ipopt::Solve_Succeeded
+        && solve_succeeded
         && result.callback_error.empty()
         && result.numerical_status == "passed"
         && result.physical_status == "passed"
@@ -4184,7 +4238,9 @@ ChemicalSolveResult solve_reaction_attempt(
                     ln_k_parameter_derivatives,
                     volume_bounds,
                     recovery_transform,
-                    false
+                    false,
+                    perform_derivative_audits,
+                    reference_anchored
                 );
             } catch (const std::exception& error) {
                 recovery_attempt.callback_error = error.what();
@@ -4284,7 +4340,7 @@ ChemicalSolveResult solve_reaction_attempt(
             return best_result;
         }
     }
-    if (status == Ipopt::Solve_Succeeded && result.callback_error.empty()) {
+    if (solve_succeeded && result.callback_error.empty()) {
         result.sensitivities = evaluate_implicit_sensitivities(
             chart,
             balances,
@@ -4344,9 +4400,10 @@ ChemicalSolveResult solve_reaction(
     const std::vector<double>& ln_k_parameter_derivatives,
     const std::array<double, 2>& volume_bounds,
     const VolumeCoordinateTransform* volume_transform = nullptr,
-    const ReactionStartGeometryFactory& geometry_factory = {}
+    const ReactionStartGeometryFactory& geometry_factory = {},
+    const ChemicalContinuationStart* continuation_start = nullptr
 ) {
-    constexpr std::size_t kPrimaryBudget = 25;
+    const std::size_t primary_budget = continuation_start == nullptr ? 25U : 2U;
     constexpr std::size_t kReactionRowLimit = 6;
     constexpr double kDuplicateStateTolerance = 1.0e-8;
     constexpr double kDuplicateVolumeTolerance = 1.0e-8;
@@ -4390,15 +4447,87 @@ ChemicalSolveResult solve_reaction(
     std::size_t duplicate_start_count = 0;
     std::size_t infeasible_start_count = 0;
     std::vector<PrimaryStart> starts;
-    starts.push_back({initialization.amounts, "max_min", {}, false, {}});
-    if (initialization.strict_positive_feasible
+    if (continuation_start == nullptr) {
+        starts.push_back({initialization.amounts, "max_min", {}, false, {}});
+    } else {
+        starts.push_back({
+            continuation_start->amounts,
+            "immutable_continuation_reference",
+            {},
+            false,
+            {},
+        });
+        std::vector<double> guard = continuation_start->amounts;
+        bool guard_available = false;
+        for (std::size_t row = 0;
+             row < system.reaction_matrix.rows && !guard_available;
+             ++row) {
+            for (const int sign : {1, -1}) {
+                double maximum_step = std::numeric_limits<double>::infinity();
+                bool nonzero = false;
+                for (std::size_t species = 0;
+                     species < system.species_count;
+                     ++species) {
+                    const double direction = static_cast<double>(sign)
+                        * system.reaction_matrix(row, species);
+                    nonzero = nonzero || direction != 0.0;
+                    if (direction > 0.0) {
+                        maximum_step = std::min(
+                            maximum_step,
+                            (initialization.amount_upper_bounds[species]
+                                - guard[species]) / direction
+                        );
+                    } else if (direction < 0.0) {
+                        maximum_step = std::min(
+                            maximum_step,
+                            (guard[species] - trace_floor) / -direction
+                        );
+                    }
+                }
+                if (!nonzero || !std::isfinite(maximum_step)
+                    || maximum_step <= 0.0) {
+                    continue;
+                }
+                const double step = 1.0e-4 * maximum_step;
+                std::vector<double> candidate = guard;
+                bool valid = true;
+                for (std::size_t species = 0;
+                     species < system.species_count;
+                     ++species) {
+                    candidate[species] += step * static_cast<double>(sign)
+                        * system.reaction_matrix(row, species);
+                    valid = valid && std::isfinite(candidate[species])
+                        && candidate[species] > trace_floor
+                        && candidate[species]
+                            < initialization.amount_upper_bounds[species];
+                }
+                if (valid) {
+                    guard = std::move(candidate);
+                    guard_available = true;
+                    break;
+                }
+            }
+        }
+        starts.push_back({
+            guard_available ? std::move(guard) : initialization.amounts,
+            guard_available
+                ? "immutable_continuation_nearby_guard"
+                : "max_min_guard_fallback",
+            {},
+            false,
+            {},
+        });
+        generated_start_count = starts.size();
+    }
+    if (continuation_start == nullptr
+        && initialization.strict_positive_feasible
         && initialization.amounts.size() == system.species_count
         && initialization.amount_upper_bounds.size() == system.species_count) {
         const std::size_t row_count = std::min(
             system.reaction_matrix.rows, kReactionRowLimit
         );
         for (std::size_t row = 0;
-             row < row_count && starts.size() < kPrimaryBudget;
+             row < row_count && starts.size() < primary_budget;
              ++row) {
             for (const double fraction : {0.5, 0.875}) {
                 for (const int sign : {1, -1}) {
@@ -4486,11 +4615,11 @@ ChemicalSolveResult solve_reaction(
                         false,
                         {},
                     });
-                    if (starts.size() == kPrimaryBudget) {
+                    if (starts.size() == primary_budget) {
                         break;
                     }
                 }
-                if (starts.size() == kPrimaryBudget) {
+                if (starts.size() == primary_budget) {
                     break;
                 }
             }
@@ -4515,13 +4644,33 @@ ChemicalSolveResult solve_reaction(
                         "Provider start pressure search returned no roots"
                     );
                 }
+                if (continuation_start != nullptr
+                    && start.identity.rfind("immutable_continuation_", 0) == 0) {
+                    const auto nearest = std::min_element(
+                        candidate.geometries.begin(),
+                        candidate.geometries.end(),
+                        [&](const ReactionStartGeometry& left,
+                            const ReactionStartGeometry& right) {
+                            return std::abs(std::log(
+                                left.initial_volume / continuation_start->volume_m3
+                            )) < std::abs(std::log(
+                                right.initial_volume / continuation_start->volume_m3
+                            ));
+                        }
+                    );
+                    std::rotate(
+                        candidate.geometries.begin(),
+                        nearest,
+                        std::next(nearest)
+                    );
+                }
             } catch (const std::exception& error) {
                 candidate.error = error.what();
             }
             candidates.push_back(std::move(candidate));
         }
         std::vector<PrimaryStart> expanded;
-        expanded.reserve(kPrimaryBudget);
+        expanded.reserve(primary_budget);
         std::size_t discovered_start_count = 0;
         for (const GeometryExpansion& candidate : candidates) {
             discovered_start_count += candidate.error.empty()
@@ -4548,11 +4697,11 @@ ChemicalSolveResult solve_reaction(
             }
         }
         for (std::size_t root = 1;
-             expanded.size() < kPrimaryBudget;
+             expanded.size() < primary_budget;
              ++root) {
             bool root_rank_available = false;
             for (const GeometryExpansion& candidate : candidates) {
-                if (expanded.size() == kPrimaryBudget) {
+                if (expanded.size() == primary_budget) {
                     break;
                 }
                 if (candidate.error.empty()
@@ -4579,6 +4728,7 @@ ChemicalSolveResult solve_reaction(
     }
 
     ChemicalSearchEvidence search;
+    search.primary_budget = primary_budget;
     search.primary_attempt_count = starts.size();
     search.generated_start_count = generated_start_count;
     search.budget_truncated_start_count = budget_truncated_start_count;
@@ -4748,7 +4898,9 @@ ChemicalSolveResult solve_reaction(
                 geometry.has_volume_transform
                     ? &geometry.volume_transform
                     : nullptr,
-                true
+                true,
+                continuation_start == nullptr,
+                continuation_start != nullptr
             );
         } catch (const std::exception& error) {
             candidate.callback_error = error.what();
@@ -5610,6 +5762,16 @@ std::vector<double> provider_pressure_start_volumes(
             bool converged = false;
             for (int iteration = 0; iteration < 100; ++iteration) {
                 root = std::sqrt(bracket_lower * bracket_upper);
+                // The Provider pressure is evaluated from a long Helmholtz
+                // derivative sum and can stop changing once this valid
+                // sign-changing volume bracket reaches floating-point
+                // resolution.  This root is only an initialization seed; the
+                // subsequent KKT solve and physical certification still own
+                // the requested pressure tolerance.
+                if (root == bracket_lower || root == bracket_upper) {
+                    converged = true;
+                    break;
+                }
                 const double root_residual = residual(root);
                 if (!std::isfinite(root_residual)) {
                     throw std::domain_error(
@@ -5727,6 +5889,7 @@ ChemicalSolveResult solve_provider_reaction(
     const std::vector<double>& ln_k_pressure_derivatives_per_pa,
     const std::vector<double>& ln_k_parameter_derivatives,
     const ProviderActiveParameterSet* active_parameters,
+    const ChemicalContinuationStart* continuation_start,
     int max_iterations
 ) {
     if (!std::isfinite(packing_fraction_min)
@@ -5946,7 +6109,8 @@ ChemicalSolveResult solve_provider_reaction(
         pressure_pa,
         packing_fraction_min,
         packing_fraction_max,
-        volume_transform
+        volume_transform,
+        continuation_start
     ](const std::vector<double>& amounts) {
         const double amount_total = std::accumulate(
             amounts.begin(), amounts.end(), 0.0
@@ -5995,9 +6159,34 @@ ChemicalSolveResult solve_provider_reaction(
                 temperature_k, amounts, volume
             ).pressure_pa - pressure_pa;
         };
-        const std::vector<double> seed_volumes = provider_pressure_start_volumes(
-            lower, upper, pressure_pa, residual
-        );
+        std::vector<double> seed_volumes;
+        if (continuation_start == nullptr) {
+            seed_volumes = provider_pressure_start_volumes(
+                lower, upper, pressure_pa, residual
+            );
+        } else {
+            const double reference_amount_total = std::accumulate(
+                continuation_start->amounts.begin(),
+                continuation_start->amounts.end(),
+                0.0
+            );
+            if (!std::isfinite(reference_amount_total)
+                || reference_amount_total <= 0.0) {
+                throw std::domain_error(
+                    "immutable continuation amount scale is invalid"
+                );
+            }
+            const double seed_volume = continuation_start->volume_m3
+                * amount_total / reference_amount_total;
+            if (!std::isfinite(seed_volume)
+                || seed_volume <= lower
+                || seed_volume >= upper) {
+                throw std::domain_error(
+                    "immutable continuation volume is outside Provider admission bounds"
+                );
+            }
+            seed_volumes.push_back(seed_volume);
+        }
         std::vector<ReactionStartGeometry> geometries;
         geometries.reserve(seed_volumes.size());
         for (const double seed_volume : seed_volumes) {
@@ -6057,7 +6246,8 @@ ChemicalSolveResult solve_provider_reaction(
             ln_k_parameter_derivatives,
             admitted_volume_bounds,
             &volume_transform,
-            geometry_factory
+            geometry_factory,
+            continuation_start
         ),
         false
     );

@@ -28,6 +28,7 @@ from ._api import (
     PhaseEquilibriumProblem,
     PhaseSpecification,
     ProviderPhase,
+    _chemical_equilibrium_impl,
     chemical_equilibrium,
     phase_equilibrium,
 )
@@ -148,9 +149,43 @@ class HomogeneousContinuationReference:
     anchor_parameter_fingerprint: str
     anchor_reaction_fingerprint: str
     anchor_topology_fingerprint: str
+    anchor_basin_states: tuple[tuple[tuple[float, ...], float], ...]
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "mole_fractions", tuple(self.mole_fractions))
+        object.__setattr__(
+            self,
+            "anchor_basin_states",
+            tuple(
+                (tuple(composition), float(molar_volume))
+                for composition, molar_volume in self.anchor_basin_states
+            ),
+        )
+        matching_anchor_states = 0
+        for composition, molar_volume in self.anchor_basin_states:
+            if (
+                len(composition) != len(self.mole_fractions)
+                or any(not math.isfinite(value) or value <= 0.0 for value in composition)
+                or not math.isclose(
+                    math.fsum(composition), 1.0, rel_tol=0.0, abs_tol=1.0e-12
+                )
+                or not math.isfinite(molar_volume)
+                or molar_volume <= 0.0
+            ):
+                raise ValueError("continuation basin catalog is invalid")
+            composition_distance = max(
+                abs(math.log(actual / anchor))
+                for actual, anchor in zip(
+                    composition, self.mole_fractions, strict=True
+                )
+            )
+            volume_distance = abs(
+                math.log(molar_volume / self.molar_volume_m3_per_mol)
+            )
+            matching_anchor_states += int(
+                composition_distance <= 2.0e-10
+                and volume_distance <= 2.0e-10
+            )
         if (
             not self.mole_fractions
             or any(not math.isfinite(value) or value <= 0.0 for value in self.mole_fractions)
@@ -168,6 +203,8 @@ class HomogeneousContinuationReference:
             or not self.anchor_parameter_fingerprint.startswith("sha256:")
             or not self.anchor_reaction_fingerprint.startswith("sha256:")
             or not self.anchor_topology_fingerprint.startswith("sha256:")
+            or not self.anchor_basin_states
+            or matching_anchor_states != 1
         ):
             raise ValueError(
                 "continuation reference requires a positive, role-certified local state"
@@ -188,6 +225,13 @@ class HomogeneousContinuationReference:
             "anchor_parameter_fingerprint": self.anchor_parameter_fingerprint,
             "anchor_reaction_fingerprint": self.anchor_reaction_fingerprint,
             "anchor_topology_fingerprint": self.anchor_topology_fingerprint,
+            "anchor_basin_states": tuple(
+                {
+                    "mole_fractions": composition,
+                    "molar_volume_m3_per_mol": molar_volume,
+                }
+                for composition, molar_volume in self.anchor_basin_states
+            ),
         }
 
     @property
@@ -1042,6 +1086,49 @@ def _certify_continuation(
         )
         in_region = (selected,)
     else:
+        anchor_catalog_metrics = tuple(
+            (
+                max(
+                    abs(math.log(actual / anchor))
+                    for actual, anchor in zip(
+                        composition,
+                        reference.mole_fractions,
+                        strict=True,
+                    )
+                ),
+                abs(
+                    math.log(
+                        molar_volume / reference.molar_volume_m3_per_mol
+                    )
+                ),
+            )
+            for composition, molar_volume in reference.anchor_basin_states
+        )
+        catalog_selected = tuple(
+            index
+            for index, (composition_distance, volume_distance) in enumerate(
+                anchor_catalog_metrics
+            )
+            if composition_distance <= 2.0e-10
+            and volume_distance <= 2.0e-10
+        )
+        if len(catalog_selected) != 1:
+            raise _ObservationFailure(
+                "branch_loss",
+                "immutable continuation catalog lost its selected anchor basin",
+            )
+        if any(
+            index != catalog_selected[0]
+            and composition_distance <= reference.maximum_log_composition_distance
+            and volume_distance <= reference.maximum_log_volume_distance
+            for index, (composition_distance, volume_distance) in enumerate(
+                anchor_catalog_metrics
+            )
+        ):
+            raise _ObservationFailure(
+                "multiple_unresolved_branches",
+                "an alternative anchor-certified basin lies inside the continuation region",
+            )
         metrics: list[tuple[int, float, float]] = []
         for basin in search.basins:
             total_amount = math.fsum(basin.amounts_mol)
@@ -1122,6 +1209,80 @@ def _certify_continuation(
             _continuation_certificate_payload(certificate),
         ),
     )
+
+
+def _immutable_continuation_start(
+    problem: HomogeneousReactiveObservationProblem,
+) -> tuple[tuple[float, ...], float] | None:
+    reference = problem.continuation_reference
+    if reference is None:
+        return None
+    projected_balances = tuple(
+        math.fsum(
+            coefficient * mole_fraction
+            for coefficient, mole_fraction in zip(
+                row,
+                reference.mole_fractions,
+                strict=True,
+            )
+        )
+        for row in problem.reaction_system.balance_matrix
+    )
+    denominator = math.fsum(value * value for value in projected_balances)
+    if not math.isfinite(denominator) or denominator <= 0.0:
+        raise ValueError("continuation composition does not determine the conserved scale")
+    total_amount = math.fsum(
+        coefficient * total
+        for coefficient, total in zip(
+            projected_balances,
+            problem.reaction_system.conserved_totals,
+            strict=True,
+        )
+    ) / denominator
+    amounts = tuple(total_amount * value for value in reference.mole_fractions)
+    balance_residual = max(
+        abs(
+            math.fsum(
+                coefficient * amount
+                for coefficient, amount in zip(row, amounts, strict=True)
+            )
+            - expected
+        )
+        for row, expected in zip(
+            problem.reaction_system.balance_matrix,
+            problem.reaction_system.conserved_totals,
+            strict=True,
+        )
+    )
+    charge_residual = abs(
+        math.fsum(
+            charge * amount
+            for charge, amount in zip(
+                problem.reaction_system.charges,
+                amounts,
+                strict=True,
+            )
+        )
+    )
+    scale = max(1.0, *(abs(value) for value in problem.reaction_system.conserved_totals))
+    volume = total_amount * reference.molar_volume_m3_per_mol
+    if (
+        not math.isfinite(total_amount)
+        or total_amount <= 0.0
+        or any(
+            not math.isfinite(amount)
+            or amount <= problem.reaction_system.strict_interior_amount_floor_mol
+            for amount in amounts
+        )
+        or not math.isfinite(volume)
+        or volume <= 0.0
+        or balance_residual > 2.0e-10 * scale
+        or charge_residual > 2.0e-10 * scale
+    ):
+        raise ValueError(
+            "immutable continuation state is inconsistent with the reaction constraints"
+        )
+    return amounts, volume
 
 
 def _validate_continuation_certificate(
@@ -1429,10 +1590,8 @@ def certify_homogeneous_continuation_reference(
         temperature,
         pressure,
         problem.reaction_system,
-        sensitivity_request=(
-            None
-            if active_parameters is None
-            else ChemicalEquilibriumSensitivityRequest(active_parameters)
+        sensitivity_request=ChemicalEquilibriumSensitivityRequest(
+            active_parameters
         ),
     )
     role_receipt = _certify_phase_role(
@@ -1472,6 +1631,16 @@ def certify_homogeneous_continuation_reference(
         trial.parameter_fingerprint,
         descriptor.reaction_fingerprint,
         descriptor.topology_fingerprint,
+        tuple(
+            (
+                tuple(
+                    amount / math.fsum(basin.amounts_mol)
+                    for amount in basin.amounts_mol
+                ),
+                basin.volume_m3 / math.fsum(basin.amounts_mol),
+            )
+            for basin in equilibrium.diagnostics.search.basins
+        ),
     )
 
 
@@ -2280,12 +2449,13 @@ def evaluate_homogeneous_reactive_observations(
             trial=trial,
         )
     try:
-        equilibrium = chemical_equilibrium(
+        equilibrium = _chemical_equilibrium_impl(
             phase,
             temperature,
             pressure,
             reaction_system,
             sensitivity_request=ChemicalEquilibriumSensitivityRequest(active_parameters),
+            continuation_start=_immutable_continuation_start(problem),
         )
     except ChemicalEquilibriumError as error:
         return _failed_result(
@@ -2295,6 +2465,13 @@ def evaluate_homogeneous_reactive_observations(
             trial=trial,
             diagnostics=error.diagnostics,
             support_domain_status=error.diagnostics.provider_domain_status,
+        )
+    except ValueError as error:
+        return _failed_result(
+            descriptor,
+            "branch_loss",
+            str(error),
+            trial=trial,
         )
     try:
         continuation_certificate = _certify_continuation(

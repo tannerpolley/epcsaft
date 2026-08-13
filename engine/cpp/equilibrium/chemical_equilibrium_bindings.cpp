@@ -137,6 +137,24 @@ ReactionSystemInput reaction_system_input(const py::dict& spec) {
     return input;
 }
 
+ChemicalContinuationStart continuation_start(const py::dict& spec) {
+    const py::dict payload = py::cast<py::dict>(spec["continuation_start"]);
+    ChemicalContinuationStart start;
+    start.amounts = py::cast<std::vector<double>>(payload["amounts"]);
+    start.volume_m3 = py::cast<double>(payload["volume_m3"]);
+    if (start.amounts.empty()
+        || std::any_of(start.amounts.begin(), start.amounts.end(), [](double amount) {
+            return !std::isfinite(amount) || amount <= 0.0;
+        })
+        || !std::isfinite(start.volume_m3)
+        || start.volume_m3 <= 0.0) {
+        throw py::value_error(
+            "immutable continuation start must be strictly positive and finite"
+        );
+    }
+    return start;
+}
+
 py::dict chemical_result(const ChemicalSolveResult& evaluation) {
     py::dict result;
     const auto optional_float = [](double value) -> py::object {
@@ -261,6 +279,8 @@ py::dict chemical_result(const ChemicalSolveResult& evaluation) {
     result["lagrangian_hessian"] = evaluation.lagrangian_hessian;
     result["covariant_lagrangian_hessian"] =
         evaluation.covariant_lagrangian_hessian;
+    result["derivative_audits_performed"] =
+        evaluation.derivative_audits_performed;
     result["derivative_check_step"] = optional_float(
         evaluation.derivative_check_step
     );
@@ -378,54 +398,56 @@ py::dict chemical_result(const ChemicalSolveResult& evaluation) {
         "derivative_evidence_finite", evaluation.callback_error.empty() ? 1.0 : 0.0,
         1.0, ">=", evaluation.callback_error.empty()
     ));
-    numerical_criteria.append(criterion(
-        "objective_gradient_spanning_relative_error",
-        evaluation.objective_gradient_check_relative_error,
-        kChemicalObjectiveDerivativeTolerance,
-        "<=",
-        evaluation.objective_gradient_check_relative_error
-            <= kChemicalObjectiveDerivativeTolerance
-    ));
-    numerical_criteria.append(criterion(
-        "physical_objective_gradient_spanning_relative_error",
-        evaluation.physical_objective_gradient_check_relative_error,
-        kChemicalObjectiveDerivativeTolerance,
-        "<=",
-        evaluation.physical_objective_gradient_check_relative_error
-            <= kChemicalObjectiveDerivativeTolerance
-    ));
-    numerical_criteria.append(criterion(
-        "constraint_jacobian_spanning_relative_error",
-        evaluation.constraint_jacobian_check_relative_error,
-        kChemicalConstraintDerivativeTolerance,
-        "<=",
-        evaluation.constraint_jacobian_check_relative_error
-            <= kChemicalConstraintDerivativeTolerance
-    ));
-    numerical_criteria.append(criterion(
-        "lagrangian_hessian_spanning_relative_error",
-        evaluation.lagrangian_hessian_check_relative_error,
-        kChemicalHessianDerivativeTolerance,
-        "<=",
-        evaluation.lagrangian_hessian_check_relative_error
-            <= kChemicalHessianDerivativeTolerance
-    ));
-    numerical_criteria.append(criterion(
-        "reduced_hessian_spanning_relative_error",
-        evaluation.reduced_hessian_check_relative_error,
-        kChemicalHessianDerivativeTolerance,
-        "<=",
-        evaluation.reduced_hessian_check_relative_error
-            <= kChemicalHessianDerivativeTolerance
-    ));
-    numerical_criteria.append(criterion(
-        "kkt_root_jacobian_spanning_relative_error",
-        evaluation.kkt_root_jacobian_check_relative_error,
-        kChemicalHessianDerivativeTolerance,
-        "<=",
-        evaluation.kkt_root_jacobian_check_relative_error
-            <= kChemicalHessianDerivativeTolerance
-    ));
+    if (evaluation.derivative_audits_performed) {
+        numerical_criteria.append(criterion(
+            "objective_gradient_spanning_relative_error",
+            evaluation.objective_gradient_check_relative_error,
+            kChemicalObjectiveDerivativeTolerance,
+            "<=",
+            evaluation.objective_gradient_check_relative_error
+                <= kChemicalObjectiveDerivativeTolerance
+        ));
+        numerical_criteria.append(criterion(
+            "physical_objective_gradient_spanning_relative_error",
+            evaluation.physical_objective_gradient_check_relative_error,
+            kChemicalObjectiveDerivativeTolerance,
+            "<=",
+            evaluation.physical_objective_gradient_check_relative_error
+                <= kChemicalObjectiveDerivativeTolerance
+        ));
+        numerical_criteria.append(criterion(
+            "constraint_jacobian_spanning_relative_error",
+            evaluation.constraint_jacobian_check_relative_error,
+            kChemicalConstraintDerivativeTolerance,
+            "<=",
+            evaluation.constraint_jacobian_check_relative_error
+                <= kChemicalConstraintDerivativeTolerance
+        ));
+        numerical_criteria.append(criterion(
+            "lagrangian_hessian_spanning_relative_error",
+            evaluation.lagrangian_hessian_check_relative_error,
+            kChemicalHessianDerivativeTolerance,
+            "<=",
+            evaluation.lagrangian_hessian_check_relative_error
+                <= kChemicalHessianDerivativeTolerance
+        ));
+        numerical_criteria.append(criterion(
+            "reduced_hessian_spanning_relative_error",
+            evaluation.reduced_hessian_check_relative_error,
+            kChemicalHessianDerivativeTolerance,
+            "<=",
+            evaluation.reduced_hessian_check_relative_error
+                <= kChemicalHessianDerivativeTolerance
+        ));
+        numerical_criteria.append(criterion(
+            "kkt_root_jacobian_spanning_relative_error",
+            evaluation.kkt_root_jacobian_check_relative_error,
+            kChemicalHessianDerivativeTolerance,
+            "<=",
+            evaluation.kkt_root_jacobian_check_relative_error
+                <= kChemicalHessianDerivativeTolerance
+        ));
+    }
     numerical_criteria.append(criterion(
         "kkt_rank",
         static_cast<double>(evaluation.kkt_rank),
@@ -709,7 +731,8 @@ py::dict solve_provider_input(
     double trace_floor,
     const std::vector<double>& ln_k_pressure_derivatives_per_pa = {},
     const std::vector<double>& ln_k_parameter_derivatives = {},
-    const ProviderActiveParameterSet* active_parameters = nullptr
+    const ProviderActiveParameterSet* active_parameters = nullptr,
+    const ChemicalContinuationStart* continuation_start = nullptr
 ) {
     validate_provider_identity(metadata, input);
     if (input.temperature_k < transport.source_temperature_min_k
@@ -813,7 +836,8 @@ py::dict solve_provider_input(
         trace_floor,
         compiled_ln_k_pressure_derivatives_per_pa,
         compiled_ln_k_parameter_derivatives,
-        active_parameters
+        active_parameters,
+        continuation_start
     );
     if (active_parameter_count == 0) {
         evaluation.sensitivities.provider_parameter_status = "not_applicable";
@@ -831,6 +855,7 @@ py::dict solve_provider_input(
     result["packing_fraction_bounds"] = packing_bounds;
     result["provider_transport_capsule_name"] =
         EPCSAFT_NATIVE_TRANSPORT_CAPSULE_NAME;
+    result["provider_evaluation_count"] = provider.evaluation_count();
     return result;
 }
 
@@ -966,7 +991,8 @@ py::dict solve_provider_source(
     const std::vector<double>& packing_bounds,
     double trace_floor,
     bool sensitivities_requested,
-    const ProviderActiveParameterSet* active_parameters
+    const ProviderActiveParameterSet* active_parameters,
+    const ChemicalContinuationStart* continuation_start
 ) {
     const epcsaft_native_transport& transport = checked_chemical_transport(capsule);
     const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
@@ -1104,7 +1130,8 @@ py::dict solve_provider_source(
         trace_floor,
         transformed.ln_k_pressure_derivatives_per_pa,
         transformed.ln_k_parameter_derivatives,
-        active_parameters
+        active_parameters,
+        continuation_start
     );
     py::dict sensitivities = py::cast<py::dict>(result["sensitivities"]);
     sensitivities["reference_parameter_status"] =
@@ -1151,6 +1178,11 @@ py::dict solve_chemical_equilibrium(
     }
     const std::vector<double> packing_bounds =
         py::cast<std::vector<double>>(packing_fraction_bounds);
+    const ChemicalContinuationStart anchored = spec.contains("continuation_start")
+        ? continuation_start(spec)
+        : ChemicalContinuationStart{};
+    const ChemicalContinuationStart* anchored_ptr =
+        spec.contains("continuation_start") ? &anchored : nullptr;
     const py::capsule provider_capsule = py::cast<py::capsule>(capsule);
     if (source_standard_state.is_none()) {
         const epcsaft_native_transport& transport =
@@ -1174,7 +1206,8 @@ py::dict solve_chemical_equilibrium(
             trace_floor,
             {},
             {},
-            resolved.identities.empty() ? nullptr : &resolved
+            resolved.identities.empty() ? nullptr : &resolved,
+            anchored_ptr
         );
     }
     const epcsaft_native_transport& transport =
@@ -1193,7 +1226,8 @@ py::dict solve_chemical_equilibrium(
         packing_bounds,
         trace_floor,
         sensitivities_requested,
-        resolved.identities.empty() ? nullptr : &resolved
+        resolved.identities.empty() ? nullptr : &resolved,
+        anchored_ptr
     );
 }
 

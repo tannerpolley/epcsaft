@@ -88,6 +88,12 @@ public:
         const std::vector<double>& mole_fractions,
         const std::string& phase
     ) const;
+    NativeResult evaluate_pressure_continuation(
+        double temperature,
+        double pressure,
+        const std::vector<double>& mole_fractions,
+        double reference_molar_density
+    ) const;
     bool supports_pure_transport() const;
     bool supports_fixed_topology_associating_mixture() const;
     bool supports_mixture_transport() const;
