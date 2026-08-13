@@ -344,8 +344,7 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_parameterized_phase(
     const ProviderActiveParameterSet& active_parameters
 ) const {
     ++evaluation_count_;
-    if (active_parameters.identities.empty()
-        || transport_.evaluate_parameterized_phase == nullptr
+    if (transport_.evaluate_parameterized_phase == nullptr
         || amounts_mol.size() != transport_.component_count) {
         throw std::invalid_argument(
             "Provider atomic parameterized-phase contract is incomplete"

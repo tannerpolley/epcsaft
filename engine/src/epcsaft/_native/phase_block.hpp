@@ -537,10 +537,6 @@ inline NativePackingFractionBlock packing_fraction_block_active_parameters(
     double temperature, const std::vector<double> &amounts, double volume,
     double ion_mole_fraction_max, const NativeParameters &parameters,
     const std::vector<NativeFixedTopologyParameter> &active_parameters) {
-  if (active_parameters.empty()) {
-    throw std::invalid_argument(
-        "active packing fraction requires at least one parameter");
-  }
   validate_electrolyte_phase_state(temperature, amounts, volume,
                                    ion_mole_fraction_max, parameters);
   std::vector<double> values;

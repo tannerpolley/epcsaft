@@ -28,7 +28,7 @@ from ..units import unit_registry
 from ._model import (
     _CORRELATIONS,
     ActiveSelection,
-    HomogeneousReactiveFitObservation,
+    EquilibriumFitObservation,
     ObservationSpec,
     ParameterFit,
     PublishedObservationCorrelation,
@@ -869,7 +869,7 @@ def resolve_fit(
     model = Pure(parameters) if fit.model.kind == "pure" else Mixture(parameters)
     resolved_observations: list[ResolvedObservation] = []
     for index, observation in enumerate(fit.observations):
-        if isinstance(observation, HomogeneousReactiveFitObservation):
+        if isinstance(observation, EquilibriumFitObservation):
             continue
         if fit.model.kind == "mixture":
             if observation.composition is None or len(observation.composition) != component_count:

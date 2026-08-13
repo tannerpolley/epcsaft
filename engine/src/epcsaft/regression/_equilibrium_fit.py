@@ -19,11 +19,21 @@ from ..equilibrium import (
     HomogeneousReactiveObservationRow,
     HomogeneousReactiveOwnerObservation,
     IdealGasPhase,
+    IdealGasVaporComparison,
+    ProviderNonidealVapor,
     ProviderPhase,
+    ReactiveBubbleContinuationReference,
+    ReactiveBubbleObservationDescriptor,
+    ReactiveBubbleObservationRow,
+    ReactiveBubbleVLEProblem,
     evaluate_homogeneous_reactive_observations,
+    evaluate_reactive_bubble_observations,
     homogeneous_reactive_observation_descriptor,
+    reactive_bubble_observation_descriptor,
     serialize_homogeneous_reactive_owner_receipt,
+    serialize_reactive_bubble_owner_receipt,
     validate_homogeneous_reactive_owner_receipt,
+    validate_reactive_bubble_owner_receipt,
 )
 from ..parameters import ActiveParameterSet, Parameters
 from ..reference import SourceReferenceIonPair
@@ -36,7 +46,7 @@ from ._fit import (
     FitPreflightError,
     _package_fingerprint,
 )
-from ._model import HomogeneousReactiveFitObservation
+from ._model import EquilibriumFitObservation
 from ._resolve import ResolvedFit
 from ._result import (
     FitCoordinateReceipt,
@@ -176,13 +186,13 @@ class _ReactiveTarget:
 
 @dataclass(frozen=True, slots=True)
 class _ReactiveBatch:
-    """Compatible fixed-T,P measurements evaluated by one reacting-phase solve."""
+    """Compatible measurements evaluated by one Equilibrium-owned solve."""
 
     identity: str
-    observation_problem: HomogeneousReactiveObservationProblem
+    observation_problem: HomogeneousReactiveObservationProblem | ReactiveBubbleVLEProblem
     temperature: Quantity[Any]
-    pressure: Quantity[Any]
-    descriptor: HomogeneousReactiveObservationDescriptor
+    pressure: Quantity[Any] | None
+    descriptor: HomogeneousReactiveObservationDescriptor | ReactiveBubbleObservationDescriptor
     targets: tuple[_ReactiveTarget, ...]
 
     def __post_init__(self) -> None:
@@ -191,19 +201,25 @@ class _ReactiveBatch:
             raise ValueError("reactive regression batch identity and targets are required")
         if len({target.identity for target in self.targets}) != len(self.targets):
             raise ValueError("reactive regression target identities must be unique within a batch")
-        if self.descriptor.identity != "equilibrium.homogeneous-reactive":
-            raise ValueError("reactive regression descriptor family is unsupported")
-        if self.descriptor.problem_identity != self.observation_problem.identity:
-            raise ValueError("reactive regression descriptor and problem identities differ")
-        if self.descriptor.phase_identity != self.observation_problem.phase_identity:
-            raise ValueError("reactive regression descriptor and phase identities differ")
-        if self.descriptor.phase_role != self.observation_problem.phase_role:
-            raise ValueError("reactive regression descriptor and phase roles differ")
-        if (
-            self.descriptor.continuation_identity != self.observation_problem.continuation_identity
-            or self.descriptor.branch_policy != self.observation_problem.branch_policy
-        ):
-            raise ValueError("reactive regression continuation declaration is inconsistent")
+        if isinstance(self.descriptor, HomogeneousReactiveObservationDescriptor):
+            if not isinstance(self.observation_problem, HomogeneousReactiveObservationProblem):
+                raise TypeError("homogeneous descriptor has the wrong Equilibrium problem")
+            if self.descriptor.problem_identity != self.observation_problem.identity:
+                raise ValueError("reactive regression descriptor and problem identities differ")
+            if self.descriptor.phase_identity != self.observation_problem.phase_identity:
+                raise ValueError("reactive regression descriptor and phase identities differ")
+            if self.descriptor.phase_role != self.observation_problem.phase_role:
+                raise ValueError("reactive regression descriptor and phase roles differ")
+            if (
+                self.descriptor.continuation_identity
+                != self.observation_problem.continuation_identity
+                or self.descriptor.branch_policy != self.observation_problem.branch_policy
+            ):
+                raise ValueError("reactive regression continuation declaration is inconsistent")
+            if self.pressure is None:
+                raise ValueError("homogeneous reactive regression requires fixed pressure")
+        elif not isinstance(self.observation_problem, ReactiveBubbleVLEProblem):
+            raise TypeError("bubble descriptor has the wrong Equilibrium problem")
         rows = {row.identity: row for row in self.descriptor.rows}
         for target in self.targets:
             row = rows.get(target.prediction_identity)
@@ -228,7 +244,8 @@ class _ReactiveBatch:
                 raise ValueError("censored residual requires a censored Equilibrium row")
         try:
             float(self.temperature.to("kelvin").magnitude)
-            float(self.pressure.to("pascal").magnitude)
+            if self.pressure is not None:
+                float(self.pressure.to("pascal").magnitude)
         except (AttributeError, TypeError, ValueError) as error:
             raise ValueError("reactive regression state has invalid units") from error
 
@@ -391,8 +408,7 @@ def _float_tuple(value: object, label: str) -> tuple[float, ...]:
 
 def _float_rows(value: object, label: str) -> tuple[tuple[float, ...], ...]:
     return tuple(
-        _float_tuple(row, f"{label}[{index}]")
-        for index, row in enumerate(_sequence(value, label))
+        _float_tuple(row, f"{label}[{index}]") for index, row in enumerate(_sequence(value, label))
     )
 
 
@@ -501,11 +517,273 @@ def _reaction_system(value: object) -> ChemicalEquilibriumProblem:
     )
 
 
+def _homogeneous_problem_from_mapping(
+    identity: str,
+    phase_value: object,
+    continuation_value: object,
+    reaction_value: object,
+    resolved: ResolvedFit,
+) -> HomogeneousReactiveObservationProblem:
+    phase = _exact_mapping(
+        phase_value,
+        frozenset({"identity", "role", "model", "admissible_packing_fraction_interval"}),
+        "reactive phase",
+    )
+    model_kind = str(phase["model"])
+    phase_model: IdealGasPhase | ProviderPhase
+    if model_kind == "provider":
+        bounds = _float_tuple(phase["admissible_packing_fraction_interval"], "packing interval")
+        if len(bounds) != 2:
+            raise ValueError("packing interval requires two bounds")
+        phase_model = ProviderPhase(Mixture(resolved.parameters), cast(Any, bounds))
+    elif model_kind == "ideal_gas":
+        phase_model = IdealGasPhase(resolved.parameters.fingerprint, "parameter-fit-ideal-gas")
+    else:
+        raise ValueError("reactive phase model must be provider or ideal_gas")
+    continuation = _exact_mapping(
+        continuation_value,
+        frozenset({"identity", "branch_policy", "reference"}),
+        "reactive continuation",
+    )
+    raw_reference = continuation["reference"]
+    reference = None
+    if raw_reference is not None:
+        from ..equilibrium import HomogeneousContinuationReference
+
+        reference_item = _exact_mapping(
+            raw_reference,
+            frozenset(
+                {
+                    "mole_fractions",
+                    "molar_volume_m3_per_mol",
+                    "maximum_log_composition_distance",
+                    "maximum_log_volume_distance",
+                    "phase_identity",
+                    "phase_role",
+                    "anchor_state_identity",
+                    "anchor_phase_role_receipt_fingerprint",
+                    "anchor_parameter_fingerprint",
+                    "anchor_reaction_fingerprint",
+                    "anchor_topology_fingerprint",
+                }
+            ),
+            "reactive continuation reference",
+        )
+        reference = HomogeneousContinuationReference(
+            _float_tuple(reference_item["mole_fractions"], "reference composition"),
+            _number(reference_item["molar_volume_m3_per_mol"], "reference molar volume"),
+            _number(
+                reference_item["maximum_log_composition_distance"],
+                "maximum composition distance",
+            ),
+            _number(
+                reference_item["maximum_log_volume_distance"],
+                "maximum volume distance",
+            ),
+            str(reference_item["phase_identity"]),
+            cast(Any, reference_item["phase_role"]),
+            str(reference_item["anchor_state_identity"]),
+            str(reference_item["anchor_phase_role_receipt_fingerprint"]),
+            str(reference_item["anchor_parameter_fingerprint"]),
+            str(reference_item["anchor_reaction_fingerprint"]),
+            str(reference_item["anchor_topology_fingerprint"]),
+        )
+    return HomogeneousReactiveObservationProblem(
+        identity,
+        str(phase["identity"]),
+        cast(Any, phase["role"]),
+        phase_model,
+        _reaction_system(reaction_value),
+        str(continuation["identity"]),
+        cast(Any, continuation["branch_policy"]),
+        reference,
+    )
+
+
+_TARGET_FIELDS = frozenset(
+    {
+        "identity",
+        "prediction_identity",
+        "observed",
+        "unit",
+        "residual",
+        "scale",
+        "multiplier",
+        "role",
+        "measurement_classification",
+        "source_identity",
+        "source_hash",
+        "included",
+        "drop_reason",
+        "aggregate_identity",
+        "covariance_identity",
+    }
+)
+
+
+def _targets_from_mapping(value: object) -> tuple[_ReactiveTarget, ...]:
+    return tuple(
+        _ReactiveTarget(
+            str(record["identity"]),
+            str(record["prediction_identity"]),
+            _number(record["observed"], "observed value"),
+            str(record["unit"]),
+            cast(Any, record["residual"]),
+            _number(record["scale"], "residual scale"),
+            _number(record["multiplier"], "target multiplier"),
+            str(record["role"]),
+            str(record["measurement_classification"]),
+            str(record["source_identity"]),
+            str(record["source_hash"]),
+            bool(record["included"]),
+            "" if record["drop_reason"] is None else str(record["drop_reason"]),
+            None if record["aggregate_identity"] is None else str(record["aggregate_identity"]),
+            None if record["covariance_identity"] is None else str(record["covariance_identity"]),
+        )
+        for record in (
+            _exact_mapping(raw, _TARGET_FIELDS, "reactive regression target")
+            for raw in _sequence(value, "reactive targets")
+        )
+    )
+
+
+def _reactive_bubble_batch(
+    item: Mapping[str, object],
+    resolved: ResolvedFit,
+    active: ActiveParameterSet,
+) -> _ReactiveBatch:
+    identity = str(item["identity"])
+    liquid = _homogeneous_problem_from_mapping(
+        str(item["liquid_problem_identity"]),
+        item["liquid_phase"],
+        item["liquid_continuation"],
+        item["reaction_system"],
+        resolved,
+    )
+    vapor = _exact_mapping(
+        item["vapor"],
+        frozenset({"identity", "component_ids", "model", "reference_id"}),
+        "reactive bubble vapor",
+    )
+    model_kind = str(vapor["model"])
+    vapor_model: ProviderNonidealVapor | IdealGasVaporComparison
+    if model_kind == "provider_nonideal":
+        vapor_model = ProviderNonidealVapor(str(vapor["reference_id"]))
+    elif model_kind == "ideal_gas_comparison":
+        vapor_model = IdealGasVaporComparison(str(vapor["reference_id"]))
+    else:
+        raise ValueError("reactive bubble vapor model is unsupported")
+    continuation = _exact_mapping(
+        item["bubble_continuation"],
+        frozenset({"identity", "reference"}),
+        "reactive bubble continuation",
+    )
+    raw_reference = continuation["reference"]
+    reference = None
+    if raw_reference is not None:
+        record = _exact_mapping(
+            raw_reference,
+            frozenset(
+                {
+                    "pressure_pa",
+                    "vapor_mole_fractions",
+                    "liquid_molar_volume_m3_per_mol",
+                    "vapor_molar_volume_m3_per_mol",
+                    "maximum_log_pressure_distance",
+                    "maximum_log_composition_distance",
+                    "maximum_log_volume_distance",
+                    "anchor_state_identity",
+                    "anchor_problem_fingerprint",
+                    "anchor_topology_fingerprint",
+                    "anchor_parameter_fingerprint",
+                }
+            ),
+            "reactive bubble continuation reference",
+        )
+        reference = ReactiveBubbleContinuationReference(
+            _number(record["pressure_pa"], "bubble reference pressure"),
+            _float_tuple(record["vapor_mole_fractions"], "bubble reference vapor composition"),
+            _number(record["liquid_molar_volume_m3_per_mol"], "bubble liquid molar volume"),
+            _number(record["vapor_molar_volume_m3_per_mol"], "bubble vapor molar volume"),
+            _number(record["maximum_log_pressure_distance"], "bubble pressure distance"),
+            _number(record["maximum_log_composition_distance"], "bubble composition distance"),
+            _number(record["maximum_log_volume_distance"], "bubble volume distance"),
+            str(record["anchor_state_identity"]),
+            str(record["anchor_problem_fingerprint"]),
+            str(record["anchor_topology_fingerprint"]),
+            str(record["anchor_parameter_fingerprint"]),
+        )
+    interval = _float_tuple(item["pressure_interval_pa"], "bubble pressure interval")
+    if len(interval) != 2:
+        raise ValueError("bubble pressure interval requires two bounds")
+    problem = ReactiveBubbleVLEProblem(
+        identity,
+        liquid,
+        str(vapor["identity"]),
+        tuple(str(value) for value in _sequence(vapor["component_ids"], "vapor components")),
+        vapor_model,
+        interval,
+        _float_tuple(item["pressure_starts_pa"], "bubble pressure starts"),
+        str(continuation["identity"]),
+        reference,
+    )
+    rows = tuple(
+        ReactiveBubbleObservationRow(
+            identity=str(record["identity"]),
+            quantity=cast(Any, record["quantity"]),
+            coefficients=_float_tuple(record["coefficients"], "bubble row coefficients"),
+            solvent_mass_coefficients_kg_per_mol=_float_tuple(
+                record["solvent_mass_coefficients_kg_per_mol"], "bubble solvent mass basis"
+            ),
+            support=cast(Any, record["support"]),
+            censor_limit=(
+                None
+                if record["censor_limit"] is None
+                else _number(record["censor_limit"], "bubble censor limit")
+            ),
+            aggregate_identity=(
+                None if record["aggregate_identity"] is None else str(record["aggregate_identity"])
+            ),
+            covariance_identity=(
+                None
+                if record["covariance_identity"] is None
+                else str(record["covariance_identity"])
+            ),
+        )
+        for record in (
+            _exact_mapping(
+                raw,
+                frozenset(
+                    {
+                        "identity",
+                        "quantity",
+                        "coefficients",
+                        "solvent_mass_coefficients_kg_per_mol",
+                        "support",
+                        "censor_limit",
+                        "aggregate_identity",
+                        "covariance_identity",
+                    }
+                ),
+                "reactive bubble observation row",
+            )
+            for raw in _sequence(item["rows"], "reactive bubble rows")
+        )
+    )
+    descriptor = reactive_bubble_observation_descriptor(problem, rows, active_parameters=active)
+    return _ReactiveBatch(
+        identity,
+        problem,
+        _number(item["temperature_k"], "temperature") * unit_registry.kelvin,
+        None,
+        descriptor,
+        _targets_from_mapping(item["targets"]),
+    )
+
+
 def _reactive_fit_problem(resolved: ResolvedFit) -> _ResolvedReactiveFit:
     observations = tuple(
-        item
-        for item in resolved.fit.observations
-        if isinstance(item, HomogeneousReactiveFitObservation)
+        item for item in resolved.fit.observations if isinstance(item, EquilibriumFitObservation)
     )
     if len(observations) != len(resolved.fit.observations):
         raise TypeError("reactive Parameter Fit cannot mix owner families")
@@ -513,84 +791,15 @@ def _reactive_fit_problem(resolved: ResolvedFit) -> _ResolvedReactiveFit:
     batches: list[_ReactiveBatch] = []
     for specification in observations:
         item = specification.to_mapping()
-        phase = _exact_mapping(
-            item["phase"],
-            frozenset({"identity", "role", "model", "admissible_packing_fraction_interval"}),
-            "reactive phase",
-        )
-        model_kind = str(phase["model"])
-        phase_model: IdealGasPhase | ProviderPhase
-        if model_kind == "provider":
-            bounds = _float_tuple(
-                phase["admissible_packing_fraction_interval"], "packing interval"
-            )
-            if len(bounds) != 2:
-                raise ValueError("packing interval requires two bounds")
-            phase_model = ProviderPhase(Mixture(resolved.parameters), cast(Any, bounds))
-        elif model_kind == "ideal_gas":
-            phase_model = IdealGasPhase(
-                resolved.parameters.fingerprint, "parameter-fit-ideal-gas"
-            )
-        else:
-            raise ValueError("reactive phase model must be provider or ideal_gas")
-        continuation = _exact_mapping(
-            item["continuation"],
-            frozenset({"identity", "branch_policy", "reference"}),
-            "reactive continuation",
-        )
-        raw_reference = continuation["reference"]
-        reference = None
-        if raw_reference is not None:
-            from ..equilibrium import HomogeneousContinuationReference
-
-            reference_item = _exact_mapping(
-                raw_reference,
-                frozenset(
-                    {
-                        "mole_fractions",
-                        "molar_volume_m3_per_mol",
-                        "maximum_log_composition_distance",
-                        "maximum_log_volume_distance",
-                        "phase_identity",
-                        "phase_role",
-                        "anchor_state_identity",
-                        "anchor_phase_role_receipt_fingerprint",
-                        "anchor_parameter_fingerprint",
-                        "anchor_reaction_fingerprint",
-                        "anchor_topology_fingerprint",
-                    }
-                ),
-                "reactive continuation reference",
-            )
-            reference = HomogeneousContinuationReference(
-                _float_tuple(reference_item["mole_fractions"], "reference composition"),
-                _number(reference_item["molar_volume_m3_per_mol"], "reference molar volume"),
-                _number(
-                    reference_item["maximum_log_composition_distance"],
-                    "maximum composition distance",
-                ),
-                _number(
-                    reference_item["maximum_log_volume_distance"],
-                    "maximum volume distance",
-                ),
-                str(reference_item["phase_identity"]),
-                cast(Any, reference_item["phase_role"]),
-                str(reference_item["anchor_state_identity"]),
-                str(reference_item["anchor_phase_role_receipt_fingerprint"]),
-                str(reference_item["anchor_parameter_fingerprint"]),
-                str(reference_item["anchor_reaction_fingerprint"]),
-                str(reference_item["anchor_topology_fingerprint"]),
-            )
-        reaction_system = _reaction_system(item["reaction_system"])
-        problem = HomogeneousReactiveObservationProblem(
+        if specification.family == "reactive_bubble_vle":
+            batches.append(_reactive_bubble_batch(item, resolved, active))
+            continue
+        problem = _homogeneous_problem_from_mapping(
             str(item["identity"]),
-            str(phase["identity"]),
-            cast(Any, phase["role"]),
-            phase_model,
-            reaction_system,
-            str(continuation["identity"]),
-            cast(Any, continuation["branch_policy"]),
-            reference,
+            item["phase"],
+            item["continuation"],
+            item["reaction_system"],
+            resolved,
         )
         rows = tuple(
             HomogeneousReactiveObservationRow(
@@ -642,52 +851,6 @@ def _reactive_fit_problem(resolved: ResolvedFit) -> _ResolvedReactiveFit:
             rows,
             active_parameters=active,
         )
-        target_fields = frozenset(
-            {
-                "identity",
-                "prediction_identity",
-                "observed",
-                "unit",
-                "residual",
-                "scale",
-                "multiplier",
-                "role",
-                "measurement_classification",
-                "source_identity",
-                "source_hash",
-                "included",
-                "drop_reason",
-                "aggregate_identity",
-                "covariance_identity",
-            }
-        )
-        targets = tuple(
-            _ReactiveTarget(
-                str(record["identity"]),
-                str(record["prediction_identity"]),
-                _number(record["observed"], "observed value"),
-                str(record["unit"]),
-                cast(Any, record["residual"]),
-                _number(record["scale"], "residual scale"),
-                _number(record["multiplier"], "target multiplier"),
-                str(record["role"]),
-                str(record["measurement_classification"]),
-                str(record["source_identity"]),
-                str(record["source_hash"]),
-                bool(record["included"]),
-                "" if record["drop_reason"] is None else str(record["drop_reason"]),
-                None
-                if record["aggregate_identity"] is None
-                else str(record["aggregate_identity"]),
-                None
-                if record["covariance_identity"] is None
-                else str(record["covariance_identity"]),
-            )
-            for record in (
-                _exact_mapping(raw, target_fields, "reactive regression target")
-                for raw in _sequence(item["targets"], "reactive targets")
-            )
-        )
         batches.append(
             _ReactiveBatch(
                 str(item["identity"]),
@@ -695,7 +858,7 @@ def _reactive_fit_problem(resolved: ResolvedFit) -> _ResolvedReactiveFit:
                 _number(item["temperature_k"], "temperature") * unit_registry.kelvin,
                 _number(item["pressure_pa"], "pressure") * unit_registry.pascal,
                 descriptor,
-                targets,
+                _targets_from_mapping(item["targets"]),
             )
         )
     return _ResolvedReactiveFit(
@@ -757,25 +920,35 @@ def _validated_owner_receipts(
     validated: list[Mapping[str, Any]] = []
     for batch, opaque_receipt in zip(batches, start.owner_receipts, strict=True):
         receipt_json = opaque_receipt.canonical_bytes_utf8
-        observations = tuple(
-            HomogeneousReactiveOwnerObservation(
-                target.identity,
-                target.prediction_identity,
-                target.aggregate_identity,
-                target.covariance_identity,
+        if isinstance(batch.descriptor, ReactiveBubbleObservationDescriptor):
+            receipt_digest = validate_reactive_bubble_owner_receipt(
+                receipt_json,
+                descriptor=batch.descriptor,
+                batch_identity=batch.identity,
+                requested_temperature=batch.temperature,
+                active_parameters=active,
             )
-            for target in batch.targets
-            if target.included
-        )
-        receipt_digest = validate_homogeneous_reactive_owner_receipt(
-            receipt_json,
-            descriptor=batch.descriptor,
-            batch_identity=batch.identity,
-            requested_temperature=batch.temperature,
-            requested_pressure=batch.pressure,
-            active_parameters=active,
-            observations=observations,
-        )
+        else:
+            observations = tuple(
+                HomogeneousReactiveOwnerObservation(
+                    target.identity,
+                    target.prediction_identity,
+                    target.aggregate_identity,
+                    target.covariance_identity,
+                )
+                for target in batch.targets
+                if target.included
+            )
+            assert batch.pressure is not None
+            receipt_digest = validate_homogeneous_reactive_owner_receipt(
+                receipt_json,
+                descriptor=batch.descriptor,
+                batch_identity=batch.identity,
+                requested_temperature=batch.temperature,
+                requested_pressure=batch.pressure,
+                active_parameters=active,
+                observations=observations,
+            )
         if receipt_digest != opaque_receipt.digest:
             raise ValueError("Equilibrium owner receipt digest does not match its opaque bytes")
         validated.append(
@@ -807,6 +980,52 @@ def _target_payload(target: _ReactiveTarget) -> dict[str, object]:
     }
 
 
+def _batch_payload(batch: _ReactiveBatch) -> dict[str, object]:
+    common = {
+        "identity": batch.identity,
+        "family": batch.descriptor.identity,
+        "descriptor_fingerprint": batch.descriptor.fingerprint,
+        "problem_fingerprint": batch.descriptor.problem_fingerprint,
+        "reaction_fingerprint": batch.descriptor.reaction_fingerprint,
+        "topology_fingerprint": batch.descriptor.topology_fingerprint,
+        "reference_fingerprint": batch.descriptor.reference_fingerprint,
+        "domain_fingerprint": batch.descriptor.domain_fingerprint,
+        "temperature_k": float(batch.temperature.to("kelvin").magnitude),
+        "targets": tuple(_target_payload(target) for target in batch.targets),
+    }
+    if isinstance(batch.observation_problem, ReactiveBubbleVLEProblem):
+        return {
+            **common,
+            "observation_problem_identity": batch.observation_problem.identity,
+            "liquid_problem_identity": batch.observation_problem.liquid_problem.identity,
+            "vapor_phase_identity": batch.observation_problem.vapor_phase_identity,
+            "vapor_component_ids": batch.observation_problem.vapor_component_ids,
+            "continuation_identity": batch.observation_problem.continuation_identity,
+            "continuation_reference": (
+                None
+                if batch.observation_problem.continuation_reference is None
+                else batch.observation_problem.continuation_reference.to_mapping()
+            ),
+            "pressure_interval_pa": batch.observation_problem.pressure_interval_pa,
+            "pressure_starts_pa": batch.observation_problem.pressure_starts_pa,
+        }
+    assert batch.pressure is not None
+    return {
+        **common,
+        "observation_problem_identity": batch.observation_problem.identity,
+        "phase_identity": batch.observation_problem.phase_identity,
+        "phase_role": batch.observation_problem.phase_role,
+        "continuation_identity": batch.observation_problem.continuation_identity,
+        "branch_policy": batch.observation_problem.branch_policy,
+        "continuation_reference": (
+            None
+            if batch.observation_problem.continuation_reference is None
+            else batch.observation_problem.continuation_reference.to_mapping()
+        ),
+        "pressure_pa": float(batch.pressure.to("pascal").magnitude),
+    }
+
+
 def _problem_payload(problem: _ResolvedReactiveFit) -> dict[str, object]:
     return {
         "parameter_fingerprint": problem.parameters.fingerprint,
@@ -823,32 +1042,7 @@ def _problem_payload(problem: _ResolvedReactiveFit) -> dict[str, object]:
             }
             for coordinate in problem.coordinates
         ),
-        "batches": tuple(
-            {
-                "identity": batch.identity,
-                "family": batch.descriptor.identity,
-                "observation_problem_identity": batch.observation_problem.identity,
-                "phase_identity": batch.observation_problem.phase_identity,
-                "phase_role": batch.observation_problem.phase_role,
-                "continuation_identity": (batch.observation_problem.continuation_identity),
-                "branch_policy": batch.observation_problem.branch_policy,
-                "continuation_reference": (
-                    None
-                    if batch.observation_problem.continuation_reference is None
-                    else batch.observation_problem.continuation_reference.to_mapping()
-                ),
-                "descriptor_fingerprint": batch.descriptor.fingerprint,
-                "problem_fingerprint": batch.descriptor.problem_fingerprint,
-                "reaction_fingerprint": batch.descriptor.reaction_fingerprint,
-                "topology_fingerprint": batch.descriptor.topology_fingerprint,
-                "reference_fingerprint": batch.descriptor.reference_fingerprint,
-                "domain_fingerprint": batch.descriptor.domain_fingerprint,
-                "temperature_k": float(batch.temperature.to("kelvin").magnitude),
-                "pressure_pa": float(batch.pressure.to("pascal").magnitude),
-                "targets": tuple(_target_payload(target) for target in batch.targets),
-            }
-            for batch in problem.batches
-        ),
+        "batches": tuple(_batch_payload(batch) for batch in problem.batches),
         "controls": {
             "starts": tuple(
                 {"identity": start.identity, "values": start.values}
@@ -921,6 +1115,26 @@ def _active_trial(
     )
 
 
+def _evaluate_batch(batch: _ReactiveBatch, active: ActiveParameterSet) -> Any:
+    if isinstance(batch.observation_problem, ReactiveBubbleVLEProblem):
+        assert isinstance(batch.descriptor, ReactiveBubbleObservationDescriptor)
+        return evaluate_reactive_bubble_observations(
+            batch.observation_problem,
+            batch.temperature,
+            batch.descriptor,
+            active_parameters=active,
+        )
+    assert isinstance(batch.descriptor, HomogeneousReactiveObservationDescriptor)
+    assert batch.pressure is not None
+    return evaluate_homogeneous_reactive_observations(
+        batch.observation_problem,
+        batch.temperature,
+        batch.pressure,
+        batch.descriptor,
+        active_parameters=active,
+    )
+
+
 def _preflight(problem: _ResolvedReactiveFit) -> None:
     """Fail before Ceres unless every exact start has complete owner derivatives."""
 
@@ -931,13 +1145,7 @@ def _preflight(problem: _ResolvedReactiveFit) -> None:
             selected_targets = tuple(target for target in batch.targets if target.included)
             if not selected_targets:
                 continue
-            result = evaluate_homogeneous_reactive_observations(
-                batch.observation_problem,
-                batch.temperature,
-                batch.pressure,
-                batch.descriptor,
-                active_parameters=active,
-            )
+            result = _evaluate_batch(batch, active)
             if result.status != "evaluated":
                 failure = result.failure
                 if failure is None:
@@ -951,7 +1159,10 @@ def _preflight(problem: _ResolvedReactiveFit) -> None:
                 # multistart accounting. The pure owner will reproduce it for
                 # native solve accounting; it must not suppress usable starts.
                 continue
-            if result.state is None or result.physical_branch is None:
+            certified_state = getattr(result, "state", None) or getattr(
+                result, "liquid_state", None
+            )
+            if certified_state is None or result.physical_branch is None:
                 raise FitPreflightError(
                     "owner_contract_failure",
                     start.identity,
@@ -977,11 +1188,11 @@ def _preflight(problem: _ResolvedReactiveFit) -> None:
             signature = (
                 result.physical_branch.branch_family_identity,
                 result.physical_branch.continuation_identity,
-                result.physical_branch.phase_identity,
-                result.physical_branch.phase_role,
-                result.state.chart_topology,
-                result.state.phase_role_receipt.phase_selection_claim,
-                result.state.chemical_search_certificate.selection_label,
+                certified_state.phase_identity,
+                certified_state.phase_role,
+                certified_state.chart_topology,
+                certified_state.phase_role_receipt.phase_selection_claim,
+                certified_state.chemical_search_certificate.selection_label,
             )
             prior = branch_signatures.setdefault(batch.identity, signature)
             if signature != prior:
@@ -1025,13 +1236,7 @@ class _EquilibriumOwnerEvaluator:
             active = ActiveParameterSet(self._parameters, self._active_ids, values=values)
         except (ParameterError, TypeError, ValueError) as error:
             return self._rejected("parameter_topology_mismatch", str(error))
-        result = evaluate_homogeneous_reactive_observations(
-            batch.observation_problem,
-            batch.temperature,
-            batch.pressure,
-            batch.descriptor,
-            active_parameters=active,
-        )
+        result = _evaluate_batch(batch, active)
         if result.status != "evaluated":
             failure = result.failure
             if failure is None:
@@ -1052,7 +1257,16 @@ class _EquilibriumOwnerEvaluator:
                 "owner_contract_failure",
                 "Equilibrium did not preserve the actual active-parameter trial receipt",
             )
-        if result.physical_branch is None or result.state is None or result.equilibrium is None:
+        certified_state = getattr(result, "state", None) or getattr(result, "liquid_state", None)
+        equilibrium_state = getattr(result, "equilibrium", None)
+        if (
+            result.physical_branch is None
+            or certified_state is None
+            or (
+                isinstance(batch.observation_problem, HomogeneousReactiveObservationProblem)
+                and equilibrium_state is None
+            )
+        ):
             return self._rejected(
                 "owner_contract_failure",
                 "Equilibrium accepted a trial without a physical branch and certified state",
@@ -1066,30 +1280,35 @@ class _EquilibriumOwnerEvaluator:
                 "owner_contract_failure",
                 "Equilibrium did not evaluate every selected measurement row",
             )
-        accepted = cast(tuple[Any, ...], selected)
         response: dict[str, object] = {
             "status": "accepted",
-            "predictions": [row.value for row in accepted],
-            "jacobian": [value for row in accepted for value in row.jacobian],
+            "predictions": [row.value for row in selected],
+            "jacobian": [value for row in selected for value in row.jacobian],
         }
         if receipt_requested:
-            observations = tuple(
-                HomogeneousReactiveOwnerObservation(
-                    target.identity,
-                    target.prediction_identity,
-                    target.aggregate_identity,
-                    target.covariance_identity,
+            if isinstance(batch.observation_problem, ReactiveBubbleVLEProblem):
+                response["receipt_json"] = serialize_reactive_bubble_owner_receipt(
+                    result, batch_identity=batch.identity
                 )
-                for target in batch.targets
-                if target.included
-            )
-            response["receipt_json"] = serialize_homogeneous_reactive_owner_receipt(
-                result,
-                batch_identity=batch.identity,
-                requested_temperature=batch.temperature,
-                requested_pressure=batch.pressure,
-                observations=observations,
-            )
+            else:
+                observations = tuple(
+                    HomogeneousReactiveOwnerObservation(
+                        target.identity,
+                        target.prediction_identity,
+                        target.aggregate_identity,
+                        target.covariance_identity,
+                    )
+                    for target in batch.targets
+                    if target.included
+                )
+                assert batch.pressure is not None
+                response["receipt_json"] = serialize_homogeneous_reactive_owner_receipt(
+                    result,
+                    batch_identity=batch.identity,
+                    requested_temperature=batch.temperature,
+                    requested_pressure=batch.pressure,
+                    observations=observations,
+                )
         return response
 
 
@@ -1117,7 +1336,14 @@ def _fit_equilibrium_observations(
     )
     if not active_batches:
         raise ValueError("equilibrium regression has no included target rows")
-    if any(batch.observation_problem.continuation_reference is None for batch in active_batches):
+    if any(
+        batch.observation_problem.continuation_reference is None
+        or (
+            isinstance(batch.observation_problem, ReactiveBubbleVLEProblem)
+            and batch.observation_problem.liquid_problem.continuation_reference is None
+        )
+        for batch in active_batches
+    ):
         raise ValueError(
             "equilibrium regression requires an immutable continuation reference per batch"
         )
@@ -1190,7 +1416,7 @@ def _fit_equilibrium_observations(
     return result
 
 
-def _fit_homogeneous_parameter_fit(resolved: ResolvedFit) -> FitResult:
+def _fit_equilibrium_parameter_fit(resolved: ResolvedFit) -> FitResult:
     return _fit_equilibrium_observations(
         _reactive_fit_problem(resolved),
         canonical_fit_mapping=resolved.to_mapping(),

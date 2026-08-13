@@ -297,9 +297,9 @@ def fit(
     parameters = Parameters.from_json(parameter_path)
     resolved = specification.resolve(parameters, base_path=root)
     if not resolved.observations:
-        from ._equilibrium_fit import _fit_homogeneous_parameter_fit
+        from ._equilibrium_fit import _fit_equilibrium_parameter_fit
 
-        return _fit_homogeneous_parameter_fit(resolved)
+        return _fit_equilibrium_parameter_fit(resolved)
     model: Pure | Mixture = (
         Pure(resolved.parameters)
         if specification.model.kind == "pure"

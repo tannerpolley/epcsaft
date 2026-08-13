@@ -677,6 +677,239 @@ SolvedStateSensitivity coexistence_sensitivity(
     return result;
 }
 
+SolvedStateSensitivity coexistence_reference_direction_sensitivity(
+    const ProviderContext& reference_provider,
+    const ProviderContext& partner_provider,
+    const FixedTCoexistenceProblem& problem,
+    const std::vector<std::size_t>& partner_to_reference,
+    const Held2Coordinates& reference_coordinates,
+    const Held2Coordinates& partner_coordinates,
+    const Evaluation& solved
+) {
+    SolvedStateSensitivity result;
+    result.parameter_identities = problem.reference_direction_identities;
+    result.reference_phase_index = problem.reference_phase_index;
+    const std::size_t direction_count =
+        problem.reference_composition_directions.size();
+    if (direction_count == 0
+        || result.parameter_identities.size() != direction_count) {
+        result.failure_reason = "reference_direction_layout_changed";
+        return result;
+    }
+    const std::size_t reference_count =
+        reference_coordinates.charges.size();
+    const std::size_t independent_count =
+        partner_coordinates.independent_indices.size();
+    result.dimension = independent_count + 2;
+    const PotentialRows potentials = potential_rows(
+        reference_coordinates, partner_coordinates, partner_to_reference
+    );
+    if (potentials.count + 1 != result.dimension) {
+        result.failure_reason = "coexistence_residual_layout_changed";
+        return result;
+    }
+    result.residual_state_jacobian.assign(
+        result.dimension * result.dimension, 0.0
+    );
+    for (std::size_t row = 0; row < result.dimension; ++row) {
+        for (std::size_t column = 0; column < result.dimension; ++column) {
+            result.residual_state_jacobian[
+                row * result.dimension + column
+            ] = solved.jacobian(
+                static_cast<Eigen::Index>(row),
+                static_cast<Eigen::Index>(column)
+            );
+        }
+    }
+    result.residual_parameter_jacobian.assign(
+        result.dimension * direction_count, 0.0
+    );
+    const auto partner_ids = phase_provider_component_ids(partner_provider);
+    const std::size_t reference_state_count = reference_count + 1;
+    for (std::size_t row = 0; row < potentials.count; ++row) {
+        const std::size_t identity_component =
+            phase_topology_is_charged(partner_coordinates.charges)
+            ? partner_coordinates.retained_indices[row]
+            : row;
+        result.residual_identities.push_back(
+            "phase[" + std::to_string(problem.reference_phase_index)
+            + (phase_topology_is_charged(partner_coordinates.charges)
+                ? "].modified_potential["
+                : "].mu[")
+            + partner_ids[identity_component]
+            + "]-phase["
+            + std::to_string(1 - problem.reference_phase_index)
+            + (phase_topology_is_charged(partner_coordinates.charges)
+                ? "].modified_potential"
+                : "].mu")
+        );
+        for (std::size_t direction = 0;
+             direction < direction_count; ++direction) {
+            double derivative = 0.0;
+            for (std::size_t potential_component = 0;
+                 potential_component < reference_count;
+                 ++potential_component) {
+                const double coefficient = potentials.reference[
+                    row * reference_count + potential_component
+                ];
+                for (std::size_t composition_component = 0;
+                     composition_component < reference_count;
+                     ++composition_component) {
+                    derivative += coefficient
+                        * solved.reference.block.hessian[
+                            potential_component * reference_state_count
+                            + composition_component
+                        ]
+                        * problem.reference_composition_directions[direction][
+                            composition_component
+                        ];
+                }
+            }
+            result.residual_parameter_jacobian[
+                row * direction_count + direction
+            ] = derivative;
+        }
+    }
+    result.residual_identities.push_back(
+        "phase[" + std::to_string(problem.reference_phase_index)
+        + "].pressure_minus_phase["
+        + std::to_string(1 - problem.reference_phase_index)
+        + "].pressure_scaled"
+    );
+    const double pressure_scale = std::max({
+        1.0,
+        std::abs(solved.reference.block.pressure_pa),
+        std::abs(solved.partner.block.pressure_pa),
+    });
+    const double rt = kGasConstant * problem.temperature_k;
+    const std::size_t pressure_row = potentials.count;
+    for (std::size_t direction = 0;
+         direction < direction_count; ++direction) {
+        double derivative = 0.0;
+        for (std::size_t component = 0;
+             component < reference_count; ++component) {
+            derivative -= rt * solved.reference.block.hessian[
+                reference_count * reference_state_count + component
+            ] * problem.reference_composition_directions[direction][component];
+        }
+        result.residual_parameter_jacobian[
+            pressure_row * direction_count + direction
+        ] = derivative / pressure_scale;
+    }
+    result.state_identities.push_back(
+        "phase[" + std::to_string(problem.reference_phase_index)
+        + "].log_molar_volume"
+    );
+    for (std::size_t coordinate = 0;
+         coordinate < independent_count; ++coordinate) {
+        result.state_identities.push_back(
+            "phase[" + std::to_string(1 - problem.reference_phase_index)
+            + "].modified_fraction["
+            + partner_ids[partner_coordinates.independent_indices[coordinate]]
+            + "]"
+        );
+    }
+    result.state_identities.push_back(
+        "phase[" + std::to_string(1 - problem.reference_phase_index)
+        + "].log_molar_volume"
+    );
+    if (!solve_sensitivity_linear_system(result, direction_count)) {
+        return result;
+    }
+    const auto reference_ids = phase_provider_component_ids(reference_provider);
+    const std::size_t output_count = 1 + reference_ids.size() + 1
+        + partner_ids.size() + 1;
+    result.output_parameter_jacobian.assign(
+        output_count * direction_count, 0.0
+    );
+    result.output_identities.push_back("boundary.pressure_pa");
+    const double pressure_log_volume = -rt
+        * solved.reference.block.hessian[
+            reference_count * reference_state_count + reference_count
+        ] * solved.reference.volume;
+    for (std::size_t direction = 0;
+         direction < direction_count; ++direction) {
+        double direct = 0.0;
+        for (std::size_t component = 0;
+             component < reference_count; ++component) {
+            direct -= rt * solved.reference.block.hessian[
+                reference_count * reference_state_count + component
+            ] * problem.reference_composition_directions[direction][component];
+        }
+        result.output_parameter_jacobian[direction] = direct
+            + pressure_log_volume
+                * result.state_parameter_jacobian[direction];
+    }
+    std::size_t output = 1;
+    for (std::size_t component = 0;
+         component < reference_ids.size(); ++component) {
+        result.output_identities.push_back(
+            "phase[" + std::to_string(problem.reference_phase_index)
+            + "].mole_fraction[" + reference_ids[component] + "]"
+        );
+        for (std::size_t direction = 0;
+             direction < direction_count; ++direction) {
+            result.output_parameter_jacobian[
+                output * direction_count + direction
+            ] = problem.reference_composition_directions[direction][component];
+        }
+        ++output;
+    }
+    result.output_identities.push_back(
+        "phase[" + std::to_string(problem.reference_phase_index)
+        + "].molar_volume_m3_per_mol"
+    );
+    for (std::size_t direction = 0;
+         direction < direction_count; ++direction) {
+        result.output_parameter_jacobian[
+            output * direction_count + direction
+        ] = solved.reference.volume
+            * result.state_parameter_jacobian[direction];
+    }
+    ++output;
+    const auto chart = held2_physical_fraction_jacobian(
+        partner_coordinates
+    );
+    for (std::size_t component = 0;
+         component < partner_ids.size(); ++component) {
+        result.output_identities.push_back(
+            "phase[" + std::to_string(1 - problem.reference_phase_index)
+            + "].mole_fraction[" + partner_ids[component] + "]"
+        );
+        for (std::size_t direction = 0;
+             direction < direction_count; ++direction) {
+            double derivative = 0.0;
+            for (std::size_t coordinate = 0;
+                 coordinate < independent_count; ++coordinate) {
+                derivative += chart[
+                    component * independent_count + coordinate
+                ] * result.state_parameter_jacobian[
+                    (1 + coordinate) * direction_count + direction
+                ];
+            }
+            result.output_parameter_jacobian[
+                output * direction_count + direction
+            ] = derivative;
+        }
+        ++output;
+    }
+    result.output_identities.push_back(
+        "phase[" + std::to_string(1 - problem.reference_phase_index)
+        + "].molar_volume_m3_per_mol"
+    );
+    for (std::size_t direction = 0;
+         direction < direction_count; ++direction) {
+        result.output_parameter_jacobian[
+            output * direction_count + direction
+        ] = solved.partner.volume * result.state_parameter_jacobian[
+            (result.dimension - 1) * direction_count + direction
+        ];
+    }
+    result.status = "available";
+    result.failure_reason.clear();
+    return result;
+}
+
 void validate_problem(
     const ProviderContext& reference_provider,
     const ProviderContext& partner_provider,
@@ -716,6 +949,62 @@ void validate_problem(
             "fixed-T coexistence requires two phases and a normalized all-component reference phase"
         );
     }
+    if (problem.reference_direction_identities.size()
+            != problem.reference_composition_directions.size()
+        || std::any_of(
+            problem.reference_direction_identities.begin(),
+            problem.reference_direction_identities.end(),
+            [](const auto& identity) { return identity.empty(); }
+        )) {
+        throw std::invalid_argument(
+            "reference-composition direction identities and rows must match"
+        );
+    }
+    {
+        auto identities = problem.reference_direction_identities;
+        std::sort(identities.begin(), identities.end());
+        if (std::adjacent_find(identities.begin(), identities.end())
+            != identities.end()) {
+            throw std::invalid_argument(
+                "reference-composition direction identities must be unique"
+            );
+        }
+    }
+    for (const auto& direction : problem.reference_composition_directions) {
+        if (direction.size() != reference_ids.size()
+            || std::any_of(
+                direction.begin(), direction.end(),
+                [](double value) { return !std::isfinite(value); }
+            )) {
+            throw std::invalid_argument(
+                "reference-composition directions must be finite full-component rows"
+            );
+        }
+        const double scale = std::max(
+            1.0,
+            std::accumulate(
+                direction.begin(), direction.end(), 0.0,
+                [](double total, double value) {
+                    return total + std::abs(value);
+                }
+            )
+        );
+        const double amount_tangent = std::accumulate(
+            direction.begin(), direction.end(), 0.0
+        );
+        double charge_tangent = 0.0;
+        for (std::size_t component = 0;
+             component < direction.size(); ++component) {
+            charge_tangent += direction[component]
+                * reference_charges[component];
+        }
+        if (std::abs(amount_tangent) > 1.0e-10 * scale
+            || std::abs(charge_tangent) > 1.0e-10 * scale) {
+            throw std::invalid_argument(
+                "reference-composition directions must preserve normalization and electroneutrality"
+            );
+        }
+    }
     const std::size_t partner_phase = 1 - problem.reference_phase_index;
     const PhaseSupport support = problem.phases[partner_phase].support;
     partner_to_reference.clear();
@@ -754,6 +1043,16 @@ void validate_problem(
                 "neutral support must contain exactly the reference model neutral components"
             );
         }
+    }
+    if (support == PhaseSupport::DeclaredNeutralComponents
+        && (partner_ids.empty()
+            || std::any_of(
+                partner_charges.begin(), partner_charges.end(),
+                [](double charge) { return charge != 0.0; }
+            ))) {
+        throw std::invalid_argument(
+            "declared-neutral support must contain only neutral reference components"
+        );
     }
     double charge = 0.0;
     double scale = 0.0;
@@ -810,6 +1109,8 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
     FixedTCoexistenceResult result;
     result.reference_phase_index = problem.reference_phase_index;
     result.parameter_fingerprint = reference_provider.fingerprint();
+    result.partner_parameter_fingerprint = partner_provider.fingerprint();
+    result.partner_component_ids = phase_provider_component_ids(partner_provider);
     result.diagnostics.route = "held_fixed_t_coexistence";
     result.diagnostics.certificate_scope =
         "fixed_t_declared_coexistence";
@@ -824,7 +1125,7 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
         "additional_phase_counts",
     };
     result.diagnostics.completeness_criterion =
-        "lowest_pressure_certified_root_among_all_deterministic_starts";
+        "unique_certified_root_among_finite_deterministic_starts;globality_not_established";
     result.diagnostics.role_evidence = {
         "native_pressure_derivative_strict_stability",
         "ordered_molar_volume_branch",
@@ -1032,6 +1333,36 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
             return std::nullopt;
         };
         std::vector<Evaluation> accepted;
+        const auto same_root = [](const Evaluation& left,
+                                  const Evaluation& right) {
+            const double left_pressure = 0.5 * (
+                left.reference.block.pressure_pa
+                + left.partner.block.pressure_pa
+            );
+            const double right_pressure = 0.5 * (
+                right.reference.block.pressure_pa
+                + right.partner.block.pressure_pa
+            );
+            if (std::abs(std::log(left_pressure / right_pressure)) > 2.0e-8
+                || std::abs(std::log(
+                    left.reference.volume / right.reference.volume
+                )) > 2.0e-8
+                || std::abs(std::log(
+                    left.partner.volume / right.partner.volume
+                )) > 2.0e-8) {
+                return false;
+            }
+            for (std::size_t component = 0;
+                 component < left.partner.composition.size(); ++component) {
+                if (std::abs(
+                        left.partner.composition[component]
+                        - right.partner.composition[component]
+                    ) > 2.0e-8) {
+                    return false;
+                }
+            }
+            return true;
+        };
         for (const auto& composition : start_compositions) {
             const auto chart = chart_coordinates(
                 partner_coordinates, composition
@@ -1092,32 +1423,41 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
             if (stable && ordered && distinctness > kDistinctTolerance
                 && candidate->reference.block.pressure_pa > 0.0
                 && candidate->partner.block.pressure_pa > 0.0) {
-                accepted.push_back(std::move(*candidate));
+                ++result.diagnostics.accepted_start_count;
+                if (!std::any_of(
+                        accepted.begin(), accepted.end(),
+                        [&candidate, &same_root](const auto& existing) {
+                            return same_root(existing, *candidate);
+                        }
+                    )) {
+                    accepted.push_back(std::move(*candidate));
+                }
             }
         }
+        result.diagnostics.distinct_root_count = static_cast<int>(
+            accepted.size()
+        );
         if (accepted.empty()) {
             throw std::runtime_error(
                 "no deterministic coexistence start produced a certified branch"
             );
         }
+        if (accepted.size() != 1) {
+            result.diagnostics.provider_evaluation_count =
+                reference_provider.evaluation_count()
+                + partner_provider.evaluation_count();
+            result.diagnostics.solver_status = "converged";
+            result.diagnostics.numerical_status = "certified";
+            result.diagnostics.physical_status = "rejected";
+            result.diagnostics.failure_stage = "branch_selection";
+            result.diagnostics.failure_reason =
+                "multiple_unresolved_coexistence_branches";
+            return result;
+        }
         result.diagnostics.provider_evaluation_count =
             reference_provider.evaluation_count()
             + partner_provider.evaluation_count();
-        const auto selected = std::min_element(
-            accepted.begin(), accepted.end(),
-            [](const auto& left, const auto& right) {
-                const double left_pressure = 0.5 * (
-                    left.reference.block.pressure_pa
-                    + left.partner.block.pressure_pa
-                );
-                const double right_pressure = 0.5 * (
-                    right.reference.block.pressure_pa
-                    + right.partner.block.pressure_pa
-                );
-                return left_pressure < right_pressure;
-            }
-        );
-        const auto& solved = *selected;
+        const auto& solved = accepted.front();
         const double pressure_scale = std::max({
             1.0,
             std::abs(solved.reference.block.pressure_pa),
@@ -1251,6 +1591,18 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
                 partner_coordinates,
                 solved
             );
+        }
+        if (!problem.reference_composition_directions.empty()) {
+            result.reference_direction_sensitivity =
+                coexistence_reference_direction_sensitivity(
+                    reference_provider,
+                    partner_provider,
+                    problem,
+                    partner_to_reference,
+                    reference_coordinates,
+                    partner_coordinates,
+                    solved
+                );
         }
         result.diagnostics.provider_evaluation_count =
             reference_provider.evaluation_count()
