@@ -5762,6 +5762,16 @@ std::vector<double> provider_pressure_start_volumes(
             bool converged = false;
             for (int iteration = 0; iteration < 100; ++iteration) {
                 root = std::sqrt(bracket_lower * bracket_upper);
+                // The Provider pressure is evaluated from a long Helmholtz
+                // derivative sum and can stop changing once this valid
+                // sign-changing volume bracket reaches floating-point
+                // resolution.  This root is only an initialization seed; the
+                // subsequent KKT solve and physical certification still own
+                // the requested pressure tolerance.
+                if (root == bracket_lower || root == bracket_upper) {
+                    converged = true;
+                    break;
+                }
                 const double root_residual = residual(root);
                 if (!std::isfinite(root_residual)) {
                     throw std::domain_error(
