@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
 
@@ -51,6 +52,116 @@ def _fixture() -> tuple[
         ),
         equilibrium.ReactiveBubbleObservationRow(
             "first-liquid-fraction", "liquid_mole_fraction", (1.0, 0.0, 0.0, 0.0)
+        ),
+    )
+    return parameters, problem, rows
+
+
+def _multireaction_fixture() -> tuple[
+    epcsaft.Parameters,
+    equilibrium.ReactiveBubbleVLEProblem,
+    tuple[equilibrium.ReactiveBubbleObservationRow, ...],
+]:
+    """Extend the generic fixture with one neutral isomerization reaction."""
+
+    mapping = deepcopy(MULTINEUTRAL_REACTIVE)
+    mapping["document_id"] = "multireaction-reactive-bubble-fixture"
+    components = {item["component_id"]: item for item in mapping["components"]}
+    isomer = deepcopy(components["cosolvent"])
+    isomer["component_id"] = "isomer"
+    for coefficient in isomer["coefficients"]:
+        coefficient["identity"] = coefficient["identity"].replace(
+            "/cosolvent/", "/isomer/"
+        )
+    provenance = deepcopy(components["solvent"]["fixed"]["molar_mass"]["provenance"])
+    for other in ("solvent", "cosolvent", "cation", "anion"):
+        left, right = sorted(("isomer", other))
+        mapping["pairs"].append(
+            {
+                "component_id_a": left,
+                "component_id_b": right,
+                "coefficients": [
+                    {
+                        "identity": f"pair/{left}/{right}/k_ij",
+                        "family": "k_ij",
+                        "value": {"magnitude": 0.0, "unit": "dimensionless"},
+                        "provenance": deepcopy(provenance),
+                    }
+                ],
+            }
+        )
+    for correlation in tuple(mapping["correlations"]):
+        if correlation["component_id"] == "cosolvent":
+            isomer_correlation = deepcopy(correlation)
+            isomer_correlation["component_id"] = "isomer"
+            isomer_correlation["correlation_id"] = isomer_correlation[
+                "correlation_id"
+            ].replace("/cosolvent/", "/isomer/")
+            isomer_correlation["constant"]["identity"] = isomer_correlation[
+                "constant"
+            ]["identity"].replace("/cosolvent/", "/isomer/")
+            mapping["correlations"].append(isomer_correlation)
+    components["isomer"] = isomer
+    component_ids = ("solvent", "cosolvent", "isomer", "cation", "anion")
+    mapping["components"] = [components[identity] for identity in component_ids]
+    parameters = epcsaft.Parameters.from_mapping(mapping)
+    reference_id = "provider-helmholtz-coordinate-basis"
+    reaction_system = equilibrium.ChemicalEquilibriumProblem(
+        species_ids=component_ids,
+        charges=(0, 0, 0, 1, -1),
+        molar_masses_kg_per_mol=(0.018, 0.030, 0.030, 0.009, 0.009),
+        balance_matrix=(
+            (1.0, 0.0, 0.0, 1.0, 0.0),
+            (1.0, 0.0, 0.0, 0.0, 1.0),
+            (0.0, 1.0, 1.0, 0.0, 0.0),
+        ),
+        conserved_totals=(0.9, 0.9, 0.2),
+        reaction_matrix=((-1.0, 0.0, 0.0, 1.0, 1.0), (0.0, -1.0, 1.0, 0.0, 0.0)),
+        feed_amounts_mol=(0.8, 0.15, 0.05, 0.1, 0.1),
+        equilibrium_constants=(
+            equilibrium.ChemicalEquilibriumConstant(
+                -269.6037501925047,
+                "synthetic-multireaction-source",
+                reference_id,
+                "products_positive",
+                "already-provider-basis",
+                True,
+            ),
+            equilibrium.ChemicalEquilibriumConstant(
+                0.0,
+                "synthetic-multireaction-source",
+                reference_id,
+                "products_positive",
+                "already-provider-basis",
+                True,
+            ),
+        ),
+        strict_interior_amount_floor_mol=1.0e-30,
+    )
+    liquid = _observation_problem(
+        equilibrium.ProviderPhase(epcsaft.Mixture(parameters), (1.0e-6, 0.70)),
+        reaction_system,
+        identity="multireaction-fixed-tp",
+        phase_identity="multireaction-liquid",
+        continuation_identity="multireaction-liquid-branch",
+    )
+    problem = equilibrium.ReactiveBubbleVLEProblem(
+        "multireaction-reactive-bubble",
+        liquid,
+        "multireaction-vapor",
+        ("solvent", "cosolvent", "isomer"),
+        equilibrium.ProviderNonidealVapor("installed-provider-eos"),
+        (2.0e6, 5.0e6),
+        (2.5e6, 3.2e6, 4.0e6),
+        "multireaction-reactive-bubble-branch",
+    )
+    rows = (
+        equilibrium.ReactiveBubbleObservationRow("bubble-pressure", "bubble_pressure_pa"),
+        equilibrium.ReactiveBubbleObservationRow(
+            "first-vapor-fraction", "vapor_mole_fraction", (1.0, 0.0, 0.0)
+        ),
+        equilibrium.ReactiveBubbleObservationRow(
+            "cation-liquid-fraction", "liquid_mole_fraction", (0.0, 0.0, 0.0, 1.0, 0.0)
         ),
     )
     return parameters, problem, rows
@@ -390,6 +501,47 @@ def test_reactive_bubble_failures_preserve_no_incipient_domain_and_support_codes
     )
     assert support.failure is not None
     assert support.failure.code == "active_bound_ambiguity"
+
+
+@pytest.mark.slow
+def test_multireaction_nonideal_bubble_total_jacobian_matches_resolves() -> None:
+    """Falsify single-reaction assumptions in the coupled Schur derivative."""
+
+    parameters, problem, rows = _multireaction_fixture()
+    identity = "component/solvent/dispersion_energy_over_k"
+    active = epcsaft.ActiveParameterSet(parameters, (identity,))
+
+    def solve(value: float):
+        trial = epcsaft.ActiveParameterSet(parameters, (identity,), values=(value,))
+        descriptor = equilibrium.reactive_bubble_observation_descriptor(
+            problem, rows, active_parameters=trial
+        )
+        result = equilibrium.evaluate_reactive_bubble_observations(
+            problem,
+            313.15 * epcsaft.unit_registry.kelvin,
+            descriptor,
+            active_parameters=trial,
+        )
+        assert result.status == "evaluated", result.failure
+        return result
+
+    center = solve(active.values[0])
+    step = 1.0e-3
+    below = solve(active.values[0] - step)
+    above = solve(active.values[0] + step)
+    assert center.certification is not None
+    assert center.certification.status == "certified_local_equilibrium"
+    assert center.certification.globality_claim == "not_established"
+    assert center.search.distinct_branch_count == 1
+    assert center.phases[1].supported_component_ids == problem.vapor_component_ids
+    for row, exact in enumerate(center.jacobian):
+        assert exact is not None
+        low = below.values[row]
+        high = above.values[row]
+        assert low is not None and high is not None
+        numerical = (high - low) / (2.0 * step)
+        scale = max(1.0, abs(exact[0]), abs(numerical))
+        assert abs(exact[0] - numerical) / scale < 2.0e-7
 
 
 @pytest.mark.slow
