@@ -128,6 +128,7 @@ DensityRoot solve_density(
     }
 
     constexpr std::size_t scan_intervals = 360;
+    const double minimum_stable_slope = 1.0e-10 * pressure / ideal_density;
     const double log_lower = std::log(lower);
     const double log_upper = std::log(upper);
     std::vector<DensityRoot> roots;
@@ -143,13 +144,21 @@ DensityRoot solve_density(
         const double residual = state.pressure - pressure;
         if (std::isfinite(previous_residual) && std::isfinite(residual)
             && previous_residual * residual <= 0.0) {
-            const auto root = refine_density_root(
+            auto root = refine_density_root(
                 pressure,
                 previous_density,
                 density,
                 previous_residual,
                 evaluate
             );
+            root.stable = std::isfinite(root.pressure_density_derivative)
+                && root.pressure_density_derivative > minimum_stable_slope;
+            if (phase == "vapor" && root.stable) {
+                root.branch = "vapor";
+                root.stable_root_count = 1;
+                root.selected_stable_root_index = 0;
+                return root;
+            }
             if (roots.empty()
                 || std::abs(root.molar_density - roots.back().molar_density)
                     > 1.0e-8 * std::max(1.0, root.molar_density)) {
@@ -159,7 +168,6 @@ DensityRoot solve_density(
         previous_density = density;
         previous_residual = residual;
     }
-    const double minimum_stable_slope = 1.0e-10 * pressure / ideal_density;
     for (auto& root : roots) {
         root.stable = std::isfinite(root.pressure_density_derivative)
             && root.pressure_density_derivative > minimum_stable_slope;
