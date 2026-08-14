@@ -131,6 +131,54 @@ DensityRoot solve_density(
     const double minimum_stable_slope = 1.0e-10 * pressure / ideal_density;
     const double log_lower = std::log(lower);
     const double log_upper = std::log(upper);
+    if (phase == "liquid") {
+        bool previous_available = false;
+        double previous_density = 0.0;
+        double previous_residual = 0.0;
+        for (std::size_t index = 0; index <= scan_intervals; ++index) {
+            const double fraction =
+                static_cast<double>(index) / scan_intervals;
+            const double density = std::exp(
+                log_upper - fraction * (log_upper - log_lower)
+            );
+            try {
+                const auto state = evaluate(density);
+                const double residual = state.pressure - pressure;
+                if (previous_available && std::isfinite(previous_residual)
+                    && std::isfinite(residual)
+                    && previous_residual * residual <= 0.0) {
+                    auto root = refine_density_root(
+                        pressure,
+                        density,
+                        previous_density,
+                        residual,
+                        evaluate
+                    );
+                    root.stable =
+                        std::isfinite(root.pressure_density_derivative)
+                        && root.pressure_density_derivative
+                            > minimum_stable_slope;
+                    if (root.stable) {
+                        root.branch = "liquid";
+                        root.stable_root_count = 1;
+                        root.selected_stable_root_index = 0;
+                        return root;
+                    }
+                }
+                previous_available = true;
+                previous_density = density;
+                previous_residual = residual;
+            } catch (const std::runtime_error& error) {
+                const std::string reason = error.what();
+                if (reason != "association solve did not converge"
+                    && reason != "association solve left physical domain") {
+                    throw;
+                }
+                previous_available = false;
+            }
+        }
+        throw DensityDomainError("no certified stable liquid density root");
+    }
     std::vector<DensityRoot> roots;
     double previous_density = lower;
     auto previous_state = evaluate(previous_density);

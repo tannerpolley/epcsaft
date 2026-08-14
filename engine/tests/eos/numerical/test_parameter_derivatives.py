@@ -662,11 +662,21 @@ def test_fixed_pressure_fugacity_derivatives_include_density_closure() -> None:
     assert exact.values == pytest.approx(value(trial_mapping), rel=2.0e-12, abs=2.0e-12)
 
 
-def test_declared_vapor_stops_at_first_certified_strong_association_root() -> None:
+@pytest.mark.parametrize(
+    ("phase", "temperature", "composition"),
+    (
+        ("vapor", 394.88, (0.0854, 0.9146)),
+        ("liquid", 376.88, (0.1385, 0.8615)),
+    ),
+    ids=("vapor-lowest-stable-root", "liquid-highest-stable-root"),
+)
+def test_declared_phase_stops_at_first_certified_strong_association_root(
+    phase: str,
+    temperature: float,
+    composition: tuple[float, float],
+) -> None:
     identity = "pair/solute/solvent/k_ij"
     parameters = Parameters.from_mapping(STRONGLY_ASSOCIATING_BINARY)
-    composition = (0.0854, 0.9146)
-    temperature = 394.88
     pressure = 101330.0
     exact = Mixture(parameters).observable_block(
         ActiveParameterSet(parameters, (identity,), values=(-0.052,)),
@@ -674,7 +684,7 @@ def test_declared_vapor_stops_at_first_certified_strong_association_root() -> No
         T=temperature * u.kelvin,
         P=pressure * u.pascal,
         x=composition,
-        phase="vapor",
+        phase=phase,
     )
 
     def value(candidate: dict[str, object]) -> Values:
@@ -682,12 +692,12 @@ def test_declared_vapor_stops_at_first_certified_strong_association_root() -> No
             T=temperature * u.kelvin,
             P=pressure * u.pascal,
             x=composition,
-            phase="vapor",
+            phase=phase,
         )
         assert state.fugacity is not None
         assert state.density_diagnostics is not None
         assert state.density_diagnostics.stable is True
-        assert state.density_diagnostics.branch == "vapor"
+        assert state.density_diagnostics.branch == phase
         assert abs(
             state.density_diagnostics.pressure_residual.to("pascal").magnitude
         ) < 1.0e-3
