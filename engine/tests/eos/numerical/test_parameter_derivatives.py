@@ -15,6 +15,7 @@ from tests.eos._raw_cases import (
     NEUTRAL_ASSOCIATING_MIXTURE,
     POLAR_BINARY,
     POLAR_PURE,
+    STRONGLY_ASSOCIATING_BINARY,
     _component,
     _document,
     _model_families,
@@ -659,6 +660,48 @@ def test_fixed_pressure_fugacity_derivatives_include_density_closure() -> None:
         numerical = _central_difference(trial_mapping, identity, step, value)
         assert exact.jacobian[0][column] == pytest.approx(numerical[0], rel=3.0e-5, abs=2.0e-8)
     assert exact.values == pytest.approx(value(trial_mapping), rel=2.0e-12, abs=2.0e-12)
+
+
+def test_declared_vapor_stops_at_first_certified_strong_association_root() -> None:
+    identity = "pair/solute/solvent/k_ij"
+    parameters = Parameters.from_mapping(STRONGLY_ASSOCIATING_BINARY)
+    composition = (0.0854, 0.9146)
+    temperature = 394.88
+    pressure = 101330.0
+    exact = Mixture(parameters).observable_block(
+        ActiveParameterSet(parameters, (identity,), values=(-0.052,)),
+        identity="eos.fixed-pressure-fugacity",
+        T=temperature * u.kelvin,
+        P=pressure * u.pascal,
+        x=composition,
+        phase="vapor",
+    )
+
+    def value(candidate: dict[str, object]) -> Values:
+        state = Mixture(Parameters.from_mapping(candidate)).state(
+            T=temperature * u.kelvin,
+            P=pressure * u.pascal,
+            x=composition,
+            phase="vapor",
+        )
+        assert state.fugacity is not None
+        assert state.density_diagnostics is not None
+        assert state.density_diagnostics.stable is True
+        assert state.density_diagnostics.branch == "vapor"
+        assert abs(
+            state.density_diagnostics.pressure_residual.to("pascal").magnitude
+        ) < 1.0e-3
+        return state.fugacity.ln_coefficient
+
+    numerical = _central_difference(
+        STRONGLY_ASSOCIATING_BINARY,
+        identity,
+        1.0e-5,
+        value,
+    )
+    assert exact.values == pytest.approx(value(STRONGLY_ASSOCIATING_BINARY), rel=2.0e-12)
+    for row, expected in zip(exact.jacobian, numerical, strict=True):
+        assert row[0] == pytest.approx(expected, rel=3.0e-5, abs=2.0e-7)
 
 
 def test_active_geometry_rejects_close_packing_before_taping() -> None:

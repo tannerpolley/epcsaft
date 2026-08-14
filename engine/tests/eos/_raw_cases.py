@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from copy import deepcopy
 
 _SOURCE_ID = "engine-numerical-fixture"
@@ -265,6 +266,89 @@ def _association_topology(
     }
 
 
+def _strong_association_topology() -> dict[str, object]:
+    solute_multiplicity = (2, 1)
+    solvent_multiplicity = (2, 2)
+    solute_energy = 2383.4744
+    solvent_energy = 1804.17
+    solute_volume = 0.118488
+    solvent_volume = 0.2039
+    sigma = {"solute": 2.6019, "solvent": 2.229}
+    cross_energy = 0.5 * (solute_energy + solvent_energy)
+    cross_volume = math.sqrt(solute_volume * solvent_volume) * (
+        math.sqrt(sigma["solute"] * sigma["solvent"])
+        / (0.5 * (sigma["solute"] + sigma["solvent"]))
+    ) ** 3
+
+    def edge(
+        component_a: str,
+        site_a: str,
+        component_b: str,
+        site_b: str,
+        energy: float,
+        volume: float,
+    ) -> dict[str, object]:
+        prefix = f"association/{component_a}/{site_a}/{component_b}/{site_b}"
+        return {
+            "endpoint_a": {"component_id": component_a, "site_id": site_a},
+            "endpoint_b": {"component_id": component_b, "site_id": site_b},
+            "energy_over_k": {
+                "identity": f"{prefix}/energy_over_k",
+                "value": {"magnitude": energy, "unit": "kelvin"},
+            },
+            "volume": {
+                "identity": f"{prefix}/volume",
+                "value": {"magnitude": volume, "unit": "dimensionless"},
+            },
+            "source": {"kind": "explicit", "provenance": [deepcopy(_PROVENANCE)]},
+        }
+
+    sites = []
+    for component_id, multiplicities in (
+        ("solute", solute_multiplicity),
+        ("solvent", solvent_multiplicity),
+    ):
+        for site_id, role, multiplicity in zip(
+            ("a", "b"),
+            ("donor", "acceptor"),
+            multiplicities,
+            strict=True,
+        ):
+            sites.append(
+                {
+                    "component_id": component_id,
+                    "site_id": site_id,
+                    "site_role": role,
+                    "multiplicity": multiplicity,
+                    "provenance": deepcopy(_PROVENANCE),
+                }
+            )
+    return {
+        "presets": [],
+        "sites": sites,
+        "edges": [
+            edge(
+                "solute",
+                "a",
+                "solute",
+                "b",
+                solute_energy,
+                solute_volume,
+            ),
+            edge("solute", "a", "solvent", "b", cross_energy, cross_volume),
+            edge("solute", "b", "solvent", "a", cross_energy, cross_volume),
+            edge(
+                "solvent",
+                "a",
+                "solvent",
+                "b",
+                solvent_energy,
+                solvent_volume,
+            ),
+        ],
+    }
+
+
 NEUTRAL_BINARY = _document(
     "neutral-binary-fixture",
     [
@@ -456,6 +540,29 @@ _neutral_associating_components.append(
 )
 _neutral_associating_pairs.append(
     _pair("associating-fluid", "inert-fluid", k_ij=0.04)
+)
+
+STRONGLY_ASSOCIATING_BINARY = _document(
+    "strongly-associating-binary-fixture",
+    [
+        _component(
+            "solute",
+            molar_mass=0.06108,
+            segment_count=4.5354,
+            segment_diameter=2.6019,
+            dispersion_energy_over_k=204.0438,
+        ),
+        _component(
+            "solvent",
+            molar_mass=0.01801528,
+            segment_count=2.1945,
+            segment_diameter=2.229,
+            dispersion_energy_over_k=141.66,
+        ),
+    ],
+    pairs=[_pair("solute", "solvent", k_ij=-0.052)],
+    model_families=_model_families(association="general-site"),
+    topology=_strong_association_topology(),
 )
 
 AQUEOUS_ELECTROLYTE = _document(
@@ -832,6 +939,7 @@ __all__ = (
     "NEUTRAL_TERNARY_IMMISCIBLE",
     "POLAR_BINARY",
     "POLAR_PURE",
+    "STRONGLY_ASSOCIATING_BINARY",
     "component_values",
     "neutral_binary",
     "neutral_pure",
