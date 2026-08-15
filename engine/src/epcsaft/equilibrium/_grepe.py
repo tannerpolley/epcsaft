@@ -16,12 +16,15 @@ from . import _equilibrium
 from ._api import (
     AllComponents,
     ChemicalEquilibriumProblem,
+    ChemicalStandardState,
     DeclaredNeutralComponents,
     EquilibriumPhaseState,
     IdealGasPhase,
     NeutralComponents,
     PhaseSupport,
     ProviderPhase,
+    _source_reference_payload,
+    _source_reference_transfer,
 )
 from ._observations import (
     ActiveParameterTrialReceipt,
@@ -287,7 +290,7 @@ class EquilibriumOutput:
 
 
 @dataclass(frozen=True, slots=True)
-class _ReactiveLleOwnerDescriptor:
+class _FinitePhaseOwnerDescriptor:
     rows: tuple[EquilibriumOutput, ...]
     row_identities: tuple[str, ...]
     active_parameter_identities: tuple[str, ...]
@@ -383,11 +386,11 @@ class GeneralReactiveEquilibriumDescriptor:
     certificate_scope: str
     jacobian_shape: tuple[int, int]
     fingerprint: str
-    _owner_kind: Literal["homogeneous", "reactive_bubble", "reactive_lle"]
+    _owner_kind: Literal["homogeneous", "reactive_bubble", "finite_phases"]
     _owner_descriptor: (
         HomogeneousReactiveObservationDescriptor
         | ReactiveBubbleObservationDescriptor
-        | _ReactiveLleOwnerDescriptor
+        | _FinitePhaseOwnerDescriptor
     )
 
 
@@ -407,7 +410,7 @@ class GeneralEquilibriumOwnerObservation:
 
 @dataclass(frozen=True, slots=True)
 class GeneralReactiveEquilibriumResult:
-    """One generic result over a locally certified admitted GREPE formulation."""
+    """One generic result from the configured GREPE formulation."""
 
     problem: GeneralReactiveEquilibriumProblem
     descriptor: GeneralReactiveEquilibriumDescriptor | None
@@ -509,6 +512,30 @@ def _preflight(model: epcsaft.Mixture, problem: GeneralReactiveEquilibriumProble
             phase.fluid_role != "liquid" for phase in eligible.values()
         ):
             raise ValueError("reaction standard state is inconsistent with its eligible phase")
+
+
+def _standard_state_payload(standard: ChemicalStandardState | None) -> object:
+    if standard is None:
+        return None
+    return {
+        "id": standard.id,
+        "activity_scale_id": standard.activity_scale_id,
+        "log_activity_scale_factors": standard.log_activity_scale_factors,
+        "reference_pressure_pa": standard.reference_pressure_pa,
+        "source_reference_component_ids": standard.source_reference_component_ids,
+        "source_reference_solvent_composition": (standard.source_reference_solvent_composition),
+        "source_reference_ion_pairs": tuple(
+            (pair.component_ids, pair.stoichiometry) for pair in standard.source_reference_ion_pairs
+        ),
+        "source_reference_phase": standard.source_reference_phase,
+        "source_reference_convention": standard.source_reference_convention,
+        "source_reference_activity_convention_id": (
+            standard.source_reference_activity_convention_id
+        ),
+        "source_reference_standard_molality_mol_per_kg": (
+            standard.source_reference_standard_molality_mol_per_kg
+        ),
+    }
 
 
 def _phase_model(
@@ -665,11 +692,11 @@ def _phase_payload(phase: ReactivePhase) -> dict[str, object]:
 def _descriptor(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
-    owner_kind: Literal["homogeneous", "reactive_bubble", "reactive_lle"],
+    owner_kind: Literal["homogeneous", "reactive_bubble", "finite_phases"],
     owner: (
         HomogeneousReactiveObservationDescriptor
         | ReactiveBubbleObservationDescriptor
-        | _ReactiveLleOwnerDescriptor
+        | _FinitePhaseOwnerDescriptor
     ),
     certificate_scope: str,
 ) -> GeneralReactiveEquilibriumDescriptor:
@@ -767,7 +794,7 @@ def _bubble_branch_signature(owner: object) -> tuple[object, ...] | None:
     )
 
 
-def _unsupported(
+def _unavailable_formulation(
     problem: GeneralReactiveEquilibriumProblem,
     diagnostic: str,
 ) -> GeneralReactiveEquilibriumResult:
@@ -777,9 +804,9 @@ def _unsupported(
         descriptor=None,
         status="non_evaluable",
         solver_status="not_started",
-        numerical_status="unsupported",
-        physical_status="unsupported",
-        provider_domain_status="unsupported",
+        numerical_status="unavailable",
+        physical_status="not_adjudicated",
+        provider_domain_status="not_adjudicated",
         rows=tuple(
             GeneralEquilibriumRowResult(
                 output.identity,
@@ -795,7 +822,7 @@ def _unsupported(
         ),
         phases=(),
         failure=failure,
-        certificate_scope="unsupported",
+        certificate_scope="unavailable_formulation",
         globality_claim="not_established",
         trial=None,
         branch_signature=None,
@@ -821,19 +848,19 @@ class _BubbleCompilation:
 
 
 @dataclass(frozen=True, slots=True)
-class _ReactiveLleCompilation:
+class _FinitePhaseCompilation:
     temperature_k: float
     pressure_pa: float
-    phases: tuple[ReactivePhase, ReactivePhase]
-    owner_descriptor: _ReactiveLleOwnerDescriptor
+    phases: tuple[ReactivePhase, ...]
+    owner_descriptor: _FinitePhaseOwnerDescriptor
     descriptor: GeneralReactiveEquilibriumDescriptor
 
 
 @dataclass(frozen=True, slots=True)
-class _ReactiveLleOwnerResult:
-    descriptor: _ReactiveLleOwnerDescriptor
+class _FinitePhaseOwnerResult:
+    descriptor: _FinitePhaseOwnerDescriptor
     rows: tuple[GeneralEquilibriumRowResult, ...]
-    phases: tuple[EquilibriumPhaseState, EquilibriumPhaseState]
+    phases: tuple[EquilibriumPhaseState, ...]
     trial: ActiveParameterTrialReceipt
     temperature_k: float
     pressure_pa: float
@@ -873,11 +900,11 @@ def _reaction_payload(problem: ChemicalEquilibriumProblem) -> dict[str, object]:
             for record in problem.equilibrium_constants
         ),
         "strict_interior_amount_floor_mol": problem.strict_interior_amount_floor_mol,
-        "source_standard_state": None,
+        "source_standard_state": _standard_state_payload(problem.source_standard_state),
     }
 
 
-def _validate_reactive_lle_outputs(
+def _validate_finite_phase_outputs(
     problem: GeneralReactiveEquilibriumProblem,
 ) -> None:
     component_count = len(problem.reaction_system.species_ids)
@@ -892,31 +919,31 @@ def _validate_reactive_lle_outputs(
         if output.selector == "system.pressure":
             continue
         if output.phase_identity not in phase_ids:
-            raise ValueError("reactive LLE output names an undeclared phase")
+            raise ValueError("finite-phase GREPE output names an undeclared phase")
         if output.selector in vector_selectors:
             if len(output.coefficients) != component_count:
-                raise ValueError("reactive LLE vector output requires full coefficients")
+                raise ValueError("finite-phase GREPE vector output requires full coefficients")
             if sum(value != 0.0 for value in output.coefficients) > 1 and (
                 not output.aggregate_identity or not output.covariance_identity
             ):
                 raise ValueError(
-                    "reactive LLE aggregate output requires aggregate and covariance identities"
+                    "finite-phase GREPE aggregate output requires aggregate and covariance identities"
                 )
         elif output.selector in scalar_selectors:
             if output.coefficients:
-                raise ValueError("reactive LLE scalar output does not accept coefficients")
+                raise ValueError("finite-phase GREPE scalar output does not accept coefficients")
         else:
-            raise ValueError("output selector is unavailable for reactive LLE")
+            raise ValueError("output selector is unavailable for finite-phase GREPE")
 
 
-def _reactive_lle_owner_descriptor(
+def _finite_phase_owner_descriptor(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
     temperature_k: float,
     pressure_pa: float,
     active_parameters: epcsaft.ActiveParameterSet | None,
-) -> _ReactiveLleOwnerDescriptor:
-    _validate_reactive_lle_outputs(problem)
+) -> _FinitePhaseOwnerDescriptor:
+    _validate_finite_phase_outputs(problem)
     active_ids = () if active_parameters is None else active_parameters.identities
     active_units = (
         ()
@@ -936,9 +963,9 @@ def _reactive_lle_owner_descriptor(
         )
     )
     reaction_payload = _reaction_payload(problem.reaction_system)
-    reaction_fingerprint = _fingerprint("epcsaft.reactive-lle-reactions", reaction_payload)
+    reaction_fingerprint = _fingerprint("epcsaft.finite-phases-reactions", reaction_payload)
     topology_fingerprint = _fingerprint(
-        "epcsaft.reactive-lle-topology",
+        "epcsaft.finite-phases-topology",
         {
             "component_ids": model.component_ids,
             "phases": tuple(_phase_payload(phase) for phase in problem.phases),
@@ -948,7 +975,7 @@ def _reactive_lle_owner_descriptor(
         },
     )
     problem_fingerprint = _fingerprint(
-        "epcsaft.reactive-lle-problem",
+        "epcsaft.finite-phases-problem",
         {
             "identity": problem.identity,
             "temperature_k": temperature_k,
@@ -973,7 +1000,7 @@ def _reactive_lle_owner_descriptor(
         },
     )
     domain_fingerprint = _fingerprint(
-        "epcsaft.reactive-lle-domain",
+        "epcsaft.finite-phases-domain",
         {
             "temperature_k": temperature_k,
             "pressure_pa": pressure_pa,
@@ -984,11 +1011,11 @@ def _reactive_lle_owner_descriptor(
             "strict_interior_amount_floor_mol": (
                 problem.reaction_system.strict_interior_amount_floor_mol
             ),
-            "local_scope": "fixed_TP_two_finite_reacting_liquids_local_minimum",
+            "local_scope": "fixed_TP_configured_finite_phases_local_minimum",
         },
     )
     reference_fingerprint = _fingerprint(
-        "epcsaft.reactive-lle-finite-phase-starts",
+        "epcsaft.finite-phases-starts",
         tuple(
             {
                 "phase_identity": phase.identity,
@@ -1011,7 +1038,7 @@ def _reactive_lle_owner_descriptor(
         "active_parameter_identities": active_ids,
         "active_parameter_units": active_units,
     }
-    return _ReactiveLleOwnerDescriptor(
+    return _FinitePhaseOwnerDescriptor(
         problem.outputs,
         tuple(output.identity for output in problem.outputs),
         active_ids,
@@ -1024,7 +1051,7 @@ def _reactive_lle_owner_descriptor(
         reference_fingerprint,
         domain_fingerprint,
         (len(problem.outputs), len(active_ids)),
-        _fingerprint("epcsaft.reactive-lle-descriptor", payload),
+        _fingerprint("epcsaft.finite-phases-descriptor", payload),
     )
 
 
@@ -1033,40 +1060,39 @@ def _compile_general_reactive_equilibrium(
     problem: GeneralReactiveEquilibriumProblem,
     *,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
-) -> _HomogeneousCompilation | _BubbleCompilation | _ReactiveLleCompilation | str:
+) -> _HomogeneousCompilation | _BubbleCompilation | _FinitePhaseCompilation | str:
     if not isinstance(model, epcsaft.Mixture):
         raise TypeError("GREPE currently requires an epcsaft.Mixture")
     if not isinstance(problem, GeneralReactiveEquilibriumProblem):
         raise TypeError("problem must be a GeneralReactiveEquilibriumProblem")
     _preflight(model, problem)
     if not isinstance(problem.temperature, Fixed):
-        return "solved temperature is not admitted"
+        return "solved temperature has no implemented GREPE formulation"
     temperature_k = _quantity(problem.temperature.value, "kelvin", "temperature")
     temperature = temperature_k * epcsaft.unit_registry.kelvin
     finite = tuple(phase for phase in problem.phases if phase.amount_role == "finite")
     incipient = tuple(phase for phase in problem.phases if phase.amount_role == "incipient")
 
-    if len(finite) == 2 and not incipient and isinstance(problem.pressure, Fixed):
+    if len(finite) >= 2 and not incipient and isinstance(problem.pressure, Fixed):
         pressure_pa = _quantity(problem.pressure.value, "pascal", "pressure")
         if (
-            any(phase.fluid_role != "liquid" for phase in finite)
-            or any(not isinstance(phase.support, AllComponents) for phase in finite)
+            any(not isinstance(phase.support, AllComponents) for phase in finite)
             or any(not isinstance(phase.model, ProviderModel) for phase in finite)
             or any(phase.start is None for phase in finite)
-            or set(problem.reaction_phase_ids) != {phase.identity for phase in finite}
         ):
-            return "reactive LLE requires two started all-component Provider liquid phases"
-        if any(problem.reaction_system.charges):
-            return "charged reactive LLE is not yet admitted"
-        if problem.reaction_system.source_standard_state is not None:
-            return "reactive LLE source-standard-state transfer is not yet admitted"
+            return (
+                "configured finite-phase equilibrium requires started all-component "
+                "Provider phases"
+            )
         component_count = len(model.component_ids)
         if any(
             len(cast(FinitePhaseStart, phase.start).amounts_mol) != component_count
             for phase in finite
         ):
-            raise ValueError("reactive LLE phase starts must match the Provider component order")
-        owner_descriptor = _reactive_lle_owner_descriptor(
+            raise ValueError(
+                "configured finite-phase starts must match the Provider component order"
+            )
+        owner_descriptor = _finite_phase_owner_descriptor(
             model,
             problem,
             temperature_k,
@@ -1076,11 +1102,11 @@ def _compile_general_reactive_equilibrium(
         descriptor = _descriptor(
             model,
             problem,
-            "reactive_lle",
+            "finite_phases",
             owner_descriptor,
-            "fixed_TP_two_finite_reacting_liquids_local_minimum",
+            "fixed_TP_configured_finite_reacting_phases_local_minimum",
         )
-        return _ReactiveLleCompilation(
+        return _FinitePhaseCompilation(
             temperature_k,
             pressure_pa,
             finite,
@@ -1093,7 +1119,7 @@ def _compile_general_reactive_equilibrium(
         if problem.reaction_phase_ids != (phase.identity,) or not isinstance(
             phase.support, AllComponents
         ):
-            return "single-phase reaction/support topology is unsupported"
+            return "single-phase reaction/support topology has no implemented formulation"
         pressure_pa = _quantity(problem.pressure.value, "pascal", "pressure")
         pressure = pressure_pa * epcsaft.unit_registry.pascal
         homogeneous_owner_problem = HomogeneousReactiveObservationProblem(
@@ -1150,7 +1176,7 @@ def _compile_general_reactive_equilibrium(
         liquid, vapor = finite[0], incipient[0]
         liquid_model = _phase_model(model, liquid)
         if not isinstance(liquid_model, ProviderPhase):
-            return "the admitted finite reacting liquid uses Provider EOS"
+            return "the configured finite reacting liquid requires the Provider EOS"
         liquid_problem = HomogeneousReactiveObservationProblem(
             f"{problem.identity}/finite/{liquid.identity}",
             liquid.identity,
@@ -1219,7 +1245,7 @@ def _compile_general_reactive_equilibrium(
             descriptor,
         )
 
-    return "declared reactive phase/state topology is not admitted"
+    return "declared reactive phase/state topology has no implemented GREPE formulation"
 
 
 def general_reactive_equilibrium_descriptor(
@@ -1228,7 +1254,7 @@ def general_reactive_equilibrium_descriptor(
     *,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
 ) -> GeneralReactiveEquilibriumDescriptor:
-    """Describe one admitted GREPE request without evaluating thermodynamics."""
+    """Describe one configured GREPE request without evaluating thermodynamics."""
 
     compiled = _compile_general_reactive_equilibrium(
         model, problem, active_parameters=active_parameters
@@ -1247,7 +1273,7 @@ def certify_general_reactive_equilibrium_continuation_reference(
     maximum_log_composition_distance: float,
     maximum_log_volume_distance: float,
 ) -> ReactiveBubbleContinuationReference:
-    """Certify the local coupled branch of an admitted incipient GREPE request."""
+    """Certify the local coupled branch of a configured incipient GREPE request."""
 
     if problem.continuation_reference is not None:
         raise ValueError("GREPE continuation certification requires an unanchored request")
@@ -1257,7 +1283,7 @@ def certify_general_reactive_equilibrium_continuation_reference(
     if isinstance(compiled, str):
         raise ValueError(compiled)
     if not isinstance(compiled, _BubbleCompilation):
-        raise ValueError("this admitted GREPE formulation has no coupled continuation")
+        raise ValueError("this GREPE formulation has no coupled continuation")
     return certify_reactive_bubble_continuation_reference(
         compiled.owner_problem,
         compiled.temperature,
@@ -1268,8 +1294,8 @@ def certify_general_reactive_equilibrium_continuation_reference(
     )
 
 
-def _reactive_lle_trial(
-    descriptor: _ReactiveLleOwnerDescriptor,
+def _finite_phase_trial(
+    descriptor: _FinitePhaseOwnerDescriptor,
     active_parameters: epcsaft.ActiveParameterSet | None,
 ) -> ActiveParameterTrialReceipt:
     identities = () if active_parameters is None else active_parameters.identities
@@ -1301,12 +1327,13 @@ def _reactive_lle_trial(
     )
 
 
-def _reactive_lle_spec(
+def _finite_phase_spec(
     problem: GeneralReactiveEquilibriumProblem,
     temperature_k: float,
     pressure_pa: float,
 ) -> dict[str, object]:
     reaction = problem.reaction_system
+    standard = reaction.source_standard_state
     return {
         "species_ids": reaction.species_ids,
         "charges": reaction.charges,
@@ -1324,7 +1351,9 @@ def _reactive_lle_spec(
                 "conversion_id": record.conversion_id,
                 "dimensionless": record.dimensionless,
                 "temperature_k": temperature_k,
-                "pressure_pa": pressure_pa,
+                "pressure_pa": (
+                    standard.reference_pressure_pa if standard is not None else pressure_pa
+                ),
             }
             for record in reaction.equilibrium_constants
         ),
@@ -1333,9 +1362,45 @@ def _reactive_lle_spec(
     }
 
 
-def _reactive_lle_failed(
+def _reactive_finite_source_standard_state(
+    model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
-    compilation: _ReactiveLleCompilation,
+    phase: ReactivePhase,
+    temperature_k: float,
+    pressure_pa: float,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+) -> dict[str, object] | None:
+    standard = problem.reaction_system.source_standard_state
+    if standard is None:
+        return None
+    provider_model = cast(ProviderModel, phase.model)
+    transfer = _source_reference_transfer(
+        ProviderPhase(model, provider_model.admissible_packing_fraction_interval),
+        standard,
+        species_ids=problem.reaction_system.species_ids,
+        temperature_k=temperature_k,
+        pressure_pa=pressure_pa,
+        sensitivities_requested=active_parameters is not None,
+        active_parameters=active_parameters,
+    )
+    return {
+        "id": standard.id,
+        "activity_scale_id": standard.activity_scale_id,
+        "log_activity_scale_factors": standard.log_activity_scale_factors,
+        "reference_pressure_pa": standard.reference_pressure_pa,
+        "source_reference_activity_convention_id": (
+            standard.source_reference_activity_convention_id
+        ),
+        "source_reference_standard_molality_mol_per_kg": (
+            standard.source_reference_standard_molality_mol_per_kg
+        ),
+        "provider_transfer": _source_reference_payload(transfer),
+    }
+
+
+def _finite_phase_failed(
+    problem: GeneralReactiveEquilibriumProblem,
+    compilation: _FinitePhaseCompilation,
     trial: ActiveParameterTrialReceipt,
     code: Literal[
         "physical_rejection",
@@ -1410,9 +1475,9 @@ def _native_float_matrix(value: object) -> tuple[tuple[float, ...], ...]:
     return tuple(_native_float_vector(row) for row in cast(tuple[object, ...], value))
 
 
-def _reactive_lle_rows(
+def _finite_phase_rows(
     problem: GeneralReactiveEquilibriumProblem,
-    compilation: _ReactiveLleCompilation,
+    compilation: _FinitePhaseCompilation,
     native: dict[str, object],
 ) -> tuple[GeneralEquilibriumRowResult, ...]:
     component_count = len(problem.reaction_system.species_ids)
@@ -1528,19 +1593,27 @@ def _reactive_lle_rows(
     return tuple(rows)
 
 
-def _evaluate_reactive_lle(
+def _evaluate_finite_phase(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
-    compilation: _ReactiveLleCompilation,
+    compilation: _FinitePhaseCompilation,
     active_parameters: epcsaft.ActiveParameterSet | None,
 ) -> GeneralReactiveEquilibriumResult:
-    trial = _reactive_lle_trial(compilation.owner_descriptor, active_parameters)
+    trial = _finite_phase_trial(compilation.owner_descriptor, active_parameters)
     try:
         native = cast(
             dict[str, object],
             _equilibrium._reactive_finite_phases(
                 _native_transport(model, active_parameters),
-                _reactive_lle_spec(problem, compilation.temperature_k, compilation.pressure_pa),
+                _finite_phase_spec(problem, compilation.temperature_k, compilation.pressure_pa),
+                _reactive_finite_source_standard_state(
+                    model,
+                    problem,
+                    compilation.phases[0],
+                    compilation.temperature_k,
+                    compilation.pressure_pa,
+                    active_parameters,
+                ),
                 tuple(
                     cast(ProviderModel, phase.model).admissible_packing_fraction_interval
                     for phase in compilation.phases
@@ -1566,7 +1639,7 @@ def _evaluate_reactive_lle(
             and "outside the declared packing interval" not in diagnostic
         ):
             raise
-        return _reactive_lle_failed(
+        return _finite_phase_failed(
             problem,
             compilation,
             trial,
@@ -1586,6 +1659,25 @@ def _evaluate_reactive_lle(
             )
             if part
         )
+        if str(native["physical_status"]) == "failed":
+            diagnostic += (
+                "; balance={balance}, pressure={pressure}, affinity={affinity}, "
+                "transfer={transfer}, stationarity={stationarity}, "
+                "distinctness={distinctness}, reduced_hessian={reduced_hessian}, "
+                "phase_totals={phase_totals}"
+            ).format(
+                balance=native["balance_inf_norm"],
+                pressure=native["pressure_relative_inf_norm"],
+                affinity=native["reaction_affinity_inf_norm"],
+                transfer=native["transfer_chemical_potential_inf_norm"],
+                stationarity=native["kkt_stationarity_inf_norm"],
+                distinctness=native["phase_distinctness"],
+                reduced_hessian=native["reduced_hessian_min_eigenvalue"],
+                phase_totals=tuple(
+                    math.fsum(row)
+                    for row in _native_float_matrix(native["phase_amounts_mol"])
+                ),
+            )
         code = (
             "provider_domain_rejection"
             if str(native["provider_domain_status"]) == "failed"
@@ -1597,7 +1689,7 @@ def _evaluate_reactive_lle(
             if str(native["physical_status"]) == "failed"
             else "numerical_convergence_failure"
         )
-        return _reactive_lle_failed(
+        return _finite_phase_failed(
             problem,
             compilation,
             trial,
@@ -1611,18 +1703,18 @@ def _evaluate_reactive_lle(
     if tuple(str(value) for value in cast(tuple[object, ...], native["parameter_order"])) != (
         compilation.descriptor.active_parameter_identities
     ):
-        return _reactive_lle_failed(
+        return _finite_phase_failed(
             problem,
             compilation,
             trial,
             "first_order_failure",
-            "reactive LLE parameter derivative order differs from its descriptor",
+            "finite-phase GREPE parameter derivative order differs from its descriptor",
             solver_status=str(native["solver_status"]),
             numerical_status=str(native["numerical_status"]),
             physical_status=str(native["physical_status"]),
             provider_domain_status=str(native["provider_domain_status"]),
         )
-    rows = _reactive_lle_rows(problem, compilation, native)
+    rows = _finite_phase_rows(problem, compilation, native)
     native_amounts = _native_float_matrix(native["phase_amounts_mol"])
     native_volumes = _native_float_vector(native["phase_volumes_m3"])
     native_pressures = _native_float_vector(native["phase_pressures_pa"])
@@ -1630,7 +1722,7 @@ def _evaluate_reactive_lle(
     native_mu = _native_float_matrix(native["phase_chemical_potentials_over_rt"])
     phases = tuple(
         EquilibriumPhaseState(
-            role="liquid",
+            role=phase.fluid_role,
             support="all_components",
             supported_component_ids=model.component_ids,
             mole_fractions=tuple(amount / math.fsum(amounts) for amount in amounts),
@@ -1642,7 +1734,8 @@ def _evaluate_reactive_lle(
             chemical_potential_over_rt=chemical_potentials,
             mechanical_class="strict_stable_local_minimum",
         )
-        for amounts, volume, packing, pressure, chemical_potentials in zip(
+        for phase, amounts, volume, packing, pressure, chemical_potentials in zip(
+            compilation.phases,
             native_amounts,
             native_volumes,
             native_packing,
@@ -1652,13 +1745,13 @@ def _evaluate_reactive_lle(
         )
     )
     branch_signature: tuple[object, ...] = (
-        "reactive_lle_local_minimum",
+        "finite_phases_local_minimum",
         compilation.descriptor.problem_fingerprint,
         tuple(
             (
                 phase.identity,
                 _fingerprint(
-                    "epcsaft.reactive-lle-phase-state",
+                    "epcsaft.finite-phases-state",
                     {
                         "mole_fractions": state.mole_fractions,
                         "molar_volume_m3_per_mol": state.molar_volume_m3_per_mol,
@@ -1669,10 +1762,10 @@ def _evaluate_reactive_lle(
         ),
         trial.fingerprint,
     )
-    owner = _ReactiveLleOwnerResult(
+    owner = _FinitePhaseOwnerResult(
         compilation.owner_descriptor,
         rows,
-        cast(tuple[EquilibriumPhaseState, EquilibriumPhaseState], phases),
+        phases,
         trial,
         compilation.temperature_k,
         compilation.pressure_pa,
@@ -1731,15 +1824,15 @@ def _solve_general_reactive_equilibrium(
     *,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
 ) -> GeneralReactiveEquilibriumResult:
-    """Compile and solve one supported role-declared GREPE condition."""
+    """Compile and solve one role-declared GREPE condition."""
 
     compiled = _compile_general_reactive_equilibrium(
         model, problem, active_parameters=active_parameters
     )
     if isinstance(compiled, str):
-        return _unsupported(problem, compiled)
-    if isinstance(compiled, _ReactiveLleCompilation):
-        return _evaluate_reactive_lle(model, problem, compiled, active_parameters)
+        return _unavailable_formulation(problem, compiled)
+    if isinstance(compiled, _FinitePhaseCompilation):
+        return _evaluate_finite_phase(model, problem, compiled, active_parameters)
     if isinstance(compiled, _HomogeneousCompilation):
         homogeneous_owner = evaluate_homogeneous_reactive_observations(
             compiled.owner_problem,
@@ -1853,7 +1946,7 @@ def _validated_observation_selection(
     return selected
 
 
-def _reactive_lle_owner_receipt_payload(
+def _finite_phase_owner_receipt_payload(
     result: GeneralReactiveEquilibriumResult,
     batch_identity: str,
 ) -> dict[str, object]:
@@ -1861,15 +1954,15 @@ def _reactive_lle_owner_receipt_payload(
     owner = result.owner_result
     if (
         descriptor is None
-        or descriptor._owner_kind != "reactive_lle"
-        or not isinstance(owner, _ReactiveLleOwnerResult)
+        or descriptor._owner_kind != "finite_phases"
+        or not isinstance(owner, _FinitePhaseOwnerResult)
         or result.trial is None
         or result.branch_signature is None
     ):
-        raise ValueError("reactive LLE owner receipt requires an evaluated LLE result")
+        raise ValueError("finite-phase GREPE owner result must be evaluated")
     trial = result.trial
     payload: dict[str, object] = {
-        "schema": "epcsaft.reactive-lle-owner-receipt.v1",
+        "schema": "epcsaft.finite-phases-owner-receipt.v1",
         "batch_identity": batch_identity,
         "descriptor_fingerprint": descriptor.fingerprint,
         "problem_fingerprint": descriptor.problem_fingerprint,
@@ -1927,11 +2020,11 @@ def _reactive_lle_owner_receipt_payload(
             for row in result.rows
         ),
     }
-    payload["fingerprint"] = _fingerprint("epcsaft.reactive-lle-owner-receipt", payload)
+    payload["fingerprint"] = _fingerprint("epcsaft.finite-phases-owner-receipt", payload)
     return payload
 
 
-def _validate_reactive_lle_owner_receipt(
+def _validate_finite_phase_owner_receipt(
     owner_json: str,
     *,
     descriptor: GeneralReactiveEquilibriumDescriptor,
@@ -1941,13 +2034,13 @@ def _validate_reactive_lle_owner_receipt(
 ) -> None:
     payload = json.loads(owner_json)
     if not isinstance(payload, dict) or _canonical_json(payload) != owner_json:
-        raise ValueError("reactive LLE owner receipt is not canonical JSON")
+        raise ValueError("finite-phase GREPE owner receipt is not canonical JSON")
     fingerprint = payload.pop("fingerprint", None)
-    if fingerprint != _fingerprint("epcsaft.reactive-lle-owner-receipt", payload):
-        raise ValueError("reactive LLE owner receipt fingerprint does not match")
+    if fingerprint != _fingerprint("epcsaft.finite-phases-owner-receipt", payload):
+        raise ValueError("finite-phase GREPE owner receipt fingerprint does not match")
     if not isinstance(problem.temperature, Fixed) or not isinstance(problem.pressure, Fixed):
-        raise ValueError("reactive LLE receipt requires fixed temperature and pressure")
-    owner_descriptor = cast(_ReactiveLleOwnerDescriptor, descriptor._owner_descriptor)
+        raise ValueError("finite-phase GREPE receipt requires fixed temperature and pressure")
+    owner_descriptor = cast(_FinitePhaseOwnerDescriptor, descriptor._owner_descriptor)
     trial = payload.get("trial")
     observations = payload.get("observations")
     phases = payload.get("phases")
@@ -1958,7 +2051,7 @@ def _validate_reactive_lle_owner_receipt(
         or not isinstance(phases, list)
         or not isinstance(certificate, dict)
     ):
-        raise TypeError("reactive LLE owner receipt is incomplete")
+        raise TypeError("finite-phase GREPE owner receipt is incomplete")
     expected_trial_payload = {
         "parameter_fingerprint": descriptor.parameter_fingerprint,
         "identities": active_parameters.identities,
@@ -1967,7 +2060,7 @@ def _validate_reactive_lle_owner_receipt(
         "active_parameter_fingerprint": active_parameters.fingerprint,
     }
     if (
-        payload.get("schema") != "epcsaft.reactive-lle-owner-receipt.v1"
+        payload.get("schema") != "epcsaft.finite-phases-owner-receipt.v1"
         or payload.get("batch_identity") != batch_identity
         or payload.get("descriptor_fingerprint") != descriptor.fingerprint
         or payload.get("problem_fingerprint") != descriptor.problem_fingerprint
@@ -1989,7 +2082,7 @@ def _validate_reactive_lle_owner_receipt(
         or certificate.get("scope") != descriptor.certificate_scope
         or certificate.get("globality_claim") != "not_established"
     ):
-        raise ValueError("reactive LLE owner receipt identity or evidence does not match")
+        raise ValueError("finite-phase GREPE owner receipt identity or evidence does not match")
     for record, output in zip(observations, owner_descriptor.rows, strict=True):
         if (
             not isinstance(record, dict)
@@ -1999,7 +2092,7 @@ def _validate_reactive_lle_owner_receipt(
             or not isinstance(record.get("jacobian"), list)
             or len(cast(list[object], record["jacobian"])) != len(active_parameters.identities)
         ):
-            raise ValueError("reactive LLE owner receipt observation rows do not match")
+            raise ValueError("finite-phase GREPE owner receipt observation rows do not match")
 
 
 def serialize_general_reactive_equilibrium_receipt(
@@ -2040,7 +2133,7 @@ def serialize_general_reactive_equilibrium_receipt(
             batch_identity=batch_identity,
         )
     else:
-        owner_json = _canonical_json(_reactive_lle_owner_receipt_payload(result, batch_identity))
+        owner_json = _canonical_json(_finite_phase_owner_receipt_payload(result, batch_identity))
     return _canonical_json(
         {
             "schema": "epcsaft.grepe-owner-receipt.v1",
@@ -2112,7 +2205,7 @@ def validate_general_reactive_equilibrium_receipt(
             active_parameters=active_parameters,
         )
     else:
-        _validate_reactive_lle_owner_receipt(
+        _validate_finite_phase_owner_receipt(
             owner_json,
             descriptor=descriptor,
             problem=problem,

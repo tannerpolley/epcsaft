@@ -91,6 +91,7 @@ def _chemical_equilibrium(
 def _reactive_finite_phases(
     capsule: object,
     spec: dict[str, object],
+    source_standard_state: dict[str, object] | None,
     packing_fraction_intervals: tuple[tuple[float, float], ...],
     starts: tuple[dict[str, object], ...],
     trace_floor: float,

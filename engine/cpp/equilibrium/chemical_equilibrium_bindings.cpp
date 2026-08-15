@@ -1327,6 +1327,7 @@ py::dict reactive_finite_phase_result(const ReactiveFinitePhaseResult& evaluatio
 py::dict solve_reactive_finite_phases(
     const py::capsule& capsule,
     const py::dict& spec,
+    const py::object& source_standard_state,
     const std::vector<std::array<double, 2>>& packing_fraction_intervals,
     const std::vector<py::dict>& start_payloads,
     double trace_floor,
@@ -1343,7 +1344,106 @@ py::dict solve_reactive_finite_phases(
     }
     const ProviderContext provider(transport);
     input.provider_fingerprint = provider.fingerprint();
-    const CompiledReactionSystem compiled = compile_reaction_system(input);
+    const ProviderActiveParameterSet parameters = provider.active_parameters();
+    if (active_parameters_requested != !parameters.identities.empty()) {
+        throw py::value_error(
+            "Provider capsule active-parameter identity does not match the request"
+        );
+    }
+    CompiledReactionSystem compiled;
+    if (source_standard_state.is_none()) {
+        compiled = compile_reaction_system(input);
+    } else {
+        const py::dict standard = py::cast<py::dict>(source_standard_state);
+        const std::string standard_id = py::cast<std::string>(standard["id"]);
+        const std::vector<double> log_activity_scale_factors =
+            py::cast<std::vector<double>>(standard["log_activity_scale_factors"]);
+        const double reference_pressure_pa = py::cast<double>(
+            standard["reference_pressure_pa"]
+        );
+        if (standard_id.empty() || !std::isfinite(reference_pressure_pa)
+            || reference_pressure_pa <= 0.0) {
+            throw py::value_error("source standard-state declaration is invalid");
+        }
+        for (const EquilibriumConstantRecord& record : input.equilibrium_constant_records) {
+            if (record.reference_id != standard_id
+                || record.conversion_id
+                    != "source-standard-state-to-provider-neutral-reference"
+                || record.pressure_pa != reference_pressure_pa) {
+                throw py::value_error(
+                    "source equilibrium-constant declaration is incompatible"
+                );
+            }
+        }
+        const SourceReferenceTransferEvidence reference =
+            source_reference_transfer_evidence(standard, "provider_transfer");
+        if (!parameters.identities.empty()
+            && reference.active_parameter_identities != parameters.identities) {
+            throw py::value_error(
+                "source-reference active parameters do not match the Provider"
+            );
+        }
+        const SourceStandardStateResult transformed =
+            transform_source_standard_state(
+                input.reaction_matrix,
+                input.ln_k,
+                log_activity_scale_factors,
+                input.species_ids,
+                input.charges,
+                input.provider_fingerprint,
+                input.temperature_k,
+                input.pressure_pa,
+                reference
+            );
+        input.ln_k = transformed.ln_k_provider_basis;
+        for (EquilibriumConstantRecord& record : input.equilibrium_constant_records) {
+            record.reference_id = "provider-helmholtz-coordinate-basis";
+            record.conversion_id = "already-provider-basis";
+            record.pressure_pa = input.pressure_pa;
+        }
+        compiled = compile_reaction_system(input);
+        const std::size_t parameter_count = parameters.identities.size();
+        if (parameter_count != 0) {
+            if (transformed.ln_k_parameter_derivatives.size()
+                != input.reaction_matrix.rows * parameter_count) {
+                throw py::value_error(
+                    "source-reference parameter derivatives are unavailable"
+                );
+            }
+            compiled.g_ref_parameter_derivatives.assign(
+                compiled.species_count * parameter_count, 0.0
+            );
+            for (std::size_t parameter = 0;
+                 parameter < parameter_count;
+                 ++parameter) {
+                ReactionSystemInput derivative_input = input;
+                for (std::size_t reaction = 0;
+                     reaction < input.reaction_matrix.rows;
+                     ++reaction) {
+                    derivative_input.ln_k[reaction] =
+                        transformed.ln_k_parameter_derivatives[
+                            reaction * parameter_count + parameter
+                        ];
+                }
+                const CompiledReactionSystem derivative_system =
+                    compile_reaction_system(derivative_input);
+                if (derivative_system.species_count != compiled.species_count
+                    || derivative_system.retained_species_indices
+                        != compiled.retained_species_indices) {
+                    throw py::value_error(
+                        "source-reference derivative species face changed"
+                    );
+                }
+                for (std::size_t species = 0;
+                     species < compiled.species_count;
+                     ++species) {
+                    compiled.g_ref_parameter_derivatives[
+                        species * parameter_count + parameter
+                    ] = derivative_system.g_ref[species];
+                }
+            }
+        }
+    }
     std::vector<ReactiveFinitePhaseStart> starts;
     starts.reserve(start_payloads.size());
     for (const py::dict& payload : start_payloads) {
@@ -1351,12 +1451,6 @@ py::dict solve_reactive_finite_phases(
             py::cast<std::vector<double>>(payload["amounts_mol"]),
             py::cast<double>(payload["molar_volume_m3_per_mol"]),
         });
-    }
-    const ProviderActiveParameterSet parameters = provider.active_parameters();
-    if (active_parameters_requested != !parameters.identities.empty()) {
-        throw py::value_error(
-            "Provider capsule active-parameter identity does not match the request"
-        );
     }
     return reactive_finite_phase_result(
         solve_provider_reactive_finite_phases(
@@ -1393,6 +1487,7 @@ void bind_chemical_equilibrium(py::module_& module) {
         &solve_reactive_finite_phases,
         py::arg("capsule"),
         py::arg("spec"),
+        py::arg("source_standard_state"),
         py::arg("packing_fraction_intervals"),
         py::arg("starts"),
         py::arg("trace_floor"),

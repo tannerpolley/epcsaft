@@ -396,6 +396,141 @@ NEUTRAL_TERNARY_IMMISCIBLE = _document(
     ],
 )
 
+
+def _ascani_2023_association_topology() -> dict[str, object]:
+    provenance = {
+        "source_id": "ascani-2023",
+        "locator": "Table 3 and standard PC-SAFT association combining rules",
+        "domain_id": "ascani-2023-hypothetical",
+    }
+    energy = 2500.0
+    volume = 0.05
+    sigma = {"a": 3.2, "b": 3.0}
+    cross_volume = volume * (
+        math.sqrt(sigma["a"] * sigma["b"])
+        / (0.5 * (sigma["a"] + sigma["b"]))
+    ) ** 3
+
+    def edge(
+        component_a: str,
+        site_a: str,
+        component_b: str,
+        site_b: str,
+        association_volume: float,
+    ) -> dict[str, object]:
+        prefix = f"association/{component_a}/{site_a}/{component_b}/{site_b}"
+        return {
+            "endpoint_a": {"component_id": component_a, "site_id": site_a},
+            "endpoint_b": {"component_id": component_b, "site_id": site_b},
+            "energy_over_k": {
+                "identity": f"{prefix}/energy_over_k",
+                "value": {"magnitude": energy, "unit": "kelvin"},
+            },
+            "volume": {
+                "identity": f"{prefix}/volume",
+                "value": {"magnitude": association_volume, "unit": "dimensionless"},
+            },
+            "source": {
+                "kind": "explicit",
+                "provenance": [deepcopy(provenance)],
+            },
+        }
+
+    return {
+        "presets": [],
+        "sites": [
+            {
+                "component_id": component_id,
+                "site_id": site_id,
+                "site_role": role,
+                "multiplicity": 1,
+                "provenance": deepcopy(provenance),
+            }
+            for component_id in ("a", "b")
+            for site_id, role in (("a", "donor"), ("b", "acceptor"))
+        ],
+        "edges": [
+            edge("a", "a", "a", "b", volume),
+            edge("a", "a", "b", "b", cross_volume),
+            edge("a", "b", "b", "a", cross_volume),
+            edge("b", "a", "b", "b", volume),
+        ],
+    }
+
+
+def _replace_fixture_provenance(value: object, provenance: dict[str, str]) -> None:
+    if isinstance(value, dict):
+        for key, item in tuple(value.items()):
+            if key == "provenance":
+                value[key] = (
+                    [deepcopy(provenance)] if isinstance(item, list) else deepcopy(provenance)
+                )
+            else:
+                _replace_fixture_provenance(item, provenance)
+    elif isinstance(value, list):
+        for item in value:
+            _replace_fixture_provenance(item, provenance)
+
+
+ASCANI_2023_HYPOTHETICAL = _document(
+    "ascani-2023-hypothetical",
+    [
+        _component(
+            "a",
+            molar_mass=0.05,
+            segment_count=2.4,
+            segment_diameter=3.2,
+            dispersion_energy_over_k=200.0,
+        ),
+        _component(
+            "b",
+            molar_mass=0.05,
+            segment_count=1.08,
+            segment_diameter=3.0,
+            dispersion_energy_over_k=400.0,
+        ),
+        _component(
+            "c",
+            molar_mass=0.10,
+            segment_count=2.8,
+            segment_diameter=3.8,
+            dispersion_energy_over_k=280.0,
+        ),
+    ],
+    pairs=[
+        _pair("a", "b", k_ij=-0.045),
+        _pair("a", "c", k_ij=0.045),
+        _pair("b", "c", k_ij=-0.025),
+    ],
+    model_families=_model_families(association="general-site"),
+    topology=_ascani_2023_association_topology(),
+)
+_ASCANI_2023_PROVENANCE = {
+    "source_id": "ascani-2023",
+    "locator": (
+        "Table 3 and Section 3.2; molar masses are a stoichiometrically consistent "
+        "amount-coordinate scale"
+    ),
+    "domain_id": "ascani-2023-hypothetical",
+}
+_replace_fixture_provenance(ASCANI_2023_HYPOTHETICAL, _ASCANI_2023_PROVENANCE)
+ASCANI_2023_HYPOTHETICAL["sources"] = [
+    {
+        "source_id": "ascani-2023",
+        "citation": (
+            "Ascani et al. (2023), Simultaneous Predictions of Chemical and Phase "
+            "Equilibria in Systems with an Esterification Reaction Using PC-SAFT."
+        ),
+        "use_basis": (
+            "Table 3 hypothetical pure parameters, Section 3.2 binary interactions, "
+            "and standard PC-SAFT association combining rules."
+        ),
+    }
+]
+ASCANI_2023_HYPOTHETICAL["domains"] = [
+    {"domain_id": "ascani-2023-hypothetical", "kind": "unknown"}
+]
+
 CHARGED_TERNARY_IMMISCIBLE = _document(
     "charged-ternary-immiscible-fixture",
     [
@@ -930,6 +1065,7 @@ def set_binary_pair_value(mapping: dict[str, object], family: str, magnitude: fl
 
 __all__ = (
     "AQUEOUS_ELECTROLYTE",
+    "ASCANI_2023_HYPOTHETICAL",
     "ASSOCIATING_PURE",
     "DIPOLAR_PERMITTIVITY_ELECTROLYTE",
     "MULTINEUTRAL_REACTIVE",

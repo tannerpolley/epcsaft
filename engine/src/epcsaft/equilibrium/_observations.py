@@ -501,6 +501,8 @@ def _problem_payload(problem: ChemicalEquilibriumProblem) -> dict[str, object]:
                 (pair.component_ids, pair.stoichiometry)
                 for pair in standard.source_reference_ion_pairs
             ),
+            "phase": standard.source_reference_phase,
+            "reference_convention": standard.source_reference_convention,
             "activity_convention_id": standard.source_reference_activity_convention_id,
             "standard_molality_mol_per_kg": (
                 standard.source_reference_standard_molality_mol_per_kg

@@ -1,6 +1,6 @@
 # Phase-Equilibrium Documentation Authority
 
-Status: promoted sole public nonreactive owner; GREPE neutral-LLE candidate
+Status: public nonreactive owner and configured two-phase GREPE
 
 `epcsaft.equilibrium.phase_equilibrium` is the only public nonreactive
 phase-equilibrium function. Governance D-030 and the
@@ -23,7 +23,7 @@ the retired name is no longer a Python API.
 | Pure-fluid saturation | EOS `Pure.saturation` | Pure vapor--liquid boundary |
 | Nonreactive phase equilibrium | Equilibrium `phase_equilibrium` | Fixed-T,P retained discovery or declared 1--3 phases; fixed-T two-phase coexistence |
 | Homogeneous chemical equilibrium | Equilibrium `chemical_equilibrium` | One homogeneous reacting state |
-| General reactive equilibrium | Equilibrium `phase_equilibrium` | Admitted homogeneous and reactive bubble; candidate two-finite-neutral-liquid reactive LLE |
+| General reactive equilibrium | Equilibrium `phase_equilibrium` | Homogeneous, reactive bubble, and configured finite multiphase equilibrium |
 | Solid equilibrium | Excluded | Requires another physical model |
 
 ## Fixed-T,P feed
@@ -35,7 +35,7 @@ Its `topology` is optional:
 - `DeclaredTopology` solves exactly one to three ordered all-component phases,
   with at most one vapor, and certifies only that topology.
 
-Discovery retains the incumbent algorithm's admitted binary-neutral and
+Discovery retains the incumbent algorithm's implemented binary-neutral and
 one-/two-phase charged search boundary and reports `not_established` globality.
 A declared solve never falls back to discovery after failure and never turns a
 local certificate into a global claim. One phase selects a mechanically
@@ -76,7 +76,7 @@ Physical acceptance is independent of the promotion comparison. It requires
 the applicable material and charge balances, pressure stationarity, KKT and
 bound conditions, phase distinctness, native mechanical stability and ordered
 volume-branch identity, and ordinary or charge-constrained modified-potential
-equality. Fixed-T coexistence uses all admitted neutral-potential equalities or
+equality. Fixed-T coexistence uses all configured neutral-potential equalities or
 the charged HELD2 `C-1` modified-potential basis plus common pressure. Exact
 implicit sensitivities differentiate those defining equations in the selected
 parameter order.
@@ -105,28 +105,31 @@ sources and their algorithmic certification evidence remain because they are
 the live discovery core, not a second public route. `chemical_equilibrium`
 remains a separate homogeneous reacting-state capability.
 
-## General reactive equilibrium candidate
+## General reactive equilibrium
 
-`GeneralReactiveEquilibriumProblem` is the declarative GREPE boundary. Fixed
-temperature and pressure, phase roles, component support, reaction eligibility,
-standard-state records, starts or immutable continuation anchors, active
-parameters, and requested outputs determine the compiled problem. Application
-and source names never select an algorithm.
+`GeneralReactiveEquilibriumProblem` is the declarative GREPE condition. Fixed
+temperature and pressure, conserved totals, phase roles, component support,
+reaction eligibility, standard-state records, starts or immutable continuation
+anchors, active parameters, and requested outputs determine the compiled
+problem. The compiler binds that condition to the selected Parameters and
+ordered components.
+Application and source names never select an algorithm.
 
-The neutral reactive-LLE candidate accepts exactly two finite liquid phases,
-all-component support, neutral species, and a positive finite start for each
-phase. It minimizes one total Gibbs objective in positive phase/species amounts
-and phase packing variables subject to global conservation. Reaction and
-interphase-transfer directions must exactly span the conservation nullspace;
-reaction affinities and shared-species chemical-potential equalities then arise
-from the minimization KKT conditions rather than duplicate residual equations.
-The result certifies the declared local minimum only and reports
-`globality_claim = not_established`.
+For two or more started finite phases at fixed temperature and pressure, GREPE
+minimizes one total Gibbs objective in positive phase/species amounts and phase
+packing variables subject to global conservation and exact per-phase charge
+neutrality. The configured phases may use any fluid-role labels. Reaction
+affinities and neutral or electrochemical interphase-potential equalities arise
+from the minimization KKT conditions. Source-standard-state equilibrium
+constants are transformed to the Provider basis before the solve, including
+their selected-parameter derivatives. The result describes the configured
+local minimum; it does not claim that no unconfigured phase is more stable.
 
-The same owner returns typed generic output rows and exact total Jacobians used
-by Regression. Current LLE outputs are system or phase pressure, phase amount,
-mole fraction, molar density, and dimensionless chemical potential. Charged or
-electrochemical LLE, incipient LLE, phase discovery, more than two reacting
-phases, restricted neutral support, and source-standard-state conversion fail
-closed as unsupported. Formal capability admission remains pending independent
-review and an accepted hash-bound receipt.
+The same owner returns generic output rows and exact total Jacobians directly
+to Regression. Current finite-phase outputs include system or phase pressure,
+phase amount, mole fraction, molar density, and dimensionless chemical
+potential. Configurations that need a different mathematical formulation, such
+as an incipient phase or solved temperature, are routed to their corresponding
+GREPE formulation when implemented. Every configuration is attempted according
+to its declared mathematical variables; a missing formulation or failed solve
+is returned directly and is never decided by an application or source name.

@@ -70,6 +70,7 @@ struct CompiledReactionSystem {
     std::vector<double> balance_totals;
     std::vector<double> feed_amounts;
     std::vector<double> g_ref;
+    std::vector<double> g_ref_parameter_derivatives;
 };
 
 struct AmountChart {

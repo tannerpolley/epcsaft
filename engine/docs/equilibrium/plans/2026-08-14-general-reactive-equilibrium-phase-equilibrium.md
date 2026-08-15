@@ -1,6 +1,6 @@
 # General Reactive Equilibrium and Phase Equilibrium
 
-- Status: neutral reactive-LLE implementation candidate; formal admission pending
+- Status: configured finite-phase GREPE implemented
 - Date: 2026-08-14
 - Owner: Equilibrium vertical-slice task
 - Authority: Governance D-036, doctrine revision 21
@@ -11,49 +11,47 @@
 General Reactive Equilibrium and Phase Equilibrium (GREPE) evolves the existing
 public `phase_equilibrium` owner into one declarative equilibrium compiler. It
 defines one target physical vocabulary for homogeneous reaction, reactive
-bubble/dew/VLE, and declared-phase reactive LLE. A later independently admitted
-slice may add electrochemical reactive LLE.
+bubble/dew/VLE, and configured-phase reactive equilibrium.
 
 GREPE is an architecture, not an application route or a globality claim. MEA,
 CO2, lithium, Ascani, source names, and operation labels never select runtime
 behavior. The request's state roles, phase roles, species support, reactions,
 and model capabilities determine the assembled problem.
 
-Current admission remains Governance D-034 fixed-T,P homogeneous reactive and
-D-035 fixed-topology reactive bubble/VLE observations. The feature branch now
-implements the first two-finite-liquid neutral reactive-LLE candidate through
-the same public request, result, receipt, and generic Regression boundary. Its
-compact manufactured installed-wheel evidence proves the declared local
-minimum, balances, reaction and transfer potentials, exact selected-parameter
-sensitivities, label covariance, failure semantics, and Regression recovery.
-Formal admission still requires review and an accepted hash-bound receipt.
-Reactive phase discovery, electrochemical multiphase work, three-plus reacting
-phases, solids, precipitation, kinetics, and reaction-correlation fitting remain
-unavailable.
+The implementation routes fixed-T,P homogeneous reaction, fixed-topology
+reactive bubble/VLE, and two-or-more configured finite reacting phases through
+the same public request/result and generic Regression boundary. The finite
+multiphase formulation supports neutral and charged systems, electrochemical
+phase transfer, source-standard-state conversion, exact selected-parameter
+sensitivities, and arbitrary configured fluid-role labels. It attempts the
+caller-provided configuration and reports mathematical, Provider, or solver
+failure directly. Automatic phase discovery, incipient multiphase LLE, solved
+temperature, solids, precipitation, and kinetics need additional formulations.
 
-## Public contract
+## Public API
 
-The canonical request contains:
+The solve boundary is `phase_equilibrium(model, problem)`. The model supplies
+the EOS and ordered components. The problem supplies state variables, phases,
+reactions, starts, and requested outputs. Application and source names are
+metadata only and never choose equations.
 
-- one immutable resolved `Parameters` document and optional ordered
-  `ActiveParameterSet`;
+The model and condition together contain:
+
+- one immutable resolved `Parameters` selection and optional ordered
+  `ActiveParameterSet`, supplied by the separate model argument;
 - canonical species identities, formula/conservation vectors, charges, and
   aliases resolved before the solver;
 - `Fixed(value)` or `Solved(initial, bounds)` temperature and pressure roles;
-- an explicit composition role: overall feed, analytical/apparent totals, or
-  known-phase composition;
 - one or more phases with stable IDs, fluid role, finite or incipient role,
-  allowed species, and any deterministic label anchor;
+  component support, and any deterministic label anchor;
 - an ordered reaction stoichiometry matrix, eligible phases, and typed
   standard-state records;
 - explicit units and composition bases; and
 - typed requested outputs.
 
-The strict JSON and in-memory mapping loaders share one schema and produce the
-same immutable request. Registered identifiers select EOS models, reaction
-correlations, and residual transforms. Unknown fields, arbitrary import paths,
+The JSON and in-memory loaders produce the same condition. Unknown fields,
 callbacks, executable expressions, ambiguous units, and implicit composition
-bases fail preflight.
+bases fail before the numerical solve.
 
 Thin chemical-engineering helpers such as `bubble_pressure`,
 `bubble_temperature`, `dew_pressure`, and `dew_temperature` may
@@ -85,7 +83,7 @@ equations.
 The solver establishes a local stationary equilibrium for the declared phases.
 Nonconvexity means an Ipopt solution alone is not a global phase-stability
 certificate. Every result therefore records `globality_claim =
-not_established` unless a separate admitted discovery/stability procedure
+not_established` unless a separate discovery/stability procedure
 proves more.
 
 ### Incipient phases
@@ -128,17 +126,16 @@ reaction only when its standard-state convention is complete. Initial GREPE
 slices keep reactions liquid-only unless equally complete vapor or second-
 liquid evidence exists.
 
-### Later electrochemical phases
+### Electrochemical phases
 
-The future electrolyte reactive-LLE slice adds phase-local electroneutrality,
+The finite multiphase formulation uses phase-local electroneutrality,
 electrochemical-potential equality over shared declared ionic support
 `mu_tilde_i = mu_i + z_i F phi_phase`, and one explicit electrostatic-potential
-gauge. Ordinary chemical-potential equality is insufficient for ions. This
-schema target does not constitute capability admission.
+gauge. Ordinary chemical-potential equality is insufficient for ions.
 
-## Numerical and derivative contract
+## Numerical method and derivatives
 
-Ipopt solves one thermodynamic condition at a time. Its admitted formulation
+Ipopt solves one thermodynamic condition at a time. Its configured formulation
 provides exact objective and constraint gradients and the exact Lagrangian
 Hessian from the CppAD authority plus exact implicit linear algebra. Limited-
 memory Hessians, numerical derivatives, and solver-history differentiation
@@ -146,9 +143,8 @@ cannot support the production claim.
 
 For an incipient formulation, finite-phase stationarity is itself a lifted
 constraint. Its exact Ipopt Lagrangian Hessian therefore requires the
-corresponding third-order Gibbs/EOS tensors. The slice remains unsupported
-until CppAD supplies and independent oracles verify every derivative order the
-formulation consumes; first-order output sensitivity is not sufficient.
+corresponding third-order Gibbs/EOS tensors. That formulation is not yet
+implemented; first-order output sensitivity is not sufficient.
 
 Numerical scaling is internal to Ipopt. Certification evaluates original
 unscaled conservation, charge, reaction/KKT, normalization, and phase-potential
@@ -164,7 +160,7 @@ Starts are deterministic functions of the request plus explicit hints. Cached
 continuation states may reduce work only for an equivalent request identity and
 must not make values, branches, or derivatives depend on evaluation history.
 
-## Result and failure contract
+## Results and failures
 
 One result contains:
 
@@ -179,15 +175,16 @@ One result contains:
 - exact request, parameter, data, software, solver-setting, and result-table
   identities/hashes.
 
-Failure distinguishes invalid configuration, unsupported capability,
+Failure distinguishes invalid configuration, unavailable formulation,
 nonconvergence, no incipient phase, requested-phase disappearance, unresolved
 or exchanged branches, provider-domain rejection, support loss, singular
 sensitivity, and failed physical certification. A useful candidate may be
 returned with a non-success status; it is never an ordinary observation value.
 
-First admission supports one or two fluid phases. Three-plus phases and solids
-return typed `unsupported_topology`; declared problems never fall back to
-discovery.
+The current proof targets two configured finite fluid phases. The underlying
+finite-phase formulation accepts additional configured phases using the same
+variables and equations. Solids and zero-amount incipient phases require
+different state variables.
 
 ## Generic Regression boundary
 
@@ -247,7 +244,7 @@ to the export. A budget-limited or nonconverged fit may export and plot that
 complete certified point with its exact termination label. Partial evaluated
 rows may remain diagnostics but cannot be exported as the fit candidate. No
 complete certified point means no export. Regression has no parameter
-acceptance, admission, promotion, or adoption authority.
+parameter-selection or scientific-adoption authority.
 
 ## Ownership
 
@@ -268,9 +265,9 @@ explicit owner commands and do not enter that gate.
 
 ## Staged implementation
 
-Implementation checkpoint on this branch: stages 1--3 are routed through the
-generic owner and evaluator, and stage 4 is implemented as a neutral-only,
-exactly-two-finite-liquid candidate. The retained specialized homogeneous and
+Implementation checkpoint on this branch: stages 1--3 use the generic owner
+and evaluator, and stage 4 uses the configured finite-phase Gibbs formulation
+for neutral and charged systems. The retained specialized homogeneous and
 bubble entry points remain temporarily callable because downstream MEA work
 still imports them; their thermodynamic and Regression ownership has already
 moved behind GREPE. Removing those names is a coordinated downstream cutover,
@@ -279,7 +276,7 @@ not part of the neutral-LLE numerical claim.
 1. **Generic seam and schema.** Add role-based request/result types, strict
    loaders, phase-aware reaction preflight, generic evaluator protocol, exact
    evaluated-row table, authority-neutral candidate export, and unambiguous
-   `best_usable_start` optimizer vocabulary. Retain current admitted algorithms
+   `best_usable_start` optimizer vocabulary. Retain current implemented algorithms
    as evidence, not alternate public owners.
 2. **Reactive bubble first.** Route the D-035 full nonideal-vapor bubble solve
    through the evolved public owner and generic evaluator. Prove identical
@@ -289,23 +286,23 @@ not part of the neutral-LLE numerical claim.
 3. **Homogeneous reaction.** Route the D-034 fixed-T,P owner through the same
    finite-phase compiler and evaluator, preserve its source-reference and
    local-branch evidence, then remove its specialized public route.
-4. **Neutral reactive LLE.** Implement and admit two finite neutral liquids
+4. **Configured reactive LLE.** Implement two or more finite phases
    using exact or
    manufactured Gibbs/KKT evidence and installed-wheel tie-line reproduction.
    Ascani/Senina-style endpoints without measured feed or phase fraction test
    conditional tie-line composition/equilibrium only. A documented midpoint
    feed is reproduction input, never independent phase-fraction validation or
    a fitted latent feed fraction.
-5. **Electrochemical reactive LLE.** Add the charged formulation only after
-   phase-aware ionic standard states, gauge handling, exact derivatives, and an
-   independent source-complete two-liquid electrolyte case exist.
+5. **Electrochemical reactive LLE.** Implemented with exact per-phase
+   electroneutral coordinates, Galvani-gauge-invariant transfer residuals,
+   source-standard-state transforms, and exact selected-parameter derivatives.
 
 Each slice uses one accountable Engine task across its exact Data, Engine, and
 Validation files. A specialized implementation is removed only after reviewed
-equivalence and new-claim evidence; the final admitted surface retains no
+equivalence and new-claim evidence; the final public surface retains no
 compatibility shim or duplicate equation owner.
 
-## Admission evidence
+## Numerical evidence
 
 Before a slice can broaden current capability, Engine evidence must falsify:
 
@@ -317,23 +314,20 @@ Before a slice can broaden current capability, Engine evidence must falsify:
 - reaction-rank compatibility with the permitted conservation nullspace;
 - structural exclusion and trace-support behavior;
 - phase disappearance, coalescence, branch ambiguity, singularity,
-  nonconvergence, and unsupported topology failure semantics; and
-- equivalence to every displaced admitted route within physically justified
+  nonconvergence, and unavailable-formulation failure semantics; and
+- equivalence to every displaced route within physically justified
   tolerances.
 
-Installed-wheel Validation then owns the bounded physical/literature slice,
-exact plotted-data table, figures where required, artifact hashes, and
-independent review. A user-approved receipt admits only that demonstrated
-slice. Design approval and low SSE alone never broaden runtime authority.
+Installed-wheel Validation then owns bounded physical/literature comparisons,
+exact plotted-data tables, and figures where required.
 
 ## Completion criteria
 
-GREPE is complete only when all admitted homogeneous, bubble/dew/VLE, and
+GREPE is complete only when homogeneous, bubble/dew/VLE, and
 declared-phase reactive-LLE configurations use the one public
 `phase_equilibrium` owner and one generic Regression evaluator; displaced
 specialized public routes, reduced tracers, family switches, and stale live
-guidance are removed; exact derivative and certificate evidence passes through
-the installed wheel; and the applicable promotion receipts are accepted.
-
-Electrochemical reactive LLE, phase discovery, three-plus phases, and solids
-remain separately incomplete until their own criteria and receipts are met.
+guidance are removed, and exact derivative and numerical evidence passes
+through the installed wheel. Configured neutral and electrochemical two-phase
+equilibrium is proven; automatic phase discovery and solids remain separate
+numerical formulations.

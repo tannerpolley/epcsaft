@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
+from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
 
@@ -12,7 +14,12 @@ from epcsaft import equilibrium, regression
 from epcsaft.eos import _native_transport
 from epcsaft.equilibrium import _equilibrium as _native_equilibrium
 from epcsaft.equilibrium import _grepe
-from tests.eos._raw_cases import NEUTRAL_TERNARY_IMMISCIBLE
+from tests.eos._raw_cases import (
+    ASCANI_2023_HYPOTHETICAL,
+    CHARGED_TERNARY_IMMISCIBLE,
+    MULTINEUTRAL_REACTIVE,
+    NEUTRAL_TERNARY_IMMISCIBLE,
+)
 
 _BASIS = "manufactured-reactive-lle-basis"
 _PARAMETER_IDENTITY = "pair/alpha/beta/k_ij"
@@ -140,7 +147,7 @@ def _fixture() -> tuple[
             equilibrium.Fixed(1.0e5 * epcsaft.unit_registry.pascal),
             phases,
             reaction,
-            ("aqueous", "organic"),
+            ("aqueous",),
             outputs,
         ),
     )
@@ -224,7 +231,7 @@ def _request_mapping(
     }
 
 
-def test_reactive_lle_is_one_certified_coupled_minimum_and_label_covariant() -> None:
+def test_finite_phase_is_one_certified_coupled_minimum_and_label_covariant() -> None:
     """Falsify staged speciation, missing transfer equilibrium, or label ordering."""
 
     parameters, model, problem = _fixture()
@@ -236,8 +243,10 @@ def test_reactive_lle_is_one_certified_coupled_minimum_and_label_covariant() -> 
     assert result.physical_status == "passed"
     assert result.provider_domain_status == "passed"
     assert result.descriptor is not None
-    assert result.descriptor._owner_kind == "reactive_lle"
-    assert result.certificate_scope == "fixed_TP_two_finite_reacting_liquids_local_minimum"
+    assert result.descriptor._owner_kind == "finite_phases"
+    assert result.certificate_scope == (
+        "fixed_TP_configured_finite_reacting_phases_local_minimum"
+    )
     assert result.globality_claim == "not_established"
     assert len(result.phases) == 2
     phase_amounts = {
@@ -311,13 +320,13 @@ def test_reactive_lle_is_one_certified_coupled_minimum_and_label_covariant() -> 
     swapped_states = {
         phase.identity: state for phase, state in zip(permuted.phases, swapped.phases, strict=True)
     }
-    for identity in states:
+    for identity, state in states.items():
         assert swapped_states[identity].mole_fractions == pytest.approx(
-            states[identity].mole_fractions, abs=2.0e-10
+            state.mole_fractions, abs=2.0e-10
         )
 
 
-def test_reactive_lle_total_parameter_jacobian_matches_independent_resolves() -> None:
+def test_finite_phase_total_parameter_jacobian_matches_independent_resolves() -> None:
     """Falsify a partial-only LLE Jacobian or fixed-pressure derivative leakage."""
 
     parameters, model, problem = _fixture()
@@ -348,14 +357,15 @@ def test_reactive_lle_total_parameter_jacobian_matches_independent_resolves() ->
 
 
 @pytest.mark.slow
-def test_reactive_lle_exact_nlp_derivatives_match_centered_oracles() -> None:
+def test_finite_phase_exact_nlp_derivatives_match_centered_oracles() -> None:
     """Falsify wrong objective, constraint, or Lagrangian derivatives supplied to IPOPT."""
 
     parameters, model, problem = _fixture()
     active = epcsaft.ActiveParameterSet(parameters, (_PARAMETER_IDENTITY,))
     native = _native_equilibrium._reactive_finite_phases(
         _native_transport(model, active),
-        _grepe._reactive_lle_spec(problem, 300.0, 1.0e5),
+        _grepe._finite_phase_spec(problem, 300.0, 1.0e5),
+        None,
         tuple(
             phase.model.admissible_packing_fraction_interval
             for phase in problem.phases
@@ -382,7 +392,7 @@ def test_reactive_lle_exact_nlp_derivatives_match_centered_oracles() -> None:
     assert native["lagrangian_hessian_audit_max_relative_error"] < 2.0e-5
 
 
-def test_reactive_lle_provider_domain_failure_preserves_failure_axis() -> None:
+def test_finite_phase_provider_domain_failure_preserves_failure_axis() -> None:
     """Falsify collapsing a Provider source-domain rejection into nonconvergence."""
 
     _, model, problem = _fixture()
@@ -412,8 +422,8 @@ def test_reactive_lle_provider_domain_failure_preserves_failure_axis() -> None:
     assert result.provider_domain_status == "failed"
 
 
-def test_reactive_lle_strict_mapping_and_unsupported_charge_fail_closed() -> None:
-    parameters, model, problem = _fixture()
+def test_finite_phase_strict_mapping_is_closed() -> None:
+    _, _, problem = _fixture()
     with pytest.raises(ValueError, match="both a start and continuation"):
         replace(
             problem.phases[0],
@@ -428,23 +438,366 @@ def test_reactive_lle_strict_mapping_and_unsupported_charge_fail_closed() -> Non
     with pytest.raises(ValueError, match="positive amounts"):
         equilibrium.general_reactive_equilibrium_problem_from_mapping(mapping)
 
-    charged = replace(
-        problem,
-        reaction_system=replace(problem.reaction_system, charges=(1, 1, 0)),
+
+def _ascani_2023_problem() -> tuple[
+    epcsaft.Mixture,
+    equilibrium.GeneralReactiveEquilibriumProblem,
+    tuple[float, ...],
+]:
+    """Configure Ascani's hypothetical Figure 3 through generic GREPE inputs."""
+
+    model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(ASCANI_2023_HYPOTHETICAL))
+    temperature = 300.0 * epcsaft.unit_registry.kelvin
+    pressure = 1.0e5 * epcsaft.unit_registry.pascal
+    pure_liquid_log_fugacity = []
+    pure_liquid_chemical_potential = []
+    for component in range(3):
+        composition = tuple(float(index == component) for index in range(3))
+        state = model.state(T=temperature, P=pressure, x=composition, phase="liquid")
+        assert state.fugacity is not None
+        pure_liquid_log_fugacity.append(state.fugacity.ln_coefficient[component])
+        trace = 1.0e-11
+        trace_composition = tuple(
+            1.0 - 2.0 * trace if index == component else trace for index in range(3)
+        )
+        pure_result = equilibrium.phase_equilibrium(
+            model,
+            equilibrium.PhaseEquilibriumProblem(
+                equilibrium.FixedTPFeed(
+                    temperature,
+                    pressure,
+                    trace_composition,
+                    equilibrium.DeclaredTopology(
+                        (
+                            equilibrium.PhaseSpecification(
+                                "liquid", equilibrium.AllComponents()
+                            ),
+                        )
+                    ),
+                )
+            ),
+        )
+        pure_liquid_chemical_potential.append(
+            pure_result.phases[0].chemical_potential_over_rt[component]
+        )
+    source_ln_k = math.log(2.25)
+    provider_ln_k = (
+        source_ln_k
+        - pure_liquid_chemical_potential[0]
+        - pure_liquid_chemical_potential[1]
+        + pure_liquid_chemical_potential[2]
     )
-    rejected = equilibrium.phase_equilibrium(model, charged)
-    assert rejected.status == "non_evaluable"
-    assert rejected.failure is not None
-    assert rejected.failure.code == "unsupported_topology"
-    assert rejected.numerical_status == "unsupported"
-    assert rejected.physical_status == "unsupported"
-    assert rejected.provider_domain_status == "unsupported"
-    assert "charged reactive LLE" in rejected.failure.diagnostic
-    with pytest.raises(ValueError, match="charged reactive LLE"):
-        equilibrium.general_reactive_equilibrium_descriptor(model, charged)
+
+    # Figure 3 publishes the two endpoints graphically, not as a numerical table.
+    # These digitized tie-line-I coordinates are starts only; every asserted result
+    # below is independently certified by the configured total-Gibbs solve.
+    starts = (
+        (0.496692, 0.202820, 0.300488),
+        (0.255113, 0.094788, 0.650099),
+    )
+    first_a_total = starts[0][0] + starts[0][2]
+    second_a_total = starts[1][0] + starts[1][2]
+    first_b_total = starts[0][1] + starts[0][2]
+    second_b_total = starts[1][1] + starts[1][2]
+    determinant = first_a_total * second_b_total - second_a_total * first_b_total
+    phase_amounts = (
+        (0.7 * second_b_total - 0.5 * second_a_total) / determinant,
+        (0.5 * first_a_total - 0.7 * first_b_total) / determinant,
+    )
+    phases = tuple(
+        equilibrium.ReactivePhase(
+            identity,
+            "liquid",
+            "finite",
+            equilibrium.AllComponents(),
+            equilibrium.ProviderModel((1.0e-8, 0.74), "installed-provider-eos"),
+            start=equilibrium.FinitePhaseStart(
+                tuple(amount * fraction for fraction in composition),
+                1.0
+                / float(
+                    model.state(
+                        T=temperature,
+                        P=pressure,
+                        x=composition,
+                        phase="liquid",
+                    ).molar_density.to("mole / meter**3").magnitude
+                ),
+            ),
+        )
+        for identity, composition, amount in zip(
+            ("a-rich-liquid", "c-rich-liquid"), starts, phase_amounts, strict=True
+        )
+    )
+    reaction = equilibrium.ChemicalEquilibriumProblem(
+        species_ids=model.component_ids,
+        charges=(0, 0, 0),
+        molar_masses_kg_per_mol=(0.05, 0.05, 0.10),
+        balance_matrix=((1.0, 0.0, 1.0), (0.0, 1.0, 1.0)),
+        conserved_totals=(0.7, 0.5),
+        reaction_matrix=((-1.0, -1.0, 1.0),),
+        feed_amounts_mol=(0.5, 0.3, 0.2),
+        equilibrium_constants=(
+            equilibrium.ChemicalEquilibriumConstant(
+                provider_ln_k,
+                "ascani-2023-eq10-pure-liquid-standard-converted",
+                "provider-helmholtz-coordinate-basis",
+                "products_positive",
+                "already-provider-basis",
+                True,
+            ),
+        ),
+        strict_interior_amount_floor_mol=1.0e-12,
+    )
+    outputs = tuple(
+        equilibrium.EquilibriumOutput(
+            f"{phase.identity}-{component_id}-mole-fraction",
+            "phase.mole_fraction",
+            "dimensionless",
+            "mole-fraction",
+            phase.identity,
+            tuple(float(index == component) for index in range(3)),
+            support="positive",
+        )
+        for phase in phases
+        for component, component_id in enumerate(model.component_ids)
+    )
+    return (
+        model,
+        equilibrium.GeneralReactiveEquilibriumProblem(
+            "ascani-2023-hypothetical-figure-3",
+            equilibrium.Fixed(temperature),
+            equilibrium.Fixed(pressure),
+            phases,
+            reaction,
+            (phases[0].identity,),
+            outputs,
+        ),
+        tuple(pure_liquid_log_fugacity),
+    )
 
 
-def test_generic_regression_recovers_reactive_lle_parameter(tmp_path: Path) -> None:
+@pytest.mark.slow
+def test_generic_two_phase_grepe_solves_ascani_2023_hypothetical_case() -> None:
+    """Prove the generic two-phase solve on Ascani's source-configured system."""
+
+    model, problem, pure_liquid_log_fugacity = _ascani_2023_problem()
+    result = equilibrium.phase_equilibrium(model, problem)
+
+    assert result.status == "evaluated", result.failure
+    assert result.numerical_status == "passed"
+    assert result.physical_status == "passed"
+    assert result.provider_domain_status == "passed"
+    assert len(result.phases) == 2
+    assert result.owner_result is not None
+    assert result.owner_result.reaction_affinity_inf_norm <= 1.0e-7
+    assert result.owner_result.transfer_chemical_potential_inf_norm <= 1.0e-7
+    assert result.owner_result.phase_distinctness >= 0.35
+    digitized_figure_3_tie_line = (
+        (0.496692, 0.202820, 0.300488),
+        (0.255113, 0.094788, 0.650099),
+    )
+    for phase, digitized in zip(result.phases, digitized_figure_3_tie_line, strict=True):
+        assert phase.mole_fractions == pytest.approx(digitized, abs=0.12)
+    for phase in result.phases:
+        state = model.state(
+            T=300.0 * epcsaft.unit_registry.kelvin,
+            P=1.0e5 * epcsaft.unit_registry.pascal,
+            x=phase.mole_fractions,
+            phase="liquid",
+        )
+        assert state.fugacity is not None
+        source_activity_reaction = (
+            -math.log(phase.mole_fractions[0])
+            - state.fugacity.ln_coefficient[0]
+            + pure_liquid_log_fugacity[0]
+            - math.log(phase.mole_fractions[1])
+            - state.fugacity.ln_coefficient[1]
+            + pure_liquid_log_fugacity[1]
+            + math.log(phase.mole_fractions[2])
+            + state.fugacity.ln_coefficient[2]
+            - pure_liquid_log_fugacity[2]
+        )
+        assert source_activity_reaction == pytest.approx(math.log(2.25), abs=1.0e-7)
+
+
+
+@pytest.mark.slow
+def test_configured_charged_two_phase_reactive_minimum() -> None:
+    """Prove charged two-phase GREPE with source-state parameter derivatives."""
+
+    parameter_mapping = deepcopy(CHARGED_TERNARY_IMMISCIBLE)
+    parameter_mapping["domains"] = deepcopy(MULTINEUTRAL_REACTIVE["domains"])
+    parameters = epcsaft.Parameters.from_mapping(parameter_mapping)
+    model = epcsaft.Mixture(parameters)
+    seed_feed = (0.32, 0.32, 0.32, 0.02, 0.02)
+    seed = equilibrium.phase_equilibrium(
+        model,
+        equilibrium.PhaseEquilibriumProblem(
+            equilibrium.FixedTPFeed(
+                300.0 * epcsaft.unit_registry.kelvin,
+                1.0e5 * epcsaft.unit_registry.pascal,
+                seed_feed,
+                equilibrium.DeclaredTopology(
+                    tuple(
+                        equilibrium.PhaseSpecification("liquid", equilibrium.AllComponents())
+                        for _ in range(2)
+                    )
+                ),
+            )
+        ),
+    )
+    assert isinstance(seed.extent, equilibrium.FeedSplit)
+    assert len(seed.phases) == 2
+    starts = tuple(phase.mole_fractions for phase in seed.phases)
+    feed = tuple(
+        sum(phase.mole_fractions[species] for phase in seed.phases)
+        for species in range(len(model.component_ids))
+    )
+    ln_k = (
+        seed.phases[0].chemical_potential_over_rt[1]
+        - seed.phases[0].chemical_potential_over_rt[0]
+    )
+    standard_state = equilibrium.ChemicalStandardState(
+        id="manufactured-charged-two-phase-source",
+        activity_scale_id="mole-fraction-to-molality",
+        log_activity_scale_factors=(0.0, 0.0, 0.0, 0.0, 0.0),
+        reference_pressure_pa=1.0e5,
+        source_reference_component_ids=model.component_ids,
+        source_reference_solvent_composition=(1.0, 0.0, 0.0, 0.0, 0.0),
+        source_reference_ion_pairs=(
+            epcsaft.SourceReferenceIonPair(("cation", "anion"), (1, 1)),
+        ),
+        source_reference_phase="liquid",
+        source_reference_convention="molality-infinite-dilution",
+        source_reference_activity_convention_id="molality-infinite-dilution-v1",
+        source_reference_standard_molality_mol_per_kg=1.0,
+    )
+    transfer = epcsaft.source_reference_transfer(
+        model,
+        epcsaft.SourceReferenceDeclaration(
+            reference_state_id=standard_state.id,
+            component_ids=model.component_ids,
+            solvent_mole_fractions=standard_state.source_reference_solvent_composition,
+            ion_pairs=standard_state.source_reference_ion_pairs,
+            phase="liquid",
+            reference_convention="molality-infinite-dilution",
+            activity_convention_id=standard_state.source_reference_activity_convention_id,
+            standard_molality_mol_per_kg=1.0,
+            reference_pressure_pa=1.0e5,
+            required_derivatives=(),
+        ),
+        T=300.0 * epcsaft.unit_registry.kelvin,
+        P=1.0e5 * epcsaft.unit_registry.pascal,
+    )
+    standard_state = replace(
+        standard_state,
+        log_activity_scale_factors=(
+            transfer.activity_scale_log_contractions[0],
+            transfer.activity_scale_log_contractions[1],
+            transfer.activity_scale_log_contractions[2],
+            0.5 * transfer.activity_scale_log_contractions[3],
+            0.5 * transfer.activity_scale_log_contractions[3],
+        ),
+    )
+    source_ln_k = ln_k - (
+        transfer.transfer_log_contractions[1]
+        - transfer.transfer_log_contractions[0]
+    )
+    reaction = equilibrium.ChemicalEquilibriumProblem(
+        species_ids=model.component_ids,
+        charges=(0, 0, 0, 1, -1),
+        molar_masses_kg_per_mol=(0.03, 0.03, 0.03, 0.01, 0.01),
+        balance_matrix=(
+            (1.0, 1.0, 0.0, 0.0, 0.0),
+            (0.0, 0.0, 1.0, 0.0, 0.0),
+            (0.0, 0.0, 0.0, 1.0, 0.0),
+        ),
+        conserved_totals=(feed[0] + feed[1], feed[2], feed[3]),
+        reaction_matrix=((-1.0, 1.0, 0.0, 0.0, 0.0),),
+        feed_amounts_mol=feed,
+        equilibrium_constants=(
+            equilibrium.ChemicalEquilibriumConstant(
+                source_ln_k,
+                "manufactured-charged-two-phase-oracle",
+                standard_state.id,
+                "products_positive",
+                "source-standard-state-to-provider-neutral-reference",
+                True,
+            ),
+        ),
+        strict_interior_amount_floor_mol=1.0e-14,
+        source_standard_state=standard_state,
+    )
+    phases = tuple(
+        equilibrium.ReactivePhase(
+            f"liquid-{index}",
+            "liquid",
+            "finite",
+            equilibrium.AllComponents(),
+            equilibrium.ProviderModel((1.0e-8, 0.74), "installed-provider-eos"),
+            start=equilibrium.FinitePhaseStart(amounts, state.molar_volume_m3_per_mol),
+        )
+        for index, (amounts, state) in enumerate(zip(starts, seed.phases, strict=True))
+    )
+    outputs = tuple(
+        equilibrium.EquilibriumOutput(
+            f"{phase.identity}-alpha",
+            "phase.mole_fraction",
+            "dimensionless",
+            _BASIS,
+            phase.identity,
+            (1.0, 0.0, 0.0, 0.0, 0.0),
+            support="positive",
+        )
+        for phase in phases
+    )
+    problem = equilibrium.GeneralReactiveEquilibriumProblem(
+        "configured-charged-two-phase",
+        equilibrium.Fixed(300.0 * epcsaft.unit_registry.kelvin),
+        equilibrium.Fixed(1.0e5 * epcsaft.unit_registry.pascal),
+        phases,
+        reaction,
+        (phases[0].identity,),
+        outputs,
+    )
+
+    result = equilibrium.phase_equilibrium(model, problem)
+
+    assert result.status == "evaluated", result.failure
+    assert len(result.phases) == 2
+    for phase in result.phases:
+        assert abs(phase.mole_fractions[3] - phase.mole_fractions[4]) <= 2.0e-10
+    owner = result.owner_result
+    assert owner is not None
+    assert owner.reaction_affinity_inf_norm <= 1.0e-7
+    assert owner.transfer_chemical_potential_inf_norm <= 1.0e-7
+
+    step = 1.0e-7
+
+    def active_solve(value: float) -> equilibrium.GeneralReactiveEquilibriumResult:
+        active_result = equilibrium.phase_equilibrium(
+            model,
+            problem,
+            active_parameters=epcsaft.ActiveParameterSet(
+                parameters,
+                (_PARAMETER_IDENTITY,),
+                values=(value,),
+            ),
+        )
+        assert active_result.status == "evaluated", active_result.failure
+        return active_result
+
+    center = active_solve(0.2)
+    below = active_solve(0.2 - step)
+    above = active_solve(0.2 + step)
+    for row, low, high in zip(center.rows, below.values, above.values, strict=True):
+        assert row.jacobian is not None and low is not None and high is not None
+        numerical = (high - low) / (2.0 * step)
+        scale = max(1.0, abs(row.jacobian[0]), abs(numerical))
+        assert abs(row.jacobian[0] - numerical) / scale < 2.0e-5
+
+
+def test_generic_regression_recovers_finite_phase_parameter(tmp_path: Path) -> None:
     """Falsify any hidden LLE-specific Regression objective or owner receipt."""
 
     parameters, model, problem = _fixture()
