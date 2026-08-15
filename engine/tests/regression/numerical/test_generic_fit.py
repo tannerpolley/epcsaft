@@ -211,7 +211,7 @@ def test_owner_blocks_preserve_mixed_active_order_and_complete_residual_jacobian
 
     mapping, input_parameters, states = _mixed_fit_mapping(tmp_path)
     result = fit(ParameterFit.from_mapping(mapping), base_path=tmp_path)
-    accepted = result.accepted_start
+    accepted = result.best_usable_start
     assert accepted is not None
     assert (
         tuple(
@@ -227,6 +227,29 @@ def test_owner_blocks_preserve_mixed_active_order_and_complete_residual_jacobian
     )
     assert accepted.rank == 3
     assert math.isfinite(accepted.condition_number)
+
+    evaluated = result.evaluated_rows
+    assert len(evaluated) == len(states)
+    assert tuple(row.predicted for row in evaluated) == pytest.approx(
+        accepted.predictions, rel=0.0, abs=0.0
+    )
+    assert tuple(row.scaled_residual for row in evaluated) == pytest.approx(
+        accepted.residuals, rel=0.0, abs=0.0
+    )
+    assert all(row.evaluation_status == "evaluated" for row in evaluated)
+    assert all(row.selector == "pressure" for row in evaluated)
+    assert all(row.unit == "pascal" and row.basis == "absolute" for row in evaluated)
+    assert result.evaluated_row_table_hash.startswith("sha256:")
+
+    candidate = result.export_candidate_parameters()
+    assert input_parameters.fingerprint == result.specification.parameters.fingerprint
+    assert candidate.fingerprint != input_parameters.fingerprint
+    for identity, expected in zip(_MIXED_IDENTITIES, accepted.final_physical, strict=True):
+        assert _parameter_value(candidate, identity) == pytest.approx(expected)
+    assert all(
+        row.candidate_parameter_identity == result.candidate_parameter_identity
+        for row in evaluated
+    )
 
     point = dict(zip(_MIXED_IDENTITIES, accepted.final_physical, strict=True))
     steps = (1.0e-5, 1.0e-3, 1.0e-5)
@@ -314,7 +337,7 @@ def test_tied_owner_coordinate_reports_interior_covariance_and_active_bound(
         },
     }
     interior = fit(mapping, base_path=tmp_path)
-    interior_start = interior.accepted_start
+    interior_start = interior.best_usable_start
     assert interior_start is not None
     assert interior_start.final_physical[0] == pytest.approx(0.05, abs=2.0e-8)
     assert interior_start.rank == 2
@@ -331,7 +354,7 @@ def test_tied_owner_coordinate_reports_interior_covariance_and_active_bound(
     )
     pair_coordinate["bounds"] = [-0.08, 0.04]
     result = fit(mapping, base_path=tmp_path)
-    accepted = result.accepted_start
+    accepted = result.best_usable_start
     assert accepted is not None
     assert accepted.final_physical[0] == pytest.approx(0.04, abs=1.0e-12)
     assert accepted.active_bounds == (0,)
@@ -506,13 +529,13 @@ def test_pure_saturation_owner_transfer_and_non_evaluable_trial_diagnostics(
     input_parameters = _pure_parameters(187.0)
     successful = fit(_pure_fit_mapping(tmp_path, input_parameters, "successful"))
     assert isinstance(successful, FitResult)
-    assert successful.accepted_start is not None
-    assert successful.accepted_start.owner_receipts == ()
-    assert successful.to_mapping()["accepted_start"] is not None
-    assert successful.accepted_start.final_physical[0] == pytest.approx(
+    assert successful.best_usable_start is not None
+    assert successful.best_usable_start.owner_receipts == ()
+    assert successful.to_mapping()["best_usable_start"] is not None
+    assert successful.best_usable_start.final_physical[0] == pytest.approx(
         _PURE_TRUE_VALUE, abs=1.0e-7
     )
-    fitted = successful.to_parameters()
+    fitted = successful.export_candidate_parameters()
     assert _parameter_value(input_parameters, _PURE_IDENTITY) == 187.0
     assert _parameter_value(fitted, _PURE_IDENTITY) == pytest.approx(_PURE_TRUE_VALUE, abs=1.0e-7)
 

@@ -34,6 +34,17 @@ def _finite_values(values: Sequence[float]) -> list[float | None]:
 
 
 @dataclass(frozen=True, slots=True)
+class _ReceiptRow:
+    values: tuple[tuple[str, float], ...]
+
+    def value(self, name: str) -> float:
+        for identity, value in self.values:
+            if identity == name:
+                return value
+        raise KeyError(name)
+
+
+@dataclass(frozen=True, slots=True)
 class OwnerReceipt:
     canonical_bytes_utf8: str
     digest: str
@@ -61,11 +72,67 @@ class FitCoordinateReceipt:
 
 
 @dataclass(frozen=True, slots=True)
+class FitRowReceipt:
+    """Immutable measurement metadata aligned with one optimizer row."""
+
+    identity: str
+    source_identity: str
+    source_hash: str
+    selector: str
+    series_metadata_json: str
+    observed: float
+    unit: str
+    basis: str
+    residual: str
+    scale: float
+    multiplier: float
+
+    def __post_init__(self) -> None:
+        if (
+            not self.identity
+            or not self.source_identity
+            or not self.source_hash.startswith("sha256:")
+            or not self.selector
+            or not self.series_metadata_json
+            or not self.unit
+            or not self.basis
+            or not self.residual
+            or not math.isfinite(self.observed)
+            or not math.isfinite(self.scale)
+            or self.scale <= 0.0
+            or not math.isfinite(self.multiplier)
+            or self.multiplier <= 0.0
+        ):
+            raise ValueError("fit row receipt is incomplete")
+        metadata = json.loads(self.series_metadata_json)
+        if not isinstance(metadata, Mapping):
+            raise TypeError("fit row series metadata must be a canonical object")
+        if _canonical(metadata).decode("utf-8") != self.series_metadata_json:
+            raise ValueError("fit row series metadata is not canonical JSON")
+
+    def to_mapping(self) -> dict[str, object]:
+        return {
+            "identity": self.identity,
+            "source_identity": self.source_identity,
+            "source_hash": self.source_hash,
+            "selector": self.selector,
+            "series_metadata": json.loads(self.series_metadata_json),
+            "observed": self.observed,
+            "unit": self.unit,
+            "basis": self.basis,
+            "residual": self.residual,
+            "scale": self.scale,
+            "multiplier": self.multiplier,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class FitSpecificationReceipt:
     canonical_bytes_utf8: str
     digest: str
     parameters: Parameters
     coordinates: tuple[FitCoordinateReceipt, ...]
+    rows: tuple[FitRowReceipt, ...]
     row_identities: tuple[str, ...]
     block_sizes: tuple[int, ...]
     input_row_count: int
@@ -78,20 +145,21 @@ class FitSpecificationReceipt:
         *,
         parameters: Parameters,
         coordinates: Sequence[FitCoordinateReceipt],
-        row_identities: Sequence[str],
+        rows: Sequence[FitRowReceipt],
         block_sizes: Sequence[int],
         input_row_count: int | None = None,
         dropped_row_count: int = 0,
-        allows_parameter_promotion: bool,
     ) -> FitSpecificationReceipt:
-        frozen_rows = tuple(row_identities)
+        frozen_rows = tuple(rows)
+        row_identities = tuple(row.identity for row in frozen_rows)
         frozen_blocks = tuple(block_sizes)
         frozen_coordinates = tuple(coordinates)
-        declared_input_rows = len(frozen_rows) if input_row_count is None else input_row_count
+        declared_input_rows = len(row_identities) if input_row_count is None else input_row_count
         if (
-            sum(frozen_blocks) != len(frozen_rows)
-            or declared_input_rows != len(frozen_rows) + dropped_row_count
+            sum(frozen_blocks) != len(row_identities)
+            or declared_input_rows != len(row_identities) + dropped_row_count
             or dropped_row_count < 0
+            or len(set(row_identities)) != len(row_identities)
         ):
             raise ValueError("fit specification row accounting is inconsistent")
         receipt_mapping = {
@@ -107,11 +175,11 @@ class FitSpecificationReceipt:
                 }
                 for coordinate in frozen_coordinates
             ],
-            "row_identities": list(frozen_rows),
+            "rows": [row.to_mapping() for row in frozen_rows],
+            "row_identities": list(row_identities),
             "block_sizes": list(frozen_blocks),
             "input_row_count": declared_input_rows,
             "dropped_row_count": dropped_row_count,
-            "result_policy": {"allows_parameter_promotion": allows_parameter_promotion},
         }
         canonical = _canonical(receipt_mapping).decode("utf-8")
         return cls(
@@ -120,6 +188,7 @@ class FitSpecificationReceipt:
             parameters,
             frozen_coordinates,
             frozen_rows,
+            row_identities,
             frozen_blocks,
             declared_input_rows,
             dropped_row_count,
@@ -127,22 +196,61 @@ class FitSpecificationReceipt:
 
     @classmethod
     def from_resolved_fit(cls, resolved: ResolvedFit) -> FitSpecificationReceipt:
-        row_identities: list[str] = []
+        rows: list[FitRowReceipt] = []
         block_sizes: list[int] = []
         for observation_index, observation in enumerate(resolved.observations):
-            states = (
-                len(observation.rows)
-                if observation.rows is not None
-                else len(observation.quadrature.rules[-1].nodes)
-                if observation.quadrature is not None
-                else 0
-            )
-            for state_index in range(states):
-                block_sizes.append(len(observation.specification.targets))
-                row_identities.extend(
-                    f"observation/{observation_index}/state/{state_index}/{target}"
-                    for target in observation.specification.targets
+            specification = observation.specification
+            canonical_units = dict(observation.canonical_units)
+            bases = dict(specification.basis)
+            residuals = dict(specification.residuals)
+            source = specification.source
+            source_identity = source.citation or source.path
+            if observation.rows is not None:
+                resolved_rows = tuple(
+                    (_ReceiptRow(row.values), specification.multiplier)
+                    for row in observation.rows
                 )
+            elif observation.quadrature is not None:
+                rule = observation.quadrature.rules[-1]
+                target = specification.targets[0]
+                resolved_rows = tuple(
+                    (
+                        _ReceiptRow(
+                            (("temperature_k", temperature), (target, observed))
+                        ),
+                        specification.multiplier * math.sqrt(weight),
+                    )
+                    for temperature, weight, observed in zip(
+                        rule.nodes, rule.weights, rule.observed_values, strict=True
+                    )
+                )
+            else:
+                raise ValueError("resolved observation has no measurement rows")
+            state_fields = tuple(name for name, _ in source.domain.bounds)
+            for state_index, (row, multiplier) in enumerate(resolved_rows):
+                block_sizes.append(len(observation.specification.targets))
+                metadata = {
+                    "observation_index": observation_index,
+                    "state_index": state_index,
+                    "state": {name: row.value(name) for name in state_fields},
+                    "composition": specification.composition,
+                }
+                for target in specification.targets:
+                    rows.append(
+                        FitRowReceipt(
+                            f"observation/{observation_index}/state/{state_index}/{target}",
+                            source_identity,
+                            observation.source_check.actual_sha256,
+                            target,
+                            _canonical(metadata).decode("utf-8"),
+                            row.value(target),
+                            canonical_units[target],
+                            bases[target],
+                            residuals[target],
+                            row.value(target),
+                            multiplier,
+                        )
+                    )
         return cls.create(
             resolved.to_mapping(),
             parameters=resolved.parameters,
@@ -156,10 +264,9 @@ class FitSpecificationReceipt:
                 )
                 for coordinate in resolved.coordinates
             ),
-            row_identities=row_identities,
+            rows=rows,
             block_sizes=block_sizes,
-            input_row_count=len(row_identities),
-            allows_parameter_promotion=True,
+            input_row_count=len(rows),
         )
 
     def to_mapping(self) -> Mapping[str, object]:
@@ -167,16 +274,6 @@ class FitSpecificationReceipt:
         if not isinstance(value, Mapping):
             raise TypeError("canonical fit specification receipt is not an object")
         return cast(Mapping[str, object], value)
-
-    @property
-    def allows_parameter_promotion(self) -> bool:
-        policy = self.to_mapping().get("result_policy")
-        if not isinstance(policy, Mapping) or not isinstance(
-            policy.get("allows_parameter_promotion"), bool
-        ):
-            raise TypeError("fit specification receipt has no canonical result policy")
-        return cast(bool, policy["allows_parameter_promotion"])
-
 
 @dataclass(frozen=True, slots=True)
 class BatchOutcome:
@@ -388,6 +485,42 @@ class FitStart:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class EvaluatedFitRow:
+    """One exact optimizer-row result; plotting consumes this table directly."""
+
+    identity: str
+    source_identity: str
+    source_hash: str
+    selector: str
+    series_metadata_json: str
+    observed: float
+    predicted: float
+    raw_difference: float
+    scaled_residual: float
+    unit: str
+    basis: str
+    evaluation_status: str
+    candidate_parameter_identity: str
+
+    def to_mapping(self) -> dict[str, object]:
+        return {
+            "identity": self.identity,
+            "source_identity": self.source_identity,
+            "source_hash": self.source_hash,
+            "selector": self.selector,
+            "series_metadata": json.loads(self.series_metadata_json),
+            "observed": self.observed,
+            "predicted": self.predicted,
+            "raw_difference": self.raw_difference,
+            "scaled_residual": self.scaled_residual,
+            "unit": self.unit,
+            "basis": self.basis,
+            "evaluation_status": self.evaluation_status,
+            "candidate_parameter_identity": self.candidate_parameter_identity,
+        }
+
+
 @dataclass(frozen=True, slots=True, init=False)
 class FitResult:
     specification: FitSpecificationReceipt
@@ -483,13 +616,91 @@ class FitResult:
         )
 
     @property
-    def accepted_start(self) -> FitStart | None:
+    def best_usable_start(self) -> FitStart | None:
         usable = tuple(start for start in self.starts if start.usable)
-        return min(usable, key=lambda start: (start.cost, start.index)) if usable else None
+        return (
+            min(usable, key=lambda start: (start.cost, start.start_identity))
+            if usable
+            else None
+        )
+
+    @property
+    def candidate_parameter_identity(self) -> str:
+        accepted = self.best_usable_start
+        if accepted is None:
+            return ""
+        payload = {
+            "input_parameter_fingerprint": self.specification.parameters.fingerprint,
+            "coordinates": [
+                {
+                    "parameter_identities": coordinate.parameter_identities,
+                    "unit": coordinate.unit,
+                    "value": value,
+                }
+                for coordinate, value in zip(
+                    self.specification.coordinates, accepted.final_physical, strict=True
+                )
+            ],
+        }
+        return f"sha256:{hashlib.sha256(_canonical(payload)).hexdigest()}"
+
+    @property
+    def evaluated_rows(self) -> tuple[EvaluatedFitRow, ...]:
+        accepted = self.best_usable_start
+        if accepted is None:
+            return ()
+        row_count = len(self.specification.rows)
+        if (
+            len(accepted.predictions) != row_count
+            or len(accepted.residuals) != row_count
+            or len(accepted.physical_jacobian)
+            != row_count * len(self.specification.coordinates)
+            or any(outcome.status != "evaluated" for outcome in accepted.batch_outcomes)
+            or any(
+                not math.isfinite(value)
+                for value in (
+                    *accepted.predictions,
+                    *accepted.residuals,
+                    *accepted.physical_jacobian,
+                )
+            )
+        ):
+            return ()
+        candidate = self.candidate_parameter_identity
+        return tuple(
+            EvaluatedFitRow(
+                identity=row.identity,
+                source_identity=row.source_identity,
+                source_hash=row.source_hash,
+                selector=row.selector,
+                series_metadata_json=row.series_metadata_json,
+                observed=row.observed,
+                predicted=prediction,
+                raw_difference=prediction - row.observed,
+                scaled_residual=residual,
+                unit=row.unit,
+                basis=row.basis,
+                evaluation_status="evaluated",
+                candidate_parameter_identity=candidate,
+            )
+            for row, prediction, residual in zip(
+                self.specification.rows,
+                accepted.predictions,
+                accepted.residuals,
+                strict=True,
+            )
+        )
+
+    @property
+    def evaluated_row_table_hash(self) -> str:
+        rows = self.evaluated_rows
+        if not rows:
+            return ""
+        return f"sha256:{hashlib.sha256(_canonical([row.to_mapping() for row in rows])).hexdigest()}"
 
     @property
     def covariance_coordinate_identities(self) -> tuple[str, ...]:
-        accepted = self.accepted_start
+        accepted = self.best_usable_start
         if accepted is None or accepted.covariance_status != "available":
             return ()
         return tuple(
@@ -499,7 +710,7 @@ class FitResult:
 
     @property
     def physical_covariance(self) -> tuple[float, ...]:
-        accepted = self.accepted_start
+        accepted = self.best_usable_start
         if accepted is None or accepted.covariance_status != "available":
             return ()
         scales = tuple(
@@ -514,7 +725,7 @@ class FitResult:
         )
 
     def fitted_values(self) -> tuple[tuple[str, float, str], ...]:
-        accepted = self.accepted_start
+        accepted = self.best_usable_start
         if accepted is None:
             return ()
         values: list[tuple[str, float, str]] = []
@@ -527,7 +738,7 @@ class FitResult:
         return tuple(values)
 
     def _payload(self) -> dict[str, object]:
-        accepted = self.accepted_start
+        accepted = self.best_usable_start
         return {
             "schema": "epcsaft.fit-result",
             "schema_version": 2,
@@ -542,7 +753,10 @@ class FitResult:
                 {"identity": identity, "value": _finite_or_none(value), "unit": unit}
                 for identity, value, unit in self.fitted_values()
             ],
-            "accepted_start": None if accepted is None else accepted.index,
+            "candidate_parameter_identity": self.candidate_parameter_identity or None,
+            "evaluated_row_table_hash": self.evaluated_row_table_hash or None,
+            "evaluated_rows": [row.to_mapping() for row in self.evaluated_rows],
+            "best_usable_start": None if accepted is None else accepted.index,
             "starts": [start.to_mapping(self.specification.block_sizes) for start in self.starts],
         }
 
@@ -557,30 +771,35 @@ class FitResult:
         target.write_bytes(self.to_json_bytes() + b"\n")
         return target
 
-    def to_parameters(self) -> Parameters:
-        if not self.specification.allows_parameter_promotion:
-            raise RuntimeError(
-                "this fit family is diagnostic and cannot promote parameters directly"
-            )
+    def export_candidate_parameters(self) -> Parameters:
+        """Create a new provenance-linked candidate without granting adoption authority."""
+
+        if not self.evaluated_rows or not self.evaluated_row_table_hash:
+            raise RuntimeError("fit has no complete certified candidate point")
         values = {
             identity: unit_registry.Quantity(value, unit)
             for identity, value, unit in self.fitted_values()
         }
         if not values:
             raise RuntimeError("fit has no usable start")
-        suffix = self.digest.removeprefix("sha256:")[:16]
+        suffix = self.candidate_parameter_identity.removeprefix("sha256:")[:16]
         return self.specification.parameters.with_values(
             values,
-            source_id=f"fit-result-{suffix}",
-            locator=f"FitResult {self.digest}",
+            source_id=f"fit-candidate-{suffix}",
+            locator=(
+                f"FitResult {self.digest}; evaluated-row-table "
+                f"{self.evaluated_row_table_hash}"
+            ),
         )
 
 
 __all__ = (
     "BatchOutcome",
+    "EvaluatedFitRow",
     "FitAccounting",
     "FitCoordinateReceipt",
     "FitResult",
+    "FitRowReceipt",
     "FitSpecificationReceipt",
     "FitStart",
     "OwnerReceipt",

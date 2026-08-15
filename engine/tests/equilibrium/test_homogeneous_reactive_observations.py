@@ -1121,7 +1121,7 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
         ),
         base_path=tmp_path,
     )
-    accepted = fit.accepted_start
+    accepted = fit.best_usable_start
     assert accepted is not None
     assert accepted.final_physical == pytest.approx((0.08,), abs=2.0e-8)
     assert accepted.predictions == pytest.approx(
@@ -1140,8 +1140,10 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
     assert fit.accounting.dropped_rows == 1
     assert fit.accounting.attempted_starts == 2
     assert fit.accounting.accepted_starts == 2
-    with pytest.raises(RuntimeError, match="diagnostic"):
-        fit.to_parameters()
+    candidate = fit.export_candidate_parameters()
+    assert candidate.fingerprint != parameters.fingerprint
+    assert fit.evaluated_row_table_hash.startswith("sha256:")
+    assert len(fit.evaluated_rows) == 5
     fit_mapping = fit.to_mapping()
     accepted_receipts = fit_mapping["starts"][accepted.index]["owner_receipts"]
     assert isinstance(accepted_receipts, list)
@@ -1216,7 +1218,7 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
         ),
         base_path=tmp_path,
     )
-    bounded = bounded_fit.accepted_start
+    bounded = bounded_fit.best_usable_start
     assert bounded is not None
     assert bounded.final_physical == pytest.approx((0.05,), abs=2.0e-9)
     assert bounded.rank == 1

@@ -14,7 +14,7 @@ request = Path(
 )
 result = fit(request)
 
-usable = result.accepted_start
+usable = result.best_usable_start
 if usable is None:
     raise RuntimeError("no usable fit start")
 
@@ -29,7 +29,7 @@ Path("propane-candidate.parameters.json").write_text(
 )
 ```
 
-The current `accepted_start` property means optimizer-usable start; it is not
+The `best_usable_start` property means optimizer-usable start; it is not
 a scientific acceptance or parameter-adoption status. The GREPE hard cutover
 will replace this ambiguous public wording with `best_usable_start`.
 

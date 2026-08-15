@@ -665,7 +665,7 @@ def test_reactive_bubble_uses_canonical_regression_fit_and_opaque_receipt(
         },
     }
     fitted = regression.fit(mapping, base_path=tmp_path)
-    accepted = fitted.accepted_start
+    accepted = fitted.best_usable_start
     assert accepted is not None
     assert accepted.final_physical == pytest.approx((value,), abs=2.0e-9)
     assert accepted.predictions == pytest.approx((pressure,), rel=2.0e-10)

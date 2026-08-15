@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -51,6 +52,7 @@ from ._resolve import ResolvedFit
 from ._result import (
     FitCoordinateReceipt,
     FitResult,
+    FitRowReceipt,
     FitSpecificationReceipt,
     FitStart,
 )
@@ -1095,8 +1097,30 @@ def _specification_receipt(
             )
             for coordinate in problem.coordinates
         ),
-        row_identities=tuple(
-            target.identity
+        rows=tuple(
+            FitRowReceipt(
+                target.identity,
+                target.source_identity,
+                target.source_hash,
+                target.prediction_identity,
+                json.dumps(
+                    {
+                        "aggregate_identity": target.aggregate_identity,
+                        "batch_identity": batch.identity,
+                        "covariance_identity": target.covariance_identity,
+                        "measurement_classification": target.measurement_classification,
+                        "role": target.role,
+                    },
+                    separators=(",", ":"),
+                    sort_keys=True,
+                ),
+                target.observed,
+                target.unit,
+                target.measurement_classification,
+                target.residual,
+                target.scale,
+                target.multiplier,
+            )
             for batch in active_batches
             for target in batch.targets
             if target.included
@@ -1108,7 +1132,6 @@ def _specification_receipt(
         dropped_row_count=sum(
             not target.included for batch in problem.batches for target in batch.targets
         ),
-        allows_parameter_promotion=False,
     )
 
 
