@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 from dataclasses import dataclass
 from typing import Any, Literal, cast
@@ -20,21 +22,30 @@ from ._api import (
     ProviderPhase,
 )
 from ._observations import (
+    ActiveParameterTrialReceipt,
     HomogeneousBranchPolicy,
     HomogeneousContinuationReference,
+    HomogeneousReactiveObservationDescriptor,
     HomogeneousReactiveObservationProblem,
     HomogeneousReactiveObservationRow,
+    HomogeneousReactiveOwnerObservation,
     evaluate_homogeneous_reactive_observations,
     homogeneous_reactive_observation_descriptor,
+    serialize_homogeneous_reactive_owner_receipt,
+    validate_homogeneous_reactive_owner_receipt,
 )
 from ._reactive_vle import (
     IdealGasVaporComparison,
     ProviderNonidealVapor,
     ReactiveBubbleContinuationReference,
+    ReactiveBubbleObservationDescriptor,
     ReactiveBubbleObservationRow,
     ReactiveBubbleVLEProblem,
+    certify_reactive_bubble_continuation_reference,
     evaluate_reactive_bubble_observations,
     reactive_bubble_observation_descriptor,
+    serialize_reactive_bubble_owner_receipt,
+    validate_reactive_bubble_owner_receipt,
 )
 
 type AmountRole = Literal["finite", "incipient"]
@@ -76,6 +87,20 @@ _EQUILIBRIUM_SELECTORS = frozenset(
         "phase.partial_pressure",
     }
 )
+_SELECTOR_UNITS = {
+    "system.pressure": "pascal",
+    "phase.amount": "mole",
+    "phase.mole_fraction": "dimensionless",
+    "phase.molality": "mole / kilogram",
+    "phase.molar_density": "mole / meter**3",
+    "phase.compressibility_factor": "dimensionless",
+    "phase.pressure": "pascal",
+    "phase.fugacity": "pascal",
+    "phase.log_activity": "dimensionless",
+    "phase.log_fugacity": "dimensionless",
+    "phase.chemical_potential_over_rt": "dimensionless",
+    "phase.partial_pressure": "pascal",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -180,6 +205,8 @@ class EquilibriumOutput:
 
     identity: str
     selector: EquilibriumSelector
+    unit: str
+    basis: str
     phase_identity: str | None = None
     coefficients: tuple[float, ...] = ()
     solvent_mass_coefficients_kg_per_mol: tuple[float, ...] = ()
@@ -195,7 +222,12 @@ class EquilibriumOutput:
             "solvent_mass_coefficients_kg_per_mol",
             tuple(self.solvent_mass_coefficients_kg_per_mol),
         )
-        if not self.identity or self.selector not in _EQUILIBRIUM_SELECTORS:
+        if (
+            not self.identity
+            or self.selector not in _EQUILIBRIUM_SELECTORS
+            or self.unit != _SELECTOR_UNITS.get(self.selector)
+            or not self.basis
+        ):
             raise ValueError("equilibrium output identity or selector is invalid")
         if self.selector == "system.pressure":
             if self.phase_identity is not None or self.coefficients:
@@ -267,6 +299,9 @@ class GeneralReactiveEquilibriumProblem:
 @dataclass(frozen=True, slots=True)
 class GeneralEquilibriumRowResult:
     identity: str
+    selector: EquilibriumSelector
+    unit: str
+    basis: str
     status: Literal["evaluated", "non_evaluable"]
     value: float | None
     jacobian: tuple[float, ...] | None
@@ -274,16 +309,61 @@ class GeneralEquilibriumRowResult:
 
 
 @dataclass(frozen=True, slots=True)
+class GeneralReactiveEquilibriumDescriptor:
+    """Closed GREPE request/output/derivative identity consumed by Regression."""
+
+    identity: Literal["equilibrium.general-reactive"]
+    version: int
+    problem_identity: str
+    component_ids: tuple[str, ...]
+    phase_identities: tuple[str, ...]
+    outputs: tuple[EquilibriumOutput, ...]
+    active_parameter_identities: tuple[str, ...]
+    active_parameter_units: tuple[str, ...]
+    parameter_fingerprint: str
+    active_parameter_selection_fingerprint: str
+    problem_fingerprint: str
+    reaction_fingerprint: str
+    topology_fingerprint: str
+    reference_fingerprint: str
+    domain_fingerprint: str
+    certificate_scope: str
+    jacobian_shape: tuple[int, int]
+    fingerprint: str
+    _owner_kind: Literal["homogeneous", "reactive_bubble"]
+    _owner_descriptor: (
+        HomogeneousReactiveObservationDescriptor | ReactiveBubbleObservationDescriptor
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class GeneralEquilibriumOwnerObservation:
+    target_identity: str
+    prediction_identity: str
+    aggregate_identity: str | None = None
+    covariance_identity: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.target_identity or not self.prediction_identity:
+            raise ValueError("GREPE owner observation identities are required")
+        if bool(self.aggregate_identity) != bool(self.covariance_identity):
+            raise ValueError("GREPE aggregate and covariance identities must be paired")
+
+
+@dataclass(frozen=True, slots=True)
 class GeneralReactiveEquilibriumResult:
     """One generic result over a locally certified admitted GREPE formulation."""
 
     problem: GeneralReactiveEquilibriumProblem
+    descriptor: GeneralReactiveEquilibriumDescriptor | None
     status: Literal["evaluated", "non_evaluable"]
     rows: tuple[GeneralEquilibriumRowResult, ...]
     phases: tuple[EquilibriumPhaseState, ...]
     failure: NonEvaluableTrial | None
     certificate_scope: str
     globality_claim: Literal["not_established"]
+    trial: ActiveParameterTrialReceipt | None
+    branch_signature: tuple[object, ...] | None
     owner_result: object | None
 
     @property
@@ -375,6 +455,8 @@ def _phase_model(
     phase: ReactivePhase,
 ) -> ProviderPhase | IdealGasPhase:
     if isinstance(phase.model, ProviderModel):
+        if phase.model.reference_id != "installed-provider-eos":
+            raise ValueError("GREPE provider model reference is not registered")
         return ProviderPhase(model, phase.model.admissible_packing_fraction_interval)
     return IdealGasPhase(model.parameter_fingerprint, phase.model.reference_id)
 
@@ -422,10 +504,16 @@ def _bubble_quantity(output: EquilibriumOutput, finite: ReactivePhase, incipient
         raise ValueError("output selector is unavailable for the declared phase role") from error
 
 
-def _generic_rows(rows: tuple[object, ...]) -> tuple[GeneralEquilibriumRowResult, ...]:
+def _generic_rows(
+    outputs: tuple[EquilibriumOutput, ...],
+    rows: tuple[object, ...],
+) -> tuple[GeneralEquilibriumRowResult, ...]:
     return tuple(
         GeneralEquilibriumRowResult(
-            identity=cast(Any, row).identity,
+            identity=output.identity,
+            selector=output.selector,
+            unit=output.unit,
+            basis=output.basis,
             status=cast(Any, row).status,
             value=cast(Any, row).value,
             jacobian=cast(Any, row).jacobian,
@@ -435,7 +523,171 @@ def _generic_rows(rows: tuple[object, ...]) -> tuple[GeneralEquilibriumRowResult
                 else "" if cast(Any, row).failure is None else cast(Any, row).failure.diagnostic
             ),
         )
-        for row in rows
+        for output, row in zip(outputs, rows, strict=True)
+    )
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+
+
+def _fingerprint(schema: str, value: object) -> str:
+    payload = _canonical_json({"schema": schema, "value": value}).encode("utf-8")
+    return f"sha256:{hashlib.sha256(payload).hexdigest()}"
+
+
+def _state_role_payload(role: Fixed | Solved, unit: str, name: str) -> dict[str, object]:
+    if isinstance(role, Fixed):
+        return {"role": "fixed", "value": _quantity(role.value, unit, name), "unit": unit}
+    return {
+        "role": "solved",
+        "initial": _quantity(role.initial, unit, f"{name} initial"),
+        "bounds": tuple(_quantity(item, unit, f"{name} bound") for item in role.bounds),
+        "starts": tuple(_quantity(item, unit, f"{name} start") for item in role.starts),
+        "unit": unit,
+    }
+
+
+def _phase_payload(phase: ReactivePhase) -> dict[str, object]:
+    if isinstance(phase.support, DeclaredNeutralComponents):
+        support = {
+            "kind": "declared_neutral_components",
+            "component_ids": phase.support.component_ids,
+        }
+    elif isinstance(phase.support, NeutralComponents):
+        support = {"kind": "neutral_components", "component_ids": ()}
+    else:
+        support = {"kind": "all_components", "component_ids": ()}
+    if isinstance(phase.model, ProviderModel):
+        model: dict[str, object] = {
+            "kind": "provider",
+            "reference_id": phase.model.reference_id,
+            "admissible_packing_fraction_interval": (
+                phase.model.admissible_packing_fraction_interval
+            ),
+        }
+    else:
+        model = {
+            "kind": "ideal_gas",
+            "reference_id": phase.model.reference_id,
+            "admissible_packing_fraction_interval": None,
+        }
+    return {
+        "identity": phase.identity,
+        "fluid_role": phase.fluid_role,
+        "amount_role": phase.amount_role,
+        "support": support,
+        "model": model,
+        "continuation_identity": phase.continuation_identity,
+        "branch_policy": phase.branch_policy,
+    }
+
+
+def _descriptor(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    owner_kind: Literal["homogeneous", "reactive_bubble"],
+    owner: HomogeneousReactiveObservationDescriptor | ReactiveBubbleObservationDescriptor,
+    certificate_scope: str,
+) -> GeneralReactiveEquilibriumDescriptor:
+    outputs = tuple(problem.outputs)
+    units_match = all(
+        epcsaft.unit_registry.Quantity(1.0, output.unit).to(cast(Any, row).unit).magnitude
+        == 1.0
+        for output, row in zip(outputs, owner.rows, strict=True)
+    )
+    if tuple(output.identity for output in outputs) != owner.row_identities or not units_match:
+        raise ValueError("GREPE outputs do not match the compiled owner descriptor")
+    payload = {
+        "problem_identity": problem.identity,
+        "component_ids": model.component_ids,
+        "temperature": _state_role_payload(problem.temperature, "kelvin", "temperature"),
+        "pressure": _state_role_payload(problem.pressure, "pascal", "pressure"),
+        "phases": tuple(_phase_payload(phase) for phase in problem.phases),
+        "reaction_phase_ids": problem.reaction_phase_ids,
+        "coupled_continuation_identity": problem.continuation_identity,
+        "outputs": tuple(
+            {
+                "identity": output.identity,
+                "selector": output.selector,
+                "unit": output.unit,
+                "basis": output.basis,
+                "phase_identity": output.phase_identity,
+                "coefficients": output.coefficients,
+                "solvent_mass_coefficients_kg_per_mol": (
+                    output.solvent_mass_coefficients_kg_per_mol
+                ),
+                "support": output.support,
+                "censor_limit": output.censor_limit,
+                "aggregate_identity": output.aggregate_identity,
+                "covariance_identity": output.covariance_identity,
+            }
+            for output in outputs
+        ),
+        "owner_kind": owner_kind,
+        "owner_descriptor_fingerprint": owner.fingerprint,
+        "certificate_scope": certificate_scope,
+    }
+    return GeneralReactiveEquilibriumDescriptor(
+        "equilibrium.general-reactive",
+        1,
+        problem.identity,
+        model.component_ids,
+        tuple(phase.identity for phase in problem.phases),
+        outputs,
+        owner.active_parameter_identities,
+        owner.active_parameter_units,
+        owner.parameter_fingerprint,
+        owner.active_parameter_selection_fingerprint,
+        owner.problem_fingerprint,
+        owner.reaction_fingerprint,
+        owner.topology_fingerprint,
+        owner.reference_fingerprint,
+        owner.domain_fingerprint,
+        certificate_scope,
+        owner.jacobian_shape,
+        _fingerprint("epcsaft.grepe-descriptor.v1", payload),
+        owner_kind,
+        owner,
+    )
+
+
+def _homogeneous_branch_signature(owner: object) -> tuple[object, ...] | None:
+    state = cast(Any, owner).state
+    branch = cast(Any, owner).physical_branch
+    chemical = cast(Any, owner).equilibrium
+    if state is None or branch is None or chemical is None:
+        return None
+    return (
+        branch.branch_family_identity,
+        branch.continuation_identity,
+        state.phase_identity,
+        state.phase_role,
+        state.chart_topology,
+        state.phase_role_receipt.phase_selection_claim,
+        state.chemical_search_certificate.selection_label,
+    )
+
+
+def _bubble_branch_signature(owner: object) -> tuple[object, ...] | None:
+    state = cast(Any, owner).liquid_state
+    branch = cast(Any, owner).physical_branch
+    if state is None or branch is None:
+        return None
+    return (
+        branch.branch_family_identity,
+        branch.continuation_identity,
+        state.phase_identity,
+        state.phase_role,
+        state.chart_topology,
+        state.phase_role_receipt.phase_selection_claim,
+        state.chemical_search_certificate.selection_label,
     )
 
 
@@ -446,9 +698,19 @@ def _unsupported(
     failure = NonEvaluableTrial("unsupported_topology", diagnostic)
     return GeneralReactiveEquilibriumResult(
         problem,
+        None,
         "non_evaluable",
         tuple(
-            GeneralEquilibriumRowResult(output.identity, "non_evaluable", None, None, diagnostic)
+            GeneralEquilibriumRowResult(
+                output.identity,
+                output.selector,
+                output.unit,
+                output.basis,
+                "non_evaluable",
+                None,
+                None,
+                diagnostic,
+            )
             for output in problem.outputs
         ),
         (),
@@ -456,24 +718,41 @@ def _unsupported(
         "unsupported",
         "not_established",
         None,
+        None,
+        None,
     )
 
 
-def solve_general_reactive_equilibrium(
+@dataclass(frozen=True, slots=True)
+class _HomogeneousCompilation:
+    temperature: Quantity[Any]
+    pressure: Quantity[Any]
+    owner_problem: HomogeneousReactiveObservationProblem
+    owner_descriptor: HomogeneousReactiveObservationDescriptor
+    descriptor: GeneralReactiveEquilibriumDescriptor
+
+
+@dataclass(frozen=True, slots=True)
+class _BubbleCompilation:
+    temperature: Quantity[Any]
+    owner_problem: ReactiveBubbleVLEProblem
+    owner_descriptor: ReactiveBubbleObservationDescriptor
+    descriptor: GeneralReactiveEquilibriumDescriptor
+
+
+def _compile_general_reactive_equilibrium(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
     *,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
-) -> GeneralReactiveEquilibriumResult:
-    """Compile and solve one currently admitted role-declared GREPE condition."""
-
+) -> _HomogeneousCompilation | _BubbleCompilation | str:
     if not isinstance(model, epcsaft.Mixture):
         raise TypeError("GREPE currently requires an epcsaft.Mixture")
     if not isinstance(problem, GeneralReactiveEquilibriumProblem):
         raise TypeError("problem must be a GeneralReactiveEquilibriumProblem")
     _preflight(model, problem)
     if not isinstance(problem.temperature, Fixed):
-        return _unsupported(problem, "solved temperature is not admitted")
+        return "solved temperature is not admitted"
     temperature_k = _quantity(problem.temperature.value, "kelvin", "temperature")
     temperature = temperature_k * epcsaft.unit_registry.kelvin
     finite = tuple(phase for phase in problem.phases if phase.amount_role == "finite")
@@ -484,8 +763,9 @@ def solve_general_reactive_equilibrium(
         if problem.reaction_phase_ids != (phase.identity,) or not isinstance(
             phase.support, AllComponents
         ):
-            return _unsupported(problem, "single-phase reaction/support topology is unsupported")
+            return "single-phase reaction/support topology is unsupported"
         pressure_pa = _quantity(problem.pressure.value, "pascal", "pressure")
+        pressure = pressure_pa * epcsaft.unit_registry.pascal
         homogeneous_owner_problem = HomogeneousReactiveObservationProblem(
             problem.identity,
             phase.identity,
@@ -512,22 +792,19 @@ def solve_general_reactive_equilibrium(
         homogeneous_descriptor = homogeneous_reactive_observation_descriptor(
             homogeneous_owner_problem, owner_rows, active_parameters=active_parameters
         )
-        homogeneous_owner = evaluate_homogeneous_reactive_observations(
-            homogeneous_owner_problem,
-            temperature,
-            pressure_pa * epcsaft.unit_registry.pascal,
-            homogeneous_descriptor,
-            active_parameters=active_parameters,
-        )
-        return GeneralReactiveEquilibriumResult(
+        descriptor = _descriptor(
+            model,
             problem,
-            homogeneous_owner.status,
-            _generic_rows(cast(tuple[object, ...], homogeneous_owner.rows)),
-            (),
-            homogeneous_owner.failure,
+            "homogeneous",
+            homogeneous_descriptor,
             "fixed_TP_single_finite_reacting_phase",
-            "not_established",
-            homogeneous_owner,
+        )
+        return _HomogeneousCompilation(
+            temperature,
+            pressure,
+            homogeneous_owner_problem,
+            homogeneous_descriptor,
+            descriptor,
         )
 
     if (
@@ -543,7 +820,7 @@ def solve_general_reactive_equilibrium(
         liquid, vapor = finite[0], incipient[0]
         liquid_model = _phase_model(model, liquid)
         if not isinstance(liquid_model, ProviderPhase):
-            return _unsupported(problem, "the admitted finite reacting liquid uses Provider EOS")
+            return "the admitted finite reacting liquid uses Provider EOS"
         liquid_problem = HomogeneousReactiveObservationProblem(
             f"{problem.identity}/finite/{liquid.identity}",
             liquid.identity,
@@ -598,35 +875,279 @@ def solve_general_reactive_equilibrium(
             bubble_owner_rows,
             active_parameters=active_parameters,
         )
-        bubble_owner = evaluate_reactive_bubble_observations(
-            bubble_owner_problem,
-            temperature,
+        descriptor = _descriptor(
+            model,
+            problem,
+            "reactive_bubble",
             bubble_descriptor,
+            "fixed_T_one_finite_liquid_one_incipient_vapor",
+        )
+        return _BubbleCompilation(
+            temperature,
+            bubble_owner_problem,
+            bubble_descriptor,
+            descriptor,
+        )
+
+    return "declared reactive phase/state topology is not admitted"
+
+
+def general_reactive_equilibrium_descriptor(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None = None,
+) -> GeneralReactiveEquilibriumDescriptor:
+    """Describe one admitted GREPE request without evaluating thermodynamics."""
+
+    compiled = _compile_general_reactive_equilibrium(
+        model, problem, active_parameters=active_parameters
+    )
+    if isinstance(compiled, str):
+        raise ValueError(compiled)
+    return compiled.descriptor
+
+
+def certify_general_reactive_equilibrium_continuation_reference(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None = None,
+    maximum_log_pressure_distance: float,
+    maximum_log_composition_distance: float,
+    maximum_log_volume_distance: float,
+) -> ReactiveBubbleContinuationReference:
+    """Certify the local coupled branch of an admitted incipient GREPE request."""
+
+    if problem.continuation_reference is not None:
+        raise ValueError("GREPE continuation certification requires an unanchored request")
+    compiled = _compile_general_reactive_equilibrium(
+        model, problem, active_parameters=active_parameters
+    )
+    if isinstance(compiled, str):
+        raise ValueError(compiled)
+    if not isinstance(compiled, _BubbleCompilation):
+        raise ValueError("this admitted GREPE formulation has no coupled continuation")
+    return certify_reactive_bubble_continuation_reference(
+        compiled.owner_problem,
+        compiled.temperature,
+        active_parameters=active_parameters,
+        maximum_log_pressure_distance=maximum_log_pressure_distance,
+        maximum_log_composition_distance=maximum_log_composition_distance,
+        maximum_log_volume_distance=maximum_log_volume_distance,
+    )
+
+
+def solve_general_reactive_equilibrium(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None = None,
+) -> GeneralReactiveEquilibriumResult:
+    """Compile and solve one currently admitted role-declared GREPE condition."""
+
+    compiled = _compile_general_reactive_equilibrium(
+        model, problem, active_parameters=active_parameters
+    )
+    if isinstance(compiled, str):
+        return _unsupported(problem, compiled)
+    if isinstance(compiled, _HomogeneousCompilation):
+        homogeneous_owner = evaluate_homogeneous_reactive_observations(
+            compiled.owner_problem,
+            compiled.temperature,
+            compiled.pressure,
+            compiled.owner_descriptor,
             active_parameters=active_parameters,
         )
         return GeneralReactiveEquilibriumResult(
             problem,
-            bubble_owner.status,
-            _generic_rows(cast(tuple[object, ...], bubble_owner.rows)),
-            bubble_owner.phases,
-            bubble_owner.failure,
-            "fixed_T_one_finite_liquid_one_incipient_vapor",
+            compiled.descriptor,
+            homogeneous_owner.status,
+            _generic_rows(problem.outputs, cast(tuple[object, ...], homogeneous_owner.rows)),
+            (),
+            homogeneous_owner.failure,
+            compiled.descriptor.certificate_scope,
             "not_established",
-            bubble_owner,
+            homogeneous_owner.trial,
+            _homogeneous_branch_signature(homogeneous_owner),
+            homogeneous_owner,
         )
+    bubble_owner = evaluate_reactive_bubble_observations(
+        compiled.owner_problem,
+        compiled.temperature,
+        compiled.owner_descriptor,
+        active_parameters=active_parameters,
+    )
+    return GeneralReactiveEquilibriumResult(
+        problem,
+        compiled.descriptor,
+        bubble_owner.status,
+        _generic_rows(problem.outputs, cast(tuple[object, ...], bubble_owner.rows)),
+        bubble_owner.phases,
+        bubble_owner.failure,
+        compiled.descriptor.certificate_scope,
+        "not_established",
+        bubble_owner.trial,
+        _bubble_branch_signature(bubble_owner),
+        bubble_owner,
+    )
 
-    return _unsupported(problem, "declared reactive phase/state topology is not admitted")
+
+def _owner_observation_payload(
+    observation: GeneralEquilibriumOwnerObservation,
+) -> dict[str, object]:
+    return {
+        "target_identity": observation.target_identity,
+        "prediction_identity": observation.prediction_identity,
+        "aggregate_identity": observation.aggregate_identity,
+        "covariance_identity": observation.covariance_identity,
+    }
+
+
+def _validated_observation_selection(
+    descriptor: GeneralReactiveEquilibriumDescriptor,
+    observations: tuple[GeneralEquilibriumOwnerObservation, ...],
+) -> tuple[GeneralEquilibriumOwnerObservation, ...]:
+    selected = tuple(observations)
+    outputs = {output.identity: output for output in descriptor.outputs}
+    if not selected or len({item.target_identity for item in selected}) != len(selected):
+        raise ValueError("GREPE owner observations must be nonempty and target-unique")
+    for observation in selected:
+        output = outputs.get(observation.prediction_identity)
+        if (
+            output is None
+            or output.aggregate_identity != observation.aggregate_identity
+            or output.covariance_identity != observation.covariance_identity
+        ):
+            raise ValueError("GREPE owner observation selection is inconsistent")
+    return selected
+
+
+def serialize_general_reactive_equilibrium_receipt(
+    result: GeneralReactiveEquilibriumResult,
+    *,
+    batch_identity: str,
+    observations: tuple[GeneralEquilibriumOwnerObservation, ...],
+) -> str:
+    """Serialize one canonical opaque GREPE owner receipt."""
+
+    descriptor = result.descriptor
+    if result.status != "evaluated" or descriptor is None or result.owner_result is None:
+        raise ValueError("only evaluated GREPE results have owner receipts")
+    selected = _validated_observation_selection(descriptor, observations)
+    if descriptor._owner_kind == "homogeneous":
+        if not isinstance(result.problem.temperature, Fixed) or not isinstance(
+            result.problem.pressure, Fixed
+        ):
+            raise ValueError("homogeneous GREPE receipt requires fixed T and P")
+        owner_json = serialize_homogeneous_reactive_owner_receipt(
+            cast(Any, result.owner_result),
+            batch_identity=batch_identity,
+            requested_temperature=result.problem.temperature.value,
+            requested_pressure=result.problem.pressure.value,
+            observations=tuple(
+                HomogeneousReactiveOwnerObservation(
+                    item.target_identity,
+                    item.prediction_identity,
+                    item.aggregate_identity,
+                    item.covariance_identity,
+                )
+                for item in selected
+            ),
+        )
+    else:
+        owner_json = serialize_reactive_bubble_owner_receipt(
+            cast(Any, result.owner_result),
+            batch_identity=batch_identity,
+        )
+    return _canonical_json(
+        {
+            "schema": "epcsaft.grepe-owner-receipt.v1",
+            "batch_identity": batch_identity,
+            "descriptor_fingerprint": descriptor.fingerprint,
+            "owner_kind": descriptor._owner_kind,
+            "owner_receipt": json.loads(owner_json),
+            "observations": tuple(_owner_observation_payload(item) for item in selected),
+        }
+    )
+
+
+def validate_general_reactive_equilibrium_receipt(
+    receipt_json: str,
+    *,
+    descriptor: GeneralReactiveEquilibriumDescriptor,
+    problem: GeneralReactiveEquilibriumProblem,
+    batch_identity: str,
+    active_parameters: epcsaft.ActiveParameterSet,
+    observations: tuple[GeneralEquilibriumOwnerObservation, ...],
+) -> str:
+    """Validate canonical GREPE owner bytes and return their SHA-256 identity."""
+
+    payload = json.loads(receipt_json)
+    if not isinstance(payload, dict) or _canonical_json(payload) != receipt_json:
+        raise ValueError("GREPE owner receipt is not canonical JSON")
+    selected = _validated_observation_selection(descriptor, observations)
+    expected_observations = tuple(_owner_observation_payload(item) for item in selected)
+    if (
+        payload.get("schema") != "epcsaft.grepe-owner-receipt.v1"
+        or payload.get("batch_identity") != batch_identity
+        or payload.get("descriptor_fingerprint") != descriptor.fingerprint
+        or payload.get("owner_kind") != descriptor._owner_kind
+        or payload.get("observations") != list(expected_observations)
+    ):
+        raise ValueError("GREPE owner receipt identity or observations do not match")
+    owner_payload = payload.get("owner_receipt")
+    if not isinstance(owner_payload, dict):
+        raise TypeError("GREPE owner receipt payload is missing")
+    owner_json = _canonical_json(owner_payload)
+    if descriptor._owner_kind == "homogeneous":
+        if not isinstance(problem.temperature, Fixed) or not isinstance(problem.pressure, Fixed):
+            raise ValueError("homogeneous GREPE receipt requires fixed T and P")
+        validate_homogeneous_reactive_owner_receipt(
+            owner_json,
+            descriptor=cast(HomogeneousReactiveObservationDescriptor, descriptor._owner_descriptor),
+            batch_identity=batch_identity,
+            requested_temperature=problem.temperature.value,
+            requested_pressure=problem.pressure.value,
+            active_parameters=active_parameters,
+            observations=tuple(
+                HomogeneousReactiveOwnerObservation(
+                    item.target_identity,
+                    item.prediction_identity,
+                    item.aggregate_identity,
+                    item.covariance_identity,
+                )
+                for item in selected
+            ),
+        )
+    else:
+        if not isinstance(problem.temperature, Fixed):
+            raise ValueError("reactive bubble GREPE receipt requires fixed temperature")
+        validate_reactive_bubble_owner_receipt(
+            owner_json,
+            descriptor=cast(ReactiveBubbleObservationDescriptor, descriptor._owner_descriptor),
+            batch_identity=batch_identity,
+            requested_temperature=problem.temperature.value,
+            active_parameters=active_parameters,
+        )
+    return f"sha256:{hashlib.sha256(receipt_json.encode('utf-8')).hexdigest()}"
 
 
 __all__ = (
     "EquilibriumOutput",
     "Fixed",
     "GeneralEquilibriumRowResult",
+    "GeneralEquilibriumOwnerObservation",
+    "GeneralReactiveEquilibriumDescriptor",
     "GeneralReactiveEquilibriumProblem",
     "GeneralReactiveEquilibriumResult",
     "IdealGasModel",
     "ProviderModel",
     "ReactivePhase",
     "Solved",
+    "certify_general_reactive_equilibrium_continuation_reference",
+    "general_reactive_equilibrium_descriptor",
+    "serialize_general_reactive_equilibrium_receipt",
     "solve_general_reactive_equilibrium",
+    "validate_general_reactive_equilibrium_receipt",
 )

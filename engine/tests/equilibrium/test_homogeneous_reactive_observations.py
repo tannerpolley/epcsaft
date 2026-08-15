@@ -68,10 +68,31 @@ def _reaction_mapping(problem: equilibrium.ChemicalEquilibriumProblem) -> dict[s
     }
 
 
-def _row_mapping(row: equilibrium.HomogeneousReactiveObservationRow) -> dict[str, object]:
+_GREPE_TEST_BASIS = "source-declared-observation-basis"
+
+
+def _homogeneous_output_mapping(
+    row: equilibrium.HomogeneousReactiveObservationRow,
+    phase_identity: str,
+) -> dict[str, object]:
+    selector = {
+        "amount_mol": "phase.amount",
+        "mole_fraction": "phase.mole_fraction",
+        "molality_mol_per_kg": "phase.molality",
+        "molar_density_mol_per_m3": "phase.molar_density",
+        "compressibility_factor": "phase.compressibility_factor",
+        "pressure_pa": "phase.pressure",
+        "fugacity_pa": "phase.fugacity",
+        "log_activity_contraction": "phase.log_activity",
+        "log_fugacity_contraction": "phase.log_fugacity",
+        "chemical_potential_over_rt_contraction": "phase.chemical_potential_over_rt",
+    }[row.quantity]
     return {
         "identity": row.identity,
-        "quantity": row.quantity,
+        "selector": selector,
+        "unit": row.unit.replace("meter ** 3", "meter**3"),
+        "basis": _GREPE_TEST_BASIS,
+        "phase_identity": phase_identity,
         "coefficients": list(row.coefficients),
         "solvent_mass_coefficients_kg_per_mol": list(
             row.solvent_mass_coefficients_kg_per_mol
@@ -106,6 +127,7 @@ def _target_mapping(
         "multiplier": 1.0,
         "role": "diagnostic",
         "measurement_classification": "direct",
+        "basis": _GREPE_TEST_BASIS,
         "source_identity": "manufactured-reactive-observation",
         "source_hash": f"sha256:{'2' * 64}",
         "included": included,
@@ -155,27 +177,46 @@ def _reactive_fit_mapping(
         },
         "observations": [
             {
-                "family": "homogeneous_reactive",
+                "family": "equilibrium",
                 "identity": observation_problem.identity,
-                "phase": {
-                    "identity": observation_problem.phase_identity,
-                    "role": observation_problem.phase_role,
-                    "model": "provider",
-                    "admissible_packing_fraction_interval": list(
-                        observation_problem.phase.admissible_packing_fraction_interval
-                    ),
+                "request": {
+                    "identity": observation_problem.identity,
+                    "temperature": {"role": "fixed", "value": 313.15, "unit": "kelvin"},
+                    "pressure": {
+                        "role": "fixed",
+                        "value": 119_199.78746707023,
+                        "unit": "pascal",
+                    },
+                    "phases": [
+                        {
+                            "identity": observation_problem.phase_identity,
+                            "fluid_role": observation_problem.phase_role,
+                            "amount_role": "finite",
+                            "support": {"kind": "all_components", "component_ids": []},
+                            "model": {
+                                "kind": "provider",
+                                "reference_id": "installed-provider-eos",
+                                "admissible_packing_fraction_interval": list(
+                                    observation_problem.phase.admissible_packing_fraction_interval
+                                ),
+                            },
+                            "continuation": {
+                                "identity": observation_problem.continuation_identity,
+                                "branch_policy": observation_problem.branch_policy,
+                                "reference": None
+                                if reference is None
+                                else reference.to_mapping(),
+                            },
+                        }
+                    ],
+                    "reaction_system": _reaction_mapping(observation_problem.reaction_system),
+                    "reaction_phase_ids": [observation_problem.phase_identity],
+                    "outputs": [
+                        _homogeneous_output_mapping(row, observation_problem.phase_identity)
+                        for row in rows
+                    ],
+                    "continuation": None,
                 },
-                "reaction_system": _reaction_mapping(observation_problem.reaction_system),
-                "continuation": {
-                    "identity": observation_problem.continuation_identity,
-                    "branch_policy": observation_problem.branch_policy,
-                    "reference": None
-                    if reference is None
-                    else reference.to_mapping(),
-                },
-                "rows": [_row_mapping(row) for row in rows],
-                "temperature_k": 313.15,
-                "pressure_pa": 119_199.78746707023,
                 "targets": list(targets),
                 "multiplier": 1.0,
             }
@@ -254,6 +295,68 @@ def test_non_evaluable_trial_vocabulary_is_closed() -> None:
         assert epcsaft.NonEvaluableTrial(code, "manufactured diagnostic").code == code
     with pytest.raises(ValueError, match="outside the public vocabulary"):
         epcsaft.NonEvaluableTrial("unregistered_failure", "manufactured diagnostic")  # type: ignore[arg-type]
+
+
+def test_grepe_mapping_loader_rejects_unknown_fields_and_noncanonical_units() -> None:
+    """Falsify permissive GREPE JSON or ambiguous output-unit admission."""
+
+    reaction = _multineutral_problem()
+    request: dict[str, object] = {
+        "identity": "strict-grepe-loader",
+        "temperature": {"role": "fixed", "value": 313.15, "unit": "kelvin"},
+        "pressure": {"role": "fixed", "value": 100_000.0, "unit": "pascal"},
+        "phases": [
+            {
+                "identity": "strict-liquid",
+                "fluid_role": "liquid",
+                "amount_role": "finite",
+                "support": {"kind": "all_components", "component_ids": []},
+                "model": {
+                    "kind": "provider",
+                    "reference_id": "installed-provider-eos",
+                    "admissible_packing_fraction_interval": [1.0e-6, 0.74],
+                },
+                "continuation": {
+                    "identity": "strict-liquid-branch",
+                    "branch_policy": "local_certified_role_selected_state",
+                    "reference": None,
+                },
+            }
+        ],
+        "reaction_system": _reaction_mapping(reaction),
+        "reaction_phase_ids": ["strict-liquid"],
+        "outputs": [
+            {
+                "identity": "pressure",
+                "selector": "system.pressure",
+                "unit": "pascal",
+                "basis": "system-total-pressure",
+                "phase_identity": None,
+                "coefficients": [],
+                "solvent_mass_coefficients_kg_per_mol": [],
+                "support": "positive",
+                "censor_limit": None,
+                "aggregate_identity": None,
+                "covariance_identity": None,
+            }
+        ],
+        "continuation": None,
+    }
+    loaded = equilibrium.general_reactive_equilibrium_problem_from_mapping(request)
+    assert loaded.identity == "strict-grepe-loader"
+    assert loaded.outputs[0].basis == "system-total-pressure"
+
+    unknown = copy.deepcopy(request)
+    unknown["owner_route"] = "homogeneous"
+    with pytest.raises(ValueError, match="fields differ"):
+        equilibrium.general_reactive_equilibrium_problem_from_mapping(unknown)
+
+    noncanonical_unit = copy.deepcopy(request)
+    cast(dict[str, object], cast(list[object], noncanonical_unit["outputs"])[0])[
+        "unit"
+    ] = "bar"
+    with pytest.raises(ValueError, match="selector is invalid"):
+        equilibrium.general_reactive_equilibrium_problem_from_mapping(noncanonical_unit)
 
 
 @pytest.mark.slow
@@ -514,6 +617,8 @@ def test_grepe_single_finite_phase_matches_homogeneous_owner_exactly() -> None:
             equilibrium.EquilibriumOutput(
                 "cation-mole-fraction",
                 "phase.mole_fraction",
+                "dimensionless",
+                "true-species-liquid-mole-fraction",
                 owner_problem.phase_identity,
                 (0.0, 0.0, 1.0, 0.0),
                 support="positive",
@@ -521,32 +626,59 @@ def test_grepe_single_finite_phase_matches_homogeneous_owner_exactly() -> None:
             equilibrium.EquilibriumOutput(
                 "molar-density",
                 "phase.molar_density",
+                "mole / meter**3",
+                "phase-total-molar-density",
                 owner_problem.phase_identity,
                 support="positive",
             ),
             equilibrium.EquilibriumOutput(
                 "reaction-log-fugacity",
                 "phase.log_fugacity",
+                "dimensionless",
+                "natural-log-pascal-true-species-contraction",
                 owner_problem.phase_identity,
                 (-1.0, 0.0, 1.0, 1.0),
             ),
             equilibrium.EquilibriumOutput(
                 "solvent-fugacity",
                 "phase.fugacity",
+                "pascal",
+                "true-species-phase-fugacity",
                 owner_problem.phase_identity,
                 (1.0, 0.0, 0.0, 0.0),
                 support="positive",
             ),
         ),
     )
+    grepe_descriptor = equilibrium.general_reactive_equilibrium_descriptor(
+        model, grepe_problem, active_parameters=active
+    )
     grepe = equilibrium.phase_equilibrium(model, grepe_problem, active_parameters=active)
 
     assert grepe.status == "evaluated", grepe.failure
+    assert grepe.descriptor == grepe_descriptor
     assert grepe.values == pytest.approx(owner.values, rel=0.0, abs=0.0)
     for actual, expected in zip(grepe.jacobian, owner.jacobian, strict=True):
         assert actual == pytest.approx(expected, rel=0.0, abs=0.0)
     assert grepe.certificate_scope == "fixed_TP_single_finite_reacting_phase"
     assert grepe.globality_claim == "not_established"
+    observations = tuple(
+        equilibrium.GeneralEquilibriumOwnerObservation(output.identity, output.identity)
+        for output in grepe_problem.outputs
+    )
+    receipt = equilibrium.serialize_general_reactive_equilibrium_receipt(
+        grepe,
+        batch_identity="grepe-homogeneous-equivalence",
+        observations=observations,
+    )
+    assert equilibrium.validate_general_reactive_equilibrium_receipt(
+        receipt,
+        descriptor=grepe_descriptor,
+        problem=grepe_problem,
+        batch_identity="grepe-homogeneous-equivalence",
+        active_parameters=active,
+        observations=observations,
+    ).startswith("sha256:")
 
 
 @pytest.mark.slow
@@ -1219,22 +1351,20 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
             drop_reason="model-derived pressure is not a fit target",
         ),
     )
-    fit = regression.fit(
-        _reactive_fit_mapping(
-            tmp_path,
-            parameters,
-            observation_problem,
-            rows,
-            targets,
-            identity,
-            lower=-0.05,
-            upper=0.2,
-            origin=0.0,
-            scale=0.1,
-            starts=(("origin", 0.0), ("confirmation", 0.05)),
-        ),
-        base_path=tmp_path,
+    fit_problem_mapping = _reactive_fit_mapping(
+        tmp_path,
+        parameters,
+        observation_problem,
+        rows,
+        targets,
+        identity,
+        lower=-0.05,
+        upper=0.2,
+        origin=0.0,
+        scale=0.1,
+        starts=(("origin", 0.0), ("confirmation", 0.05)),
     )
+    fit = regression.fit(fit_problem_mapping, base_path=tmp_path)
     accepted = fit.best_usable_start
     assert accepted is not None
     assert accepted.final_physical == pytest.approx((0.08,), abs=2.0e-8)
@@ -1258,8 +1388,8 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
     assert candidate.fingerprint != parameters.fingerprint
     assert fit.evaluated_row_table_hash.startswith("sha256:")
     assert len(fit.evaluated_rows) == 5
-    fit_mapping = fit.to_mapping()
-    accepted_receipts = fit_mapping["starts"][accepted.index]["owner_receipts"]
+    fit_result_mapping = fit.to_mapping()
+    accepted_receipts = fit_result_mapping["starts"][accepted.index]["owner_receipts"]
     assert isinstance(accepted_receipts, list)
     accepted_receipt = json.loads(accepted_receipts[0]["canonical_bytes_utf8"])
     assert accepted_receipts[0]["digest"].startswith("sha256:")
@@ -1272,10 +1402,13 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
     assert aggregate_receipt["aggregate_identity"] == "manufactured-total-ions"
     assert aggregate_receipt["covariance_identity"] == "manufactured-prepared-stock"
     assert accepted.optimizer_basin is not None
-    assert accepted_receipt["physical_branch"]["identity"].startswith("sha256:")
-    search_certificate = accepted_receipt["certified_state"]["chemical_search_certificate"]
+    assert accepted_receipt["schema"] == "epcsaft.grepe-owner-receipt.v1"
+    assert accepted_receipt["owner_kind"] == "homogeneous"
+    owner_receipt = accepted_receipt["owner_receipt"]
+    assert owner_receipt["physical_branch"]["identity"].startswith("sha256:")
+    search_certificate = owner_receipt["certified_state"]["chemical_search_certificate"]
     assert search_certificate["basin_count"] == 1
-    continuation_certificate = accepted_receipt["certified_state"][
+    continuation_certificate = owner_receipt["certified_state"][
         "continuation_certificate"
     ]
     assert continuation_certificate["in_region_basin_count"] == 1
@@ -1285,7 +1418,7 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
     assert search_certificate["budget_prefix_selection_history"]
 
     tampered_receipt = json.loads(accepted.owner_receipts[0].canonical_bytes_utf8)
-    tampered_receipt["certified_state"]["chemical_search_certificate"][
+    tampered_receipt["owner_receipt"]["certified_state"]["chemical_search_certificate"][
         "selected_basin_representative_attempt_ordinal"
     ] += 1
     tampered_json = json.dumps(
@@ -1294,26 +1427,36 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
         separators=(",", ":"),
         sort_keys=True,
     )
+    request_mapping = fit_problem_mapping["observations"][0]["request"]
+    grepe_problem = equilibrium.general_reactive_equilibrium_problem_from_mapping(
+        request_mapping
+    )
+    accepted_active = epcsaft.ActiveParameterSet(
+        parameters, (identity,), values=accepted.final_physical
+    )
+    grepe_descriptor = equilibrium.general_reactive_equilibrium_descriptor(
+        model,
+        grepe_problem,
+        active_parameters=accepted_active,
+    )
+    grepe_observations = tuple(
+        equilibrium.GeneralEquilibriumOwnerObservation(
+            str(target["identity"]),
+            str(target["prediction_identity"]),
+            cast(str | None, target["aggregate_identity"]),
+            cast(str | None, target["covariance_identity"]),
+        )
+        for target in targets
+        if target["included"]
+    )
     with pytest.raises(ValueError, match="receipt|certificate"):
-        equilibrium.validate_homogeneous_reactive_owner_receipt(
+        equilibrium.validate_general_reactive_equilibrium_receipt(
             tampered_json,
-            descriptor=descriptor,
+            descriptor=grepe_descriptor,
+            problem=grepe_problem,
             batch_identity=observation_problem.identity,
-            requested_temperature=temperature,
-            requested_pressure=pressure,
-            active_parameters=epcsaft.ActiveParameterSet(
-                parameters, (identity,), values=accepted.final_physical
-            ),
-            observations=tuple(
-                equilibrium.HomogeneousReactiveOwnerObservation(
-                    str(target["identity"]),
-                    str(target["prediction_identity"]),
-                    cast(str | None, target["aggregate_identity"]),
-                    cast(str | None, target["covariance_identity"]),
-                )
-                for target in targets
-                if target["included"]
-            ),
+            active_parameters=accepted_active,
+            observations=grepe_observations,
         )
 
     bounded_fit = regression.fit(

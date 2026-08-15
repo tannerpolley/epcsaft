@@ -14,11 +14,42 @@ from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE
 
 from .test_chemical_provider import _multineutral_problem
 from .test_homogeneous_reactive_observations import (
+    _GREPE_TEST_BASIS,
     _observation_problem,
     _reaction_mapping,
-    _row_mapping,
     _target_mapping,
 )
+
+
+def _bubble_output_mapping(
+    row: equilibrium.ReactiveBubbleObservationRow,
+    liquid_identity: str,
+    vapor_identity: str,
+) -> dict[str, object]:
+    selector, phase_identity = {
+        "bubble_pressure_pa": ("system.pressure", None),
+        "vapor_mole_fraction": ("phase.mole_fraction", vapor_identity),
+        "vapor_partial_pressure_pa": ("phase.partial_pressure", vapor_identity),
+        "liquid_amount_mol": ("phase.amount", liquid_identity),
+        "liquid_mole_fraction": ("phase.mole_fraction", liquid_identity),
+        "liquid_molality_mol_per_kg": ("phase.molality", liquid_identity),
+        "liquid_molar_density_mol_per_m3": ("phase.molar_density", liquid_identity),
+    }[row.quantity]
+    return {
+        "identity": row.identity,
+        "selector": selector,
+        "unit": row.unit.replace("meter ** 3", "meter**3"),
+        "basis": _GREPE_TEST_BASIS,
+        "phase_identity": phase_identity,
+        "coefficients": list(row.coefficients),
+        "solvent_mass_coefficients_kg_per_mol": list(
+            row.solvent_mass_coefficients_kg_per_mol
+        ),
+        "support": row.support,
+        "censor_limit": row.censor_limit,
+        "aggregate_identity": row.aggregate_identity,
+        "covariance_identity": row.covariance_identity,
+    }
 
 
 def _fixture() -> tuple[
@@ -583,16 +614,25 @@ def test_multireaction_nonideal_bubble_total_jacobian_matches_resolves() -> None
         reaction_system=problem.liquid_problem.reaction_system,
         reaction_phase_ids=(problem.liquid_problem.phase_identity,),
         outputs=(
-            equilibrium.EquilibriumOutput("bubble-pressure", "system.pressure"),
+            equilibrium.EquilibriumOutput(
+                "bubble-pressure",
+                "system.pressure",
+                "pascal",
+                "system-total-pressure",
+            ),
             equilibrium.EquilibriumOutput(
                 "first-vapor-fraction",
                 "phase.mole_fraction",
+                "dimensionless",
+                "true-species-vapor-mole-fraction",
                 problem.vapor_phase_identity,
                 (1.0, 0.0, 0.0),
             ),
             equilibrium.EquilibriumOutput(
                 "cation-liquid-fraction",
                 "phase.mole_fraction",
+                "dimensionless",
+                "true-species-liquid-mole-fraction",
                 problem.liquid_problem.phase_identity,
                 (0.0, 0.0, 0.0, 1.0, 0.0),
             ),
@@ -604,10 +644,31 @@ def test_multireaction_nonideal_bubble_total_jacobian_matches_resolves() -> None
         epcsaft.Mixture(parameters), grepe_problem, active_parameters=active
     )
     assert grepe.status == "evaluated", grepe.failure
+    assert grepe.descriptor == equilibrium.general_reactive_equilibrium_descriptor(
+        epcsaft.Mixture(parameters), grepe_problem, active_parameters=active
+    )
     assert grepe.values == pytest.approx(center.values, rel=2.0e-12, abs=2.0e-12)
     for actual, expected in zip(grepe.jacobian, center.jacobian, strict=True):
         assert actual == pytest.approx(expected, rel=2.0e-12, abs=2.0e-12)
     assert grepe.globality_claim == "not_established"
+    observations = tuple(
+        equilibrium.GeneralEquilibriumOwnerObservation(output.identity, output.identity)
+        for output in grepe_problem.outputs
+    )
+    receipt = equilibrium.serialize_general_reactive_equilibrium_receipt(
+        grepe,
+        batch_identity="grepe-bubble-equivalence",
+        observations=observations,
+    )
+    assert grepe.descriptor is not None
+    assert equilibrium.validate_general_reactive_equilibrium_receipt(
+        receipt,
+        descriptor=grepe.descriptor,
+        problem=grepe_problem,
+        batch_identity="grepe-bubble-equivalence",
+        active_parameters=active,
+        observations=observations,
+    ).startswith("sha256:")
 
 
 @pytest.mark.slow
@@ -616,7 +677,7 @@ def test_reactive_bubble_uses_canonical_regression_fit_and_opaque_receipt(
 ) -> None:
     """Falsify a parallel CAP-13 fit surface or non-final owner receipt."""
 
-    parameters, problem, _ = _fixture()
+    parameters, problem, _ = _multireaction_fixture()
     problem = replace(problem, pressure_starts_pa=(3.2e6,))
     identity = "component/solvent/dispersion_energy_over_k"
     active = epcsaft.ActiveParameterSet(parameters, (identity,))
@@ -675,37 +736,71 @@ def test_reactive_bubble_uses_canonical_regression_fit_and_opaque_receipt(
         },
         "observations": [
             {
-                "family": "reactive_bubble_vle",
+                "family": "equilibrium",
                 "identity": problem.identity,
-                "liquid_problem_identity": problem.liquid_problem.identity,
-                "liquid_phase": {
-                    "identity": problem.liquid_problem.phase_identity,
-                    "role": "liquid",
-                    "model": "provider",
-                    "admissible_packing_fraction_interval": list(
-                        problem.liquid_problem.phase.admissible_packing_fraction_interval
+                "request": {
+                    "identity": problem.identity,
+                    "temperature": {"role": "fixed", "value": 313.15, "unit": "kelvin"},
+                    "pressure": {
+                        "role": "solved",
+                        "initial": problem.pressure_starts_pa[0],
+                        "bounds": list(problem.pressure_interval_pa),
+                        "starts": list(problem.pressure_starts_pa),
+                        "unit": "pascal",
+                    },
+                    "phases": [
+                        {
+                            "identity": problem.liquid_problem.phase_identity,
+                            "fluid_role": "liquid",
+                            "amount_role": "finite",
+                            "support": {"kind": "all_components", "component_ids": []},
+                            "model": {
+                                "kind": "provider",
+                                "reference_id": "installed-provider-eos",
+                                "admissible_packing_fraction_interval": list(
+                                    problem.liquid_problem.phase.admissible_packing_fraction_interval
+                                ),
+                            },
+                            "continuation": {
+                                "identity": problem.liquid_problem.continuation_identity,
+                                "branch_policy": problem.liquid_problem.branch_policy,
+                                "reference": liquid_reference.to_mapping(),
+                            },
+                        },
+                        {
+                            "identity": problem.vapor_phase_identity,
+                            "fluid_role": "vapor",
+                            "amount_role": "incipient",
+                            "support": {
+                                "kind": "declared_neutral_components",
+                                "component_ids": list(problem.vapor_component_ids),
+                            },
+                            "model": {
+                                "kind": "provider",
+                                "reference_id": problem.vapor_model.reference_id,
+                                "admissible_packing_fraction_interval": list(
+                                    problem.liquid_problem.phase.admissible_packing_fraction_interval
+                                ),
+                            },
+                            "continuation": None,
+                        },
+                    ],
+                    "reaction_system": _reaction_mapping(
+                        problem.liquid_problem.reaction_system
                     ),
+                    "reaction_phase_ids": [problem.liquid_problem.phase_identity],
+                    "outputs": [
+                        _bubble_output_mapping(
+                            row,
+                            problem.liquid_problem.phase_identity,
+                            problem.vapor_phase_identity,
+                        )
+                    ],
+                    "continuation": {
+                        "identity": problem.continuation_identity,
+                        "reference": bubble_reference.to_mapping(),
+                    },
                 },
-                "reaction_system": _reaction_mapping(problem.liquid_problem.reaction_system),
-                "liquid_continuation": {
-                    "identity": problem.liquid_problem.continuation_identity,
-                    "branch_policy": problem.liquid_problem.branch_policy,
-                    "reference": liquid_reference.to_mapping(),
-                },
-                "vapor": {
-                    "identity": problem.vapor_phase_identity,
-                    "component_ids": list(problem.vapor_component_ids),
-                    "model": "provider_nonideal",
-                    "reference_id": problem.vapor_model.reference_id,
-                },
-                "bubble_continuation": {
-                    "identity": problem.continuation_identity,
-                    "reference": bubble_reference.to_mapping(),
-                },
-                "pressure_interval_pa": list(problem.pressure_interval_pa),
-                "pressure_starts_pa": list(problem.pressure_starts_pa),
-                "rows": [_row_mapping(row)],
-                "temperature_k": 313.15,
                 "targets": [
                     _target_mapping(
                         "source-neutral/bubble-pressure",
@@ -726,9 +821,25 @@ def test_reactive_bubble_uses_canonical_regression_fit_and_opaque_receipt(
             }
         },
     }
+    request_mapping = mapping["observations"][0]["request"]
+    request_mapping["continuation"]["reference"] = None
+    unanchored_grepe = equilibrium.general_reactive_equilibrium_problem_from_mapping(
+        request_mapping
+    )
+    canonical_reference = (
+        equilibrium.certify_general_reactive_equilibrium_continuation_reference(
+            epcsaft.Mixture(parameters),
+            unanchored_grepe,
+            active_parameters=active,
+            maximum_log_pressure_distance=0.5,
+            maximum_log_composition_distance=0.5,
+            maximum_log_volume_distance=0.5,
+        )
+    )
+    request_mapping["continuation"]["reference"] = canonical_reference.to_mapping()
     fitted = regression.fit(mapping, base_path=tmp_path)
     accepted = fitted.best_usable_start
-    assert accepted is not None
+    assert accepted is not None, fitted.to_mapping()
     assert accepted.final_physical == pytest.approx((value,), abs=2.0e-9)
     assert accepted.predictions == pytest.approx((pressure,), rel=2.0e-10)
     assert len(accepted.owner_receipts) == 1

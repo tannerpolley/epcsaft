@@ -1675,7 +1675,7 @@ def phase_equilibrium(
     *,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
 ) -> PhaseEquilibriumResult | GeneralReactiveEquilibriumResult:
-    """Solve one typed HELD-lineage feed or two-phase coexistence specification."""
+    """Solve one typed nonreactive or GREPE equilibrium specification."""
 
     if not isinstance(model, epcsaft.Mixture):
         raise TypeError("phase_equilibrium requires an epcsaft.Mixture")

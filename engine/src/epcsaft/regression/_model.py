@@ -96,12 +96,7 @@ _FIELDS = MappingProxyType(
             (
                 "family",
                 "identity",
-                "phase",
-                "reaction_system",
-                "continuation",
-                "rows",
-                "temperature_k",
-                "pressure_pa",
+                "request",
                 "targets",
                 "multiplier",
             )
@@ -328,7 +323,7 @@ class ObservationSpec:
 class EquilibriumFitObservation:
     """Canonical JSON-backed declaration validated by its Equilibrium owner."""
 
-    family: Literal["homogeneous_reactive", "reactive_bubble_vle"]
+    family: Literal["equilibrium"]
     canonical_bytes_utf8: str
 
     def to_mapping(self) -> dict[str, object]:
@@ -391,7 +386,7 @@ class ParameterFit:
         if not observations:
             raise FitSchemaError("missing-value", "$.observations", "at least one required")
         families = tuple(observation.family for observation in observations)
-        equilibrium_families = {"homogeneous_reactive", "reactive_bubble_vle"}
+        equilibrium_families = {"equilibrium"}
         if any(item in equilibrium_families for item in families) and (
             model.kind != "mixture" or any(item not in equilibrium_families for item in families)
         ):
@@ -750,61 +745,17 @@ def _parse_fit_observation(
     path: str,
 ) -> ObservationSpec | EquilibriumFitObservation:
     mapping = _mapping(value, path)
-    if mapping.get("family") == "homogeneous_reactive":
+    if mapping.get("family") == "equilibrium":
         _keys(mapping, "reactive_observation", path)
-        if _text(mapping["identity"], f"{path}.identity") == "homogeneous_reactive":
+        if _text(mapping["identity"], f"{path}.identity") == "equilibrium":
             raise FitSchemaError("invalid-value", f"{path}.identity", "batch identity required")
         multiplier = _number(mapping["multiplier"], f"{path}.multiplier")
         if multiplier <= 0.0:
             raise FitSchemaError("invalid-value", f"{path}.multiplier", "positive required")
-        _number(mapping["temperature_k"], f"{path}.temperature_k")
-        _number(mapping["pressure_pa"], f"{path}.pressure_pa")
-        for field in ("phase", "reaction_system", "continuation"):
-            _mapping(mapping[field], f"{path}.{field}")
-        for field in ("rows", "targets"):
-            if not _list(mapping[field], f"{path}.{field}"):
-                raise FitSchemaError("missing-value", f"{path}.{field}", "non-empty required")
-        return EquilibriumFitObservation(
-            "homogeneous_reactive", _canonical(mapping).decode("utf-8")
-        )
-    if mapping.get("family") == "reactive_bubble_vle":
-        required = (
-            "family",
-            "identity",
-            "liquid_problem_identity",
-            "liquid_phase",
-            "reaction_system",
-            "liquid_continuation",
-            "vapor",
-            "bubble_continuation",
-            "pressure_interval_pa",
-            "pressure_starts_pa",
-            "rows",
-            "temperature_k",
-            "targets",
-            "multiplier",
-        )
-        if set(mapping) != set(required):
-            raise FitSchemaError(
-                "invalid-keys", path, {"expected": required, "actual": tuple(sorted(mapping))}
-            )
-        if _text(mapping["identity"], f"{path}.identity") == "reactive_bubble_vle":
-            raise FitSchemaError("invalid-value", f"{path}.identity", "batch identity required")
-        if _number(mapping["multiplier"], f"{path}.multiplier") <= 0.0:
-            raise FitSchemaError("invalid-value", f"{path}.multiplier", "positive required")
-        _number(mapping["temperature_k"], f"{path}.temperature_k")
-        for field in (
-            "liquid_phase",
-            "reaction_system",
-            "liquid_continuation",
-            "vapor",
-            "bubble_continuation",
-        ):
-            _mapping(mapping[field], f"{path}.{field}")
-        for field in ("pressure_interval_pa", "pressure_starts_pa", "rows", "targets"):
-            if not _list(mapping[field], f"{path}.{field}"):
-                raise FitSchemaError("missing-value", f"{path}.{field}", "non-empty required")
-        return EquilibriumFitObservation("reactive_bubble_vle", _canonical(mapping).decode("utf-8"))
+        _mapping(mapping["request"], f"{path}.request")
+        if not _list(mapping["targets"], f"{path}.targets"):
+            raise FitSchemaError("missing-value", f"{path}.targets", "non-empty required")
+        return EquilibriumFitObservation("equilibrium", _canonical(mapping).decode("utf-8"))
     return _parse_observation(value, path)
 
 
@@ -1235,15 +1186,9 @@ def parameter_fit_json_schema() -> dict[str, object]:
         *_observation_schemas(strings, number, transformation),
         _object_schema(
             {
-                "family": {"const": "homogeneous_reactive"},
+                "family": {"const": "equilibrium"},
                 "identity": strings,
-                "liquid_problem_identity": strings,
-                "phase": {"type": "object"},
-                "reaction_system": {"type": "object"},
-                "continuation": {"type": "object"},
-                "rows": {"type": "array", "items": {"type": "object"}, "minItems": 1},
-                "temperature_k": {"type": "number", "exclusiveMinimum": 0},
-                "pressure_pa": {"type": "number", "exclusiveMinimum": 0},
+                "request": {"type": "object"},
                 "targets": {
                     "type": "array",
                     "items": {"type": "object"},
@@ -1252,49 +1197,6 @@ def parameter_fit_json_schema() -> dict[str, object]:
                 "multiplier": {"type": "number", "exclusiveMinimum": 0},
             },
             _FIELDS["reactive_observation"].required,
-        ),
-        _object_schema(
-            {
-                "family": {"const": "reactive_bubble_vle"},
-                "identity": strings,
-                "liquid_problem_identity": strings,
-                "liquid_phase": {"type": "object"},
-                "reaction_system": {"type": "object"},
-                "liquid_continuation": {"type": "object"},
-                "vapor": {"type": "object"},
-                "bubble_continuation": {"type": "object"},
-                "pressure_interval_pa": {
-                    "type": "array",
-                    "items": {"type": "number", "exclusiveMinimum": 0},
-                    "minItems": 2,
-                    "maxItems": 2,
-                },
-                "pressure_starts_pa": {
-                    "type": "array",
-                    "items": {"type": "number", "exclusiveMinimum": 0},
-                    "minItems": 1,
-                },
-                "rows": {"type": "array", "items": {"type": "object"}, "minItems": 1},
-                "temperature_k": {"type": "number", "exclusiveMinimum": 0},
-                "targets": {"type": "array", "items": {"type": "object"}, "minItems": 1},
-                "multiplier": {"type": "number", "exclusiveMinimum": 0},
-            },
-            (
-                "family",
-                "identity",
-                "liquid_problem_identity",
-                "liquid_phase",
-                "reaction_system",
-                "liquid_continuation",
-                "vapor",
-                "bubble_continuation",
-                "pressure_interval_pa",
-                "pressure_starts_pa",
-                "rows",
-                "temperature_k",
-                "targets",
-                "multiplier",
-            ),
         ),
     )
     valid_model_kinds = sorted(
