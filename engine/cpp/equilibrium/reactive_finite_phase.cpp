@@ -417,6 +417,140 @@ MultiphaseEvaluation evaluate_multiphase(
     return result;
 }
 
+double relative_difference(double analytic, double numerical) {
+    return std::abs(analytic - numerical)
+        / std::max({1.0, std::abs(analytic), std::abs(numerical)});
+}
+
+std::vector<double> lagrangian_gradient(
+    const MultiphaseEvaluation& evaluation,
+    const std::vector<double>& multipliers
+) {
+    const std::size_t variable_count = evaluation.gradient.size();
+    std::vector<double> result = evaluation.gradient;
+    for (std::size_t row = 0; row < multipliers.size(); ++row) {
+        for (std::size_t column = 0; column < variable_count; ++column) {
+            result[column] += multipliers[row]
+                * evaluation.jacobian[row * variable_count + column];
+        }
+    }
+    return result;
+}
+
+bool audit_multiphase_derivatives(
+    ReactiveFinitePhaseResult& result,
+    const ProviderContext& provider,
+    const ProviderActiveParameterSet& parameters,
+    const CompiledReactionSystem& system,
+    const NormalizedBalances& balances,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<std::array<double, 2>>& packing_intervals,
+    const std::vector<double>& solution,
+    const std::vector<double>& multipliers,
+    const std::vector<double>& lower,
+    const std::vector<double>& upper,
+    std::size_t phase_count
+) {
+    const std::size_t variable_count = solution.size();
+    const MultiphaseEvaluation baseline = evaluate_multiphase(
+        provider,
+        parameters,
+        system,
+        balances,
+        temperature_k,
+        pressure_pa,
+        packing_intervals,
+        solution,
+        multipliers,
+        phase_count
+    );
+    double objective_error = 0.0;
+    double constraint_error = 0.0;
+    double hessian_error = 0.0;
+    for (std::size_t column = 0; column < variable_count; ++column) {
+        const double margin = std::min(
+            solution[column] - lower[column], upper[column] - solution[column]
+        );
+        const double step = std::min(
+            1.0e-5 * std::max(1.0, std::abs(solution[column])), 0.25 * margin
+        );
+        if (!std::isfinite(step) || step <= 1.0e-10) {
+            result.derivative_audits_performed = true;
+            result.derivative_audit_status = "failed";
+            return false;
+        }
+        std::vector<double> plus_variables = solution;
+        std::vector<double> minus_variables = solution;
+        plus_variables[column] += step;
+        minus_variables[column] -= step;
+        const MultiphaseEvaluation plus = evaluate_multiphase(
+            provider,
+            parameters,
+            system,
+            balances,
+            temperature_k,
+            pressure_pa,
+            packing_intervals,
+            plus_variables,
+            multipliers,
+            phase_count
+        );
+        const MultiphaseEvaluation minus = evaluate_multiphase(
+            provider,
+            parameters,
+            system,
+            balances,
+            temperature_k,
+            pressure_pa,
+            packing_intervals,
+            minus_variables,
+            multipliers,
+            phase_count
+        );
+        const double inverse_span = 0.5 / step;
+        objective_error = std::max(
+            objective_error,
+            relative_difference(
+                baseline.gradient[column],
+                (plus.objective - minus.objective) * inverse_span
+            )
+        );
+        for (std::size_t row = 0; row < balances.matrix.rows; ++row) {
+            constraint_error = std::max(
+                constraint_error,
+                relative_difference(
+                    baseline.jacobian[row * variable_count + column],
+                    (plus.constraints[row] - minus.constraints[row]) * inverse_span
+                )
+            );
+        }
+        const std::vector<double> plus_lagrangian_gradient =
+            lagrangian_gradient(plus, multipliers);
+        const std::vector<double> minus_lagrangian_gradient =
+            lagrangian_gradient(minus, multipliers);
+        for (std::size_t row = 0; row < variable_count; ++row) {
+            hessian_error = std::max(
+                hessian_error,
+                relative_difference(
+                    baseline.lagrangian_hessian[row * variable_count + column],
+                    (plus_lagrangian_gradient[row] - minus_lagrangian_gradient[row])
+                        * inverse_span
+                )
+            );
+        }
+    }
+    result.derivative_audits_performed = true;
+    result.objective_gradient_audit_max_relative_error = objective_error;
+    result.constraint_jacobian_audit_max_relative_error = constraint_error;
+    result.lagrangian_hessian_audit_max_relative_error = hessian_error;
+    const bool passed = objective_error <= 2.0e-6
+        && constraint_error <= 2.0e-8
+        && hessian_error <= 2.0e-5;
+    result.derivative_audit_status = passed ? "passed" : "failed";
+    return passed;
+}
+
 class ReactiveFinitePhaseTnlp final : public Ipopt::TNLP {
 public:
     ReactiveFinitePhaseTnlp(
@@ -685,6 +819,9 @@ public:
         return upper_multipliers_;
     }
     [[nodiscard]] const std::string& callback_error() const { return callback_error_; }
+    [[nodiscard]] const std::string& callback_failure_kind() const {
+        return callback_failure_kind_;
+    }
     [[nodiscard]] std::size_t iterations() const { return iterations_; }
 
 private:
@@ -720,8 +857,17 @@ private:
         try {
             callback();
             return true;
+        } catch (const ProviderDomainError& error) {
+            callback_error_ = error.what();
+            callback_failure_kind_ = "provider_domain";
+            return false;
+        } catch (const std::domain_error& error) {
+            callback_error_ = error.what();
+            callback_failure_kind_ = "physical_domain";
+            return false;
         } catch (const std::exception& error) {
             callback_error_ = error.what();
+            callback_failure_kind_ = "internal_contract";
             return false;
         }
     }
@@ -742,6 +888,7 @@ private:
     std::vector<double> lower_multipliers_;
     std::vector<double> upper_multipliers_;
     std::string callback_error_;
+    std::string callback_failure_kind_ = "none";
     std::size_t iterations_ = 0;
 };
 
@@ -946,7 +1093,8 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     const std::vector<ReactiveFinitePhaseStart>& starts,
     double trace_floor,
     const ProviderActiveParameterSet* active_parameters,
-    int max_iterations
+    int max_iterations,
+    bool perform_derivative_audits
 ) {
     ReactiveFinitePhaseResult result;
     const std::size_t phase_count = starts.size();
@@ -1086,19 +1234,42 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     if (initialized != Ipopt::Solve_Succeeded) {
         result.solver_status = "initialization_" + ipopt_status_name(initialized);
         result.failure_reason = "ipopt_initialization_failed";
+        result.numerical_status = "failed";
         return result;
     }
     const Ipopt::ApplicationReturnStatus status = application->OptimizeTNLP(problem);
     result.solver_status = ipopt_status_name(status);
     result.callback_error = raw_problem->callback_error();
+    result.callback_failure_kind = raw_problem->callback_failure_kind();
     result.optimizer_iterations = raw_problem->iterations();
     result.provider_evaluation_count = static_cast<std::size_t>(provider.evaluation_count());
     if (status != Ipopt::Solve_Succeeded || !result.callback_error.empty()) {
-        result.failure_reason = !result.callback_error.empty()
-            ? "provider_callback_failed"
-            : "ipopt_solve_failed";
+        if (!result.callback_error.empty()) {
+            if (result.callback_failure_kind == "provider_domain") {
+                result.failure_reason = "provider_callback_domain_failed";
+                result.provider_domain_status = "failed";
+            } else {
+                result.failure_reason = result.callback_failure_kind == "physical_domain"
+                    ? "physical_domain_callback_failed"
+                    : "internal_callback_failed";
+                result.provider_domain_status = result.callback_failure_kind == "physical_domain"
+                    ? "passed"
+                    : "not_adjudicated";
+                if (result.callback_failure_kind == "physical_domain") {
+                    result.physical_status = "failed";
+                } else {
+                    result.numerical_status = "failed";
+                }
+            }
+        } else {
+            result.failure_reason = "ipopt_solve_failed";
+            result.provider_domain_status = "passed";
+            result.numerical_status = "failed";
+        }
         return result;
     }
+    result.provider_domain_status = "passed";
+    result.numerical_status = "passed";
 
     const std::vector<double>& solution = raw_problem->solution();
     const std::vector<double>& multipliers = raw_problem->multipliers();
@@ -1187,7 +1358,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     );
     const double strict_minimum_threshold =
         1.0e-10 * hessian_scale;
-    result.accepted =
+    const bool physical_certificates_passed =
         result.balance_inf_norm <= kChemicalBalanceTolerance
         && result.pressure_relative_inf_norm <= kChemicalPressureTolerance
         && result.reaction_affinity_inf_norm <= kChemicalAffinityTolerance
@@ -1197,10 +1368,43 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         && minimum_amount > trace_floor
         && minimum_bound_margin > 1.0e-7
         && result.reduced_hessian_min_eigenvalue > strict_minimum_threshold;
-    if (!result.accepted) {
+    result.physical_status = physical_certificates_passed ? "passed" : "failed";
+    if (!physical_certificates_passed) {
         result.failure_reason = "reactive_finite_phase_certificate_failed";
         return result;
     }
+    if (perform_derivative_audits) {
+        bool derivative_audits_passed = false;
+        try {
+            derivative_audits_passed = audit_multiphase_derivatives(
+                result,
+                provider,
+                parameters,
+                system,
+                balances,
+                temperature_k,
+                pressure_pa,
+                packing_fraction_intervals,
+                solution,
+                multipliers,
+                lower,
+                upper,
+                phase_count
+            );
+        } catch (const std::exception& error) {
+            result.derivative_audits_performed = true;
+            result.derivative_audit_status = "failed";
+            result.callback_error = error.what();
+        }
+        if (!derivative_audits_passed) {
+            result.numerical_status = "failed";
+            result.failure_reason = "reactive_finite_phase_derivative_audit_failed";
+            result.provider_evaluation_count =
+                static_cast<std::size_t>(provider.evaluation_count());
+            return result;
+        }
+    }
+    result.accepted = true;
     populate_sensitivities(
         result,
         evaluated,
@@ -1213,6 +1417,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         result.accepted = false;
         result.failure_reason = "reactive_finite_phase_sensitivity_failed";
     }
+    result.provider_evaluation_count = static_cast<std::size_t>(provider.evaluation_count());
     return result;
 }
 

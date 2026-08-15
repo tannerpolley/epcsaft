@@ -54,7 +54,6 @@ from ._grepe import (
     certify_general_reactive_equilibrium_continuation_reference,
     general_reactive_equilibrium_descriptor,
     serialize_general_reactive_equilibrium_receipt,
-    solve_general_reactive_equilibrium,
     validate_general_reactive_equilibrium_receipt,
 )
 from ._grepe_io import general_reactive_equilibrium_problem_from_mapping
@@ -168,7 +167,6 @@ __all__ = [
     "serialize_general_reactive_equilibrium_receipt",
     "serialize_homogeneous_reactive_owner_receipt",
     "serialize_reactive_bubble_owner_receipt",
-    "solve_general_reactive_equilibrium",
     "validate_general_reactive_equilibrium_receipt",
     "validate_homogeneous_reactive_owner_receipt",
     "validate_reactive_bubble_owner_receipt",

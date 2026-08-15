@@ -9,8 +9,10 @@ import pytest
 
 import epcsaft
 from epcsaft import equilibrium, regression
+from epcsaft.eos import _native_transport
+from epcsaft.equilibrium import _equilibrium as _native_equilibrium
+from epcsaft.equilibrium import _grepe
 from tests.eos._raw_cases import NEUTRAL_TERNARY_IMMISCIBLE
-
 
 _BASIS = "manufactured-reactive-lle-basis"
 _PARAMETER_IDENTITY = "pair/alpha/beta/k_ij"
@@ -230,6 +232,9 @@ def test_reactive_lle_is_one_certified_coupled_minimum_and_label_covariant() -> 
     result = equilibrium.phase_equilibrium(model, problem, active_parameters=active)
 
     assert result.status == "evaluated", result.failure
+    assert result.numerical_status == "passed"
+    assert result.physical_status == "passed"
+    assert result.provider_domain_status == "passed"
     assert result.descriptor is not None
     assert result.descriptor._owner_kind == "reactive_lle"
     assert result.certificate_scope == "fixed_TP_two_finite_reacting_liquids_local_minimum"
@@ -342,6 +347,71 @@ def test_reactive_lle_total_parameter_jacobian_matches_independent_resolves() ->
         assert abs(row.jacobian[0] - numerical) / scale < 3.0e-6
 
 
+@pytest.mark.slow
+def test_reactive_lle_exact_nlp_derivatives_match_centered_oracles() -> None:
+    """Falsify wrong objective, constraint, or Lagrangian derivatives supplied to IPOPT."""
+
+    parameters, model, problem = _fixture()
+    active = epcsaft.ActiveParameterSet(parameters, (_PARAMETER_IDENTITY,))
+    native = _native_equilibrium._reactive_finite_phases(
+        _native_transport(model, active),
+        _grepe._reactive_lle_spec(problem, 300.0, 1.0e5),
+        tuple(
+            phase.model.admissible_packing_fraction_interval
+            for phase in problem.phases
+            if isinstance(phase.model, equilibrium.ProviderModel)
+        ),
+        tuple(
+            {
+                "amounts_mol": phase.start.amounts_mol,
+                "molar_volume_m3_per_mol": phase.start.molar_volume_m3_per_mol,
+            }
+            for phase in problem.phases
+            if isinstance(phase.start, equilibrium.FinitePhaseStart)
+        ),
+        problem.reaction_system.strict_interior_amount_floor_mol,
+        True,
+        True,
+    )
+
+    assert native["accepted"], native
+    assert native["derivative_audits_performed"]
+    assert native["derivative_audit_status"] == "passed"
+    assert native["objective_gradient_audit_max_relative_error"] < 2.0e-6
+    assert native["constraint_jacobian_audit_max_relative_error"] < 2.0e-8
+    assert native["lagrangian_hessian_audit_max_relative_error"] < 2.0e-5
+
+
+def test_reactive_lle_provider_domain_failure_preserves_failure_axis() -> None:
+    """Falsify collapsing a Provider source-domain rejection into nonconvergence."""
+
+    _, model, problem = _fixture()
+    first_phase = problem.phases[0]
+    assert isinstance(first_phase.model, equilibrium.ProviderModel)
+    outside_source_domain = replace(
+        problem,
+        phases=(
+            replace(
+                first_phase,
+                model=replace(
+                    first_phase.model,
+                    admissible_packing_fraction_interval=(1.0e-8, 1.0e-7),
+                ),
+            ),
+            problem.phases[1],
+        ),
+    )
+    result = equilibrium.phase_equilibrium(model, outside_source_domain)
+
+    assert result.status == "non_evaluable"
+    assert result.failure is not None
+    assert result.failure.code == "provider_domain_rejection"
+    assert result.solver_status == "not_started"
+    assert result.numerical_status == "not_adjudicated"
+    assert result.physical_status == "not_adjudicated"
+    assert result.provider_domain_status == "failed"
+
+
 def test_reactive_lle_strict_mapping_and_unsupported_charge_fail_closed() -> None:
     parameters, model, problem = _fixture()
     with pytest.raises(ValueError, match="both a start and continuation"):
@@ -366,6 +436,9 @@ def test_reactive_lle_strict_mapping_and_unsupported_charge_fail_closed() -> Non
     assert rejected.status == "non_evaluable"
     assert rejected.failure is not None
     assert rejected.failure.code == "unsupported_topology"
+    assert rejected.numerical_status == "unsupported"
+    assert rejected.physical_status == "unsupported"
+    assert rejected.provider_domain_status == "unsupported"
     assert "charged reactive LLE" in rejected.failure.diagnostic
     with pytest.raises(ValueError, match="charged reactive LLE"):
         equilibrium.general_reactive_equilibrium_descriptor(model, charged)

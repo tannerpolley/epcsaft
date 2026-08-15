@@ -412,6 +412,10 @@ class GeneralReactiveEquilibriumResult:
     problem: GeneralReactiveEquilibriumProblem
     descriptor: GeneralReactiveEquilibriumDescriptor | None
     status: Literal["evaluated", "non_evaluable"]
+    solver_status: str
+    numerical_status: str
+    physical_status: str
+    provider_domain_status: str
     rows: tuple[GeneralEquilibriumRowResult, ...]
     phases: tuple[EquilibriumPhaseState, ...]
     failure: NonEvaluableTrial | None
@@ -769,10 +773,14 @@ def _unsupported(
 ) -> GeneralReactiveEquilibriumResult:
     failure = NonEvaluableTrial("unsupported_topology", diagnostic)
     return GeneralReactiveEquilibriumResult(
-        problem,
-        None,
-        "non_evaluable",
-        tuple(
+        problem=problem,
+        descriptor=None,
+        status="non_evaluable",
+        solver_status="not_started",
+        numerical_status="unsupported",
+        physical_status="unsupported",
+        provider_domain_status="unsupported",
+        rows=tuple(
             GeneralEquilibriumRowResult(
                 output.identity,
                 output.selector,
@@ -785,13 +793,13 @@ def _unsupported(
             )
             for output in problem.outputs
         ),
-        (),
-        failure,
-        "unsupported",
-        "not_established",
-        None,
-        None,
-        None,
+        phases=(),
+        failure=failure,
+        certificate_scope="unsupported",
+        globality_claim="not_established",
+        trial=None,
+        branch_signature=None,
+        owner_result=None,
     )
 
 
@@ -1333,14 +1341,25 @@ def _reactive_lle_failed(
         "physical_rejection",
         "numerical_convergence_failure",
         "first_order_failure",
+        "provider_domain_rejection",
+        "owner_contract_failure",
     ],
     diagnostic: str,
+    *,
+    solver_status: str,
+    numerical_status: str,
+    physical_status: str,
+    provider_domain_status: str,
 ) -> GeneralReactiveEquilibriumResult:
     return GeneralReactiveEquilibriumResult(
-        problem,
-        compilation.descriptor,
-        "non_evaluable",
-        tuple(
+        problem=problem,
+        descriptor=compilation.descriptor,
+        status="non_evaluable",
+        solver_status=solver_status,
+        numerical_status=numerical_status,
+        physical_status=physical_status,
+        provider_domain_status=provider_domain_status,
+        rows=tuple(
             GeneralEquilibriumRowResult(
                 output.identity,
                 output.selector,
@@ -1353,13 +1372,13 @@ def _reactive_lle_failed(
             )
             for output in problem.outputs
         ),
-        (),
-        NonEvaluableTrial(code, diagnostic),
-        compilation.descriptor.certificate_scope,
-        "not_established",
-        trial,
-        None,
-        None,
+        phases=(),
+        failure=NonEvaluableTrial(code, diagnostic),
+        certificate_scope=compilation.descriptor.certificate_scope,
+        globality_claim="not_established",
+        trial=trial,
+        branch_signature=None,
+        owner_result=None,
     )
 
 
@@ -1516,38 +1535,79 @@ def _evaluate_reactive_lle(
     active_parameters: epcsaft.ActiveParameterSet | None,
 ) -> GeneralReactiveEquilibriumResult:
     trial = _reactive_lle_trial(compilation.owner_descriptor, active_parameters)
-    native = cast(
-        dict[str, object],
-        _equilibrium._reactive_finite_phases(
-            _native_transport(model, active_parameters),
-            _reactive_lle_spec(problem, compilation.temperature_k, compilation.pressure_pa),
-            tuple(
-                cast(ProviderModel, phase.model).admissible_packing_fraction_interval
-                for phase in compilation.phases
+    try:
+        native = cast(
+            dict[str, object],
+            _equilibrium._reactive_finite_phases(
+                _native_transport(model, active_parameters),
+                _reactive_lle_spec(problem, compilation.temperature_k, compilation.pressure_pa),
+                tuple(
+                    cast(ProviderModel, phase.model).admissible_packing_fraction_interval
+                    for phase in compilation.phases
+                ),
+                tuple(
+                    {
+                        "amounts_mol": cast(FinitePhaseStart, phase.start).amounts_mol,
+                        "molar_volume_m3_per_mol": cast(
+                            FinitePhaseStart, phase.start
+                        ).molar_volume_m3_per_mol,
+                    }
+                    for phase in compilation.phases
+                ),
+                problem.reaction_system.strict_interior_amount_floor_mol,
+                active_parameters is not None,
             ),
-            tuple(
-                {
-                    "amounts_mol": cast(FinitePhaseStart, phase.start).amounts_mol,
-                    "molar_volume_m3_per_mol": cast(
-                        FinitePhaseStart, phase.start
-                    ).molar_volume_m3_per_mol,
-                }
-                for phase in compilation.phases
-            ),
-            problem.reaction_system.strict_interior_amount_floor_mol,
-            active_parameters is not None,
-        ),
-    )
+        )
+    except (ArithmeticError, RuntimeError, ValueError) as error:
+        diagnostic = str(error)
+        if (
+            "Provider" not in diagnostic
+            and "source domain" not in diagnostic
+            and "outside the declared packing interval" not in diagnostic
+        ):
+            raise
+        return _reactive_lle_failed(
+            problem,
+            compilation,
+            trial,
+            "provider_domain_rejection",
+            diagnostic,
+            solver_status="not_started",
+            numerical_status="not_adjudicated",
+            physical_status="not_adjudicated",
+            provider_domain_status="failed",
+        )
     if not bool(native["accepted"]):
-        diagnostic = str(native["failure_reason"] or native["solver_status"])
+        diagnostic = ": ".join(
+            part
+            for part in (
+                str(native["failure_reason"] or native["solver_status"]),
+                str(native["callback_error"]),
+            )
+            if part
+        )
         code = (
-            "first_order_failure"
+            "provider_domain_rejection"
+            if str(native["provider_domain_status"]) == "failed"
+            else "owner_contract_failure"
+            if str(native["callback_failure_kind"]) == "internal_contract"
+            else "first_order_failure"
             if "sensitivity" in diagnostic
             else "physical_rejection"
-            if "certificate" in diagnostic
+            if str(native["physical_status"]) == "failed"
             else "numerical_convergence_failure"
         )
-        return _reactive_lle_failed(problem, compilation, trial, cast(Any, code), diagnostic)
+        return _reactive_lle_failed(
+            problem,
+            compilation,
+            trial,
+            cast(Any, code),
+            diagnostic,
+            solver_status=str(native["solver_status"]),
+            numerical_status=str(native["numerical_status"]),
+            physical_status=str(native["physical_status"]),
+            provider_domain_status=str(native["provider_domain_status"]),
+        )
     if tuple(str(value) for value in cast(tuple[object, ...], native["parameter_order"])) != (
         compilation.descriptor.active_parameter_identities
     ):
@@ -1557,6 +1617,10 @@ def _evaluate_reactive_lle(
             trial,
             "first_order_failure",
             "reactive LLE parameter derivative order differs from its descriptor",
+            solver_status=str(native["solver_status"]),
+            numerical_status=str(native["numerical_status"]),
+            physical_status=str(native["physical_status"]),
+            provider_domain_status=str(native["provider_domain_status"]),
         )
     rows = _reactive_lle_rows(problem, compilation, native)
     native_amounts = _native_float_matrix(native["phase_amounts_mol"])
@@ -1627,21 +1691,41 @@ def _evaluate_reactive_lle(
         branch_signature,
     )
     return GeneralReactiveEquilibriumResult(
-        problem,
-        compilation.descriptor,
-        "evaluated",
-        rows,
-        phases,
-        None,
-        compilation.descriptor.certificate_scope,
-        "not_established",
-        trial,
-        branch_signature,
-        owner,
+        problem=problem,
+        descriptor=compilation.descriptor,
+        status="evaluated",
+        solver_status=str(native["solver_status"]),
+        numerical_status=str(native["numerical_status"]),
+        physical_status=str(native["physical_status"]),
+        provider_domain_status=str(native["provider_domain_status"]),
+        rows=rows,
+        phases=phases,
+        failure=None,
+        certificate_scope=compilation.descriptor.certificate_scope,
+        globality_claim="not_established",
+        trial=trial,
+        branch_signature=branch_signature,
+        owner_result=owner,
     )
 
 
-def solve_general_reactive_equilibrium(
+def _failure_axes(failure: NonEvaluableTrial | None) -> tuple[str, str, str]:
+    if failure is None:
+        return "passed", "passed", "passed"
+    if failure.code == "provider_domain_rejection":
+        return "not_adjudicated", "not_adjudicated", "failed"
+    if failure.code in {
+        "numerical_convergence_failure",
+        "singular_sensitivity",
+        "ill_conditioned_sensitivity",
+    }:
+        return "failed", "not_adjudicated", "passed"
+    if failure.code == "first_order_failure":
+        return "passed", "passed", "passed"
+    return "passed", "failed", "passed"
+
+
+def _solve_general_reactive_equilibrium(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
     *,
@@ -1664,18 +1748,38 @@ def solve_general_reactive_equilibrium(
             compiled.owner_descriptor,
             active_parameters=active_parameters,
         )
+        numerical_status, physical_status, provider_status = _failure_axes(
+            homogeneous_owner.failure
+        )
+        diagnostics = homogeneous_owner.diagnostics
         return GeneralReactiveEquilibriumResult(
-            problem,
-            compiled.descriptor,
-            homogeneous_owner.status,
-            _generic_rows(problem.outputs, cast(tuple[object, ...], homogeneous_owner.rows)),
-            (),
-            homogeneous_owner.failure,
-            compiled.descriptor.certificate_scope,
-            "not_established",
-            homogeneous_owner.trial,
-            _homogeneous_branch_signature(homogeneous_owner),
-            homogeneous_owner,
+            problem=problem,
+            descriptor=compiled.descriptor,
+            status=homogeneous_owner.status,
+            solver_status=(
+                diagnostics.solver_status
+                if diagnostics is not None
+                else homogeneous_owner.failure.code
+                if homogeneous_owner.failure is not None
+                else "not_started"
+            ),
+            numerical_status=(
+                diagnostics.numerical_status if diagnostics is not None else numerical_status
+            ),
+            physical_status=(
+                diagnostics.physical_status if diagnostics is not None else physical_status
+            ),
+            provider_domain_status=(
+                diagnostics.provider_domain_status if diagnostics is not None else provider_status
+            ),
+            rows=_generic_rows(problem.outputs, cast(tuple[object, ...], homogeneous_owner.rows)),
+            phases=(),
+            failure=homogeneous_owner.failure,
+            certificate_scope=compiled.descriptor.certificate_scope,
+            globality_claim="not_established",
+            trial=homogeneous_owner.trial,
+            branch_signature=_homogeneous_branch_signature(homogeneous_owner),
+            owner_result=homogeneous_owner,
         )
     bubble_owner = evaluate_reactive_bubble_observations(
         compiled.owner_problem,
@@ -1683,18 +1787,39 @@ def solve_general_reactive_equilibrium(
         compiled.owner_descriptor,
         active_parameters=active_parameters,
     )
+    numerical_status, physical_status, provider_status = _failure_axes(bubble_owner.failure)
+    certification = bubble_owner.certification
+    chemical_diagnostics = cast(Any, bubble_owner.chemical_diagnostics)
     return GeneralReactiveEquilibriumResult(
-        problem,
-        compiled.descriptor,
-        bubble_owner.status,
-        _generic_rows(problem.outputs, cast(tuple[object, ...], bubble_owner.rows)),
-        bubble_owner.phases,
-        bubble_owner.failure,
-        compiled.descriptor.certificate_scope,
-        "not_established",
-        bubble_owner.trial,
-        _bubble_branch_signature(bubble_owner),
-        bubble_owner,
+        problem=problem,
+        descriptor=compiled.descriptor,
+        status=bubble_owner.status,
+        solver_status=(
+            str(chemical_diagnostics.solver_status)
+            if chemical_diagnostics is not None
+            else bubble_owner.failure.code
+            if bubble_owner.failure is not None
+            else "not_started"
+        ),
+        numerical_status=(
+            certification.numerical_status if certification is not None else numerical_status
+        ),
+        physical_status=(
+            certification.physical_status if certification is not None else physical_status
+        ),
+        provider_domain_status=(
+            str(chemical_diagnostics.provider_domain_status)
+            if chemical_diagnostics is not None
+            else provider_status
+        ),
+        rows=_generic_rows(problem.outputs, cast(tuple[object, ...], bubble_owner.rows)),
+        phases=bubble_owner.phases,
+        failure=bubble_owner.failure,
+        certificate_scope=compiled.descriptor.certificate_scope,
+        globality_claim="not_established",
+        trial=bubble_owner.trial,
+        branch_signature=_bubble_branch_signature(bubble_owner),
+        owner_result=bubble_owner,
     )
 
 
@@ -2013,6 +2138,5 @@ __all__ = (
     "certify_general_reactive_equilibrium_continuation_reference",
     "general_reactive_equilibrium_descriptor",
     "serialize_general_reactive_equilibrium_receipt",
-    "solve_general_reactive_equilibrium",
     "validate_general_reactive_equilibrium_receipt",
 )

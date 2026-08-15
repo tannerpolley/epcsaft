@@ -2,12 +2,18 @@
 
 #include <array>
 #include <cstddef>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "native_transport.hpp"
 
 namespace epcsaft_engine::equilibrium {
+
+class ProviderDomainError final : public std::domain_error {
+public:
+    using std::domain_error::domain_error;
+};
 
 struct PhaseEvaluation {
     double amount_mol = 0.0;

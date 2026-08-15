@@ -73,7 +73,7 @@ MixturePhaseEvaluation evaluate_mixture_callback(
             sizeof(phase.error),
             "provider mixture error"
         );
-        throw std::domain_error("provider mixture phase evaluation failed: " + error);
+        throw ProviderDomainError("provider mixture phase evaluation failed: " + error);
     }
     if (phase.coordinate_count != coordinate_count
         || phase.gradient_capacity != gradient.size()
@@ -160,7 +160,7 @@ PhaseEvaluation ProviderContext::evaluate(
             sizeof(phase.error),
             "provider error"
         );
-        throw std::domain_error("provider phase evaluation failed: " + error);
+        throw ProviderDomainError("provider phase evaluation failed: " + error);
     }
     const std::string parameter_fingerprint = decode_provider_char_array(
         phase.parameter_fingerprint,
@@ -242,7 +242,7 @@ std::array<double, 2> ProviderContext::evaluate_molar_volume_bounds(
         bounds.size()
     );
     if (status != EPCSAFT_NATIVE_STATUS_OK) {
-        throw std::domain_error(
+        throw ProviderDomainError(
             "provider molar-volume domain/fingerprint evaluation failed with status "
             + std::to_string(status)
         );
@@ -294,7 +294,7 @@ PackingFractionEvaluation ProviderContext::evaluate_packing_fraction(
         result.hessian.size()
     );
     if (status != EPCSAFT_NATIVE_STATUS_OK) {
-        throw std::domain_error(
+        throw ProviderDomainError(
             "provider packing-fraction evaluation failed with status "
             + std::to_string(status)
         );
@@ -415,7 +415,7 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_parameterized_phase(
         );
     }
     if (status != EPCSAFT_NATIVE_STATUS_OK) {
-        throw std::domain_error(
+        throw ProviderDomainError(
             "Provider parameterized-phase evaluation failed: "
             + decode_provider_char_array(
                 native.error,
@@ -606,7 +606,7 @@ InversePackingGeometryEvaluation ProviderContext::evaluate_inverse_packing_geome
         );
     }
     if (status != EPCSAFT_NATIVE_STATUS_OK) {
-        throw std::domain_error(
+        throw ProviderDomainError(
             "Provider inverse-packing geometry failed: "
             + decode_provider_char_array(
                 native.error,

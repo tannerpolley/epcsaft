@@ -1274,7 +1274,11 @@ py::dict reactive_finite_phase_result(const ReactiveFinitePhaseResult& evaluatio
     result["accepted"] = evaluation.accepted;
     result["solver_status"] = evaluation.solver_status;
     result["callback_error"] = evaluation.callback_error;
+    result["callback_failure_kind"] = evaluation.callback_failure_kind;
     result["failure_reason"] = evaluation.failure_reason;
+    result["numerical_status"] = evaluation.numerical_status;
+    result["physical_status"] = evaluation.physical_status;
+    result["provider_domain_status"] = evaluation.provider_domain_status;
     result["phase_amounts_mol"] = evaluation.phase_amounts_mol;
     result["phase_volumes_m3"] = evaluation.phase_volumes_m3;
     result["phase_pressures_pa"] = evaluation.phase_pressures_pa;
@@ -1298,6 +1302,17 @@ py::dict reactive_finite_phase_result(const ReactiveFinitePhaseResult& evaluatio
     result["admissible_nullity"] = evaluation.admissible_nullity;
     result["optimizer_iterations"] = evaluation.optimizer_iterations;
     result["provider_evaluation_count"] = evaluation.provider_evaluation_count;
+    result["derivative_audits_performed"] = evaluation.derivative_audits_performed;
+    result["derivative_audit_status"] = evaluation.derivative_audit_status;
+    result["objective_gradient_audit_max_relative_error"] = optional_float(
+        evaluation.objective_gradient_audit_max_relative_error
+    );
+    result["constraint_jacobian_audit_max_relative_error"] = optional_float(
+        evaluation.constraint_jacobian_audit_max_relative_error
+    );
+    result["lagrangian_hessian_audit_max_relative_error"] = optional_float(
+        evaluation.lagrangian_hessian_audit_max_relative_error
+    );
     result["parameter_order"] = evaluation.parameter_order;
     result["sensitivity_status"] = evaluation.sensitivity_status;
     result["sensitivity_failure_reason"] = evaluation.sensitivity_failure_reason;
@@ -1315,7 +1330,8 @@ py::dict solve_reactive_finite_phases(
     const std::vector<std::array<double, 2>>& packing_fraction_intervals,
     const std::vector<py::dict>& start_payloads,
     double trace_floor,
-    bool active_parameters_requested
+    bool active_parameters_requested,
+    bool derivative_audits_requested
 ) {
     const epcsaft_native_transport& transport = checked_reactive_finite_transport(capsule);
     const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
@@ -1351,7 +1367,9 @@ py::dict solve_reactive_finite_phases(
             packing_fraction_intervals,
             starts,
             trace_floor,
-            parameters.identities.empty() ? nullptr : &parameters
+            parameters.identities.empty() ? nullptr : &parameters,
+            500,
+            derivative_audits_requested
         )
     );
 }
@@ -1378,7 +1396,8 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("packing_fraction_intervals"),
         py::arg("starts"),
         py::arg("trace_floor"),
-        py::arg("active_parameters_requested") = false
+        py::arg("active_parameters_requested") = false,
+        py::arg("derivative_audits_requested") = false
     );
 }
 

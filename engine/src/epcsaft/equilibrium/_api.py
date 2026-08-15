@@ -180,9 +180,7 @@ class EquilibriumPhaseState:
     """One intensive phase state on its declared component support."""
 
     role: PhaseRole
-    support: Literal[
-        "all_components", "neutral_components", "declared_neutral_components"
-    ]
+    support: Literal["all_components", "neutral_components", "declared_neutral_components"]
     supported_component_ids: tuple[str, ...]
     mole_fractions: tuple[float, ...]
     molar_volume_m3_per_mol: float
@@ -1089,9 +1087,7 @@ def _reference_direction_sensitivity(
         raise ValueError("native reference-direction sensitivity status is invalid")
     unavailable = status == "unavailable"
     failure = value["failure_reason"]
-    if (unavailable and not isinstance(failure, str)) or (
-        not unavailable and failure is not None
-    ):
+    if (unavailable and not isinstance(failure, str)) or (not unavailable and failure is not None):
         raise ValueError("native reference-direction sensitivity failure state is invalid")
     native_identities = tuple(
         str(item) for item in cast(Sequence[object], value["parameter_identities"])
@@ -1326,9 +1322,7 @@ def _native_equilibrium_phase(payload: Mapping[str, object]) -> EquilibriumPhase
     return EquilibriumPhaseState(
         role=cast(PhaseRole, role),
         support=cast(
-            Literal[
-                "all_components", "neutral_components", "declared_neutral_components"
-            ],
+            Literal["all_components", "neutral_components", "declared_neutral_components"],
             support,
         ),
         supported_component_ids=component_ids,
@@ -1655,8 +1649,7 @@ def phase_equilibrium(
     problem: PhaseEquilibriumProblem,
     *,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
-) -> PhaseEquilibriumResult:
-    ...
+) -> PhaseEquilibriumResult: ...
 
 
 @overload
@@ -1665,8 +1658,7 @@ def phase_equilibrium(
     problem: GeneralReactiveEquilibriumProblem,
     *,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
-) -> GeneralReactiveEquilibriumResult:
-    ...
+) -> GeneralReactiveEquilibriumResult: ...
 
 
 def phase_equilibrium(
@@ -1679,10 +1671,10 @@ def phase_equilibrium(
 
     if not isinstance(model, epcsaft.Mixture):
         raise TypeError("phase_equilibrium requires an epcsaft.Mixture")
-    from ._grepe import GeneralReactiveEquilibriumProblem, solve_general_reactive_equilibrium
+    from ._grepe import GeneralReactiveEquilibriumProblem, _solve_general_reactive_equilibrium
 
     if isinstance(problem, GeneralReactiveEquilibriumProblem):
-        return solve_general_reactive_equilibrium(
+        return _solve_general_reactive_equilibrium(
             model, problem, active_parameters=active_parameters
         )
     if type(problem) is not PhaseEquilibriumProblem:
@@ -1839,7 +1831,8 @@ def _fixed_t_coexistence_core(
     if type(partner_support) in {NeutralComponents, DeclaredNeutralComponents}:
         charges = tuple(model._model.charge_number)
         all_neutral_ids = tuple(
-            component for component, charge in zip(model.component_ids, charges, strict=True)
+            component
+            for component, charge in zip(model.component_ids, charges, strict=True)
             if charge == 0
         )
         partner_ids = (
@@ -3189,8 +3182,7 @@ def _chemical_equilibrium_impl(
             if (
                 len(continuation_amounts) != len(problem.species_ids)
                 or any(
-                    not math.isfinite(amount) or amount <= 0.0
-                    for amount in continuation_amounts
+                    not math.isfinite(amount) or amount <= 0.0 for amount in continuation_amounts
                 )
                 or not math.isfinite(continuation_volume)
                 or continuation_volume <= 0.0

@@ -198,7 +198,11 @@ struct ReactiveFinitePhaseResult {
     bool accepted = false;
     std::string solver_status;
     std::string callback_error;
+    std::string callback_failure_kind = "none";
     std::string failure_reason;
+    std::string numerical_status = "not_adjudicated";
+    std::string physical_status = "not_adjudicated";
+    std::string provider_domain_status = "not_adjudicated";
     std::vector<std::vector<double>> phase_amounts_mol;
     std::vector<double> phase_volumes_m3;
     std::vector<double> phase_pressures_pa;
@@ -218,6 +222,14 @@ struct ReactiveFinitePhaseResult {
     std::size_t admissible_nullity = 0;
     std::size_t optimizer_iterations = 0;
     std::size_t provider_evaluation_count = 0;
+    bool derivative_audits_performed = false;
+    std::string derivative_audit_status = "not_requested";
+    double objective_gradient_audit_max_relative_error =
+        std::numeric_limits<double>::quiet_NaN();
+    double constraint_jacobian_audit_max_relative_error =
+        std::numeric_limits<double>::quiet_NaN();
+    double lagrangian_hessian_audit_max_relative_error =
+        std::numeric_limits<double>::quiet_NaN();
     std::vector<std::string> parameter_order;
     std::string sensitivity_status = "not_requested";
     std::string sensitivity_failure_reason;
@@ -479,7 +491,8 @@ struct SourceStandardStateResult {
     const std::vector<ReactiveFinitePhaseStart>& starts,
     double trace_floor,
     const ProviderActiveParameterSet* active_parameters = nullptr,
-    int max_iterations = 500
+    int max_iterations = 500,
+    bool perform_derivative_audits = false
 );
 
 }  // namespace epcsaft_engine::equilibrium

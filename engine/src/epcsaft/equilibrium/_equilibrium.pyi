@@ -95,4 +95,5 @@ def _reactive_finite_phases(
     starts: tuple[dict[str, object], ...],
     trace_floor: float,
     active_parameters_requested: bool = ...,
+    derivative_audits_requested: bool = ...,
 ) -> dict[str, Any]: ...
