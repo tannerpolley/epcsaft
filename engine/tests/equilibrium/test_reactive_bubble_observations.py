@@ -547,6 +547,68 @@ def test_multireaction_nonideal_bubble_total_jacobian_matches_resolves() -> None
         scale = max(1.0, abs(exact[0]), abs(numerical))
         assert abs(exact[0] - numerical) / scale < 2.0e-7
 
+    grepe_problem = equilibrium.GeneralReactiveEquilibriumProblem(
+        identity=problem.identity,
+        temperature=equilibrium.Fixed(313.15 * epcsaft.unit_registry.kelvin),
+        pressure=equilibrium.Solved(
+            3.2e6 * epcsaft.unit_registry.pascal,
+            tuple(item * epcsaft.unit_registry.pascal for item in problem.pressure_interval_pa),
+            tuple(item * epcsaft.unit_registry.pascal for item in problem.pressure_starts_pa),
+        ),
+        phases=(
+            equilibrium.ReactivePhase(
+                problem.liquid_problem.phase_identity,
+                "liquid",
+                "finite",
+                equilibrium.AllComponents(),
+                equilibrium.ProviderModel(
+                    problem.liquid_problem.phase.admissible_packing_fraction_interval,
+                    "installed-provider-eos",
+                ),
+                problem.liquid_problem.continuation_identity,
+                problem.liquid_problem.branch_policy,
+                problem.liquid_problem.continuation_reference,
+            ),
+            equilibrium.ReactivePhase(
+                problem.vapor_phase_identity,
+                "vapor",
+                "incipient",
+                equilibrium.DeclaredNeutralComponents(problem.vapor_component_ids),
+                equilibrium.ProviderModel(
+                    problem.liquid_problem.phase.admissible_packing_fraction_interval,
+                    "installed-provider-eos",
+                ),
+            ),
+        ),
+        reaction_system=problem.liquid_problem.reaction_system,
+        reaction_phase_ids=(problem.liquid_problem.phase_identity,),
+        outputs=(
+            equilibrium.EquilibriumOutput("bubble-pressure", "system.pressure"),
+            equilibrium.EquilibriumOutput(
+                "first-vapor-fraction",
+                "phase.mole_fraction",
+                problem.vapor_phase_identity,
+                (1.0, 0.0, 0.0),
+            ),
+            equilibrium.EquilibriumOutput(
+                "cation-liquid-fraction",
+                "phase.mole_fraction",
+                problem.liquid_problem.phase_identity,
+                (0.0, 0.0, 0.0, 1.0, 0.0),
+            ),
+        ),
+        continuation_identity=problem.continuation_identity,
+        continuation_reference=problem.continuation_reference,
+    )
+    grepe = equilibrium.phase_equilibrium(
+        epcsaft.Mixture(parameters), grepe_problem, active_parameters=active
+    )
+    assert grepe.status == "evaluated", grepe.failure
+    assert grepe.values == pytest.approx(center.values, rel=2.0e-12, abs=2.0e-12)
+    for actual, expected in zip(grepe.jacobian, center.jacobian, strict=True):
+        assert actual == pytest.approx(expected, rel=2.0e-12, abs=2.0e-12)
+    assert grepe.globality_claim == "not_established"
+
 
 @pytest.mark.slow
 def test_reactive_bubble_uses_canonical_regression_fit_and_opaque_receipt(

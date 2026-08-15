@@ -436,6 +436,120 @@ def test_value_only_provider_potential_observation_has_zero_column_jacobian() ->
 
 
 @pytest.mark.slow
+def test_grepe_single_finite_phase_matches_homogeneous_owner_exactly() -> None:
+    """Falsify value or exact-J drift across the role-declared GREPE compiler."""
+
+    parameters = epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE)
+    model = epcsaft.Mixture(parameters)
+    owner_problem = _observation_problem(
+        equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
+        _multineutral_problem(),
+    )
+    identities = (
+        "pair/anion/solvent/k_ij",
+        "component/solvent/segment_diameter",
+    )
+    active = epcsaft.ActiveParameterSet(parameters, identities)
+    owner_rows = (
+        equilibrium.HomogeneousReactiveObservationRow(
+            "cation-mole-fraction",
+            "mole_fraction",
+            (0.0, 0.0, 1.0, 0.0),
+            support="positive",
+        ),
+        equilibrium.HomogeneousReactiveObservationRow(
+            "molar-density",
+            "molar_density_mol_per_m3",
+            support="positive",
+        ),
+        equilibrium.HomogeneousReactiveObservationRow(
+            "reaction-log-fugacity",
+            "log_fugacity_contraction",
+            (-1.0, 0.0, 1.0, 1.0),
+        ),
+        equilibrium.HomogeneousReactiveObservationRow(
+            "solvent-fugacity",
+            "fugacity_pa",
+            (1.0, 0.0, 0.0, 0.0),
+            support="positive",
+        ),
+    )
+    owner = equilibrium.evaluate_homogeneous_reactive_observations(
+        owner_problem,
+        313.15 * epcsaft.unit_registry.kelvin,
+        119_199.78746707023 * epcsaft.unit_registry.pascal,
+        equilibrium.homogeneous_reactive_observation_descriptor(
+            owner_problem,
+            owner_rows,
+            active_parameters=active,
+        ),
+        active_parameters=active,
+    )
+    assert owner.status == "evaluated", owner.failure
+
+    grepe_problem = equilibrium.GeneralReactiveEquilibriumProblem(
+        identity=owner_problem.identity,
+        temperature=equilibrium.Fixed(313.15 * epcsaft.unit_registry.kelvin),
+        pressure=equilibrium.Fixed(
+            119_199.78746707023 * epcsaft.unit_registry.pascal
+        ),
+        phases=(
+            equilibrium.ReactivePhase(
+                owner_problem.phase_identity,
+                "liquid",
+                "finite",
+                equilibrium.AllComponents(),
+                equilibrium.ProviderModel(
+                    owner_problem.phase.admissible_packing_fraction_interval,
+                    "installed-provider-eos",
+                ),
+                owner_problem.continuation_identity,
+                owner_problem.branch_policy,
+                owner_problem.continuation_reference,
+            ),
+        ),
+        reaction_system=owner_problem.reaction_system,
+        reaction_phase_ids=(owner_problem.phase_identity,),
+        outputs=(
+            equilibrium.EquilibriumOutput(
+                "cation-mole-fraction",
+                "phase.mole_fraction",
+                owner_problem.phase_identity,
+                (0.0, 0.0, 1.0, 0.0),
+                support="positive",
+            ),
+            equilibrium.EquilibriumOutput(
+                "molar-density",
+                "phase.molar_density",
+                owner_problem.phase_identity,
+                support="positive",
+            ),
+            equilibrium.EquilibriumOutput(
+                "reaction-log-fugacity",
+                "phase.log_fugacity",
+                owner_problem.phase_identity,
+                (-1.0, 0.0, 1.0, 1.0),
+            ),
+            equilibrium.EquilibriumOutput(
+                "solvent-fugacity",
+                "phase.fugacity",
+                owner_problem.phase_identity,
+                (1.0, 0.0, 0.0, 0.0),
+                support="positive",
+            ),
+        ),
+    )
+    grepe = equilibrium.phase_equilibrium(model, grepe_problem, active_parameters=active)
+
+    assert grepe.status == "evaluated", grepe.failure
+    assert grepe.values == pytest.approx(owner.values, rel=0.0, abs=0.0)
+    for actual, expected in zip(grepe.jacobian, owner.jacobian, strict=True):
+        assert actual == pytest.approx(expected, rel=0.0, abs=0.0)
+    assert grepe.certificate_scope == "fixed_TP_single_finite_reacting_phase"
+    assert grepe.globality_claim == "not_established"
+
+
+@pytest.mark.slow
 def test_homogeneous_observation_total_jacobian_matches_independent_resolves(
     tmp_path: Path,
 ) -> None:

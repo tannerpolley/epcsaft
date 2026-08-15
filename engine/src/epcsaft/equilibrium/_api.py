@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from functools import cache
 from importlib import metadata
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from pint import Quantity
 from pint.errors import DimensionalityError
@@ -15,6 +15,9 @@ import epcsaft
 from epcsaft.eos import _native_transport
 
 from . import _equilibrium
+
+if TYPE_CHECKING:
+    from ._grepe import GeneralReactiveEquilibriumProblem, GeneralReactiveEquilibriumResult
 
 
 @dataclass(frozen=True)
@@ -1646,18 +1649,46 @@ def _discovery_result(
     )
 
 
+@overload
 def phase_equilibrium(
     model: epcsaft.Mixture,
     problem: PhaseEquilibriumProblem,
     *,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
 ) -> PhaseEquilibriumResult:
+    ...
+
+
+@overload
+def phase_equilibrium(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None = None,
+) -> GeneralReactiveEquilibriumResult:
+    ...
+
+
+def phase_equilibrium(
+    model: epcsaft.Mixture,
+    problem: PhaseEquilibriumProblem | GeneralReactiveEquilibriumProblem,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None = None,
+) -> PhaseEquilibriumResult | GeneralReactiveEquilibriumResult:
     """Solve one typed HELD-lineage feed or two-phase coexistence specification."""
 
     if not isinstance(model, epcsaft.Mixture):
         raise TypeError("phase_equilibrium requires an epcsaft.Mixture")
+    from ._grepe import GeneralReactiveEquilibriumProblem, solve_general_reactive_equilibrium
+
+    if isinstance(problem, GeneralReactiveEquilibriumProblem):
+        return solve_general_reactive_equilibrium(
+            model, problem, active_parameters=active_parameters
+        )
     if type(problem) is not PhaseEquilibriumProblem:
-        raise TypeError("problem must be a PhaseEquilibriumProblem")
+        raise TypeError(
+            "problem must be a PhaseEquilibriumProblem or GeneralReactiveEquilibriumProblem"
+        )
     if active_parameters is not None and type(active_parameters) is not epcsaft.ActiveParameterSet:
         raise TypeError("active_parameters must be an epcsaft.ActiveParameterSet")
     specification = problem.specification

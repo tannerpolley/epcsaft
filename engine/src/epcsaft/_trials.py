@@ -6,6 +6,7 @@ from typing import Literal
 type NonEvaluableTrialCode = Literal[
     "component_order_mismatch",
     "parameter_topology_mismatch",
+    "unsupported_topology",
     "unsupported_derivative",
     "provider_domain_rejection",
     "source_reference_failure",
@@ -32,6 +33,7 @@ NON_EVALUABLE_TRIAL_CODES = frozenset(
     {
         "component_order_mismatch",
         "parameter_topology_mismatch",
+        "unsupported_topology",
         "unsupported_derivative",
         "provider_domain_rejection",
         "source_reference_failure",
