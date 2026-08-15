@@ -2,7 +2,7 @@
 
 - Status: completed by Governance D-032; historical execution is tracked by GitHub root issue #10 and its native CAP subissues
 - Date: 2026-08-07
-- Doctrine: Governance revision 20, Numerical Verification-Driven Development
+- Doctrine: Governance revision 21, Numerical Verification-Driven Development
 - Scope: `engine/` EOS, Equilibrium, and Regression
 - Decision authority: ADR 0004 and the three owner plans linked below
 
@@ -52,9 +52,9 @@ The pair-parameter scientific basis is recorded in
    indexed non-authoritative hints. Governance D-030 accepts the reviewed
    promotion receipt, retains exact HELD/HELD2 internally for discovery, and
    retires its redundant public Python route.
-7. Homogeneous chemical equilibrium remains separate. This plan defines only
-   the state, phase, parameter, and sensitivity seam needed by a future coupled
-   reactive-phase design.
+7. Homogeneous chemical equilibrium remained separate for this completed
+   cutover. Governance D-036 now uses its state, phase, parameter, and
+   sensitivity seam in the GREPE target.
 8. Generated parameter templates write every required neutral identity value.
    Loaders reject omission rather than inferring defaults.
 9. Engine tests remain compact numerical falsification checks. Named literature
@@ -68,7 +68,7 @@ The pair-parameter scientific basis is recorded in
 | Parameter identity, values, domains, topology, correlation coefficients | `Parameters` | Resolved ordered `ActiveParameterSet` |
 | Fixed-state and pure-saturation quantities | EOS | Observable value, units/basis, domain, exact selected-parameter Jacobian, structured failure |
 | Nonreactive solved phase quantities | Equilibrium | Certified phase result and exact total sensitivity from EOS partials |
-| Observations, residual scaling, bounds, ties, multistart, Ceres, fit receipt | Regression | Immutable `FitResult` and accepted `Parameters` |
+| Observations, residual scaling, bounds, ties, multistart, Ceres, fit receipt | Regression | Immutable `FitResult` and explicit candidate `Parameters` export |
 | Literature and application acceptance | Validation | Installed-wheel evidence |
 | Reusable parameters and observations | Data | Explicit source-traceable packets |
 

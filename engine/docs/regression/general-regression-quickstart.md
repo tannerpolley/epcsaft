@@ -14,20 +14,24 @@ request = Path(
 )
 result = fit(request)
 
-accepted = result.accepted_start
-if accepted is None:
+usable = result.accepted_start
+if usable is None:
     raise RuntimeError("no usable fit start")
 
 print(result.fitted_values())
-print(accepted.rank, accepted.condition_number, accepted.active_bounds)
+print(usable.rank, usable.condition_number, usable.active_bounds)
 
 # Explicit outputs are optional; fit never mutates the input parameter file.
 result.to_json("propane-baseline.fit-result.json")
-Path("propane-fitted.parameters.json").write_text(
+Path("propane-candidate.parameters.json").write_text(
     json.dumps(result.to_parameters().to_mapping(), indent=2, sort_keys=True) + "\n",
     encoding="utf-8",
 )
 ```
+
+The current `accepted_start` property means optimizer-usable start; it is not
+a scientific acceptance or parameter-adoption status. The GREPE hard cutover
+will replace this ambiguous public wording with `best_usable_start`.
 
 `fit` also accepts a strict `ParameterFit` or matching in-memory mapping.
 Each declared optimizer coordinate uses
@@ -39,6 +43,9 @@ No starts are generated implicitly.
 active bounds, parameter-space optimizer basin/cluster identity, and artifact
 fingerprints. This optimizer cluster is not a thermodynamic physical-branch
 identity.
+
+`to_parameters()` is an explicit authority-neutral candidate export. A
+downstream scientific campaign, not Regression, decides whether to adopt it.
 
 The admitted families are EOS pure-saturation/fixed-state observations and the
 Equilibrium-owned fixed-T,P homogeneous reactive and fixed-topology reactive

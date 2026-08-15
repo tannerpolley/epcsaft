@@ -1,6 +1,6 @@
-version: 7
+version: 8
 status: unified-monorepo-active
-governance_doctrine_revision: 20
+governance_doctrine_revision: 21
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -96,6 +96,7 @@ canonical_plans:
   eos: docs/eos/plans/2026-08-07-general-eos-parameter-derivatives.md
   regression: docs/regression/plans/2026-08-07-owner-driven-parameter-fit.md
   equilibrium: docs/equilibrium/plans/2026-08-07-general-phase-equilibrium.md
+  grepe_target: docs/equilibrium/plans/2026-08-14-general-reactive-equilibrium-phase-equilibrium.md
 
 final_cutover:
   status: accepted
@@ -110,7 +111,7 @@ scientific_boundaries:
   exploratory_workflows: lab
   packet_access: explicit_materialization_only
   sibling_discovery: forbidden
-  regression_transfer: typed_immutable_parameters
+  regression_transfer: explicit_authority_neutral_candidate_parameters
 
 build_invariants:
   distributions: 1

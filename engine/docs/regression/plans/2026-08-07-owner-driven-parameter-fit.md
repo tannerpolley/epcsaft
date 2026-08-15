@@ -18,9 +18,10 @@ immutable parameter transfer. EOS and later Equilibrium own all scientific
 values, domains, solves, and exact selected-parameter derivatives.
 
 The hard-cutover boundary began with EOS fixed-state and pure-saturation
-observations. Governance D-034 later admits the issue-#30 fixed-T,P homogeneous
-reactive family after its separate branch, failure, receipt, derivative, and
-installed-artifact evidence. D-031 still defers phase-equilibrium families.
+observations. Governance D-034 admits fixed-T,P homogeneous reactive
+observations, and D-035 admits fixed-topology reactive bubble/VLE observations.
+D-036 approves the generic GREPE evaluator target but admits no additional
+Observation Family without separate evidence.
 
 ## What remains
 
@@ -34,7 +35,8 @@ installed-artifact evidence. D-031 still defers phase-equilibrium families.
 - Owner-published closed typed catalogs for parameter correlations and admitted
   observable descriptors, queried read-only by Regression. Regression owns no
   duplicate thermodynamic registry or family switch.
-- Immutable `FitResult.to_parameters()` transfer.
+- Immutable explicit candidate-parameter export from `FitResult`; Regression
+  assigns no scientific acceptance or adoption status.
 
 ## What is deleted
 
@@ -80,8 +82,8 @@ an owner's parameter capability.
 7. Route the owner's exact Jacobian through the same scaling and ties into
    Ceres.
 8. Record starts, failures, convergence, objective blocks, rank/conditioning,
-   active bounds, predictions, residuals, Jacobian, and accepted parameters in
-   one immutable result.
+   active bounds, predictions, residuals, Jacobian, and candidate parameter
+   values in one immutable result.
 
 An owner evaluation may fail at a bounded trial. Regression records the typed
 failure and allows Ceres or multistart policy to reject/backtrack that trial; it
@@ -98,12 +100,15 @@ never fabricates a scientific penalty value.
   domain, and exact selected-parameter derivative.
 - Equilibrium-owned fixed-T,P homogeneous reactive rows with immutable local
   continuation anchors, exact total Jacobians, and diagnostic-only results.
+- Equilibrium-owned fixed-topology reactive bubble/VLE rows with immutable
+  local branch receipts, exact total Jacobians, and typed failures.
 
 ### Deferred
 
-- mixture VLE/LLE/flash quantities;
-- phase appearance or phase-count observations;
-- coupled reactive-VLE and nonreactive phase-equilibrium quantities;
+- unadmitted mixture VLE/LLE/flash quantities;
+- phase appearance or phase-count observations other than the D-035 declared
+  incipient-vapor family;
+- reactive LLE and unadmitted nonreactive phase-equilibrium quantities;
 - reaction-model coefficients;
 - total caloric properties before an EOS thermochemistry model exists; and
 - arbitrary user callbacks or expressions.
@@ -230,7 +235,8 @@ Compact Regression checks must establish:
 - pure-saturation rows share one owner solve and preserve distinct outputs;
 - non-evaluable trials remain typed diagnostics and do not become penalties;
 - rank deficiency and active bounds remain visible; and
-- accepted parameter transfer does not mutate the input document.
+- candidate parameter export does not mutate the input document or assert
+  scientific adoption.
 
 Tests may use compact manufactured or carefully selected numerical cases. Named
 literature recovery, broad temperature tables, and workflow acceptance belong

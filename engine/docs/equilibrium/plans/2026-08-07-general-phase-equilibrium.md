@@ -6,6 +6,11 @@
 - Parent: [General scientific capability hard cutover](../../plans/2026-08-07-general-scientific-capability-hard-cutover.md)
 - Decisions: [one general phase-equilibrium owner](../adr/0001-one-general-phase-equilibrium-owner.md), [protected HELD promotion](../adr/0002-protect-held-until-phase-equilibrium-promotion.md)
 
+Governance D-036 supersedes only this plan's future boundary that kept
+homogeneous chemistry permanently separate. The accepted nonreactive
+capability and HELD/HELD2 discovery lineage remain unchanged while the GREPE
+target evolves the same public owner.
+
 ## Outcome
 
 The protected promotion gate replaced the separate neutral and electrolyte

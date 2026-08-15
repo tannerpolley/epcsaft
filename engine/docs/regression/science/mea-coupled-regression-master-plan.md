@@ -1,10 +1,17 @@
 # MEA Coupled Regression Master Plan
 
-Status: Regression transport ready; reduced tracer blocked on a certified
-stable homogeneous state and frozen rank-sufficient coordinates.
+Status: historical readiness record; superseded for live equilibrium and
+regression routing by Governance D-036 and the canonical GREPE plan.
 
-This document is the single Regression-owned plan for fitting ePC-SAFT
-parameters to aqueous monoethanolamine observations. It coordinates the
+The reduced `p_CO2 = f_CO2_liquid` tracer in this document is not the live
+target. After staged GREPE cutover, new MEA work will use the full fixed-
+topology reactive bubble calculation, with `p_CO2 = y_CO2 P`, through the
+generic GREPE/Regression boundary. Retain the source-row inventories below as
+provenance only; they do not authorize a parallel solver, a reduced pressure
+convention, or parameter adoption.
+
+This document historically coordinated Regression work for fitting ePC-SAFT
+parameters to aqueous monoethanolamine observations. It recorded the
 application contract owned by MEA-Thermodynamics, thermodynamic state and
 sensitivity results owned by Equilibrium, thermodynamic values and exact
 parameter partials owned by EOS, and the Ceres workflow owned by Regression.
@@ -660,6 +667,6 @@ observations or derivatives.
   homogeneous state and the application freezes a rank-sufficient `N <= 2`
   coordinate block. Re-freeze all artifact identities on resume.
 
-This document controls the coordinated sequence. Application manifests,
-installed artifact receipts, and owner-specific implementation contracts
-remain authoritative for their own content.
+This document no longer controls the coordinated sequence. Governance D-036,
+the GREPE plan, current application manifests, installed-artifact receipts,
+and owner-specific implementation contracts are authoritative.

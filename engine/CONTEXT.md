@@ -1,6 +1,6 @@
 # Engine Context
 
-`governance_doctrine_revision: 20`
+`governance_doctrine_revision: 21`
 
 `engine/` is the sole runtime owner inside `tannerpolley/ePC-SAFT`. It
 builds one Python 3.13 distribution, `epcsaft`, containing EOS, equilibrium,
@@ -8,9 +8,11 @@ and regression. All native modules share one CMake graph and wheel.
 
 Reusable packets remain owned by `data/` and are materialized with exact
 commit, packet, fingerprint, and file hashes. Regression returns an immutable
-`FitResult` containing the accepted parameter document; EOS and equilibrium
-consume the resulting `Parameters` directly. No package, SDK, filesystem, or
-legacy compatibility handoff exists between the three runtime modules.
+`FitResult`. D-036 requires the promotion-gated transfer to become an explicit
+candidate export that creates a new provenance-linked `Parameters` document
+without accepting, admitting, promoting, or adopting it. No package, SDK,
+filesystem, or legacy compatibility handoff exists between the three runtime
+modules.
 
 Engine retains compact numerical evidence. Installed-wheel physical and
 literature campaigns belong in `validation/`; temporary experiments belong in
@@ -21,6 +23,9 @@ still-relevant numerical evidence retain historical identities as provenance.
 
 The canonical cross-module execution plan is
 [`docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md`](docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md).
+The approved GREPE target that evolves the sole public `phase_equilibrium`
+owner is
+[`docs/equilibrium/plans/2026-08-14-general-reactive-equilibrium-phase-equilibrium.md`](docs/equilibrium/plans/2026-08-14-general-reactive-equilibrium-phase-equilibrium.md).
 Its full owner plans cover
 [`EOS`](docs/eos/plans/2026-08-07-general-eos-parameter-derivatives.md),
 [`Regression`](docs/regression/plans/2026-08-07-owner-driven-parameter-fit.md),
@@ -255,19 +260,21 @@ derivative, duplicated observation solver
 
 **Regression Cutover Boundary**:
 The hard cutover admits EOS-owned fixed-state and Pure Saturation State
-Observation Families only. It excludes every mixture phase-equilibrium, flash,
-and reactive Observation Family, as well as every reaction-model coefficient.
-Governance D-031 defers every current Equilibrium Observation Family after the
-owner interface, exact sensitivity, and numerical-failure review; later
-admission requires a separately shaped implementation issue and evidence.
-_Avoid_: Premature Equilibrium dependency, reaction fit coordinate, eventual-
-architecture claim presented as current support
+Observation Families plus the D-034 fixed-T,P homogeneous reactive and D-035
+fixed-topology reactive bubble/VLE families. Every admitted Equilibrium family
+owns its descriptor, values, exact total Jacobians, branch certificate, and
+typed Non-Evaluable Trial result. D-036 approves GREPE as the next target
+architecture but admits no reactive LLE, electrochemical multiphase, reaction-
+coefficient fit, or other future capability without its own executable
+evidence and receipt.
+_Avoid_: Family-specific Regression thermodynamics, reaction fit coordinate,
+target architecture presented as current admission
 
 **Non-Evaluable Trial**:
-A bounded optimizer point at which a required EOS or Pure Saturation State
-calculation cannot produce its declared value and exact derivative. The
-evaluation returns structured failure without a fabricated residual, Ceres may
-backtrack, and the affected multistart outcome remains in FitResult diagnostics.
+A bounded optimizer point at which a required owner evaluation cannot produce
+its declared value, certificate, and exact derivative. The evaluation returns
+structured failure without a fabricated residual, Ceres may backtrack, and the
+affected multistart outcome remains in FitResult diagnostics.
 _Avoid_: Fixed scientific penalty, silent clipping, whole-fit first-failure abort
 
 **Pure Saturation State**:

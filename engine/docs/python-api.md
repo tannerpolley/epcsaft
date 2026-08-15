@@ -156,7 +156,7 @@ from epcsaft.regression import FitResult, ParameterFit, fit
 
 specification = ParameterFit.from_json("parameter-fit.json")
 result: FitResult = fit(specification, base_path="campaign")
-fitted_parameters = result.to_parameters()
+candidate_parameters = result.to_parameters()
 ```
 
 `ParameterFit` declares one parameter document, model kind, active selectors,
@@ -166,17 +166,18 @@ the owner's values and exact ordered Jacobian blocks through the private native
 Ceres core, and returns every start without mutating the input parameters.
 Each start retains predictions, scaled residuals and Jacobians, rank and
 conditioning, active bounds, and typed owner-evaluation failures.
-`FitResult.to_parameters()` creates a new immutable parameter document with fit
-provenance.
+`FitResult.to_parameters()` creates a new immutable candidate parameter
+document with fit provenance. It does not accept, promote, or adopt the values.
 
-This cutover admits `pure_saturation` and `fixed_state_pressure` observation
-families. Selectable coordinates include continuous component and association
-parameters and constant neutral `k_ij` or `l_ij` pairs when the chosen
-observation has the required exact EOS derivative. Mixture phase-equilibrium,
+This cutover admits `pure_saturation`, `fixed_state_pressure`, fixed-T,P
+homogeneous reactive, and fixed-topology reactive bubble/VLE Observation
+Families. Selectable coordinates include continuous component and association
+parameters and supported pair or model coefficients when the chosen
+observation has the required exact owner derivative. Reactive LLE,
 charged/electrolyte pair fitting, direct permittivity or Born calibration, and
-reaction observations are not admitted. Adding one requires a source-neutral
-Observation Family and scientific evidence; it never creates another public
-fit route.
+reaction-correlation fitting are not admitted. Adding one requires a source-
+neutral Observation Family and scientific evidence; it never creates another
+public fit route.
 
 ## Native boundary
 

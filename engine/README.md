@@ -33,13 +33,15 @@ Regression exports only `ParameterFit`, `FitResult`, and `fit`:
 from epcsaft.regression import fit
 
 result = fit("parameter-fit.json")
-parameters = result.to_parameters()
+candidate_parameters = result.to_parameters()
 ```
 
 The fit request owns the selected parameter identities, data hashes, units,
-residuals, bounds, scales, ties, and multistart policy. Engine owns the exact
-derivatives and one private native solver; Validation owns literature
-acceptance.
+residuals, bounds, scales, ties, and multistart policy. `to_parameters()` is an
+explicit authority-neutral candidate export; it does not accept or adopt the
+values. Engine owns the exact derivatives and one private native solver;
+Validation owns installed-artifact literature evidence, and the downstream
+scientific campaign owns any parameter-adoption decision.
 
 The canonical capability cutover and its EOS, Regression, and Equilibrium owner
 plans begin at
