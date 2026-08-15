@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
@@ -215,15 +216,6 @@ class ReactivePhase:
             raise ValueError("reactive phase declaration is invalid")
         if self.start is not None and has_local_continuation:
             raise ValueError("a finite reactive phase cannot declare both a start and continuation")
-        if (
-            self.amount_role == "finite"
-            and self.start is None
-            and (
-                not self.continuation_identity
-                or self.branch_policy != "local_certified_role_selected_state"
-            )
-        ):
-            raise ValueError("finite reactive phases require a local branch declaration or start")
         if self.amount_role == "incipient" and any(
             value is not None
             for value in (
@@ -852,6 +844,8 @@ class _FinitePhaseCompilation:
     temperature_k: float
     pressure_pa: float
     phases: tuple[ReactivePhase, ...]
+    declared_start_set: tuple[FinitePhaseStart, ...] | None
+    generated_allocations: tuple[tuple[tuple[float, ...], ...], ...]
     owner_descriptor: _FinitePhaseOwnerDescriptor
     descriptor: GeneralReactiveEquilibriumDescriptor
 
@@ -1016,16 +1010,29 @@ def _finite_phase_owner_descriptor(
     )
     reference_fingerprint = _fingerprint(
         "epcsaft.finite-phases-starts",
-        tuple(
-            {
-                "phase_identity": phase.identity,
-                "amounts_mol": cast(FinitePhaseStart, phase.start).amounts_mol,
-                "molar_volume_m3_per_mol": cast(
-                    FinitePhaseStart, phase.start
-                ).molar_volume_m3_per_mol,
-            }
-            for phase in problem.phases
-        ),
+        {
+            "mode": (
+                "generated_reaction_feed_partitions_v1"
+                if all(phase.start is None for phase in problem.phases)
+                else "declared"
+            ),
+            "phases": tuple(
+                {
+                    "phase_identity": phase.identity,
+                    "start": (
+                        None
+                        if phase.start is None
+                        else {
+                            "amounts_mol": phase.start.amounts_mol,
+                            "molar_volume_m3_per_mol": (
+                                phase.start.molar_volume_m3_per_mol
+                            ),
+                        }
+                    ),
+                }
+                for phase in problem.phases
+            ),
+        },
     )
     payload = {
         "problem_fingerprint": problem_fingerprint,
@@ -1055,6 +1062,94 @@ def _finite_phase_owner_descriptor(
     )
 
 
+def _generated_finite_phase_allocations(
+    problem: GeneralReactiveEquilibriumProblem,
+    phases: tuple[ReactivePhase, ...],
+) -> tuple[tuple[tuple[float, ...], ...], ...]:
+    """Build deterministic feasible amount partitions for declared phases."""
+
+    feed = problem.reaction_system.feed_amounts_mol
+    phase_count = len(phases)
+    component_count = len(feed)
+    floor = problem.reaction_system.strict_interior_amount_floor_mol
+    if any(amount <= phase_count * 0.1 * floor for amount in feed):
+        raise ValueError(
+            "automatic finite-phase starts require a strict-interior reaction feed"
+        )
+
+    allocations: list[tuple[tuple[float, ...], ...]] = []
+    if phase_count == 2:
+        neutral_indices = tuple(
+            index
+            for index, charge in enumerate(problem.reaction_system.charges)
+            if charge == 0
+        )
+        for reaction in problem.reaction_system.reaction_matrix:
+            first = tuple(
+                (
+                    0.5
+                    if problem.reaction_system.charges[component] != 0
+                    or coefficient == 0.0
+                    else 0.8
+                    if coefficient > 0.0
+                    else 0.2
+                )
+                for component, coefficient in enumerate(reaction)
+            )
+            if any(value == 0.8 for value in first) and any(
+                value == 0.2 for value in first
+            ):
+                allocations.append((first, tuple(1.0 - value for value in first)))
+        for anchor in neutral_indices:
+            first = tuple(
+                0.8 if component == anchor else 0.2
+                for component in range(component_count)
+            )
+            if len(neutral_indices) != component_count:
+                first = tuple(
+                    value if problem.reaction_system.charges[component] == 0 else 0.5
+                    for component, value in enumerate(first)
+                )
+            anchor_allocation = (first, tuple(1.0 - value for value in first))
+            if anchor_allocation not in allocations:
+                allocations.append(anchor_allocation)
+    equal_allocation = tuple(
+        (1.0 / phase_count,) * component_count for _ in range(phase_count)
+    )
+    if equal_allocation not in allocations:
+        allocations.append(equal_allocation)
+
+    return tuple(allocations)
+
+
+def _finite_phase_start_set_from_allocation(
+    model: epcsaft.Mixture,
+    phases: tuple[ReactivePhase, ...],
+    feed: tuple[float, ...],
+    allocation: tuple[tuple[float, ...], ...],
+    temperature_k: float,
+    pressure_pa: float,
+) -> tuple[FinitePhaseStart, ...]:
+    temperature = temperature_k * epcsaft.unit_registry.kelvin
+    pressure = pressure_pa * epcsaft.unit_registry.pascal
+    starts: list[FinitePhaseStart] = []
+    for phase, fractions in zip(phases, allocation, strict=True):
+        amounts = tuple(
+            amount * fraction for amount, fraction in zip(feed, fractions, strict=True)
+        )
+        total = math.fsum(amounts)
+        composition = tuple(amount / total for amount in amounts)
+        state = model.state(
+            T=temperature,
+            P=pressure,
+            x=composition,
+            phase=phase.fluid_role,
+        )
+        density = float(state.molar_density.to("mole / meter**3").magnitude)
+        starts.append(FinitePhaseStart(amounts, 1.0 / density))
+    return tuple(starts)
+
+
 def _compile_general_reactive_equilibrium(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
@@ -1078,20 +1173,35 @@ def _compile_general_reactive_equilibrium(
         if (
             any(not isinstance(phase.support, AllComponents) for phase in finite)
             or any(not isinstance(phase.model, ProviderModel) for phase in finite)
-            or any(phase.start is None for phase in finite)
         ):
             return (
-                "configured finite-phase equilibrium requires started all-component "
-                "Provider phases"
+                "configured finite-phase equilibrium requires all-component Provider phases"
+            )
+        supplied_starts = tuple(phase.start for phase in finite)
+        if any(start is None for start in supplied_starts) and any(
+            start is not None for start in supplied_starts
+        ):
+            raise ValueError(
+                "configured finite phases must either all supply starts or all omit them"
             )
         component_count = len(model.component_ids)
-        if any(
-            len(cast(FinitePhaseStart, phase.start).amounts_mol) != component_count
-            for phase in finite
+        if supplied_starts[0] is not None and any(
+            len(cast(FinitePhaseStart, start).amounts_mol) != component_count
+            for start in supplied_starts
         ):
             raise ValueError(
                 "configured finite-phase starts must match the Provider component order"
             )
+        declared_start_set = (
+            tuple(cast(FinitePhaseStart, start) for start in supplied_starts)
+            if supplied_starts[0] is not None
+            else None
+        )
+        generated_allocations = (
+            ()
+            if declared_start_set is not None
+            else _generated_finite_phase_allocations(problem, finite)
+        )
         owner_descriptor = _finite_phase_owner_descriptor(
             model,
             problem,
@@ -1110,6 +1220,8 @@ def _compile_general_reactive_equilibrium(
             temperature_k,
             pressure_pa,
             finite,
+            declared_start_set,
+            generated_allocations,
             owner_descriptor,
             descriptor,
         )
@@ -1601,36 +1713,65 @@ def _evaluate_finite_phase(
 ) -> GeneralReactiveEquilibriumResult:
     trial = _finite_phase_trial(compilation.owner_descriptor, active_parameters)
     try:
-        native = cast(
-            dict[str, object],
-            _equilibrium._reactive_finite_phases(
-                _native_transport(model, active_parameters),
-                _finite_phase_spec(problem, compilation.temperature_k, compilation.pressure_pa),
-                _reactive_finite_source_standard_state(
-                    model,
-                    problem,
-                    compilation.phases[0],
-                    compilation.temperature_k,
-                    compilation.pressure_pa,
-                    active_parameters,
-                ),
-                tuple(
-                    cast(ProviderModel, phase.model).admissible_packing_fraction_interval
-                    for phase in compilation.phases
-                ),
-                tuple(
-                    {
-                        "amounts_mol": cast(FinitePhaseStart, phase.start).amounts_mol,
-                        "molar_volume_m3_per_mol": cast(
-                            FinitePhaseStart, phase.start
-                        ).molar_volume_m3_per_mol,
-                    }
-                    for phase in compilation.phases
-                ),
-                problem.reaction_system.strict_interior_amount_floor_mol,
-                active_parameters is not None,
-            ),
+        source_standard_state = _reactive_finite_source_standard_state(
+            model,
+            problem,
+            compilation.phases[0],
+            compilation.temperature_k,
+            compilation.pressure_pa,
+            active_parameters,
         )
+        native_attempt_list: list[dict[str, object]] = []
+
+        def candidate_start_sets() -> Iterator[tuple[FinitePhaseStart, ...]]:
+            if compilation.declared_start_set is not None:
+                yield compilation.declared_start_set
+                return
+            for allocation in compilation.generated_allocations:
+                try:
+                    yield _finite_phase_start_set_from_allocation(
+                        model,
+                        compilation.phases,
+                        problem.reaction_system.feed_amounts_mol,
+                        allocation,
+                        compilation.temperature_k,
+                        compilation.pressure_pa,
+                    )
+                except (ArithmeticError, RuntimeError, ValueError):
+                    continue
+
+        for start_set in candidate_start_sets():
+            attempt = cast(
+                dict[str, object],
+                _equilibrium._reactive_finite_phases(
+                    _native_transport(model, active_parameters),
+                    _finite_phase_spec(
+                        problem, compilation.temperature_k, compilation.pressure_pa
+                    ),
+                    source_standard_state,
+                    tuple(
+                        cast(
+                            ProviderModel, phase.model
+                        ).admissible_packing_fraction_interval
+                        for phase in compilation.phases
+                    ),
+                    tuple(
+                        {
+                            "amounts_mol": start.amounts_mol,
+                            "molar_volume_m3_per_mol": start.molar_volume_m3_per_mol,
+                        }
+                        for start in start_set
+                    ),
+                    problem.reaction_system.strict_interior_amount_floor_mol,
+                    active_parameters is not None,
+                ),
+            )
+            native_attempt_list.append(attempt)
+            if bool(attempt["accepted"]):
+                break
+        if not native_attempt_list:
+            raise ValueError("Provider could not construct a finite-phase candidate start")
+        native_attempts = tuple(native_attempt_list)
     except (ArithmeticError, RuntimeError, ValueError) as error:
         diagnostic = str(error)
         if (
@@ -1650,6 +1791,37 @@ def _evaluate_finite_phase(
             physical_status="not_adjudicated",
             provider_domain_status="failed",
         )
+    accepted_attempts = tuple(
+        (ordinal, attempt)
+        for ordinal, attempt in enumerate(native_attempts)
+        if bool(attempt["accepted"])
+    )
+    if accepted_attempts:
+        _, selected = accepted_attempts[0]
+    else:
+        residual_names = (
+            "balance_inf_norm",
+            "pressure_relative_inf_norm",
+            "reaction_affinity_inf_norm",
+            "transfer_chemical_potential_inf_norm",
+            "kkt_stationarity_inf_norm",
+        )
+
+        def failure_score(item: tuple[int, dict[str, object]]) -> tuple[float, int]:
+            score = 0.0
+            for name in residual_names:
+                value = float(cast(float, item[1][name]))
+                score += abs(value) if math.isfinite(value) else 1.0e100
+            return score, item[0]
+
+        _, selected = min(enumerate(native_attempts), key=failure_score)
+    native = dict(selected)
+    native["optimizer_iterations"] = sum(
+        int(cast(int, attempt["optimizer_iterations"])) for attempt in native_attempts
+    )
+    native["provider_evaluation_count"] = sum(
+        int(cast(int, attempt["provider_evaluation_count"])) for attempt in native_attempts
+    )
     if not bool(native["accepted"]):
         diagnostic = ": ".join(
             part

@@ -156,9 +156,14 @@ Jacobians in `ActiveParameterSet` order. Finite differences and high-precision
 oracles validate those derivatives only. Branch/support changes,
 ill-conditioning, and unavailable derivative order fail closed.
 
-Starts are deterministic functions of the request plus explicit hints. Cached
-continuation states may reduce work only for an equivalent request identity and
-must not make values, branches, or derivatives depend on evaluation history.
+Starts are deterministic functions of the request plus explicit hints. For two
+configured finite phases, an omitted start set is generated from
+conservation-preserving reaction-sign, neutral-component, and equal-feed
+partitions with Provider fixed-pressure volume roots. The first completely
+certified candidate selects the local branch. Explicit starts bypass generation
+and select the intended local basin. Cached continuation states may reduce work
+only for an equivalent request identity and must not make values, branches, or
+derivatives depend on evaluation history.
 
 ## Results and failures
 

@@ -620,6 +620,34 @@ def test_generic_two_phase_grepe_solves_ascani_2023_hypothetical_case() -> None:
         assert source_activity_reaction == pytest.approx(math.log(2.25), abs=1.0e-7)
 
 
+@pytest.mark.slow
+def test_generic_two_phase_grepe_generates_ascani_start_candidates() -> None:
+    """Prove known phases do not require source-derived composition starts."""
+
+    model, problem, _ = _ascani_2023_problem()
+    generated_start_problem = replace(
+        problem,
+        identity="ascani-2023-hypothetical-generated-starts",
+        phases=tuple(replace(phase, start=None) for phase in problem.phases),
+    )
+    result = equilibrium.phase_equilibrium(model, generated_start_problem)
+
+    assert result.status == "evaluated", result.failure
+    assert result.owner_result is not None
+    assert result.owner_result.reaction_affinity_inf_norm <= 1.0e-7
+    assert result.owner_result.transfer_chemical_potential_inf_norm <= 1.0e-7
+    expected = (
+        (0.5444273618587753, 0.21016731227664495, 0.2454053258645798),
+        (0.17715297890104614, 0.06383171565566206, 0.7590153054432918),
+    )
+    actual = tuple(
+        phase.mole_fractions
+        for phase in sorted(result.phases, key=lambda phase: phase.mole_fractions[0], reverse=True)
+    )
+    for phase, reference in zip(actual, expected, strict=True):
+        assert phase == pytest.approx(reference, abs=2.0e-9)
+
+
 
 @pytest.mark.slow
 def test_configured_charged_two_phase_reactive_minimum() -> None:
@@ -771,6 +799,24 @@ def test_configured_charged_two_phase_reactive_minimum() -> None:
     assert owner is not None
     assert owner.reaction_affinity_inf_norm <= 1.0e-7
     assert owner.transfer_chemical_potential_inf_norm <= 1.0e-7
+
+    generated = equilibrium.phase_equilibrium(
+        model,
+        replace(
+            problem,
+            identity="configured-charged-two-phase-generated-starts",
+            phases=tuple(replace(phase, start=None) for phase in phases),
+        ),
+    )
+    assert generated.status == "evaluated", generated.failure
+    assert len(generated.phases) == 2
+    for phase in generated.phases:
+        assert abs(phase.mole_fractions[3] - phase.mole_fractions[4]) <= 2.0e-10
+    generated_owner = generated.owner_result
+    assert generated_owner is not None
+    assert generated_owner.reaction_affinity_inf_norm <= 1.0e-7
+    assert generated_owner.transfer_chemical_potential_inf_norm <= 1.0e-7
+    assert generated_owner.phase_distinctness > 0.1
 
     step = 1.0e-7
 

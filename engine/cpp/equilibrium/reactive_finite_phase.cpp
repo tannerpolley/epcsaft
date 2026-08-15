@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <limits>
 #include <numeric>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -756,7 +757,7 @@ public:
             return false;
         }
         return guarded([&] {
-            const MultiphaseEvaluation evaluated = evaluate(x, zero_multipliers());
+            const MultiphaseEvaluation& evaluated = evaluate(x, zero_multipliers());
             std::copy(evaluated.gradient.begin(), evaluated.gradient.end(), gradient);
         });
     }
@@ -772,7 +773,7 @@ public:
             return false;
         }
         return guarded([&] {
-            const MultiphaseEvaluation evaluated = evaluate(x, zero_multipliers());
+            const MultiphaseEvaluation& evaluated = evaluate(x, zero_multipliers());
             std::copy(
                 evaluated.constraints.begin(), evaluated.constraints.end(), constraints
             );
@@ -808,7 +809,7 @@ public:
             return false;
         }
         return guarded([&] {
-            const MultiphaseEvaluation evaluated = evaluate(x, zero_multipliers());
+            const MultiphaseEvaluation& evaluated = evaluate(x, zero_multipliers());
             std::copy(evaluated.jacobian.begin(), evaluated.jacobian.end(), values);
         });
     }
@@ -848,7 +849,7 @@ public:
         }
         return guarded([&] {
             const std::vector<double> lambda(multipliers, multipliers + m);
-            const MultiphaseEvaluation evaluated = evaluate(x, lambda);
+            const MultiphaseEvaluation& evaluated = evaluate(x, lambda);
             Ipopt::Index entry = 0;
             for (Ipopt::Index row = 0; row < n; ++row) {
                 for (Ipopt::Index column = 0; column <= row; ++column) {
@@ -931,22 +932,39 @@ private:
         return std::vector<double>(multipliers_.size(), 0.0);
     }
 
-    MultiphaseEvaluation evaluate(
+    const MultiphaseEvaluation& evaluate(
         const Ipopt::Number* x,
         const std::vector<double>& multipliers
     ) const {
-        return evaluate_multiphase(
-            provider_,
-            active_parameters_,
-            system_,
-            balances_,
-            temperature_k_,
-            pressure_pa_,
-            packing_intervals_,
-            std::vector<double>(x, x + initial_.size()),
-            multipliers,
-            phase_count_
+        const std::vector<double> point(x, x + initial_.size());
+        const bool zero = std::all_of(
+            multipliers.begin(), multipliers.end(), [](double value) {
+                return value == 0.0;
+            }
         );
+        std::vector<double>& cached_point = zero ? base_point_ : lagrangian_point_;
+        std::vector<double>& cached_multipliers =
+            zero ? base_multipliers_ : lagrangian_multipliers_;
+        std::optional<MultiphaseEvaluation>& cached =
+            zero ? base_evaluation_ : lagrangian_evaluation_;
+        if (!cached.has_value() || cached_point != point
+            || cached_multipliers != multipliers) {
+            cached = evaluate_multiphase(
+                provider_,
+                active_parameters_,
+                system_,
+                balances_,
+                temperature_k_,
+                pressure_pa_,
+                packing_intervals_,
+                point,
+                multipliers,
+                phase_count_
+            );
+            cached_point = point;
+            cached_multipliers = multipliers;
+        }
+        return *cached;
     }
 
     template <class Callback>
@@ -987,6 +1005,12 @@ private:
     std::string callback_error_;
     std::string callback_failure_kind_ = "none";
     std::size_t iterations_ = 0;
+    mutable std::vector<double> base_point_;
+    mutable std::vector<double> base_multipliers_;
+    mutable std::optional<MultiphaseEvaluation> base_evaluation_;
+    mutable std::vector<double> lagrangian_point_;
+    mutable std::vector<double> lagrangian_multipliers_;
+    mutable std::optional<MultiphaseEvaluation> lagrangian_evaluation_;
 };
 
 double phase_distinctness(const std::vector<PhaseBlock>& phases) {

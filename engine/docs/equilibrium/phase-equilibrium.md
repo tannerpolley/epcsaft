@@ -115,7 +115,7 @@ problem. The compiler binds that condition to the selected Parameters and
 ordered components.
 Application and source names never select an algorithm.
 
-For two or more started finite phases at fixed temperature and pressure, GREPE
+For two or more configured finite phases at fixed temperature and pressure, GREPE
 minimizes one total Gibbs objective in positive phase/species amounts and phase
 packing variables subject to global conservation and exact per-phase charge
 neutrality. The configured phases may use any fluid-role labels. Reaction
@@ -124,6 +124,32 @@ from the minimization KKT conditions. Source-standard-state equilibrium
 constants are transformed to the Provider basis before the solve, including
 their selected-parameter derivatives. The result describes the configured
 local minimum; it does not claim that no unconfigured phase is more stable.
+
+Finite-phase starts are optional. When they are omitted for two configured
+phases, GREPE constructs deterministic positive candidates from the declared
+reaction feed. Reaction-product/reactant partitions are tried first, followed
+by neutral-component partitions and an equal split. Every partition preserves
+the total amount of each species; charged species retain an equal split so
+each phase remains electroneutral. A fixed-pressure Provider state supplies
+each candidate phase volume. Candidates are attempted in stable order until
+one passes the complete numerical and physical checks. Explicit starts bypass
+this generation and remain the way to select a particular known local branch.
+
+The finite-phase NLP uses logarithmic positive-amount coordinates and a
+logarithmic packing coordinate. Its total Gibbs objective is dimensionless
+(`G/RT`), while each conservation row is normalized by its conserved total
+and feed contribution. IPOPT receives exact gradients and the exact
+Lagrangian Hessian. Final acceptance rechecks the original unscaled material,
+charge, pressure, reaction-affinity, interphase-potential, KKT, phase-
+distinctness, and local-curvature quantities.
+
+For the Ascani 2023 hypothetical case, 33 of 34 deliberately varied feasible
+starts reached the same two-phase minimum. Successful starts required 7--61
+IPOPT iterations (median 14); the only rejected start drove one configured
+phase to effectively zero amount. The automatic reaction-sign candidate
+reached the same phase compositions in 11 iterations and 286 Provider
+evaluations before callback caching, and 122 afterward, without using the
+digitized tie-line compositions.
 
 The same owner returns generic output rows and exact total Jacobians directly
 to Regression. Current finite-phase outputs include system or phase pressure,
