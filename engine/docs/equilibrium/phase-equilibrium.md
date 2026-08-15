@@ -1,6 +1,6 @@
 # Phase-Equilibrium Documentation Authority
 
-Status: promoted sole public nonreactive owner
+Status: promoted sole public nonreactive owner; GREPE neutral-LLE candidate
 
 `epcsaft.equilibrium.phase_equilibrium` is the only public nonreactive
 phase-equilibrium function. Governance D-030 and the
@@ -23,7 +23,7 @@ the retired name is no longer a Python API.
 | Pure-fluid saturation | EOS `Pure.saturation` | Pure vapor--liquid boundary |
 | Nonreactive phase equilibrium | Equilibrium `phase_equilibrium` | Fixed-T,P retained discovery or declared 1--3 phases; fixed-T two-phase coexistence |
 | Homogeneous chemical equilibrium | Equilibrium `chemical_equilibrium` | One homogeneous reacting state |
-| Reactive multiphase equilibrium | Deferred | No runtime route |
+| General reactive equilibrium | Equilibrium `phase_equilibrium` | Admitted homogeneous and reactive bubble; candidate two-finite-neutral-liquid reactive LLE |
 | Solid equilibrium | Excluded | Requires another physical model |
 
 ## Fixed-T,P feed
@@ -104,3 +104,29 @@ The unrelated scratch Gibbs solver remains removed. The private HELD/HELD2
 sources and their algorithmic certification evidence remain because they are
 the live discovery core, not a second public route. `chemical_equilibrium`
 remains a separate homogeneous reacting-state capability.
+
+## General reactive equilibrium candidate
+
+`GeneralReactiveEquilibriumProblem` is the declarative GREPE boundary. Fixed
+temperature and pressure, phase roles, component support, reaction eligibility,
+standard-state records, starts or immutable continuation anchors, active
+parameters, and requested outputs determine the compiled problem. Application
+and source names never select an algorithm.
+
+The neutral reactive-LLE candidate accepts exactly two finite liquid phases,
+all-component support, neutral species, and a positive finite start for each
+phase. It minimizes one total Gibbs objective in positive phase/species amounts
+and phase packing variables subject to global conservation. Reaction and
+interphase-transfer directions must exactly span the conservation nullspace;
+reaction affinities and shared-species chemical-potential equalities then arise
+from the minimization KKT conditions rather than duplicate residual equations.
+The result certifies the declared local minimum only and reports
+`globality_claim = not_established`.
+
+The same owner returns typed generic output rows and exact total Jacobians used
+by Regression. Current LLE outputs are system or phase pressure, phase amount,
+mole fraction, molar density, and dimensionless chemical potential. Charged or
+electrochemical LLE, incipient LLE, phase discovery, more than two reacting
+phases, restricted neutral support, and source-standard-state conversion fail
+closed as unsupported. Formal capability admission remains pending independent
+review and an accepted hash-bound receipt.

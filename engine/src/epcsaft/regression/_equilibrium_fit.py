@@ -420,9 +420,7 @@ def _targets_from_mapping(value: object) -> tuple[_ReactiveTarget, ...]:
             _text(record["source_identity"], "source identity"),
             _text(record["source_hash"], "source hash"),
             _boolean(record["included"], "included flag"),
-            ""
-            if record["drop_reason"] is None
-            else _text(record["drop_reason"], "drop reason"),
+            "" if record["drop_reason"] is None else _text(record["drop_reason"], "drop reason"),
             _optional_text(record["aggregate_identity"], "aggregate identity"),
             _optional_text(record["covariance_identity"], "covariance identity"),
         )
@@ -450,9 +448,7 @@ def _reactive_fit_problem(resolved: ResolvedFit) -> _ResolvedReactiveFit:
                 _text(item["identity"], "equilibrium batch identity"),
                 model,
                 request,
-                general_reactive_equilibrium_descriptor(
-                    model, request, active_parameters=active
-                ),
+                general_reactive_equilibrium_descriptor(model, request, active_parameters=active),
                 _targets_from_mapping(item["targets"]),
             )
         )
@@ -880,7 +876,9 @@ def _fit_equilibrium_observations(
         raise ValueError("equilibrium regression has no included target rows")
     if any(
         any(
-            phase.amount_role == "finite" and phase.continuation_reference is None
+            phase.amount_role == "finite"
+            and phase.continuation_reference is None
+            and phase.start is None
             for phase in batch.problem.phases
         )
         or (
@@ -890,7 +888,7 @@ def _fit_equilibrium_observations(
         for batch in active_batches
     ):
         raise ValueError(
-            "equilibrium regression requires an immutable continuation reference per batch"
+            "equilibrium regression requires an immutable continuation reference or start per batch"
         )
     _preflight(problem)
     residual_blocks = [

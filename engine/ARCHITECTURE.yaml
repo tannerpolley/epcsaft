@@ -1,4 +1,4 @@
-version: 8
+version: 9
 status: unified-monorepo-active
 governance_doctrine_revision: 21
 
@@ -56,6 +56,19 @@ owners:
     declared_topology_fallback: forbidden
     active_parameters: epcsaft.ActiveParameterSet
     solved_state_sensitivity: exact_implicit_from_eos_partials
+    general_reactive_equilibrium:
+      request: epcsaft.equilibrium.GeneralReactiveEquilibriumProblem
+      result: epcsaft.equilibrium.GeneralReactiveEquilibriumResult
+      public_route: epcsaft.equilibrium.phase_equilibrium
+      compiler: src/epcsaft/equilibrium/_grepe.py
+      admitted_owner_kinds: [homogeneous, reactive_bubble]
+      candidate_owner_kinds: [neutral_reactive_lle]
+      candidate_topology: exactly_two_finite_liquids
+      candidate_component_support: all_components_neutral_only
+      candidate_numerical_core: cpp/equilibrium/reactive_finite_phase.cpp
+      candidate_formulation: total_gibbs_with_global_conservation
+      candidate_globality_claim: not_established
+      candidate_admission: pending_review_and_hash_bound_receipt
     homogeneous_reactive_observations:
       descriptor: epcsaft.equilibrium.HomogeneousReactiveObservationDescriptor
       evaluator: epcsaft.equilibrium.evaluate_homogeneous_reactive_observations
@@ -84,6 +97,9 @@ owners:
     native_sources: src/epcsaft/regression/native
     scientific_values: owner_provided_only
     current_observation_boundary: [eos_fixed_state, eos_pure_saturation, equilibrium_homogeneous_reactive, equilibrium_reactive_bubble_vle]
+    candidate_observation_boundary: [equilibrium_neutral_reactive_lle]
+    generic_equilibrium_evaluator: epcsaft.equilibrium.phase_equilibrium
+    generic_equilibrium_observation: epcsaft.equilibrium.GeneralEquilibriumOwnerObservation
     equilibrium_observation_admission: homogeneous_reactive_and_reactive_bubble_vle_by_governance_D-034_D-035
     equilibrium_observation_families: [homogeneous_reactive, reactive_bubble_vle]
   native_transport:

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <limits>
 #include <string>
@@ -186,6 +187,44 @@ struct ChemicalSearchEvidence {
 struct ChemicalContinuationStart {
     std::vector<double> amounts;
     double volume_m3 = std::numeric_limits<double>::quiet_NaN();
+};
+
+struct ReactiveFinitePhaseStart {
+    std::vector<double> amounts_mol;
+    double molar_volume_m3_per_mol = std::numeric_limits<double>::quiet_NaN();
+};
+
+struct ReactiveFinitePhaseResult {
+    bool accepted = false;
+    std::string solver_status;
+    std::string callback_error;
+    std::string failure_reason;
+    std::vector<std::vector<double>> phase_amounts_mol;
+    std::vector<double> phase_volumes_m3;
+    std::vector<double> phase_pressures_pa;
+    std::vector<double> phase_packing_fractions;
+    std::vector<std::vector<double>> phase_chemical_potentials_over_rt;
+    double objective_over_rt = std::numeric_limits<double>::quiet_NaN();
+    double balance_inf_norm = std::numeric_limits<double>::quiet_NaN();
+    double pressure_relative_inf_norm = std::numeric_limits<double>::quiet_NaN();
+    double reaction_affinity_inf_norm = std::numeric_limits<double>::quiet_NaN();
+    double transfer_chemical_potential_inf_norm =
+        std::numeric_limits<double>::quiet_NaN();
+    double kkt_stationarity_inf_norm = std::numeric_limits<double>::quiet_NaN();
+    double phase_distinctness = std::numeric_limits<double>::quiet_NaN();
+    double reduced_hessian_min_eigenvalue =
+        std::numeric_limits<double>::quiet_NaN();
+    std::size_t declared_direction_rank = 0;
+    std::size_t admissible_nullity = 0;
+    std::size_t optimizer_iterations = 0;
+    std::size_t provider_evaluation_count = 0;
+    std::vector<std::string> parameter_order;
+    std::string sensitivity_status = "not_requested";
+    std::string sensitivity_failure_reason;
+    std::vector<double> amount_derivatives;
+    std::vector<double> volume_derivatives;
+    std::vector<double> pressure_derivatives;
+    std::vector<double> chemical_potential_derivatives;
 };
 
 struct ChemicalSolveResult {
@@ -428,6 +467,18 @@ struct SourceStandardStateResult {
     const std::vector<double>& ln_k_parameter_derivatives = {},
     const ProviderActiveParameterSet* active_parameters = nullptr,
     const ChemicalContinuationStart* continuation_start = nullptr,
+    int max_iterations = 500
+);
+
+[[nodiscard]] ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
+    const CompiledReactionSystem& system,
+    const ProviderContext& provider,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<std::array<double, 2>>& packing_fraction_intervals,
+    const std::vector<ReactiveFinitePhaseStart>& starts,
+    double trace_floor,
+    const ProviderActiveParameterSet* active_parameters = nullptr,
     int max_iterations = 500
 );
 

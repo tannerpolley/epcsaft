@@ -88,3 +88,11 @@ def _chemical_equilibrium(
     sensitivities_requested: bool = ...,
     active_parameters_requested: bool = ...,
 ) -> dict[str, Any]: ...
+def _reactive_finite_phases(
+    capsule: object,
+    spec: dict[str, object],
+    packing_fraction_intervals: tuple[tuple[float, float], ...],
+    starts: tuple[dict[str, object], ...],
+    trace_floor: float,
+    active_parameters_requested: bool = ...,
+) -> dict[str, Any]: ...

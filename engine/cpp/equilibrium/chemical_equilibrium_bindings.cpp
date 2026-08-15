@@ -58,6 +58,41 @@ const epcsaft_native_transport& checked_chemical_transport(
     return *transport;
 }
 
+const epcsaft_native_transport& checked_reactive_finite_transport(
+    const py::capsule& capsule
+) {
+    const char* name = capsule.name();
+    if (name == nullptr
+        || std::string_view(name) != EPCSAFT_NATIVE_TRANSPORT_CAPSULE_NAME) {
+        throw py::value_error("expected private Engine native transport");
+    }
+    const auto* transport = capsule.get_pointer<epcsaft_native_transport>();
+    if (transport == nullptr || transport->model_context == nullptr
+        || transport->component_count < 2
+        || transport->component_ids == nullptr
+        || transport->component_charges == nullptr
+        || transport->evaluate_mixture_phase == nullptr
+        || transport->evaluate_molar_volume_bounds == nullptr
+        || transport->evaluate_packing_fraction == nullptr
+        || transport->evaluate_inverse_packing_geometry == nullptr) {
+        throw py::value_error(
+            "Provider capsule is missing the reactive finite-phase callbacks"
+        );
+    }
+    const bool has_temperature_domain =
+        std::isfinite(transport->source_temperature_min_k)
+        && std::isfinite(transport->source_temperature_max_k);
+    if ((std::isfinite(transport->source_temperature_min_k)
+            != std::isfinite(transport->source_temperature_max_k))
+        || (has_temperature_domain
+            && (transport->source_temperature_min_k <= 0.0
+                || transport->source_temperature_max_k
+                    < transport->source_temperature_min_k))) {
+        throw py::value_error("Provider source-domain metadata is invalid");
+    }
+    return *transport;
+}
+
 ChemicalProviderMetadata chemical_provider_metadata(const epcsaft_native_transport& transport) {
     ChemicalProviderMetadata result;
     result.component_ids.reserve(transport.component_count);
@@ -1231,6 +1266,96 @@ py::dict solve_chemical_equilibrium(
     );
 }
 
+py::dict reactive_finite_phase_result(const ReactiveFinitePhaseResult& evaluation) {
+    py::dict result;
+    const auto optional_float = [](double value) -> py::object {
+        return std::isfinite(value) ? py::cast(value) : py::none();
+    };
+    result["accepted"] = evaluation.accepted;
+    result["solver_status"] = evaluation.solver_status;
+    result["callback_error"] = evaluation.callback_error;
+    result["failure_reason"] = evaluation.failure_reason;
+    result["phase_amounts_mol"] = evaluation.phase_amounts_mol;
+    result["phase_volumes_m3"] = evaluation.phase_volumes_m3;
+    result["phase_pressures_pa"] = evaluation.phase_pressures_pa;
+    result["phase_packing_fractions"] = evaluation.phase_packing_fractions;
+    result["phase_chemical_potentials_over_rt"] =
+        evaluation.phase_chemical_potentials_over_rt;
+    result["objective_over_rt"] = optional_float(evaluation.objective_over_rt);
+    result["balance_inf_norm"] = optional_float(evaluation.balance_inf_norm);
+    result["pressure_relative_inf_norm"] =
+        optional_float(evaluation.pressure_relative_inf_norm);
+    result["reaction_affinity_inf_norm"] =
+        optional_float(evaluation.reaction_affinity_inf_norm);
+    result["transfer_chemical_potential_inf_norm"] =
+        optional_float(evaluation.transfer_chemical_potential_inf_norm);
+    result["kkt_stationarity_inf_norm"] =
+        optional_float(evaluation.kkt_stationarity_inf_norm);
+    result["phase_distinctness"] = optional_float(evaluation.phase_distinctness);
+    result["reduced_hessian_min_eigenvalue"] =
+        optional_float(evaluation.reduced_hessian_min_eigenvalue);
+    result["declared_direction_rank"] = evaluation.declared_direction_rank;
+    result["admissible_nullity"] = evaluation.admissible_nullity;
+    result["optimizer_iterations"] = evaluation.optimizer_iterations;
+    result["provider_evaluation_count"] = evaluation.provider_evaluation_count;
+    result["parameter_order"] = evaluation.parameter_order;
+    result["sensitivity_status"] = evaluation.sensitivity_status;
+    result["sensitivity_failure_reason"] = evaluation.sensitivity_failure_reason;
+    result["amount_derivatives"] = evaluation.amount_derivatives;
+    result["volume_derivatives"] = evaluation.volume_derivatives;
+    result["pressure_derivatives"] = evaluation.pressure_derivatives;
+    result["chemical_potential_derivatives"] =
+        evaluation.chemical_potential_derivatives;
+    return result;
+}
+
+py::dict solve_reactive_finite_phases(
+    const py::capsule& capsule,
+    const py::dict& spec,
+    const std::vector<std::array<double, 2>>& packing_fraction_intervals,
+    const std::vector<py::dict>& start_payloads,
+    double trace_floor,
+    bool active_parameters_requested
+) {
+    const epcsaft_native_transport& transport = checked_reactive_finite_transport(capsule);
+    const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
+    ReactionSystemInput input = reaction_system_input(spec);
+    validate_provider_identity(metadata, input);
+    if (input.temperature_k < transport.source_temperature_min_k
+        || input.temperature_k > transport.source_temperature_max_k) {
+        throw py::value_error("temperature is outside the Provider source domain");
+    }
+    const ProviderContext provider(transport);
+    input.provider_fingerprint = provider.fingerprint();
+    const CompiledReactionSystem compiled = compile_reaction_system(input);
+    std::vector<ReactiveFinitePhaseStart> starts;
+    starts.reserve(start_payloads.size());
+    for (const py::dict& payload : start_payloads) {
+        starts.push_back({
+            py::cast<std::vector<double>>(payload["amounts_mol"]),
+            py::cast<double>(payload["molar_volume_m3_per_mol"]),
+        });
+    }
+    const ProviderActiveParameterSet parameters = provider.active_parameters();
+    if (active_parameters_requested != !parameters.identities.empty()) {
+        throw py::value_error(
+            "Provider capsule active-parameter identity does not match the request"
+        );
+    }
+    return reactive_finite_phase_result(
+        solve_provider_reactive_finite_phases(
+            compiled,
+            provider,
+            input.temperature_k,
+            input.pressure_pa,
+            packing_fraction_intervals,
+            starts,
+            trace_floor,
+            parameters.identities.empty() ? nullptr : &parameters
+        )
+    );
+}
+
 }  // namespace
 
 void bind_chemical_equilibrium(py::module_& module) {
@@ -1243,6 +1368,16 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("packing_fraction_bounds"),
         py::arg("trace_floor"),
         py::arg("sensitivities_requested") = false,
+        py::arg("active_parameters_requested") = false
+    );
+    module.def(
+        "_reactive_finite_phases",
+        &solve_reactive_finite_phases,
+        py::arg("capsule"),
+        py::arg("spec"),
+        py::arg("packing_fraction_intervals"),
+        py::arg("starts"),
+        py::arg("trace_floor"),
         py::arg("active_parameters_requested") = false
     );
 }

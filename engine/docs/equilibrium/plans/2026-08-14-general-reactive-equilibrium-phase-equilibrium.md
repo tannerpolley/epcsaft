@@ -1,6 +1,6 @@
 # General Reactive Equilibrium and Phase Equilibrium
 
-- Status: canonical target plan; no new capability admitted
+- Status: neutral reactive-LLE implementation candidate; formal admission pending
 - Date: 2026-08-14
 - Owner: Equilibrium vertical-slice task
 - Authority: Governance D-036, doctrine revision 21
@@ -20,10 +20,16 @@ behavior. The request's state roles, phase roles, species support, reactions,
 and model capabilities determine the assembled problem.
 
 Current admission remains Governance D-034 fixed-T,P homogeneous reactive and
-D-035 fixed-topology reactive bubble/VLE observations. This plan does not make
-reactive LLE, reactive phase discovery, electrochemical multiphase work, three-
-plus reacting phases, solids, precipitation, kinetics, or reaction-correlation
-fitting available.
+D-035 fixed-topology reactive bubble/VLE observations. The feature branch now
+implements the first two-finite-liquid neutral reactive-LLE candidate through
+the same public request, result, receipt, and generic Regression boundary. Its
+compact manufactured installed-wheel evidence proves the declared local
+minimum, balances, reaction and transfer potentials, exact selected-parameter
+sensitivities, label covariance, failure semantics, and Regression recovery.
+Formal admission still requires review and an accepted hash-bound receipt.
+Reactive phase discovery, electrochemical multiphase work, three-plus reacting
+phases, solids, precipitation, kinetics, and reaction-correlation fitting remain
+unavailable.
 
 ## Public contract
 
@@ -262,6 +268,14 @@ explicit owner commands and do not enter that gate.
 
 ## Staged implementation
 
+Implementation checkpoint on this branch: stages 1--3 are routed through the
+generic owner and evaluator, and stage 4 is implemented as a neutral-only,
+exactly-two-finite-liquid candidate. The retained specialized homogeneous and
+bubble entry points remain temporarily callable because downstream MEA work
+still imports them; their thermodynamic and Regression ownership has already
+moved behind GREPE. Removing those names is a coordinated downstream cutover,
+not part of the neutral-LLE numerical claim.
+
 1. **Generic seam and schema.** Add role-based request/result types, strict
    loaders, phase-aware reaction preflight, generic evaluator protocol, exact
    evaluated-row table, authority-neutral candidate export, and unambiguous
@@ -275,7 +289,8 @@ explicit owner commands and do not enter that gate.
 3. **Homogeneous reaction.** Route the D-034 fixed-T,P owner through the same
    finite-phase compiler and evaluator, preserve its source-reference and
    local-branch evidence, then remove its specialized public route.
-4. **Neutral reactive LLE.** Admit two finite neutral liquids using exact or
+4. **Neutral reactive LLE.** Implement and admit two finite neutral liquids
+   using exact or
    manufactured Gibbs/KKT evidence and installed-wheel tie-line reproduction.
    Ascani/Senina-style endpoints without measured feed or phase fraction test
    conditional tie-line composition/equilibrium only. A documented midpoint

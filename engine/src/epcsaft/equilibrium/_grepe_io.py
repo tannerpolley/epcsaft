@@ -18,6 +18,7 @@ from ._api import (
 )
 from ._grepe import (
     EquilibriumOutput,
+    FinitePhaseStart,
     Fixed,
     GeneralReactiveEquilibriumProblem,
     IdealGasModel,
@@ -77,8 +78,7 @@ def _floats(value: object, label: str) -> tuple[float, ...]:
 
 def _rows(value: object, label: str) -> tuple[tuple[float, ...], ...]:
     return tuple(
-        _floats(row, f"{label}[{index}]")
-        for index, row in enumerate(_sequence(value, label))
+        _floats(row, f"{label}[{index}]") for index, row in enumerate(_sequence(value, label))
     )
 
 
@@ -143,7 +143,9 @@ def _reaction_system(value: object) -> ChemicalEquilibriumProblem:
             record = _sequence(raw, "source ion pair")
             if len(record) != 2:
                 raise ValueError("source ion pairs require components and stoichiometry")
-            components = tuple(_text(item, "ion component") for item in _sequence(record[0], "ion components"))
+            components = tuple(
+                _text(item, "ion component") for item in _sequence(record[0], "ion components")
+            )
             stoichiometry = tuple(
                 _integer(item, "ion stoichiometry")
                 for item in _sequence(record[1], "ion stoichiometry")
@@ -309,20 +311,23 @@ def _state_role(value: object, name: str) -> Fixed | Solved:
 
 
 def _phase(value: object) -> ReactivePhase:
-    item = _mapping(
-        value,
-        frozenset(
-            {
-                "identity",
-                "fluid_role",
-                "amount_role",
-                "support",
-                "model",
-                "continuation",
-            }
-        ),
-        "GREPE phase",
+    required = frozenset(
+        {
+            "identity",
+            "fluid_role",
+            "amount_role",
+            "support",
+            "model",
+            "continuation",
+        }
     )
+    if not isinstance(value, Mapping) or any(type(key) is not str for key in value):
+        raise TypeError("GREPE phase must be an object with string keys")
+    if set(value) not in {required, required | {"start"}}:
+        raise ValueError(
+            "GREPE phase fields differ: expected required phase fields and optional start"
+        )
+    item = cast(Mapping[str, object], value)
     support_item = _mapping(
         item["support"], frozenset({"kind", "component_ids"}), "GREPE phase support"
     )
@@ -371,6 +376,19 @@ def _phase(value: object) -> ReactivePhase:
         continuation_identity = _text(continuation["identity"], "continuation identity")
         branch_policy = cast(Any, _text(continuation["branch_policy"], "branch policy"))
         continuation_reference = _homogeneous_reference(continuation["reference"])
+    start_value = item.get("start")
+    if start_value is None:
+        start = None
+    else:
+        start_item = _mapping(
+            start_value,
+            frozenset({"amounts_mol", "molar_volume_m3_per_mol"}),
+            "GREPE finite phase start",
+        )
+        start = FinitePhaseStart(
+            _floats(start_item["amounts_mol"], "finite phase start amounts"),
+            _number(start_item["molar_volume_m3_per_mol"], "finite phase start molar volume"),
+        )
     return ReactivePhase(
         _text(item["identity"], "phase identity"),
         cast(Any, _text(item["fluid_role"], "fluid role")),
@@ -380,6 +398,7 @@ def _phase(value: object) -> ReactivePhase:
         continuation_identity,
         branch_policy,
         continuation_reference,
+        start,
     )
 
 

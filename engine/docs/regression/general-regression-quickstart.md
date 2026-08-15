@@ -30,8 +30,7 @@ Path("propane-candidate.parameters.json").write_text(
 ```
 
 The `best_usable_start` property means optimizer-usable start; it is not
-a scientific acceptance or parameter-adoption status. The GREPE hard cutover
-will replace this ambiguous public wording with `best_usable_start`.
+a scientific acceptance or parameter-adoption status.
 
 `fit` also accepts a strict `ParameterFit` or matching in-memory mapping.
 Each declared optimizer coordinate uses
