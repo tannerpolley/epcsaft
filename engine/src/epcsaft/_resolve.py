@@ -601,12 +601,15 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         or "ionic_region_relative_permittivity" in models
     )
     l_ij_present = any(key[2] == "l_ij" for key in pair_records)
-    if electrolyte_formulation == "fully-dissociated-debye-huckel":
+    if electrolyte_formulation in {
+        "fully-dissociated-debye-huckel",
+        "revised-debye-huckel",
+    }:
         if born_schema_present or l_ij_present:
             raise _error(
                 "invalid-value",
                 family="electrolyte",
-                reason="invalid-fully-dissociated-coefficients",
+                reason="invalid-debye-huckel-coefficients",
             )
     elif electrolyte_formulation != "born":
         raise _error("invalid-value", family="electrolyte", value=electrolyte_formulation)
@@ -648,7 +651,10 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
     if electrolyte_formulation == "born":
         assert electrolyte_spec.c_shell is not None
         assert electrolyte_spec.c_dielectric is not None
-    if electrolyte_formulation == "fully-dissociated-debye-huckel":
+    if electrolyte_formulation in {
+        "fully-dissociated-debye-huckel",
+        "revised-debye-huckel",
+    }:
         if relative_permittivity_formulation != "solvent-only":
             raise _error(
                 "invalid-value",

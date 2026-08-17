@@ -16,13 +16,14 @@ from ._api import (
     DeclaredNeutralComponents,
     NeutralComponents,
 )
-from ._feed import ResolvedFeed
+from ._feed import AffineFeed, FeedCoordinate, ResolvedFeed
 from ._grepe import (
     EquilibriumOutput,
     FinitePhaseStart,
     Fixed,
     GeneralReactiveEquilibriumProblem,
     IdealGasModel,
+    IntensiveBoundary,
     ProviderModel,
     ReactivePhase,
     ReactivePhaseSupport,
@@ -565,7 +566,7 @@ def general_reactive_equilibrium_problem_from_mapping(
                 "continuation",
             }
         ),
-        frozenset({"feed", "phase_reactions"}),
+        frozenset({"feed", "phase_reactions", "intensive_boundaries"}),
         "GREPE request",
     )
     continuation_value = item["continuation"]
@@ -581,38 +582,116 @@ def general_reactive_equilibrium_problem_from_mapping(
         continuation_identity = _text(continuation["identity"], "coupled continuation identity")
         continuation_reference = _bubble_reference(continuation["reference"])
     feed_value = item.get("feed")
-    feed = None
+    feed: ResolvedFeed | AffineFeed | None = None
     if feed_value is not None:
-        feed_mapping = _mapping(
-            feed_value,
-            frozenset(
-                {
-                    "component_ids",
-                    "amounts_mol",
-                    "coordinate_ids",
-                    "amount_jacobian_mol_per_coordinate",
-                }
-            ),
-            "GREPE resolved feed",
-        )
-        feed = ResolvedFeed(
-            tuple(
-                _text(raw, "feed component identity")
-                for raw in _sequence(feed_mapping["component_ids"], "feed component identities")
-            ),
-            _floats(feed_mapping["amounts_mol"], "feed amounts"),
-            tuple(
-                _text(raw, "feed coordinate identity")
-                for raw in _sequence(feed_mapping["coordinate_ids"], "feed coordinate identities")
-            ),
-            _rows(
-                feed_mapping["amount_jacobian_mol_per_coordinate"],
-                "feed amount Jacobian",
-            ),
-        )
+        if isinstance(feed_value, Mapping) and feed_value.get("kind") == "affine":
+            feed_mapping = _mapping(
+                feed_value,
+                frozenset(
+                    {
+                        "kind",
+                        "component_ids",
+                        "base_amounts_mol",
+                        "basis_matrix_mol_per_coordinate",
+                        "coordinates",
+                    }
+                ),
+                "GREPE affine feed",
+            )
+            coordinates = []
+            for raw in _sequence(feed_mapping["coordinates"], "feed coordinates"):
+                coordinate = _sequence(raw, "feed coordinate")
+                if len(coordinate) != 2:
+                    raise ValueError("feed coordinates require identity and bounds")
+                bounds = _floats(coordinate[1], "feed coordinate bounds")
+                if len(bounds) != 2:
+                    raise ValueError("feed coordinate bounds require two values")
+                coordinates.append(
+                    FeedCoordinate(
+                        _text(coordinate[0], "feed coordinate identity"),
+                        bounds,
+                    )
+                )
+            feed = AffineFeed(
+                tuple(
+                    _text(raw, "feed component identity")
+                    for raw in _sequence(
+                        feed_mapping["component_ids"], "feed component identities"
+                    )
+                ),
+                _floats(feed_mapping["base_amounts_mol"], "feed base amounts"),
+                _rows(
+                    feed_mapping["basis_matrix_mol_per_coordinate"],
+                    "feed basis matrix",
+                ),
+                tuple(coordinates),
+            )
+        else:
+            feed_mapping = _mapping(
+                feed_value,
+                frozenset(
+                    {
+                        "component_ids",
+                        "amounts_mol",
+                        "coordinate_ids",
+                        "amount_jacobian_mol_per_coordinate",
+                    }
+                ),
+                "GREPE resolved feed",
+            )
+            feed = ResolvedFeed(
+                tuple(
+                    _text(raw, "feed component identity")
+                    for raw in _sequence(
+                        feed_mapping["component_ids"], "feed component identities"
+                    )
+                ),
+                _floats(feed_mapping["amounts_mol"], "feed amounts"),
+                tuple(
+                    _text(raw, "feed coordinate identity")
+                    for raw in _sequence(
+                        feed_mapping["coordinate_ids"], "feed coordinate identities"
+                    )
+                ),
+                _rows(
+                    feed_mapping["amount_jacobian_mol_per_coordinate"],
+                    "feed amount Jacobian",
+                ),
+            )
     phase_reactions_value = item.get("phase_reactions")
     phase_reactions = (
         None if phase_reactions_value is None else _phase_reaction_system(phase_reactions_value)
+    )
+    intensive_boundaries = tuple(
+        IntensiveBoundary(
+            _text(boundary["identity"], "intensive boundary identity"),
+            _text(boundary["coordinate_identity"], "intensive boundary coordinate"),
+            _text(boundary["phase_identity"], "intensive boundary phase"),
+            cast(Any, _text(boundary["selector"], "intensive boundary selector")),
+            _floats(boundary["coefficients"], "intensive boundary coefficients"),
+            _number(boundary["target"], "intensive boundary target"),
+            _number(boundary["initial"], "intensive boundary initial"),
+        )
+        for boundary in (
+            _mapping(
+                raw,
+                frozenset(
+                    {
+                        "identity",
+                        "coordinate_identity",
+                        "phase_identity",
+                        "selector",
+                        "coefficients",
+                        "target",
+                        "initial",
+                    }
+                ),
+                "GREPE intensive boundary",
+            )
+            for raw in _sequence(
+                item.get("intensive_boundaries", ()), "GREPE intensive boundaries"
+            )
+        )
     )
     return GeneralReactiveEquilibriumProblem(
         _text(item["identity"], "GREPE identity"),
@@ -629,6 +708,7 @@ def general_reactive_equilibrium_problem_from_mapping(
         continuation_reference,
         feed,
         phase_reactions,
+        intensive_boundaries,
     )
 
 
@@ -801,6 +881,19 @@ def general_reactive_equilibrium_problem_to_mapping(
             None
             if problem.feed is None
             else {
+                "kind": "affine",
+                "component_ids": list(problem.feed.component_ids),
+                "base_amounts_mol": list(problem.feed.base_amounts_mol),
+                "basis_matrix_mol_per_coordinate": [
+                    list(row) for row in problem.feed.basis_matrix_mol_per_coordinate
+                ],
+                "coordinates": [
+                    [coordinate.identity, list(coordinate.bounds)]
+                    for coordinate in problem.feed.coordinates
+                ],
+            }
+            if isinstance(problem.feed, AffineFeed)
+            else {
                 "component_ids": list(problem.feed.component_ids),
                 "amounts_mol": list(problem.feed.amounts_mol),
                 "coordinate_ids": list(problem.feed.coordinate_ids),
@@ -809,6 +902,18 @@ def general_reactive_equilibrium_problem_to_mapping(
                 ],
             }
         ),
+        "intensive_boundaries": [
+            {
+                "identity": boundary.identity,
+                "coordinate_identity": boundary.coordinate_identity,
+                "phase_identity": boundary.phase_identity,
+                "selector": boundary.selector,
+                "coefficients": list(boundary.coefficients),
+                "target": boundary.target,
+                "initial": boundary.initial,
+            }
+            for boundary in problem.intensive_boundaries
+        ],
         "phase_reactions": (
             None
             if problem.phase_reactions is None

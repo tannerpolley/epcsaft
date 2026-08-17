@@ -91,7 +91,9 @@ _MODEL_FAMILY_IDS: dict[str, str] = {
 _MODEL_CHOICES = {
     "base": frozenset({"pc-saft"}),
     "association": frozenset({"none", "general-site"}),
-    "electrolyte": frozenset({"none", "born", "fully-dissociated-debye-huckel"}),
+    "electrolyte": frozenset(
+        {"none", "born", "fully-dissociated-debye-huckel", "revised-debye-huckel"}
+    ),
     "permittivity": frozenset(
         {
             "none",
@@ -988,9 +990,7 @@ def _validate_combining_inputs(
                     field=f"{field}.source.inputs.{family}",
                     reason="combining-input-site-does-not-match-edge",
                 )
-            input_role_pair = tuple(
-                sorted(site_roles[endpoint] for endpoint in matching[0])
-            )
+            input_role_pair = tuple(sorted(site_roles[endpoint] for endpoint in matching[0]))
             if input_role_pair != output_role_pair:
                 raise _error(
                     "invalid-value",
@@ -1122,9 +1122,7 @@ def _apply_cross_association_corrections(
             for index, edge in enumerate(corrected_edges)
             if edge.source.kind == "combining-rule"
             and tuple(sorted((edge.endpoint_a[0], edge.endpoint_b[0]))) == component_pair
-            and tuple(
-                sorted((site_roles[edge.endpoint_a], site_roles[edge.endpoint_b]))
-            )
+            and tuple(sorted((site_roles[edge.endpoint_a], site_roles[edge.endpoint_b])))
             == role_pair
         )
         if not matching:
@@ -1341,9 +1339,7 @@ def _topology(
         edges.append(edge)
         specs.extend(edge_specs)
 
-    edges, specs = _apply_cross_association_corrections(
-        edges, specs, corrections, site_roles
-    )
+    edges, specs = _apply_cross_association_corrections(edges, specs, corrections, site_roles)
     ordered_edges = tuple(sorted(edges, key=lambda edge: (edge.endpoint_a, edge.endpoint_b)))
     associations = tuple(record for edge in ordered_edges for record in _edge_records(edge))
     return (
@@ -1475,9 +1471,7 @@ def _records_from_mapping(value: object) -> _DocumentRecords:
     domains = _domains(raw["domains"])
     components, singles, component_specs = _components(raw["components"])
     component_ids = frozenset(item.component_id for item in components)
-    pairs, cross_association_corrections, pair_specs = _pairs(
-        raw["pairs"], component_ids
-    )
+    pairs, cross_association_corrections, pair_specs = _pairs(raw["pairs"], component_ids)
     model_families = _model_families(raw["model_families"])
     models, model_specs = _model_coefficients(raw["model_coefficients"])
     correlations, correlation_specs = _correlations(raw["correlations"], component_ids)

@@ -20,6 +20,7 @@ from tests.eos._raw_cases import (
     ASSOCIATING_PURE,
     DIPOLAR_PERMITTIVITY_ELECTROLYTE,
     HELD_STRATEGY_2_TERNARY,
+    MULTINEUTRAL_REACTIVE,
     MULTISOLVENT_MULTIION,
     NEUTRAL_BINARY,
     _component,
@@ -341,11 +342,7 @@ def test_invalid_born_physical_declarations_do_not_resolve(declaration: str) -> 
         ion["coefficients"].sort(key=lambda item: str(item["family"]))
         family = "relative_permittivity"
     else:
-        family = (
-            declaration.removeprefix("neutral-")
-            .removeprefix("nonpositive-")
-            .replace("-", "_")
-        )
+        family = declaration.removeprefix("neutral-").removeprefix("nonpositive-").replace("-", "_")
     if declaration.startswith("neutral-"):
         ion = next(
             component
@@ -409,9 +406,7 @@ def test_permittivity__matches_independent_ion_fraction_and_dipolar_equations() 
 
     component_mixing = deepcopy(AQUEOUS_ELECTROLYTE)
     permittivity_family = next(
-        family
-        for family in component_mixing["model_families"]
-        if family["kind"] == "permittivity"
+        family for family in component_mixing["model_families"] if family["kind"] == "permittivity"
     )
     permittivity_family["choice"] = "component-permittivity-mixing"
     component_mixing["model_coefficients"] = [
@@ -424,9 +419,7 @@ def test_permittivity__matches_independent_ion_fraction_and_dipolar_equations() 
         ("chloride-anion", 5.0),
     ):
         component = next(
-            item
-            for item in component_mixing["components"]
-            if item["component_id"] == component_id
+            item for item in component_mixing["components"] if item["component_id"] == component_id
         )
         component["coefficients"].extend(
             _component(component_id, relative_permittivity=permittivity)["coefficients"]
@@ -671,6 +664,99 @@ def test_electrolyte_reference_matches_projection_identities() -> None:
         except EosError:
             rejected = None
         assert rejected is None
+
+
+def test_revised_debye_huckel_retains_opposite_charge_dispersion() -> None:
+    """The revised Held form admits solvent-ion and cation-anion k_ij values."""
+
+    mapping = deepcopy(AQUEOUS_ELECTROLYTE)
+    electrolyte = next(
+        family for family in mapping["model_families"] if family["kind"] == "electrolyte"
+    )
+    electrolyte["choice"] = "revised-debye-huckel"
+    electrolyte.pop("c_shell")
+    electrolyte.pop("c_dielectric")
+    permittivity = next(
+        family for family in mapping["model_families"] if family["kind"] == "permittivity"
+    )
+    permittivity["choice"] = "solvent-only"
+    mapping["model_coefficients"] = []
+    for component in mapping["components"]:
+        component["coefficients"] = [
+            coefficient
+            for coefficient in component["coefficients"]
+            if coefficient["family"] not in {"born_diameter", "solvation_factor"}
+        ]
+
+    model = Mixture(Parameters.from_mapping(mapping))
+    state = model.state(
+        T=298.15 * u.kelvin,
+        P=1.0 * u.bar,
+        x=(0.98, 0.01, 0.01),
+        phase="liquid",
+    )
+
+    assert state.fugacity is not None
+    assert all(math.isfinite(value) for value in state.fugacity.ln_coefficient)
+
+    suppressed = deepcopy(mapping)
+    ion_pair = next(
+        pair
+        for pair in suppressed["pairs"]
+        if {pair["component_id_a"], pair["component_id_b"]} == {"sodium-cation", "chloride-anion"}
+    )
+    ion_pair["coefficients"][0]["value"]["magnitude"] = 1.0
+    suppressed_state = Mixture(Parameters.from_mapping(suppressed)).state(
+        T=298.15 * u.kelvin,
+        P=1.0 * u.bar,
+        x=(0.98, 0.01, 0.01),
+        phase="liquid",
+    )
+
+    assert suppressed_state.fugacity is not None
+    assert state.fugacity.ln_coefficient != pytest.approx(
+        suppressed_state.fugacity.ln_coefficient,
+        rel=1.0e-8,
+        abs=1.0e-10,
+    )
+
+
+def test_revised_debye_huckel_uses_declared_multisolvent_permittivity() -> None:
+    """The revised no-Born model admits a specified neutral solvent mixture."""
+
+    mapping = deepcopy(MULTINEUTRAL_REACTIVE)
+    electrolyte = next(
+        family for family in mapping["model_families"] if family["kind"] == "electrolyte"
+    )
+    electrolyte["choice"] = "revised-debye-huckel"
+    electrolyte.pop("c_shell")
+    electrolyte.pop("c_dielectric")
+    permittivity = next(
+        family for family in mapping["model_families"] if family["kind"] == "permittivity"
+    )
+    permittivity["choice"] = "solvent-only"
+    mapping["model_coefficients"] = []
+    for component in mapping["components"]:
+        component["coefficients"] = [
+            coefficient
+            for coefficient in component["coefficients"]
+            if coefficient["family"] not in {"born_diameter", "solvation_factor"}
+        ]
+
+    composition = (0.50, 0.40, 0.05, 0.05)
+    state = Mixture(Parameters.from_mapping(mapping)).state(
+        T=313.15 * u.kelvin,
+        P=1.0 * u.bar,
+        x=composition,
+        phase="liquid",
+    )
+    expected = (
+        composition[0] * 0.018 * 78.0 + composition[1] * 0.030 * 40.0
+    ) / (composition[0] * 0.018 + composition[1] * 0.030)
+
+    assert state.bulk_relative_permittivity == pytest.approx(expected, rel=2.0e-13)
+    assert state.fugacity is not None
+    assert all(math.isfinite(value) for value in state.fugacity.ln_coefficient)
 
 
 def test_multisolvent_multiion_reference_is_component_order_invariant() -> None:
