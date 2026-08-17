@@ -444,7 +444,8 @@ struct SourceStandardStateResult {
 };
 
 [[nodiscard]] CompiledReactionSystem compile_reaction_system(
-    const ReactionSystemInput& input
+    const ReactionSystemInput& input,
+    bool require_complete_species_basis = true
 );
 
 [[nodiscard]] PhaseDirectionCompilation compile_phase_direction_system(

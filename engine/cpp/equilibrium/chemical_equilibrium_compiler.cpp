@@ -813,7 +813,10 @@ CompiledReactionSystem compile_accessible_face(
 }  // namespace
 
 
-CompiledReactionSystem compile_reaction_system(const ReactionSystemInput& input) {
+CompiledReactionSystem compile_reaction_system(
+    const ReactionSystemInput& input,
+    bool require_complete_species_basis
+) {
     validate_identities(input);
     require_finite(input.temperature_k, "temperature");
     require_finite(input.pressure_pa, "pressure");
@@ -896,6 +899,46 @@ CompiledReactionSystem compile_reaction_system(const ReactionSystemInput& input)
     );
     if (reaction_charge_norm > numerical_tolerance(1.0, species_count)) {
         throw std::invalid_argument("reaction stoichiometry does not conserve charge");
+    }
+
+    if (!require_complete_species_basis) {
+        // A compiled phase/species direction system supplies the complete
+        // invariant space and reference potentials to the finite-phase owner.
+        // Preserve the validated species metadata here without requiring a
+        // redundant species-only reaction basis.
+        CompiledReactionSystem result;
+        result.provider_fingerprint = input.provider_fingerprint;
+        result.original_species_count = species_count;
+        result.original_charges = input.charges;
+        result.original_molar_masses_kg_per_mol = input.molar_masses_kg_per_mol;
+        result.original_feed_amounts = input.feed_amounts;
+        result.species_count = species_count;
+        result.charges = input.charges;
+        result.molar_masses_kg_per_mol = input.molar_masses_kg_per_mol;
+        result.supplied_balance_matrix = input.balance_matrix;
+        result.retained_species_indices.resize(species_count);
+        std::iota(
+            result.retained_species_indices.begin(),
+            result.retained_species_indices.end(),
+            std::size_t{0}
+        );
+        result.balance_matrix = input.balance_matrix;
+        result.reaction_matrix = input.reaction_matrix;
+        result.supplied_reaction_transform = {
+            input.reaction_matrix.rows,
+            input.reaction_matrix.rows,
+            std::vector<double>(
+                input.reaction_matrix.rows * input.reaction_matrix.rows,
+                0.0
+            ),
+        };
+        for (std::size_t row = 0; row < input.reaction_matrix.rows; ++row) {
+            result.supplied_reaction_transform(row, row) = 1.0;
+        }
+        result.balance_totals = input.conserved_totals;
+        result.feed_amounts = input.feed_amounts;
+        result.g_ref.assign(species_count, 0.0);
+        return result;
     }
 
     if (input.reaction_matrix.rows == 0) {

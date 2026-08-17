@@ -315,6 +315,39 @@ def test_explicit_phase_directions_reproduce_legacy_admissible_space() -> None:
         assert directed_row.jacobian == pytest.approx(legacy_row.jacobian, rel=2.0e-6, abs=2.0e-8)
 
 
+def test_explicit_phase_directions_are_the_reactive_authority() -> None:
+    """A configured direction space must not require a duplicate legacy reaction basis."""
+
+    parameters, model, problem = _fixture()
+    explicit = _explicit_phase_direction_problem(problem)
+    direction_only = replace(
+        explicit,
+        reaction_system=replace(
+            explicit.reaction_system,
+            reaction_matrix=(),
+            equilibrium_constants=(),
+        ),
+        reaction_phase_ids=(),
+    )
+    active = epcsaft.ActiveParameterSet(parameters, (_PARAMETER_IDENTITY,))
+
+    expected = equilibrium.phase_equilibrium(model, explicit, active_parameters=active)
+    actual = equilibrium.phase_equilibrium(model, direction_only, active_parameters=active)
+
+    assert expected.status == actual.status == "evaluated"
+    assert actual.owner_result is not None
+    assert actual.owner_result.declared_direction_rank == 4
+    assert actual.owner_result.admissible_nullity == 4
+    for expected_phase, actual_phase in zip(expected.phases, actual.phases, strict=True):
+        assert actual_phase.mole_fractions == pytest.approx(
+            expected_phase.mole_fractions, rel=2.0e-7, abs=2.0e-10
+        )
+    for expected_row, actual_row in zip(expected.rows, actual.rows, strict=True):
+        assert actual_row.jacobian == pytest.approx(
+            expected_row.jacobian, rel=2.0e-6, abs=2.0e-8
+        )
+
+
 def test_finite_phase_total_parameter_jacobian_matches_independent_resolves() -> None:
     """Falsify a partial-only LLE Jacobian or fixed-pressure derivative leakage."""
 

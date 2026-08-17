@@ -1384,8 +1384,9 @@ py::dict solve_reactive_finite_phases(
         );
     }
     CompiledReactionSystem compiled;
+    const bool configured_directions = !phase_direction_system.is_none();
     if (source_standard_state.is_none()) {
-        compiled = compile_reaction_system(input);
+        compiled = compile_reaction_system(input, !configured_directions);
     } else {
         const py::dict standard = py::cast<py::dict>(source_standard_state);
         const std::string standard_id = py::cast<std::string>(standard["id"]);
@@ -1434,7 +1435,7 @@ py::dict solve_reactive_finite_phases(
             record.conversion_id = "already-provider-basis";
             record.pressure_pa = input.pressure_pa;
         }
-        compiled = compile_reaction_system(input);
+        compiled = compile_reaction_system(input, !configured_directions);
         const std::size_t parameter_count = parameters.identities.size();
         if (parameter_count != 0) {
             if (transformed.ln_k_parameter_derivatives.size()
@@ -1459,7 +1460,9 @@ py::dict solve_reactive_finite_phases(
                         ];
                 }
                 const CompiledReactionSystem derivative_system =
-                    compile_reaction_system(derivative_input);
+                    compile_reaction_system(
+                        derivative_input, !configured_directions
+                    );
                 if (derivative_system.species_count != compiled.species_count
                     || derivative_system.retained_species_indices
                         != compiled.retained_species_indices) {
@@ -1500,6 +1503,27 @@ py::dict solve_reactive_finite_phases(
         reference_rows.reserve(starts.size());
         for (const ReactiveFinitePhaseStart& start : starts) {
             reference_rows.push_back(start.amounts_mol);
+        }
+        for (std::size_t species = 0;
+             species < input.species_ids.size();
+             ++species) {
+            double declared_total = 0.0;
+            double scale = std::abs(input.feed_amounts[species]);
+            for (const ReactiveFinitePhaseStart& start : starts) {
+                if (start.amounts_mol.size() != input.species_ids.size()) {
+                    throw py::value_error(
+                        "phase reference amounts must match the species order"
+                    );
+                }
+                declared_total += start.amounts_mol[species];
+                scale += std::abs(start.amounts_mol[species]);
+            }
+            if (std::abs(declared_total - input.feed_amounts[species])
+                > 1.0e-10 * std::max(1.0, scale)) {
+                throw py::value_error(
+                    "phase reference amounts must sum to the declared feed"
+                );
+            }
         }
         phase_directions = compile_phase_direction_system(
             py::cast<std::vector<std::string>>(declaration["phase_ids"]),
