@@ -12,7 +12,8 @@ from pint import Quantity
 import epcsaft
 
 from .._trials import NonEvaluableTrial, NonEvaluableTrialCode
-from ..eos import _native_topology_fingerprint
+from ..eos import _native_topology_fingerprint, _native_transport
+from . import _equilibrium
 from ._api import (
     AllComponents,
     ChemicalEquilibriumDiagnostics,
@@ -1491,6 +1492,42 @@ def _certify_phase_role(
             ),
             provider_evaluation_count=1,
         )
+    if pressure_derivative_log_volume_pa is not None:
+        mechanical_scale = max(1.0, abs(equilibrium.pressure_pa))
+        if (
+            not math.isfinite(pressure_derivative_log_volume_pa)
+            or pressure_derivative_log_volume_pa >= -1.0e-6 * mechanical_scale
+        ):
+            raise ValueError(
+                "declared Provider phase is not a strict local mechanical minimum"
+            )
+        return receipt(
+            scope="declared_fixed_composition_role",
+            audited_mole_fractions=normalized,
+            audited_molar_volume_m3_per_mol=certified_molar_volume,
+            audited_pressure_pa=equilibrium.pressure_pa,
+            mechanical_class="strict_stable",
+            route="exact_fixed_TnV_provider_hessian",
+            native_certificate_scope="declared_phase_exact_local_mechanical_stability",
+            phase_selection_claim="mechanically_certified_declared_single_phase",
+            globality_claim="not_established",
+            search_scope="exact_certified_chemical_state_in_declared_phase_support",
+            search_budget="one_exact_state_provider_derivative_evaluation",
+            search_exclusions=(
+                "global_phase_stability",
+                "other_compositions",
+                "other_phase_counts",
+                "other_volume_roots",
+            ),
+            completeness_criterion=(
+                "declared_phase_support_only;other_volume_roots_not_searched"
+            ),
+            role_evidence=(
+                "exact_state_negative_pressure_derivative_log_volume",
+                "phase_role_and_support_declared_by_problem",
+            ),
+            provider_evaluation_count=1,
+        )
     role_result = phase_equilibrium(
         problem.phase.model,
         PhaseEquilibriumProblem(
@@ -1574,7 +1611,7 @@ def certify_homogeneous_continuation_reference(
     maximum_log_volume_distance: float,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
 ) -> HomogeneousContinuationReference:
-    """Certify one immutable local role anchor using the full detected-root route."""
+    """Certify one immutable local anchor inside the declared phase support."""
 
     if problem.continuation_reference is not None:
         raise ValueError("continuation anchoring requires an unanchored homogeneous problem")
@@ -1596,13 +1633,35 @@ def certify_homogeneous_continuation_reference(
             active_parameters
         ),
     )
+    pressure_derivative_log_volume_pa: float | None = None
+    if isinstance(problem.phase, ProviderPhase):
+        block = _equilibrium.evaluate_parameterized_phase(
+            _native_transport(problem.phase.model, active_parameters),
+            equilibrium.temperature_k,
+            equilibrium.amounts_mol,
+            equilibrium.volume_m3,
+            *problem.phase.admissible_packing_fraction_interval,
+        )
+        width = len(equilibrium.amounts_mol) + 1
+        hessian = tuple(
+            float(cast(Any, value))
+            for value in cast(Sequence[object], block["state_hessian"])
+        )
+        pressure_derivative_log_volume_pa = (
+            -8.31446261815324
+            * equilibrium.temperature_k
+            * equilibrium.volume_m3
+            * hessian[
+                len(equilibrium.amounts_mol) * width + len(equilibrium.amounts_mol)
+            ]
+        )
     role_receipt = _certify_phase_role(
         problem,
         descriptor,
         equilibrium,
         active_parameters,
         trial,
-        None,
+        pressure_derivative_log_volume_pa,
         "not_applicable_anchor_construction",
     )
     anchor_state_identity = _canonical_fingerprint(
@@ -1803,6 +1862,7 @@ def _validate_phase_role_receipt(
     )
     local_detected = receipt.scope == "local_detected_fixed_composition_role"
     local_anchored = receipt.scope == "local_reference_anchored_fixed_composition_role"
+    declared_local = receipt.scope == "declared_fixed_composition_role"
     ideal_gas = receipt.scope == "typed_ideal_gas_fixed_composition_role"
     if (
         receipt.normalized_chemical_mole_fractions != normalized
@@ -1822,7 +1882,7 @@ def _validate_phase_role_receipt(
         or receipt.provider_evaluation_count < 0
         or receipt.continuation_reference_fingerprint
         != state.continuation_certificate.reference_fingerprint
-        or not (local_detected or local_anchored or ideal_gas)
+        or not (local_detected or local_anchored or declared_local or ideal_gas)
         or (
             local_detected
             and (
@@ -1860,6 +1920,22 @@ def _validate_phase_role_receipt(
                     evidence.startswith("anchor_phase_role_receipt:sha256:")
                     for evidence in receipt.role_evidence
                 )
+                or receipt.provider_evaluation_count != 1
+            )
+        )
+        or (
+            declared_local
+            and (
+                receipt.phase_selection_claim
+                != "mechanically_certified_declared_single_phase"
+                or receipt.native_certificate_scope
+                != "declared_phase_exact_local_mechanical_stability"
+                or receipt.completeness_criterion
+                != "declared_phase_support_only;other_volume_roots_not_searched"
+                or "exact_state_negative_pressure_derivative_log_volume"
+                not in receipt.role_evidence
+                or "phase_role_and_support_declared_by_problem"
+                not in receipt.role_evidence
                 or receipt.provider_evaluation_count != 1
             )
         )
@@ -2551,26 +2627,34 @@ def evaluate_homogeneous_reactive_observations(
         pressure_derivative_log_volume_pa: float | None = None
         try:
             if active_parameters is None:
-                fixed_state = provider_phase.model._state(
-                    T=equilibrium.temperature_k * epcsaft.unit_registry.kelvin,
-                    rho=(
-                        total_amount
-                        / volume
-                        * epcsaft.unit_registry.mole
-                        / epcsaft.unit_registry.meter**3
-                    ),
-                    x=equilibrium.mole_fractions,
+                parameterized = _equilibrium.evaluate_parameterized_phase(
+                    _native_transport(provider_phase.model, None),
+                    equilibrium.temperature_k,
+                    amounts,
+                    volume,
+                    *provider_phase.admissible_packing_fraction_interval,
                 )
-                potential_values = tuple(
-                    math.log(amount / volume) + residual
-                    for amount, residual in zip(
-                        amounts,
-                        fixed_state.residual_chemical_potential_over_rt,
-                        strict=True,
+                width = len(amounts) + 1
+                hessian = tuple(
+                    float(cast(Any, value))
+                    for value in cast(
+                        Sequence[object], parameterized["state_hessian"]
                     )
                 )
+                pressure_derivative_log_volume_pa = (
+                    -8.31446261815324
+                    * equilibrium.temperature_k
+                    * volume
+                    * hessian[len(amounts) * width + len(amounts)]
+                )
+                potential_values = tuple(
+                    float(cast(Any, value))
+                    for value in cast(
+                        Sequence[object], parameterized["state_gradient"]
+                    )[: len(amounts)]
+                )
                 potential_derivatives = tuple(() for _ in amounts)
-                eos_pressure_pa = float(fixed_state.pressure.to("pascal").magnitude)
+                eos_pressure_pa = float(cast(Any, parameterized["pressure_pa"]))
             else:
                 coordinates = provider_phase.model._active_coordinates(active_parameters)
                 block = provider_phase.model._native.evaluate_phase_derivatives(
@@ -2588,7 +2672,9 @@ def evaluate_homogeneous_reactive_observations(
                     * volume
                     * hessian[len(amounts) * width + len(amounts)]
                 )
-                potential_values = tuple(float(value) for value in block.gradient[: len(amounts)])
+                potential_values = tuple(
+                    float(value) for value in block.gradient[: len(amounts)]
+                )
                 potential_derivatives = tuple(
                     tuple(
                         math.fsum(

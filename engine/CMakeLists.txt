@@ -210,6 +210,7 @@ add_library(
     STATIC
     cpp/equilibrium/chemical_equilibrium.cpp
     cpp/equilibrium/chemical_equilibrium_compiler.cpp
+    cpp/equilibrium/phase_direction_compiler.cpp
     cpp/equilibrium/chemical_equilibrium_support.cpp
     cpp/equilibrium/chemical_equilibrium_solver.cpp
     cpp/equilibrium/reactive_finite_phase.cpp

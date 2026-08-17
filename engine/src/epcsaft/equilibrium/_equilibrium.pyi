@@ -97,4 +97,5 @@ def _reactive_finite_phases(
     trace_floor: float,
     active_parameters_requested: bool = ...,
     derivative_audits_requested: bool = ...,
+    phase_direction_system: dict[str, object] | None = ...,
 ) -> dict[str, Any]: ...

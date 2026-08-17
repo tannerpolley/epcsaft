@@ -62,20 +62,107 @@ struct NormalizedBalances {
     DenseMatrix matrix;
     std::vector<double> totals;
     std::vector<double> scales;
+    bool phase_stacked = false;
+    std::vector<double> reference_potentials;
 };
 
-NormalizedBalances normalized_balances(const CompiledReactionSystem& system) {
+DenseMatrix admissible_invariant_matrix(
+    const PhaseDirectionCompilation& directions,
+    const std::vector<int>& charges
+) {
+    const std::size_t phase_count = directions.phase_ids.size();
+    const std::size_t species_count = directions.species_ids.size();
+    const std::size_t dimension = phase_count * species_count;
+    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        invariants(
+            directions.invariant_matrix.values.data(),
+            static_cast<Eigen::Index>(directions.invariant_matrix.rows),
+            static_cast<Eigen::Index>(dimension)
+        );
+    double charge_norm_squared = 0.0;
+    for (int charge : charges) {
+        charge_norm_squared += static_cast<double>(charge * charge);
+    }
+    if (charge_norm_squared == 0.0) {
+        return directions.invariant_matrix;
+    }
+    Eigen::MatrixXd charge_basis = Eigen::MatrixXd::Zero(
+        static_cast<Eigen::Index>(phase_count),
+        static_cast<Eigen::Index>(dimension)
+    );
+    const double inverse_charge_norm = 1.0 / std::sqrt(charge_norm_squared);
+    for (std::size_t phase = 0; phase < phase_count; ++phase) {
+        for (std::size_t species = 0; species < species_count; ++species) {
+            charge_basis(
+                static_cast<Eigen::Index>(phase),
+                static_cast<Eigen::Index>(phase * species_count + species)
+            ) = static_cast<double>(charges[species]) * inverse_charge_norm;
+        }
+    }
+    const Eigen::MatrixXd projected = invariants
+        * (Eigen::MatrixXd::Identity(
+            static_cast<Eigen::Index>(dimension),
+            static_cast<Eigen::Index>(dimension)
+        ) - charge_basis.transpose() * charge_basis);
+    const Eigen::JacobiSVD<Eigen::MatrixXd> svd(
+        projected, Eigen::ComputeFullV
+    );
+    const double threshold = 256.0 * std::numeric_limits<double>::epsilon()
+        * static_cast<double>(dimension)
+        * (svd.singularValues().size() == 0 ? 1.0 : svd.singularValues()(0));
+    std::size_t rank = 0;
+    for (Eigen::Index index = 0; index < svd.singularValues().size(); ++index) {
+        rank += static_cast<std::size_t>(svd.singularValues()(index) > threshold);
+    }
+    Eigen::MatrixXd basis = svd.matrixV()
+        .leftCols(static_cast<Eigen::Index>(rank))
+        .transpose();
+    DenseMatrix result;
+    result.rows = rank;
+    result.columns = dimension;
+    result.values.reserve(rank * dimension);
+    for (Eigen::Index row = 0; row < basis.rows(); ++row) {
+        for (Eigen::Index column = 0; column < basis.cols(); ++column) {
+            result.values.push_back(basis(row, column));
+        }
+    }
+    return result;
+}
+
+NormalizedBalances normalized_balances(
+    const CompiledReactionSystem& system,
+    const PhaseDirectionCompilation* directions
+) {
     NormalizedBalances result{
-        system.balance_matrix,
-        system.balance_totals,
-        std::vector<double>(system.balance_matrix.rows, 1.0),
+        directions == nullptr
+            ? system.balance_matrix
+            : admissible_invariant_matrix(*directions, system.charges),
+        directions == nullptr
+            ? system.balance_totals
+            : std::vector<double>{},
+        {},
+        directions != nullptr,
+        directions == nullptr ? system.g_ref : directions->reference_potentials,
     };
+    if (directions != nullptr) {
+        result.totals.assign(result.matrix.rows, 0.0);
+        for (std::size_t row = 0; row < result.matrix.rows; ++row) {
+            for (std::size_t coordinate = 0;
+                 coordinate < result.matrix.columns;
+                 ++coordinate) {
+                result.totals[row] += result.matrix(row, coordinate)
+                    * directions->phase_reference_amounts[coordinate];
+            }
+        }
+    }
+    result.scales.assign(result.matrix.rows, 1.0);
     for (std::size_t row = 0; row < result.matrix.rows; ++row) {
         double scale = std::abs(result.totals[row]);
-        for (std::size_t species = 0; species < result.matrix.columns; ++species) {
-            scale += std::abs(
-                result.matrix(row, species) * system.feed_amounts[species]
-            );
+        for (std::size_t column = 0; column < result.matrix.columns; ++column) {
+            const double reference_amount = directions == nullptr
+                ? system.feed_amounts[column]
+                : directions->phase_reference_amounts[column];
+            scale += std::abs(result.matrix(row, column) * reference_amount);
         }
         scale = std::max(scale, std::numeric_limits<double>::min());
         result.scales[row] = scale;
@@ -85,6 +172,29 @@ NormalizedBalances normalized_balances(const CompiledReactionSystem& system) {
         }
     }
     return result;
+}
+
+void shift_extensive_amount_coordinates(
+    const AmountChart& chart,
+    std::vector<double>& coordinates,
+    std::size_t offset,
+    double shift
+) {
+    if (!chart.ionic()) {
+        for (std::size_t species = 0; species < chart.charges.size(); ++species) {
+            coordinates[offset + species] += shift;
+        }
+        return;
+    }
+    coordinates[offset] += shift;
+    const std::size_t neutral_offset = 1
+        + chart.cation_indices.size() - 1
+        + chart.anion_indices.size() - 1;
+    for (std::size_t neutral = 0;
+         neutral < chart.neutral_indices.size();
+         ++neutral) {
+        coordinates[offset + neutral_offset + neutral] += shift;
+    }
 }
 
 struct PhaseBlock {
@@ -445,12 +555,24 @@ MultiphaseEvaluation evaluate_multiphase(
     result.phases.reserve(phase_count);
     for (std::size_t phase = 0; phase < phase_count; ++phase) {
         const std::size_t offset = phase * phase_dimension;
+        std::vector<double> phase_reference = system.g_ref;
+        std::vector<double> phase_reference_derivatives =
+            system.g_ref_parameter_derivatives;
+        if (balances.phase_stacked) {
+            phase_reference.assign(system.species_count, 0.0);
+            phase_reference_derivatives.clear();
+            for (std::size_t species = 0; species < system.species_count; ++species) {
+                phase_reference[species] = balances.reference_potentials[
+                    phase * system.species_count + species
+                ];
+            }
+        }
         result.phases.push_back(evaluate_phase(
             provider,
             active_parameters,
             chart,
-            system.g_ref,
-            system.g_ref_parameter_derivatives,
+            phase_reference,
+            phase_reference_derivatives,
             temperature_k,
             pressure_pa,
             packing_intervals[phase],
@@ -474,14 +596,17 @@ MultiphaseEvaluation evaluate_multiphase(
             const std::size_t offset = phase * phase_dimension;
             const PhaseBlock& block = result.phases[phase];
             for (std::size_t species = 0; species < species_count; ++species) {
-                result.constraints[row] +=
-                    balances.matrix(row, species) * block.amounts[species];
+                const std::size_t balance_column = balances.phase_stacked
+                    ? phase * species_count + species
+                    : species;
+                result.constraints[row] += balances.matrix(row, balance_column)
+                    * block.amounts[species];
                 for (std::size_t coordinate = 0;
                      coordinate + 1 < phase_dimension;
                      ++coordinate) {
                     result.jacobian[
                         row * variable_count + offset + coordinate
-                    ] += balances.matrix(row, species)
+                    ] += balances.matrix(row, balance_column)
                         * block.state_jacobian[
                             species * phase_dimension + coordinate
                         ];
@@ -502,7 +627,12 @@ MultiphaseEvaluation evaluate_multiphase(
                         result.lagrangian_hessian[
                             (offset + left) * variable_count + offset + right
                         ] += multipliers[row]
-                            * balances.matrix(row, species)
+                            * balances.matrix(
+                                row,
+                                balances.phase_stacked
+                                    ? phase * species_count + species
+                                    : species
+                            )
                             * result.phases[phase].amount_hessians[
                                 species * amount_dimension * amount_dimension
                                     + left * amount_dimension + right
@@ -1042,6 +1172,40 @@ double phase_distinctness(const std::vector<PhaseBlock>& phases) {
     return result;
 }
 
+std::vector<double> equality_multipliers_at(
+    const MultiphaseEvaluation& evaluation
+) {
+    const std::size_t constraint_count = evaluation.constraints.size();
+    const std::size_t variable_count = evaluation.gradient.size();
+    if (constraint_count == 0) {
+        return {};
+    }
+    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        jacobian(
+            evaluation.jacobian.data(),
+            static_cast<Eigen::Index>(constraint_count),
+            static_cast<Eigen::Index>(variable_count)
+        );
+    Eigen::Map<const Eigen::VectorXd> gradient(
+        evaluation.gradient.data(), static_cast<Eigen::Index>(variable_count)
+    );
+    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> factor(
+        jacobian.transpose()
+    );
+    if (static_cast<std::size_t>(factor.rank()) != constraint_count) {
+        throw std::runtime_error(
+            "reactive finite-phase equality multiplier recovery is rank deficient"
+        );
+    }
+    const Eigen::VectorXd recovered = factor.solve(-gradient);
+    if (!recovered.allFinite()) {
+        throw std::runtime_error(
+            "reactive finite-phase equality multiplier recovery is nonfinite"
+        );
+    }
+    return std::vector<double>(recovered.data(), recovered.data() + recovered.size());
+}
+
 double reduced_hessian_minimum(
     const MultiphaseEvaluation& evaluation,
     std::size_t variable_count,
@@ -1228,7 +1392,8 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     double trace_floor,
     const ProviderActiveParameterSet* active_parameters,
     int max_iterations,
-    bool perform_derivative_audits
+    bool perform_derivative_audits,
+    const PhaseDirectionCompilation* phase_directions
 ) {
     ReactiveFinitePhaseResult result;
     const std::size_t phase_count = starts.size();
@@ -1248,21 +1413,24 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
             "reactive finite-phase solve requires a complete strict-interior species face"
         );
     }
+    if (phase_directions != nullptr
+        && (phase_directions->phase_ids.size() != phase_count
+            || phase_directions->species_ids.size() != species_count
+            || phase_directions->charges.size() != species_count
+            || phase_directions->phase_reference_amounts.size()
+                != phase_count * species_count
+            || phase_directions->reference_potentials.size()
+                != phase_count * species_count)) {
+        throw std::invalid_argument(
+            "reactive finite-phase direction dimensions changed"
+        );
+    }
     if (!std::isfinite(temperature_k) || temperature_k <= 0.0
         || !std::isfinite(pressure_pa) || pressure_pa <= 0.0
         || !std::isfinite(trace_floor) || trace_floor <= 0.0
         || max_iterations <= 0) {
         throw std::invalid_argument("reactive finite-phase state controls are invalid");
     }
-    if (phase_count * chart.coordinate_count() <= system.balance_matrix.rows) {
-        throw std::invalid_argument(
-            "configured reactive phases have no independent composition directions"
-        );
-    }
-    result.admissible_nullity = phase_count * chart.coordinate_count()
-        - system.balance_matrix.rows;
-    result.declared_direction_rank = result.admissible_nullity;
-
     const ProviderActiveParameterSet parameters = active_parameters == nullptr
         ? ProviderActiveParameterSet{}
         : *active_parameters;
@@ -1276,6 +1444,14 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         system.molar_masses_kg_per_mol.begin(),
         0.0
     );
+    const double total_feed_amount_mol = std::accumulate(
+        system.feed_amounts.begin(), system.feed_amounts.end(), 0.0
+    );
+    if (!std::isfinite(total_feed_mass_kg) || total_feed_mass_kg <= 0.0
+        || !std::isfinite(total_feed_amount_mol) || total_feed_amount_mol <= 0.0) {
+        throw std::invalid_argument("reactive finite-phase feed amount is invalid");
+    }
+    const double amount_log_scale = std::log(total_feed_amount_mol);
     for (std::size_t phase = 0; phase < phase_count; ++phase) {
         const ReactiveFinitePhaseStart& start = starts[phase];
         const std::array<double, 2>& packing = packing_fraction_intervals[phase];
@@ -1361,6 +1537,15 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
                     ));
             }
         }
+        shift_extensive_amount_coordinates(
+            chart, initial, offset, -amount_log_scale
+        );
+        shift_extensive_amount_coordinates(
+            chart, lower, offset, -amount_log_scale
+        );
+        shift_extensive_amount_coordinates(
+            chart, upper, offset, -amount_log_scale
+        );
         initial[offset + amount_dimension] = std::log(start_packing);
         lower[offset + amount_dimension] = std::log(packing[0]);
         upper[offset + amount_dimension] = std::nextafter(
@@ -1368,8 +1553,21 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         );
     }
 
-    const NormalizedBalances balances = normalized_balances(system);
+    NormalizedBalances balances = normalized_balances(system, phase_directions);
+    for (double& coefficient : balances.matrix.values) {
+        coefficient *= total_feed_amount_mol;
+    }
     const std::size_t constraint_count = balances.matrix.rows;
+    if (phase_count * chart.coordinate_count() <= constraint_count) {
+        throw std::invalid_argument(
+            "configured reactive phases have no independent composition directions"
+        );
+    }
+    result.admissible_nullity = phase_count * chart.coordinate_count()
+        - constraint_count;
+    result.declared_direction_rank = phase_directions == nullptr
+        ? result.admissible_nullity
+        : phase_directions->direction_rank;
     const MultiphaseEvaluation initial_evaluation = evaluate_multiphase(
         provider,
         parameters,
@@ -1407,6 +1605,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     application->Options()->SetStringValue("sb", "yes");
     application->Options()->SetStringValue("hessian_approximation", "exact");
     application->Options()->SetStringValue("mu_strategy", "adaptive");
+    application->Options()->SetStringValue("nlp_scaling_method", "none");
     application->Options()->SetNumericValue("tol", 1.0e-10);
     application->Options()->SetNumericValue("constr_viol_tol", 1.0e-10);
     application->Options()->SetNumericValue("acceptable_tol", 1.0e-8);
@@ -1453,7 +1652,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     result.numerical_status = "passed";
 
     std::vector<double> solution = raw_problem->solution();
-    const std::vector<double>& multipliers = raw_problem->multipliers();
+    std::vector<double> multipliers = raw_problem->multipliers();
     // Fixed-pressure phase amounts do not depend on the packing coordinate.
     // Polish each phase's scalar packing coordinate after IPOPT so the direct
     // pressure check is as accurate as the otherwise well-scaled KKT solve.
@@ -1511,6 +1710,19 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
             break;
         }
     }
+    const MultiphaseEvaluation polished_primal = evaluate_multiphase(
+        provider,
+        parameters,
+        system,
+        balances,
+        temperature_k,
+        pressure_pa,
+        packing_fraction_intervals,
+        solution,
+        multipliers,
+        phase_count
+    );
+    multipliers = equality_multipliers_at(polished_primal);
     const MultiphaseEvaluation evaluated = evaluate_multiphase(
         provider,
         parameters,
@@ -1523,7 +1735,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         multipliers,
         phase_count
     );
-    result.objective_over_rt = evaluated.objective;
+    result.objective_over_rt = total_feed_amount_mol * evaluated.objective;
     result.balance_inf_norm = inf_norm(evaluated.constraints);
     result.phase_distinctness = phase_distinctness(evaluated.phases);
     result.phase_amounts_mol.reserve(phase_count);
@@ -1546,8 +1758,14 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     double minimum_bound_margin = std::numeric_limits<double>::infinity();
     for (std::size_t phase = 0; phase < phase_count; ++phase) {
         const PhaseBlock& block = evaluated.phases[phase];
-        result.phase_amounts_mol.push_back(block.amounts);
-        result.phase_volumes_m3.push_back(block.volume);
+        std::vector<double> physical_amounts = block.amounts;
+        for (double& amount : physical_amounts) {
+            amount *= total_feed_amount_mol;
+        }
+        result.phase_amounts_mol.push_back(std::move(physical_amounts));
+        result.phase_volumes_m3.push_back(
+            total_feed_amount_mol * block.volume
+        );
         result.phase_pressures_pa.push_back(block.pressure);
         result.phase_packing_fractions.push_back(block.packing);
         result.phase_chemical_potentials_over_rt.push_back(block.chemical_potentials);
@@ -1556,7 +1774,9 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
             std::abs(block.pressure - pressure_pa) / pressure_pa
         );
         for (double amount : block.amounts) {
-            minimum_amount = std::min(minimum_amount, amount);
+            minimum_amount = std::min(
+                minimum_amount, total_feed_amount_mol * amount
+            );
         }
         const std::size_t offset = phase * phase_dimension;
         for (std::size_t coordinate = 0; coordinate < phase_dimension; ++coordinate) {
@@ -1566,23 +1786,46 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
                 upper[offset + coordinate] - solution[offset + coordinate],
             });
         }
-        for (std::size_t reaction = 0;
-             reaction < system.reaction_matrix.rows;
-             ++reaction) {
+        if (phase_directions == nullptr) {
+            for (std::size_t reaction = 0;
+                 reaction < system.reaction_matrix.rows;
+                 ++reaction) {
+                double affinity = 0.0;
+                for (std::size_t species = 0; species < species_count; ++species) {
+                    affinity += system.reaction_matrix(reaction, species)
+                        * block.chemical_potentials[species];
+                }
+                result.reaction_affinity_inf_norm = std::max(
+                    result.reaction_affinity_inf_norm, std::abs(affinity)
+                );
+            }
+        }
+    }
+    if (phase_directions != nullptr) {
+        for (std::size_t direction = 0;
+             direction < phase_directions->direction_matrix.rows;
+             ++direction) {
             double affinity = 0.0;
-            for (std::size_t species = 0; species < species_count; ++species) {
-                affinity += system.reaction_matrix(reaction, species)
-                    * block.chemical_potentials[species];
+            for (std::size_t phase = 0; phase < phase_count; ++phase) {
+                for (std::size_t species = 0; species < species_count; ++species) {
+                    affinity += phase_directions->direction_matrix(
+                        direction, phase * species_count + species
+                    ) * evaluated.phases[phase].chemical_potentials[species];
+                }
             }
             result.reaction_affinity_inf_norm = std::max(
                 result.reaction_affinity_inf_norm, std::abs(affinity)
             );
         }
+        result.transfer_chemical_potential_inf_norm =
+            result.reaction_affinity_inf_norm;
     }
     const double charge_norm_squared = std::inner_product(
         system.charges.begin(), system.charges.end(), system.charges.begin(), 0.0
     );
-    for (std::size_t phase = 1; phase < phase_count; ++phase) {
+    for (std::size_t phase = 1;
+         phase_directions == nullptr && phase < phase_count;
+         ++phase) {
         double electric_offset = 0.0;
         if (charge_norm_squared > 0.0) {
             for (std::size_t species = 0; species < species_count; ++species) {
@@ -1666,6 +1909,12 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         temperature_k,
         species_count
     );
+    for (double& derivative : result.amount_derivatives) {
+        derivative *= total_feed_amount_mol;
+    }
+    for (double& derivative : result.volume_derivatives) {
+        derivative *= total_feed_amount_mol;
+    }
     if (!parameters.identities.empty() && result.sensitivity_status != "available") {
         result.accepted = false;
         result.failure_reason = "reactive_finite_phase_sensitivity_failed";

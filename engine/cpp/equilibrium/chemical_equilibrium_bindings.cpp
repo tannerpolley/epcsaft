@@ -4,9 +4,11 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <pybind11/pybind11.h>
@@ -130,6 +132,31 @@ DenseMatrix dense_matrix(const py::handle& value, const char* field) {
     return result;
 }
 
+DenseMatrix phase_direction_matrix(
+    const std::vector<std::vector<double>>& rows,
+    std::size_t expected_columns,
+    const char* field
+) {
+    if (rows.empty()) {
+        return {0, expected_columns, {}};
+    }
+    const std::size_t columns = rows.front().size();
+    DenseMatrix result{rows.size(), columns, {}};
+    result.values.reserve(rows.size() * columns);
+    for (const std::vector<double>& row : rows) {
+        if (row.size() != columns) {
+            throw py::value_error(std::string(field) + " must be rectangular");
+        }
+        result.values.insert(result.values.end(), row.begin(), row.end());
+    }
+    if (columns != expected_columns) {
+        throw py::value_error(
+            std::string(field) + " columns must match the phase-species dimension"
+        );
+    }
+    return result;
+}
+
 std::vector<EquilibriumConstantRecord> equilibrium_constant_records(
     const py::handle& value
 ) {
@@ -162,6 +189,9 @@ ReactionSystemInput reaction_system_input(const py::dict& spec) {
     input.balance_matrix = dense_matrix(spec["balance_matrix"], "balance matrix");
     input.conserved_totals = py::cast<std::vector<double>>(spec["conserved_totals"]);
     input.reaction_matrix = dense_matrix(spec["reaction_matrix"], "reaction matrix");
+    if (input.reaction_matrix.rows == 0) {
+        input.reaction_matrix.columns = input.species_ids.size();
+    }
     input.feed_amounts = py::cast<std::vector<double>>(spec["feed_amounts"]);
     input.ln_k = py::cast<std::vector<double>>(spec["ln_k"]);
     input.equilibrium_constant_records = equilibrium_constant_records(
@@ -1332,7 +1362,8 @@ py::dict solve_reactive_finite_phases(
     const std::vector<py::dict>& start_payloads,
     double trace_floor,
     bool active_parameters_requested,
-    bool derivative_audits_requested
+    bool derivative_audits_requested,
+    const py::object& phase_direction_system
 ) {
     const epcsaft_native_transport& transport = checked_reactive_finite_transport(capsule);
     const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
@@ -1452,6 +1483,42 @@ py::dict solve_reactive_finite_phases(
             py::cast<double>(payload["molar_volume_m3_per_mol"]),
         });
     }
+    std::optional<PhaseDirectionCompilation> phase_directions;
+    if (!phase_direction_system.is_none()) {
+        const py::dict declaration = py::cast<py::dict>(phase_direction_system);
+        std::vector<std::vector<double>> reference_rows;
+        reference_rows.reserve(starts.size());
+        for (const ReactiveFinitePhaseStart& start : starts) {
+            reference_rows.push_back(start.amounts_mol);
+        }
+        phase_directions = compile_phase_direction_system(
+            py::cast<std::vector<std::string>>(declaration["phase_ids"]),
+            py::cast<std::vector<std::string>>(declaration["species_ids"]),
+            py::cast<std::vector<double>>(declaration["charges"]),
+            phase_direction_matrix(
+                py::cast<std::vector<std::vector<double>>>(
+                    declaration["balance_matrix"]
+                ),
+                input.species_ids.size(),
+                "balance_matrix"
+            ),
+            phase_direction_matrix(
+                reference_rows,
+                input.species_ids.size(),
+                "phase_reference_amounts"
+            ),
+            phase_direction_matrix(
+                py::cast<std::vector<std::vector<double>>>(
+                    declaration["direction_rows"]
+                ),
+                starts.size() * input.species_ids.size(),
+                "direction_rows"
+            ),
+            py::cast<std::vector<double>>(declaration["driving_constants"]),
+            1.0e-12,
+            1.0e-10
+        );
+    }
     return reactive_finite_phase_result(
         solve_provider_reactive_finite_phases(
             compiled,
@@ -1463,9 +1530,109 @@ py::dict solve_reactive_finite_phases(
             trace_floor,
             parameters.identities.empty() ? nullptr : &parameters,
             500,
-            derivative_audits_requested
+            derivative_audits_requested,
+            phase_directions.has_value() ? &*phase_directions : nullptr
         )
     );
+}
+
+std::vector<std::vector<double>> matrix_rows(const DenseMatrix& matrix) {
+    std::vector<std::vector<double>> result(
+        matrix.rows,
+        std::vector<double>(matrix.columns)
+    );
+    for (std::size_t row = 0; row < matrix.rows; ++row) {
+        for (std::size_t column = 0; column < matrix.columns; ++column) {
+            result[row][column] = matrix.values[row * matrix.columns + column];
+        }
+    }
+    return result;
+}
+
+py::dict compile_phase_direction_system_binding(
+    const std::vector<std::string>& phase_ids,
+    const std::vector<std::string>& species_ids,
+    const std::vector<double>& charges,
+    const std::vector<std::vector<double>>& balance_rows,
+    const std::vector<std::vector<double>>& phase_reference_rows,
+    const std::vector<std::vector<double>>& direction_rows,
+    const std::vector<double>& driving_constants,
+    double rank_tolerance,
+    double conservation_tolerance
+) {
+    const std::size_t dimension = phase_ids.size() * species_ids.size();
+    const PhaseDirectionCompilation compilation =
+        compile_phase_direction_system(
+            phase_ids,
+            species_ids,
+            charges,
+            phase_direction_matrix(
+                balance_rows,
+                species_ids.size(),
+                "balance_matrix"
+            ),
+            phase_direction_matrix(
+                phase_reference_rows,
+                species_ids.size(),
+                "phase_reference_amounts"
+            ),
+            phase_direction_matrix(
+                direction_rows,
+                dimension,
+                "direction_rows"
+            ),
+            driving_constants,
+            rank_tolerance,
+            conservation_tolerance
+        );
+    py::dict result;
+    result["phase_ids"] = compilation.phase_ids;
+    result["species_ids"] = compilation.species_ids;
+    result["charges"] = compilation.charges;
+    result["coordinate_count"] = dimension;
+    py::list coordinate_order;
+    for (const std::string& phase_id : compilation.phase_ids) {
+        for (const std::string& species_id : compilation.species_ids) {
+            coordinate_order.append(py::make_tuple(phase_id, species_id));
+        }
+    }
+    result["coordinate_order"] = std::move(coordinate_order);
+    result["direction_matrix"] = matrix_rows(compilation.direction_matrix);
+    result["directions"] = matrix_rows(compilation.direction_matrix);
+    result["invariant_rows"] = matrix_rows(compilation.invariant_matrix);
+    result["invariant_matrix"] = matrix_rows(compilation.invariant_matrix);
+    result["phase_reference_amounts"] = compilation.phase_reference_amounts;
+    result["driving_constants"] = compilation.driving_constants;
+    result["invariant_totals"] = compilation.invariant_totals;
+    result["reference_potentials"] = compilation.reference_potentials;
+    result["g"] = compilation.reference_potentials;
+    result["global_balance_residuals"] = compilation.global_balance_residuals;
+    result["phase_charge_residuals"] = compilation.phase_charge_residuals;
+    result["reference_phase_charge_residuals"] =
+        compilation.reference_phase_charge_residuals;
+    result["direction_rank"] = compilation.direction_rank;
+    result["rank"] = compilation.direction_rank;
+    result["invariant_rank"] = compilation.invariant_rank;
+    result["direction_count"] = compilation.direction_matrix.rows;
+    result["invariant_count"] = compilation.invariant_matrix.rows;
+    result["direction_scale"] = compilation.direction_scale;
+    result["rank_tolerance"] = compilation.rank_tolerance;
+    result["conservation_tolerance"] = compilation.conservation_tolerance;
+    result["invariant_orthonormal_residual_inf_norm"] =
+        compilation.invariant_orthonormal_residual_inf;
+    result["invariant_direction_residual_inf_norm"] =
+        compilation.invariant_direction_residual_inf;
+    result["potential_equation_residual_inf_norm"] =
+        compilation.potential_equation_residual_inf;
+    result["minimum_norm_potential_norm"] =
+        compilation.minimum_norm_potential_norm;
+    result["global_balance_residual_inf_norm"] =
+        compilation.global_balance_residual_inf;
+    result["phase_charge_residual_inf_norm"] =
+        compilation.phase_charge_residual_inf;
+    result["reference_neutrality_residual_inf_norm"] =
+        compilation.reference_neutrality_residual_inf;
+    return result;
 }
 
 }  // namespace
@@ -1492,7 +1659,36 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("starts"),
         py::arg("trace_floor"),
         py::arg("active_parameters_requested") = false,
-        py::arg("derivative_audits_requested") = false
+        py::arg("derivative_audits_requested") = false,
+        py::arg("phase_direction_system") = py::none()
+    );
+    module.def(
+        "_compile_phase_direction_system",
+        &compile_phase_direction_system_binding,
+        py::arg("phase_ids"),
+        py::arg("species_ids"),
+        py::arg("charges"),
+        py::arg("balance_matrix"),
+        py::arg("phase_reference_amounts"),
+        py::arg("direction_rows"),
+        py::arg("driving_constants"),
+        py::arg("rank_tolerance") = 1.0e-12,
+        py::arg("conservation_tolerance") = 1.0e-10
+    );
+    // Keep the private seam discoverable under the concise plural spelling as
+    // well; both names call the same compiler and have no separate behavior.
+    module.def(
+        "_compile_phase_directions",
+        &compile_phase_direction_system_binding,
+        py::arg("phase_ids"),
+        py::arg("species_ids"),
+        py::arg("charges"),
+        py::arg("balance_matrix"),
+        py::arg("phase_reference_amounts"),
+        py::arg("directions"),
+        py::arg("driving_constants"),
+        py::arg("rank_tolerance") = 1.0e-12,
+        py::arg("conservation_tolerance") = 1.0e-10
     );
 }
 

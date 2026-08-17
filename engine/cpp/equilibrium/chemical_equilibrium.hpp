@@ -27,6 +27,40 @@ struct DenseMatrix {
     double& operator()(std::size_t row, std::size_t column);
 };
 
+// A source-neutral, phase/species direction compilation.  The columns of
+// ``direction_matrix`` are ordered phase-major/species-minor.  ``invariant_matrix``
+// contains an orthonormal row basis for the complement of the declared
+// directions; its rows therefore represent the conserved coordinates left
+// after the caller has declared reactions and transfers.  This is deliberately
+// a compiler seam only: it does not own an equilibrium solve.
+struct PhaseDirectionCompilation {
+    std::vector<std::string> phase_ids;
+    std::vector<std::string> species_ids;
+    std::vector<double> charges;
+    DenseMatrix balance_matrix;
+    DenseMatrix direction_matrix;
+    DenseMatrix invariant_matrix;
+    std::vector<double> phase_reference_amounts;
+    std::vector<double> driving_constants;
+    std::vector<double> invariant_totals;
+    std::vector<double> reference_potentials;
+    std::vector<double> global_balance_residuals;
+    std::vector<double> phase_charge_residuals;
+    std::vector<double> reference_phase_charge_residuals;
+    std::size_t direction_rank = 0;
+    std::size_t invariant_rank = 0;
+    double direction_scale = 0.0;
+    double rank_tolerance = 0.0;
+    double conservation_tolerance = 0.0;
+    double invariant_orthonormal_residual_inf = 0.0;
+    double invariant_direction_residual_inf = 0.0;
+    double potential_equation_residual_inf = 0.0;
+    double minimum_norm_potential_norm = 0.0;
+    double global_balance_residual_inf = 0.0;
+    double phase_charge_residual_inf = 0.0;
+    double reference_neutrality_residual_inf = 0.0;
+};
+
 struct EquilibriumConstantRecord {
     std::string source_id;
     std::string reference_id;
@@ -413,6 +447,18 @@ struct SourceStandardStateResult {
     const ReactionSystemInput& input
 );
 
+[[nodiscard]] PhaseDirectionCompilation compile_phase_direction_system(
+    const std::vector<std::string>& phase_ids,
+    const std::vector<std::string>& species_ids,
+    const std::vector<double>& charges,
+    const DenseMatrix& balance_matrix,
+    const DenseMatrix& phase_reference_amounts,
+    const DenseMatrix& direction_matrix,
+    const std::vector<double>& driving_constants,
+    double rank_tolerance = 1.0e-12,
+    double conservation_tolerance = 1.0e-10
+);
+
 [[nodiscard]] AmountChart make_amount_chart(const std::vector<int>& charges);
 
 [[nodiscard]] AmountChartEvaluation evaluate_amount_chart(
@@ -493,7 +539,8 @@ struct SourceStandardStateResult {
     double trace_floor,
     const ProviderActiveParameterSet* active_parameters = nullptr,
     int max_iterations = 500,
-    bool perform_derivative_audits = false
+    bool perform_derivative_audits = false,
+    const PhaseDirectionCompilation* phase_directions = nullptr
 );
 
 }  // namespace epcsaft_engine::equilibrium

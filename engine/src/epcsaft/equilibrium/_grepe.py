@@ -4,7 +4,7 @@ import hashlib
 import json
 import math
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Literal, cast
 
 from pint import Quantity
@@ -27,6 +27,7 @@ from ._api import (
     _source_reference_payload,
     _source_reference_transfer,
 )
+from ._feed import ResolvedFeed
 from ._observations import (
     ActiveParameterTrialReceipt,
     HomogeneousBranchPolicy,
@@ -40,6 +41,7 @@ from ._observations import (
     serialize_homogeneous_reactive_owner_receipt,
     validate_homogeneous_reactive_owner_receipt,
 )
+from ._phase_reactions import PhaseReactionSystem, preflight_phase_reaction_system
 from ._reactive_vle import (
     IdealGasVaporComparison,
     ProviderNonidealVapor,
@@ -311,6 +313,8 @@ class GeneralReactiveEquilibriumProblem:
     outputs: tuple[EquilibriumOutput, ...]
     continuation_identity: str | None = None
     continuation_reference: ReactiveBubbleContinuationReference | None = None
+    feed: ResolvedFeed | None = None
+    phase_reactions: PhaseReactionSystem | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "phases", tuple(self.phases))
@@ -318,16 +322,37 @@ class GeneralReactiveEquilibriumProblem:
         object.__setattr__(self, "outputs", tuple(self.outputs))
         phase_ids = tuple(phase.identity for phase in self.phases)
         output_ids = tuple(output.identity for output in self.outputs)
+        if not isinstance(self.reaction_system, ChemicalEquilibriumProblem):
+            raise TypeError("general reactive equilibrium request is incomplete")
+        if self.feed is not None:
+            if not isinstance(self.feed, ResolvedFeed):
+                raise TypeError("GREPE feed must be a resolved source-neutral feed")
+            if set(self.feed.component_ids) != set(self.reaction_system.species_ids):
+                raise ValueError("GREPE feed identities must equal the reaction species identities")
+        if self.phase_reactions is not None:
+            if not isinstance(self.phase_reactions, PhaseReactionSystem):
+                raise TypeError("GREPE phase reactions must be a phase/species direction system")
+            phase_reaction_preflight = preflight_phase_reaction_system(self.phase_reactions)
+            if phase_reaction_preflight.species_ids != self.reaction_system.species_ids:
+                raise ValueError(
+                    "GREPE phase-reaction species order must equal the reaction system"
+                )
+            if phase_reaction_preflight.phase_ids != phase_ids:
+                raise ValueError("GREPE phase-reaction order must equal the declared phase order")
+            if phase_reaction_preflight.charges != tuple(self.reaction_system.charges):
+                raise ValueError("GREPE phase-reaction charges differ from the reaction system")
+            if phase_reaction_preflight.balance_matrix != self.reaction_system.balance_matrix:
+                raise ValueError("GREPE phase-reaction balances differ from the reaction system")
+        has_reactions = bool(self.reaction_system.reaction_matrix)
         if (
             not self.identity
             or not self.phases
             or len(set(phase_ids)) != len(phase_ids)
             or not self.outputs
             or len(set(output_ids)) != len(output_ids)
-            or not self.reaction_phase_ids
+            or has_reactions != bool(self.reaction_phase_ids)
             or len(set(self.reaction_phase_ids)) != len(self.reaction_phase_ids)
             or any(identity not in phase_ids for identity in self.reaction_phase_ids)
-            or not isinstance(self.reaction_system, ChemicalEquilibriumProblem)
         ):
             raise ValueError("general reactive equilibrium request is incomplete")
         finite_ids = {phase.identity for phase in self.phases if phase.amount_role == "finite"}
@@ -342,6 +367,33 @@ class GeneralReactiveEquilibriumProblem:
                 raise ValueError("an incipient formulation requires a coupled continuation ID")
         elif self.continuation_identity is not None or self.continuation_reference is not None:
             raise ValueError("single finite-phase requests have no coupled continuation")
+
+
+def _effective_reaction_system(
+    problem: GeneralReactiveEquilibriumProblem,
+) -> ChemicalEquilibriumProblem:
+    """Return the chemical declaration with the request's normalized fixed feed.
+
+    Composition-basis conversion is deliberately outside the thermodynamic
+    solve.  Once resolved, the feed is just a canonical amount vector and its
+    conserved totals are obtained from the declared balance matrix.
+    """
+
+    reaction = problem.reaction_system
+    if problem.feed is None:
+        return reaction
+    feed = problem.feed.reorder(reaction.species_ids)
+    conserved_totals = tuple(
+        math.fsum(
+            coefficient * amount for coefficient, amount in zip(row, feed.amounts_mol, strict=True)
+        )
+        for row in reaction.balance_matrix
+    )
+    return replace(
+        reaction,
+        feed_amounts_mol=feed.amounts_mol,
+        conserved_totals=conserved_totals,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -464,7 +516,7 @@ def _matrix_rank(rows: tuple[tuple[float, ...], ...]) -> int:
 
 
 def _preflight(model: epcsaft.Mixture, problem: GeneralReactiveEquilibriumProblem) -> None:
-    reaction = problem.reaction_system
+    reaction = _effective_reaction_system(problem)
     component_ids = model.component_ids
     if reaction.species_ids != component_ids:
         raise ValueError("GREPE species order must equal the Provider component order")
@@ -494,6 +546,8 @@ def _preflight(model: epcsaft.Mixture, problem: GeneralReactiveEquilibriumProble
         if abs(charge_change) > 1.0e-12 or any(abs(value) > 1.0e-12 for value in conservation):
             raise ValueError("GREPE reaction stoichiometry violates charge or conservation")
     standard = reaction.source_standard_state
+    if not reaction.reaction_matrix and standard is not None:
+        raise ValueError("a nonreactive GREPE request cannot declare a reaction standard state")
     if standard is not None:
         eligible = {
             phase.identity: phase
@@ -705,6 +759,19 @@ def _descriptor(
         "temperature": _state_role_payload(problem.temperature, "kelvin", "temperature"),
         "pressure": _state_role_payload(problem.pressure, "pascal", "pressure"),
         "phases": tuple(_phase_payload(phase) for phase in problem.phases),
+        "feed": (
+            None
+            if problem.feed is None
+            else {
+                "component_ids": problem.feed.component_ids,
+                "amounts_mol": problem.feed.amounts_mol,
+                "coordinate_ids": problem.feed.coordinate_ids,
+                "amount_jacobian_mol_per_coordinate": (
+                    problem.feed.amount_jacobian_mol_per_coordinate
+                ),
+            }
+        ),
+        "phase_reactions": _phase_reaction_payload(problem.phase_reactions),
         "reaction_phase_ids": problem.reaction_phase_ids,
         "coupled_continuation_identity": problem.continuation_identity,
         "outputs": tuple(
@@ -898,10 +965,39 @@ def _reaction_payload(problem: ChemicalEquilibriumProblem) -> dict[str, object]:
     }
 
 
+def _phase_reaction_payload(system: PhaseReactionSystem | None) -> object:
+    if system is None:
+        return None
+    return {
+        "phase_ids": system.phase_ids,
+        "species_ids": system.species_ids,
+        "charges": system.charges,
+        "balance_matrix": system.balance_matrix,
+        "reactions": tuple(
+            {
+                "identity": reaction.identity,
+                "terms": tuple(
+                    (term.phase_id, term.species_id, term.coefficient) for term in reaction.terms
+                ),
+                "ln_equilibrium_constant": reaction.ln_equilibrium_constant,
+                "standard_state": (
+                    None
+                    if reaction.standard_state is None
+                    else {
+                        "activity_scale_id": reaction.standard_state.activity_scale_id,
+                        "reference_pressure_pa": (reaction.standard_state.reference_pressure_pa),
+                    }
+                ),
+            }
+            for reaction in system.reactions
+        ),
+    }
+
+
 def _validate_finite_phase_outputs(
     problem: GeneralReactiveEquilibriumProblem,
 ) -> None:
-    component_count = len(problem.reaction_system.species_ids)
+    component_count = len(_effective_reaction_system(problem).species_ids)
     phase_ids = {phase.identity for phase in problem.phases}
     vector_selectors = {
         "phase.amount",
@@ -956,7 +1052,11 @@ def _finite_phase_owner_descriptor(
             },
         )
     )
-    reaction_payload = _reaction_payload(problem.reaction_system)
+    reaction = _effective_reaction_system(problem)
+    reaction_payload = {
+        "chemical": _reaction_payload(reaction),
+        "phase_directions": _phase_reaction_payload(problem.phase_reactions),
+    }
     reaction_fingerprint = _fingerprint("epcsaft.finite-phases-reactions", reaction_payload)
     topology_fingerprint = _fingerprint(
         "epcsaft.finite-phases-topology",
@@ -964,8 +1064,9 @@ def _finite_phase_owner_descriptor(
             "component_ids": model.component_ids,
             "phases": tuple(_phase_payload(phase) for phase in problem.phases),
             "reaction_phase_ids": problem.reaction_phase_ids,
-            "reaction_matrix": problem.reaction_system.reaction_matrix,
-            "balance_matrix": problem.reaction_system.balance_matrix,
+            "reaction_matrix": reaction.reaction_matrix,
+            "balance_matrix": reaction.balance_matrix,
+            "phase_reactions": _phase_reaction_payload(problem.phase_reactions),
         },
     )
     problem_fingerprint = _fingerprint(
@@ -1002,9 +1103,7 @@ def _finite_phase_owner_descriptor(
                 cast(ProviderModel, phase.model).admissible_packing_fraction_interval
                 for phase in problem.phases
             ),
-            "strict_interior_amount_floor_mol": (
-                problem.reaction_system.strict_interior_amount_floor_mol
-            ),
+            "strict_interior_amount_floor_mol": (reaction.strict_interior_amount_floor_mol),
             "local_scope": "fixed_TP_configured_finite_phases_local_minimum",
         },
     )
@@ -1024,9 +1123,7 @@ def _finite_phase_owner_descriptor(
                         if phase.start is None
                         else {
                             "amounts_mol": phase.start.amounts_mol,
-                            "molar_volume_m3_per_mol": (
-                                phase.start.molar_volume_m3_per_mol
-                            ),
+                            "molar_volume_m3_per_mol": (phase.start.molar_volume_m3_per_mol),
                         }
                     ),
                 }
@@ -1068,54 +1165,45 @@ def _generated_finite_phase_allocations(
 ) -> tuple[tuple[tuple[float, ...], ...], ...]:
     """Build deterministic feasible amount partitions for declared phases."""
 
-    feed = problem.reaction_system.feed_amounts_mol
+    reaction_system = _effective_reaction_system(problem)
+    feed = reaction_system.feed_amounts_mol
     phase_count = len(phases)
     component_count = len(feed)
-    floor = problem.reaction_system.strict_interior_amount_floor_mol
+    floor = reaction_system.strict_interior_amount_floor_mol
     if any(amount <= phase_count * 0.1 * floor for amount in feed):
-        raise ValueError(
-            "automatic finite-phase starts require a strict-interior reaction feed"
-        )
+        raise ValueError("automatic finite-phase starts require a strict-interior species feed")
 
     allocations: list[tuple[tuple[float, ...], ...]] = []
     if phase_count == 2:
         neutral_indices = tuple(
-            index
-            for index, charge in enumerate(problem.reaction_system.charges)
-            if charge == 0
+            index for index, charge in enumerate(reaction_system.charges) if charge == 0
         )
-        for reaction in problem.reaction_system.reaction_matrix:
+        for reaction in reaction_system.reaction_matrix:
             first = tuple(
                 (
                     0.5
-                    if problem.reaction_system.charges[component] != 0
-                    or coefficient == 0.0
+                    if reaction_system.charges[component] != 0 or coefficient == 0.0
                     else 0.8
                     if coefficient > 0.0
                     else 0.2
                 )
                 for component, coefficient in enumerate(reaction)
             )
-            if any(value == 0.8 for value in first) and any(
-                value == 0.2 for value in first
-            ):
+            if any(value == 0.8 for value in first) and any(value == 0.2 for value in first):
                 allocations.append((first, tuple(1.0 - value for value in first)))
         for anchor in neutral_indices:
             first = tuple(
-                0.8 if component == anchor else 0.2
-                for component in range(component_count)
+                0.8 if component == anchor else 0.2 for component in range(component_count)
             )
             if len(neutral_indices) != component_count:
                 first = tuple(
-                    value if problem.reaction_system.charges[component] == 0 else 0.5
+                    value if reaction_system.charges[component] == 0 else 0.5
                     for component, value in enumerate(first)
                 )
             anchor_allocation = (first, tuple(1.0 - value for value in first))
             if anchor_allocation not in allocations:
                 allocations.append(anchor_allocation)
-    equal_allocation = tuple(
-        (1.0 / phase_count,) * component_count for _ in range(phase_count)
-    )
+    equal_allocation = tuple((1.0 / phase_count,) * component_count for _ in range(phase_count))
     if equal_allocation not in allocations:
         allocations.append(equal_allocation)
 
@@ -1134,9 +1222,7 @@ def _finite_phase_start_set_from_allocation(
     pressure = pressure_pa * epcsaft.unit_registry.pascal
     starts: list[FinitePhaseStart] = []
     for phase, fractions in zip(phases, allocation, strict=True):
-        amounts = tuple(
-            amount * fraction for amount, fraction in zip(feed, fractions, strict=True)
-        )
+        amounts = tuple(amount * fraction for amount, fraction in zip(feed, fractions, strict=True))
         total = math.fsum(amounts)
         composition = tuple(amount / total for amount in amounts)
         state = model.state(
@@ -1168,15 +1254,15 @@ def _compile_general_reactive_equilibrium(
     finite = tuple(phase for phase in problem.phases if phase.amount_role == "finite")
     incipient = tuple(phase for phase in problem.phases if phase.amount_role == "incipient")
 
+    if problem.phase_reactions is not None and incipient:
+        return "explicit phase/species directions currently require finite configured phases"
+
     if len(finite) >= 2 and not incipient and isinstance(problem.pressure, Fixed):
         pressure_pa = _quantity(problem.pressure.value, "pascal", "pressure")
-        if (
-            any(not isinstance(phase.support, AllComponents) for phase in finite)
-            or any(not isinstance(phase.model, ProviderModel) for phase in finite)
+        if any(not isinstance(phase.support, AllComponents) for phase in finite) or any(
+            not isinstance(phase.model, ProviderModel) for phase in finite
         ):
-            return (
-                "configured finite-phase equilibrium requires all-component Provider phases"
-            )
+            return "configured finite-phase equilibrium requires all-component Provider phases"
         supplied_starts = tuple(phase.start for phase in finite)
         if any(start is None for start in supplied_starts) and any(
             start is not None for start in supplied_starts
@@ -1197,6 +1283,10 @@ def _compile_general_reactive_equilibrium(
             if supplied_starts[0] is not None
             else None
         )
+        if problem.phase_reactions is not None and declared_start_set is None:
+            raise ValueError(
+                "explicit phase/species directions require declared reference phase amounts"
+            )
         generated_allocations = (
             ()
             if declared_start_set is not None
@@ -1214,7 +1304,7 @@ def _compile_general_reactive_equilibrium(
             problem,
             "finite_phases",
             owner_descriptor,
-            "fixed_TP_configured_finite_reacting_phases_local_minimum",
+            "fixed_TP_configured_finite_phases_local_minimum",
         )
         return _FinitePhaseCompilation(
             temperature_k,
@@ -1239,7 +1329,7 @@ def _compile_general_reactive_equilibrium(
             phase.identity,
             phase.fluid_role,
             _phase_model(model, phase),
-            problem.reaction_system,
+            _effective_reaction_system(problem),
             cast(str, phase.continuation_identity),
             cast(HomogeneousBranchPolicy, phase.branch_policy),
             phase.continuation_reference,
@@ -1281,7 +1371,10 @@ def _compile_general_reactive_equilibrium(
         and isinstance(problem.pressure, Solved)
         and finite[0].fluid_role == "liquid"
         and incipient[0].fluid_role == "vapor"
-        and problem.reaction_phase_ids == (finite[0].identity,)
+        and (
+            not _effective_reaction_system(problem).reaction_matrix
+            or problem.reaction_phase_ids == (finite[0].identity,)
+        )
         and isinstance(finite[0].support, AllComponents)
         and isinstance(incipient[0].support, DeclaredNeutralComponents)
     ):
@@ -1294,7 +1387,7 @@ def _compile_general_reactive_equilibrium(
             liquid.identity,
             "liquid",
             liquid_model,
-            problem.reaction_system,
+            _effective_reaction_system(problem),
             cast(str, liquid.continuation_identity),
             cast(HomogeneousBranchPolicy, liquid.branch_policy),
             liquid.continuation_reference,
@@ -1372,7 +1465,7 @@ def general_reactive_equilibrium_descriptor(
         model, problem, active_parameters=active_parameters
     )
     if isinstance(compiled, str):
-        raise ValueError(compiled)
+        raise ValueError(compiled)  # noqa: TRY004 - invalid configured formulation
     return compiled.descriptor
 
 
@@ -1393,9 +1486,11 @@ def certify_general_reactive_equilibrium_continuation_reference(
         model, problem, active_parameters=active_parameters
     )
     if isinstance(compiled, str):
-        raise ValueError(compiled)
+        raise ValueError(compiled)  # noqa: TRY004 - invalid configured formulation
     if not isinstance(compiled, _BubbleCompilation):
-        raise ValueError("this GREPE formulation has no coupled continuation")
+        raise ValueError(  # noqa: TRY004 - invalid configured formulation
+            "this GREPE formulation has no coupled continuation"
+        )
     return certify_reactive_bubble_continuation_reference(
         compiled.owner_problem,
         compiled.temperature,
@@ -1444,7 +1539,7 @@ def _finite_phase_spec(
     temperature_k: float,
     pressure_pa: float,
 ) -> dict[str, object]:
-    reaction = problem.reaction_system
+    reaction = _effective_reaction_system(problem)
     standard = reaction.source_standard_state
     return {
         "species_ids": reaction.species_ids,
@@ -1474,6 +1569,26 @@ def _finite_phase_spec(
     }
 
 
+def _finite_phase_direction_spec(
+    problem: GeneralReactiveEquilibriumProblem,
+) -> dict[str, object] | None:
+    system = problem.phase_reactions
+    if system is None:
+        return None
+    preflight = preflight_phase_reaction_system(system)
+    return {
+        "phase_ids": preflight.phase_ids,
+        "species_ids": preflight.species_ids,
+        "charges": preflight.charges,
+        "balance_matrix": preflight.balance_matrix,
+        "direction_rows": preflight.direction_matrix,
+        "driving_constants": tuple(
+            0.0 if reaction.ln_equilibrium_constant is None else reaction.ln_equilibrium_constant
+            for reaction in system.reactions
+        ),
+    }
+
+
 def _reactive_finite_source_standard_state(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
@@ -1482,14 +1597,15 @@ def _reactive_finite_source_standard_state(
     pressure_pa: float,
     active_parameters: epcsaft.ActiveParameterSet | None,
 ) -> dict[str, object] | None:
-    standard = problem.reaction_system.source_standard_state
+    reaction = _effective_reaction_system(problem)
+    standard = reaction.source_standard_state
     if standard is None:
         return None
     provider_model = cast(ProviderModel, phase.model)
     transfer = _source_reference_transfer(
         ProviderPhase(model, provider_model.admissible_packing_fraction_interval),
         standard,
-        species_ids=problem.reaction_system.species_ids,
+        species_ids=reaction.species_ids,
         temperature_k=temperature_k,
         pressure_pa=pressure_pa,
         sensitivities_requested=active_parameters is not None,
@@ -1592,7 +1708,7 @@ def _finite_phase_rows(
     compilation: _FinitePhaseCompilation,
     native: dict[str, object],
 ) -> tuple[GeneralEquilibriumRowResult, ...]:
-    component_count = len(problem.reaction_system.species_ids)
+    component_count = len(_effective_reaction_system(problem).species_ids)
     parameter_count = len(compilation.descriptor.active_parameter_identities)
     phase_index_by_id = {phase.identity: index for index, phase in enumerate(compilation.phases)}
     amounts = _native_float_matrix(native["phase_amounts_mol"])
@@ -1732,7 +1848,7 @@ def _evaluate_finite_phase(
                     yield _finite_phase_start_set_from_allocation(
                         model,
                         compilation.phases,
-                        problem.reaction_system.feed_amounts_mol,
+                        _effective_reaction_system(problem).feed_amounts_mol,
                         allocation,
                         compilation.temperature_k,
                         compilation.pressure_pa,
@@ -1745,14 +1861,10 @@ def _evaluate_finite_phase(
                 dict[str, object],
                 _equilibrium._reactive_finite_phases(
                     _native_transport(model, active_parameters),
-                    _finite_phase_spec(
-                        problem, compilation.temperature_k, compilation.pressure_pa
-                    ),
+                    _finite_phase_spec(problem, compilation.temperature_k, compilation.pressure_pa),
                     source_standard_state,
                     tuple(
-                        cast(
-                            ProviderModel, phase.model
-                        ).admissible_packing_fraction_interval
+                        cast(ProviderModel, phase.model).admissible_packing_fraction_interval
                         for phase in compilation.phases
                     ),
                     tuple(
@@ -1762,8 +1874,10 @@ def _evaluate_finite_phase(
                         }
                         for start in start_set
                     ),
-                    problem.reaction_system.strict_interior_amount_floor_mol,
+                    _effective_reaction_system(problem).strict_interior_amount_floor_mol,
                     active_parameters is not None,
+                    False,
+                    _finite_phase_direction_spec(problem),
                 ),
             )
             native_attempt_list.append(attempt)
@@ -1846,8 +1960,7 @@ def _evaluate_finite_phase(
                 distinctness=native["phase_distinctness"],
                 reduced_hessian=native["reduced_hessian_min_eigenvalue"],
                 phase_totals=tuple(
-                    math.fsum(row)
-                    for row in _native_float_matrix(native["phase_amounts_mol"])
+                    math.fsum(row) for row in _native_float_matrix(native["phase_amounts_mol"])
                 ),
             )
         code = (
@@ -2211,7 +2324,9 @@ def _validate_finite_phase_owner_receipt(
     if fingerprint != _fingerprint("epcsaft.finite-phases-owner-receipt", payload):
         raise ValueError("finite-phase GREPE owner receipt fingerprint does not match")
     if not isinstance(problem.temperature, Fixed) or not isinstance(problem.pressure, Fixed):
-        raise ValueError("finite-phase GREPE receipt requires fixed temperature and pressure")
+        raise ValueError(  # noqa: TRY004 - receipt is invalid for this formulation
+            "finite-phase GREPE receipt requires fixed temperature and pressure"
+        )
     owner_descriptor = cast(_FinitePhaseOwnerDescriptor, descriptor._owner_descriptor)
     trial = payload.get("trial")
     observations = payload.get("observations")

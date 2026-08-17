@@ -821,11 +821,6 @@ CompiledReactionSystem compile_reaction_system(const ReactionSystemInput& input)
         throw std::invalid_argument("temperature and pressure must be positive");
     }
     const std::size_t species_count = input.species_ids.size();
-    if (input.reaction_matrix.rows == 0) {
-        throw std::invalid_argument(
-            "complete closed system requires independent reactions and lnK"
-        );
-    }
     if (input.feed_amounts.size() != species_count
         || input.molar_masses_kg_per_mol.size() != species_count
         || input.conserved_totals.size() != input.balance_matrix.rows
@@ -901,6 +896,44 @@ CompiledReactionSystem compile_reaction_system(const ReactionSystemInput& input)
     );
     if (reaction_charge_norm > numerical_tolerance(1.0, species_count)) {
         throw std::invalid_argument("reaction stoichiometry does not conserve charge");
+    }
+
+    if (input.reaction_matrix.rows == 0) {
+        bool charge_is_independent = false;
+        const DenseMatrix balance_matrix = matrix_from_rows(
+            seeded_balance_rows(
+                input.molar_masses_kg_per_mol,
+                input.charges,
+                input.balance_matrix,
+                charge_is_independent
+            )
+        );
+        if (balance_matrix.rows + (charge_is_independent ? 1 : 0)
+            != species_count) {
+            throw std::invalid_argument(
+                "nonreactive closed system balance rank does not equal species count"
+            );
+        }
+        std::vector<double> balance_totals(balance_matrix.rows, 0.0);
+        for (std::size_t row = 0; row < balance_matrix.rows; ++row) {
+            for (std::size_t species = 0; species < species_count; ++species) {
+                balance_totals[row] += balance_matrix(row, species)
+                    * input.feed_amounts[species];
+            }
+        }
+        CompiledReactionSystem result;
+        result.provider_fingerprint = input.provider_fingerprint;
+        result.species_count = species_count;
+        result.charges = input.charges;
+        result.molar_masses_kg_per_mol = input.molar_masses_kg_per_mol;
+        result.supplied_balance_matrix = input.balance_matrix;
+        result.balance_matrix = balance_matrix;
+        result.reaction_matrix = {0, species_count, {}};
+        result.supplied_reaction_transform = {0, 0, {}};
+        result.balance_totals = std::move(balance_totals);
+        result.feed_amounts = input.feed_amounts;
+        result.g_ref = std::vector<double>(species_count, 0.0);
+        return compile_accessible_face(std::move(result), {});
     }
 
     const std::vector<std::size_t> reaction_basis_rows = select_independent_rows(

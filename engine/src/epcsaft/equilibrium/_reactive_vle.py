@@ -421,9 +421,12 @@ def reactive_bubble_observation_descriptor(
     vapor_count = len(problem.vapor_component_ids)
     for row in rows:
         count = vapor_count if row.quantity.startswith("vapor_") else len(species)
-        if row.quantity == "bubble_pressure_pa":
+        if row.quantity in {
+            "bubble_pressure_pa",
+            "liquid_molar_density_mol_per_m3",
+        }:
             if row.coefficients:
-                raise ValueError("bubble pressure row does not accept coefficients")
+                raise ValueError("scalar reactive bubble row does not accept coefficients")
         elif len(row.coefficients) != count:
             raise ValueError("reactive bubble row coefficients do not match their phase support")
         if row.quantity == "liquid_molality_mol_per_kg" and len(
@@ -918,7 +921,13 @@ def _solve_declared_incipient_vapor(
     continuation_fractions: tuple[float, ...] | None,
     packing_fraction_interval: tuple[float, float],
 ) -> _IncipientVaporPoint:
-    """Select the sole declared local vapor composition, or fail closed."""
+    """Solve composition inside the declared vapor support.
+
+    An unanchored bubble boundary uses the lowest tangent-plane value among
+    the stationary compositions reached by its declared starts.  A supplied
+    continuation composition instead owns local branch selection.  Neither
+    case discovers a phase or changes the configured phase topology.
+    """
 
     component_count = len(liquid_potentials)
     reference = component_count - 1
@@ -1029,12 +1038,68 @@ def _solve_declared_incipient_vapor(
             "no_incipient_phase",
             "no declared strict-stable vapor composition satisfies fugacity equality",
         )
-    if len(accepted) != 1:
+    if continuation_fractions is not None:
+        ranked_by_continuation = sorted(
+            accepted,
+            key=lambda point: (
+                max(
+                    abs(math.log(value / anchor))
+                    for value, anchor in zip(
+                        point.mole_fractions, continuation_fractions, strict=True
+                    )
+                ),
+                point.mole_fractions,
+            ),
+        )
+        if len(ranked_by_continuation) > 1:
+            best_distance = max(
+                abs(math.log(value / anchor))
+                for value, anchor in zip(
+                    ranked_by_continuation[0].mole_fractions,
+                    continuation_fractions,
+                    strict=True,
+                )
+            )
+            next_distance = max(
+                abs(math.log(value / anchor))
+                for value, anchor in zip(
+                    ranked_by_continuation[1].mole_fractions,
+                    continuation_fractions,
+                    strict=True,
+                )
+            )
+            if abs(next_distance - best_distance) <= 2.0e-8:
+                raise _BubbleFailure(
+                    "multiple_unresolved_branches",
+                    "multiple vapor compositions are equally close to the continuation anchor",
+                )
+        return ranked_by_continuation[0]
+    # At a stationary composition all component chemical-potential
+    # differences are equal, so this common difference is exactly the
+    # tangent-plane value of the candidate.  This ranks only stationary
+    # compositions reached inside the already-declared vapor support; it is
+    # not a global phase-stability search or phase-topology discovery.
+    ranked = sorted(
+        accepted,
+        key=lambda point: (
+            point.chemical_potential_over_rt[reference] - liquid_potentials[reference],
+            point.mole_fractions,
+        ),
+    )
+    best = ranked[0]
+    best_tpd = best.chemical_potential_over_rt[reference] - liquid_potentials[reference]
+    if len(ranked) > 1:
+        next_tpd = (
+            ranked[1].chemical_potential_over_rt[reference] - liquid_potentials[reference]
+        )
+    else:
+        next_tpd = math.inf
+    if abs(next_tpd - best_tpd) <= 2.0e-10:
         raise _BubbleFailure(
             "multiple_unresolved_branches",
-            "multiple incipient-vapor compositions satisfy the declared local problem",
+            "multiple incipient-vapor compositions have indistinguishable minimum TPD",
         )
-    return accepted[0]
+    return best
 
 
 def _nonideal_closure(

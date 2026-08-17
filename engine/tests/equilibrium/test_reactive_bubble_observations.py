@@ -10,6 +10,7 @@ import pytest
 
 import epcsaft
 from epcsaft import equilibrium, regression
+from epcsaft.equilibrium import _reactive_vle
 from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE
 
 from .test_chemical_provider import _multineutral_problem
@@ -19,6 +20,45 @@ from .test_homogeneous_reactive_observations import (
     _reaction_mapping,
     _target_mapping,
 )
+
+
+def test_incipient_vapor_continuation_selects_anchored_composition(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Falsify switching a declared local branch merely because another has lower TPD."""
+
+    def evaluate(**kwargs: object) -> _reactive_vle._IncipientVaporPoint:
+        log_ratio = float(kwargs["log_ratios"][0])  # type: ignore[index]
+        if log_ratio > 1.0:
+            fractions = (0.9, 0.1)
+            potential = 0.2
+        else:
+            fractions = (0.5, 0.5)
+            potential = -0.1
+        return _reactive_vle._IncipientVaporPoint(
+            mole_fractions=fractions,
+            volume_m3=1.0,
+            pressure_pa=1.0e5,
+            packing_fraction=0.01,
+            chemical_potential_over_rt=(potential, potential),
+            mu_log_ratio_jacobian=((1.0,), (0.0,)),
+            mu_pressure_derivative=(0.0, 0.0),
+            mu_parameter_derivatives={},
+        )
+
+    monkeypatch.setattr(_reactive_vle, "_evaluate_incipient_vapor_point", evaluate)
+    selected = _reactive_vle._solve_declared_incipient_vapor(
+        model=object(),  # type: ignore[arg-type]
+        active_parameters=None,
+        all_active_identities=(),
+        temperature=303.0 * epcsaft.unit_registry.kelvin,
+        temperature_k=303.0,
+        pressure_pa=1.0e5,
+        liquid_potentials=(0.0, 0.0),
+        continuation_fractions=(0.9, 0.1),
+        packing_fraction_interval=(1.0e-8, 0.74),
+    )
+    assert selected.mole_fractions == pytest.approx((0.9, 0.1))
 
 
 def _bubble_output_mapping(

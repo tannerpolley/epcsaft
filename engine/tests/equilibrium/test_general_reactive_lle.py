@@ -153,82 +153,51 @@ def _fixture() -> tuple[
     )
 
 
-def _reaction_mapping(
-    problem: equilibrium.ChemicalEquilibriumProblem,
-) -> dict[str, object]:
-    return {
-        "species_ids": list(problem.species_ids),
-        "charges": list(problem.charges),
-        "molar_masses_kg_per_mol": list(problem.molar_masses_kg_per_mol),
-        "balance_matrix": [list(row) for row in problem.balance_matrix],
-        "conserved_totals": list(problem.conserved_totals),
-        "reaction_matrix": [list(row) for row in problem.reaction_matrix],
-        "feed_amounts_mol": list(problem.feed_amounts_mol),
-        "equilibrium_constants": [
-            [
-                item.ln_value,
-                item.source_id,
-                item.reference_id,
-                item.reaction_orientation,
-                item.conversion_id,
-                item.dimensionless,
-            ]
-            for item in problem.equilibrium_constants
-        ],
-        "strict_interior_amount_floor_mol": problem.strict_interior_amount_floor_mol,
-        "source_standard_state": None,
-    }
-
-
-def _request_mapping(
+def _explicit_phase_direction_problem(
     problem: equilibrium.GeneralReactiveEquilibriumProblem,
-) -> dict[str, object]:
-    return {
-        "identity": problem.identity,
-        "temperature": {"role": "fixed", "value": 300.0, "unit": "kelvin"},
-        "pressure": {"role": "fixed", "value": 1.0e5, "unit": "pascal"},
-        "phases": [
-            {
-                "identity": phase.identity,
-                "fluid_role": phase.fluid_role,
-                "amount_role": phase.amount_role,
-                "support": {"kind": "all_components", "component_ids": []},
-                "model": {
-                    "kind": "provider",
-                    "reference_id": "installed-provider-eos",
-                    "admissible_packing_fraction_interval": list(
-                        phase.model.admissible_packing_fraction_interval
-                    ),
-                },
-                "continuation": None,
-                "start": {
-                    "amounts_mol": list(phase.start.amounts_mol),
-                    "molar_volume_m3_per_mol": phase.start.molar_volume_m3_per_mol,
-                },
-            }
-            for phase in problem.phases
-            if isinstance(phase.model, equilibrium.ProviderModel) and phase.start is not None
-        ],
-        "reaction_system": _reaction_mapping(problem.reaction_system),
-        "reaction_phase_ids": list(problem.reaction_phase_ids),
-        "outputs": [
-            {
-                "identity": output.identity,
-                "selector": output.selector,
-                "unit": output.unit,
-                "basis": output.basis,
-                "phase_identity": output.phase_identity,
-                "coefficients": list(output.coefficients),
-                "solvent_mass_coefficients_kg_per_mol": [],
-                "support": output.support,
-                "censor_limit": output.censor_limit,
-                "aggregate_identity": output.aggregate_identity,
-                "covariance_identity": output.covariance_identity,
-            }
-            for output in problem.outputs
-        ],
-        "continuation": None,
-    }
+) -> equilibrium.GeneralReactiveEquilibriumProblem:
+    transfer_rows = tuple(
+        equilibrium.PhaseReactionRow(
+            f"transfer-{species_id}",
+            (
+                equilibrium.PhaseSpeciesTerm("aqueous", species_id, -1.0),
+                equilibrium.PhaseSpeciesTerm("organic", species_id, 1.0),
+            ),
+        )
+        for species_id in problem.reaction_system.species_ids
+    )
+    reaction_rows = tuple(
+        equilibrium.PhaseReactionRow(
+            f"aqueous-reaction-{index}",
+            tuple(
+                equilibrium.PhaseSpeciesTerm("aqueous", species_id, coefficient)
+                for species_id, coefficient in zip(
+                    problem.reaction_system.species_ids,
+                    stoichiometry,
+                    strict=True,
+                )
+                if coefficient != 0.0
+            ),
+            ln_equilibrium_constant=record.ln_value,
+        )
+        for index, (stoichiometry, record) in enumerate(
+            zip(
+                problem.reaction_system.reaction_matrix,
+                problem.reaction_system.equilibrium_constants,
+                strict=True,
+            )
+        )
+    )
+    return replace(
+        problem,
+        phase_reactions=equilibrium.PhaseReactionSystem(
+            tuple(phase.identity for phase in problem.phases),
+            problem.reaction_system.species_ids,
+            transfer_rows + reaction_rows,
+            tuple(float(value) for value in problem.reaction_system.charges),
+            problem.reaction_system.balance_matrix,
+        ),
+    )
 
 
 def test_finite_phase_is_one_certified_coupled_minimum_and_label_covariant() -> None:
@@ -244,9 +213,7 @@ def test_finite_phase_is_one_certified_coupled_minimum_and_label_covariant() -> 
     assert result.provider_domain_status == "passed"
     assert result.descriptor is not None
     assert result.descriptor._owner_kind == "finite_phases"
-    assert result.certificate_scope == (
-        "fixed_TP_configured_finite_reacting_phases_local_minimum"
-    )
+    assert result.certificate_scope == ("fixed_TP_configured_finite_phases_local_minimum")
     assert result.globality_claim == "not_established"
     assert len(result.phases) == 2
     phase_amounts = {
@@ -326,11 +293,36 @@ def test_finite_phase_is_one_certified_coupled_minimum_and_label_covariant() -> 
         )
 
 
+def test_explicit_phase_directions_reproduce_legacy_admissible_space() -> None:
+    """Explicit transfer/reaction rows must drive the same coupled Gibbs problem."""
+
+    parameters, model, problem = _fixture()
+    explicit = _explicit_phase_direction_problem(problem)
+
+    active = epcsaft.ActiveParameterSet(parameters, (_PARAMETER_IDENTITY,))
+    legacy = equilibrium.phase_equilibrium(model, problem, active_parameters=active)
+    directed = equilibrium.phase_equilibrium(model, explicit, active_parameters=active)
+
+    assert legacy.status == directed.status == "evaluated"
+    for legacy_phase, directed_phase in zip(legacy.phases, directed.phases, strict=True):
+        assert directed_phase.mole_fractions == pytest.approx(
+            legacy_phase.mole_fractions, rel=2.0e-7, abs=2.0e-10
+        )
+        assert directed_phase.molar_volume_m3_per_mol == pytest.approx(
+            legacy_phase.molar_volume_m3_per_mol, rel=2.0e-7
+        )
+    for legacy_row, directed_row in zip(legacy.rows, directed.rows, strict=True):
+        assert directed_row.jacobian == pytest.approx(legacy_row.jacobian, rel=2.0e-6, abs=2.0e-8)
+
+
 def test_finite_phase_total_parameter_jacobian_matches_independent_resolves() -> None:
     """Falsify a partial-only LLE Jacobian or fixed-pressure derivative leakage."""
 
     parameters, model, problem = _fixture()
-    center_value = 0.2
+    # Keep the finite-difference stencil inside the certified two-finite-phase
+    # basin.  At 0.2 the corrected scale-invariant chart is on a local basin
+    # boundary, so the neighboring solves truthfully collapse one phase.
+    center_value = 0.205
     step = 1.0e-5
 
     def solve(value: float) -> equilibrium.GeneralReactiveEquilibriumResult:
@@ -422,6 +414,67 @@ def test_finite_phase_provider_domain_failure_preserves_failure_axis() -> None:
     assert result.provider_domain_status == "failed"
 
 
+def test_finite_phase_amount_chart_is_scale_invariant_with_trace_species() -> None:
+    """Preserve phase composition while scaling extensive feed and amounts."""
+
+    _, model, problem = _fixture()
+    trace_floor = 0.3
+    base_amount_scale = 10.0
+    scale = 1.0e6
+
+    def configured(scale_factor: float) -> equilibrium.GeneralReactiveEquilibriumProblem:
+        phases = []
+        for phase in problem.phases:
+            assert isinstance(phase.start, equilibrium.FinitePhaseStart)
+            amounts = tuple(
+                amount * base_amount_scale * scale_factor for amount in phase.start.amounts_mol
+            )
+            phases.append(
+                replace(
+                    phase,
+                    start=equilibrium.FinitePhaseStart(
+                        amounts, phase.start.molar_volume_m3_per_mol
+                    ),
+                )
+            )
+        feed = tuple(
+            math.fsum(phase.start.amounts_mol[component] for phase in phases)
+            for component in range(3)
+        )
+        reaction = replace(
+            problem.reaction_system,
+            feed_amounts_mol=feed,
+            conserved_totals=(feed[0] + feed[1], feed[2]),
+            strict_interior_amount_floor_mol=trace_floor,
+        )
+        return replace(
+            problem,
+            identity=f"{problem.identity}-scale-{scale_factor:g}",
+            phases=tuple(phases),
+            reaction_system=reaction,
+        )
+
+    reference = equilibrium.phase_equilibrium(model, configured(1.0))
+    scaled = equilibrium.phase_equilibrium(model, configured(scale))
+    assert reference.status == "evaluated", reference.failure
+    assert scaled.status == "evaluated", scaled.failure
+    assert reference.physical_status == scaled.physical_status == "passed"
+    assert reference.owner_result is not None and scaled.owner_result is not None
+
+    for reference_phase, scaled_phase in zip(reference.phases, scaled.phases, strict=True):
+        assert scaled_phase.mole_fractions == pytest.approx(
+            reference_phase.mole_fractions, rel=2.0e-7, abs=2.0e-12
+        )
+        assert scaled_phase.molar_volume_m3_per_mol == pytest.approx(
+            reference_phase.molar_volume_m3_per_mol, rel=2.0e-7
+        )
+    for reference_row, scaled_row in zip(reference.rows, scaled.rows, strict=True):
+        if reference_row.selector == "phase.amount":
+            assert scaled_row.value == pytest.approx(
+                float(reference_row.value) * scale, rel=2.0e-6, abs=2.0e-10
+            )
+
+
 def test_finite_phase_strict_mapping_is_closed() -> None:
     _, _, problem = _fixture()
     with pytest.raises(ValueError, match="both a start and continuation"):
@@ -430,9 +483,49 @@ def test_finite_phase_strict_mapping_is_closed() -> None:
             continuation_identity="ambiguous-local-anchor",
             branch_policy="local_certified_role_selected_state",
         )
-    mapping = _request_mapping(problem)
+    mapping = equilibrium.general_reactive_equilibrium_problem_to_mapping(problem)
     loaded = equilibrium.general_reactive_equilibrium_problem_from_mapping(mapping)
     assert loaded == problem
+
+    resolved_problem = replace(
+        problem,
+        feed=equilibrium.direct_amounts(
+            problem.reaction_system.species_ids,
+            problem.reaction_system.feed_amounts_mol,
+        ),
+    )
+    resolved_mapping = equilibrium.general_reactive_equilibrium_problem_to_mapping(resolved_problem)
+    assert (
+        equilibrium.general_reactive_equilibrium_problem_from_mapping(resolved_mapping)
+        == resolved_problem
+    )
+
+    phase_direction_problem = replace(
+        resolved_problem,
+        phase_reactions=equilibrium.PhaseReactionSystem(
+            ("aqueous", "organic"),
+            problem.reaction_system.species_ids,
+            tuple(
+                equilibrium.PhaseReactionRow(
+                    f"transfer-{species_id}",
+                    (
+                        equilibrium.PhaseSpeciesTerm("aqueous", species_id, -1.0),
+                        equilibrium.PhaseSpeciesTerm("organic", species_id, 1.0),
+                    ),
+                )
+                for species_id in problem.reaction_system.species_ids
+            ),
+            tuple(float(value) for value in problem.reaction_system.charges),
+            problem.reaction_system.balance_matrix,
+        ),
+    )
+    phase_direction_mapping = equilibrium.general_reactive_equilibrium_problem_to_mapping(
+        phase_direction_problem
+    )
+    assert (
+        equilibrium.general_reactive_equilibrium_problem_from_mapping(phase_direction_mapping)
+        == phase_direction_problem
+    )
 
     mapping["phases"][0]["start"]["amounts_mol"][0] = 0.0
     with pytest.raises(ValueError, match="positive amounts"):
@@ -468,11 +561,7 @@ def _ascani_2023_problem() -> tuple[
                     pressure,
                     trace_composition,
                     equilibrium.DeclaredTopology(
-                        (
-                            equilibrium.PhaseSpecification(
-                                "liquid", equilibrium.AllComponents()
-                            ),
-                        )
+                        (equilibrium.PhaseSpecification("liquid", equilibrium.AllComponents()),)
                     ),
                 )
             ),
@@ -520,7 +609,9 @@ def _ascani_2023_problem() -> tuple[
                         P=pressure,
                         x=composition,
                         phase="liquid",
-                    ).molar_density.to("mole / meter**3").magnitude
+                    )
+                    .molar_density.to("mole / meter**3")
+                    .magnitude
                 ),
             ),
         )
@@ -620,6 +711,66 @@ def test_generic_two_phase_grepe_solves_ascani_2023_hypothetical_case() -> None:
         assert source_activity_reaction == pytest.approx(math.log(2.25), abs=1.0e-7)
 
 
+def test_generic_finite_phase_grepe_accepts_an_empty_reaction_set() -> None:
+    """Prove that configured phases do not require a fictitious reaction."""
+
+    model, reactive_problem, _ = _ascani_2023_problem()
+    feed = tuple(
+        math.fsum(
+            phase.start.amounts_mol[component]
+            for phase in reactive_problem.phases
+            if phase.start is not None
+        )
+        for component in range(len(model.component_ids))
+    )
+    nonreactive = equilibrium.ChemicalEquilibriumProblem(
+        species_ids=model.component_ids,
+        charges=(0, 0, 0),
+        molar_masses_kg_per_mol=(0.05, 0.05, 0.10),
+        balance_matrix=tuple(
+            tuple(float(row == column) for column in range(3)) for row in range(3)
+        ),
+        conserved_totals=feed,
+        reaction_matrix=(),
+        feed_amounts_mol=feed,
+        equilibrium_constants=(),
+        strict_interior_amount_floor_mol=1.0e-12,
+    )
+    problem = replace(
+        reactive_problem,
+        identity="ascani-2023-nonreactive-configured-phases",
+        reaction_system=nonreactive,
+        reaction_phase_ids=(),
+        outputs=reactive_problem.outputs
+        + tuple(
+            equilibrium.EquilibriumOutput(
+                f"{phase.identity}-{component_id}-amount",
+                "phase.amount",
+                "mole",
+                "amount",
+                phase.identity,
+                tuple(float(index == component) for index in range(3)),
+                support="positive",
+            )
+            for phase in reactive_problem.phases
+            for component, component_id in enumerate(model.component_ids)
+        ),
+    )
+
+    result = equilibrium.phase_equilibrium(model, problem)
+
+    assert result.status == "evaluated", result.failure
+    assert result.owner_result is not None
+    assert result.owner_result.reaction_affinity_inf_norm == 0.0
+    assert result.owner_result.transfer_chemical_potential_inf_norm <= 1.0e-7
+    phase_component_amounts = tuple(row.value for row in result.rows[-6:])
+    assert all(amount is not None for amount in phase_component_amounts)
+    for component, expected in enumerate(feed):
+        assert math.fsum(
+            float(phase_component_amounts[phase * 3 + component]) for phase in range(2)
+        ) == pytest.approx(expected, abs=2.0e-10)
+
+
 @pytest.mark.slow
 def test_generic_two_phase_grepe_generates_ascani_start_candidates() -> None:
     """Prove known phases do not require source-derived composition starts."""
@@ -646,7 +797,6 @@ def test_generic_two_phase_grepe_generates_ascani_start_candidates() -> None:
     )
     for phase, reference in zip(actual, expected, strict=True):
         assert phase == pytest.approx(reference, abs=2.0e-9)
-
 
 
 @pytest.mark.slow
@@ -682,8 +832,7 @@ def test_configured_charged_two_phase_reactive_minimum() -> None:
         for species in range(len(model.component_ids))
     )
     ln_k = (
-        seed.phases[0].chemical_potential_over_rt[1]
-        - seed.phases[0].chemical_potential_over_rt[0]
+        seed.phases[0].chemical_potential_over_rt[1] - seed.phases[0].chemical_potential_over_rt[0]
     )
     standard_state = equilibrium.ChemicalStandardState(
         id="manufactured-charged-two-phase-source",
@@ -692,9 +841,7 @@ def test_configured_charged_two_phase_reactive_minimum() -> None:
         reference_pressure_pa=1.0e5,
         source_reference_component_ids=model.component_ids,
         source_reference_solvent_composition=(1.0, 0.0, 0.0, 0.0, 0.0),
-        source_reference_ion_pairs=(
-            epcsaft.SourceReferenceIonPair(("cation", "anion"), (1, 1)),
-        ),
+        source_reference_ion_pairs=(epcsaft.SourceReferenceIonPair(("cation", "anion"), (1, 1)),),
         source_reference_phase="liquid",
         source_reference_convention="molality-infinite-dilution",
         source_reference_activity_convention_id="molality-infinite-dilution-v1",
@@ -728,8 +875,7 @@ def test_configured_charged_two_phase_reactive_minimum() -> None:
         ),
     )
     source_ln_k = ln_k - (
-        transfer.transfer_log_contractions[1]
-        - transfer.transfer_log_contractions[0]
+        transfer.transfer_log_contractions[1] - transfer.transfer_log_contractions[0]
     )
     reaction = equilibrium.ChemicalEquilibriumProblem(
         species_ids=model.component_ids,
@@ -847,6 +993,16 @@ def test_generic_regression_recovers_finite_phase_parameter(tmp_path: Path) -> N
     """Falsify any hidden LLE-specific Regression objective or owner receipt."""
 
     parameters, model, problem = _fixture()
+    problem = _explicit_phase_direction_problem(problem)
+    total_feed = math.fsum(problem.reaction_system.feed_amounts_mol)
+    problem = replace(
+        problem,
+        feed=equilibrium.mole_fractions(
+            problem.reaction_system.species_ids,
+            tuple(amount / total_feed for amount in problem.reaction_system.feed_amounts_mol),
+            total_feed,
+        ),
+    )
     true_value = 0.202
     truth = equilibrium.phase_equilibrium(
         model,
@@ -887,7 +1043,7 @@ def test_generic_regression_recovers_finite_phase_parameter(tmp_path: Path) -> N
             {
                 "family": "equilibrium",
                 "identity": "manufactured/reactive-lle-regression",
-                "request": _request_mapping(problem),
+                "request": equilibrium.general_reactive_equilibrium_problem_to_mapping(problem),
                 "targets": [
                     {
                         "identity": "manufactured/reactive-lle-alpha-amount",

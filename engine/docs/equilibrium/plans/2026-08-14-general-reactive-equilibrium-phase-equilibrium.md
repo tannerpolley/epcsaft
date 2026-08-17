@@ -19,8 +19,8 @@ behavior. The request's state roles, phase roles, species support, reactions,
 and model capabilities determine the assembled problem.
 
 The implementation routes fixed-T,P homogeneous reaction, fixed-topology
-reactive bubble/VLE, and two-or-more configured finite reacting phases through
-the same public request/result and generic Regression boundary. The finite
+reactive bubble/VLE, and two-or-more configured finite phases with or without
+reactions through the same public request/result and generic Regression boundary. The finite
 multiphase formulation supports neutral and charged systems, electrochemical
 phase transfer, source-standard-state conversion, exact selected-parameter
 sensitivities, and arbitrary configured fluid-role labels. It attempts the
@@ -41,11 +41,14 @@ The model and condition together contain:
   `ActiveParameterSet`, supplied by the separate model argument;
 - canonical species identities, formula/conservation vectors, charges, and
   aliases resolved before the solver;
+- one source-neutral resolved feed in amounts, mole fractions, mass fractions,
+  or solvent-composition-plus-molality form; every conversion exposes its exact
+  affine amount Jacobian before thermodynamic compilation;
 - `Fixed(value)` or `Solved(initial, bounds)` temperature and pressure roles;
 - one or more phases with stable IDs, fluid role, finite or incipient role,
   component support, and any deterministic label anchor;
-- an ordered reaction stoichiometry matrix, eligible phases, and typed
-  standard-state records;
+- an optional ordered reaction stoichiometry matrix with eligible phases and
+  typed standard-state records when reactions are present;
 - explicit units and composition bases; and
 - typed requested outputs.
 
@@ -66,16 +69,16 @@ GREPE encodes each equilibrium condition exactly once.
 
 A finite phase has a positive phase amount. The compiler constructs one
 constrained total-Gibbs formulation over phase/species amounts with the
-declared conservation, charge, support, and state constraints. Phase-local
-reaction extents restrict total-composition changes to the declared
-stoichiometric subspace; species-transfer coordinates redistribute the same
-species only across the participating phases' shared declared support and sum
-to zero. For conservation matrix `C`, phase reaction matrices `S_p`, and the
-support-restricted transfer basis `T`, the permitted composition nullspace is
-the declared span of the phase blocks `S_p^T` and `T`, with every column in
-`null(C)`. Preflight proves equality with that declared admissible span and
-freezes every other direction, so the minimization cannot invent an undeclared
-reaction. Reaction affinities and
+declared conservation, charge, support, and state constraints. A generic sparse
+phase/species direction row may describe a phase-local reaction, interphase
+transfer, ion exchange, or any coupled combination. The native compiler proves
+direction rank, global conservation, per-phase charge conservation, and the
+orthogonal invariant complement before Ipopt sees the problem. For conservation
+matrix `C`, phase reaction matrices `S_p`, and the support-restricted transfer
+basis `T`, the permitted composition nullspace is the declared span of the
+phase blocks `S_p^T` and `T`, with every column in `null(C)`. Preflight proves
+equality with that declared admissible span and freezes every other direction,
+so the minimization cannot invent an undeclared reaction. Reaction affinities and
 interphase chemical-potential equalities over shared declared support arise
 from its KKT conditions; they are not imposed a second time as independent
 equations.
@@ -126,6 +129,10 @@ reaction only when its standard-state convention is complete. Initial GREPE
 slices keep reactions liquid-only unless equally complete vapor or second-
 liquid evidence exists.
 
+An empty reaction matrix compiles ordinary species conservation with no
+reaction-affinity rows. It does not require a fictitious reaction or select a
+different finite-phase solver.
+
 ### Electrochemical phases
 
 The finite multiphase formulation uses phase-local electroneutrality,
@@ -146,10 +153,16 @@ constraint. Its exact Ipopt Lagrangian Hessian therefore requires the
 corresponding third-order Gibbs/EOS tensors. That formulation is not yet
 implemented; first-order output sensitivity is not sufficient.
 
-Numerical scaling is internal to Ipopt. Certification evaluates original
-unscaled conservation, charge, reaction/KKT, normalization, and phase-potential
-closures at their unchanged physical tolerances. No post-Ipopt root polish is
-part of the initial contract.
+The finite-phase formulation normalizes total feed to one mole internally. It
+uses logarithmic amount and packing coordinates, dimensionless `G/RT`, and
+feed-scaled conservation rows, then rescales amounts, volumes, free energy, and
+their parameter derivatives at the public boundary. The conservation
+certificate is the dimensionless feed-relative residual of those scaled rows;
+pressure, affinity, transfer, and KKT certificates retain their existing
+tolerances. Numerical scaling is otherwise internal to Ipopt. A bounded scalar
+packing-coordinate Newton refinement tightens the direct fixed-pressure
+residual after Ipopt without changing phase amounts or composition, after which
+the equality multipliers are recomputed at the returned state.
 
 Each certified fixed-branch result exposes requested values and exact total
 Jacobians in `ActiveParameterSet` order. Finite differences and high-precision
@@ -190,6 +203,16 @@ The current proof targets two configured finite fluid phases. The underlying
 finite-phase formulation accepts additional configured phases using the same
 variables and equations. Solids and zero-amount incipient phases require
 different state variables.
+
+The installed numerical evidence now includes a neutral reactive LLE, a
+nonreactive electrolyte liquid/vapor topology, exact finite-phase parameter
+Jacobians, amount-scale invariance over six orders of magnitude, a generic
+Regression recovery through the public GREPE owner, and a sparse lithium/sodium
+exchange oracle. The electrolyte finite-phase proof currently keeps every
+Provider component in every finite phase; exact liquid-only ion support in a
+finite vapor and fixed-pressure incipient equilibrium with a solved generic feed
+coordinate remain implementation work. The solved-bubble formulation already
+supports a declared neutral-only incipient vapor.
 
 ## Generic Regression boundary
 
