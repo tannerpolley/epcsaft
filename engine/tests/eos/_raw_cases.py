@@ -767,6 +767,54 @@ AQUEOUS_ELECTROLYTE["domains"] = [
     }
 ]
 
+HELD_STRATEGY_2_TERNARY = _document(
+    "held-strategy-2-ternary-fixture",
+    [
+        _component(
+            "water",
+            molar_mass=0.01801528,
+            charge_number=0,
+            segment_count=1.2047,
+            dispersion_energy_over_k=353.95,
+        ),
+        _component(
+            "lithium-cation",
+            molar_mass=0.00694,
+            charge_number=1,
+            segment_count=1.0,
+            segment_diameter=2.8449,
+            dispersion_energy_over_k=360.0,
+            packing_diameter=2.503512,
+            debye_huckel_diameter=2.503512,
+        ),
+        _component(
+            "chloride-anion",
+            molar_mass=0.03545,
+            charge_number=-1,
+            segment_count=1.0,
+            segment_diameter=2.7560,
+            dispersion_energy_over_k=170.0,
+            packing_diameter=2.42528,
+            debye_huckel_diameter=2.42528,
+        ),
+    ],
+    pairs=[
+        _pair("water", "lithium-cation", k_ij=-0.25),
+        _pair("water", "chloride-anion", k_ij=-0.25),
+        _pair("lithium-cation", "chloride-anion", k_ij=0.669),
+    ],
+    model_families=_model_families(
+        association="general-site",
+        electrolyte="fully-dissociated-debye-huckel",
+        permittivity="solvent-only",
+    ),
+    correlations=[
+        _water_diameter_correlation(),
+        _constant_correlation("water", "relative_permittivity", 78.09),
+    ],
+    topology=_association_topology("water", 2425.7, 0.0451),
+)
+
 MULTINEUTRAL_REACTIVE = _document(
     "multineutral-reactive-fixture",
     [

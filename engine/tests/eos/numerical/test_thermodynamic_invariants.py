@@ -19,6 +19,7 @@ from tests.eos._raw_cases import (
     AQUEOUS_ELECTROLYTE,
     ASSOCIATING_PURE,
     DIPOLAR_PERMITTIVITY_ELECTROLYTE,
+    HELD_STRATEGY_2_TERNARY,
     MULTISOLVENT_MULTIION,
     NEUTRAL_BINARY,
     _component,
@@ -105,6 +106,40 @@ def test_neutral_model__inactive_electrolyte_terms_are_exactly_zero() -> None:
     assert state.debye_huckel == 0.0
     assert state.born == 0.0
     assert state.bulk_relative_permittivity is None
+
+
+def test_fully_dissociated_debye_huckel__retains_declared_opposite_charge_dispersion() -> None:
+    state = Mixture(Parameters.from_mapping(HELD_STRATEGY_2_TERNARY)).state(
+        T=298.15 * u.kelvin,
+        P=1.0 * u.bar,
+        x=(0.96, 0.02, 0.02),
+        phase="liquid",
+    )
+    suppressed_mapping = deepcopy(HELD_STRATEGY_2_TERNARY)
+    pair = next(
+        record
+        for record in suppressed_mapping["pairs"]
+        if {record["component_id_a"], record["component_id_b"]}
+        == {"lithium-cation", "chloride-anion"}
+    )
+    pair["coefficients"][0]["value"]["magnitude"] = 1.0
+    suppressed = Mixture(Parameters.from_mapping(suppressed_mapping)).state(
+        T=298.15 * u.kelvin,
+        P=1.0 * u.bar,
+        x=(0.96, 0.02, 0.02),
+        phase="liquid",
+    )
+
+    assert state.dispersion == pytest.approx(-8.936297809884787, rel=2.0e-13)
+    assert suppressed.dispersion == pytest.approx(-8.93489498474385, rel=2.0e-13)
+    assert state.fugacity is not None
+    assert suppressed.fugacity is not None
+    assert state.fugacity.ln_coefficient[1:] == pytest.approx(
+        (-3.0464389064816944, 2.9426852991208703), rel=2.0e-12
+    )
+    assert state.fugacity.ln_coefficient[1:] != pytest.approx(
+        suppressed.fugacity.ln_coefficient[1:]
+    )
 
 
 def test_component_permutation__preserves_scalar_thermodynamics() -> None:

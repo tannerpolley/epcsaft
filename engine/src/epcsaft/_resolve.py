@@ -669,12 +669,14 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         if len(fully_dissociated_k_ij) != len(k_ij):
             raise _error("missing-record", family="k_ij")
         for left, right in combinations(range(len(component_ids)), 2):
-            expected = 1.0 if charges[left] != 0 and charges[right] != 0 else 0.0
-            if fully_dissociated_k_ij[left * len(component_ids) + right] != expected:
+            if (
+                charges[left] * charges[right] > 0
+                and fully_dissociated_k_ij[left * len(component_ids) + right] != 1.0
+            ):
                 raise _error(
                     "invalid-value",
                     family="k_ij",
-                    reason="fully-dissociated-dispersion-rule",
+                    reason="same-sign-ionic-dispersion-rule",
                 )
         solvent_relative_permittivity: list[_TemperatureRecord | None] = []
         for index, (component_id, charge) in enumerate(zip(component_ids, charges, strict=True)):

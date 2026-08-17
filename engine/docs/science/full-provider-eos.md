@@ -845,6 +845,13 @@ ion-pairing, or reaction-equilibrium behavior. Evaluation or the
 standard-reference callback outside the recorded source state is not
 source-backed, and the callback fails closed outside that state.
 
+The fully dissociated Debye--Huckel model family also accepts explicitly
+declared neutral--ion and opposite-charge `k_ij` records when a different
+source strategy requires those dispersion interactions. Same-sign ionic
+dispersion remains identically suppressed by the EOS and its declared pair
+record must be `k_ij = 1`. The Engine does not infer either strategy from a
+component identity or application.
+
 Topology is determined by the selected components, not by unrelated records
 remaining in their source bundle. A selection containing no nonzero charge is
 neutral or associating according to its explicit sites; ionic contributions
