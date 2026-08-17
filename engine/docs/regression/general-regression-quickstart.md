@@ -38,6 +38,22 @@ Each declared optimizer coordinate uses
 physical starts with units implied by their parameter coordinates and stable
 start identities. Regression performs the affine conversion once internally.
 No starts are generated implicitly.
+
+Optimizer stopping controls are optional values in the existing solver mapping:
+
+```python
+request["solver"]["controls"] = {
+    "maximum_iterations": 25,
+    "function_tolerance": 1.0e-6,
+    "gradient_tolerance": 1.0e-6,
+    "parameter_tolerance": 1.0e-6,
+}
+```
+
+Those values are the defaults. Ceres stops when a convergence tolerance is
+reached or the iteration ceiling is exhausted. These controls do not alter EOS,
+phase-equilibrium, reaction, density, or certification tolerances.
+
 `FitResult` retains every start, residuals, exact Jacobians, rank, conditioning,
 active bounds, parameter-space optimizer basin/cluster identity, and artifact
 fingerprints. This optimizer cluster is not a thermodynamic physical-branch
@@ -46,11 +62,9 @@ identity.
 `to_parameters()` is an explicit authority-neutral candidate export. A
 downstream scientific campaign, not Regression, decides whether to adopt it.
 
-The admitted families are EOS pure-saturation/fixed-state observations and the
-Equilibrium-owned fixed-T,P homogeneous reactive and fixed-topology reactive
-bubble/VLE families. Both reactive families use immutable local continuation
-anchors, exact total parameter Jacobians, and typed non-evaluable trials. The
-bubble family treats reported partial pressure as `y_i P` while phase
-equilibrium uses the Provider fugacity. Neither family makes a global-equilibrium
-or parameter-promotion claim. Nonreactive mixture phase-equilibrium, direct
-permittivity, and standalone Born observations are not admitted.
+The observation families are supplied by EOS and Equilibrium owners. Configured
+generic-equilibrium problems retain their declared phases, outputs, local
+continuation anchors, exact total parameter Jacobians, and typed non-evaluable
+trials. Regression only maps matching data to those outputs and minimizes the
+declared residuals; it does not select a phase topology or a case-specific
+route.

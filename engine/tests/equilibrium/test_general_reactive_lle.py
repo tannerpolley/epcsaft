@@ -1123,7 +1123,12 @@ def test_generic_regression_recovers_finite_phase_parameter(tmp_path: Path) -> N
             "multistart": {
                 "starts": [{"identity": "offset-start", "values": [0.198]}],
                 "affine_bound_margin": 1.0e-7,
-            }
+            },
+            "controls": {
+                "function_tolerance": 1.0e-12,
+                "gradient_tolerance": 1.0e-12,
+                "parameter_tolerance": 1.0e-12,
+            },
         },
     }
     fitted = regression.fit(fit_mapping, base_path=tmp_path)

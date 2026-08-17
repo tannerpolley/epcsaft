@@ -115,7 +115,16 @@ _FIELDS = MappingProxyType(
         ),
         "transformation": _Fields(("input", "output")),
         "quadrature": _Fields(("initial_order", "max_order", "tolerance")),
-        "solver": _Fields(("multistart",)),
+        "solver": _Fields(("multistart",), ("controls",)),
+        "solver_controls": _Fields(
+            (),
+            (
+                "maximum_iterations",
+                "function_tolerance",
+                "gradient_tolerance",
+                "parameter_tolerance",
+            ),
+        ),
         "multistart": _Fields(("starts", "affine_bound_margin")),
         "start": _Fields(("identity", "values")),
     }
@@ -346,8 +355,17 @@ class FitStartSpec:
 
 
 @dataclass(frozen=True, slots=True)
+class SolverControlsSpec:
+    maximum_iterations: int = 25
+    function_tolerance: float = 1.0e-6
+    gradient_tolerance: float = 1.0e-6
+    parameter_tolerance: float = 1.0e-6
+
+
+@dataclass(frozen=True, slots=True)
 class SolverSpec:
     multistart: MultistartSpec
+    controls: SolverControlsSpec
 
 
 @dataclass(frozen=True, slots=True)
@@ -885,7 +903,38 @@ def _parse_solver(value: object, path: str) -> SolverSpec:
         raise FitSchemaError(
             "invalid-value", f"{path}.multistart.affine_bound_margin", "nonnegative required"
         )
-    return SolverSpec(MultistartSpec(tuple(starts), margin))
+    controls_item = _mapping(mapping.get("controls", {}), f"{path}.controls")
+    _keys(controls_item, "solver_controls", f"{path}.controls")
+    controls = SolverControlsSpec(
+        maximum_iterations=_integer(
+            controls_item.get("maximum_iterations", 25),
+            f"{path}.controls.maximum_iterations",
+        ),
+        function_tolerance=_number(
+            controls_item.get("function_tolerance", 1.0e-6),
+            f"{path}.controls.function_tolerance",
+        ),
+        gradient_tolerance=_number(
+            controls_item.get("gradient_tolerance", 1.0e-6),
+            f"{path}.controls.gradient_tolerance",
+        ),
+        parameter_tolerance=_number(
+            controls_item.get("parameter_tolerance", 1.0e-6),
+            f"{path}.controls.parameter_tolerance",
+        ),
+    )
+    if controls.maximum_iterations <= 0:
+        raise FitSchemaError(
+            "invalid-value",
+            f"{path}.controls.maximum_iterations",
+            "positive required",
+        )
+    for name in ("function_tolerance", "gradient_tolerance", "parameter_tolerance"):
+        if getattr(controls, name) <= 0.0:
+            raise FitSchemaError(
+                "invalid-value", f"{path}.controls.{name}", "positive required"
+            )
+    return SolverSpec(MultistartSpec(tuple(starts), margin), controls)
 
 
 def _coordinate_mapping(coordinate: FitCoordinate) -> dict[str, object]:
@@ -960,6 +1009,12 @@ def _solver_mapping(solver: SolverSpec) -> dict[str, object]:
                 for start in solver.multistart.starts
             ],
             "affine_bound_margin": solver.multistart.affine_bound_margin,
+        },
+        "controls": {
+            "maximum_iterations": solver.controls.maximum_iterations,
+            "function_tolerance": solver.controls.function_tolerance,
+            "gradient_tolerance": solver.controls.gradient_tolerance,
+            "parameter_tolerance": solver.controls.parameter_tolerance,
         },
     }
 
@@ -1282,6 +1337,27 @@ def parameter_fit_json_schema() -> dict[str, object]:
                                 "affine_bound_margin": {"type": "number", "minimum": 0},
                             },
                             _FIELDS["multistart"].required,
+                        ),
+                        "controls": _object_schema(
+                            {
+                                "maximum_iterations": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                },
+                                "function_tolerance": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0,
+                                },
+                                "gradient_tolerance": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0,
+                                },
+                                "parameter_tolerance": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0,
+                                },
+                            },
+                            _FIELDS["solver_controls"].required,
                         ),
                     },
                     _FIELDS["solver"].required,

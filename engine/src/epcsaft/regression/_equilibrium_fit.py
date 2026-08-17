@@ -473,6 +473,10 @@ def _reactive_fit_problem(resolved: ResolvedFit) -> _ResolvedReactiveFit:
                 for start in resolved.fit.solver.multistart.starts
             ),
             affine_bound_margin=resolved.fit.solver.multistart.affine_bound_margin,
+            maximum_iterations=resolved.fit.solver.controls.maximum_iterations,
+            function_tolerance=resolved.fit.solver.controls.function_tolerance,
+            gradient_tolerance=resolved.fit.solver.controls.gradient_tolerance,
+            parameter_tolerance=resolved.fit.solver.controls.parameter_tolerance,
         ),
     )
 

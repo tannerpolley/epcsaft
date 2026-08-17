@@ -5831,9 +5831,15 @@ ProviderPhaseBlockEvidence evaluate_provider_phase_block(
     const std::vector<double>& amounts,
     double volume_m3
 ) {
-    const MixturePhaseEvaluation phase = provider.evaluate_electrolyte(
-        temperature_k, amounts, volume_m3
+    const epcsaft_native_transport& transport = provider.transport();
+    const bool charged = std::any_of(
+        transport.component_charges,
+        transport.component_charges + transport.component_count,
+        [](std::int32_t charge) { return charge != 0; }
     );
+    const MixturePhaseEvaluation phase = charged
+        ? provider.evaluate_electrolyte(temperature_k, amounts, volume_m3)
+        : provider.evaluate_mixture(temperature_k, amounts, volume_m3);
     const PackingFractionEvaluation packing = provider.evaluate_packing_fraction(
         temperature_k, amounts, volume_m3
     );
@@ -5946,8 +5952,8 @@ ChemicalSolveResult solve_provider_reaction(
                 *active_parameters
             ).phase.pressure_pa - pressure_pa;
         }
-        return provider.evaluate_electrolyte(
-            temperature_k, starting_amounts, volume
+        return evaluate_provider_phase_block(
+            provider, temperature_k, starting_amounts, volume
         ).pressure_pa - pressure_pa;
     };
     double initial_volume = std::numeric_limits<double>::quiet_NaN();
@@ -6155,8 +6161,8 @@ ChemicalSolveResult solve_provider_reaction(
                     *active_parameters
                 ).phase.pressure_pa - pressure_pa;
             }
-            return provider.evaluate_electrolyte(
-                temperature_k, amounts, volume
+            return evaluate_provider_phase_block(
+                provider, temperature_k, amounts, volume
             ).pressure_pa - pressure_pa;
         };
         std::vector<double> seed_volumes;

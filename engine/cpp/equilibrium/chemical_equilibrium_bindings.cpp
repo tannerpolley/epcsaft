@@ -37,10 +37,11 @@ const epcsaft_native_transport& checked_chemical_transport(
     }
     const auto* transport = capsule.get_pointer<epcsaft_native_transport>();
     if (transport == nullptr || transport->model_context == nullptr
-        || transport->component_count < 3
+        || transport->component_count < 2
         || transport->component_ids == nullptr
         || transport->component_charges == nullptr
-        || transport->evaluate_electrolyte_phase == nullptr
+        || (transport->evaluate_mixture_phase == nullptr
+            && transport->evaluate_electrolyte_phase == nullptr)
         || transport->evaluate_molar_volume_bounds == nullptr
         || transport->evaluate_packing_fraction == nullptr) {
         throw py::value_error(

@@ -188,9 +188,24 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
             "multistart": {
                 "starts": [{"identity": "origin", "values": [0.0]}],
                 "affine_bound_margin": 1.0e-7,
-            }
+            },
+            "controls": {
+                "maximum_iterations": 12,
+                "function_tolerance": 1.0e-8,
+                "gradient_tolerance": 1.0e-8,
+                "parameter_tolerance": 1.0e-8,
+            },
         },
     }
+    default_mapping = json.loads(json.dumps(mapping))
+    del default_mapping["solver"]["controls"]
+    default_controls = regression.ParameterFit.from_mapping(
+        default_mapping
+    ).solver.controls
+    assert default_controls.maximum_iterations == 25
+    assert default_controls.function_tolerance == 1.0e-6
+    assert default_controls.gradient_tolerance == 1.0e-6
+    assert default_controls.parameter_tolerance == 1.0e-6
 
     result = regression.fit(mapping, base_path=tmp_path)
 
@@ -199,3 +214,5 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
     assert accepted.final_physical == pytest.approx((truth_parameter,), abs=3.0e-7)
     assert accepted.predictions == pytest.approx((0.2,), abs=3.0e-8)
     assert accepted.owner_receipts
+    fit_receipt = result.specification.to_mapping()["fit"]
+    assert fit_receipt["solver"]["controls"] == mapping["solver"]["controls"]

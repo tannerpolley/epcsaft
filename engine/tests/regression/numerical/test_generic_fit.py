@@ -167,7 +167,12 @@ def _mixed_fit_mapping(
                     {"identity": "confirmation-b", "values": [0.04, 285.0, -0.05]},
                 ],
                 "affine_bound_margin": 1.0e-7,
-            }
+            },
+            "controls": {
+                "function_tolerance": 1.0e-12,
+                "gradient_tolerance": 1.0e-12,
+                "parameter_tolerance": 1.0e-12,
+            },
         },
     }
     return mapping, input_parameters, tuple(states)
@@ -333,7 +338,12 @@ def test_tied_owner_coordinate_reports_interior_covariance_and_active_bound(
             "multistart": {
                 "starts": [{"identity": "input", "values": [0.0, 270.0]}],
                 "affine_bound_margin": 1.0e-7,
-            }
+            },
+            "controls": {
+                "function_tolerance": 1.0e-12,
+                "gradient_tolerance": 1.0e-12,
+                "parameter_tolerance": 1.0e-12,
+            },
         },
     }
     interior = fit(mapping, base_path=tmp_path)
@@ -516,7 +526,12 @@ def _pure_fit_mapping(tmp_path: Any, parameters: Parameters, name: str) -> dict[
                     }
                 ],
                 "affine_bound_margin": 1.0e-7,
-            }
+            },
+            "controls": {
+                "function_tolerance": 1.0e-12,
+                "gradient_tolerance": 1.0e-12,
+                "parameter_tolerance": 1.0e-12,
+            },
         },
     }
 

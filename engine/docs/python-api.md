@@ -160,8 +160,10 @@ candidate_parameters = result.to_parameters()
 ```
 
 `ParameterFit` declares one parameter document, model kind, active selectors,
-bounds, scales, ties, observations, source hashes, residuals, and multistart
-policy. `fit` resolves each observation against an EOS-owned descriptor, sends
+bounds, scales, ties, observations, source hashes, residuals, multistart policy,
+and optional optimizer controls. Defaults are 25 maximum iterations and `1e-6`
+function, gradient, and parameter stopping tolerances. `fit` resolves each
+observation against an owner descriptor, sends
 the owner's values and exact ordered Jacobian blocks through the private native
 Ceres core, and returns every start without mutating the input parameters.
 Each start retains predictions, scaled residuals and Jacobians, rank and
@@ -169,15 +171,11 @@ conditioning, active bounds, and typed owner-evaluation failures.
 `FitResult.to_parameters()` creates a new immutable candidate parameter
 document with fit provenance. It does not accept, promote, or adopt the values.
 
-This cutover admits `pure_saturation`, `fixed_state_pressure`, fixed-T,P
-homogeneous reactive, and fixed-topology reactive bubble/VLE Observation
-Families. Selectable coordinates include continuous component and association
-parameters and supported pair or model coefficients when the chosen
-observation has the required exact owner derivative. Reactive LLE,
-charged/electrolyte pair fitting, direct permittivity or Born calibration, and
-reaction-correlation fitting are not admitted. Adding one requires a source-
-neutral Observation Family and scientific evidence; it never creates another
-public fit route.
+Selectable coordinates include continuous component and association parameters
+and supported pair or model coefficients when the chosen owner output has the
+required exact derivative. Generic configured-equilibrium outputs use the same
+fit path; Regression does not select a phase topology or create a case-specific
+public route.
 
 ## Native boundary
 

@@ -26,10 +26,10 @@ from ._model import ParameterFit, TableRow
 from ._resolve import ResolvedFit, ResolvedObservation
 from ._result import FitResult, FitSpecificationReceipt
 
-_MAXIMUM_ITERATIONS = 100
-_FUNCTION_TOLERANCE = 1.0e-12
-_GRADIENT_TOLERANCE = 1.0e-12
-_PARAMETER_TOLERANCE = 1.0e-12
+_MAXIMUM_ITERATIONS = 25
+_FUNCTION_TOLERANCE = 1.0e-6
+_GRADIENT_TOLERANCE = 1.0e-6
+_PARAMETER_TOLERANCE = 1.0e-6
 
 
 class FitPreflightError(ValueError):
@@ -344,10 +344,10 @@ def fit(
             ],
             "affine_bound_margin": specification.solver.multistart.affine_bound_margin,
             "workers": 1,
-            "maximum_iterations": _MAXIMUM_ITERATIONS,
-            "function_tolerance": _FUNCTION_TOLERANCE,
-            "gradient_tolerance": _GRADIENT_TOLERANCE,
-            "parameter_tolerance": _PARAMETER_TOLERANCE,
+            "maximum_iterations": specification.solver.controls.maximum_iterations,
+            "function_tolerance": specification.solver.controls.function_tolerance,
+            "gradient_tolerance": specification.solver.controls.gradient_tolerance,
+            "parameter_tolerance": specification.solver.controls.parameter_tolerance,
         },
         tuple(sorted(NON_EVALUABLE_TRIAL_CODES)),
     )

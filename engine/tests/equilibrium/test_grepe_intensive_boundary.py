@@ -3,12 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from copy import deepcopy
 
 import pytest
 
 import epcsaft
 from epcsaft import equilibrium
-from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE
+from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE, NEUTRAL_BINARY
 
 from .test_chemical_provider import _held_parameters, _multineutral_problem
 from .test_homogeneous_reactive_observations import _observation_problem
@@ -92,6 +93,126 @@ def test_imposed_log_fugacity_recovers_analytic_open_component_uptake() -> None:
     assert result.branch_signature is not None
     mapping = equilibrium.general_reactive_equilibrium_problem_to_mapping(problem)
     assert equilibrium.general_reactive_equilibrium_problem_from_mapping(mapping) == problem
+
+
+def test_imposed_log_fugacity_accepts_neutral_provider_mixture() -> None:
+    """Falsify an electrolyte-only callback gate in generic homogeneous GREPE."""
+
+    parameter_mapping = deepcopy(NEUTRAL_BINARY)
+    parameter_mapping["domains"][0] = {
+        "domain_id": "engine-numerical-fixture-domain",
+        "kind": "fit-range",
+        "temperature_min": {"magnitude": 150.0, "unit": "kelvin"},
+        "temperature_max": {"magnitude": 300.0, "unit": "kelvin"},
+    }
+    parameters = epcsaft.Parameters.from_mapping(parameter_mapping)
+    model = epcsaft.Mixture(parameters)
+    component_ids = parameters.component_ids
+    expected_x = 0.2
+    amounts = (expected_x, 1.0 - expected_x)
+    reaction = equilibrium.ChemicalEquilibriumProblem(
+        species_ids=component_ids,
+        charges=(0, 0),
+        molar_masses_kg_per_mol=(0.016043, 0.03007),
+        balance_matrix=((1.0, 0.0), (0.0, 1.0)),
+        conserved_totals=amounts,
+        reaction_matrix=(),
+        feed_amounts_mol=amounts,
+        equilibrium_constants=(),
+        strict_interior_amount_floor_mol=1.0e-14,
+    )
+    provider_phase = equilibrium.ProviderPhase(model, (1.0e-6, 0.74))
+    anchor = equilibrium.HomogeneousReactiveObservationProblem(
+        "neutral-provider-anchor",
+        "configured-liquid",
+        "liquid",
+        provider_phase,
+        reaction,
+        "neutral-provider-branch",
+        "local_certified_role_selected_state",
+    )
+    temperature = 170.0 * epcsaft.unit_registry.kelvin
+    pressure = 1.0e6 * epcsaft.unit_registry.pascal
+    reference = equilibrium.certify_homogeneous_continuation_reference(
+        anchor,
+        temperature,
+        pressure,
+        maximum_log_composition_distance=1.0,
+        maximum_log_volume_distance=1.0,
+    )
+    phase = equilibrium.ReactivePhase(
+        "configured-liquid",
+        "liquid",
+        "finite",
+        equilibrium.AllComponents(),
+        equilibrium.ProviderModel((1.0e-6, 0.74), "installed-provider-eos"),
+        "neutral-provider-branch",
+        "local_certified_role_selected_state",
+        reference,
+    )
+    potential = equilibrium.EquilibriumOutput(
+        "methane-log-fugacity",
+        "phase.log_fugacity",
+        "dimensionless",
+        "natural-log-pascal-true-species",
+        phase.identity,
+        (1.0, 0.0),
+    )
+    truth = equilibrium.phase_equilibrium(
+        model,
+        equilibrium.GeneralReactiveEquilibriumProblem(
+            "neutral-provider-truth",
+            equilibrium.Fixed(temperature),
+            equilibrium.Fixed(pressure),
+            (phase,),
+            reaction,
+            (),
+            (potential,),
+            feed=equilibrium.direct_amounts(component_ids, amounts),
+        ),
+    )
+    assert truth.status == "evaluated", truth.failure
+    problem = equilibrium.GeneralReactiveEquilibriumProblem(
+        "neutral-provider-uptake",
+        equilibrium.Fixed(temperature),
+        equilibrium.Fixed(pressure),
+        (phase,),
+        reaction,
+        (),
+        (
+            equilibrium.EquilibriumOutput(
+                "methane-x",
+                "phase.mole_fraction",
+                "dimensionless",
+                "true-species-liquid-mole-fraction",
+                phase.identity,
+                (1.0, 0.0),
+                support="positive",
+            ),
+        ),
+        feed=equilibrium.AffineFeed(
+            component_ids,
+            (0.0, 0.8),
+            ((1.0,), (0.0,)),
+            (equilibrium.FeedCoordinate("open-methane", (0.02, 0.5)),),
+        ),
+        intensive_boundaries=(
+            equilibrium.IntensiveBoundary(
+                "methane-reservoir",
+                "open-methane",
+                phase.identity,
+                "phase.log_fugacity",
+                (1.0, 0.0),
+                float(truth.values[0]),
+                amounts[0],
+            ),
+        ),
+    )
+
+    evaluated = equilibrium.phase_equilibrium(model, problem)
+
+    assert evaluated.status == "evaluated", evaluated.failure
+    assert evaluated.values == pytest.approx((expected_x,), abs=2.0e-10)
 
 
 @pytest.mark.slow
