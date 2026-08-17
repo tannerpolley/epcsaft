@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <numeric>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -1363,7 +1364,8 @@ py::dict solve_reactive_finite_phases(
     double trace_floor,
     bool active_parameters_requested,
     bool derivative_audits_requested,
-    const py::object& phase_direction_system
+    const py::object& phase_direction_system,
+    std::vector<std::vector<std::size_t>> phase_support_indices
 ) {
     const epcsaft_native_transport& transport = checked_reactive_finite_transport(capsule);
     const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
@@ -1483,6 +1485,14 @@ py::dict solve_reactive_finite_phases(
             py::cast<double>(payload["molar_volume_m3_per_mol"]),
         });
     }
+    if (phase_support_indices.empty()) {
+        const std::vector<std::size_t> full_support = [&input]() {
+            std::vector<std::size_t> indices(input.species_ids.size());
+            std::iota(indices.begin(), indices.end(), 0);
+            return indices;
+        }();
+        phase_support_indices.assign(starts.size(), full_support);
+    }
     std::optional<PhaseDirectionCompilation> phase_directions;
     if (!phase_direction_system.is_none()) {
         const py::dict declaration = py::cast<py::dict>(phase_direction_system);
@@ -1531,7 +1541,8 @@ py::dict solve_reactive_finite_phases(
             parameters.identities.empty() ? nullptr : &parameters,
             500,
             derivative_audits_requested,
-            phase_directions.has_value() ? &*phase_directions : nullptr
+            phase_directions.has_value() ? &*phase_directions : nullptr,
+            phase_support_indices
         )
     );
 }
@@ -1660,7 +1671,9 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("trace_floor"),
         py::arg("active_parameters_requested") = false,
         py::arg("derivative_audits_requested") = false,
-        py::arg("phase_direction_system") = py::none()
+        py::arg("phase_direction_system") = py::none(),
+        py::arg("phase_support_indices") =
+            std::vector<std::vector<std::size_t>>{}
     );
     module.def(
         "_compile_phase_direction_system",

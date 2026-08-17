@@ -328,101 +328,6 @@ def preflight_phase_reaction_system(
     )
 
 
-def ideal_exchange_ln_q(
-    initial_activities: Sequence[float], extent: float
-) -> float:
-    """Return ``ln Q`` for Li/Na carrier exchange under ideal activities.
-
-    The activity order is ``(Li+, Na+, NaC, LiC)`` and the reaction is
-    ``Li+ + NaC <=> Na+ + LiC``.  Activities are dimensionless positive
-    starting amounts or activities; the extent has the same amount scale.
-    """
-
-    if len(initial_activities) != 4:
-        raise ValueError("initial_activities must be (Li+, Na+, NaC, LiC)")
-    li, na, nac, lic = (
-        _finite(value, field=f"initial_activities[{index}]")
-        for index, value in enumerate(initial_activities)
-    )
-    if any(value <= 0.0 for value in (li, na, nac, lic)):
-        raise ValueError("initial activities must be positive")
-    x = _finite(extent, field="extent")
-    factors = (na + x, li - x, lic + x, nac - x)
-    if any(value <= 0.0 for value in factors):
-        raise ValueError("extent leaves an ideal exchange activity nonpositive")
-    return math.log(factors[0]) - math.log(factors[1]) + math.log(factors[2]) - math.log(
-        factors[3]
-    )
-
-
-def ideal_exchange_extent(
-    initial_activities: Sequence[float],
-    ln_equilibrium_constant: float,
-    *,
-    tolerance: float = 1.0e-15,
-    max_iterations: int = 200,
-) -> float:
-    """Solve the unique admissible ideal Li/Na exchange extent by bisection."""
-
-    if len(initial_activities) != 4:
-        raise ValueError("initial_activities must be (Li+, Na+, NaC, LiC)")
-    values = tuple(
-        _finite(value, field=f"initial_activities[{index}]")
-        for index, value in enumerate(initial_activities)
-    )
-    if any(value <= 0.0 for value in values):
-        raise ValueError("initial activities must be positive")
-    ln_k = _finite(ln_equilibrium_constant, field="ln_equilibrium_constant")
-    tolerance = _validate_tolerance(tolerance, field="tolerance")
-    if not isinstance(max_iterations, int) or isinstance(max_iterations, bool) or max_iterations < 1:
-        raise ValueError("max_iterations must be a positive integer")
-    lower = -min(values[1], values[3])
-    upper = min(values[0], values[2])
-    scale = max(1.0, *(abs(value) for value in values))
-    margin = max(math.ulp(scale), 1.0e-15 * scale)
-    lower += margin
-    upper -= margin
-    if lower >= upper:
-        raise ValueError("ideal exchange admissible interval is empty")
-    target = math.exp(ln_k)
-
-    def residual(extent: float) -> float:
-        li, na, nac, lic = values
-        return (na + extent) * (lic + extent) - target * (li - extent) * (nac - extent)
-
-    lo_value = residual(lower)
-    hi_value = residual(upper)
-    if not lo_value < 0.0 < hi_value:
-        raise ValueError("ln_equilibrium_constant has no interior ideal exchange root")
-    for _ in range(max_iterations):
-        midpoint = 0.5 * (lower + upper)
-        value = residual(midpoint)
-        if abs(value) <= tolerance * max(1.0, abs(target)) or upper - lower <= tolerance:
-            return midpoint
-        if value < 0.0:
-            lower = midpoint
-        else:
-            upper = midpoint
-    raise ArithmeticError("ideal exchange extent did not converge")
-
-
-def ideal_exchange_dxi_dln_k(initial_activities: Sequence[float], extent: float) -> float:
-    """Return the exact ideal-exchange ``d extent / d ln(K)`` at ``extent``."""
-
-    if len(initial_activities) != 4:
-        raise ValueError("initial_activities must be (Li+, Na+, NaC, LiC)")
-    li, na, nac, lic = (
-        _finite(value, field=f"initial_activities[{index}]")
-        for index, value in enumerate(initial_activities)
-    )
-    x = _finite(extent, field="extent")
-    terms = (na + x, li - x, lic + x, nac - x)
-    if any(value <= 0.0 for value in terms):
-        raise ValueError("extent leaves an ideal exchange activity nonpositive")
-    denominator = math.fsum(1.0 / value for value in terms)
-    return 1.0 / denominator
-
-
 __all__ = [
     "PhaseReactionPreflight",
     "PhaseReactionRow",
@@ -430,9 +335,6 @@ __all__ = [
     "PhaseReactionSystem",
     "PhaseSpeciesTerm",
     "canonical_stacked_directions",
-    "ideal_exchange_dxi_dln_k",
-    "ideal_exchange_extent",
-    "ideal_exchange_ln_q",
     "phase_species_coordinate_order",
     "preflight_phase_reaction_system",
 ]

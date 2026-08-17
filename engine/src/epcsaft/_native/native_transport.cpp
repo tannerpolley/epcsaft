@@ -364,8 +364,12 @@ struct NativeTransportEndpoint final {
                 "inverse packing model or topology is not admitted"
             );
         }
-        const std::size_t coordinate_count =
-            endpoint.table.component_count + 1 + request_count;
+        const std::size_t support_count = static_cast<std::size_t>(std::count_if(
+            amounts_mol,
+            amounts_mol + amount_count,
+            [](double amount) { return amount > 0.0; }
+        ));
+        const std::size_t coordinate_count = support_count + 1 + request_count;
         if (amount_count != endpoint.table.component_count
             || result->coordinate_count != coordinate_count
             || result->active_parameter_count != request_count
@@ -383,7 +387,7 @@ struct NativeTransportEndpoint final {
                 amounts_mol,
                 amounts_mol + amount_count,
                 [](double amount) {
-                    return std::isfinite(amount) && amount > 0.0;
+                    return std::isfinite(amount) && amount >= 0.0;
                 }
             )
             || !std::isfinite(log_packing_fraction)) {
@@ -520,7 +524,12 @@ struct NativeTransportEndpoint final {
                 "parameterized phase temperature is outside the source domain"
             );
         }
-        const std::size_t state_count = endpoint.component_ids.size() + 1;
+        const std::size_t support_count = static_cast<std::size_t>(std::count_if(
+            amounts_mol,
+            amounts_mol + amount_count,
+            [](double amount) { return amount > 0.0; }
+        ));
+        const std::size_t state_count = support_count + 1;
         if (amount_count != endpoint.component_ids.size()
             || result->state_coordinate_count != state_count
             || result->active_parameter_count != request_count
@@ -536,7 +545,7 @@ struct NativeTransportEndpoint final {
                 != 2u * request_count
             || result->pressure_parameter_capacity != request_count
             || result->chemical_potential_parameter_capacity
-                != endpoint.component_ids.size() * request_count
+                != support_count * request_count
             || result->state_gradient == nullptr
             || result->state_hessian == nullptr
             || (request_count != 0 && result->parameter_gradient == nullptr)
@@ -614,9 +623,7 @@ struct NativeTransportEndpoint final {
                 state_count * state_count
             );
             std::vector<double> pressure_parameter(request_count);
-            std::vector<double> chemical_parameter(
-                amount_count * request_count
-            );
+            std::vector<double> chemical_parameter(support_count * request_count);
             for (std::size_t state = 0; state < state_count; ++state) {
                 state_gradient[state] = phase.gradient[state];
                 packing_state_gradient[state] = packing.gradient[state];
@@ -648,7 +655,7 @@ struct NativeTransportEndpoint final {
                         (state_count - 1) * request_count + parameter
                     ];
                 for (std::size_t component = 0;
-                     component < amount_count;
+                     component < support_count;
                      ++component) {
                     chemical_parameter[
                         component * request_count + parameter
@@ -1841,7 +1848,12 @@ struct NativeTransportEndpoint final {
         if (!endpoint.phase_callbacks_admitted) {
             return EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL;
         }
-        const std::size_t coordinate_count = endpoint.table.component_count + 1;
+        const std::size_t support_count = static_cast<std::size_t>(std::count_if(
+            amounts_mol,
+            amounts_mol + amount_count,
+            [](double amount) { return amount > 0.0; }
+        ));
+        const std::size_t coordinate_count = support_count + 1;
         if (gradient_capacity != coordinate_count
             || hessian_capacity != coordinate_count * coordinate_count) {
             return EPCSAFT_NATIVE_STATUS_BUFFER_ERROR;
@@ -1850,7 +1862,7 @@ struct NativeTransportEndpoint final {
             || !std::isfinite(temperature_k) || temperature_k <= 0.0
             || !std::isfinite(volume_m3) || volume_m3 <= 0.0
             || !std::all_of(amounts_mol, amounts_mol + amount_count, [](double amount) {
-                return std::isfinite(amount) && amount > 0.0;
+                return std::isfinite(amount) && amount >= 0.0;
             })) {
             return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT;
         }
@@ -1863,11 +1875,12 @@ struct NativeTransportEndpoint final {
 
         try {
             const std::vector<double> amounts(amounts_mol, amounts_mol + amount_count);
-            const auto block = endpoint.model.evaluate_packing_fraction(
+            const auto block = endpoint.model.evaluate_packing_fraction_parameters(
                 temperature_k,
                 amounts,
                 volume_m3,
-                endpoint.ion_mole_fraction_max
+                endpoint.ion_mole_fraction_max,
+                {}
             );
             *packing_fraction = block.packing_fraction;
             std::copy(block.gradient.begin(), block.gradient.end(), gradient);

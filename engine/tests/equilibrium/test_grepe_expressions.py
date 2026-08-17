@@ -41,12 +41,12 @@ def test_scaled_log_activity_expression_is_generic_ph_style_output() -> None:
     assert result.jacobian == pytest.approx((-0.5 / math.log(10.0), 0.25 / math.log(10.0)))
 
 
-def test_lithium_extraction_is_a_species_neutral_amount_ratio() -> None:
+def test_phase_recovery_is_a_species_neutral_amount_ratio() -> None:
     result = evaluate_expression(
-        Ratio(RowReference("organic_li_amount"), RowReference("total_li_amount")),
+        Ratio(RowReference("target_phase_amount"), RowReference("total_species_amount")),
         [
-            EvaluatedRow("organic_li_amount", 0.35, (0.10, 0.0)),
-            EvaluatedRow("total_li_amount", 1.40, (0.0, 0.20)),
+            EvaluatedRow("target_phase_amount", 0.35, (0.10, 0.0)),
+            EvaluatedRow("total_species_amount", 1.40, (0.0, 0.20)),
         ],
     )
 

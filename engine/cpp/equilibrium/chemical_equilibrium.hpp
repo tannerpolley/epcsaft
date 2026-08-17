@@ -540,7 +540,8 @@ struct SourceStandardStateResult {
     const ProviderActiveParameterSet* active_parameters = nullptr,
     int max_iterations = 500,
     bool perform_derivative_audits = false,
-    const PhaseDirectionCompilation* phase_directions = nullptr
+    const PhaseDirectionCompilation* phase_directions = nullptr,
+    const std::vector<std::vector<std::size_t>>& phase_support_indices = {}
 );
 
 }  // namespace epcsaft_engine::equilibrium

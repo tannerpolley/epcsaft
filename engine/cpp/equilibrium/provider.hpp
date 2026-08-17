@@ -50,6 +50,7 @@ struct ParameterizedPhaseEvaluation {
     std::vector<double> molar_volume_bound_parameter_derivatives_m3_per_mol;
     std::vector<double> pressure_parameter_derivatives_pa;
     std::vector<double> chemical_potential_parameter_derivatives_over_rt;
+    std::vector<std::size_t> supported_component_indices;
     std::string topology_fingerprint;
 };
 
@@ -57,6 +58,7 @@ struct InversePackingGeometryEvaluation {
     double volume_m3 = 0.0;
     std::vector<double> gradient;
     std::vector<double> hessian;
+    std::vector<std::size_t> supported_component_indices;
     std::string topology_fingerprint;
 };
 

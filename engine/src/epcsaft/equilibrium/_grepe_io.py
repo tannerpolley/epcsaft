@@ -12,9 +12,9 @@ from ._api import (
     ChemicalEquilibriumConstant,
     ChemicalEquilibriumProblem,
     ChemicalStandardState,
+    DeclaredComponents,
     DeclaredNeutralComponents,
     NeutralComponents,
-    PhaseSupport,
 )
 from ._feed import ResolvedFeed
 from ._grepe import (
@@ -25,6 +25,7 @@ from ._grepe import (
     IdealGasModel,
     ProviderModel,
     ReactivePhase,
+    ReactivePhaseSupport,
     Solved,
 )
 from ._observations import HomogeneousContinuationReference
@@ -443,11 +444,13 @@ def _phase(value: object) -> ReactivePhase:
         for value in _sequence(support_item["component_ids"], "support components")
     )
     if support_kind == "all_components" and not component_ids:
-        support: PhaseSupport = AllComponents()
+        support: ReactivePhaseSupport = AllComponents()
     elif support_kind == "neutral_components" and not component_ids:
         support = NeutralComponents()
     elif support_kind == "declared_neutral_components":
         support = DeclaredNeutralComponents(component_ids)
+    elif support_kind == "declared_components":
+        support = DeclaredComponents(component_ids)
     else:
         raise ValueError("GREPE phase support declaration is inconsistent")
     model_item = _mapping(
@@ -657,9 +660,14 @@ def general_reactive_equilibrium_problem_to_mapping(
             support = {"kind": "all_components", "component_ids": []}
         elif isinstance(phase.support, NeutralComponents):
             support = {"kind": "neutral_components", "component_ids": []}
-        else:
+        elif isinstance(phase.support, DeclaredNeutralComponents):
             support = {
                 "kind": "declared_neutral_components",
+                "component_ids": list(phase.support.component_ids),
+            }
+        else:
+            support = {
+                "kind": "declared_components",
                 "component_ids": list(phase.support.component_ids),
             }
         if isinstance(phase.model, ProviderModel):

@@ -102,6 +102,21 @@ class DeclaredNeutralComponents:
         object.__setattr__(self, "component_ids", component_ids)
 
 
+@dataclass(frozen=True, slots=True)
+class DeclaredComponents:
+    """An ordered caller-declared nonempty finite-phase species support."""
+
+    component_ids: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        component_ids = tuple(self.component_ids)
+        if not component_ids or any(not identity for identity in component_ids):
+            raise ValueError("declared component support must be nonempty")
+        if len(set(component_ids)) != len(component_ids):
+            raise ValueError("declared component support contains duplicates")
+        object.__setattr__(self, "component_ids", component_ids)
+
+
 PhaseSupport = AllComponents | NeutralComponents | DeclaredNeutralComponents
 
 
@@ -180,7 +195,12 @@ class EquilibriumPhaseState:
     """One intensive phase state on its declared component support."""
 
     role: PhaseRole
-    support: Literal["all_components", "neutral_components", "declared_neutral_components"]
+    support: Literal[
+        "all_components",
+        "neutral_components",
+        "declared_neutral_components",
+        "declared_components",
+    ]
     supported_component_ids: tuple[str, ...]
     mole_fractions: tuple[float, ...]
     molar_volume_m3_per_mol: float
@@ -1311,6 +1331,7 @@ def _native_equilibrium_phase(payload: Mapping[str, object]) -> EquilibriumPhase
         "all_components",
         "neutral_components",
         "declared_neutral_components",
+        "declared_components",
     }:
         raise ValueError("native phase identity is invalid")
     component_ids = tuple(
@@ -1322,7 +1343,12 @@ def _native_equilibrium_phase(payload: Mapping[str, object]) -> EquilibriumPhase
     return EquilibriumPhaseState(
         role=cast(PhaseRole, role),
         support=cast(
-            Literal["all_components", "neutral_components", "declared_neutral_components"],
+            Literal[
+                "all_components",
+                "neutral_components",
+                "declared_neutral_components",
+                "declared_components",
+            ],
             support,
         ),
         supported_component_ids=component_ids,

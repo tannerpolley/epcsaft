@@ -10,9 +10,6 @@ from epcsaft.equilibrium import (
     PhaseReactionSystem,
     PhaseSpeciesTerm,
     canonical_stacked_directions,
-    ideal_exchange_dxi_dln_k,
-    ideal_exchange_extent,
-    ideal_exchange_ln_q,
     preflight_phase_reaction_system,
 )
 
@@ -20,15 +17,15 @@ from epcsaft.equilibrium import (
 def _exchange_system() -> PhaseReactionSystem:
     return PhaseReactionSystem(
         phase_ids=("aqueous", "organic"),
-        species_ids=("Li+", "Na+", "Cl-", "NaBTA·TOPO", "LiBTA·TOPO"),
+        species_ids=("A+", "B+", "X-", "BC", "AC"),
         reactions=(
             PhaseReactionRow(
-                "li-na-carrier-exchange",
+                "cation-complex-exchange",
                 (
-                    PhaseSpeciesTerm("aqueous", "Li+", -1.0),
-                    PhaseSpeciesTerm("aqueous", "Na+", 1.0),
-                    PhaseSpeciesTerm("organic", "NaBTA·TOPO", -1.0),
-                    PhaseSpeciesTerm("organic", "LiBTA·TOPO", 1.0),
+                    PhaseSpeciesTerm("aqueous", "A+", -1.0),
+                    PhaseSpeciesTerm("aqueous", "B+", 1.0),
+                    PhaseSpeciesTerm("organic", "BC", -1.0),
+                    PhaseSpeciesTerm("organic", "AC", 1.0),
                 ),
                 ln_equilibrium_constant=0.0,
                 standard_state=PhaseReactionStandardState("dimensionless-activity"),
@@ -72,26 +69,13 @@ def test_phase_local_row_is_a_special_case_of_stacked_direction() -> None:
     assert preflight.direction_matrix == ((-1.0, 1.0, 0.0, 0.0, 0.0, 0.0),)
 
 
-def test_cross_phase_li_na_exchange_conserves_global_material_and_phase_charge() -> None:
+def test_cross_phase_exchange_conserves_global_material_and_phase_charge() -> None:
     system = _exchange_system()
     preflight = preflight_phase_reaction_system(system)
     assert preflight.rank == 1
     assert canonical_stacked_directions(system) == (
         (-1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0),
     )
-
-
-def test_ideal_exchange_extent_and_exact_log_k_sensitivity_are_independent_oracle() -> None:
-    initial = (0.8, 0.2, 0.7, 0.3)
-    target_extent = 0.1
-    ln_k = ideal_exchange_ln_q(initial, target_extent)
-    assert ideal_exchange_extent(initial, ln_k) == pytest.approx(target_extent, abs=1.0e-13)
-    expected = 1.0 / (1.0 / 0.3 + 1.0 / 0.7 + 1.0 / 0.4 + 1.0 / 0.6)
-    assert ideal_exchange_dxi_dln_k(initial, target_extent) == pytest.approx(expected)
-    step = 1.0e-7
-    plus = ideal_exchange_extent(initial, ln_k + step)
-    minus = ideal_exchange_extent(initial, ln_k - step)
-    assert (plus - minus) / (2.0 * step) == pytest.approx(expected, rel=1.0e-7)
 
 
 @pytest.mark.parametrize(
@@ -103,8 +87,8 @@ def test_ideal_exchange_extent_and_exact_log_k_sensitivity_are_independent_oracl
                 system.species_ids,
                 (
                     PhaseReactionRow(
-                        "li-na-carrier-exchange",
-                        system.reactions[0].terms + (PhaseSpeciesTerm("aqueous", "Li+", 0.5),),
+                        "cation-complex-exchange",
+                        system.reactions[0].terms + (PhaseSpeciesTerm("aqueous", "A+", 0.5),),
                     ),
                 ),
                 system.charges,
@@ -119,7 +103,7 @@ def test_ideal_exchange_extent_and_exact_log_k_sensitivity_are_independent_oracl
                 (
                     PhaseReactionRow(
                         "unknown-phase",
-                        system.reactions[0].terms[:1] + (PhaseSpeciesTerm("missing", "Na+", 1.0),),
+                        system.reactions[0].terms[:1] + (PhaseSpeciesTerm("missing", "B+", 1.0),),
                     ),
                 ),
                 system.charges,
@@ -134,7 +118,7 @@ def test_ideal_exchange_extent_and_exact_log_k_sensitivity_are_independent_oracl
                 (
                     PhaseReactionRow(
                         "nonfinite",
-                        (PhaseSpeciesTerm("aqueous", "Li+", math.inf),),
+                        (PhaseSpeciesTerm("aqueous", "A+", math.inf),),
                     ),
                 ),
                 system.charges,

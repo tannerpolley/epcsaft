@@ -18,6 +18,7 @@ from ._api import (
     AllComponents,
     ChemicalEquilibriumProblem,
     ChemicalStandardState,
+    DeclaredComponents,
     DeclaredNeutralComponents,
     EquilibriumPhaseState,
     IdealGasPhase,
@@ -57,6 +58,7 @@ from ._reactive_vle import (
 )
 
 type AmountRole = Literal["finite", "incipient"]
+type ReactivePhaseSupport = PhaseSupport | DeclaredComponents
 type OutputSupport = Literal[
     "real",
     "positive",
@@ -176,11 +178,14 @@ class FinitePhaseStart:
         object.__setattr__(self, "amounts_mol", tuple(self.amounts_mol))
         if (
             not self.amounts_mol
-            or any(not math.isfinite(value) or value <= 0.0 for value in self.amounts_mol)
+            or any(not math.isfinite(value) or value < 0.0 for value in self.amounts_mol)
+            or not any(value > 0.0 for value in self.amounts_mol)
             or not math.isfinite(self.molar_volume_m3_per_mol)
             or self.molar_volume_m3_per_mol <= 0.0
         ):
-            raise ValueError("finite phase starts require positive amounts and molar volume")
+            raise ValueError(
+                "finite phase starts require nonnegative amounts, positive total, and molar volume"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,7 +195,7 @@ class ReactivePhase:
     identity: str
     fluid_role: Literal["liquid", "vapor"]
     amount_role: AmountRole
-    support: PhaseSupport
+    support: ReactivePhaseSupport
     model: ReactivePhaseModel
     continuation_identity: str | None = None
     branch_policy: HomogeneousBranchPolicy | None = None
@@ -211,7 +216,8 @@ class ReactivePhase:
             or self.fluid_role not in {"liquid", "vapor"}
             or self.amount_role not in {"finite", "incipient"}
             or not isinstance(
-                self.support, (AllComponents, NeutralComponents, DeclaredNeutralComponents)
+                self.support,
+                (AllComponents, NeutralComponents, DeclaredNeutralComponents, DeclaredComponents),
             )
             or not isinstance(self.model, (ProviderModel, IdealGasModel))
         ):
@@ -521,6 +527,22 @@ def _preflight(model: epcsaft.Mixture, problem: GeneralReactiveEquilibriumProble
     if reaction.species_ids != component_ids:
         raise ValueError("GREPE species order must equal the Provider component order")
     component_count = len(component_ids)
+    phase_supports = {
+        phase.identity: frozenset(
+            _phase_supported_component_ids(phase, component_ids, tuple(reaction.charges))
+        )
+        for phase in problem.phases
+    }
+    if any(not supported for supported in phase_supports.values()):
+        raise ValueError("GREPE finite phase support must not be empty")
+    if problem.phase_reactions is not None:
+        for row in problem.phase_reactions.reactions:
+            for term in row.terms:
+                if term.species_id not in phase_supports[term.phase_id]:
+                    raise ValueError(
+                        f"phase direction {row.identity!r} names species {term.species_id!r} "
+                        f"outside phase {term.phase_id!r} support"
+                    )
     if (
         len(reaction.charges) != component_count
         or len(reaction.molar_masses_kg_per_mol) != component_count
@@ -693,7 +715,12 @@ def _state_role_payload(role: Fixed | Solved, unit: str, name: str) -> dict[str,
 
 
 def _phase_payload(phase: ReactivePhase) -> dict[str, object]:
-    if isinstance(phase.support, DeclaredNeutralComponents):
+    if isinstance(phase.support, DeclaredComponents):
+        support = {
+            "kind": "declared_components",
+            "component_ids": phase.support.component_ids,
+        }
+    elif isinstance(phase.support, DeclaredNeutralComponents):
         support = {
             "kind": "declared_neutral_components",
             "component_ids": phase.support.component_ids,
@@ -733,6 +760,31 @@ def _phase_payload(phase: ReactivePhase) -> dict[str, object]:
             }
         ),
     }
+
+
+def _phase_supported_component_ids(
+    phase: ReactivePhase,
+    component_ids: tuple[str, ...],
+    charges: tuple[int, ...],
+) -> tuple[str, ...]:
+    if isinstance(phase.support, AllComponents):
+        return component_ids
+    if isinstance(phase.support, NeutralComponents):
+        return tuple(
+            identity
+            for identity, charge in zip(component_ids, charges, strict=True)
+            if charge == 0
+        )
+    declared = phase.support.component_ids
+    unknown = tuple(identity for identity in declared if identity not in component_ids)
+    if unknown:
+        raise ValueError(f"GREPE phase support names unknown components: {unknown!r}")
+    if isinstance(phase.support, DeclaredNeutralComponents):
+        charge_by_id = dict(zip(component_ids, charges, strict=True))
+        if any(charge_by_id[identity] != 0 for identity in declared):
+            raise ValueError("declared neutral support contains a charged component")
+    declared_set = frozenset(declared)
+    return tuple(identity for identity in component_ids if identity in declared_set)
 
 
 def _descriptor(
@@ -911,6 +963,7 @@ class _FinitePhaseCompilation:
     temperature_k: float
     pressure_pa: float
     phases: tuple[ReactivePhase, ...]
+    supported_component_ids: tuple[tuple[str, ...], ...]
     declared_start_set: tuple[FinitePhaseStart, ...] | None
     generated_allocations: tuple[tuple[tuple[float, ...], ...], ...]
     owner_descriptor: _FinitePhaseOwnerDescriptor
@@ -997,7 +1050,9 @@ def _phase_reaction_payload(system: PhaseReactionSystem | None) -> object:
 def _validate_finite_phase_outputs(
     problem: GeneralReactiveEquilibriumProblem,
 ) -> None:
-    component_count = len(_effective_reaction_system(problem).species_ids)
+    reaction = _effective_reaction_system(problem)
+    component_count = len(reaction.species_ids)
+    phase_by_id = {phase.identity: phase for phase in problem.phases}
     phase_ids = {phase.identity for phase in problem.phases}
     vector_selectors = {
         "phase.amount",
@@ -1019,6 +1074,22 @@ def _validate_finite_phase_outputs(
                 raise ValueError(
                     "finite-phase GREPE aggregate output requires aggregate and covariance identities"
                 )
+            if output.selector == "phase.chemical_potential_over_rt":
+                phase = phase_by_id[output.phase_identity]
+                supported = frozenset(
+                    _phase_supported_component_ids(
+                        phase, reaction.species_ids, tuple(reaction.charges)
+                    )
+                )
+                if any(
+                    coefficient != 0.0 and species not in supported
+                    for species, coefficient in zip(
+                        reaction.species_ids, output.coefficients, strict=True
+                    )
+                ):
+                    raise ValueError(
+                        "finite-phase chemical-potential output names species outside support"
+                    )
         elif output.selector in scalar_selectors:
             if output.coefficients:
                 raise ValueError("finite-phase GREPE scalar output does not accept coefficients")
@@ -1207,7 +1278,36 @@ def _generated_finite_phase_allocations(
     if equal_allocation not in allocations:
         allocations.append(equal_allocation)
 
-    return tuple(allocations)
+    component_index = {
+        identity: index for index, identity in enumerate(reaction_system.species_ids)
+    }
+    phase_supports = tuple(
+        frozenset(
+            component_index[identity]
+            for identity in _phase_supported_component_ids(
+                phase, reaction_system.species_ids, reaction_system.charges
+            )
+        )
+        for phase in phases
+    )
+    projected: list[tuple[tuple[float, ...], ...]] = []
+    for allocation in allocations:
+        rows = [[0.0] * component_count for _ in phases]
+        for component in range(component_count):
+            eligible = tuple(
+                phase for phase, support in enumerate(phase_supports) if component in support
+            )
+            if not eligible:
+                raise ValueError(
+                    "every fed species must belong to at least one declared finite-phase support"
+                )
+            scale = math.fsum(allocation[phase][component] for phase in eligible)
+            for phase in eligible:
+                rows[phase][component] = allocation[phase][component] / scale
+        candidate = tuple(tuple(row) for row in rows)
+        if candidate not in projected:
+            projected.append(candidate)
+    return tuple(projected)
 
 
 def _finite_phase_start_set_from_allocation(
@@ -1259,10 +1359,16 @@ def _compile_general_reactive_equilibrium(
 
     if len(finite) >= 2 and not incipient and isinstance(problem.pressure, Fixed):
         pressure_pa = _quantity(problem.pressure.value, "pascal", "pressure")
-        if any(not isinstance(phase.support, AllComponents) for phase in finite) or any(
-            not isinstance(phase.model, ProviderModel) for phase in finite
-        ):
-            return "configured finite-phase equilibrium requires all-component Provider phases"
+        if any(not isinstance(phase.model, ProviderModel) for phase in finite):
+            return "configured finite-phase equilibrium requires Provider phases"
+        supported_component_ids = tuple(
+            _phase_supported_component_ids(
+                phase,
+                model.component_ids,
+                tuple(_effective_reaction_system(problem).charges),
+            )
+            for phase in finite
+        )
         supplied_starts = tuple(phase.start for phase in finite)
         if any(start is None for start in supplied_starts) and any(
             start is not None for start in supplied_starts
@@ -1278,6 +1384,22 @@ def _compile_general_reactive_equilibrium(
             raise ValueError(
                 "configured finite-phase starts must match the Provider component order"
             )
+        component_index = {identity: index for index, identity in enumerate(model.component_ids)}
+        for phase, supported, start in zip(
+            finite, supported_component_ids, supplied_starts, strict=True
+        ):
+            if start is None:
+                continue
+            support_indices = {component_index[identity] for identity in supported}
+            for index, amount in enumerate(start.amounts_mol):
+                if index in support_indices and amount <= 0.0:
+                    raise ValueError(
+                        f"finite phase {phase.identity!r} start must be positive on its support"
+                    )
+                if index not in support_indices and amount != 0.0:
+                    raise ValueError(
+                        f"finite phase {phase.identity!r} start must be zero outside its support"
+                    )
         declared_start_set = (
             tuple(cast(FinitePhaseStart, start) for start in supplied_starts)
             if supplied_starts[0] is not None
@@ -1310,6 +1432,7 @@ def _compile_general_reactive_equilibrium(
             temperature_k,
             pressure_pa,
             finite,
+            supported_component_ids,
             declared_start_set,
             generated_allocations,
             owner_descriptor,
@@ -1589,6 +1712,17 @@ def _finite_phase_direction_spec(
     }
 
 
+def _finite_phase_support_indices(
+    model: epcsaft.Mixture,
+    compilation: _FinitePhaseCompilation,
+) -> tuple[tuple[int, ...], ...]:
+    component_index = {identity: index for index, identity in enumerate(model.component_ids)}
+    return tuple(
+        tuple(component_index[identity] for identity in supported)
+        for supported in compilation.supported_component_ids
+    )
+
+
 def _reactive_finite_source_standard_state(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
@@ -1643,6 +1777,7 @@ def _finite_phase_failed(
     numerical_status: str,
     physical_status: str,
     provider_domain_status: str,
+    phases: tuple[EquilibriumPhaseState, ...] = (),
 ) -> GeneralReactiveEquilibriumResult:
     return GeneralReactiveEquilibriumResult(
         problem=problem,
@@ -1665,7 +1800,7 @@ def _finite_phase_failed(
             )
             for output in problem.outputs
         ),
-        phases=(),
+        phases=phases,
         failure=NonEvaluableTrial(code, diagnostic),
         certificate_scope=compilation.descriptor.certificate_scope,
         globality_claim="not_established",
@@ -1701,6 +1836,67 @@ def _native_float_vector(value: object) -> tuple[float, ...]:
 
 def _native_float_matrix(value: object) -> tuple[tuple[float, ...], ...]:
     return tuple(_native_float_vector(row) for row in cast(tuple[object, ...], value))
+
+
+def _finite_phase_states(
+    model: epcsaft.Mixture,
+    compilation: _FinitePhaseCompilation,
+    native: dict[str, object],
+    *,
+    mechanical_class: str,
+) -> tuple[EquilibriumPhaseState, ...]:
+    native_amounts = _native_float_matrix(native["phase_amounts_mol"])
+    native_volumes = _native_float_vector(native["phase_volumes_m3"])
+    native_pressures = _native_float_vector(native["phase_pressures_pa"])
+    native_packing = _native_float_vector(native["phase_packing_fractions"])
+    native_mu = _native_float_matrix(native["phase_chemical_potentials_over_rt"])
+    if not all(
+        len(values) == len(compilation.phases)
+        for values in (
+            native_amounts,
+            native_volumes,
+            native_pressures,
+            native_packing,
+            native_mu,
+        )
+    ):
+        return ()
+    component_index = {identity: index for index, identity in enumerate(model.component_ids)}
+    return tuple(
+        EquilibriumPhaseState(
+            role=phase.fluid_role,
+            support=(
+                "all_components"
+                if isinstance(phase.support, AllComponents)
+                else "neutral_components"
+                if isinstance(phase.support, NeutralComponents)
+                else "declared_neutral_components"
+                if isinstance(phase.support, DeclaredNeutralComponents)
+                else "declared_components"
+            ),
+            supported_component_ids=supported,
+            mole_fractions=tuple(amount / math.fsum(amounts) for amount in amounts),
+            molar_volume_m3_per_mol=volume / math.fsum(amounts),
+            molar_density_mol_m3=math.fsum(amounts) / volume,
+            packing_fraction=packing,
+            pressure_pa=pressure,
+            chemical_potential_component_ids=supported,
+            chemical_potential_over_rt=tuple(
+                chemical_potentials[component_index[identity]] for identity in supported
+            ),
+            mechanical_class=mechanical_class,
+        )
+        for phase, supported, amounts, volume, packing, pressure, chemical_potentials in zip(
+            compilation.phases,
+            compilation.supported_component_ids,
+            native_amounts,
+            native_volumes,
+            native_packing,
+            native_pressures,
+            native_mu,
+            strict=True,
+        )
+    )
 
 
 def _finite_phase_rows(
@@ -1878,6 +2074,7 @@ def _evaluate_finite_phase(
                     active_parameters is not None,
                     False,
                     _finite_phase_direction_spec(problem),
+                    _finite_phase_support_indices(model, compilation),
                 ),
             )
             native_attempt_list.append(attempt)
@@ -1984,6 +2181,12 @@ def _evaluate_finite_phase(
             numerical_status=str(native["numerical_status"]),
             physical_status=str(native["physical_status"]),
             provider_domain_status=str(native["provider_domain_status"]),
+            phases=_finite_phase_states(
+                model,
+                compilation,
+                native,
+                mechanical_class="rejected_configured_candidate",
+            ),
         )
     if tuple(str(value) for value in cast(tuple[object, ...], native["parameter_order"])) != (
         compilation.descriptor.active_parameter_identities
@@ -2000,34 +2203,11 @@ def _evaluate_finite_phase(
             provider_domain_status=str(native["provider_domain_status"]),
         )
     rows = _finite_phase_rows(problem, compilation, native)
-    native_amounts = _native_float_matrix(native["phase_amounts_mol"])
-    native_volumes = _native_float_vector(native["phase_volumes_m3"])
-    native_pressures = _native_float_vector(native["phase_pressures_pa"])
-    native_packing = _native_float_vector(native["phase_packing_fractions"])
-    native_mu = _native_float_matrix(native["phase_chemical_potentials_over_rt"])
-    phases = tuple(
-        EquilibriumPhaseState(
-            role=phase.fluid_role,
-            support="all_components",
-            supported_component_ids=model.component_ids,
-            mole_fractions=tuple(amount / math.fsum(amounts) for amount in amounts),
-            molar_volume_m3_per_mol=volume / math.fsum(amounts),
-            molar_density_mol_m3=math.fsum(amounts) / volume,
-            packing_fraction=packing,
-            pressure_pa=pressure,
-            chemical_potential_component_ids=model.component_ids,
-            chemical_potential_over_rt=chemical_potentials,
-            mechanical_class="strict_stable_local_minimum",
-        )
-        for phase, amounts, volume, packing, pressure, chemical_potentials in zip(
-            compilation.phases,
-            native_amounts,
-            native_volumes,
-            native_packing,
-            native_pressures,
-            native_mu,
-            strict=True,
-        )
+    phases = _finite_phase_states(
+        model,
+        compilation,
+        native,
+        mechanical_class="strict_stable_local_minimum",
     )
     branch_signature: tuple[object, ...] = (
         "finite_phases_local_minimum",

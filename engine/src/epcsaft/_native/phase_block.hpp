@@ -537,8 +537,9 @@ inline NativePackingFractionBlock packing_fraction_block_active_parameters(
     double temperature, const std::vector<double> &amounts, double volume,
     double ion_mole_fraction_max, const NativeParameters &parameters,
     const std::vector<NativeFixedTopologyParameter> &active_parameters) {
-  validate_electrolyte_phase_state(temperature, amounts, volume,
-                                   ion_mole_fraction_max, parameters);
+  const std::vector<std::size_t> coordinate_components =
+      validate_reduced_support_phase_state(temperature, amounts, volume,
+                                           ion_mole_fraction_max, parameters);
   std::vector<double> values;
   values.reserve(active_parameters.size());
   for (const auto &parameter : active_parameters) {
@@ -562,7 +563,11 @@ inline NativePackingFractionBlock packing_fraction_block_active_parameters(
 
   CppAdSerialGuard cppad_guard;
   using ADScalar = CppAD::AD<double>;
-  std::vector<double> point(amounts.begin(), amounts.end());
+  std::vector<double> point;
+  point.reserve(coordinate_components.size() + 1 + active_parameters.size());
+  for (std::size_t component : coordinate_components) {
+    point.push_back(amounts[component]);
+  }
   point.push_back(volume);
   for (const auto &parameter : active_parameters) {
     point.push_back(parameter.value);
@@ -570,9 +575,12 @@ inline NativePackingFractionBlock packing_fraction_block_active_parameters(
   std::vector<ADScalar> independent(point.begin(), point.end());
   CppAD::Independent(independent);
   const std::size_t components = amounts.size();
-  const std::size_t parameter_offset = components + 1;
-  const std::vector<ADScalar> active_amounts(independent.begin(),
-                                             independent.begin() + components);
+  const std::size_t support_count = coordinate_components.size();
+  const std::size_t parameter_offset = support_count + 1;
+  std::vector<ADScalar> active_amounts(components, ADScalar(0.0));
+  for (std::size_t coordinate = 0; coordinate < support_count; ++coordinate) {
+    active_amounts[coordinate_components[coordinate]] = independent[coordinate];
+  }
   ADScalar total = 0.0;
   for (const auto &amount : active_amounts) {
     total += amount;
@@ -589,7 +597,7 @@ inline NativePackingFractionBlock packing_fraction_block_active_parameters(
       temperature, parameters, active_parameters, active_values,
       active_parameters_values);
   const ADScalar active_value = packing_fraction_from_geometry(
-      total / independent[components], composition, active_parameters_values,
+      total / independent[support_count], composition, active_parameters_values,
       diameter);
   CppAD::ADFun<double> function(independent, {active_value});
   const double value = function.Forward(0, point)[0];
@@ -616,16 +624,14 @@ inline NativeInversePackingGeometryBlock inverse_packing_geometry_block(
     throw std::logic_error(
         "inverse packing geometry requires compatible component parameters");
   }
-  if (!std::isfinite(temperature) || temperature <= 0.0 ||
-      amounts.size() != parameters.segment_count.size() ||
-      !std::all_of(amounts.begin(), amounts.end(),
-                   [](double amount) {
-                     return std::isfinite(amount) && amount > 0.0;
-                   }) ||
-      !std::isfinite(log_packing_fraction)) {
+  if (!std::isfinite(log_packing_fraction)) {
     throw std::invalid_argument(
         "inverse packing temperature, amounts, and log eta are invalid");
   }
+  const std::vector<std::size_t> coordinate_components =
+      validate_reduced_support_phase_state(
+          temperature, amounts, 1.0, std::numeric_limits<double>::quiet_NaN(),
+          parameters);
   const double packing_fraction = std::exp(log_packing_fraction);
   if (!std::isfinite(packing_fraction) || packing_fraction <= 0.0 ||
       packing_fraction >= close_packing_fraction()) {
@@ -635,7 +641,11 @@ inline NativeInversePackingGeometryBlock inverse_packing_geometry_block(
 
   CppAdSerialGuard cppad_guard;
   using ADScalar = CppAD::AD<double>;
-  std::vector<double> point(amounts.begin(), amounts.end());
+  std::vector<double> point;
+  point.reserve(coordinate_components.size() + 1 + active_parameters.size());
+  for (std::size_t component : coordinate_components) {
+    point.push_back(amounts[component]);
+  }
   point.push_back(log_packing_fraction);
   for (const auto &parameter : active_parameters) {
     point.push_back(parameter.value);
@@ -643,9 +653,12 @@ inline NativeInversePackingGeometryBlock inverse_packing_geometry_block(
   std::vector<ADScalar> independent(point.begin(), point.end());
   CppAD::Independent(independent);
   const std::size_t components = amounts.size();
-  const std::size_t parameter_offset = components + 1;
-  const std::vector<ADScalar> active_amounts(independent.begin(),
-                                             independent.begin() + components);
+  const std::size_t support_count = coordinate_components.size();
+  const std::size_t parameter_offset = support_count + 1;
+  std::vector<ADScalar> active_amounts(components, ADScalar(0.0));
+  for (std::size_t coordinate = 0; coordinate < support_count; ++coordinate) {
+    active_amounts[coordinate_components[coordinate]] = independent[coordinate];
+  }
   ADScalar total = 0.0;
   for (const auto &amount : active_amounts) {
     total += amount;
@@ -664,7 +677,7 @@ inline NativeInversePackingGeometryBlock inverse_packing_geometry_block(
   const ADScalar coefficient =
       packing_fraction_from_geometry(total, composition,
                                      active_parameters_values, diameter);
-  const ADScalar volume = coefficient / scalar_exp(independent[components]);
+  const ADScalar volume = coefficient / scalar_exp(independent[support_count]);
   CppAD::ADFun<double> function(independent, {volume});
   const double value = function.Forward(0, point)[0];
   const auto gradient = function.Jacobian(point);

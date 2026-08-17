@@ -893,19 +893,8 @@ NativeMixturePhaseBlock NativeModel::evaluate_parameterized_phase(
     double temperature, const std::vector<double> &amounts, double volume,
     double ion_mole_fraction_max,
     const std::vector<NativeActiveCoordinate> &active_parameters) const {
-  if (supports_electrolyte_transport()) {
-    detail::validate_electrolyte_phase_state(
-        temperature, amounts, volume, ion_mole_fraction_max, parameters_);
-  } else {
-    detail::validate_mixture_phase_state(temperature, amounts, volume,
-                                         parameters_);
-  }
-  return active_parameters.empty()
-             ? evaluate_supported_phase_derivatives(
-                   temperature, amounts, volume, ion_mole_fraction_max,
-                   active_parameters)
-             : evaluate_phase_derivatives(temperature, amounts, volume,
-                                          active_parameters, 2);
+  return evaluate_supported_phase_derivatives(
+      temperature, amounts, volume, ion_mole_fraction_max, active_parameters);
 }
 
 // EqExclude: transport and buffer mechanics
@@ -987,7 +976,10 @@ NativeModel::molar_volume_bounds_parameters(
   const auto coefficient = evaluate_packing_fraction_parameters(
       temperature, mole_fractions, 1.0, ion_mole_fraction_max,
       active_parameters);
-  const std::size_t parameter_offset = mole_fractions.size() + 1;
+  const std::size_t support_count = static_cast<std::size_t>(std::count_if(
+      mole_fractions.begin(), mole_fractions.end(),
+      [](double value) { return value > 0.0; }));
+  const std::size_t parameter_offset = support_count + 1;
   std::vector<double> derivatives(2 * active_parameters.size());
   for (std::size_t parameter = 0; parameter < active_parameters.size();
        ++parameter) {

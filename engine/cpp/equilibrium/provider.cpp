@@ -277,7 +277,10 @@ PackingFractionEvaluation ProviderContext::evaluate_packing_fraction(
         );
     }
 
-    const std::size_t coordinate_count = amounts_mol.size() + 1;
+    const std::size_t support_count = static_cast<std::size_t>(std::count_if(
+        amounts_mol.begin(), amounts_mol.end(), [](double value) { return value > 0.0; }
+    ));
+    const std::size_t coordinate_count = support_count + 1;
     PackingFractionEvaluation result;
     result.gradient.resize(coordinate_count);
     result.hessian.resize(coordinate_count * coordinate_count);
@@ -350,7 +353,13 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_parameterized_phase(
             "Provider atomic parameterized-phase contract is incomplete"
         );
     }
-    const std::size_t state_count = amounts_mol.size() + 1;
+    std::vector<std::size_t> supported_component_indices;
+    for (std::size_t index = 0; index < amounts_mol.size(); ++index) {
+        if (amounts_mol[index] > 0.0) {
+            supported_component_indices.push_back(index);
+        }
+    }
+    const std::size_t state_count = supported_component_indices.size() + 1;
     const std::size_t parameter_count = active_parameters.identities.size();
     ParameterizedPhaseEvaluation result;
     result.phase.gradient.resize(state_count);
@@ -365,8 +374,9 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_parameterized_phase(
     );
     result.pressure_parameter_derivatives_pa.resize(parameter_count);
     result.chemical_potential_parameter_derivatives_over_rt.resize(
-        amounts_mol.size() * parameter_count
+        supported_component_indices.size() * parameter_count
     );
+    result.supported_component_indices = supported_component_indices;
     epcsaft_parameterized_phase_result native{};
     native.struct_size = sizeof(native);
     native.state_coordinate_count = state_count;
@@ -519,7 +529,9 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_parameterized_phase(
     };
     constexpr double kProjectionRelativeTolerance = 2.0e-11;
     for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
-        for (std::size_t species = 0; species < amounts_mol.size(); ++species) {
+        for (std::size_t species = 0;
+             species < supported_component_indices.size();
+             ++species) {
             const double mixed =
                 result.state_parameter_derivatives[
                     species * parameter_count + parameter
@@ -538,7 +550,7 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_parameterized_phase(
         const double projected_pressure =
             -8.31446261815324 * temperature_k
             * result.state_parameter_derivatives[
-                amounts_mol.size() * parameter_count + parameter
+                supported_component_indices.size() * parameter_count + parameter
             ];
         const double returned_pressure =
             result.pressure_parameter_derivatives_pa[parameter];
@@ -572,18 +584,25 @@ InversePackingGeometryEvaluation ProviderContext::evaluate_inverse_packing_geome
     require_finite(log_packing_fraction, "log packing fraction");
     if (temperature_k <= 0.0
         || !std::all_of(amounts_mol.begin(), amounts_mol.end(), [](double value) {
-            return std::isfinite(value) && value > 0.0;
+            return std::isfinite(value) && value >= 0.0;
         })) {
         throw std::invalid_argument(
             "inverse-packing geometry state must be finite and positive"
         );
     }
     const std::string topology = parameterized_topology_fingerprint();
-    const std::size_t coordinate_count = amounts_mol.size() + 1
+    std::vector<std::size_t> supported_component_indices;
+    for (std::size_t index = 0; index < amounts_mol.size(); ++index) {
+        if (amounts_mol[index] > 0.0) {
+            supported_component_indices.push_back(index);
+        }
+    }
+    const std::size_t coordinate_count = supported_component_indices.size() + 1
         + active_parameters.identities.size();
     InversePackingGeometryEvaluation result;
     result.gradient.resize(coordinate_count);
     result.hessian.resize(coordinate_count * coordinate_count);
+    result.supported_component_indices = supported_component_indices;
     epcsaft_inverse_packing_geometry_result native{};
     native.struct_size = sizeof(native);
     native.coordinate_count = coordinate_count;

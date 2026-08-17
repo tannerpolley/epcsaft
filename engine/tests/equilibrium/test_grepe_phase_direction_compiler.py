@@ -7,15 +7,15 @@ import pytest
 from epcsaft.equilibrium import _equilibrium
 
 _PHASES = ("aqueous", "organic")
-_SPECIES = ("Li+", "Na+", "Cl-", "NaC", "LiC", "solvent")
+_SPECIES = ("A+", "B+", "X-", "BC", "AC", "solvent")
 _CHARGES = (1.0, 1.0, -1.0, 0.0, 0.0, 0.0)
 _REFERENCE = (
     (0.8, 0.2, 1.0, 0.0, 0.0, 0.5),
     (0.0, 0.0, 0.0, 0.3, 0.1, 1.0),
 )
 _BALANCES = (
-    (1.0, 0.0, 0.0, 0.0, 1.0, 0.0),  # total Li
-    (0.0, 1.0, 0.0, 1.0, 0.0, 0.0),  # total Na
+    (1.0, 0.0, 0.0, 0.0, 1.0, 0.0),  # total A
+    (0.0, 1.0, 0.0, 1.0, 0.0, 0.0),  # total B
     (0.0, 0.0, 0.0, 1.0, 1.0, 0.0),  # carrier
     (0.0, 0.0, 1.0, 0.0, 0.0, 0.0),  # chloride
     (0.0, 0.0, 0.0, 0.0, 0.0, 1.0),  # solvent
@@ -25,10 +25,10 @@ _BALANCES = (
 def _directions() -> tuple[tuple[float, ...], tuple[float, ...]]:
     dimension = len(_PHASES) * len(_SPECIES)
     exchange = [0.0] * dimension
-    exchange[0] = -1.0  # Li+ aqueous
-    exchange[1] = 1.0  # Na+ aqueous
-    exchange[3 + len(_SPECIES)] = -1.0  # NaC organic
-    exchange[4 + len(_SPECIES)] = 1.0  # LiC organic
+    exchange[0] = -1.0  # A+ aqueous
+    exchange[1] = 1.0  # B+ aqueous
+    exchange[3 + len(_SPECIES)] = -1.0  # BC organic
+    exchange[4 + len(_SPECIES)] = 1.0  # AC organic
     transfer = [0.0] * dimension
     transfer[5] = -1.0  # solvent aqueous
     transfer[5 + len(_SPECIES)] = 1.0  # solvent organic

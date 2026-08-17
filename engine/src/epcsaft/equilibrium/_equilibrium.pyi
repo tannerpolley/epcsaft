@@ -98,4 +98,5 @@ def _reactive_finite_phases(
     active_parameters_requested: bool = ...,
     derivative_audits_requested: bool = ...,
     phase_direction_system: dict[str, object] | None = ...,
+    phase_support_indices: tuple[tuple[int, ...], ...] = ...,
 ) -> dict[str, Any]: ...

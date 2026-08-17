@@ -527,8 +527,8 @@ def test_finite_phase_strict_mapping_is_closed() -> None:
         == phase_direction_problem
     )
 
-    mapping["phases"][0]["start"]["amounts_mol"][0] = 0.0
-    with pytest.raises(ValueError, match="positive amounts"):
+    mapping["phases"][0]["start"]["amounts_mol"][0] = -1.0
+    with pytest.raises(ValueError, match="nonnegative amounts"):
         equilibrium.general_reactive_equilibrium_problem_from_mapping(mapping)
 
 
