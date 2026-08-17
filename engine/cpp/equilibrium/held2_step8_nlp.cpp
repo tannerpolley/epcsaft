@@ -2,6 +2,7 @@
 #include "held2_tolerances.hpp"
 
 #include <Highs.h>
+#include <Eigen/Dense>
 #include <coin/IpIpoptApplication.hpp>
 #include <coin/IpTNLP.hpp>
 
@@ -1034,6 +1035,234 @@ Held2Problem67Evaluation evaluate_problem67(
     return result;
 }
 
+struct Problem67FinalCorrection {
+    bool attempted = false;
+    bool accepted = false;
+    int iterations = 0;
+    double initial_residual_inf = std::numeric_limits<double>::infinity();
+    double final_residual_inf = std::numeric_limits<double>::infinity();
+    std::vector<double> variables;
+    std::vector<double> equality_multipliers;
+};
+
+double kkt_residual_inf(
+    const Held2Problem67Evaluation& evaluation,
+    std::size_t variable_count,
+    std::size_t equality_count
+) {
+    double residual = 0.0;
+    for (double value : evaluation.lagrangian_gradient) {
+        residual = std::max(residual, std::abs(value));
+    }
+    for (std::size_t row = 0; row < equality_count; ++row) {
+        residual = std::max(
+            residual, std::abs(evaluation.constraints[row])
+        );
+    }
+    if (evaluation.lagrangian_gradient.size() != variable_count) {
+        return std::numeric_limits<double>::infinity();
+    }
+    return residual;
+}
+
+Problem67FinalCorrection correct_problem67_interior_kkt(
+    Problem67& problem,
+    const std::vector<double>& lower,
+    const std::vector<double>& upper,
+    const std::vector<double>& initial
+) {
+    Problem67FinalCorrection result;
+    result.attempted = true;
+    result.variables = initial;
+    const std::size_t variable_count = initial.size();
+    const std::size_t equality_count = problem.dimension + 1;
+    const std::size_t multiplier_count =
+        equality_count + problem.phase_count;
+    if (lower.size() != variable_count || upper.size() != variable_count) {
+        return result;
+    }
+    for (std::size_t variable = 0; variable < variable_count; ++variable) {
+        const double margin = 1.0e-12 * std::max({
+            1.0, std::abs(lower[variable]), std::abs(upper[variable])
+        });
+        if (!(initial[variable] > lower[variable] + margin
+              && initial[variable] < upper[variable] - margin)) {
+            return result;
+        }
+    }
+
+    std::vector<double> zero_multipliers(multiplier_count, 0.0);
+    Held2Problem67Evaluation evaluation = evaluate_problem67(
+        problem.coordinates,
+        problem.feed,
+        problem.evaluate,
+        problem.phase_count,
+        result.variables,
+        zero_multipliers
+    );
+    Eigen::MatrixXd equality_transpose(variable_count, equality_count);
+    Eigen::VectorXd negative_gradient(variable_count);
+    for (std::size_t variable = 0; variable < variable_count; ++variable) {
+        negative_gradient[static_cast<Eigen::Index>(variable)] =
+            -evaluation.objective_gradient[variable];
+        for (std::size_t row = 0; row < equality_count; ++row) {
+            equality_transpose(
+                static_cast<Eigen::Index>(variable),
+                static_cast<Eigen::Index>(row)
+            ) = evaluation.constraint_jacobian[
+                row * variable_count + variable
+            ];
+        }
+    }
+    const Eigen::VectorXd initial_multipliers =
+        equality_transpose.colPivHouseholderQr().solve(negative_gradient);
+    if (!initial_multipliers.allFinite()) {
+        return result;
+    }
+    result.equality_multipliers.resize(equality_count);
+    for (std::size_t row = 0; row < equality_count; ++row) {
+        result.equality_multipliers[row] =
+            initial_multipliers[static_cast<Eigen::Index>(row)];
+    }
+
+    const auto evaluate = [&]() {
+        std::vector<double> multipliers(multiplier_count, 0.0);
+        std::copy(
+            result.equality_multipliers.begin(),
+            result.equality_multipliers.end(),
+            multipliers.begin()
+        );
+        return evaluate_problem67(
+            problem.coordinates,
+            problem.feed,
+            problem.evaluate,
+            problem.phase_count,
+            result.variables,
+            multipliers
+        );
+    };
+    evaluation = evaluate();
+    result.initial_residual_inf = kkt_residual_inf(
+        evaluation, variable_count, equality_count
+    );
+    result.final_residual_inf = result.initial_residual_inf;
+    constexpr double target = 1.0e-10;
+    constexpr int maximum_iterations = 12;
+    for (int iteration = 0; iteration < maximum_iterations; ++iteration) {
+        if (result.final_residual_inf <= target) {
+            result.accepted = true;
+            return result;
+        }
+        const std::size_t system_size = variable_count + equality_count;
+        Eigen::MatrixXd kkt = Eigen::MatrixXd::Zero(
+            static_cast<Eigen::Index>(system_size),
+            static_cast<Eigen::Index>(system_size)
+        );
+        Eigen::VectorXd residual(system_size);
+        for (std::size_t row = 0; row < variable_count; ++row) {
+            residual[static_cast<Eigen::Index>(row)] =
+                evaluation.lagrangian_gradient[row];
+            for (std::size_t column = 0; column < variable_count; ++column) {
+                kkt(
+                    static_cast<Eigen::Index>(row),
+                    static_cast<Eigen::Index>(column)
+                ) = evaluation.lagrangian_hessian[
+                    row * variable_count + column
+                ];
+            }
+            for (std::size_t equality = 0;
+                 equality < equality_count; ++equality) {
+                const double derivative = evaluation.constraint_jacobian[
+                    equality * variable_count + row
+                ];
+                kkt(
+                    static_cast<Eigen::Index>(row),
+                    static_cast<Eigen::Index>(variable_count + equality)
+                ) = derivative;
+                kkt(
+                    static_cast<Eigen::Index>(variable_count + equality),
+                    static_cast<Eigen::Index>(row)
+                ) = derivative;
+            }
+        }
+        for (std::size_t equality = 0;
+             equality < equality_count; ++equality) {
+            residual[
+                static_cast<Eigen::Index>(variable_count + equality)
+            ] = evaluation.constraints[equality];
+        }
+        Eigen::FullPivLU<Eigen::MatrixXd> factorization(kkt);
+        if (factorization.rank() != static_cast<Eigen::Index>(system_size)) {
+            return result;
+        }
+        const Eigen::VectorXd step = factorization.solve(-residual);
+        if (!step.allFinite()) {
+            return result;
+        }
+
+        const std::vector<double> previous_variables = result.variables;
+        const std::vector<double> previous_multipliers =
+            result.equality_multipliers;
+        const double previous_residual = result.final_residual_inf;
+        bool improved = false;
+        for (int line_search = 0; line_search < 20; ++line_search) {
+            const double scale = std::ldexp(1.0, -line_search);
+            bool inside = true;
+            for (std::size_t variable = 0;
+                 variable < variable_count; ++variable) {
+                result.variables[variable] = previous_variables[variable]
+                    + scale * step[static_cast<Eigen::Index>(variable)];
+                if (!(result.variables[variable] > lower[variable]
+                      && result.variables[variable] < upper[variable])) {
+                    inside = false;
+                    break;
+                }
+            }
+            if (!inside) {
+                result.variables = previous_variables;
+                continue;
+            }
+            for (std::size_t equality = 0;
+                 equality < equality_count; ++equality) {
+                result.equality_multipliers[equality] =
+                    previous_multipliers[equality]
+                    + scale * step[static_cast<Eigen::Index>(
+                        variable_count + equality
+                    )];
+            }
+            try {
+                Held2Problem67Evaluation trial = evaluate();
+                bool inequalities_satisfied = true;
+                for (std::size_t row = equality_count;
+                     row < trial.constraints.size(); ++row) {
+                    inequalities_satisfied = inequalities_satisfied
+                        && trial.constraints[row] <= 0.0;
+                }
+                const double trial_residual = kkt_residual_inf(
+                    trial, variable_count, equality_count
+                );
+                if (inequalities_satisfied
+                    && std::isfinite(trial_residual)
+                    && trial_residual < previous_residual) {
+                    evaluation = std::move(trial);
+                    result.final_residual_inf = trial_residual;
+                    improved = true;
+                    break;
+                }
+            } catch (...) {
+            }
+            result.variables = previous_variables;
+            result.equality_multipliers = previous_multipliers;
+        }
+        if (!improved) {
+            return result;
+        }
+        result.iterations = iteration + 1;
+    }
+    result.accepted = result.final_residual_inf <= target;
+    return result;
+}
+
 }  // namespace
 
 Held2Problem67Result solve_held2_problem67(
@@ -1046,7 +1275,8 @@ Held2Problem67Result solve_held2_problem67(
     int stage_iii_solve_budget,
     bool allow_feasibility_support_retry,
     const Held2VolumeBoundsEvaluator& volume_bounds_evaluator,
-    double neighborhood_radius
+    double neighborhood_radius,
+    bool perform_final_correction
 ) {
     Held2Problem67Result result;
     if (stage_iii_solve_budget < 1) {
@@ -1251,7 +1481,8 @@ Held2Problem67Result solve_held2_problem67(
                 stage_iii_solve_budget - 1,
                 false,
                 volume_bounds_evaluator,
-                neighborhood_radius
+                neighborhood_radius,
+                perform_final_correction
             );
             supported.stage_iii_solve_count +=
                 result.stage_iii_solve_count;
@@ -1282,9 +1513,11 @@ Held2Problem67Result solve_held2_problem67(
     }
     variables = raw->variables();
     const double objective = raw->objective();
-    const std::vector<double>& z_lower = raw->lower_multipliers();
-    const std::vector<double>& z_upper = raw->upper_multipliers();
-    const std::vector<double>& lambda = raw->constraint_multipliers();
+    std::vector<double> z_lower = raw->lower_multipliers();
+    std::vector<double> z_upper = raw->upper_multipliers();
+    std::vector<double> lambda = raw->constraint_multipliers();
+    std::vector<Held2StateEvaluation> pressure_refined_states;
+    pressure_refined_states.reserve(candidates.size());
     for (std::size_t phase = 0; phase < candidates.size(); ++phase) {
         const std::size_t offset = phase * block_size;
         if (z_lower[offset] > kHeld2PhaseRetirementMargin.atol) {
@@ -1298,8 +1531,9 @@ Held2Problem67Result solve_held2_problem67(
         );
         double& log_volume = variables[offset + 1 + dimension];
         bool pressure_certified = false;
+        Held2StateEvaluation state;
         for (int iteration = 0; iteration < 8; ++iteration) {
-            const Held2StateEvaluation state = evaluator(
+            state = evaluator(
                 independent, log_volume
             );
             if (audit_held2_tolerance(
@@ -1329,15 +1563,52 @@ Held2Problem67Result solve_held2_problem67(
             }
             log_volume = next;
         }
-        if (!pressure_certified
-            && !audit_held2_tolerance(
-                kHeld2Stage3Pressure,
-                evaluator(independent, log_volume)
-                    .pressure_stationarity_relative
-            ).passed) {
-            result.failure_reason =
-                "stage_iii_pressure_refinement_failed";
-            return result;
+        if (!pressure_certified) {
+            state = evaluator(independent, log_volume);
+            if (!audit_held2_tolerance(
+                    kHeld2Stage3Pressure,
+                    state.pressure_stationarity_relative
+                ).passed) {
+                result.failure_reason =
+                    "stage_iii_pressure_refinement_failed";
+                return result;
+            }
+        }
+        pressure_refined_states.push_back(std::move(state));
+    }
+    double potential_difference_inf = 0.0;
+    for (std::size_t phase = 1;
+         phase < pressure_refined_states.size(); ++phase) {
+        potential_difference_inf = std::max(
+            potential_difference_inf,
+            maximum_difference(
+                pressure_refined_states.front().modified_potentials,
+                pressure_refined_states[phase].modified_potentials
+            )
+        );
+    }
+    if (perform_final_correction && potential_difference_inf > 1.0e-6) {
+        Problem67FinalCorrection correction =
+            correct_problem67_interior_kkt(
+                problem, lower, upper, variables
+            );
+        result.final_correction_attempted = correction.attempted;
+        result.final_correction_accepted = correction.accepted;
+        result.final_correction_iteration_count = correction.iterations;
+        result.pre_correction_residual_inf_norm =
+            correction.initial_residual_inf;
+        result.post_correction_residual_inf_norm =
+            correction.final_residual_inf;
+        if (correction.accepted) {
+            variables = std::move(correction.variables);
+            std::fill(z_lower.begin(), z_lower.end(), 0.0);
+            std::fill(z_upper.begin(), z_upper.end(), 0.0);
+            std::fill(lambda.begin(), lambda.end(), 0.0);
+            std::copy(
+                correction.equality_multipliers.begin(),
+                correction.equality_multipliers.end(),
+                lambda.begin()
+            );
         }
     }
     result.solution_variables = variables;
@@ -1487,7 +1758,8 @@ Held2Problem67Result solve_held2_problem67(
             stage_iii_solve_budget - 1,
             allow_feasibility_support_retry,
             volume_bounds_evaluator,
-            neighborhood_radius
+            neighborhood_radius,
+            perform_final_correction
         );
         restore_coalescence_candidate_indices(
             refined.phase_coalescences, retained_indices
@@ -1731,7 +2003,8 @@ Held2Problem67Result solve_held2_problem67(
             stage_iii_solve_budget - 1,
             allow_feasibility_support_retry,
             volume_bounds_evaluator,
-            neighborhood_radius
+            neighborhood_radius,
+            perform_final_correction
         );
         restore_coalescence_candidate_indices(
             refined.phase_coalescences, duplicate_removed

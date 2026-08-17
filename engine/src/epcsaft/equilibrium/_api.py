@@ -180,14 +180,29 @@ class PhaseHint:
 
 
 @dataclass(frozen=True, slots=True)
+class DeclaredPhaseInitialGuess:
+    """Authoritative initial variables for one declared finite phase."""
+
+    phase_index: int
+    mole_fractions: tuple[float, ...]
+    molar_density_mol_m3: float
+    phase_fraction: float
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "mole_fractions", tuple(self.mole_fractions))
+
+
+@dataclass(frozen=True, slots=True)
 class PhaseEquilibriumProblem:
     """One typed HELD-lineage feed or coexistence specification."""
 
     specification: PhaseEquilibriumSpecification
     hints: tuple[PhaseHint, ...] = ()
+    initial_guesses: tuple[DeclaredPhaseInitialGuess, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "hints", tuple(self.hints))
+        object.__setattr__(self, "initial_guesses", tuple(self.initial_guesses))
 
 
 @dataclass(frozen=True, slots=True)
@@ -235,8 +250,14 @@ class PhaseEquilibriumDiagnostics:
     provider_evaluation_count: int
     hint_count: int
     hint_reordered_start_count: int
+    initial_guess_count: int
     accepted_start_count: int
     distinct_root_count: int
+    final_correction_attempted: bool
+    final_correction_accepted: bool
+    final_correction_iteration_count: int
+    pre_correction_residual_inf: float
+    post_correction_residual_inf: float
     material_balance_inf: float
     electroneutrality_inf: float
     pressure_residual_inf: float
@@ -1309,8 +1330,20 @@ def _native_phase_diagnostics(
         provider_evaluation_count=int(cast(int, payload["provider_evaluation_count"])),
         hint_count=int(cast(int, payload["hint_count"])),
         hint_reordered_start_count=int(cast(int, payload["hint_reordered_start_count"])),
+        initial_guess_count=int(cast(int, payload["initial_guess_count"])),
         accepted_start_count=int(cast(int, payload["accepted_start_count"])),
         distinct_root_count=int(cast(int, payload["distinct_root_count"])),
+        final_correction_attempted=bool(payload["final_correction_attempted"]),
+        final_correction_accepted=bool(payload["final_correction_accepted"]),
+        final_correction_iteration_count=int(
+            cast(int, payload["final_correction_iteration_count"])
+        ),
+        pre_correction_residual_inf=float(
+            cast(float, payload["pre_correction_residual_inf"])
+        ),
+        post_correction_residual_inf=float(
+            cast(float, payload["post_correction_residual_inf"])
+        ),
         material_balance_inf=float(cast(float, payload["material_balance_inf"])),
         electroneutrality_inf=float(cast(float, payload["electroneutrality_inf"])),
         pressure_residual_inf=float(cast(float, payload["pressure_residual_inf"])),
@@ -1438,6 +1471,55 @@ def _validated_phase_hints(
     )
 
 
+def _validated_phase_initial_guesses(
+    guesses: tuple[DeclaredPhaseInitialGuess, ...],
+    phase_count: int,
+    component_counts: tuple[int, ...],
+) -> tuple[
+    tuple[int, ...],
+    tuple[tuple[float, ...], ...],
+    tuple[float, ...],
+    tuple[float, ...],
+]:
+    if any(type(guess) is not DeclaredPhaseInitialGuess for guess in guesses):
+        raise TypeError("initial_guesses must contain DeclaredPhaseInitialGuess values")
+    if guesses and len(guesses) != phase_count:
+        raise ValueError("initial_guesses must cover every declared phase")
+    indices = tuple(guess.phase_index for guess in guesses)
+    if len(indices) != len(set(indices)) or any(
+        index < 0 or index >= phase_count for index in indices
+    ):
+        raise ValueError("declared phase initial-guess indices must be unique and in range")
+    for guess in guesses:
+        if len(guess.mole_fractions) != component_counts[guess.phase_index]:
+            raise ValueError("declared phase initial-guess composition has the wrong component count")
+        if not all(
+            math.isfinite(value) and value > 0.0 for value in guess.mole_fractions
+        ):
+            raise ValueError("declared phase initial-guess composition must be positive and finite")
+        if not math.isclose(
+            math.fsum(guess.mole_fractions), 1.0, rel_tol=0.0, abs_tol=1.0e-12
+        ):
+            raise ValueError("declared phase initial-guess composition must sum to one within 1e-12")
+        if not math.isfinite(guess.molar_density_mol_m3) or guess.molar_density_mol_m3 <= 0.0:
+            raise ValueError("declared phase initial-guess density must be positive and finite")
+        if not math.isfinite(guess.phase_fraction) or guess.phase_fraction <= 0.0:
+            raise ValueError("declared phase initial-guess fraction must be positive and finite")
+    if guesses and not math.isclose(
+        math.fsum(guess.phase_fraction for guess in guesses),
+        1.0,
+        rel_tol=0.0,
+        abs_tol=1.0e-12,
+    ):
+        raise ValueError("declared phase initial-guess fractions must sum to one within 1e-12")
+    return (
+        indices,
+        tuple(guess.mole_fractions for guess in guesses),
+        tuple(guess.molar_density_mol_m3 for guess in guesses),
+        tuple(guess.phase_fraction for guess in guesses),
+    )
+
+
 def _protected_discovery_diagnostics(
     retained: HeldDiagnostics | Held2Diagnostics,
     hint_count: int,
@@ -1500,8 +1582,14 @@ def _protected_discovery_diagnostics(
         provider_evaluation_count=retained.provider_evaluation_count,
         hint_count=hint_count,
         hint_reordered_start_count=0,
+        initial_guess_count=0,
         accepted_start_count=0,
         distinct_root_count=0,
+        final_correction_attempted=False,
+        final_correction_accepted=False,
+        final_correction_iteration_count=0,
+        pre_correction_residual_inf=0.0,
+        post_correction_residual_inf=0.0,
         material_balance_inf=retained.material_balance_max_abs or 0.0,
         electroneutrality_inf=(
             retained.electroneutrality_inf or 0.0 if isinstance(retained, Held2Diagnostics) else 0.0
@@ -1712,8 +1800,8 @@ def phase_equilibrium(
     specification = problem.specification
     if isinstance(specification, FixedTPFeed):
         if specification.topology is None:
-            if problem.hints:
-                raise ValueError("phase hints require a declared topology")
+            if problem.hints or problem.initial_guesses:
+                raise ValueError("phase hints and initial guesses require a declared topology")
             return _discovery_result(model, problem, specification, active_parameters)
         if not isinstance(specification.topology, DeclaredTopology):
             raise TypeError("fixed-T,P topology must be DeclaredTopology or None")
@@ -1724,6 +1812,8 @@ def phase_equilibrium(
             raise ValueError("fixed-T,P declared topology currently requires AllComponents")
         if sum(phase.role == "vapor" for phase in topology.phases) > 1:
             raise ValueError("fixed-T,P declared topology permits at most one vapor phase")
+        if problem.hints and problem.initial_guesses:
+            raise ValueError("phase hints and initial_guesses are mutually exclusive")
         temperature_k = _quantity(
             specification.temperature, "kelvin", "temperature", "phase_equilibrium"
         )
@@ -1731,6 +1821,11 @@ def phase_equilibrium(
         feed = _phase_feed(specification.feed_amounts_mol, len(model.component_ids))
         hints = _validated_phase_hints(
             problem.hints,
+            len(topology.phases),
+            tuple(len(model.component_ids) for _ in topology.phases),
+        )
+        initial_guesses = _validated_phase_initial_guesses(
+            problem.initial_guesses,
             len(topology.phases),
             tuple(len(model.component_ids) for _ in topology.phases),
         )
@@ -1743,7 +1838,13 @@ def phase_equilibrium(
                 feed,
                 tuple(phase.role for phase in topology.phases),
                 tuple(_phase_support_name(phase.support) for phase in topology.phases),
-                *hints,
+                hints[0],
+                hints[1],
+                hints[2],
+                initial_guesses[0],
+                initial_guesses[1],
+                initial_guesses[2],
+                initial_guesses[3],
             ),
         )
         diagnostics = _native_phase_diagnostics(cast(Mapping[str, object], native["diagnostics"]))
@@ -1777,6 +1878,8 @@ def phase_equilibrium(
         )
     if not isinstance(specification, FixedTCoexistence):
         raise TypeError("phase-equilibrium specification type is unsupported")
+    if problem.initial_guesses:
+        raise ValueError("declared phase initial guesses currently require fixed T,P")
     result, directions, _, _ = _fixed_t_coexistence_core(
         model,
         problem,

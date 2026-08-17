@@ -42,10 +42,15 @@ local certificate into a global claim. One phase selects a mechanically
 strict-stable pressure root. Two or three phases use the HELD2 Step-8 material,
 composition, volume, and phase-fraction formulation.
 
-`PhaseHint` supplies optional composition and density starts for an explicitly
-declared phase index. Hints may reorder the finite start set but cannot define
-phase count or type, change equations or tolerances, or alter the accepted
-physical result. Hints without a declared topology are rejected.
+`PhaseHint` supplies non-authoritative composition and density ordering advice
+for an explicitly declared phase index. It may reorder the generated finite
+start set but does not populate nonlinear variables. A
+`DeclaredPhaseInitialGuess` instead supplies the actual composition, density,
+and phase fraction for every phase of a fixed-T,P multiphase topology. Its
+phase indices must cover the topology exactly; compositions and phase
+fractions are normalized, positive, finite, and representation-valid. Hints
+and actual initial guesses are mutually exclusive. Neither can define phase
+count or type, change equations or tolerances, or weaken acceptance.
 
 ## Fixed-T coexistence
 
@@ -80,6 +85,19 @@ equality. Fixed-T coexistence uses all configured neutral-potential equalities o
 the charged HELD2 `C-1` modified-potential basis plus common pressure. Exact
 implicit sensitivities differentiate those defining equations in the selected
 parameter order.
+
+After the declared fixed-T,P Stage-III terminal and pressure update, a state
+whose modified-potential mismatch exceeds the existing `1e-6` certificate
+enters an interior
+exact-derivative Newton correction of the equality-constrained KKT system with
+bounded backtracking. The corrected state is used only when its residual
+reaches `1e-10`; the complete existing physical certificates are then
+reevaluated without relaxed tolerances. Diagnostics report whether correction
+was attempted and accepted, its iteration count, and its pre/post KKT
+residual. A candidate that reaches phase construction but fails a later role
+or modified-potential certificate is retained on
+`PhaseEquilibriumError.best_candidate` for diagnosis and has no accepted-state
+or globality claim.
 
 ## Evidence
 

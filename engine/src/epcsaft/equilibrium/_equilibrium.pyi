@@ -33,6 +33,10 @@ def _solve_declared_fixed_tp(
     hint_indices: tuple[int, ...],
     hint_compositions: tuple[tuple[float, ...], ...],
     hint_densities_mol_m3: tuple[float, ...],
+    initial_guess_indices: tuple[int, ...],
+    initial_guess_compositions: tuple[tuple[float, ...], ...],
+    initial_guess_densities_mol_m3: tuple[float, ...],
+    initial_guess_phase_fractions: tuple[float, ...],
 ) -> dict[str, Any]: ...
 def _solve_fixed_t_coexistence(
     reference_capsule: object,

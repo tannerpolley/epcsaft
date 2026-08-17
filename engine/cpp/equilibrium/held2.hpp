@@ -223,6 +223,13 @@ struct Held2Problem67Result {
     std::string failure_reason;
     int stage_iii_solve_count = 0;
     int optimizer_iteration_count = 0;
+    bool final_correction_attempted = false;
+    bool final_correction_accepted = false;
+    int final_correction_iteration_count = 0;
+    double pre_correction_residual_inf_norm =
+        std::numeric_limits<double>::infinity();
+    double post_correction_residual_inf_norm =
+        std::numeric_limits<double>::infinity();
     double objective = 0.0;
     double modified_balance_inf_norm = 0.0;
     double ordinary_balance_inf_norm = 0.0;
@@ -259,7 +266,8 @@ struct Held2Problem67Result {
     int stage_iii_solve_budget = 32,
     bool allow_feasibility_support_retry = true,
     const Held2VolumeBoundsEvaluator& volume_bounds_evaluator = {},
-    double neighborhood_radius = kHeld2Problem67InitialRadius
+    double neighborhood_radius = kHeld2Problem67InitialRadius,
+    bool perform_final_correction = false
 );
 
 }  // namespace epcsaft_engine::equilibrium

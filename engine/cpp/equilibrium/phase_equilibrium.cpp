@@ -619,7 +619,8 @@ FixedTpPhaseResult solve_declared_fixed_tp(
     result.diagnostics.search_scope =
         "declared_topology_held_step8_local_equations";
     result.diagnostics.search_budget =
-        "problem67_major_iterations=32";
+        "problem67_recursive_solves=32;ipopt_max_iterations=300;"
+        "final_correction_iterations=12";
     result.diagnostics.search_exclusions = {
         "undeclared_phase_counts",
         "undeclared_component_supports",
@@ -631,6 +632,8 @@ FixedTpPhaseResult solve_declared_fixed_tp(
         "ordered_molar_volume_branch",
     };
     result.diagnostics.hint_count = static_cast<int>(problem.hints.size());
+    result.diagnostics.initial_guess_count =
+        static_cast<int>(problem.initial_guesses.size());
     try {
         const auto component_ids = phase_provider_component_ids(provider);
         const auto component_charges = phase_provider_component_charges(provider);
@@ -659,6 +662,18 @@ FixedTpPhaseResult solve_declared_fixed_tp(
                 "fixed-T,P topology requires one to three all-component phases and at most one vapor"
             );
         }
+        if (!problem.hints.empty() && !problem.initial_guesses.empty()) {
+            throw std::invalid_argument(
+                "phase hints and declared phase initial guesses are mutually exclusive"
+            );
+        }
+        if (!problem.initial_guesses.empty()
+            && (problem.phases.size() == 1
+                || problem.initial_guesses.size() != problem.phases.size())) {
+            throw std::invalid_argument(
+                "declared phase initial guesses must cover every multiphase topology phase"
+            );
+        }
         const auto feed = normalize(problem.feed_amounts_mol);
         const auto coordinates = make_held2_coordinates(
             component_charges, component_ids
@@ -676,11 +691,59 @@ FixedTpPhaseResult solve_declared_fixed_tp(
             const std::size_t phase_count = problem.phases.size();
             const std::size_t block_size =
                 coordinates.independent_indices.size() + 2;
-            std::vector<DeclaredStart> starts = discovery_starts(
-                provider, problem, coordinates, feed
-            );
-            const bool local_candidate_starts =
-                starts.size() == phase_count;
+            std::vector<DeclaredStart> starts;
+            if (!problem.initial_guesses.empty()) {
+                starts.resize(phase_count);
+                std::vector<bool> assigned(phase_count, false);
+                double fraction_sum = 0.0;
+                for (const auto& guess : problem.initial_guesses) {
+                    if (guess.phase_index >= phase_count
+                        || assigned[guess.phase_index]
+                        || guess.mole_fractions.size()
+                            != component_ids.size()
+                        || !std::isfinite(guess.molar_density_mol_m3)
+                        || guess.molar_density_mol_m3 <= 0.0
+                        || !std::isfinite(guess.phase_fraction)
+                        || guess.phase_fraction <= 0.0) {
+                        throw std::invalid_argument(
+                            "declared phase initial guess is invalid"
+                        );
+                    }
+                    const double composition_sum = std::accumulate(
+                        guess.mole_fractions.begin(),
+                        guess.mole_fractions.end(),
+                        0.0
+                    );
+                    if (std::abs(composition_sum - 1.0) > 1.0e-12) {
+                        throw std::invalid_argument(
+                            "declared phase initial-guess composition must sum to one"
+                        );
+                    }
+                    const std::vector<double> composition =
+                        normalize(guess.mole_fractions);
+                    const double volume = 1.0 / guess.molar_density_mol_m3;
+                    starts[guess.phase_index] = {
+                        {
+                            independent(coordinates, composition),
+                            volume,
+                            std::log(volume),
+                        },
+                        guess.phase_fraction,
+                    };
+                    assigned[guess.phase_index] = true;
+                    fraction_sum += guess.phase_fraction;
+                }
+                if (std::abs(fraction_sum - 1.0) > 1.0e-12) {
+                    throw std::invalid_argument(
+                        "declared phase initial-guess fractions must sum to one"
+                    );
+                }
+            } else {
+                starts = discovery_starts(
+                    provider, problem, coordinates, feed
+                );
+            }
+            const bool local_candidate_starts = starts.size() == phase_count;
             if (!local_candidate_starts) {
                 std::vector<std::size_t> neutral_indices;
                 for (std::size_t component = 0;
@@ -728,7 +791,9 @@ FixedTpPhaseResult solve_declared_fixed_tp(
                     });
                 }
             }
-            align_starts_with_declared_roles(starts, problem.phases);
+            if (problem.initial_guesses.empty()) {
+                align_starts_with_declared_roles(starts, problem.phases);
+            }
             const auto canonical_starts = starts;
             result.diagnostics.hint_reordered_start_count =
                 reorder_starts_from_hints(
@@ -773,7 +838,8 @@ FixedTpPhaseResult solve_declared_fixed_tp(
                 },
                 local_candidate_starts
                     ? kHeld2Problem67ExpandedRadius
-                    : 1.0
+                    : 1.0,
+                true
             );
             result.diagnostics.provider_evaluation_count =
                 provider.evaluation_count();
@@ -781,6 +847,16 @@ FixedTpPhaseResult solve_declared_fixed_tp(
                 solved.stage_iii_solve_count;
             result.diagnostics.optimizer_iteration_count =
                 solved.optimizer_iteration_count;
+            result.diagnostics.final_correction_attempted =
+                solved.final_correction_attempted;
+            result.diagnostics.final_correction_accepted =
+                solved.final_correction_accepted;
+            result.diagnostics.final_correction_iteration_count =
+                solved.final_correction_iteration_count;
+            result.diagnostics.pre_correction_residual_inf =
+                solved.pre_correction_residual_inf_norm;
+            result.diagnostics.post_correction_residual_inf =
+                solved.post_correction_residual_inf_norm;
             result.diagnostics.material_balance_inf =
                 solved.ordinary_balance_inf_norm;
             result.diagnostics.electroneutrality_inf =
@@ -857,9 +933,6 @@ FixedTpPhaseResult solve_declared_fixed_tp(
                 )) {
                 result.diagnostics.provider_evaluation_count =
                     provider.evaluation_count();
-                result.phases.clear();
-                result.phase_fractions.clear();
-                result.phase_amounts_mol.clear();
                 result.diagnostics.solver_status = "converged";
                 result.diagnostics.numerical_status = "certified";
                 result.diagnostics.physical_status = "rejected";
@@ -896,9 +969,6 @@ FixedTpPhaseResult solve_declared_fixed_tp(
             if (!potentials_certified) {
                 result.diagnostics.provider_evaluation_count =
                     provider.evaluation_count();
-                result.phases.clear();
-                result.phase_fractions.clear();
-                result.phase_amounts_mol.clear();
                 result.diagnostics.solver_status = "converged";
                 result.diagnostics.numerical_status = "uncertified";
                 result.diagnostics.physical_status = "rejected";
@@ -911,6 +981,8 @@ FixedTpPhaseResult solve_declared_fixed_tp(
             result.diagnostics.solver_status = solved.solver_status;
             result.diagnostics.numerical_status = "certified";
             result.diagnostics.physical_status = "accepted";
+            result.diagnostics.accepted_start_count = 1;
+            result.diagnostics.distinct_root_count = 1;
         }
         if (!provider.active_parameters().identities.empty()
             && !result.phases.empty()) {

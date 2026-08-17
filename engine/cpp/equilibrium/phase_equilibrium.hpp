@@ -32,12 +32,20 @@ struct PhaseHint {
     double molar_density_mol_m3 = 0.0;
 };
 
+struct DeclaredPhaseInitialGuess {
+    std::size_t phase_index = 0;
+    std::vector<double> mole_fractions;
+    double molar_density_mol_m3 = 0.0;
+    double phase_fraction = 0.0;
+};
+
 struct FixedTpPhaseProblem {
     double temperature_k = 0.0;
     double pressure_pa = 0.0;
     std::vector<double> feed_amounts_mol;
     std::vector<DeclaredPhaseSpecification> phases;
     std::vector<PhaseHint> hints;
+    std::vector<DeclaredPhaseInitialGuess> initial_guesses;
 };
 
 struct FixedTCoexistenceProblem {
@@ -84,8 +92,14 @@ struct PhaseEquilibriumDiagnostics {
     int provider_evaluation_count = 0;
     int hint_count = 0;
     int hint_reordered_start_count = 0;
+    int initial_guess_count = 0;
     int accepted_start_count = 0;
     int distinct_root_count = 0;
+    bool final_correction_attempted = false;
+    bool final_correction_accepted = false;
+    int final_correction_iteration_count = 0;
+    double pre_correction_residual_inf = 0.0;
+    double post_correction_residual_inf = 0.0;
     double material_balance_inf = 0.0;
     double electroneutrality_inf = 0.0;
     double pressure_residual_inf = 0.0;

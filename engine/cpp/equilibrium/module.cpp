@@ -241,6 +241,35 @@ std::vector<epcsaft_engine::equilibrium::PhaseHint> parse_phase_hints(
     return result;
 }
 
+std::vector<epcsaft_engine::equilibrium::DeclaredPhaseInitialGuess>
+parse_declared_phase_initial_guesses(
+    const std::vector<std::size_t>& indices,
+    const std::vector<std::vector<double>>& compositions,
+    const std::vector<double>& densities,
+    const std::vector<double>& phase_fractions
+) {
+    if (indices.size() != compositions.size()
+        || indices.size() != densities.size()
+        || indices.size() != phase_fractions.size()) {
+        throw py::value_error(
+            "declared phase initial-guess arrays must have equal length"
+        );
+    }
+    std::vector<
+        epcsaft_engine::equilibrium::DeclaredPhaseInitialGuess
+    > result;
+    result.reserve(indices.size());
+    for (std::size_t guess = 0; guess < indices.size(); ++guess) {
+        result.push_back({
+            indices[guess],
+            compositions[guess],
+            densities[guess],
+            phase_fractions[guess],
+        });
+    }
+    return result;
+}
+
 py::dict phase_diagnostics_to_dict(
     const epcsaft_engine::equilibrium::PhaseEquilibriumDiagnostics& value
 ) {
@@ -269,8 +298,19 @@ py::dict phase_diagnostics_to_dict(
     result["hint_count"] = value.hint_count;
     result["hint_reordered_start_count"] =
         value.hint_reordered_start_count;
+    result["initial_guess_count"] = value.initial_guess_count;
     result["accepted_start_count"] = value.accepted_start_count;
     result["distinct_root_count"] = value.distinct_root_count;
+    result["final_correction_attempted"] =
+        value.final_correction_attempted;
+    result["final_correction_accepted"] =
+        value.final_correction_accepted;
+    result["final_correction_iteration_count"] =
+        value.final_correction_iteration_count;
+    result["pre_correction_residual_inf"] =
+        value.pre_correction_residual_inf;
+    result["post_correction_residual_inf"] =
+        value.post_correction_residual_inf;
     result["material_balance_inf"] = value.material_balance_inf;
     result["electroneutrality_inf"] = value.electroneutrality_inf;
     result["pressure_residual_inf"] = value.pressure_residual_inf;
@@ -619,7 +659,11 @@ py::dict solve_declared_fixed_tp(
     const std::vector<std::string>& supports,
     const std::vector<std::size_t>& hint_indices,
     const std::vector<std::vector<double>>& hint_compositions,
-    const std::vector<double>& hint_densities
+    const std::vector<double>& hint_densities,
+    const std::vector<std::size_t>& initial_guess_indices,
+    const std::vector<std::vector<double>>& initial_guess_compositions,
+    const std::vector<double>& initial_guess_densities,
+    const std::vector<double>& initial_guess_phase_fractions
 ) {
     const epcsaft_engine::equilibrium::ProviderContext provider(
         checked_mixture_transport(capsule)
@@ -627,6 +671,12 @@ py::dict solve_declared_fixed_tp(
     const auto declared_phases = parse_declared_phases(roles, supports);
     const auto phase_hints = parse_phase_hints(
         hint_indices, hint_compositions, hint_densities
+    );
+    const auto initial_guesses = parse_declared_phase_initial_guesses(
+        initial_guess_indices,
+        initial_guess_compositions,
+        initial_guess_densities,
+        initial_guess_phase_fractions
     );
     epcsaft_engine::equilibrium::FixedTpPhaseResult solved;
     {
@@ -639,6 +689,7 @@ py::dict solve_declared_fixed_tp(
                 feed_amounts_mol,
                 declared_phases,
                 phase_hints,
+                initial_guesses,
             }
         );
     }
@@ -922,7 +973,11 @@ PYBIND11_MODULE(_equilibrium, module) {
         py::arg("supports"),
         py::arg("hint_indices"),
         py::arg("hint_compositions"),
-        py::arg("hint_densities_mol_m3")
+        py::arg("hint_densities_mol_m3"),
+        py::arg("initial_guess_indices"),
+        py::arg("initial_guess_compositions"),
+        py::arg("initial_guess_densities_mol_m3"),
+        py::arg("initial_guess_phase_fractions")
     );
     module.def(
         "_solve_fixed_t_coexistence",

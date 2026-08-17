@@ -6,6 +6,7 @@ from epcsaft import ActiveParameterSet, Mixture, Parameters
 from epcsaft import unit_registry as u
 from epcsaft.equilibrium import (
     AllComponents,
+    DeclaredPhaseInitialGuess,
     DeclaredTopology,
     EquilibriumPhaseState,
     FeedSplit,
@@ -268,6 +269,34 @@ def test_declared_three_liquid_phases_satisfy_independent_equilibrium_claims() -
             result.phases[0].chemical_potential_over_rt,
             rel=2.0e-8,
             abs=2.0e-8,
+        )
+
+    seeded = phase_equilibrium(
+        model,
+        PhaseEquilibriumProblem(
+            specification,
+            initial_guesses=tuple(
+                DeclaredPhaseInitialGuess(
+                    index,
+                    phase.mole_fractions,
+                    phase.molar_density_mol_m3,
+                    fraction,
+                )
+                for index, (phase, fraction) in enumerate(
+                    zip(result.phases, result.extent.phase_fractions, strict=True)
+                )
+            ),
+        ),
+        active_parameters=selected,
+    )
+    assert seeded.diagnostics.initial_guess_count == 3
+    if seeded.diagnostics.final_correction_attempted:
+        assert seeded.diagnostics.final_correction_accepted
+        assert seeded.diagnostics.post_correction_residual_inf <= 1.0e-10
+    for actual, expected in zip(seeded.phases, result.phases, strict=True):
+        assert actual.mole_fractions == pytest.approx(expected.mole_fractions, abs=2.0e-10)
+        assert actual.molar_density_mol_m3 == pytest.approx(
+            expected.molar_density_mol_m3, rel=2.0e-9
         )
 
     hinted = PhaseEquilibriumProblem(
