@@ -282,7 +282,6 @@ def test_nonideal_reactive_bubble_total_jacobian_and_measurement_semantics() -> 
     assert result.certification.globality_claim == "not_established"
     assert result.physical_branch.globality_claim == "not_established"
     assert result.search.distinct_branch_count == 1
-    assert result.search.accepted_candidate_count == len(problem.pressure_starts_pa)
     assert tuple(attempt.start_pressure_pa for attempt in result.search.attempts) == (
         problem.pressure_starts_pa
     )

@@ -479,6 +479,26 @@ def test_imposed_pressure_matches_fixed_pressure_incipient_reference() -> None:
         rel=0.0,
         abs=2.0e-7,
     )
+    step = 1.0e-3
+    perturbed = []
+    for sign in (-1.0, 1.0):
+        trial = epcsaft.ActiveParameterSet(
+            parameters,
+            active.identities,
+            values=(active.values[0] + sign * step,),
+        )
+        trial_result = equilibrium.phase_equilibrium(
+            epcsaft.Mixture(parameters), problem, active_parameters=trial
+        )
+        assert trial_result.status == "evaluated", trial_result.failure
+        perturbed.append(trial_result)
+    for row, exact in enumerate(result.jacobian):
+        lower = perturbed[0].values[row]
+        upper = perturbed[1].values[row]
+        assert exact is not None and lower is not None and upper is not None
+        numerical = (upper - lower) / (2.0 * step)
+        scale = max(1.0, abs(exact[0]), abs(numerical))
+        assert abs(exact[0] - numerical) / scale < 3.0e-6
     assert result.branch_signature is not None
     solved_coordinates = cast(tuple[tuple[str, float], ...], result.branch_signature[1])
     assert solved_coordinates[0][0] == "open-neutral-feed"
@@ -531,3 +551,36 @@ def test_imposed_pressure_matches_fixed_pressure_incipient_reference() -> None:
         active_parameters=active,
         observations=observations,
     ).startswith("sha256:")
+
+    tampered = json.loads(receipt)
+    owner_receipt = tampered["owner_receipt"]
+    owner_receipt["wrapped_descriptor"]["reaction_fingerprint"] = "sha256:" + "0" * 64
+    owner_payload = dict(owner_receipt)
+    owner_payload.pop("fingerprint")
+    fingerprint_payload = json.dumps(
+        {
+            "schema": "epcsaft.intensive-boundary-owner-receipt.v2",
+            "value": owner_payload,
+        },
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    owner_receipt["fingerprint"] = f"sha256:{hashlib.sha256(fingerprint_payload).hexdigest()}"
+    tampered_json = json.dumps(
+        tampered,
+        ensure_ascii=False,
+        allow_nan=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    with pytest.raises(ValueError, match="reaction system"):
+        equilibrium.validate_general_reactive_equilibrium_receipt(
+            tampered_json,
+            descriptor=result.descriptor,
+            problem=problem,
+            batch_identity="imposed-pressure-parity",
+            active_parameters=active,
+            observations=observations,
+        )

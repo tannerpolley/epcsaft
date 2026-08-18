@@ -38,6 +38,7 @@ from ._observations import (
     HomogeneousReactiveObservationResult,
     HomogeneousReactiveObservationRow,
     HomogeneousReactiveOwnerObservation,
+    _problem_payload,
     certify_homogeneous_continuation_reference,
     evaluate_homogeneous_reactive_observations,
     homogeneous_reactive_observation_descriptor,
@@ -3366,7 +3367,6 @@ def _intensive_boundary_owner_receipt_payload(
         "certificate_scope": descriptor.certificate_scope,
         "wrapped_owner_kind": wrapped_owner_kind,
         "wrapped_certificate_scope": wrapped_certificate_scope,
-        "wrapped_branch_signature": result.branch_signature[2],
         "wrapped_descriptor": wrapped_descriptor,
         "wrapped_owner_receipt": wrapped_receipt,
         "trial": {
@@ -3485,7 +3485,6 @@ def _validate_intensive_boundary_owner_receipt(
     rows = payload.get("observations")
     coordinates = payload.get("solved_coordinates")
     phases = payload.get("phases")
-    wrapped_branch = payload.get("wrapped_branch_signature")
     wrapped_descriptor_payload = payload.get("wrapped_descriptor")
     wrapped_receipt_payload = payload.get("wrapped_owner_receipt")
     wrapped_owner_kind = (
@@ -3510,7 +3509,6 @@ def _validate_intensive_boundary_owner_receipt(
         or not isinstance(rows, list)
         or not isinstance(coordinates, list)
         or not isinstance(phases, list)
-        or not isinstance(wrapped_branch, list)
         or not isinstance(wrapped_descriptor_payload, dict)
         or not isinstance(wrapped_receipt_payload, dict)
     ):
@@ -3551,11 +3549,18 @@ def _validate_intensive_boundary_owner_receipt(
         or len(rows) != len(observations)
     ):
         raise ValueError("intensive-boundary owner receipt identity does not match")
-    if (
-        wrapped_descriptor.parameter_fingerprint != descriptor.parameter_fingerprint
-        or wrapped_descriptor.component_ids != descriptor.component_ids
-        or wrapped_descriptor.active_parameter_identities != descriptor.active_parameter_identities
+    expected_wrapped = asdict(cast(Any, descriptor._owner_descriptor))
+    actual_wrapped = asdict(wrapped_descriptor)
+    for dynamic_field in (
+        "fingerprint",
+        "problem_fingerprint",
+        "liquid_problem_fingerprint",
+        "reaction_fingerprint",
+        "reference_fingerprint",
     ):
+        expected_wrapped.pop(dynamic_field, None)
+        actual_wrapped.pop(dynamic_field, None)
+    if actual_wrapped != expected_wrapped:
         raise ValueError("wrapped owner descriptor does not match the intensive boundary")
     wrapped_receipt_json = _canonical_json(wrapped_receipt_payload)
     if isinstance(wrapped_descriptor, ReactiveBubbleObservationDescriptor):
@@ -3598,7 +3603,22 @@ def _validate_intensive_boundary_owner_receipt(
             or not lower <= value <= upper
         ):
             raise ValueError("intensive-boundary solved coordinate is outside its declaration")
+    resolved_problem = _resolved_intensive_problem(
+        problem,
+        tuple(float(record[1]) for record in coordinates),
+        problem.outputs
+        + tuple(_intensive_boundary_output(boundary) for boundary in problem.intensive_boundaries),
+    )
+    expected_reaction_fingerprint = _fingerprint(
+        "epcsaft.homogeneous-reactive-reaction-system",
+        _problem_payload(_effective_reaction_system(resolved_problem)),
+    )
+    if wrapped_descriptor.reaction_fingerprint != expected_reaction_fingerprint:
+        raise ValueError("wrapped owner reaction system does not match the solved feed")
     if phases:
+        wrapped_branch = wrapped_receipt_payload.get("physical_branch")
+        if not isinstance(wrapped_branch, dict):
+            raise ValueError("wrapped bubble receipt has no physical branch")
         for phase_record, phase in zip(phases, problem.phases, strict=True):
             if (
                 not isinstance(phase_record, dict)
@@ -3623,6 +3643,54 @@ def _validate_intensive_boundary_owner_receipt(
                 )
             ):
                 raise ValueError("intensive-boundary owner phase does not match")
+        if (
+            any(
+                not math.isclose(float(actual), float(expected), rel_tol=0.0, abs_tol=2.0e-12)
+                for actual, expected in zip(
+                    phases[0]["mole_fractions"],
+                    cast(list[float], wrapped_branch.get("liquid_mole_fractions")),
+                    strict=True,
+                )
+            )
+            or any(
+                not math.isclose(float(actual), float(expected), rel_tol=0.0, abs_tol=2.0e-12)
+                for actual, expected in zip(
+                    phases[1]["mole_fractions"],
+                    cast(list[float], wrapped_branch.get("vapor_mole_fractions")),
+                    strict=True,
+                )
+            )
+            or not math.isclose(
+                float(phases[0]["pressure_pa"]),
+                float(cast(float, wrapped_branch.get("liquid_pressure_pa"))),
+                rel_tol=0.0,
+                abs_tol=2.0e-6,
+            )
+            or not math.isclose(
+                float(phases[1]["pressure_pa"]),
+                float(cast(float, wrapped_branch.get("pressure_pa"))),
+                rel_tol=0.0,
+                abs_tol=2.0e-6,
+            )
+        ):
+            raise ValueError("intensive-boundary phases do not match the wrapped owner")
+    wrapped_rows = wrapped_receipt_payload.get("observations")
+    if not isinstance(wrapped_rows, list):
+        raise TypeError("wrapped owner receipt observations are incomplete")
+    wrapped_row_ids = {
+        row.get("identity", row.get("prediction_identity"))
+        for row in wrapped_rows
+        if isinstance(row, dict)
+    }
+    wrapped_values = (
+        {
+            row.get("identity"): row.get("value")
+            for row in wrapped_rows
+            if isinstance(row, dict)
+        }
+        if wrapped_owner_kind == "reactive_bubble"
+        else {}
+    )
     for row, observation in zip(rows, observations, strict=True):
         row_value = row.get("value") if isinstance(row, dict) else None
         jacobian = row.get("jacobian") if isinstance(row, dict) else None
@@ -3630,6 +3698,11 @@ def _validate_intensive_boundary_owner_receipt(
             not isinstance(row, dict)
             or row.get("target_identity") != observation.target_identity
             or row.get("prediction_identity") != observation.prediction_identity
+            or observation.prediction_identity not in wrapped_row_ids
+            or (
+                wrapped_owner_kind == "reactive_bubble"
+                and row_value != wrapped_values.get(observation.prediction_identity)
+            )
             or not isinstance(row_value, (int, float))
             or not math.isfinite(float(row_value))
             or not isinstance(jacobian, list)
