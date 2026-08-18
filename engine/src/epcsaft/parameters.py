@@ -15,6 +15,7 @@ from .records import (
     AssociationTopology,
     ComponentRecord,
     ConstantCorrelation,
+    ConstantPlusPolynomialInTemperatureCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
     CrossAssociationCorrectionRecord,
     ModelFamilySpec,
@@ -174,6 +175,7 @@ def _record_components(record: ParameterRecord) -> tuple[str, ...]:
             SingleParameterRecord,
             SiteRecord,
             ConstantCorrelation,
+            ConstantPlusPolynomialInTemperatureCorrelation,
             ConstantPlusSumOfExponentialsCorrelation,
         ),
     ):
@@ -448,7 +450,11 @@ def _active_coordinate(
         and (
             parts[2] == "segment_diameter"
             or parts[2] in {"relative_permittivity", "solvation_factor"}
-            and len(parts) == 5
+            and (
+                len(parts) == 5
+                or parts[2] == "relative_permittivity"
+                and len(parts) == 6
+            )
         )
     ):
         component_ids = (parts[1],)
@@ -457,7 +463,7 @@ def _active_coordinate(
             and parts[4] == "constant"
             or len(parts) == 6
             and parts[4].startswith("term-")
-            and parts[5] in {"amplitude", "exponent_coefficient"}
+            and parts[5] in {"amplitude", "exponent_coefficient", "coefficient"}
         )
         if not application_resolved:
             raise _error(

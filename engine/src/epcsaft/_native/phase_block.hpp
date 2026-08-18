@@ -39,6 +39,7 @@ enum class NativeFixedTopologyParameterKind {
   PairSize,
   CrossAssociationEnergyCorrection,
   RelativePermittivity,
+  RelativePermittivityCorrelationCoefficient,
   BornDiameter,
   SolvationFactor,
   SolvationFactorCorrelationConstant,
@@ -511,6 +512,7 @@ void apply_active_packing_parameters(
     case NativeFixedTopologyParameterKind::PairSize:
     case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection:
     case NativeFixedTopologyParameterKind::RelativePermittivity:
+    case NativeFixedTopologyParameterKind::RelativePermittivityCorrelationCoefficient:
     case NativeFixedTopologyParameterKind::BornDiameter:
     case NativeFixedTopologyParameterKind::SolvationFactor:
     case NativeFixedTopologyParameterKind::SolvationFactorCorrelationConstant:
@@ -847,7 +849,9 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
         parameter.kind == NativeFixedTopologyParameterKind::
                               SegmentDiameterCorrelationAmplitude ||
         parameter.kind == NativeFixedTopologyParameterKind::
-                              SegmentDiameterCorrelationExponent;
+                              SegmentDiameterCorrelationExponent ||
+        parameter.kind == NativeFixedTopologyParameterKind::
+                              RelativePermittivityCorrelationCoefficient;
     const bool pair_upper_closed =
         parameter.kind == NativeFixedTopologyParameterKind::PairDispersion;
     const bool pair_upper_open =
@@ -1014,6 +1018,16 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
       value_parameters.relative_permittivity[parameter.component] =
           parameter.value;
       break;
+    case NativeFixedTopologyParameterKind::RelativePermittivityCorrelationCoefficient:
+      if (parameter.correlation_term >=
+          value_parameters.permittivity_term_coefficient.size()) {
+        throw std::invalid_argument(
+            "permittivity correlation term is outside the model");
+      }
+      identity = parameter.correlation_term;
+      value_parameters.permittivity_term_coefficient[parameter.correlation_term] =
+          parameter.value;
+      break;
     case NativeFixedTopologyParameterKind::BornDiameter:
       if (parameter.component >= components ||
           base_parameters.charge_number[parameter.component] == 0) {
@@ -1115,6 +1129,9 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
   std::vector<ADScalar> relative_permittivity(
       base_parameters.relative_permittivity.begin(),
       base_parameters.relative_permittivity.end());
+  std::vector<ADScalar> permittivity_term_coefficient(
+      base_parameters.permittivity_term_coefficient.begin(),
+      base_parameters.permittivity_term_coefficient.end());
   std::vector<ADScalar> born_diameter(
       base_parameters.born_diameter_angstrom.begin(),
       base_parameters.born_diameter_angstrom.end());
@@ -1188,6 +1205,9 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
     case NativeFixedTopologyParameterKind::RelativePermittivity:
       relative_permittivity[parameter.component] = active;
       break;
+    case NativeFixedTopologyParameterKind::RelativePermittivityCorrelationCoefficient:
+      permittivity_term_coefficient[parameter.correlation_term] = active;
+      break;
     case NativeFixedTopologyParameterKind::BornDiameter:
       born_diameter[parameter.component] = active;
       break;
@@ -1202,6 +1222,21 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
       ionic_region_relative_permittivity = active;
       break;
     }
+  }
+
+  for (std::size_t term = 0;
+       term < base_parameters.permittivity_term_component.size(); ++term) {
+    const std::size_t component = static_cast<std::size_t>(
+        base_parameters.permittivity_term_component[term]);
+    const ADScalar delta = ADScalar(temperature) - ADScalar(
+        base_parameters.permittivity_reference_temperature_k[component]);
+    ADScalar temperature_power = ADScalar(1.0);
+    for (int exponent = 0;
+         exponent < base_parameters.permittivity_term_power[term]; ++exponent) {
+      temperature_power *= delta;
+    }
+    relative_permittivity[component] +=
+        permittivity_term_coefficient[term] * temperature_power;
   }
 
   std::vector<ADScalar> active_amounts(components, ADScalar(0.0));

@@ -36,6 +36,10 @@ struct NativeParameters final {
     std::vector<double> molar_mass_kg_per_mol;
     std::vector<int> charge_number;
     std::vector<double> relative_permittivity;
+    std::vector<int> permittivity_term_component;
+    std::vector<double> permittivity_term_coefficient;
+    std::vector<int> permittivity_term_power;
+    std::vector<double> permittivity_reference_temperature_k;
     double ion_fraction_suppression_coefficient;
     std::vector<double> packing_diameter_angstrom;
     std::vector<double> debye_huckel_diameter_angstrom;

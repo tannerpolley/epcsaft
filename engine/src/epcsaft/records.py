@@ -631,6 +631,34 @@ class ExponentialTerm:
 
 
 @dataclass(frozen=True, slots=True)
+class TemperaturePolynomialTerm:
+    power: int
+    coefficient: object
+    coefficient_identity: str | None = None
+
+    def __post_init__(self) -> None:
+        power = _exact_integer(self.power, field="power")
+        if power < 1:
+            raise _error("invalid-correlation", field="power", value=power)
+        object.__setattr__(self, "power", power)
+        object.__setattr__(
+            self,
+            "coefficient",
+            _quantity(
+                self.coefficient,
+                f"1 / kelvin ** {power}",
+                field="coefficient",
+            ),
+        )
+        if self.coefficient_identity is not None:
+            object.__setattr__(
+                self,
+                "coefficient_identity",
+                _parameter_identity(self.coefficient_identity),
+            )
+
+
+@dataclass(frozen=True, slots=True)
 class ConstantCorrelation:
     form: ClassVar[str] = "constant"
 
@@ -706,6 +734,54 @@ class ConstantPlusSumOfExponentialsCorrelation:
         object.__setattr__(self, "domain_id", domain_id)
         correlation_id = self.correlation_id or (
             f"component/{self.component_id}/{self.family}/temperature-exponential"
+        )
+        object.__setattr__(self, "correlation_id", _parameter_identity(correlation_id))
+
+    @property
+    def identity(self) -> str:
+        return self.correlation_id or ""
+
+
+@dataclass(frozen=True, slots=True)
+class ConstantPlusPolynomialInTemperatureCorrelation:
+    form: ClassVar[str] = "constant-plus-polynomial-in-temperature"
+
+    record_id: str
+    component_id: str
+    family: Literal["relative_permittivity"]
+    constant: object
+    reference_temperature: object
+    terms: tuple[TemperaturePolynomialTerm, ...]
+    source_id: str
+    locator: str
+    domain_id: str
+    correlation_id: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
+        object.__setattr__(
+            self, "component_id", _identifier(self.component_id, field="component_id")
+        )
+        family = _family(self.family, allowed=frozenset({"relative_permittivity"}))
+        object.__setattr__(self, "family", family)
+        object.__setattr__(self, "constant", _parameter_value(family, self.constant))
+        object.__setattr__(
+            self,
+            "reference_temperature",
+            _quantity(self.reference_temperature, "kelvin", field="reference_temperature"),
+        )
+        terms = tuple(self.terms)
+        if not terms or not all(isinstance(term, TemperaturePolynomialTerm) for term in terms):
+            raise _error("invalid-correlation", field="terms", value="invalid")
+        if tuple(term.power for term in terms) != tuple(range(1, len(terms) + 1)):
+            raise _error("invalid-correlation", field="terms", reason="nonconsecutive-powers")
+        object.__setattr__(self, "terms", terms)
+        source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
+        object.__setattr__(self, "source_id", source_id)
+        object.__setattr__(self, "locator", locator)
+        object.__setattr__(self, "domain_id", domain_id)
+        correlation_id = self.correlation_id or (
+            f"component/{self.component_id}/{self.family}/{self.form}"
         )
         object.__setattr__(self, "correlation_id", _parameter_identity(correlation_id))
 
@@ -865,7 +941,11 @@ class AssociationTopology:
             raise _error("missing-record", field="association_edge.site")
 
 
-type CorrelationRecord = ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation
+type CorrelationRecord = (
+    ConstantCorrelation
+    | ConstantPlusSumOfExponentialsCorrelation
+    | ConstantPlusPolynomialInTemperatureCorrelation
+)
 type ParameterRecord = (
     SingleParameterRecord
     | ModelParameterRecord
@@ -890,6 +970,7 @@ __all__ = (
     "AssociationTopology",
     "ComponentRecord",
     "ConstantCorrelation",
+    "ConstantPlusPolynomialInTemperatureCorrelation",
     "ConstantPlusSumOfExponentialsCorrelation",
     "CorrelationFamily",
     "CorrelationRecord",
@@ -912,5 +993,6 @@ __all__ = (
     "SingleParameterRecord",
     "SiteRecord",
     "SourceRecord",
+    "TemperaturePolynomialTerm",
     "ValidityDomain",
 )

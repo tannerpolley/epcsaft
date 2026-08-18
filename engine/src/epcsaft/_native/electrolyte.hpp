@@ -17,6 +17,57 @@ namespace epcsaft::detail {
 inline constexpr double ELECTROLYTE_PI =
     3.141592653589793238462643383279502884;
 
+inline bool dielectric_solvent_component(
+    std::size_t component,
+    const NativeParameters& parameters
+) {
+    if (parameters.charge_number[component] != 0) {
+        return false;
+    }
+    if (parameters.relative_permittivity_formulation ==
+            RELATIVE_PERMITTIVITY_FORMULATION_DENSITY_VOLUME_TEMPERATURE ||
+        parameters.relative_permittivity_formulation ==
+            RELATIVE_PERMITTIVITY_FORMULATION_DIPOLAR_DENSITY_PERTURBATION) {
+        return true;
+    }
+    if (parameters.relative_permittivity[component] > 0.0) {
+        return true;
+    }
+    return std::find(
+        parameters.permittivity_term_component.begin(),
+        parameters.permittivity_term_component.end(),
+        static_cast<int>(component)
+    ) != parameters.permittivity_term_component.end();
+}
+
+template <typename Scalar>
+// EqID: component_permittivity_temperature_polynomial
+std::vector<Scalar> component_relative_permittivities(
+    const Scalar& temperature,
+    const NativeParameters& parameters
+) {
+    std::vector<Scalar> values(
+        parameters.relative_permittivity.begin(),
+        parameters.relative_permittivity.end()
+    );
+    for (std::size_t term = 0;
+         term < parameters.permittivity_term_component.size(); ++term) {
+        const std::size_t component = static_cast<std::size_t>(
+            parameters.permittivity_term_component[term]
+        );
+        const Scalar delta = temperature
+            - Scalar(parameters.permittivity_reference_temperature_k[component]);
+        Scalar temperature_power = Scalar(1.0);
+        for (int exponent = 0;
+             exponent < parameters.permittivity_term_power[term]; ++exponent) {
+            temperature_power *= delta;
+        }
+        values[component] += Scalar(parameters.permittivity_term_coefficient[term])
+            * temperature_power;
+    }
+    return values;
+}
+
 template <typename Scalar>
 // EqExclude: scalar utility dispatch
 Scalar electrolyte_sqrt(const Scalar& value) {
@@ -50,18 +101,6 @@ struct ElectrolyteResult final {
     Scalar debye_huckel;
 };
 
-inline bool is_dielectric_solvent(
-    std::size_t component,
-    const NativeParameters& parameters
-) {
-    return parameters.charge_number[component] == 0
-        && (
-            parameters.relative_permittivity_formulation
-                != RELATIVE_PERMITTIVITY_FORMULATION_SOLVENT_ONLY
-            || parameters.relative_permittivity[component] > 0.0
-        );
-}
-
 template <typename Scalar>
 Scalar ion_fraction_suppressed_relative_permittivity(
     const Scalar& salt_free_permittivity,
@@ -82,6 +121,14 @@ Scalar bulk_relative_permittivity(
     const std::vector<Scalar>* relative_permittivity_override = nullptr,
     const Scalar* ion_fraction_suppression_override = nullptr
 ) {
+    const std::vector<Scalar> correlated_relative_permittivity =
+        relative_permittivity_override == nullptr
+            ? component_relative_permittivities(temperature, parameters)
+            : std::vector<Scalar>{};
+    const std::vector<Scalar>* evaluated_relative_permittivity =
+        relative_permittivity_override == nullptr
+            ? &correlated_relative_permittivity
+            : relative_permittivity_override;
     Scalar solvent_mass = Scalar(0.0);
     Scalar dielectric_mass = Scalar(0.0);
     Scalar solvent_fraction = Scalar(0.0);
@@ -96,14 +143,14 @@ Scalar bulk_relative_permittivity(
     const Scalar number_density_angstrom3 =
         molar_density * PHYSICAL_AVOGADRO * 1.0e-30;
     const auto relative_permittivity = [&](std::size_t component) {
-        return relative_permittivity_override == nullptr
+        return evaluated_relative_permittivity == nullptr
             ? Scalar(parameters.relative_permittivity[component])
-            : (*relative_permittivity_override)[component];
+            : (*evaluated_relative_permittivity)[component];
     };
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const Scalar& fraction = mole_fractions[component];
         const int charge = parameters.charge_number[component];
-        if (charge == 0 && is_dielectric_solvent(component, parameters)) {
+        if (dielectric_solvent_component(component, parameters)) {
             solvent_fraction += fraction;
             const Scalar mass = fraction * parameters.molar_mass_kg_per_mol[component];
             solvent_mass += mass;
@@ -112,7 +159,7 @@ Scalar bulk_relative_permittivity(
                 * parameters.dielectric_volume_m3_per_mol[component];
             dielectric_temperature += fraction
                 * parameters.dielectric_temperature_k[component];
-        } else {
+        } else if (charge != 0) {
             ion_fraction += fraction;
             ion_dielectric += fraction * relative_permittivity(component);
             ion_specific_suppression += fraction
@@ -242,7 +289,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
                 * charge * charge;
         } else if (
             reference_mole_fractions[component] > 0.0
-            && is_dielectric_solvent(component, parameters)
+            && dielectric_solvent_component(component, parameters)
         ) {
             ++reference_dielectric_solvent_count;
         }
@@ -268,7 +315,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     Scalar charge_square_sum = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
-        if (charge == 0 && is_dielectric_solvent(component, parameters)) {
+        if (dielectric_solvent_component(component, parameters)) {
             const Scalar mass = mole_fractions[component]
                 * parameters.molar_mass_kg_per_mol[component];
             solvent_mass += mass;

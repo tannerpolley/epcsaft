@@ -18,6 +18,7 @@ from .records import (
     AssociationTopology,
     ComponentRecord,
     ConstantCorrelation,
+    ConstantPlusPolynomialInTemperatureCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
     CrossAssociationCorrectionRecord,
     ExponentialTerm,
@@ -30,6 +31,7 @@ from .records import (
     SingleParameterRecord,
     SiteRecord,
     SourceRecord,
+    TemperaturePolynomialTerm,
     ValidityDomain,
     _identifier,
     _parameter_identity,
@@ -142,7 +144,12 @@ class _DocumentRecords:
     cross_association_corrections: tuple[CrossAssociationCorrectionRecord, ...]
     sites: tuple[SiteRecord, ...]
     associations: tuple[AssociationParameterRecord, ...]
-    correlations: tuple[ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation, ...]
+    correlations: tuple[
+        ConstantCorrelation
+        | ConstantPlusSumOfExponentialsCorrelation
+        | ConstantPlusPolynomialInTemperatureCorrelation,
+        ...,
+    ]
     models: tuple[ModelParameterRecord, ...]
     model_families: tuple[ModelFamilySpec, ...]
     topology: AssociationTopology
@@ -209,11 +216,13 @@ def _measurement(
         if unit != "elementary-charge":
             raise _error("invalid-unit", field=f"{field}.unit", expected="elementary-charge")
         return _exact_integer(magnitude, field=f"{field}.magnitude"), unit
-    target = (
-        "1 / kelvin"
-        if family == "exponential_temperature_coefficient"
-        else _DIMENSIONAL_UNITS.get(family, "dimensionless")
-    )
+    if family == "exponential_temperature_coefficient":
+        target = "1 / kelvin"
+    elif family.startswith("temperature_polynomial_coefficient_"):
+        power = family.removeprefix("temperature_polynomial_coefficient_")
+        target = f"1 / kelvin ** {power}"
+    else:
+        target = _DIMENSIONAL_UNITS.get(family, "dimensionless")
     try:
         quantity = unit_registry.Quantity(
             _decimal_number(magnitude, field=f"{field}.magnitude"), unit
@@ -657,10 +666,19 @@ def _correlations(
     value: object,
     component_ids: frozenset[str],
 ) -> tuple[
-    tuple[ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation, ...],
+    tuple[
+        ConstantCorrelation
+        | ConstantPlusSumOfExponentialsCorrelation
+        | ConstantPlusPolynomialInTemperatureCorrelation,
+        ...,
+    ],
     tuple[ParameterSpec, ...],
 ]:
-    records: list[ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation] = []
+    records: list[
+        ConstantCorrelation
+        | ConstantPlusSumOfExponentialsCorrelation
+        | ConstantPlusPolynomialInTemperatureCorrelation
+    ] = []
     specs = []
     for index, item in enumerate(_sequence(value, field="correlations")):
         field = f"correlations[{index}]"
@@ -679,7 +697,7 @@ def _correlations(
                     "provenance",
                 }
             ),
-            optional=frozenset({"terms"}),
+            optional=frozenset({"terms", "reference_temperature"}),
         )
         component_id = _identifier(raw["component_id"], field=f"{field}.component_id")
         if component_id not in component_ids:
@@ -688,9 +706,15 @@ def _correlations(
         if family not in {"segment_diameter", "relative_permittivity", "solvation_factor"}:
             raise _error("invalid-value", field=f"{field}.family", value=family)
         form = raw["form"]
-        if form not in {"constant", "constant-plus-sum-of-exponentials"}:
+        if form not in {
+            "constant",
+            "constant-plus-sum-of-exponentials",
+            "constant-plus-polynomial-in-temperature",
+        }:
             raise _error("invalid-correlation", field=f"{field}.form", value=form)
         if form == "constant-plus-sum-of-exponentials" and family != "segment_diameter":
+            raise _error("invalid-correlation", field=f"{field}.form", family=family)
+        if form == "constant-plus-polynomial-in-temperature" and family != "relative_permittivity":
             raise _error("invalid-correlation", field=f"{field}.form", family=family)
         correlation_id = f"component/{component_id}/{family}/{form}"
         observed_id = _parameter_identity(raw["correlation_id"], field=f"{field}.correlation_id")
@@ -716,14 +740,63 @@ def _correlations(
         )
         specs.append(constant_spec)
         if form == "constant":
-            if "terms" in raw:
-                raise _error("invalid-schema", field=f"{field}.terms", value="extraneous")
+            if "terms" in raw or "reference_temperature" in raw:
+                raise _error("invalid-schema", field=field, value="extraneous-correlation-field")
             records.append(
                 ConstantCorrelation(
                     _record_id(correlation_id),
                     component_id,
                     family,
                     constant,
+                    *provenance,
+                    correlation_id=correlation_id,
+                )
+            )
+            continue
+        if form == "constant-plus-polynomial-in-temperature":
+            if "terms" not in raw or "reference_temperature" not in raw:
+                raise _error("invalid-schema", field=field, missing="terms-or-reference-temperature")
+            reference_temperature, _ = _measurement(
+                raw["reference_temperature"],
+                family="dielectric_temperature",
+                field=f"{field}.reference_temperature",
+            )
+            polynomial_terms = []
+            for term_index, item_term in enumerate(
+                _sequence(raw["terms"], field=f"{field}.terms")
+            ):
+                term_field = f"{field}.terms[{term_index}]"
+                term = _mapping(item_term, field=term_field)
+                _strict(
+                    term,
+                    field=term_field,
+                    required=frozenset({"power", "coefficient"}),
+                )
+                power = _exact_integer(term["power"], field=f"{term_field}.power")
+                identity = f"{correlation_id}/term-{term_index}/coefficient"
+                coefficient, coefficient_spec = _correlation_coefficient(
+                    term["coefficient"],
+                    field=f"{term_field}.coefficient",
+                    identity=identity,
+                    family=f"temperature_polynomial_coefficient_{power}",
+                    provenance=provenance,
+                )
+                polynomial_terms.append(
+                    TemperaturePolynomialTerm(
+                        power,
+                        coefficient,
+                        coefficient_identity=coefficient_spec.identity,
+                    )
+                )
+                specs.append(coefficient_spec)
+            records.append(
+                ConstantPlusPolynomialInTemperatureCorrelation(
+                    _record_id(correlation_id),
+                    component_id,
+                    "relative_permittivity",
+                    constant,
+                    reference_temperature,
+                    tuple(polynomial_terms),
                     *provenance,
                     correlation_id=correlation_id,
                 )
@@ -1362,6 +1435,7 @@ def _validate_document(
         | AssociationParameterRecord
         | ConstantCorrelation
         | ConstantPlusSumOfExponentialsCorrelation
+        | ConstantPlusPolynomialInTemperatureCorrelation
         | ModelParameterRecord
         | SiteRecord,
         ...,

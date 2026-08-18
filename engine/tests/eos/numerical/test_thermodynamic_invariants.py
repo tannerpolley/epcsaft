@@ -6,6 +6,7 @@ from copy import deepcopy
 import pytest
 
 from epcsaft import (
+    ActiveParameterSet,
     Activity,
     EosError,
     Mixture,
@@ -744,7 +745,9 @@ def test_revised_debye_huckel_uses_declared_multisolvent_permittivity() -> None:
         ]
 
     composition = (0.50, 0.40, 0.05, 0.05)
-    state = Mixture(Parameters.from_mapping(mapping)).state(
+    parameters = Parameters.from_mapping(mapping)
+    model = Mixture(parameters)
+    state = model.state(
         T=313.15 * u.kelvin,
         P=1.0 * u.bar,
         x=composition,
@@ -755,8 +758,140 @@ def test_revised_debye_huckel_uses_declared_multisolvent_permittivity() -> None:
     ) / (composition[0] * 0.018 + composition[1] * 0.030)
 
     assert state.bulk_relative_permittivity == pytest.approx(expected, rel=2.0e-13)
+
     assert state.fugacity is not None
     assert all(math.isfinite(value) for value in state.fugacity.ln_coefficient)
+
+
+def test_solvent_only_permittivity_tracks_temperature_and_excludes_neutral_solute() -> None:
+    """Temperature correlations and dielectric participation are both explicit."""
+
+    mapping = deepcopy(MULTINEUTRAL_REACTIVE)
+    electrolyte = next(
+        family for family in mapping["model_families"] if family["kind"] == "electrolyte"
+    )
+    electrolyte["choice"] = "revised-debye-huckel"
+    electrolyte.pop("c_shell")
+    electrolyte.pop("c_dielectric")
+    permittivity = next(
+        family for family in mapping["model_families"] if family["kind"] == "permittivity"
+    )
+    permittivity["choice"] = "solvent-only"
+    mapping["model_coefficients"] = []
+    for component in mapping["components"]:
+        component["coefficients"] = [
+            coefficient
+            for coefficient in component["coefficients"]
+            if coefficient["family"] not in {"born_diameter", "solvation_factor"}
+        ]
+    mapping["components"].append(
+        _component(
+            "neutral-solute",
+            molar_mass=0.044,
+            charge_number=0,
+            segment_count=1.4,
+            segment_diameter=3.2,
+            dispersion_energy_over_k=210.0,
+        )
+    )
+    for component_id in ("solvent", "cosolvent", "cation", "anion"):
+        mapping["pairs"].append(_pair(component_id, "neutral-solute", k_ij=0.0))
+
+    def correlation(component_id: str, coefficients: tuple[float, ...]) -> dict[str, object]:
+        correlation_id = (
+            f"component/{component_id}/relative_permittivity/"
+            "constant-plus-polynomial-in-temperature"
+        )
+        return {
+            "correlation_id": correlation_id,
+            "component_id": component_id,
+            "family": "relative_permittivity",
+            "form": "constant-plus-polynomial-in-temperature",
+            "independent_variables": ["temperature"],
+            "constant": {
+                "identity": f"{correlation_id}/constant",
+                "value": {"magnitude": coefficients[0], "unit": "dimensionless"},
+            },
+            "reference_temperature": {"magnitude": 300.0, "unit": "kelvin"},
+            "terms": [
+                {
+                    "power": power,
+                    "coefficient": {
+                        "identity": f"{correlation_id}/term-{power - 1}/coefficient",
+                        "value": {
+                            "magnitude": coefficient,
+                            "unit": f"1 / kelvin ** {power}",
+                        },
+                    },
+                }
+                for power, coefficient in enumerate(coefficients[1:], start=1)
+            ],
+            "provenance": deepcopy(mapping["correlations"][0]["provenance"]),
+        }
+
+    mapping["correlations"] = [
+        correlation("solvent", (78.0, -0.3)),
+        correlation("cosolvent", (40.0, -0.1, 0.001)),
+    ]
+    composition = (0.45, 0.35, 0.05, 0.05, 0.10)
+    temperature = 320.0
+    parameters = Parameters.from_mapping(mapping)
+    model = Mixture(parameters)
+    state = model.state(
+        T=temperature * u.kelvin,
+        rho=2000.0 * u.mole / u.meter**3,
+        x=composition,
+    )
+    solvent_epsilon = 78.0 - 0.3 * 20.0
+    cosolvent_epsilon = 40.0 - 0.1 * 20.0 + 0.001 * 20.0**2
+    expected = (
+        composition[0] * 0.018 * solvent_epsilon
+        + composition[1] * 0.030 * cosolvent_epsilon
+    ) / (composition[0] * 0.018 + composition[1] * 0.030)
+
+    assert state.bulk_relative_permittivity == pytest.approx(expected, rel=2.0e-13)
+
+    identity = (
+        "component/solvent/relative_permittivity/"
+        "constant-plus-polynomial-in-temperature/term-0/coefficient"
+    )
+    exact = model.observable_block(
+        ActiveParameterSet(parameters, (identity,)),
+        identity="eos.fixed-state",
+        T=temperature * u.kelvin,
+        rho=2000.0 * u.mole / u.meter**3,
+        x=composition,
+    )
+
+    def values(slope: float) -> tuple[float, ...]:
+        candidate = deepcopy(mapping)
+        correlation_mapping = next(
+            item
+            for item in candidate["correlations"]
+            if item["component_id"] == "solvent"
+        )
+        correlation_mapping["terms"][0]["coefficient"]["value"]["magnitude"] = slope
+        candidate_state = Mixture(Parameters.from_mapping(candidate)).state(
+            T=temperature * u.kelvin,
+            rho=2000.0 * u.mole / u.meter**3,
+            x=composition,
+        )
+        return (
+            float(candidate_state.ares(basis="reduced")),
+            float(candidate_state.pressure.to("pascal").magnitude),
+            *candidate_state.residual_chemical_potential_over_rt,
+        )
+
+    step = 1.0e-6
+    lower = values(-0.3 - step)
+    upper = values(-0.3 + step)
+    numerical = tuple(
+        (high - low) / (2.0 * step) for low, high in zip(lower, upper, strict=True)
+    )
+    for row, expected_derivative in enumerate(numerical):
+        assert exact.jacobian[row][0] == pytest.approx(
+            expected_derivative, rel=6.0e-5, abs=4.0e-7
+        )
 
 
 def test_multisolvent_multiion_reference_is_component_order_invariant() -> None:

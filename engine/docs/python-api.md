@@ -24,6 +24,7 @@ Continuous identity examples are:
 ```text
 component/propane/segment_count
 component/water/segment_diameter/constant-plus-sum-of-exponentials/constant
+component/water/relative_permittivity/constant-plus-polynomial-in-temperature/term-0/coefficient
 pair/ethane/methane/k_ij
 association/ethanol/a/ethanol/b/energy_over_k
 model/relative_permittivity/ionic_region_relative_permittivity

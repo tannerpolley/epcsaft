@@ -1579,7 +1579,7 @@ equations:
     source: "\\cite{Figiel2025}, Eq.~(11) solvent basis; \\cite{AscaniHeld2021}, Eq.~(13)"
     status: "Source equation"
     description: "Mass-weighted relative permittivity of the salt-free solvent mixture."
-    change_note: "Uses component molar masses and excludes ions from the denominator."
+    change_note: "Uses component molar masses and includes exactly the neutral components with declared permittivity correlations."
     latex: "\\epsilon_{r,\\mathrm{sf}}=\n\\frac{\\sum_{s\\in\\mathcal{S}}x_sM_s\\epsilon_{r,s}}\n{\\sum_{s\\in\\mathcal{S}}x_sM_s}.\n\\label{eq:salt_free_solvent_permittivity}"
     tex_file: "docs/latex/equations.tex"
     tex_line: 777
@@ -1592,6 +1592,22 @@ equations:
         line: 65
         comment_line: 164
         symbol: "bulk_relative_permittivity"
+  - eqid: "component_permittivity_temperature_polynomial"
+    section: "Electrolyte dielectric and Debye--Huckel relations"
+    subsection: ""
+    label: "eq:component_permittivity_temperature_polynomial"
+    source: "Typed constitutive correlation"
+    status: "Implementation convention"
+    description: "Reference-temperature polynomial for one dielectric solvent's relative static permittivity."
+    change_note: "Each continuous coefficient is independently selectable while the polynomial powers and reference temperature remain fixed."
+    latex: "\\epsilon_{r,s}(T)=c_{0,s}+\\sum_{n=1}^{N_s}c_{n,s}(T-T_{\\mathrm{ref},s})^n.\\label{eq:component_permittivity_temperature_polynomial}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 784
+    implementation_refs:
+      - file: "src/epcsaft/_native/electrolyte.hpp"
+        line: 38
+        comment_line: 38
+        symbol: "component_relative_permittivities"
   - eqid: "same_sign_ionic_dispersion"
     section: "Parameter setup"
     subsection: ""

@@ -11,6 +11,7 @@ from .parameters import Parameters
 from .records import (
     AssociationParameterRecord,
     ConstantCorrelation,
+    ConstantPlusPolynomialInTemperatureCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
     CrossAssociationCorrectionRecord,
     IonicDispersionFormulation,
@@ -25,7 +26,10 @@ from .units import ParameterError, _error
 
 _ScalarRecord = SingleParameterRecord | ConstantCorrelation
 _TemperatureRecord = (
-    SingleParameterRecord | ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation
+    SingleParameterRecord
+    | ConstantCorrelation
+    | ConstantPlusSumOfExponentialsCorrelation
+    | ConstantPlusPolynomialInTemperatureCorrelation
 )
 
 
@@ -109,12 +113,20 @@ def _magnitude(
     record: SingleParameterRecord
     | AssociationParameterRecord
     | ConstantCorrelation
-    | ConstantPlusSumOfExponentialsCorrelation,
+    | ConstantPlusSumOfExponentialsCorrelation
+    | ConstantPlusPolynomialInTemperatureCorrelation,
     unit: str,
 ) -> float:
     value = (
         record.constant
-        if isinstance(record, (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation))
+        if isinstance(
+            record,
+            (
+                ConstantCorrelation,
+                ConstantPlusSumOfExponentialsCorrelation,
+                ConstantPlusPolynomialInTemperatureCorrelation,
+            ),
+        )
         else record.value
     )
     if unit != "dimensionless":
@@ -332,7 +344,14 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
     correlations: dict[tuple[str, str], _TemperatureRecord] = {
         (record.component_id, record.family): record
         for record in parameters.records
-        if isinstance(record, (ConstantCorrelation, ConstantPlusSumOfExponentialsCorrelation))
+        if isinstance(
+            record,
+            (
+                ConstantCorrelation,
+                ConstantPlusSumOfExponentialsCorrelation,
+                ConstantPlusPolynomialInTemperatureCorrelation,
+            ),
+        )
     }
     pair_records: dict[tuple[str, str, str], PairParameterRecord] = {
         (record.component_id_a, record.component_id_b, record.family): record
@@ -417,6 +436,7 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         SingleParameterRecord,
         ConstantCorrelation,
         ConstantPlusSumOfExponentialsCorrelation,
+        ConstantPlusPolynomialInTemperatureCorrelation,
         PairParameterRecord,
         CrossAssociationCorrectionRecord,
         SiteRecord,

@@ -18,6 +18,7 @@ from ._resolve import _resolve_model, _ResolvedModel
 from .parameters import ActiveParameterSet, Parameters
 from .records import (
     ConstantCorrelation,
+    ConstantPlusPolynomialInTemperatureCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
     SingleParameterRecord,
 )
@@ -125,7 +126,12 @@ def _file_fingerprint(path: Path) -> str:
 
 
 def _magnitude(
-    record: SingleParameterRecord | ConstantCorrelation | ConstantPlusSumOfExponentialsCorrelation,
+    record: (
+        SingleParameterRecord
+        | ConstantCorrelation
+        | ConstantPlusSumOfExponentialsCorrelation
+        | ConstantPlusPolynomialInTemperatureCorrelation
+    ),
     unit: str,
 ) -> float:
     value = record.value if isinstance(record, SingleParameterRecord) else record.constant
@@ -453,6 +459,10 @@ def _native_arguments(
             association_volume[index] = pair.volume
 
     components = len(model.component_ids)
+    permittivity_term_component: list[int] = []
+    permittivity_term_coefficient: list[float] = []
+    permittivity_term_power: list[int] = []
+    permittivity_reference_temperature = [0.0] * components
     relative_permittivity_formulation_codes = {
         "none": 0,
         "ion-fraction-suppression": 1,
@@ -468,10 +478,29 @@ def _native_arguments(
     }:
         molar_mass = [0.0 if value is None else value for value in model.molar_mass_kg_per_mol]
         charge_number = list(model.charge_number)
-        relative_permittivity = [
-            0.0 if record is None else _magnitude(record, "dimensionless")
-            for record in model.relative_permittivity
-        ]
+        relative_permittivity = []
+        for component, permittivity_record in enumerate(model.relative_permittivity):
+            relative_permittivity.append(
+                0.0
+                if permittivity_record is None
+                else _magnitude(permittivity_record, "dimensionless")
+            )
+            if isinstance(
+                permittivity_record,
+                ConstantPlusPolynomialInTemperatureCorrelation,
+            ):
+                permittivity_reference_temperature[component] = _quantity_magnitude(
+                    permittivity_record.reference_temperature, "kelvin"
+                )
+                for polynomial_term in permittivity_record.terms:
+                    permittivity_term_component.append(component)
+                    permittivity_term_coefficient.append(
+                        _quantity_magnitude(
+                            polynomial_term.coefficient,
+                            f"1 / kelvin ** {polynomial_term.power}",
+                        )
+                    )
+                    permittivity_term_power.append(polynomial_term.power)
         packing_diameter = [
             0.0 if value is None else value for value in model.packing_diameter_angstrom
         ]
@@ -541,6 +570,10 @@ def _native_arguments(
         molar_mass,
         charge_number,
         relative_permittivity,
+        permittivity_term_component,
+        permittivity_term_coefficient,
+        permittivity_term_power,
+        permittivity_reference_temperature,
         dielectric_suppression,
         packing_diameter,
         debye_huckel_diameter,

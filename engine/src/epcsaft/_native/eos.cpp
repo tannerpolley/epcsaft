@@ -117,6 +117,8 @@ NativeModel::NativeModel(NativeParameters parameters)
     : parameters_(std::move(parameters)) {
   const std::size_t components = parameters_.segment_count.size();
   const std::size_t terms = parameters_.sigma_term_component.size();
+  const std::size_t permittivity_terms =
+      parameters_.permittivity_term_component.size();
   const std::size_t sites = parameters_.site_component.size();
   if (components == 0 || parameters_.sigma_constant.size() != components ||
       parameters_.dispersion_energy_over_k.size() != components ||
@@ -131,6 +133,9 @@ NativeModel::NativeModel(NativeParameters parameters)
       parameters_.molar_mass_kg_per_mol.size() != components ||
       parameters_.charge_number.size() != components ||
       parameters_.relative_permittivity.size() != components ||
+      parameters_.permittivity_term_coefficient.size() != permittivity_terms ||
+      parameters_.permittivity_term_power.size() != permittivity_terms ||
+      parameters_.permittivity_reference_temperature_k.size() != components ||
       parameters_.packing_diameter_angstrom.size() != components ||
       parameters_.debye_huckel_diameter_angstrom.size() != components ||
       parameters_.born_diameter_angstrom.size() != components ||
@@ -155,6 +160,8 @@ NativeModel::NativeModel(NativeParameters parameters)
       !finite(parameters_.association_volume) ||
       !finite(parameters_.molar_mass_kg_per_mol) ||
       !finite(parameters_.relative_permittivity) ||
+      !finite(parameters_.permittivity_term_coefficient) ||
+      !finite(parameters_.permittivity_reference_temperature_k) ||
       !std::isfinite(parameters_.ion_fraction_suppression_coefficient) ||
       !finite(parameters_.packing_diameter_angstrom) ||
       !finite(parameters_.debye_huckel_diameter_angstrom) ||
@@ -176,6 +183,14 @@ NativeModel::NativeModel(NativeParameters parameters)
   for (int component : parameters_.sigma_term_component) {
     if (component < 0 || static_cast<std::size_t>(component) >= components) {
       throw std::invalid_argument("invalid sigma correlation component");
+    }
+  }
+  for (std::size_t term = 0; term < permittivity_terms; ++term) {
+    const int component = parameters_.permittivity_term_component[term];
+    if (component < 0 || static_cast<std::size_t>(component) >= components ||
+        parameters_.permittivity_term_power[term] < 1 ||
+        !(parameters_.permittivity_reference_temperature_k[component] > 0.0)) {
+      throw std::invalid_argument("invalid permittivity correlation term");
     }
   }
   for (std::size_t site = 0; site < sites; ++site) {
@@ -250,12 +265,10 @@ NativeModel::NativeModel(NativeParameters parameters)
           "incompatible electrolyte and permittivity models");
     }
     std::size_t solvent_count = 0;
-    std::size_t dielectric_solvent_count = 0;
     for (std::size_t component = 0; component < components; ++component) {
-      const bool solvent = parameters_.charge_number[component] == 0;
+      const bool neutral = parameters_.charge_number[component] == 0;
+      const bool solvent = detail::dielectric_solvent_component(component, parameters_);
       solvent_count += static_cast<std::size_t>(solvent);
-      dielectric_solvent_count += static_cast<std::size_t>(
-          detail::is_dielectric_solvent(component, parameters_));
       const bool needs_tabulated_permittivity =
           parameters_.relative_permittivity_formulation ==
               RELATIVE_PERMITTIVITY_FORMULATION_ION_FRACTION_SUPPRESSION ||
@@ -279,10 +292,10 @@ NativeModel::NativeModel(NativeParameters parameters)
           parameters_.packing_diameter_angstrom[component];
       const double debye_diameter =
           parameters_.debye_huckel_diameter_angstrom[component];
-      if ((solvent &&
+      if ((neutral &&
            (packing_diameter != 0.0 || debye_diameter != 0.0)) ||
-          (!solvent && !(packing_diameter > 0.0)) ||
-          (!solvent && !(debye_diameter > 0.0))) {
+          (!neutral && !(packing_diameter > 0.0)) ||
+          (!neutral && !(debye_diameter > 0.0))) {
         throw std::invalid_argument("invalid ionic diameter declaration");
       }
       if (born) {
@@ -291,8 +304,8 @@ NativeModel::NativeModel(NativeParameters parameters)
           throw std::invalid_argument("invalid Born electrolyte parameters");
         }
         const double born_diameter = parameters_.born_diameter_angstrom[component];
-        if ((solvent && born_diameter != 0.0) ||
-            (!solvent && !(born_diameter > 0.0))) {
+        if ((neutral && born_diameter != 0.0) ||
+            (!neutral && !(born_diameter > 0.0))) {
           throw std::invalid_argument("invalid Born diameter");
         }
       } else if (parameters_.electrolyte_model ==
@@ -330,6 +343,9 @@ NativeModel::NativeModel(NativeParameters parameters)
         }
       }
     }
+    if (solvent_count == 0) {
+      throw std::invalid_argument("electrolyte model requires a dielectric solvent");
+    }
     const bool valid_born_corrections =
         (parameters_.born_c_shell == 0.0 &&
          parameters_.born_c_dielectric == 0.0) ||
@@ -349,10 +365,6 @@ NativeModel::NativeModel(NativeParameters parameters)
             RELATIVE_PERMITTIVITY_FORMULATION_ION_SPECIFIC_SUPPRESSION &&
         solvent_count != 1) {
       throw std::invalid_argument("mixed-solvent volume data are required");
-    }
-    if (fully_dissociated && dielectric_solvent_count == 0) {
-      throw std::invalid_argument(
-          "fully dissociated electrolyte requires a dielectric solvent");
     }
     if (fully_dissociated &&
         (parameters_.ion_fraction_suppression_coefficient != 0.0 ||
@@ -476,6 +488,10 @@ NativeModel NativeModel::with_active_coordinates(
     }
     case NativeFixedTopologyParameterKind::RelativePermittivity:
       updated.relative_permittivity[parameter.component] = parameter.value;
+      break;
+    case NativeFixedTopologyParameterKind::RelativePermittivityCorrelationCoefficient:
+      updated.permittivity_term_coefficient[parameter.correlation_term] =
+          parameter.value;
       break;
     case NativeFixedTopologyParameterKind::BornDiameter:
       updated.born_diameter_angstrom[parameter.component] = parameter.value;
@@ -645,6 +661,47 @@ NativeFixedTopologyParameter NativeModel::resolve_fixed_topology_parameter(
     return {NativeFixedTopologyParameterKind::RelativePermittivity,
             component, 0, 0, value};
   }
+  if (parts.size() == 6 && parts[0] == "component" &&
+      parts[2] == "relative_permittivity" &&
+      parts[4].compare(0, 5, "term-") == 0 && parts[5] == "coefficient") {
+    const std::size_t component =
+        named_index(component_ids_, parts[1], "component");
+    const std::string ordinal_text = parts[4].substr(5);
+    if (ordinal_text.empty() ||
+        !std::all_of(ordinal_text.begin(), ordinal_text.end(),
+                     [](char item) { return item >= '0' && item <= '9'; })) {
+      throw std::logic_error("invalid permittivity correlation term identity");
+    }
+    std::size_t ordinal = 0;
+    for (const char item : ordinal_text) {
+      ordinal = ordinal * 10 + static_cast<std::size_t>(item - '0');
+    }
+    std::size_t observed = 0;
+    std::size_t term = parameters_.permittivity_term_component.size();
+    for (std::size_t index = 0;
+         index < parameters_.permittivity_term_component.size(); ++index) {
+      if (parameters_.permittivity_term_component[index] !=
+          static_cast<int>(component)) {
+        continue;
+      }
+      if (observed == ordinal) {
+        term = index;
+        break;
+      }
+      ++observed;
+    }
+    if (term == parameters_.permittivity_term_component.size()) {
+      throw std::logic_error("permittivity correlation term is outside the model");
+    }
+    return {
+        NativeFixedTopologyParameterKind::RelativePermittivityCorrelationCoefficient,
+        component,
+        0,
+        0,
+        value,
+        term,
+    };
+  }
   if (parts.size() == 5 && parts[0] == "component" &&
       parts[2] == "solvation_factor" && parts[4] == "constant") {
     const std::size_t component =
@@ -754,6 +811,7 @@ NativeFixedTopologyParameter NativeModel::resolve_active_coordinate(
   case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationConstant:
   case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationAmplitude:
   case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationExponent:
+  case NativeFixedTopologyParameterKind::RelativePermittivityCorrelationCoefficient:
   case NativeFixedTopologyParameterKind::SolvationFactorCorrelationConstant:
     expected_application = "typed-correlation-coefficient";
     expected_indices = {resolved.component};
