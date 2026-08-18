@@ -375,6 +375,7 @@ class _Closure:
     partner_component_ids: tuple[str, ...]
     chemical_amount_directions: dict[str, tuple[float, ...]]
     chemical_volume_directions: dict[str, float]
+    balance_direction_ids: tuple[str, ...]
 
 
 class _BubbleFailure(RuntimeError):
@@ -600,6 +601,7 @@ def _chemical_directions(
 ) -> tuple[
     dict[str, tuple[float, ...]],
     dict[str, float],
+    tuple[str, ...],
 ]:
     if sensitivity.status != "available":
         raise _BubbleFailure(
@@ -607,24 +609,42 @@ def _chemical_directions(
             sensitivity.failure_reason or "chemical sensitivity is unavailable",
         )
     requested = ("pressure_pa", *active_ids)
-    amount_rows: dict[str, tuple[float, ...]] = {}
-    volume_rows: dict[str, float] = {}
+    found_amount_rows: dict[str, tuple[float, ...]] = {}
+    found_volume_rows: dict[str, float] = {}
+    balance_ids: list[str] = []
     for parameter, amount_row, volume in zip(
         sensitivity.parameters,
         sensitivity.amount_derivatives,
         sensitivity.volume_derivatives,
         strict=True,
     ):
-        identity = "pressure_pa" if parameter.name == "pressure_pa" else parameter.identity
-        if identity in requested:
-            amount_rows[identity] = amount_row
-            volume_rows[identity] = volume
-    if tuple(amount_rows) != requested:
+        identity: str | None
+        if parameter.kind == "compiled_balance_total":
+            if parameter.source_index != len(balance_ids):
+                raise _BubbleFailure(
+                    "parameter_topology_mismatch",
+                    "compiled balance sensitivity order changed",
+                )
+            identity = f"compiled-balance-total/{parameter.source_index}"
+            balance_ids.append(identity)
+        else:
+            identity = "pressure_pa" if parameter.name == "pressure_pa" else parameter.identity
+            if identity is None:
+                continue
+        if identity in requested or identity in balance_ids:
+            found_amount_rows[identity] = amount_row
+            found_volume_rows[identity] = volume
+    if any(identity not in found_amount_rows for identity in requested):
         raise _BubbleFailure(
             "parameter_topology_mismatch",
             "chemical sensitivity omitted or reordered a coupled input direction",
         )
-    return amount_rows, volume_rows
+    ordered = (*requested, *balance_ids)
+    return (
+        {identity: found_amount_rows[identity] for identity in ordered},
+        {identity: found_volume_rows[identity] for identity in ordered},
+        tuple(balance_ids),
+    )
 
 
 def _liquid_trial_state(
@@ -638,6 +658,7 @@ def _liquid_trial_state(
     Any,
     dict[str, tuple[float, ...]],
     dict[str, float],
+    tuple[str, ...],
 ]:
     reaction_system = problem.liquid_problem.reaction_system
     if any(
@@ -680,13 +701,15 @@ def _liquid_trial_state(
     if equilibrium.sensitivity is None:
         raise _BubbleFailure("first_order_failure", "chemical pressure sensitivity is missing")
     active_ids = descriptor.active_parameter_identities
-    amount_rows, volume_rows = _chemical_directions(equilibrium.sensitivity, active_ids)
+    amount_rows, volume_rows, balance_ids = _chemical_directions(
+        equilibrium.sensitivity, active_ids
+    )
     if equilibrium.diagnostics.active_trace_species:
         raise _BubbleFailure(
             "active_bound_ambiguity",
             "the reactive liquid contains a trace-bound species at the coupled state",
         )
-    return liquid, equilibrium, amount_rows, volume_rows
+    return liquid, equilibrium, amount_rows, volume_rows, balance_ids
 
 
 @dataclass(frozen=True)
@@ -1089,9 +1112,7 @@ def _solve_declared_incipient_vapor(
     best = ranked[0]
     best_tpd = best.chemical_potential_over_rt[reference] - liquid_potentials[reference]
     if len(ranked) > 1:
-        next_tpd = (
-            ranked[1].chemical_potential_over_rt[reference] - liquid_potentials[reference]
-        )
+        next_tpd = ranked[1].chemical_potential_over_rt[reference] - liquid_potentials[reference]
     else:
         next_tpd = math.inf
     if abs(next_tpd - best_tpd) <= 2.0e-10:
@@ -1116,7 +1137,7 @@ def _nonideal_closure(
     vapor composition and its strict-stable Provider density branch.
     """
 
-    liquid, equilibrium, amount_rows, volume_rows = _liquid_trial_state(
+    liquid, equilibrium, amount_rows, volume_rows, balance_ids = _liquid_trial_state(
         problem, temperature, descriptor, active_parameters, pressure_pa
     )
     active_ids = descriptor.active_parameter_identities
@@ -1175,10 +1196,10 @@ def _nonideal_closure(
         component_position[identity] for identity in problem.vapor_component_ids
     )
     liquid_potentials = tuple(liquid_gradient[index] for index in vapor_positions)
-    direction_ids = ("pressure_pa", *active_ids)
+    direction_ids = tuple(amount_rows)
     liquid_mu_directions: dict[str, tuple[float, ...]] = {}
     for identity in direction_ids:
-        parameter = None if identity == "pressure_pa" else active_ids.index(identity)
+        parameter = active_ids.index(identity) if identity in active_ids else None
         liquid_mu_directions[identity] = tuple(
             math.fsum(
                 liquid_hessian[component * state_count + species] * derivative
@@ -1235,6 +1256,8 @@ def _nonideal_closure(
             vapor.mu_pressure_derivative
             if identity == "pressure_pa"
             else vapor.mu_parameter_derivatives[identity]
+            if identity in active_ids
+            else (0.0,) * vapor_count
         )
         potential_direction = tuple(
             vapor_value - liquid_value
@@ -1271,7 +1294,11 @@ def _nonideal_closure(
     # B_theta=P*h_theta; the resulting total dP/dtheta is identical.
     boundary_directional = {
         "pressure_pa": 1.0 + residual_log_pressure_derivative,
-        **{identity: pressure_pa * closure_directions[identity] for identity in active_ids},
+        **{
+            identity: pressure_pa * closure_directions[identity]
+            for identity in direction_ids
+            if identity != "pressure_pa"
+        },
     }
     boundary_direct = {identity: 0.0 for identity in active_ids}
     vapor_direct = {identity: (0.0,) * vapor_count for identity in active_ids}
@@ -1318,6 +1345,7 @@ def _nonideal_closure(
         partner_model.component_ids,
         amount_rows,
         volume_rows,
+        balance_ids,
     )
 
 
@@ -1328,7 +1356,7 @@ def _ideal_closure(
     active_parameters: epcsaft.ActiveParameterSet | None,
     pressure_pa: float,
 ) -> _Closure:
-    liquid, equilibrium, amount_rows, volume_rows = _liquid_trial_state(
+    liquid, equilibrium, amount_rows, volume_rows, balance_ids = _liquid_trial_state(
         problem, temperature, descriptor, active_parameters, pressure_pa
     )
     phase = cast(ProviderPhase, problem.liquid_problem.phase)
@@ -1380,7 +1408,7 @@ def _ideal_closure(
         raise _BubbleFailure(
             "no_incipient_phase", "ideal comparison has no positive incipient pressure"
         )
-    direction_ids = ("pressure_pa", *active_ids)
+    direction_ids = tuple(amount_rows)
     boundary_directional: dict[str, float] = {}
     vapor_directional: dict[str, tuple[float, ...]] = {}
     for identity in direction_ids:
@@ -1470,6 +1498,7 @@ def _ideal_closure(
         descriptor.partner_component_ids,
         amount_rows,
         volume_rows,
+        balance_ids,
     )
 
 
@@ -1769,8 +1798,11 @@ def _select_branch(
 def _row_values(
     descriptor: ReactiveBubbleObservationDescriptor,
     closure: _Closure,
+    derivative_ids: tuple[str, ...] | None = None,
 ) -> tuple[ReactiveBubbleObservationRowResult, ...]:
-    active_ids = descriptor.active_parameter_identities
+    direction_ids = (
+        descriptor.active_parameter_identities if derivative_ids is None else derivative_ids
+    )
     pressure_partial = closure.boundary_directional_derivatives["pressure_pa"]
     schur_pressure = pressure_partial - 1.0
     schur_scale = max(1.0, abs(pressure_partial))
@@ -1782,9 +1814,9 @@ def _row_values(
             "coupled bubble Schur complement is ill-conditioned",
         )
     pressure_derivatives: dict[str, float] = {}
-    for identity in active_ids:
+    for identity in direction_ids:
         fixed_pressure_parameter_derivative = (
-            closure.boundary_direct_derivatives[identity]
+            closure.boundary_direct_derivatives.get(identity, 0.0)
             + closure.boundary_directional_derivatives[identity]
         )
         pressure_derivatives[identity] = -fixed_pressure_parameter_derivative / schur_pressure
@@ -1796,7 +1828,7 @@ def _row_values(
     liquid_amount_total: dict[str, tuple[float, ...]] = {}
     liquid_volume_total: dict[str, float] = {}
     liquid_fraction_total: dict[str, tuple[float, ...]] = {}
-    for identity in active_ids:
+    for identity in direction_ids:
         pressure_derivative = pressure_derivatives[identity]
         amount_row = tuple(
             direct + pressure * pressure_derivative
@@ -1818,11 +1850,13 @@ def _row_values(
         )
     vapor = closure.phases[1]
     vapor_derivatives: dict[str, tuple[float, ...]] = {}
-    for identity in active_ids:
+    for identity in direction_ids:
         vapor_derivatives[identity] = tuple(
             direct + directional + pressure * pressure_derivatives[identity]
             for direct, directional, pressure in zip(
-                closure.vapor_fraction_direct_derivatives[identity],
+                closure.vapor_fraction_direct_derivatives.get(
+                    identity, (0.0,) * len(vapor.mole_fractions)
+                ),
                 closure.vapor_fraction_directional_derivatives[identity],
                 closure.vapor_fraction_directional_derivatives["pressure_pa"],
                 strict=True,
@@ -1832,7 +1866,7 @@ def _row_values(
     for row in descriptor.rows:
         if row.quantity == "bubble_pressure_pa":
             value = closure.pressure_pa
-            jacobian = tuple(pressure_derivatives[identity] for identity in active_ids)
+            jacobian = tuple(pressure_derivatives[identity] for identity in direction_ids)
         elif row.quantity == "vapor_mole_fraction":
             value = math.fsum(
                 coefficient * fraction
@@ -1847,7 +1881,7 @@ def _row_values(
                         row.coefficients, vapor_derivatives[identity], strict=True
                     )
                 )
-                for identity in active_ids
+                for identity in direction_ids
             )
         elif row.quantity == "vapor_partial_pressure_pa":
             vapor_fraction = math.fsum(
@@ -1866,7 +1900,7 @@ def _row_values(
                         row.coefficients, vapor_derivatives[identity], strict=True
                     )
                 )
-                for identity in active_ids
+                for identity in direction_ids
             )
         elif row.quantity == "liquid_amount_mol":
             value = math.fsum(
@@ -1880,7 +1914,7 @@ def _row_values(
                         row.coefficients, liquid_amount_total[identity], strict=True
                     )
                 )
-                for identity in active_ids
+                for identity in direction_ids
             )
         elif row.quantity == "liquid_mole_fraction":
             value = math.fsum(
@@ -1896,7 +1930,7 @@ def _row_values(
                         row.coefficients, liquid_fraction_total[identity], strict=True
                     )
                 )
-                for identity in active_ids
+                for identity in direction_ids
             )
         elif row.quantity == "liquid_molality_mol_per_kg":
             numerator = math.fsum(
@@ -1915,7 +1949,7 @@ def _row_values(
                 )
             value = numerator / denominator_mass
             jacobian_values = []
-            for identity in active_ids:
+            for identity in direction_ids:
                 dn = liquid_amount_total[identity]
                 dnumerator = math.fsum(
                     coefficient * derivative
@@ -1937,7 +1971,7 @@ def _row_values(
             jacobian = tuple(
                 math.fsum(liquid_amount_total[identity]) / volume
                 - total * liquid_volume_total[identity] / (volume * volume)
-                for identity in active_ids
+                for identity in direction_ids
             )
         if not math.isfinite(value) or any(not math.isfinite(item) for item in jacobian):
             raise _BubbleFailure(
@@ -2081,6 +2115,59 @@ def _certification(closure: _Closure) -> ReactiveBubbleCertification:
     )
 
 
+def _evaluate_reactive_bubble_observations(
+    problem: ReactiveBubbleVLEProblem,
+    temperature: Any,
+    descriptor: ReactiveBubbleObservationDescriptor,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None = None,
+) -> tuple[ReactiveBubbleObservationResult, tuple[tuple[float, ...], ...]]:
+    """Solve and evaluate one pure, locally certified coupled bubble batch."""
+
+    try:
+        expected = reactive_bubble_observation_descriptor(
+            problem, descriptor.rows, active_parameters=active_parameters
+        )
+    except (TypeError, ValueError) as error:
+        return _failed_result(descriptor, "parameter_topology_mismatch", str(error)), ()
+    if expected.fingerprint != descriptor.fingerprint:
+        return (
+            _failed_result(
+                descriptor, "parameter_topology_mismatch", "reactive bubble descriptor changed"
+            ),
+            (),
+        )
+    candidates, search = _solve_starts(problem, temperature, descriptor, active_parameters)
+    try:
+        selected_ordinal, closure = _select_branch(problem, descriptor, candidates, search)
+        search = replace(search, selected_branch_ordinal=selected_ordinal)
+        _validate_same_liquid_state(closure)
+        rows = _row_values(descriptor, closure)
+        balance_rows = _row_values(descriptor, closure, closure.balance_direction_ids)
+        branch = _physical_branch(problem, descriptor, closure)
+        certification = _certification(closure)
+    except _BubbleFailure as error:
+        return _failed_result(descriptor, error.code, str(error), search=search), ()
+    return (
+        ReactiveBubbleObservationResult(
+            descriptor=descriptor,
+            status="evaluated",
+            failure=None,
+            rows=rows,
+            trial=closure.liquid.trial,
+            liquid_state=closure.liquid.state,
+            liquid_branch=closure.liquid.physical_branch,
+            phases=closure.phases,
+            pressure_pa=closure.pressure_pa,
+            physical_branch=branch,
+            certification=certification,
+            search=search,
+            chemical_diagnostics=closure.liquid.diagnostics,
+        ),
+        tuple(cast(tuple[float, ...], row.jacobian) for row in balance_rows),
+    )
+
+
 def evaluate_reactive_bubble_observations(
     problem: ReactiveBubbleVLEProblem,
     temperature: Any,
@@ -2090,41 +2177,13 @@ def evaluate_reactive_bubble_observations(
 ) -> ReactiveBubbleObservationResult:
     """Solve and evaluate one pure, locally certified coupled bubble batch."""
 
-    try:
-        expected = reactive_bubble_observation_descriptor(
-            problem, descriptor.rows, active_parameters=active_parameters
-        )
-    except (TypeError, ValueError) as error:
-        return _failed_result(descriptor, "parameter_topology_mismatch", str(error))
-    if expected.fingerprint != descriptor.fingerprint:
-        return _failed_result(
-            descriptor, "parameter_topology_mismatch", "reactive bubble descriptor changed"
-        )
-    candidates, search = _solve_starts(problem, temperature, descriptor, active_parameters)
-    try:
-        selected_ordinal, closure = _select_branch(problem, descriptor, candidates, search)
-        search = replace(search, selected_branch_ordinal=selected_ordinal)
-        _validate_same_liquid_state(closure)
-        rows = _row_values(descriptor, closure)
-        branch = _physical_branch(problem, descriptor, closure)
-        certification = _certification(closure)
-    except _BubbleFailure as error:
-        return _failed_result(descriptor, error.code, str(error), search=search)
-    return ReactiveBubbleObservationResult(
-        descriptor=descriptor,
-        status="evaluated",
-        failure=None,
-        rows=rows,
-        trial=closure.liquid.trial,
-        liquid_state=closure.liquid.state,
-        liquid_branch=closure.liquid.physical_branch,
-        phases=closure.phases,
-        pressure_pa=closure.pressure_pa,
-        physical_branch=branch,
-        certification=certification,
-        search=search,
-        chemical_diagnostics=closure.liquid.diagnostics,
+    result, _ = _evaluate_reactive_bubble_observations(
+        problem,
+        temperature,
+        descriptor,
+        active_parameters=active_parameters,
     )
+    return result
 
 
 def certify_reactive_bubble_continuation_reference(

@@ -615,9 +615,7 @@ def general_reactive_equilibrium_problem_from_mapping(
             feed = AffineFeed(
                 tuple(
                     _text(raw, "feed component identity")
-                    for raw in _sequence(
-                        feed_mapping["component_ids"], "feed component identities"
-                    )
+                    for raw in _sequence(feed_mapping["component_ids"], "feed component identities")
                 ),
                 _floats(feed_mapping["base_amounts_mol"], "feed base amounts"),
                 _rows(
@@ -642,9 +640,7 @@ def general_reactive_equilibrium_problem_from_mapping(
             feed = ResolvedFeed(
                 tuple(
                     _text(raw, "feed component identity")
-                    for raw in _sequence(
-                        feed_mapping["component_ids"], "feed component identities"
-                    )
+                    for raw in _sequence(feed_mapping["component_ids"], "feed component identities")
                 ),
                 _floats(feed_mapping["amounts_mol"], "feed amounts"),
                 tuple(
@@ -666,7 +662,11 @@ def general_reactive_equilibrium_problem_from_mapping(
         IntensiveBoundary(
             _text(boundary["identity"], "intensive boundary identity"),
             _text(boundary["coordinate_identity"], "intensive boundary coordinate"),
-            _text(boundary["phase_identity"], "intensive boundary phase"),
+            (
+                None
+                if boundary["phase_identity"] is None
+                else _text(boundary["phase_identity"], "intensive boundary phase")
+            ),
             cast(Any, _text(boundary["selector"], "intensive boundary selector")),
             _floats(boundary["coefficients"], "intensive boundary coefficients"),
             _number(boundary["target"], "intensive boundary target"),
@@ -688,9 +688,7 @@ def general_reactive_equilibrium_problem_from_mapping(
                 ),
                 "GREPE intensive boundary",
             )
-            for raw in _sequence(
-                item.get("intensive_boundaries", ()), "GREPE intensive boundaries"
-            )
+            for raw in _sequence(item.get("intensive_boundaries", ()), "GREPE intensive boundaries")
         )
     )
     return GeneralReactiveEquilibriumProblem(

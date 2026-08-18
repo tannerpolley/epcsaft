@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 from copy import deepcopy
+from typing import Any, cast
 
 import pytest
 
@@ -13,6 +14,7 @@ from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE, NEUTRAL_BINARY
 
 from .test_chemical_provider import _held_parameters, _multineutral_problem
 from .test_homogeneous_reactive_observations import _observation_problem
+from .test_reactive_bubble_observations import _multireaction_fixture
 
 
 def test_imposed_log_fugacity_recovers_analytic_open_component_uptake() -> None:
@@ -222,9 +224,7 @@ def test_imposed_potential_output_jacobian_includes_uptake_response() -> None:
     parameters = epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE)
     model = epcsaft.Mixture(parameters)
     reaction = _multineutral_problem()
-    anchor = _observation_problem(
-        equilibrium.ProviderPhase(model, (1.0e-6, 0.74)), reaction
-    )
+    anchor = _observation_problem(equilibrium.ProviderPhase(model, (1.0e-6, 0.74)), reaction)
     phase = equilibrium.ReactivePhase(
         anchor.phase_identity,
         "liquid",
@@ -236,9 +236,7 @@ def test_imposed_potential_output_jacobian_includes_uptake_response() -> None:
         anchor.continuation_reference,
     )
     temperature = equilibrium.Fixed(313.15 * epcsaft.unit_registry.kelvin)
-    pressure = equilibrium.Fixed(
-        119_199.78746707023 * epcsaft.unit_registry.pascal
-    )
+    pressure = equilibrium.Fixed(119_199.78746707023 * epcsaft.unit_registry.pascal)
     potential_output = equilibrium.EquilibriumOutput(
         "cosolvent-log-fugacity",
         "phase.log_fugacity",
@@ -255,9 +253,7 @@ def test_imposed_potential_output_jacobian_includes_uptake_response() -> None:
         reaction,
         (phase.identity,),
         (potential_output,),
-        feed=equilibrium.direct_amounts(
-            reaction.species_ids, (0.8, 0.2, 0.1, 0.1)
-        ),
+        feed=equilibrium.direct_amounts(reaction.species_ids, (0.8, 0.2, 0.1, 0.1)),
     )
     identity = "pair/anion/solvent/k_ij"
     active = epcsaft.ActiveParameterSet(parameters, (identity,))
@@ -323,9 +319,7 @@ def test_imposed_potential_output_jacobian_includes_uptake_response() -> None:
         model, problem, active_parameters=active
     )
     observations = (
-        equilibrium.GeneralEquilibriumOwnerObservation(
-            "synthetic-cation-target", output.identity
-        ),
+        equilibrium.GeneralEquilibriumOwnerObservation("synthetic-cation-target", output.identity),
     )
     receipt = equilibrium.serialize_general_reactive_equilibrium_receipt(
         evaluated,
@@ -348,7 +342,7 @@ def test_imposed_potential_output_jacobian_includes_uptake_response() -> None:
     owner_payload.pop("fingerprint")
     fingerprint_payload = json.dumps(
         {
-            "schema": "epcsaft.intensive-boundary-owner-receipt",
+            "schema": "epcsaft.intensive-boundary-owner-receipt.v2",
             "value": owner_payload,
         },
         ensure_ascii=False,
@@ -373,3 +367,167 @@ def test_imposed_potential_output_jacobian_includes_uptake_response() -> None:
             active_parameters=active,
             observations=observations,
         )
+
+
+@pytest.mark.slow
+def test_imposed_pressure_matches_fixed_pressure_incipient_reference() -> None:
+    """Falsify changing the solved branch or its exact derivatives during owner unification."""
+
+    parameters, bubble, _ = _multireaction_fixture()
+    pressure_pa = 3_348_818.325948275
+    liquid_id = bubble.liquid_problem.phase_identity
+    vapor_id = bubble.vapor_phase_identity
+    problem = equilibrium.GeneralReactiveEquilibriumProblem(
+        identity="imposed-pressure-affine-feed-incipient",
+        temperature=equilibrium.Fixed(313.15 * epcsaft.unit_registry.kelvin),
+        pressure=equilibrium.Solved(
+            pressure_pa * epcsaft.unit_registry.pascal,
+            tuple(value * epcsaft.unit_registry.pascal for value in bubble.pressure_interval_pa),
+            tuple(value * epcsaft.unit_registry.pascal for value in bubble.pressure_starts_pa),
+        ),
+        phases=(
+            equilibrium.ReactivePhase(
+                liquid_id,
+                "liquid",
+                "finite",
+                equilibrium.AllComponents(),
+                equilibrium.ProviderModel(
+                    bubble.liquid_problem.phase.admissible_packing_fraction_interval,
+                    "installed-provider-eos",
+                ),
+                bubble.liquid_problem.continuation_identity,
+                bubble.liquid_problem.branch_policy,
+                bubble.liquid_problem.continuation_reference,
+            ),
+            equilibrium.ReactivePhase(
+                vapor_id,
+                "vapor",
+                "incipient",
+                equilibrium.DeclaredNeutralComponents(bubble.vapor_component_ids),
+                equilibrium.ProviderModel(
+                    bubble.liquid_problem.phase.admissible_packing_fraction_interval,
+                    "installed-provider-eos",
+                ),
+            ),
+        ),
+        reaction_system=bubble.liquid_problem.reaction_system,
+        reaction_phase_ids=(liquid_id,),
+        outputs=(
+            equilibrium.EquilibriumOutput(
+                "neutral-family-amount",
+                "phase.amount",
+                "mole",
+                "true-species-liquid-amount",
+                liquid_id,
+                (0.0, 1.0, 1.0, 0.0, 0.0),
+                support="positive",
+                aggregate_identity="neutral-family",
+                covariance_identity="neutral-family-covariance",
+            ),
+            equilibrium.EquilibriumOutput(
+                "first-vapor-fraction",
+                "phase.mole_fraction",
+                "dimensionless",
+                "true-species-vapor-mole-fraction",
+                vapor_id,
+                (1.0, 0.0, 0.0),
+                support="positive",
+            ),
+            equilibrium.EquilibriumOutput(
+                "liquid-density",
+                "phase.molar_density",
+                "mole / meter**3",
+                "true-species-liquid-molar-density",
+                liquid_id,
+                support="positive",
+            ),
+        ),
+        continuation_identity=bubble.continuation_identity,
+        continuation_reference=bubble.continuation_reference,
+        feed=equilibrium.AffineFeed(
+            bubble.liquid_problem.reaction_system.species_ids,
+            (0.8, 0.05, 0.05, 0.1, 0.1),
+            ((0.0,), (1.0,), (0.0,), (0.0,), (0.0,)),
+            (equilibrium.FeedCoordinate("open-neutral-feed", (0.02, 0.2)),),
+        ),
+        intensive_boundaries=(
+            equilibrium.IntensiveBoundary(
+                "imposed-pressure",
+                "open-neutral-feed",
+                None,
+                "system.pressure",
+                (),
+                pressure_pa,
+                0.1,
+            ),
+        ),
+    )
+    active = epcsaft.ActiveParameterSet(parameters, ("component/solvent/dispersion_energy_over_k",))
+
+    result = equilibrium.phase_equilibrium(
+        epcsaft.Mixture(parameters), problem, active_parameters=active
+    )
+
+    assert result.status == "evaluated", result.failure
+    assert result.values == pytest.approx(
+        (0.19999999806869684, 0.002557333097189453, 52153.02200781559),
+        rel=0.0,
+        abs=1.0e-5,
+    )
+    assert tuple(cast(tuple[float, ...], row)[0] for row in result.jacobian) == pytest.approx(
+        (-0.002103817673475548, -5.376521092483845e-05, 50.733760375527396),
+        rel=0.0,
+        abs=2.0e-7,
+    )
+    assert result.branch_signature is not None
+    solved_coordinates = cast(tuple[tuple[str, float], ...], result.branch_signature[1])
+    assert solved_coordinates[0][0] == "open-neutral-feed"
+    assert solved_coordinates[0][1] == pytest.approx(0.09999999806869665, abs=5.0e-9)
+    assert len(result.phases) == 2
+    assert result.phases[0].mole_fractions == pytest.approx(
+        (
+            0.8144251424167347,
+            0.09072125633239035,
+            0.09072125633239085,
+            0.002066172459242039,
+            0.002066172459242039,
+        ),
+        abs=2.0e-10,
+    )
+    assert result.phases[1].mole_fractions == pytest.approx(
+        (0.002557333097189453, 0.498721333451404, 0.4987213334514067),
+        abs=2.0e-10,
+    )
+    assert result.phases[0].pressure_pa == pytest.approx(pressure_pa, abs=2.0e-6)
+    assert result.phases[1].pressure_pa == pytest.approx(pressure_pa, abs=2.0e-6)
+    certification = cast(Any, result.owner_result).certification
+    assert certification is not None
+    assert certification.bubble_log_closure_abs < 2.0e-10
+    assert certification.phase_pressure_residual_inf_pa < 2.0e-6
+    assert certification.phase_chemical_potential_residual_inf < 1.0e-10
+    observations = tuple(
+        equilibrium.GeneralEquilibriumOwnerObservation(
+            f"target/{output.identity}",
+            output.identity,
+            output.aggregate_identity,
+            output.covariance_identity,
+        )
+        for output in problem.outputs
+    )
+    receipt = equilibrium.serialize_general_reactive_equilibrium_receipt(
+        result,
+        batch_identity="imposed-pressure-parity",
+        observations=observations,
+    )
+    assert json.loads(receipt)["owner_receipt"]["schema"] == (
+        "epcsaft.intensive-boundary-owner-receipt.v2"
+    )
+    assert result.descriptor is not None
+    assert equilibrium.validate_general_reactive_equilibrium_receipt(
+        receipt,
+        descriptor=result.descriptor,
+        problem=problem,
+        batch_identity="imposed-pressure-parity",
+        active_parameters=active,
+        observations=observations,
+    ).startswith("sha256:")
