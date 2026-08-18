@@ -23,6 +23,10 @@ from tests.eos._raw_cases import (
     MULTISOLVENT_MULTIION,
     NEUTRAL_BINARY,
     _component,
+    _document,
+    _model_coefficient,
+    _model_families,
+    _pair,
     neutral_binary,
     neutral_pure,
 )
@@ -433,6 +437,56 @@ def test_permittivity__matches_independent_ion_fraction_and_dipolar_equations() 
         fractions[0] * 78.09 + fractions[1] * 10.0 + fractions[2] * 5.0,
         rel=2.0e-12,
     )
+
+
+def test_component_permittivity__admits_exact_pure_ionic_support() -> None:
+    components = [
+        _component(
+            component_id,
+            molar_mass=molar_mass,
+            charge_number=charge,
+            segment_count=segment_count,
+            segment_diameter=segment_diameter,
+            dispersion_energy_over_k=dispersion_energy,
+            relative_permittivity=relative_permittivity,
+            packing_diameter=segment_diameter,
+            debye_huckel_diameter=segment_diameter,
+            born_diameter=segment_diameter,
+            solvation_factor=1.0,
+        )
+        for (
+            component_id,
+            molar_mass,
+            charge,
+            segment_count,
+            segment_diameter,
+            dispersion_energy,
+            relative_permittivity,
+        ) in (
+            ("cation", 0.111, 1, 1.5, 3.6, 210.0, 2.0),
+            ("anion", 0.115, -1, 2.0, 3.8, 240.0, 4.0),
+        )
+    ]
+    mapping = _document(
+        "pure-ionic-fluid-fixture",
+        components,
+        pairs=[_pair("cation", "anion", k_ij=0.0)],
+        model_families=_model_families(
+            electrolyte="born",
+            permittivity="component-permittivity-mixing",
+            born_corrections=(0.0, 0.0),
+        ),
+        model_coefficients=[
+            _model_coefficient("ionic_region_relative_permittivity", 1.0)
+        ],
+    )
+
+    state = _state(mapping, x=(0.5, 0.5), density=5000.0)
+
+    assert state.bulk_relative_permittivity == pytest.approx(3.0, rel=2.0e-14)
+    assert math.isfinite(state.debye_huckel)
+    assert math.isfinite(state.born)
+    assert math.isfinite(state.pressure.to("pascal").magnitude)
 
 
 def test_density_closure__returns_certified_single_root_and_slope() -> None:

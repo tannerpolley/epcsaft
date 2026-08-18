@@ -5,6 +5,7 @@
 
 #include <cppad/cppad.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <stdexcept>
@@ -141,6 +142,18 @@ Scalar bulk_relative_permittivity(
             * (mixed_temperature / temperature - Scalar(1.0));
     }
 
+    if (parameters.relative_permittivity_formulation == RELATIVE_PERMITTIVITY_FORMULATION_COMPONENT_MIXING) {
+        const bool has_neutral_component = std::any_of(
+            parameters.charge_number.begin(),
+            parameters.charge_number.end(),
+            [](int charge) { return charge == 0; }
+        );
+        if (!has_neutral_component) {
+            // EqID: component_mixed_bulk_permittivity
+            return ion_dielectric;
+        }
+    }
+
     // EqID: salt_free_solvent_permittivity
     const Scalar salt_free_permittivity = dielectric_mass / solvent_mass;
     if (parameters.relative_permittivity_formulation == RELATIVE_PERMITTIVITY_FORMULATION_COMPONENT_MIXING) {
@@ -229,7 +242,9 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         ion_fraction_suppression_override
     );
     if constexpr (std::is_same_v<Scalar, double>) {
-        if (!(solvent_mass > 0.0) || !std::isfinite(solvent_mass)) {
+        if (parameters.relative_permittivity_formulation !=
+                RELATIVE_PERMITTIVITY_FORMULATION_COMPONENT_MIXING &&
+            (!(solvent_mass > 0.0) || !std::isfinite(solvent_mass))) {
             throw std::invalid_argument("electrolyte state has no solvent mass");
         }
         if (!(bulk_permittivity > 0.0) || !std::isfinite(bulk_permittivity)) {
