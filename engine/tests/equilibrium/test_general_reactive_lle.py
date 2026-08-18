@@ -25,6 +25,25 @@ _BASIS = "manufactured-reactive-lle-basis"
 _PARAMETER_IDENTITY = "pair/alpha/beta/k_ij"
 
 
+def test_finite_phase_failure_ranking_treats_missing_residual_as_nonfinite() -> None:
+    """A partially diagnosed failed start must not crash typed trial selection."""
+
+    residuals = {
+        "balance_inf_norm": 1.0e-8,
+        "pressure_relative_inf_norm": 2.0e-8,
+        "reaction_affinity_inf_norm": 3.0e-8,
+        "transfer_chemical_potential_inf_norm": 4.0e-8,
+        "kkt_stationarity_inf_norm": 5.0e-8,
+    }
+    partial = {**residuals, "reaction_affinity_inf_norm": None}
+
+    selected, _ = min(
+        enumerate((partial, residuals)), key=_grepe._finite_phase_failure_score
+    )
+
+    assert selected == 1
+
+
 def _fixture() -> tuple[
     epcsaft.Parameters,
     epcsaft.Mixture,

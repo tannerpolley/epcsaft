@@ -111,6 +111,27 @@ _SELECTOR_UNITS = {
     "phase.chemical_potential_over_rt": "dimensionless",
     "phase.partial_pressure": "pascal",
 }
+_FINITE_PHASE_FAILURE_RESIDUALS = (
+    "balance_inf_norm",
+    "pressure_relative_inf_norm",
+    "reaction_affinity_inf_norm",
+    "transfer_chemical_potential_inf_norm",
+    "kkt_stationarity_inf_norm",
+)
+
+
+def _finite_phase_failure_score(
+    item: tuple[int, dict[str, object]],
+) -> tuple[float, int]:
+    score = 0.0
+    for name in _FINITE_PHASE_FAILURE_RESIDUALS:
+        raw_value = item[1][name]
+        if raw_value is None:
+            score += 1.0e100
+            continue
+        value = float(cast(float, raw_value))
+        score += abs(value) if math.isfinite(value) else 1.0e100
+    return score, item[0]
 
 
 @dataclass(frozen=True, slots=True)
@@ -2110,22 +2131,7 @@ def _evaluate_finite_phase(
     if accepted_attempts:
         _, selected = accepted_attempts[0]
     else:
-        residual_names = (
-            "balance_inf_norm",
-            "pressure_relative_inf_norm",
-            "reaction_affinity_inf_norm",
-            "transfer_chemical_potential_inf_norm",
-            "kkt_stationarity_inf_norm",
-        )
-
-        def failure_score(item: tuple[int, dict[str, object]]) -> tuple[float, int]:
-            score = 0.0
-            for name in residual_names:
-                value = float(cast(float, item[1][name]))
-                score += abs(value) if math.isfinite(value) else 1.0e100
-            return score, item[0]
-
-        _, selected = min(enumerate(native_attempts), key=failure_score)
+        _, selected = min(enumerate(native_attempts), key=_finite_phase_failure_score)
     native = dict(selected)
     native["optimizer_iterations"] = sum(
         int(cast(int, attempt["optimizer_iterations"])) for attempt in native_attempts
