@@ -14,6 +14,24 @@ without accepting, admitting, promoting, or adopting it. No package, SDK,
 filesystem, or legacy compatibility handoff exists between the three runtime
 modules.
 
+Application observations, including phase-equilibrium and extraction
+observations, may be declared Regression targets when their units, basis,
+topology, support, standard states, and residual meanings are explicit. A
+successful fit produces a provenance-linked candidate parameter document for
+the caller's stated domain. Engine numerical acceptance establishes that the
+declared mathematical problem and its exact derivatives satisfy the stated
+checks; it does not assert that fitted parameters are universal or
+decide whether an application may use them. Application suitability,
+calibration scope, surrogate construction, and flowsheet claims remain with
+the downstream repository.
+
+Configured reactive-phase acceptance uses a dimensionless reaction-affinity
+and interphase-potential residual limit of `5e-7`, equivalent to about
+`1.24e-3 J/mol` at `298.15 K`. This is a numerical-resolution threshold,
+not a scientific goodness-of-fit criterion. Balance, pressure, charge,
+phase-support, KKT, stability, and derivative checks keep their independent
+tolerances.
+
 Engine retains compact numerical evidence. Installed-wheel physical and
 literature campaigns belong in `validation/`; temporary experiments belong in
 `lab/` and carry no durable evidence authority. Superseded live plans, designs,

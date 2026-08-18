@@ -10,7 +10,10 @@ namespace epcsaft_engine::equilibrium {
 
 inline constexpr double kChemicalBalanceTolerance = 1.0e-9;
 inline constexpr double kChemicalPressureTolerance = 1.0e-8;
-inline constexpr double kChemicalAffinityTolerance = 1.0e-7;
+// A 5e-7 dimensionless affinity is about 1.24e-3 J/mol at 298.15 K.
+// That is below the meaningful resolution of configured reactive phase
+// calculations while remaining substantially tighter than process data.
+inline constexpr double kChemicalAffinityTolerance = 5.0e-7;
 inline constexpr double kChemicalKktTolerance = 1.0e-7;
 inline constexpr double kChemicalChartPullbackTolerance = 1.0e-10;
 inline constexpr double kChemicalObjectiveDerivativeTolerance = 1.0e-5;
