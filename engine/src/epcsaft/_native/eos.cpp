@@ -343,7 +343,9 @@ NativeModel::NativeModel(NativeParameters parameters)
         }
       }
     }
-    if (solvent_count == 0) {
+    if (solvent_count == 0 &&
+        parameters_.relative_permittivity_formulation !=
+            RELATIVE_PERMITTIVITY_FORMULATION_COMPONENT_MIXING) {
       throw std::invalid_argument("electrolyte model requires a dielectric solvent");
     }
     const bool valid_born_corrections =

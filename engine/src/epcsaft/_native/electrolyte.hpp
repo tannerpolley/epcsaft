@@ -280,35 +280,39 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         return {0.0, Scalar(0.0)};
     }
     double reference_charge_square_sum = 0.0;
-    std::size_t reference_dielectric_solvent_count = 0;
+    double reference_solvent_mass = 0.0;
     for (std::size_t component = 0;
          component < reference_mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
-        if (charge != 0) {
+        if (dielectric_solvent_component(component, parameters)) {
+            reference_solvent_mass += reference_mole_fractions[component]
+                * parameters.molar_mass_kg_per_mol[component];
+        } else if (charge != 0) {
             reference_charge_square_sum += reference_mole_fractions[component]
                 * charge * charge;
-        } else if (
-            reference_mole_fractions[component] > 0.0
-            && dielectric_solvent_component(component, parameters)
-        ) {
-            ++reference_dielectric_solvent_count;
         }
     }
-    if (
-        parameters.relative_permittivity_formulation
-            == RELATIVE_PERMITTIVITY_FORMULATION_SOLVENT_ONLY
-        && reference_charge_square_sum > 0.0
-        && reference_dielectric_solvent_count != 1
-    ) {
-        throw std::invalid_argument(
-            "electrolyte state requires exactly one dielectric solvent"
+    if (reference_charge_square_sum == 0.0) {
+        if (reference_solvent_mass == 0.0) {
+            return {0.0, Scalar(0.0)};
+        }
+        const Scalar neutral_permittivity = detail::bulk_relative_permittivity(
+            temperature,
+            molar_density,
+            mole_fractions,
+            parameters,
+            relative_permittivity_override,
+            ion_fraction_suppression_override
         );
-    }
-    if (
-        reference_charge_square_sum == 0.0
-        && reference_dielectric_solvent_count == 0
-    ) {
-        return {Scalar(0.0), Scalar(0.0)};
+        if constexpr (std::is_same_v<Scalar, double>) {
+            if (!(neutral_permittivity > 0.0)
+                || !std::isfinite(neutral_permittivity)) {
+                throw std::invalid_argument(
+                    "bulk relative permittivity is nonpositive"
+                );
+            }
+        }
+        return {neutral_permittivity, Scalar(0.0)};
     }
 
     Scalar solvent_mass = Scalar(0.0);
@@ -346,9 +350,6 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         }
     }
 
-    if (reference_charge_square_sum == 0.0) {
-        return {bulk_permittivity, Scalar(0.0)};
-    }
     // EqID: debye_screening_parameter
     const Scalar kappa = electrolyte_sqrt(
         molar_density * PHYSICAL_AVOGADRO

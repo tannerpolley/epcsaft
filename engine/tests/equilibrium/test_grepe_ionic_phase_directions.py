@@ -192,15 +192,10 @@ def test_dielectric_solvent_identity_is_scoped_to_charged_phase_support() -> Non
             problem.phases[1],
         ),
     )
-    for invalid_model, invalid_problem in (
-        (ambiguous_model, problem),
-        (model, no_solvent_problem),
-    ):
-        with pytest.raises(
-            epcsaft.ParameterError,
-            match="exactly-one-dielectric-solvent-required",
-        ):
-            equilibrium.phase_equilibrium(invalid_model, invalid_problem)
+    multisolvent = equilibrium.phase_equilibrium(ambiguous_model, problem)
+    assert multisolvent.status == "evaluated", multisolvent.failure
+    with pytest.raises(epcsaft.ParameterError, match="dielectric-solvent-required"):
+        equilibrium.phase_equilibrium(model, no_solvent_problem)
 
 
 def test_electrolyte_finite_phases_preserve_exact_support_and_declared_directions() -> None:

@@ -915,12 +915,12 @@ def _validate_finite_phase_electrolyte_supports(
     for phase, supported in zip(phases, supported_component_ids, strict=True):
         if not any(charges[component_id] != 0 for component_id in supported):
             continue
-        if len(dielectric_solvents.intersection(supported)) != 1:
+        if not dielectric_solvents.intersection(supported):
             raise epcsaft.ParameterError(
                 "invalid-value",
                 (
                     ("phase_identity", phase.identity),
-                    ("reason", "exactly-one-dielectric-solvent-required"),
+                    ("reason", "dielectric-solvent-required"),
                 ),
             )
 
