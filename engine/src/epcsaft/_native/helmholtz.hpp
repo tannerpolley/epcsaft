@@ -320,7 +320,9 @@ HelmholtzResult<Scalar> residual_helmholtz(
                 ? Scalar(parameters.dispersion_energy_over_k[j])
                 : (*dispersion_energy_override)[j];
             const Scalar epsilon_ij =
-                parameters.charge_number[i] * parameters.charge_number[j] > 0
+                parameters.ionic_dispersion_model ==
+                        IONIC_DISPERSION_EXCLUDE_SAME_SIGN_PAIRS &&
+                    parameters.charge_number[i] * parameters.charge_number[j] > 0
                 ? Scalar(0.0)
                 : scalar_sqrt(epsilon_i * epsilon_j)
                     * (Scalar(1.0) - k_ij);

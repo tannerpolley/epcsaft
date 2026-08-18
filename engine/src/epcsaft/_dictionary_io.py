@@ -536,7 +536,7 @@ def _model_families(value: object) -> tuple[ModelFamilySpec, ...]:
             raw,
             field=field,
             required=frozenset({"family_id", "kind", "choice", "provenance"}),
-            optional=frozenset({"c_shell", "c_dielectric"}),
+            optional=frozenset({"c_shell", "c_dielectric", "ionic_dispersion"}),
         )
         kind = raw["kind"]
         if not isinstance(kind, str) or kind not in _MODEL_CHOICES:
@@ -567,6 +567,27 @@ def _model_families(value: object) -> tuple[ModelFamilySpec, ...]:
                 )
             c_shell = None
             c_dielectric = None
+        if kind == "electrolyte" and choice != "none":
+            ionic_dispersion = raw.get(
+                "ionic_dispersion", "exclude-same-sign-ion-pairs"
+            )
+            if ionic_dispersion not in {
+                "all-ion-pairs",
+                "exclude-same-sign-ion-pairs",
+            }:
+                raise _error(
+                    "invalid-value",
+                    field=f"{field}.ionic_dispersion",
+                    value=ionic_dispersion,
+                )
+        else:
+            if "ionic_dispersion" in raw:
+                raise _error(
+                    "invalid-schema",
+                    field=field,
+                    unknown="ionic_dispersion",
+                )
+            ionic_dispersion = None
         result.append(
             ModelFamilySpec(
                 family_id,
@@ -575,6 +596,7 @@ def _model_families(value: object) -> tuple[ModelFamilySpec, ...]:
                 *_provenance(raw["provenance"], field=f"{field}.provenance"),
                 c_shell,
                 c_dielectric,
+                ionic_dispersion,
             )
         )
     if seen != set(_MODEL_CHOICES):

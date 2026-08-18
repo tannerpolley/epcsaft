@@ -32,6 +32,10 @@ type RelativePermittivityFormulation = Literal[
     "solvent-only",
 ]
 type PolarFormulation = Literal["point-multipole"]
+type IonicDispersionFormulation = Literal[
+    "all-ion-pairs",
+    "exclude-same-sign-ion-pairs",
+]
 type SingleParameterFamily = Literal[
     "molar_mass",
     "segment_count",
@@ -218,6 +222,7 @@ class ModelFamilySpec:
     domain_id: str
     c_shell: float | None = None
     c_dielectric: float | None = None
+    ionic_dispersion: IonicDispersionFormulation | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -239,6 +244,28 @@ class ModelFamilySpec:
                 "invalid-value",
                 field="model_family.born_corrections",
                 reason="non-born-model",
+            )
+        if self.kind == "electrolyte" and self.choice != "none":
+            if self.ionic_dispersion is None:
+                object.__setattr__(
+                    self,
+                    "ionic_dispersion",
+                    "exclude-same-sign-ion-pairs",
+                )
+            if self.ionic_dispersion not in {
+                "all-ion-pairs",
+                "exclude-same-sign-ion-pairs",
+            }:
+                raise _error(
+                    "invalid-value",
+                    field="model_family.ionic_dispersion",
+                    value=self.ionic_dispersion,
+                )
+        elif self.ionic_dispersion is not None:
+            raise _error(
+                "invalid-value",
+                field="model_family.ionic_dispersion",
+                reason="non-electrolyte-model",
             )
         source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
         object.__setattr__(self, "source_id", source_id)
@@ -870,6 +897,7 @@ __all__ = (
     "CrossAssociationCorrectionRecord",
     "DomainKind",
     "ExponentialTerm",
+    "IonicDispersionFormulation",
     "ModelFamilyKind",
     "ModelFamilySpec",
     "ModelParameterFamily",

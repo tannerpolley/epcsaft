@@ -7,6 +7,8 @@ namespace epcsaft {
 inline constexpr int ELECTROLYTE_MODEL_NONE = 0;
 inline constexpr int ELECTROLYTE_MODEL_BORN = 1;
 inline constexpr int ELECTROLYTE_MODEL_FULLY_DISSOCIATED_DEBYE_HUCKEL = 2;
+inline constexpr int IONIC_DISPERSION_EXCLUDE_SAME_SIGN_PAIRS = 0;
+inline constexpr int IONIC_DISPERSION_ALL_PAIRS = 1;
 inline constexpr int RELATIVE_PERMITTIVITY_FORMULATION_NONE = 0;
 inline constexpr int RELATIVE_PERMITTIVITY_FORMULATION_ION_FRACTION_SUPPRESSION = 1;
 inline constexpr int RELATIVE_PERMITTIVITY_FORMULATION_COMPONENT_MIXING = 2;
@@ -43,6 +45,7 @@ struct NativeParameters final {
     double born_c_shell;
     double born_c_dielectric;
     int electrolyte_model;
+    int ionic_dispersion_model;
     std::vector<double> dielectric_volume_m3_per_mol;
     std::vector<double> dielectric_temperature_k;
     std::vector<double> ion_specific_suppression_coefficient;

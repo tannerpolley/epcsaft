@@ -520,6 +520,10 @@ def _native_arguments(
         born_c_dielectric = 0.0
         electrolyte_model = 0
 
+    ionic_dispersion_model = (
+        1 if model.ionic_dispersion == "all-ion-pairs" else 0
+    )
+
     return (
         list(model.segment_count),
         sigma_constant,
@@ -546,6 +550,7 @@ def _native_arguments(
         born_c_shell,
         born_c_dielectric,
         electrolyte_model,
+        ionic_dispersion_model,
         list(model.dielectric_volume_m3_per_mol) or [0.0] * components,
         list(model.dielectric_temperature_k) or [0.0] * components,
         list(model.ion_specific_suppression_coefficient) or [0.0] * components,

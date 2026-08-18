@@ -482,11 +482,22 @@ def test_component_permittivity__admits_exact_pure_ionic_support() -> None:
     )
 
     state = _state(mapping, x=(0.5, 0.5), density=5000.0)
+    all_pair_mapping = deepcopy(mapping)
+    electrolyte = next(
+        family
+        for family in all_pair_mapping["model_families"]
+        if family["kind"] == "electrolyte"
+    )
+    electrolyte["ionic_dispersion"] = "all-ion-pairs"
+    all_pair = _state(all_pair_mapping, x=(0.5, 0.5), density=5000.0)
 
     assert state.bulk_relative_permittivity == pytest.approx(3.0, rel=2.0e-14)
     assert math.isfinite(state.debye_huckel)
     assert math.isfinite(state.born)
     assert math.isfinite(state.pressure.to("pascal").magnitude)
+    assert state.dispersion == pytest.approx(-1.1002931545314838, rel=2.0e-13)
+    assert all_pair.dispersion == pytest.approx(-2.3098829509931313, rel=2.0e-13)
+    assert all_pair.debye_huckel == pytest.approx(state.debye_huckel, rel=2.0e-14)
 
 
 def test_density_closure__returns_certified_single_root_and_slope() -> None:

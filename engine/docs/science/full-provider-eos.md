@@ -32,6 +32,7 @@ It does not override this bounded specification or the current implementation.
 | VrabecGross2008DQ | Vrabec and Gross, DOI `10.1021/jp072619u` | Directional DQ35 Padé contribution, coefficients, and alpha |
 | Bulow2019 | Bülow et al., *Fluid Phase Equilibria* 2019, 492, 26-33, DOI `10.1016/j.fluid.2019.03.010` | Debye-Huckel contribution with composition-dependent dielectric treatment |
 | Figiel2025 | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2025, 64, 9406-9418, DOI `10.1021/acs.iecr.5c00475` | Fitted Born diameter, SSM+DS Born term, solvation factor, dielectric rule, fugacity relations, and electrolyte reference-state equations |
+| Ji2012 | Ji, Held, and Sadowski, *Fluid Phase Equilibria* 2012, 335, 64-73, DOI `10.1016/j.fluid.2012.05.029` | Fully dissociated ionic-liquid model with dispersion among all ion pairs |
 | Figiel2025SI | Official ACS supporting information, DOI `10.1021/acs.iecr.5c00475.s001`, Figshare article `28888514`, file `54030209`, MD5 `4c3d3964d6e61b908c3ce3b17bb4e6b0` | Comparison of direct, SSM, and SSM+DS formulations and retained validation evidence |
 | Figiel2026Correction | Figiel, Yu, and Held, *Ind. Eng. Chem. Res.* 2026, DOI `10.1021/acs.iecr.6c01415` | Authoritative corrected text of Figiel2025 Eq. (7): restores the missing bracket and replaces the second `epsilon_r,bulk` with `epsilon_r,ion` |
 | Zuber2014 | Zuber et al., *Fluid Phase Equilibria* 2014, DOI `10.1016/j.fluid.2014.05.037` | Ion-specific dielectric suppression, Eqs. (8)--(10) and Table 2 |
@@ -173,17 +174,19 @@ The `l_ij = 0` Gross rule remains an implementation identity for bundles that
 do not admit that family. The Ascani2022 bundle instead requires an explicit
 `l_ij` record for every unlike pair and uses its Eq. S4 `(1-l_ij)` sign
 convention. A missing applicable unlike-component `k_ij` or Ascani `l_ij`
-record is an input error. Same-sign ion dispersion is equation-level
-`NOT_APPLICABLE`, not an implicit zero source record. The diagonal identities
+record is an input error. For electrolyte families declaring same-sign ion
+exclusion, same-sign dispersion is equation-level `NOT_APPLICABLE`, not an
+implicit zero source record. Families declaring all-ion-pair dispersion retain
+the Gross combining rule for those pairs. The diagonal identities
 `k_ii = l_ii = 0` are not pair records.
 An associating neutral subset selected from the Ascani bundle retains its
 explicit source `l_ij`; only bundles with no selected `l_ij` family use the
 zero-matrix identity.
 
-For charged components, Figiel2025 sets cation--cation and anion--anion
-dispersion energies to zero. This gives `d_i = 0.88 sigma_i` from Eqs. (3)--
-(4) and sets every same-sign `u_ij` to zero in the dispersion sums. Opposite-
-sign and solvent--ion pairs retain the Gross combining equation with their
+For charged components, the electrolyte model family declares its source rule.
+Figiel2025 sets cation--cation and anion--anion dispersion energies to zero;
+Ji2012 retains dispersion among all ionic species. Opposite-sign and
+solvent--ion pairs always retain the Gross combining equation with their
 explicit source-backed `k_ij`. These ionic rules are part of the common scalar
 kernel, so Helmholtz values and CppAD composition derivatives consume the same
 definition.

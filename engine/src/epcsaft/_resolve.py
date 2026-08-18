@@ -13,6 +13,7 @@ from .records import (
     ConstantCorrelation,
     ConstantPlusSumOfExponentialsCorrelation,
     CrossAssociationCorrectionRecord,
+    IonicDispersionFormulation,
     ModelParameterRecord,
     PairParameterRecord,
     PolarFormulation,
@@ -83,6 +84,7 @@ class _ResolvedModel:
     polar_formulation: PolarFormulation | None = None
     dipole_moment_debye: tuple[float, ...] = ()
     quadrupole_moment_debye_angstrom: tuple[float, ...] = ()
+    ionic_dispersion: IonicDispersionFormulation = "exclude-same-sign-ion-pairs"
     packing_diameter_angstrom: tuple[float | None, ...] = ()
     debye_huckel_diameter_angstrom: tuple[float | None, ...] = ()
     born_c_shell: float = 0.0
@@ -363,6 +365,8 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         family_choices["permittivity"],
     )
     electrolyte_formulation = family_choices["electrolyte"]
+    electrolyte_spec = family_specs["electrolyte"]
+    ionic_dispersion = electrolyte_spec.ionic_dispersion
     formulation_model_families = {"ion_fraction_suppression_coefficient"}
     formulation_single_families = {
         "dielectric_volume",
@@ -642,11 +646,8 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
     debye_huckel_diameter = ionic_diameters("debye_huckel_diameter")
 
     if electrolyte_formulation == "born":
-        electrolyte_spec = family_specs["electrolyte"]
         assert electrolyte_spec.c_shell is not None
         assert electrolyte_spec.c_dielectric is not None
-    else:
-        electrolyte_spec = None
     if electrolyte_formulation == "fully-dissociated-debye-huckel":
         if relative_permittivity_formulation != "solvent-only":
             raise _error(
@@ -736,6 +737,7 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             polar_formulation=polar_formulation,
             dipole_moment_debye=dipole_moment,
             quadrupole_moment_debye_angstrom=quadrupole_moment,
+            ionic_dispersion=cast(IonicDispersionFormulation, ionic_dispersion),
             packing_diameter_angstrom=tuple(packing_diameter),
             debye_huckel_diameter_angstrom=tuple(debye_huckel_diameter),
         )
@@ -969,6 +971,7 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         polar_formulation,
         dipole_moment,
         quadrupole_moment,
+        cast(IonicDispersionFormulation, ionic_dispersion),
         tuple(packing_diameter),
         tuple(debye_huckel_diameter),
         cast(float, electrolyte_spec.c_shell),

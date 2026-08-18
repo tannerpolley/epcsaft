@@ -100,12 +100,12 @@ d_i=d_i^{\mathrm{pack}},\qquad z_i\ne0,\qquad d_i^{\mathrm{pack}}>0.
 \end{equation}
 
 % EqID: same_sign_ionic_dispersion
-% Source: \cite{Figiel2025}, same-sign ion convention
+% Source: \cite{Figiel2025}, same-sign ion exclusion; \cite{Ji2012}, all-ion-pair dispersion
 % Status: Implementation convention
-% Description: Suppress dispersion between equally charged ions.
-% Change note: Mirrors the charged-pair branch in residual_helmholtz.
+% Description: Select the source-declared dispersion rule for equally charged ions.
+% Change note: The caller selects all ion pairs or same-sign exclusion as part of the electrolyte model family.
 \begin{equation}
-\epsilon_{ij}=0,\qquad z_iz_j>0.
+\epsilon_{ij}=\begin{cases}\sqrt{\epsilon_i\epsilon_j}(1-k_{ij}),&z_iz_j\leq 0\ \text{or all-ion-pair dispersion},\\0,&z_iz_j>0\ \text{and same-sign exclusion}.\end{cases}
 \label{eq:same_sign_ionic_dispersion}
 \end{equation}
 
