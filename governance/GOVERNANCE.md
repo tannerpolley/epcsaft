@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 21
+Doctrine revision: 22
 
-Approved: 2026-08-14
+Approved: 2026-08-18
 
 Owner: `tannerpolley/ePC-SAFT:governance/`
 
@@ -172,6 +172,30 @@ parameters. The canonical target plan is
 This architecture decision admits no new runtime capability: D-034 and D-035
 remain the current reactive Observation Family boundary until later slices
 earn independent numerical evidence and accepted receipts.
+
+D-037 admits the reviewed GREPE proven core implemented across issues #47,
+#48, and #49. The sole `phase_equilibrium` owner may now compile declared
+finite and incipient phase supports, phase-scoped electrolyte solvents,
+temperature-dependent permittivity, declared reactions, affine feeds, and
+imposed intensive boundaries through its existing homogeneous or reactive-
+bubble owner. A charged phase may contain multiple neutral components, but its
+electrolyte term still requires exactly one declared dielectric solvent within
+that phase. The implementation remains source- and component-neutral and does
+not discover topology, choose phases by TPD, or claim global equilibrium.
+
+The admitted intensive-boundary route retains exact owner derivatives and
+typed non-evaluable trials. Its outer receipt binds the solved feed, reaction
+system, and immutable owner topology to the validated wrapped receipt. For the
+reactive-bubble wrapper it also cross-links phase compositions, pressures, and
+observation values. Homogeneous values and derivatives remain executable
+falsifier evidence rather than being recomputed by receipt validation. The
+fixed-pressure incipient parity case reproduces
+the retired specialized route's pressure, solved feed coordinate, phase
+compositions, three observables, and their parameter derivatives; independent
+perturbation solves also verify those derivatives. No other uncommitted issue-
+#48 application, reference-correction, saturation, or campaign layer is
+admitted. The accepted receipt is
+`governance/receipts/cap-14-grepe-proven-core-admission.json`.
 
 D-032 completes the general scientific capability hard cutover. The accepted
 CAP-11 subject commit removes the superseded live permittivity design, the
@@ -566,6 +590,11 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 22 records the user-approved proven-core integration. D-037 admits
+only the generic, reviewed GREPE runtime shared by issues #47, #48, and #49,
+including exact imposed-boundary derivatives and parity with the retired
+fixed-pressure incipient route.
+
 Revision 21 records the user-approved GREPE target architecture. D-036 evolves
 the one public `phase_equilibrium` owner toward declarative homogeneous
 reaction, reactive bubble/dew/VLE, and declared-phase reactive LLE work while
@@ -686,3 +715,4 @@ Historical plans and receipts retain their original names.
 | D-034 Admit homogeneous reactive observations | Explicit user instruction through issue #30 and the reviewed CAP-12 correction/admission gates on 2026-08-13 | Admit only the fixed-T,P homogeneous reactive Observation Family and its canonical Regression integration; require immutable role-certified continuation anchors, exact total Jacobians, closed typed failures, exact trial/branch receipts, and local/no-global semantics; retain phase-equilibrium and coupled reactive-VLE families as unadmitted | Enables the first source-neutral reactive regression tracer without weakening D-031's prohibition on variable-topology or insufficiently certified phase-equilibrium fitting | No | Engine, Validation, Regression, and Management |
 | D-035 Admit reactive bubble/VLE observations | Explicit user instruction through issue #31 and the reviewed CAP-13 correction/admission gates on 2026-08-13 | Admit only the fixed-topology reactive bubble/VLE Observation Family and its canonical Regression integration; require exact same-liquid-state binding, ordered neutral vapor support, nonideal Provider vapor as the primary path, exact total Schur derivatives, immutable local branch receipts, and typed fail-closed outcomes | Enables coupled pressure/speciation regression without weakening D-031's prohibition on unqualified variable-topology phase-equilibrium fitting or making a global-equilibrium claim | No | Engine, Validation, Regression, and Management |
 | D-036 General Reactive Equilibrium and Phase Equilibrium target | User-confirmed GREPE design and two independent read-only sanity reviews on 2026-08-14 | Evolve the sole public `phase_equilibrium` owner through declarative finite/incipient reacting-phase blocks; use one nonduplicated Gibbs/KKT encoding, phase-aware reaction standards, exact Ipopt Hessians, exact outer-Ceres Jacobians, local declared-phase certificates, generic Regression evaluation, and authority-neutral candidate export | Establishes one staged architecture for homogeneous reaction, reactive bubble/dew/VLE, neutral reactive LLE, and later electrochemical LLE without admitting unimplemented capability or adding an application-specific route | Architecture target only; each runtime slice requires its own accepted receipt | Engine, Validation, Regression, Data, downstream applications, and Management |
+| D-037 Admit the GREPE proven core | Explicit user instruction on 2026-08-18 to combine the reviewed generic Engine work, retain only the proven core, reproduce the removed specialized path's results, and use an exact receipt before updating main | Admit declared finite/incipient supports, phase-scoped dielectric solvent selection, temperature-dependent permittivity, generic affine-feed intensive boundaries over the existing homogeneous/reactive-bubble owners, exact total derivatives, typed failures, and hash-bound nested receipts at subject commit `25cd674bb32611bac89d0ffb4ab8e1d953cbe09f` | Replaces a specialized fixed-pressure incipient implementation with the smaller generic owner while preserving its numerical results; excludes the other issue-48 dirty application/reference/saturation layer | No; later globality, phase discovery, and application parameter promotion remain separate | Engine, Validation, Regression, downstream applications, and Management |

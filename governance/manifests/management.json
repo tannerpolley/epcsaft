@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "doctrine_revision": 21,
+  "doctrine_revision": 22,
   "repository": "tannerpolley/ePC-SAFT",
   "visibility": "private",
   "default_branch": "main",

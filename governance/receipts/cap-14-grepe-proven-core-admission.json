@@ -1,0 +1,144 @@
+{
+  "envelope": {
+    "schema": {
+      "path": "manifests/operation-receipt-envelope-v1.json",
+      "version": 1,
+      "sha256": "7cc1cbf4b92aaa54a4f7856bab5de4f1d8d2855c63566e5ecfe9660fb6f2061e"
+    },
+    "sequence": 12,
+    "subject": {
+      "operation": "cap-14-grepe-proven-core-admission",
+      "repository": "tannerpolley/ePC-SAFT",
+      "issue": 48,
+      "decision": "governance_D-037",
+      "doctrine_revision": 22,
+      "phase": "completed-admission",
+      "engine_commit": "25cd674bb32611bac89d0ffb4ab8e1d953cbe09f",
+      "engine_tree": "7db3f8440fc9d65aee022cee7212662e4cc2f9c7",
+      "evidence_commit": "25cd674bb32611bac89d0ffb4ab8e1d953cbe09f",
+      "evidence_tree": "7db3f8440fc9d65aee022cee7212662e4cc2f9c7",
+      "wheel_sha256": "810da89795b8b42e22497278bddeb94b9cb2d3edc13d3600bbbc273eeeb69cf1",
+      "parity_falsifier_sha256": "0808250a75098cf217216fb7fdacf815613267c40890edde8f2c42079551a878",
+      "record_sha256": "2c3607c00b0473b0e4e03b9837d83d0f834084b33e72502ce58fd8309e85a9b0"
+    },
+    "subject_sha256": "de458fb6cb423b05ed6f6827569ebf5fbc0abb371a920e737b312f3b89d795c4",
+    "validator": {
+      "repository": "tannerpolley/ePC-SAFT",
+      "commit": "25cd674bb32611bac89d0ffb4ab8e1d953cbe09f",
+      "path": "engine/tests/equilibrium/test_grepe_intensive_boundary.py",
+      "sha256": "0808250a75098cf217216fb7fdacf815613267c40890edde8f2c42079551a878"
+    },
+    "command": "tools/check-all.sh; .venv/bin/python -m pytest -q -m slow engine/tests/equilibrium/test_reactive_bubble_observations.py -k nonideal_reactive_bubble_total_jacobian_and_measurement_semantics; .venv/bin/python -m pytest -q -m slow engine/tests/equilibrium/test_grepe_intensive_boundary.py -k imposed_potential_output_jacobian_includes_uptake_response; .venv/bin/python -m pytest -q -m slow engine/tests/equilibrium/test_grepe_intensive_boundary.py -k imposed_pressure_matches_fixed_pressure_incipient_reference",
+    "environment": {
+      "captured_at": "2026-08-18T16:58:40-06:00",
+      "timezone": "America/Denver",
+      "platform": "linux-x86_64",
+      "python": "3.13",
+      "package_source": "single non-editable installed wheel",
+      "ci": "none; local owner validation"
+    },
+    "artifacts": [
+      {
+        "kind": "engine-wheel",
+        "path": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+        "sha256": "810da89795b8b42e22497278bddeb94b9cb2d3edc13d3600bbbc273eeeb69cf1"
+      },
+      {
+        "kind": "installed-parity-falsifier",
+        "path": "engine/tests/equilibrium/test_grepe_intensive_boundary.py",
+        "sha256": "0808250a75098cf217216fb7fdacf815613267c40890edde8f2c42079551a878"
+      }
+    ],
+    "producer": {
+      "kind": "codex-task",
+      "id": "01a0123c-2cdd-7b90-a9c3-414b0f790ccd"
+    },
+    "reviewer": {
+      "kind": "two-independent-read-only-review-agents",
+      "id": "parity-science-review+parity-minimalism-review",
+      "outcome": "receipt, parity, and regression-safety corrections satisfied"
+    },
+    "failed_outcomes": [
+      {
+        "name": "all_declared_pressure_starts_must_converge",
+        "observed": "The 3.6 MPa start is rejected with no_incipient_phase on both the untouched issue-47 commit and the integrated branch; two other starts reach the same unique certified branch.",
+        "disposition": "Removed the nonphysical all-starts-accepted assertion while retaining every-start accounting, unique-branch, certification, phase-support, value, and derivative checks."
+      },
+      {
+        "name": "exact_duplicate_pressure_equality",
+        "observed": "Duplicated outer and wrapped pressure records differed only within the existing 2e-6 Pa certification bound.",
+        "disposition": "Bound the duplicate receipt fields at the existing strict certificate tolerance; no physical solver tolerance changed."
+      }
+    ],
+    "supersedes": null,
+    "revoked_by": null,
+    "user_approval": {
+      "source": "explicit native approval in the originating Codex task on 2026-08-18 of exact subject de458fb6cb423b05ed6f6827569ebf5fbc0abb371a920e737b312f3b89d795c4",
+      "subject_sha256": "de458fb6cb423b05ed6f6827569ebf5fbc0abb371a920e737b312f3b89d795c4"
+    }
+  },
+  "record": {
+    "status": "completed",
+    "observations": [
+      {
+        "name": "immutable_engine_artifact",
+        "expected": "One committed runtime tree supplies one installed GREPE wheel.",
+        "observed": "Commit 25cd674bb32611bac89d0ffb4ab8e1d953cbe09f, tree 7db3f8440fc9d65aee022cee7212662e4cc2f9c7, supplied the non-editable wheel with SHA-256 810da89795b8b42e22497278bddeb94b9cb2d3edc13d3600bbbc273eeeb69cf1.",
+        "outcome": "pass"
+      },
+      {
+        "name": "generic_proven_core",
+        "expected": "The combined capability stays source-neutral, uses the sole phase-equilibrium owner, and adds no specialized fixed-pressure route.",
+        "observed": "Declared finite/incipient supports, multiple neutral components with one phase-scoped dielectric solvent, temperature-dependent permittivity, declared reactions, affine feeds, and imposed boundaries compile through the existing homogeneous or reactive-bubble owner. No Rezaee, lithium, DES, HBTA, TOPO, MDEA, paper, component, route, or whitelist selector exists in the admitted runtime.",
+        "outcome": "pass"
+      },
+      {
+        "name": "removed_path_numerical_parity",
+        "expected": "The generic owner reproduces the retired specialized fixed-pressure incipient path.",
+        "observed": "At 313.15 K and 3348818.325948275 Pa it solved open-neutral-feed=0.09999999806869665; returned neutral-family amount 0.19999999806869684 mol, first vapor fraction 0.002557333097189453, and liquid density 52153.02200781559 mol/m3; and reproduced both phase compositions and pressures within the declared strict bounds.",
+        "outcome": "pass"
+      },
+      {
+        "name": "exact_total_derivative_parity",
+        "expected": "The unified path preserves the specialized path's active-parameter response and agrees with independent resolves.",
+        "observed": "The three derivatives were -0.002103817673475548 mol/K, -5.376521092483845e-05 1/K, and 50.733760375527396 mol/(m3 K). Centered resolves at plus/minus 0.001 K agreed within 3e-6 scaled error. The complete parity and receipt-tamper falsifier passed in 317.78 s.",
+        "outcome": "pass"
+      },
+      {
+        "name": "installed_regression_safety",
+        "expected": "The installed wheel passes the warm gate and both existing intensive-owner branches.",
+        "observed": "The warm installed-wheel gate passed 65 EOS, 23 chemical-equilibrium, 62 other-equilibrium, 3 regression, and 4 Validation tests with Ruff, mypy, Management, and artifact checks clean. The canonical reactive-bubble test passed in 18.64 s and the imposed-potential exact-derivative/receipt test passed in 45.57 s.",
+        "outcome": "pass"
+      },
+      {
+        "name": "receipt_binding",
+        "expected": "The outer intensive-boundary receipt preserves content identity and the declared wrapped-owner relationships without duplicating a solver.",
+        "observed": "Receipt v2 binds the solved feed coordinate, reconstructed reaction fingerprint, immutable owner topology, and full validated wrapped receipt. The reactive-bubble wrapper additionally cross-links phase compositions, pressures, and selected values; its reaction tamper case is rejected. Homogeneous value and derivative truth remains in the executable falsifier.",
+        "outcome": "pass"
+      }
+    ],
+    "preconditions": [
+      "The Engine and evidence commit remains reachable and unchanged.",
+      "The installed distribution originates only from the recorded non-editable wheel.",
+      "Callers declare phase supports, reactions, feed coordinates, boundaries, starts, and local continuation policy.",
+      "Only the committed proven core is admitted; the independent uncommitted issue-48 layer remains excluded."
+    ],
+    "expected_postconditions": [
+      "Governance D-037 admits the exact GREPE proven-core subject.",
+      "The dedicated integration branch may update origin main only after exact subject approval.",
+      "Issue #49 may close after the admitted main commit is verified; issues #47 and #48 retain later scientific boundaries.",
+      "Downstream applications consume a rebuilt immutable wheel and retain their own chemistry and parameter evidence."
+    ],
+    "retry": "Repeat only from the unchanged subject commit and compare tree, wheel, parity-falsifier, receipt, branch, value, and derivative identities.",
+    "stop_conditions": [
+      "The generic route changes any recorded parity value or derivative beyond its existing bound.",
+      "A reactive-bubble receipt can change the solved feed, reaction system, linked phase composition or pressure, or selected value without changing its content identity.",
+      "A charged phase silently chooses among multiple declared dielectric solvents.",
+      "The solver discovers topology, uses TPD to select the declared topology, or implies global equilibrium.",
+      "Application-specific behavior or an unsupported dirty issue-48 layer enters the admitted runtime."
+    ],
+    "reversibility": "D-037 can be superseded by a later doctrine revision and receipt; the subject commit, wheel identity, and evidence remain immutable.",
+    "irreversible_effects": "None before the separately authorized main update. No public release, data mutation, or downstream parameter promotion is performed by this admission.",
+    "recovery_owner": "The unified Engine owner must fail closed, supersede D-037 with corrected hash-bound evidence, and block downstream use until the same parity and installed-wheel gates pass."
+  }
+}
