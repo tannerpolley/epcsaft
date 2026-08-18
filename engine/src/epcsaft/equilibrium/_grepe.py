@@ -808,6 +808,41 @@ def _phase_supported_component_ids(
     return tuple(identity for identity in component_ids if identity in declared_set)
 
 
+def _validate_finite_phase_electrolyte_supports(
+    model: epcsaft.Mixture,
+    phases: tuple[ReactivePhase, ...],
+    supported_component_ids: tuple[tuple[str, ...], ...],
+) -> None:
+    resolved = model._model
+    if (
+        resolved.topology != "ionic-fully-dissociated-debye-huckel"
+        or resolved.relative_permittivity_formulation != "solvent-only"
+    ):
+        return
+    charges = dict(zip(resolved.component_ids, resolved.charge_number, strict=True))
+    dielectric_solvents = frozenset(
+        component_id
+        for component_id, charge, permittivity in zip(
+            resolved.component_ids,
+            resolved.charge_number,
+            resolved.relative_permittivity,
+            strict=True,
+        )
+        if charge == 0 and permittivity is not None
+    )
+    for phase, supported in zip(phases, supported_component_ids, strict=True):
+        if not any(charges[component_id] != 0 for component_id in supported):
+            continue
+        if len(dielectric_solvents.intersection(supported)) != 1:
+            raise epcsaft.ParameterError(
+                "invalid-value",
+                (
+                    ("phase_identity", phase.identity),
+                    ("reason", "exactly-one-dielectric-solvent-required"),
+                ),
+            )
+
+
 def _descriptor(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
@@ -1389,6 +1424,9 @@ def _compile_general_reactive_equilibrium(
                 tuple(_effective_reaction_system(problem).charges),
             )
             for phase in finite
+        )
+        _validate_finite_phase_electrolyte_supports(
+            model, finite, supported_component_ids
         )
         supplied_starts = tuple(phase.start for phase in finite)
         if any(start is None for start in supplied_starts) and any(

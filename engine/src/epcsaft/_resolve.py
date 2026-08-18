@@ -655,16 +655,20 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
                 family="relative_permittivity_formulation",
                 reason="incompatible-electrolyte-topology",
             )
-        neutral_components = tuple(
+        dielectric_solvent_components = tuple(
             component_id
             for component_id, charge in zip(component_ids, charges, strict=True)
             if charge == 0
+            and (
+                (component_id, "relative_permittivity") in singles
+                or (component_id, "relative_permittivity") in correlations
+            )
         )
-        if len(neutral_components) != 1:
+        if not dielectric_solvent_components:
             raise _error(
                 "invalid-value",
                 family="electrolyte_formulation",
-                reason="exactly-one-neutral-solvent-required",
+                reason="dielectric-solvent-required",
             )
         fully_dissociated_k_ij = tuple(value for value in k_ij if value is not None)
         if len(fully_dissociated_k_ij) != len(k_ij):
@@ -684,6 +688,9 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             if charge == 0:
                 if molar_mass[index] is None:
                     raise _missing(component_id=component_id, family="molar_mass")
+                if component_id not in dielectric_solvent_components:
+                    solvent_relative_permittivity.append(None)
+                    continue
                 permittivity = _component_record(
                     component_id,
                     "relative_permittivity",

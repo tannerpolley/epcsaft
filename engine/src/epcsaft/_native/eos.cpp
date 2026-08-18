@@ -250,9 +250,12 @@ NativeModel::NativeModel(NativeParameters parameters)
           "incompatible electrolyte and permittivity models");
     }
     std::size_t solvent_count = 0;
+    std::size_t dielectric_solvent_count = 0;
     for (std::size_t component = 0; component < components; ++component) {
       const bool solvent = parameters_.charge_number[component] == 0;
       solvent_count += static_cast<std::size_t>(solvent);
+      dielectric_solvent_count += static_cast<std::size_t>(
+          detail::is_dielectric_solvent(component, parameters_));
       const bool needs_tabulated_permittivity =
           parameters_.relative_permittivity_formulation ==
               RELATIVE_PERMITTIVITY_FORMULATION_ION_FRACTION_SUPPRESSION ||
@@ -262,10 +265,14 @@ NativeModel::NativeModel(NativeParameters parameters)
               RELATIVE_PERMITTIVITY_FORMULATION_ION_SPECIFIC_SUPPRESSION ||
           parameters_.relative_permittivity_formulation ==
               RELATIVE_PERMITTIVITY_FORMULATION_SOLVENT_ONLY;
+      const bool omitted_fully_dissociated_permittivity =
+          fully_dissociated
+          && parameters_.relative_permittivity[component] == 0.0;
       if (solvent &&
           (!(parameters_.molar_mass_kg_per_mol[component] > 0.0) ||
            (needs_tabulated_permittivity &&
-            !(parameters_.relative_permittivity[component] > 0.0)))) {
+            !(parameters_.relative_permittivity[component] > 0.0) &&
+            !omitted_fully_dissociated_permittivity))) {
         throw std::invalid_argument("invalid solvent dielectric parameters");
       }
       const double packing_diameter =
@@ -342,6 +349,10 @@ NativeModel::NativeModel(NativeParameters parameters)
             RELATIVE_PERMITTIVITY_FORMULATION_ION_SPECIFIC_SUPPRESSION &&
         solvent_count != 1) {
       throw std::invalid_argument("mixed-solvent volume data are required");
+    }
+    if (fully_dissociated && dielectric_solvent_count == 0) {
+      throw std::invalid_argument(
+          "fully dissociated electrolyte requires a dielectric solvent");
     }
     if (fully_dissociated &&
         (parameters_.ion_fraction_suppression_coefficient != 0.0 ||

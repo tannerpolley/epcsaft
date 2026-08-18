@@ -50,6 +50,18 @@ struct ElectrolyteResult final {
     Scalar debye_huckel;
 };
 
+inline bool is_dielectric_solvent(
+    std::size_t component,
+    const NativeParameters& parameters
+) {
+    return parameters.charge_number[component] == 0
+        && (
+            parameters.relative_permittivity_formulation
+                != RELATIVE_PERMITTIVITY_FORMULATION_SOLVENT_ONLY
+            || parameters.relative_permittivity[component] > 0.0
+        );
+}
+
 template <typename Scalar>
 Scalar ion_fraction_suppressed_relative_permittivity(
     const Scalar& salt_free_permittivity,
@@ -91,7 +103,7 @@ Scalar bulk_relative_permittivity(
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const Scalar& fraction = mole_fractions[component];
         const int charge = parameters.charge_number[component];
-        if (charge == 0) {
+        if (charge == 0 && is_dielectric_solvent(component, parameters)) {
             solvent_fraction += fraction;
             const Scalar mass = fraction * parameters.molar_mass_kg_per_mol[component];
             solvent_mass += mass;
@@ -220,11 +232,43 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     if (!has_ion) {
         return {0.0, Scalar(0.0)};
     }
+    double reference_charge_square_sum = 0.0;
+    std::size_t reference_dielectric_solvent_count = 0;
+    for (std::size_t component = 0;
+         component < reference_mole_fractions.size(); ++component) {
+        const int charge = parameters.charge_number[component];
+        if (charge != 0) {
+            reference_charge_square_sum += reference_mole_fractions[component]
+                * charge * charge;
+        } else if (
+            reference_mole_fractions[component] > 0.0
+            && is_dielectric_solvent(component, parameters)
+        ) {
+            ++reference_dielectric_solvent_count;
+        }
+    }
+    if (
+        parameters.relative_permittivity_formulation
+            == RELATIVE_PERMITTIVITY_FORMULATION_SOLVENT_ONLY
+        && reference_charge_square_sum > 0.0
+        && reference_dielectric_solvent_count != 1
+    ) {
+        throw std::invalid_argument(
+            "electrolyte state requires exactly one dielectric solvent"
+        );
+    }
+    if (
+        reference_charge_square_sum == 0.0
+        && reference_dielectric_solvent_count == 0
+    ) {
+        return {Scalar(0.0), Scalar(0.0)};
+    }
+
     Scalar solvent_mass = Scalar(0.0);
     Scalar charge_square_sum = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
-        if (charge == 0) {
+        if (charge == 0 && is_dielectric_solvent(component, parameters)) {
             const Scalar mass = mole_fractions[component]
                 * parameters.molar_mass_kg_per_mol[component];
             solvent_mass += mass;
@@ -255,15 +299,6 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         }
     }
 
-    double reference_charge_square_sum = 0.0;
-    for (std::size_t component = 0;
-         component < reference_mole_fractions.size(); ++component) {
-        const int charge = parameters.charge_number[component];
-        if (charge != 0) {
-            reference_charge_square_sum += reference_mole_fractions[component]
-                * charge * charge;
-        }
-    }
     if (reference_charge_square_sum == 0.0) {
         return {bulk_permittivity, Scalar(0.0)};
     }
