@@ -1,7 +1,7 @@
 # Governance Context
 
 `governance/` is the doctrine and control-record directory inside the private
-`tannerpolley/ePC-SAFT` monorepo. `GOVERNANCE.md` revision 21 is canonical.
+`tannerpolley/ePC-SAFT` monorepo. `GOVERNANCE.md` revision 23 is canonical.
 
 The repository root coordinates work. `engine/` owns the sole `epcsaft`
 runtime; `data/` owns reusable scientific packets; `validation/` owns
@@ -10,3 +10,73 @@ installed-wheel campaigns; and `lab/` is a temporary zero-test playground.
 Source repositories and their former names are migration provenance after
 archive. The organization-profile repository remains separate and thin.
 Artifacts and rollback bundles live in external local state, not in Git.
+
+## Current scientific program
+
+The current program matures General Reactive Equilibrium and Phase Equilibrium
+(GREPE) as one generic, configured-physics equilibrium owner and applies it in
+two independent downstream programs:
+
+1. aqueous MEA--H2O--CO2 model selection, regression, validation, and
+   manuscript revision in `tannerpolley/MEA-Thermodynamics`, followed by a
+   separately scoped predictive lane in `tannerpolley/MEA-Absorption-Column`;
+2. configured reactive-electrolyte LLE, application parameterization, and an
+   equation-oriented IDAES surrogate in `tannerpolley/Lithium_Extraction`.
+
+Neither application selects an Engine route by component, paper, or operation
+name. Declared state roles, phases, species support, reactions, observations,
+and model capabilities compile the problem.
+
+The canonical generic design is
+`engine/docs/equilibrium/plans/2026-08-14-general-reactive-equilibrium-phase-equilibrium.md`.
+Current work is tracked only in native GitHub issues. For the Engine, issues
+#44, #47, #48, #50, and #51 are the live GREPE capability leaves. Issue #51
+owns the optional simultaneous sparse multi-experiment backend. Historical
+plans, campaign reports, and issue mirrors retain evidence but are not parallel
+work queues.
+
+## Regression architecture
+
+Scientific staging and numerical formulation are separate decisions.
+Parameter families are qualified in a source- and identifiability-aware order
+regardless of optimizer architecture.
+
+- The implemented production path is reduced space: Regression changes shared
+  parameters, GREPE/Ipopt solves each unique condition, and exact total
+  observable Jacobians return to Ceres. Caching, batching, and independent
+  condition parallelism are valid performance improvements to this path.
+- The planned mature path is an optional generic sparse full-space
+  multi-experiment NLP: every experiment owns local equilibrium variables and
+  constraints, global model parameters are shared, and one Ipopt objective
+  contains the declared observation residuals. It must consume the same public
+  request, observation, parameter, result-table, and certification vocabulary.
+
+The full-space path is a future numerical backend, not a new thermodynamic
+route and not permission to fit all parameter families simultaneously. IDAES
+is useful evidence for sparse block-arrow optimization, but it is not the
+thermodynamic or scientific authority for GREPE.
+
+## Cross-repository authority
+
+MEA-Thermodynamics, MEA-Absorption-Column, and Lithium_Extraction are official
+downstream applications under D-038. They remain separate sibling Git
+repositories. An accountable Engine task may work across the applicable seam,
+but every application consumes a hash-identified non-editable Engine wheel and
+keeps its application-specific inputs, analyses, and claims locally.
+
+- Engine owns equations, generic equilibrium compilation, exact derivatives,
+  generic regression mechanics, and compact numerical evidence.
+- MEA-Thermodynamics owns MEA chemistry hypotheses, source data, model
+  hierarchy, fitting campaigns, validation, parameter adoption, and its
+  thermodynamics manuscript.
+- MEA-Absorption-Column owns absorber integration, column validation, and its
+  manuscript. Its fixed-chemistry benchmark remains distinct from any future
+  predictive MEA lane.
+- Lithium_Extraction owns HBTA/TOPO chemistry hypotheses, source translation,
+  application fitting, surrogate-domain decisions, flowsheet integration, and
+  its manuscript.
+
+The configured Better BibTeX export
+`~/Zotero/exports/references.bib` is the single bibliography
+authority. Repository bibliographies are one-way projections from that export;
+they do not become independent citation databases.

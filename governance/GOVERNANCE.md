@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 22
+Doctrine revision: 23
 
-Approved: 2026-08-18
+Approved: 2026-08-20
 
 Owner: `tannerpolley/ePC-SAFT:governance/`
 
@@ -288,6 +288,16 @@ scientific or production claim, and MUST NOT be executed or published as a
 supported workflow until its owner installs an accepted Engine wheel and passes
 the applicable Validation evidence. Its retained dependency state is deferred
 work, not a compatibility path or alternate runtime authority.
+
+D-038 supersedes D-024's quarantine for `tannerpolley/MEA-Thermodynamics`,
+`tannerpolley/MEA-Absorption-Column`, and `tannerpolley/Lithium_Extraction`.
+They are official downstream applications and MAY be co-developed by the
+accountable Engine task when the requested slice crosses the application seam.
+They remain separate sibling Git repositories. Official status grants work and
+integration authority; it does not admit an unfinished model, fitted parameter
+set, validation result, flowsheet, or manuscript claim. Each application MUST
+consume an immutable Engine wheel with recorded artifact identity and MUST keep
+application chemistry, data, analyses, and manuscripts in its own repository.
 
 The EOS native interface used by Equilibrium and Regression is internal to the
 Engine implementation. Engine modules link repository-owned native targets in
@@ -590,6 +600,14 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 23 records the user-approved official downstream application model.
+D-038 removes the D-024 quarantine from MEA-Thermodynamics,
+MEA-Absorption-Column, and Lithium_Extraction; keeps all three as separate
+sibling Git repositories; authorizes one accountable Engine task to cross the
+named application seam when required; and retains the immutable-wheel boundary
+and application-owned scientific evidence. Official status is not scientific
+admission of any particular result.
+
 Revision 22 records the user-approved proven-core integration. D-037 admits
 only the generic, reviewed GREPE runtime shared by issues #47, #48, and #49,
 including exact imposed-boundary derivatives and parity with the retired
@@ -716,3 +734,4 @@ Historical plans and receipts retain their original names.
 | D-035 Admit reactive bubble/VLE observations | Explicit user instruction through issue #31 and the reviewed CAP-13 correction/admission gates on 2026-08-13 | Admit only the fixed-topology reactive bubble/VLE Observation Family and its canonical Regression integration; require exact same-liquid-state binding, ordered neutral vapor support, nonideal Provider vapor as the primary path, exact total Schur derivatives, immutable local branch receipts, and typed fail-closed outcomes | Enables coupled pressure/speciation regression without weakening D-031's prohibition on unqualified variable-topology phase-equilibrium fitting or making a global-equilibrium claim | No | Engine, Validation, Regression, and Management |
 | D-036 General Reactive Equilibrium and Phase Equilibrium target | User-confirmed GREPE design and two independent read-only sanity reviews on 2026-08-14 | Evolve the sole public `phase_equilibrium` owner through declarative finite/incipient reacting-phase blocks; use one nonduplicated Gibbs/KKT encoding, phase-aware reaction standards, exact Ipopt Hessians, exact outer-Ceres Jacobians, local declared-phase certificates, generic Regression evaluation, and authority-neutral candidate export | Establishes one staged architecture for homogeneous reaction, reactive bubble/dew/VLE, neutral reactive LLE, and later electrochemical LLE without admitting unimplemented capability or adding an application-specific route | Architecture target only; each runtime slice requires its own accepted receipt | Engine, Validation, Regression, Data, downstream applications, and Management |
 | D-037 Admit the GREPE proven core | Explicit user instruction on 2026-08-18 to combine the reviewed generic Engine work, retain only the proven core, reproduce the removed specialized path's results, and use an exact receipt before updating main | Admit declared finite/incipient supports, phase-scoped dielectric solvent selection, temperature-dependent permittivity, generic affine-feed intensive boundaries over the existing homogeneous/reactive-bubble owners, exact total derivatives, typed failures, and hash-bound nested receipts at subject commit `25cd674bb32611bac89d0ffb4ab8e1d953cbe09f` | Replaces a specialized fixed-pressure incipient implementation with the smaller generic owner while preserving its numerical results; excludes the other issue-48 dirty application/reference/saturation layer | No; later globality, phase discovery, and application parameter promotion remain separate | Engine, Validation, Regression, downstream applications, and Management |
+| D-038 Official downstream applications | Explicit user instruction on 2026-08-20 to maintain MEA-Thermodynamics, MEA-Absorption-Column, and Lithium_Extraction as official Engine applications while preserving Engine/application ownership | Remove the D-024 quarantine for the three named repositories; keep them as separate sibling Git repositories; authorize cross-repository vertical-slice work; require immutable Engine-wheel identity and separate repository histories | Makes cross-repository work durable without nested repositories, submodules, sibling-source imports, or automatic scientific admission | No | Engine, downstream application owners, and Management |

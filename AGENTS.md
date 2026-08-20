@@ -2,7 +2,7 @@
 
 Repository Profile: scientific-computing
 
-Governance doctrine revision 21 applies.
+Governance doctrine revision 23 applies.
 
 This private repository is the single Git and Codex home for the ePC-SAFT
 project. Read `governance/GOVERNANCE.md`, `governance/manifests/management.json`,
@@ -14,6 +14,28 @@ agent may change the exact files needed across `data/`, `engine/`, and
 experiments. Keep one writer per file and do not create nested Git
 repositories, submodules, sibling-repository dependencies, or separate package
 installations.
+
+## Official downstream applications
+
+The following sibling Git repositories are official downstream applications:
+
+- `~/Workspaces/Engineering/MEA-Thermodynamics`
+- `~/Workspaces/Engineering/MEA-Absorption-Column`
+- `~/Workspaces/Engineering/Lithium_Extraction`
+
+When a requested Engine slice requires application implementation or evidence,
+the same accountable agent may inspect, edit, test, and run Git commands in the
+applicable named repository without moving the Codex task attachment. This
+authorization applies only when the task filesystem exposes the target path;
+repository instructions cannot override an app sandbox.
+
+Before every downstream Git mutation, verify the exact repository root,
+branch, and working-tree state, read its nearest `AGENTS.md`, and keep each
+repository's changes separately reviewable. Do not create nested repositories,
+submodules, or runtime sibling-source dependencies. Every application must
+consume an explicitly identified, non-editable Engine wheel and record its
+SHA-256 rather than import the Engine source checkout. Preserve one writer per
+file across the participating repositories.
 
 Directory ownership remains strict:
 

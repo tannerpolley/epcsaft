@@ -32,6 +32,7 @@ CONTROL_MANIFESTS = {
     "data_packet_locks": "manifests/data-packet-locks.json",
     "runtime_consolidation": "manifests/runtime-consolidation.json",
     "approved_operations": "manifests/approved-operations.json",
+    "downstream_applications": "manifests/downstream-applications.json",
 }
 LIVE_POINTERS = tuple(
     path
@@ -416,8 +417,8 @@ def check() -> list[str]:
 
     if config.get("schema_version") != 2:
         errors.append("management schema_version must be 2")
-    if config.get("doctrine_revision") != 22:
-        errors.append("management doctrine_revision must be 22")
+    if config.get("doctrine_revision") != 23:
+        errors.append("management doctrine_revision must be 23")
     if config.get("repository") != "tannerpolley/ePC-SAFT":
         errors.append("management repository must be tannerpolley/ePC-SAFT")
     if config.get("ci_cd") != "disabled":
