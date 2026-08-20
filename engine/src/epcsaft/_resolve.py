@@ -613,6 +613,14 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         required=True,
         not_applicable=same_sign_ion_pairs,
     )
+    if ionic_dispersion == "exclude-same-sign-ion-pairs":
+        # EqID: same_sign_ionic_dispersion
+        size = len(component_ids)
+        k_ij = tuple(
+            1.0 if charges[left] * charges[right] > 0 else k_ij[left * size + right]
+            for left in range(size)
+            for right in range(size)
+        )
 
     if electrolyte_formulation == "none":
         raise _error("missing-record", family="electrolyte")
@@ -699,16 +707,6 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         fully_dissociated_k_ij = tuple(value for value in k_ij if value is not None)
         if len(fully_dissociated_k_ij) != len(k_ij):
             raise _error("missing-record", family="k_ij")
-        for left, right in combinations(range(len(component_ids)), 2):
-            if (
-                charges[left] * charges[right] > 0
-                and fully_dissociated_k_ij[left * len(component_ids) + right] != 1.0
-            ):
-                raise _error(
-                    "invalid-value",
-                    family="k_ij",
-                    reason="same-sign-ionic-dispersion-rule",
-                )
         solvent_relative_permittivity: list[_TemperatureRecord | None] = []
         for index, (component_id, charge) in enumerate(zip(component_ids, charges, strict=True)):
             if charge == 0:

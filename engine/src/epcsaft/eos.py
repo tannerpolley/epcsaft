@@ -549,10 +549,6 @@ def _native_arguments(
         born_c_dielectric = 0.0
         electrolyte_model = 0
 
-    ionic_dispersion_model = (
-        1 if model.ionic_dispersion == "all-ion-pairs" else 0
-    )
-
     return (
         list(model.segment_count),
         sigma_constant,
@@ -583,7 +579,6 @@ def _native_arguments(
         born_c_shell,
         born_c_dielectric,
         electrolyte_model,
-        ionic_dispersion_model,
         list(model.dielectric_volume_m3_per_mol) or [0.0] * components,
         list(model.dielectric_temperature_k) or [0.0] * components,
         list(model.ion_specific_suppression_coefficient) or [0.0] * components,
@@ -650,6 +645,21 @@ class _EosModel:
                     observation="fixed-state-helmholtz",
                     identity=coordinate.identity,
                     reason="physical-application-unresolved",
+                )
+            if (
+                self._model.ionic_dispersion == "exclude-same-sign-ion-pairs"
+                and coordinate.family == "k_ij"
+                and len(applicability.component_indices) == 2
+                and self._model.charge_number
+                and self._model.charge_number[applicability.component_indices[0]]
+                * self._model.charge_number[applicability.component_indices[1]]
+                > 0
+            ):
+                raise _eos_error(
+                    "unsupported-parameter-derivative",
+                    observation="fixed-state-helmholtz",
+                    identity=coordinate.identity,
+                    reason="inactive-by-selected-model",
                 )
             result.append(
                 _native_core.NativeActiveCoordinate(

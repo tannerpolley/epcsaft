@@ -210,7 +210,6 @@ template <typename Scalar> struct PhaseBlockParameters final {
   std::vector<int> charge_number;
   std::vector<double> packing_diameter_angstrom;
   int electrolyte_model;
-  int ionic_dispersion_model;
   std::vector<double> dipole_moment_debye;
   std::vector<double> quadrupole_moment_debye_angstrom;
   int polar_formulation;
@@ -241,7 +240,6 @@ phase_block_parameters(const NativeParameters &parameters) {
       parameters.charge_number,
       parameters.packing_diameter_angstrom,
       parameters.electrolyte_model,
-      parameters.ionic_dispersion_model,
       parameters.dipole_moment_debye,
       parameters.quadrupole_moment_debye_angstrom,
       parameters.polar_formulation,

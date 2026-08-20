@@ -73,6 +73,30 @@ def _state(mapping, *, x, density=1000.0, temperature=298.15):
     )
 
 
+def _revised_debye_huckel(mapping):
+    candidate = deepcopy(mapping)
+    electrolyte = next(
+        family for family in candidate["model_families"] if family["kind"] == "electrolyte"
+    )
+    electrolyte["choice"] = "revised-debye-huckel"
+    electrolyte.pop("c_shell")
+    electrolyte.pop("c_dielectric")
+    permittivity = next(
+        family for family in candidate["model_families"] if family["kind"] == "permittivity"
+    )
+    permittivity["choice"] = "solvent-only"
+    candidate["model_coefficients"] = []
+    for component in candidate["components"]:
+        charged = component["fixed"]["charge_number"]["value"]["magnitude"] != 0
+        component["coefficients"] = [
+            coefficient
+            for coefficient in component["coefficients"]
+            if coefficient["family"] not in {"born_diameter", "solvation_factor"}
+            and not (charged and coefficient["family"] == "relative_permittivity")
+        ]
+    return candidate
+
+
 @pytest.mark.parametrize(
     ("mapping", "composition"),
     (
@@ -522,6 +546,73 @@ def test_component_permittivity__admits_exact_pure_ionic_support() -> None:
     assert all_pair.debye_huckel == pytest.approx(state.debye_huckel, rel=2.0e-14)
 
 
+def test_excluded_same_sign_ion_pairs_resolve_to_unit_k_ij() -> None:
+    mapping = _revised_debye_huckel(MULTISOLVENT_MULTIION)
+    explicit = deepcopy(mapping)
+    explicit["pairs"].extend(
+        (
+            _pair("cation", "divalent-cation", k_ij=0.25),
+            _pair("anion", "iodide-anion", k_ij=0.35),
+        )
+    )
+    composition = (0.445, 0.38, 0.05, 0.05, 0.025, 0.05)
+    identity = "pair/anion/divalent-cation/k_ij"
+
+    def evaluate(candidate):
+        parameters = Parameters.from_mapping(candidate)
+        model = Mixture(parameters)
+        state = model.state(
+            T=298.15 * u.kelvin,
+            rho=2000.0 * u.mole / u.meter**3,
+            x=composition,
+        )
+        block = model.observable_block(
+            ActiveParameterSet(parameters, (identity,)),
+            identity="eos.fixed-state",
+            T=298.15 * u.kelvin,
+            rho=2000.0 * u.mole / u.meter**3,
+            x=composition,
+        )
+        return state, block
+
+    resolved_state, resolved_block = evaluate(mapping)
+    explicit_state, explicit_block = evaluate(explicit)
+    all_pair = deepcopy(explicit)
+    electrolyte = next(
+        family for family in all_pair["model_families"] if family["kind"] == "electrolyte"
+    )
+    electrolyte["ionic_dispersion"] = "all-ion-pairs"
+    all_pair_state = _state(all_pair, x=composition, density=2000.0)
+    all_pair_parameters = Parameters.from_mapping(all_pair)
+    all_pair_block = Mixture(all_pair_parameters).observable_block(
+        ActiveParameterSet(all_pair_parameters, ("pair/cation/divalent-cation/k_ij",)),
+        identity="eos.fixed-state",
+        T=298.15 * u.kelvin,
+        rho=2000.0 * u.mole / u.meter**3,
+        x=composition,
+    )
+
+    assert resolved_state.dispersion == explicit_state.dispersion
+    assert resolved_block.values == explicit_block.values
+    assert resolved_block.jacobian == explicit_block.jacobian
+    assert all_pair_state.dispersion < resolved_state.dispersion
+    assert any(row[0] != 0.0 for row in all_pair_block.jacobian)
+
+    explicit_parameters = Parameters.from_mapping(explicit)
+    explicit_model = Mixture(explicit_parameters)
+    with pytest.raises(EosError, match="inactive-by-selected-model"):
+        explicit_model.observable_block(
+            ActiveParameterSet(
+                explicit_parameters,
+                ("pair/cation/divalent-cation/k_ij",),
+            ),
+            identity="eos.fixed-state",
+            T=298.15 * u.kelvin,
+            rho=2000.0 * u.mole / u.meter**3,
+            x=composition,
+        )
+
+
 def test_density_closure__returns_certified_single_root_and_slope() -> None:
     model = Pure(Parameters.from_mapping(neutral_pure("methane")))
     state = model.state(T=250.0 * u.kelvin, P=10.0 * u.bar)
@@ -698,24 +789,7 @@ def test_electrolyte_reference_matches_projection_identities() -> None:
 def test_revised_debye_huckel_retains_opposite_charge_dispersion() -> None:
     """The revised Held form admits solvent-ion and cation-anion k_ij values."""
 
-    mapping = deepcopy(AQUEOUS_ELECTROLYTE)
-    electrolyte = next(
-        family for family in mapping["model_families"] if family["kind"] == "electrolyte"
-    )
-    electrolyte["choice"] = "revised-debye-huckel"
-    electrolyte.pop("c_shell")
-    electrolyte.pop("c_dielectric")
-    permittivity = next(
-        family for family in mapping["model_families"] if family["kind"] == "permittivity"
-    )
-    permittivity["choice"] = "solvent-only"
-    mapping["model_coefficients"] = []
-    for component in mapping["components"]:
-        component["coefficients"] = [
-            coefficient
-            for coefficient in component["coefficients"]
-            if coefficient["family"] not in {"born_diameter", "solvation_factor"}
-        ]
+    mapping = _revised_debye_huckel(AQUEOUS_ELECTROLYTE)
 
     model = Mixture(Parameters.from_mapping(mapping))
     state = model.state(
@@ -753,24 +827,7 @@ def test_revised_debye_huckel_retains_opposite_charge_dispersion() -> None:
 def test_revised_debye_huckel_uses_declared_multisolvent_permittivity() -> None:
     """The revised no-Born model admits a specified neutral solvent mixture."""
 
-    mapping = deepcopy(MULTINEUTRAL_REACTIVE)
-    electrolyte = next(
-        family for family in mapping["model_families"] if family["kind"] == "electrolyte"
-    )
-    electrolyte["choice"] = "revised-debye-huckel"
-    electrolyte.pop("c_shell")
-    electrolyte.pop("c_dielectric")
-    permittivity = next(
-        family for family in mapping["model_families"] if family["kind"] == "permittivity"
-    )
-    permittivity["choice"] = "solvent-only"
-    mapping["model_coefficients"] = []
-    for component in mapping["components"]:
-        component["coefficients"] = [
-            coefficient
-            for coefficient in component["coefficients"]
-            if coefficient["family"] not in {"born_diameter", "solvation_factor"}
-        ]
+    mapping = _revised_debye_huckel(MULTINEUTRAL_REACTIVE)
 
     composition = (0.50, 0.40, 0.05, 0.05)
     parameters = Parameters.from_mapping(mapping)
@@ -794,24 +851,7 @@ def test_revised_debye_huckel_uses_declared_multisolvent_permittivity() -> None:
 def test_solvent_only_permittivity_tracks_temperature_and_excludes_neutral_solute() -> None:
     """Temperature correlations and dielectric participation are both explicit."""
 
-    mapping = deepcopy(MULTINEUTRAL_REACTIVE)
-    electrolyte = next(
-        family for family in mapping["model_families"] if family["kind"] == "electrolyte"
-    )
-    electrolyte["choice"] = "revised-debye-huckel"
-    electrolyte.pop("c_shell")
-    electrolyte.pop("c_dielectric")
-    permittivity = next(
-        family for family in mapping["model_families"] if family["kind"] == "permittivity"
-    )
-    permittivity["choice"] = "solvent-only"
-    mapping["model_coefficients"] = []
-    for component in mapping["components"]:
-        component["coefficients"] = [
-            coefficient
-            for coefficient in component["coefficients"]
-            if coefficient["family"] not in {"born_diameter", "solvation_factor"}
-        ]
+    mapping = _revised_debye_huckel(MULTINEUTRAL_REACTIVE)
     mapping["components"].append(
         _component(
             "neutral-solute",
