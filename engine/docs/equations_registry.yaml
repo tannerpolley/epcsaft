@@ -324,7 +324,7 @@ equations:
     status: "Exact derivation"
     description: "Declared-solvent fugacity and activity-scale contractions transferred to the Provider reference."
     change_note: "The source pressure is provenance; every fugacity contraction is evaluated at the requested trial pressure."
-    latex: "\\begin{aligned}\n\\Delta_r^{\\mathrm{src}\\rightarrow\\mathrm{Provider}}\n&=c_r+s_r,\\\\\ns_r&=\\sum_i b_i^{(r)}\\ell_i^{\\mathrm{src}},\\\\\n\\ell_i^{\\mathrm{src}}&=\n\\begin{cases}\n\\ln x_i^S, & z_i=0,\\ x_i^S>0,\\\\\n\\ln(\\overline M_S m^\\circ), & z_i=0,\\ x_i^S=0,\\\\\n\\ln(\\overline M_S m^\\circ), & z_i\\ne0.\n\\end{cases}\n\\end{aligned}\n\\label{eq:declared_solvent_source_reference_transfer}"
+    latex: "\\begin{aligned}\n\\Delta_r^{\\mathrm{src}\\rightarrow\\mathrm{Provider}}\n&=c_r+s_r+\\Delta\\nu_r\\ln\\!\\left(\\frac{P}{\\rho^\\circ RT}\\right),\\\\\ns_r&=\\sum_i b_i^{(r)}\\ell_i^{\\mathrm{src}},\\\\\n\\ell_i^{\\mathrm{src}}&=\n\\begin{cases}\n\\ln x_i^S, & z_i=0,\\ x_i^S>0,\\\\\n\\ln(\\overline M_S m^\\circ), & z_i=0,\\ x_i^S=0,\\\\\n\\ln(\\overline M_S m^\\circ), & z_i\\ne0.\n\\end{cases}\n\\end{aligned}\n\\label{eq:declared_solvent_source_reference_transfer}"
     tex_file: "docs/latex/equations.tex"
     tex_line: 1268
     implementation_refs:
@@ -332,6 +332,9 @@ equations:
         line: 792
         comment_line: 791
         symbol: "evaluate_source_reference_transfer"
+      - file: "cpp/equilibrium/chemical_equilibrium_compiler.cpp"
+        line: 1099
+        symbol: "transform_source_standard_state"
   - eqid: "density_correlated_bulk_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
     subsection: "Gross--Vrabec point multipoles"

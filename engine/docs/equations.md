@@ -368,11 +368,12 @@ $$
 - LaTeX: `docs/latex/equations.tex:1268`
 - Implementation:
   - `src/epcsaft/_native/native_transport.cpp:792` (`evaluate_source_reference_transfer`)
+  - `cpp/equilibrium/chemical_equilibrium_compiler.cpp:1099` (`transform_source_standard_state`)
 
 $$
 \begin{aligned}
 \Delta_r^{\mathrm{src}\rightarrow\mathrm{Provider}}
-&=c_r+s_r,\\
+&=c_r+s_r+\Delta\nu_r\ln\!\left(\frac{P}{\rho^\circ RT}\right),\\
 s_r&=\sum_i b_i^{(r)}\ell_i^{\mathrm{src}},\\
 \ell_i^{\mathrm{src}}&=
 \begin{cases}
@@ -383,6 +384,10 @@ s_r&=\sum_i b_i^{(r)}\ell_i^{\mathrm{src}},\\
 \end{aligned}
 \label{eq:declared_solvent_source_reference_transfer}
 $$
+
+Here $\rho^\circ=1\ \mathrm{mol\,m^{-3}}$ is the Provider Helmholtz
+reference density and $\Delta\nu_r=\sum_i\nu_{ri}$. The exact pressure
+derivative therefore adds $\Delta\nu_r/P$ to the reference-fugacity derivative.
 
 ## `density_correlated_bulk_permittivity`
 

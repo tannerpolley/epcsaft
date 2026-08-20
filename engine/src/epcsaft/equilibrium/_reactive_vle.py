@@ -809,6 +809,9 @@ def _evaluate_incipient_vapor_point(
         if active_parameters is None
         else model._native.with_active_coordinates(model._active_coordinates(active_parameters))
     )
+    component_count = len(fractions)
+    state_count = component_count + 1
+    volume_coordinate = component_count
     try:
         state = model._state(
             T=temperature,
@@ -831,13 +834,45 @@ def _evaluate_incipient_vapor_point(
             volume,
             *packing_fraction_interval,
         )
+        for _ in range(4):
+            pressure_residual = float(cast(Any, block["pressure_pa"])) - pressure_pa
+            if abs(pressure_residual) <= 1.0e-6:
+                break
+            curvature = tuple(
+                float(cast(Any, value))
+                for value in cast(Sequence[object], block["state_hessian"])
+            )[volume_coordinate * state_count + volume_coordinate]
+            if not math.isfinite(curvature) or curvature <= 0.0:
+                raise _BubbleFailure(
+                    "second_order_failure",
+                    "declared vapor mechanical polish lacks positive curvature",
+                )
+            candidate = volume + pressure_residual / (
+                8.31446261815324 * temperature_k * curvature
+            )
+            if not math.isfinite(candidate) or candidate <= 0.0:
+                raise _BubbleFailure(
+                    "numerical_convergence_failure",
+                    "declared vapor mechanical polish left the positive-volume domain",
+                )
+            volume = candidate
+            block = _equilibrium.evaluate_parameterized_phase(
+                _native_transport(model, active_parameters),
+                temperature_k,
+                fractions,
+                volume,
+                *packing_fraction_interval,
+            )
+        if abs(float(cast(Any, block["pressure_pa"])) - pressure_pa) > 1.0e-6:
+            raise _BubbleFailure(
+                "numerical_convergence_failure",
+                "declared vapor mechanical root did not reach the requested pressure",
+            )
     except _BubbleFailure:
         raise
     except (RuntimeError, TypeError, ValueError) as error:
         raise _BubbleFailure("provider_domain_rejection", str(error)) from error
 
-    component_count = len(fractions)
-    state_count = component_count + 1
     gradient = tuple(
         float(cast(Any, value)) for value in cast(Sequence[object], block["state_gradient"])
     )
@@ -862,7 +897,6 @@ def _evaluate_incipient_vapor_point(
     ):
         raise _BubbleFailure("owner_contract_failure", "vapor Provider derivative layout changed")
 
-    volume_coordinate = component_count
     h_vv = hessian[volume_coordinate * state_count + volume_coordinate]
     h_scale = max(
         1.0,
@@ -946,10 +980,11 @@ def _solve_declared_incipient_vapor(
 ) -> _IncipientVaporPoint:
     """Solve composition inside the declared vapor support.
 
-    An unanchored bubble boundary uses the lowest tangent-plane value among
-    the stationary compositions reached by its declared starts.  A supplied
-    continuation composition instead owns local branch selection.  Neither
-    case discovers a phase or changes the configured phase topology.
+    The vapor role is already fixed by the problem topology. An unanchored
+    boundary therefore retains the lowest-density stationary composition
+    reached inside that declared support. A supplied continuation composition
+    instead owns local branch selection. Neither case discovers a phase or
+    changes the configured phase topology.
     """
 
     component_count = len(liquid_potentials)
@@ -963,6 +998,20 @@ def _solve_declared_incipient_vapor(
         if continuation_fractions is None
         else continuation_fractions
     )
+    # Fugacity equality also admits a dense same-phase stationary solution
+    # when the vapor support contains the liquid's neutral components. Generic
+    # component-dominant starts expose dilute vapor basins without assuming a
+    # volatile species or changing the declared topology.
+    minor_fraction = 1.0e-4 / max(1, component_count - 1)
+    for dominant in range(component_count):
+        starts.append(
+            tuple(
+                1.0 - minor_fraction * (component_count - 1)
+                if component == dominant
+                else minor_fraction
+                for component in range(component_count)
+            )
+        )
     cache: dict[tuple[float, ...], _IncipientVaporPoint] = {}
 
     def evaluate(log_ratios: tuple[float, ...]) -> _IncipientVaporPoint:
@@ -1097,28 +1146,26 @@ def _solve_declared_incipient_vapor(
                     "multiple vapor compositions are equally close to the continuation anchor",
                 )
         return ranked_by_continuation[0]
-    # At a stationary composition all component chemical-potential
-    # differences are equal, so this common difference is exactly the
-    # tangent-plane value of the candidate.  This ranks only stationary
-    # compositions reached inside the already-declared vapor support; it is
-    # not a global phase-stability search or phase-topology discovery.
+    # The phase role is an input, so branch selection follows that role rather
+    # than a tangent-plane-distance ranking. At fixed T and P the largest
+    # molar volume is the vapor branch among the stationary compositions found
+    # inside the declared support.
     ranked = sorted(
         accepted,
         key=lambda point: (
-            point.chemical_potential_over_rt[reference] - liquid_potentials[reference],
+            -point.volume_m3,
             point.mole_fractions,
         ),
     )
     best = ranked[0]
-    best_tpd = best.chemical_potential_over_rt[reference] - liquid_potentials[reference]
     if len(ranked) > 1:
-        next_tpd = ranked[1].chemical_potential_over_rt[reference] - liquid_potentials[reference]
+        next_volume = ranked[1].volume_m3
     else:
-        next_tpd = math.inf
-    if abs(next_tpd - best_tpd) <= 2.0e-10:
+        next_volume = 0.0
+    if next_volume > 0.0 and abs(math.log(best.volume_m3 / next_volume)) <= 2.0e-10:
         raise _BubbleFailure(
             "multiple_unresolved_branches",
-            "multiple incipient-vapor compositions have indistinguishable minimum TPD",
+            "multiple incipient-vapor compositions have indistinguishable vapor volumes",
         )
     return best
 
@@ -1514,6 +1561,54 @@ def _closure(
     return _nonideal_closure(problem, temperature, descriptor, active_parameters, pressure_pa)
 
 
+def _fixed_pressure_coordinate_derivatives(
+    closure: _Closure,
+    balance_direction: tuple[float, ...],
+) -> tuple[float, dict[str, float]]:
+    balance_ids = closure.balance_direction_ids
+    if len(balance_ids) != len(balance_direction) or not balance_ids:
+        raise _BubbleFailure(
+            "parameter_topology_mismatch",
+            "fixed-pressure incipient closure lacks the conserved-balance directions",
+        )
+    vapor = closure.phases[1]
+    residual_scale = (
+        vapor.pressure_pa
+        if vapor.mechanical_class == "strict_stable_ideal_gas"
+        else closure.pressure_pa
+    )
+    if not math.isfinite(residual_scale) or residual_scale <= 0.0:
+        raise _BubbleFailure("first_order_failure", "incipient residual scale is invalid")
+
+    def residual_direction(identity: str) -> float:
+        return (
+            closure.boundary_directional_derivatives[identity]
+            + closure.boundary_direct_derivatives.get(identity, 0.0)
+        ) / residual_scale
+
+    coordinate_slope = math.fsum(
+        residual_direction(identity) * direction
+        for identity, direction in zip(balance_ids, balance_direction, strict=True)
+    )
+    slope_scale = max(
+        1.0,
+        *(abs(residual_direction(identity)) for identity in balance_ids),
+    )
+    if abs(coordinate_slope) <= 1.0e-12 * slope_scale:
+        raise _BubbleFailure(
+            "singular_sensitivity", "fixed-pressure affine-feed closure is singular"
+        )
+    if abs(coordinate_slope) <= 1.0e-8 * slope_scale:
+        raise _BubbleFailure(
+            "ill_conditioned_sensitivity",
+            "fixed-pressure affine-feed closure is ill-conditioned",
+        )
+    return coordinate_slope, {
+        identity: residual_direction(identity)
+        for identity in closure.boundary_directional_derivatives
+    }
+
+
 def _candidate_distance(
     left: _Closure,
     right: _Closure,
@@ -1799,27 +1894,11 @@ def _row_values(
     descriptor: ReactiveBubbleObservationDescriptor,
     closure: _Closure,
     derivative_ids: tuple[str, ...] | None = None,
+    fixed_balance_direction: tuple[float, ...] | None = None,
 ) -> tuple[ReactiveBubbleObservationRowResult, ...]:
     direction_ids = (
         descriptor.active_parameter_identities if derivative_ids is None else derivative_ids
     )
-    pressure_partial = closure.boundary_directional_derivatives["pressure_pa"]
-    schur_pressure = pressure_partial - 1.0
-    schur_scale = max(1.0, abs(pressure_partial))
-    if not math.isfinite(schur_pressure) or abs(schur_pressure) < 1.0e-12 * schur_scale:
-        raise _BubbleFailure("singular_sensitivity", "coupled bubble Schur complement is singular")
-    if abs(schur_pressure) < 1.0e-8 * schur_scale:
-        raise _BubbleFailure(
-            "ill_conditioned_sensitivity",
-            "coupled bubble Schur complement is ill-conditioned",
-        )
-    pressure_derivatives: dict[str, float] = {}
-    for identity in direction_ids:
-        fixed_pressure_parameter_derivative = (
-            closure.boundary_direct_derivatives.get(identity, 0.0)
-            + closure.boundary_directional_derivatives[identity]
-        )
-        pressure_derivatives[identity] = -fixed_pressure_parameter_derivative / schur_pressure
     equilibrium = closure.liquid.equilibrium
     assert equilibrium is not None
     amounts = equilibrium.amounts_mol
@@ -1827,40 +1906,120 @@ def _row_values(
     total = math.fsum(amounts)
     liquid_amount_total: dict[str, tuple[float, ...]] = {}
     liquid_volume_total: dict[str, float] = {}
-    liquid_fraction_total: dict[str, tuple[float, ...]] = {}
-    for identity in direction_ids:
-        pressure_derivative = pressure_derivatives[identity]
-        amount_row = tuple(
-            direct + pressure * pressure_derivative
-            for direct, pressure in zip(
-                closure.chemical_amount_directions[identity],
-                closure.chemical_amount_directions["pressure_pa"],
-                strict=True,
+    vapor = closure.phases[1]
+    vapor_derivatives: dict[str, tuple[float, ...]] = {}
+    if fixed_balance_direction is None:
+        pressure_partial = closure.boundary_directional_derivatives["pressure_pa"]
+        schur_pressure = pressure_partial - 1.0
+        schur_scale = max(1.0, abs(pressure_partial))
+        if not math.isfinite(schur_pressure) or abs(schur_pressure) < 1.0e-12 * schur_scale:
+            raise _BubbleFailure(
+                "singular_sensitivity", "coupled bubble Schur complement is singular"
             )
+        if abs(schur_pressure) < 1.0e-8 * schur_scale:
+            raise _BubbleFailure(
+                "ill_conditioned_sensitivity",
+                "coupled bubble Schur complement is ill-conditioned",
+            )
+        pressure_derivatives = {
+            identity: -(
+                closure.boundary_direct_derivatives.get(identity, 0.0)
+                + closure.boundary_directional_derivatives[identity]
+            )
+            / schur_pressure
+            for identity in direction_ids
+        }
+        for identity in direction_ids:
+            pressure_derivative = pressure_derivatives[identity]
+            liquid_amount_total[identity] = tuple(
+                direct + pressure * pressure_derivative
+                for direct, pressure in zip(
+                    closure.chemical_amount_directions[identity],
+                    closure.chemical_amount_directions["pressure_pa"],
+                    strict=True,
+                )
+            )
+            liquid_volume_total[identity] = (
+                closure.chemical_volume_directions[identity]
+                + closure.chemical_volume_directions["pressure_pa"] * pressure_derivative
+            )
+            vapor_derivatives[identity] = tuple(
+                direct + directional + pressure * pressure_derivative
+                for direct, directional, pressure in zip(
+                    closure.vapor_fraction_direct_derivatives.get(
+                        identity, (0.0,) * len(vapor.mole_fractions)
+                    ),
+                    closure.vapor_fraction_directional_derivatives[identity],
+                    closure.vapor_fraction_directional_derivatives["pressure_pa"],
+                    strict=True,
+                )
+            )
+    else:
+        if derivative_ids is not None:
+            raise _BubbleFailure(
+                "parameter_topology_mismatch",
+                "fixed-pressure rows require active parameter directions",
+            )
+        slope, residual_directions = _fixed_pressure_coordinate_derivatives(
+            closure, fixed_balance_direction
         )
-        liquid_amount_total[identity] = amount_row
-        liquid_volume_total[identity] = (
-            closure.chemical_volume_directions[identity]
-            + closure.chemical_volume_directions["pressure_pa"] * pressure_derivative
+        coordinate_derivatives = {
+            identity: -residual_directions[identity] / slope for identity in direction_ids
+        }
+        pressure_derivatives = {identity: 0.0 for identity in direction_ids}
+        balance_ids = closure.balance_direction_ids
+        coordinate_amount = tuple(
+            math.fsum(
+                closure.chemical_amount_directions[identity][component] * direction
+                for identity, direction in zip(
+                    balance_ids, fixed_balance_direction, strict=True
+                )
+            )
+            for component in range(len(descriptor.component_ids))
         )
+        coordinate_volume = math.fsum(
+            closure.chemical_volume_directions[identity] * direction
+            for identity, direction in zip(balance_ids, fixed_balance_direction, strict=True)
+        )
+        coordinate_vapor = tuple(
+            math.fsum(
+                closure.vapor_fraction_directional_derivatives[identity][component] * direction
+                for identity, direction in zip(
+                    balance_ids, fixed_balance_direction, strict=True
+                )
+            )
+            for component in range(len(vapor.mole_fractions))
+        )
+        for identity in direction_ids:
+            dq = coordinate_derivatives[identity]
+            liquid_amount_total[identity] = tuple(
+                direct + coordinate * dq
+                for direct, coordinate in zip(
+                    closure.chemical_amount_directions[identity],
+                    coordinate_amount,
+                    strict=True,
+                )
+            )
+            liquid_volume_total[identity] = (
+                closure.chemical_volume_directions[identity] + coordinate_volume * dq
+            )
+            vapor_derivatives[identity] = tuple(
+                direct + directional + coordinate * dq
+                for direct, directional, coordinate in zip(
+                    closure.vapor_fraction_direct_derivatives.get(
+                        identity, (0.0,) * len(vapor.mole_fractions)
+                    ),
+                    closure.vapor_fraction_directional_derivatives[identity],
+                    coordinate_vapor,
+                    strict=True,
+                )
+            )
+    liquid_fraction_total: dict[str, tuple[float, ...]] = {}
+    for identity, amount_row in liquid_amount_total.items():
         dtotal = math.fsum(amount_row)
         liquid_fraction_total[identity] = tuple(
             (dn * total - amount * dtotal) / (total * total)
             for amount, dn in zip(amounts, amount_row, strict=True)
-        )
-    vapor = closure.phases[1]
-    vapor_derivatives: dict[str, tuple[float, ...]] = {}
-    for identity in direction_ids:
-        vapor_derivatives[identity] = tuple(
-            direct + directional + pressure * pressure_derivatives[identity]
-            for direct, directional, pressure in zip(
-                closure.vapor_fraction_direct_derivatives.get(
-                    identity, (0.0,) * len(vapor.mole_fractions)
-                ),
-                closure.vapor_fraction_directional_derivatives[identity],
-                closure.vapor_fraction_directional_derivatives["pressure_pa"],
-                strict=True,
-            )
         )
     results: list[ReactiveBubbleObservationRowResult] = []
     for row in descriptor.rows:
@@ -2112,6 +2271,68 @@ def _certification(closure: _Closure) -> ReactiveBubbleCertification:
         cast(float, diagnostics.pressure_relative_residual),
         phase_pressure_residual,
         potential_residual,
+    )
+
+
+def _fixed_pressure_coordinate_result(
+    problem: ReactiveBubbleVLEProblem,
+    descriptor: ReactiveBubbleObservationDescriptor,
+    closure: _Closure,
+    balance_direction: tuple[float, ...],
+) -> ReactiveBubbleObservationResult:
+    """Certify one fixed-pressure state owned by the reactive-bubble formulation."""
+
+    _validate_same_liquid_state(closure)
+    rows = _row_values(
+        descriptor, closure, fixed_balance_direction=balance_direction
+    )
+    branch = _physical_branch(problem, descriptor, closure)
+    certification = _certification(closure)
+    liquid_state = closure.liquid.state
+    assert liquid_state is not None
+    search = ReactiveBubbleSearch(
+        attempts=(
+            ReactiveBubbleStartAttempt(
+                0,
+                _canonical_fingerprint(
+                    "epcsaft.reactive-bubble-fixed-pressure",
+                    {
+                        "problem_identity": problem.identity,
+                        "pressure_pa": closure.pressure_pa,
+                    },
+                ),
+                closure.pressure_pa,
+                "accepted",
+                1,
+                closure.pressure_pa,
+                closure.residual,
+                None,
+                "",
+            ),
+        ),
+        closure_evaluation_count=1,
+        provider_evaluation_count=(
+            liquid_state.phase_role_receipt.provider_evaluation_count + 1
+        ),
+        accepted_candidate_count=1,
+        distinct_branch_count=1,
+        selected_branch_ordinal=0,
+        completeness_claim="finite_declared_starts_only",
+    )
+    return ReactiveBubbleObservationResult(
+        descriptor=descriptor,
+        status="evaluated",
+        failure=None,
+        rows=rows,
+        trial=closure.liquid.trial,
+        liquid_state=liquid_state,
+        liquid_branch=closure.liquid.physical_branch,
+        phases=closure.phases,
+        pressure_pa=closure.pressure_pa,
+        physical_branch=branch,
+        certification=certification,
+        search=search,
+        chemical_diagnostics=closure.liquid.diagnostics,
     )
 
 

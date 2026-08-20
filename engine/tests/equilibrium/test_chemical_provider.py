@@ -213,6 +213,52 @@ def test_source_reference_uses_declared_multisolvent_multiion_basis() -> None:
     assert all(math.isfinite(value) for value in transfer.transfer_log_contractions)
 
 
+@pytest.mark.slow
+def test_source_reference_supports_mixed_pure_and_infinite_dilution_neutrals() -> None:
+    """Falsify replacing a declared pure-neutral reference by the solvent blend."""
+
+    component_ids = ("water", "hydronium-cation", "hydroxide-anion")
+    model = epcsaft.Mixture(_held_parameters(component_ids))
+    transfer = epcsaft.source_reference_transfer(
+        model,
+        epcsaft.SourceReferenceDeclaration(
+            reference_state_id="mixed-pure-and-infinite-dilution-fixture",
+            component_ids=component_ids,
+            solvent_mole_fractions=(1.0, 0.0, 0.0),
+            ion_pairs=(
+                epcsaft.SourceReferenceIonPair(
+                    ("hydronium-cation", "hydroxide-anion"), (1, 1)
+                ),
+            ),
+            phase="liquid",
+            reference_convention="mole-fraction-mixed-reference",
+            activity_convention_id="mole-fraction-mixed-reference-v1",
+            standard_molality_mol_per_kg=1.0,
+            reference_pressure_pa=100_000.0,
+            required_derivatives=(),
+            pure_components=(
+                epcsaft.SourceReferencePureComponent("water", "liquid"),
+            ),
+        ),
+        T=298.15 * epcsaft.unit_registry.kelvin,
+        P=100_000.0 * epcsaft.unit_registry.pascal,
+    )
+    pure_solvent = model.state(
+        T=298.15 * epcsaft.unit_registry.kelvin,
+        P=100_000.0 * epcsaft.unit_registry.pascal,
+        x=(1.0, 0.0, 0.0),
+        phase="liquid",
+    )
+
+    solvent_row = transfer.neutral_basis.index((1.0, 0.0, 0.0))
+    assert transfer.log_fugacity_contractions[solvent_row] == pytest.approx(
+        pure_solvent.fugacity.ln_coefficient[0], abs=2.0e-12
+    )
+    assert transfer.activity_scale_log_contractions == pytest.approx(
+        (0.0,) * len(transfer.activity_scale_log_contractions), abs=0.0
+    )
+
+
 @functools.cache
 def _held_parameter_packet() -> Path:
     fixture = Path(__file__).parents[1] / "fixtures" / "data" / "held-cameretti-sadowski-2008"
@@ -331,6 +377,93 @@ def test_provider_certifies_multineutral_reactive_minimum() -> None:
     assert result.diagnostics.derivative_audits_performed
     assert result.diagnostics.reaction_affinity_inf_norm <= 2.0e-7
     assert result.diagnostics.kkt_stationarity_inf_norm <= 2.0e-7
+
+
+@pytest.mark.slow
+def test_source_transform_includes_provider_pressure_density_standard() -> None:
+    """Falsify dropping the ideal pressure factor when reaction mole count changes."""
+
+    temperature_k = 313.15
+    pressure_pa = 119_199.78746707023
+    component_ids = ("solvent", "cosolvent", "cation", "anion")
+    model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE))
+    declaration = epcsaft.SourceReferenceDeclaration(
+        reference_state_id="mixed-source-pressure-density-fixture",
+        component_ids=component_ids,
+        solvent_mole_fractions=(0.8, 0.2, 0.0, 0.0),
+        ion_pairs=(epcsaft.SourceReferenceIonPair(("cation", "anion"), (1, 1)),),
+        phase="liquid",
+        reference_convention="mole-fraction-mixed-reference",
+        activity_convention_id="mole-fraction-mixed-reference-v1",
+        standard_molality_mol_per_kg=1.0,
+        reference_pressure_pa=pressure_pa,
+        required_derivatives=(),
+    )
+    transfer = epcsaft.source_reference_transfer(
+        model,
+        declaration,
+        T=temperature_k * epcsaft.unit_registry.kelvin,
+        P=pressure_pa * epcsaft.unit_registry.pascal,
+    )
+    solvent_row = transfer.neutral_basis.index((1.0, 0.0, 0.0, 0.0))
+    ion_pair_row = transfer.neutral_basis.index((0.0, 0.0, 1.0, 1.0))
+    reference_offset = (
+        -transfer.transfer_log_contractions[solvent_row]
+        + transfer.transfer_log_contractions[ion_pair_row]
+    )
+    pressure_density_offset = math.log(
+        pressure_pa / (8.31446261815324 * temperature_k)
+    )
+    expected_offset = reference_offset + pressure_density_offset
+    expected_provider_ln_k = -269.6037501925047
+    source_ln_k = expected_provider_ln_k - expected_offset
+    base = _multineutral_problem()
+    source_problem = equilibrium.ChemicalEquilibriumProblem(
+        species_ids=base.species_ids,
+        charges=base.charges,
+        molar_masses_kg_per_mol=base.molar_masses_kg_per_mol,
+        balance_matrix=base.balance_matrix,
+        conserved_totals=base.conserved_totals,
+        reaction_matrix=base.reaction_matrix,
+        feed_amounts_mol=base.feed_amounts_mol,
+        equilibrium_constants=(
+            equilibrium.ChemicalEquilibriumConstant(
+                ln_value=source_ln_k,
+                source_id="synthetic-multineutral-source",
+                reference_id=declaration.reference_state_id,
+                reaction_orientation="products_positive",
+                conversion_id="source-standard-state-to-provider-neutral-reference",
+                dimensionless=True,
+            ),
+        ),
+        strict_interior_amount_floor_mol=base.strict_interior_amount_floor_mol,
+        source_standard_state=equilibrium.ChemicalStandardState(
+            id=declaration.reference_state_id,
+            activity_scale_id=declaration.activity_convention_id,
+            log_activity_scale_factors=(0.0, 0.0, 0.0, 0.0),
+            reference_pressure_pa=pressure_pa,
+            source_reference_component_ids=component_ids,
+            source_reference_solvent_composition=(0.8, 0.2, 0.0, 0.0),
+            source_reference_ion_pairs=declaration.ion_pairs,
+            source_reference_phase="liquid",
+            source_reference_convention="mole-fraction-mixed-reference",
+            source_reference_activity_convention_id=declaration.activity_convention_id,
+            source_reference_standard_molality_mol_per_kg=1.0,
+        ),
+    )
+
+    result = equilibrium.chemical_equilibrium(
+        equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
+        temperature_k * epcsaft.unit_registry.kelvin,
+        pressure_pa * epcsaft.unit_registry.pascal,
+        source_problem,
+    )
+
+    assert result.standard_offsets == pytest.approx((expected_offset,), abs=2.0e-12)
+    assert result.ln_k_provider_basis == pytest.approx(
+        (expected_provider_ln_k,), abs=2.0e-12
+    )
+    assert result.diagnostics.reaction_affinity_inf_norm <= 2.0e-7
 
 
 def test_active_parameter_values_own_reaction_setup_geometry() -> None:
@@ -644,7 +777,16 @@ def test_held_source_transform_is_coordinate_invariant(variant: str) -> None:
     )
     assert result.sensitivity is not None
     assert result.sensitivity.status == "available"
-    assert result.sensitivity.pressure.status == "available"
+    pressure_column = next(
+        index
+        for index, parameter in enumerate(result.sensitivity.parameters)
+        if parameter.name == "pressure_pa"
+    )
+    assert all(
+        math.isfinite(value)
+        for value in result.sensitivity.amount_derivatives[pressure_column]
+    )
+    assert math.isfinite(result.sensitivity.volume_derivatives[pressure_column])
 
 
 def test_engine_model_provider_solve_enforces_balance_affinity_and_domain() -> None:

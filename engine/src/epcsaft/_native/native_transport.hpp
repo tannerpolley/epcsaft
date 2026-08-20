@@ -177,6 +177,9 @@ enum epcsaft_source_reference_status {
 inline constexpr const char*
     EPCSAFT_SOURCE_REFERENCE_ACTIVITY_MOLALITY_INFINITE_DILUTION =
         "molality-infinite-dilution-v1";
+inline constexpr const char*
+    EPCSAFT_SOURCE_REFERENCE_ACTIVITY_MOLE_FRACTION_MIXED_REFERENCE =
+        "mole-fraction-mixed-reference-v1";
 
 struct epcsaft_source_reference_request final {
     std::uint32_t struct_size;
@@ -189,6 +192,9 @@ struct epcsaft_source_reference_request final {
     const std::size_t* ion_pair_anion_indices;
     const std::int32_t* ion_pair_cation_stoichiometry;
     const std::int32_t* ion_pair_anion_stoichiometry;
+    std::size_t pure_component_count;
+    const std::size_t* pure_component_indices;
+    const char* const* pure_component_phases;
     const char* phase;
     const char* reference_convention;
     const char* reference_state_id;

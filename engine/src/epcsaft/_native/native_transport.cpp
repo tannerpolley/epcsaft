@@ -874,20 +874,33 @@ struct NativeTransportEndpoint final {
                 );
             }
         }
-        if (request->reference_state_id == nullptr
-            || request->reference_state_id[0] == '\0'
-            || request->activity_convention_id == nullptr
-            || std::strcmp(
+        const bool molality_reference =
+            request->activity_convention_id != nullptr
+            && std::strcmp(
                 request->activity_convention_id,
                 EPCSAFT_SOURCE_REFERENCE_ACTIVITY_MOLALITY_INFINITE_DILUTION
-            ) != 0
+            ) == 0
+            && request->reference_convention != nullptr
+            && std::strcmp(
+                request->reference_convention,
+                "molality-infinite-dilution"
+            ) == 0;
+        const bool mixed_mole_fraction_reference =
+            request->activity_convention_id != nullptr
+            && std::strcmp(
+                request->activity_convention_id,
+                EPCSAFT_SOURCE_REFERENCE_ACTIVITY_MOLE_FRACTION_MIXED_REFERENCE
+            ) == 0
+            && request->reference_convention != nullptr
+            && std::strcmp(
+                request->reference_convention,
+                "mole-fraction-mixed-reference"
+            ) == 0;
+        if (request->reference_state_id == nullptr
+            || request->reference_state_id[0] == '\0'
+            || (!molality_reference && !mixed_mole_fraction_reference)
             || request->phase == nullptr
             || std::strcmp(request->phase, "liquid") != 0
-            || request->reference_convention == nullptr
-            || std::strcmp(
-                   request->reference_convention,
-                   "molality-infinite-dilution"
-               ) != 0
             || request->reference_state_fingerprint == nullptr
             || !sha256_fingerprint_valid(request->reference_state_fingerprint)
             || !std::isfinite(request->standard_molality_mol_per_kg)
@@ -966,6 +979,42 @@ struct NativeTransportEndpoint final {
                     "source composition must sum to one"
                 );
             }
+            std::vector<bool> pure_component(component_count, false);
+            if (request->pure_component_count > 0u
+                && (request->pure_component_indices == nullptr
+                    || request->pure_component_phases == nullptr)) {
+                return fail(
+                    EPCSAFT_SOURCE_REFERENCE_INVALID_SOURCE,
+                    "pure-component reference identities or phases are unavailable"
+                );
+            }
+            std::vector<std::string> pure_component_phase(component_count);
+            for (std::size_t index = 0;
+                 index < request->pure_component_count;
+                 ++index) {
+                const std::size_t component = request->pure_component_indices[index];
+                const char* phase = request->pure_component_phases[index];
+                if (component >= component_count
+                    || endpoint.component_charges[component] != 0
+                    || pure_component[component]
+                    || phase == nullptr
+                    || (std::strcmp(phase, "liquid") != 0
+                        && std::strcmp(phase, "vapor") != 0)) {
+                    return fail(
+                        EPCSAFT_SOURCE_REFERENCE_INVALID_SOURCE,
+                        "pure-component references must be unique neutral components "
+                        "with liquid or vapor phases"
+                    );
+                }
+                pure_component[component] = true;
+                pure_component_phase[component] = phase;
+            }
+            if (molality_reference && request->pure_component_count != 0u) {
+                return fail(
+                    EPCSAFT_SOURCE_REFERENCE_INVALID_SOURCE,
+                    "molality reference does not admit pure-component overrides"
+                );
+            }
             std::vector<NeutralReferenceBasis::IonPair> ion_pairs;
             ion_pairs.reserve(request->ion_pair_count);
             for (std::size_t index = 0; index < request->ion_pair_count; ++index) {
@@ -1023,7 +1072,8 @@ struct NativeTransportEndpoint final {
                     : 0u);
             std::vector<std::size_t> neutral_solutes;
             for (std::size_t component : reference_basis.neutral_components) {
-                if (source_composition[component] == 0.0) {
+                if (source_composition[component] == 0.0
+                    && !pure_component[component]) {
                     neutral_solutes.push_back(component);
                 }
             }
@@ -1073,8 +1123,11 @@ struct NativeTransportEndpoint final {
                 ).molar_density;
             }
             const auto phase_fugacity_derivatives =
-                [&](const std::vector<double>& composition) {
+                [&](const std::vector<double>& composition,
+                    const char* phase_branch,
+                    bool use_density_anchor) {
                     const auto state = density_anchor.has_value()
+                            && use_density_anchor
                         ? endpoint.model.evaluate_pressure_continuation(
                             temperature_k,
                             pressure_pa,
@@ -1085,7 +1138,7 @@ struct NativeTransportEndpoint final {
                             temperature_k,
                             pressure_pa,
                             composition,
-                            "liquid"
+                            phase_branch
                         );
                     if (!state.log_fugacity_coefficient.has_value()) {
                         throw std::runtime_error(
@@ -1257,6 +1310,48 @@ struct NativeTransportEndpoint final {
                     * derivative_stride,
                 0.0
             );
+            std::vector<std::size_t> non_pure_neutral_components;
+            for (std::size_t component : reference_basis.neutral_components) {
+                if (!pure_component[component]) {
+                    non_pure_neutral_components.push_back(component);
+                }
+            }
+            const auto copy_neutral_values = [&] (
+                const std::vector<std::size_t>& selected_components,
+                const std::vector<double>& values
+            ) {
+                for (std::size_t selected = 0;
+                     selected < selected_components.size();
+                     ++selected) {
+                    const auto position = std::find(
+                        reference_basis.neutral_components.begin(),
+                        reference_basis.neutral_components.end(),
+                        selected_components[selected]
+                    );
+                    if (position == reference_basis.neutral_components.end()) {
+                        throw std::runtime_error(
+                            "source-reference neutral basis changed"
+                        );
+                    }
+                    const std::size_t target = static_cast<std::size_t>(
+                        std::distance(
+                            reference_basis.neutral_components.begin(),
+                            position
+                        )
+                    );
+                    std::copy_n(
+                        values.begin()
+                            + static_cast<std::ptrdiff_t>(
+                                selected * derivative_stride
+                            ),
+                        derivative_stride,
+                        neutral_values.begin()
+                            + static_cast<std::ptrdiff_t>(
+                                target * derivative_stride
+                            )
+                    );
+                }
+            };
             const auto reference_limit_derivatives = [&] (
                 const std::vector<std::size_t>& selected_components,
                 const std::vector<double>& trace_stoichiometry
@@ -1268,7 +1363,9 @@ struct NativeTransportEndpoint final {
                                 trace_stoichiometry, molality
                             );
                         return selected_derivatives(
-                            phase_fugacity_derivatives(composition),
+                            phase_fugacity_derivatives(
+                                composition, "liquid", true
+                            ),
                             selected_components
                         );
                     };
@@ -1283,18 +1380,50 @@ struct NativeTransportEndpoint final {
                 0.0
             );
             if (neutral_trace_formula_moles == 0.0) {
-                neutral_values = selected_derivatives(
-                    phase_fugacity_derivatives(source_composition),
-                    reference_basis.neutral_components
+                copy_neutral_values(
+                    non_pure_neutral_components,
+                    selected_derivatives(
+                        phase_fugacity_derivatives(
+                            source_composition, "liquid", true
+                        ),
+                        non_pure_neutral_components
+                    )
                 );
             } else {
                 const auto sequence = reference_limit_derivatives(
-                    reference_basis.neutral_components,
+                    non_pure_neutral_components,
                     neutral_trace_stoichiometry
                 );
-                neutral_values = sequence.values;
+                copy_neutral_values(
+                    non_pure_neutral_components, sequence.values
+                );
                 reference_molality = sequence.molality;
                 convergence_error = sequence.convergence_error;
+            }
+            for (std::size_t neutral = 0;
+                 neutral < reference_basis.neutral_components.size();
+                 ++neutral) {
+                const std::size_t component =
+                    reference_basis.neutral_components[neutral];
+                if (!pure_component[component]) {
+                    continue;
+                }
+                std::vector<double> composition(component_count, 0.0);
+                composition[component] = 1.0;
+                const std::vector<double> values = selected_derivatives(
+                    phase_fugacity_derivatives(
+                        composition,
+                        pure_component_phase[component].c_str(),
+                        false
+                    ),
+                    {component}
+                );
+                std::copy(
+                    values.begin(),
+                    values.end(),
+                    neutral_values.begin()
+                        + static_cast<std::ptrdiff_t>(neutral * derivative_stride)
+                );
             }
             const double solute_scale = std::log(
                 solvent_molar_mass
@@ -1303,7 +1432,9 @@ struct NativeTransportEndpoint final {
             std::size_t row = 0;
             for (std::size_t component : reference_basis.neutral_components) {
                 assign_derivatives(row, neutral_values, row);
-                if (source_composition[component] > 0.0) {
+                if (mixed_mole_fraction_reference) {
+                    activity[row] = 0.0;
+                } else if (source_composition[component] > 0.0) {
                     activity[row] = std::log(source_composition[component]);
                 } else {
                     activity[row] = solute_scale;
@@ -1343,10 +1474,11 @@ struct NativeTransportEndpoint final {
                         ] = contraction;
                     }
                 }
-                activity[row] =
-                    (static_cast<double>(stoichiometry[0])
-                     + static_cast<double>(stoichiometry[1]))
-                    * solute_scale;
+                activity[row] = mixed_mole_fraction_reference
+                    ? 0.0
+                    : (static_cast<double>(stoichiometry[0])
+                       + static_cast<double>(stoichiometry[1]))
+                        * solute_scale;
                 transfer[row] = fugacity[row] + activity[row];
                 reference_molality = sequence.molality;
                 convergence_error = std::max(

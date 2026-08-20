@@ -888,6 +888,7 @@ def _fit_equilibrium_observations(
         or (
             any(phase.amount_role == "incipient" for phase in batch.problem.phases)
             and batch.problem.continuation_reference is None
+            and not batch.problem.intensive_boundaries
         )
         for batch in active_batches
     ):

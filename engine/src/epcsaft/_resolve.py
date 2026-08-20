@@ -780,6 +780,7 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         "density-volume-temperature",
         "ion-specific-suppression",
         "dipolar-density-perturbation",
+        "solvent-only",
     }:
         raise _error(
             "invalid-value",
@@ -813,7 +814,19 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         elif charge == 0:
             if molar_mass[index] is None:
                 raise _missing(component_id=component_id, family="molar_mass")
-            if relative_permittivity_formulation in {
+            if relative_permittivity_formulation == "solvent-only":
+                relative_permittivity.append(
+                    _component_record(
+                        component_id,
+                        "relative_permittivity",
+                        singles,
+                        correlations,
+                        allow_correlation=True,
+                    )
+                    if permittivity_declared
+                    else None
+                )
+            elif relative_permittivity_formulation in {
                 "ion-fraction-suppression",
                 "ion-specific-suppression",
             }:

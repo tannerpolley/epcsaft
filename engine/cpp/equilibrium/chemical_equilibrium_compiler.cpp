@@ -14,6 +14,8 @@ namespace epcsaft_engine::equilibrium {
 namespace {
 
 constexpr double kResidualMultiplier = 4096.0;
+constexpr double kGasConstantJPerMolK = 8.31446261815324;
+constexpr double kProviderReferenceDensityMolPerM3 = 1.0;
 
 void require_finite(double value, const char* field) {
     if (!std::isfinite(value)) {
@@ -1301,12 +1303,21 @@ SourceStandardStateResult transform_source_standard_state(
                 "source activity-scale conversion is inconsistent with Provider transfer"
             );
         }
-        const double offset = std::inner_product(
+        const double reference_offset = std::inner_product(
             coordinates.begin(),
             coordinates.end(),
             reference.transfer_log_contractions.begin(),
             0.0
         );
+        const double delta_nu = std::accumulate(
+            stoichiometry.begin(), stoichiometry.end(), 0.0
+        );
+        const double pressure_density_offset = delta_nu * std::log(
+            pressure_pa
+            / (kProviderReferenceDensityMolPerM3
+                * kGasConstantJPerMolK * temperature_k)
+        );
+        const double offset = reference_offset + pressure_density_offset;
         if (!std::isfinite(offset)
             || !std::isfinite(source_ln_k[reaction] + offset)) {
             throw std::invalid_argument(
@@ -1322,7 +1333,7 @@ SourceStandardStateResult transform_source_standard_state(
                     coordinates.end(),
                     reference.pressure_derivatives_per_pa.begin(),
                     0.0
-                );
+                ) + delta_nu / pressure_pa;
         }
         if (parameter_derivative_available) {
             const std::size_t parameter_count =

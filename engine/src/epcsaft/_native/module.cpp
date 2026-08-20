@@ -313,6 +313,8 @@ PYBIND11_MODULE(_core, module) {
         py::arg("source_solvent_mole_fractions"),
         py::arg("ion_pair_indices"),
         py::arg("ion_pair_stoichiometry"),
+        py::arg("pure_component_indices"),
+        py::arg("pure_component_phases"),
         py::arg("phase"),
         py::arg("reference_convention"),
         py::arg("reference_state_id"),

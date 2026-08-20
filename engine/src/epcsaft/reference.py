@@ -114,6 +114,20 @@ class SourceReferenceIonPair:
 
 
 @dataclass(frozen=True, slots=True)
+class SourceReferencePureComponent:
+    """One neutral component evaluated on its declared pure-phase branch."""
+
+    component_id: str
+    phase: Literal["liquid", "vapor"]
+
+    def __post_init__(self) -> None:
+        if not self.component_id or self.phase not in ("liquid", "vapor"):
+            raise ValueError(
+                "pure-component source references require an identity and phase"
+            )
+
+
+@dataclass(frozen=True, slots=True)
 class SourceReferenceDeclaration:
     """Exact caller-owned source standard state in installed component order."""
 
@@ -122,17 +136,21 @@ class SourceReferenceDeclaration:
     solvent_mole_fractions: tuple[float, ...]
     ion_pairs: tuple[SourceReferenceIonPair, ...]
     phase: Literal["liquid"]
-    reference_convention: Literal["molality-infinite-dilution"]
+    reference_convention: Literal[
+        "molality-infinite-dilution", "mole-fraction-mixed-reference"
+    ]
     activity_convention_id: str
     standard_molality_mol_per_kg: float
     reference_pressure_pa: float
     required_derivatives: tuple[str, ...]
+    pure_components: tuple[SourceReferencePureComponent, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "component_ids", tuple(self.component_ids))
         object.__setattr__(self, "solvent_mole_fractions", tuple(self.solvent_mole_fractions))
         object.__setattr__(self, "ion_pairs", tuple(self.ion_pairs))
         object.__setattr__(self, "required_derivatives", tuple(self.required_derivatives))
+        object.__setattr__(self, "pure_components", tuple(self.pure_components))
 
 
 @dataclass(frozen=True, slots=True)
@@ -234,6 +252,10 @@ def source_reference_transfer(
             "standard_molality_mol_per_kg": standard_molality_mol_per_kg,
             "reference_pressure_pa": reference_pressure_pa,
             "required_derivatives": required_derivatives,
+            "pure_components": tuple(
+                (component.component_id, component.phase)
+                for component in declaration.pure_components
+            ),
         }
         reference_fingerprint = (
             "sha256:"
@@ -257,6 +279,11 @@ def source_reference_transfer(
                 for pair in declaration.ion_pairs
             ),
             tuple(pair.stoichiometry for pair in declaration.ion_pairs),
+            tuple(
+                component_ids.index(component.component_id)
+                for component in declaration.pure_components
+            ),
+            tuple(component.phase for component in declaration.pure_components),
             declaration.phase,
             declaration.reference_convention,
             declaration.reference_state_id,
@@ -636,6 +663,7 @@ __all__ = (
     "ElectrolyteReference",
     "SourceReferenceDeclaration",
     "SourceReferenceIonPair",
+    "SourceReferencePureComponent",
     "SourceReferenceTransfer",
     "TransferFreeEnergy",
     "source_reference_transfer",

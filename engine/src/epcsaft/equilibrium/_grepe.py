@@ -54,7 +54,10 @@ from ._reactive_vle import (
     ReactiveBubbleObservationResult,
     ReactiveBubbleObservationRow,
     ReactiveBubbleVLEProblem,
-    _evaluate_reactive_bubble_observations,
+    _BubbleFailure,
+    _closure,
+    _fixed_pressure_coordinate_derivatives,
+    _fixed_pressure_coordinate_result,
     certify_reactive_bubble_continuation_reference,
     evaluate_reactive_bubble_observations,
     reactive_bubble_observation_descriptor,
@@ -712,6 +715,10 @@ def _standard_state_payload(standard: ChemicalStandardState | None) -> object:
         "source_reference_solvent_composition": (standard.source_reference_solvent_composition),
         "source_reference_ion_pairs": tuple(
             (pair.component_ids, pair.stoichiometry) for pair in standard.source_reference_ion_pairs
+        ),
+        "source_reference_pure_components": tuple(
+            (component.component_id, component.phase)
+            for component in standard.source_reference_pure_components
         ),
         "source_reference_phase": standard.source_reference_phase,
         "source_reference_convention": standard.source_reference_convention,
@@ -2800,12 +2807,192 @@ class _IntensiveOwnerFailure(RuntimeError):
         super().__init__(diagnostic)
 
 
+def _evaluate_fixed_pressure_boundary(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    compilation: _IntensiveBoundaryCompilation,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+) -> GeneralReactiveEquilibriumResult:
+    """Close one declared affine feed against an imposed bubble pressure."""
+
+    feed = cast(AffineFeed, problem.feed).reorder(problem.reaction_system.species_ids)
+    boundary = problem.intensive_boundaries[0]
+    coordinate = feed.coordinates[0]
+    balance_direction = tuple(
+        math.fsum(
+            balance[species] * feed.basis_matrix_mol_per_coordinate[species][0]
+            for species in range(len(feed.component_ids))
+        )
+        for balance in _compiled_balance_rows(problem.reaction_system)
+    )
+
+    def evaluate(value: float) -> tuple[
+        ReactiveBubbleVLEProblem,
+        ReactiveBubbleObservationDescriptor,
+        Any,
+        float,
+    ]:
+        internal_problem = _resolved_intensive_problem(
+            problem, (value,), compilation.augmented_outputs
+        )
+        internal = _compile_general_reactive_equilibrium(
+            model, internal_problem, active_parameters=active_parameters
+        )
+        if not isinstance(internal, _BubbleCompilation):
+            raise _BubbleFailure(
+                "owner_contract_failure",
+                "fixed-pressure affine feed did not compile to the bubble owner",
+            )
+        unanchored_liquid = replace(
+            internal.owner_problem.liquid_problem, continuation_reference=None
+        )
+        liquid_reference = certify_homogeneous_continuation_reference(
+            unanchored_liquid,
+            internal.temperature,
+            boundary.target * epcsaft.unit_registry.pascal,
+            active_parameters=active_parameters,
+            maximum_log_composition_distance=0.25,
+            maximum_log_volume_distance=0.25,
+        )
+        owner_problem = replace(
+            internal.owner_problem,
+            liquid_problem=replace(
+                unanchored_liquid, continuation_reference=liquid_reference
+            ),
+            continuation_reference=None,
+        )
+        owner_descriptor = reactive_bubble_observation_descriptor(
+            owner_problem,
+            internal.owner_descriptor.rows,
+            active_parameters=active_parameters,
+        )
+        closure = _closure(
+            owner_problem,
+            internal.temperature,
+            owner_descriptor,
+            active_parameters,
+            boundary.target,
+        )
+        slope, _ = _fixed_pressure_coordinate_derivatives(
+            closure, balance_direction
+        )
+        return owner_problem, owner_descriptor, closure, slope
+
+    lower, upper = coordinate.bounds
+    width = upper - lower
+    starts = tuple(
+        dict.fromkeys(
+            (
+                boundary.initial,
+                lower + 0.5 * width,
+                lower + 0.25 * width,
+                lower + 0.75 * width,
+            )
+        )
+    )
+    owner_problem: ReactiveBubbleVLEProblem | None = None
+    owner_descriptor: ReactiveBubbleObservationDescriptor | None = None
+    closure: Any = None
+    solved_coordinate: float | None = None
+    failure: _BubbleFailure | None = None
+    for start in starts:
+        value = start
+        for _ in range(25):
+            try:
+                owner_problem, owner_descriptor, closure, slope = evaluate(value)
+            except _BubbleFailure as error:
+                failure = error
+                break
+            if abs(closure.residual) <= 2.0e-10:
+                solved_coordinate = value
+                break
+            step = max(-0.5 * width, min(0.5 * width, -closure.residual / slope))
+            candidate = value + step
+            if not lower < candidate < upper:
+                candidate = 0.5 * (value + (upper if step > 0.0 else lower))
+            if candidate == value:
+                failure = _BubbleFailure(
+                    "no_incipient_phase", "affine feed bounds exclude the closure root"
+                )
+                break
+            value = candidate
+        if solved_coordinate is not None:
+            break
+    if (
+        solved_coordinate is None
+        or owner_problem is None
+        or owner_descriptor is None
+        or closure is None
+    ):
+        terminal = failure or _BubbleFailure(
+            "numerical_convergence_failure",
+            "fixed-pressure affine-feed solve exceeded its iteration budget",
+        )
+        return _intensive_failure(
+            problem,
+            compilation,
+            NonEvaluableTrial(terminal.code, str(terminal)),
+            None,
+        )
+    try:
+        owner = _fixed_pressure_coordinate_result(
+            owner_problem, owner_descriptor, closure, balance_direction
+        )
+    except _BubbleFailure as error:
+        return _intensive_failure(
+            problem, compilation, NonEvaluableTrial(error.code, str(error)), None
+        )
+    rows = tuple(
+        GeneralEquilibriumRowResult(
+            output.identity,
+            output.selector,
+            output.unit,
+            output.basis,
+            "evaluated",
+            owner.rows[index].value,
+            owner.rows[index].jacobian,
+            "",
+        )
+        for index, output in enumerate(problem.outputs)
+    )
+    diagnostics = cast(Any, owner.chemical_diagnostics)
+    return GeneralReactiveEquilibriumResult(
+        problem=problem,
+        descriptor=compilation.descriptor,
+        status="evaluated",
+        solver_status="converged",
+        numerical_status="passed",
+        physical_status="passed",
+        provider_domain_status=(
+            "passed" if diagnostics is None else diagnostics.provider_domain_status
+        ),
+        rows=rows,
+        phases=owner.phases,
+        failure=None,
+        certificate_scope=compilation.descriptor.certificate_scope,
+        globality_claim="not_established",
+        trial=owner.trial,
+        branch_signature=(
+            "intensive_boundary",
+            ((boundary.coordinate_identity, solved_coordinate),),
+            _bubble_branch_signature(owner),
+        ),
+        owner_result=owner,
+    )
+
+
 def _evaluate_intensive_boundary(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
     compilation: _IntensiveBoundaryCompilation,
     active_parameters: epcsaft.ActiveParameterSet | None,
 ) -> GeneralReactiveEquilibriumResult:
+    if isinstance(
+        compilation.descriptor._owner_descriptor, ReactiveBubbleObservationDescriptor
+    ):
+        return _evaluate_fixed_pressure_boundary(
+            model, problem, compilation, active_parameters
+        )
     feed = cast(AffineFeed, problem.feed).reorder(problem.reaction_system.species_ids)
     phase = problem.phases[0]
     boundary_count = len(problem.intensive_boundaries)
@@ -2845,89 +3032,39 @@ def _evaluate_intensive_boundary(
         internal = _compile_general_reactive_equilibrium(
             model, internal_problem, active_parameters=active_parameters
         )
-        if isinstance(internal, _HomogeneousCompilation):
-            unanchored_owner_problem = replace(internal.owner_problem, continuation_reference=None)
-            local_reference = certify_homogeneous_continuation_reference(
-                unanchored_owner_problem,
-                internal.temperature,
-                internal.pressure,
-                active_parameters=active_parameters,
-                maximum_log_composition_distance=0.25,
-                maximum_log_volume_distance=0.25,
-            )
-            owner_problem = replace(
-                unanchored_owner_problem, continuation_reference=local_reference
-            )
-            owner_descriptor = homogeneous_reactive_observation_descriptor(
-                owner_problem,
-                internal.owner_descriptor.rows,
-                active_parameters=active_parameters,
-            )
-            homogeneous_owner = evaluate_homogeneous_reactive_observations(
-                owner_problem,
-                internal.temperature,
-                internal.pressure,
-                owner_descriptor,
-                active_parameters=active_parameters,
-            )
-            if homogeneous_owner.status != "evaluated":
-                raise _IntensiveOwnerFailure(homogeneous_owner)
-            values = tuple(float(cast(float, row.value)) for row in homogeneous_owner.rows)
-            balance_derivatives = tuple(
-                _homogeneous_output_balance_derivatives(
-                    model, phase, homogeneous_owner, output, value
-                )
-                for output, value in zip(compilation.augmented_outputs, values, strict=True)
-            )
-            owner: _IntensiveOwnerResult = homogeneous_owner
-        elif isinstance(internal, _BubbleCompilation):
-            unanchored_liquid_problem = replace(
-                internal.owner_problem.liquid_problem, continuation_reference=None
-            )
-            local_liquid_reference = certify_homogeneous_continuation_reference(
-                unanchored_liquid_problem,
-                internal.temperature,
-                problem.intensive_boundaries[0].target * epcsaft.unit_registry.pascal,
-                active_parameters=active_parameters,
-                maximum_log_composition_distance=0.25,
-                maximum_log_volume_distance=0.25,
-            )
-            unanchored_bubble_problem = replace(
-                internal.owner_problem,
-                liquid_problem=replace(
-                    unanchored_liquid_problem,
-                    continuation_reference=local_liquid_reference,
-                ),
-                continuation_reference=None,
-            )
-            local_bubble_reference = certify_reactive_bubble_continuation_reference(
-                unanchored_bubble_problem,
-                internal.temperature,
-                active_parameters=active_parameters,
-                maximum_log_pressure_distance=0.25,
-                maximum_log_composition_distance=0.25,
-                maximum_log_volume_distance=0.25,
-            )
-            bubble_problem = replace(
-                unanchored_bubble_problem, continuation_reference=local_bubble_reference
-            )
-            bubble_descriptor = reactive_bubble_observation_descriptor(
-                bubble_problem,
-                internal.owner_descriptor.rows,
-                active_parameters=active_parameters,
-            )
-            bubble_owner, balance_derivatives = _evaluate_reactive_bubble_observations(
-                bubble_problem,
-                internal.temperature,
-                bubble_descriptor,
-                active_parameters=active_parameters,
-            )
-            if bubble_owner.status != "evaluated":
-                raise _IntensiveOwnerFailure(bubble_owner)
-            values = tuple(float(cast(float, row.value)) for row in bubble_owner.rows)
-            owner = bubble_owner
-        else:
+        if not isinstance(internal, _HomogeneousCompilation):
             raise TypeError("intensive boundary compiled to a nondifferentiable owner")
+        unanchored_owner_problem = replace(internal.owner_problem, continuation_reference=None)
+        local_reference = certify_homogeneous_continuation_reference(
+            unanchored_owner_problem,
+            internal.temperature,
+            internal.pressure,
+            active_parameters=active_parameters,
+            maximum_log_composition_distance=0.25,
+            maximum_log_volume_distance=0.25,
+        )
+        owner_problem = replace(
+            unanchored_owner_problem, continuation_reference=local_reference
+        )
+        owner_descriptor = homogeneous_reactive_observation_descriptor(
+            owner_problem,
+            internal.owner_descriptor.rows,
+            active_parameters=active_parameters,
+        )
+        owner = evaluate_homogeneous_reactive_observations(
+            owner_problem,
+            internal.temperature,
+            internal.pressure,
+            owner_descriptor,
+            active_parameters=active_parameters,
+        )
+        if owner.status != "evaluated":
+            raise _IntensiveOwnerFailure(owner)
+        values = tuple(float(cast(float, row.value)) for row in owner.rows)
+        balance_derivatives = tuple(
+            _homogeneous_output_balance_derivatives(model, phase, owner, output, value)
+            for output, value in zip(compilation.augmented_outputs, values, strict=True)
+        )
         if any(len(row) != len(balance_rows) for row in balance_derivatives):
             raise ValueError("wrapped owner balance basis does not match GREPE")
         coordinate_derivatives = tuple(

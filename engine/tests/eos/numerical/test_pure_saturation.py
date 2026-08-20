@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import csv
 import math
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
 
 import epcsaft
 from epcsaft import _core
+from tests.eos._raw_cases import ASSOCIATING_PURE, set_component_values
 from tests.equilibrium.parameter_dictionaries import PURE_SATURATION_PARAMETERS
 
 ANCHORS = Path(__file__).parents[3] / "data" / "reference" / "pure_saturation_anchors.csv"
@@ -124,6 +126,33 @@ def test_saturation_matches_independent_and_nist_anchors() -> None:
         assert liquid_density_kg_m3 == pytest.approx(
             float(anchor["nist_liquid_density_kg_m3"]), rel=1.0e-2
         )
+
+
+def test_low_pressure_strongly_associating_saturation_converges() -> None:
+    parameters = deepcopy(ASSOCIATING_PURE)
+    set_component_values(parameters, "molar_mass", (0.119163,))
+    set_component_values(parameters, "segment_count", (3.675,))
+    set_component_values(parameters, "segment_diameter", (3.563,))
+    set_component_values(parameters, "dispersion_energy_over_k", (228.711,))
+    for site in parameters["topology"]["sites"]:
+        site["multiplicity"] = 2
+    edge = parameters["topology"]["edges"][0]
+    edge["energy_over_k"]["value"]["magnitude"] = 2046.624
+    edge["volume"]["value"]["magnitude"] = 0.123858
+
+    result = epcsaft.Pure(epcsaft.Parameters.from_mapping(parameters)).saturation(
+        T=313.15 * epcsaft.unit_registry.kelvin,
+    )
+
+    # An independent scalar pressure solve on the two public density branches
+    # brackets the fugacity crossing at 4.228881 Pa.  Below about 1e-6 Pa the
+    # dense-branch pressure loses relative precision through cancellation.
+    assert result.saturation_pressure_pa == pytest.approx(4.228881, abs=2.0e-6)
+    assert result.liquid.molar_density_mol_m3 == pytest.approx(8564.24294, abs=2.0e-5)
+    assert abs(result.liquid.pressure_pa - result.saturation_pressure_pa) <= 1.0e-6
+    assert abs(result.vapor.pressure_pa - result.saturation_pressure_pa) <= 1.0e-6
+    assert result.diagnostics.chemical_potential_absolute_residual <= 1.0e-10
+    assert result.diagnostics.solver_constraint_violation <= 1.0e-6
 
 
 def test_supercritical_saturation_block_rejects_without_fabricated_rows() -> None:

@@ -256,7 +256,9 @@ NativeModel::NativeModel(NativeParameters parameters)
         parameters_.relative_permittivity_formulation ==
             RELATIVE_PERMITTIVITY_FORMULATION_ION_SPECIFIC_SUPPRESSION ||
         parameters_.relative_permittivity_formulation ==
-            RELATIVE_PERMITTIVITY_FORMULATION_DIPOLAR_DENSITY_PERTURBATION;
+            RELATIVE_PERMITTIVITY_FORMULATION_DIPOLAR_DENSITY_PERTURBATION ||
+        parameters_.relative_permittivity_formulation ==
+            RELATIVE_PERMITTIVITY_FORMULATION_SOLVENT_ONLY;
     if ((born && !valid_born_permittivity) ||
         (fully_dissociated &&
          parameters_.relative_permittivity_formulation !=

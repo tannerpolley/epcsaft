@@ -34,6 +34,8 @@ pybind11::dict evaluate_source_reference_transfer(
     const std::vector<double>& source_solvent_mole_fractions,
     const std::vector<std::array<std::size_t, 2>>& ion_pair_indices,
     const std::vector<std::array<int, 2>>& ion_pair_stoichiometry,
+    const std::vector<std::size_t>& pure_component_indices,
+    const std::vector<std::string>& pure_component_phases,
     const std::string& phase,
     const std::string& reference_convention,
     const std::string& reference_state_id,

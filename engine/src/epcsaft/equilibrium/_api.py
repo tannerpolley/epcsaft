@@ -409,9 +409,14 @@ class ChemicalStandardState:
     source_reference_solvent_composition: tuple[float, ...]
     source_reference_ion_pairs: tuple[epcsaft.SourceReferenceIonPair, ...]
     source_reference_phase: Literal["liquid"]
-    source_reference_convention: Literal["molality-infinite-dilution"]
+    source_reference_convention: Literal[
+        "molality-infinite-dilution", "mole-fraction-mixed-reference"
+    ]
     source_reference_activity_convention_id: str
     source_reference_standard_molality_mol_per_kg: float
+    source_reference_pure_components: tuple[
+        epcsaft.SourceReferencePureComponent, ...
+    ] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -431,6 +436,11 @@ class ChemicalStandardState:
         )
         object.__setattr__(
             self, "source_reference_ion_pairs", tuple(self.source_reference_ion_pairs)
+        )
+        object.__setattr__(
+            self,
+            "source_reference_pure_components",
+            tuple(self.source_reference_pure_components),
         )
 
 
@@ -3166,6 +3176,7 @@ def _source_reference_transfer(
             ),
             reference_pressure_pa=standard_state.reference_pressure_pa,
             required_derivatives=required_derivatives,
+            pure_components=standard_state.source_reference_pure_components,
         ),
         T=temperature_k * epcsaft.unit_registry.kelvin,
         P=pressure_pa * epcsaft.unit_registry.pascal,

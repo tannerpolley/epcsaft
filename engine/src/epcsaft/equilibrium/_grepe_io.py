@@ -6,7 +6,7 @@ from typing import Any, cast
 
 import epcsaft
 
-from ..reference import SourceReferenceIonPair
+from ..reference import SourceReferenceIonPair, SourceReferencePureComponent
 from ._api import (
     AllComponents,
     ChemicalEquilibriumConstant,
@@ -145,7 +145,7 @@ def _reaction_system(value: object) -> ChemicalEquilibriumProblem:
     standard_value = item["source_standard_state"]
     standard = None
     if standard_value is not None:
-        source = _mapping(
+        source = _mapping_with_optional(
             standard_value,
             frozenset(
                 {
@@ -162,6 +162,7 @@ def _reaction_system(value: object) -> ChemicalEquilibriumProblem:
                     "standard_molality_mol_per_kg",
                 }
             ),
+            frozenset({"pure_components"}),
             "GREPE source standard state",
         )
         ion_pairs = []
@@ -179,6 +180,17 @@ def _reaction_system(value: object) -> ChemicalEquilibriumProblem:
             if len(components) != 2 or len(stoichiometry) != 2:
                 raise ValueError("source ion pairs require two components")
             ion_pairs.append(SourceReferenceIonPair(components, stoichiometry))
+        pure_components = []
+        for raw in _sequence(source.get("pure_components", ()), "source pure components"):
+            record = _sequence(raw, "source pure component")
+            if len(record) != 2:
+                raise ValueError("source pure components require identity and phase")
+            pure_components.append(
+                SourceReferencePureComponent(
+                    _text(record[0], "pure component"),
+                    cast(Any, _text(record[1], "pure-component phase")),
+                )
+            )
         standard = ChemicalStandardState(
             _text(source["id"], "standard-state identity"),
             _text(source["activity_scale_id"], "activity-scale identity"),
@@ -194,6 +206,7 @@ def _reaction_system(value: object) -> ChemicalEquilibriumProblem:
             cast(Any, _text(source["reference_convention"], "reference convention")),
             _text(source["activity_convention_id"], "activity convention"),
             _number(source["standard_molality_mol_per_kg"], "standard molality"),
+            tuple(pure_components),
         )
     return ChemicalEquilibriumProblem(
         tuple(
@@ -808,6 +821,10 @@ def general_reactive_equilibrium_problem_to_mapping(
             "ion_pairs": [
                 [list(pair.component_ids), list(pair.stoichiometry)]
                 for pair in standard.source_reference_ion_pairs
+            ],
+            "pure_components": [
+                [component.component_id, component.phase]
+                for component in standard.source_reference_pure_components
             ],
             "phase": standard.source_reference_phase,
             "reference_convention": standard.source_reference_convention,

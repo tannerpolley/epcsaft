@@ -502,6 +502,10 @@ def _problem_payload(problem: ChemicalEquilibriumProblem) -> dict[str, object]:
                 (pair.component_ids, pair.stoichiometry)
                 for pair in standard.source_reference_ion_pairs
             ),
+            "pure_components": tuple(
+                (component.component_id, component.phase)
+                for component in standard.source_reference_pure_components
+            ),
             "phase": standard.source_reference_phase,
             "reference_convention": standard.source_reference_convention,
             "activity_convention_id": standard.source_reference_activity_convention_id,

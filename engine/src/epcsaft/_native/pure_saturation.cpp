@@ -21,6 +21,7 @@ constexpr double kPressureLowerPa = 1.0e-12;
 constexpr double kPressureUpperPa = 1.0e8;
 constexpr double kSolverConstraintTolerance = 1.0e-10;
 constexpr double kConstraintTolerance = 1.0e-8;
+constexpr double kPressureAbsoluteTolerancePa = 1.0e-6;
 constexpr double kPhaseDistanceTolerance = 1.0e-3;
 
 void require_finite(double value, const char *name) {
@@ -165,7 +166,18 @@ AttemptResult run_saturation_newton(const NativeModel &model,
                                         std::abs(evaluation.constraints[2])});
       result.iterations = iteration;
       result.solver_constraint_violation = residual;
-      if (residual <= kSolverConstraintTolerance) {
+      const double allowed_pressure_difference = std::max(
+          kPressureAbsoluteTolerancePa,
+          kSolverConstraintTolerance * evaluation.saturation_pressure_pa);
+      const bool mixed_tolerance_converged =
+          std::abs(evaluation.vapor.eos.pressure_pa
+                   - evaluation.saturation_pressure_pa)
+              <= allowed_pressure_difference
+          && std::abs(evaluation.liquid.eos.pressure_pa
+                      - evaluation.saturation_pressure_pa)
+                 <= allowed_pressure_difference
+          && std::abs(evaluation.constraints[2]) <= kSolverConstraintTolerance;
+      if (residual <= kSolverConstraintTolerance || mixed_tolerance_converged) {
         result.solver_converged = true;
         result.solver_status = "solve_succeeded";
         return result;
@@ -242,10 +254,15 @@ bool physical_acceptance(const AttemptResult &attempt,
                          SaturationSolveResult &result) {
   const double vapor_density = 1.0 / evaluation.vapor.volume_m3;
   const double liquid_density = 1.0 / evaluation.liquid.volume_m3;
+  const double saturation_pressure = evaluation.saturation_pressure_pa;
+  const double vapor_pressure_difference =
+      std::abs(evaluation.vapor.eos.pressure_pa - saturation_pressure);
+  const double liquid_pressure_difference =
+      std::abs(evaluation.liquid.eos.pressure_pa - saturation_pressure);
   result.vapor_pressure_relative_residual =
-      std::abs(evaluation.constraints[0]);
+      vapor_pressure_difference / saturation_pressure;
   result.liquid_pressure_relative_residual =
-      std::abs(evaluation.constraints[1]);
+      liquid_pressure_difference / saturation_pressure;
   result.pressure_relative_residual =
       std::max(result.vapor_pressure_relative_residual,
                result.liquid_pressure_relative_residual);
@@ -267,13 +284,16 @@ bool physical_acceptance(const AttemptResult &attempt,
       std::isfinite(result.liquid_residual_density_derivative_m3_per_mol);
   const bool locally_stable =
       evaluation.jacobian[0] > 0.0 && evaluation.jacobian[4] > 0.0;
+  const double allowed_pressure_difference = std::max(
+      kPressureAbsoluteTolerancePa,
+      kConstraintTolerance * saturation_pressure);
   const bool accepted = attempt.solver_converged &&
          std::isfinite(attempt.solver_constraint_violation) &&
-         attempt.solver_constraint_violation <= kSolverConstraintTolerance &&
          attempt.callback_error.empty() && finite &&
          evaluation.saturation_pressure_pa > 0.0 && vapor_density > 0.0 &&
          liquid_density > vapor_density &&
-         result.pressure_relative_residual <= kConstraintTolerance &&
+         vapor_pressure_difference <= allowed_pressure_difference &&
+         liquid_pressure_difference <= allowed_pressure_difference &&
          result.chemical_potential_absolute_residual <= kConstraintTolerance &&
          result.phase_density_distance > kPhaseDistanceTolerance &&
          locally_stable &&

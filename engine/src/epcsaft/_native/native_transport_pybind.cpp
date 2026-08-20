@@ -63,6 +63,8 @@ pybind11::dict evaluate_source_reference_transfer(
     const std::vector<double>& source_solvent_mole_fractions,
     const std::vector<std::array<std::size_t, 2>>& ion_pair_indices,
     const std::vector<std::array<int, 2>>& ion_pair_stoichiometry,
+    const std::vector<std::size_t>& pure_component_indices,
+    const std::vector<std::string>& pure_component_phases,
     const std::string& phase,
     const std::string& reference_convention,
     const std::string& reference_state_id,
@@ -120,6 +122,16 @@ pybind11::dict evaluate_source_reference_transfer(
         cation_stoichiometry.push_back(ion_pair_stoichiometry[index][0]);
         anion_stoichiometry.push_back(ion_pair_stoichiometry[index][1]);
     }
+    if (pure_component_indices.size() != pure_component_phases.size()) {
+        throw pybind11::value_error(
+            "pure-component reference index and phase counts differ"
+        );
+    }
+    std::vector<const char*> pure_component_phase_pointers;
+    pure_component_phase_pointers.reserve(pure_component_phases.size());
+    for (const auto& pure_component_phase : pure_component_phases) {
+        pure_component_phase_pointers.push_back(pure_component_phase.c_str());
+    }
     epcsaft_source_reference_request request{
         sizeof(epcsaft_source_reference_request),
         component_ids.size(),
@@ -131,6 +143,9 @@ pybind11::dict evaluate_source_reference_transfer(
         anions.data(),
         cation_stoichiometry.data(),
         anion_stoichiometry.data(),
+        pure_component_indices.size(),
+        pure_component_indices.data(),
+        pure_component_phase_pointers.data(),
         phase.c_str(),
         reference_convention.c_str(),
         reference_state_id.c_str(),

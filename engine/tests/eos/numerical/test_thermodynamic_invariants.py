@@ -315,6 +315,34 @@ def test_born_corrections_match_independent_nested_equations(
     assert state.born == pytest.approx(expected, rel=3.0e-12, abs=2.0e-12)
 
 
+def test_original_born_accepts_solvent_only_permittivity() -> None:
+    """Bülow's original Born form uses only neutral-solvent permittivities."""
+    mapping = deepcopy(AQUEOUS_ELECTROLYTE)
+    next(
+        family
+        for family in mapping["model_families"]
+        if family["kind"] == "permittivity"
+    )["choice"] = "solvent-only"
+    mapping["model_coefficients"] = [
+        coefficient
+        for coefficient in mapping["model_coefficients"]
+        if coefficient["family"] != "ion_fraction_suppression_coefficient"
+    ]
+    electrolyte = next(
+        family
+        for family in mapping["model_families"]
+        if family["kind"] == "electrolyte"
+    )
+    electrolyte["c_shell"] = 0.0
+    electrolyte["c_dielectric"] = 0.0
+
+    state = _state(mapping, x=(0.90, 0.05, 0.05), density=40000.0)
+
+    assert state.bulk_relative_permittivity == pytest.approx(78.09, rel=2.0e-13)
+    assert math.isfinite(state.debye_huckel)
+    assert math.isfinite(state.born)
+
+
 @pytest.mark.parametrize(
     "declaration",
     (
