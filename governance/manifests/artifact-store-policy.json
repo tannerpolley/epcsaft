@@ -16,9 +16,9 @@
   "active_distributions": {
     "epcsaft": {
       "repository": "ePC-SAFT/ePC-SAFT-engine",
-      "source_commit": "c712fe9730faef0732341ccdabc4d799fef2d953",
+      "source_commit": "6d1c434a67edfdad1f29f624311969a499ad83c1",
       "version": "0.2.0.dev0",
-      "sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049"
+      "sha256": "69466464ae323af3b2702ccf56ca00de67d389cd4b51f87b605cc5d6fce54a21"
     }
   },
   "historical_archive": {

@@ -1,0 +1,245 @@
+{
+  "envelope": {
+    "schema": {
+      "path": "manifests/operation-receipt-envelope-v1.json",
+      "version": 1,
+      "sha256": "7cc1cbf4b92aaa54a4f7856bab5de4f1d8d2855c63566e5ecfe9660fb6f2061e"
+    },
+    "sequence": 13,
+    "subject": {
+      "operation": "engine-artifact-promotion",
+      "repository": "tannerpolley/ePC-SAFT",
+      "decision": "governance-artifact-store-active-channel-promotion",
+      "doctrine_revision": 23,
+      "phase": "completed",
+      "source_task": "01a0123c-2cdd-7b90-a9c3-414b0f790ccd",
+      "engine_commit": "6d1c434a67edfdad1f29f624311969a499ad83c1",
+      "engine_tree": "f03504ac53b66f1c44eba376da98cf0f539be3de",
+      "wheel_filename": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "wheel_sha256": "69466464ae323af3b2702ccf56ca00de67d389cd4b51f87b605cc5d6fce54a21",
+      "old_active_wheel_sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049",
+      "candidate_wheel_sha256": "67fef817d5c48115c40c0cb34d4883add8a5fc31cea4ab558ad57cd101d7dd33",
+      "disposition_archive": "archive/candidate-wheel-dispositions-20260820.tar.zst",
+      "disposition_archive_sha256": "a7f92963174fbdf9e21bf30b0044aa444f30be100baf94328ceafe5807497171",
+      "disposition_archive_bytes": 9192185,
+      "record_sha256": "f889eaf75b7aa960b8003d9c5aa69db77d1d94f638cab010f91aadfa35aa727f"
+    },
+    "subject_sha256": "809ea78208bc680f923ef16cc7c060b76ad77d0a97862c28bcd3e0741aa9d965",
+    "validator": {
+      "repository": "tannerpolley/ePC-SAFT",
+      "commit": "8259d0c2a41f073761ecdb8b432f237ee68e7b55",
+      "path": "governance/tools/artifact_store.py",
+      "sha256": "61e696b3c8f45290dde21bc9b18b9ea2ed2a8d3d7df9a3608853509d4f9eaeed"
+    },
+    "command": "python3 governance/tools/artifact_store.py normalize; python3 governance/tools/artifact_store.py check; python3 governance/tools/artifact_store.py resolve --distribution epcsaft; .venv/bin/python tools/verify-installed-wheel.py --wheel build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl; focused installed-wheel Buelow-2021 four-state reactive replay with unchanged defaults; bash tools/check-affected.sh; bash tools/check-all.sh; python3 governance/tools/management_preflight.py check",
+    "environment": {
+      "captured_at": "2026-08-20T19:34:21-06:00",
+      "timezone": "America/Denver",
+      "platform": "linux-x86_64",
+      "python": "3.13",
+      "package_source": "single non-editable installed wheel",
+      "ci": "none; local owner validation"
+    },
+    "artifacts": [
+      {
+        "kind": "engine-wheel-build",
+        "path": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+        "sha256": "69466464ae323af3b2702ccf56ca00de67d389cd4b51f87b605cc5d6fce54a21"
+      },
+      {
+        "kind": "active-artifact-policy",
+        "path": "governance/manifests/artifact-store-policy.json",
+        "sha256": "b768a7656dffc3d910ead5934b16c5ee8f6afec4bd20098cdca42b71f2aa3da8"
+      },
+      {
+        "kind": "artifact-disposition-manifest",
+        "path": "governance/manifests/artifact-dispositions.json",
+        "sha256": "048dfb939464fb29b17f4d0e98ca1b929b60cbac1a19e9f23a28d8ad7a24dce4"
+      },
+      {
+        "kind": "artifact-index",
+        "path": "governance/manifests/artifacts.json",
+        "sha256": "0364148dafe9b0ab5c6ce24c503ffd2664c7b2baee26f2f2f4d03cea87fbc286"
+      },
+      {
+        "kind": "bulow-2021-parameter-document",
+        "path": "validation/campaigns/2021-bulow-sour-gas/parameters/paper-parameters.csv",
+        "sha256": "a4a67f5a295d016d0a57ee109bb7d02445cec8a0275825e731641ca0ec2a7734"
+      },
+      {
+        "kind": "retained-bulow-2021-reactive-results",
+        "path": "validation/campaigns/2021-bulow-sour-gas/results/data/bulow-2021-reactive-mdea-co2-plotted-data.csv",
+        "sha256": "5570725d82b89359dc5cec6bd55ac1d5a0c0019807765c13fa87e7fff9423f41"
+      }
+    ],
+    "producer": {
+      "kind": "codex-task",
+      "id": "01a0123c-2cdd-7b90-a9c3-414b0f790ccd"
+    },
+    "reviewer": {
+      "kind": "governance-readiness-gate",
+      "id": "artifact_store_check_resolve_management_preflight",
+      "outcome": "archive, active alias, exact installed-wheel replay, and governance checks recorded"
+    },
+    "failed_outcomes": [],
+    "supersedes": null,
+    "revoked_by": null,
+    "user_approval": {
+      "source": "explicit promotion and PR authorization in the originating Codex task on 2026-08-20",
+      "subject_sha256": "809ea78208bc680f923ef16cc7c060b76ad77d0a97862c28bcd3e0741aa9d965"
+    }
+  },
+  "record": {
+    "status": "completed",
+    "observations": [
+      {
+        "name": "active_engine_subject",
+        "expected": "The sole active epcsaft channel resolves to a verified non-editable wheel built from current main.",
+        "observed": "The active alias and immutable object both resolve to SHA-256 69466464ae323af3b2702ccf56ca00de67d389cd4b51f87b605cc5d6fce54a21, built from commit 6d1c434a67edfdad1f29f624311969a499ad83c1 and engine tree f03504ac53b66f1c44eba376da98cf0f539be3de.",
+        "outcome": "pass"
+      },
+      {
+        "name": "old_active_object_preservation",
+        "expected": "The previous active object and its provenance remain recoverable and unchanged.",
+        "observed": "Object objects/sha256/21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl remains present at 4577089 bytes with its original SHA-256.",
+        "outcome": "pass"
+      },
+      {
+        "name": "candidate_disposition",
+        "expected": "The released candidate leaves no installable wheel outside active and remains exact replay evidence.",
+        "observed": "Candidate 67fef817d5c48115c40c0cb34d4883add8a5fc31cea4ab558ad57cd101d7dd33 was verified into archive/candidate-wheel-dispositions-20260820.tar.zst before its candidate file/hash directory was removed. The archive is 9192185 bytes, SHA-256 a7f92963174fbdf9e21bf30b0044aa444f30be100baf94328ceafe5807497171, and contains the old active and candidate wheel members with exact hashes.",
+        "outcome": "pass"
+      },
+      {
+        "name": "artifact_store_gate",
+        "expected": "The store check passes closed and resolve returns the new full-SHA-256 object path.",
+        "observed": "normalize, check, and resolve --distribution epcsaft passed; resolve returned ~/Workspaces/Engineering/ePC-SAFT-local-state/artifacts/objects/sha256/69466464ae323af3b2702ccf56ca00de67d389cd4b51f87b605cc5d6fce54a21/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl.",
+        "outcome": "pass"
+      },
+      {
+        "name": "installed_wheel_gate",
+        "expected": "The root environment imports only the promoted non-editable Engine wheel and retains the reactive, GREPE, and regression public surfaces.",
+        "observed": "verify-installed-wheel.py passed for epcsaft 0.2.0.dev0 from build/environment-wheel; module origins are .venv site-packages, and reactive observations, phase_equilibrium, and regression.fit/ParameterFit/FitResult are present.",
+        "outcome": "pass"
+      },
+      {
+        "name": "bulow_2021_reactive_replay",
+        "expected": "The promoted wheel reproduces the four retained ionic MDEA/CO2 reactive rows under unchanged generator and Engine defaults, including same-sign ion-pair exclusion.",
+        "observed": {
+          "retained_results_path": "validation/campaigns/2021-bulow-sour-gas/results/data/bulow-2021-reactive-mdea-co2-plotted-data.csv",
+          "retained_results_sha256": "5570725d82b89359dc5cec6bd55ac1d5a0c0019807765c13fa87e7fff9423f41",
+          "parameter_document": "validation/campaigns/2021-bulow-sour-gas/parameters/paper-parameters.csv",
+          "charged_species": ["H+", "MDEAH+", "OH-", "HCO3-", "CO3--"],
+          "explicit_kij_records": ["sulfolane-CO2", "sulfolane-H2S", "sulfolane-water", "water-CO2", "water-CO3--", "water-H+", "water-MDEA", "water-OH-"],
+          "same_sign_pair_policy": "exclude-same-sign-ion-pairs",
+          "omitted_same_sign_pairs": ["H+/MDEAH+", "OH-/HCO3-", "OH-/CO3--", "HCO3-/CO3--"],
+          "parameter_mapping_pair_count": 24,
+          "tolerance_policy": "unchanged generator/Engine defaults; no tolerance override",
+          "rows": [
+            {
+              "source_row": "kuranov-1996-table-2-mdea-approx-2m-r01",
+              "grepe_status": "evaluated",
+              "grepe_solver_status": "solve_succeeded",
+              "predicted_total_pressure_pa": 48740.56750055257,
+              "predicted_co2_partial_pressure_pa": 41646.89738906014,
+              "absolute_relative_deviation_percent": 34.13436824249653,
+              "liquid_molar_density_mol_per_m3": 51259.085011560586,
+              "vapor_molar_density_mol_per_m3": 18.768406456134684,
+              "exact_field_match": true,
+              "numeric_deltas": "all 0.0"
+            },
+            {
+              "source_row": "kuranov-1996-table-2-mdea-approx-2m-r12",
+              "grepe_status": "evaluated",
+              "grepe_solver_status": "solve_succeeded",
+              "predicted_total_pressure_pa": 71488.6519657694,
+              "predicted_co2_partial_pressure_pa": 52438.78599619205,
+              "absolute_relative_deviation_percent": 48.75365450482481,
+              "liquid_molar_density_mol_per_m3": 50299.58429797671,
+              "vapor_molar_density_mol_per_m3": 25.92753157108708,
+              "exact_field_match": true,
+              "numeric_deltas": "all 0.0"
+            },
+            {
+              "source_row": "kuranov-1996-table-2-mdea-approx-2m-r19",
+              "grepe_status": "evaluated",
+              "grepe_solver_status": "solve_succeeded",
+              "predicted_total_pressure_pa": 117700.17931257964,
+              "predicted_co2_partial_pressure_pa": 21279.011549202423,
+              "absolute_relative_deviation_percent": 48.126849135046434,
+              "liquid_molar_density_mol_per_m3": 46891.17825654595,
+              "vapor_molar_density_mol_per_m3": 38.46350588992094,
+              "exact_field_match": true,
+              "numeric_deltas": "all 0.0"
+            },
+            {
+              "source_row": "kuranov-1996-table-2-mdea-approx-2m-r29",
+              "grepe_status": "evaluated",
+              "grepe_solver_status": "solve_succeeded",
+              "predicted_total_pressure_pa": 218301.42661647344,
+              "predicted_co2_partial_pressure_pa": 28665.08005010426,
+              "absolute_relative_deviation_percent": 41.26945746126622,
+              "liquid_molar_density_mol_per_m3": 45783.08930896261,
+              "vapor_molar_density_mol_per_m3": 68.1628612581861,
+              "exact_field_match": true,
+              "numeric_deltas": "all 0.0"
+            }
+          ],
+          "all_four_exact": true,
+          "neutral_sulfolane_co2_regression_rerun": false,
+          "retained_evidence_modified": false
+        },
+        "outcome": "pass"
+      },
+      {
+        "name": "downstream_engine_lock",
+        "expected": "Downstream MEA worktrees can lock one immutable Engine subject without importing source.",
+        "observed": {
+          "distribution": "epcsaft",
+          "version": "0.2.0.dev0",
+          "engine_commit": "6d1c434a67edfdad1f29f624311969a499ad83c1",
+          "engine_tree": "f03504ac53b66f1c44eba376da98cf0f539be3de",
+          "wheel_filename": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+          "wheel_sha256": "69466464ae323af3b2702ccf56ca00de67d389cd4b51f87b605cc5d6fce54a21",
+          "public_api_signature_identity": "sha256:6c6ad454b5080780841cabfe843307860e35bcd0a1ae90b9fbd21eede78ae309",
+          "public_header_sha256": {
+            "epcsaft": "fef47a5e86f2f1a6e7026b63d227cda116439284b69f8bba2d00589c36c18f61",
+            "epcsaft.equilibrium": "93c1605bcf94064c3c96f96de0103b25f49102fec8c620804de9a3d7e8b954c4",
+            "epcsaft.regression": "171527d7a0b360b26130af45174a68d5fc07f532bbaee5c42b835d65fcc59b94"
+          }
+        },
+        "outcome": "pass"
+      },
+      {
+        "name": "scope_and_provenance",
+        "expected": "The repair changes only artifact governance/build state and does not alter Engine equations or MEA chemistry.",
+        "observed": "Only governance manifests, the promotion plan, and this governance receipt changed in the Engine repository; no MEA-Thermodynamics files were edited by this task. Historical objects, retained Bülow evidence, and all provenance were preserved.",
+        "outcome": "pass"
+      }
+    ],
+    "preconditions": [
+      "Protected MEA task 019fdeb0-c2fc-7cc1-8d5e-1ba8166126ac completed and was idle before candidate release.",
+      "Its completion automation was deleted through the app control plane and no candidate-backed process remained.",
+      "The current-main build wheel hash was independently verified as 69466464ae323af3b2702ccf56ca00de67d389cd4b51f87b605cc5d6fce54a21.",
+      "The old active object and candidate bytes matched their recorded hashes before mutation."
+    ],
+    "expected_postconditions": [
+      "The artifact store has exactly one active epcsaft wheel and resolve returns the 694664 object path.",
+      "The old active object remains available for recoverable rollback and the released candidate remains only in compressed disposition evidence.",
+      "Downstream MEA applications lock the exact commit, tree, wheel filename, wheel hash, public API identity, and headers recorded above.",
+      "The focused Bülow ionic replay remains exact without rewriting retained evidence or running the unrelated neutral regression."
+    ],
+    "retry": "Repeat only from the immutable current-main build and the recorded parameter/results paths; compare artifact hashes, active/object identity, archive member hashes, four Bülow rows, and all governed checks before any further alias change.",
+    "stop_conditions": [
+      "Any active alias, object, policy, index, or archive hash differs from this receipt.",
+      "A candidate or other uncompressed wheel reappears outside active.",
+      "Any Bülow status, solver status, composition, density, pressure, ARD, or numeric delta differs from the retained four-row evidence.",
+      "The old object is missing or altered.",
+      "A downstream application requests source import, a fallback channel, or an unrecorded wheel identity.",
+      "A change would touch Engine equations, MEA chemistry, or retained scientific results."
+    ],
+    "reversibility": "The active alias can be atomically restored from the untouched 21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049 object, with policy/index changes superseded by a new governance receipt. The released candidate and pre-promotion alias bytes are recoverable from the verified compressed archive.",
+    "irreversible_effects": "The uncompressed candidate alias was removed after archive verification; no scientific results or old object bytes were deleted. The active alias and policy/index subject changed under the authorized promotion.",
+    "recovery_owner": "The ePC-SAFT Engine owner must fail closed, restore only the preserved old object through a new hash-bound governance operation, and rerun artifact-store, installed-wheel, and downstream lock checks before release."
+  }
+}

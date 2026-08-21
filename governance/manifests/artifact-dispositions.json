@@ -13,6 +13,12 @@
       "sha256": "23c5c8fd9dd83ee8340e3db8c822f00a6c398739199111e70faf659bcba89122",
       "bytes": 15400963,
       "entries": 5
+    },
+    {
+      "path": "archive/candidate-wheel-dispositions-20260820.tar.zst",
+      "sha256": "a7f92963174fbdf9e21bf30b0044aa444f30be100baf94328ceafe5807497171",
+      "bytes": 9192185,
+      "entries": 2
     }
   ],
   "dispositions": [
@@ -64,6 +70,20 @@
       "distribution": "epcsaft",
       "retention": "superseded-replay",
       "reason": "Superseded provider-named native-SDK candidate is retained for exact replay and is not an active install source."
+    },
+    {
+      "archive_member": "wheels/epcsaft-active-20260820/21ed202d/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "21ed202df4aa5f8a516aa6400a3a09fe9b5e1d267935f6c5411b92e8faf9d049",
+      "distribution": "epcsaft",
+      "retention": "superseded-replay",
+      "reason": "Pre-promotion active alias bytes retained with the untouched old object for exact rollback and provenance."
+    },
+    {
+      "archive_member": "wheels/epcsaft-m3-m7-candidate-20260820/67fef817/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+      "sha256": "67fef817d5c48115c40c0cb34d4883add8a5fc31cea4ab558ad57cd101d7dd33",
+      "distribution": "epcsaft",
+      "retention": "superseded-replay",
+      "reason": "MEA M3-M7 candidate wheel retained after protected-task completion for exact replay provenance; it is not an active install source."
     }
   ]
 }
