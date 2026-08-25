@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from typing import Any, Literal, cast
 
@@ -791,6 +791,7 @@ def _solve_incipient_linear_system(
 def _evaluate_incipient_vapor_point(
     *,
     model: epcsaft.Pure | epcsaft.Mixture,
+    transport: Callable[[], object],
     active_parameters: epcsaft.ActiveParameterSet | None,
     all_active_identities: tuple[str, ...],
     temperature: Any,
@@ -828,7 +829,7 @@ def _evaluate_incipient_vapor_point(
             )
         volume = 1.0 / float(state.molar_density.to("mole / meter ** 3").magnitude)
         block = _equilibrium.evaluate_parameterized_phase(
-            _native_transport(model, active_parameters),
+            transport(),
             temperature_k,
             fractions,
             volume,
@@ -857,7 +858,7 @@ def _evaluate_incipient_vapor_point(
                 )
             volume = candidate
             block = _equilibrium.evaluate_parameterized_phase(
-                _native_transport(model, active_parameters),
+                transport(),
                 temperature_k,
                 fractions,
                 volume,
@@ -989,6 +990,17 @@ def _solve_declared_incipient_vapor(
 
     component_count = len(liquid_potentials)
     reference = component_count - 1
+    transport_capsule: object | None = None
+
+    def transport() -> object:
+        nonlocal transport_capsule
+        if transport_capsule is None:
+            try:
+                transport_capsule = _native_transport(model, active_parameters)
+            except (RuntimeError, TypeError, ValueError) as error:
+                raise _BubbleFailure("provider_domain_rejection", str(error)) from error
+        return transport_capsule
+
     shifted = tuple(value - max(liquid_potentials) for value in liquid_potentials)
     weights = tuple(math.exp(max(-700.0, value)) for value in shifted)
     weight_total = math.fsum(weights)
@@ -1018,6 +1030,7 @@ def _solve_declared_incipient_vapor(
         if log_ratios not in cache:
             cache[log_ratios] = _evaluate_incipient_vapor_point(
                 model=model,
+                transport=transport,
                 active_parameters=active_parameters,
                 all_active_identities=all_active_identities,
                 temperature=temperature,

@@ -21,14 +21,7 @@ from ..equilibrium import (
 )
 from ..parameters import ActiveParameterSet, Parameters
 from ..units import ParameterError
-from ._fit import (
-    _FUNCTION_TOLERANCE,
-    _GRADIENT_TOLERANCE,
-    _MAXIMUM_ITERATIONS,
-    _PARAMETER_TOLERANCE,
-    FitPreflightError,
-    _package_fingerprint,
-)
+from ._fit import FitPreflightError, _package_fingerprint
 from ._model import EquilibriumFitObservation
 from ._resolve import ResolvedFit
 from ._result import (
@@ -219,11 +212,11 @@ class _ReactiveBatch:
 @dataclass(frozen=True, slots=True)
 class _ReactiveControls:
     starts: tuple[_ReactiveStart, ...]
-    affine_bound_margin: float = 1.0e-7
-    maximum_iterations: int = _MAXIMUM_ITERATIONS
-    function_tolerance: float = _FUNCTION_TOLERANCE
-    gradient_tolerance: float = _GRADIENT_TOLERANCE
-    parameter_tolerance: float = _PARAMETER_TOLERANCE
+    affine_bound_margin: float
+    maximum_iterations: int
+    function_tolerance: float
+    gradient_tolerance: float
+    parameter_tolerance: float
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "starts", tuple(self.starts))
@@ -705,10 +698,15 @@ def _evaluate_batch(batch: _ReactiveBatch, active: ActiveParameterSet) -> Any:
     return phase_equilibrium(batch.model, batch.problem, active_parameters=active)
 
 
-def _preflight(problem: _ResolvedReactiveFit) -> None:
+def _preflight(
+    problem: _ResolvedReactiveFit,
+) -> dict[tuple[str, str, tuple[str, ...], tuple[float, ...]], Any]:
     """Fail before Ceres unless every exact start has complete owner derivatives."""
 
     branch_signatures: dict[str, tuple[object, ...]] = {}
+    exact_start_results: dict[
+        tuple[str, str, tuple[str, ...], tuple[float, ...]], Any
+    ] = {}
     for start in problem.controls.starts:
         active = _active_trial(problem, start.values)
         for batch in problem.batches:
@@ -761,10 +759,14 @@ def _preflight(problem: _ResolvedReactiveFit) -> None:
                     batch.identity,
                     "cross-start physical branch signature changed",
                 )
+            exact_start_results[(start.identity, batch.identity, active.identities, active.values)] = (
+                result
+            )
+    return exact_start_results
 
 
 class _EquilibriumOwnerEvaluator:
-    __slots__ = ("_active_ids", "_batches", "_parameters")
+    __slots__ = ("_active_ids", "_batches", "_exact_start_results", "_parameters", "_starts")
 
     def __init__(
         self,
@@ -772,12 +774,14 @@ class _EquilibriumOwnerEvaluator:
         batches: Sequence[_ReactiveBatch],
     ) -> None:
         self._parameters = problem.parameters
+        self._starts = tuple(start.identity for start in problem.controls.starts)
         self._active_ids = tuple(
             identity
             for coordinate in problem.coordinates
             for identity in coordinate.parameter_identities
         )
         self._batches = tuple(batches)
+        self._exact_start_results = _preflight(problem)
 
     @staticmethod
     def _rejected(code: NonEvaluableTrialCode, reason: str) -> dict[str, object]:
@@ -795,7 +799,13 @@ class _EquilibriumOwnerEvaluator:
             active = ActiveParameterSet(self._parameters, self._active_ids, values=values)
         except (ParameterError, TypeError, ValueError) as error:
             return self._rejected("parameter_topology_mismatch", str(error))
-        result = _evaluate_batch(batch, active)
+        result = None
+        if not receipt_requested:
+            result = self._exact_start_results.get(
+                (self._starts[_start_index], batch.identity, self._active_ids, active.values)
+            )
+        if result is None:
+            result = _evaluate_batch(batch, active)
         if result.status != "evaluated":
             failure = result.failure
             if failure is None:
@@ -895,7 +905,6 @@ def _fit_equilibrium_observations(
         raise ValueError(
             "equilibrium regression requires an immutable continuation reference or start per batch"
         )
-    _preflight(problem)
     residual_blocks = [
         {
             "multiplier": 1.0,
@@ -942,7 +951,6 @@ def _fit_equilibrium_observations(
                 for start in problem.controls.starts
             ],
             "affine_bound_margin": problem.controls.affine_bound_margin,
-            "workers": 1,
             "maximum_iterations": problem.controls.maximum_iterations,
             "function_tolerance": problem.controls.function_tolerance,
             "gradient_tolerance": problem.controls.gradient_tolerance,

@@ -6,7 +6,6 @@
 #include <pybind11/stl.h>
 
 #include <algorithm>
-#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <limits>
@@ -14,7 +13,6 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
-#include <thread>
 #include <utility>
 #include <vector>
 
@@ -69,7 +67,6 @@ struct Start final {
 struct Controls final {
   std::vector<Start> starts;
   double affine_bound_margin;
-  std::size_t workers;
   int maximum_iterations;
   double function_tolerance;
   double gradient_tolerance;
@@ -227,14 +224,12 @@ Controls parse_controls(const py::dict &mapping) {
   Controls controls{
       std::move(starts),
       required<double>(mapping, "affine_bound_margin"),
-      required<std::size_t>(mapping, "workers"),
       required<int>(mapping, "maximum_iterations"),
       required<double>(mapping, "function_tolerance"),
       required<double>(mapping, "gradient_tolerance"),
       required<double>(mapping, "parameter_tolerance"),
   };
-  if (controls.starts.empty() || controls.workers == 0 ||
-      controls.maximum_iterations <= 0 ||
+  if (controls.starts.empty() || controls.maximum_iterations <= 0 ||
       !(std::isfinite(controls.affine_bound_margin) &&
         controls.affine_bound_margin >= 0.0 &&
         std::isfinite(controls.function_tolerance) &&
@@ -975,44 +970,27 @@ py::dict fit_resolved(const py::function &owner_evaluator,
   }
   const auto &start_values = controls.starts;
   std::vector<StartResult> results(start_values.size());
-  std::atomic<std::size_t> next{0};
-  const std::size_t worker_count =
-      std::min(controls.workers, start_values.size());
   {
     py::gil_scoped_release release;
-    auto solve_next = [&]() {
-      for (;;) {
-        const std::size_t index = next.fetch_add(1);
-        if (index >= start_values.size()) {
-          return;
-        }
-        try {
-          results[index] =
-              solve_start(index, owner_evaluator.ptr(), active_parameter_count,
-                          identity_coordinates, coordinates, observations,
-                          controls, start_values[index], failure_codes);
-        } catch (const std::exception &error) {
-          results[index].index = index;
-          results[index].start_identity = start_values[index].identity;
-          results[index].initial_affine = start_values[index].affine;
-          results[index].final_affine = start_values[index].affine;
-          results[index].failure_reason = error.what();
-          results[index].trial_failure_code = "optimizer_failure";
-          for (std::size_t batch = 0; batch < observations.size(); ++batch) {
-            results[index].batch_outcomes.push_back(
-                {batch, observations[batch].targets.size(), "not_evaluated",
-                 "optimizer_failure"});
-          }
+    for (std::size_t index = 0; index < start_values.size(); ++index) {
+      try {
+        results[index] =
+            solve_start(index, owner_evaluator.ptr(), active_parameter_count,
+                        identity_coordinates, coordinates, observations,
+                        controls, start_values[index], failure_codes);
+      } catch (const std::exception &error) {
+        results[index].index = index;
+        results[index].start_identity = start_values[index].identity;
+        results[index].initial_affine = start_values[index].affine;
+        results[index].final_affine = start_values[index].affine;
+        results[index].failure_reason = error.what();
+        results[index].trial_failure_code = "optimizer_failure";
+        for (std::size_t batch = 0; batch < observations.size(); ++batch) {
+          results[index].batch_outcomes.push_back(
+              {batch, observations[batch].targets.size(), "not_evaluated",
+               "optimizer_failure"});
         }
       }
-    };
-    std::vector<std::thread> workers;
-    workers.reserve(worker_count);
-    for (std::size_t worker = 0; worker < worker_count; ++worker) {
-      workers.emplace_back(solve_next);
-    }
-    for (auto &worker : workers) {
-      worker.join();
     }
   }
   assign_optimizer_basins(results, coordinates);
