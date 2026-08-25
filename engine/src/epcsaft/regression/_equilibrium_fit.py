@@ -704,9 +704,7 @@ def _preflight(
     """Fail before Ceres unless every exact start has complete owner derivatives."""
 
     branch_signatures: dict[str, tuple[object, ...]] = {}
-    exact_start_results: dict[
-        tuple[str, str, tuple[str, ...], tuple[float, ...]], Any
-    ] = {}
+    exact_start_results: dict[tuple[str, str, tuple[str, ...], tuple[float, ...]], Any] = {}
     for start in problem.controls.starts:
         active = _active_trial(problem, start.values)
         for batch in problem.batches:
@@ -759,9 +757,9 @@ def _preflight(
                     batch.identity,
                     "cross-start physical branch signature changed",
                 )
-            exact_start_results[(start.identity, batch.identity, active.identities, active.values)] = (
-                result
-            )
+            exact_start_results[
+                (start.identity, batch.identity, active.identities, active.values)
+            ] = result
     return exact_start_results
 
 

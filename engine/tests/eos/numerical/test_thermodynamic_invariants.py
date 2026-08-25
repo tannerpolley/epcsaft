@@ -342,20 +342,16 @@ def test_born_corrections_match_independent_nested_equations(
 def test_original_born_accepts_solvent_only_permittivity() -> None:
     """Bülow's original Born form uses only neutral-solvent permittivities."""
     mapping = deepcopy(AQUEOUS_ELECTROLYTE)
-    next(
-        family
-        for family in mapping["model_families"]
-        if family["kind"] == "permittivity"
-    )["choice"] = "solvent-only"
+    next(family for family in mapping["model_families"] if family["kind"] == "permittivity")[
+        "choice"
+    ] = "solvent-only"
     mapping["model_coefficients"] = [
         coefficient
         for coefficient in mapping["model_coefficients"]
         if coefficient["family"] != "ion_fraction_suppression_coefficient"
     ]
     electrolyte = next(
-        family
-        for family in mapping["model_families"]
-        if family["kind"] == "electrolyte"
+        family for family in mapping["model_families"] if family["kind"] == "electrolyte"
     )
     electrolyte["c_shell"] = 0.0
     electrolyte["c_dielectric"] = 0.0
@@ -487,11 +483,9 @@ def test_permittivity__matches_independent_ion_fraction_and_dipolar_equations() 
 
 def test_ion_specific_permittivity__supports_multiple_neutral_components() -> None:
     mapping = deepcopy(MULTINEUTRAL_REACTIVE)
-    next(
-        family
-        for family in mapping["model_families"]
-        if family["kind"] == "permittivity"
-    )["choice"] = "ion-specific-suppression"
+    next(family for family in mapping["model_families"] if family["kind"] == "permittivity")[
+        "choice"
+    ] = "ion-specific-suppression"
     mapping["model_coefficients"] = [
         coefficient
         for coefficient in mapping["model_coefficients"]
@@ -499,9 +493,7 @@ def test_ion_specific_permittivity__supports_multiple_neutral_components() -> No
     ]
     for component_id, coefficient in (("cation", 9.55), ("anion", 13.96)):
         component = next(
-            item
-            for item in mapping["components"]
-            if item["component_id"] == component_id
+            item for item in mapping["components"] if item["component_id"] == component_id
         )
         component["coefficients"].extend(
             _component(
@@ -512,9 +504,9 @@ def test_ion_specific_permittivity__supports_multiple_neutral_components() -> No
 
     fractions = (0.7, 0.1, 0.1, 0.1)
     state = _state(mapping, x=fractions, density=55_000.0)
-    salt_free = (
-        fractions[0] * 0.018 * 78.0 + fractions[1] * 0.030 * 40.0
-    ) / (fractions[0] * 0.018 + fractions[1] * 0.030)
+    salt_free = (fractions[0] * 0.018 * 78.0 + fractions[1] * 0.030 * 40.0) / (
+        fractions[0] * 0.018 + fractions[1] * 0.030
+    )
     assert state.bulk_relative_permittivity == pytest.approx(
         salt_free / (1.0 + fractions[2] * 9.55 + fractions[3] * 13.96),
         rel=2.0e-12,
@@ -558,17 +550,13 @@ def test_component_permittivity__admits_exact_pure_ionic_support() -> None:
             permittivity="component-permittivity-mixing",
             born_corrections=(0.0, 0.0),
         ),
-        model_coefficients=[
-            _model_coefficient("ionic_region_relative_permittivity", 1.0)
-        ],
+        model_coefficients=[_model_coefficient("ionic_region_relative_permittivity", 1.0)],
     )
 
     state = _state(mapping, x=(0.5, 0.5), density=5000.0)
     all_pair_mapping = deepcopy(mapping)
     electrolyte = next(
-        family
-        for family in all_pair_mapping["model_families"]
-        if family["kind"] == "electrolyte"
+        family for family in all_pair_mapping["model_families"] if family["kind"] == "electrolyte"
     )
     electrolyte["ionic_dispersion"] = "all-ion-pairs"
     all_pair = _state(all_pair_mapping, x=(0.5, 0.5), density=5000.0)
@@ -874,9 +862,9 @@ def test_revised_debye_huckel_uses_declared_multisolvent_permittivity() -> None:
         x=composition,
         phase="liquid",
     )
-    expected = (
-        composition[0] * 0.018 * 78.0 + composition[1] * 0.030 * 40.0
-    ) / (composition[0] * 0.018 + composition[1] * 0.030)
+    expected = (composition[0] * 0.018 * 78.0 + composition[1] * 0.030 * 40.0) / (
+        composition[0] * 0.018 + composition[1] * 0.030
+    )
 
     assert state.bulk_relative_permittivity == pytest.approx(expected, rel=2.0e-13)
 
@@ -949,8 +937,7 @@ def test_solvent_only_permittivity_tracks_temperature_and_excludes_neutral_solut
     solvent_epsilon = 78.0 - 0.3 * 20.0
     cosolvent_epsilon = 40.0 - 0.1 * 20.0 + 0.001 * 20.0**2
     expected = (
-        composition[0] * 0.018 * solvent_epsilon
-        + composition[1] * 0.030 * cosolvent_epsilon
+        composition[0] * 0.018 * solvent_epsilon + composition[1] * 0.030 * cosolvent_epsilon
     ) / (composition[0] * 0.018 + composition[1] * 0.030)
 
     assert state.bulk_relative_permittivity == pytest.approx(expected, rel=2.0e-13)
@@ -970,9 +957,7 @@ def test_solvent_only_permittivity_tracks_temperature_and_excludes_neutral_solut
     def values(slope: float) -> tuple[float, ...]:
         candidate = deepcopy(mapping)
         correlation_mapping = next(
-            item
-            for item in candidate["correlations"]
-            if item["component_id"] == "solvent"
+            item for item in candidate["correlations"] if item["component_id"] == "solvent"
         )
         correlation_mapping["terms"][0]["coefficient"]["value"]["magnitude"] = slope
         candidate_state = Mixture(Parameters.from_mapping(candidate)).state(
@@ -989,13 +974,9 @@ def test_solvent_only_permittivity_tracks_temperature_and_excludes_neutral_solut
     step = 1.0e-6
     lower = values(-0.3 - step)
     upper = values(-0.3 + step)
-    numerical = tuple(
-        (high - low) / (2.0 * step) for low, high in zip(lower, upper, strict=True)
-    )
+    numerical = tuple((high - low) / (2.0 * step) for low, high in zip(lower, upper, strict=True))
     for row, expected_derivative in enumerate(numerical):
-        assert exact.jacobian[row][0] == pytest.approx(
-            expected_derivative, rel=6.0e-5, abs=4.0e-7
-        )
+        assert exact.jacobian[row][0] == pytest.approx(expected_derivative, rel=6.0e-5, abs=4.0e-7)
 
 
 def test_multisolvent_multiion_reference_is_component_order_invariant() -> None:

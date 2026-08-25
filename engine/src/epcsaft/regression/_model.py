@@ -932,9 +932,7 @@ def _parse_solver(value: object, path: str) -> SolverSpec:
         )
     for name in ("function_tolerance", "gradient_tolerance", "parameter_tolerance"):
         if getattr(controls, name) <= 0.0:
-            raise FitSchemaError(
-                "invalid-value", f"{path}.controls.{name}", "positive required"
-            )
+            raise FitSchemaError("invalid-value", f"{path}.controls.{name}", "positive required")
     return SolverSpec(MultistartSpec(tuple(starts), margin), controls)
 
 
