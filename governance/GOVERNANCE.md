@@ -329,7 +329,7 @@ tests/eos/
 tests/equilibrium/
 tests/regression/
 docs/
-CMakeLists.txt
+meson.build
 pyproject.toml
 README.md
 LICENSE

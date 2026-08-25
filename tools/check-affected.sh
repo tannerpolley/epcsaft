@@ -32,7 +32,7 @@ fi
 if grep -q '^data/' <<<"$paths"; then
     python3 data/tools/validate_packets.py
 fi
-if [[ "$source_only" == 0 ]] && grep -Eq '^(engine/(CMakeLists\.txt|LICENSE|README\.md|pyproject\.toml|cpp/|src/|data/|tests/)|validation/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
+if [[ "$source_only" == 0 ]] && grep -Eq '^(engine/(meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|cpp/|src/|data/|tests/)|validation/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
     bash .codex/environments/setup.sh
 fi
 if grep -q '^engine/' <<<"$paths"; then
@@ -53,7 +53,7 @@ if grep -q '^engine/' <<<"$paths"; then
                 engine_equilibrium=true
                 ;;
             engine/src/epcsaft/regression/*) engine_regression=true ;;
-            engine/AGENTS.md|engine/ARCHITECTURE.yaml|engine/CONTEXT.md|engine/README.md|engine/CMakeLists.txt|engine/pyproject.toml|engine/cpp/*|engine/src/*|engine/data/*|engine/tests/*)
+            engine/AGENTS.md|engine/ARCHITECTURE.yaml|engine/CONTEXT.md|engine/README.md|engine/meson.build|engine/build/subprojects/*|engine/pyproject.toml|engine/cpp/*|engine/src/*|engine/data/*|engine/tests/*)
                 engine_all=true
                 ;;
         esac

@@ -9,7 +9,7 @@ bash .codex/environments/setup.sh
 
 run_root="$(mktemp -d)"
 cleanup() {
-    cmake -E remove_directory "$run_root"
+    rm -rf -- "$run_root"
 }
 trap cleanup EXIT
 

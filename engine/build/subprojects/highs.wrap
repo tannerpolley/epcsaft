@@ -1,0 +1,5 @@
+[wrap-file]
+directory = HiGHS-1.15.1
+source_url = https://github.com/ERGO-Code/HiGHS/archive/refs/tags/v1.15.1.tar.gz
+source_filename = highs-v1.15.1.tar.gz
+source_hash = a840d269dff2fafb371dd247df13ad5e026d7ce3b35ad3dc1eedd59bf0c2fb16

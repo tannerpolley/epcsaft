@@ -4,7 +4,7 @@
 
 `engine/` is the sole runtime owner inside `tannerpolley/ePC-SAFT`. It
 builds one Python 3.13 distribution, `epcsaft`, containing EOS, equilibrium,
-and regression. All native modules share one CMake graph and wheel.
+and regression. All native modules share one Meson graph and wheel.
 
 Reusable packets remain owned by `data/` and are materialized with exact
 commit, packet, fingerprint, and file hashes. Regression returns an immutable

@@ -1,0 +1,6 @@
+[wrap-file]
+directory = CppAD-20250000.3
+source_url = https://github.com/coin-or/CppAD/archive/refs/tags/20250000.3.tar.gz
+source_filename = cppad-20250000.3.tar.gz
+source_hash = a3a4030ae49719e88e5057e923c4c97c5ba8910e22471f22661420ce65747fbe
+patch_directory = cppad

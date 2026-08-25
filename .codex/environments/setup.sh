@@ -12,4 +12,11 @@ for required_command in git uv cmake ninja c++ flock; do
 done
 
 uv sync --python 3.13 --no-install-project --locked --inexact
+export PATH="$repo_root/.venv/bin:$PATH"
+for required_command in meson patchelf; do
+    if ! command -v "$required_command" >/dev/null 2>&1; then
+        echo "missing required command: $required_command" >&2
+        exit 1
+    fi
+done
 bash tools/ensure-engine-wheel.sh
