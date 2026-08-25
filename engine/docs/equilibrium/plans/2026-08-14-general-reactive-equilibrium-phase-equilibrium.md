@@ -351,11 +351,12 @@ exact plotted-data tables, and figures where required.
 
 ## Completion criteria
 
-GREPE is complete only when homogeneous, bubble/dew/VLE, and
-declared-phase reactive-LLE configurations use the one public
-`phase_equilibrium` owner and one generic Regression evaluator; displaced
-specialized public routes, reduced tracers, family switches, and stale live
-guidance are removed, and exact derivative and numerical evidence passes
-through the installed wheel. Configured neutral and electrochemical two-phase
-equilibrium is proven; automatic phase discovery and solids remain separate
-numerical formulations.
+The admitted GREPE core covers homogeneous reaction, solved-pressure
+bubble/VLE, imposed intensive boundaries, and declared-phase reactive LLE
+through the one public `phase_equilibrium` owner and one generic Regression
+evaluator. Temperature-solved Bubble-T and Dew-T observations remain issue
+#42. Displaced specialized public routes, reduced tracers, family switches,
+and stale live guidance are removed, and exact derivative and numerical
+evidence passes through the installed wheel. Configured neutral and
+electrochemical two-phase equilibrium is proven; automatic phase discovery and
+solids remain separate numerical formulations.

@@ -29,10 +29,11 @@ and model capabilities compile the problem.
 
 The canonical generic design is
 `engine/docs/equilibrium/plans/2026-08-14-general-reactive-equilibrium-phase-equilibrium.md`.
-Current work is tracked only in native GitHub issues. For the Engine, issues
-#44, #47, #48, #50, and #51 are the live GREPE capability leaves. Issue #51
-owns the optional simultaneous sparse multi-experiment backend. Historical
-plans, campaign reports, and issue mirrors retain evidence but are not parallel
+Current work is tracked only in native GitHub issues. For the Engine, issue #42
+owns temperature-solved Bubble-T and Dew-T observations, issue #51 owns the
+optional simultaneous sparse multi-experiment backend, and issue #54 owns the
+active Bülow 2021 reproduction and integration. Historical plans, completed
+issues, campaign reports, and issue mirrors retain evidence but are not parallel
 work queues.
 
 ## Regression architecture

@@ -15,9 +15,10 @@ bubble/VLE Observation Family. Nonreactive phase-equilibrium observations
 remain unadmitted.
 
 Historical CAP plans, receipts, results, reviews, and source identities remain
-provenance. They are not a live execution queue. Issue #6 is a separate
-post-cutover Validation campaign. Issues #30 and #31 are completed detached
-post-cutover capabilities with hash-bound admission receipts.
+provenance. They are not a live execution queue. Issue #6 was superseded when
+D-038 established MEA-Thermodynamics as the official downstream application.
+Issues #30 and #31 are completed detached post-cutover capabilities with
+hash-bound admission receipts.
 
 ## Private development feedback
 
