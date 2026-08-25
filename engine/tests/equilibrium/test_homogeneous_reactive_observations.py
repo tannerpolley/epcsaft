@@ -692,6 +692,29 @@ def test_grepe_single_finite_phase_matches_homogeneous_owner() -> None:
         assert actual == pytest.approx(expected, rel=3.0e-5, abs=3.0e-7)
     assert grepe.certificate_scope == "fixed_TP_single_finite_reacting_phase"
     assert grepe.globality_claim == "not_established"
+    assert grepe.branch_signature is not None
+    assert grepe.branch_signature[-2] == (
+        (
+            owner_problem.continuation_identity,
+            owner_problem.continuation_reference.fingerprint,
+        ),
+    )
+    tight_reference = replace(
+        owner_problem.continuation_reference,
+        maximum_log_composition_distance=1.0e-12,
+        maximum_log_volume_distance=1.0e-12,
+    )
+    tight_phase = replace(
+        grepe_problem.phases[0], continuation_reference=tight_reference
+    )
+    rejected = equilibrium.phase_equilibrium(
+        model,
+        replace(grepe_problem, phases=(tight_phase,)),
+        active_parameters=active,
+    )
+    assert rejected.status == "non_evaluable"
+    assert rejected.failure is not None
+    assert "continuation region" in rejected.failure.diagnostic
     observations = tuple(
         equilibrium.GeneralEquilibriumOwnerObservation(output.identity, output.identity)
         for output in grepe_problem.outputs

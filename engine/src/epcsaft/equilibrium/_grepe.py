@@ -2635,6 +2635,38 @@ def _evaluate_finite_phase(
         native,
         mechanical_class="strict_stable_local_minimum",
     )
+    if len(compilation.phases) == 1:
+        reference = compilation.phases[0].continuation_reference
+        state = phases[0]
+        if reference is not None:
+            composition_distance = max(
+                abs(math.log(actual / anchor))
+                for actual, anchor in zip(
+                    state.mole_fractions, reference.mole_fractions, strict=True
+                )
+            )
+            volume_distance = abs(
+                math.log(
+                    state.molar_volume_m3_per_mol
+                    / reference.molar_volume_m3_per_mol
+                )
+            )
+            if (
+                composition_distance > reference.maximum_log_composition_distance
+                or volume_distance > reference.maximum_log_volume_distance
+            ):
+                return _finite_phase_failed(
+                    problem,
+                    compilation,
+                    trial,
+                    "physical_rejection",
+                    "the finite-phase state left its declared continuation region",
+                    solver_status=str(native["solver_status"]),
+                    numerical_status=str(native["numerical_status"]),
+                    physical_status="failed",
+                    provider_domain_status=str(native["provider_domain_status"]),
+                    phases=phases,
+                )
     branch_signature: tuple[object, ...] = (
         "finite_phases_local_minimum",
         compilation.descriptor.problem_fingerprint,
@@ -2650,6 +2682,15 @@ def _evaluate_finite_phase(
                 ),
             )
             for phase, state in zip(compilation.phases, phases, strict=True)
+        ),
+        tuple(
+            (
+                phase.continuation_identity,
+                None
+                if phase.continuation_reference is None
+                else phase.continuation_reference.fingerprint,
+            )
+            for phase in compilation.phases
         ),
         trial.fingerprint,
     )
