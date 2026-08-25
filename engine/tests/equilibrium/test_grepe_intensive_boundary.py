@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 from copy import deepcopy
-from typing import Any, cast
+from typing import cast
 
 import pytest
 
@@ -336,21 +335,7 @@ def test_imposed_potential_output_jacobian_includes_uptake_response() -> None:
     ).startswith("sha256:")
 
     tampered = json.loads(receipt)
-    owner_receipt = tampered["owner_receipt"]
-    owner_receipt["problem_fingerprint"] = "sha256:tampered"
-    owner_payload = dict(owner_receipt)
-    owner_payload.pop("fingerprint")
-    fingerprint_payload = json.dumps(
-        {
-            "schema": "epcsaft.intensive-boundary-owner-receipt.v2",
-            "value": owner_payload,
-        },
-        ensure_ascii=False,
-        allow_nan=False,
-        separators=(",", ":"),
-        sort_keys=True,
-    ).encode("utf-8")
-    owner_receipt["fingerprint"] = f"sha256:{hashlib.sha256(fingerprint_payload).hexdigest()}"
+    tampered["problem_fingerprint"] = "sha256:tampered"
     tampered_json = json.dumps(
         tampered,
         ensure_ascii=False,
@@ -520,11 +505,10 @@ def test_imposed_pressure_matches_fixed_pressure_incipient_reference() -> None:
     )
     assert result.phases[0].pressure_pa == pytest.approx(pressure_pa, abs=2.0e-6)
     assert result.phases[1].pressure_pa == pytest.approx(pressure_pa, abs=2.0e-6)
-    certification = cast(Any, result.owner_result).certification
-    assert certification is not None
-    assert certification.bubble_log_closure_abs < 2.0e-10
-    assert certification.phase_pressure_residual_inf_pa < 2.0e-6
-    assert certification.phase_chemical_potential_residual_inf < 1.0e-10
+    evidence = dict(result.evidence)
+    assert evidence["bubble_log_closure_abs"] < 2.0e-10
+    assert evidence["phase_pressure_residual_inf_pa"] < 2.0e-6
+    assert evidence["phase_chemical_potential_residual_inf"] < 1.0e-10
     observations = tuple(
         equilibrium.GeneralEquilibriumOwnerObservation(
             f"target/{output.identity}",
@@ -539,9 +523,10 @@ def test_imposed_pressure_matches_fixed_pressure_incipient_reference() -> None:
         batch_identity="imposed-pressure-parity",
         observations=observations,
     )
-    assert json.loads(receipt)["owner_receipt"]["schema"] == (
-        "epcsaft.intensive-boundary-owner-receipt.v2"
-    )
+    receipt_payload = json.loads(receipt)
+    assert receipt_payload["schema"] == "epcsaft.grepe-owner-receipt.v2"
+    assert receipt_payload["formulation"] == "intensive_boundary"
+    assert "owner_receipt" not in receipt_payload
     assert result.descriptor is not None
     assert equilibrium.validate_general_reactive_equilibrium_receipt(
         receipt,
@@ -553,21 +538,7 @@ def test_imposed_pressure_matches_fixed_pressure_incipient_reference() -> None:
     ).startswith("sha256:")
 
     tampered = json.loads(receipt)
-    owner_receipt = tampered["owner_receipt"]
-    owner_receipt["wrapped_descriptor"]["reaction_fingerprint"] = "sha256:" + "0" * 64
-    owner_payload = dict(owner_receipt)
-    owner_payload.pop("fingerprint")
-    fingerprint_payload = json.dumps(
-        {
-            "schema": "epcsaft.intensive-boundary-owner-receipt.v2",
-            "value": owner_payload,
-        },
-        ensure_ascii=False,
-        allow_nan=False,
-        separators=(",", ":"),
-        sort_keys=True,
-    ).encode("utf-8")
-    owner_receipt["fingerprint"] = f"sha256:{hashlib.sha256(fingerprint_payload).hexdigest()}"
+    tampered["reaction_fingerprint"] = "sha256:" + "0" * 64
     tampered_json = json.dumps(
         tampered,
         ensure_ascii=False,
@@ -575,7 +546,7 @@ def test_imposed_pressure_matches_fixed_pressure_incipient_reference() -> None:
         separators=(",", ":"),
         sort_keys=True,
     )
-    with pytest.raises(ValueError, match="reaction system"):
+    with pytest.raises(ValueError, match="identity"):
         equilibrium.validate_general_reactive_equilibrium_receipt(
             tampered_json,
             descriptor=result.descriptor,

@@ -231,7 +231,7 @@ def test_finite_phase_is_one_certified_coupled_minimum_and_label_covariant() -> 
     assert result.physical_status == "passed"
     assert result.provider_domain_status == "passed"
     assert result.descriptor is not None
-    assert result.descriptor._owner_kind == "finite_phases"
+    assert result.descriptor.formulation == "finite"
     assert result.certificate_scope == ("fixed_TP_configured_finite_phases_local_minimum")
     assert result.globality_claim == "not_established"
     assert len(result.phases) == 2
@@ -289,9 +289,9 @@ def test_finite_phase_is_one_certified_coupled_minimum_and_label_covariant() -> 
         active_parameters=active,
         observations=observations,
     ).startswith("sha256:")
-    certificate = json.loads(receipt)["owner_receipt"]["certificate"]
-    assert certificate["declared_direction_rank"] == certificate["admissible_nullity"] == 4
-    assert certificate["reduced_hessian_min_eigenvalue"] > 0.0
+    evidence = dict(json.loads(receipt)["evidence"])
+    assert evidence["declared_direction_rank"] == evidence["admissible_nullity"] == 4
+    assert evidence["reduced_hessian_min_eigenvalue"] > 0.0
 
     permuted = replace(
         problem,
@@ -354,9 +354,9 @@ def test_explicit_phase_directions_are_the_reactive_authority() -> None:
     actual = equilibrium.phase_equilibrium(model, direction_only, active_parameters=active)
 
     assert expected.status == actual.status == "evaluated"
-    assert actual.owner_result is not None
-    assert actual.owner_result.declared_direction_rank == 4
-    assert actual.owner_result.admissible_nullity == 4
+    actual_evidence = dict(actual.evidence)
+    assert actual_evidence["declared_direction_rank"] == 4
+    assert actual_evidence["admissible_nullity"] == 4
     for expected_phase, actual_phase in zip(expected.phases, actual.phases, strict=True):
         assert actual_phase.mole_fractions == pytest.approx(
             expected_phase.mole_fractions, rel=2.0e-7, abs=2.0e-10
@@ -511,7 +511,7 @@ def test_finite_phase_amount_chart_is_scale_invariant_with_trace_species() -> No
     assert reference.status == "evaluated", reference.failure
     assert scaled.status == "evaluated", scaled.failure
     assert reference.physical_status == scaled.physical_status == "passed"
-    assert reference.owner_result is not None and scaled.owner_result is not None
+    assert reference.evidence and scaled.evidence
 
     for reference_phase, scaled_phase in zip(reference.phases, scaled.phases, strict=True):
         assert scaled_phase.mole_fractions == pytest.approx(
@@ -731,10 +731,10 @@ def test_generic_two_phase_grepe_solves_ascani_2023_hypothetical_case() -> None:
     assert result.physical_status == "passed"
     assert result.provider_domain_status == "passed"
     assert len(result.phases) == 2
-    assert result.owner_result is not None
-    assert result.owner_result.reaction_affinity_inf_norm <= 1.0e-7
-    assert result.owner_result.transfer_chemical_potential_inf_norm <= 1.0e-7
-    assert result.owner_result.phase_distinctness >= 0.35
+    evidence = dict(result.evidence)
+    assert evidence["reaction_affinity_inf_norm"] <= 1.0e-7
+    assert evidence["transfer_chemical_potential_inf_norm"] <= 1.0e-7
+    assert evidence["phase_distinctness"] >= 0.35
     digitized_figure_3_tie_line = (
         (0.496692, 0.202820, 0.300488),
         (0.255113, 0.094788, 0.650099),
@@ -812,9 +812,9 @@ def test_generic_finite_phase_grepe_accepts_an_empty_reaction_set() -> None:
     result = equilibrium.phase_equilibrium(model, problem)
 
     assert result.status == "evaluated", result.failure
-    assert result.owner_result is not None
-    assert result.owner_result.reaction_affinity_inf_norm == 0.0
-    assert result.owner_result.transfer_chemical_potential_inf_norm <= 1.0e-7
+    evidence = dict(result.evidence)
+    assert evidence["reaction_affinity_inf_norm"] == 0.0
+    assert evidence["transfer_chemical_potential_inf_norm"] <= 1.0e-7
     phase_component_amounts = tuple(row.value for row in result.rows[-6:])
     assert all(amount is not None for amount in phase_component_amounts)
     for component, expected in enumerate(feed):
@@ -836,9 +836,9 @@ def test_generic_two_phase_grepe_generates_ascani_start_candidates() -> None:
     result = equilibrium.phase_equilibrium(model, generated_start_problem)
 
     assert result.status == "evaluated", result.failure
-    assert result.owner_result is not None
-    assert result.owner_result.reaction_affinity_inf_norm <= 1.0e-7
-    assert result.owner_result.transfer_chemical_potential_inf_norm <= 1.0e-7
+    evidence = dict(result.evidence)
+    assert evidence["reaction_affinity_inf_norm"] <= 1.0e-7
+    assert evidence["transfer_chemical_potential_inf_norm"] <= 1.0e-7
     expected = (
         (0.5444273618587753, 0.21016731227664495, 0.2454053258645798),
         (0.17715297890104614, 0.06383171565566206, 0.7590153054432918),
@@ -993,10 +993,9 @@ def test_configured_charged_two_phase_reactive_minimum() -> None:
     assert len(result.phases) == 2
     for phase in result.phases:
         assert abs(phase.mole_fractions[3] - phase.mole_fractions[4]) <= 2.0e-10
-    owner = result.owner_result
-    assert owner is not None
-    assert owner.reaction_affinity_inf_norm <= 1.0e-7
-    assert owner.transfer_chemical_potential_inf_norm <= 1.0e-7
+    evidence = dict(result.evidence)
+    assert evidence["reaction_affinity_inf_norm"] <= 1.0e-7
+    assert evidence["transfer_chemical_potential_inf_norm"] <= 1.0e-7
 
     generated = equilibrium.phase_equilibrium(
         model,
@@ -1010,11 +1009,10 @@ def test_configured_charged_two_phase_reactive_minimum() -> None:
     assert len(generated.phases) == 2
     for phase in generated.phases:
         assert abs(phase.mole_fractions[3] - phase.mole_fractions[4]) <= 2.0e-10
-    generated_owner = generated.owner_result
-    assert generated_owner is not None
-    assert generated_owner.reaction_affinity_inf_norm <= 1.0e-7
-    assert generated_owner.transfer_chemical_potential_inf_norm <= 1.0e-7
-    assert generated_owner.phase_distinctness > 0.1
+    generated_evidence = dict(generated.evidence)
+    assert generated_evidence["reaction_affinity_inf_norm"] <= 1.0e-7
+    assert generated_evidence["transfer_chemical_potential_inf_norm"] <= 1.0e-7
+    assert generated_evidence["phase_distinctness"] > 0.1
 
     step = 1.0e-7
 
