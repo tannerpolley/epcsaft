@@ -456,6 +456,8 @@ class GeneralReactiveEquilibriumProblem:
         if self.intensive_boundaries:
             if not isinstance(self.feed, AffineFeed):
                 raise ValueError("intensive boundaries require an affine feed")
+            if len(self.intensive_boundaries) != 1:
+                raise ValueError("GREPE supports exactly one intensive boundary per request")
             boundary_ids = tuple(boundary.identity for boundary in self.intensive_boundaries)
             coordinate_ids = tuple(
                 boundary.coordinate_identity for boundary in self.intensive_boundaries
@@ -1531,17 +1533,14 @@ def _intensive_boundary_output(boundary: IntensiveBoundary) -> EquilibriumOutput
 
 def _resolved_intensive_problem(
     problem: GeneralReactiveEquilibriumProblem,
-    coordinate_values: tuple[float, ...],
+    coordinate_value: float,
     outputs: tuple[EquilibriumOutput, ...],
 ) -> GeneralReactiveEquilibriumProblem:
     feed = cast(AffineFeed, problem.feed)
-    values_by_identity = {
-        boundary.coordinate_identity: value
-        for boundary, value in zip(problem.intensive_boundaries, coordinate_values, strict=True)
-    }
+    boundary = problem.intensive_boundaries[0]
     return replace(
         problem,
-        feed=feed.resolve(values_by_identity),
+        feed=feed.resolve({boundary.coordinate_identity: coordinate_value}),
         outputs=outputs,
         intensive_boundaries=(),
     )
@@ -1554,11 +1553,9 @@ def _compile_intensive_boundary(
 ) -> _IntensiveBoundaryCompilation | str:
     if not isinstance(problem.temperature, Fixed):
         return "intensive boundaries currently require fixed temperature"
-    augmented_outputs = problem.outputs + tuple(
-        _intensive_boundary_output(boundary) for boundary in problem.intensive_boundaries
-    )
-    initial_values = tuple(boundary.initial for boundary in problem.intensive_boundaries)
-    internal_problem = _resolved_intensive_problem(problem, initial_values, augmented_outputs)
+    boundary = problem.intensive_boundaries[0]
+    augmented_outputs = problem.outputs + (_intensive_boundary_output(boundary),)
+    internal_problem = _resolved_intensive_problem(problem, boundary.initial, augmented_outputs)
     compiled = _compile_general_reactive_equilibrium(
         model,
         internal_problem,
@@ -1568,21 +1565,15 @@ def _compile_intensive_boundary(
         return compiled
     if not isinstance(compiled, (_HomogeneousCompilation, _BubbleCompilation)):
         return "intensive boundaries require a differentiable homogeneous or bubble owner"
-    pressure_boundaries = tuple(
-        boundary
-        for boundary in problem.intensive_boundaries
-        if boundary.selector == "system.pressure"
-    )
-    if isinstance(compiled, _HomogeneousCompilation) and pressure_boundaries:
+    pressure_boundary = boundary.selector == "system.pressure"
+    if isinstance(compiled, _HomogeneousCompilation) and pressure_boundary:
         return "system pressure boundaries require the reactive bubble owner"
-    if isinstance(compiled, _BubbleCompilation) and (
-        len(pressure_boundaries) != 1 or len(problem.intensive_boundaries) != 1
-    ):
+    if isinstance(compiled, _BubbleCompilation) and not pressure_boundary:
         return "reactive bubble boundaries require exactly one imposed system pressure"
     if isinstance(compiled, _BubbleCompilation):
         pressure = cast(Solved, problem.pressure)
         lower, upper = (_quantity(value, "pascal", "pressure bound") for value in pressure.bounds)
-        if not lower <= pressure_boundaries[0].target <= upper:
+        if not lower <= boundary.target <= upper:
             return "imposed system pressure lies outside the declared pressure bounds"
     feed = cast(AffineFeed, problem.feed)
     payload = {
@@ -2574,32 +2565,6 @@ def _failure_axes(failure: NonEvaluableTrial | None) -> tuple[str, str, str]:
     return "passed", "failed", "passed"
 
 
-def _solve_dense(
-    matrix: tuple[tuple[float, ...], ...],
-    right_hand_side: tuple[float, ...],
-) -> tuple[float, ...]:
-    size = len(matrix)
-    if size == 0 or len(right_hand_side) != size or any(len(row) != size for row in matrix):
-        raise ValueError("intensive-boundary Jacobian must be square")
-    work = [list(row) + [right_hand_side[index]] for index, row in enumerate(matrix)]
-    scale = max(1.0, max(abs(value) for row in matrix for value in row))
-    for column in range(size):
-        pivot = max(range(column, size), key=lambda index: abs(work[index][column]))
-        if abs(work[pivot][column]) <= 1.0e-13 * scale:
-            raise ValueError("intensive-boundary Jacobian is singular")
-        work[column], work[pivot] = work[pivot], work[column]
-        divisor = work[column][column]
-        for entry in range(column, size + 1):
-            work[column][entry] /= divisor
-        for row in range(size):
-            if row == column:
-                continue
-            factor = work[row][column]
-            for entry in range(column, size + 1):
-                work[row][entry] -= factor * work[column][entry]
-    return tuple(work[row][-1] for row in range(size))
-
-
 def _balance_state_derivatives(
     owner: HomogeneousReactiveObservationResult,
 ) -> tuple[tuple[tuple[float, ...], float], ...]:
@@ -2833,7 +2798,7 @@ def _evaluate_fixed_pressure_boundary(
         float,
     ]:
         internal_problem = _resolved_intensive_problem(
-            problem, (value,), compilation.augmented_outputs
+            problem, value, compilation.augmented_outputs
         )
         internal = _compile_general_reactive_equilibrium(
             model, internal_problem, active_parameters=active_parameters
@@ -2995,39 +2960,30 @@ def _evaluate_intensive_boundary(
         )
     feed = cast(AffineFeed, problem.feed).reorder(problem.reaction_system.species_ids)
     phase = problem.phases[0]
-    boundary_count = len(problem.intensive_boundaries)
+    boundary = problem.intensive_boundaries[0]
     coordinate_index = {
         coordinate.identity: index for index, coordinate in enumerate(feed.coordinates)
     }
-    ordered_feed_columns = tuple(
-        coordinate_index[boundary.coordinate_identity] for boundary in problem.intensive_boundaries
-    )
+    feed_column = coordinate_index[boundary.coordinate_identity]
     balance_rows = _compiled_balance_rows(problem.reaction_system)
-    balance_directions = tuple(
-        tuple(
-            math.fsum(
-                balance[species] * feed.basis_matrix_mol_per_coordinate[species][feed_column]
-                for species in range(len(feed.component_ids))
-            )
-            for feed_column in ordered_feed_columns
+    balance_direction = tuple(
+        math.fsum(
+            balance[species] * feed.basis_matrix_mol_per_coordinate[species][feed_column]
+            for species in range(len(feed.component_ids))
         )
         for balance in balance_rows
     )
     bounds_by_id = {coordinate.identity: coordinate.bounds for coordinate in feed.coordinates}
-    bounds = tuple(
-        bounds_by_id[boundary.coordinate_identity] for boundary in problem.intensive_boundaries
-    )
+    lower, upper = bounds_by_id[boundary.coordinate_identity]
 
-    def evaluate(
-        coordinates: tuple[float, ...],
-    ) -> tuple[
+    def evaluate(coordinate: float) -> tuple[
         _IntensiveOwnerResult,
+        float,
+        float,
         tuple[float, ...],
-        tuple[tuple[float, ...], ...],
-        tuple[tuple[float, ...], ...],
     ]:
         internal_problem = _resolved_intensive_problem(
-            problem, coordinates, compilation.augmented_outputs
+            problem, coordinate, compilation.augmented_outputs
         )
         internal = _compile_general_reactive_equilibrium(
             model, internal_problem, active_parameters=active_parameters
@@ -3068,67 +3024,52 @@ def _evaluate_intensive_boundary(
         if any(len(row) != len(balance_rows) for row in balance_derivatives):
             raise ValueError("wrapped owner balance basis does not match GREPE")
         coordinate_derivatives = tuple(
-            tuple(
-                math.fsum(
-                    derivative * balance_directions[balance][coordinate]
-                    for balance, derivative in enumerate(row)
-                )
-                for coordinate in range(boundary_count)
+            math.fsum(
+                derivative * balance_direction[balance]
+                for balance, derivative in enumerate(row)
             )
             for row in balance_derivatives
         )
-        boundary_values = values[len(problem.outputs) :]
-        residuals = tuple(
-            math.log(value / boundary.target)
+        boundary_value = values[len(problem.outputs)]
+        residual = (
+            math.log(boundary_value / boundary.target)
             if boundary.selector == "system.pressure"
-            else value - boundary.target
-            for value, boundary in zip(boundary_values, problem.intensive_boundaries, strict=True)
+            else boundary_value - boundary.target
         )
-        boundary_jacobian = tuple(
-            tuple(
-                derivative / value if boundary.selector == "system.pressure" else derivative
-                for derivative in row
-            )
-            for row, value, boundary in zip(
-                coordinate_derivatives[len(problem.outputs) :],
-                boundary_values,
-                problem.intensive_boundaries,
-                strict=True,
-            )
-        )
-        return owner, residuals, boundary_jacobian, coordinate_derivatives
+        boundary_derivative = coordinate_derivatives[len(problem.outputs)]
+        if boundary.selector == "system.pressure":
+            boundary_derivative /= boundary_value
+        return owner, residual, boundary_derivative, coordinate_derivatives
 
-    coordinates = tuple(boundary.initial for boundary in problem.intensive_boundaries)
+    coordinate = boundary.initial
     owner: _IntensiveOwnerResult | None = None
-    coordinate_derivatives: tuple[tuple[float, ...], ...] = ()
-    boundary_jacobian: tuple[tuple[float, ...], ...] = ()
+    coordinate_derivatives: tuple[float, ...] = ()
+    boundary_derivative = 0.0
     try:
         for _ in range(32):
-            owner, residuals, boundary_jacobian, coordinate_derivatives = evaluate(coordinates)
-            residual_norm = max(abs(value) for value in residuals)
-            if residual_norm <= 2.0e-11:
+            owner, residual, boundary_derivative, coordinate_derivatives = evaluate(coordinate)
+            if abs(residual) <= 2.0e-11:
                 break
-            step = _solve_dense(boundary_jacobian, tuple(-value for value in residuals))
+            if abs(boundary_derivative) <= 1.0e-13:
+                raise ValueError("intensive-boundary Jacobian is singular")
+            step = -residual / boundary_derivative
             maximum_step = 1.0
-            for value, delta, (lower, upper) in zip(coordinates, step, bounds, strict=True):
-                if delta > 0.0:
-                    maximum_step = min(maximum_step, 0.95 * (upper - value) / delta)
-                elif delta < 0.0:
-                    maximum_step = min(maximum_step, 0.95 * (lower - value) / delta)
+            if step > 0.0:
+                maximum_step = min(maximum_step, 0.95 * (upper - coordinate) / step)
+            elif step < 0.0:
+                maximum_step = min(maximum_step, 0.95 * (lower - coordinate) / step)
             accepted = False
             scale = max(0.0, maximum_step)
             for _ in range(20):
-                candidate = tuple(
-                    value + scale * delta for value, delta in zip(coordinates, step, strict=True)
-                )
-                candidate_owner, candidate_residuals, candidate_jacobian, candidate_derivatives = (
+                candidate = coordinate + scale * step
+                candidate_owner, candidate_residual, candidate_derivative, candidate_outputs = (
                     evaluate(candidate)
                 )
-                if max(abs(value) for value in candidate_residuals) < residual_norm:
-                    coordinates = candidate
+                if abs(candidate_residual) < abs(residual):
+                    coordinate = candidate
                     owner = candidate_owner
-                    boundary_jacobian = candidate_jacobian
-                    coordinate_derivatives = candidate_derivatives
+                    boundary_derivative = candidate_derivative
+                    coordinate_derivatives = candidate_outputs
                     accepted = True
                     break
                 scale *= 0.5
@@ -3138,28 +3079,22 @@ def _evaluate_intensive_boundary(
             raise ValueError("intensive-boundary solve exceeded its iteration budget")
         if owner is None:
             raise ValueError("intensive-boundary solve returned no state")
-        owner, residuals, boundary_jacobian, coordinate_derivatives = evaluate(coordinates)
-        if max(abs(value) for value in residuals) > 2.0e-11:
+        owner, residual, boundary_derivative, coordinate_derivatives = evaluate(coordinate)
+        if abs(residual) > 2.0e-11:
             raise ValueError("intensive-boundary residual did not converge")
+        if abs(boundary_derivative) <= 1.0e-13:
+            raise ValueError("intensive-boundary Jacobian is singular")
         parameter_count = len(compilation.descriptor.active_parameter_identities)
-        boundary_parameter_jacobian = tuple(
-            tuple(
-                derivative / cast(float, owner.rows[len(problem.outputs) + row].value)
-                if boundary.selector == "system.pressure"
-                else derivative
-                for derivative in cast(
-                    tuple[float, ...], owner.rows[len(problem.outputs) + row].jacobian
-                )
-            )
-            for row, boundary in enumerate(problem.intensive_boundaries)
+        boundary_parameter_jacobian = cast(
+            tuple[float, ...], owner.rows[len(problem.outputs)].jacobian
         )
-        coordinate_parameter_jacobian = tuple(
-            _solve_dense(
-                boundary_jacobian,
-                tuple(
-                    -boundary_parameter_jacobian[row][parameter] for row in range(boundary_count)
-                ),
+        if boundary.selector == "system.pressure":
+            boundary_parameter_jacobian = tuple(
+                derivative / cast(float, owner.rows[len(problem.outputs)].value)
+                for derivative in boundary_parameter_jacobian
             )
+        coordinate_parameter_jacobian = tuple(
+            -boundary_parameter_jacobian[parameter] / boundary_derivative
             for parameter in range(parameter_count)
         )
         generic_rows = []
@@ -3168,11 +3103,7 @@ def _evaluate_intensive_boundary(
             fixed_coordinate_jacobian = cast(tuple[float, ...], row.jacobian)
             total_jacobian = tuple(
                 fixed_coordinate_jacobian[parameter]
-                + math.fsum(
-                    coordinate_derivatives[index][coordinate]
-                    * coordinate_parameter_jacobian[parameter][coordinate]
-                    for coordinate in range(boundary_count)
-                )
+                + coordinate_derivatives[index] * coordinate_parameter_jacobian[parameter]
                 for parameter in range(parameter_count)
             )
             generic_rows.append(
@@ -3225,10 +3156,7 @@ def _evaluate_intensive_boundary(
         trial=owner.trial,
         branch_signature=(
             "intensive_boundary",
-            tuple(
-                (boundary.coordinate_identity, value)
-                for boundary, value in zip(problem.intensive_boundaries, coordinates, strict=True)
-            ),
+            ((boundary.coordinate_identity, coordinate),),
             _homogeneous_branch_signature(owner)
             if isinstance(owner, HomogeneousReactiveObservationResult)
             else _bubble_branch_signature(owner),
@@ -3742,9 +3670,8 @@ def _validate_intensive_boundary_owner_receipt(
             raise ValueError("intensive-boundary solved coordinate is outside its declaration")
     resolved_problem = _resolved_intensive_problem(
         problem,
-        tuple(float(record[1]) for record in coordinates),
-        problem.outputs
-        + tuple(_intensive_boundary_output(boundary) for boundary in problem.intensive_boundaries),
+        float(coordinates[0][1]),
+        problem.outputs + (_intensive_boundary_output(problem.intensive_boundaries[0]),),
     )
     expected_reaction_fingerprint = _fingerprint(
         "epcsaft.homogeneous-reactive-reaction-system",
