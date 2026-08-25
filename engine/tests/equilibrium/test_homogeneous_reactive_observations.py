@@ -693,8 +693,9 @@ def test_grepe_single_finite_phase_matches_homogeneous_owner() -> None:
     assert grepe.certificate_scope == "fixed_TP_single_finite_reacting_phase"
     assert grepe.globality_claim == "not_established"
     assert grepe.branch_signature is not None
-    assert grepe.branch_signature[-2] == (
+    assert grepe.branch_signature[-1] == (
         (
+            owner_problem.phase_identity,
             owner_problem.continuation_identity,
             owner_problem.continuation_reference.fingerprint,
         ),
@@ -1455,25 +1456,13 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
     assert aggregate_receipt["aggregate_identity"] == "manufactured-total-ions"
     assert aggregate_receipt["covariance_identity"] == "manufactured-prepared-stock"
     assert accepted.optimizer_basin is not None
-    assert accepted_receipt["schema"] == "epcsaft.grepe-owner-receipt.v1"
-    assert accepted_receipt["owner_kind"] == "homogeneous"
-    owner_receipt = accepted_receipt["owner_receipt"]
-    assert owner_receipt["physical_branch"]["identity"].startswith("sha256:")
-    search_certificate = owner_receipt["certified_state"]["chemical_search_certificate"]
-    assert search_certificate["basin_count"] == 1
-    continuation_certificate = owner_receipt["certified_state"][
-        "continuation_certificate"
-    ]
-    assert continuation_certificate["in_region_basin_count"] == 1
-    assert continuation_certificate["selected_basin_ordinal"] == search_certificate[
-        "selected_basin_ordinal"
-    ]
-    assert search_certificate["budget_prefix_selection_history"]
+    assert accepted_receipt["schema"] == "epcsaft.grepe-owner-receipt.v2"
+    assert accepted_receipt["formulation"] == "finite"
+    assert accepted_receipt["branch_signature"]
+    assert "owner_receipt" not in accepted_receipt
 
     tampered_receipt = json.loads(accepted.owner_receipts[0].canonical_bytes_utf8)
-    tampered_receipt["owner_receipt"]["certified_state"]["chemical_search_certificate"][
-        "selected_basin_representative_attempt_ordinal"
-    ] += 1
+    tampered_receipt["problem_fingerprint"] = "sha256:tampered"
     tampered_json = json.dumps(
         tampered_receipt,
         allow_nan=False,
@@ -1502,7 +1491,7 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
         for target in targets
         if target["included"]
     )
-    with pytest.raises(ValueError, match="receipt|certificate"):
+    with pytest.raises(ValueError, match="identity"):
         equilibrium.validate_general_reactive_equilibrium_receipt(
             tampered_json,
             descriptor=grepe_descriptor,

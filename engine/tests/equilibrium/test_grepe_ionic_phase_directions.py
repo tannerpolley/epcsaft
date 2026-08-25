@@ -162,9 +162,9 @@ def test_dielectric_solvent_identity_is_scoped_to_charged_phase_support() -> Non
     above = solve(selected.values[0] + step)
 
     assert result.status == "evaluated", result.failure
-    assert result.owner_result is not None
-    assert result.owner_result.balance_inf_norm < 1.0e-9
-    assert result.owner_result.reaction_affinity_inf_norm < 1.0e-7
+    evidence = dict(result.evidence)
+    assert evidence["balance_inf_norm"] < 1.0e-9
+    assert evidence["reaction_affinity_inf_norm"] < 1.0e-7
     assert result.phases[0].supported_component_ids == component_ids
     assert result.phases[1].supported_component_ids == ("neutral-organic",)
     assert result.rows[0].value == 0.0
@@ -306,11 +306,11 @@ def test_electrolyte_finite_phases_preserve_exact_support_and_declared_direction
     result = equilibrium.phase_equilibrium(model, problem, active_parameters=active)
 
     assert result.status == "evaluated", result.failure
-    assert result.owner_result is not None
-    assert result.owner_result.declared_direction_rank == 1
-    assert result.owner_result.admissible_nullity == 1
-    assert result.owner_result.reaction_affinity_inf_norm < 1.0e-7
-    assert result.owner_result.balance_inf_norm < 1.0e-9
+    evidence = dict(result.evidence)
+    assert evidence["declared_direction_rank"] == 1
+    assert evidence["admissible_nullity"] == 1
+    assert evidence["reaction_affinity_inf_norm"] < 1.0e-7
+    assert evidence["balance_inf_norm"] < 1.0e-9
     assert result.rows[4].value == 0.0
     assert result.rows[5].value == 0.0
     assert result.rows[4].jacobian == (0.0,)

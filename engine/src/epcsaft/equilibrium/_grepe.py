@@ -4,7 +4,7 @@ import hashlib
 import json
 import math
 from collections.abc import Iterator
-from dataclasses import asdict, dataclass, replace
+from dataclasses import dataclass, replace
 from typing import Any, Literal, cast
 
 from pint import Quantity
@@ -37,13 +37,9 @@ from ._observations import (
     HomogeneousReactiveObservationProblem,
     HomogeneousReactiveObservationResult,
     HomogeneousReactiveObservationRow,
-    HomogeneousReactiveOwnerObservation,
-    _problem_payload,
     certify_homogeneous_continuation_reference,
     evaluate_homogeneous_reactive_observations,
     homogeneous_reactive_observation_descriptor,
-    serialize_homogeneous_reactive_owner_receipt,
-    validate_homogeneous_reactive_owner_receipt,
 )
 from ._phase_reactions import PhaseReactionSystem, preflight_phase_reaction_system
 from ._reactive_vle import (
@@ -61,8 +57,6 @@ from ._reactive_vle import (
     certify_reactive_bubble_continuation_reference,
     evaluate_reactive_bubble_observations,
     reactive_bubble_observation_descriptor,
-    serialize_reactive_bubble_owner_receipt,
-    validate_reactive_bubble_owner_receipt,
 )
 
 type AmountRole = Literal["finite", "incipient"]
@@ -559,7 +553,7 @@ class GeneralReactiveEquilibriumDescriptor:
     certificate_scope: str
     jacobian_shape: tuple[int, int]
     fingerprint: str
-    _owner_kind: Literal["homogeneous", "reactive_bubble", "finite_phases", "intensive_boundary"]
+    formulation: Literal["finite", "finite_incipient", "intensive_boundary"]
     _owner_descriptor: (
         HomogeneousReactiveObservationDescriptor
         | ReactiveBubbleObservationDescriptor
@@ -599,7 +593,7 @@ class GeneralReactiveEquilibriumResult:
     globality_claim: Literal["not_established"]
     trial: ActiveParameterTrialReceipt | None
     branch_signature: tuple[object, ...] | None
-    owner_result: object | None
+    evidence: tuple[tuple[str, float | int | str], ...]
 
     @property
     def values(self) -> tuple[float | None, ...]:
@@ -608,6 +602,58 @@ class GeneralReactiveEquilibriumResult:
     @property
     def jacobian(self) -> tuple[tuple[float, ...] | None, ...]:
         return tuple(row.jacobian for row in self.rows)
+
+
+def _result_evidence(owner: object | None) -> tuple[tuple[str, float | int | str], ...]:
+    if isinstance(owner, _FinitePhaseOwnerResult):
+        names: tuple[str, ...] = (
+            "objective_over_rt",
+            "balance_inf_norm",
+            "pressure_relative_inf_norm",
+            "reaction_affinity_inf_norm",
+            "transfer_chemical_potential_inf_norm",
+            "kkt_stationarity_inf_norm",
+            "phase_distinctness",
+            "reduced_hessian_min_eigenvalue",
+            "declared_direction_rank",
+            "admissible_nullity",
+            "optimizer_iterations",
+            "provider_evaluation_count",
+        )
+        return tuple((name, cast(float | int, getattr(owner, name))) for name in names)
+    if isinstance(owner, ReactiveBubbleObservationResult):
+        certification = owner.certification
+        if certification is None:
+            return ()
+        names = (
+            "bubble_log_closure_abs",
+            "bubble_log_pressure_derivative",
+            "liquid_balance_inf",
+            "liquid_electroneutrality_inf",
+            "liquid_reaction_affinity_inf",
+            "liquid_pressure_relative_residual",
+            "phase_pressure_residual_inf_pa",
+            "phase_chemical_potential_residual_inf",
+        )
+        return tuple((name, cast(float, getattr(certification, name))) for name in names) + (
+            ("closure_evaluation_count", owner.search.closure_evaluation_count),
+            ("provider_evaluation_count", owner.search.provider_evaluation_count),
+            ("distinct_branch_count", owner.search.distinct_branch_count),
+        )
+    if isinstance(owner, HomogeneousReactiveObservationResult) and owner.diagnostics is not None:
+        diagnostics = owner.diagnostics
+        names = (
+            "balance_inf_norm",
+            "electroneutrality_inf",
+            "reaction_affinity_inf_norm",
+            "pressure_relative_residual",
+        )
+        return tuple(
+            (name, cast(float, getattr(diagnostics, name)))
+            for name in names
+            if hasattr(diagnostics, name)
+        )
+    return ()
 
 
 def _quantity(value: Quantity[Any], unit: str, name: str) -> float:
@@ -972,7 +1018,7 @@ def _feed_payload(feed: ResolvedFeed | AffineFeed | None) -> object:
 def _descriptor(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
-    owner_kind: Literal["homogeneous", "reactive_bubble", "finite_phases", "intensive_boundary"],
+    formulation: Literal["finite", "finite_incipient"],
     owner: (
         HomogeneousReactiveObservationDescriptor
         | ReactiveBubbleObservationDescriptor
@@ -1015,13 +1061,13 @@ def _descriptor(
             }
             for output in outputs
         ),
-        "owner_kind": owner_kind,
+        "formulation": formulation,
         "owner_descriptor_fingerprint": owner.fingerprint,
         "certificate_scope": certificate_scope,
     }
     return GeneralReactiveEquilibriumDescriptor(
         "equilibrium.general-reactive",
-        1,
+        2,
         problem.identity,
         model.component_ids,
         tuple(phase.identity for phase in problem.phases),
@@ -1037,8 +1083,8 @@ def _descriptor(
         owner.domain_fingerprint,
         certificate_scope,
         owner.jacobian_shape,
-        _fingerprint("epcsaft.grepe-descriptor.v1", payload),
-        owner_kind,
+        _fingerprint("epcsaft.grepe-descriptor.v2", payload),
+        formulation,
         owner,
     )
 
@@ -1108,7 +1154,7 @@ def _unavailable_formulation(
         globality_claim="not_established",
         trial=None,
         branch_signature=None,
-        owner_result=None,
+        evidence=(),
     )
 
 
@@ -1631,7 +1677,7 @@ def _compile_intensive_boundary(
             len(compiled.descriptor.active_parameter_identities),
         ),
         fingerprint=_fingerprint("epcsaft.grepe-intensive-boundary-descriptor.v2", payload),
-        _owner_kind="intensive_boundary",
+        formulation="intensive_boundary",
         _owner_descriptor=compiled.owner_descriptor,
     )
     return _IntensiveBoundaryCompilation(descriptor, augmented_outputs)
@@ -1710,7 +1756,7 @@ def _compile_homogeneous_owner(
         _descriptor(
             model,
             problem,
-            "homogeneous",
+            "finite",
             owner_descriptor,
             "fixed_TP_single_finite_reacting_phase",
         ),
@@ -1822,7 +1868,7 @@ def _compile_general_reactive_equilibrium(
         descriptor = _descriptor(
             model,
             problem,
-            "finite_phases",
+            "finite",
             owner_descriptor,
             certificate_scope,
         )
@@ -1925,7 +1971,7 @@ def _compile_general_reactive_equilibrium(
         descriptor = _descriptor(
             model,
             problem,
-            "reactive_bubble",
+            "finite_incipient",
             bubble_descriptor,
             "fixed_T_one_finite_liquid_one_incipient_vapor",
         )
@@ -2169,7 +2215,7 @@ def _finite_phase_failed(
         globality_claim="not_established",
         trial=trial,
         branch_signature=None,
-        owner_result=None,
+        evidence=(),
     )
 
 
@@ -2673,18 +2719,6 @@ def _evaluate_finite_phase(
         tuple(
             (
                 phase.identity,
-                _fingerprint(
-                    "epcsaft.finite-phases-state",
-                    {
-                        "mole_fractions": state.mole_fractions,
-                        "molar_volume_m3_per_mol": state.molar_volume_m3_per_mol,
-                    },
-                ),
-            )
-            for phase, state in zip(compilation.phases, phases, strict=True)
-        ),
-        tuple(
-            (
                 phase.continuation_identity,
                 None
                 if phase.continuation_reference is None
@@ -2692,7 +2726,6 @@ def _evaluate_finite_phase(
             )
             for phase in compilation.phases
         ),
-        trial.fingerprint,
     )
     owner = _FinitePhaseOwnerResult(
         compilation.owner_descriptor,
@@ -2730,7 +2763,7 @@ def _evaluate_finite_phase(
         globality_claim="not_established",
         trial=trial,
         branch_signature=branch_signature,
-        owner_result=owner,
+        evidence=_result_evidence(owner),
     )
 
 
@@ -2942,7 +2975,7 @@ def _intensive_failure(
             if isinstance(owner, HomogeneousReactiveObservationResult)
             else _bubble_branch_signature(owner)
         ),
-        owner_result=owner,
+        evidence=_result_evidence(owner),
     )
 
 
@@ -3127,7 +3160,7 @@ def _evaluate_fixed_pressure_boundary(
             ((boundary.coordinate_identity, solved_coordinate),),
             _bubble_branch_signature(owner),
         ),
-        owner_result=owner,
+        evidence=_result_evidence(owner),
     )
 
 
@@ -3346,7 +3379,7 @@ def _evaluate_intensive_boundary(
             if isinstance(owner, HomogeneousReactiveObservationResult)
             else _bubble_branch_signature(owner),
         ),
-        owner_result=owner,
+        evidence=_result_evidence(owner),
     )
 
 
@@ -3406,7 +3439,7 @@ def _solve_general_reactive_equilibrium(
             globality_claim="not_established",
             trial=homogeneous_owner.trial,
             branch_signature=_homogeneous_branch_signature(homogeneous_owner),
-            owner_result=homogeneous_owner,
+            evidence=_result_evidence(homogeneous_owner),
         )
     bubble_owner = evaluate_reactive_bubble_observations(
         compiled.owner_problem,
@@ -3446,7 +3479,7 @@ def _solve_general_reactive_equilibrium(
         globality_claim="not_established",
         trial=bubble_owner.trial,
         branch_signature=_bubble_branch_signature(bubble_owner),
-        owner_result=bubble_owner,
+        evidence=_result_evidence(bubble_owner),
     )
 
 
@@ -3480,29 +3513,26 @@ def _validated_observation_selection(
     return selected
 
 
-def _finite_phase_owner_receipt_payload(
+def _general_receipt_payload(
     result: GeneralReactiveEquilibriumResult,
     batch_identity: str,
+    observations: tuple[GeneralEquilibriumOwnerObservation, ...],
 ) -> dict[str, object]:
-    descriptor = result.descriptor
-    owner = result.owner_result
-    if (
-        descriptor is None
-        or descriptor._owner_kind != "finite_phases"
-        or not isinstance(owner, _FinitePhaseOwnerResult)
-        or result.trial is None
-        or result.branch_signature is None
-    ):
-        raise ValueError("finite-phase GREPE owner result must be evaluated")
-    trial = result.trial
-    payload: dict[str, object] = {
-        "schema": "epcsaft.finite-phases-owner-receipt.v1",
+    descriptor = cast(GeneralReactiveEquilibriumDescriptor, result.descriptor)
+    trial = cast(ActiveParameterTrialReceipt, result.trial)
+    selected_rows = {row.identity: row for row in result.rows}
+    return {
+        "schema": "epcsaft.grepe-owner-receipt.v2",
         "batch_identity": batch_identity,
         "descriptor_fingerprint": descriptor.fingerprint,
         "problem_fingerprint": descriptor.problem_fingerprint,
         "reaction_fingerprint": descriptor.reaction_fingerprint,
         "topology_fingerprint": descriptor.topology_fingerprint,
+        "reference_fingerprint": descriptor.reference_fingerprint,
         "domain_fingerprint": descriptor.domain_fingerprint,
+        "formulation": descriptor.formulation,
+        "certificate_scope": descriptor.certificate_scope,
+        "globality_claim": result.globality_claim,
         "trial": {
             "parameter_fingerprint": trial.parameter_fingerprint,
             "identities": trial.identities,
@@ -3511,530 +3541,36 @@ def _finite_phase_owner_receipt_payload(
             "active_parameter_fingerprint": trial.active_parameter_fingerprint,
             "fingerprint": trial.fingerprint,
         },
-        "temperature_k": owner.temperature_k,
-        "pressure_pa": owner.pressure_pa,
-        "certificate": {
-            "scope": descriptor.certificate_scope,
-            "globality_claim": "not_established",
-            "objective_over_rt": owner.objective_over_rt,
-            "balance_inf_norm": owner.balance_inf_norm,
-            "pressure_relative_inf_norm": owner.pressure_relative_inf_norm,
-            "reaction_affinity_inf_norm": owner.reaction_affinity_inf_norm,
-            "transfer_chemical_potential_inf_norm": (owner.transfer_chemical_potential_inf_norm),
-            "kkt_stationarity_inf_norm": owner.kkt_stationarity_inf_norm,
-            "phase_distinctness": owner.phase_distinctness,
-            "reduced_hessian_min_eigenvalue": owner.reduced_hessian_min_eigenvalue,
-            "declared_direction_rank": owner.declared_direction_rank,
-            "admissible_nullity": owner.admissible_nullity,
-            "optimizer_iterations": owner.optimizer_iterations,
-            "provider_evaluation_count": owner.provider_evaluation_count,
-        },
         "branch_signature": result.branch_signature,
+        "evidence": result.evidence,
         "phases": tuple(
             {
                 "identity": phase.identity,
+                "role": state.role,
+                "support": state.support,
+                "supported_component_ids": state.supported_component_ids,
                 "mole_fractions": state.mole_fractions,
                 "molar_volume_m3_per_mol": state.molar_volume_m3_per_mol,
                 "molar_density_mol_m3": state.molar_density_mol_m3,
                 "packing_fraction": state.packing_fraction,
                 "pressure_pa": state.pressure_pa,
+                "chemical_potential_component_ids": state.chemical_potential_component_ids,
                 "chemical_potential_over_rt": state.chemical_potential_over_rt,
                 "mechanical_class": state.mechanical_class,
             }
-            for phase, state in zip(result.problem.phases, result.phases, strict=True)
+            for phase, state in zip(result.problem.phases, result.phases)
         ),
         "observations": tuple(
             {
-                "identity": row.identity,
-                "selector": row.selector,
-                "unit": row.unit,
-                "value": row.value,
-                "jacobian": row.jacobian,
-            }
-            for row in result.rows
-        ),
-    }
-    payload["fingerprint"] = _fingerprint("epcsaft.finite-phases-owner-receipt", payload)
-    return payload
-
-
-def _intensive_boundary_owner_receipt_payload(
-    result: GeneralReactiveEquilibriumResult,
-    batch_identity: str,
-    observations: tuple[GeneralEquilibriumOwnerObservation, ...],
-) -> dict[str, object]:
-    descriptor = result.descriptor
-    if (
-        descriptor is None
-        or descriptor._owner_kind != "intensive_boundary"
-        or result.trial is None
-        or result.branch_signature is None
-    ):
-        raise ValueError("intensive-boundary GREPE owner result must be evaluated")
-    selected_rows = {row.identity: row for row in result.rows}
-    trial = result.trial
-    wrapped_owner_kind = (
-        "reactive_bubble"
-        if isinstance(result.owner_result, ReactiveBubbleObservationResult)
-        else "homogeneous"
-    )
-    wrapped_certificate_scope = cast(Any, result.owner_result).descriptor.local_scope
-    wrapped_descriptor = asdict(cast(Any, result.owner_result).descriptor)
-    if isinstance(result.owner_result, ReactiveBubbleObservationResult):
-        wrapped_receipt = json.loads(
-            serialize_reactive_bubble_owner_receipt(
-                result.owner_result,
-                batch_identity=batch_identity,
-            )
-        )
-    else:
-        homogeneous_owner = cast(HomogeneousReactiveObservationResult, result.owner_result)
-        wrapped_receipt = json.loads(
-            serialize_homogeneous_reactive_owner_receipt(
-                homogeneous_owner,
-                batch_identity=batch_identity,
-                requested_temperature=cast(Fixed, result.problem.temperature).value,
-                requested_pressure=cast(Fixed, result.problem.pressure).value,
-                observations=tuple(
-                    HomogeneousReactiveOwnerObservation(
-                        row.identity,
-                        row.identity,
-                        row.aggregate_identity,
-                        row.covariance_identity,
-                    )
-                    for row in homogeneous_owner.descriptor.rows
-                ),
-            )
-        )
-    payload: dict[str, object] = {
-        "schema": "epcsaft.intensive-boundary-owner-receipt.v2",
-        "batch_identity": batch_identity,
-        "descriptor_fingerprint": descriptor.fingerprint,
-        "problem_fingerprint": descriptor.problem_fingerprint,
-        "reaction_fingerprint": descriptor.reaction_fingerprint,
-        "topology_fingerprint": descriptor.topology_fingerprint,
-        "domain_fingerprint": descriptor.domain_fingerprint,
-        "certificate_scope": descriptor.certificate_scope,
-        "wrapped_owner_kind": wrapped_owner_kind,
-        "wrapped_certificate_scope": wrapped_certificate_scope,
-        "wrapped_descriptor": wrapped_descriptor,
-        "wrapped_owner_receipt": wrapped_receipt,
-        "trial": {
-            "parameter_fingerprint": trial.parameter_fingerprint,
-            "identities": trial.identities,
-            "values": trial.values,
-            "units": trial.units,
-            "active_parameter_fingerprint": trial.active_parameter_fingerprint,
-            "fingerprint": trial.fingerprint,
-        },
-        "solved_coordinates": result.branch_signature[1],
-        "boundaries": tuple(
-            {
-                "identity": boundary.identity,
-                "coordinate_identity": boundary.coordinate_identity,
-                "phase_identity": boundary.phase_identity,
-                "selector": boundary.selector,
-                "coefficients": boundary.coefficients,
-                "target": boundary.target,
-            }
-            for boundary in result.problem.intensive_boundaries
-        ),
-        "phases": (
-            tuple(
-                {
-                    "identity": phase.identity,
-                    "role": state.role,
-                    "support": state.support,
-                    "supported_component_ids": state.supported_component_ids,
-                    "mole_fractions": state.mole_fractions,
-                    "molar_volume_m3_per_mol": state.molar_volume_m3_per_mol,
-                    "molar_density_mol_m3": state.molar_density_mol_m3,
-                    "packing_fraction": state.packing_fraction,
-                    "pressure_pa": state.pressure_pa,
-                    "chemical_potential_component_ids": state.chemical_potential_component_ids,
-                    "chemical_potential_over_rt": state.chemical_potential_over_rt,
-                    "mechanical_class": state.mechanical_class,
-                }
-                for phase, state in zip(result.problem.phases, result.phases, strict=True)
-            )
-            if result.phases
-            else ()
-        ),
-        "observations": tuple(
-            {
-                "target_identity": observation.target_identity,
-                "prediction_identity": observation.prediction_identity,
+                **_owner_observation_payload(observation),
+                "selector": selected_rows[observation.prediction_identity].selector,
+                "unit": selected_rows[observation.prediction_identity].unit,
                 "value": selected_rows[observation.prediction_identity].value,
                 "jacobian": selected_rows[observation.prediction_identity].jacobian,
             }
             for observation in observations
         ),
     }
-    payload["fingerprint"] = _fingerprint("epcsaft.intensive-boundary-owner-receipt.v2", payload)
-    return payload
-
-
-def _wrapped_bubble_descriptor(payload: dict[str, object]) -> ReactiveBubbleObservationDescriptor:
-    values = dict(payload)
-    values["rows"] = tuple(
-        ReactiveBubbleObservationRow(**cast(Any, row))
-        for row in cast(list[dict[str, object]], values["rows"])
-    )
-    for name in (
-        "component_ids",
-        "charges",
-        "vapor_component_ids",
-        "row_identities",
-        "row_units",
-        "active_parameter_identities",
-        "active_parameter_units",
-        "partner_component_ids",
-        "jacobian_shape",
-    ):
-        values[name] = tuple(cast(list[object], values[name]))
-    return ReactiveBubbleObservationDescriptor(**cast(Any, values))
-
-
-def _wrapped_homogeneous_descriptor(
-    payload: dict[str, object],
-) -> HomogeneousReactiveObservationDescriptor:
-    values = dict(payload)
-    values["rows"] = tuple(
-        HomogeneousReactiveObservationRow(**cast(Any, row))
-        for row in cast(list[dict[str, object]], values["rows"])
-    )
-    for name in (
-        "component_ids",
-        "charges",
-        "row_identities",
-        "row_units",
-        "active_parameter_identities",
-        "active_parameter_units",
-        "jacobian_shape",
-    ):
-        values[name] = tuple(cast(list[object], values[name]))
-    return HomogeneousReactiveObservationDescriptor(**cast(Any, values))
-
-
-def _validate_intensive_boundary_owner_receipt(
-    owner_json: str,
-    *,
-    descriptor: GeneralReactiveEquilibriumDescriptor,
-    problem: GeneralReactiveEquilibriumProblem,
-    batch_identity: str,
-    active_parameters: epcsaft.ActiveParameterSet,
-    observations: tuple[GeneralEquilibriumOwnerObservation, ...],
-) -> None:
-    payload = json.loads(owner_json)
-    if not isinstance(payload, dict) or _canonical_json(payload) != owner_json:
-        raise ValueError("intensive-boundary GREPE owner receipt is not canonical JSON")
-    fingerprint = payload.pop("fingerprint", None)
-    if fingerprint != _fingerprint("epcsaft.intensive-boundary-owner-receipt.v2", payload):
-        raise ValueError("intensive-boundary owner receipt fingerprint does not match")
-    trial = payload.get("trial")
-    rows = payload.get("observations")
-    coordinates = payload.get("solved_coordinates")
-    phases = payload.get("phases")
-    wrapped_descriptor_payload = payload.get("wrapped_descriptor")
-    wrapped_receipt_payload = payload.get("wrapped_owner_receipt")
-    wrapped_owner_kind = (
-        "reactive_bubble"
-        if isinstance(descriptor._owner_descriptor, ReactiveBubbleObservationDescriptor)
-        else "homogeneous"
-    )
-    wrapped_certificate_scope = cast(Any, descriptor._owner_descriptor).local_scope
-    expected_boundaries = [
-        {
-            "identity": boundary.identity,
-            "coordinate_identity": boundary.coordinate_identity,
-            "phase_identity": boundary.phase_identity,
-            "selector": boundary.selector,
-            "coefficients": list(boundary.coefficients),
-            "target": boundary.target,
-        }
-        for boundary in problem.intensive_boundaries
-    ]
-    if (
-        not isinstance(trial, dict)
-        or not isinstance(rows, list)
-        or not isinstance(coordinates, list)
-        or not isinstance(phases, list)
-        or not isinstance(wrapped_descriptor_payload, dict)
-        or not isinstance(wrapped_receipt_payload, dict)
-    ):
-        raise TypeError("intensive-boundary owner receipt is incomplete")
-    wrapped_descriptor = (
-        _wrapped_bubble_descriptor(wrapped_descriptor_payload)
-        if wrapped_owner_kind == "reactive_bubble"
-        else _wrapped_homogeneous_descriptor(wrapped_descriptor_payload)
-    )
-    expected_trial_payload = {
-        "parameter_fingerprint": descriptor.parameter_fingerprint,
-        "identities": active_parameters.identities,
-        "values": active_parameters.values,
-        "units": tuple(parameter.unit for parameter in active_parameters.coordinates),
-        "active_parameter_fingerprint": active_parameters.fingerprint,
-    }
-    if (
-        payload.get("schema") != "epcsaft.intensive-boundary-owner-receipt.v2"
-        or payload.get("batch_identity") != batch_identity
-        or payload.get("descriptor_fingerprint") != descriptor.fingerprint
-        or payload.get("problem_fingerprint") != descriptor.problem_fingerprint
-        or payload.get("reaction_fingerprint") != descriptor.reaction_fingerprint
-        or payload.get("topology_fingerprint") != descriptor.topology_fingerprint
-        or payload.get("domain_fingerprint") != descriptor.domain_fingerprint
-        or payload.get("certificate_scope") != descriptor.certificate_scope
-        or payload.get("wrapped_owner_kind") != wrapped_owner_kind
-        or payload.get("wrapped_certificate_scope") != wrapped_certificate_scope
-        or payload.get("boundaries") != expected_boundaries
-        or trial.get("parameter_fingerprint") != expected_trial_payload["parameter_fingerprint"]
-        or tuple(trial.get("identities", ())) != active_parameters.identities
-        or tuple(float(value) for value in trial.get("values", ())) != active_parameters.values
-        or tuple(trial.get("units", ())) != expected_trial_payload["units"]
-        or trial.get("active_parameter_fingerprint") != active_parameters.fingerprint
-        or trial.get("fingerprint")
-        != _fingerprint("epcsaft.active-parameter-trial", expected_trial_payload)
-        or len(coordinates) != len(problem.intensive_boundaries)
-        or len(phases) != (len(problem.phases) if wrapped_owner_kind == "reactive_bubble" else 0)
-        or len(rows) != len(observations)
-    ):
-        raise ValueError("intensive-boundary owner receipt identity does not match")
-    expected_wrapped = asdict(cast(Any, descriptor._owner_descriptor))
-    actual_wrapped = asdict(wrapped_descriptor)
-    for dynamic_field in (
-        "fingerprint",
-        "problem_fingerprint",
-        "liquid_problem_fingerprint",
-        "reaction_fingerprint",
-        "reference_fingerprint",
-    ):
-        expected_wrapped.pop(dynamic_field, None)
-        actual_wrapped.pop(dynamic_field, None)
-    if actual_wrapped != expected_wrapped:
-        raise ValueError("wrapped owner descriptor does not match the intensive boundary")
-    wrapped_receipt_json = _canonical_json(wrapped_receipt_payload)
-    if isinstance(wrapped_descriptor, ReactiveBubbleObservationDescriptor):
-        validate_reactive_bubble_owner_receipt(
-            wrapped_receipt_json,
-            descriptor=wrapped_descriptor,
-            batch_identity=batch_identity,
-            requested_temperature=cast(Fixed, problem.temperature).value,
-            active_parameters=active_parameters,
-        )
-    else:
-        validate_homogeneous_reactive_owner_receipt(
-            wrapped_receipt_json,
-            descriptor=wrapped_descriptor,
-            batch_identity=batch_identity,
-            requested_temperature=cast(Fixed, problem.temperature).value,
-            requested_pressure=cast(Fixed, problem.pressure).value,
-            active_parameters=active_parameters,
-            observations=tuple(
-                HomogeneousReactiveOwnerObservation(
-                    row.identity,
-                    row.identity,
-                    row.aggregate_identity,
-                    row.covariance_identity,
-                )
-                for row in wrapped_descriptor.rows
-            ),
-        )
-    feed = cast(AffineFeed, problem.feed)
-    bounds = {coordinate.identity: coordinate.bounds for coordinate in feed.coordinates}
-    for coordinate_record, boundary in zip(coordinates, problem.intensive_boundaries, strict=True):
-        if not isinstance(coordinate_record, list) or len(coordinate_record) != 2:
-            raise ValueError("intensive-boundary solved coordinate record is invalid")
-        identity = coordinate_record[0]
-        value = float(coordinate_record[1])
-        lower, upper = bounds[boundary.coordinate_identity]
-        if (
-            identity != boundary.coordinate_identity
-            or not math.isfinite(value)
-            or not lower <= value <= upper
-        ):
-            raise ValueError("intensive-boundary solved coordinate is outside its declaration")
-    resolved_problem = _resolved_intensive_problem(
-        problem,
-        float(coordinates[0][1]),
-        problem.outputs + (_intensive_boundary_output(problem.intensive_boundaries[0]),),
-    )
-    expected_reaction_fingerprint = _fingerprint(
-        "epcsaft.homogeneous-reactive-reaction-system",
-        _problem_payload(_effective_reaction_system(resolved_problem)),
-    )
-    if wrapped_descriptor.reaction_fingerprint != expected_reaction_fingerprint:
-        raise ValueError("wrapped owner reaction system does not match the solved feed")
-    if phases:
-        wrapped_branch = wrapped_receipt_payload.get("physical_branch")
-        if not isinstance(wrapped_branch, dict):
-            raise ValueError("wrapped bubble receipt has no physical branch")
-        for phase_record, phase in zip(phases, problem.phases, strict=True):
-            if (
-                not isinstance(phase_record, dict)
-                or phase_record.get("identity") != phase.identity
-                or phase_record.get("role") != phase.fluid_role
-                or not isinstance(phase_record.get("mole_fractions"), list)
-                or not math.isclose(
-                    math.fsum(float(value) for value in phase_record["mole_fractions"]),
-                    1.0,
-                    rel_tol=0.0,
-                    abs_tol=2.0e-12,
-                )
-                or any(
-                    not isinstance(phase_record.get(name), (int, float))
-                    or not math.isfinite(float(phase_record[name]))
-                    for name in (
-                        "molar_volume_m3_per_mol",
-                        "molar_density_mol_m3",
-                        "packing_fraction",
-                        "pressure_pa",
-                    )
-                )
-            ):
-                raise ValueError("intensive-boundary owner phase does not match")
-        if (
-            any(
-                not math.isclose(float(actual), float(expected), rel_tol=0.0, abs_tol=2.0e-12)
-                for actual, expected in zip(
-                    phases[0]["mole_fractions"],
-                    cast(list[float], wrapped_branch.get("liquid_mole_fractions")),
-                    strict=True,
-                )
-            )
-            or any(
-                not math.isclose(float(actual), float(expected), rel_tol=0.0, abs_tol=2.0e-12)
-                for actual, expected in zip(
-                    phases[1]["mole_fractions"],
-                    cast(list[float], wrapped_branch.get("vapor_mole_fractions")),
-                    strict=True,
-                )
-            )
-            or not math.isclose(
-                float(phases[0]["pressure_pa"]),
-                float(cast(float, wrapped_branch.get("liquid_pressure_pa"))),
-                rel_tol=0.0,
-                abs_tol=2.0e-6,
-            )
-            or not math.isclose(
-                float(phases[1]["pressure_pa"]),
-                float(cast(float, wrapped_branch.get("pressure_pa"))),
-                rel_tol=0.0,
-                abs_tol=2.0e-6,
-            )
-        ):
-            raise ValueError("intensive-boundary phases do not match the wrapped owner")
-    wrapped_rows = wrapped_receipt_payload.get("observations")
-    if not isinstance(wrapped_rows, list):
-        raise TypeError("wrapped owner receipt observations are incomplete")
-    wrapped_row_ids = {
-        row.get("identity", row.get("prediction_identity"))
-        for row in wrapped_rows
-        if isinstance(row, dict)
-    }
-    wrapped_values = (
-        {
-            row.get("identity"): row.get("value")
-            for row in wrapped_rows
-            if isinstance(row, dict)
-        }
-        if wrapped_owner_kind == "reactive_bubble"
-        else {}
-    )
-    for row, observation in zip(rows, observations, strict=True):
-        row_value = row.get("value") if isinstance(row, dict) else None
-        jacobian = row.get("jacobian") if isinstance(row, dict) else None
-        if (
-            not isinstance(row, dict)
-            or row.get("target_identity") != observation.target_identity
-            or row.get("prediction_identity") != observation.prediction_identity
-            or observation.prediction_identity not in wrapped_row_ids
-            or (
-                wrapped_owner_kind == "reactive_bubble"
-                and row_value != wrapped_values.get(observation.prediction_identity)
-            )
-            or not isinstance(row_value, (int, float))
-            or not math.isfinite(float(row_value))
-            or not isinstance(jacobian, list)
-            or len(jacobian) != len(active_parameters.identities)
-            or any(
-                not isinstance(item, (int, float)) or not math.isfinite(float(item))
-                for item in jacobian
-            )
-        ):
-            raise ValueError("intensive-boundary owner observation does not match")
-
-
-def _validate_finite_phase_owner_receipt(
-    owner_json: str,
-    *,
-    descriptor: GeneralReactiveEquilibriumDescriptor,
-    problem: GeneralReactiveEquilibriumProblem,
-    batch_identity: str,
-    active_parameters: epcsaft.ActiveParameterSet,
-) -> None:
-    payload = json.loads(owner_json)
-    if not isinstance(payload, dict) or _canonical_json(payload) != owner_json:
-        raise ValueError("finite-phase GREPE owner receipt is not canonical JSON")
-    fingerprint = payload.pop("fingerprint", None)
-    if fingerprint != _fingerprint("epcsaft.finite-phases-owner-receipt", payload):
-        raise ValueError("finite-phase GREPE owner receipt fingerprint does not match")
-    if not isinstance(problem.temperature, Fixed) or not isinstance(problem.pressure, Fixed):
-        raise ValueError(  # noqa: TRY004 - receipt is invalid for this formulation
-            "finite-phase GREPE receipt requires fixed temperature and pressure"
-        )
-    owner_descriptor = cast(_FinitePhaseOwnerDescriptor, descriptor._owner_descriptor)
-    trial = payload.get("trial")
-    observations = payload.get("observations")
-    phases = payload.get("phases")
-    certificate = payload.get("certificate")
-    if (
-        not isinstance(trial, dict)
-        or not isinstance(observations, list)
-        or not isinstance(phases, list)
-        or not isinstance(certificate, dict)
-    ):
-        raise TypeError("finite-phase GREPE owner receipt is incomplete")
-    expected_trial_payload = {
-        "parameter_fingerprint": descriptor.parameter_fingerprint,
-        "identities": active_parameters.identities,
-        "values": active_parameters.values,
-        "units": tuple(parameter.unit for parameter in active_parameters.coordinates),
-        "active_parameter_fingerprint": active_parameters.fingerprint,
-    }
-    if (
-        payload.get("schema") != "epcsaft.finite-phases-owner-receipt.v1"
-        or payload.get("batch_identity") != batch_identity
-        or payload.get("descriptor_fingerprint") != descriptor.fingerprint
-        or payload.get("problem_fingerprint") != descriptor.problem_fingerprint
-        or payload.get("reaction_fingerprint") != descriptor.reaction_fingerprint
-        or payload.get("topology_fingerprint") != descriptor.topology_fingerprint
-        or payload.get("domain_fingerprint") != descriptor.domain_fingerprint
-        or payload.get("temperature_k")
-        != _quantity(problem.temperature.value, "kelvin", "temperature")
-        or payload.get("pressure_pa") != _quantity(problem.pressure.value, "pascal", "pressure")
-        or trial.get("parameter_fingerprint") != expected_trial_payload["parameter_fingerprint"]
-        or tuple(trial.get("identities", ())) != active_parameters.identities
-        or tuple(float(value) for value in trial.get("values", ())) != active_parameters.values
-        or tuple(trial.get("units", ())) != expected_trial_payload["units"]
-        or trial.get("active_parameter_fingerprint") != active_parameters.fingerprint
-        or trial.get("fingerprint")
-        != _fingerprint("epcsaft.active-parameter-trial", expected_trial_payload)
-        or len(observations) != len(owner_descriptor.rows)
-        or len(phases) != len(problem.phases)
-        or certificate.get("scope") != descriptor.certificate_scope
-        or certificate.get("globality_claim") != "not_established"
-    ):
-        raise ValueError("finite-phase GREPE owner receipt identity or evidence does not match")
-    for record, output in zip(observations, owner_descriptor.rows, strict=True):
-        if (
-            not isinstance(record, dict)
-            or record.get("identity") != output.identity
-            or record.get("selector") != output.selector
-            or record.get("unit") != output.unit
-            or not isinstance(record.get("jacobian"), list)
-            or len(cast(list[object], record["jacobian"])) != len(active_parameters.identities)
-        ):
-            raise ValueError("finite-phase GREPE owner receipt observation rows do not match")
 
 
 def serialize_general_reactive_equilibrium_receipt(
@@ -4046,50 +3582,10 @@ def serialize_general_reactive_equilibrium_receipt(
     """Serialize one canonical opaque GREPE owner receipt."""
 
     descriptor = result.descriptor
-    if result.status != "evaluated" or descriptor is None or result.owner_result is None:
+    if result.status != "evaluated" or descriptor is None or result.trial is None:
         raise ValueError("only evaluated GREPE results have owner receipts")
     selected = _validated_observation_selection(descriptor, observations)
-    if descriptor._owner_kind == "homogeneous":
-        if not isinstance(result.problem.temperature, Fixed) or not isinstance(
-            result.problem.pressure, Fixed
-        ):
-            raise ValueError("homogeneous GREPE receipt requires fixed T and P")
-        owner_json = serialize_homogeneous_reactive_owner_receipt(
-            cast(Any, result.owner_result),
-            batch_identity=batch_identity,
-            requested_temperature=result.problem.temperature.value,
-            requested_pressure=result.problem.pressure.value,
-            observations=tuple(
-                HomogeneousReactiveOwnerObservation(
-                    item.target_identity,
-                    item.prediction_identity,
-                    item.aggregate_identity,
-                    item.covariance_identity,
-                )
-                for item in selected
-            ),
-        )
-    elif descriptor._owner_kind == "reactive_bubble":
-        owner_json = serialize_reactive_bubble_owner_receipt(
-            cast(Any, result.owner_result),
-            batch_identity=batch_identity,
-        )
-    elif descriptor._owner_kind == "intensive_boundary":
-        owner_json = _canonical_json(
-            _intensive_boundary_owner_receipt_payload(result, batch_identity, selected)
-        )
-    else:
-        owner_json = _canonical_json(_finite_phase_owner_receipt_payload(result, batch_identity))
-    return _canonical_json(
-        {
-            "schema": "epcsaft.grepe-owner-receipt.v1",
-            "batch_identity": batch_identity,
-            "descriptor_fingerprint": descriptor.fingerprint,
-            "owner_kind": descriptor._owner_kind,
-            "owner_receipt": json.loads(owner_json),
-            "observations": tuple(_owner_observation_payload(item) for item in selected),
-        }
-    )
+    return _canonical_json(_general_receipt_payload(result, batch_identity, selected))
 
 
 def validate_general_reactive_equilibrium_receipt(
@@ -4107,66 +3603,92 @@ def validate_general_reactive_equilibrium_receipt(
     if not isinstance(payload, dict) or _canonical_json(payload) != receipt_json:
         raise ValueError("GREPE owner receipt is not canonical JSON")
     selected = _validated_observation_selection(descriptor, observations)
-    expected_observations = tuple(_owner_observation_payload(item) for item in selected)
+    trial = payload.get("trial")
+    rows = payload.get("observations")
+    phases = payload.get("phases")
+    evidence = payload.get("evidence")
+    expected_trial = {
+        "parameter_fingerprint": descriptor.parameter_fingerprint,
+        "identities": active_parameters.identities,
+        "values": active_parameters.values,
+        "units": tuple(parameter.unit for parameter in active_parameters.coordinates),
+        "active_parameter_fingerprint": active_parameters.fingerprint,
+    }
     if (
-        payload.get("schema") != "epcsaft.grepe-owner-receipt.v1"
+        payload.get("schema") != "epcsaft.grepe-owner-receipt.v2"
         or payload.get("batch_identity") != batch_identity
         or payload.get("descriptor_fingerprint") != descriptor.fingerprint
-        or payload.get("owner_kind") != descriptor._owner_kind
-        or payload.get("observations") != list(expected_observations)
+        or payload.get("problem_fingerprint") != descriptor.problem_fingerprint
+        or payload.get("reaction_fingerprint") != descriptor.reaction_fingerprint
+        or payload.get("topology_fingerprint") != descriptor.topology_fingerprint
+        or payload.get("reference_fingerprint") != descriptor.reference_fingerprint
+        or payload.get("domain_fingerprint") != descriptor.domain_fingerprint
+        or payload.get("formulation") != descriptor.formulation
+        or payload.get("certificate_scope") != descriptor.certificate_scope
+        or payload.get("globality_claim") != "not_established"
+        or problem.identity != descriptor.problem_identity
+        or tuple(phase.identity for phase in problem.phases) != descriptor.phase_identities
+        or not isinstance(trial, dict)
+        or not isinstance(rows, list)
+        or not isinstance(phases, list)
+        or not isinstance(evidence, list)
+        or len(rows) != len(selected)
     ):
         raise ValueError("GREPE owner receipt identity or observations do not match")
-    owner_payload = payload.get("owner_receipt")
-    if not isinstance(owner_payload, dict):
-        raise TypeError("GREPE owner receipt payload is missing")
-    owner_json = _canonical_json(owner_payload)
-    if descriptor._owner_kind == "homogeneous":
-        if not isinstance(problem.temperature, Fixed) or not isinstance(problem.pressure, Fixed):
-            raise ValueError("homogeneous GREPE receipt requires fixed T and P")
-        validate_homogeneous_reactive_owner_receipt(
-            owner_json,
-            descriptor=cast(HomogeneousReactiveObservationDescriptor, descriptor._owner_descriptor),
-            batch_identity=batch_identity,
-            requested_temperature=problem.temperature.value,
-            requested_pressure=problem.pressure.value,
-            active_parameters=active_parameters,
-            observations=tuple(
-                HomogeneousReactiveOwnerObservation(
-                    item.target_identity,
-                    item.prediction_identity,
-                    item.aggregate_identity,
-                    item.covariance_identity,
+    if (
+        trial.get("parameter_fingerprint") != expected_trial["parameter_fingerprint"]
+        or tuple(trial.get("identities", ())) != active_parameters.identities
+        or tuple(float(value) for value in trial.get("values", ())) != active_parameters.values
+        or tuple(trial.get("units", ())) != expected_trial["units"]
+        or trial.get("active_parameter_fingerprint") != active_parameters.fingerprint
+        or trial.get("fingerprint")
+        != _fingerprint("epcsaft.active-parameter-trial", expected_trial)
+    ):
+        raise ValueError("GREPE owner receipt trial does not match")
+    output_by_identity = {output.identity: output for output in descriptor.outputs}
+    for record, observation in zip(rows, selected, strict=True):
+        output = output_by_identity[observation.prediction_identity]
+        if (
+            not isinstance(record, dict)
+            or record.get("target_identity") != observation.target_identity
+            or record.get("prediction_identity") != observation.prediction_identity
+            or record.get("aggregate_identity") != observation.aggregate_identity
+            or record.get("covariance_identity") != observation.covariance_identity
+            or record.get("selector") != output.selector
+            or record.get("unit") != output.unit
+            or not isinstance(record.get("value"), (int, float))
+            or not math.isfinite(float(record["value"]))
+            or not isinstance(record.get("jacobian"), list)
+            or len(cast(list[object], record["jacobian"])) != len(active_parameters.identities)
+            or any(
+                not isinstance(value, (int, float)) or not math.isfinite(float(value))
+                for value in cast(list[object], record["jacobian"])
+            )
+        ):
+            raise ValueError("GREPE owner receipt observation does not match")
+    if phases:
+        for record, phase in zip(phases, problem.phases, strict=True):
+            if (
+                not isinstance(record, dict)
+                or record.get("identity") != phase.identity
+                or record.get("role") != phase.fluid_role
+                or not isinstance(record.get("mole_fractions"), list)
+                or not math.isclose(
+                    math.fsum(float(value) for value in record["mole_fractions"]),
+                    1.0,
+                    rel_tol=0.0,
+                    abs_tol=2.0e-12,
                 )
-                for item in selected
-            ),
-        )
-    elif descriptor._owner_kind == "reactive_bubble":
-        if not isinstance(problem.temperature, Fixed):
-            raise ValueError("reactive bubble GREPE receipt requires fixed temperature")
-        validate_reactive_bubble_owner_receipt(
-            owner_json,
-            descriptor=cast(ReactiveBubbleObservationDescriptor, descriptor._owner_descriptor),
-            batch_identity=batch_identity,
-            requested_temperature=problem.temperature.value,
-            active_parameters=active_parameters,
-        )
-    elif descriptor._owner_kind == "intensive_boundary":
-        _validate_intensive_boundary_owner_receipt(
-            owner_json,
-            descriptor=descriptor,
-            problem=problem,
-            batch_identity=batch_identity,
-            active_parameters=active_parameters,
-            observations=selected,
-        )
-    else:
-        _validate_finite_phase_owner_receipt(
-            owner_json,
-            descriptor=descriptor,
-            problem=problem,
-            batch_identity=batch_identity,
-            active_parameters=active_parameters,
-        )
+            ):
+                raise ValueError("GREPE owner receipt phase does not match")
+    if len(phases) not in {0, len(problem.phases)} or any(
+        not isinstance(item, list)
+        or len(item) != 2
+        or not isinstance(item[0], str)
+        or not isinstance(item[1], (int, float, str))
+        for item in evidence
+    ):
+        raise ValueError("GREPE owner receipt evidence is invalid")
     return f"sha256:{hashlib.sha256(receipt_json.encode('utf-8')).hexdigest()}"
 
 
