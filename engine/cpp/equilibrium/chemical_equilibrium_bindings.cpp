@@ -1550,8 +1550,8 @@ py::dict solve_reactive_finite_phases(
                 "direction_rows"
             ),
             py::cast<std::vector<double>>(declaration["driving_constants"]),
-            1.0e-12,
-            1.0e-10
+            kPhaseDirectionRankTolerance,
+            kPhaseDirectionConservationTolerance
         );
     }
     return reactive_finite_phase_result(
@@ -1710,8 +1710,8 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("phase_reference_amounts"),
         py::arg("direction_rows"),
         py::arg("driving_constants"),
-        py::arg("rank_tolerance") = 1.0e-12,
-        py::arg("conservation_tolerance") = 1.0e-10
+        py::arg("rank_tolerance") = kPhaseDirectionRankTolerance,
+        py::arg("conservation_tolerance") = kPhaseDirectionConservationTolerance
     );
     // Keep the private seam discoverable under the concise plural spelling as
     // well; both names call the same compiler and have no separate behavior.
@@ -1725,8 +1725,8 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("phase_reference_amounts"),
         py::arg("directions"),
         py::arg("driving_constants"),
-        py::arg("rank_tolerance") = 1.0e-12,
-        py::arg("conservation_tolerance") = 1.0e-10
+        py::arg("rank_tolerance") = kPhaseDirectionRankTolerance,
+        py::arg("conservation_tolerance") = kPhaseDirectionConservationTolerance
     );
 }
 

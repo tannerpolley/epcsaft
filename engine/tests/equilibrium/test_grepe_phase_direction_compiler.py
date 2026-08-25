@@ -122,3 +122,19 @@ def test_native_phase_direction_compiler_rejects_rank_or_conservation_failures(
 ) -> None:
     with pytest.raises(ValueError, match=message):
         _compile(directions=directions)
+
+
+@pytest.mark.parametrize(
+    ("defect", "accepted"),
+    ((5.0e-13, True), (5.0e-11, False)),
+)
+def test_native_phase_direction_conservation_boundary(
+    defect: float, accepted: bool
+) -> None:
+    direction = list(_directions()[0])
+    direction[0] += defect
+    if accepted:
+        _compile(directions=(tuple(direction),))
+    else:
+        with pytest.raises(ValueError, match="conservation"):
+            _compile(directions=(tuple(direction),))

@@ -20,6 +20,8 @@ inline constexpr double kChemicalObjectiveDerivativeTolerance = 1.0e-5;
 inline constexpr double kChemicalConstraintDerivativeTolerance = 1.0e-5;
 inline constexpr double kChemicalHessianDerivativeTolerance = 2.0e-4;
 inline constexpr double kChemicalConditionNumberMax = 1.0e6;
+inline constexpr double kPhaseDirectionRankTolerance = 1.0e-12;
+inline constexpr double kPhaseDirectionConservationTolerance = 1.0e-12;
 
 struct DenseMatrix {
     std::size_t rows = 0;
@@ -459,8 +461,8 @@ struct SourceStandardStateResult {
     const DenseMatrix& phase_reference_amounts,
     const DenseMatrix& direction_matrix,
     const std::vector<double>& driving_constants,
-    double rank_tolerance = 1.0e-12,
-    double conservation_tolerance = 1.0e-10
+    double rank_tolerance = kPhaseDirectionRankTolerance,
+    double conservation_tolerance = kPhaseDirectionConservationTolerance
 );
 
 [[nodiscard]] AmountChart make_amount_chart(const std::vector<int>& charges);

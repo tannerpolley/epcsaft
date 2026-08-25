@@ -25,13 +25,6 @@ decide whether an application may use them. Application suitability,
 calibration scope, surrogate construction, and flowsheet claims remain with
 the downstream repository.
 
-Configured reactive-phase acceptance uses a dimensionless reaction-affinity
-and interphase-potential residual limit of `5e-7`, equivalent to about
-`1.24e-3 J/mol` at `298.15 K`. This is a numerical-resolution threshold,
-not a scientific goodness-of-fit criterion. Balance, pressure, charge,
-phase-support, KKT, stability, and derivative checks keep their independent
-tolerances.
-
 Engine retains compact numerical evidence. Installed-wheel physical and
 literature campaigns belong in `validation/`; temporary experiments belong in
 `lab/` and carry no durable evidence authority. Superseded live plans, designs,
