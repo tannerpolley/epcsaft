@@ -26,11 +26,6 @@ from ._model import ParameterFit, TableRow
 from ._resolve import ResolvedFit, ResolvedObservation
 from ._result import FitResult, FitSpecificationReceipt
 
-_MAXIMUM_ITERATIONS = 25
-_FUNCTION_TOLERANCE = 1.0e-6
-_GRADIENT_TOLERANCE = 1.0e-6
-_PARAMETER_TOLERANCE = 1.0e-6
-
 
 class FitPreflightError(ValueError):
     """A typed non-evaluable exact start encountered before native optimization."""
@@ -229,19 +224,22 @@ def _preflight(
     owner: _OwnerEvaluator,
     resolved: ResolvedFit,
     requests: Sequence[_OwnerRequest],
-) -> None:
+) -> dict[tuple[str, int, tuple[str, ...], tuple[float, ...]], dict[str, object]]:
+    exact_start_blocks: dict[
+        tuple[str, int, tuple[str, ...], tuple[float, ...]], dict[str, object]
+    ] = {}
     coordinate_by_parameter = {
         identity: index
         for index, coordinate in enumerate(resolved.coordinates)
         for identity in coordinate.tied_identities
     }
-    for start in resolved.fit.solver.multistart.starts:
+    for start_index, start in enumerate(resolved.fit.solver.multistart.starts):
         physical = start.values
         active = tuple(
             physical[coordinate_by_parameter[identity]] for identity in resolved.selected_identities
         )
         for index, request in enumerate(requests):
-            response = owner(0, index, active, False)
+            response = owner(start_index, index, active, False)
             if response.get("status") != "accepted":
                 failure = response.get("failure")
                 failure_mapping = failure if isinstance(failure, Mapping) else {}
@@ -273,6 +271,10 @@ def _preflight(
                     f"observation-{index}",
                     "owner returned an incomplete value/Jacobian block",
                 )
+            exact_start_blocks[(start.identity, index, resolved.selected_identities, active)] = (
+                response
+            )
+    return exact_start_blocks
 
 
 def _package_fingerprint() -> str:
@@ -312,9 +314,26 @@ def fit(
     }
     requests, residual_blocks = _owner_requests(resolved)
     owner = _OwnerEvaluator(model, resolved, requests)
-    _preflight(owner, resolved, requests)
+    exact_start_blocks = _preflight(owner, resolved, requests)
+
+    def evaluate_owner(
+        start_index: int,
+        index: int,
+        values: Sequence[float],
+        receipt_requested: bool,
+    ) -> dict[str, object]:
+        key = (
+            specification.solver.multistart.starts[start_index].identity,
+            index,
+            resolved.selected_identities,
+            tuple(values),
+        )
+        if not receipt_requested and (block := exact_start_blocks.get(key)) is not None:
+            return block
+        return owner(start_index, index, values, receipt_requested)
+
     native = _core._fit_resolved(
-        owner,
+        evaluate_owner,
         len(resolved.selected_identities),
         [coordinate_indices[identity] for identity in resolved.selected_identities],
         [
@@ -343,7 +362,6 @@ def fit(
                 for start in specification.solver.multistart.starts
             ],
             "affine_bound_margin": specification.solver.multistart.affine_bound_margin,
-            "workers": 1,
             "maximum_iterations": specification.solver.controls.maximum_iterations,
             "function_tolerance": specification.solver.controls.function_tolerance,
             "gradient_tolerance": specification.solver.controls.gradient_tolerance,

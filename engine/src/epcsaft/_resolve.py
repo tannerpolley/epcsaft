@@ -968,16 +968,6 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
                     component_id=component_ids[index],
                     family="correlation_integral_parameter",
                 )
-    if (
-        relative_permittivity_formulation == "ion-specific-suppression"
-        and sum(charge == 0 for charge in charges) != 1
-    ):
-        raise _error(
-            "invalid-value",
-            family="relative_permittivity_formulation",
-            reason="mixed-solvent-volume-data-required",
-        )
-
     assert electrolyte_spec is not None
     return _ResolvedModel(
         "ionic-born",

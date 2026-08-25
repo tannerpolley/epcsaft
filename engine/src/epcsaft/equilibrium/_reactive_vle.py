@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from typing import Any, Literal, cast
 
@@ -791,6 +791,7 @@ def _solve_incipient_linear_system(
 def _evaluate_incipient_vapor_point(
     *,
     model: epcsaft.Pure | epcsaft.Mixture,
+    transport: Callable[[], object],
     active_parameters: epcsaft.ActiveParameterSet | None,
     all_active_identities: tuple[str, ...],
     temperature: Any,
@@ -828,7 +829,7 @@ def _evaluate_incipient_vapor_point(
             )
         volume = 1.0 / float(state.molar_density.to("mole / meter ** 3").magnitude)
         block = _equilibrium.evaluate_parameterized_phase(
-            _native_transport(model, active_parameters),
+            transport(),
             temperature_k,
             fractions,
             volume,
@@ -839,17 +840,14 @@ def _evaluate_incipient_vapor_point(
             if abs(pressure_residual) <= 1.0e-6:
                 break
             curvature = tuple(
-                float(cast(Any, value))
-                for value in cast(Sequence[object], block["state_hessian"])
+                float(cast(Any, value)) for value in cast(Sequence[object], block["state_hessian"])
             )[volume_coordinate * state_count + volume_coordinate]
             if not math.isfinite(curvature) or curvature <= 0.0:
                 raise _BubbleFailure(
                     "second_order_failure",
                     "declared vapor mechanical polish lacks positive curvature",
                 )
-            candidate = volume + pressure_residual / (
-                8.31446261815324 * temperature_k * curvature
-            )
+            candidate = volume + pressure_residual / (8.31446261815324 * temperature_k * curvature)
             if not math.isfinite(candidate) or candidate <= 0.0:
                 raise _BubbleFailure(
                     "numerical_convergence_failure",
@@ -857,7 +855,7 @@ def _evaluate_incipient_vapor_point(
                 )
             volume = candidate
             block = _equilibrium.evaluate_parameterized_phase(
-                _native_transport(model, active_parameters),
+                transport(),
                 temperature_k,
                 fractions,
                 volume,
@@ -989,6 +987,17 @@ def _solve_declared_incipient_vapor(
 
     component_count = len(liquid_potentials)
     reference = component_count - 1
+    transport_capsule: object | None = None
+
+    def transport() -> object:
+        nonlocal transport_capsule
+        if transport_capsule is None:
+            try:
+                transport_capsule = _native_transport(model, active_parameters)
+            except (RuntimeError, TypeError, ValueError) as error:
+                raise _BubbleFailure("provider_domain_rejection", str(error)) from error
+        return transport_capsule
+
     shifted = tuple(value - max(liquid_potentials) for value in liquid_potentials)
     weights = tuple(math.exp(max(-700.0, value)) for value in shifted)
     weight_total = math.fsum(weights)
@@ -1018,6 +1027,7 @@ def _solve_declared_incipient_vapor(
         if log_ratios not in cache:
             cache[log_ratios] = _evaluate_incipient_vapor_point(
                 model=model,
+                transport=transport,
                 active_parameters=active_parameters,
                 all_active_identities=all_active_identities,
                 temperature=temperature,
@@ -1971,9 +1981,7 @@ def _row_values(
         coordinate_amount = tuple(
             math.fsum(
                 closure.chemical_amount_directions[identity][component] * direction
-                for identity, direction in zip(
-                    balance_ids, fixed_balance_direction, strict=True
-                )
+                for identity, direction in zip(balance_ids, fixed_balance_direction, strict=True)
             )
             for component in range(len(descriptor.component_ids))
         )
@@ -1984,9 +1992,7 @@ def _row_values(
         coordinate_vapor = tuple(
             math.fsum(
                 closure.vapor_fraction_directional_derivatives[identity][component] * direction
-                for identity, direction in zip(
-                    balance_ids, fixed_balance_direction, strict=True
-                )
+                for identity, direction in zip(balance_ids, fixed_balance_direction, strict=True)
             )
             for component in range(len(vapor.mole_fractions))
         )
@@ -2283,9 +2289,7 @@ def _fixed_pressure_coordinate_result(
     """Certify one fixed-pressure state owned by the reactive-bubble formulation."""
 
     _validate_same_liquid_state(closure)
-    rows = _row_values(
-        descriptor, closure, fixed_balance_direction=balance_direction
-    )
+    rows = _row_values(descriptor, closure, fixed_balance_direction=balance_direction)
     branch = _physical_branch(problem, descriptor, closure)
     certification = _certification(closure)
     liquid_state = closure.liquid.state
@@ -2311,9 +2315,7 @@ def _fixed_pressure_coordinate_result(
             ),
         ),
         closure_evaluation_count=1,
-        provider_evaluation_count=(
-            liquid_state.phase_role_receipt.provider_evaluation_count + 1
-        ),
+        provider_evaluation_count=(liquid_state.phase_role_receipt.provider_evaluation_count + 1),
         accepted_candidate_count=1,
         distinct_branch_count=1,
         selected_branch_ordinal=0,

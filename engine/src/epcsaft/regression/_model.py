@@ -905,21 +905,22 @@ def _parse_solver(value: object, path: str) -> SolverSpec:
         )
     controls_item = _mapping(mapping.get("controls", {}), f"{path}.controls")
     _keys(controls_item, "solver_controls", f"{path}.controls")
+    defaults = SolverControlsSpec()
     controls = SolverControlsSpec(
         maximum_iterations=_integer(
-            controls_item.get("maximum_iterations", 25),
+            controls_item.get("maximum_iterations", defaults.maximum_iterations),
             f"{path}.controls.maximum_iterations",
         ),
         function_tolerance=_number(
-            controls_item.get("function_tolerance", 1.0e-6),
+            controls_item.get("function_tolerance", defaults.function_tolerance),
             f"{path}.controls.function_tolerance",
         ),
         gradient_tolerance=_number(
-            controls_item.get("gradient_tolerance", 1.0e-6),
+            controls_item.get("gradient_tolerance", defaults.gradient_tolerance),
             f"{path}.controls.gradient_tolerance",
         ),
         parameter_tolerance=_number(
-            controls_item.get("parameter_tolerance", 1.0e-6),
+            controls_item.get("parameter_tolerance", defaults.parameter_tolerance),
             f"{path}.controls.parameter_tolerance",
         ),
     )
@@ -931,9 +932,7 @@ def _parse_solver(value: object, path: str) -> SolverSpec:
         )
     for name in ("function_tolerance", "gradient_tolerance", "parameter_tolerance"):
         if getattr(controls, name) <= 0.0:
-            raise FitSchemaError(
-                "invalid-value", f"{path}.controls.{name}", "positive required"
-            )
+            raise FitSchemaError("invalid-value", f"{path}.controls.{name}", "positive required")
     return SolverSpec(MultistartSpec(tuple(starts), margin), controls)
 
 

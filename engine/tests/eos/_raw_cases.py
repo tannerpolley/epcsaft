@@ -30,6 +30,7 @@ _UNITS = {
     "l_ij": "dimensionless",
     "ionic_region_relative_permittivity": "dimensionless",
     "ion_fraction_suppression_coefficient": "dimensionless",
+    "ion_specific_suppression_coefficient": "dimensionless",
 }
 _FIXED = frozenset({"molar_mass", "charge_number", "dipole_moment", "quadrupole_moment"})
 
@@ -275,10 +276,14 @@ def _strong_association_topology() -> dict[str, object]:
     solvent_volume = 0.2039
     sigma = {"solute": 2.6019, "solvent": 2.229}
     cross_energy = 0.5 * (solute_energy + solvent_energy)
-    cross_volume = math.sqrt(solute_volume * solvent_volume) * (
-        math.sqrt(sigma["solute"] * sigma["solvent"])
-        / (0.5 * (sigma["solute"] + sigma["solvent"]))
-    ) ** 3
+    cross_volume = (
+        math.sqrt(solute_volume * solvent_volume)
+        * (
+            math.sqrt(sigma["solute"] * sigma["solvent"])
+            / (0.5 * (sigma["solute"] + sigma["solvent"]))
+        )
+        ** 3
+    )
 
     def edge(
         component_a: str,
@@ -406,10 +411,9 @@ def _ascani_2023_association_topology() -> dict[str, object]:
     energy = 2500.0
     volume = 0.05
     sigma = {"a": 3.2, "b": 3.0}
-    cross_volume = volume * (
-        math.sqrt(sigma["a"] * sigma["b"])
-        / (0.5 * (sigma["a"] + sigma["b"]))
-    ) ** 3
+    cross_volume = (
+        volume * (math.sqrt(sigma["a"] * sigma["b"]) / (0.5 * (sigma["a"] + sigma["b"]))) ** 3
+    )
 
     def edge(
         component_a: str,
@@ -527,9 +531,7 @@ ASCANI_2023_HYPOTHETICAL["sources"] = [
         ),
     }
 ]
-ASCANI_2023_HYPOTHETICAL["domains"] = [
-    {"domain_id": "ascani-2023-hypothetical", "kind": "unknown"}
-]
+ASCANI_2023_HYPOTHETICAL["domains"] = [{"domain_id": "ascani-2023-hypothetical", "kind": "unknown"}]
 
 CHARGED_TERNARY_IMMISCIBLE = _document(
     "charged-ternary-immiscible-fixture",
@@ -579,8 +581,7 @@ CHARGED_TERNARY_IMMISCIBLE = _document(
             right,
             k_ij=(
                 0.20
-                if left in {"alpha", "beta", "gamma"}
-                and right in {"alpha", "beta", "gamma"}
+                if left in {"alpha", "beta", "gamma"} and right in {"alpha", "beta", "gamma"}
                 else 0.0
             ),
         )
@@ -673,9 +674,7 @@ _neutral_associating_components.append(
         dispersion_energy_over_k=180.0,
     )
 )
-_neutral_associating_pairs.append(
-    _pair("associating-fluid", "inert-fluid", k_ij=0.04)
-)
+_neutral_associating_pairs.append(_pair("associating-fluid", "inert-fluid", k_ij=0.04))
 
 STRONGLY_ASSOCIATING_BINARY = _document(
     "strongly-associating-binary-fixture",
@@ -894,9 +893,7 @@ MULTINEUTRAL_REACTIVE["domains"] = [
 MULTISOLVENT_MULTIION = deepcopy(MULTINEUTRAL_REACTIVE)
 MULTISOLVENT_MULTIION["document_id"] = "multisolvent-multiion-fixture"
 next(
-    family
-    for family in MULTISOLVENT_MULTIION["model_families"]
-    if family["kind"] == "permittivity"
+    family for family in MULTISOLVENT_MULTIION["model_families"] if family["kind"] == "permittivity"
 )["choice"] = "component-permittivity-mixing"
 MULTISOLVENT_MULTIION["model_coefficients"] = [
     coefficient

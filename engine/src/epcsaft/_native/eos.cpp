@@ -365,11 +365,6 @@ NativeModel::NativeModel(NativeParameters parameters)
         !(parameters_.ion_fraction_suppression_coefficient > 0.0)) {
       throw std::invalid_argument("invalid ion-fraction suppression parameter");
     }
-    if (parameters_.relative_permittivity_formulation ==
-            RELATIVE_PERMITTIVITY_FORMULATION_ION_SPECIFIC_SUPPRESSION &&
-        solvent_count != 1) {
-      throw std::invalid_argument("mixed-solvent volume data are required");
-    }
     if (fully_dissociated &&
         (parameters_.ion_fraction_suppression_coefficient != 0.0 ||
          parameters_.ionic_region_relative_permittivity != 0.0 ||
