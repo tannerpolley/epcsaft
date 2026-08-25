@@ -118,7 +118,7 @@ PY
         CMAKE_PREFIX_PATH MESON_ARGS NINJAFLAGS SOURCE_DATE_EPOCH; do
         printf '%s=%s\n' "$variable" "${!variable-}"
     done
-    for package in ipopt eigen3 libglog; do
+    for package in ipopt eigen3; do
         pkg-config --exists "$package"
         pc_file="$(pkg-config --variable=pcfiledir "$package")/$package.pc"
         [[ -f "$pc_file" ]] || { echo "cannot fingerprint $package metadata: $pc_file" >&2; exit 1; }
@@ -128,8 +128,7 @@ PY
     done
     fingerprint_tree eigen-headers "$(pkg-config --variable=prefix eigen3)/include/eigen3/Eigen"
     fingerprint_tree ipopt-headers "$(pkg-config --variable=includedir ipopt)"
-    fingerprint_tree glog-headers "$(pkg-config --variable=includedir libglog)/glog"
-    for library in ipopt glog ceres; do
+    for library in ipopt; do
         library_path="$("${cxx_command[@]}" -print-file-name="lib$library.so")"
         [[ "$library_path" != "lib$library.so" && -f "$library_path" ]] || {
             echo "cannot fingerprint native library: lib$library.so" >&2
@@ -139,15 +138,6 @@ PY
         printf '%s-library=%s:%s\n' \
             "$library" "$(basename "$library_path")" \
             "$(sha256sum "$library_path" | cut -d ' ' -f 1)"
-        if [[ "$library" == ceres ]]; then
-            ceres_cmake_dir="$(dirname "$library_path")/cmake/Ceres"
-            ceres_prefix="$ceres_cmake_dir"
-            while [[ "$ceres_prefix" != / && ! -d "$ceres_prefix/include/ceres" ]]; do
-                ceres_prefix="$(dirname "$ceres_prefix")"
-            done
-            fingerprint_tree ceres-headers "$ceres_prefix/include/ceres"
-            fingerprint_tree ceres-cmake "$ceres_cmake_dir"
-        fi
     done
 } | sha256sum | cut -d ' ' -f 1)"
 

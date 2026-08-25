@@ -139,7 +139,7 @@ build_invariants:
   installed_provider_discovery: forbidden
   mutable_wheel_inputs: forbidden
   development_wheel_cache: content_addressed_and_verified
-  third_party_cmake_use: nlopt_subproject_and_ceres_metadata_only
+  third_party_cmake_use: nlopt_subproject_only
   source_specific_runtime_routes: forbidden
   inferred_parameter_defaults: forbidden
 

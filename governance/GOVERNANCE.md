@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 23
+Doctrine revision: 24
 
-Approved: 2026-08-20
+Approved: 2026-08-25
 
 Owner: `tannerpolley/ePC-SAFT:governance/`
 
@@ -159,7 +159,7 @@ interphase transfer. Incipient phases use their normalization and shared-
 support chemical-potential/fugacity equalities without an incipient material
 balance. Each thermodynamic condition is solved and locally certified by Ipopt
 with exact objective/constraint derivatives and exact Lagrangian Hessians;
-outer Regression/Ceres consumes exact total observable Jacobians and remains
+outer reduced-space Regression/Ipopt consumes exact total observable Jacobians and remains
 an authority-neutral parameter-estimation tool.
 
 GREPE accepts only phase-aware, unit- and convention-complete reaction standard
@@ -393,10 +393,11 @@ and every density, composition, temperature, and association-strength
 dependency. A fixed-association-strength block is diagnostic only and cannot
 support a production capability or exact-Hessian claim.
 
-Ipopt routes MUST provide exact objective and constraint first derivatives and
-the exact Lagrangian Hessian for the admitted formulation. Ceres routes MUST
-provide exact residual Jacobians for each admitted target family; this does not
-imply an exact objective Hessian or generic regression support.
+Equilibrium Ipopt routes MUST provide exact objective and constraint first
+derivatives and the exact Lagrangian Hessian for the admitted formulation.
+Reduced-space Regression/Ipopt routes MUST provide exact residual Jacobians and
+the exact `J^T r` objective gradient for every admitted target family; a
+limited-memory objective Hessian is allowed.
 
 Independent numerical or high-precision derivative checks are encouraged as
 validation oracles. They MUST NOT be selectable production backends.
@@ -600,6 +601,12 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 24 records the user-approved issue-#60 optimizer cutover. D-039 makes
+Ipopt the sole reduced-space Regression optimizer after fixed-state,
+saturation, and GREPE numerical parity; removes Ceres and glog from the native
+graph; and preserves the exact owner Jacobian, result, receipt, and typed-trial
+semantics. It does not admit the separate full-space multi-experiment design.
+
 Revision 23 records the user-approved official downstream application model.
 D-038 removes the D-024 quarantine from MEA-Thermodynamics,
 MEA-Absorption-Column, and Lithium_Extraction; keeps all three as separate
@@ -735,3 +742,4 @@ Historical plans and receipts retain their original names.
 | D-036 General Reactive Equilibrium and Phase Equilibrium target | User-confirmed GREPE design and two independent read-only sanity reviews on 2026-08-14 | Evolve the sole public `phase_equilibrium` owner through declarative finite/incipient reacting-phase blocks; use one nonduplicated Gibbs/KKT encoding, phase-aware reaction standards, exact Ipopt Hessians, exact outer-Ceres Jacobians, local declared-phase certificates, generic Regression evaluation, and authority-neutral candidate export | Establishes one staged architecture for homogeneous reaction, reactive bubble/dew/VLE, neutral reactive LLE, and later electrochemical LLE without admitting unimplemented capability or adding an application-specific route | Architecture target only; each runtime slice requires its own accepted receipt | Engine, Validation, Regression, Data, downstream applications, and Management |
 | D-037 Admit the GREPE proven core | Explicit user instruction on 2026-08-18 to combine the reviewed generic Engine work, retain only the proven core, reproduce the removed specialized path's results, and use an exact receipt before updating main | Admit declared finite/incipient supports, phase-scoped dielectric solvent selection, temperature-dependent permittivity, generic affine-feed intensive boundaries over the existing homogeneous/reactive-bubble owners, exact total derivatives, typed failures, and hash-bound nested receipts at subject commit `25cd674bb32611bac89d0ffb4ab8e1d953cbe09f` | Replaces a specialized fixed-pressure incipient implementation with the smaller generic owner while preserving its numerical results; excludes the other issue-48 dirty application/reference/saturation layer | No; later globality, phase discovery, and application parameter promotion remain separate | Engine, Validation, Regression, downstream applications, and Management |
 | D-038 Official downstream applications | Explicit user instruction on 2026-08-20 to maintain MEA-Thermodynamics, MEA-Absorption-Column, and Lithium_Extraction as official Engine applications while preserving Engine/application ownership | Remove the D-024 quarantine for the three named repositories; keep them as separate sibling Git repositories; authorize cross-repository vertical-slice work; require immutable Engine-wheel identity and separate repository histories | Makes cross-repository work durable without nested repositories, submodules, sibling-source imports, or automatic scientific admission | No | Engine, downstream application owners, and Management |
+| D-039 Reduced-space Ipopt Regression | Explicit user instruction through issue #60 to prototype Ipopt, compare it with Ceres on every admitted reduced-space owner, and retain one optimizer | Make Ipopt the sole reduced-space Regression optimizer; preserve exact owner residual Jacobians, `J^T r`, bounds, typed trial failures, immutable results, and scientific tolerances; remove Ceres and glog; keep simultaneous full-space Regression outside this decision | Removes a second native optimizer dependency while retaining fixed-state, saturation, and GREPE numerical parity and improving the expensive GREPE reference runtime | No | Engine, Regression, Validation, and downstream applications |

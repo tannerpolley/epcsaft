@@ -50,7 +50,7 @@ request["solver"]["controls"] = {
 }
 ```
 
-Those values are the defaults. Ceres stops when a convergence tolerance is
+Those values are the defaults. Ipopt stops when a convergence tolerance is
 reached or the iteration ceiling is exhausted. These controls do not alter EOS,
 phase-equilibrium, reaction, density, or certification tolerances.
 
