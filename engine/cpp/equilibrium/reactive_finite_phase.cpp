@@ -1268,7 +1268,7 @@ private:
 
 double phase_distinctness(const std::vector<PhaseBlock>& phases) {
     if (phases.size() < 2) {
-        return std::numeric_limits<double>::infinity();
+        return 0.0;
     }
     double result = std::numeric_limits<double>::infinity();
     for (std::size_t left = 0; left < phases.size(); ++left) {
@@ -1373,6 +1373,7 @@ void populate_sensitivities(
     ReactiveFinitePhaseResult& result,
     const MultiphaseEvaluation& evaluation,
     const ProviderActiveParameterSet& active_parameters,
+    const std::vector<double>& g_ref_parameter_derivatives,
     const std::vector<double>& multipliers,
     double temperature_k,
     std::size_t species_count,
@@ -1425,6 +1426,9 @@ void populate_sensitivities(
     result.volume_derivatives.assign(phase_count * parameter_count, 0.0);
     result.pressure_derivatives.assign(phase_count * parameter_count, 0.0);
     result.chemical_potential_derivatives.assign(
+        phase_count * species_count * parameter_count, 0.0
+    );
+    result.log_fugacity_derivatives.assign(
         phase_count * species_count * parameter_count, 0.0
     );
     for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
@@ -1493,6 +1497,14 @@ void populate_sensitivities(
                 result.chemical_potential_derivatives[
                     (phase * species_count + species) * parameter_count + parameter
                 ] = chemical_response;
+                result.log_fugacity_derivatives[
+                    (phase * species_count + species) * parameter_count + parameter
+                ] = chemical_response
+                    - (g_ref_parameter_derivatives.empty()
+                        ? 0.0
+                        : g_ref_parameter_derivatives[
+                            species * parameter_count + parameter
+                        ]);
             }
             result.volume_derivatives[phase * parameter_count + parameter] =
                 full_physical_response.back();
@@ -1535,10 +1547,10 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     ReactiveFinitePhaseResult result;
     const std::size_t phase_count = starts.size();
     const std::size_t species_count = system.species_count;
-    if (phase_count < 2 || packing_fraction_intervals.size() != phase_count
+    if (phase_count < 1 || packing_fraction_intervals.size() != phase_count
         || phase_support_indices.size() != phase_count) {
         throw std::invalid_argument(
-            "reactive finite-phase solve requires at least two declared phases"
+            "reactive finite-phase solve requires at least one declared phase"
         );
     }
     const std::vector<PhaseLayout> layouts = make_phase_layouts(
@@ -1769,9 +1781,9 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
             return total + layout.amount_dimension();
         }
     );
-    if (amount_variable_count <= constraint_count) {
+    if (amount_variable_count < constraint_count) {
         throw std::invalid_argument(
-            "configured reactive phases have no independent composition directions"
+            "configured reactive phases have more balances than amount coordinates"
         );
     }
     result.admissible_nullity = amount_variable_count - constraint_count;
@@ -1957,6 +1969,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     result.phase_pressures_pa.reserve(phase_count);
     result.phase_packing_fractions.reserve(phase_count);
     result.phase_chemical_potentials_over_rt.reserve(phase_count);
+    result.phase_log_fugacities.reserve(phase_count);
     std::vector<double> stationarity = evaluated.gradient;
     for (std::size_t row = 0; row < evaluated.constraints.size(); ++row) {
         for (std::size_t column = 0; column < variable_count; ++column) {
@@ -1984,6 +1997,13 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         result.phase_pressures_pa.push_back(block.pressure);
         result.phase_packing_fractions.push_back(block.packing);
         result.phase_chemical_potentials_over_rt.push_back(block.chemical_potentials);
+        std::vector<double> log_fugacities = block.chemical_potentials;
+        for (std::size_t species = 0; species < species_count; ++species) {
+            log_fugacities[species] += std::log(
+                kGasConstantJPerMolK * temperature_k
+            ) - system.g_ref[species];
+        }
+        result.phase_log_fugacities.push_back(std::move(log_fugacities));
         result.pressure_relative_inf_norm = std::max(
             result.pressure_relative_inf_norm,
             std::abs(block.pressure - pressure_pa) / pressure_pa
@@ -2098,7 +2118,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         && result.reaction_affinity_inf_norm <= kChemicalAffinityTolerance
         && result.transfer_chemical_potential_inf_norm <= kChemicalAffinityTolerance
         && result.kkt_stationarity_inf_norm <= kChemicalKktTolerance
-        && result.phase_distinctness > 1.0e-6
+        && (phase_count == 1 || result.phase_distinctness > 1.0e-6)
         && minimum_amount > trace_floor
         && minimum_bound_margin > 1.0e-7
         && result.reduced_hessian_min_eigenvalue > strict_minimum_threshold;
@@ -2143,6 +2163,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         result,
         evaluated,
         parameters,
+        system.g_ref_parameter_derivatives,
         multipliers,
         temperature_k,
         species_count,

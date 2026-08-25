@@ -539,8 +539,8 @@ def test_value_only_provider_potential_observation_has_zero_column_jacobian() ->
 
 
 @pytest.mark.slow
-def test_grepe_single_finite_phase_matches_homogeneous_owner_exactly() -> None:
-    """Falsify value or exact-J drift across the role-declared GREPE compiler."""
+def test_grepe_single_finite_phase_matches_homogeneous_owner() -> None:
+    """Falsify material value or exact-J drift between independent formulations."""
 
     parameters = epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE)
     model = epcsaft.Mixture(parameters)
@@ -563,6 +563,18 @@ def test_grepe_single_finite_phase_matches_homogeneous_owner_exactly() -> None:
         equilibrium.HomogeneousReactiveObservationRow(
             "molar-density",
             "molar_density_mol_per_m3",
+            support="positive",
+        ),
+        equilibrium.HomogeneousReactiveObservationRow(
+            "cation-molality",
+            "molality_mol_per_kg",
+            (0.0, 0.0, 1.0, 0.0),
+            (0.018, 0.0, 0.0, 0.0),
+            support="positive",
+        ),
+        equilibrium.HomogeneousReactiveObservationRow(
+            "compressibility-factor",
+            "compressibility_factor",
             support="positive",
         ),
         equilibrium.HomogeneousReactiveObservationRow(
@@ -632,6 +644,24 @@ def test_grepe_single_finite_phase_matches_homogeneous_owner_exactly() -> None:
                 support="positive",
             ),
             equilibrium.EquilibriumOutput(
+                "cation-molality",
+                "phase.molality",
+                "mole / kilogram",
+                "true-species-liquid-molality",
+                owner_problem.phase_identity,
+                (0.0, 0.0, 1.0, 0.0),
+                (0.018, 0.0, 0.0, 0.0),
+                support="positive",
+            ),
+            equilibrium.EquilibriumOutput(
+                "compressibility-factor",
+                "phase.compressibility_factor",
+                "dimensionless",
+                "phase-compressibility-factor",
+                owner_problem.phase_identity,
+                support="positive",
+            ),
+            equilibrium.EquilibriumOutput(
                 "reaction-log-fugacity",
                 "phase.log_fugacity",
                 "dimensionless",
@@ -657,11 +687,34 @@ def test_grepe_single_finite_phase_matches_homogeneous_owner_exactly() -> None:
 
     assert grepe.status == "evaluated", grepe.failure
     assert grepe.descriptor == grepe_descriptor
-    assert grepe.values == pytest.approx(owner.values, rel=0.0, abs=0.0)
+    assert grepe.values == pytest.approx(owner.values, rel=3.0e-5, abs=3.0e-7)
     for actual, expected in zip(grepe.jacobian, owner.jacobian, strict=True):
-        assert actual == pytest.approx(expected, rel=0.0, abs=0.0)
+        assert actual == pytest.approx(expected, rel=3.0e-5, abs=3.0e-7)
     assert grepe.certificate_scope == "fixed_TP_single_finite_reacting_phase"
     assert grepe.globality_claim == "not_established"
+    assert grepe.branch_signature is not None
+    assert grepe.branch_signature[-2] == (
+        (
+            owner_problem.continuation_identity,
+            owner_problem.continuation_reference.fingerprint,
+        ),
+    )
+    tight_reference = replace(
+        owner_problem.continuation_reference,
+        maximum_log_composition_distance=1.0e-12,
+        maximum_log_volume_distance=1.0e-12,
+    )
+    tight_phase = replace(
+        grepe_problem.phases[0], continuation_reference=tight_reference
+    )
+    rejected = equilibrium.phase_equilibrium(
+        model,
+        replace(grepe_problem, phases=(tight_phase,)),
+        active_parameters=active,
+    )
+    assert rejected.status == "non_evaluable"
+    assert rejected.failure is not None
+    assert "continuation region" in rejected.failure.diagnostic
     observations = tuple(
         equilibrium.GeneralEquilibriumOwnerObservation(output.identity, output.identity)
         for output in grepe_problem.outputs

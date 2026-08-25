@@ -456,6 +456,8 @@ class GeneralReactiveEquilibriumProblem:
         if self.intensive_boundaries:
             if not isinstance(self.feed, AffineFeed):
                 raise ValueError("intensive boundaries require an affine feed")
+            if len(self.intensive_boundaries) != 1:
+                raise ValueError("GREPE supports exactly one intensive boundary per request")
             boundary_ids = tuple(boundary.identity for boundary in self.intensive_boundaries)
             coordinate_ids = tuple(
                 boundary.coordinate_identity for boundary in self.intensive_boundaries
@@ -1234,10 +1236,17 @@ def _validate_finite_phase_outputs(
     phase_ids = {phase.identity for phase in problem.phases}
     vector_selectors = {
         "phase.amount",
+        "phase.fugacity",
+        "phase.log_fugacity",
+        "phase.molality",
         "phase.mole_fraction",
         "phase.chemical_potential_over_rt",
     }
-    scalar_selectors = {"phase.molar_density", "phase.pressure"}
+    scalar_selectors = {
+        "phase.compressibility_factor",
+        "phase.molar_density",
+        "phase.pressure",
+    }
     for output in problem.outputs:
         if output.selector == "system.pressure":
             continue
@@ -1246,12 +1255,21 @@ def _validate_finite_phase_outputs(
         if output.selector in vector_selectors:
             if len(output.coefficients) != component_count:
                 raise ValueError("finite-phase GREPE vector output requires full coefficients")
-            if sum(value != 0.0 for value in output.coefficients) > 1 and (
+            if (
+                output.selector in {"phase.amount", "phase.molality", "phase.mole_fraction"}
+                and sum(value != 0.0 for value in output.coefficients) > 1
+                and (
                 not output.aggregate_identity or not output.covariance_identity
+                )
             ):
                 raise ValueError(
                     "finite-phase GREPE aggregate output requires aggregate and covariance identities"
                 )
+            if output.selector == "phase.molality" and (
+                len(output.solvent_mass_coefficients_kg_per_mol) != component_count
+                or not any(output.solvent_mass_coefficients_kg_per_mol)
+            ):
+                raise ValueError("finite-phase molality requires a declared solvent-mass basis")
             if output.selector == "phase.chemical_potential_over_rt":
                 phase = phase_by_id[output.phase_identity]
                 supported = frozenset(
@@ -1531,17 +1549,14 @@ def _intensive_boundary_output(boundary: IntensiveBoundary) -> EquilibriumOutput
 
 def _resolved_intensive_problem(
     problem: GeneralReactiveEquilibriumProblem,
-    coordinate_values: tuple[float, ...],
+    coordinate_value: float,
     outputs: tuple[EquilibriumOutput, ...],
 ) -> GeneralReactiveEquilibriumProblem:
     feed = cast(AffineFeed, problem.feed)
-    values_by_identity = {
-        boundary.coordinate_identity: value
-        for boundary, value in zip(problem.intensive_boundaries, coordinate_values, strict=True)
-    }
+    boundary = problem.intensive_boundaries[0]
     return replace(
         problem,
-        feed=feed.resolve(values_by_identity),
+        feed=feed.resolve({boundary.coordinate_identity: coordinate_value}),
         outputs=outputs,
         intensive_boundaries=(),
     )
@@ -1554,12 +1569,10 @@ def _compile_intensive_boundary(
 ) -> _IntensiveBoundaryCompilation | str:
     if not isinstance(problem.temperature, Fixed):
         return "intensive boundaries currently require fixed temperature"
-    augmented_outputs = problem.outputs + tuple(
-        _intensive_boundary_output(boundary) for boundary in problem.intensive_boundaries
-    )
-    initial_values = tuple(boundary.initial for boundary in problem.intensive_boundaries)
-    internal_problem = _resolved_intensive_problem(problem, initial_values, augmented_outputs)
-    compiled = _compile_general_reactive_equilibrium(
+    boundary = problem.intensive_boundaries[0]
+    augmented_outputs = problem.outputs + (_intensive_boundary_output(boundary),)
+    internal_problem = _resolved_intensive_problem(problem, boundary.initial, augmented_outputs)
+    compiled = _compile_intensive_owner(
         model,
         internal_problem,
         active_parameters=active_parameters,
@@ -1568,21 +1581,15 @@ def _compile_intensive_boundary(
         return compiled
     if not isinstance(compiled, (_HomogeneousCompilation, _BubbleCompilation)):
         return "intensive boundaries require a differentiable homogeneous or bubble owner"
-    pressure_boundaries = tuple(
-        boundary
-        for boundary in problem.intensive_boundaries
-        if boundary.selector == "system.pressure"
-    )
-    if isinstance(compiled, _HomogeneousCompilation) and pressure_boundaries:
+    pressure_boundary = boundary.selector == "system.pressure"
+    if isinstance(compiled, _HomogeneousCompilation) and pressure_boundary:
         return "system pressure boundaries require the reactive bubble owner"
-    if isinstance(compiled, _BubbleCompilation) and (
-        len(pressure_boundaries) != 1 or len(problem.intensive_boundaries) != 1
-    ):
+    if isinstance(compiled, _BubbleCompilation) and not pressure_boundary:
         return "reactive bubble boundaries require exactly one imposed system pressure"
     if isinstance(compiled, _BubbleCompilation):
         pressure = cast(Solved, problem.pressure)
         lower, upper = (_quantity(value, "pascal", "pressure bound") for value in pressure.bounds)
-        if not lower <= pressure_boundaries[0].target <= upper:
+        if not lower <= boundary.target <= upper:
             return "imposed system pressure lies outside the declared pressure bounds"
     feed = cast(AffineFeed, problem.feed)
     payload = {
@@ -1630,6 +1637,86 @@ def _compile_intensive_boundary(
     return _IntensiveBoundaryCompilation(descriptor, augmented_outputs)
 
 
+def _compile_intensive_owner(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+) -> (
+    _HomogeneousCompilation
+    | _BubbleCompilation
+    | _FinitePhaseCompilation
+    | _IntensiveBoundaryCompilation
+    | str
+):
+    compiled = _compile_general_reactive_equilibrium(
+        model, problem, active_parameters=active_parameters
+    )
+    if isinstance(compiled, _FinitePhaseCompilation) and len(compiled.phases) == 1:
+        return _compile_homogeneous_owner(
+            model,
+            problem,
+            compiled.phases[0],
+            active_parameters,
+            temperature_k=_quantity(
+                cast(Fixed, problem.temperature).value,
+                "kelvin",
+                "temperature",
+            ),
+        )
+    return compiled
+
+
+def _compile_homogeneous_owner(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    phase: ReactivePhase,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+    *,
+    temperature_k: float,
+) -> _HomogeneousCompilation:
+    pressure_pa = _quantity(cast(Fixed, problem.pressure).value, "pascal", "pressure")
+    owner_problem = HomogeneousReactiveObservationProblem(
+        problem.identity,
+        phase.identity,
+        phase.fluid_role,
+        _phase_model(model, phase),
+        _effective_reaction_system(problem),
+        cast(str, phase.continuation_identity),
+        cast(HomogeneousBranchPolicy, phase.branch_policy),
+        phase.continuation_reference,
+    )
+    owner_rows = tuple(
+        HomogeneousReactiveObservationRow(
+            output.identity,
+            cast(Any, _homogeneous_quantity(output)),
+            output.coefficients,
+            output.solvent_mass_coefficients_kg_per_mol,
+            output.support,
+            output.censor_limit,
+            output.aggregate_identity,
+            output.covariance_identity,
+        )
+        for output in problem.outputs
+    )
+    owner_descriptor = homogeneous_reactive_observation_descriptor(
+        owner_problem, owner_rows, active_parameters=active_parameters
+    )
+    return _HomogeneousCompilation(
+        temperature_k * epcsaft.unit_registry.kelvin,
+        pressure_pa * epcsaft.unit_registry.pascal,
+        owner_problem,
+        owner_descriptor,
+        _descriptor(
+            model,
+            problem,
+            "homogeneous",
+            owner_descriptor,
+            "fixed_TP_single_finite_reacting_phase",
+        ),
+    )
+
+
 def _compile_general_reactive_equilibrium(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
@@ -1659,10 +1746,13 @@ def _compile_general_reactive_equilibrium(
     if problem.phase_reactions is not None and incipient:
         return "explicit phase/species directions currently require finite configured phases"
 
-    if len(finite) >= 2 and not incipient and isinstance(problem.pressure, Fixed):
+    if (
+        finite
+        and not incipient
+        and isinstance(problem.pressure, Fixed)
+        and all(isinstance(phase.model, ProviderModel) for phase in finite)
+    ):
         pressure_pa = _quantity(problem.pressure.value, "pascal", "pressure")
-        if any(not isinstance(phase.model, ProviderModel) for phase in finite):
-            return "configured finite-phase equilibrium requires Provider phases"
         supported_component_ids = tuple(
             _phase_supported_component_ids(
                 phase,
@@ -1724,12 +1814,17 @@ def _compile_general_reactive_equilibrium(
             pressure_pa,
             active_parameters,
         )
+        certificate_scope = (
+            "fixed_TP_single_finite_reacting_phase"
+            if len(finite) == 1
+            else "fixed_TP_configured_finite_phases_local_minimum"
+        )
         descriptor = _descriptor(
             model,
             problem,
             "finite_phases",
             owner_descriptor,
-            "fixed_TP_configured_finite_phases_local_minimum",
+            certificate_scope,
         )
         return _FinitePhaseCompilation(
             temperature_k,
@@ -1742,56 +1837,18 @@ def _compile_general_reactive_equilibrium(
             descriptor,
         )
 
-    if len(finite) == 1 and not incipient and isinstance(problem.pressure, Fixed):
-        phase = finite[0]
-        reaction_ids_are_valid = (
-            problem.reaction_phase_ids == (phase.identity,)
-            if _effective_reaction_system(problem).reaction_matrix
-            else not problem.reaction_phase_ids
-        )
-        if not reaction_ids_are_valid or not isinstance(phase.support, AllComponents):
-            return "single-phase reaction/support topology has no implemented formulation"
-        pressure_pa = _quantity(problem.pressure.value, "pascal", "pressure")
-        pressure = pressure_pa * epcsaft.unit_registry.pascal
-        homogeneous_owner_problem = HomogeneousReactiveObservationProblem(
-            problem.identity,
-            phase.identity,
-            phase.fluid_role,
-            _phase_model(model, phase),
-            _effective_reaction_system(problem),
-            cast(str, phase.continuation_identity),
-            cast(HomogeneousBranchPolicy, phase.branch_policy),
-            phase.continuation_reference,
-        )
-        owner_rows = tuple(
-            HomogeneousReactiveObservationRow(
-                output.identity,
-                cast(Any, _homogeneous_quantity(output)),
-                output.coefficients,
-                output.solvent_mass_coefficients_kg_per_mol,
-                output.support,
-                output.censor_limit,
-                output.aggregate_identity,
-                output.covariance_identity,
-            )
-            for output in problem.outputs
-        )
-        homogeneous_descriptor = homogeneous_reactive_observation_descriptor(
-            homogeneous_owner_problem, owner_rows, active_parameters=active_parameters
-        )
-        descriptor = _descriptor(
+    if (
+        len(finite) == 1
+        and not incipient
+        and isinstance(problem.pressure, Fixed)
+        and isinstance(finite[0].model, IdealGasModel)
+    ):
+        return _compile_homogeneous_owner(
             model,
             problem,
-            "homogeneous",
-            homogeneous_descriptor,
-            "fixed_TP_single_finite_reacting_phase",
-        )
-        return _HomogeneousCompilation(
-            temperature,
-            pressure,
-            homogeneous_owner_problem,
-            homogeneous_descriptor,
-            descriptor,
+            finite[0],
+            active_parameters,
+            temperature_k=temperature_k,
         )
 
     if (
@@ -2216,9 +2273,11 @@ def _finite_phase_rows(
     amounts = _native_float_matrix(native["phase_amounts_mol"])
     volumes = _native_float_vector(native["phase_volumes_m3"])
     chemical_potentials = _native_float_matrix(native["phase_chemical_potentials_over_rt"])
+    log_fugacities = _native_float_matrix(native["phase_log_fugacities"])
     amount_derivatives = _native_float_vector(native["amount_derivatives"])
     volume_derivatives = _native_float_vector(native["volume_derivatives"])
     chemical_potential_derivatives = _native_float_vector(native["chemical_potential_derivatives"])
+    log_fugacity_derivatives = _native_float_vector(native["log_fugacity_derivatives"])
     rows = []
     for output in problem.outputs:
         if output.selector == "system.pressure":
@@ -2272,6 +2331,43 @@ def _finite_phase_rows(
                     / (total_amount * total_amount)
                     for parameter, derivative in enumerate(contracted)
                 )
+            elif output.selector == "phase.molality":
+                numerator = math.fsum(
+                    coefficient * amount
+                    for coefficient, amount in zip(
+                        output.coefficients, phase_amounts, strict=True
+                    )
+                )
+                denominator = math.fsum(
+                    coefficient * amount
+                    for coefficient, amount in zip(
+                        output.solvent_mass_coefficients_kg_per_mol,
+                        phase_amounts,
+                        strict=True,
+                    )
+                )
+                numerator_derivatives = _contract_parameter_derivatives(
+                    output.coefficients,
+                    amount_derivatives,
+                    phase_index=phase_index,
+                    component_count=component_count,
+                    parameter_count=parameter_count,
+                )
+                denominator_derivatives = _contract_parameter_derivatives(
+                    output.solvent_mass_coefficients_kg_per_mol,
+                    amount_derivatives,
+                    phase_index=phase_index,
+                    component_count=component_count,
+                    parameter_count=parameter_count,
+                )
+                value = numerator / denominator
+                jacobian = tuple(
+                    (dnumerator * denominator - numerator * ddenominator)
+                    / (denominator * denominator)
+                    for dnumerator, ddenominator in zip(
+                        numerator_derivatives, denominator_derivatives, strict=True
+                    )
+                )
             elif output.selector == "phase.molar_density":
                 value = total_amount / volume
                 jacobian = tuple(
@@ -2290,24 +2386,63 @@ def _finite_phase_rows(
                     / (volume * volume)
                     for parameter in range(parameter_count)
                 )
+            elif output.selector == "phase.compressibility_factor":
+                value = (
+                    compilation.pressure_pa
+                    * volume
+                    / (total_amount * 8.31446261815324 * compilation.temperature_k)
+                )
+                jacobian = tuple(
+                    value
+                    * (
+                        volume_derivatives[phase_index * parameter_count + parameter]
+                        / volume
+                        - math.fsum(
+                            amount_derivatives[
+                                ((phase_index * component_count + component) * parameter_count)
+                                + parameter
+                            ]
+                            for component in range(component_count)
+                        )
+                        / total_amount
+                    )
+                    for parameter in range(parameter_count)
+                )
             elif output.selector == "phase.pressure":
                 value = compilation.pressure_pa
                 jacobian = (0.0,) * parameter_count
             else:
-                assert output.selector == "phase.chemical_potential_over_rt"
+                assert output.selector in {
+                    "phase.chemical_potential_over_rt",
+                    "phase.fugacity",
+                    "phase.log_fugacity",
+                }
+                potentials = (
+                    log_fugacities[phase_index]
+                    if output.selector in {"phase.fugacity", "phase.log_fugacity"}
+                    else chemical_potentials[phase_index]
+                )
+                derivatives = (
+                    log_fugacity_derivatives
+                    if output.selector in {"phase.fugacity", "phase.log_fugacity"}
+                    else chemical_potential_derivatives
+                )
                 value = math.fsum(
                     coefficient * chemical_potential
                     for coefficient, chemical_potential in zip(
-                        output.coefficients, chemical_potentials[phase_index], strict=True
+                        output.coefficients, potentials, strict=True
                     )
                 )
                 jacobian = _contract_parameter_derivatives(
                     output.coefficients,
-                    chemical_potential_derivatives,
+                    derivatives,
                     phase_index=phase_index,
                     component_count=component_count,
                     parameter_count=parameter_count,
                 )
+                if output.selector == "phase.fugacity":
+                    value = math.exp(value)
+                    jacobian = tuple(value * derivative for derivative in jacobian)
         rows.append(
             GeneralEquilibriumRowResult(
                 output.identity,
@@ -2500,6 +2635,38 @@ def _evaluate_finite_phase(
         native,
         mechanical_class="strict_stable_local_minimum",
     )
+    if len(compilation.phases) == 1:
+        reference = compilation.phases[0].continuation_reference
+        state = phases[0]
+        if reference is not None:
+            composition_distance = max(
+                abs(math.log(actual / anchor))
+                for actual, anchor in zip(
+                    state.mole_fractions, reference.mole_fractions, strict=True
+                )
+            )
+            volume_distance = abs(
+                math.log(
+                    state.molar_volume_m3_per_mol
+                    / reference.molar_volume_m3_per_mol
+                )
+            )
+            if (
+                composition_distance > reference.maximum_log_composition_distance
+                or volume_distance > reference.maximum_log_volume_distance
+            ):
+                return _finite_phase_failed(
+                    problem,
+                    compilation,
+                    trial,
+                    "physical_rejection",
+                    "the finite-phase state left its declared continuation region",
+                    solver_status=str(native["solver_status"]),
+                    numerical_status=str(native["numerical_status"]),
+                    physical_status="failed",
+                    provider_domain_status=str(native["provider_domain_status"]),
+                    phases=phases,
+                )
     branch_signature: tuple[object, ...] = (
         "finite_phases_local_minimum",
         compilation.descriptor.problem_fingerprint,
@@ -2515,6 +2682,15 @@ def _evaluate_finite_phase(
                 ),
             )
             for phase, state in zip(compilation.phases, phases, strict=True)
+        ),
+        tuple(
+            (
+                phase.continuation_identity,
+                None
+                if phase.continuation_reference is None
+                else phase.continuation_reference.fingerprint,
+            )
+            for phase in compilation.phases
         ),
         trial.fingerprint,
     )
@@ -2572,32 +2748,6 @@ def _failure_axes(failure: NonEvaluableTrial | None) -> tuple[str, str, str]:
     if failure.code == "first_order_failure":
         return "passed", "passed", "passed"
     return "passed", "failed", "passed"
-
-
-def _solve_dense(
-    matrix: tuple[tuple[float, ...], ...],
-    right_hand_side: tuple[float, ...],
-) -> tuple[float, ...]:
-    size = len(matrix)
-    if size == 0 or len(right_hand_side) != size or any(len(row) != size for row in matrix):
-        raise ValueError("intensive-boundary Jacobian must be square")
-    work = [list(row) + [right_hand_side[index]] for index, row in enumerate(matrix)]
-    scale = max(1.0, max(abs(value) for row in matrix for value in row))
-    for column in range(size):
-        pivot = max(range(column, size), key=lambda index: abs(work[index][column]))
-        if abs(work[pivot][column]) <= 1.0e-13 * scale:
-            raise ValueError("intensive-boundary Jacobian is singular")
-        work[column], work[pivot] = work[pivot], work[column]
-        divisor = work[column][column]
-        for entry in range(column, size + 1):
-            work[column][entry] /= divisor
-        for row in range(size):
-            if row == column:
-                continue
-            factor = work[row][column]
-            for entry in range(column, size + 1):
-                work[row][entry] -= factor * work[column][entry]
-    return tuple(work[row][-1] for row in range(size))
 
 
 def _balance_state_derivatives(
@@ -2833,9 +2983,9 @@ def _evaluate_fixed_pressure_boundary(
         float,
     ]:
         internal_problem = _resolved_intensive_problem(
-            problem, (value,), compilation.augmented_outputs
+            problem, value, compilation.augmented_outputs
         )
-        internal = _compile_general_reactive_equilibrium(
+        internal = _compile_intensive_owner(
             model, internal_problem, active_parameters=active_parameters
         )
         if not isinstance(internal, _BubbleCompilation):
@@ -2995,41 +3145,32 @@ def _evaluate_intensive_boundary(
         )
     feed = cast(AffineFeed, problem.feed).reorder(problem.reaction_system.species_ids)
     phase = problem.phases[0]
-    boundary_count = len(problem.intensive_boundaries)
+    boundary = problem.intensive_boundaries[0]
     coordinate_index = {
         coordinate.identity: index for index, coordinate in enumerate(feed.coordinates)
     }
-    ordered_feed_columns = tuple(
-        coordinate_index[boundary.coordinate_identity] for boundary in problem.intensive_boundaries
-    )
+    feed_column = coordinate_index[boundary.coordinate_identity]
     balance_rows = _compiled_balance_rows(problem.reaction_system)
-    balance_directions = tuple(
-        tuple(
-            math.fsum(
-                balance[species] * feed.basis_matrix_mol_per_coordinate[species][feed_column]
-                for species in range(len(feed.component_ids))
-            )
-            for feed_column in ordered_feed_columns
+    balance_direction = tuple(
+        math.fsum(
+            balance[species] * feed.basis_matrix_mol_per_coordinate[species][feed_column]
+            for species in range(len(feed.component_ids))
         )
         for balance in balance_rows
     )
     bounds_by_id = {coordinate.identity: coordinate.bounds for coordinate in feed.coordinates}
-    bounds = tuple(
-        bounds_by_id[boundary.coordinate_identity] for boundary in problem.intensive_boundaries
-    )
+    lower, upper = bounds_by_id[boundary.coordinate_identity]
 
-    def evaluate(
-        coordinates: tuple[float, ...],
-    ) -> tuple[
+    def evaluate(coordinate: float) -> tuple[
         _IntensiveOwnerResult,
+        float,
+        float,
         tuple[float, ...],
-        tuple[tuple[float, ...], ...],
-        tuple[tuple[float, ...], ...],
     ]:
         internal_problem = _resolved_intensive_problem(
-            problem, coordinates, compilation.augmented_outputs
+            problem, coordinate, compilation.augmented_outputs
         )
-        internal = _compile_general_reactive_equilibrium(
+        internal = _compile_intensive_owner(
             model, internal_problem, active_parameters=active_parameters
         )
         if not isinstance(internal, _HomogeneousCompilation):
@@ -3068,67 +3209,52 @@ def _evaluate_intensive_boundary(
         if any(len(row) != len(balance_rows) for row in balance_derivatives):
             raise ValueError("wrapped owner balance basis does not match GREPE")
         coordinate_derivatives = tuple(
-            tuple(
-                math.fsum(
-                    derivative * balance_directions[balance][coordinate]
-                    for balance, derivative in enumerate(row)
-                )
-                for coordinate in range(boundary_count)
+            math.fsum(
+                derivative * balance_direction[balance]
+                for balance, derivative in enumerate(row)
             )
             for row in balance_derivatives
         )
-        boundary_values = values[len(problem.outputs) :]
-        residuals = tuple(
-            math.log(value / boundary.target)
+        boundary_value = values[len(problem.outputs)]
+        residual = (
+            math.log(boundary_value / boundary.target)
             if boundary.selector == "system.pressure"
-            else value - boundary.target
-            for value, boundary in zip(boundary_values, problem.intensive_boundaries, strict=True)
+            else boundary_value - boundary.target
         )
-        boundary_jacobian = tuple(
-            tuple(
-                derivative / value if boundary.selector == "system.pressure" else derivative
-                for derivative in row
-            )
-            for row, value, boundary in zip(
-                coordinate_derivatives[len(problem.outputs) :],
-                boundary_values,
-                problem.intensive_boundaries,
-                strict=True,
-            )
-        )
-        return owner, residuals, boundary_jacobian, coordinate_derivatives
+        boundary_derivative = coordinate_derivatives[len(problem.outputs)]
+        if boundary.selector == "system.pressure":
+            boundary_derivative /= boundary_value
+        return owner, residual, boundary_derivative, coordinate_derivatives
 
-    coordinates = tuple(boundary.initial for boundary in problem.intensive_boundaries)
+    coordinate = boundary.initial
     owner: _IntensiveOwnerResult | None = None
-    coordinate_derivatives: tuple[tuple[float, ...], ...] = ()
-    boundary_jacobian: tuple[tuple[float, ...], ...] = ()
+    coordinate_derivatives: tuple[float, ...] = ()
+    boundary_derivative = 0.0
     try:
         for _ in range(32):
-            owner, residuals, boundary_jacobian, coordinate_derivatives = evaluate(coordinates)
-            residual_norm = max(abs(value) for value in residuals)
-            if residual_norm <= 2.0e-11:
+            owner, residual, boundary_derivative, coordinate_derivatives = evaluate(coordinate)
+            if abs(residual) <= 2.0e-11:
                 break
-            step = _solve_dense(boundary_jacobian, tuple(-value for value in residuals))
+            if abs(boundary_derivative) <= 1.0e-13:
+                raise ValueError("intensive-boundary Jacobian is singular")
+            step = -residual / boundary_derivative
             maximum_step = 1.0
-            for value, delta, (lower, upper) in zip(coordinates, step, bounds, strict=True):
-                if delta > 0.0:
-                    maximum_step = min(maximum_step, 0.95 * (upper - value) / delta)
-                elif delta < 0.0:
-                    maximum_step = min(maximum_step, 0.95 * (lower - value) / delta)
+            if step > 0.0:
+                maximum_step = min(maximum_step, 0.95 * (upper - coordinate) / step)
+            elif step < 0.0:
+                maximum_step = min(maximum_step, 0.95 * (lower - coordinate) / step)
             accepted = False
             scale = max(0.0, maximum_step)
             for _ in range(20):
-                candidate = tuple(
-                    value + scale * delta for value, delta in zip(coordinates, step, strict=True)
-                )
-                candidate_owner, candidate_residuals, candidate_jacobian, candidate_derivatives = (
+                candidate = coordinate + scale * step
+                candidate_owner, candidate_residual, candidate_derivative, candidate_outputs = (
                     evaluate(candidate)
                 )
-                if max(abs(value) for value in candidate_residuals) < residual_norm:
-                    coordinates = candidate
+                if abs(candidate_residual) < abs(residual):
+                    coordinate = candidate
                     owner = candidate_owner
-                    boundary_jacobian = candidate_jacobian
-                    coordinate_derivatives = candidate_derivatives
+                    boundary_derivative = candidate_derivative
+                    coordinate_derivatives = candidate_outputs
                     accepted = True
                     break
                 scale *= 0.5
@@ -3138,28 +3264,22 @@ def _evaluate_intensive_boundary(
             raise ValueError("intensive-boundary solve exceeded its iteration budget")
         if owner is None:
             raise ValueError("intensive-boundary solve returned no state")
-        owner, residuals, boundary_jacobian, coordinate_derivatives = evaluate(coordinates)
-        if max(abs(value) for value in residuals) > 2.0e-11:
+        owner, residual, boundary_derivative, coordinate_derivatives = evaluate(coordinate)
+        if abs(residual) > 2.0e-11:
             raise ValueError("intensive-boundary residual did not converge")
+        if abs(boundary_derivative) <= 1.0e-13:
+            raise ValueError("intensive-boundary Jacobian is singular")
         parameter_count = len(compilation.descriptor.active_parameter_identities)
-        boundary_parameter_jacobian = tuple(
-            tuple(
-                derivative / cast(float, owner.rows[len(problem.outputs) + row].value)
-                if boundary.selector == "system.pressure"
-                else derivative
-                for derivative in cast(
-                    tuple[float, ...], owner.rows[len(problem.outputs) + row].jacobian
-                )
-            )
-            for row, boundary in enumerate(problem.intensive_boundaries)
+        boundary_parameter_jacobian = cast(
+            tuple[float, ...], owner.rows[len(problem.outputs)].jacobian
         )
-        coordinate_parameter_jacobian = tuple(
-            _solve_dense(
-                boundary_jacobian,
-                tuple(
-                    -boundary_parameter_jacobian[row][parameter] for row in range(boundary_count)
-                ),
+        if boundary.selector == "system.pressure":
+            boundary_parameter_jacobian = tuple(
+                derivative / cast(float, owner.rows[len(problem.outputs)].value)
+                for derivative in boundary_parameter_jacobian
             )
+        coordinate_parameter_jacobian = tuple(
+            -boundary_parameter_jacobian[parameter] / boundary_derivative
             for parameter in range(parameter_count)
         )
         generic_rows = []
@@ -3168,11 +3288,7 @@ def _evaluate_intensive_boundary(
             fixed_coordinate_jacobian = cast(tuple[float, ...], row.jacobian)
             total_jacobian = tuple(
                 fixed_coordinate_jacobian[parameter]
-                + math.fsum(
-                    coordinate_derivatives[index][coordinate]
-                    * coordinate_parameter_jacobian[parameter][coordinate]
-                    for coordinate in range(boundary_count)
-                )
+                + coordinate_derivatives[index] * coordinate_parameter_jacobian[parameter]
                 for parameter in range(parameter_count)
             )
             generic_rows.append(
@@ -3225,10 +3341,7 @@ def _evaluate_intensive_boundary(
         trial=owner.trial,
         branch_signature=(
             "intensive_boundary",
-            tuple(
-                (boundary.coordinate_identity, value)
-                for boundary, value in zip(problem.intensive_boundaries, coordinates, strict=True)
-            ),
+            ((boundary.coordinate_identity, coordinate),),
             _homogeneous_branch_signature(owner)
             if isinstance(owner, HomogeneousReactiveObservationResult)
             else _bubble_branch_signature(owner),
@@ -3742,9 +3855,8 @@ def _validate_intensive_boundary_owner_receipt(
             raise ValueError("intensive-boundary solved coordinate is outside its declaration")
     resolved_problem = _resolved_intensive_problem(
         problem,
-        tuple(float(record[1]) for record in coordinates),
-        problem.outputs
-        + tuple(_intensive_boundary_output(boundary) for boundary in problem.intensive_boundaries),
+        float(coordinates[0][1]),
+        problem.outputs + (_intensive_boundary_output(problem.intensive_boundaries[0]),),
     )
     expected_reaction_fingerprint = _fingerprint(
         "epcsaft.homogeneous-reactive-reaction-system",

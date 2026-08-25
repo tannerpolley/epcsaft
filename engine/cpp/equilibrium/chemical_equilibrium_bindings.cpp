@@ -1317,6 +1317,7 @@ py::dict reactive_finite_phase_result(const ReactiveFinitePhaseResult& evaluatio
     result["phase_packing_fractions"] = evaluation.phase_packing_fractions;
     result["phase_chemical_potentials_over_rt"] =
         evaluation.phase_chemical_potentials_over_rt;
+    result["phase_log_fugacities"] = evaluation.phase_log_fugacities;
     result["objective_over_rt"] = optional_float(evaluation.objective_over_rt);
     result["balance_inf_norm"] = optional_float(evaluation.balance_inf_norm);
     result["pressure_relative_inf_norm"] =
@@ -1353,6 +1354,7 @@ py::dict reactive_finite_phase_result(const ReactiveFinitePhaseResult& evaluatio
     result["pressure_derivatives"] = evaluation.pressure_derivatives;
     result["chemical_potential_derivatives"] =
         evaluation.chemical_potential_derivatives;
+    result["log_fugacity_derivatives"] = evaluation.log_fugacity_derivatives;
     return result;
 }
 
