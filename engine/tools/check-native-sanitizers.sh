@@ -4,8 +4,9 @@ set -euo pipefail
 engine_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 workspace_root="$(dirname "$engine_root")"
 cd "$engine_root"
+export PATH="$workspace_root/.venv/bin:$PATH"
 
-for required_command in uv cmake ninja clang++-18; do
+for required_command in uv meson cmake ninja clang-18 clang++-18 file nm; do
     if ! command -v "$required_command" >/dev/null 2>&1; then
         echo "missing required command: $required_command" >&2
         exit 1
@@ -19,18 +20,27 @@ fi
 run_root="$workspace_root/build/native-sanitizers"
 wheelhouse="$run_root/wheelhouse"
 cleanup() {
-    cmake -E remove_directory "$run_root"
+    rm -rf -- "$run_root"
 }
 trap cleanup EXIT
-cmake -E make_directory "$run_root"
-cmake -E remove_directory "$wheelhouse"
-cmake -E remove_directory "$run_root/venv"
-cmake -E make_directory "$wheelhouse"
+rm -rf -- "$run_root"
+mkdir -p "$wheelhouse"
 
-CMAKE_ARGS="-DEPCSAFT_ENABLE_SANITIZERS=ON -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF" \
+CC=clang-18 CXX=clang++-18 \
     "$workspace_root/.venv/bin/python" -m build --wheel --outdir "$wheelhouse" \
         --config-setting="build-dir=$run_root/build" \
-        --config-setting="cmake.build-type=Debug"
+        --config-setting="setup-args=-Dbuildtype=debug" \
+        --config-setting="setup-args=-Db_ndebug=false" \
+        --config-setting="setup-args=-Db_lundef=false" \
+        --config-setting="setup-args=-Db_sanitize=address,undefined" \
+        --config-setting="setup-args=-Db_lto=false" \
+        --config-setting="setup-args=-Dstrip=false"
+
+if grep -Fq -- '-DNDEBUG' "$run_root/build/compile_commands.json"; then
+    echo "sanitizer compile commands unexpectedly define NDEBUG" >&2
+    exit 1
+fi
+echo "sanitizer compile commands: NDEBUG absent"
 
 mapfile -t wheels < <(find "$wheelhouse" -maxdepth 1 -type f -name 'epcsaft-*.whl')
 if ((${#wheels[@]} != 1)); then
@@ -40,6 +50,26 @@ fi
 
 uv venv --python 3.13 "$run_root/venv"
 uv pip install --python "$run_root/venv/bin/python" pytest "${wheels[0]}"
+mapfile -t installed_extensions < <(
+    find "$run_root/venv/lib" -type f \
+        \( -name '_core*.so' -o -name '_equilibrium*.so' \)
+)
+if ((${#installed_extensions[@]} != 2)); then
+    echo "expected two installed sanitizer extensions, found ${#installed_extensions[@]}" >&2
+    exit 1
+fi
+for extension in "${installed_extensions[@]}"; do
+    if ! file "$extension" | grep -Fq 'not stripped'; then
+        echo "sanitizer extension lacks useful symbols: $extension" >&2
+        exit 1
+    fi
+    nm --defined-only "$extension" >"$run_root/defined-symbols.txt"
+    if [[ ! -s "$run_root/defined-symbols.txt" ]]; then
+        echo "sanitizer extension has no defined symbols: $extension" >&2
+        exit 1
+    fi
+done
+echo "sanitizer extensions: installed with symbols retained"
 
 asan_runtime="$(clang++-18 -print-file-name=libclang_rt.asan-x86_64.so)"
 if [[ ! -f "$asan_runtime" ]]; then

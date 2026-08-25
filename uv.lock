@@ -4,13 +4,16 @@ requires-python = ">=3.13"
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'ios' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'ios'",
     "python_full_version == '3.14.*' and sys_platform == 'win32'",
     "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'ios' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'ios'",
     "python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version < '3.14' and sys_platform == 'emscripten'",
-    "python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'ios' and sys_platform != 'win32'",
+    "python_full_version < '3.14' and sys_platform == 'ios'",
 ]
 
 [[package]]
@@ -59,7 +62,7 @@ name = "build"
 version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "os_name == 'nt'" },
+    { name = "colorama", marker = "os_name == 'nt' and sys_platform != 'ios'" },
     { name = "packaging" },
     { name = "pyproject-hooks" },
 ]
@@ -148,13 +151,15 @@ source = { virtual = "." }
 dependencies = [
     { name = "build" },
     { name = "matplotlib" },
+    { name = "meson" },
+    { name = "meson-python" },
     { name = "mypy" },
     { name = "numpy" },
     { name = "pandas" },
+    { name = "patchelf" },
     { name = "pybind11" },
     { name = "pytest" },
     { name = "ruff" },
-    { name = "scikit-build-core" },
     { name = "scipy" },
 ]
 
@@ -162,13 +167,15 @@ dependencies = [
 requires-dist = [
     { name = "build", specifier = ">=1.3" },
     { name = "matplotlib", specifier = ">=3.10" },
+    { name = "meson", specifier = ">=1.8" },
+    { name = "meson-python", specifier = ">=0.18" },
     { name = "mypy", specifier = ">=1.17" },
     { name = "numpy", specifier = ">=2.1,<3" },
     { name = "pandas", specifier = ">=2.3" },
+    { name = "patchelf", specifier = ">=0.11" },
     { name = "pybind11", specifier = ">=3.0" },
     { name = "pytest", specifier = ">=8,<10" },
     { name = "ruff", specifier = ">=0.12" },
-    { name = "scikit-build-core", specifier = ">=0.12" },
     { name = "scipy", specifier = ">=1.15,<2" },
 ]
 
@@ -378,6 +385,29 @@ wheels = [
 ]
 
 [[package]]
+name = "meson"
+version = "1.12.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/48/91/d58a3eb45ed54bf32b96806dd2f4efd407f7a9675953e15e8ef257840a0d/meson-1.12.0.tar.gz", hash = "sha256:88afe0c20e52030218924ac37d0c81c59b4b5f3ae3752c8c6d7470c7d365886c", size = 2518280, upload-time = "2026-08-10T22:10:27.439Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/68/b0117422eb0a46d9d8d9e328f0c5b5c835179bfc058688bca35c90c89eba/meson-1.12.0-py3-none-any.whl", hash = "sha256:71f133147fa0fcfe8f4df49fa1045771064947834538409e5d97b3613aac8b4e", size = 1106208, upload-time = "2026-08-10T22:10:23.093Z" },
+]
+
+[[package]]
+name = "meson-python"
+version = "0.20.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "meson" },
+    { name = "packaging" },
+    { name = "pyproject-metadata" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8b/f0/d794d7ed8a843a8a8947768f3b329d1e8601222dc95d930f4a5f9706cd6c/meson_python-0.20.0.tar.gz", hash = "sha256:6d9726ae6cd37e22f210c74b364b30180a68c20442e97ff09f3c566a414af738", size = 102641, upload-time = "2026-06-10T19:42:52.132Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/90/ad/77f9483e180cabab2772ac222aedd3dfab858e60d992f40414a3f08e7494/meson_python-0.20.0-py3-none-any.whl", hash = "sha256:6a744cf0c09e76ecbdc58cfa374b48c8902dac1b74479628238634efbf36aec9", size = 29386, upload-time = "2026-06-10T19:42:50.614Z" },
+]
+
+[[package]]
 name = "mypy"
 version = "2.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -511,6 +541,22 @@ wheels = [
 ]
 
 [[package]]
+name = "patchelf"
+version = "0.19.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/0b/691b49b40201a80cb09dbf2003eef0e36270ae07b00de99baa915df1d274/patchelf-0.19.1.0.tar.gz", hash = "sha256:8976fbdef7d3e461d623e703024b70db6b6e3308f7e389930f39a71a1e347a2c", size = 371787, upload-time = "2026-08-08T05:07:29.253Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cc/44/e2d33d8adbe206bc003aeb24840f62ad27b0bc44ec8baf97692d2bd3e5ef/patchelf-0.19.1.0-py3-none-macosx_10_9_universal2.whl", hash = "sha256:f97a0e9e657882b89d397418b76b667c0d8af7058a3775cf14c0e105e8ce3a58", size = 281233, upload-time = "2026-08-08T05:07:19.101Z" },
+    { url = "https://files.pythonhosted.org/packages/83/03/29cd947cc94b2c91f5bd368c1b5d3469bec6b8ea538db67dcaf6e4ac065a/patchelf-0.19.1.0-py3-none-manylinux1_i686.manylinux_2_5_i686.musllinux_1_1_i686.whl", hash = "sha256:f16f44fbcf0da4f2d1dd841d49f849fe9ea1b8fb952d5c4e9b8234f09d3f149a", size = 624780, upload-time = "2026-08-08T05:07:20.401Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/03/afd9bdd2ba5f96997196109f25dadbe5141bc6e70dffd85f3f84cc85d69c/patchelf-0.19.1.0-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.musllinux_1_1_x86_64.whl", hash = "sha256:a8f6331ccf40c345507279f755f4a38c2cb00b9efda746fd43c17713cce0aba4", size = 549422, upload-time = "2026-08-08T05:07:21.583Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/e6/1c78ad10adfc4b00a642ab518c246dd88dc826d641eb31faca5eaddc8b97/patchelf-0.19.1.0-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:b5c3dec03b89db2bb0df301d316360847eeaf72c6fb6ddde0227326655edabb4", size = 542031, upload-time = "2026-08-08T05:07:22.836Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/b8/a8bcf0a627b688ed0798048e585f1c1c8dbef5070db3f6c30c6895d73ce9/patchelf-0.19.1.0-py3-none-manylinux2014_armv7l.manylinux_2_17_armv7l.musllinux_1_1_armv7l.whl", hash = "sha256:2ffad3734be73b83ac2f46709264a34dd2aee40a7dd5deccf84856684d606ec6", size = 487087, upload-time = "2026-08-08T05:07:24.03Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/05/816af7bf3a51106e3558d32e10dc021a306d64f257fc0c404e4a9fcb1fba/patchelf-0.19.1.0-py3-none-manylinux2014_ppc64le.manylinux_2_17_ppc64le.musllinux_1_1_ppc64le.whl", hash = "sha256:89760f542fac28c7798e5f56e66601a78ef20e088fc80a493b6a9161438b8dc5", size = 612621, upload-time = "2026-08-08T05:07:25.276Z" },
+    { url = "https://files.pythonhosted.org/packages/99/fc/48c07d0f74251946e62881a89ef105bed242e855928ac4f834a9bde85f73/patchelf-0.19.1.0-py3-none-manylinux2014_s390x.manylinux_2_17_s390x.musllinux_1_1_s390x.whl", hash = "sha256:efed44482d740e86d84e3f40e0ee9876c4249c7ac1128b5b1639e31287fa14a4", size = 674133, upload-time = "2026-08-08T05:07:26.541Z" },
+    { url = "https://files.pythonhosted.org/packages/0c/f3/dffc8a228ff8a2a627c48c7356ae36eb6d0c2497ba549a98a3b5a55f24af/patchelf-0.19.1.0-py3-none-manylinux_2_31_riscv64.musllinux_1_1_riscv64.whl", hash = "sha256:c2311d99eac1b9c40f5acd673e3b3581cde320bc4647e7f997e5e063731fc438", size = 572865, upload-time = "2026-08-08T05:07:27.867Z" },
+]
+
+[[package]]
 name = "pathspec"
 version = "1.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -627,6 +673,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pyproject-metadata"
+version = "0.12.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4f/76/1cae539918a7b1746d624c2f01560b793c22cd8c081157505bb9bbf0e34d/pyproject_metadata-0.12.1.tar.gz", hash = "sha256:8809a4df6fe08279b39a8890669506ed3158e0617855ac9aff098fcbe772ae4c", size = 48457, upload-time = "2026-07-04T02:19:32.029Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b9/8e/d883718e872abc214ba053f60f7e6edc2abd5ffbd1544beb01a9c92ddd3c/pyproject_metadata-0.12.1-py3-none-any.whl", hash = "sha256:f7162d580a96386a8eb096da06215f981f547d1490f03055ef99e323bc2da427", size = 23452, upload-time = "2026-07-04T02:19:30.657Z" },
+]
+
+[[package]]
 name = "pytest"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -677,19 +735,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/fc/8a/fb22af2fd78a736e241fabf67e30ce1799a64244026377a49e133af90762/ruff-0.16.1-py3-none-win32.whl", hash = "sha256:d31765e131295b8445caf301e3e8a85b34d1b9b211b4109b7ba457888b051806", size = 10838258, upload-time = "2026-07-30T19:36:53.298Z" },
     { url = "https://files.pythonhosted.org/packages/d4/35/e57fd9fb5d423961df087a00b12d42c0a830288dc2f3b45ecca299158b4f/ruff-0.16.1-py3-none-win_amd64.whl", hash = "sha256:09b05e8b90c2cb06ad63464350e7a45e8e44a2dfe52072ebfba6666ca8d3f596", size = 11961111, upload-time = "2026-07-30T19:36:56.107Z" },
     { url = "https://files.pythonhosted.org/packages/cb/46/240ea004bf6dc4feb40e9832f2205a476a47dd5b8a3f8211a5fc5f95e20e/ruff-0.16.1-py3-none-win_arm64.whl", hash = "sha256:dbaadaac38c70239f056d306b7476f246b0bf000fa6b3876402acbf5b227eaf8", size = 11309414, upload-time = "2026-07-30T19:36:58.79Z" },
-]
-
-[[package]]
-name = "scikit-build-core"
-version = "1.0.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "packaging" },
-    { name = "pathspec" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/8d/7c/0f69b0c7150ce4bcee78c199fe3b7e03a6e01578451bd5d5d1a58beb32f9/scikit_build_core-1.0.3.tar.gz", hash = "sha256:a4d7a05978ee37975c37743510c8991e2debce7ef83afb0a07c0c576fd4f16e8", size = 477539, upload-time = "2026-07-12T05:08:30.298Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b7/b0/7ad8fa9aebb0835b2e20afebf1483cbe175d1612fe01e85042ce9ced8755/scikit_build_core-1.0.3-py3-none-any.whl", hash = "sha256:ae95427b7d3c14a6cf8bbfd4d901f6138ab64c99e20cbe8ea7d75cd26093f085", size = 278294, upload-time = "2026-07-12T05:08:28.725Z" },
 ]
 
 [[package]]

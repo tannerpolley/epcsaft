@@ -1,27 +1,15 @@
 [build-system]
-requires = ["scikit-build-core>=0.12", "pybind11>=3.0"]
-build-backend = "scikit_build_core.build"
+requires = ["meson-python>=0.18", "pybind11>=3.0"]
+build-backend = "mesonpy"
 
 [project]
 name = "epcsaft"
-version = "0.2.0.dev0"
+dynamic = ["version"]
 description = "Unified ePC-SAFT engine for EOS, equilibrium, and regression"
 readme = "README.md"
 requires-python = ">=3.13"
 license = { file = "LICENSE" }
 dependencies = ["Pint>=0.25.3"]
-
-[tool.scikit-build]
-minimum-version = "0.12"
-build-dir = "build/{wheel_tag}"
-wheel.packages = ["src/epcsaft"]
-wheel.exclude = [
-  "epcsaft/_native/**",
-  "epcsaft/regression/native/**",
-]
-cmake.source-dir = "."
-cmake.version = ">=3.24"
-ninja.version = ">=1.11"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

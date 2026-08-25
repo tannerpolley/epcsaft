@@ -1,4 +1,4 @@
-version: 9
+version: 10
 status: unified-monorepo-active
 governance_doctrine_revision: 21
 
@@ -8,7 +8,7 @@ artifact:
   distribution: epcsaft
   python: ">=3.13"
   build_owner: pyproject.toml
-  native_build_owner: CMakeLists.txt
+  native_build_owner: meson.build
   runtime_dependencies: [Pint]
   public_modules: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
 
@@ -133,12 +133,13 @@ build_invariants:
   distributions: 1
   versions: 1
   wheels: 1
-  cmake_roots: 1
+  meson_roots: 1
   editable_downstream_dependencies: forbidden
   compatibility_aliases: forbidden
   installed_provider_discovery: forbidden
   mutable_wheel_inputs: forbidden
   development_wheel_cache: content_addressed_and_verified
+  third_party_cmake_use: nlopt_subproject_and_ceres_metadata_only
   source_specific_runtime_routes: forbidden
   inferred_parameter_defaults: forbidden
 
