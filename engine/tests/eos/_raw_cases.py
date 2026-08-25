@@ -30,6 +30,7 @@ _UNITS = {
     "l_ij": "dimensionless",
     "ionic_region_relative_permittivity": "dimensionless",
     "ion_fraction_suppression_coefficient": "dimensionless",
+    "ion_specific_suppression_coefficient": "dimensionless",
 }
 _FIXED = frozenset({"molar_mass", "charge_number", "dipole_moment", "quadrupole_moment"})
 

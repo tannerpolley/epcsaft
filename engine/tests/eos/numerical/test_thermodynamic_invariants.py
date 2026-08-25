@@ -485,6 +485,42 @@ def test_permittivity__matches_independent_ion_fraction_and_dipolar_equations() 
     )
 
 
+def test_ion_specific_permittivity__supports_multiple_neutral_components() -> None:
+    mapping = deepcopy(MULTINEUTRAL_REACTIVE)
+    next(
+        family
+        for family in mapping["model_families"]
+        if family["kind"] == "permittivity"
+    )["choice"] = "ion-specific-suppression"
+    mapping["model_coefficients"] = [
+        coefficient
+        for coefficient in mapping["model_coefficients"]
+        if coefficient["family"] != "ion_fraction_suppression_coefficient"
+    ]
+    for component_id, coefficient in (("cation", 9.55), ("anion", 13.96)):
+        component = next(
+            item
+            for item in mapping["components"]
+            if item["component_id"] == component_id
+        )
+        component["coefficients"].extend(
+            _component(
+                component_id,
+                ion_specific_suppression_coefficient=coefficient,
+            )["coefficients"]
+        )
+
+    fractions = (0.7, 0.1, 0.1, 0.1)
+    state = _state(mapping, x=fractions, density=55_000.0)
+    salt_free = (
+        fractions[0] * 0.018 * 78.0 + fractions[1] * 0.030 * 40.0
+    ) / (fractions[0] * 0.018 + fractions[1] * 0.030)
+    assert state.bulk_relative_permittivity == pytest.approx(
+        salt_free / (1.0 + fractions[2] * 9.55 + fractions[3] * 13.96),
+        rel=2.0e-12,
+    )
+
+
 def test_component_permittivity__admits_exact_pure_ionic_support() -> None:
     components = [
         _component(
