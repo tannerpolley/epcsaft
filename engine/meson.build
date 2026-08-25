@@ -31,18 +31,6 @@ pybind11_include = run_command(
 pybind11_dep = declare_dependency(
   include_directories: include_directories(pybind11_include, is_system: true),
 )
-glog_dep = dependency(
-  'libglog',
-  method: 'pkg-config',
-  version: '>=0.6',
-)
-ceres_dep = dependency(
-  'Ceres',
-  method: 'cmake',
-  version: '>=2.2',
-  modules: ['Ceres::ceres'],
-)
-
 cppad_project = subproject('cppad')
 cppad_headers_dep = cppad_project.get_variable('cppad_headers_dep')
 cppad_temp_file = cppad_project.get_variable('cppad_temp_file')
@@ -111,8 +99,7 @@ py.extension_module(
   cpp_args: native_warnings,
   dependencies: [
     pybind11_dep,
-    glog_dep,
-    ceres_dep,
+    ipopt_dep,
     eigen_dep,
     cppad_headers_dep,
   ],

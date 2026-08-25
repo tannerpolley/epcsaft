@@ -701,7 +701,7 @@ def _evaluate_batch(batch: _ReactiveBatch, active: ActiveParameterSet) -> Any:
 def _preflight(
     problem: _ResolvedReactiveFit,
 ) -> dict[tuple[str, str, tuple[str, ...], tuple[float, ...]], Any]:
-    """Fail before Ceres unless every exact start has complete owner derivatives."""
+    """Fail before optimization unless every exact start has complete owner derivatives."""
 
     branch_signatures: dict[str, tuple[object, ...]] = {}
     exact_start_results: dict[tuple[str, str, tuple[str, ...], tuple[float, ...]], Any] = {}

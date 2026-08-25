@@ -215,4 +215,4 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
     assert accepted.predictions == pytest.approx((0.2,), abs=3.0e-8)
     assert accepted.owner_receipts
     fit_receipt = result.specification.to_mapping()["fit"]
-    assert fit_receipt["solver"]["controls"] == mapping["solver"]["controls"]
+    assert fit_receipt["fit"]["solver"]["controls"] == mapping["solver"]["controls"]

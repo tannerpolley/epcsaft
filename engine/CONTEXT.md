@@ -1,6 +1,6 @@
 # Engine Context
 
-`governance_doctrine_revision: 21`
+`governance_doctrine_revision: 24`
 
 `engine/` is the sole runtime owner inside `tannerpolley/ePC-SAFT`. It
 builds one Python 3.13 distribution, `epcsaft`, containing EOS, equilibrium,
@@ -265,7 +265,7 @@ selected-parameter derivatives. Equilibrium owns mixture and reactive solved
 property values, domains, and exact selected-parameter derivatives. Regression
 may discover only capabilities admitted by the current Regression Cutover
 Boundary, maps observations, forms scaled residuals, and routes their exact
-Jacobians to Ceres.
+Jacobians through its reduced-space Ipopt owner.
 _Avoid_: Regression property implementation, Regression-owned thermodynamic
 derivative, duplicated observation solver
 
@@ -284,7 +284,7 @@ target architecture presented as current admission
 **Non-Evaluable Trial**:
 A bounded optimizer point at which a required owner evaluation cannot produce
 its declared value, certificate, and exact derivative. The evaluation returns
-structured failure without a fabricated residual, Ceres may backtrack, and the
+structured failure without a fabricated residual, Ipopt may backtrack, and the
 affected multistart outcome remains in FitResult diagnostics.
 _Avoid_: Fixed scientific penalty, silent clipping, whole-fit first-failure abort
 
@@ -336,11 +336,11 @@ _Avoid_: Arbitrary expression, uncited formula, homologous-series parameter fit
 The normalized continuous-domain squared residual for a Published Observation
 Correlation. Preflight increases a deterministic Gaussian quadrature order
 until the objective and exact Jacobian converge, then freezes the nodes and
-weights for Ceres. The fit receipt retains the correlation identity, domain,
+weights for Regression. The fit receipt retains the correlation identity, domain,
 measure, quadrature, convergence evidence, predictions, residuals, and Jacobian
 rows. Explicit points remain valid for tabulated sources or selected operating
 conditions.
-_Avoid_: Hidden uniform grid, quadrature adaptation during Ceres, unnormalized
+_Avoid_: Hidden uniform grid, quadrature adaptation during optimization, unnormalized
 row-count weighting, summary-only receipt
 
 **Optimizer Coordinate**:

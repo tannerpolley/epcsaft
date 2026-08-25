@@ -1,7 +1,7 @@
 # Governance Context
 
 `governance/` is the doctrine and control-record directory inside the private
-`tannerpolley/ePC-SAFT` monorepo. `GOVERNANCE.md` revision 23 is canonical.
+`tannerpolley/ePC-SAFT` monorepo. `GOVERNANCE.md` revision 24 is canonical.
 
 The repository root coordinates work. `engine/` owns the sole `epcsaft`
 runtime; `data/` owns reusable scientific packets; `validation/` owns
@@ -44,7 +44,7 @@ regardless of optimizer architecture.
 
 - The implemented production path is reduced space: Regression changes shared
   parameters, GREPE/Ipopt solves each unique condition, and exact total
-  observable Jacobians return to Ceres. Caching, batching, and independent
+  observable Jacobians form the Ipopt objective gradient. Caching, batching, and independent
   condition parallelism are valid performance improvements to this path.
 - The planned mature path is an optional generic sparse full-space
   multi-experiment NLP: every experiment owns local equilibrium variables and

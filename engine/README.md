@@ -65,12 +65,11 @@ packet materializations are explicit and hash-bound. Installed-wheel campaigns
 live in `validation/`. See `AGENTS.md`, `ARCHITECTURE.yaml`, and
 `../governance/GOVERNANCE.md`.
 
-Meson discovers threads natively; Ipopt 3.11.9 or newer, Eigen 3.4 or newer,
-and glog 0.6 or newer through pkg-config; and Ceres 2.2 or newer through its
-installed CMake metadata. Exact archive wraps own Boost 1.88.0, CppAD
+Meson discovers threads natively; Ipopt 3.11.9 or newer and Eigen 3.4 or newer
+through pkg-config. Exact archive wraps own Boost 1.88.0, CppAD
 20250000.3, HiGHS 1.15.1, and NLopt 2.11.0. Meson's CMake module translates
-the unmodified NLopt project. CMake remains a third-party translation and
-metadata tool for NLopt and Ceres; the Engine has no CMake build route.
+the unmodified NLopt project. CMake remains a third-party translation tool for
+NLopt; the Engine has no CMake build route.
 
 The HiGHS tag archive replaces its same-version source release asset because
 that asset embeds Git metadata. All archive URLs and SHA-256 values are pinned.

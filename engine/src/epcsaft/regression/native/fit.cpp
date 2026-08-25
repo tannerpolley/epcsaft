@@ -2,7 +2,9 @@
 
 #include <Eigen/Dense>
 #include <Eigen/SVD>
-#include <ceres/ceres.h>
+#include <coin/IpIpoptApplication.hpp>
+#include <coin/IpSolveStatistics.hpp>
+#include <coin/IpTNLP.hpp>
 #include <pybind11/stl.h>
 
 #include <algorithm>
@@ -197,13 +199,12 @@ std::vector<Coordinate> parse_coordinates(const py::iterable &values) {
         required<double>(mapping, "lower_affine"),
         required<double>(mapping, "upper_affine"),
     };
-    if (!(std::isfinite(coordinate.origin) &&
-          std::isfinite(coordinate.scale) && coordinate.scale > 0.0 &&
-          std::isfinite(coordinate.lower_affine) &&
+    if (!(std::isfinite(coordinate.origin) && std::isfinite(coordinate.scale) &&
+          coordinate.scale > 0.0 && std::isfinite(coordinate.lower_affine) &&
           std::isfinite(coordinate.upper_affine) &&
           coordinate.lower_affine < coordinate.upper_affine)) {
-      throw std::invalid_argument(
-          "coordinate origin, scale, and affine bounds must be finite and consistent");
+      throw std::invalid_argument("coordinate origin, scale, and affine bounds "
+                                  "must be finite and consistent");
     }
     coordinates.push_back(coordinate);
   }
@@ -254,7 +255,7 @@ private:
   std::string code_;
 };
 
-class OwnerCost final : public ceres::CostFunction {
+class OwnerCost final {
 public:
   OwnerCost(PyObject *owner_evaluator, std::size_t start_index,
             std::size_t observation_index, std::size_t active_parameter_count,
@@ -269,15 +270,9 @@ public:
         coordinate_origins_(std::move(coordinate_origins)),
         coordinate_scales_(std::move(coordinate_scales)),
         observation_(std::move(observation)),
-        failure_codes_(std::move(failure_codes)) {
-    set_num_residuals(static_cast<int>(observation_.targets.size()));
-    mutable_parameter_block_sizes()->assign(coordinate_scales_.size(), 1);
-  }
+        failure_codes_(std::move(failure_codes)) {}
 
-  bool Evaluate(double const *const *parameters, double *residuals,
-                double **jacobians) const override {
-    return evaluate(parameters, residuals, jacobians, nullptr, false, nullptr);
-  }
+  std::size_t row_count() const noexcept { return observation_.targets.size(); }
 
   bool evaluate(double const *const *parameters, double *residuals,
                 double **jacobians, double *predictions, bool receipt_requested,
@@ -286,9 +281,9 @@ public:
       std::vector<double> active(active_parameter_count_);
       for (std::size_t index = 0; index < active_parameter_count_; ++index) {
         const std::size_t coordinate = identity_coordinates_[index];
-        active[index] = coordinate_origins_[coordinate] +
-                        parameters[coordinate][0] *
-                            coordinate_scales_[coordinate];
+        active[index] =
+            coordinate_origins_[coordinate] +
+            parameters[coordinate][0] * coordinate_scales_[coordinate];
       }
       const OwnerEvaluation evaluation =
           evaluate_owner(active, receipt_requested);
@@ -615,16 +610,249 @@ Diagnostics diagnose(const std::vector<double> &jacobian,
   return result;
 }
 
-ceres::Solver::Options solver_options(const Controls &controls) {
-  ceres::Solver::Options options;
-  options.linear_solver_type = ceres::DENSE_QR;
-  options.max_num_iterations = controls.maximum_iterations;
-  options.function_tolerance = controls.function_tolerance;
-  options.gradient_tolerance = controls.gradient_tolerance;
-  options.parameter_tolerance = controls.parameter_tolerance;
-  options.logging_type = ceres::SILENT;
-  options.num_threads = 1;
-  return options;
+std::string ipopt_status_name(Ipopt::ApplicationReturnStatus status) {
+  switch (status) {
+  case Ipopt::Solve_Succeeded:
+    return "solve_succeeded";
+  case Ipopt::Solved_To_Acceptable_Level:
+    return "solved_to_acceptable_level";
+  case Ipopt::Infeasible_Problem_Detected:
+    return "infeasible_problem_detected";
+  case Ipopt::Search_Direction_Becomes_Too_Small:
+    return "search_direction_too_small";
+  case Ipopt::Diverging_Iterates:
+    return "diverging_iterates";
+  case Ipopt::Feasible_Point_Found:
+    return "feasible_point_found";
+  case Ipopt::Maximum_Iterations_Exceeded:
+    return "maximum_iterations_exceeded";
+  case Ipopt::Restoration_Failed:
+    return "restoration_failed";
+  case Ipopt::Error_In_Step_Computation:
+    return "error_in_step_computation";
+  case Ipopt::Not_Enough_Degrees_Of_Freedom:
+    return "not_enough_degrees_of_freedom";
+  case Ipopt::Invalid_Problem_Definition:
+    return "invalid_problem_definition";
+  case Ipopt::Invalid_Option:
+    return "invalid_option";
+  case Ipopt::Invalid_Number_Detected:
+    return "invalid_number_detected";
+  case Ipopt::Unrecoverable_Exception:
+    return "unrecoverable_exception";
+  case Ipopt::NonIpopt_Exception_Thrown:
+    return "non_ipopt_exception_thrown";
+  case Ipopt::Insufficient_Memory:
+    return "insufficient_memory";
+  case Ipopt::Internal_Error:
+    return "internal_error";
+  default:
+    return "ipopt_status_" + std::to_string(static_cast<int>(status));
+  }
+}
+
+bool ipopt_solution_usable(Ipopt::ApplicationReturnStatus status) {
+  return status == Ipopt::Solve_Succeeded ||
+         status == Ipopt::Solved_To_Acceptable_Level ||
+         status == Ipopt::Search_Direction_Becomes_Too_Small ||
+         status == Ipopt::Feasible_Point_Found ||
+         status == Ipopt::Maximum_Iterations_Exceeded;
+}
+
+class ReducedSpaceNlp final : public Ipopt::TNLP {
+public:
+  ReducedSpaceNlp(const std::vector<std::unique_ptr<OwnerCost>> &costs,
+                  const std::vector<Coordinate> &coordinates,
+                  std::vector<double> initial)
+      : costs_(costs), coordinates_(coordinates), initial_(std::move(initial)),
+        solution_(initial_) {}
+
+  bool get_nlp_info(Ipopt::Index &n, Ipopt::Index &m, Ipopt::Index &nnz_jac_g,
+                    Ipopt::Index &nnz_h_lag,
+                    IndexStyleEnum &index_style) override {
+    n = static_cast<Ipopt::Index>(coordinates_.size());
+    m = 0;
+    nnz_jac_g = 0;
+    nnz_h_lag = 0;
+    index_style = TNLP::C_STYLE;
+    return true;
+  }
+
+  bool get_bounds_info(Ipopt::Index n, Ipopt::Number *x_l, Ipopt::Number *x_u,
+                       Ipopt::Index m, Ipopt::Number *,
+                       Ipopt::Number *) override {
+    if (n != static_cast<Ipopt::Index>(coordinates_.size()) || m != 0) {
+      return false;
+    }
+    for (std::size_t index = 0; index < coordinates_.size(); ++index) {
+      x_l[index] = coordinates_[index].lower_affine;
+      x_u[index] = coordinates_[index].upper_affine;
+    }
+    return true;
+  }
+
+  bool get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Number *x,
+                          bool init_z, Ipopt::Number *, Ipopt::Number *,
+                          Ipopt::Index m, bool init_lambda,
+                          Ipopt::Number *) override {
+    if (n != static_cast<Ipopt::Index>(initial_.size()) || m != 0 || !init_x ||
+        init_z || init_lambda) {
+      return false;
+    }
+    std::copy(initial_.begin(), initial_.end(), x);
+    return true;
+  }
+
+  bool eval_f(Ipopt::Index n, const Ipopt::Number *x, bool,
+              Ipopt::Number &objective) override {
+    if (!evaluate(n, x)) {
+      return false;
+    }
+    objective = cached_objective_;
+    return true;
+  }
+
+  bool eval_grad_f(Ipopt::Index n, const Ipopt::Number *x, bool,
+                   Ipopt::Number *gradient) override {
+    if (!evaluate(n, x)) {
+      return false;
+    }
+    std::copy(cached_gradient_.begin(), cached_gradient_.end(), gradient);
+    return true;
+  }
+
+  bool eval_g(Ipopt::Index, const Ipopt::Number *, bool, Ipopt::Index m,
+              Ipopt::Number *) override {
+    return m == 0;
+  }
+
+  bool eval_jac_g(Ipopt::Index, const Ipopt::Number *, bool, Ipopt::Index m,
+                  Ipopt::Index nonzero_count, Ipopt::Index *, Ipopt::Index *,
+                  Ipopt::Number *) override {
+    return m == 0 && nonzero_count == 0;
+  }
+
+  bool eval_h(Ipopt::Index, const Ipopt::Number *, bool, Ipopt::Number,
+              Ipopt::Index m, const Ipopt::Number *, bool,
+              Ipopt::Index nonzero_count, Ipopt::Index *, Ipopt::Index *,
+              Ipopt::Number *) override {
+    return m == 0 && nonzero_count == 0;
+  }
+
+  void finalize_solution(Ipopt::SolverReturn, Ipopt::Index n,
+                         const Ipopt::Number *x, const Ipopt::Number *,
+                         const Ipopt::Number *, Ipopt::Index m,
+                         const Ipopt::Number *, const Ipopt::Number *,
+                         Ipopt::Number, const Ipopt::IpoptData *,
+                         Ipopt::IpoptCalculatedQuantities *) override {
+    if (n == static_cast<Ipopt::Index>(solution_.size()) && m == 0 &&
+        x != nullptr) {
+      std::copy(x, x + n, solution_.begin());
+    }
+  }
+
+  const std::vector<double> &solution() const noexcept { return solution_; }
+
+private:
+  bool evaluate(Ipopt::Index n, const Ipopt::Number *x) const {
+    if (n != static_cast<Ipopt::Index>(coordinates_.size())) {
+      return false;
+    }
+    if (cached_x_.size() == coordinates_.size() &&
+        std::equal(x, x + n, cached_x_.begin())) {
+      return cached_evaluable_;
+    }
+    cached_x_.assign(x, x + n);
+    cached_objective_ = 0.0;
+    cached_gradient_.assign(coordinates_.size(), 0.0);
+    std::vector<const double *> blocks;
+    blocks.reserve(coordinates_.size());
+    for (Ipopt::Index index = 0; index < n; ++index) {
+      blocks.push_back(x + index);
+    }
+    for (const auto &cost : costs_) {
+      const std::size_t rows = cost->row_count();
+      std::vector<double> residuals(rows);
+      std::vector<std::vector<double>> jacobian_blocks(
+          coordinates_.size(), std::vector<double>(rows));
+      std::vector<double *> jacobian_pointers;
+      jacobian_pointers.reserve(coordinates_.size());
+      for (auto &block : jacobian_blocks) {
+        jacobian_pointers.push_back(block.data());
+      }
+      if (!cost->evaluate(blocks.data(), residuals.data(),
+                          jacobian_pointers.data(), nullptr, false, nullptr)) {
+        cached_evaluable_ = false;
+        return false;
+      }
+      for (std::size_t row = 0; row < rows; ++row) {
+        cached_objective_ += 0.5 * residuals[row] * residuals[row];
+        for (std::size_t coordinate = 0; coordinate < coordinates_.size();
+             ++coordinate) {
+          cached_gradient_[coordinate] +=
+              residuals[row] * jacobian_blocks[coordinate][row];
+        }
+      }
+    }
+    cached_evaluable_ =
+        std::isfinite(cached_objective_) &&
+        std::all_of(cached_gradient_.begin(), cached_gradient_.end(),
+                    [](double value) { return std::isfinite(value); });
+    return cached_evaluable_;
+  }
+
+  const std::vector<std::unique_ptr<OwnerCost>> &costs_;
+  const std::vector<Coordinate> &coordinates_;
+  std::vector<double> initial_;
+  std::vector<double> solution_;
+  mutable std::vector<double> cached_x_;
+  mutable std::vector<double> cached_gradient_;
+  mutable double cached_objective_{0.0};
+  mutable bool cached_evaluable_{false};
+};
+
+Ipopt::ApplicationReturnStatus solve_ipopt(ReducedSpaceNlp *problem,
+                                           const Controls &controls,
+                                           int &iterations,
+                                           std::vector<double> &solution) {
+  Ipopt::SmartPtr<Ipopt::TNLP> nlp = problem;
+  Ipopt::SmartPtr<Ipopt::IpoptApplication> application =
+      IpoptApplicationFactory();
+  application->Options()->SetStringValue("option_file_name", "");
+  application->Options()->SetIntegerValue("print_level", 0);
+  application->Options()->SetStringValue("sb", "yes");
+  application->Options()->SetIntegerValue("max_iter",
+                                          controls.maximum_iterations);
+  const double optimizer_tolerance =
+      0.001 *
+      std::min({controls.function_tolerance, controls.gradient_tolerance,
+                controls.parameter_tolerance});
+  application->Options()->SetNumericValue("tol", optimizer_tolerance);
+  application->Options()->SetIntegerValue("acceptable_iter", 0);
+  application->Options()->SetNumericValue("tiny_step_tol",
+                                          controls.parameter_tolerance);
+  application->Options()->SetStringValue("hessian_approximation",
+                                         "limited-memory");
+  application->Options()->SetStringValue("mu_strategy", "adaptive");
+  application->Options()->SetNumericValue("mu_min", 0.01 * optimizer_tolerance);
+  application->Options()->SetStringValue("nlp_scaling_method", "none");
+  application->Options()->SetNumericValue("bound_relax_factor", 0.0);
+  application->Options()->SetStringValue("honor_original_bounds", "yes");
+  application->Options()->SetNumericValue("bound_push", 1.0e-12);
+  application->Options()->SetStringValue("check_derivatives_for_naninf", "yes");
+  const auto initialize_status = application->Initialize();
+  if (initialize_status != Ipopt::Solve_Succeeded) {
+    solution = problem->solution();
+    return initialize_status;
+  }
+  const auto status = application->OptimizeTNLP(nlp);
+  const Ipopt::SmartPtr<Ipopt::SolveStatistics> statistics =
+      application->Statistics();
+  if (IsValid(statistics)) {
+    iterations = statistics->IterationCount();
+  }
+  solution = problem->solution();
+  return status;
 }
 
 StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
@@ -632,8 +860,7 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
                         const std::vector<std::size_t> &identity_coordinates,
                         const std::vector<Coordinate> &coordinates,
                         const std::vector<Observation> &observations,
-                        const Controls &controls,
-                        const Start &start,
+                        const Controls &controls, const Start &start,
                         const std::vector<std::string> &failure_codes) {
   StartResult result;
   result.index = index;
@@ -650,34 +877,34 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
   }
   std::vector<std::unique_ptr<OwnerCost>> costs;
   costs.reserve(observations.size());
-  ceres::Problem::Options problem_options;
-  problem_options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
-  ceres::Problem problem(problem_options);
-  std::vector<double *> blocks;
-  blocks.reserve(result.final_affine.size());
-  for (double &value : result.final_affine) {
-    blocks.push_back(&value);
-  }
   for (std::size_t observation_index = 0;
        observation_index < observations.size(); ++observation_index) {
     costs.push_back(std::make_unique<OwnerCost>(
         owner_evaluator, index, observation_index, active_parameter_count,
         identity_coordinates, origins, scales, observations[observation_index],
         failure_codes));
-    problem.AddResidualBlock(costs.back().get(), nullptr, blocks);
   }
+  auto *problem = new ReducedSpaceNlp(costs, coordinates, result.final_affine);
+  const auto solver_status =
+      solve_ipopt(problem, controls, result.iterations, result.final_affine);
+  result.solver_status = ipopt_status_name(solver_status);
+  const bool solver_usable = ipopt_solution_usable(solver_status);
   for (std::size_t coordinate = 0; coordinate < coordinates.size();
        ++coordinate) {
-    problem.SetParameterLowerBound(blocks[coordinate], 0,
-                                   coordinates[coordinate].lower_affine);
-    problem.SetParameterUpperBound(blocks[coordinate], 0,
-                                   coordinates[coordinate].upper_affine);
+    double &affine = result.final_affine[coordinate];
+    if (std::abs(affine - coordinates[coordinate].lower_affine) <=
+        controls.affine_bound_margin) {
+      affine = coordinates[coordinate].lower_affine;
+    } else if (std::abs(affine - coordinates[coordinate].upper_affine) <=
+               controls.affine_bound_margin) {
+      affine = coordinates[coordinate].upper_affine;
+    }
   }
-  ceres::Solver::Summary summary;
-  ceres::Solve(solver_options(controls), &problem, &summary);
-  result.solver_status = summary.BriefReport();
-  result.iterations = static_cast<int>(summary.iterations.size());
-  result.cost = summary.final_cost;
+  std::vector<double *> blocks;
+  blocks.reserve(result.final_affine.size());
+  for (double &value : result.final_affine) {
+    blocks.push_back(&value);
+  }
   std::size_t residual_count = 0;
   for (const auto &observation : observations) {
     residual_count += observation.targets.size();
@@ -691,9 +918,7 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
   result.batch_outcomes.reserve(costs.size());
   for (std::size_t batch_index = 0; batch_index < costs.size(); ++batch_index) {
     result.batch_outcomes.push_back(
-        {batch_index,
-         static_cast<std::size_t>(costs[batch_index]->num_residuals()),
-         "not_evaluated", ""});
+        {batch_index, costs[batch_index]->row_count(), "not_evaluated", ""});
   }
   bool censor_kink = false;
   std::vector<const double *> final_blocks;
@@ -703,10 +928,10 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
   }
   std::size_t offset = 0;
   bool final_evaluable = true;
-  const bool request_receipts = summary.IsSolutionUsable();
+  const bool request_receipts = solver_usable;
   for (std::size_t batch_index = 0; batch_index < costs.size(); ++batch_index) {
     const auto &cost = costs[batch_index];
-    const std::size_t rows = static_cast<std::size_t>(cost->num_residuals());
+    const std::size_t rows = cost->row_count();
     std::vector<std::vector<double>> jacobian_blocks(coordinates.size(),
                                                      std::vector<double>(rows));
     std::vector<double *> jacobian_pointers;
@@ -744,7 +969,7 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
     }
     offset += rows;
   }
-  result.usable = summary.IsSolutionUsable() && final_evaluable;
+  result.usable = solver_usable && final_evaluable;
   if (!result.usable) {
     result.owner_receipts_json.clear();
   }
@@ -770,6 +995,9 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
     result.trial_failure_code = result.owner_failures.front().code;
   }
   if (result.usable) {
+    result.cost = 0.5 * std::inner_product(result.residuals.begin(),
+                                           result.residuals.end(),
+                                           result.residuals.begin(), 0.0);
     result.failure_reason.clear();
     for (std::size_t coordinate = 0; coordinate < coordinates.size();
          ++coordinate) {
@@ -788,7 +1016,7 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
     result.trial_failure_code.clear();
   } else {
     if (result.failure_reason.empty()) {
-      result.failure_reason = summary.message;
+      result.failure_reason = result.solver_status;
     }
     if (result.trial_failure_code.empty()) {
       result.trial_failure_code = "optimizer_failure";
@@ -943,7 +1171,8 @@ py::dict fit_resolved(const py::function &owner_evaluator,
     throw std::invalid_argument("at least one explicit start is required");
   }
   if (failure_codes.empty()) {
-    throw std::invalid_argument("the owner failure vocabulary must be nonempty");
+    throw std::invalid_argument(
+        "the owner failure vocabulary must be nonempty");
   }
   std::vector<std::string> start_identities;
   start_identities.reserve(controls.starts.size());
@@ -951,14 +1180,15 @@ py::dict fit_resolved(const py::function &owner_evaluator,
     if (start.identity.empty() || start.affine.size() != coordinates.size() ||
         !std::all_of(start.affine.begin(), start.affine.end(),
                      [](double value) { return std::isfinite(value); })) {
-      throw std::invalid_argument(
-          "each explicit start needs an identity and one finite affine value per coordinate");
+      throw std::invalid_argument("each explicit start needs an identity and "
+                                  "one finite affine value per coordinate");
     }
     for (std::size_t coordinate = 0; coordinate < coordinates.size();
          ++coordinate) {
       if (start.affine[coordinate] < coordinates[coordinate].lower_affine ||
           start.affine[coordinate] > coordinates[coordinate].upper_affine) {
-        throw std::invalid_argument("explicit affine start lies outside its bounds");
+        throw std::invalid_argument(
+            "explicit affine start lies outside its bounds");
       }
     }
     start_identities.push_back(start.identity);

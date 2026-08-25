@@ -212,7 +212,7 @@ def _complete_residuals(
 def test_owner_blocks_preserve_mixed_active_order_and_complete_residual_jacobian(
     tmp_path: Any,
 ) -> None:
-    """Falsify identity/order loss and residual scaling at the EOS--Ceres seam."""
+    """Falsify identity/order loss and residual scaling at the EOS--optimizer seam."""
 
     mapping, input_parameters, states = _mixed_fit_mapping(tmp_path)
     result = fit(ParameterFit.from_mapping(mapping), base_path=tmp_path)
@@ -278,6 +278,29 @@ def test_owner_blocks_preserve_mixed_active_order_and_complete_residual_jacobian
     # truncation against pressure cancellation. Failure means Regression
     # changed owner column order or scaled values and derivatives differently.
     assert accepted.physical_jacobian == pytest.approx(centered, rel=5.0e-5, abs=2.0e-9)
+    objective_gradient = tuple(
+        sum(
+            accepted.residuals[row]
+            * accepted.physical_jacobian[row * len(_MIXED_IDENTITIES) + column]
+            for row in range(len(states))
+        )
+        for column in range(len(_MIXED_IDENTITIES))
+    )
+    centered_objective_gradient = []
+    for identity, step in zip(_MIXED_IDENTITIES, steps, strict=True):
+        below = _complete_residuals(
+            input_parameters, states, {**point, identity: point[identity] - step}
+        )
+        above = _complete_residuals(
+            input_parameters, states, {**point, identity: point[identity] + step}
+        )
+        centered_objective_gradient.append(
+            (sum(value * value for value in above) - sum(value * value for value in below))
+            / (4.0 * step)
+        )
+    assert objective_gradient == pytest.approx(
+        centered_objective_gradient, rel=5.0e-5, abs=2.0e-10
+    )
 
 
 def test_tied_owner_coordinate_reports_interior_covariance_and_active_bound(

@@ -166,7 +166,7 @@ and optional optimizer controls. Defaults are 25 maximum iterations and `1e-6`
 function, gradient, and parameter stopping tolerances. `fit` resolves each
 observation against an owner descriptor, sends
 the owner's values and exact ordered Jacobian blocks through the private native
-Ceres core, and returns every start without mutating the input parameters.
+Ipopt core, and returns every start without mutating the input parameters.
 Each start retains predictions, scaled residuals and Jacobians, rank and
 conditioning, active bounds, and typed owner-evaluation failures.
 `FitResult.to_parameters()` creates a new immutable candidate parameter
