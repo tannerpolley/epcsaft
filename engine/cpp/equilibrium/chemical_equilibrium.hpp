@@ -248,6 +248,7 @@ struct ReactiveFinitePhaseResult {
     std::vector<double> phase_pressures_pa;
     std::vector<double> phase_packing_fractions;
     std::vector<std::vector<double>> phase_chemical_potentials_over_rt;
+    std::vector<std::vector<double>> phase_log_fugacities;
     double objective_over_rt = std::numeric_limits<double>::quiet_NaN();
     double balance_inf_norm = std::numeric_limits<double>::quiet_NaN();
     double pressure_relative_inf_norm = std::numeric_limits<double>::quiet_NaN();
@@ -277,6 +278,7 @@ struct ReactiveFinitePhaseResult {
     std::vector<double> volume_derivatives;
     std::vector<double> pressure_derivatives;
     std::vector<double> chemical_potential_derivatives;
+    std::vector<double> log_fugacity_derivatives;
 };
 
 struct ChemicalSolveResult {

@@ -1236,6 +1236,8 @@ def _validate_finite_phase_outputs(
     phase_ids = {phase.identity for phase in problem.phases}
     vector_selectors = {
         "phase.amount",
+        "phase.fugacity",
+        "phase.log_fugacity",
         "phase.mole_fraction",
         "phase.chemical_potential_over_rt",
     }
@@ -1248,8 +1250,12 @@ def _validate_finite_phase_outputs(
         if output.selector in vector_selectors:
             if len(output.coefficients) != component_count:
                 raise ValueError("finite-phase GREPE vector output requires full coefficients")
-            if sum(value != 0.0 for value in output.coefficients) > 1 and (
+            if (
+                output.selector in {"phase.amount", "phase.mole_fraction"}
+                and sum(value != 0.0 for value in output.coefficients) > 1
+                and (
                 not output.aggregate_identity or not output.covariance_identity
+                )
             ):
                 raise ValueError(
                     "finite-phase GREPE aggregate output requires aggregate and covariance identities"
@@ -1556,7 +1562,7 @@ def _compile_intensive_boundary(
     boundary = problem.intensive_boundaries[0]
     augmented_outputs = problem.outputs + (_intensive_boundary_output(boundary),)
     internal_problem = _resolved_intensive_problem(problem, boundary.initial, augmented_outputs)
-    compiled = _compile_general_reactive_equilibrium(
+    compiled = _compile_intensive_owner(
         model,
         internal_problem,
         active_parameters=active_parameters,
@@ -1621,6 +1627,86 @@ def _compile_intensive_boundary(
     return _IntensiveBoundaryCompilation(descriptor, augmented_outputs)
 
 
+def _compile_intensive_owner(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+) -> (
+    _HomogeneousCompilation
+    | _BubbleCompilation
+    | _FinitePhaseCompilation
+    | _IntensiveBoundaryCompilation
+    | str
+):
+    compiled = _compile_general_reactive_equilibrium(
+        model, problem, active_parameters=active_parameters
+    )
+    if isinstance(compiled, _FinitePhaseCompilation) and len(compiled.phases) == 1:
+        return _compile_homogeneous_owner(
+            model,
+            problem,
+            compiled.phases[0],
+            active_parameters,
+            temperature_k=_quantity(
+                cast(Fixed, problem.temperature).value,
+                "kelvin",
+                "temperature",
+            ),
+        )
+    return compiled
+
+
+def _compile_homogeneous_owner(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    phase: ReactivePhase,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+    *,
+    temperature_k: float,
+) -> _HomogeneousCompilation:
+    pressure_pa = _quantity(cast(Fixed, problem.pressure).value, "pascal", "pressure")
+    owner_problem = HomogeneousReactiveObservationProblem(
+        problem.identity,
+        phase.identity,
+        phase.fluid_role,
+        _phase_model(model, phase),
+        _effective_reaction_system(problem),
+        cast(str, phase.continuation_identity),
+        cast(HomogeneousBranchPolicy, phase.branch_policy),
+        phase.continuation_reference,
+    )
+    owner_rows = tuple(
+        HomogeneousReactiveObservationRow(
+            output.identity,
+            cast(Any, _homogeneous_quantity(output)),
+            output.coefficients,
+            output.solvent_mass_coefficients_kg_per_mol,
+            output.support,
+            output.censor_limit,
+            output.aggregate_identity,
+            output.covariance_identity,
+        )
+        for output in problem.outputs
+    )
+    owner_descriptor = homogeneous_reactive_observation_descriptor(
+        owner_problem, owner_rows, active_parameters=active_parameters
+    )
+    return _HomogeneousCompilation(
+        temperature_k * epcsaft.unit_registry.kelvin,
+        pressure_pa * epcsaft.unit_registry.pascal,
+        owner_problem,
+        owner_descriptor,
+        _descriptor(
+            model,
+            problem,
+            "homogeneous",
+            owner_descriptor,
+            "fixed_TP_single_finite_reacting_phase",
+        ),
+    )
+
+
 def _compile_general_reactive_equilibrium(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
@@ -1650,10 +1736,13 @@ def _compile_general_reactive_equilibrium(
     if problem.phase_reactions is not None and incipient:
         return "explicit phase/species directions currently require finite configured phases"
 
-    if len(finite) >= 2 and not incipient and isinstance(problem.pressure, Fixed):
+    if (
+        finite
+        and not incipient
+        and isinstance(problem.pressure, Fixed)
+        and all(isinstance(phase.model, ProviderModel) for phase in finite)
+    ):
         pressure_pa = _quantity(problem.pressure.value, "pascal", "pressure")
-        if any(not isinstance(phase.model, ProviderModel) for phase in finite):
-            return "configured finite-phase equilibrium requires Provider phases"
         supported_component_ids = tuple(
             _phase_supported_component_ids(
                 phase,
@@ -1715,12 +1804,17 @@ def _compile_general_reactive_equilibrium(
             pressure_pa,
             active_parameters,
         )
+        certificate_scope = (
+            "fixed_TP_single_finite_reacting_phase"
+            if len(finite) == 1
+            else "fixed_TP_configured_finite_phases_local_minimum"
+        )
         descriptor = _descriptor(
             model,
             problem,
             "finite_phases",
             owner_descriptor,
-            "fixed_TP_configured_finite_phases_local_minimum",
+            certificate_scope,
         )
         return _FinitePhaseCompilation(
             temperature_k,
@@ -1733,56 +1827,18 @@ def _compile_general_reactive_equilibrium(
             descriptor,
         )
 
-    if len(finite) == 1 and not incipient and isinstance(problem.pressure, Fixed):
-        phase = finite[0]
-        reaction_ids_are_valid = (
-            problem.reaction_phase_ids == (phase.identity,)
-            if _effective_reaction_system(problem).reaction_matrix
-            else not problem.reaction_phase_ids
-        )
-        if not reaction_ids_are_valid or not isinstance(phase.support, AllComponents):
-            return "single-phase reaction/support topology has no implemented formulation"
-        pressure_pa = _quantity(problem.pressure.value, "pascal", "pressure")
-        pressure = pressure_pa * epcsaft.unit_registry.pascal
-        homogeneous_owner_problem = HomogeneousReactiveObservationProblem(
-            problem.identity,
-            phase.identity,
-            phase.fluid_role,
-            _phase_model(model, phase),
-            _effective_reaction_system(problem),
-            cast(str, phase.continuation_identity),
-            cast(HomogeneousBranchPolicy, phase.branch_policy),
-            phase.continuation_reference,
-        )
-        owner_rows = tuple(
-            HomogeneousReactiveObservationRow(
-                output.identity,
-                cast(Any, _homogeneous_quantity(output)),
-                output.coefficients,
-                output.solvent_mass_coefficients_kg_per_mol,
-                output.support,
-                output.censor_limit,
-                output.aggregate_identity,
-                output.covariance_identity,
-            )
-            for output in problem.outputs
-        )
-        homogeneous_descriptor = homogeneous_reactive_observation_descriptor(
-            homogeneous_owner_problem, owner_rows, active_parameters=active_parameters
-        )
-        descriptor = _descriptor(
+    if (
+        len(finite) == 1
+        and not incipient
+        and isinstance(problem.pressure, Fixed)
+        and isinstance(finite[0].model, IdealGasModel)
+    ):
+        return _compile_homogeneous_owner(
             model,
             problem,
-            "homogeneous",
-            homogeneous_descriptor,
-            "fixed_TP_single_finite_reacting_phase",
-        )
-        return _HomogeneousCompilation(
-            temperature,
-            pressure,
-            homogeneous_owner_problem,
-            homogeneous_descriptor,
-            descriptor,
+            finite[0],
+            active_parameters,
+            temperature_k=temperature_k,
         )
 
     if (
@@ -2207,9 +2263,11 @@ def _finite_phase_rows(
     amounts = _native_float_matrix(native["phase_amounts_mol"])
     volumes = _native_float_vector(native["phase_volumes_m3"])
     chemical_potentials = _native_float_matrix(native["phase_chemical_potentials_over_rt"])
+    log_fugacities = _native_float_matrix(native["phase_log_fugacities"])
     amount_derivatives = _native_float_vector(native["amount_derivatives"])
     volume_derivatives = _native_float_vector(native["volume_derivatives"])
     chemical_potential_derivatives = _native_float_vector(native["chemical_potential_derivatives"])
+    log_fugacity_derivatives = _native_float_vector(native["log_fugacity_derivatives"])
     rows = []
     for output in problem.outputs:
         if output.selector == "system.pressure":
@@ -2285,20 +2343,37 @@ def _finite_phase_rows(
                 value = compilation.pressure_pa
                 jacobian = (0.0,) * parameter_count
             else:
-                assert output.selector == "phase.chemical_potential_over_rt"
+                assert output.selector in {
+                    "phase.chemical_potential_over_rt",
+                    "phase.fugacity",
+                    "phase.log_fugacity",
+                }
+                potentials = (
+                    log_fugacities[phase_index]
+                    if output.selector in {"phase.fugacity", "phase.log_fugacity"}
+                    else chemical_potentials[phase_index]
+                )
+                derivatives = (
+                    log_fugacity_derivatives
+                    if output.selector in {"phase.fugacity", "phase.log_fugacity"}
+                    else chemical_potential_derivatives
+                )
                 value = math.fsum(
                     coefficient * chemical_potential
                     for coefficient, chemical_potential in zip(
-                        output.coefficients, chemical_potentials[phase_index], strict=True
+                        output.coefficients, potentials, strict=True
                     )
                 )
                 jacobian = _contract_parameter_derivatives(
                     output.coefficients,
-                    chemical_potential_derivatives,
+                    derivatives,
                     phase_index=phase_index,
                     component_count=component_count,
                     parameter_count=parameter_count,
                 )
+                if output.selector == "phase.fugacity":
+                    value = math.exp(value)
+                    jacobian = tuple(value * derivative for derivative in jacobian)
         rows.append(
             GeneralEquilibriumRowResult(
                 output.identity,
@@ -2800,7 +2875,7 @@ def _evaluate_fixed_pressure_boundary(
         internal_problem = _resolved_intensive_problem(
             problem, value, compilation.augmented_outputs
         )
-        internal = _compile_general_reactive_equilibrium(
+        internal = _compile_intensive_owner(
             model, internal_problem, active_parameters=active_parameters
         )
         if not isinstance(internal, _BubbleCompilation):
@@ -2985,7 +3060,7 @@ def _evaluate_intensive_boundary(
         internal_problem = _resolved_intensive_problem(
             problem, coordinate, compilation.augmented_outputs
         )
-        internal = _compile_general_reactive_equilibrium(
+        internal = _compile_intensive_owner(
             model, internal_problem, active_parameters=active_parameters
         )
         if not isinstance(internal, _HomogeneousCompilation):
