@@ -1238,10 +1238,15 @@ def _validate_finite_phase_outputs(
         "phase.amount",
         "phase.fugacity",
         "phase.log_fugacity",
+        "phase.molality",
         "phase.mole_fraction",
         "phase.chemical_potential_over_rt",
     }
-    scalar_selectors = {"phase.molar_density", "phase.pressure"}
+    scalar_selectors = {
+        "phase.compressibility_factor",
+        "phase.molar_density",
+        "phase.pressure",
+    }
     for output in problem.outputs:
         if output.selector == "system.pressure":
             continue
@@ -1251,7 +1256,7 @@ def _validate_finite_phase_outputs(
             if len(output.coefficients) != component_count:
                 raise ValueError("finite-phase GREPE vector output requires full coefficients")
             if (
-                output.selector in {"phase.amount", "phase.mole_fraction"}
+                output.selector in {"phase.amount", "phase.molality", "phase.mole_fraction"}
                 and sum(value != 0.0 for value in output.coefficients) > 1
                 and (
                 not output.aggregate_identity or not output.covariance_identity
@@ -1260,6 +1265,11 @@ def _validate_finite_phase_outputs(
                 raise ValueError(
                     "finite-phase GREPE aggregate output requires aggregate and covariance identities"
                 )
+            if output.selector == "phase.molality" and (
+                len(output.solvent_mass_coefficients_kg_per_mol) != component_count
+                or not any(output.solvent_mass_coefficients_kg_per_mol)
+            ):
+                raise ValueError("finite-phase molality requires a declared solvent-mass basis")
             if output.selector == "phase.chemical_potential_over_rt":
                 phase = phase_by_id[output.phase_identity]
                 supported = frozenset(
@@ -2321,6 +2331,43 @@ def _finite_phase_rows(
                     / (total_amount * total_amount)
                     for parameter, derivative in enumerate(contracted)
                 )
+            elif output.selector == "phase.molality":
+                numerator = math.fsum(
+                    coefficient * amount
+                    for coefficient, amount in zip(
+                        output.coefficients, phase_amounts, strict=True
+                    )
+                )
+                denominator = math.fsum(
+                    coefficient * amount
+                    for coefficient, amount in zip(
+                        output.solvent_mass_coefficients_kg_per_mol,
+                        phase_amounts,
+                        strict=True,
+                    )
+                )
+                numerator_derivatives = _contract_parameter_derivatives(
+                    output.coefficients,
+                    amount_derivatives,
+                    phase_index=phase_index,
+                    component_count=component_count,
+                    parameter_count=parameter_count,
+                )
+                denominator_derivatives = _contract_parameter_derivatives(
+                    output.solvent_mass_coefficients_kg_per_mol,
+                    amount_derivatives,
+                    phase_index=phase_index,
+                    component_count=component_count,
+                    parameter_count=parameter_count,
+                )
+                value = numerator / denominator
+                jacobian = tuple(
+                    (dnumerator * denominator - numerator * ddenominator)
+                    / (denominator * denominator)
+                    for dnumerator, ddenominator in zip(
+                        numerator_derivatives, denominator_derivatives, strict=True
+                    )
+                )
             elif output.selector == "phase.molar_density":
                 value = total_amount / volume
                 jacobian = tuple(
@@ -2337,6 +2384,28 @@ def _finite_phase_rows(
                         * volume_derivatives[phase_index * parameter_count + parameter]
                     )
                     / (volume * volume)
+                    for parameter in range(parameter_count)
+                )
+            elif output.selector == "phase.compressibility_factor":
+                value = (
+                    compilation.pressure_pa
+                    * volume
+                    / (total_amount * 8.31446261815324 * compilation.temperature_k)
+                )
+                jacobian = tuple(
+                    value
+                    * (
+                        volume_derivatives[phase_index * parameter_count + parameter]
+                        / volume
+                        - math.fsum(
+                            amount_derivatives[
+                                ((phase_index * component_count + component) * parameter_count)
+                                + parameter
+                            ]
+                            for component in range(component_count)
+                        )
+                        / total_amount
+                    )
                     for parameter in range(parameter_count)
                 )
             elif output.selector == "phase.pressure":
