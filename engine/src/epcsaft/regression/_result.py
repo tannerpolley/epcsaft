@@ -207,17 +207,14 @@ class FitSpecificationReceipt:
             source_identity = source.citation or source.path
             if observation.rows is not None:
                 resolved_rows = tuple(
-                    (_ReceiptRow(row.values), specification.multiplier)
-                    for row in observation.rows
+                    (_ReceiptRow(row.values), specification.multiplier) for row in observation.rows
                 )
             elif observation.quadrature is not None:
                 rule = observation.quadrature.rules[-1]
                 target = specification.targets[0]
                 resolved_rows = tuple(
                     (
-                        _ReceiptRow(
-                            (("temperature_k", temperature), (target, observed))
-                        ),
+                        _ReceiptRow((("temperature_k", temperature), (target, observed))),
                         specification.multiplier * math.sqrt(weight),
                     )
                     for temperature, weight, observed in zip(
@@ -274,6 +271,7 @@ class FitSpecificationReceipt:
         if not isinstance(value, Mapping):
             raise TypeError("canonical fit specification receipt is not an object")
         return cast(Mapping[str, object], value)
+
 
 @dataclass(frozen=True, slots=True)
 class BatchOutcome:
@@ -379,6 +377,45 @@ class FitStart:
     usable: bool
     optimizer_basin: int | None
 
+    @property
+    def outcomes(self) -> dict[str, dict[str, str]]:
+        solver_converged = self.solver_status in {
+            "solve_succeeded",
+            "solved_to_acceptable_level",
+        }
+        if self.usable and all(outcome.status == "evaluated" for outcome in self.batch_outcomes):
+            physical_status = "certified"
+        elif any(outcome.status == "rejected" for outcome in self.batch_outcomes):
+            physical_status = "rejected"
+        else:
+            physical_status = "not_evaluated"
+        return {
+            "solver_convergence": {
+                "status": "converged" if solver_converged else "not_converged",
+                "reason": self.solver_status,
+            },
+            "numerical_convergence": {
+                "status": "not_assessed" if solver_converged else "not_converged",
+                "reason": (
+                    "no independent tolerance or initialization sensitivity study"
+                    if solver_converged
+                    else self.solver_status
+                ),
+            },
+            "physical_certification": {
+                "status": physical_status,
+                "reason": (
+                    "all owner batches evaluated"
+                    if physical_status == "certified"
+                    else self.failure_reason or physical_status
+                ),
+            },
+            "scientific_fit_acceptance": {
+                "status": "not_declared",
+                "reason": "the fit specification declares no scientific acceptance criterion",
+            },
+        }
+
     @classmethod
     def from_native(cls, value: Mapping[str, Any]) -> FitStart:
         diagnostics = value["diagnostics"]
@@ -482,6 +519,7 @@ class FitStart:
             "cost": _finite_or_none(self.cost),
             "usable": self.usable,
             "optimizer_basin": self.optimizer_basin,
+            "outcomes": self.outcomes,
         }
 
 
@@ -618,11 +656,7 @@ class FitResult:
     @property
     def best_usable_start(self) -> FitStart | None:
         usable = tuple(start for start in self.starts if start.usable)
-        return (
-            min(usable, key=lambda start: (start.cost, start.start_identity))
-            if usable
-            else None
-        )
+        return min(usable, key=lambda start: (start.cost, start.start_identity)) if usable else None
 
     @property
     def candidate_parameter_identity(self) -> str:
@@ -653,8 +687,7 @@ class FitResult:
         if (
             len(accepted.predictions) != row_count
             or len(accepted.residuals) != row_count
-            or len(accepted.physical_jacobian)
-            != row_count * len(self.specification.coordinates)
+            or len(accepted.physical_jacobian) != row_count * len(self.specification.coordinates)
             or any(outcome.status != "evaluated" for outcome in accepted.batch_outcomes)
             or any(
                 not math.isfinite(value)
@@ -696,7 +729,9 @@ class FitResult:
         rows = self.evaluated_rows
         if not rows:
             return ""
-        return f"sha256:{hashlib.sha256(_canonical([row.to_mapping() for row in rows])).hexdigest()}"
+        return (
+            f"sha256:{hashlib.sha256(_canonical([row.to_mapping() for row in rows])).hexdigest()}"
+        )
 
     @property
     def covariance_coordinate_identities(self) -> tuple[str, ...]:
@@ -757,6 +792,7 @@ class FitResult:
             "evaluated_row_table_hash": self.evaluated_row_table_hash or None,
             "evaluated_rows": [row.to_mapping() for row in self.evaluated_rows],
             "best_usable_start": None if accepted is None else accepted.index,
+            "outcomes": None if accepted is None else accepted.outcomes,
             "starts": [start.to_mapping(self.specification.block_sizes) for start in self.starts],
         }
 
@@ -787,8 +823,7 @@ class FitResult:
             values,
             source_id=f"fit-candidate-{suffix}",
             locator=(
-                f"FitResult {self.digest}; evaluated-row-table "
-                f"{self.evaluated_row_table_hash}"
+                f"FitResult {self.digest}; evaluated-row-table {self.evaluated_row_table_hash}"
             ),
         )
 
