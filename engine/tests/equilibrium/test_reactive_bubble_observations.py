@@ -862,6 +862,7 @@ def test_reactive_bubble_uses_canonical_regression_fit_and_opaque_receipt(
     }
     request_mapping = mapping["observations"][0]["request"]
     request_mapping["continuation"]["reference"] = None
+    request_mapping["phases"][0]["continuation"]["reference"] = None
     unanchored_grepe = equilibrium.general_reactive_equilibrium_problem_from_mapping(
         request_mapping
     )

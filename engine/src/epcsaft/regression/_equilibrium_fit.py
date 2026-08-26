@@ -887,16 +887,21 @@ def _fit_equilibrium_observations(
     if not active_batches:
         raise ValueError("equilibrium regression has no included target rows")
     if any(
-        any(
-            phase.amount_role == "finite"
-            and phase.continuation_reference is None
-            and phase.start is None
-            for phase in batch.problem.phases
-        )
-        or (
-            any(phase.amount_role == "incipient" for phase in batch.problem.phases)
-            and batch.problem.continuation_reference is None
-            and not batch.problem.intensive_boundaries
+        not batch.problem.intensive_boundaries
+        and (
+            (
+                not any(phase.amount_role == "incipient" for phase in batch.problem.phases)
+                and any(
+                    phase.amount_role == "finite"
+                    and phase.continuation_reference is None
+                    and phase.start is None
+                    for phase in batch.problem.phases
+                )
+            )
+            or (
+                any(phase.amount_role == "incipient" for phase in batch.problem.phases)
+                and batch.problem.continuation_reference is None
+            )
         )
         for batch in active_batches
     ):
