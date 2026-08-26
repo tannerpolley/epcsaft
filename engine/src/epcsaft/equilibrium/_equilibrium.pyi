@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Any
 
 def evaluate_parameterized_phase(
@@ -90,6 +91,17 @@ def _chemical_equilibrium(
     packing_fraction_bounds: tuple[float, float] | None,
     trace_floor: float,
     sensitivities_requested: bool = ...,
+    active_parameters_requested: bool = ...,
+) -> dict[str, Any]: ...
+def _evaluate_provider_reaction_local(
+    capsule: object,
+    spec: dict[str, object],
+    source_standard_state: dict[str, object] | None,
+    packing_fraction_bounds: tuple[float, float],
+    trace_floor: float,
+    variables: Sequence[float],
+    lower: Sequence[float],
+    upper: Sequence[float],
     active_parameters_requested: bool = ...,
 ) -> dict[str, Any]: ...
 def _reactive_finite_phases(

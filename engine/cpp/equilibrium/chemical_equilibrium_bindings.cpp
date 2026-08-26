@@ -242,6 +242,7 @@ py::dict chemical_result(const ChemicalSolveResult& evaluation) {
     result["physical_status"] = evaluation.physical_status;
     result["provider_domain_status"] = evaluation.provider_domain_status;
     result["local_minimum_status"] = evaluation.local_minimum_status;
+    result["resolved_policy"] = evaluation.resolved_policy;
     result["negative_curvature_recovery_status"] =
         evaluation.negative_curvature_recovery_status;
     result["negative_curvature_recovery_attempts"] =
@@ -252,6 +253,11 @@ py::dict chemical_result(const ChemicalSolveResult& evaluation) {
     result["globality_certificate"] = "not_guaranteed";
     result["amounts"] = evaluation.amounts;
     result["volume_m3"] = evaluation.volume_m3;
+    result["volume_parameter_derivatives"] =
+        evaluation.volume_parameter_derivatives;
+    result["local_variables"] = evaluation.local_variables;
+    result["local_lower_bounds"] = evaluation.local_lower_bounds;
+    result["local_upper_bounds"] = evaluation.local_upper_bounds;
     result["balance_inf_norm"] = evaluation.balance_inf_norm;
     result["charge_inf_norm"] = evaluation.charge_inf_norm;
     result["pressure_relative_residual"] = evaluation.pressure_relative_residual;
@@ -404,6 +410,7 @@ py::dict chemical_result(const ChemicalSolveResult& evaluation) {
     result["lagrangian_hessian_shape"] = py::make_tuple(
         derivative_dimension, derivative_dimension
     );
+    result["kkt_root_values"] = evaluation.kkt_root_values;
     result["kkt_root_jacobian"] = evaluation.kkt_root_jacobian;
     result["kkt_root_shape"] = py::make_tuple(
         evaluation.kkt_root_rows,
@@ -731,6 +738,9 @@ py::dict chemical_result(const ChemicalSolveResult& evaluation) {
     sensitivities["volume_derivatives"] = py::tuple(py::cast(
         evaluation.sensitivities.volume_derivatives
     ));
+    sensitivities["kkt_parameter_jacobian"] = py::tuple(py::cast(
+        evaluation.sensitivities.kkt_parameter_jacobian
+    ));
     sensitivities["kkt_dimension"] = evaluation.sensitivities.kkt_dimension;
     sensitivities["kkt_rank"] = evaluation.sensitivities.kkt_rank;
     sensitivities["condition_number_inf"] =
@@ -789,17 +799,11 @@ void validate_provider_identity(
     }
 }
 
-py::dict solve_provider_input(
+CompiledReactionSystem compile_provider_input(
     const epcsaft_native_transport& transport,
     const ChemicalProviderMetadata& metadata,
     const ReactionSystemInput& input,
-    const ProviderContext& provider,
-    const std::vector<double>& packing_bounds,
-    double trace_floor,
-    const std::vector<double>& ln_k_pressure_derivatives_per_pa = {},
-    const std::vector<double>& ln_k_parameter_derivatives = {},
-    const ProviderActiveParameterSet* active_parameters = nullptr,
-    const ChemicalContinuationStart* continuation_start = nullptr
+    const std::vector<double>& packing_bounds
 ) {
     validate_provider_identity(metadata, input);
     if (input.temperature_k < transport.source_temperature_min_k
@@ -823,6 +827,84 @@ py::dict solve_provider_input(
     if (packing_bounds.size() != 2) {
         throw py::value_error("packing_fraction_bounds must contain two values");
     }
+    return compiled;
+}
+
+void set_provider_parameter_status(
+    ChemicalSolveResult& evaluation,
+    std::size_t active_parameter_count
+) {
+    if (active_parameter_count == 0) {
+        evaluation.sensitivities.provider_parameter_status = "not_applicable";
+        evaluation.sensitivities.provider_parameter_failure_reason.clear();
+    } else if (evaluation.sensitivities.status == "available") {
+        evaluation.sensitivities.provider_parameter_status = "available";
+        evaluation.sensitivities.provider_parameter_failure_reason.clear();
+    } else {
+        evaluation.sensitivities.provider_parameter_status = "unavailable";
+        evaluation.sensitivities.provider_parameter_failure_reason =
+            evaluation.sensitivities.failure_reason;
+    }
+}
+
+std::vector<double> compile_ln_k_parameter_derivatives(
+    const CompiledReactionSystem& compiled,
+    const ReactionSystemInput& input,
+    const std::vector<double>& supplied,
+    std::size_t parameter_count
+) {
+    if (supplied.empty()) {
+        return std::vector<double>(
+            compiled.reaction_matrix.rows * parameter_count, 0.0
+        );
+    }
+    if (parameter_count == 0
+        || supplied.size() != input.reaction_matrix.rows * parameter_count
+        || compiled.supplied_reaction_transform.rows
+            != compiled.reaction_matrix.rows
+        || compiled.supplied_reaction_transform.columns
+            != input.reaction_matrix.rows) {
+        throw py::value_error(
+            "source parameter derivatives do not match the compiled reaction basis"
+        );
+    }
+    std::vector<double> result(
+        compiled.reaction_matrix.rows * parameter_count, 0.0
+    );
+    for (std::size_t reaction = 0;
+         reaction < compiled.reaction_matrix.rows;
+         ++reaction) {
+        for (std::size_t input_reaction = 0;
+             input_reaction < input.reaction_matrix.rows;
+             ++input_reaction) {
+            for (std::size_t parameter = 0;
+                 parameter < parameter_count;
+                 ++parameter) {
+                result[reaction * parameter_count + parameter] +=
+                    compiled.supplied_reaction_transform(
+                        reaction, input_reaction
+                    ) * supplied[input_reaction * parameter_count + parameter];
+            }
+        }
+    }
+    return result;
+}
+
+py::dict solve_provider_input(
+    const epcsaft_native_transport& transport,
+    const ChemicalProviderMetadata& metadata,
+    const ReactionSystemInput& input,
+    const ProviderContext& provider,
+    const std::vector<double>& packing_bounds,
+    double trace_floor,
+    const std::vector<double>& ln_k_pressure_derivatives_per_pa = {},
+    const std::vector<double>& ln_k_parameter_derivatives = {},
+    const ProviderActiveParameterSet* active_parameters = nullptr,
+    const ChemicalContinuationStart* continuation_start = nullptr
+) {
+    const CompiledReactionSystem compiled = compile_provider_input(
+        transport, metadata, input, packing_bounds
+    );
     std::vector<double> compiled_ln_k_pressure_derivatives_per_pa;
     if (!ln_k_pressure_derivatives_per_pa.empty()) {
         if (ln_k_pressure_derivatives_per_pa.size()
@@ -850,48 +932,16 @@ py::dict solve_provider_input(
             }
         }
     }
-    std::vector<double> compiled_ln_k_parameter_derivatives;
     const std::size_t active_parameter_count = active_parameters == nullptr
         ? 0
         : active_parameters->identities.size();
-    if (!ln_k_parameter_derivatives.empty()) {
-        if (active_parameter_count == 0
-            || ln_k_parameter_derivatives.size()
-                != input.reaction_matrix.rows * active_parameter_count
-            || compiled.supplied_reaction_transform.rows
-                != compiled.reaction_matrix.rows
-            || compiled.supplied_reaction_transform.columns
-                != input.reaction_matrix.rows) {
-            throw py::value_error(
-                "source parameter derivatives do not match the compiled reaction basis"
-            );
-        }
-        compiled_ln_k_parameter_derivatives.assign(
-            compiled.reaction_matrix.rows * active_parameter_count, 0.0
+    const std::vector<double> compiled_ln_k_parameter_derivatives =
+        compile_ln_k_parameter_derivatives(
+            compiled,
+            input,
+            ln_k_parameter_derivatives,
+            active_parameter_count
         );
-        for (std::size_t reaction = 0;
-             reaction < compiled.reaction_matrix.rows;
-             ++reaction) {
-            for (std::size_t supplied = 0;
-                 supplied < input.reaction_matrix.rows;
-                 ++supplied) {
-                for (std::size_t parameter = 0;
-                     parameter < active_parameter_count;
-                     ++parameter) {
-                    compiled_ln_k_parameter_derivatives[
-                        reaction * active_parameter_count + parameter
-                    ] += compiled.supplied_reaction_transform(reaction, supplied)
-                        * ln_k_parameter_derivatives[
-                            supplied * active_parameter_count + parameter
-                        ];
-                }
-            }
-        }
-    } else if (active_parameter_count != 0) {
-        compiled_ln_k_parameter_derivatives.assign(
-            compiled.reaction_matrix.rows * active_parameter_count, 0.0
-        );
-    }
     ChemicalSolveResult evaluation = solve_provider_reaction(
         compiled,
         provider,
@@ -906,17 +956,7 @@ py::dict solve_provider_input(
         active_parameters,
         continuation_start
     );
-    if (active_parameter_count == 0) {
-        evaluation.sensitivities.provider_parameter_status = "not_applicable";
-        evaluation.sensitivities.provider_parameter_failure_reason.clear();
-    } else if (evaluation.sensitivities.status == "available") {
-        evaluation.sensitivities.provider_parameter_status = "available";
-        evaluation.sensitivities.provider_parameter_failure_reason.clear();
-    } else {
-        evaluation.sensitivities.provider_parameter_status = "unavailable";
-        evaluation.sensitivities.provider_parameter_failure_reason =
-            evaluation.sensitivities.failure_reason;
-    }
+    set_provider_parameter_status(evaluation, active_parameter_count);
     py::dict result = chemical_result(evaluation);
     result["parameter_fingerprint"] = input.provider_fingerprint;
     result["packing_fraction_bounds"] = packing_bounds;
@@ -1051,20 +1091,15 @@ SourceReferenceTransferEvidence source_reference_transfer_evidence(
     return result;
 }
 
-py::dict solve_provider_source(
-    const py::capsule& capsule,
-    const py::dict& spec,
+std::pair<SourceStandardStateResult, SourceReferenceTransferEvidence>
+transform_provider_source_input(
+    const epcsaft_native_transport& transport,
+    const ProviderContext& provider,
     const py::dict& source_standard_state,
-    const std::vector<double>& packing_bounds,
-    double trace_floor,
     bool sensitivities_requested,
     const ProviderActiveParameterSet* active_parameters,
-    const ChemicalContinuationStart* continuation_start
+    ReactionSystemInput& input
 ) {
-    const epcsaft_native_transport& transport = checked_chemical_transport(capsule);
-    const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
-    ReactionSystemInput input = reaction_system_input(spec);
-    validate_provider_identity(metadata, input);
     const std::string source_standard_state_id = py::cast<std::string>(
         source_standard_state["id"]
     );
@@ -1120,7 +1155,6 @@ py::dict solve_provider_source(
             );
         }
     }
-    const ProviderContext provider(transport);
     input.provider_fingerprint = provider.fingerprint();
     const std::string provider_topology_fingerprint =
         provider.parameterized_topology_fingerprint();
@@ -1171,7 +1205,7 @@ py::dict solve_provider_source(
             "installed Provider source-reference topology or domain is incompatible"
         );
     }
-    const SourceStandardStateResult transformed = transform_source_standard_state(
+    SourceStandardStateResult transformed = transform_source_standard_state(
         input.reaction_matrix,
         input.ln_k,
         log_activity_scale_factors,
@@ -1188,6 +1222,32 @@ py::dict solve_provider_source(
         record.conversion_id = "already-provider-basis";
         record.pressure_pa = input.pressure_pa;
     }
+    return {std::move(transformed), reference};
+}
+
+py::dict solve_provider_source(
+    const py::capsule& capsule,
+    const py::dict& spec,
+    const py::dict& source_standard_state,
+    const std::vector<double>& packing_bounds,
+    double trace_floor,
+    bool sensitivities_requested,
+    const ProviderActiveParameterSet* active_parameters,
+    const ChemicalContinuationStart* continuation_start
+) {
+    const epcsaft_native_transport& transport = checked_chemical_transport(capsule);
+    const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
+    ReactionSystemInput input = reaction_system_input(spec);
+    validate_provider_identity(metadata, input);
+    const ProviderContext provider(transport);
+    auto [transformed, reference] = transform_provider_source_input(
+        transport,
+        provider,
+        source_standard_state,
+        sensitivities_requested,
+        active_parameters,
+        input
+    );
     py::dict result = solve_provider_input(
         transport,
         metadata,
@@ -1208,12 +1268,12 @@ py::dict solve_provider_source(
     result["ln_k_provider_basis"] = transformed.ln_k_provider_basis;
     result["reference_representation_residual_inf_norm"] =
         transformed.representation_residual_inf_norm;
-    result["source_standard_state_id"] = source_standard_state_id;
-    result["source_activity_scale_id"] = source_activity_scale_id;
+    result["source_standard_state_id"] = source_standard_state["id"];
+    result["source_activity_scale_id"] = source_standard_state["activity_scale_id"];
     result["provider_reference_id"] = reference.helmholtz_basis_id;
     result["reference_derivative_availability"] =
-        (pressure_derivative_available ? 2 : 0)
-        | (parameter_derivative_available ? 8 : 0);
+        (sensitivities_requested ? 2 : 0)
+        | (active_parameters == nullptr ? 0 : 8);
     result["reference_convergence_error"] =
         reference.reference_convergence_error;
     result["source_reference_state_fingerprint"] =
@@ -1296,6 +1356,60 @@ py::dict solve_chemical_equilibrium(
         resolved.identities.empty() ? nullptr : &resolved,
         anchored_ptr
     );
+}
+
+py::dict evaluate_provider_local(
+    const py::capsule& capsule,
+    const py::dict& spec,
+    const py::object& source_standard_state,
+    const std::vector<double>& packing_bounds,
+    double trace_floor,
+    const std::vector<double>& variables,
+    const std::vector<double>& lower,
+    const std::vector<double>& upper,
+    bool active_parameters_requested
+) {
+    const epcsaft_native_transport& transport = checked_chemical_transport(capsule);
+    const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
+    ReactionSystemInput input = reaction_system_input(spec);
+    const ProviderContext provider(transport);
+    input.provider_fingerprint = provider.fingerprint();
+    const ProviderActiveParameterSet parameters = provider.active_parameters();
+    if (active_parameters_requested != !parameters.identities.empty()) {
+        throw py::value_error(
+            "Provider capsule active-parameter identity does not match the request"
+        );
+    }
+    const std::size_t parameter_count = parameters.identities.size();
+    std::vector<double> ln_k_parameter_derivatives;
+    if (!source_standard_state.is_none()) {
+        auto source = transform_provider_source_input(
+            transport,
+            provider,
+            py::cast<py::dict>(source_standard_state),
+            active_parameters_requested,
+            parameter_count == 0 ? nullptr : &parameters,
+            input
+        );
+        ln_k_parameter_derivatives = std::move(
+            source.first.ln_k_parameter_derivatives
+        );
+    }
+    const CompiledReactionSystem compiled = compile_provider_input(
+        transport, metadata, input, packing_bounds
+    );
+    ChemicalSolveResult evaluation = evaluate_provider_reaction_local(
+        compiled, provider, input.temperature_k, input.pressure_pa,
+        packing_bounds[0], packing_bounds[1],
+        transport.total_ion_mole_fraction_max, trace_floor,
+        variables, lower, upper,
+        compile_ln_k_parameter_derivatives(
+            compiled, input, ln_k_parameter_derivatives, parameter_count
+        ),
+        parameter_count == 0 ? nullptr : &parameters
+    );
+    set_provider_parameter_status(evaluation, parameter_count);
+    return chemical_result(evaluation);
 }
 
 py::dict reactive_finite_phase_result(const ReactiveFinitePhaseResult& evaluation) {
@@ -1686,6 +1800,19 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("packing_fraction_bounds"),
         py::arg("trace_floor"),
         py::arg("sensitivities_requested") = false,
+        py::arg("active_parameters_requested") = false
+    );
+    module.def(
+        "_evaluate_provider_reaction_local",
+        &evaluate_provider_local,
+        py::arg("capsule"),
+        py::arg("spec"),
+        py::arg("source_standard_state"),
+        py::arg("packing_fraction_bounds"),
+        py::arg("trace_floor"),
+        py::arg("variables"),
+        py::arg("lower"),
+        py::arg("upper"),
         py::arg("active_parameters_requested") = false
     );
     module.def(

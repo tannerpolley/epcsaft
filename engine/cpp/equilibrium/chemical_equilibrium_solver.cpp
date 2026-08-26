@@ -32,6 +32,8 @@ constexpr double kChartPhysicalPullbackTolerance =
     kChemicalChartPullbackTolerance;
 constexpr double kProviderDomainTolerance = 1.0e-12;
 constexpr double kSensitivityConditionNumberMax = kChemicalConditionNumberMax;
+constexpr double kIpoptTolerance = 1.0e-10;
+constexpr double kIpoptAcceptableTolerance = 1.0e-9;
 
 std::string ipopt_status_name(Ipopt::ApplicationReturnStatus status) {
     switch (status) {
@@ -82,10 +84,12 @@ void configure_ipopt(
     application->Options()->SetIntegerValue("print_level", 0);
     application->Options()->SetStringValue("sb", "yes");
     application->Options()->SetIntegerValue("max_iter", max_iterations);
-    application->Options()->SetNumericValue("tol", 1.0e-10);
-    application->Options()->SetNumericValue("acceptable_tol", 1.0e-9);
+    application->Options()->SetNumericValue("tol", kIpoptTolerance);
+    application->Options()->SetNumericValue(
+        "acceptable_tol", kIpoptAcceptableTolerance
+    );
     application->Options()->SetIntegerValue("acceptable_iter", 0);
-    application->Options()->SetNumericValue("constr_viol_tol", 1.0e-10);
+    application->Options()->SetNumericValue("constr_viol_tol", kIpoptTolerance);
     application->Options()->SetStringValue("jacobian_approximation", "exact");
     application->Options()->SetStringValue("hessian_approximation", "exact");
     application->Options()->SetStringValue("linear_solver", "mumps");
@@ -1548,6 +1552,9 @@ ChemicalSensitivityResult evaluate_implicit_sensitivities(
         phase.active_parameter_names.end()
     );
     const std::size_t parameter_count = result.parameter_order.size();
+    result.kkt_parameter_jacobian.assign(
+        result.kkt_dimension * parameter_count, 0.0
+    );
     result.amount_derivatives.assign(
         parameter_count * g_ref.size(), 0.0
     );
@@ -1627,6 +1634,10 @@ ChemicalSensitivityResult evaluate_implicit_sensitivities(
                     * phase.mechanical.hessian.back()
                     * direct_volume_derivative
             ) / pressure_pa;
+        }
+        for (std::size_t row = 0; row < result.kkt_dimension; ++row) {
+            result.kkt_parameter_jacobian[row * parameter_count + parameter] =
+                -right_hand_side[row];
         }
         std::vector<double> solution;
         if (!solve_equilibrated_square_system(
@@ -3122,6 +3133,8 @@ ChemicalSolveResult solve_reaction_attempt(
         lower.back() = std::log(initial_volume) - 30.0;
         upper.back() = std::log(initial_volume) + 30.0;
     }
+    result.local_lower_bounds = lower;
+    result.local_upper_bounds = upper;
     const ConstraintRows balances = normalized_constraint_rows(
         system.balance_matrix, system.balance_totals
     );
@@ -3260,6 +3273,7 @@ ChemicalSolveResult solve_reaction_attempt(
             // physical certificates when an interior polish is unavailable.
         }
     }
+    result.local_variables = variables;
     ReactionNlpEvaluation evaluation;
     try {
         evaluation = evaluate_reaction_nlp(
@@ -3925,6 +3939,7 @@ derivative_audits_complete:
             && result.active_upper_bounds.empty()
             && result.active_constraint_bounds.empty();
         if (root_is_interior) {
+            result.kkt_root_values = kkt.constraints;
             result.kkt_root_jacobian = kkt.jacobian;
             result.kkt_root_rows = variables.size();
             result.kkt_root_columns = variables.size();
@@ -5856,29 +5871,122 @@ ProviderPhaseBlockEvidence evaluate_provider_phase_block(
 
 namespace {
 
-PhaseBlockEvaluation provider_phase_evaluation(
+VolumeCoordinateTransform provider_volume_transform(
     const ProviderContext& provider,
-    double temperature_k,
-    const std::vector<double>& amounts,
-    double volume_m3
+    double packing_fraction_min,
+    double packing_fraction_max,
+    double initial_coordinate,
+    const ProviderActiveParameterSet* active_parameters
 ) {
-    const ProviderPhaseBlockEvidence block = evaluate_provider_phase_block(
-        provider, temperature_k, amounts, volume_m3
+    const ProviderActiveParameterSet parameters = active_parameters == nullptr
+        ? ProviderActiveParameterSet{}
+        : *active_parameters;
+    VolumeCoordinateTransform result;
+    result.lower_coordinate = std::log(packing_fraction_min);
+    result.upper_coordinate = std::nextafter(
+        std::log(packing_fraction_max), -std::numeric_limits<double>::infinity()
     );
-    PhaseBlockEvaluation result;
-    result.mechanical = {
-        block.value,
-        block.gradient,
-        block.hessian,
-        block.pressure_pa,
+    result.initial_coordinate = initial_coordinate;
+    if (!std::isfinite(initial_coordinate)
+        || initial_coordinate <= result.lower_coordinate
+        || initial_coordinate >= result.upper_coordinate) {
+        throw std::invalid_argument(
+            "Provider inverse-packing coordinate is outside admission bounds"
+        );
+    }
+    result.evaluate = [&provider, parameters](
+        double temperature,
+        const std::vector<double>& amounts,
+        double coordinate
+    ) {
+        const InversePackingGeometryEvaluation block =
+            provider.evaluate_inverse_packing_geometry(
+                temperature, amounts, coordinate, parameters
+            );
+        const std::size_t state_count = amounts.size() + 1;
+        const std::size_t parameter_count = parameters.identities.size();
+        if (block.gradient.size() != state_count + parameter_count
+            || block.hessian.size()
+                != (state_count + parameter_count) * (state_count + parameter_count)) {
+            throw std::invalid_argument(
+                "Provider inverse-packing geometry tensor dimensions changed"
+            );
+        }
+        std::vector<double> state_hessian(state_count * state_count, 0.0);
+        for (std::size_t row = 0; row < state_count; ++row) {
+            for (std::size_t column = 0; column < state_count; ++column) {
+                state_hessian[row * state_count + column] = block.hessian[
+                    row * (state_count + parameter_count) + column
+                ];
+            }
+        }
+        return VolumeCoordinateEvaluation{
+            block.volume_m3,
+            {block.gradient.begin(), block.gradient.begin()
+                + static_cast<std::ptrdiff_t>(state_count)},
+            std::move(state_hessian),
+            {block.gradient.begin() + static_cast<std::ptrdiff_t>(state_count),
+                block.gradient.end()},
+        };
     };
-    result.packing = {
-        block.packing_fraction,
-        block.packing_gradient,
-        block.packing_hessian,
-    };
-    result.has_packing = true;
     return result;
+}
+
+PhaseEvaluator provider_phase_evaluator(
+    const ProviderContext& provider,
+    double packing_fraction_min,
+    double packing_fraction_max,
+    const ProviderActiveParameterSet* active_parameters
+) {
+    const ProviderActiveParameterSet parameters = active_parameters == nullptr
+        ? ProviderActiveParameterSet{}
+        : *active_parameters;
+    return [&provider, packing_fraction_min, packing_fraction_max, parameters](
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume
+    ) {
+        if (parameters.identities.empty()) {
+            const ProviderPhaseBlockEvidence block = evaluate_provider_phase_block(
+                provider, temperature, amounts, volume
+            );
+            PhaseBlockEvaluation result;
+            result.mechanical = {
+                block.value, block.gradient, block.hessian, block.pressure_pa,
+            };
+            result.packing = {
+                block.packing_fraction, block.packing_gradient,
+                block.packing_hessian,
+            };
+            result.has_packing = true;
+            return result;
+        }
+        const ParameterizedPhaseEvaluation block =
+            provider.evaluate_parameterized_phase(
+                temperature, amounts, volume, packing_fraction_min,
+                packing_fraction_max, parameters
+            );
+        PhaseBlockEvaluation result;
+        result.mechanical = {
+            block.phase.value, block.phase.gradient, block.phase.hessian,
+            block.phase.pressure_pa,
+        };
+        result.packing = {
+            block.packing.value, block.packing.gradient, block.packing.hessian,
+        };
+        result.has_packing = true;
+        result.state_parameter_derivatives = block.state_parameter_derivatives;
+        result.pressure_parameter_derivatives_pa =
+            block.pressure_parameter_derivatives_pa;
+        result.chemical_potential_parameter_derivatives_over_rt =
+            block.chemical_potential_parameter_derivatives_over_rt;
+        for (const std::string& identity : parameters.identities) {
+            result.active_parameter_names.push_back(
+                "provider_parameter[" + identity + "]"
+            );
+        }
+        return result;
+    };
 }
 
 }  // namespace
@@ -5898,6 +6006,20 @@ ChemicalSolveResult solve_provider_reaction(
     const ChemicalContinuationStart* continuation_start,
     int max_iterations
 ) {
+    const auto finish = [&](ChemicalSolveResult result) {
+        result.resolved_policy = {
+            {"ipopt.tol", kIpoptTolerance},
+            {"ipopt.constr_viol_tol", kIpoptTolerance},
+            {"ipopt.acceptable_tol", kIpoptAcceptableTolerance},
+            {"ipopt.max_iter", static_cast<double>(max_iterations)},
+            {"certificate.balance_inf_norm_max", kBalanceTolerance},
+            {"certificate.pressure_relative_inf_norm_max", kPressureTolerance},
+            {"certificate.affinity_inf_norm_max", kAffinityTolerance},
+            {"certificate.kkt_stationarity_inf_norm_max", kKktTolerance},
+            {"certificate.minimum_amount_mol_min_exclusive", trace_floor},
+        };
+        return finalize_chemical_result(system, std::move(result), false);
+    };
     if (!std::isfinite(packing_fraction_min)
         || !std::isfinite(packing_fraction_max)
         || packing_fraction_min <= 0.0
@@ -5905,7 +6027,7 @@ ChemicalSolveResult solve_provider_reaction(
         throw std::invalid_argument("packing-fraction bounds must be finite, positive, and ordered");
     }
     if (!system.removed_species_indices.empty()) {
-        return finalize_chemical_result(system, ChemicalSolveResult{}, false);
+        return finish(ChemicalSolveResult{});
     }
     const MaxMinInitializationResult initialization = max_min_initialization(
         system.balance_matrix,
@@ -5919,7 +6041,7 @@ ChemicalSolveResult solve_provider_reaction(
         result.solver_status = initialization.solver_status;
         result.numerical_status = "failed";
         result.trace_status = "at_or_below_floor";
-        return finalize_chemical_result(system, std::move(result), false);
+        return finish(std::move(result));
     }
     const std::vector<double>& starting_amounts = initialization.amounts;
     const double total = std::accumulate(
@@ -5967,16 +6089,8 @@ ChemicalSolveResult solve_provider_reaction(
         result.callback_error = error.what();
         result.numerical_status = "failed";
         result.provider_domain_status = "failed";
-        return finalize_chemical_result(system, std::move(result), false);
+        return finish(std::move(result));
     }
-    const ProviderActiveParameterSet inverse_parameters = active_parameters == nullptr
-        ? ProviderActiveParameterSet{}
-        : *active_parameters;
-    VolumeCoordinateTransform volume_transform;
-    volume_transform.lower_coordinate = std::log(packing_fraction_min);
-    volume_transform.upper_coordinate = std::nextafter(
-        std::log(packing_fraction_max), -std::numeric_limits<double>::infinity()
-    );
     const double initial_packing_fraction = parameterized
         ? provider.evaluate_parameterized_phase(
             temperature_k,
@@ -5989,118 +6103,13 @@ ChemicalSolveResult solve_provider_reaction(
         : provider.evaluate_packing_fraction(
             temperature_k, starting_amounts, initial_volume
         ).value;
-    volume_transform.initial_coordinate = std::log(initial_packing_fraction);
-    if (!std::isfinite(volume_transform.lower_coordinate)
-        || !std::isfinite(volume_transform.upper_coordinate)
-        || volume_transform.upper_coordinate <= volume_transform.lower_coordinate
-        || !std::isfinite(volume_transform.initial_coordinate)
-        || volume_transform.initial_coordinate <= volume_transform.lower_coordinate
-        || volume_transform.initial_coordinate >= volume_transform.upper_coordinate) {
-        throw std::invalid_argument(
-            "Provider inverse-packing coordinate bounds are incompatible with the seed"
-        );
-    }
-    volume_transform.evaluate = [
-        &provider,
-        inverse_parameters
-    ](
-        double temperature,
-        const std::vector<double>& amounts,
-        double coordinate
-    ) {
-        const InversePackingGeometryEvaluation block =
-            provider.evaluate_inverse_packing_geometry(
-                temperature,
-                amounts,
-                coordinate,
-                inverse_parameters
-            );
-        const std::size_t state_count = amounts.size() + 1;
-        const std::size_t parameter_count = inverse_parameters.identities.size();
-        if (block.gradient.size() != state_count + parameter_count
-            || block.hessian.size()
-                != (state_count + parameter_count) * (state_count + parameter_count)) {
-            throw std::invalid_argument(
-                "Provider inverse-packing geometry tensor dimensions changed"
-            );
-        }
-        std::vector<double> state_gradient(
-            block.gradient.begin(), block.gradient.begin()
-                + static_cast<std::ptrdiff_t>(state_count)
-        );
-        std::vector<double> state_hessian(state_count * state_count, 0.0);
-        for (std::size_t row = 0; row < state_count; ++row) {
-            for (std::size_t column = 0; column < state_count; ++column) {
-                state_hessian[row * state_count + column] = block.hessian[
-                    row * (state_count + parameter_count) + column
-                ];
-            }
-        }
-        std::vector<double> parameter_derivatives(
-            block.gradient.begin() + static_cast<std::ptrdiff_t>(state_count),
-            block.gradient.end()
-        );
-        return VolumeCoordinateEvaluation{
-            block.volume_m3,
-            std::move(state_gradient),
-            std::move(state_hessian),
-            std::move(parameter_derivatives),
-        };
-    };
-    const PhaseEvaluator phase_evaluator = [
-        &provider,
-        active_parameters,
-        parameterized,
-        packing_fraction_min,
-        packing_fraction_max
-    ](
-        double temperature,
-        const std::vector<double>& amounts,
-        double volume
-    ) {
-        if (parameterized) {
-            const ParameterizedPhaseEvaluation block =
-                provider.evaluate_parameterized_phase(
-                    temperature,
-                    amounts,
-                    volume,
-                    packing_fraction_min,
-                    packing_fraction_max,
-                    *active_parameters
-                );
-            PhaseBlockEvaluation result;
-            result.mechanical = {
-                block.phase.value,
-                block.phase.gradient,
-                block.phase.hessian,
-                block.phase.pressure_pa,
-            };
-            result.packing = {
-                block.packing.value,
-                block.packing.gradient,
-                block.packing.hessian,
-            };
-            result.has_packing = true;
-            result.state_parameter_derivatives =
-                block.state_parameter_derivatives;
-            result.pressure_parameter_derivatives_pa =
-                block.pressure_parameter_derivatives_pa;
-            result.chemical_potential_parameter_derivatives_over_rt =
-                block.chemical_potential_parameter_derivatives_over_rt;
-            result.active_parameter_names.reserve(
-                active_parameters->identities.size()
-            );
-            for (const std::string& identity : active_parameters->identities) {
-                result.active_parameter_names.push_back(
-                    "provider_parameter[" + identity + "]"
-                );
-            }
-            return result;
-        }
-        return provider_phase_evaluation(
-            provider, temperature, amounts, volume
-        );
-    };
+    const VolumeCoordinateTransform volume_transform = provider_volume_transform(
+        provider, packing_fraction_min, packing_fraction_max,
+        std::log(initial_packing_fraction), active_parameters
+    );
+    const PhaseEvaluator phase_evaluator = provider_phase_evaluator(
+        provider, packing_fraction_min, packing_fraction_max, active_parameters
+    );
     const ReactionDomain domain{
         false,
         packing_fraction_min,
@@ -6235,8 +6244,7 @@ ChemicalSolveResult solve_provider_reaction(
         }
         return geometries;
     };
-    return finalize_chemical_result(
-        system,
+    return finish(
         solve_reaction(
             system,
             temperature_k,
@@ -6254,9 +6262,79 @@ ChemicalSolveResult solve_provider_reaction(
             &volume_transform,
             geometry_factory,
             continuation_start
-        ),
-        false
+        )
     );
+}
+
+ChemicalSolveResult evaluate_provider_reaction_local(
+    const CompiledReactionSystem& system,
+    const ProviderContext& provider,
+    double temperature_k,
+    double pressure_pa,
+    double packing_fraction_min,
+    double packing_fraction_max,
+    double total_ion_fraction_max,
+    double trace_floor,
+    const std::vector<double>& variables,
+    const std::vector<double>& lower,
+    const std::vector<double>& upper,
+    const std::vector<double>& ln_k_parameter_derivatives,
+    const ProviderActiveParameterSet* active_parameters
+) {
+    const AmountChart chart = make_amount_chart(system.charges);
+    if (variables.size() != chart.coordinate_count() + 1
+        || lower.size() != variables.size()
+        || upper.size() != variables.size()) {
+        throw std::invalid_argument("chemical local coordinate shape changed");
+    }
+    const ConstraintRows balances = normalized_constraint_rows(
+        system.balance_matrix, system.balance_totals
+    );
+    const ReactionDomain domain{
+        false, packing_fraction_min, packing_fraction_max,
+        total_ion_fraction_max,
+    };
+    const VolumeCoordinateTransform volume_transform = provider_volume_transform(
+        provider, packing_fraction_min, packing_fraction_max,
+        variables.back(), active_parameters
+    );
+    const PhaseEvaluator phase_evaluator = provider_phase_evaluator(
+        provider, packing_fraction_min, packing_fraction_max, active_parameters
+    );
+    const KktPolishEvaluation kkt = evaluate_kkt_polish(
+        chart, balances, system.reaction_matrix, system.g_ref,
+        temperature_k, pressure_pa, phase_evaluator, domain, variables,
+        &volume_transform
+    );
+    const ReactionNlpEvaluation state = evaluate_reaction_nlp(
+        chart, balances, system.g_ref, temperature_k, pressure_pa,
+        phase_evaluator, domain, variables,
+        std::vector<double>(reaction_constraint_count(balances, domain), 0.0),
+        &volume_transform
+    );
+    ChemicalSolveResult result;
+    result.local_variables = variables;
+    result.local_lower_bounds = lower;
+    result.local_upper_bounds = upper;
+    result.amounts = state.amount_chart.amounts;
+    result.volume_m3 = state.volume;
+    result.volume_parameter_derivatives = state.volume_parameter_derivatives;
+    result.packing_fraction = std::exp(variables.back());
+    result.minimum_amount_mol = state.amount_chart.minimum_amount;
+    result.kkt_root_values = kkt.constraints;
+    result.kkt_root_jacobian = kkt.jacobian;
+    result.kkt_root_rows = kkt.constraints.size();
+    result.kkt_root_columns = variables.size();
+    result.physical_to_chart_jacobian = state.physical_to_chart_jacobian;
+    result.physical_to_chart_rows = system.species_count + 1;
+    result.physical_to_chart_columns = variables.size();
+    result.sensitivities = evaluate_implicit_sensitivities(
+        chart, balances, system.reaction_matrix, system.g_ref,
+        temperature_k, pressure_pa, phase_evaluator, domain, variables,
+        lower, upper, {}, trace_floor, system.provider_fingerprint, {},
+        ln_k_parameter_derivatives, &volume_transform
+    );
+    return result;
 }
 
 }  // namespace epcsaft_engine::equilibrium

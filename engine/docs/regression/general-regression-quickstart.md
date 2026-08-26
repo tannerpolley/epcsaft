@@ -44,9 +44,7 @@ Optimizer stopping controls are optional values in the existing solver mapping:
 ```python
 request["solver"]["controls"] = {
     "maximum_iterations": 25,
-    "function_tolerance": 1.0e-6,
-    "gradient_tolerance": 1.0e-6,
-    "parameter_tolerance": 1.0e-6,
+    "optimizer_tolerance": 1.0e-6,
 }
 ```
 

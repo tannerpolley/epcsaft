@@ -18,9 +18,8 @@ choices must be reported as missing and may be replaced only by explicit
 reconstruction decisions.
 
 This contract applies to accepted paper-specific workflows and authority-neutral
-general Regression. It complements
-`docs/science/general-parameter-regression.md`; it does not broaden the
-parameter-family or observation capabilities advertised by an installed EOS.
+general Regression. It does not broaden the parameter-family or observation
+capabilities advertised by the installed Engine.
 
 ## Reproduction classes
 

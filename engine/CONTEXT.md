@@ -264,8 +264,9 @@ EOS owns fixed-state and pure-fluid property values, domains, and exact
 selected-parameter derivatives. Equilibrium owns mixture and reactive solved
 property values, domains, and exact selected-parameter derivatives. Regression
 may discover only capabilities admitted by the current Regression Cutover
-Boundary, maps observations, forms scaled residuals, and routes their exact
-Jacobians through its reduced-space Ipopt owner.
+Boundary, maps observations, forms scaled residuals, and routes them through
+its one Ipopt owner: simultaneous full-space where local exact derivatives are
+available, reduced-space otherwise.
 _Avoid_: Regression property implementation, Regression-owned thermodynamic
 derivative, duplicated observation solver
 

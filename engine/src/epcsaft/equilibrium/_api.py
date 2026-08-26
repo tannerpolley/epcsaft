@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import math
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from functools import cache
 from importlib import metadata
+from itertools import pairwise
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from pint import Quantity
@@ -15,6 +16,113 @@ import epcsaft
 from epcsaft.eos import _native_transport
 
 from . import _equilibrium
+
+
+class _ScalarBoundarySolveError(ValueError):
+    """A bounded scalar boundary could not produce an accepted root."""
+
+    def __init__(self, reason: str, value: float, state: object) -> None:
+        self.reason = reason
+        self.state = state
+        super().__init__(f"scalar boundary solve {reason} at {value!r}")
+
+
+def _solve_bracketed_scalar[ScalarState](
+    evaluate: Callable[[float], tuple[ScalarState, float, float]],
+    lower: float,
+    upper: float,
+    *,
+    initial: float | None,
+    bracket_points: Sequence[float] = (),
+    tolerance: float,
+    maximum_iterations: int,
+) -> tuple[float, ScalarState, float]:
+    """Solve one bounded scalar residual with safeguarded exact-derivative Newton."""
+
+    if not lower < upper:
+        raise ValueError("scalar boundary bounds must be ordered")
+    if not math.isfinite(tolerance) or tolerance <= 0.0:
+        raise ValueError("scalar boundary tolerance must be positive and finite")
+    if maximum_iterations <= 0:
+        raise ValueError("scalar boundary iteration limit must be positive")
+    if initial is not None and not lower <= initial <= upper:
+        raise ValueError("scalar boundary initial must lie inside its bounds")
+
+    def checked(value: float) -> tuple[ScalarState, float, float]:
+        state, residual, derivative = evaluate(value)
+        if not math.isfinite(residual):
+            raise _ScalarBoundarySolveError("invalid_residual", value, state)
+        return state, residual, derivative
+
+    anchor = 0.5 * (lower + upper) if initial is None else initial
+    evaluations: dict[float, tuple[ScalarState, float, float]] = {}
+    if initial is not None:
+        evaluations[initial] = checked(initial)
+        if abs(evaluations[initial][1]) <= tolerance:
+            return initial, evaluations[initial][0], evaluations[initial][1]
+    points = tuple(sorted({lower, *bracket_points, upper}))
+    if any(not math.isfinite(point) or not lower <= point <= upper for point in points):
+        raise ValueError("scalar boundary bracket points must lie inside its bounds")
+    for point in points:
+        if point not in evaluations:
+            evaluations[point] = checked(point)
+    roots = tuple(
+        point for point in points if abs(evaluations[point][1]) <= tolerance
+    )
+    if roots:
+        point = min(roots, key=lambda value: abs(value - anchor))
+        state, residual, _ = evaluations[point]
+        return point, state, residual
+    brackets = tuple(
+        (left, right)
+        for left, right in pairwise(points)
+        if math.copysign(1.0, evaluations[left][1])
+        != math.copysign(1.0, evaluations[right][1])
+    )
+    if not brackets:
+        raise _ScalarBoundarySolveError("not_bracketed", lower, evaluations[lower][0])
+    left, right = min(
+        brackets,
+        key=lambda pair: abs(anchor - 0.5 * (pair[0] + pair[1])),
+    )
+    left_residual = evaluations[left][1]
+
+    if initial is None:
+        current = 0.5 * (left + right)
+        current_state, current_residual, current_derivative = checked(current)
+    elif left <= initial <= right:
+        current = initial
+        current_state, current_residual, current_derivative = evaluations[initial]
+    else:
+        current = 0.5 * (left + right)
+        if current in evaluations:
+            current_state, current_residual, current_derivative = evaluations[current]
+        else:
+            current_state, current_residual, current_derivative = checked(current)
+
+    for _ in range(maximum_iterations):
+        if abs(current_residual) <= tolerance:
+            return current, current_state, current_residual
+        if math.copysign(1.0, current_residual) == math.copysign(1.0, left_residual):
+            left, left_residual = current, current_residual
+        else:
+            right = current
+        candidate = 0.5 * (left + right)
+        if not math.isfinite(current_derivative):
+            raise _ScalarBoundarySolveError("invalid_derivative", current, current_state)
+        if current_derivative != 0.0:
+            newton = current - current_residual / current_derivative
+            if left < newton < right:
+                candidate = newton
+        if candidate == current:
+            raise _ScalarBoundarySolveError("iteration_limit", current, current_state)
+        current = candidate
+        current_state, current_residual, current_derivative = checked(current)
+
+    if abs(current_residual) <= tolerance:
+        return current, current_state, current_residual
+    raise _ScalarBoundarySolveError("iteration_limit", current, current_state)
+
 
 if TYPE_CHECKING:
     from ._grepe import GeneralReactiveEquilibriumProblem, GeneralReactiveEquilibriumResult
@@ -786,6 +894,7 @@ class ChemicalEquilibriumResult:
     ln_k_provider_basis: tuple[float, ...] | None
     local_scope: str
     diagnostics: ChemicalEquilibriumDiagnostics
+    resolved_policy: tuple[tuple[str, float], ...]
     response_kind: str
     artifact_identity: ChemicalArtifactIdentity
     sensitivity: ChemicalEquilibriumSensitivity | None
@@ -2236,88 +2345,69 @@ def _fixed_p_coexistence(
         provider_evaluations += solved.diagnostics.provider_evaluation_count
         return solved, temperature_direction, solved.extent.pressure_pa - pressure_pa
 
-    lower_result, lower_temperature, lower_residual = evaluate(lower)
-    if lower_residual == 0.0:
-        selected = (lower, lower_result, lower_temperature, lower_residual)
-    else:
-        upper_result, upper_temperature, upper_residual = evaluate(upper)
-        if upper_residual == 0.0:
-            selected = (upper, upper_result, upper_temperature, upper_residual)
-        elif math.copysign(1.0, lower_residual) == math.copysign(1.0, upper_residual):
-            diagnostics = replace(
-                lower_result.diagnostics,
-                route="held_fixed_p_coexistence",
-                solver_status="failed",
-                numerical_status="not_certified",
-                physical_status="rejected",
-                failure_stage="intensive_boundary",
-                failure_reason="fixed_pressure_temperature_not_bracketed",
-                certificate_scope="fixed_p_declared_coexistence",
-                search_budget="declared_temperature_bracket_endpoints",
-                provider_evaluation_count=provider_evaluations,
-            )
-            raise PhaseEquilibriumError(
-                diagnostics.failure_reason or "fixed-pressure boundary was not bracketed",
-                diagnostics,
-                lower_result.phases,
-            )
-        else:
-            current = (
-                0.5 * (lower + upper)
-                if specification.temperature_initial is None
-                else _quantity(
-                    specification.temperature_initial,
-                    "kelvin",
-                    "temperature initial",
-                    "phase_equilibrium",
-                )
-            )
-            if not lower < current < upper:
-                raise ValueError(
-                    "fixed-pressure coexistence temperature initial must lie inside its bounds"
-                )
-            selected = None
-            for _ in range(64):
-                current_result, current_temperature, current_residual = evaluate(current)
-                if abs(current_residual) <= 1.0e-10 * max(1.0, pressure_pa):
-                    selected = (
-                        current,
-                        current_result,
-                        current_temperature,
-                        current_residual,
-                    )
-                    break
-                if math.copysign(1.0, current_residual) == math.copysign(
-                    1.0, lower_residual
-                ):
-                    lower, lower_residual = current, current_residual
-                else:
-                    upper, upper_residual = current, current_residual
-                pressure_temperature = current_temperature.output_direction_jacobian[0][0]
-                newton = current - current_residual / pressure_temperature
-                current = newton if lower < newton < upper else 0.5 * (lower + upper)
-            if selected is None:
-                diagnostics = replace(
-                    current_result.diagnostics,
-                    route="held_fixed_p_coexistence",
-                    solver_status="failed",
-                    numerical_status="not_certified",
-                    physical_status="rejected",
-                    failure_stage="intensive_boundary",
-                    failure_reason="fixed_pressure_temperature_iteration_limit",
-                    certificate_scope="fixed_p_declared_coexistence",
-                    search_budget="declared_temperature_bracket;64_iterations",
-                    optimizer_iteration_count=64,
-                    provider_evaluation_count=provider_evaluations,
-                )
-                raise PhaseEquilibriumError(
-                    diagnostics.failure_reason or "fixed-pressure boundary did not converge",
-                    diagnostics,
-                    current_result.phases,
-                )
+    initial = (
+        None
+        if specification.temperature_initial is None
+        else _quantity(
+            specification.temperature_initial,
+            "kelvin",
+            "temperature initial",
+            "phase_equilibrium",
+        )
+    )
+    if initial is not None and not lower < initial < upper:
+        raise ValueError(
+            "fixed-pressure coexistence temperature initial must lie inside its bounds"
+        )
 
-    assert selected is not None
-    temperature_k, solved, temperature_direction, residual = selected
+    def evaluate_scalar(
+        temperature_k: float,
+    ) -> tuple[tuple[PhaseEquilibriumResult, _ReferenceDirectionSensitivity], float, float]:
+        solved, direction, residual = evaluate(temperature_k)
+        return (solved, direction), residual, direction.output_direction_jacobian[0][0]
+
+    try:
+        temperature_k, selected_state, residual = _solve_bracketed_scalar(
+            evaluate_scalar,
+            lower,
+            upper,
+            initial=initial,
+            tolerance=1.0e-10 * max(1.0, pressure_pa),
+            maximum_iterations=64,
+        )
+    except _ScalarBoundarySolveError as error:
+        solved, _ = cast(
+            tuple[PhaseEquilibriumResult, _ReferenceDirectionSensitivity], error.state
+        )
+        failure_reason = (
+            "fixed_pressure_temperature_not_bracketed"
+            if error.reason == "not_bracketed"
+            else "fixed_pressure_temperature_iteration_limit"
+        )
+        diagnostics = replace(
+            solved.diagnostics,
+            route="held_fixed_p_coexistence",
+            solver_status="failed",
+            numerical_status="not_certified",
+            physical_status="rejected",
+            failure_stage="intensive_boundary",
+            failure_reason=failure_reason,
+            certificate_scope="fixed_p_declared_coexistence",
+            search_budget=(
+                "declared_temperature_bracket_endpoints"
+                if error.reason == "not_bracketed"
+                else "declared_temperature_bracket;64_iterations"
+            ),
+            optimizer_iteration_count=(0 if error.reason == "not_bracketed" else 64),
+            provider_evaluation_count=provider_evaluations,
+        )
+        raise PhaseEquilibriumError(
+            diagnostics.failure_reason or "fixed-pressure boundary did not converge",
+            diagnostics,
+            solved.phases,
+        )
+
+    solved, temperature_direction = selected_state
     if intervals is not None and any(
         not lower_packing < phase.packing_fraction < upper_packing
         for phase, (lower_packing, upper_packing) in zip(
@@ -3823,6 +3913,10 @@ def _chemical_equilibrium_impl(
         ln_k_provider_basis=ln_k_provider_basis,
         local_scope="fixed_TP_single_homogeneous_phase",
         diagnostics=diagnostics,
+        resolved_policy=tuple(
+            (str(record[0]), float(cast(float, record[1])))
+            for record in cast(Sequence[Sequence[object]], native["resolved_policy"])
+        ),
         response_kind=(
             "value_only"
             if sensitivity is None

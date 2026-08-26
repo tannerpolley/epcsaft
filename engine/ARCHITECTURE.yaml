@@ -1,6 +1,6 @@
 version: 10
 status: unified-monorepo-active
-governance_doctrine_revision: 21
+governance_doctrine_revision: 24
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -95,6 +95,7 @@ owners:
     result: epcsaft.regression.FitResult
     native_fit: src/epcsaft/regression/native/fit.cpp
     native_sources: src/epcsaft/regression/native
+    optimizer: ipopt
     scientific_values: owner_provided_only
     current_observation_boundary: [eos_fixed_state, eos_pure_saturation, equilibrium_homogeneous_reactive, equilibrium_reactive_bubble_vle]
     candidate_observation_boundary: [equilibrium_neutral_reactive_lle]

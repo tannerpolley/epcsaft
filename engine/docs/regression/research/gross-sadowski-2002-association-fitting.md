@@ -158,39 +158,12 @@ is **not evidence** that the 2002 associating pure-component fit used the same
 objective, weights, or algorithm; the 2002 paper does not refer back to Eq. 20
 for its five-coordinate regression.
 
-## Comparison with the current Regression pure-2B surface
+## Historical implementation boundary
 
-The current implementation is intentionally narrower than the literature
-claim:
-
-* `PureDensityObservation` stores one pure liquid density row with an observed
-  pressure, scales, volume origin/start/bounds, and a training partition
-  (`src/epcsaft_regression/parameter_regression.py:598--646`).
-* The first `RegressionProblem` implementation accepts exactly one shared
-  parameter and forbids mixing pure-density and phase-equilibrium observations
-  (`src/epcsaft_regression/parameter_regression.py:1127--1135`).
-* The bounded association surface uses the lifted coordinate
-  `p = p_origin + p_scale z`, `V = V_origin exp(u)` and two scaled residuals,
-  pressure and density; the exact Provider Hessian is consumed in
-  `(n,V,p)` (`docs/science/general-parameter-regression.md:230--260`).
-* The current tests use one Held-2012 ethanol density anchor and fit either
-  association energy **or** association volume at a time, with declared
-  Regression bounds/starts for mechanics testing
-  (`tests/test_parameter_regression.py:76--110`).  The tests explicitly report
-  a one-parameter projected rank and no scientific adjudication
-  (`tests/test_parameter_regression.py:1632--1657`).
-* The canonical design therefore selects a joint five-parameter extension of
-  the existing pure-saturation owner and keeps both association families
-  source-row/Provider-seam blocked. It requires the original simultaneous
-  vapor-pressure/liquid-density rows and a declared reconstruction objective
-  before calling them fit-ready
-  (`docs/science/general-parameter-regression.md`, “Pure-association evidence
-  and selected joint route”).
-
-The present surface is useful evidence that Provider derivatives and a Ceres
-mechanics path exist.  It is not a reproduction of the 2002 five-parameter
-identification and must not be used to claim recovery of `epsilon^A/k` or
-`kappa^A B` from a single density anchor.
+The implementation inspected for this research note is preserved at commit
+`98a433660af7b889202b489d373c4091773429b2`. It was not a reproduction of the
+2002 five-parameter identification and must not be used to claim recovery of
+`epsilon^A/k` or `kappa^A B` from a single density anchor.
 
 ## Decision boundary
 
@@ -203,7 +176,7 @@ identification and must not be used to claim recovery of `epsilon^A/k` or
    with `m`, `sigma`, and `epsilon/k` fixed to Table 1 values. This can be useful
    for sensitivity or initialization, but must be labeled conditional and not
    attributed to Gross--Sadowski.
-3. **Do not** treat the current one-row, one-parameter surface as either route;
+3. **Do not** treat a one-row, one-parameter surface as either route;
    it lacks the source series and the five-coordinate objective.
 
 The 2002 paper therefore resolves the original question—association energy and

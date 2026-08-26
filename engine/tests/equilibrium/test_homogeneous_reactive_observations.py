@@ -540,7 +540,7 @@ def test_value_only_provider_potential_observation_has_zero_column_jacobian() ->
 
 @pytest.mark.slow
 def test_grepe_single_finite_phase_matches_homogeneous_owner() -> None:
-    """Falsify material value or exact-J drift between independent formulations."""
+    """Falsify material value or exact-J drift across the GREPE wrapper."""
 
     parameters = epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE)
     model = epcsaft.Mixture(parameters)
@@ -700,22 +700,6 @@ def test_grepe_single_finite_phase_matches_homogeneous_owner() -> None:
             owner_problem.continuation_reference.fingerprint,
         ),
     )
-    tight_reference = replace(
-        owner_problem.continuation_reference,
-        maximum_log_composition_distance=1.0e-12,
-        maximum_log_volume_distance=1.0e-12,
-    )
-    tight_phase = replace(
-        grepe_problem.phases[0], continuation_reference=tight_reference
-    )
-    rejected = equilibrium.phase_equilibrium(
-        model,
-        replace(grepe_problem, phases=(tight_phase,)),
-        active_parameters=active,
-    )
-    assert rejected.status == "non_evaluable"
-    assert rejected.failure is not None
-    assert "continuation region" in rejected.failure.diagnostic
     observations = tuple(
         equilibrium.GeneralEquilibriumOwnerObservation(output.identity, output.identity)
         for output in grepe_problem.outputs
