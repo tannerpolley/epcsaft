@@ -130,6 +130,7 @@ struct FixedTCoexistenceResult {
     PhaseEquilibriumDiagnostics diagnostics;
     std::optional<SolvedStateSensitivity> sensitivity;
     std::optional<SolvedStateSensitivity> reference_direction_sensitivity;
+    std::optional<SolvedStateSensitivity> temperature_sensitivity;
 };
 
 [[nodiscard]] std::vector<std::string> phase_provider_component_ids(

@@ -135,6 +135,26 @@ using epcsaft_evaluate_parameterized_phase = int (*)(
     epcsaft_parameterized_phase_result* result
 );
 
+struct epcsaft_temperature_phase_result final {
+    std::uint32_t struct_size;
+    std::int32_t status;
+    std::size_t supported_component_count;
+    std::size_t chemical_potential_temperature_capacity;
+    double* chemical_potential_temperature_derivatives_over_rt_per_k;
+    double pressure_temperature_derivative_pa_per_k;
+    char parameter_fingerprint[EPCSAFT_NATIVE_FINGERPRINT_SIZE];
+    char error[EPCSAFT_NATIVE_ERROR_SIZE];
+};
+
+using epcsaft_evaluate_temperature_phase = int (*)(
+    const void* model_context,
+    double temperature_k,
+    const double* amounts_mol,
+    std::size_t amount_count,
+    double volume_m3,
+    epcsaft_temperature_phase_result* result
+);
+
 struct epcsaft_inverse_packing_geometry_result final {
     std::uint32_t struct_size;
     std::int32_t status;
@@ -261,6 +281,7 @@ struct epcsaft_native_transport final {
     epcsaft_evaluate_molar_volume_bounds evaluate_molar_volume_bounds;
     epcsaft_evaluate_packing_fraction evaluate_packing_fraction;
     epcsaft_evaluate_parameterized_phase evaluate_parameterized_phase;
+    epcsaft_evaluate_temperature_phase evaluate_temperature_phase;
     epcsaft_evaluate_inverse_packing_geometry evaluate_inverse_packing_geometry;
     epcsaft_evaluate_source_reference_transfer evaluate_source_reference_transfer;
     const char* const* component_ids;

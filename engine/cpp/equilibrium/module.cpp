@@ -813,6 +813,13 @@ py::dict solve_fixed_t_coexistence(
     } else {
         result["reference_direction_sensitivity"] = py::none();
     }
+    if (solved.temperature_sensitivity.has_value()) {
+        result["temperature_sensitivity"] = solved_sensitivity_to_dict(
+            *solved.temperature_sensitivity
+        );
+    } else {
+        result["temperature_sensitivity"] = py::none();
+    }
     return result;
 }
 py::dict solve_held_discovery(

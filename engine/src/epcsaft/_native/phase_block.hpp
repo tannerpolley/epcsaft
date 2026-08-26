@@ -814,7 +814,8 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
     const std::vector<NativeFixedTopologyParameter> &active_parameters,
     const NativeParameters &base_parameters,
     bool reduce_zero_amount_support = false,
-    double ion_mole_fraction_max = std::numeric_limits<double>::infinity()) {
+    double ion_mole_fraction_max = std::numeric_limits<double>::infinity(),
+    bool differentiate_temperature = false) {
   if (base_parameters.segment_count.empty()) {
     throw std::logic_error("active parameters require at least one component");
   }
@@ -1100,8 +1101,10 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
   const std::size_t amount_coordinate_count = coordinate_components.size();
   const std::size_t volume_coordinate = amount_coordinate_count;
   const std::size_t parameter_coordinate = volume_coordinate + 1;
-  const std::size_t coordinates =
+  const std::size_t temperature_coordinate =
       parameter_coordinate + active_parameters.size();
+  const std::size_t coordinates =
+      temperature_coordinate + static_cast<std::size_t>(differentiate_temperature);
   const std::size_t width = coordinates + sites;
   std::vector<ADScalar> independent(width);
   for (std::size_t coordinate = 0; coordinate < amount_coordinate_count;
@@ -1112,10 +1115,16 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
   for (std::size_t index = 0; index < active_parameters.size(); ++index) {
     independent[parameter_coordinate + index] = active_parameters[index].value;
   }
+  if (differentiate_temperature) {
+    independent[temperature_coordinate] = temperature;
+  }
   for (std::size_t site = 0; site < sites; ++site) {
     independent[coordinates + site] = site_fractions[site];
   }
   CppAD::Independent(independent);
+  const ADScalar active_temperature = differentiate_temperature
+      ? independent[temperature_coordinate]
+      : ADScalar(temperature);
 
   auto parameters = phase_block_parameters<ADScalar>(base_parameters);
   std::vector<ADScalar> association_energies(
@@ -1226,7 +1235,7 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
        term < base_parameters.permittivity_term_component.size(); ++term) {
     const std::size_t component = static_cast<std::size_t>(
         base_parameters.permittivity_term_component[term]);
-    const ADScalar delta = ADScalar(temperature) - ADScalar(
+    const ADScalar delta = active_temperature - ADScalar(
         base_parameters.permittivity_reference_temperature_k[component]);
     ADScalar temperature_power = ADScalar(1.0);
     for (int exponent = 0;
@@ -1255,20 +1264,20 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
   const std::vector<ADScalar> active_site_fractions(
       independent.begin() + static_cast<std::ptrdiff_t>(coordinates),
       independent.end());
-  const auto sigma = segment_sigma(ADScalar(temperature), parameters);
+  const auto sigma = segment_sigma(active_temperature, parameters);
   const auto diameter =
-      segment_diameter(ADScalar(temperature), parameters, sigma);
+      segment_diameter(active_temperature, parameters, sigma);
   const auto electrolyte_contributions = electrolyte_contribution(
-      ADScalar(temperature), active_density, temperature, density,
+      active_temperature, active_density, temperature, density,
       active_composition, composition, base_parameters,
       &relative_permittivity,
       &ion_fraction_suppression_coefficient);
   const auto born = born_contribution(
-      ADScalar(temperature), active_composition, base_parameters,
+      active_temperature, active_composition, base_parameters,
       electrolyte_contributions.bulk_relative_permittivity, &born_diameter,
       &solvation_factor, &ionic_region_relative_permittivity);
   const auto contributions = residual_helmholtz(
-      ADScalar(temperature), active_density, active_composition, parameters,
+      active_temperature, active_density, active_composition, parameters,
       sigma, diameter, active_site_fractions,
       electrolyte_contributions.debye_huckel, born);
   ADScalar ideal = ADScalar(0.0);
@@ -1284,7 +1293,7 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
                       contributions.association + contributions.polar +
                       contributions.debye_huckel + contributions.born);
   const auto delta = association_delta_values(
-      ADScalar(temperature), active_density, active_composition, parameters,
+      active_temperature, active_density, active_composition, parameters,
       sigma, diameter, association_energies, association_volumes);
   const auto mass_action =
       association_residuals(active_density, active_composition, parameters,
@@ -1301,6 +1310,9 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
   point.push_back(volume);
   for (const auto &parameter : active_parameters) {
     point.push_back(parameter.value);
+  }
+  if (differentiate_temperature) {
+    point.push_back(temperature);
   }
   point.insert(point.end(), site_fractions.begin(), site_fractions.end());
   const auto jacobian = function.Jacobian(point);
@@ -1386,6 +1398,14 @@ inline NativeMixturePhaseBlock support_aware_parameterized_mixture_phase_block(
   return fixed_topology_parameterized_mixture_phase_block(
       temperature, amounts, volume, active_parameters, base_parameters, true,
       ion_mole_fraction_max);
+}
+
+inline NativeMixturePhaseBlock support_aware_temperature_mixture_phase_block(
+    double temperature, const std::vector<double> &amounts, double volume,
+    double ion_mole_fraction_max, const NativeParameters &base_parameters) {
+  return fixed_topology_parameterized_mixture_phase_block(
+      temperature, amounts, volume, {}, base_parameters, true,
+      ion_mole_fraction_max, true);
 }
 
 // EqExclude: transport and buffer mechanics

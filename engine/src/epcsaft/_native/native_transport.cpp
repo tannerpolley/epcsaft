@@ -305,6 +305,9 @@ struct NativeTransportEndpoint final {
                       && !topology_fingerprint.empty()
                   ? &NativeTransportEndpoint::evaluate_parameterized_phase
                   : nullptr,
+              phase_callbacks_admitted
+                  ? &NativeTransportEndpoint::evaluate_temperature_phase
+                  : nullptr,
               phase_callbacks_admitted && !topology_fingerprint.empty()
                   ? &NativeTransportEndpoint::evaluate_inverse_packing_geometry
                   : nullptr,
@@ -321,6 +324,105 @@ struct NativeTransportEndpoint final {
               temperature_max_k,
               ion_mole_fraction_max,
           } {}
+
+    static int evaluate_temperature_phase(
+        const void* context,
+        double temperature_k,
+        const double* amounts_mol,
+        size_t amount_count,
+        double volume_m3,
+        epcsaft_temperature_phase_result* result
+    ) noexcept {
+        if (result == nullptr) {
+            return EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT;
+        }
+        if (result->struct_size != sizeof(epcsaft_temperature_phase_result)) {
+            return EPCSAFT_NATIVE_STATUS_BUFFER_ERROR;
+        }
+        result->status = EPCSAFT_NATIVE_STATUS_OK;
+        result->pressure_temperature_derivative_pa_per_k =
+            std::numeric_limits<double>::quiet_NaN();
+        result->parameter_fingerprint[0] = '\0';
+        result->error[0] = '\0';
+        auto fail = [&](int status, const char* message) {
+            result->status = status;
+            std::snprintf(result->error, sizeof(result->error), "%s", message);
+            return status;
+        };
+        if (context == nullptr || amounts_mol == nullptr) {
+            return fail(EPCSAFT_NATIVE_STATUS_INVALID_ARGUMENT,
+                        "temperature phase required pointer is null");
+        }
+        const auto& endpoint =
+            *static_cast<const NativeTransportEndpoint*>(context);
+        const std::size_t support_count = static_cast<std::size_t>(std::count_if(
+            amounts_mol, amounts_mol + amount_count,
+            [](double amount) { return amount > 0.0; }
+        ));
+        if (amount_count != endpoint.component_ids.size()
+            || result->supported_component_count != support_count
+            || result->chemical_potential_temperature_capacity != support_count
+            || result->chemical_potential_temperature_derivatives_over_rt_per_k
+                == nullptr) {
+            return fail(EPCSAFT_NATIVE_STATUS_BUFFER_ERROR,
+                        "temperature phase buffers do not match immutable dimensions");
+        }
+        if (!std::isfinite(temperature_k) || temperature_k <= 0.0
+            || !std::isfinite(volume_m3) || volume_m3 <= 0.0
+            || (std::isfinite(endpoint.temperature_min_k)
+                && temperature_k < endpoint.temperature_min_k)
+            || (std::isfinite(endpoint.temperature_max_k)
+                && temperature_k > endpoint.temperature_max_k)) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR,
+                        "temperature phase state is outside the source domain");
+        }
+        try {
+            const std::vector<double> amounts(
+                amounts_mol, amounts_mol + amount_count
+            );
+            const auto phase = endpoint.model.evaluate_temperature_phase_derivatives(
+                temperature_k, amounts, volume_m3,
+                endpoint.ion_mole_fraction_max
+            );
+            const std::size_t state_count = support_count + 1u;
+            const std::size_t width = state_count + 1u;
+            const std::size_t volume_coordinate = support_count;
+            const std::size_t temperature_coordinate = state_count;
+            if (phase.gradient.size() != width
+                || phase.hessian.size() != width * width) {
+                throw std::runtime_error(
+                    "temperature phase tensor dimensions changed"
+                );
+            }
+            for (std::size_t component = 0; component < support_count; ++component) {
+                result->chemical_potential_temperature_derivatives_over_rt_per_k[
+                    component
+                ] = phase.hessian[
+                    component * width + temperature_coordinate
+                ];
+            }
+            result->pressure_temperature_derivative_pa_per_k =
+                -detail::GAS_CONSTANT * phase.gradient[volume_coordinate]
+                -detail::GAS_CONSTANT * temperature_k * phase.hessian[
+                    volume_coordinate * width + temperature_coordinate
+                ];
+            std::snprintf(
+                result->parameter_fingerprint,
+                sizeof(result->parameter_fingerprint),
+                "%s", endpoint.parameter_fingerprint.c_str()
+            );
+            return result->status = EPCSAFT_NATIVE_STATUS_OK;
+        } catch (const std::invalid_argument& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_DOMAIN_ERROR, error.what());
+        } catch (const std::logic_error& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_UNSUPPORTED_MODEL, error.what());
+        } catch (const std::exception& error) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR, error.what());
+        } catch (...) {
+            return fail(EPCSAFT_NATIVE_STATUS_EVALUATION_ERROR,
+                        "unknown temperature phase evaluation failure");
+        }
+    }
 
     // EqID: phase_packing_fraction
     // EqExclude: transport and buffer mechanics
