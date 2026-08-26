@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import math
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from importlib import metadata
 from os import PathLike
@@ -22,9 +22,9 @@ from ..eos import (
     evaluate_observable,
 )
 from ..parameters import ActiveParameterSet, Parameters
-from ._model import ParameterFit, TableRow
+from ._model import EquilibriumFitObservation, ParameterFit, TableRow
 from ._resolve import ResolvedFit, ResolvedObservation
-from ._result import FitResult, FitSpecificationReceipt
+from ._result import FitResult, FitRowReceipt, FitSpecificationReceipt
 
 
 class FitPreflightError(ValueError):
@@ -284,56 +284,19 @@ def _package_fingerprint() -> str:
     return f"sha256:{hashlib.sha256(record.encode()).hexdigest()}"
 
 
-def fit(
-    value: object,
-    *,
-    base_path: str | PathLike[str] | None = None,
+def _fit_owner_batches(
+    resolved: ResolvedFit,
+    owner: Callable[[int, int, Sequence[float], bool], Mapping[str, object]],
+    residual_blocks: Sequence[Mapping[str, object]],
+    specification: FitSpecificationReceipt,
 ) -> FitResult:
-    if not isinstance(value, (ParameterFit, Mapping, str, PathLike)):
-        raise TypeError("fit requires a ParameterFit, mapping, or path")
-    specification, source = _load(value)
-    root = _root(base_path, source)
-    parameter_path = Path(specification.parameters.path)
-    if not parameter_path.is_absolute():
-        parameter_path = root / parameter_path
-    parameters = Parameters.from_json(parameter_path)
-    resolved = specification.resolve(parameters, base_path=root)
-    if not resolved.observations:
-        from ._equilibrium_fit import _fit_equilibrium_parameter_fit
-
-        return _fit_equilibrium_parameter_fit(resolved)
-    model: Pure | Mixture = (
-        Pure(resolved.parameters)
-        if specification.model.kind == "pure"
-        else Mixture(resolved.parameters)
-    )
     coordinate_indices = {
         identity: index
         for index, coordinate in enumerate(resolved.coordinates)
         for identity in coordinate.tied_identities
     }
-    requests, residual_blocks = _owner_requests(resolved)
-    owner = _OwnerEvaluator(model, resolved, requests)
-    exact_start_blocks = _preflight(owner, resolved, requests)
-
-    def evaluate_owner(
-        start_index: int,
-        index: int,
-        values: Sequence[float],
-        receipt_requested: bool,
-    ) -> dict[str, object]:
-        key = (
-            specification.solver.multistart.starts[start_index].identity,
-            index,
-            resolved.selected_identities,
-            tuple(values),
-        )
-        if not receipt_requested and (block := exact_start_blocks.get(key)) is not None:
-            return block
-        return owner(start_index, index, values, receipt_requested)
-
     native = _core._fit_resolved(
-        evaluate_owner,
+        owner,
         len(resolved.selected_identities),
         [coordinate_indices[identity] for identity in resolved.selected_identities],
         [
@@ -359,22 +322,166 @@ def fit(
                         )
                     ],
                 }
-                for start in specification.solver.multistart.starts
+                for start in resolved.fit.solver.multistart.starts
             ],
-            "affine_bound_margin": specification.solver.multistart.affine_bound_margin,
-            "maximum_iterations": specification.solver.controls.maximum_iterations,
-            "function_tolerance": specification.solver.controls.function_tolerance,
-            "gradient_tolerance": specification.solver.controls.gradient_tolerance,
-            "parameter_tolerance": specification.solver.controls.parameter_tolerance,
+            "affine_bound_margin": resolved.fit.solver.multistart.affine_bound_margin,
+            "maximum_iterations": resolved.fit.solver.controls.maximum_iterations,
+            "function_tolerance": resolved.fit.solver.controls.function_tolerance,
+            "gradient_tolerance": resolved.fit.solver.controls.gradient_tolerance,
+            "parameter_tolerance": resolved.fit.solver.controls.parameter_tolerance,
         },
         tuple(sorted(NON_EVALUABLE_TRIAL_CODES)),
     )
     return FitResult.from_native(
-        FitSpecificationReceipt.from_resolved_fit(resolved),
+        specification,
         cast(Mapping[str, Any], native),
         artifact_fingerprint=_python_native_artifact_fingerprint(),
         package_fingerprint=_package_fingerprint(),
     )
+
+
+def _receipt_blocks(
+    receipt: FitSpecificationReceipt,
+) -> tuple[tuple[FitRowReceipt, ...], ...]:
+    offset = 0
+    blocks = []
+    for size in receipt.block_sizes:
+        blocks.append(receipt.rows[offset : offset + size])
+        offset += size
+    return tuple(blocks)
+
+
+def fit(
+    value: object,
+    *,
+    base_path: str | PathLike[str] | None = None,
+) -> FitResult:
+    if not isinstance(value, (ParameterFit, Mapping, str, PathLike)):
+        raise TypeError("fit requires a ParameterFit, mapping, or path")
+    specification, source = _load(value)
+    root = _root(base_path, source)
+    parameter_path = Path(specification.parameters.path)
+    if not parameter_path.is_absolute():
+        parameter_path = root / parameter_path
+    parameters = Parameters.from_json(parameter_path)
+    resolved = specification.resolve(parameters, base_path=root)
+    model: Pure | Mixture = (
+        Pure(resolved.parameters)
+        if specification.model.kind == "pure"
+        else Mixture(resolved.parameters)
+    )
+    requests, residual_blocks = _owner_requests(resolved)
+    direct_owner = _OwnerEvaluator(model, resolved, requests)
+    exact_start_blocks = _preflight(direct_owner, resolved, requests)
+
+    def evaluate_owner(
+        start_index: int,
+        index: int,
+        values: Sequence[float],
+        receipt_requested: bool,
+    ) -> dict[str, object]:
+        key = (
+            specification.solver.multistart.starts[start_index].identity,
+            index,
+            resolved.selected_identities,
+            tuple(values),
+        )
+        if not receipt_requested and (block := exact_start_blocks.get(key)) is not None:
+            return block
+        return direct_owner(start_index, index, values, receipt_requested)
+
+    direct_receipt = FitSpecificationReceipt.from_resolved_fit(resolved)
+    direct_receipt_blocks = _receipt_blocks(direct_receipt)
+    owner_entries: list[
+        tuple[Callable[[int, int, Sequence[float], bool], Mapping[str, object]], int]
+    ] = []
+    ordered_residual_blocks: list[Mapping[str, object]] = []
+    ordered_receipt_rows: list[FitRowReceipt] = []
+    ordered_block_sizes: list[int] = []
+    equilibrium_all_batches: Sequence[Any] = ()
+    equilibrium_owner = None
+    equilibrium_batches: Sequence[Any] = ()
+    equilibrium_receipt = None
+    equilibrium_residual_blocks: tuple[Mapping[str, object], ...] = ()
+    if any(
+        isinstance(observation, EquilibriumFitObservation)
+        for observation in resolved.fit.observations
+    ):
+        from ._equilibrium_owner import _equilibrium_owner_batches
+
+        (
+            equilibrium_all_batches,
+            equilibrium_batches,
+            equilibrium_owner,
+            equilibrium_residual_blocks,
+            equilibrium_receipt,
+        ) = _equilibrium_owner_batches(resolved)
+    equilibrium_receipt_blocks = (
+        () if equilibrium_receipt is None else _receipt_blocks(equilibrium_receipt)
+    )
+    equilibrium_index_by_identity = {
+        batch.identity: index for index, batch in enumerate(equilibrium_batches)
+    }
+    direct_observation_index = 0
+    direct_batch_index = 0
+    equilibrium_batch_index = 0
+    for observation in resolved.fit.observations:
+        if isinstance(observation, EquilibriumFitObservation):
+            assert equilibrium_owner is not None
+            batch = equilibrium_all_batches[equilibrium_batch_index]
+            equilibrium_batch_index += 1
+            active_index = equilibrium_index_by_identity.get(batch.identity)
+            if active_index is None:
+                continue
+            owner_entries.append((equilibrium_owner, active_index))
+            ordered_residual_blocks.append(equilibrium_residual_blocks[active_index])
+            rows = equilibrium_receipt_blocks[active_index]
+            ordered_receipt_rows.extend(rows)
+            ordered_block_sizes.append(len(rows))
+            continue
+        row_count = len(_rows(resolved.observations[direct_observation_index]))
+        direct_observation_index += 1
+        for _ in range(row_count):
+            owner_entries.append((evaluate_owner, direct_batch_index))
+            ordered_residual_blocks.append(residual_blocks[direct_batch_index])
+            rows = direct_receipt_blocks[direct_batch_index]
+            ordered_receipt_rows.extend(rows)
+            ordered_block_sizes.append(len(rows))
+            direct_batch_index += 1
+
+    def evaluate_ordered_owner(
+        start_index: int,
+        index: int,
+        values: Sequence[float],
+        receipt_requested: bool,
+    ) -> Mapping[str, object]:
+        owner, local_index = owner_entries[index]
+        return owner(start_index, local_index, values, receipt_requested)
+
+    combined_receipt = FitSpecificationReceipt.create(
+        resolved.to_mapping(),
+        parameters=resolved.parameters,
+        coordinates=direct_receipt.coordinates,
+        rows=ordered_receipt_rows,
+        block_sizes=ordered_block_sizes,
+        input_row_count=direct_receipt.input_row_count
+        + (0 if equilibrium_receipt is None else equilibrium_receipt.input_row_count),
+        dropped_row_count=direct_receipt.dropped_row_count
+        + (0 if equilibrium_receipt is None else equilibrium_receipt.dropped_row_count),
+    )
+
+    result = _fit_owner_batches(
+        resolved,
+        evaluate_ordered_owner,
+        ordered_residual_blocks,
+        combined_receipt,
+    )
+    if equilibrium_all_batches:
+        from ._equilibrium_owner import _validated_owner_receipts
+
+        for start in result.starts:
+            _validated_owner_receipts(resolved, equilibrium_all_batches, start)
+    return result
 
 
 __all__ = ("FitPreflightError", "fit")
