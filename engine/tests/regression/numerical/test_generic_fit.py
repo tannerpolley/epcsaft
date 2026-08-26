@@ -252,8 +252,7 @@ def test_owner_blocks_preserve_mixed_active_order_and_complete_residual_jacobian
     for identity, expected in zip(_MIXED_IDENTITIES, accepted.final_physical, strict=True):
         assert _parameter_value(candidate, identity) == pytest.approx(expected)
     assert all(
-        row.candidate_parameter_identity == result.candidate_parameter_identity
-        for row in evaluated
+        row.candidate_parameter_identity == result.candidate_parameter_identity for row in evaluated
     )
 
     point = dict(zip(_MIXED_IDENTITIES, accepted.final_physical, strict=True))
@@ -298,9 +297,7 @@ def test_owner_blocks_preserve_mixed_active_order_and_complete_residual_jacobian
             (sum(value * value for value in above) - sum(value * value for value in below))
             / (4.0 * step)
         )
-    assert objective_gradient == pytest.approx(
-        centered_objective_gradient, rel=5.0e-5, abs=2.0e-10
-    )
+    assert objective_gradient == pytest.approx(centered_objective_gradient, rel=5.0e-5, abs=2.0e-10)
 
 
 def test_tied_owner_coordinate_reports_interior_covariance_and_active_bound(
@@ -570,6 +567,24 @@ def test_pure_saturation_owner_transfer_and_non_evaluable_trial_diagnostics(
     assert successful.best_usable_start is not None
     assert successful.best_usable_start.owner_receipts == ()
     assert successful.to_mapping()["best_usable_start"] is not None
+    assert successful.to_mapping()["outcomes"] == {
+        "solver_convergence": {
+            "status": "converged",
+            "reason": successful.best_usable_start.solver_status,
+        },
+        "numerical_convergence": {
+            "status": "not_assessed",
+            "reason": "no independent tolerance or initialization sensitivity study",
+        },
+        "physical_certification": {
+            "status": "certified",
+            "reason": "all owner batches evaluated",
+        },
+        "scientific_fit_acceptance": {
+            "status": "not_declared",
+            "reason": "the fit specification declares no scientific acceptance criterion",
+        },
+    }
     assert successful.best_usable_start.final_physical[0] == pytest.approx(
         _PURE_TRUE_VALUE, abs=1.0e-7
     )
