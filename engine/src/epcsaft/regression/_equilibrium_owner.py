@@ -859,7 +859,7 @@ def _full_space_batches(
             )
             amounts = tuple(cast(Sequence[float], native["amounts"]))
             total = math.fsum(amounts)
-            volume = float(native["volume_m3"])
+            volume = float(cast(float, native["volume_m3"]))
             volume_parameter_derivatives = cast(
                 Sequence[float], native["volume_parameter_derivatives"]
             )
