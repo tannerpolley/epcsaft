@@ -164,7 +164,30 @@ class FixedTCoexistence:
         object.__setattr__(self, "reference_mole_fractions", tuple(self.reference_mole_fractions))
 
 
-PhaseEquilibriumSpecification = FixedTPFeed | FixedTCoexistence
+@dataclass(frozen=True, slots=True)
+class FixedPCoexistence:
+    """Fixed-pressure two-phase boundary on one declared temperature bracket."""
+
+    pressure: Quantity[Any]
+    temperature_bounds: tuple[Quantity[Any], Quantity[Any]]
+    topology: DeclaredTopology
+    reference_phase_index: int
+    reference_mole_fractions: tuple[float, ...]
+    temperature_initial: Quantity[Any] | None = None
+    packing_fraction_intervals: tuple[tuple[float, float], ...] | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "temperature_bounds", tuple(self.temperature_bounds))
+        object.__setattr__(self, "reference_mole_fractions", tuple(self.reference_mole_fractions))
+        if self.packing_fraction_intervals is not None:
+            object.__setattr__(
+                self,
+                "packing_fraction_intervals",
+                tuple(tuple(interval) for interval in self.packing_fraction_intervals),
+            )
+
+
+PhaseEquilibriumSpecification = FixedTPFeed | FixedTCoexistence | FixedPCoexistence
 
 
 @dataclass(frozen=True, slots=True)
@@ -356,7 +379,16 @@ class IncipientBoundary:
     pressure_pa: float
 
 
-EquilibriumExtent = FeedSplit | IncipientBoundary
+@dataclass(frozen=True, slots=True)
+class IncipientTemperatureBoundary:
+    """Two-phase boundary at fixed pressure with solved temperature."""
+
+    reference_phase_index: int
+    pressure_pa: float
+    temperature_k: float
+
+
+EquilibriumExtent = FeedSplit | IncipientBoundary | IncipientTemperatureBoundary
 
 
 @dataclass(frozen=True, slots=True)
@@ -1886,11 +1918,13 @@ def phase_equilibrium(
                 native.get("sensitivity"), active_parameters
             ),
         )
+    if isinstance(specification, FixedPCoexistence):
+        return _fixed_p_coexistence(model, problem, specification, active_parameters)
     if not isinstance(specification, FixedTCoexistence):
         raise TypeError("phase-equilibrium specification type is unsupported")
     if problem.initial_guesses:
         raise ValueError("declared phase initial guesses currently require fixed T,P")
-    result, directions, _, _ = _fixed_t_coexistence_core(
+    result, directions, _, _, _ = _fixed_t_coexistence_core(
         model,
         problem,
         active_parameters=active_parameters,
@@ -1917,7 +1951,7 @@ def _fixed_t_coexistence_with_reference_directions(
 ]:
     """Solve coexistence and differentiate exact admissible liquid-composition directions."""
 
-    result, directions, partner_fingerprint, partner_ids = _fixed_t_coexistence_core(
+    result, directions, _, partner_fingerprint, partner_ids = _fixed_t_coexistence_core(
         model,
         problem,
         active_parameters=active_parameters,
@@ -1939,6 +1973,7 @@ def _fixed_t_coexistence_core(
 ) -> tuple[
     PhaseEquilibriumResult,
     _ReferenceDirectionSensitivity | None,
+    _ReferenceDirectionSensitivity,
     str,
     tuple[str, ...],
 ]:
@@ -2058,7 +2093,293 @@ def _fixed_t_coexistence_core(
             native.get("reference_direction_sensitivity"), direction_identities
         )
     )
-    return result, directions, partner_model.parameter_fingerprint, partner_model.component_ids
+    temperature_directions = _reference_direction_sensitivity(
+        native.get("temperature_sensitivity"), ("state/temperature_k",)
+    )
+    return (
+        result,
+        directions,
+        temperature_directions,
+        partner_model.parameter_fingerprint,
+        partner_model.component_ids,
+    )
+
+
+def _fixed_p_coexistence_sensitivity(
+    fixed: PhaseEquilibriumSensitivity | None,
+    temperature: _ReferenceDirectionSensitivity,
+) -> PhaseEquilibriumSensitivity | None:
+    if fixed is None:
+        return None
+    if fixed.status != "available" or temperature.status != "available":
+        return replace(
+            fixed,
+            status="unavailable",
+            failure_reason="fixed_pressure_temperature_or_parameter_sensitivity_unavailable",
+        )
+    if fixed.output_identities != temperature.output_identities:
+        return replace(
+            fixed,
+            status="unavailable",
+            failure_reason="fixed_pressure_output_layout_changed",
+        )
+    pressure_temperature = temperature.output_direction_jacobian[0][0]
+    if not math.isfinite(pressure_temperature) or pressure_temperature == 0.0:
+        return replace(
+            fixed,
+            status="unavailable",
+            failure_reason="fixed_pressure_temperature_closure_singular",
+        )
+    pressure_parameters = fixed.output_parameter_jacobian[0]
+    temperature_parameters = tuple(
+        -value / pressure_temperature for value in pressure_parameters
+    )
+    output_rows: list[tuple[float, ...]] = [temperature_parameters]
+    for fixed_row, temperature_row in zip(
+        fixed.output_parameter_jacobian[1:],
+        temperature.output_direction_jacobian[1:],
+        strict=True,
+    ):
+        output_rows.append(
+            tuple(
+                direct + temperature_row[0] * temperature_parameters[index]
+                for index, direct in enumerate(fixed_row)
+            )
+        )
+    return PhaseEquilibriumSensitivity(
+        status="available",
+        failure_reason=None,
+        derivative_order=1,
+        higher_order_status="unavailable",
+        higher_order_reason="fixed-pressure coexistence provides exact first derivatives only",
+        tensor_layout="row-major",
+        parameters=fixed.parameters,
+        residual_identities=("boundary.pressure_pa_minus_target",),
+        state_identities=("boundary.temperature_k",),
+        output_identities=("boundary.temperature_k", *fixed.output_identities[1:]),
+        residual_state_jacobian=((pressure_temperature,),),
+        residual_parameter_jacobian=(pressure_parameters,),
+        state_parameter_jacobian=(temperature_parameters,),
+        output_parameter_jacobian=tuple(output_rows),
+        rank=1,
+        dimension=1,
+        scaled_condition_number_2=1.0,
+        linear_solve_backward_error=0.0,
+        reference_phase_index=fixed.reference_phase_index,
+    )
+
+
+def _fixed_p_coexistence(
+    model: epcsaft.Mixture,
+    problem: PhaseEquilibriumProblem,
+    specification: FixedPCoexistence,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+) -> PhaseEquilibriumResult:
+    if problem.initial_guesses:
+        raise ValueError("fixed-pressure coexistence accepts phase hints, not finite-phase starts")
+    pressure_pa = _quantity(
+        specification.pressure, "pascal", "pressure", "phase_equilibrium"
+    )
+    if pressure_pa <= 0.0:
+        raise ValueError("fixed-pressure coexistence pressure must be positive")
+    if len(specification.temperature_bounds) != 2:
+        raise ValueError("fixed-pressure coexistence requires two temperature bounds")
+    lower = _quantity(
+        specification.temperature_bounds[0], "kelvin", "temperature", "phase_equilibrium"
+    )
+    upper = _quantity(
+        specification.temperature_bounds[1], "kelvin", "temperature", "phase_equilibrium"
+    )
+    if not lower < upper:
+        raise ValueError("fixed-pressure coexistence temperature bounds must be ordered")
+    intervals = specification.packing_fraction_intervals
+    if intervals is not None and (
+        len(intervals) != 2
+        or any(
+            len(interval) != 2
+            or not 0.0 <= interval[0] < interval[1] < 1.0
+            for interval in intervals
+        )
+    ):
+        raise ValueError(
+            "fixed-pressure coexistence requires one physical packing interval per phase"
+        )
+
+    evaluation_count = 0
+    provider_evaluations = 0
+
+    def evaluate(temperature_k: float) -> tuple[
+        PhaseEquilibriumResult,
+        _ReferenceDirectionSensitivity,
+        float,
+    ]:
+        nonlocal evaluation_count, provider_evaluations
+        fixed_problem = PhaseEquilibriumProblem(
+            FixedTCoexistence(
+                temperature_k * epcsaft.unit_registry.kelvin,
+                specification.topology,
+                specification.reference_phase_index,
+                specification.reference_mole_fractions,
+            ),
+            problem.hints,
+        )
+        solved, _, temperature_direction, _, _ = _fixed_t_coexistence_core(
+            model,
+            fixed_problem,
+            active_parameters=active_parameters,
+            direction_identities=(),
+            reference_composition_directions=(),
+        )
+        if not isinstance(solved.extent, IncipientBoundary):
+            raise TypeError("fixed-temperature coexistence returned the wrong extent")
+        evaluation_count += 1
+        provider_evaluations += solved.diagnostics.provider_evaluation_count
+        return solved, temperature_direction, solved.extent.pressure_pa - pressure_pa
+
+    lower_result, lower_temperature, lower_residual = evaluate(lower)
+    if lower_residual == 0.0:
+        selected = (lower, lower_result, lower_temperature, lower_residual)
+    else:
+        upper_result, upper_temperature, upper_residual = evaluate(upper)
+        if upper_residual == 0.0:
+            selected = (upper, upper_result, upper_temperature, upper_residual)
+        elif math.copysign(1.0, lower_residual) == math.copysign(1.0, upper_residual):
+            diagnostics = replace(
+                lower_result.diagnostics,
+                route="held_fixed_p_coexistence",
+                solver_status="failed",
+                numerical_status="not_certified",
+                physical_status="rejected",
+                failure_stage="intensive_boundary",
+                failure_reason="fixed_pressure_temperature_not_bracketed",
+                certificate_scope="fixed_p_declared_coexistence",
+                search_budget="declared_temperature_bracket_endpoints",
+                provider_evaluation_count=provider_evaluations,
+            )
+            raise PhaseEquilibriumError(
+                diagnostics.failure_reason or "fixed-pressure boundary was not bracketed",
+                diagnostics,
+                lower_result.phases,
+            )
+        else:
+            current = (
+                0.5 * (lower + upper)
+                if specification.temperature_initial is None
+                else _quantity(
+                    specification.temperature_initial,
+                    "kelvin",
+                    "temperature initial",
+                    "phase_equilibrium",
+                )
+            )
+            if not lower < current < upper:
+                raise ValueError(
+                    "fixed-pressure coexistence temperature initial must lie inside its bounds"
+                )
+            selected = None
+            for _ in range(64):
+                current_result, current_temperature, current_residual = evaluate(current)
+                if abs(current_residual) <= 1.0e-10 * max(1.0, pressure_pa):
+                    selected = (
+                        current,
+                        current_result,
+                        current_temperature,
+                        current_residual,
+                    )
+                    break
+                if math.copysign(1.0, current_residual) == math.copysign(
+                    1.0, lower_residual
+                ):
+                    lower, lower_residual = current, current_residual
+                else:
+                    upper, upper_residual = current, current_residual
+                pressure_temperature = current_temperature.output_direction_jacobian[0][0]
+                newton = current - current_residual / pressure_temperature
+                current = newton if lower < newton < upper else 0.5 * (lower + upper)
+            if selected is None:
+                diagnostics = replace(
+                    current_result.diagnostics,
+                    route="held_fixed_p_coexistence",
+                    solver_status="failed",
+                    numerical_status="not_certified",
+                    physical_status="rejected",
+                    failure_stage="intensive_boundary",
+                    failure_reason="fixed_pressure_temperature_iteration_limit",
+                    certificate_scope="fixed_p_declared_coexistence",
+                    search_budget="declared_temperature_bracket;64_iterations",
+                    optimizer_iteration_count=64,
+                    provider_evaluation_count=provider_evaluations,
+                )
+                raise PhaseEquilibriumError(
+                    diagnostics.failure_reason or "fixed-pressure boundary did not converge",
+                    diagnostics,
+                    current_result.phases,
+                )
+
+    assert selected is not None
+    temperature_k, solved, temperature_direction, residual = selected
+    if intervals is not None and any(
+        not lower_packing < phase.packing_fraction < upper_packing
+        for phase, (lower_packing, upper_packing) in zip(
+            solved.phases, intervals, strict=True
+        )
+    ):
+        diagnostics = replace(
+            solved.diagnostics,
+            route="held_fixed_p_coexistence",
+            solver_status="converged",
+            numerical_status="certified",
+            physical_status="rejected",
+            failure_stage="provider_domain",
+            failure_reason="provider_domain_rejection",
+            certificate_scope="fixed_p_declared_coexistence",
+            provider_evaluation_count=provider_evaluations,
+        )
+        raise PhaseEquilibriumError(
+            "fixed-pressure coexistence root is outside a declared Provider domain",
+            diagnostics,
+            solved.phases,
+        )
+    if temperature_direction.status != "available":
+        diagnostics = replace(
+            solved.diagnostics,
+            route="held_fixed_p_coexistence",
+            solver_status="converged",
+            numerical_status="uncertified",
+            physical_status="rejected",
+            failure_stage="intensive_boundary_sensitivity",
+            failure_reason=temperature_direction.failure_reason,
+            certificate_scope="fixed_p_declared_coexistence",
+            provider_evaluation_count=provider_evaluations,
+        )
+        raise PhaseEquilibriumError(
+            diagnostics.failure_reason or "fixed-pressure derivative is unavailable",
+            diagnostics,
+            solved.phases,
+        )
+    return replace(
+        solved,
+        problem=problem,
+        extent=IncipientTemperatureBoundary(
+            specification.reference_phase_index,
+            pressure_pa,
+            temperature_k,
+        ),
+        diagnostics=replace(
+            solved.diagnostics,
+            route="held_fixed_p_coexistence",
+            certificate_scope="fixed_p_declared_coexistence",
+            search_scope="declared_temperature_bracket",
+            search_budget=f"2_endpoints;64_iteration_limit;{evaluation_count}_evaluations",
+            optimizer_solve_count=evaluation_count,
+            optimizer_iteration_count=max(0, evaluation_count - 2),
+            provider_evaluation_count=provider_evaluations,
+            pressure_residual_inf=abs(residual) / max(1.0, pressure_pa),
+        ),
+        sensitivity=_fixed_p_coexistence_sensitivity(
+            solved.sensitivity, temperature_direction
+        ),
+    )
 
 
 def _empty_chemical_search(status: str = "not_evaluated") -> ChemicalEquilibriumSearch:

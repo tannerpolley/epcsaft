@@ -597,6 +597,7 @@ def _equilibrium_owner_batches(
         raise ValueError("equilibrium regression has no included target rows")
     if any(
         not batch.problem.intensive_boundaries
+        and batch.descriptor.formulation != "temperature_boundary"
         and (
             (
                 not any(phase.amount_role == "incipient" for phase in batch.problem.phases)

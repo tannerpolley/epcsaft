@@ -54,6 +54,11 @@ struct ParameterizedPhaseEvaluation {
     std::string topology_fingerprint;
 };
 
+struct TemperaturePhaseEvaluation {
+    std::vector<double> chemical_potential_temperature_derivatives_over_rt_per_k;
+    double pressure_temperature_derivative_pa_per_k = 0.0;
+};
+
 struct InversePackingGeometryEvaluation {
     double volume_m3 = 0.0;
     std::vector<double> gradient;
@@ -108,6 +113,11 @@ public:
         double packing_fraction_min,
         double packing_fraction_max,
         const ProviderActiveParameterSet& active_parameters
+    ) const;
+    [[nodiscard]] TemperaturePhaseEvaluation evaluate_temperature_phase(
+        double temperature_k,
+        const std::vector<double>& amounts_mol,
+        double volume_m3
     ) const;
 
     [[nodiscard]] InversePackingGeometryEvaluation

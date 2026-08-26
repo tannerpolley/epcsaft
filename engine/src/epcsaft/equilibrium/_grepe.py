@@ -20,13 +20,20 @@ from ._api import (
     ChemicalStandardState,
     DeclaredComponents,
     DeclaredNeutralComponents,
+    DeclaredTopology,
     EquilibriumPhaseState,
+    FixedPCoexistence,
     IdealGasPhase,
+    IncipientTemperatureBoundary,
     NeutralComponents,
+    PhaseEquilibriumError,
+    PhaseEquilibriumProblem,
+    PhaseSpecification,
     PhaseSupport,
     ProviderPhase,
     _source_reference_payload,
     _source_reference_transfer,
+    phase_equilibrium,
 )
 from ._feed import AffineFeed, ResolvedFeed
 from ._observations import (
@@ -70,6 +77,7 @@ type OutputSupport = Literal[
 ]
 type EquilibriumSelector = Literal[
     "system.pressure",
+    "system.temperature",
     "phase.amount",
     "phase.mole_fraction",
     "phase.molality",
@@ -92,6 +100,7 @@ type IntensiveBoundarySelector = Literal[
 _EQUILIBRIUM_SELECTORS = frozenset(
     {
         "system.pressure",
+        "system.temperature",
         "phase.amount",
         "phase.mole_fraction",
         "phase.molality",
@@ -107,6 +116,7 @@ _EQUILIBRIUM_SELECTORS = frozenset(
 )
 _SELECTOR_UNITS = {
     "system.pressure": "pascal",
+    "system.temperature": "kelvin",
     "phase.amount": "mole",
     "phase.mole_fraction": "dimensionless",
     "phase.molality": "mole / kilogram",
@@ -299,9 +309,9 @@ class EquilibriumOutput:
             or not self.basis
         ):
             raise ValueError("equilibrium output identity or selector is invalid")
-        if self.selector == "system.pressure":
+        if self.selector in {"system.pressure", "system.temperature"}:
             if self.phase_identity is not None or self.coefficients:
-                raise ValueError("system pressure has no phase or contraction coefficients")
+                raise ValueError("system intensives have no phase or contraction coefficients")
         elif not self.phase_identity:
             raise ValueError("phase output selectors require a phase identity")
         if self.support not in {
@@ -553,7 +563,9 @@ class GeneralReactiveEquilibriumDescriptor:
     certificate_scope: str
     jacobian_shape: tuple[int, int]
     fingerprint: str
-    formulation: Literal["finite", "finite_incipient", "intensive_boundary"]
+    formulation: Literal[
+        "finite", "finite_incipient", "intensive_boundary", "temperature_boundary"
+    ]
 
 
 @dataclass(frozen=True, slots=True)
@@ -1013,7 +1025,7 @@ def _feed_payload(feed: ResolvedFeed | AffineFeed | None) -> object:
 def _descriptor(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
-    formulation: Literal["finite", "finite_incipient"],
+    formulation: Literal["finite", "finite_incipient", "temperature_boundary"],
     owner: (
         HomogeneousReactiveObservationDescriptor
         | ReactiveBubbleObservationDescriptor
@@ -1177,6 +1189,13 @@ class _FinitePhaseCompilation:
     supported_component_ids: tuple[tuple[str, ...], ...]
     declared_start_set: tuple[FinitePhaseStart, ...] | None
     generated_allocations: tuple[tuple[tuple[float, ...], ...], ...]
+    owner_descriptor: _FinitePhaseOwnerDescriptor
+    descriptor: GeneralReactiveEquilibriumDescriptor
+
+
+@dataclass(frozen=True, slots=True)
+class _TemperatureBoundaryCompilation:
+    owner_problem: PhaseEquilibriumProblem
     owner_descriptor: _FinitePhaseOwnerDescriptor
     descriptor: GeneralReactiveEquilibriumDescriptor
 
@@ -1467,6 +1486,141 @@ def _finite_phase_owner_descriptor(
     )
 
 
+def _temperature_boundary_owner_descriptor(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    reference_phase_index: int,
+    reference_mole_fractions: tuple[float, ...],
+    active_parameters: epcsaft.ActiveParameterSet | None,
+) -> _FinitePhaseOwnerDescriptor:
+    component_count = len(model.component_ids)
+    phase_ids = {phase.identity for phase in problem.phases}
+    for output in problem.outputs:
+        if output.selector in {"system.temperature", "system.pressure"}:
+            if output.coefficients:
+                raise ValueError("temperature-boundary system outputs have no coefficients")
+        elif output.selector == "phase.mole_fraction":
+            if output.phase_identity not in phase_ids or len(output.coefficients) != component_count:
+                raise ValueError(
+                    "temperature-boundary composition outputs require full coefficients"
+                )
+            if sum(value != 0.0 for value in output.coefficients) > 1 and (
+                not output.aggregate_identity or not output.covariance_identity
+            ):
+                raise ValueError(
+                    "temperature-boundary aggregate composition requires identities"
+                )
+        elif output.selector in {"phase.molar_density", "phase.pressure"}:
+            if output.phase_identity not in phase_ids or output.coefficients:
+                raise ValueError("temperature-boundary scalar phase output is invalid")
+        else:
+            raise ValueError("output selector is unavailable for fixed-pressure coexistence")
+
+    active_ids = () if active_parameters is None else active_parameters.identities
+    active_units = (
+        ()
+        if active_parameters is None
+        else tuple(parameter.unit for parameter in active_parameters.coordinates)
+    )
+    selection_fingerprint = (
+        _fingerprint("epcsaft.empty-active-selection", ())
+        if active_parameters is None
+        else _fingerprint(
+            "epcsaft.active-parameter-selection",
+            {
+                "parameter_fingerprint": model.parameter_fingerprint,
+                "identities": active_ids,
+                "units": active_units,
+            },
+        )
+    )
+    reaction_fingerprint = _fingerprint(
+        "epcsaft.temperature-boundary-reactions",
+        _reaction_payload(_effective_reaction_system(problem)),
+    )
+    topology_fingerprint = _fingerprint(
+        "epcsaft.temperature-boundary-topology",
+        {
+            "component_ids": model.component_ids,
+            "phases": tuple(_phase_payload(phase) for phase in problem.phases),
+            "reference_phase_index": reference_phase_index,
+        },
+    )
+    problem_fingerprint = _fingerprint(
+        "epcsaft.temperature-boundary-problem",
+        {
+            "identity": problem.identity,
+            "temperature": _state_role_payload(problem.temperature, "kelvin", "temperature"),
+            "pressure": _state_role_payload(problem.pressure, "pascal", "pressure"),
+            "topology_fingerprint": topology_fingerprint,
+            "reaction_fingerprint": reaction_fingerprint,
+            "outputs": tuple(
+                (
+                    output.identity,
+                    output.selector,
+                    output.unit,
+                    output.basis,
+                    output.phase_identity,
+                    output.coefficients,
+                    output.support,
+                    output.censor_limit,
+                    output.aggregate_identity,
+                    output.covariance_identity,
+                )
+                for output in problem.outputs
+            ),
+        },
+    )
+    reference_fingerprint = _fingerprint(
+        "epcsaft.temperature-boundary-reference",
+        {
+            "feed": _feed_payload(problem.feed),
+            "reference_phase_index": reference_phase_index,
+            "reference_mole_fractions": reference_mole_fractions,
+            "temperature": _state_role_payload(problem.temperature, "kelvin", "temperature"),
+        },
+    )
+    domain_fingerprint = _fingerprint(
+        "epcsaft.temperature-boundary-domain",
+        {
+            "temperature_bounds": _state_role_payload(
+                problem.temperature, "kelvin", "temperature"
+            )["bounds"],
+            "pressure_pa": _quantity(
+                cast(Fixed, problem.pressure).value, "pascal", "pressure"
+            ),
+            "packing_intervals": tuple(
+                cast(ProviderModel, phase.model).admissible_packing_fraction_interval
+                for phase in problem.phases
+            ),
+        },
+    )
+    payload = {
+        "problem_fingerprint": problem_fingerprint,
+        "reaction_fingerprint": reaction_fingerprint,
+        "topology_fingerprint": topology_fingerprint,
+        "reference_fingerprint": reference_fingerprint,
+        "domain_fingerprint": domain_fingerprint,
+        "parameter_fingerprint": model.parameter_fingerprint,
+        "active_parameter_selection_fingerprint": selection_fingerprint,
+    }
+    return _FinitePhaseOwnerDescriptor(
+        problem.outputs,
+        tuple(output.identity for output in problem.outputs),
+        active_ids,
+        active_units,
+        model.parameter_fingerprint,
+        selection_fingerprint,
+        problem_fingerprint,
+        reaction_fingerprint,
+        topology_fingerprint,
+        reference_fingerprint,
+        domain_fingerprint,
+        (len(problem.outputs), len(active_ids)),
+        _fingerprint("epcsaft.temperature-boundary-descriptor", payload),
+    )
+
+
 def _generated_finite_phase_allocations(
     problem: GeneralReactiveEquilibriumProblem,
     phases: tuple[ReactivePhase, ...],
@@ -1690,6 +1844,7 @@ def _compile_intensive_owner(
     _HomogeneousCompilation
     | _BubbleCompilation
     | _FinitePhaseCompilation
+    | _TemperatureBoundaryCompilation
     | _IntensiveBoundaryCompilation
     | str
 ):
@@ -1770,6 +1925,7 @@ def _compile_general_reactive_equilibrium(
     _HomogeneousCompilation
     | _BubbleCompilation
     | _FinitePhaseCompilation
+    | _TemperatureBoundaryCompilation
     | _IntensiveBoundaryCompilation
     | str
 ):
@@ -1780,12 +1936,80 @@ def _compile_general_reactive_equilibrium(
     if problem.intensive_boundaries:
         return _compile_intensive_boundary(model, problem, active_parameters)
     _preflight(model, problem)
+    finite = tuple(phase for phase in problem.phases if phase.amount_role == "finite")
+    incipient = tuple(phase for phase in problem.phases if phase.amount_role == "incipient")
+
+    if (
+        isinstance(problem.temperature, Solved)
+        and isinstance(problem.pressure, Fixed)
+        and len(finite) == 1
+        and len(incipient) == 1
+        and not _effective_reaction_system(problem).reaction_matrix
+        and not problem.reaction_phase_ids
+        and problem.phase_reactions is None
+        and all(isinstance(phase.model, ProviderModel) for phase in problem.phases)
+        and all(isinstance(phase.support, AllComponents) for phase in problem.phases)
+        and {phase.fluid_role for phase in problem.phases} == {"liquid", "vapor"}
+    ):
+        bounds = tuple(
+            value.to("kelvin") for value in problem.temperature.bounds
+        )
+        initial = problem.temperature.initial.to("kelvin")
+        starts = tuple(value.to("kelvin") for value in problem.temperature.starts)
+        lower, upper = (float(value.magnitude) for value in bounds)
+        initial_k = float(initial.magnitude)
+        if not lower < initial_k < upper or any(
+            not lower < float(value.magnitude) < upper for value in starts
+        ):
+            raise ValueError("GREPE temperature starts must lie inside their bounds")
+        reaction = _effective_reaction_system(problem)
+        total = math.fsum(reaction.feed_amounts_mol)
+        if total <= 0.0 or any(amount < 0.0 for amount in reaction.feed_amounts_mol):
+            raise ValueError("fixed-pressure coexistence requires a nonnegative reference feed")
+        reference = tuple(amount / total for amount in reaction.feed_amounts_mol)
+        reference_index = problem.phases.index(finite[0])
+        owner_problem = PhaseEquilibriumProblem(
+            FixedPCoexistence(
+                problem.pressure.value,
+                cast(tuple[Quantity[Any], Quantity[Any]], bounds),
+                DeclaredTopology(
+                    tuple(
+                        PhaseSpecification(phase.fluid_role, cast(AllComponents, phase.support))
+                        for phase in problem.phases
+                    )
+                ),
+                reference_index,
+                reference,
+                initial,
+                tuple(
+                    cast(ProviderModel, phase.model).admissible_packing_fraction_interval
+                    for phase in problem.phases
+                ),
+            )
+        )
+        temperature_owner_descriptor = _temperature_boundary_owner_descriptor(
+            model,
+            problem,
+            reference_index,
+            reference,
+            active_parameters,
+        )
+        return _TemperatureBoundaryCompilation(
+            owner_problem,
+            temperature_owner_descriptor,
+            _descriptor(
+                model,
+                problem,
+                "temperature_boundary",
+                temperature_owner_descriptor,
+                "fixed_P_one_finite_one_incipient_declared_coexistence",
+            ),
+        )
+
     if not isinstance(problem.temperature, Fixed):
         return "solved temperature has no implemented GREPE formulation"
     temperature_k = _quantity(problem.temperature.value, "kelvin", "temperature")
     temperature = temperature_k * epcsaft.unit_registry.kelvin
-    finite = tuple(phase for phase in problem.phases if phase.amount_role == "finite")
-    incipient = tuple(phase for phase in problem.phases if phase.amount_role == "incipient")
 
     if problem.phase_reactions is not None and incipient:
         return "explicit phase/species directions currently require finite configured phases"
@@ -3379,6 +3603,206 @@ def _evaluate_intensive_boundary(
     )
 
 
+def _evaluate_temperature_boundary(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    compilation: _TemperatureBoundaryCompilation,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+) -> GeneralReactiveEquilibriumResult:
+    trial = _finite_phase_trial(compilation.owner_descriptor, active_parameters)
+    try:
+        solved = phase_equilibrium(
+            model,
+            compilation.owner_problem,
+            active_parameters=active_parameters,
+        )
+    except PhaseEquilibriumError as error:
+        reason = error.diagnostics.failure_reason or str(error)
+        if "domain" in reason or "provider" in reason:
+            code = "provider_domain_rejection"
+        elif "singular" in reason:
+            code = "singular_sensitivity"
+        elif "condition" in reason:
+            code = "ill_conditioned_sensitivity"
+        elif "iteration" in reason:
+            code = "numerical_convergence_failure"
+        else:
+            code = "physical_rejection"
+        failure = NonEvaluableTrial(cast(Any, code), reason)
+        numerical, physical, provider = _failure_axes(failure)
+        return GeneralReactiveEquilibriumResult(
+            problem,
+            compilation.descriptor,
+            "non_evaluable",
+            error.diagnostics.solver_status,
+            numerical,
+            physical,
+            provider,
+            tuple(
+                GeneralEquilibriumRowResult(
+                    output.identity,
+                    output.selector,
+                    output.unit,
+                    output.basis,
+                    "non_evaluable",
+                    None,
+                    None,
+                    reason,
+                )
+                for output in problem.outputs
+            ),
+            error.best_candidate,
+            failure,
+            compilation.descriptor.certificate_scope,
+            "not_established",
+            trial,
+            None,
+            (("provider_evaluation_count", error.diagnostics.provider_evaluation_count),),
+        )
+
+    extent = solved.extent
+    if not isinstance(extent, IncipientTemperatureBoundary):
+        raise TypeError("fixed-pressure coexistence returned the wrong extent")
+    parameter_count = len(compilation.owner_descriptor.active_parameter_identities)
+    sensitivity = solved.sensitivity
+    if active_parameters is not None and (
+        sensitivity is None or sensitivity.status != "available"
+    ):
+        reason = (
+            "fixed-pressure coexistence did not provide exact total derivatives"
+            if sensitivity is None
+            else sensitivity.failure_reason
+            or "fixed-pressure coexistence sensitivity is unavailable"
+        )
+        failure = NonEvaluableTrial("owner_contract_failure", reason)
+        return GeneralReactiveEquilibriumResult(
+            problem,
+            compilation.descriptor,
+            "non_evaluable",
+            solved.diagnostics.solver_status,
+            "failed",
+            "passed",
+            "passed",
+            tuple(
+                GeneralEquilibriumRowResult(
+                    output.identity,
+                    output.selector,
+                    output.unit,
+                    output.basis,
+                    "non_evaluable",
+                    None,
+                    None,
+                    reason,
+                )
+                for output in problem.outputs
+            ),
+            solved.phases,
+            failure,
+            compilation.descriptor.certificate_scope,
+            "not_established",
+            trial,
+            None,
+            (),
+        )
+
+    derivative_by_identity = (
+        {}
+        if sensitivity is None
+        else dict(
+            zip(
+                sensitivity.output_identities,
+                sensitivity.output_parameter_jacobian,
+                strict=True,
+            )
+        )
+    )
+    phase_index = {phase.identity: index for index, phase in enumerate(problem.phases)}
+    rows: list[GeneralEquilibriumRowResult] = []
+    for output in problem.outputs:
+        if output.selector == "system.temperature":
+            value = extent.temperature_k
+            jacobian = derivative_by_identity.get(
+                "boundary.temperature_k", (0.0,) * parameter_count
+            )
+        elif output.selector == "system.pressure":
+            value = extent.pressure_pa
+            jacobian = (0.0,) * parameter_count
+        else:
+            index = phase_index[cast(str, output.phase_identity)]
+            phase = solved.phases[index]
+            if output.selector == "phase.mole_fraction":
+                value = math.fsum(
+                    coefficient * fraction
+                    for coefficient, fraction in zip(
+                        output.coefficients, phase.mole_fractions, strict=True
+                    )
+                )
+                jacobian = tuple(
+                    math.fsum(
+                        coefficient
+                        * derivative_by_identity[
+                            f"phase[{index}].mole_fraction[{component_id}]"
+                        ][parameter]
+                        for coefficient, component_id in zip(
+                            output.coefficients, phase.supported_component_ids, strict=True
+                        )
+                    )
+                    for parameter in range(parameter_count)
+                )
+            elif output.selector == "phase.molar_density":
+                value = phase.molar_density_mol_m3
+                volume_derivative = derivative_by_identity.get(
+                    f"phase[{index}].molar_volume_m3_per_mol",
+                    (0.0,) * parameter_count,
+                )
+                jacobian = tuple(
+                    -derivative * value * value for derivative in volume_derivative
+                )
+            else:
+                value = phase.pressure_pa
+                jacobian = (0.0,) * parameter_count
+        rows.append(
+            GeneralEquilibriumRowResult(
+                output.identity,
+                output.selector,
+                output.unit,
+                output.basis,
+                "evaluated",
+                value,
+                tuple(jacobian),
+                "",
+            )
+        )
+
+    diagnostics = solved.diagnostics
+    return GeneralReactiveEquilibriumResult(
+        problem,
+        compilation.descriptor,
+        "evaluated",
+        diagnostics.solver_status,
+        diagnostics.numerical_status,
+        diagnostics.physical_status,
+        "passed",
+        tuple(rows),
+        solved.phases,
+        None,
+        compilation.descriptor.certificate_scope,
+        "not_established",
+        trial,
+        (
+            "fixed_p_declared_coexistence",
+            extent.reference_phase_index,
+            tuple((phase.fluid_role, type(phase.support).__name__) for phase in problem.phases),
+        ),
+        (
+            ("temperature_k", extent.temperature_k),
+            ("pressure_residual_inf", diagnostics.pressure_residual_inf),
+            ("optimizer_solve_count", diagnostics.optimizer_solve_count),
+            ("provider_evaluation_count", diagnostics.provider_evaluation_count),
+        ),
+    )
+
+
 def _solve_general_reactive_equilibrium(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
@@ -3394,6 +3818,8 @@ def _solve_general_reactive_equilibrium(
         return _unavailable_formulation(problem, compiled)
     if isinstance(compiled, _IntensiveBoundaryCompilation):
         return _evaluate_intensive_boundary(model, problem, compiled, active_parameters)
+    if isinstance(compiled, _TemperatureBoundaryCompilation):
+        return _evaluate_temperature_boundary(model, problem, compiled, active_parameters)
     if isinstance(compiled, _FinitePhaseCompilation):
         return _evaluate_finite_phase(model, problem, compiled, active_parameters)
     if isinstance(compiled, _HomogeneousCompilation):

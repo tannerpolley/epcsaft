@@ -10,9 +10,11 @@ from epcsaft.equilibrium import (
     DeclaredTopology,
     EquilibriumPhaseState,
     FeedSplit,
+    FixedPCoexistence,
     FixedTCoexistence,
     FixedTPFeed,
     IncipientBoundary,
+    IncipientTemperatureBoundary,
     NeutralComponents,
     PhaseEquilibriumError,
     PhaseEquilibriumProblem,
@@ -29,6 +31,7 @@ from tests.eos._raw_cases import (
     MULTISOLVENT_MULTIION,
     NEUTRAL_BINARY,
     NEUTRAL_TERNARY_IMMISCIBLE,
+    STRONGLY_ASSOCIATING_BINARY,
 )
 
 _TEMPERATURE = 300.0 * u.kelvin
@@ -661,6 +664,211 @@ def test_coexistence_model_parameter_sensitivity_uses_both_phase_partials() -> N
         upper.extent.pressure_pa - lower.extent.pressure_pa
     ) / (2.0 * step)
     assert exact == pytest.approx(centered, rel=2.0e-6, abs=2.0e-3)
+
+
+def test_fixed_pressure_coexistence_recovers_temperature_and_exact_total_jacobian() -> None:
+    """Falsify a fixed-T reinterpretation or omitted temperature closure derivative."""
+
+    parameters = Parameters.from_mapping(STRONGLY_ASSOCIATING_BINARY)
+    model = Mixture(parameters)
+    identity = "pair/solute/solvent/k_ij"
+    selected = ActiveParameterSet(parameters, (identity,))
+    topology = DeclaredTopology(
+        (
+            PhaseSpecification("liquid", AllComponents()),
+            PhaseSpecification("vapor", AllComponents()),
+        )
+    )
+    reference = (0.5, 0.5)
+    fixed_temperature = phase_equilibrium(
+        model,
+        PhaseEquilibriumProblem(
+            FixedTCoexistence(300.0 * u.kelvin, topology, 0, reference)
+        ),
+        active_parameters=selected,
+    )
+    assert isinstance(fixed_temperature.extent, IncipientBoundary)
+    problem = PhaseEquilibriumProblem(
+        FixedPCoexistence(
+            fixed_temperature.extent.pressure_pa * u.pascal,
+            (295.0 * u.kelvin, 305.0 * u.kelvin),
+            topology,
+            0,
+            reference,
+        )
+    )
+
+    def solve(value: float) -> PhaseEquilibriumResult:
+        return phase_equilibrium(
+            model,
+            problem,
+            active_parameters=ActiveParameterSet(
+                parameters, (identity,), values=(value,)
+            ),
+        )
+
+    center = solve(selected.values[0])
+    assert isinstance(center.extent, IncipientTemperatureBoundary)
+    assert center.extent.temperature_k == pytest.approx(300.0, abs=1.0e-10)
+    assert center.diagnostics.route == "held_fixed_p_coexistence"
+    assert center.diagnostics.pressure_residual_inf <= 1.0e-10
+    sensitivity = center.sensitivity
+    assert sensitivity is not None
+    assert sensitivity.status == "available"
+    assert sensitivity.output_identities[0] == "boundary.temperature_k"
+
+    step = 1.0e-5
+    lower = solve(selected.values[0] - step)
+    upper = solve(selected.values[0] + step)
+    assert isinstance(lower.extent, IncipientTemperatureBoundary)
+    assert isinstance(upper.extent, IncipientTemperatureBoundary)
+    exact_temperature = sensitivity.output_parameter_jacobian[0][0]
+    centered_temperature = (
+        upper.extent.temperature_k - lower.extent.temperature_k
+    ) / (2.0 * step)
+    assert exact_temperature == pytest.approx(centered_temperature, rel=4.0e-6)
+    exact_vapor_solute = sensitivity.output_parameter_jacobian[4][0]
+    centered_vapor_solute = (
+        upper.phases[1].mole_fractions[0] - lower.phases[1].mole_fractions[0]
+    ) / (2.0 * step)
+    assert exact_vapor_solute == pytest.approx(centered_vapor_solute, rel=4.0e-6)
+
+
+def test_fixed_pressure_coexistence_rejects_unbracketed_temperature() -> None:
+    """Falsify silent extrapolation outside the caller-declared temperature branch."""
+
+    model = Mixture(Parameters.from_mapping(STRONGLY_ASSOCIATING_BINARY))
+    topology = DeclaredTopology(
+        (
+            PhaseSpecification("liquid", AllComponents()),
+            PhaseSpecification("vapor", AllComponents()),
+        )
+    )
+    with pytest.raises(PhaseEquilibriumError) as rejected:
+        phase_equilibrium(
+            model,
+            PhaseEquilibriumProblem(
+                FixedPCoexistence(
+                    1.0e6 * u.pascal,
+                    (295.0 * u.kelvin, 305.0 * u.kelvin),
+                    topology,
+                    0,
+                    (0.5, 0.5),
+                )
+            ),
+        )
+    assert rejected.value.diagnostics.failure_reason == (
+        "fixed_pressure_temperature_not_bracketed"
+    )
+
+
+def test_fixed_pressure_coexistence_supports_dew_temperature_and_alternate_start() -> None:
+    """Falsify a liquid-reference-only route or hidden dependence on the first start."""
+
+    model = Mixture(Parameters.from_mapping(STRONGLY_ASSOCIATING_BINARY))
+    topology = DeclaredTopology(
+        (
+            PhaseSpecification("liquid", AllComponents()),
+            PhaseSpecification("vapor", AllComponents()),
+        )
+    )
+    bubble = phase_equilibrium(
+        model,
+        PhaseEquilibriumProblem(
+            FixedTCoexistence(300.0 * u.kelvin, topology, 0, (0.5, 0.5))
+        ),
+    )
+    vapor_reference = bubble.phases[1].mole_fractions
+
+    def solve(initial_k: float) -> PhaseEquilibriumResult:
+        return phase_equilibrium(
+            model,
+            PhaseEquilibriumProblem(
+                FixedPCoexistence(
+                    bubble.extent.pressure_pa * u.pascal,
+                    (295.0 * u.kelvin, 305.0 * u.kelvin),
+                    topology,
+                    1,
+                    vapor_reference,
+                    initial_k * u.kelvin,
+                )
+            ),
+        )
+
+    lower_start = solve(296.0)
+    upper_start = solve(299.0)
+    for result in (lower_start, upper_start):
+        assert isinstance(result.extent, IncipientTemperatureBoundary)
+        assert result.extent.reference_phase_index == 1
+        assert result.extent.temperature_k == pytest.approx(300.0, abs=2.0e-8)
+        assert result.phases[0].mole_fractions == pytest.approx((0.5, 0.5), abs=2.0e-9)
+
+
+def test_fixed_pressure_coexistence_is_component_order_invariant() -> None:
+    """Falsify positional component handling in the declared Bubble-T route."""
+
+    topology = DeclaredTopology(
+        (
+            PhaseSpecification("liquid", AllComponents()),
+            PhaseSpecification("vapor", AllComponents()),
+        )
+    )
+
+    def solve(component_ids: tuple[str, ...]) -> PhaseEquilibriumResult:
+        model = Mixture(
+            Parameters.from_mapping(
+                STRONGLY_ASSOCIATING_BINARY,
+                components=component_ids,
+            )
+        )
+        reference = tuple(0.5 for _ in component_ids)
+        fixed_temperature = phase_equilibrium(
+            model,
+            PhaseEquilibriumProblem(
+                FixedTCoexistence(300.0 * u.kelvin, topology, 0, reference)
+            ),
+        )
+        assert isinstance(fixed_temperature.extent, IncipientBoundary)
+        return phase_equilibrium(
+            model,
+            PhaseEquilibriumProblem(
+                FixedPCoexistence(
+                    fixed_temperature.extent.pressure_pa * u.pascal,
+                    (295.0 * u.kelvin, 305.0 * u.kelvin),
+                    topology,
+                    0,
+                    reference,
+                )
+            ),
+        )
+
+    original = solve(("solute", "solvent"))
+    reordered = solve(("solvent", "solute"))
+    assert isinstance(original.extent, IncipientTemperatureBoundary)
+    assert isinstance(reordered.extent, IncipientTemperatureBoundary)
+    assert reordered.extent.temperature_k == pytest.approx(
+        original.extent.temperature_k, abs=1.0e-10
+    )
+    for original_phase, reordered_phase in zip(
+        original.phases, reordered.phases, strict=True
+    ):
+        reordered_composition = dict(
+            zip(
+                reordered_phase.supported_component_ids,
+                reordered_phase.mole_fractions,
+                strict=True,
+            )
+        )
+        original_composition = dict(
+            zip(
+                original_phase.supported_component_ids,
+                original_phase.mole_fractions,
+                strict=True,
+            )
+        )
+        assert reordered_composition == pytest.approx(
+            original_composition, abs=2.0e-10
+        )
 
 
 @pytest.mark.slow

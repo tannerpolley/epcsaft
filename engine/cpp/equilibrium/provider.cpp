@@ -567,6 +567,75 @@ ParameterizedPhaseEvaluation ProviderContext::evaluate_parameterized_phase(
     return result;
 }
 
+TemperaturePhaseEvaluation ProviderContext::evaluate_temperature_phase(
+    double temperature_k,
+    const std::vector<double>& amounts_mol,
+    double volume_m3
+) const {
+    ++evaluation_count_;
+    if (transport_.evaluate_temperature_phase == nullptr
+        || amounts_mol.size() != transport_.component_count) {
+        throw std::invalid_argument(
+            "Provider temperature-phase contract is incomplete"
+        );
+    }
+    const std::size_t support_count = static_cast<std::size_t>(std::count_if(
+        amounts_mol.begin(), amounts_mol.end(),
+        [](double amount) { return amount > 0.0; }
+    ));
+    TemperaturePhaseEvaluation result;
+    result.chemical_potential_temperature_derivatives_over_rt_per_k.resize(
+        support_count
+    );
+    epcsaft_temperature_phase_result native{};
+    native.struct_size = sizeof(native);
+    native.supported_component_count = support_count;
+    native.chemical_potential_temperature_capacity = support_count;
+    native.chemical_potential_temperature_derivatives_over_rt_per_k =
+        result.chemical_potential_temperature_derivatives_over_rt_per_k.data();
+    const int status = transport_.evaluate_temperature_phase(
+        transport_.model_context,
+        temperature_k,
+        amounts_mol.data(),
+        amounts_mol.size(),
+        volume_m3,
+        &native
+    );
+    if (status != native.status) {
+        throw std::runtime_error(
+            "Provider temperature-phase evaluation returned inconsistent status values"
+        );
+    }
+    if (status != EPCSAFT_NATIVE_STATUS_OK) {
+        throw ProviderDomainError(
+            "Provider temperature-phase evaluation failed: "
+            + decode_provider_char_array(
+                native.error, sizeof(native.error),
+                "Provider temperature-phase error"
+            )
+        );
+    }
+    const std::string fingerprint = decode_provider_char_array(
+        native.parameter_fingerprint,
+        sizeof(native.parameter_fingerprint),
+        "Provider temperature-phase fingerprint"
+    );
+    if (fingerprint != fingerprint_
+        || !std::isfinite(native.pressure_temperature_derivative_pa_per_k)
+        || !std::all_of(
+            result.chemical_potential_temperature_derivatives_over_rt_per_k.begin(),
+            result.chemical_potential_temperature_derivatives_over_rt_per_k.end(),
+            [](double value) { return std::isfinite(value); }
+        )) {
+        throw std::invalid_argument(
+            "Provider temperature-phase identity or derivatives changed"
+        );
+    }
+    result.pressure_temperature_derivative_pa_per_k =
+        native.pressure_temperature_derivative_pa_per_k;
+    return result;
+}
+
 InversePackingGeometryEvaluation ProviderContext::evaluate_inverse_packing_geometry(
     double temperature_k,
     const std::vector<double>& amounts_mol,

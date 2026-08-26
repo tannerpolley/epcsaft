@@ -172,8 +172,12 @@ digitized tie-line compositions.
 The same owner returns generic output rows and exact total Jacobians directly
 to Regression. Current finite-phase outputs include system or phase pressure,
 phase amount, mole fraction, molar density, and dimensionless chemical
-potential. Configurations that need a different mathematical formulation, such
-as an incipient phase or solved temperature, are routed to their corresponding
-GREPE formulation when implemented. Every configuration is attempted according
-to its declared mathematical variables; a missing formulation or failed solve
-is returned directly and is never decided by an application or source name.
+potential. For one declared finite and one declared incipient liquid/vapor
+phase, solved temperature with fixed pressure compiles to fixed-pressure
+coexistence. Either phase can be the fixed-composition reference, so the same
+public request represents Bubble-T or Dew-T. The caller supplies the local
+temperature bracket and optional start; exact implicit total derivatives flow
+through the same output rows and Regression owner receipt. Every configuration
+is attempted according to its declared mathematical variables; a missing
+formulation or failed solve is returned directly and is never decided by an
+application or source name.
