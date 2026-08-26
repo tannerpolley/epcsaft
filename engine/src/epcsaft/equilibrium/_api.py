@@ -4,7 +4,7 @@ import hashlib
 import math
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
-from functools import cache
+from functools import cache, lru_cache
 from importlib import metadata
 from itertools import pairwise
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
@@ -3551,6 +3551,7 @@ def _chemical_sensitivity(
     )
 
 
+@lru_cache(maxsize=128)
 def _source_reference_transfer(
     phase: ProviderPhase,
     standard_state: ChemicalStandardState,

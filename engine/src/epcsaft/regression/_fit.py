@@ -423,7 +423,9 @@ def fit(
             equilibrium_receipt,
         ) = _equilibrium_owner_batches(resolved)
         if len(equilibrium_batches) == len(resolved.fit.observations):
-            full_space = _full_space_batches(resolved, equilibrium_batches)
+            full_space = _full_space_batches(
+                resolved, equilibrium_batches, equilibrium_owner
+            )
     equilibrium_receipt_blocks = (
         () if equilibrium_receipt is None else _receipt_blocks(equilibrium_receipt)
     )

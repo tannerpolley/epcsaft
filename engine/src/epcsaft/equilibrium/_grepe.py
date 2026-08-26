@@ -46,6 +46,8 @@ from ._observations import (
     HomogeneousReactiveObservationProblem,
     HomogeneousReactiveObservationResult,
     HomogeneousReactiveObservationRow,
+    _evaluate_homogeneous_reactive_observations,
+    _immutable_continuation_start,
     certify_homogeneous_continuation_reference,
     evaluate_homogeneous_reactive_observations,
     homogeneous_reactive_observation_descriptor,
@@ -1899,8 +1901,8 @@ def _compile_homogeneous_owner(
         phase.fluid_role,
         _phase_model(model, phase),
         _effective_reaction_system(problem),
-        cast(str, phase.continuation_identity),
-        cast(HomogeneousBranchPolicy, phase.branch_policy),
+        phase.continuation_identity or problem.identity,
+        phase.branch_policy or "local_certified_role_selected_state",
         phase.continuation_reference,
     )
     owner_rows = tuple(
@@ -2051,7 +2053,6 @@ def _compile_general_reactive_equilibrium(
         if (
             len(finite) == 1
             and isinstance(finite[0].support, AllComponents)
-            and finite[0].start is None
         ):
             return _compile_homogeneous_owner(
                 model,
@@ -3827,6 +3828,7 @@ def _solve_general_reactive_equilibrium(
     problem: GeneralReactiveEquilibriumProblem,
     *,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
+    continuation_start: tuple[tuple[float, ...], float] | None = None,
 ) -> GeneralReactiveEquilibriumResult:
     """Compile and solve one role-declared GREPE condition."""
 
@@ -3842,12 +3844,28 @@ def _solve_general_reactive_equilibrium(
     if isinstance(compiled, _FinitePhaseCompilation):
         return _evaluate_finite_phase(model, problem, compiled, active_parameters)
     if isinstance(compiled, _HomogeneousCompilation):
-        homogeneous_owner = evaluate_homogeneous_reactive_observations(
+        owner_start = continuation_start
+        if owner_start is None:
+            declared_start = next(
+                phase.start
+                for phase in problem.phases
+                if phase.identity == compiled.owner_problem.phase_identity
+            )
+            owner_start = (
+                _immutable_continuation_start(compiled.owner_problem)
+                if declared_start is None
+                else (
+                    declared_start.amounts_mol,
+                    math.fsum(declared_start.amounts_mol) * declared_start.molar_volume_m3_per_mol,
+                )
+            )
+        homogeneous_owner = _evaluate_homogeneous_reactive_observations(
             compiled.owner_problem,
             compiled.temperature,
             compiled.pressure,
             compiled.owner_descriptor,
             active_parameters=active_parameters,
+            continuation_start=owner_start,
         )
         numerical_status, physical_status, provider_status = _failure_axes(
             homogeneous_owner.failure

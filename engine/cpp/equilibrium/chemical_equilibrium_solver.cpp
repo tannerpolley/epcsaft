@@ -792,6 +792,7 @@ std::vector<double> chemical_potentials(
 }
 
 struct KktPolishEvaluation {
+    ReactionNlpEvaluation state;
     std::vector<double> constraints;
     std::vector<double> jacobian;
     bool domain_feasible = true;
@@ -819,7 +820,8 @@ KktPolishEvaluation evaluate_kkt_polish(
     if (reactions.columns != g_ref.size()) {
         throw std::invalid_argument("reaction polish dimensions are inconsistent");
     }
-    const ReactionNlpEvaluation base = evaluate_reaction_nlp(
+    KktPolishEvaluation result;
+    result.state = evaluate_reaction_nlp(
         chart,
         balances,
         g_ref,
@@ -831,11 +833,11 @@ KktPolishEvaluation evaluate_kkt_polish(
         std::vector<double>(reaction_constraint_count(balances, domain), 0.0),
         volume_transform
     );
+    const ReactionNlpEvaluation& base = result.state;
     const std::size_t species_count = g_ref.size();
     const std::size_t variable_count = variables.size();
     const std::size_t amount_dimension = chart.coordinate_count();
     const std::size_t physical_count = species_count + 1;
-    KktPolishEvaluation result;
     const std::size_t constraint_count = kkt_polish_constraint_count(balances, reactions);
     result.constraints.assign(constraint_count, 0.0);
     result.jacobian.assign(constraint_count * variable_count, 0.0);
@@ -908,6 +910,70 @@ KktPolishEvaluation evaluate_kkt_polish(
                 * physical_jacobian[physical * variable_count + variable]
                 / pressure_pa;
         }
+    }
+    return result;
+}
+
+struct ProviderKktPartials {
+    std::vector<std::string> parameter_order;
+    std::vector<double> jacobian;
+};
+
+ProviderKktPartials evaluate_provider_kkt_partials(
+    const ConstraintRows& balances,
+    const DenseMatrix& reactions,
+    const std::vector<double>& g_ref,
+    double temperature_k,
+    double pressure_pa,
+    const ReactionNlpEvaluation& state,
+    const std::vector<double>& ln_k_parameter_derivatives
+) {
+    const PhaseBlockEvaluation& phase = state.phase;
+    const std::size_t parameter_count = phase.active_parameter_names.size();
+    if ((parameter_count != 0
+            && (phase.pressure_parameter_derivatives_pa.size() != parameter_count
+                || phase.chemical_potential_parameter_derivatives_over_rt.size()
+                    != g_ref.size() * parameter_count
+                || ln_k_parameter_derivatives.size()
+                    != reactions.rows * parameter_count
+                || state.volume_parameter_derivatives.size() != parameter_count))
+        || (parameter_count == 0 && !ln_k_parameter_derivatives.empty())) {
+        throw std::invalid_argument(
+            "incomplete Provider local parameter derivatives"
+        );
+    }
+    ProviderKktPartials result;
+    result.parameter_order = phase.active_parameter_names;
+    const std::size_t row_count = kkt_polish_constraint_count(balances, reactions);
+    result.jacobian.assign(row_count * parameter_count, 0.0);
+    for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
+        const double volume_derivative = state.volume_parameter_derivatives[parameter];
+        for (std::size_t reaction = 0; reaction < reactions.rows; ++reaction) {
+            double mechanical_derivative = 0.0;
+            for (std::size_t species = 0; species < g_ref.size(); ++species) {
+                mechanical_derivative += reactions(reaction, species) * (
+                    phase.chemical_potential_parameter_derivatives_over_rt[
+                        species * parameter_count + parameter
+                    ]
+                    + phase.mechanical.hessian[
+                        species * (g_ref.size() + 1) + g_ref.size()
+                    ] * volume_derivative
+                );
+            }
+            result.jacobian[
+                (balances.matrix.rows + reaction) * parameter_count + parameter
+            ] = (
+                mechanical_derivative
+                - ln_k_parameter_derivatives[
+                    reaction * parameter_count + parameter
+                ]
+            ) / matrix_row_l2_norm(reactions, reaction);
+        }
+        result.jacobian[(row_count - 1) * parameter_count + parameter] = (
+            phase.pressure_parameter_derivatives_pa[parameter]
+            - kGasConstantJPerMolK * temperature_k
+                * phase.mechanical.hessian.back() * volume_derivative
+        ) / pressure_pa;
     }
     return result;
 }
@@ -1536,6 +1602,15 @@ ChemicalSensitivityResult evaluate_implicit_sensitivities(
         result.failure_reason = "provider_parameter_order_mismatch";
         return result;
     }
+    const ProviderKktPartials provider_partials = evaluate_provider_kkt_partials(
+        balances,
+        reactions,
+        g_ref,
+        temperature_k,
+        pressure_pa,
+        solved,
+        ln_k_parameter_derivatives
+    );
 
     for (std::size_t row = 0; row < balances.matrix.rows; ++row) {
         result.parameter_order.push_back("balance_total[" + std::to_string(row) + "]");
@@ -1605,35 +1680,11 @@ ChemicalSensitivityResult evaluate_implicit_sensitivities(
         } else {
             const std::size_t active = parameter
                 - balances.matrix.rows - reactions.rows - 1;
-            const double direct_volume_derivative =
-                solved.volume_parameter_derivatives.empty()
-                ? 0.0
-                : solved.volume_parameter_derivatives[active];
-            for (std::size_t reaction = 0; reaction < reactions.rows; ++reaction) {
-                double mechanical_derivative = 0.0;
-                for (std::size_t species = 0; species < g_ref.size(); ++species) {
-                    mechanical_derivative += reactions(reaction, species)
-                        * (
-                            phase.chemical_potential_parameter_derivatives_over_rt[
-                                species * active_parameter_count + active
-                            ]
-                            + phase.mechanical.hessian[
-                                species * (g_ref.size() + 1) + g_ref.size()
-                            ] * direct_volume_derivative
-                        );
-                }
-                right_hand_side[balances.matrix.rows + reaction] = (
-                    ln_k_parameter_derivatives[
-                        reaction * active_parameter_count + active
-                    ] - mechanical_derivative
-                ) / matrix_row_l2_norm(reactions, reaction);
+            for (std::size_t row = 0; row < result.kkt_dimension; ++row) {
+                right_hand_side[row] = -provider_partials.jacobian[
+                    row * active_parameter_count + active
+                ];
             }
-            right_hand_side.back() = -(
-                phase.pressure_parameter_derivatives_pa[active]
-                - kGasConstantJPerMolK * temperature_k
-                    * phase.mechanical.hessian.back()
-                    * direct_volume_derivative
-            ) / pressure_pa;
         }
         for (std::size_t row = 0; row < result.kkt_dimension; ++row) {
             result.kkt_parameter_jacobian[row * parameter_count + parameter] =
@@ -3140,6 +3191,10 @@ ChemicalSolveResult solve_reaction_attempt(
     );
     if (max_iterations < 0) {
         throw std::invalid_argument("reaction solver iteration limit must be nonnegative");
+    }
+    if (max_iterations == 0) {
+        result.local_variables = initial;
+        return result;
     }
     ReactionTnlp* raw_problem = nullptr;
     Ipopt::SmartPtr<Ipopt::TNLP> problem;
@@ -6018,6 +6073,9 @@ ChemicalSolveResult solve_provider_reaction(
             {"certificate.kkt_stationarity_inf_norm_max", kKktTolerance},
             {"certificate.minimum_amount_mol_min_exclusive", trace_floor},
         };
+        if (max_iterations == 0) {
+            return result;
+        }
         return finalize_chemical_result(system, std::move(result), false);
     };
     if (!std::isfinite(packing_fraction_min)
@@ -6042,6 +6100,57 @@ ChemicalSolveResult solve_provider_reaction(
         result.numerical_status = "failed";
         result.trace_status = "at_or_below_floor";
         return finish(std::move(result));
+    }
+    if (max_iterations == 0 && continuation_start != nullptr) {
+        MaxMinInitializationResult anchor = initialization;
+        anchor.amounts = continuation_start->amounts;
+        const double packing = active_parameters == nullptr
+            || active_parameters->identities.empty()
+            ? provider.evaluate_packing_fraction(
+                temperature_k, anchor.amounts, continuation_start->volume_m3
+            ).value
+            : provider.evaluate_parameterized_phase(
+                temperature_k,
+                anchor.amounts,
+                continuation_start->volume_m3,
+                packing_fraction_min,
+                packing_fraction_max,
+                *active_parameters
+            ).packing.value;
+        const VolumeCoordinateTransform transform = provider_volume_transform(
+            provider,
+            packing_fraction_min,
+            packing_fraction_max,
+            std::log(packing),
+            active_parameters
+        );
+        return finish(solve_reaction_attempt(
+            system,
+            temperature_k,
+            pressure_pa,
+            {},
+            trace_floor,
+            0,
+            anchor,
+            provider_phase_evaluator(
+                provider,
+                packing_fraction_min,
+                packing_fraction_max,
+                active_parameters
+            ),
+            {false, packing_fraction_min, packing_fraction_max,
+                total_ion_fraction_max},
+            continuation_start->volume_m3,
+            ln_k_pressure_derivatives_per_pa,
+            ln_k_parameter_derivatives,
+            {
+                std::numeric_limits<double>::quiet_NaN(),
+                std::numeric_limits<double>::quiet_NaN(),
+            },
+            &transform,
+            false,
+            false
+        ));
     }
     const std::vector<double>& starting_amounts = initialization.amounts;
     const double total = std::accumulate(
@@ -6274,7 +6383,6 @@ ChemicalSolveResult evaluate_provider_reaction_local(
     double packing_fraction_min,
     double packing_fraction_max,
     double total_ion_fraction_max,
-    double trace_floor,
     const std::vector<double>& variables,
     const std::vector<double>& lower,
     const std::vector<double>& upper,
@@ -6306,16 +6414,22 @@ ChemicalSolveResult evaluate_provider_reaction_local(
         temperature_k, pressure_pa, phase_evaluator, domain, variables,
         &volume_transform
     );
-    const ReactionNlpEvaluation state = evaluate_reaction_nlp(
-        chart, balances, system.g_ref, temperature_k, pressure_pa,
-        phase_evaluator, domain, variables,
-        std::vector<double>(reaction_constraint_count(balances, domain), 0.0),
-        &volume_transform
+    const ReactionNlpEvaluation& state = kkt.state;
+    const ProviderKktPartials parameter_partials = evaluate_provider_kkt_partials(
+        balances,
+        system.reaction_matrix,
+        system.g_ref,
+        temperature_k,
+        pressure_pa,
+        state,
+        ln_k_parameter_derivatives
     );
     ChemicalSolveResult result;
     result.local_variables = variables;
     result.local_lower_bounds = lower;
     result.local_upper_bounds = upper;
+    result.local_parameter_order = parameter_partials.parameter_order;
+    result.local_parameter_jacobian = parameter_partials.jacobian;
     result.amounts = state.amount_chart.amounts;
     result.volume_m3 = state.volume;
     result.volume_parameter_derivatives = state.volume_parameter_derivatives;
@@ -6328,12 +6442,6 @@ ChemicalSolveResult evaluate_provider_reaction_local(
     result.physical_to_chart_jacobian = state.physical_to_chart_jacobian;
     result.physical_to_chart_rows = system.species_count + 1;
     result.physical_to_chart_columns = variables.size();
-    result.sensitivities = evaluate_implicit_sensitivities(
-        chart, balances, system.reaction_matrix, system.g_ref,
-        temperature_k, pressure_pa, phase_evaluator, domain, variables,
-        lower, upper, {}, trace_floor, system.provider_fingerprint, {},
-        ln_k_parameter_derivatives, &volume_transform
-    );
     return result;
 }
 

@@ -258,6 +258,8 @@ py::dict chemical_result(const ChemicalSolveResult& evaluation) {
     result["local_variables"] = evaluation.local_variables;
     result["local_lower_bounds"] = evaluation.local_lower_bounds;
     result["local_upper_bounds"] = evaluation.local_upper_bounds;
+    result["local_parameter_order"] = evaluation.local_parameter_order;
+    result["local_parameter_jacobian"] = evaluation.local_parameter_jacobian;
     result["balance_inf_norm"] = evaluation.balance_inf_norm;
     result["charge_inf_norm"] = evaluation.charge_inf_norm;
     result["pressure_relative_residual"] = evaluation.pressure_relative_residual;
@@ -900,7 +902,8 @@ py::dict solve_provider_input(
     const std::vector<double>& ln_k_pressure_derivatives_per_pa = {},
     const std::vector<double>& ln_k_parameter_derivatives = {},
     const ProviderActiveParameterSet* active_parameters = nullptr,
-    const ChemicalContinuationStart* continuation_start = nullptr
+    const ChemicalContinuationStart* continuation_start = nullptr,
+    int max_iterations = 500
 ) {
     const CompiledReactionSystem compiled = compile_provider_input(
         transport, metadata, input, packing_bounds
@@ -954,7 +957,8 @@ py::dict solve_provider_input(
         compiled_ln_k_pressure_derivatives_per_pa,
         compiled_ln_k_parameter_derivatives,
         active_parameters,
-        continuation_start
+        continuation_start,
+        max_iterations
     );
     set_provider_parameter_status(evaluation, active_parameter_count);
     py::dict result = chemical_result(evaluation);
@@ -1233,7 +1237,8 @@ py::dict solve_provider_source(
     double trace_floor,
     bool sensitivities_requested,
     const ProviderActiveParameterSet* active_parameters,
-    const ChemicalContinuationStart* continuation_start
+    const ChemicalContinuationStart* continuation_start,
+    int max_iterations = 500
 ) {
     const epcsaft_native_transport& transport = checked_chemical_transport(capsule);
     const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
@@ -1258,7 +1263,8 @@ py::dict solve_provider_source(
         transformed.ln_k_pressure_derivatives_per_pa,
         transformed.ln_k_parameter_derivatives,
         active_parameters,
-        continuation_start
+        continuation_start,
+        max_iterations
     );
     py::dict sensitivities = py::cast<py::dict>(result["sensitivities"]);
     sensitivities["reference_parameter_status"] =
@@ -1288,7 +1294,8 @@ py::dict solve_chemical_equilibrium(
     const py::object& packing_fraction_bounds,
     double trace_floor,
     bool sensitivities_requested,
-    bool active_parameters_requested
+    bool active_parameters_requested,
+    int max_iterations
 ) {
     if (capsule.is_none()) {
         if (!source_standard_state.is_none() || !packing_fraction_bounds.is_none()) {
@@ -1334,7 +1341,8 @@ py::dict solve_chemical_equilibrium(
             {},
             {},
             resolved.identities.empty() ? nullptr : &resolved,
-            anchored_ptr
+            anchored_ptr,
+            max_iterations
         );
     }
     const epcsaft_native_transport& transport =
@@ -1354,7 +1362,8 @@ py::dict solve_chemical_equilibrium(
         trace_floor,
         sensitivities_requested,
         resolved.identities.empty() ? nullptr : &resolved,
-        anchored_ptr
+        anchored_ptr,
+        max_iterations
     );
 }
 
@@ -1363,7 +1372,6 @@ py::dict evaluate_provider_local(
     const py::dict& spec,
     const py::object& source_standard_state,
     const std::vector<double>& packing_bounds,
-    double trace_floor,
     const std::vector<double>& variables,
     const std::vector<double>& lower,
     const std::vector<double>& upper,
@@ -1401,7 +1409,7 @@ py::dict evaluate_provider_local(
     ChemicalSolveResult evaluation = evaluate_provider_reaction_local(
         compiled, provider, input.temperature_k, input.pressure_pa,
         packing_bounds[0], packing_bounds[1],
-        transport.total_ion_mole_fraction_max, trace_floor,
+        transport.total_ion_mole_fraction_max,
         variables, lower, upper,
         compile_ln_k_parameter_derivatives(
             compiled, input, ln_k_parameter_derivatives, parameter_count
@@ -1800,7 +1808,8 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("packing_fraction_bounds"),
         py::arg("trace_floor"),
         py::arg("sensitivities_requested") = false,
-        py::arg("active_parameters_requested") = false
+        py::arg("active_parameters_requested") = false,
+        py::arg("max_iterations") = 500
     );
     module.def(
         "_evaluate_provider_reaction_local",
@@ -1809,7 +1818,6 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("spec"),
         py::arg("source_standard_state"),
         py::arg("packing_fraction_bounds"),
-        py::arg("trace_floor"),
         py::arg("variables"),
         py::arg("lower"),
         py::arg("upper"),

@@ -2489,13 +2489,14 @@ class _ObservationFailure(ValueError):
         self.code = code
 
 
-def evaluate_homogeneous_reactive_observations(
+def _evaluate_homogeneous_reactive_observations(
     problem: HomogeneousReactiveObservationProblem,
     temperature: Quantity[Any],
     pressure: Quantity[Any],
     descriptor: HomogeneousReactiveObservationDescriptor,
     *,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
+    continuation_start: tuple[tuple[float, ...], float] | None,
 ) -> HomogeneousReactiveObservationResult:
     """Evaluate one descriptor without constructing residuals or failure penalties."""
 
@@ -2537,7 +2538,7 @@ def evaluate_homogeneous_reactive_observations(
             pressure,
             reaction_system,
             sensitivity_request=ChemicalEquilibriumSensitivityRequest(active_parameters),
-            continuation_start=_immutable_continuation_start(problem),
+            continuation_start=continuation_start,
         )
     except ChemicalEquilibriumError as error:
         return _failed_result(
@@ -2961,4 +2962,22 @@ def evaluate_homogeneous_reactive_observations(
         support_domain_status=equilibrium.diagnostics.provider_domain_status,
         equilibrium=equilibrium,
         diagnostics=equilibrium.diagnostics,
+    )
+
+
+def evaluate_homogeneous_reactive_observations(
+    problem: HomogeneousReactiveObservationProblem,
+    temperature: Quantity[Any],
+    pressure: Quantity[Any],
+    descriptor: HomogeneousReactiveObservationDescriptor,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None = None,
+) -> HomogeneousReactiveObservationResult:
+    return _evaluate_homogeneous_reactive_observations(
+        problem,
+        temperature,
+        pressure,
+        descriptor,
+        active_parameters=active_parameters,
+        continuation_start=_immutable_continuation_start(problem),
     )

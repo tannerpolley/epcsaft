@@ -306,6 +306,8 @@ struct ChemicalSolveResult {
     std::vector<double> local_variables;
     std::vector<double> local_lower_bounds;
     std::vector<double> local_upper_bounds;
+    std::vector<std::string> local_parameter_order;
+    std::vector<double> local_parameter_jacobian;
     double balance_inf_norm = 0.0;
     double charge_inf_norm = 0.0;
     double pressure_relative_residual = 0.0;
@@ -553,7 +555,6 @@ struct SourceStandardStateResult {
     double packing_fraction_min,
     double packing_fraction_max,
     double total_ion_fraction_max,
-    double trace_floor,
     const std::vector<double>& variables,
     const std::vector<double>& lower,
     const std::vector<double>& upper,

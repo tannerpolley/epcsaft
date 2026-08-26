@@ -690,6 +690,28 @@ def test_grepe_single_finite_phase_matches_homogeneous_owner() -> None:
     assert grepe.values == pytest.approx(owner.values, rel=3.0e-5, abs=3.0e-7)
     for actual, expected in zip(grepe.jacobian, owner.jacobian, strict=True):
         assert actual == pytest.approx(expected, rel=3.0e-5, abs=3.0e-7)
+    state = owner.equilibrium
+    assert state is not None
+    started = equilibrium.phase_equilibrium(
+        model,
+        replace(
+            grepe_problem,
+            phases=(
+                replace(
+                    grepe_problem.phases[0],
+                    continuation_identity=None,
+                    branch_policy=None,
+                    continuation_reference=None,
+                    start=equilibrium.FinitePhaseStart(
+                        state.amounts_mol,
+                        state.volume_m3 / math.fsum(state.amounts_mol),
+                    ),
+                ),
+            ),
+        ),
+        active_parameters=active,
+    )
+    assert started.values == pytest.approx(owner.values, rel=3.0e-5, abs=3.0e-7)
     assert grepe.certificate_scope == "fixed_TP_single_finite_reacting_phase"
     assert grepe.globality_claim == "not_established"
     assert grepe.branch_signature is not None

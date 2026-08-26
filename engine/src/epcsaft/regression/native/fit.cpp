@@ -981,7 +981,7 @@ public:
                          const Ipopt::Number *, const Ipopt::Number *,
                          Ipopt::Number, const Ipopt::IpoptData *,
                          Ipopt::IpoptCalculatedQuantities *) override {
-    if (dimensions(n, m) && x != nullptr) {
+    if (dimensions(n, m) && x != nullptr && evaluate(n, x)) {
       std::copy(x, x + n, solution_.begin());
     }
   }

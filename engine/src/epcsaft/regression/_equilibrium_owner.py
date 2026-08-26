@@ -26,6 +26,7 @@ from ..equilibrium._grepe import (
     _finite_phase_spec,
     _HomogeneousCompilation,
     _reactive_finite_source_standard_state,
+    _solve_general_reactive_equilibrium,
 )
 from ..equilibrium._observations import _immutable_continuation_start
 from ..parameters import ActiveParameterSet
@@ -425,8 +426,19 @@ def _active_trial(
     )
 
 
-def _evaluate_batch(batch: _ReactiveBatch, active: ActiveParameterSet) -> Any:
-    return phase_equilibrium(batch.model, batch.problem, active_parameters=active)
+def _evaluate_batch(
+    batch: _ReactiveBatch,
+    active: ActiveParameterSet,
+    continuation_start: tuple[tuple[float, ...], float] | None = None,
+) -> Any:
+    if continuation_start is None:
+        return phase_equilibrium(batch.model, batch.problem, active_parameters=active)
+    return _solve_general_reactive_equilibrium(
+        batch.model,
+        batch.problem,
+        active_parameters=active,
+        continuation_start=continuation_start,
+    )
 
 
 def _preflight(
@@ -496,7 +508,15 @@ def _preflight(
 
 
 class _EquilibriumOwnerEvaluator:
-    __slots__ = ("_active_ids", "_batches", "_exact_start_results", "_parameters", "_starts")
+    __slots__ = (
+        "_active_ids",
+        "_batches",
+        "_exact_start_results",
+        "_full_space_starts",
+        "_parameters",
+        "_resolved",
+        "_starts",
+    )
 
     def __init__(
         self,
@@ -504,10 +524,23 @@ class _EquilibriumOwnerEvaluator:
         batches: Sequence[_ReactiveBatch],
     ) -> None:
         self._parameters = resolved.parameters
+        self._resolved = resolved
         self._starts = tuple(start.identity for start in resolved.fit.solver.multistart.starts)
         self._active_ids = resolved.selected_identities
         self._batches = tuple(batches)
-        self._exact_start_results = _preflight(resolved, batches)
+        self._exact_start_results: dict[
+            tuple[str, str, tuple[str, ...], tuple[float, ...]], Any
+        ] | None = None
+        self._full_space_starts: dict[
+            int, tuple[tuple[tuple[float, ...], float], ...]
+        ] = {}
+
+    def set_full_space_starts(
+        self,
+        start_index: int,
+        starts: tuple[tuple[tuple[float, ...], float], ...],
+    ) -> None:
+        self._full_space_starts[start_index] = starts
 
     @staticmethod
     def _rejected(code: NonEvaluableTrialCode, reason: str) -> dict[str, object]:
@@ -520,6 +553,8 @@ class _EquilibriumOwnerEvaluator:
         values: Sequence[float],
         receipt_requested: bool,
     ) -> dict[str, object]:
+        if not receipt_requested and self._exact_start_results is None:
+            self._exact_start_results = _preflight(self._resolved, self._batches)
         batch = self._batches[index]
         try:
             active = ActiveParameterSet(self._parameters, self._active_ids, values=values)
@@ -527,11 +562,17 @@ class _EquilibriumOwnerEvaluator:
             return self._rejected("parameter_topology_mismatch", str(error))
         result = None
         if not receipt_requested:
+            assert self._exact_start_results is not None
             result = self._exact_start_results.get(
                 (self._starts[_start_index], batch.identity, self._active_ids, active.values)
             )
         if result is None:
-            result = _evaluate_batch(batch, active)
+            starts = self._full_space_starts.get(_start_index)
+            result = _evaluate_batch(
+                batch,
+                active,
+                None if starts is None else starts[index],
+            )
         if result.status != "evaluated":
             failure = result.failure
             if failure is None:
@@ -656,6 +697,7 @@ def _equilibrium_owner_batches(
 def _full_space_batches(
     resolved: ResolvedFit,
     batches: Sequence[_ReactiveBatch],
+    owner: _EquilibriumOwnerEvaluator | None = None,
 ) -> tuple[Any, tuple[Mapping[str, object], ...]] | None:
     active = ActiveParameterSet(resolved.parameters, resolved.selected_identities)
     compiled_batches: list[tuple[Any, ...]] = []
@@ -745,10 +787,10 @@ def _full_space_batches(
                         trace_floor,
                         True,
                         True,
+                        0,
                     ),
                 )
                 local = tuple(cast(Sequence[float], native["local_variables"]))
-                constraints = tuple(cast(Sequence[float], native["kkt_root_values"]))
                 continuation_width = len(reference.mole_fractions) + 1
                 local_lower = tuple(cast(Sequence[float], native["local_lower_bounds"]))
                 local_upper = tuple(cast(Sequence[float], native["local_upper_bounds"]))
@@ -759,7 +801,7 @@ def _full_space_batches(
                         "local_offset": len(initial),
                         "local_width": len(local),
                         "constraint_offset": len(constraint_lower),
-                        "constraint_width": len(constraints) + continuation_width,
+                        "constraint_width": len(local) + continuation_width,
                         "lower": local_lower,
                         "upper": local_upper,
                     }
@@ -767,8 +809,8 @@ def _full_space_batches(
                 initial.extend(local)
                 lower.extend(local_lower)
                 upper.extend(local_upper)
-                constraint_lower.extend([0.0] * len(constraints))
-                constraint_upper.extend([0.0] * len(constraints))
+                constraint_lower.extend([0.0] * len(local))
+                constraint_upper.extend([0.0] * len(local))
                 constraint_lower.extend(
                     [-reference.maximum_log_composition_distance] * len(reference.mole_fractions)
                     + [-reference.maximum_log_volume_distance]
@@ -839,8 +881,9 @@ def _full_space_batches(
         residual_jacobian: list[float] = []
         constraints: list[float] = []
         constraint_jacobian: list[float] = []
+        continuation_starts: list[tuple[tuple[float, ...], float]] = []
         for compiled, bounds in zip(compiled_batches, start_blocks[start_index], strict=True):
-            batch, spec, packing, trace_floor, outputs, reference = compiled
+            batch, spec, packing, _, outputs, reference = compiled
             local_width = cast(int, bounds["local_width"])
             local_offset = coordinate_count + cast(int, bounds["local_offset"])
             native = cast(
@@ -850,7 +893,6 @@ def _full_space_batches(
                     spec,
                     source_state(batch, spec, trial),
                     packing,
-                    trace_floor,
                     values[local_offset : local_offset + local_width],
                     cast(Sequence[float], bounds["lower"]),
                     cast(Sequence[float], bounds["upper"]),
@@ -860,6 +902,7 @@ def _full_space_batches(
             amounts = tuple(cast(Sequence[float], native["amounts"]))
             total = math.fsum(amounts)
             volume = float(cast(float, native["volume_m3"]))
+            continuation_starts.append((amounts, volume))
             volume_parameter_derivatives = cast(
                 Sequence[float], native["volume_parameter_derivatives"]
             )
@@ -913,9 +956,10 @@ def _full_space_batches(
             block_constraints = tuple(cast(Sequence[float], native["kkt_root_values"]))
             constraints.extend(block_constraints)
             state_jacobian = cast(Sequence[float], native["kkt_root_jacobian"])
-            sensitivities = cast(Mapping[str, object], native["sensitivities"])
-            order = tuple(cast(Sequence[str], sensitivities["parameter_order"]))
-            parameter_jacobian = cast(Sequence[float], sensitivities["kkt_parameter_jacobian"])
+            order = tuple(cast(Sequence[str], native["local_parameter_order"]))
+            parameter_jacobian = cast(
+                Sequence[float], native["local_parameter_jacobian"]
+            )
             parameter_columns = {
                 identity: order.index(f"provider_parameter[{identity}]")
                 for identity in resolved.selected_identities
@@ -959,6 +1003,8 @@ def _full_space_batches(
                     - amount_derivative[column] / total
                     for column in range(local_width)
                 )
+        if owner is not None:
+            owner.set_full_space_starts(start_index, tuple(continuation_starts))
         return {
             "residuals": residuals,
             "residual_jacobian": residual_jacobian,

@@ -40,6 +40,24 @@ bool finite(const std::vector<double> &values) {
                      [](double value) { return std::isfinite(value); });
 }
 
+struct PressureDensityState final {
+  double pressure;
+  double pressure_density_derivative;
+};
+
+PressureDensityState pressure_density_state(
+    const NativeModel &model, double temperature, double density,
+    const std::vector<double> &composition) {
+  const auto phase = model.evaluate_supported_phase_derivatives(
+      temperature, composition, 1.0 / density,
+      std::numeric_limits<double>::quiet_NaN(), {});
+  const std::size_t volume = phase.gradient.size() - 1;
+  return {phase.pressure_pa,
+          detail::GAS_CONSTANT * temperature *
+              phase.hessian[volume * phase.gradient.size() + volume] /
+              (density * density)};
+}
+
 std::vector<std::string> split_identity(const std::string &identity) {
   std::vector<std::string> parts;
   std::size_t begin = 0;
@@ -1362,8 +1380,52 @@ NativeResult NativeModel::evaluate_pressure_continuation(
         "continued density reference is outside the model domain");
   }
   const auto evaluate_at = [this, temperature, &mole_fractions](double density) {
-    return evaluate(temperature, density, mole_fractions);
+    return pressure_density_state(*this, temperature, density, mole_fractions);
   };
+  const double minimum_stable_slope =
+      1.0e-10 * pressure / ideal_density;
+  const auto finish = [&](detail::DensityRoot root) {
+    root.stable = std::isfinite(root.pressure_density_derivative) &&
+                  root.pressure_density_derivative > minimum_stable_slope;
+    if (!root.stable) {
+      throw detail::DensityDomainError(
+          "continued density branch is not locally strict-stable");
+    }
+    root.branch = "local_continuation";
+    root.stable_root_count = 1;
+    root.selected_stable_root_index = 0;
+    auto result = evaluate(temperature, root.molar_density, mole_fractions);
+    result.density_diagnostics = NativeDensityDiagnostics{
+        root.bracket_lower, root.bracket_upper, root.pressure_residual,
+        root.pressure_density_derivative, root.iterations, root.stable,
+        root.branch, root.stable_root_count, root.selected_stable_root_index};
+    return result;
+  };
+  const auto reference_state = evaluate_at(reference_molar_density);
+  const double reference_residual = reference_state.pressure - pressure;
+  if (std::abs(reference_residual) <= std::max(1.0e-6, 1.0e-10 * pressure) &&
+      reference_state.pressure_density_derivative > minimum_stable_slope) {
+    return finish({reference_molar_density, reference_molar_density,
+                   reference_molar_density, reference_residual,
+                   reference_state.pressure_density_derivative, 1, false, "",
+                   0, 0});
+  }
+  const double candidate_density = reference_molar_density -
+      reference_residual / reference_state.pressure_density_derivative;
+  if (candidate_density > lower_domain && candidate_density < upper_domain &&
+      std::abs(std::log(candidate_density / reference_molar_density)) <=
+          std::log1p(1.0e-2)) {
+    const auto candidate_state = evaluate_at(candidate_density);
+    const double candidate_residual = candidate_state.pressure - pressure;
+    if (std::abs(candidate_residual) <=
+            std::max(1.0e-6, 1.0e-10 * pressure) &&
+        candidate_state.pressure_density_derivative > minimum_stable_slope) {
+      return finish({candidate_density, candidate_density, candidate_density,
+                     candidate_residual,
+                     candidate_state.pressure_density_derivative, 2, false, "",
+                     0, 0});
+    }
+  }
   constexpr std::size_t scan_intervals = 360;
   const double log_lower = std::log(lower_domain);
   const double log_upper = std::log(upper_domain);
@@ -1409,31 +1471,7 @@ NativeResult NativeModel::evaluate_pressure_continuation(
     throw detail::DensityDomainError(
         "continued density branch is absent or locally ambiguous");
   }
-  detail::DensityRoot root = continued_roots.front();
-  const double minimum_stable_slope =
-      1.0e-10 * pressure / ideal_density;
-  root.stable = std::isfinite(root.pressure_density_derivative) &&
-                root.pressure_density_derivative > minimum_stable_slope;
-  if (!root.stable) {
-    throw detail::DensityDomainError(
-        "continued density branch is not locally strict-stable");
-  }
-  root.branch = "local_continuation";
-  root.stable_root_count = 1;
-  root.selected_stable_root_index = 0;
-  auto result = evaluate_at(root.molar_density);
-  result.density_diagnostics = NativeDensityDiagnostics{
-      root.bracket_lower,
-      root.bracket_upper,
-      root.pressure_residual,
-      root.pressure_density_derivative,
-      root.iterations,
-      root.stable,
-      root.branch,
-      root.stable_root_count,
-      root.selected_stable_root_index,
-  };
-  return result;
+  return finish(continued_roots.front());
 }
 
 } // namespace epcsaft
