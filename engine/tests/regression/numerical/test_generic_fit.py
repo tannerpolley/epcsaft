@@ -169,9 +169,7 @@ def _mixed_fit_mapping(
                 "affine_bound_margin": 1.0e-7,
             },
             "controls": {
-                "function_tolerance": 1.0e-12,
-                "gradient_tolerance": 1.0e-12,
-                "parameter_tolerance": 1.0e-12,
+                "optimizer_tolerance": 1.0e-12,
             },
         },
     }
@@ -397,9 +395,7 @@ def test_tied_owner_coordinate_reports_interior_covariance_and_active_bound(
                 "affine_bound_margin": 1.0e-7,
             },
             "controls": {
-                "function_tolerance": 1.0e-12,
-                "gradient_tolerance": 1.0e-12,
-                "parameter_tolerance": 1.0e-12,
+                "optimizer_tolerance": 1.0e-12,
             },
         },
     }
@@ -585,9 +581,7 @@ def _pure_fit_mapping(tmp_path: Any, parameters: Parameters, name: str) -> dict[
                 "affine_bound_margin": 1.0e-7,
             },
             "controls": {
-                "function_tolerance": 1.0e-12,
-                "gradient_tolerance": 1.0e-12,
-                "parameter_tolerance": 1.0e-12,
+                "optimizer_tolerance": 1.0e-12,
             },
         },
     }

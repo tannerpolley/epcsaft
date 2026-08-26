@@ -1123,9 +1123,7 @@ def test_generic_regression_recovers_finite_phase_parameter(tmp_path: Path) -> N
                 "affine_bound_margin": 1.0e-7,
             },
             "controls": {
-                "function_tolerance": 1.0e-12,
-                "gradient_tolerance": 1.0e-12,
-                "parameter_tolerance": 1.0e-12,
+                "optimizer_tolerance": 1.0e-12,
             },
         },
     }

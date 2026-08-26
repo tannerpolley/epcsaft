@@ -73,9 +73,7 @@ struct Controls final {
   std::vector<Start> starts;
   double affine_bound_margin;
   int maximum_iterations;
-  double function_tolerance;
-  double gradient_tolerance;
-  double parameter_tolerance;
+  double optimizer_tolerance;
 };
 
 struct FullSpaceSetup final {
@@ -238,19 +236,13 @@ Controls parse_controls(const py::dict &mapping) {
       std::move(starts),
       required<double>(mapping, "affine_bound_margin"),
       required<int>(mapping, "maximum_iterations"),
-      required<double>(mapping, "function_tolerance"),
-      required<double>(mapping, "gradient_tolerance"),
-      required<double>(mapping, "parameter_tolerance"),
+      required<double>(mapping, "optimizer_tolerance"),
   };
   if (controls.starts.empty() || controls.maximum_iterations <= 0 ||
       !(std::isfinite(controls.affine_bound_margin) &&
         controls.affine_bound_margin >= 0.0 &&
-        std::isfinite(controls.function_tolerance) &&
-        controls.function_tolerance > 0.0 &&
-        std::isfinite(controls.gradient_tolerance) &&
-        controls.gradient_tolerance > 0.0 &&
-        std::isfinite(controls.parameter_tolerance) &&
-        controls.parameter_tolerance > 0.0)) {
+        std::isfinite(controls.optimizer_tolerance) &&
+        controls.optimizer_tolerance > 0.0)) {
     throw std::invalid_argument("solver controls must be positive and finite");
   }
   return controls;
@@ -1071,18 +1063,13 @@ Ipopt::ApplicationReturnStatus solve_ipopt(Problem *problem,
   application->Options()->SetStringValue("sb", "yes");
   application->Options()->SetIntegerValue("max_iter",
                                           controls.maximum_iterations);
-  const double optimizer_tolerance =
-      0.001 *
-      std::min({controls.function_tolerance, controls.gradient_tolerance,
-                controls.parameter_tolerance});
-  application->Options()->SetNumericValue("tol", optimizer_tolerance);
+  const double ipopt_tolerance = 0.001 * controls.optimizer_tolerance;
+  application->Options()->SetNumericValue("tol", ipopt_tolerance);
   application->Options()->SetIntegerValue("acceptable_iter", 0);
-  application->Options()->SetNumericValue("tiny_step_tol",
-                                          controls.parameter_tolerance);
   application->Options()->SetStringValue("hessian_approximation",
                                          "limited-memory");
   application->Options()->SetStringValue("mu_strategy", "adaptive");
-  application->Options()->SetNumericValue("mu_min", 0.01 * optimizer_tolerance);
+  application->Options()->SetNumericValue("mu_min", 0.01 * ipopt_tolerance);
   application->Options()->SetStringValue(
       "nlp_scaling_method", full_space ? "gradient-based" : "none");
   application->Options()->SetNumericValue("bound_relax_factor", 0.0);

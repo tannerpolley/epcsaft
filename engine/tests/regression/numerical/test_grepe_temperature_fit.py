@@ -137,9 +137,7 @@ def test_regression_recovers_binary_parameter_from_declared_bubble_temperature(
             },
             "controls": {
                 "maximum_iterations": 10,
-                "function_tolerance": 1.0e-8,
-                "gradient_tolerance": 1.0e-8,
-                "parameter_tolerance": 1.0e-8,
+                "optimizer_tolerance": 1.0e-8,
             },
         },
     }

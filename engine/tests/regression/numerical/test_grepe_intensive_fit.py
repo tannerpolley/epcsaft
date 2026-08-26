@@ -213,9 +213,7 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
             },
             "controls": {
                 "maximum_iterations": 12,
-                "function_tolerance": 1.0e-8,
-                "gradient_tolerance": 1.0e-8,
-                "parameter_tolerance": 1.0e-8,
+                "optimizer_tolerance": 1.0e-8,
             },
         },
     }
@@ -223,9 +221,7 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
     del default_mapping["solver"]["controls"]
     default_controls = regression.ParameterFit.from_mapping(default_mapping).solver.controls
     assert default_controls.maximum_iterations == 25
-    assert default_controls.function_tolerance == 1.0e-6
-    assert default_controls.gradient_tolerance == 1.0e-6
-    assert default_controls.parameter_tolerance == 1.0e-6
+    assert default_controls.optimizer_tolerance == 1.0e-6
 
     result = regression.fit(mapping, base_path=tmp_path)
 

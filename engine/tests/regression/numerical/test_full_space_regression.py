@@ -87,9 +87,7 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_states(
     mapping["observations"] = observations
     mapping["solver"]["controls"] = {
         "maximum_iterations": 50,
-        "function_tolerance": 1.0e-8,
-        "gradient_tolerance": 1.0e-8,
-        "parameter_tolerance": 1.0e-8,
+        "optimizer_tolerance": 1.0e-8,
     }
 
     result = regression.fit(mapping, base_path=tmp_path)

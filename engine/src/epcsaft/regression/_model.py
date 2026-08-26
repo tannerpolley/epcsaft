@@ -122,9 +122,7 @@ _FIELDS = MappingProxyType(
             (),
             (
                 "maximum_iterations",
-                "function_tolerance",
-                "gradient_tolerance",
-                "parameter_tolerance",
+                "optimizer_tolerance",
             ),
         ),
         "multistart": _Fields(("starts", "affine_bound_margin")),
@@ -359,9 +357,7 @@ class FitStartSpec:
 @dataclass(frozen=True, slots=True)
 class SolverControlsSpec:
     maximum_iterations: int = 25
-    function_tolerance: float = 1.0e-6
-    gradient_tolerance: float = 1.0e-6
-    parameter_tolerance: float = 1.0e-6
+    optimizer_tolerance: float = 1.0e-6
 
 
 @dataclass(frozen=True, slots=True)
@@ -926,17 +922,9 @@ def _parse_solver(value: object, path: str) -> SolverSpec:
             controls_item.get("maximum_iterations", defaults.maximum_iterations),
             f"{path}.controls.maximum_iterations",
         ),
-        function_tolerance=_number(
-            controls_item.get("function_tolerance", defaults.function_tolerance),
-            f"{path}.controls.function_tolerance",
-        ),
-        gradient_tolerance=_number(
-            controls_item.get("gradient_tolerance", defaults.gradient_tolerance),
-            f"{path}.controls.gradient_tolerance",
-        ),
-        parameter_tolerance=_number(
-            controls_item.get("parameter_tolerance", defaults.parameter_tolerance),
-            f"{path}.controls.parameter_tolerance",
+        optimizer_tolerance=_number(
+            controls_item.get("optimizer_tolerance", defaults.optimizer_tolerance),
+            f"{path}.controls.optimizer_tolerance",
         ),
     )
     if controls.maximum_iterations <= 0:
@@ -945,9 +933,10 @@ def _parse_solver(value: object, path: str) -> SolverSpec:
             f"{path}.controls.maximum_iterations",
             "positive required",
         )
-    for name in ("function_tolerance", "gradient_tolerance", "parameter_tolerance"):
-        if getattr(controls, name) <= 0.0:
-            raise FitSchemaError("invalid-value", f"{path}.controls.{name}", "positive required")
+    if controls.optimizer_tolerance <= 0.0:
+        raise FitSchemaError(
+            "invalid-value", f"{path}.controls.optimizer_tolerance", "positive required"
+        )
     return SolverSpec(MultistartSpec(tuple(starts), margin), controls)
 
 
@@ -1035,9 +1024,7 @@ def _solver_mapping(solver: SolverSpec) -> dict[str, object]:
         },
         "controls": {
             "maximum_iterations": solver.controls.maximum_iterations,
-            "function_tolerance": solver.controls.function_tolerance,
-            "gradient_tolerance": solver.controls.gradient_tolerance,
-            "parameter_tolerance": solver.controls.parameter_tolerance,
+            "optimizer_tolerance": solver.controls.optimizer_tolerance,
         },
     }
 
@@ -1367,15 +1354,7 @@ def parameter_fit_json_schema() -> dict[str, object]:
                                     "type": "integer",
                                     "minimum": 1,
                                 },
-                                "function_tolerance": {
-                                    "type": "number",
-                                    "exclusiveMinimum": 0,
-                                },
-                                "gradient_tolerance": {
-                                    "type": "number",
-                                    "exclusiveMinimum": 0,
-                                },
-                                "parameter_tolerance": {
+                                "optimizer_tolerance": {
                                     "type": "number",
                                     "exclusiveMinimum": 0,
                                 },
