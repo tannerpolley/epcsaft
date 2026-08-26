@@ -31,8 +31,10 @@ from ._api import (
     PhaseSpecification,
     PhaseSupport,
     ProviderPhase,
+    _ScalarBoundarySolveError,
     _source_reference_payload,
     _source_reference_transfer,
+    _solve_bracketed_scalar,
     phase_equilibrium,
 )
 from ._feed import AffineFeed, ResolvedFeed
@@ -3316,60 +3318,46 @@ def _evaluate_fixed_pressure_boundary(
 
     lower, upper = coordinate.bounds
     width = upper - lower
-    starts = tuple(
-        dict.fromkeys(
-            (
+
+    def evaluate_scalar(
+        value: float,
+    ) -> tuple[
+        tuple[ReactiveBubbleVLEProblem, ReactiveBubbleObservationDescriptor, Any],
+        float,
+        float,
+    ]:
+        owner_problem, owner_descriptor, closure, slope = evaluate(value)
+        return (owner_problem, owner_descriptor, closure), closure.residual, slope
+
+    try:
+        solved_coordinate, selected_state, _ = _solve_bracketed_scalar(
+            evaluate_scalar,
+            lower,
+            upper,
+            initial=boundary.initial,
+            bracket_points=(
                 boundary.initial,
-                lower + 0.5 * width,
                 lower + 0.25 * width,
+                lower + 0.5 * width,
                 lower + 0.75 * width,
-            )
+            ),
+            tolerance=2.0e-10,
+            maximum_iterations=64,
         )
-    )
-    owner_problem: ReactiveBubbleVLEProblem | None = None
-    owner_descriptor: ReactiveBubbleObservationDescriptor | None = None
-    closure: Any = None
-    solved_coordinate: float | None = None
-    failure: _BubbleFailure | None = None
-    for start in starts:
-        value = start
-        for _ in range(25):
-            try:
-                owner_problem, owner_descriptor, closure, slope = evaluate(value)
-            except _BubbleFailure as error:
-                failure = error
-                break
-            if abs(closure.residual) <= 2.0e-10:
-                solved_coordinate = value
-                break
-            step = max(-0.5 * width, min(0.5 * width, -closure.residual / slope))
-            candidate = value + step
-            if not lower < candidate < upper:
-                candidate = 0.5 * (value + (upper if step > 0.0 else lower))
-            if candidate == value:
-                failure = _BubbleFailure(
-                    "no_incipient_phase", "affine feed bounds exclude the closure root"
-                )
-                break
-            value = candidate
-        if solved_coordinate is not None:
-            break
-    if (
-        solved_coordinate is None
-        or owner_problem is None
-        or owner_descriptor is None
-        or closure is None
-    ):
-        terminal = failure or _BubbleFailure(
-            "numerical_convergence_failure",
-            "fixed-pressure affine-feed solve exceeded its iteration budget",
+    except _BubbleFailure as error:
+        return _intensive_failure(
+            problem, compilation, NonEvaluableTrial(error.code, str(error)), None
+        )
+    except _ScalarBoundarySolveError as error:
+        code: Literal["no_incipient_phase", "numerical_convergence_failure"] = (
+            "no_incipient_phase"
+            if error.reason == "not_bracketed"
+            else "numerical_convergence_failure"
         )
         return _intensive_failure(
-            problem,
-            compilation,
-            NonEvaluableTrial(terminal.code, str(terminal)),
-            None,
+            problem, compilation, NonEvaluableTrial(code, str(error)), None
         )
+    owner_problem, owner_descriptor, closure = selected_state
     try:
         owner = _fixed_pressure_coordinate_result(
             owner_problem, owner_descriptor, closure, balance_direction
@@ -3445,6 +3433,7 @@ def _evaluate_intensive_boundary(
     )
     bounds_by_id = {coordinate.identity: coordinate.bounds for coordinate in feed.coordinates}
     lower, upper = bounds_by_id[boundary.coordinate_identity]
+    width = upper - lower
 
     def evaluate(coordinate: float) -> tuple[
         _IntensiveOwnerResult,
@@ -3511,47 +3500,32 @@ def _evaluate_intensive_boundary(
             boundary_derivative /= boundary_value
         return owner, residual, boundary_derivative, coordinate_derivatives
 
-    coordinate = boundary.initial
     owner: _IntensiveOwnerResult | None = None
     coordinate_derivatives: tuple[float, ...] = ()
     boundary_derivative = 0.0
+
+    def evaluate_scalar(
+        coordinate: float,
+    ) -> tuple[tuple[_IntensiveOwnerResult, float, tuple[float, ...]], float, float]:
+        evaluated_owner, residual, derivative, derivatives = evaluate(coordinate)
+        return (evaluated_owner, derivative, derivatives), residual, derivative
+
     try:
-        for _ in range(32):
-            owner, residual, boundary_derivative, coordinate_derivatives = evaluate(coordinate)
-            if abs(residual) <= 2.0e-11:
-                break
-            if abs(boundary_derivative) <= 1.0e-13:
-                raise ValueError("intensive-boundary Jacobian is singular")
-            step = -residual / boundary_derivative
-            maximum_step = 1.0
-            if step > 0.0:
-                maximum_step = min(maximum_step, 0.95 * (upper - coordinate) / step)
-            elif step < 0.0:
-                maximum_step = min(maximum_step, 0.95 * (lower - coordinate) / step)
-            accepted = False
-            scale = max(0.0, maximum_step)
-            for _ in range(20):
-                candidate = coordinate + scale * step
-                candidate_owner, candidate_residual, candidate_derivative, candidate_outputs = (
-                    evaluate(candidate)
-                )
-                if abs(candidate_residual) < abs(residual):
-                    coordinate = candidate
-                    owner = candidate_owner
-                    boundary_derivative = candidate_derivative
-                    coordinate_derivatives = candidate_outputs
-                    accepted = True
-                    break
-                scale *= 0.5
-            if not accepted:
-                raise ValueError("intensive-boundary Newton step did not reduce the residual")
-        else:
-            raise ValueError("intensive-boundary solve exceeded its iteration budget")
-        if owner is None:
-            raise ValueError("intensive-boundary solve returned no state")
-        owner, residual, boundary_derivative, coordinate_derivatives = evaluate(coordinate)
-        if abs(residual) > 2.0e-11:
-            raise ValueError("intensive-boundary residual did not converge")
+        coordinate, selected_state, _ = _solve_bracketed_scalar(
+            evaluate_scalar,
+            lower,
+            upper,
+            initial=boundary.initial,
+            bracket_points=(
+                boundary.initial,
+                lower + 0.25 * width,
+                lower + 0.5 * width,
+                lower + 0.75 * width,
+            ),
+            tolerance=2.0e-11,
+            maximum_iterations=64,
+        )
+        owner, boundary_derivative, coordinate_derivatives = selected_state
         if abs(boundary_derivative) <= 1.0e-13:
             raise ValueError("intensive-boundary Jacobian is singular")
         parameter_count = len(compilation.descriptor.active_parameter_identities)
@@ -3595,6 +3569,10 @@ def _evaluate_intensive_boundary(
         failure = (
             NonEvaluableTrial("singular_sensitivity", str(error))
             if "Jacobian is singular" in str(error)
+            or (
+                isinstance(error, _ScalarBoundarySolveError)
+                and error.reason == "invalid_derivative"
+            )
             else NonEvaluableTrial("numerical_convergence_failure", str(error))
         )
         return _intensive_failure(
