@@ -1311,6 +1311,7 @@ py::dict reactive_finite_phase_result(const ReactiveFinitePhaseResult& evaluatio
     result["numerical_status"] = evaluation.numerical_status;
     result["physical_status"] = evaluation.physical_status;
     result["provider_domain_status"] = evaluation.provider_domain_status;
+    result["resolved_policy"] = evaluation.resolved_policy;
     result["phase_amounts_mol"] = evaluation.phase_amounts_mol;
     result["phase_volumes_m3"] = evaluation.phase_volumes_m3;
     result["phase_pressures_pa"] = evaluation.phase_pressures_pa;

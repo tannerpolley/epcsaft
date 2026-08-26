@@ -243,6 +243,7 @@ struct ReactiveFinitePhaseResult {
     std::string numerical_status = "not_adjudicated";
     std::string physical_status = "not_adjudicated";
     std::string provider_domain_status = "not_adjudicated";
+    std::vector<std::pair<std::string, double>> resolved_policy;
     std::vector<std::vector<double>> phase_amounts_mol;
     std::vector<double> phase_volumes_m3;
     std::vector<double> phase_pressures_pa;

@@ -524,7 +524,7 @@ def test_imposed_pressure_matches_fixed_pressure_incipient_reference() -> None:
         observations=observations,
     )
     receipt_payload = json.loads(receipt)
-    assert receipt_payload["schema"] == "epcsaft.grepe-owner-receipt.v2"
+    assert receipt_payload["schema"] == "epcsaft.grepe-owner-receipt.v3"
     assert receipt_payload["formulation"] == "intensive_boundary"
     assert "owner_receipt" not in receipt_payload
     assert result.descriptor is not None

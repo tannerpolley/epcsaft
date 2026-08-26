@@ -725,6 +725,28 @@ def test_grepe_single_finite_phase_matches_homogeneous_owner() -> None:
         batch_identity="grepe-homogeneous-equivalence",
         observations=observations,
     )
+    receipt_payload = json.loads(receipt)
+    assert receipt_payload["schema"] == "epcsaft.grepe-owner-receipt.v3"
+    assert receipt_payload["outcomes"] == {
+        "solver_convergence": {"status": "passed", "reason": "solve_succeeded"},
+        "numerical_convergence": {
+            "status": "passed",
+            "reason": "passed",
+        },
+        "physical_certification": {
+            "status": "passed",
+            "reason": "passed",
+        },
+        "scientific_fit_acceptance": {
+            "status": "not_applicable",
+            "reason": "GREPE owner receipt is not a fit acceptance decision",
+        },
+    }
+    resolved_policy = dict(receipt_payload["resolved_policy"])
+    assert resolved_policy["ipopt.max_iter"] == 500.0
+    assert resolved_policy["certificate.balance_inf_norm_max"] == 1.0e-9
+    assert resolved_policy["certificate.affinity_inf_norm_max"] == 1.0e-6
+    assert resolved_policy["certificate.minimum_amount_mol_min_exclusive"] > 0.0
     assert equilibrium.validate_general_reactive_equilibrium_receipt(
         receipt,
         descriptor=grepe_descriptor,
@@ -1456,7 +1478,7 @@ def test_equilibrium_regression_batches_exact_rows_and_reports_accounting(
     assert aggregate_receipt["aggregate_identity"] == "manufactured-total-ions"
     assert aggregate_receipt["covariance_identity"] == "manufactured-prepared-stock"
     assert accepted.optimizer_basin is not None
-    assert accepted_receipt["schema"] == "epcsaft.grepe-owner-receipt.v2"
+    assert accepted_receipt["schema"] == "epcsaft.grepe-owner-receipt.v3"
     assert accepted_receipt["formulation"] == "finite"
     assert accepted_receipt["branch_signature"]
     assert "owner_receipt" not in accepted_receipt

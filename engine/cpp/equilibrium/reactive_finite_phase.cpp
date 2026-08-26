@@ -20,6 +20,12 @@ namespace epcsaft_engine::equilibrium {
 namespace {
 
 constexpr double kGasConstantJPerMolK = 8.31446261815324;
+constexpr double kReactiveFinitePhaseStartBalanceTolerance = 1.0e-8;
+constexpr double kReactiveFinitePhaseSolverTolerance = 1.0e-10;
+constexpr double kReactiveFinitePhaseAcceptableTolerance = 1.0e-8;
+constexpr double kReactiveFinitePhaseDistinctnessMinimum = 1.0e-6;
+constexpr double kReactiveFinitePhaseBoundMarginMinimum = 1.0e-7;
+constexpr double kReactiveFinitePhaseStrictMinimumFactor = 1.0e-10;
 
 std::string ipopt_status_name(Ipopt::ApplicationReturnStatus status) {
     switch (status) {
@@ -1547,6 +1553,26 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     ReactiveFinitePhaseResult result;
     const std::size_t phase_count = starts.size();
     const std::size_t species_count = system.species_count;
+    result.resolved_policy = {
+        {"ipopt.tol", kReactiveFinitePhaseSolverTolerance},
+        {"ipopt.constr_viol_tol", kReactiveFinitePhaseSolverTolerance},
+        {"ipopt.acceptable_tol", kReactiveFinitePhaseAcceptableTolerance},
+        {"ipopt.max_iter", static_cast<double>(max_iterations)},
+        {"start.balance_inf_norm_max", kReactiveFinitePhaseStartBalanceTolerance},
+        {"certificate.balance_inf_norm_max", kChemicalBalanceTolerance},
+        {"certificate.pressure_relative_inf_norm_max", kChemicalPressureTolerance},
+        {"certificate.affinity_inf_norm_max", kChemicalAffinityTolerance},
+        {"certificate.kkt_stationarity_inf_norm_max", kChemicalKktTolerance},
+        {"certificate.minimum_amount_mol_min_exclusive", trace_floor},
+        {"certificate.bound_margin_min_exclusive", kReactiveFinitePhaseBoundMarginMinimum},
+        {"certificate.strict_minimum_scale_factor", kReactiveFinitePhaseStrictMinimumFactor},
+    };
+    if (phase_count > 1) {
+        result.resolved_policy.push_back({
+            "certificate.phase_distinctness_min_exclusive",
+            kReactiveFinitePhaseDistinctnessMinimum,
+        });
+    }
     if (phase_count < 1 || packing_fraction_intervals.size() != phase_count
         || phase_support_indices.size() != phase_count) {
         throw std::invalid_argument(
@@ -1802,7 +1828,8 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         std::vector<double>(constraint_count, 0.0),
         layouts
     );
-    if (inf_norm(initial_evaluation.constraints) > 1.0e-8) {
+    if (inf_norm(initial_evaluation.constraints)
+        > kReactiveFinitePhaseStartBalanceTolerance) {
         throw std::invalid_argument(
             "reactive finite-phase starts do not preserve the global conserved totals"
         );
@@ -1828,9 +1855,13 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     application->Options()->SetStringValue("hessian_approximation", "exact");
     application->Options()->SetStringValue("mu_strategy", "adaptive");
     application->Options()->SetStringValue("nlp_scaling_method", "none");
-    application->Options()->SetNumericValue("tol", 1.0e-10);
-    application->Options()->SetNumericValue("constr_viol_tol", 1.0e-10);
-    application->Options()->SetNumericValue("acceptable_tol", 1.0e-8);
+    application->Options()->SetNumericValue("tol", kReactiveFinitePhaseSolverTolerance);
+    application->Options()->SetNumericValue(
+        "constr_viol_tol", kReactiveFinitePhaseSolverTolerance
+    );
+    application->Options()->SetNumericValue(
+        "acceptable_tol", kReactiveFinitePhaseAcceptableTolerance
+    );
     application->Options()->SetIntegerValue("max_iter", max_iterations);
     const Ipopt::ApplicationReturnStatus initialized = application->Initialize();
     if (initialized != Ipopt::Solve_Succeeded) {
@@ -2111,16 +2142,17 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         1.0, inf_norm(evaluated.lagrangian_hessian)
     );
     const double strict_minimum_threshold =
-        1.0e-10 * hessian_scale;
+        kReactiveFinitePhaseStrictMinimumFactor * hessian_scale;
     const bool physical_certificates_passed =
         result.balance_inf_norm <= kChemicalBalanceTolerance
         && result.pressure_relative_inf_norm <= kChemicalPressureTolerance
         && result.reaction_affinity_inf_norm <= kChemicalAffinityTolerance
         && result.transfer_chemical_potential_inf_norm <= kChemicalAffinityTolerance
         && result.kkt_stationarity_inf_norm <= kChemicalKktTolerance
-        && (phase_count == 1 || result.phase_distinctness > 1.0e-6)
+        && (phase_count == 1
+            || result.phase_distinctness > kReactiveFinitePhaseDistinctnessMinimum)
         && minimum_amount > trace_floor
-        && minimum_bound_margin > 1.0e-7
+        && minimum_bound_margin > kReactiveFinitePhaseBoundMarginMinimum
         && result.reduced_hessian_min_eigenvalue > strict_minimum_threshold;
     result.physical_status = physical_certificates_passed ? "passed" : "failed";
     if (!physical_certificates_passed) {

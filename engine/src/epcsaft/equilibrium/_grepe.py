@@ -601,6 +601,7 @@ class GeneralReactiveEquilibriumResult:
     trial: ActiveParameterTrialReceipt | None
     branch_signature: tuple[object, ...] | None
     evidence: tuple[tuple[str, float | int | str], ...]
+    resolved_policy: tuple[tuple[str, float], ...]
 
     @property
     def values(self) -> tuple[float | None, ...]:
@@ -661,6 +662,20 @@ def _result_evidence(owner: object | None) -> tuple[tuple[str, float | int | str
             if hasattr(diagnostics, name)
         )
     return ()
+
+
+def _native_resolved_policy(native: dict[str, object]) -> tuple[tuple[str, float], ...]:
+    records = tuple(
+        (str(record[0]), float(cast(float, record[1])))
+        for record in cast(tuple[tuple[object, object], ...], native["resolved_policy"])
+    )
+    if (
+        not records
+        or len({name for name, _ in records}) != len(records)
+        or any(not name or not math.isfinite(value) or value < 0.0 for name, value in records)
+    ):
+        raise ValueError("native GREPE numerical policy is invalid")
+    return records
 
 
 def _quantity(value: Quantity[Any], unit: str, name: str) -> float:
@@ -1161,6 +1176,7 @@ def _unavailable_formulation(
         trial=None,
         branch_signature=None,
         evidence=(),
+        resolved_policy=(),
     )
 
 
@@ -2438,6 +2454,7 @@ def _finite_phase_failed(
         trial=trial,
         branch_signature=None,
         evidence=(),
+        resolved_policy=(),
     )
 
 
@@ -2986,6 +3003,7 @@ def _evaluate_finite_phase(
         trial=trial,
         branch_signature=branch_signature,
         evidence=_result_evidence(owner),
+        resolved_policy=_native_resolved_policy(native),
     )
 
 
@@ -3198,6 +3216,7 @@ def _intensive_failure(
             else _bubble_branch_signature(owner)
         ),
         evidence=_result_evidence(owner),
+        resolved_policy=(),
     )
 
 
@@ -3383,6 +3402,7 @@ def _evaluate_fixed_pressure_boundary(
             _bubble_branch_signature(owner),
         ),
         evidence=_result_evidence(owner),
+        resolved_policy=(),
     )
 
 
@@ -3600,6 +3620,7 @@ def _evaluate_intensive_boundary(
             else _bubble_branch_signature(owner),
         ),
         evidence=_result_evidence(owner),
+        resolved_policy=(),
     )
 
 
@@ -3658,6 +3679,7 @@ def _evaluate_temperature_boundary(
             trial,
             None,
             (("provider_evaluation_count", error.diagnostics.provider_evaluation_count),),
+            (),
         )
 
     extent = solved.extent
@@ -3702,6 +3724,7 @@ def _evaluate_temperature_boundary(
             "not_established",
             trial,
             None,
+            (),
             (),
         )
 
@@ -3800,6 +3823,7 @@ def _evaluate_temperature_boundary(
             ("optimizer_solve_count", diagnostics.optimizer_solve_count),
             ("provider_evaluation_count", diagnostics.provider_evaluation_count),
         ),
+        (),
     )
 
 
@@ -3862,6 +3886,7 @@ def _solve_general_reactive_equilibrium(
             trial=homogeneous_owner.trial,
             branch_signature=_homogeneous_branch_signature(homogeneous_owner),
             evidence=_result_evidence(homogeneous_owner),
+            resolved_policy=(),
         )
     bubble_owner = evaluate_reactive_bubble_observations(
         compiled.owner_problem,
@@ -3902,6 +3927,7 @@ def _solve_general_reactive_equilibrium(
         trial=bubble_owner.trial,
         branch_signature=_bubble_branch_signature(bubble_owner),
         evidence=_result_evidence(bubble_owner),
+        resolved_policy=(),
     )
 
 
@@ -3944,7 +3970,7 @@ def _general_receipt_payload(
     trial = cast(ActiveParameterTrialReceipt, result.trial)
     selected_rows = {row.identity: row for row in result.rows}
     return {
-        "schema": "epcsaft.grepe-owner-receipt.v2",
+        "schema": "epcsaft.grepe-owner-receipt.v3",
         "batch_identity": batch_identity,
         "descriptor_fingerprint": descriptor.fingerprint,
         "problem_fingerprint": descriptor.problem_fingerprint,
@@ -3955,6 +3981,23 @@ def _general_receipt_payload(
         "formulation": descriptor.formulation,
         "certificate_scope": descriptor.certificate_scope,
         "globality_claim": result.globality_claim,
+        "outcomes": {
+            "solver_convergence": {"status": "passed", "reason": result.solver_status},
+            "numerical_convergence": {
+                "status": "passed",
+                "reason": result.numerical_status,
+            },
+            "physical_certification": {
+                "status": "passed",
+                "reason": result.physical_status,
+            },
+            "scientific_fit_acceptance": {
+                "status": "not_applicable",
+                "reason": "GREPE owner receipt is not a fit acceptance decision",
+            },
+        },
+        "provider_domain_status": result.provider_domain_status,
+        "resolved_policy": result.resolved_policy,
         "trial": {
             "parameter_fingerprint": trial.parameter_fingerprint,
             "identities": trial.identities,
@@ -4029,6 +4072,8 @@ def validate_general_reactive_equilibrium_receipt(
     rows = payload.get("observations")
     phases = payload.get("phases")
     evidence = payload.get("evidence")
+    outcomes = payload.get("outcomes")
+    resolved_policy = payload.get("resolved_policy")
     expected_trial = {
         "parameter_fingerprint": descriptor.parameter_fingerprint,
         "identities": active_parameters.identities,
@@ -4037,7 +4082,7 @@ def validate_general_reactive_equilibrium_receipt(
         "active_parameter_fingerprint": active_parameters.fingerprint,
     }
     if (
-        payload.get("schema") != "epcsaft.grepe-owner-receipt.v2"
+        payload.get("schema") != "epcsaft.grepe-owner-receipt.v3"
         or payload.get("batch_identity") != batch_identity
         or payload.get("descriptor_fingerprint") != descriptor.fingerprint
         or payload.get("problem_fingerprint") != descriptor.problem_fingerprint
@@ -4048,12 +4093,15 @@ def validate_general_reactive_equilibrium_receipt(
         or payload.get("formulation") != descriptor.formulation
         or payload.get("certificate_scope") != descriptor.certificate_scope
         or payload.get("globality_claim") != "not_established"
+        or payload.get("provider_domain_status") not in {"passed", "not_adjudicated"}
         or problem.identity != descriptor.problem_identity
         or tuple(phase.identity for phase in problem.phases) != descriptor.phase_identities
         or not isinstance(trial, dict)
         or not isinstance(rows, list)
         or not isinstance(phases, list)
         or not isinstance(evidence, list)
+        or not isinstance(outcomes, dict)
+        or not isinstance(resolved_policy, list)
         or len(rows) != len(selected)
     ):
         raise ValueError("GREPE owner receipt identity or observations do not match")
@@ -4067,6 +4115,36 @@ def validate_general_reactive_equilibrium_receipt(
         != _fingerprint("epcsaft.active-parameter-trial", expected_trial)
     ):
         raise ValueError("GREPE owner receipt trial does not match")
+    expected_outcome_statuses = {
+        "solver_convergence": "passed",
+        "numerical_convergence": "passed",
+        "physical_certification": "passed",
+        "scientific_fit_acceptance": "not_applicable",
+    }
+    if set(outcomes) != set(expected_outcome_statuses) or any(
+        not isinstance(outcome, dict)
+        or outcome.get("status") != expected_outcome_statuses[name]
+        or not isinstance(outcome.get("reason"), str)
+        or not outcome["reason"]
+        for name, outcome in outcomes.items()
+    ):
+        raise ValueError("GREPE owner receipt outcomes are invalid")
+    policy_records = tuple(
+        (str(record[0]), float(record[1]))
+        for record in resolved_policy
+        if isinstance(record, list) and len(record) == 2
+    )
+    if len(policy_records) != len(resolved_policy) or (
+        policy_records
+        and (
+            len({name for name, _ in policy_records}) != len(policy_records)
+            or any(
+                not name or not math.isfinite(value) or value < 0.0
+                for name, value in policy_records
+            )
+        )
+    ):
+        raise ValueError("GREPE owner receipt numerical policy is invalid")
     output_by_identity = {output.identity: output for output in descriptor.outputs}
     for record, observation in zip(rows, selected, strict=True):
         output = output_by_identity[observation.prediction_identity]
