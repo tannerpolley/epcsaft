@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -53,24 +52,6 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
     truth_active = epcsaft.ActiveParameterSet(
         parameters, (parameter_identity,), values=(truth_parameter,)
     )
-    owner_problem = equilibrium.HomogeneousReactiveObservationProblem(
-        "nonreactive-open-component-truth",
-        phase.identity,
-        "liquid",
-        equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
-        reaction,
-        "nonreactive-open-component-branch",
-        "local_certified_role_selected_state",
-    )
-    reference = equilibrium.certify_homogeneous_continuation_reference(
-        owner_problem,
-        temperature.value,
-        pressure.value,
-        active_parameters=truth_active,
-        maximum_log_composition_distance=0.5,
-        maximum_log_volume_distance=0.5,
-    )
-    phase = replace(phase, continuation_reference=reference)
     potential = equilibrium.EquilibriumOutput(
         "cosolvent-log-fugacity",
         "phase.log_fugacity",

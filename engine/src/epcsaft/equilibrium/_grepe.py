@@ -554,11 +554,6 @@ class GeneralReactiveEquilibriumDescriptor:
     jacobian_shape: tuple[int, int]
     fingerprint: str
     formulation: Literal["finite", "finite_incipient", "intensive_boundary"]
-    _owner_descriptor: (
-        HomogeneousReactiveObservationDescriptor
-        | ReactiveBubbleObservationDescriptor
-        | _FinitePhaseOwnerDescriptor
-    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -1085,7 +1080,6 @@ def _descriptor(
         owner.jacobian_shape,
         _fingerprint("epcsaft.grepe-descriptor.v2", payload),
         formulation,
-        owner,
     )
 
 
@@ -1191,6 +1185,7 @@ class _FinitePhaseCompilation:
 class _IntensiveBoundaryCompilation:
     descriptor: GeneralReactiveEquilibriumDescriptor
     augmented_outputs: tuple[EquilibriumOutput, ...]
+    base_formulation: Literal["finite", "finite_incipient"]
 
 
 type _IntensiveOwnerResult = HomogeneousReactiveObservationResult | ReactiveBubbleObservationResult
@@ -1678,9 +1673,12 @@ def _compile_intensive_boundary(
         ),
         fingerprint=_fingerprint("epcsaft.grepe-intensive-boundary-descriptor.v2", payload),
         formulation="intensive_boundary",
-        _owner_descriptor=compiled.owner_descriptor,
     )
-    return _IntensiveBoundaryCompilation(descriptor, augmented_outputs)
+    return _IntensiveBoundaryCompilation(
+        descriptor,
+        augmented_outputs,
+        cast(Literal["finite", "finite_incipient"], compiled.descriptor.formulation),
+    )
 
 
 def _compile_intensive_owner(
@@ -3170,9 +3168,7 @@ def _evaluate_intensive_boundary(
     compilation: _IntensiveBoundaryCompilation,
     active_parameters: epcsaft.ActiveParameterSet | None,
 ) -> GeneralReactiveEquilibriumResult:
-    if isinstance(
-        compilation.descriptor._owner_descriptor, ReactiveBubbleObservationDescriptor
-    ):
+    if compilation.base_formulation == "finite_incipient":
         return _evaluate_fixed_pressure_boundary(
             model, problem, compilation, active_parameters
         )
