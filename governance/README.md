@@ -3,7 +3,7 @@
 Canonical doctrine and machine-readable control records for the private
 `tannerpolley/ePC-SAFT` monorepo.
 
-- Read [GOVERNANCE.md](GOVERNANCE.md) for revision 23 and D-038.
+- Read [GOVERNANCE.md](GOVERNANCE.md) for revision 24, D-039, and D-040.
 - Read [manifests/management.json](manifests/management.json) for directory
   ownership and external-state locations.
 - Read [the monorepo cutover plan](docs/plans/2026-08-05-monorepo-cutover.md)

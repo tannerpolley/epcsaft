@@ -237,7 +237,7 @@ PhaseDirectionCompilation compile_phase_direction_system(
             directions,
             Eigen::ComputeFullU | Eigen::ComputeFullV
         );
-        const Eigen::VectorXd singular_values = svd.singularValues();
+        const Eigen::VectorXd& singular_values = svd.singularValues();
         for (Eigen::Index value = 0; value < singular_values.size(); ++value) {
             if (singular_values(value) > rank_threshold) {
                 ++direction_rank;

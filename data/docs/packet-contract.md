@@ -18,8 +18,8 @@ appears only when needed under `parameters/`, `observations/`, `sources/`, or
 `provenance/`. Empty placeholder directories and unlisted files are invalid.
 
 Full papers, broad extraction corpora, rejected experiments, and exploratory
-notebooks remain in Lab. Generated campaign results, plots, and receipts remain
-in Validation.
+notebooks are outside Data. Generated campaign results, plots, and receipts
+remain in Validation.
 
 ## Property-data admission boundary
 

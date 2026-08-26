@@ -5,7 +5,7 @@
 
 The repository root coordinates work. `engine/` owns the sole `epcsaft`
 runtime; `data/` owns reusable scientific packets; `validation/` owns
-installed-wheel campaigns; and `lab/` is a temporary zero-test playground.
+installed-wheel campaigns.
 
 Source repositories and their former names are migration provenance after
 archive. The organization-profile repository remains separate and thin.
@@ -31,7 +31,7 @@ The canonical generic design is
 `engine/docs/equilibrium/plans/2026-08-14-general-reactive-equilibrium-phase-equilibrium.md`.
 Current work is tracked only in native GitHub issues. GREPE owns declared
 temperature-solved Bubble-T and Dew-T observations through the generic
-fixed-pressure coexistence formulation. Issue #51 owns the optional simultaneous
+  fixed-pressure coexistence formulation. Issue #51 owns the simultaneous
 sparse multi-experiment backend, and issue #54 owns the active Bülow 2021
 reproduction and integration. Historical plans, completed issues, campaign
 reports, and issue mirrors retain evidence but are not parallel work queues.
@@ -42,20 +42,15 @@ Scientific staging and numerical formulation are separate decisions.
 Parameter families are qualified in a source- and identifiability-aware order
 regardless of optimizer architecture.
 
-- The implemented production path is reduced space: Regression changes shared
-  parameters, GREPE/Ipopt solves each unique condition, and exact total
-  observable Jacobians form the Ipopt objective gradient. Caching, batching, and independent
-  condition parallelism are valid performance improvements to this path.
-- The planned mature path is an optional generic sparse full-space
-  multi-experiment NLP: every experiment owns local equilibrium variables and
-  constraints, global model parameters are shared, and one Ipopt objective
-  contains the declared observation residuals. It must consume the same public
-  request, observation, parameter, result-table, and certification vocabulary.
+- Reduced space remains the fallback when a formulation does not expose the
+  local variables and exact derivatives required by simultaneous Regression.
+- The optional sparse full-space backend places each eligible experiment's
+  local equilibrium variables and constraints in one Ipopt problem with shared
+  model parameters and the declared observation residuals.
 
-The full-space path is a future numerical backend, not a new thermodynamic
-route and not permission to fit all parameter families simultaneously. IDAES
-is useful evidence for sparse block-arrow optimization, but it is not the
-thermodynamic or scientific authority for GREPE.
+Both backends consume the same public request, observation, parameter, result,
+and certification vocabulary. Full space is a numerical backend, not a second
+thermodynamic route or permission to fit every parameter family simultaneously.
 
 ## Cross-repository authority
 

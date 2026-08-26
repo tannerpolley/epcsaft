@@ -2,7 +2,7 @@
   "schema_version": 2,
   "enforcement": "inventory",
   "policy": {
-    "storage": "Reusable scientific parameter packets are canonical only in ePC-SAFT-data.",
+    "storage": "Reusable scientific parameter packets are canonical only under this monorepo's data/packets owner.",
     "runtime": "Engine ships no installed parameter catalog; any future runtime subset requires a separate admission from an immutable Data packet release.",
     "evidence": "Validation owns generated campaign evidence and pins exact Data commits; it does not own canonical parameter bytes."
   },

@@ -1,7 +1,5 @@
 # Data Directory Agent Contract
 
-Repository Profile: scientific-computing
-
 Read `../governance/GOVERNANCE.md`, the root contract, `CONTEXT.md`, and
 `docs/packet-contract.md`.
 

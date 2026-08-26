@@ -26,8 +26,7 @@ calibration scope, surrogate construction, and flowsheet claims remain with
 the downstream repository.
 
 Engine retains compact numerical evidence. Installed-wheel physical and
-literature campaigns belong in `validation/`; temporary experiments belong in
-`lab/` and carry no durable evidence authority. Superseded live plans, designs,
+literature campaigns belong in `validation/`. Superseded live plans, designs,
 implementation reviews, and source-specific runtime guidance are deleted.
 Primary citations, research, source locators, raw data, receipts, results, and
 still-relevant numerical evidence retain historical identities as provenance.
