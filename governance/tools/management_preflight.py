@@ -23,7 +23,6 @@ AREA_ROLES = {
     "engine": "runtime_and_compact_numerical_evidence",
     "data": "canonical_scientific_packets",
     "validation": "installed_artifact_campaigns",
-    "lab": "temporary_experiments_and_provenance",
 }
 AREAS = tuple(AREA_ROLES)
 CONTROL_MANIFESTS = {
@@ -48,6 +47,15 @@ RETIRED_ACTIVE_PATTERNS = (
     "ePC-SAFT-project/ePC-SAFT-",
     "Current issue tracking and runtime authority belong to",
 )
+VALIDATION_DATA_PATH_EXCEPTIONS = {
+    Path("validation/campaigns/2026-eos-literature-handoff/scripts/eos_literature_handoff.py"),
+    Path("validation/campaigns/2026-eos-literature-handoff/source/data-packet-locks.json"),
+    Path("validation/campaigns/2026-khudaida/parameters/data-lock.toml"),
+}
+VALIDATION_DATA_PATH_PATTERN = re.compile(
+    r'''data/packets|["']data["']\s*/\s*["']packets["']'''
+)
+VALIDATION_RUNTIME_SUFFIXES = {".json", ".py", ".toml", ".yaml", ".yml"}
 
 
 def load_json(path: Path) -> Any:
@@ -408,6 +416,27 @@ def materialization_errors(repository: str) -> list[str]:
     return errors
 
 
+def validation_data_boundary_errors() -> list[str]:
+    errors: list[str] = []
+    for path in sorted((ROOT / "validation").rglob("*")):
+        if not path.is_file() or path.suffix not in VALIDATION_RUNTIME_SUFFIXES:
+            continue
+        relative = path.relative_to(ROOT)
+        if (
+            relative in VALIDATION_DATA_PATH_EXCEPTIONS
+            or (
+                path.suffix == ".json"
+                and path.name.startswith("materialization")
+                and "data" in relative.parts
+            )
+            or (path.suffix == ".json" and "receipts" in relative.parts)
+        ):
+            continue
+        if VALIDATION_DATA_PATH_PATTERN.search(path.read_text(encoding="utf-8")):
+            errors.append(f"Validation runtime bypasses Data materialization: {relative}")
+    return errors
+
+
 def check() -> list[str]:
     errors: list[str] = []
     try:
@@ -417,8 +446,8 @@ def check() -> list[str]:
 
     if config.get("schema_version") != 2:
         errors.append("management schema_version must be 2")
-    if config.get("doctrine_revision") != 23:
-        errors.append("management doctrine_revision must be 23")
+    if config.get("doctrine_revision") != 24:
+        errors.append("management doctrine_revision must be 24")
     if config.get("repository") != "tannerpolley/ePC-SAFT":
         errors.append("management repository must be tannerpolley/ePC-SAFT")
     if config.get("ci_cd") != "disabled":
@@ -494,6 +523,7 @@ def check() -> list[str]:
 
     errors.extend(data_packet_lock_errors(config.get("repository", "")))
     errors.extend(materialization_errors(config.get("repository", "")))
+    errors.extend(validation_data_boundary_errors())
     errors.extend(receipt_errors())
 
     for pointer in LIVE_POINTERS:

@@ -1,8 +1,6 @@
 # ePC-SAFT Monorepo Agent Contract
 
-Repository Profile: scientific-computing
-
-Governance doctrine revision 23 applies.
+Governance doctrine revision 24 applies.
 
 This private repository is the single Git and Codex home for the ePC-SAFT
 project. Read `governance/GOVERNANCE.md`, `governance/manifests/management.json`,
@@ -10,10 +8,9 @@ and the nearest subtree `AGENTS.md` before material work.
 
 One scientific slice has one accountable agent from input to evidence. That
 agent may change the exact files needed across `data/`, `engine/`, and
-`validation/` in one branch. Use `lab/` only for temporary non-production
-experiments. Keep one writer per file and do not create nested Git
-repositories, submodules, sibling-repository dependencies, or separate package
-installations.
+`validation/` in one branch. Keep one writer per file and do not create nested
+Git repositories, submodules, sibling-repository dependencies, or separate
+package installations.
 
 ## Official downstream applications
 
@@ -45,8 +42,6 @@ Directory ownership remains strict:
 - `data/`: canonical reusable scientific packets and packet readiness checks.
 - `validation/`: installed-wheel literature, experimental, and cross-module
   scientific campaigns.
-- `lab/`: temporary non-production experiments, source notes, and rejected
-  alternatives; it owns no persistent tests or test frameworks.
 
 The root `.codex/environments/environment.toml` is the only Codex environment.
 It creates one root `.venv`, builds `engine/` into one non-editable wheel, and
@@ -69,5 +64,7 @@ compatibility, legacy, snapshot, prose, mock, or coverage-only tests.
 
 Historical plans, receipts, results, evidence, source locators, old repository
 names, and old package names are provenance and must not be normalized as live
-instructions. This project has no CI/CD. Run the applicable root checks and the
-repository cleanup audit before handoff.
+instructions. This project has no CI/CD. Run the applicable root checks before
+handoff. `codex-cleanup.sh` is an agent closeout action: agents run it, never ask
+the user to run it, and remove only task-created ignored caches or exact
+user-authorized candidates.

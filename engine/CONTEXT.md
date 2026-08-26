@@ -1,6 +1,6 @@
 # Engine Context
 
-`governance_doctrine_revision: 21`
+`governance_doctrine_revision: 24`
 
 `engine/` is the sole runtime owner inside `tannerpolley/ePC-SAFT`. It
 builds one Python 3.13 distribution, `epcsaft`, containing EOS, equilibrium,
@@ -33,8 +33,7 @@ phase-support, KKT, stability, and derivative checks keep their independent
 tolerances.
 
 Engine retains compact numerical evidence. Installed-wheel physical and
-literature campaigns belong in `validation/`; temporary experiments belong in
-`lab/` and carry no durable evidence authority. Superseded live plans, designs,
+literature campaigns belong in `validation/`. Superseded live plans, designs,
 implementation reviews, and source-specific runtime guidance are deleted.
 Primary citations, research, source locators, raw data, receipts, results, and
 still-relevant numerical evidence retain historical identities as provenance.

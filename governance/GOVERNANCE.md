@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 23
+Doctrine revision: 24
 
-Approved: 2026-08-20
+Approved: 2026-08-25
 
 Owner: `tannerpolley/ePC-SAFT:governance/`
 
@@ -65,7 +65,6 @@ doctrine does not transfer any scientific implementation or capability.
 | `data/` | Canonical reusable scientific packets: parameter bundles, source-derived datasets, normalized observations, provenance, units, domains, hashes, and license or use bases | Runtime algorithms, generated validation results, package artifacts, full papers, or exploratory and rejected material |
 | `engine/` | The single `epcsaft` runtime distribution: EOS/state/property evaluation, CppAD derivatives, equilibrium formulations and certification, regression targets and diagnostics, one native build, and one release identity | Canonical scientific packets, durable black-box validation evidence, application workflows, or separate Equilibrium and Regression distributions |
 | `validation/` | Installed-artifact, cross-module, downstream-consumer, and literature acceptance evidence authored by the accountable Engine task | Production algorithms, private Engine imports, a paper archive, or a permanent execution owner |
-| `lab/` | Temporary non-production experiments, broad provenance, source indexes, and rejected alternatives | Persistent tests or test frameworks, durable scientific evidence, production distributions or releases, runtime authority, admission receipts, or dependencies consumed by production or validation directories |
 
 D-026 supersedes the active polyrepo topology and D-019's environment-per-repo
 rule. The source repositories remain immutable migration provenance after
@@ -74,11 +73,10 @@ profile and is not part of the active project Git graph.
 
 One concept has one runtime owner. Canonical scientific storage does not confer
 runtime authority. A capability without an accepted production
-owner is non-production; no lab or legacy copy supplies transitional runtime
-authority. The lab MAY investigate such a capability, but production and
-validation repositories MUST NOT depend on it. Promotion distills a clean,
-independently evidenced slice into its unique package owner rather than
-transferring authority from a runnable archive.
+owner is non-production; no legacy copy supplies transitional runtime
+authority. Promotion distills a clean, independently evidenced slice into its
+unique package owner rather than transferring authority from a runnable
+archive.
 
 D-029 establishes one narrow nonreactive-phase transition inside Engine. The
 exact `tp_flash` HELD/HELD2 calculation is the protected incumbent while the
@@ -241,12 +239,11 @@ evidence outside the active topology. It owns no current plan, queue, gate,
 decision, or authority.
 
 Data is a read-only scientific-input home, not a service or runtime dependency.
-Lab may submit reviewed packets to Data. Engine may copy or generate an
-admitted runtime-catalog subset from a pinned Data release. Validation and
-Engine regression campaigns may consume packets from exact Data commits for
-campaigns and declared fitting inputs. The consuming module or campaign
-remains self-contained and records the Data commit, packet path, and packet
-fingerprint.
+Engine may copy or generate an admitted runtime-catalog subset from a pinned
+Data release. Validation and Engine regression campaigns may consume packets
+from exact Data commits for campaigns and declared fitting inputs. The
+consuming module or campaign remains self-contained and records the Data
+commit, packet path, and packet fingerprint.
 
 ## 4. Dependency direction
 
@@ -258,12 +255,11 @@ validation/ -----> installed wheel built from engine/
 
 EOS, Equilibrium, and Regression are internal Engine modules. They use
 repository-internal seams and one build graph rather than installed-package
-dependencies. No production or validation repository depends on the lab.
+dependencies.
 
 Scientific packet flow is separate from production dependency direction:
 
 ```text
-lab/ -----------> data/         reviewed packet submission
 data/ ----------> engine/       pinned admitted runtime subset
 data/ ----------> validation/   pinned campaign input
 data/ ----------> engine/       pinned regression input
@@ -490,15 +486,16 @@ when that content exists. Empty placeholder directories are forbidden.
 Engine retains only a compact, admitted, self-contained runtime copy generated or
 copied from a pinned Data release. Validation retains campaign definitions,
 generated results, plots, and receipts that reference exact Data inputs; it
-does not become the canonical owner of those inputs. Full papers, broad
-extraction corpora, failed experiments, and exploratory notebooks belong in
-the lab. Retained literature campaign plots belong in validation evidence, not
-in every package test.
+does not become the canonical owner of those inputs. Full papers and broad
+extraction corpora remain outside the governed source tree. Failed experiments
+and exploratory notebooks are not retained as active project areas. Retained
+literature campaign plots belong in validation evidence, not in every package
+test.
 
 ## 8. Promotion and unique authority
 
-Lab-to-production promotion is distillation, not bulk transfer. Clean history
-is the default. Original commits remain cited as provenance.
+Production promotion is distillation, not bulk transfer. Clean history is the
+default. Original commits remain cited as provenance.
 
 Every promoted slice requires a machine-validated receipt containing at least:
 
@@ -526,7 +523,7 @@ checkout being validated.
 A receipt cannot accept itself. Its validator MUST pass, the producer and
 reviewer MUST differ for acceptance, and the user MUST approve the authority
 change. Before that moment the candidate is non-production. After it, the
-destination is the sole production owner and any lab or legacy copy remains
+destination is the sole production owner and any legacy copy remains
 non-authoritative provenance.
 
 The first post-cutover runtime promotion is the smallest complete Engine
@@ -558,10 +555,10 @@ share one Engine version and one `epcsaft` wheel. Existing public release and
 repository events remain historical facts; no new publication or release is
 implied by this doctrine.
 
-Engine issues own production vertical slices. Data, Validation, Lab, and
-Governance keep issues for work unique to those repositories. One Management
-Project may aggregate them. Cross-repository references MUST use full URLs or
-stable node identifiers, never ambiguous number-only references.
+Engine issues own production vertical slices. Data, Validation, and Governance
+keep issues for work unique to those directories. One Management Project may
+aggregate them. Cross-repository references MUST use full URLs or stable node
+identifiers, never ambiguous number-only references.
 
 The private `.github` repository owns only organization metadata and links to
 Governance. The Management coordination task executes project coordination.
@@ -599,6 +596,11 @@ evidence classification. No CI/CD or caller workflow is required.
 Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
+
+Revision 24 records the user-approved removal of the active Lab area. D-039
+deletes `lab/`, removes it from current ownership and routing, and preserves
+only historical or scientific provenance that identifies the former Lab or its
+source material.
 
 Revision 23 records the user-approved official downstream application model.
 D-038 removes the D-024 quarantine from MEA-Thermodynamics,
@@ -735,3 +737,4 @@ Historical plans and receipts retain their original names.
 | D-036 General Reactive Equilibrium and Phase Equilibrium target | User-confirmed GREPE design and two independent read-only sanity reviews on 2026-08-14 | Evolve the sole public `phase_equilibrium` owner through declarative finite/incipient reacting-phase blocks; use one nonduplicated Gibbs/KKT encoding, phase-aware reaction standards, exact Ipopt Hessians, exact outer-Ceres Jacobians, local declared-phase certificates, generic Regression evaluation, and authority-neutral candidate export | Establishes one staged architecture for homogeneous reaction, reactive bubble/dew/VLE, neutral reactive LLE, and later electrochemical LLE without admitting unimplemented capability or adding an application-specific route | Architecture target only; each runtime slice requires its own accepted receipt | Engine, Validation, Regression, Data, downstream applications, and Management |
 | D-037 Admit the GREPE proven core | Explicit user instruction on 2026-08-18 to combine the reviewed generic Engine work, retain only the proven core, reproduce the removed specialized path's results, and use an exact receipt before updating main | Admit declared finite/incipient supports, phase-scoped dielectric solvent selection, temperature-dependent permittivity, generic affine-feed intensive boundaries over the existing homogeneous/reactive-bubble owners, exact total derivatives, typed failures, and hash-bound nested receipts at subject commit `25cd674bb32611bac89d0ffb4ab8e1d953cbe09f` | Replaces a specialized fixed-pressure incipient implementation with the smaller generic owner while preserving its numerical results; excludes the other issue-48 dirty application/reference/saturation layer | No; later globality, phase discovery, and application parameter promotion remain separate | Engine, Validation, Regression, downstream applications, and Management |
 | D-038 Official downstream applications | Explicit user instruction on 2026-08-20 to maintain MEA-Thermodynamics, MEA-Absorption-Column, and Lithium_Extraction as official Engine applications while preserving Engine/application ownership | Remove the D-024 quarantine for the three named repositories; keep them as separate sibling Git repositories; authorize cross-repository vertical-slice work; require immutable Engine-wheel identity and separate repository histories | Makes cross-repository work durable without nested repositories, submodules, sibling-source imports, or automatic scientific admission | No | Engine, downstream application owners, and Management |
+| D-039 Remove the active Lab area | Explicit user instruction on 2026-08-25 to delete the Lab subtree and all live routing while retaining required provenance | Remove `lab/` from the governed topology, ownership manifest, checks, and live instructions; retain former Lab names and paths only in historical decisions, receipts, source identities, and scientific provenance | Removes a non-production project area without creating a replacement scratch framework or weakening Engine, Data, or Validation ownership | No | Governance and Management |

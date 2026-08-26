@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "doctrine_revision": 23,
+  "doctrine_revision": 24,
   "repository": "tannerpolley/ePC-SAFT",
   "visibility": "private",
   "default_branch": "main",
@@ -36,10 +36,6 @@
     "validation": {
       "path": "validation",
       "role": "installed_artifact_campaigns"
-    },
-    "lab": {
-      "path": "lab",
-      "role": "temporary_experiments_and_provenance"
     }
   },
   "vertical_slice": {
@@ -48,8 +44,7 @@
       "data",
       "engine",
       "validation"
-    ],
-    "lab_use": "temporary_experiments_only"
+    ]
   },
   "external_repositories": {
     "organization_profile": {

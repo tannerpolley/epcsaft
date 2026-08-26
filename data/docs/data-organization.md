@@ -76,8 +76,9 @@ additional Data ownership locations.
 
 ## Current reusable property packet
 
-`nist-srd69-pure-saturation-properties/1` contains the three pure-component
-property tables currently used by the Regression saturation workflow:
+`nist-srd69-pure-saturation-properties/1` is a reviewed reusable packet with
+three pure-component property tables. It currently has no live consumer or
+Governance lock:
 
 - methane, NIST SRD 69, 100–180 K;
 - ethane, NIST SRD 69, 100–280 K; and

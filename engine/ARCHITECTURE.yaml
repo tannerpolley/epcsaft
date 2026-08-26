@@ -1,6 +1,6 @@
 version: 10
 status: unified-monorepo-active
-governance_doctrine_revision: 21
+governance_doctrine_revision: 24
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -124,7 +124,6 @@ final_cutover:
 scientific_boundaries:
   reusable_packets: data
   installed_artifact_evidence: validation
-  exploratory_workflows: lab
   packet_access: explicit_materialization_only
   sibling_discovery: forbidden
   regression_transfer: explicit_authority_neutral_candidate_parameters

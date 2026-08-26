@@ -1,7 +1,5 @@
 # Engine Directory Agent Contract
 
-Repository Profile: scientific-computing
-
 Read `../governance/GOVERNANCE.md`, `../governance/manifests/management.json`,
 root `AGENTS.md`, and `CONTEXT.md` before material work. For CAP work, also read
 `docs/agents/issue-tracker.md` before selecting or executing a leaf.
@@ -27,5 +25,7 @@ source-backed benchmarks. No API-contract, compatibility, legacy, mock,
 snapshot, prose, solver-label, iteration-count, or coverage-only tests.
 
 The sole environment is `../.codex/environments/environment.toml`. Run the
-applicable root affected/all checks and cleanup audit. Historical plans,
-receipts, results, and old names are immutable provenance. No CI/CD.
+applicable root affected/all checks. `codex-cleanup.sh` is an agent closeout
+action: agents run it, never ask the user to run it, and remove only task-created
+ignored caches or exact user-authorized candidates. Historical plans, receipts,
+results, and old names are immutable provenance. No CI/CD.
