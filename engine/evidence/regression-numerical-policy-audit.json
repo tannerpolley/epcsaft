@@ -1,0 +1,207 @@
+{
+  "artifact": {
+    "distribution": "epcsaft 0.2.0.dev0",
+    "source_base_commit": "e25d13c7bf0b13d9dc7baab2c66ab4277a572d82",
+    "wheel_sha256": "1f52065ce2b422a3d0916c10bde273384f3dbbe84dbf4724b4217219580b92d3"
+  },
+  "authority": {
+    "runtime_consumed": false,
+    "scope": "retained Regression owner only",
+    "status": "audit evidence, not a tolerance registry"
+  },
+  "policies": [
+    {
+      "category": "floating_point_guard",
+      "configurable": false,
+      "failure_meaning": "a censored observation is treated as lying on its nondifferentiable kink",
+      "id": "regression-censor-kink",
+      "metric": "absolute predicted-minus-observed value",
+      "owner_symbol": "epcsaft::regression::ReducedSpaceNlp::censor_kink",
+      "rationale_status": "machine-scaled guard",
+      "resolved_policy": "1e-12 * max(1, abs(predicted), abs(observed))",
+      "units": "observation unit"
+    },
+    {
+      "category": "floating_point_guard",
+      "configurable": false,
+      "failure_meaning": "a singular direction is excluded from rank and covariance calculations",
+      "id": "regression-svd-rank",
+      "metric": "singular value",
+      "owner_symbol": "epcsaft::regression::diagnose",
+      "rationale_status": "dimension-scaled machine precision",
+      "resolved_policy": "100 * epsilon * max(information_rows, columns) * largest_singular_value",
+      "units": "affine Jacobian singular-value unit"
+    },
+    {
+      "category": "heuristic",
+      "configurable": true,
+      "failure_meaning": "a fitted coordinate is classified as active at a declared bound",
+      "id": "regression-affine-bound-margin",
+      "metric": "absolute affine-coordinate distance to a bound",
+      "owner_symbol": "epcsaft.regression.MultistartSpec.affine_bound_margin",
+      "rationale_status": "caller-declared; no hidden default",
+      "resolved_policy": "fit specification value",
+      "units": "affine coordinate"
+    },
+    {
+      "category": "solver_policy",
+      "configurable": true,
+      "default": 25,
+      "failure_meaning": "Ipopt exhausts its iteration budget",
+      "id": "regression-maximum-iterations",
+      "metric": "Ipopt iterations",
+      "owner_symbol": "epcsaft.regression.SolverControlsSpec.maximum_iterations",
+      "rationale_status": "private-development default; caller override retained in FitResult receipt",
+      "units": "iterations"
+    },
+    {
+      "category": "solver_policy",
+      "configurable": true,
+      "default_inputs": {
+        "function_tolerance": 1e-06,
+        "gradient_tolerance": 1e-06,
+        "parameter_tolerance": 1e-06
+      },
+      "failure_meaning": "Ipopt does not satisfy its resolved convergence or tiny-step policy",
+      "id": "regression-ipopt-convergence",
+      "metric": "Ipopt overall error and affine tiny-step size",
+      "owner_symbol": "epcsaft::regression::solve_ipopt",
+      "rationale_status": "three legacy-named inputs collapse to one overall tolerance; semantic separation remains unsupported",
+      "resolved_policy": {
+        "ipopt_tiny_step_tol": "parameter_tolerance",
+        "ipopt_tol": "0.001 * min(function_tolerance, gradient_tolerance, parameter_tolerance)",
+        "mu_min": "0.01 * ipopt_tol"
+      },
+      "units": "dimensionless affine optimization metrics"
+    },
+    {
+      "category": "solver_policy",
+      "configurable": false,
+      "failure_meaning": "Ipopt remains strictly inside original affine bounds without relaxing them",
+      "id": "regression-ipopt-bound-push",
+      "metric": "Ipopt bound push",
+      "owner_symbol": "epcsaft::regression::solve_ipopt",
+      "rationale_status": "internal Ipopt guard; sensitivity not yet assessed",
+      "resolved_policy": 1e-12,
+      "units": "affine coordinate"
+    },
+    {
+      "category": "heuristic",
+      "configurable": false,
+      "failure_meaning": "usable starts are assigned to different optimizer basins",
+      "id": "regression-optimizer-basin-affine-distance",
+      "metric": "maximum absolute coordinate difference divided by affine bound span",
+      "owner_symbol": "epcsaft::regression::assign_optimizer_basins",
+      "rationale_status": "bounded manufactured-case sensitivity retained below; broader fit evidence pending",
+      "resolved_policy": 1e-06,
+      "units": "dimensionless"
+    },
+    {
+      "category": "heuristic",
+      "configurable": false,
+      "failure_meaning": "usable starts are assigned to different optimizer basins",
+      "id": "regression-optimizer-basin-cost-difference",
+      "metric": "absolute cost difference divided by max(1, abs(cost_a), abs(cost_b))",
+      "owner_symbol": "epcsaft::regression::assign_optimizer_basins",
+      "rationale_status": "bounded manufactured-case sensitivity retained below; broader fit evidence pending",
+      "resolved_policy": 1e-08,
+      "units": "dimensionless"
+    },
+    {
+      "category": "solver_policy",
+      "configurable": true,
+      "failure_meaning": "the observation-correlation quadrature does not converge by max_order",
+      "id": "regression-quadrature-convergence",
+      "metric": "maximum relative change in objective and objective Jacobian",
+      "owner_symbol": "epcsaft.regression._resolve._resolve_quadrature",
+      "rationale_status": "caller-declared order sequence and tolerance; achieved changes retained in resolved fit",
+      "resolved_policy": "observation quadrature.initial_order, max_order, and tolerance",
+      "units": "dimensionless"
+    },
+    {
+      "category": "scientific_acceptance",
+      "configurable": true,
+      "failure_meaning": "the best usable fit does not meet the caller's intended-use cost criterion",
+      "id": "regression-scientific-maximum-cost",
+      "metric": "0.5 * sum(scaled_residual**2)",
+      "owner_symbol": "epcsaft.regression.ParameterFit.acceptance.maximum_cost",
+      "rationale_status": "optional caller criterion; no Engine default",
+      "resolved_policy": "fit specification value or not_declared",
+      "units": "dimensionless scaled-residual objective"
+    }
+  ],
+  "schema_version": 1,
+  "sensitivity": {
+    "case": "project-authored mixed three-parameter manufactured fit",
+    "coordinate_threshold_sweep": [
+      {"basin_count": 3, "threshold": 1e-14},
+      {"basin_count": 3, "threshold": 1e-13},
+      {"basin_count": 2, "threshold": 1e-12},
+      {"basin_count": 1, "threshold": 1e-11},
+      {"basin_count": 1, "threshold": 1e-10},
+      {"basin_count": 1, "threshold": 1e-08},
+      {"basin_count": 1, "threshold": 1e-06},
+      {"basin_count": 1, "threshold": 0.0001}
+    ],
+    "cost_factor_sweep": [
+      {"basin_count": 3, "factor": 1e-30},
+      {"basin_count": 2, "factor": 1e-29},
+      {"basin_count": 2, "factor": 1e-28},
+      {"basin_count": 2, "factor": 1e-27},
+      {"basin_count": 1, "factor": 1e-26},
+      {"basin_count": 1, "factor": 1e-20},
+      {"basin_count": 1, "factor": 1e-12},
+      {"basin_count": 1, "factor": 1e-08}
+    ],
+    "pairwise_max_normalized_affine_distances": [
+      1.6189549700840189e-12,
+      1.806166327611436e-12,
+      1.8721135752741702e-13
+    ],
+    "pairwise_scaled_cost_differences": [
+      3.15629411154763e-27,
+      3.1611012326888205e-27,
+      4.807121141190542e-30
+    ],
+    "starts": [
+      {
+        "cost": 3.1616004337304057e-27,
+        "identity": "input",
+        "iterations": 25,
+        "optimizer_basin": 0,
+        "solver_status": "maximum_iterations_exceeded",
+        "usable": true
+      },
+      {
+        "cost": 5.3063221827757136e-30,
+        "identity": "confirmation-a",
+        "iterations": 22,
+        "optimizer_basin": 0,
+        "solver_status": "solve_succeeded",
+        "usable": true
+      },
+      {
+        "cost": 4.992010415851712e-31,
+        "identity": "confirmation-b",
+        "iterations": 24,
+        "optimizer_basin": 0,
+        "solver_status": "solve_succeeded",
+        "usable": true
+      }
+    ]
+  },
+  "source_files": [
+    {
+      "path": "engine/src/epcsaft/regression/native/fit.cpp",
+      "sha256": "e21a4278becf5e4ca9ead78549d0f0a2bf7d77586e0616fc8ae67dde88068289"
+    },
+    {
+      "path": "engine/src/epcsaft/regression/_model.py",
+      "sha256": "efc1e12edae571196d43267c16a221d865d13943b5f9e71d21a9c9da5041b5db"
+    },
+    {
+      "path": "engine/src/epcsaft/regression/_result.py",
+      "sha256": "85b0847a1c7d7c9d073c03ff24a21ea174f28c151d99f38b1a9346dd09005f2f"
+    }
+  ]
+}

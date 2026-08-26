@@ -23,6 +23,9 @@ namespace py = pybind11;
 namespace epcsaft::regression {
 namespace {
 
+constexpr double kOptimizerBasinAffineDistanceMax = 1.0e-6;
+constexpr double kOptimizerBasinCostDifferenceFactor = 1.0e-8;
+
 enum class ResidualKind {
   LogRatio,
   ScaledDifference,
@@ -1043,11 +1046,12 @@ void assign_optimizer_basins(std::vector<StartResult> &results,
         const double distance = std::abs(result.final_affine[coordinate] -
                                          other.final_affine[coordinate]) /
                                 span;
-        same = same && distance <= 1.0e-6;
+        same = same && distance <= kOptimizerBasinAffineDistanceMax;
       }
       const double cost_scale =
           std::max({1.0, std::abs(result.cost), std::abs(other.cost)});
-      if (same && std::abs(result.cost - other.cost) <= 1.0e-8 * cost_scale) {
+      if (same && std::abs(result.cost - other.cost) <=
+                      kOptimizerBasinCostDifferenceFactor * cost_scale) {
         result.optimizer_basin = basin;
         break;
       }
