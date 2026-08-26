@@ -649,7 +649,7 @@ d(mu/RT)/dq_j = Phi_(n,q_j).
 The regression package may lift each observed state's two phase volumes and
 assemble its own pressure, potential, and density residuals without copying an
 EOS equation or differentiating a density solver. The EOS does not own
-target data, residual scaling, parameter bounds, Ceres, identifiability, or fit
+target data, residual scaling, parameter bounds, optimization, identifiability, or fit
 acceptance. Mixture, association, electrolyte, and binary-interaction active
 parameters remain outside this version-1 parameterized block.
 

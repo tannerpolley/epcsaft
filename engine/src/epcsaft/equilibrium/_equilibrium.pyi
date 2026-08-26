@@ -96,6 +96,7 @@ def _chemical_equilibrium(
 def _evaluate_provider_reaction_local(
     capsule: object,
     spec: dict[str, object],
+    source_standard_state: dict[str, object] | None,
     packing_fraction_bounds: tuple[float, float],
     trace_floor: float,
     variables: Sequence[float],

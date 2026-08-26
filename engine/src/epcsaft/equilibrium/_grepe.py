@@ -31,6 +31,8 @@ from ._api import (
     PhaseSpecification,
     PhaseSupport,
     ProviderPhase,
+    _ScalarBoundarySolveError,
+    _solve_bracketed_scalar,
     _source_reference_payload,
     _source_reference_transfer,
     phase_equilibrium,
@@ -2098,11 +2100,7 @@ def _compile_general_reactive_equilibrium(
             raise ValueError(
                 "explicit phase/species directions require declared reference phase amounts"
             )
-        generated_allocations = (
-            ()
-            if declared_start_set is not None
-            else _generated_finite_phase_allocations(problem, finite)
-        )
+        generated_allocations = _generated_finite_phase_allocations(problem, finite)
         owner_descriptor = _finite_phase_owner_descriptor(
             model,
             problem,
@@ -2776,7 +2774,6 @@ def _evaluate_finite_phase(
         def candidate_start_sets() -> Iterator[tuple[FinitePhaseStart, ...]]:
             if compilation.declared_start_set is not None:
                 yield compilation.declared_start_set
-                return
             for allocation in compilation.generated_allocations:
                 try:
                     yield _finite_phase_start_set_from_allocation(
@@ -3316,60 +3313,46 @@ def _evaluate_fixed_pressure_boundary(
 
     lower, upper = coordinate.bounds
     width = upper - lower
-    starts = tuple(
-        dict.fromkeys(
-            (
+
+    def evaluate_scalar(
+        value: float,
+    ) -> tuple[
+        tuple[ReactiveBubbleVLEProblem, ReactiveBubbleObservationDescriptor, Any],
+        float,
+        float,
+    ]:
+        owner_problem, owner_descriptor, closure, slope = evaluate(value)
+        return (owner_problem, owner_descriptor, closure), closure.residual, slope
+
+    try:
+        solved_coordinate, selected_state, _ = _solve_bracketed_scalar(
+            evaluate_scalar,
+            lower,
+            upper,
+            initial=boundary.initial,
+            bracket_points=(
                 boundary.initial,
-                lower + 0.5 * width,
                 lower + 0.25 * width,
+                lower + 0.5 * width,
                 lower + 0.75 * width,
-            )
+            ),
+            tolerance=2.0e-10,
+            maximum_iterations=64,
         )
-    )
-    owner_problem: ReactiveBubbleVLEProblem | None = None
-    owner_descriptor: ReactiveBubbleObservationDescriptor | None = None
-    closure: Any = None
-    solved_coordinate: float | None = None
-    failure: _BubbleFailure | None = None
-    for start in starts:
-        value = start
-        for _ in range(25):
-            try:
-                owner_problem, owner_descriptor, closure, slope = evaluate(value)
-            except _BubbleFailure as error:
-                failure = error
-                break
-            if abs(closure.residual) <= 2.0e-10:
-                solved_coordinate = value
-                break
-            step = max(-0.5 * width, min(0.5 * width, -closure.residual / slope))
-            candidate = value + step
-            if not lower < candidate < upper:
-                candidate = 0.5 * (value + (upper if step > 0.0 else lower))
-            if candidate == value:
-                failure = _BubbleFailure(
-                    "no_incipient_phase", "affine feed bounds exclude the closure root"
-                )
-                break
-            value = candidate
-        if solved_coordinate is not None:
-            break
-    if (
-        solved_coordinate is None
-        or owner_problem is None
-        or owner_descriptor is None
-        or closure is None
-    ):
-        terminal = failure or _BubbleFailure(
-            "numerical_convergence_failure",
-            "fixed-pressure affine-feed solve exceeded its iteration budget",
+    except _BubbleFailure as error:
+        return _intensive_failure(
+            problem, compilation, NonEvaluableTrial(error.code, str(error)), None
+        )
+    except _ScalarBoundarySolveError as error:
+        code: Literal["no_incipient_phase", "numerical_convergence_failure"] = (
+            "no_incipient_phase"
+            if error.reason == "not_bracketed"
+            else "numerical_convergence_failure"
         )
         return _intensive_failure(
-            problem,
-            compilation,
-            NonEvaluableTrial(terminal.code, str(terminal)),
-            None,
+            problem, compilation, NonEvaluableTrial(code, str(error)), None
         )
+    owner_problem, owner_descriptor, closure = selected_state
     try:
         owner = _fixed_pressure_coordinate_result(
             owner_problem, owner_descriptor, closure, balance_direction
@@ -3913,7 +3896,11 @@ def _solve_general_reactive_equilibrium(
             if homogeneous_owner.status == "evaluated"
             else None,
             evidence=_result_evidence(homogeneous_owner),
-            resolved_policy=(),
+            resolved_policy=(
+                homogeneous_owner.equilibrium.resolved_policy
+                if homogeneous_owner.equilibrium is not None
+                else ()
+            ),
         )
     bubble_owner = evaluate_reactive_bubble_observations(
         compiled.owner_problem,

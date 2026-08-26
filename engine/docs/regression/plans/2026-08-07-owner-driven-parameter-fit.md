@@ -13,7 +13,7 @@ is not a live execution queue; current work is selected from GitHub Issues.
 
 Make Regression a small generic optimizer over owner-provided thermodynamic
 observable blocks. Regression owns fit declaration, observation mapping,
-residual scaling, weights, bounds, ties, multistart, Ceres, diagnostics, and
+residual scaling, weights, bounds, ties, multistart, Ipopt, diagnostics, and
 immutable parameter transfer. EOS and later Equilibrium own all scientific
 values, domains, solves, and exact selected-parameter derivatives.
 
@@ -31,7 +31,7 @@ Observation Family without separate evidence.
   ties.
 - Explicit data locators/hashes, observation mapping, units, residual basis,
   weighting, loss, partitions, and multistart policy.
-- One private native Ceres core and complete fit diagnostics.
+- One private native Ipopt core and complete fit diagnostics.
 - Owner-published closed typed catalogs for parameter correlations and admitted
   observable descriptors, queried read-only by Regression. Regression owns no
   duplicate thermodynamic registry or family switch.
@@ -74,19 +74,19 @@ an owner's parameter capability.
 2. Resolve the base `Parameters` and one explicit `ActiveParameterSet`.
 3. Resolve each observation block against an admitted owner descriptor.
 4. Validate units, bases, reference data, active-coordinate applicability,
-   bounds, ties, scales, and row hashes before entering Ceres.
+   bounds, ties, scales, and row hashes before entering Ipopt.
 5. At each trial, materialize the physical active values and call each owner
    block in batches.
 6. Convert returned predictions to declared dimensionless residuals and apply
    measurement weighting/loss.
 7. Route the owner's exact Jacobian through the same scaling and ties into
-   Ceres.
+   Ipopt.
 8. Record starts, failures, convergence, objective blocks, rank/conditioning,
    active bounds, predictions, residuals, Jacobian, and candidate parameter
    values in one immutable result.
 
 An owner evaluation may fail at a bounded trial. Regression records the typed
-failure and allows Ceres or multistart policy to reject/backtrack that trial; it
+failure and allows Ipopt or multistart policy to reject/backtrack that trial; it
 never fabricates a scientific penalty value.
 
 ## Initial observation boundary
@@ -175,7 +175,7 @@ requirements, and typed failure semantics, then falsify the complete value and
 Jacobian block independently across its declared optimizer domain. Equilibrium
 must own the batch values and total derivatives; Regression may own only row
 mapping, residuals, weights, and family-level trial policy at that owner seam;
-its existing fit-wide bounds, ties, multistart, Ceres, and diagnostics ownership
+its existing fit-wide bounds, ties, multistart, Ipopt, and diagnostics ownership
 remains unchanged.
 
 The decision reuses the compact evidence in
@@ -209,7 +209,7 @@ not preemptively.
    EOS generic block; remove binary/single-pair assumptions.
 4. **Pure-saturation adapter.** Route all saturation rows through the EOS owner
    and share a solve for co-located observations.
-5. **Native core reduction.** Leave only residual scaling/ties and Ceres-facing
+5. **Native core reduction.** Leave only residual scaling/ties and Ipopt-facing
    plumbing in Regression native code; delete EOS/saturation implementations
    and family/target switches.
 6. **Result consolidation.** Preserve owner row identities, active parameter
@@ -227,7 +227,7 @@ Compact Regression checks must establish:
 - simultaneous fitting of several arbitrary `k_ij` pairs in a multicomponent
   fixed-state problem;
 - a mixed-family active set where every owner-provided Jacobian column reaches
-  Ceres in the same order;
+  Ipopt in the same order;
 - component reordering changes only declared row/coordinate permutations;
 - owner exact Jacobians and residual-scaled Jacobians agree with independent
   central differences of the complete residual at interior points;
@@ -252,7 +252,7 @@ Do not publish these units until the four canonical plans are approved.
 | REG-02 | Descriptor-driven fit resolver | REG-01 | No Regression thermodynamic registry or target index remains |
 | REG-03 | Generic EOS fixed-state residual block | REG-02 | Arbitrary supported active sets and component counts fit |
 | REG-04 | EOS pure-saturation residual block | REG-02 | Co-located outputs share one solve and exact sensitivities |
-| REG-05 | Native Ceres core reduction | REG-03, REG-04 | Native code owns optimization only |
+| REG-05 | Native Ipopt core reduction | REG-03, REG-04 | Native code owns optimization only |
 | REG-06 | FitResult diagnostics and transfer | REG-05 | Complete identity/value/Jacobian/failure receipt is immutable |
 | REG-07 | Regression dead-surface audit | REG-06 | Duplicated dispatch, source routes, and legacy docs/tests are absent |
 | REG-08 | Equilibrium admission review | EQ-08 | D-031 deferred phase families; D-034 admits only fixed-T,P homogeneous reactive observations |

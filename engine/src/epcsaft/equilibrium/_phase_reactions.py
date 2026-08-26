@@ -54,18 +54,6 @@ class PhaseSpeciesTerm:
     species_id: str
     coefficient: float
 
-    @property
-    def phase_identity(self) -> str:
-        """Compatibility spelling for callers that use GREPE phase identities."""
-
-        return self.phase_id
-
-    @property
-    def species_identity(self) -> str:
-        """Compatibility spelling for callers that use GREPE species identities."""
-
-        return self.species_id
-
 
 @dataclass(frozen=True, slots=True)
 class PhaseReactionStandardState:

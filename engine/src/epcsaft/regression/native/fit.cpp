@@ -73,16 +73,15 @@ struct Controls final {
   std::vector<Start> starts;
   double affine_bound_margin;
   int maximum_iterations;
-  double function_tolerance;
-  double gradient_tolerance;
-  double parameter_tolerance;
+  double optimizer_tolerance;
 };
 
 struct FullSpaceSetup final {
   std::vector<double> initial;
   std::vector<double> lower;
   std::vector<double> upper;
-  std::size_t constraint_count;
+  std::vector<double> constraint_lower;
+  std::vector<double> constraint_upper;
   std::vector<int> jacobian_rows;
   std::vector<int> jacobian_columns;
 };
@@ -238,19 +237,13 @@ Controls parse_controls(const py::dict &mapping) {
       std::move(starts),
       required<double>(mapping, "affine_bound_margin"),
       required<int>(mapping, "maximum_iterations"),
-      required<double>(mapping, "function_tolerance"),
-      required<double>(mapping, "gradient_tolerance"),
-      required<double>(mapping, "parameter_tolerance"),
+      required<double>(mapping, "optimizer_tolerance"),
   };
   if (controls.starts.empty() || controls.maximum_iterations <= 0 ||
       !(std::isfinite(controls.affine_bound_margin) &&
         controls.affine_bound_margin >= 0.0 &&
-        std::isfinite(controls.function_tolerance) &&
-        controls.function_tolerance > 0.0 &&
-        std::isfinite(controls.gradient_tolerance) &&
-        controls.gradient_tolerance > 0.0 &&
-        std::isfinite(controls.parameter_tolerance) &&
-        controls.parameter_tolerance > 0.0)) {
+        std::isfinite(controls.optimizer_tolerance) &&
+        controls.optimizer_tolerance > 0.0)) {
     throw std::invalid_argument("solver controls must be positive and finite");
   }
   return controls;
@@ -265,13 +258,15 @@ std::vector<FullSpaceSetup> parse_full_space_setups(
         required<std::vector<double>>(mapping, "initial"),
         required<std::vector<double>>(mapping, "lower"),
         required<std::vector<double>>(mapping, "upper"),
-        required<std::size_t>(mapping, "constraint_count"),
+        required<std::vector<double>>(mapping, "constraint_lower"),
+        required<std::vector<double>>(mapping, "constraint_upper"),
         required<std::vector<int>>(mapping, "jacobian_rows"),
         required<std::vector<int>>(mapping, "jacobian_columns"),
     };
     if (setup.initial.empty() || setup.lower.size() != setup.initial.size() ||
         setup.upper.size() != setup.initial.size() ||
-        setup.constraint_count == 0 ||
+        setup.constraint_lower.empty() ||
+        setup.constraint_upper.size() != setup.constraint_lower.size() ||
         setup.jacobian_rows.size() != setup.jacobian_columns.size()) {
       throw std::invalid_argument("full-space setup dimensions are invalid");
     }
@@ -283,6 +278,13 @@ std::vector<FullSpaceSetup> parse_full_space_setups(
           setup.initial[index] < setup.lower[index] ||
           setup.initial[index] > setup.upper[index]) {
         throw std::invalid_argument("full-space local bounds are invalid");
+      }
+    }
+    for (std::size_t index = 0; index < setup.constraint_lower.size(); ++index) {
+      if (!std::isfinite(setup.constraint_lower[index]) ||
+          !std::isfinite(setup.constraint_upper[index]) ||
+          setup.constraint_lower[index] > setup.constraint_upper[index]) {
+        throw std::invalid_argument("full-space constraint bounds are invalid");
       }
     }
     setups.push_back(std::move(setup));
@@ -862,13 +864,16 @@ public:
   SparseFullSpaceNlp(PyObject *evaluator, std::size_t start_index,
                      std::vector<double> initial, std::vector<double> lower,
                      std::vector<double> upper, std::size_t residual_count,
-                     std::size_t constraint_count,
+                     std::vector<double> constraint_lower,
+                     std::vector<double> constraint_upper,
                      std::vector<int> jacobian_rows,
                      std::vector<int> jacobian_columns)
       : evaluator_(evaluator), start_index_(start_index),
         initial_(std::move(initial)),
         lower_(std::move(lower)), upper_(std::move(upper)),
-        residual_count_(residual_count), constraint_count_(constraint_count),
+        residual_count_(residual_count),
+        constraint_lower_(std::move(constraint_lower)),
+        constraint_upper_(std::move(constraint_upper)),
         jacobian_rows_(std::move(jacobian_rows)),
         jacobian_columns_(std::move(jacobian_columns)), solution_(initial_) {
     Py_INCREF(evaluator_);
@@ -883,7 +888,7 @@ public:
                     Ipopt::Index &nnz_jac_g, Ipopt::Index &nnz_h_lag,
                     IndexStyleEnum &index_style) override {
     n = static_cast<Ipopt::Index>(initial_.size());
-    m = static_cast<Ipopt::Index>(constraint_count_);
+    m = static_cast<Ipopt::Index>(constraint_lower_.size());
     nnz_jac_g = static_cast<Ipopt::Index>(jacobian_rows_.size());
     nnz_h_lag = 0;
     index_style = TNLP::C_STYLE;
@@ -898,8 +903,8 @@ public:
     }
     std::copy(lower_.begin(), lower_.end(), x_l);
     std::copy(upper_.begin(), upper_.end(), x_u);
-    std::fill(g_l, g_l + m, 0.0);
-    std::fill(g_u, g_u + m, 0.0);
+    std::copy(constraint_lower_.begin(), constraint_lower_.end(), g_l);
+    std::copy(constraint_upper_.begin(), constraint_upper_.end(), g_u);
     return true;
   }
 
@@ -985,7 +990,7 @@ public:
 private:
   bool dimensions(Ipopt::Index n, Ipopt::Index m) const noexcept {
     return n == static_cast<Ipopt::Index>(initial_.size()) &&
-           m == static_cast<Ipopt::Index>(constraint_count_);
+           m == static_cast<Ipopt::Index>(constraint_lower_.size());
   }
 
   bool evaluate(Ipopt::Index n, const Ipopt::Number *x) const {
@@ -1010,7 +1015,7 @@ private:
           required<std::vector<double>>(result, "constraint_jacobian");
       if (residuals.size() != residual_count_ ||
           residual_jacobian.size() != residual_count_ * initial_.size() ||
-          constraints_.size() != constraint_count_ ||
+          constraints_.size() != constraint_lower_.size() ||
           constraint_jacobian_.size() != jacobian_rows_.size()) {
         throw std::invalid_argument("full-space callback shape changed");
       }
@@ -1045,7 +1050,8 @@ private:
   std::vector<double> lower_;
   std::vector<double> upper_;
   std::size_t residual_count_;
-  std::size_t constraint_count_;
+  std::vector<double> constraint_lower_;
+  std::vector<double> constraint_upper_;
   std::vector<int> jacobian_rows_;
   std::vector<int> jacobian_columns_;
   std::vector<double> solution_;
@@ -1071,18 +1077,13 @@ Ipopt::ApplicationReturnStatus solve_ipopt(Problem *problem,
   application->Options()->SetStringValue("sb", "yes");
   application->Options()->SetIntegerValue("max_iter",
                                           controls.maximum_iterations);
-  const double optimizer_tolerance =
-      0.001 *
-      std::min({controls.function_tolerance, controls.gradient_tolerance,
-                controls.parameter_tolerance});
-  application->Options()->SetNumericValue("tol", optimizer_tolerance);
+  const double ipopt_tolerance = 0.001 * controls.optimizer_tolerance;
+  application->Options()->SetNumericValue("tol", ipopt_tolerance);
   application->Options()->SetIntegerValue("acceptable_iter", 0);
-  application->Options()->SetNumericValue("tiny_step_tol",
-                                          controls.parameter_tolerance);
   application->Options()->SetStringValue("hessian_approximation",
                                          "limited-memory");
   application->Options()->SetStringValue("mu_strategy", "adaptive");
-  application->Options()->SetNumericValue("mu_min", 0.01 * optimizer_tolerance);
+  application->Options()->SetNumericValue("mu_min", 0.01 * ipopt_tolerance);
   application->Options()->SetStringValue(
       "nlp_scaling_method", full_space ? "gradient-based" : "none");
   application->Options()->SetNumericValue("bound_relax_factor", 0.0);
@@ -1164,7 +1165,8 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
     auto *problem = new SparseFullSpaceNlp(
         full_space_evaluator, index, std::move(initial), std::move(lower),
         std::move(upper), residual_count,
-        full_space_setup->constraint_count, full_space_setup->jacobian_rows,
+        full_space_setup->constraint_lower, full_space_setup->constraint_upper,
+        full_space_setup->jacobian_rows,
         full_space_setup->jacobian_columns);
     solver_status = solve_ipopt(problem, controls, result.iterations, solution, true);
     result.final_affine.assign(solution.begin(),
@@ -1474,7 +1476,7 @@ py::dict fit_resolved(const py::function &owner_evaluator,
     for (std::size_t index = 0; index < setup.jacobian_rows.size(); ++index) {
       if (setup.jacobian_rows[index] < 0 ||
           setup.jacobian_rows[index] >=
-              static_cast<int>(setup.constraint_count) ||
+              static_cast<int>(setup.constraint_lower.size()) ||
           setup.jacobian_columns[index] < 0 ||
           setup.jacobian_columns[index] >= static_cast<int>(variable_count)) {
         throw std::invalid_argument("full-space sparse index is invalid");

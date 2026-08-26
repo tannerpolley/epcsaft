@@ -36,6 +36,28 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
         equilibrium_constants=(),
         strict_interior_amount_floor_mol=1.0e-14,
     )
+    parameter_identity = "pair/anion/solvent/k_ij"
+    truth_parameter = 0.08
+    truth_active = epcsaft.ActiveParameterSet(
+        parameters, (parameter_identity,), values=(truth_parameter,)
+    )
+    anchor_problem = equilibrium.HomogeneousReactiveObservationProblem(
+        "nonreactive-open-component-anchor",
+        "configured-liquid",
+        "liquid",
+        equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
+        reaction,
+        "nonreactive-open-component-branch",
+        "local_certified_role_selected_state",
+    )
+    anchor = equilibrium.certify_homogeneous_continuation_reference(
+        anchor_problem,
+        313.15 * epcsaft.unit_registry.kelvin,
+        119_199.78746707023 * epcsaft.unit_registry.pascal,
+        maximum_log_composition_distance=1.0,
+        maximum_log_volume_distance=1.0,
+        active_parameters=truth_active,
+    )
     phase = equilibrium.ReactivePhase(
         "configured-liquid",
         "liquid",
@@ -44,14 +66,10 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
         equilibrium.ProviderModel((1.0e-6, 0.74), "installed-provider-eos"),
         "nonreactive-open-component-branch",
         "local_certified_role_selected_state",
+        anchor,
     )
     temperature = equilibrium.Fixed(313.15 * epcsaft.unit_registry.kelvin)
     pressure = equilibrium.Fixed(119_199.78746707023 * epcsaft.unit_registry.pascal)
-    parameter_identity = "pair/anion/solvent/k_ij"
-    truth_parameter = 0.08
-    truth_active = epcsaft.ActiveParameterSet(
-        parameters, (parameter_identity,), values=(truth_parameter,)
-    )
     truth_parameters = parameters.with_values(
         {parameter_identity: truth_parameter},
         source_id="mixed-regression-truth",
@@ -213,9 +231,7 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
             },
             "controls": {
                 "maximum_iterations": 12,
-                "function_tolerance": 1.0e-8,
-                "gradient_tolerance": 1.0e-8,
-                "parameter_tolerance": 1.0e-8,
+                "optimizer_tolerance": 1.0e-8,
             },
         },
     }
@@ -223,9 +239,7 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
     del default_mapping["solver"]["controls"]
     default_controls = regression.ParameterFit.from_mapping(default_mapping).solver.controls
     assert default_controls.maximum_iterations == 25
-    assert default_controls.function_tolerance == 1.0e-6
-    assert default_controls.gradient_tolerance == 1.0e-6
-    assert default_controls.parameter_tolerance == 1.0e-6
+    assert default_controls.optimizer_tolerance == 1.0e-6
 
     result = regression.fit(mapping, base_path=tmp_path)
 

@@ -294,6 +294,7 @@ struct ChemicalSolveResult {
     std::string physical_status = "not_adjudicated";
     std::string provider_domain_status = "not_adjudicated";
     std::string local_minimum_status = "not_adjudicated";
+    std::vector<std::pair<std::string, double>> resolved_policy;
     std::string negative_curvature_recovery_status = "not_needed";
     std::size_t negative_curvature_recovery_seed_count = 0;
     std::size_t negative_curvature_recovery_attempts = 0;
@@ -301,6 +302,7 @@ struct ChemicalSolveResult {
     std::string trace_status = "not_adjudicated";
     std::vector<double> amounts;
     double volume_m3 = 0.0;
+    std::vector<double> volume_parameter_derivatives;
     std::vector<double> local_variables;
     std::vector<double> local_lower_bounds;
     std::vector<double> local_upper_bounds;

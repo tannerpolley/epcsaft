@@ -159,43 +159,11 @@ are presently:
    inherited-parameter rules, uncertainty assessment, and an immutable
    Provider artifact.
 
-## Current Regression readiness
+## Historical implementation boundary
 
-The latest local Regression work inspected was branch
-`codex/general-parameter-regression` at commit `b3c1fb1`. It is substantially
-ahead of public `main` (`11c664c`) and is not currently published on the
-remote. The checkout also contains user-owned uncommitted test/data work, so
-this assessment is read-only and does not treat the branch as admitted.
-
-The branch has useful foundations:
-
-- one typed Ceres engine with exact installed-Provider derivatives;
-- source, units, bounds, transforms, partitions, rank, conditioning, active
-  bounds, and confirmation-start diagnostics;
-- scalar fit paths for `segment_count`, `segment_diameter`,
-  `dispersion_energy_over_k`, Born diameter, solvation factor, relative
-  permittivity, selected dielectric parameters, and selected `k_ij`/`l_ij`;
-- one bounded joint five-coordinate pure 2B saturation fit.
-
-It is not yet capable of fitting the requested calcium complexes:
-
-- the reusable `RegressionProblem` explicitly accepts exactly one shared
-  parameter;
-- component `m`, `sigma`, and `epsilon/k` fits use neutral pure-saturation
-  pressure/density observations, which are unavailable and physically
-  inappropriate for dissolved `CaHCO3+` and `CaCO3(aq)`;
-- direct electrolyte observations currently activate one advertised
-  coordinate, not a new species' coupled mechanical parameter block;
-- there is no reactive-speciation observation contract or exact
-  Equilibrium implicit parameter-sensitivity path for fitting mechanical
-  parameters against calcium-carbonate speciation;
-- the special five-parameter association route is a neutral pure 2B
-  saturation workflow, not a general aqueous ion-pair fitter.
-
-Focused current-checkout verification passed 51 tests in 220.23 seconds,
-covering the general contracts, scalar pure parameters, bounded association
-derivatives, aqueous `k_ij`, Born diameters, and solvent/ionic permittivity.
-This confirms the documented mechanics but does not broaden their domain.
+The Regression implementation assessed here is preserved at commit `b3c1fb1`.
+Its mechanics did not make formation constants sufficient to identify
+calcium-complex SAFT parameters.
 
 The shortest scientifically defensible extension would follow Held and
 Sadowski's ion-pair construction: fix inherited quantities under an explicit

@@ -224,19 +224,19 @@ Regression consumes one owner-published evaluator protocol:
 3. return typed values, exact Jacobian rows, certificates, and failures.
 
 Regression owns observation mapping, residual transforms and covariance
-whitening, parameter coordinates/bounds/ties, multistart, Ceres, optimizer
+whitening, parameter coordinates/bounds/ties, multistart, Ipopt, optimizer
 accounting, and descriptive/statistical diagnostics. It contains no species,
 reaction, phase, bubble, LLE, or application-specific thermodynamic branch.
 Current homogeneous and bubble family dispatch will be removed after the
 generic protocol proves equivalent; no future LLE `isinstance` branch is
 added.
 
-The layering is nested and explicit: inner GREPE/Ipopt solves each condition;
-outer Regression/Ceres changes parameters and minimizes the declared dataset
-SSE using GREPE's exact total Jacobian. Parameters and all equilibrium states
-are not combined into one monolithic campaign-wide Ipopt problem.
+Derivative-capable local GREPE states and shared parameters may enter one
+simultaneous sparse Regression/Ipopt problem. Unsupported formulations retain
+the reduced-space Ipopt route using GREPE's exact total Jacobian. Both routes
+evaluate the same GREPE thermodynamic equations.
 
-An invalid trial returns a typed failure so Ceres rejects or shrinks the step.
+An invalid trial returns a typed failure so Ipopt rejects or shrinks the step.
 Regression does not fabricate penalties or drop failed rows. No usable
 certified point produces a typed fit failure.
 

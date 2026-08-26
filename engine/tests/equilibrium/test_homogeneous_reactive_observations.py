@@ -726,6 +726,11 @@ def test_grepe_single_finite_phase_matches_homogeneous_owner() -> None:
             "reason": "GREPE owner receipt is not a fit acceptance decision",
         },
     }
+    resolved_policy = dict(receipt_payload["resolved_policy"])
+    assert resolved_policy["ipopt.max_iter"] == 500.0
+    assert resolved_policy["certificate.balance_inf_norm_max"] == 1.0e-9
+    assert resolved_policy["certificate.affinity_inf_norm_max"] == 1.0e-6
+    assert resolved_policy["certificate.minimum_amount_mol_min_exclusive"] > 0.0
     assert equilibrium.validate_general_reactive_equilibrium_receipt(
         receipt,
         descriptor=grepe_descriptor,

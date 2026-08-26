@@ -32,6 +32,8 @@ constexpr double kChartPhysicalPullbackTolerance =
     kChemicalChartPullbackTolerance;
 constexpr double kProviderDomainTolerance = 1.0e-12;
 constexpr double kSensitivityConditionNumberMax = kChemicalConditionNumberMax;
+constexpr double kIpoptTolerance = 1.0e-10;
+constexpr double kIpoptAcceptableTolerance = 1.0e-9;
 
 std::string ipopt_status_name(Ipopt::ApplicationReturnStatus status) {
     switch (status) {
@@ -82,10 +84,12 @@ void configure_ipopt(
     application->Options()->SetIntegerValue("print_level", 0);
     application->Options()->SetStringValue("sb", "yes");
     application->Options()->SetIntegerValue("max_iter", max_iterations);
-    application->Options()->SetNumericValue("tol", 1.0e-10);
-    application->Options()->SetNumericValue("acceptable_tol", 1.0e-9);
+    application->Options()->SetNumericValue("tol", kIpoptTolerance);
+    application->Options()->SetNumericValue(
+        "acceptable_tol", kIpoptAcceptableTolerance
+    );
     application->Options()->SetIntegerValue("acceptable_iter", 0);
-    application->Options()->SetNumericValue("constr_viol_tol", 1.0e-10);
+    application->Options()->SetNumericValue("constr_viol_tol", kIpoptTolerance);
     application->Options()->SetStringValue("jacobian_approximation", "exact");
     application->Options()->SetStringValue("hessian_approximation", "exact");
     application->Options()->SetStringValue("linear_solver", "mumps");
@@ -6002,6 +6006,20 @@ ChemicalSolveResult solve_provider_reaction(
     const ChemicalContinuationStart* continuation_start,
     int max_iterations
 ) {
+    const auto finish = [&](ChemicalSolveResult result) {
+        result.resolved_policy = {
+            {"ipopt.tol", kIpoptTolerance},
+            {"ipopt.constr_viol_tol", kIpoptTolerance},
+            {"ipopt.acceptable_tol", kIpoptAcceptableTolerance},
+            {"ipopt.max_iter", static_cast<double>(max_iterations)},
+            {"certificate.balance_inf_norm_max", kBalanceTolerance},
+            {"certificate.pressure_relative_inf_norm_max", kPressureTolerance},
+            {"certificate.affinity_inf_norm_max", kAffinityTolerance},
+            {"certificate.kkt_stationarity_inf_norm_max", kKktTolerance},
+            {"certificate.minimum_amount_mol_min_exclusive", trace_floor},
+        };
+        return finalize_chemical_result(system, std::move(result), false);
+    };
     if (!std::isfinite(packing_fraction_min)
         || !std::isfinite(packing_fraction_max)
         || packing_fraction_min <= 0.0
@@ -6009,7 +6027,7 @@ ChemicalSolveResult solve_provider_reaction(
         throw std::invalid_argument("packing-fraction bounds must be finite, positive, and ordered");
     }
     if (!system.removed_species_indices.empty()) {
-        return finalize_chemical_result(system, ChemicalSolveResult{}, false);
+        return finish(ChemicalSolveResult{});
     }
     const MaxMinInitializationResult initialization = max_min_initialization(
         system.balance_matrix,
@@ -6023,7 +6041,7 @@ ChemicalSolveResult solve_provider_reaction(
         result.solver_status = initialization.solver_status;
         result.numerical_status = "failed";
         result.trace_status = "at_or_below_floor";
-        return finalize_chemical_result(system, std::move(result), false);
+        return finish(std::move(result));
     }
     const std::vector<double>& starting_amounts = initialization.amounts;
     const double total = std::accumulate(
@@ -6071,7 +6089,7 @@ ChemicalSolveResult solve_provider_reaction(
         result.callback_error = error.what();
         result.numerical_status = "failed";
         result.provider_domain_status = "failed";
-        return finalize_chemical_result(system, std::move(result), false);
+        return finish(std::move(result));
     }
     const double initial_packing_fraction = parameterized
         ? provider.evaluate_parameterized_phase(
@@ -6226,8 +6244,7 @@ ChemicalSolveResult solve_provider_reaction(
         }
         return geometries;
     };
-    return finalize_chemical_result(
-        system,
+    return finish(
         solve_reaction(
             system,
             temperature_k,
@@ -6245,8 +6262,7 @@ ChemicalSolveResult solve_provider_reaction(
             &volume_transform,
             geometry_factory,
             continuation_start
-        ),
-        false
+        )
     );
 }
 
@@ -6302,6 +6318,7 @@ ChemicalSolveResult evaluate_provider_reaction_local(
     result.local_upper_bounds = upper;
     result.amounts = state.amount_chart.amounts;
     result.volume_m3 = state.volume;
+    result.volume_parameter_derivatives = state.volume_parameter_derivatives;
     result.packing_fraction = std::exp(variables.back());
     result.minimum_amount_mol = state.amount_chart.minimum_amount;
     result.kkt_root_values = kkt.constraints;
