@@ -143,6 +143,7 @@ struct ChemicalSensitivityResult {
     std::vector<std::string> parameter_order;
     std::vector<double> amount_derivatives;
     std::vector<double> volume_derivatives;
+    std::vector<double> kkt_parameter_jacobian;
     std::size_t kkt_dimension = 0;
     std::size_t kkt_rank = 0;
     double condition_number_inf = 0.0;
@@ -300,6 +301,9 @@ struct ChemicalSolveResult {
     std::string trace_status = "not_adjudicated";
     std::vector<double> amounts;
     double volume_m3 = 0.0;
+    std::vector<double> local_variables;
+    std::vector<double> local_lower_bounds;
+    std::vector<double> local_upper_bounds;
     double balance_inf_norm = 0.0;
     double charge_inf_norm = 0.0;
     double pressure_relative_residual = 0.0;
@@ -385,6 +389,7 @@ struct ChemicalSolveResult {
     std::string derivative_constraint_basis =
         "ordered_per_row_in_derivative_constraint_order";
     std::vector<std::string> derivative_constraint_order;
+    std::vector<double> kkt_root_values;
     std::vector<double> kkt_root_jacobian;
     std::size_t kkt_root_rows = 0;
     std::size_t kkt_root_columns = 0;
@@ -536,6 +541,22 @@ struct SourceStandardStateResult {
     const ProviderActiveParameterSet* active_parameters = nullptr,
     const ChemicalContinuationStart* continuation_start = nullptr,
     int max_iterations = 500
+);
+
+[[nodiscard]] ChemicalSolveResult evaluate_provider_reaction_local(
+    const CompiledReactionSystem& system,
+    const ProviderContext& provider,
+    double temperature_k,
+    double pressure_pa,
+    double packing_fraction_min,
+    double packing_fraction_max,
+    double total_ion_fraction_max,
+    double trace_floor,
+    const std::vector<double>& variables,
+    const std::vector<double>& lower,
+    const std::vector<double>& upper,
+    const std::vector<double>& ln_k_parameter_derivatives = {},
+    const ProviderActiveParameterSet* active_parameters = nullptr
 );
 
 [[nodiscard]] ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(

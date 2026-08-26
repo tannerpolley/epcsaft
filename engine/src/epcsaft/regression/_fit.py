@@ -289,6 +289,11 @@ def _fit_owner_batches(
     owner: Callable[[int, int, Sequence[float], bool], Mapping[str, object]],
     residual_blocks: Sequence[Mapping[str, object]],
     specification: FitSpecificationReceipt,
+    full_space: tuple[
+        Callable[[int, Sequence[float]], Mapping[str, object]],
+        Sequence[Mapping[str, object]],
+    ]
+    | None = None,
 ) -> FitResult:
     coordinate_indices = {
         identity: index
@@ -331,6 +336,8 @@ def _fit_owner_batches(
             "parameter_tolerance": resolved.fit.solver.controls.parameter_tolerance,
         },
         tuple(sorted(NON_EVALUABLE_TRIAL_CODES)),
+        None if full_space is None else full_space[0],
+        () if full_space is None else full_space[1],
     )
     return FitResult.from_native(
         specification,
@@ -403,11 +410,12 @@ def fit(
     equilibrium_batches: Sequence[Any] = ()
     equilibrium_receipt = None
     equilibrium_residual_blocks: tuple[Mapping[str, object], ...] = ()
+    full_space = None
     if any(
         isinstance(observation, EquilibriumFitObservation)
         for observation in resolved.fit.observations
     ):
-        from ._equilibrium_owner import _equilibrium_owner_batches
+        from ._equilibrium_owner import _equilibrium_owner_batches, _full_space_batches
 
         (
             equilibrium_all_batches,
@@ -416,6 +424,8 @@ def fit(
             equilibrium_residual_blocks,
             equilibrium_receipt,
         ) = _equilibrium_owner_batches(resolved)
+        if len(equilibrium_batches) == len(resolved.fit.observations):
+            full_space = _full_space_batches(resolved, equilibrium_batches)
     equilibrium_receipt_blocks = (
         () if equilibrium_receipt is None else _receipt_blocks(equilibrium_receipt)
     )
@@ -475,6 +485,7 @@ def fit(
         evaluate_ordered_owner,
         ordered_residual_blocks,
         combined_receipt,
+        full_space,
     )
     if equilibrium_all_batches:
         from ._equilibrium_owner import _validated_owner_receipts

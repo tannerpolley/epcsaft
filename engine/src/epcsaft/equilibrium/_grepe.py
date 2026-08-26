@@ -2046,6 +2046,18 @@ def _compile_general_reactive_equilibrium(
             for phase in finite
         )
         _validate_finite_phase_electrolyte_supports(model, finite, supported_component_ids)
+        if (
+            len(finite) == 1
+            and isinstance(finite[0].support, AllComponents)
+            and finite[0].start is None
+        ):
+            return _compile_homogeneous_owner(
+                model,
+                problem,
+                finite[0],
+                active_parameters,
+                temperature_k=temperature_k,
+            )
         supplied_starts = tuple(phase.start for phase in finite)
         if any(start is None for start in supplied_starts) and any(
             start is not None for start in supplied_starts
@@ -3858,6 +3870,7 @@ def _solve_general_reactive_equilibrium(
             homogeneous_owner.failure
         )
         diagnostics = homogeneous_owner.diagnostics
+        phase = problem.phases[0]
         return GeneralReactiveEquilibriumResult(
             problem=problem,
             descriptor=compiled.descriptor,
@@ -3884,7 +3897,21 @@ def _solve_general_reactive_equilibrium(
             certificate_scope=compiled.descriptor.certificate_scope,
             globality_claim="not_established",
             trial=homogeneous_owner.trial,
-            branch_signature=_homogeneous_branch_signature(homogeneous_owner),
+            branch_signature=(
+                "finite_phases_local_minimum",
+                compiled.descriptor.problem_fingerprint,
+                (
+                    (
+                        phase.identity,
+                        phase.continuation_identity,
+                        None
+                        if phase.continuation_reference is None
+                        else phase.continuation_reference.fingerprint,
+                    ),
+                ),
+            )
+            if homogeneous_owner.status == "evaluated"
+            else None,
             evidence=_result_evidence(homogeneous_owner),
             resolved_policy=(),
         )

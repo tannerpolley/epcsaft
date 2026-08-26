@@ -78,6 +78,15 @@ struct Controls final {
   double parameter_tolerance;
 };
 
+struct FullSpaceSetup final {
+  std::vector<double> initial;
+  std::vector<double> lower;
+  std::vector<double> upper;
+  std::size_t constraint_count;
+  std::vector<int> jacobian_rows;
+  std::vector<int> jacobian_columns;
+};
+
 struct Diagnostics final {
   std::vector<double> singular_values;
   std::vector<double> affine_covariance;
@@ -245,6 +254,40 @@ Controls parse_controls(const py::dict &mapping) {
     throw std::invalid_argument("solver controls must be positive and finite");
   }
   return controls;
+}
+
+std::vector<FullSpaceSetup> parse_full_space_setups(
+    const py::iterable &values) {
+  std::vector<FullSpaceSetup> setups;
+  for (const py::handle item : values) {
+    const auto mapping = py::cast<py::dict>(item);
+    FullSpaceSetup setup{
+        required<std::vector<double>>(mapping, "initial"),
+        required<std::vector<double>>(mapping, "lower"),
+        required<std::vector<double>>(mapping, "upper"),
+        required<std::size_t>(mapping, "constraint_count"),
+        required<std::vector<int>>(mapping, "jacobian_rows"),
+        required<std::vector<int>>(mapping, "jacobian_columns"),
+    };
+    if (setup.initial.empty() || setup.lower.size() != setup.initial.size() ||
+        setup.upper.size() != setup.initial.size() ||
+        setup.constraint_count == 0 ||
+        setup.jacobian_rows.size() != setup.jacobian_columns.size()) {
+      throw std::invalid_argument("full-space setup dimensions are invalid");
+    }
+    for (std::size_t index = 0; index < setup.initial.size(); ++index) {
+      if (!std::isfinite(setup.initial[index]) ||
+          !std::isfinite(setup.lower[index]) ||
+          !std::isfinite(setup.upper[index]) ||
+          setup.lower[index] >= setup.upper[index] ||
+          setup.initial[index] < setup.lower[index] ||
+          setup.initial[index] > setup.upper[index]) {
+        throw std::invalid_argument("full-space local bounds are invalid");
+      }
+    }
+    setups.push_back(std::move(setup));
+  }
+  return setups;
 }
 
 class OwnerEvaluationError final : public std::runtime_error {
@@ -814,10 +857,212 @@ private:
   mutable bool cached_evaluable_{false};
 };
 
-Ipopt::ApplicationReturnStatus solve_ipopt(ReducedSpaceNlp *problem,
+class SparseFullSpaceNlp final : public Ipopt::TNLP {
+public:
+  SparseFullSpaceNlp(PyObject *evaluator, std::size_t start_index,
+                     std::vector<double> initial, std::vector<double> lower,
+                     std::vector<double> upper, std::size_t residual_count,
+                     std::size_t constraint_count,
+                     std::vector<int> jacobian_rows,
+                     std::vector<int> jacobian_columns)
+      : evaluator_(evaluator), start_index_(start_index),
+        initial_(std::move(initial)),
+        lower_(std::move(lower)), upper_(std::move(upper)),
+        residual_count_(residual_count), constraint_count_(constraint_count),
+        jacobian_rows_(std::move(jacobian_rows)),
+        jacobian_columns_(std::move(jacobian_columns)), solution_(initial_) {
+    Py_INCREF(evaluator_);
+  }
+
+  ~SparseFullSpaceNlp() override {
+    py::gil_scoped_acquire acquire;
+    Py_DECREF(evaluator_);
+  }
+
+  bool get_nlp_info(Ipopt::Index &n, Ipopt::Index &m,
+                    Ipopt::Index &nnz_jac_g, Ipopt::Index &nnz_h_lag,
+                    IndexStyleEnum &index_style) override {
+    n = static_cast<Ipopt::Index>(initial_.size());
+    m = static_cast<Ipopt::Index>(constraint_count_);
+    nnz_jac_g = static_cast<Ipopt::Index>(jacobian_rows_.size());
+    nnz_h_lag = 0;
+    index_style = TNLP::C_STYLE;
+    return true;
+  }
+
+  bool get_bounds_info(Ipopt::Index n, Ipopt::Number *x_l,
+                       Ipopt::Number *x_u, Ipopt::Index m,
+                       Ipopt::Number *g_l, Ipopt::Number *g_u) override {
+    if (!dimensions(n, m)) {
+      return false;
+    }
+    std::copy(lower_.begin(), lower_.end(), x_l);
+    std::copy(upper_.begin(), upper_.end(), x_u);
+    std::fill(g_l, g_l + m, 0.0);
+    std::fill(g_u, g_u + m, 0.0);
+    return true;
+  }
+
+  bool get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Number *x,
+                          bool init_z, Ipopt::Number *, Ipopt::Number *,
+                          Ipopt::Index m, bool init_lambda,
+                          Ipopt::Number *) override {
+    if (!dimensions(n, m) || !init_x || init_z || init_lambda) {
+      return false;
+    }
+    std::copy(initial_.begin(), initial_.end(), x);
+    return true;
+  }
+
+  bool eval_f(Ipopt::Index n, const Ipopt::Number *x, bool,
+              Ipopt::Number &objective) override {
+    if (!evaluate(n, x)) {
+      return false;
+    }
+    objective = objective_;
+    return true;
+  }
+
+  bool eval_grad_f(Ipopt::Index n, const Ipopt::Number *x, bool,
+                   Ipopt::Number *gradient) override {
+    if (!evaluate(n, x)) {
+      return false;
+    }
+    std::copy(gradient_.begin(), gradient_.end(), gradient);
+    return true;
+  }
+
+  bool eval_g(Ipopt::Index n, const Ipopt::Number *x, bool, Ipopt::Index m,
+              Ipopt::Number *constraints) override {
+    if (!dimensions(n, m) || !evaluate(n, x)) {
+      return false;
+    }
+    std::copy(constraints_.begin(), constraints_.end(), constraints);
+    return true;
+  }
+
+  bool eval_jac_g(Ipopt::Index n, const Ipopt::Number *x, bool,
+                  Ipopt::Index m, Ipopt::Index nonzero_count,
+                  Ipopt::Index *rows, Ipopt::Index *columns,
+                  Ipopt::Number *values) override {
+    if (!dimensions(n, m) ||
+        nonzero_count != static_cast<Ipopt::Index>(jacobian_rows_.size())) {
+      return false;
+    }
+    if (values == nullptr) {
+      for (std::size_t index = 0; index < jacobian_rows_.size(); ++index) {
+        rows[index] = jacobian_rows_[index];
+        columns[index] = jacobian_columns_[index];
+      }
+      return true;
+    }
+    if (!evaluate(n, x)) {
+      return false;
+    }
+    std::copy(constraint_jacobian_.begin(), constraint_jacobian_.end(), values);
+    return true;
+  }
+
+  bool eval_h(Ipopt::Index, const Ipopt::Number *, bool, Ipopt::Number,
+              Ipopt::Index, const Ipopt::Number *, bool,
+              Ipopt::Index nonzero_count, Ipopt::Index *, Ipopt::Index *,
+              Ipopt::Number *) override {
+    return nonzero_count == 0;
+  }
+
+  void finalize_solution(Ipopt::SolverReturn, Ipopt::Index n,
+                         const Ipopt::Number *x, const Ipopt::Number *,
+                         const Ipopt::Number *, Ipopt::Index m,
+                         const Ipopt::Number *, const Ipopt::Number *,
+                         Ipopt::Number, const Ipopt::IpoptData *,
+                         Ipopt::IpoptCalculatedQuantities *) override {
+    if (dimensions(n, m) && x != nullptr) {
+      std::copy(x, x + n, solution_.begin());
+    }
+  }
+
+  const std::vector<double> &solution() const noexcept { return solution_; }
+private:
+  bool dimensions(Ipopt::Index n, Ipopt::Index m) const noexcept {
+    return n == static_cast<Ipopt::Index>(initial_.size()) &&
+           m == static_cast<Ipopt::Index>(constraint_count_);
+  }
+
+  bool evaluate(Ipopt::Index n, const Ipopt::Number *x) const {
+    if (n != static_cast<Ipopt::Index>(initial_.size()) || x == nullptr) {
+      return false;
+    }
+    if (cached_x_.size() == initial_.size() &&
+        std::equal(x, x + n, cached_x_.begin())) {
+      return !callback_failed_;
+    }
+    cached_x_.assign(x, x + n);
+    try {
+      py::gil_scoped_acquire acquire;
+      const py::dict result = py::cast<py::dict>(
+          py::reinterpret_borrow<py::function>(py::handle(evaluator_))(
+              start_index_, cached_x_));
+      const auto residuals = required<std::vector<double>>(result, "residuals");
+      const auto residual_jacobian =
+          required<std::vector<double>>(result, "residual_jacobian");
+      constraints_ = required<std::vector<double>>(result, "constraints");
+      constraint_jacobian_ =
+          required<std::vector<double>>(result, "constraint_jacobian");
+      if (residuals.size() != residual_count_ ||
+          residual_jacobian.size() != residual_count_ * initial_.size() ||
+          constraints_.size() != constraint_count_ ||
+          constraint_jacobian_.size() != jacobian_rows_.size()) {
+        throw std::invalid_argument("full-space callback shape changed");
+      }
+      objective_ = 0.0;
+      gradient_.assign(initial_.size(), 0.0);
+      for (std::size_t row = 0; row < residual_count_; ++row) {
+        objective_ += 0.5 * residuals[row] * residuals[row];
+        for (std::size_t column = 0; column < initial_.size(); ++column) {
+          gradient_[column] += residuals[row] *
+                               residual_jacobian[row * initial_.size() + column];
+        }
+      }
+      const auto finite = [](const std::vector<double> &values) {
+        return std::all_of(values.begin(), values.end(),
+                           [](double value) { return std::isfinite(value); });
+      };
+      if (!std::isfinite(objective_) || !finite(gradient_) ||
+          !finite(constraints_) || !finite(constraint_jacobian_)) {
+        throw std::domain_error("full-space callback returned nonfinite values");
+      }
+      callback_failed_ = false;
+      return true;
+    } catch (const std::exception &) {
+      callback_failed_ = true;
+      return false;
+    }
+  }
+
+  PyObject *evaluator_;
+  std::size_t start_index_;
+  std::vector<double> initial_;
+  std::vector<double> lower_;
+  std::vector<double> upper_;
+  std::size_t residual_count_;
+  std::size_t constraint_count_;
+  std::vector<int> jacobian_rows_;
+  std::vector<int> jacobian_columns_;
+  std::vector<double> solution_;
+  mutable std::vector<double> cached_x_;
+  mutable std::vector<double> gradient_;
+  mutable std::vector<double> constraints_;
+  mutable std::vector<double> constraint_jacobian_;
+  mutable double objective_{0.0};
+  mutable bool callback_failed_{false};
+};
+
+template <typename Problem>
+Ipopt::ApplicationReturnStatus solve_ipopt(Problem *problem,
                                            const Controls &controls,
                                            int &iterations,
-                                           std::vector<double> &solution) {
+                                           std::vector<double> &solution,
+                                           bool full_space = false) {
   Ipopt::SmartPtr<Ipopt::TNLP> nlp = problem;
   Ipopt::SmartPtr<Ipopt::IpoptApplication> application =
       IpoptApplicationFactory();
@@ -838,7 +1083,8 @@ Ipopt::ApplicationReturnStatus solve_ipopt(ReducedSpaceNlp *problem,
                                          "limited-memory");
   application->Options()->SetStringValue("mu_strategy", "adaptive");
   application->Options()->SetNumericValue("mu_min", 0.01 * optimizer_tolerance);
-  application->Options()->SetStringValue("nlp_scaling_method", "none");
+  application->Options()->SetStringValue(
+      "nlp_scaling_method", full_space ? "gradient-based" : "none");
   application->Options()->SetNumericValue("bound_relax_factor", 0.0);
   application->Options()->SetStringValue("honor_original_bounds", "yes");
   application->Options()->SetNumericValue("bound_push", 1.0e-12);
@@ -859,6 +1105,8 @@ Ipopt::ApplicationReturnStatus solve_ipopt(ReducedSpaceNlp *problem,
 }
 
 StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
+                        PyObject *full_space_evaluator,
+                        const FullSpaceSetup *full_space_setup,
                         std::size_t active_parameter_count,
                         const std::vector<std::size_t> &identity_coordinates,
                         const std::vector<Coordinate> &coordinates,
@@ -887,9 +1135,41 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
         identity_coordinates, origins, scales, observations[observation_index],
         failure_codes));
   }
-  auto *problem = new ReducedSpaceNlp(costs, coordinates, result.final_affine);
-  const auto solver_status =
-      solve_ipopt(problem, controls, result.iterations, result.final_affine);
+  Ipopt::ApplicationReturnStatus solver_status;
+  if (full_space_setup == nullptr) {
+    auto *problem = new ReducedSpaceNlp(costs, coordinates, result.final_affine);
+    solver_status =
+        solve_ipopt(problem, controls, result.iterations, result.final_affine);
+  } else {
+    std::vector<double> initial = result.final_affine;
+    std::vector<double> lower;
+    std::vector<double> upper;
+    lower.reserve(coordinates.size() + full_space_setup->lower.size());
+    upper.reserve(coordinates.size() + full_space_setup->upper.size());
+    for (const auto &coordinate : coordinates) {
+      lower.push_back(coordinate.lower_affine);
+      upper.push_back(coordinate.upper_affine);
+    }
+    initial.insert(initial.end(), full_space_setup->initial.begin(),
+                   full_space_setup->initial.end());
+    lower.insert(lower.end(), full_space_setup->lower.begin(),
+                 full_space_setup->lower.end());
+    upper.insert(upper.end(), full_space_setup->upper.begin(),
+                 full_space_setup->upper.end());
+    std::size_t residual_count = 0;
+    for (const auto &observation : observations) {
+      residual_count += observation.targets.size();
+    }
+    std::vector<double> solution;
+    auto *problem = new SparseFullSpaceNlp(
+        full_space_evaluator, index, std::move(initial), std::move(lower),
+        std::move(upper), residual_count,
+        full_space_setup->constraint_count, full_space_setup->jacobian_rows,
+        full_space_setup->jacobian_columns);
+    solver_status = solve_ipopt(problem, controls, result.iterations, solution, true);
+    result.final_affine.assign(solution.begin(),
+                               solution.begin() + coordinates.size());
+  }
   result.solver_status = ipopt_status_name(solver_status);
   const bool solver_usable = ipopt_solution_usable(solver_status);
   for (std::size_t coordinate = 0; coordinate < coordinates.size();
@@ -1158,10 +1438,13 @@ py::dict fit_resolved(const py::function &owner_evaluator,
                       const py::iterable &coordinate_values,
                       const py::iterable &observation_values,
                       const py::dict &control_values,
-                      const std::vector<std::string> &failure_codes) {
+                      const std::vector<std::string> &failure_codes,
+                      const py::object &full_space_evaluator,
+                      const py::iterable &full_space_values) {
   const auto coordinates = parse_coordinates(coordinate_values);
   const auto observations = parse_observations(observation_values);
   const auto controls = parse_controls(control_values);
+  const auto full_space_setups = parse_full_space_setups(full_space_values);
   if (active_parameter_count == 0 ||
       active_parameter_count != identity_coordinates.size() ||
       std::any_of(identity_coordinates.begin(), identity_coordinates.end(),
@@ -1177,6 +1460,26 @@ py::dict fit_resolved(const py::function &owner_evaluator,
   if (failure_codes.empty()) {
     throw std::invalid_argument(
         "the owner failure vocabulary must be nonempty");
+  }
+  const bool full_space = !full_space_evaluator.is_none();
+  if (full_space != !full_space_setups.empty() ||
+      (full_space &&
+       (full_space_setups.size() != controls.starts.size() ||
+        !PyCallable_Check(full_space_evaluator.ptr())))) {
+    throw std::invalid_argument(
+        "full-space evaluator and one setup per start must be supplied together");
+  }
+  for (const auto &setup : full_space_setups) {
+    const std::size_t variable_count = coordinates.size() + setup.initial.size();
+    for (std::size_t index = 0; index < setup.jacobian_rows.size(); ++index) {
+      if (setup.jacobian_rows[index] < 0 ||
+          setup.jacobian_rows[index] >=
+              static_cast<int>(setup.constraint_count) ||
+          setup.jacobian_columns[index] < 0 ||
+          setup.jacobian_columns[index] >= static_cast<int>(variable_count)) {
+        throw std::invalid_argument("full-space sparse index is invalid");
+      }
+    }
   }
   std::vector<std::string> start_identities;
   start_identities.reserve(controls.starts.size());
@@ -1208,10 +1511,12 @@ py::dict fit_resolved(const py::function &owner_evaluator,
     py::gil_scoped_release release;
     for (std::size_t index = 0; index < start_values.size(); ++index) {
       try {
-        results[index] =
-            solve_start(index, owner_evaluator.ptr(), active_parameter_count,
-                        identity_coordinates, coordinates, observations,
-                        controls, start_values[index], failure_codes);
+        results[index] = solve_start(
+            index, owner_evaluator.ptr(),
+            full_space ? full_space_evaluator.ptr() : nullptr,
+            full_space ? &full_space_setups[index] : nullptr,
+            active_parameter_count, identity_coordinates, coordinates,
+            observations, controls, start_values[index], failure_codes);
       } catch (const std::exception &error) {
         results[index].index = index;
         results[index].start_identity = start_values[index].identity;
@@ -1245,5 +1550,7 @@ void bind_parameter_fit(py::module_ &module) {
              py::arg("owner_evaluator"), py::arg("active_parameter_count"),
              py::arg("identity_coordinates"), py::arg("coordinates"),
              py::arg("observations"), py::arg("controls"),
-             py::arg("failure_codes"));
+             py::arg("failure_codes"),
+             py::arg("full_space_evaluator") = py::none(),
+             py::arg("full_space_setups") = py::tuple());
 }

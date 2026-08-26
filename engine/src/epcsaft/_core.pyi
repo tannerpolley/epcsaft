@@ -144,4 +144,6 @@ def _fit_resolved(
     observations: Sequence[Mapping[str, object]],
     controls: Mapping[str, object],
     failure_codes: Sequence[str],
+    full_space_evaluator: Callable[[int, Sequence[float]], Mapping[str, object]] | None = ...,
+    full_space_setups: Sequence[Mapping[str, object]] = ...,
 ) -> dict[str, Any]: ...

@@ -7,17 +7,26 @@ from dataclasses import dataclass
 from typing import Any, Literal, cast
 
 from .._trials import NonEvaluableTrialCode
-from ..eos import Mixture
+from ..eos import EosError, Mixture, _native_transport
 from ..equilibrium import (
+    AllComponents,
     GeneralEquilibriumOwnerObservation,
     GeneralReactiveEquilibriumDescriptor,
     GeneralReactiveEquilibriumProblem,
+    ProviderModel,
+    _equilibrium,
     general_reactive_equilibrium_descriptor,
     general_reactive_equilibrium_problem_from_mapping,
     phase_equilibrium,
     serialize_general_reactive_equilibrium_receipt,
     validate_general_reactive_equilibrium_receipt,
 )
+from ..equilibrium._grepe import (
+    _compile_general_reactive_equilibrium,
+    _finite_phase_spec,
+    _HomogeneousCompilation,
+)
+from ..equilibrium._observations import _immutable_continuation_start
 from ..parameters import ActiveParameterSet
 from ..units import ParameterError
 from ._fit import FitPreflightError
@@ -641,6 +650,272 @@ def _equilibrium_owner_batches(
         residual_blocks,
         _specification_receipt(resolved, batches),
     )
+
+
+def _full_space_batches(
+    resolved: ResolvedFit,
+    batches: Sequence[_ReactiveBatch],
+) -> tuple[Any, tuple[Mapping[str, object], ...]] | None:
+    active = ActiveParameterSet(resolved.parameters, resolved.selected_identities)
+    compiled_batches: list[tuple[Any, ...]] = []
+    for batch in batches:
+        compiled = _compile_general_reactive_equilibrium(
+            batch.model, batch.problem, active_parameters=active
+        )
+        phase = batch.problem.phases[0]
+        outputs = {output.identity: output for output in batch.problem.outputs}
+        selected = tuple(
+            outputs[target.prediction_identity] for target in batch.targets if target.included
+        )
+        reaction = (
+            compiled.owner_problem.reaction_system
+            if isinstance(compiled, _HomogeneousCompilation)
+            else None
+        )
+        if (
+            not isinstance(compiled, _HomogeneousCompilation)
+            or len(batch.problem.phases) != 1
+            or not isinstance(phase.model, ProviderModel)
+            or not isinstance(phase.support, AllComponents)
+            or phase.start is not None
+            or reaction is None
+            or reaction.source_standard_state is not None
+            or any(
+                output.selector not in {"phase.amount", "phase.mole_fraction"}
+                for output in selected
+            )
+        ):
+            return None
+        temperature_k = float(compiled.temperature.to("kelvin").magnitude)
+        pressure_pa = float(compiled.pressure.to("pascal").magnitude)
+        spec = _finite_phase_spec(batch.problem, temperature_k, pressure_pa)
+        if (continuation := _immutable_continuation_start(compiled.owner_problem)) is not None:
+            spec["continuation_start"] = {
+                "amounts": continuation[0],
+                "volume_m3": continuation[1],
+            }
+        compiled_batches.append(
+            (
+                batch,
+                spec,
+                phase.model.admissible_packing_fraction_interval,
+                reaction.strict_interior_amount_floor_mol,
+                selected,
+            )
+        )
+
+    coordinate_count = len(resolved.coordinates)
+    setups: list[Mapping[str, object]] = []
+    start_blocks: list[tuple[Mapping[str, object], ...]] = []
+    expected_widths: tuple[tuple[int, int], ...] | None = None
+    try:
+        for start in resolved.fit.solver.multistart.starts:
+            trial = _active_trial(resolved, start.values)
+            initial: list[float] = []
+            lower: list[float] = []
+            upper: list[float] = []
+            blocks: list[Mapping[str, object]] = []
+            constraint_count = 0
+            for batch, spec, packing, trace_floor, *_ in compiled_batches:
+                native = cast(
+                    Mapping[str, object],
+                    _equilibrium._chemical_equilibrium(
+                        _native_transport(batch.model, trial),
+                        spec,
+                        None,
+                        packing,
+                        trace_floor,
+                        True,
+                        True,
+                    ),
+                )
+                sensitivities = cast(Mapping[str, object], native["sensitivities"])
+                parameter_order = tuple(cast(Sequence[str], sensitivities["parameter_order"]))
+                if (
+                    native["kkt_root_status"] != "interior_no_active_bounds"
+                    or sensitivities["status"] != "available"
+                    or any(
+                        f"provider_parameter[{identity}]" not in parameter_order
+                        for identity in resolved.selected_identities
+                    )
+                ):
+                    return None
+                local = tuple(cast(Sequence[float], native["local_variables"]))
+                constraints = tuple(cast(Sequence[float], native["kkt_root_values"]))
+                blocks.append(
+                    {
+                        "local_offset": len(initial),
+                        "local_width": len(local),
+                        "constraint_offset": constraint_count,
+                        "constraint_width": len(constraints),
+                        "lower": tuple(cast(Sequence[float], native["local_lower_bounds"])),
+                        "upper": tuple(cast(Sequence[float], native["local_upper_bounds"])),
+                    }
+                )
+                initial.extend(local)
+                lower.extend(cast(Sequence[float], native["local_lower_bounds"]))
+                upper.extend(cast(Sequence[float], native["local_upper_bounds"]))
+                constraint_count += len(constraints)
+            widths = tuple(
+                (cast(int, block["local_width"]), cast(int, block["constraint_width"]))
+                for block in blocks
+            )
+            if expected_widths is not None and widths != expected_widths:
+                return None
+            expected_widths = widths
+            rows: list[int] = []
+            columns: list[int] = []
+            for block in blocks:
+                for row in range(cast(int, block["constraint_width"])):
+                    rows.extend([cast(int, block["constraint_offset"]) + row] * coordinate_count)
+                    columns.extend(range(coordinate_count))
+                    rows.extend(
+                        [cast(int, block["constraint_offset"]) + row]
+                        * cast(int, block["local_width"])
+                    )
+                    columns.extend(
+                        coordinate_count + cast(int, block["local_offset"]) + column
+                        for column in range(cast(int, block["local_width"]))
+                    )
+            setups.append(
+                {
+                    "initial": initial,
+                    "lower": lower,
+                    "upper": upper,
+                    "constraint_count": constraint_count,
+                    "jacobian_rows": rows,
+                    "jacobian_columns": columns,
+                }
+            )
+            start_blocks.append(tuple(blocks))
+    except (EosError, ParameterError, RuntimeError, TypeError, ValueError):
+        return None
+
+    coordinate_by_parameter = {
+        identity: index
+        for index, coordinate in enumerate(resolved.coordinates)
+        for identity in coordinate.tied_identities
+    }
+
+    def evaluate(start_index: int, values: Sequence[float]) -> Mapping[str, object]:
+        physical = tuple(
+            coordinate.origin + float(values[index]) * coordinate.scale
+            for index, coordinate in enumerate(resolved.coordinates)
+        )
+        trial = ActiveParameterSet(
+            resolved.parameters,
+            resolved.selected_identities,
+            values=tuple(
+                physical[coordinate_by_parameter[identity]]
+                for identity in resolved.selected_identities
+            ),
+        )
+        variable_count = coordinate_count + len(
+            cast(Sequence[object], setups[start_index]["initial"])
+        )
+        residuals: list[float] = []
+        residual_jacobian: list[float] = []
+        constraints: list[float] = []
+        constraint_jacobian: list[float] = []
+        for compiled, bounds in zip(compiled_batches, start_blocks[start_index], strict=True):
+            batch, spec, packing, trace_floor, outputs = compiled
+            local_width = cast(int, bounds["local_width"])
+            local_offset = coordinate_count + cast(int, bounds["local_offset"])
+            native = cast(
+                Mapping[str, object],
+                _equilibrium._evaluate_provider_reaction_local(
+                    _native_transport(batch.model, trial),
+                    spec,
+                    packing,
+                    trace_floor,
+                    values[local_offset : local_offset + local_width],
+                    cast(Sequence[float], bounds["lower"]),
+                    cast(Sequence[float], bounds["upper"]),
+                    True,
+                ),
+            )
+            amounts = tuple(cast(Sequence[float], native["amounts"]))
+            chart = cast(Sequence[float], native["physical_to_chart_jacobian"])
+            for target, output in zip(
+                (target for target in batch.targets if target.included), outputs, strict=True
+            ):
+                total = math.fsum(amounts)
+                numerator = math.fsum(
+                    coefficient * amount
+                    for coefficient, amount in zip(
+                        output.coefficients, amounts, strict=True
+                    )
+                )
+                if output.selector == "phase.amount":
+                    prediction = numerator
+                    physical = (*output.coefficients, 0.0)
+                else:
+                    prediction = numerator / total
+                    physical = (
+                        *(
+                            (coefficient * total - numerator) / total**2
+                            for coefficient in output.coefficients
+                        ),
+                        0.0,
+                    )
+                local_jacobian = tuple(
+                    math.fsum(
+                        physical[row] * chart[row * local_width + column]
+                        for row in range(len(physical))
+                    )
+                    for column in range(local_width)
+                )
+                multiplier = target.multiplier
+                factor = multiplier / target.scale
+                if target.residual == "log_ratio":
+                    factor = multiplier / prediction
+                    residual = multiplier * math.log(prediction / target.observed)
+                elif (
+                    target.residual == "left_censored"
+                    and prediction <= target.observed
+                    or target.residual == "right_censored"
+                    and prediction >= target.observed
+                ):
+                    factor = residual = 0.0
+                else:
+                    residual = multiplier * (prediction - target.observed) / target.scale
+                residuals.append(residual)
+                row_jacobian = [0.0] * variable_count
+                row_jacobian[local_offset : local_offset + local_width] = (
+                    factor * derivative for derivative in local_jacobian
+                )
+                residual_jacobian.extend(row_jacobian)
+            block_constraints = tuple(cast(Sequence[float], native["kkt_root_values"]))
+            constraints.extend(block_constraints)
+            state_jacobian = cast(Sequence[float], native["kkt_root_jacobian"])
+            sensitivities = cast(Mapping[str, object], native["sensitivities"])
+            order = tuple(cast(Sequence[str], sensitivities["parameter_order"]))
+            parameter_jacobian = cast(Sequence[float], sensitivities["kkt_parameter_jacobian"])
+            parameter_columns = {
+                identity: order.index(f"provider_parameter[{identity}]")
+                for identity in resolved.selected_identities
+            }
+            for row in range(len(block_constraints)):
+                for coordinate in resolved.coordinates:
+                    constraint_jacobian.append(
+                        coordinate.scale
+                        * math.fsum(
+                            parameter_jacobian[row * len(order) + parameter_columns[identity]]
+                            for identity in coordinate.tied_identities
+                            if identity in parameter_columns
+                        )
+                    )
+                constraint_jacobian.extend(
+                    state_jacobian[row * local_width : (row + 1) * local_width]
+                )
+        return {
+            "residuals": residuals,
+            "residual_jacobian": residual_jacobian,
+            "constraints": constraints,
+            "constraint_jacobian": constraint_jacobian,
+        }
+
+    return evaluate, tuple(setups)
 
 
 __all__: tuple[str, ...] = ()
