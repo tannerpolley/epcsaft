@@ -52,6 +52,23 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
     truth_active = epcsaft.ActiveParameterSet(
         parameters, (parameter_identity,), values=(truth_parameter,)
     )
+    truth_parameters = parameters.with_values(
+        {parameter_identity: truth_parameter},
+        source_id="mixed-regression-truth",
+        locator="project-authored numerical fixture",
+    )
+    direct_composition = (0.6, 0.2, 0.1, 0.1)
+    direct_density = 500.0
+    direct_pressure = float(
+        epcsaft.Mixture(truth_parameters)
+        .state(
+            T=313.15 * epcsaft.unit_registry.kelvin,
+            rho=direct_density * epcsaft.unit_registry.mole / epcsaft.unit_registry.meter**3,
+            x=direct_composition,
+        )
+        .pressure.to("pascal")
+        .magnitude
+    )
     potential = equilibrium.EquilibriumOutput(
         "cosolvent-log-fugacity",
         "phase.log_fugacity",
@@ -112,9 +129,7 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
             ),
         ),
     )
-    payload = json.dumps(
-        parameters.to_mapping(), separators=(",", ":"), sort_keys=True
-    ).encode()
+    payload = json.dumps(parameters.to_mapping(), separators=(",", ":"), sort_keys=True).encode()
     parameter_path = tmp_path / "parameters.json"
     parameter_path.write_bytes(payload)
     mapping = {
@@ -137,11 +152,37 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
         },
         "observations": [
             {
+                "family": "fixed_state_pressure",
+                "composition": list(direct_composition),
+                "source": {
+                    "kind": "table",
+                    "path": "inline-mixed-direct-pressure",
+                    "sha256": f"sha256:{hashlib.sha256(json.dumps([{'temperature_k': 313.15, 'molar_density_mol_per_m3': direct_density, 'pressure': direct_pressure}], separators=(',', ':'), sort_keys=True).encode()).hexdigest()}",
+                    "citation": "Project-authored mixed-owner numerical fixture.",
+                    "domain": {
+                        "temperature_k": [312.0, 314.0],
+                        "molar_density_mol_per_m3": [499.0, 501.0],
+                    },
+                    "rows": [
+                        {
+                            "temperature_k": 313.15,
+                            "molar_density_mol_per_m3": direct_density,
+                            "pressure": direct_pressure,
+                        }
+                    ],
+                },
+                "targets": ["pressure"],
+                "residuals": {"pressure": "log_ratio"},
+                "units": {"pressure": "pascal"},
+                "basis": {"pressure": "absolute"},
+                "reference_convention": {"pressure": "absolute"},
+                "transformation": {"pressure": {"input": "identity", "output": "identity"}},
+                "multiplier": 1.0,
+            },
+            {
                 "family": "equilibrium",
                 "identity": "open-component-fit-batch",
-                "request": equilibrium.general_reactive_equilibrium_problem_to_mapping(
-                    problem
-                ),
+                "request": equilibrium.general_reactive_equilibrium_problem_to_mapping(problem),
                 "targets": [
                     {
                         "identity": "manufactured-open-component-uptake",
@@ -163,7 +204,7 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
                     }
                 ],
                 "multiplier": 1.0,
-            }
+            },
         ],
         "solver": {
             "multistart": {
@@ -180,9 +221,7 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
     }
     default_mapping = json.loads(json.dumps(mapping))
     del default_mapping["solver"]["controls"]
-    default_controls = regression.ParameterFit.from_mapping(
-        default_mapping
-    ).solver.controls
+    default_controls = regression.ParameterFit.from_mapping(default_mapping).solver.controls
     assert default_controls.maximum_iterations == 25
     assert default_controls.function_tolerance == 1.0e-6
     assert default_controls.gradient_tolerance == 1.0e-6
@@ -193,7 +232,11 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
     accepted = result.best_usable_start
     assert accepted is not None
     assert accepted.final_physical == pytest.approx((truth_parameter,), abs=3.0e-7)
-    assert accepted.predictions == pytest.approx((0.2,), abs=3.0e-8)
+    assert accepted.predictions == pytest.approx((direct_pressure, 0.2), rel=2.0e-12, abs=3.0e-8)
     assert accepted.owner_receipts
+    assert tuple(row.selector for row in result.evaluated_rows) == (
+        "pressure",
+        "cosolvent-uptake",
+    )
     fit_receipt = result.specification.to_mapping()["fit"]
     assert fit_receipt["fit"]["solver"]["controls"] == mapping["solver"]["controls"]

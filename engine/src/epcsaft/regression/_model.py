@@ -405,9 +405,7 @@ class ParameterFit:
             raise FitSchemaError("missing-value", "$.observations", "at least one required")
         families = tuple(observation.family for observation in observations)
         equilibrium_families = {"equilibrium"}
-        if any(item in equilibrium_families for item in families) and (
-            model.kind != "mixture" or any(item not in equilibrium_families for item in families)
-        ):
+        if any(item in equilibrium_families for item in families) and model.kind != "mixture":
             raise FitSchemaError(
                 "unsupported-model-domain",
                 "$.observations",
