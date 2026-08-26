@@ -71,7 +71,8 @@ _CORRELATIONS = MappingProxyType(
 _FIELDS = MappingProxyType(
     {
         "fit": _Fields(
-            ("schema_version", "parameters", "model", "active", "observations", "solver")
+            ("schema_version", "parameters", "model", "active", "observations", "solver"),
+            ("acceptance",),
         ),
         "parameters": _Fields(("path", "sha256")),
         "model": _Fields(("kind",)),
@@ -116,6 +117,7 @@ _FIELDS = MappingProxyType(
         "transformation": _Fields(("input", "output")),
         "quadrature": _Fields(("initial_order", "max_order", "tolerance")),
         "solver": _Fields(("multistart",), ("controls",)),
+        "acceptance": _Fields(("maximum_cost",)),
         "solver_controls": _Fields(
             (),
             (
@@ -369,6 +371,11 @@ class SolverSpec:
 
 
 @dataclass(frozen=True, slots=True)
+class FitAcceptanceSpec:
+    maximum_cost: float
+
+
+@dataclass(frozen=True, slots=True)
 class ActiveSelection:
     identities: tuple[str, ...]
     coordinates: tuple[tuple[str, FitCoordinate], ...]
@@ -383,6 +390,7 @@ class ParameterFit:
     active: ActiveSelection
     observations: tuple[ObservationSpec | EquilibriumFitObservation, ...]
     solver: SolverSpec
+    acceptance: FitAcceptanceSpec | None
 
     def __init__(self) -> None:
         raise TypeError("use ParameterFit.from_mapping or ParameterFit.from_json")
@@ -428,6 +436,12 @@ class ParameterFit:
             ("active", _parse_active(root["active"], "$.active")),
             ("observations", observations),
             ("solver", _parse_solver(root["solver"], "$.solver")),
+            (
+                "acceptance",
+                _parse_acceptance(root["acceptance"], "$.acceptance")
+                if "acceptance" in root
+                else None,
+            ),
         ):
             object.__setattr__(instance, name, item)
         return instance
@@ -465,7 +479,7 @@ class ParameterFit:
         return _digest(self.to_mapping())
 
     def to_mapping(self) -> dict[str, object]:
-        return {
+        result: dict[str, object] = {
             "schema_version": self.schema_version,
             "parameters": {"path": self.parameters.path, "sha256": self.parameters.sha256},
             "model": {"kind": self.model.kind},
@@ -485,6 +499,9 @@ class ParameterFit:
             ],
             "solver": _solver_mapping(self.solver),
         }
+        if self.acceptance is not None:
+            result["acceptance"] = {"maximum_cost": self.acceptance.maximum_cost}
+        return result
 
     def resolve(
         self,
@@ -934,6 +951,15 @@ def _parse_solver(value: object, path: str) -> SolverSpec:
     return SolverSpec(MultistartSpec(tuple(starts), margin), controls)
 
 
+def _parse_acceptance(value: object, path: str) -> FitAcceptanceSpec:
+    mapping = _mapping(value, path)
+    _keys(mapping, "acceptance", path)
+    maximum_cost = _number(mapping["maximum_cost"], f"{path}.maximum_cost")
+    if maximum_cost < 0.0:
+        raise FitSchemaError("invalid-value", f"{path}.maximum_cost", "nonnegative required")
+    return FitAcceptanceSpec(maximum_cost)
+
+
 def _coordinate_mapping(coordinate: FitCoordinate) -> dict[str, object]:
     result: dict[str, object] = {
         "bounds": list(coordinate.bounds),
@@ -1358,6 +1384,10 @@ def parameter_fit_json_schema() -> dict[str, object]:
                         ),
                     },
                     _FIELDS["solver"].required,
+                ),
+                "acceptance": _object_schema(
+                    {"maximum_cost": {"type": "number", "minimum": 0}},
+                    _FIELDS["acceptance"].required,
                 ),
             },
             _FIELDS["fit"].required,

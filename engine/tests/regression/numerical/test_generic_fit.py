@@ -215,9 +215,41 @@ def test_owner_blocks_preserve_mixed_active_order_and_complete_residual_jacobian
     """Falsify identity/order loss and residual scaling at the EOS--optimizer seam."""
 
     mapping, input_parameters, states = _mixed_fit_mapping(tmp_path)
-    result = fit(ParameterFit.from_mapping(mapping), base_path=tmp_path)
+    invalid = deepcopy(mapping)
+    invalid["acceptance"] = {"maximum_cost": -1.0}
+    with pytest.raises(ValueError, match=r"invalid-value at \$\.acceptance\.maximum_cost"):
+        ParameterFit.from_mapping(invalid)
+
+    mapping["acceptance"] = {"maximum_cost": 1.0e-20}
+    specification = ParameterFit.from_mapping(mapping)
+    assert specification.to_mapping()["acceptance"] == {"maximum_cost": 1.0e-20}
+    result = fit(specification, base_path=tmp_path)
     accepted = result.best_usable_start
     assert accepted is not None
+    assert result.outcomes == {
+        "solver_convergence": {
+            "status": "converged",
+            "reason": accepted.solver_status,
+        },
+        "numerical_convergence": {
+            "status": "converged",
+            "reason": "all declared starts reached one optimizer basin",
+            "attempted_starts": 3,
+            "usable_starts": 3,
+            "distinct_basins": 1,
+        },
+        "physical_certification": {
+            "status": "certified",
+            "reason": "all owner batches evaluated",
+        },
+        "scientific_fit_acceptance": {
+            "status": "accepted",
+            "reason": "best usable cost compared with declared maximum_cost",
+            "metric": "half_sum_of_squared_scaled_residuals",
+            "achieved": accepted.cost,
+            "threshold": 1.0e-20,
+        },
+    }
     assert (
         tuple(
             identity
@@ -298,6 +330,11 @@ def test_owner_blocks_preserve_mixed_active_order_and_complete_residual_jacobian
             / (4.0 * step)
         )
     assert objective_gradient == pytest.approx(centered_objective_gradient, rel=5.0e-5, abs=2.0e-10)
+
+    mapping["acceptance"] = {"maximum_cost": 1.0e-40}
+    rejected = fit(ParameterFit.from_mapping(mapping), base_path=tmp_path)
+    assert rejected.outcomes is not None
+    assert rejected.outcomes["scientific_fit_acceptance"]["status"] == "rejected"
 
 
 def test_tied_owner_coordinate_reports_interior_covariance_and_active_bound(

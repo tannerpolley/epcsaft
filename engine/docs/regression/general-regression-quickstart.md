@@ -54,6 +54,17 @@ Those values are the defaults. Ipopt stops when a convergence tolerance is
 reached or the iteration ceiling is exhausted. These controls do not alter EOS,
 phase-equilibrium, reaction, density, or certification tolerances.
 
+Callers may separately declare a fit-level scientific criterion:
+
+```python
+request["acceptance"] = {"maximum_cost": 10.0}
+```
+
+`maximum_cost` is compared with the achieved objective
+`0.5 * sum(scaled_residual**2)`. It does not change the solve or imply parameter
+adoption. With multiple declared starts, `FitResult` also reports whether every
+start was usable and reached the same optimizer basin.
+
 `FitResult` retains every start, residuals, exact Jacobians, rank, conditioning,
 active bounds, parameter-space optimizer basin/cluster identity, and artifact
 fingerprints. This optimizer cluster is not a thermodynamic physical-branch

@@ -772,6 +772,47 @@ class FitResult:
             )
         return tuple(values)
 
+    @property
+    def outcomes(self) -> dict[str, dict[str, object]] | None:
+        accepted = self.best_usable_start
+        if accepted is None:
+            return None
+        outcomes: dict[str, dict[str, object]] = {
+            name: dict(outcome) for name, outcome in accepted.outcomes.items()
+        }
+        basins = {
+            start.optimizer_basin for start in self.starts if start.optimizer_basin is not None
+        }
+        if len(self.starts) > 1:
+            usable_starts = sum(start.usable for start in self.starts)
+            converged = usable_starts == len(self.starts) and len(basins) == 1
+            outcomes["numerical_convergence"] = {
+                "status": "converged" if converged else "not_converged",
+                "reason": (
+                    "all declared starts reached one optimizer basin"
+                    if converged
+                    else "declared starts did not all reach one optimizer basin"
+                ),
+                "attempted_starts": len(self.starts),
+                "usable_starts": usable_starts,
+                "distinct_basins": len(basins),
+            }
+
+        resolved = cast(Mapping[str, object], self.specification.to_mapping()["fit"])
+        fit = cast(Mapping[str, object], resolved["fit"])
+        acceptance = fit.get("acceptance")
+        if isinstance(acceptance, Mapping):
+            threshold = float(acceptance["maximum_cost"])
+            passed = accepted.cost <= threshold
+            outcomes["scientific_fit_acceptance"] = {
+                "status": "accepted" if passed else "rejected",
+                "reason": "best usable cost compared with declared maximum_cost",
+                "metric": "half_sum_of_squared_scaled_residuals",
+                "achieved": accepted.cost,
+                "threshold": threshold,
+            }
+        return outcomes
+
     def _payload(self) -> dict[str, object]:
         accepted = self.best_usable_start
         return {
@@ -792,7 +833,7 @@ class FitResult:
             "evaluated_row_table_hash": self.evaluated_row_table_hash or None,
             "evaluated_rows": [row.to_mapping() for row in self.evaluated_rows],
             "best_usable_start": None if accepted is None else accepted.index,
-            "outcomes": None if accepted is None else accepted.outcomes,
+            "outcomes": self.outcomes,
             "starts": [start.to_mapping(self.specification.block_sizes) for start in self.starts],
         }
 
