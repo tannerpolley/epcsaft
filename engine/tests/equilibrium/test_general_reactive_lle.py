@@ -334,6 +334,48 @@ def test_explicit_phase_directions_reproduce_legacy_admissible_space() -> None:
         assert directed_row.jacobian == pytest.approx(legacy_row.jacobian, rel=2.0e-6, abs=2.0e-8)
 
 
+def test_declared_finite_phase_start_recovers_from_collapsed_candidate() -> None:
+    """Keep a valid caller start first, then recover through canonical partitions."""
+
+    _, model, problem = _fixture()
+    feed = tuple(
+        math.fsum(phase.start.amounts_mol[component] for phase in problem.phases)
+        for component in range(3)
+    )
+    collapsed_starts = tuple(
+        equilibrium.FinitePhaseStart(
+            tuple(amount / 2.0 for amount in feed),
+            phase.start.molar_volume_m3_per_mol,
+        )
+        for phase in problem.phases
+    )
+    result = equilibrium.phase_equilibrium(
+        model,
+        replace(
+            problem,
+            identity="manufactured-reactive-lle-collapsed-start",
+            phases=tuple(
+                replace(phase, start=start)
+                for phase, start in zip(problem.phases, collapsed_starts, strict=True)
+            ),
+        ),
+    )
+
+    assert result.status == "evaluated", result.failure
+    assert result.physical_status == "passed"
+    evidence = dict(result.evidence)
+    assert evidence["phase_distinctness"] > 1.0e-6
+    assert evidence["reduced_hessian_min_eigenvalue"] > 0.0
+    for phase in result.phases:
+        assert phase.pressure_pa == pytest.approx(1.0e5, rel=7.0e-9)
+    for left, right in zip(
+        result.phases[0].chemical_potential_over_rt,
+        result.phases[1].chemical_potential_over_rt,
+        strict=True,
+    ):
+        assert left == pytest.approx(right, abs=3.0e-8)
+
+
 def test_explicit_phase_directions_are_the_reactive_authority() -> None:
     """A configured direction space must not require a duplicate legacy reaction basis."""
 

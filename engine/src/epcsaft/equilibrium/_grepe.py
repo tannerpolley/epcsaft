@@ -2098,11 +2098,7 @@ def _compile_general_reactive_equilibrium(
             raise ValueError(
                 "explicit phase/species directions require declared reference phase amounts"
             )
-        generated_allocations = (
-            ()
-            if declared_start_set is not None
-            else _generated_finite_phase_allocations(problem, finite)
-        )
+        generated_allocations = _generated_finite_phase_allocations(problem, finite)
         owner_descriptor = _finite_phase_owner_descriptor(
             model,
             problem,
@@ -2776,7 +2772,6 @@ def _evaluate_finite_phase(
         def candidate_start_sets() -> Iterator[tuple[FinitePhaseStart, ...]]:
             if compilation.declared_start_set is not None:
                 yield compilation.declared_start_set
-                return
             for allocation in compilation.generated_allocations:
                 try:
                     yield _finite_phase_start_set_from_allocation(
