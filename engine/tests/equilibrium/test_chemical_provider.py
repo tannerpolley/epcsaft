@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 from typing import cast
 
@@ -643,53 +644,50 @@ def test_source_reference_pressure_column_matches_centered_resolves() -> None:
         x=tuple(amount / total for amount in reaction.feed_amounts_mol),
         phase="liquid",
     )
-    starts = (
-        {
-            "amounts_mol": reaction.feed_amounts_mol,
-            "molar_volume_m3_per_mol": 1.0
-            / float(start_state.molar_density.to("mole / meter**3").magnitude),
-        },
+    phase = replace(
+        phase,
+        start=equilibrium.FinitePhaseStart(
+            reaction.feed_amounts_mol,
+            1.0 / float(start_state.molar_density.to("mole / meter**3").magnitude),
+        ),
     )
     outputs = tuple(
-        {
-            "selector": "phase.amount",
-            "phase_index": 0,
-            "coefficients": tuple(float(component == species) for component in range(4)),
-            "solvent_mass_coefficients_kg_per_mol": (),
-        }
+        equilibrium.EquilibriumOutput(
+            f"amount-{species}",
+            "phase.amount",
+            "mole",
+            "true-species-amount",
+            phase.identity,
+            tuple(float(component == species) for component in range(4)),
+        )
         for species in range(4)
     )
 
-    def solve_native(trial_pressure_pa: float) -> dict[str, object]:
-        source = _grepe._reactive_finite_source_standard_state(
-            model,
+    def solve_native(trial_pressure_pa: float) -> object:
+        trial_problem = replace(
             problem,
-            phase,
-            temperature_k,
-            trial_pressure_pa,
-            None,
+            pressure=equilibrium.Fixed(trial_pressure_pa * epcsaft.unit_registry.pascal),
+            phases=(phase,),
+            outputs=outputs,
         )
-        return _core._reactive_finite_phases(
-            model._native_model(),
-            _grepe._finite_phase_spec(problem, temperature_k, trial_pressure_pa),
-            source,
-            ((1.0e-6, 0.74),),
-            starts,
-            reaction.strict_interior_amount_floor_mol,
-            False,
-            False,
+        return _core._solve_grepe(
+            model._native,
+            model._native,
+            trial_problem,
             None,
-            ((0, 1, 2, 3),),
-            outputs,
-        )
+            _grepe._source_reference_fingerprint(
+                reaction.source_standard_state,
+                active_parameters_requested=False,
+            ),
+        ).equilibrium
 
     center = solve_native(pressure_pa)
     lower = solve_native(pressure_pa - 5.0)
     upper = solve_native(pressure_pa + 5.0)
-    assert center["accepted"] and lower["accepted"] and upper["accepted"]
-    pressure_column = center["input_order"].index("pressure_pa")
-    width = len(center["input_order"])
+    assert center.accepted and lower.accepted and upper.accepted
+    pressure_column = center.input_order.index("pressure_pa")
+    width = len(center.input_order)
     for species in range(4):
-        analytic = center["output_input_derivatives"][species * width + pressure_column]
-        numerical = (upper["output_values"][species] - lower["output_values"][species]) / 10.0
+        analytic = center.output_input_derivatives[species * width + pressure_column]
+        numerical = (upper.output_values[species] - lower.output_values[species]) / 10.0
         assert abs(analytic - numerical) <= 5.0e-5 * max(abs(analytic), abs(numerical)) + 2.0e-9

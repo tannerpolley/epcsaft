@@ -215,23 +215,103 @@ def _held2_audit_step5_kkt(
     step4_binding_valid: bool,
     pressure_branch_valid: bool,
 ) -> dict[str, Any]: ...
-def _reactive_finite_phases(
+
+class _ReactiveFinitePhaseResult:
+    accepted: bool
+    solver_status: str
+    callback_error: str
+    callback_failure_kind: str
+    failure_reason: str
+    numerical_status: str
+    physical_status: str
+    provider_domain_status: str
+    resolved_policy: Sequence[tuple[str, float]]
+    phase_amounts_mol: Sequence[Sequence[float]]
+    phase_volumes_m3: Sequence[float]
+    phase_pressures_pa: Sequence[float]
+    phase_packing_fractions: Sequence[float]
+    phase_chemical_potentials_over_rt: Sequence[Sequence[float]]
+    phase_log_fugacities: Sequence[Sequence[float]]
+    local_variables: Sequence[float]
+    local_lower_bounds: Sequence[float]
+    local_upper_bounds: Sequence[float]
+    input_order: Sequence[str]
+    kkt_input_jacobian: Sequence[float]
+    input_amount_derivatives: Sequence[float]
+    input_volume_derivatives: Sequence[float]
+    input_pressure_derivatives: Sequence[float]
+    input_chemical_potential_derivatives: Sequence[float]
+    input_log_fugacity_derivatives: Sequence[float]
+    kkt_root_values: Sequence[float]
+    kkt_root_jacobian: Sequence[float]
+    kkt_dimension: int
+    kkt_rank: int
+    condition_number_inf: float
+    output_values: Sequence[float]
+    output_input_derivatives: Sequence[float]
+    output_local_derivatives: Sequence[float]
+    output_parameter_partials: Sequence[float]
+    objective_over_rt: float
+    balance_inf_norm: float
+    pressure_relative_inf_norm: float
+    reaction_affinity_inf_norm: float
+    transfer_chemical_potential_inf_norm: float
+    kkt_stationarity_inf_norm: float
+    phase_distinctness: float
+    minimum_amount_mol: float
+    minimum_bound_margin: float
+    reduced_hessian_min_eigenvalue: float
+    reduced_hessian_scale: float
+    reduced_hessian_threshold: float
+    declared_direction_rank: int
+    admissible_nullity: int
+    optimizer_iterations: int
+    provider_evaluation_count: int
+    derivative_audits_performed: bool
+    derivative_audit_status: str
+    objective_gradient_audit_max_relative_error: float
+    constraint_jacobian_audit_max_relative_error: float
+    lagrangian_hessian_audit_max_relative_error: float
+    parameter_order: Sequence[str]
+    sensitivity_status: str
+    sensitivity_failure_reason: str
+    amount_derivatives: Sequence[float]
+    volume_derivatives: Sequence[float]
+    pressure_derivatives: Sequence[float]
+    chemical_potential_derivatives: Sequence[float]
+    log_fugacity_derivatives: Sequence[float]
+
+class _GrepeResult:
+    formulation: str
+    certificate_scope: str
+    equilibrium: _ReactiveFinitePhaseResult
+    failure_code: str
+    temperature_k: float
+    pressure_pa: float
+    source_reference_representation_residual_inf_norm: float
+    evidence: Sequence[tuple[str, float]]
+    branch_kind: str
+    branch_coordinates: Sequence[float]
+    phase_mechanical_classes: Sequence[str]
+
+def _solve_grepe(
     model: NativeModel,
-    spec: dict[str, object],
-    source_standard_state: dict[str, object] | None,
-    packing_fraction_intervals: tuple[tuple[float, float], ...],
-    starts: tuple[dict[str, object], ...],
-    trace_floor: float,
-    active_parameters_requested: bool = ...,
-    derivative_audits_requested: bool = ...,
-    phase_direction_system: dict[str, object] | None = ...,
-    phase_support_indices: tuple[tuple[int, ...], ...] = ...,
-    outputs: tuple[dict[str, object], ...] = ...,
-    local_variables: Sequence[float] = ...,
-    local_lower_bounds: Sequence[float] = ...,
-    local_upper_bounds: Sequence[float] = ...,
-    ideal_gas: bool = ...,
-) -> dict[str, Any]: ...
+    incipient_model: NativeModel,
+    problem: object,
+    active_parameters: object | None = ...,
+    source_reference_fingerprint: str = ...,
+    perform_derivative_audits: bool = ...,
+    declared_starts_only: bool = ...,
+) -> _GrepeResult: ...
+def _evaluate_grepe_local(
+    model: NativeModel,
+    problem: object,
+    active_parameters: object | None,
+    source_reference_fingerprint: str,
+    local_variables: Sequence[float],
+    local_lower_bounds: Sequence[float],
+    local_upper_bounds: Sequence[float],
+) -> _GrepeResult: ...
 def _evaluate_saturation_nlp(
     model: NativeModel,
     temperature_k: float,

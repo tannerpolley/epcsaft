@@ -416,6 +416,51 @@ def test_solved_pressure_uses_generic_grepe_route() -> None:
     assert result.continuation_state is not None
     assert dict(result.evidence)["bubble_log_closure_abs"] < 2.0e-10
 
+    ideal = equilibrium.solve(
+        epcsaft.Mixture(parameters),
+        replace(
+            problem,
+            identity="generic-ideal-incipient-pressure",
+            phases=(
+                problem.phases[0],
+                replace(
+                    problem.phases[1],
+                    model=equilibrium.IdealGasModel("ideal-gas"),
+                ),
+            ),
+        ),
+    )
+    assert ideal.status == "evaluated", ideal.failure
+    assert 2.5e6 < ideal.values[0] < 4.0e6
+    assert ideal.phases[1].mechanical_class == "analytical_ideal_gas"
+
+    boundary = replace(
+        problem,
+        identity="fixed-pressure-incipient-composition-boundary",
+        feed=equilibrium.AffineFeed(
+            reaction.species_ids,
+            reaction.feed_amounts_mol,
+            ((1.0,), (-1.0,), (0.0,), (0.0,)),
+            (equilibrium.FeedCoordinate("composition-shift", (-0.02, 0.02)),),
+        ),
+        intensive_boundaries=(
+            equilibrium.IntensiveBoundary(
+                "imposed-bubble-pressure",
+                "composition-shift",
+                None,
+                "system.pressure",
+                (),
+                float(result.values[0]),
+                0.0,
+            ),
+        ),
+    )
+    boundary_result = equilibrium.solve(epcsaft.Mixture(parameters), boundary)
+    assert boundary_result.status == "evaluated", boundary_result.failure
+    assert boundary_result.values == pytest.approx(result.values, rel=2.0e-9, abs=2.0e-8)
+    assert boundary_result.branch_signature is not None
+    assert boundary_result.branch_signature[1][0][1] == pytest.approx(0.0, abs=2.0e-10)
+
     continued = equilibrium.solve(
         epcsaft.Mixture(parameters),
         replace(problem, continuation_state=result.continuation_state),
@@ -483,6 +528,33 @@ def test_solved_pressure_uses_generic_grepe_route() -> None:
             1.0, abs(derivative), abs(finite_difference)
         ) < 2.0e-7
 
+    boundary_exact = equilibrium.solve(
+        epcsaft.Mixture(parameters), boundary, active_parameters=center
+    )
+    boundary_sides = tuple(
+        equilibrium.solve(
+            epcsaft.Mixture(parameters),
+            boundary,
+            active_parameters=epcsaft.ActiveParameterSet(
+                parameters, (parameter_id,), values=(center.values[0] + sign * step,)
+            ),
+        )
+        for sign in (-1.0, 1.0)
+    )
+    assert boundary_exact.status == "evaluated", boundary_exact.failure
+    assert all(side.status == "evaluated" for side in boundary_sides)
+    for row, lower, upper in zip(
+        boundary_exact.rows,
+        boundary_sides[0].values,
+        boundary_sides[1].values,
+        strict=True,
+    ):
+        assert row.jacobian is not None and lower is not None and upper is not None
+        finite_difference = (float(upper) - float(lower)) / (2.0 * step)
+        assert row.jacobian[0] == pytest.approx(
+            finite_difference, rel=5.0e-5, abs=2.0e-9
+        )
+
     constant = reaction.equilibrium_constants[0]
     reversed_reaction = replace(
         reaction,
@@ -515,7 +587,7 @@ def test_solved_pressure_uses_generic_grepe_route() -> None:
         ),
     ):
         invariant = equilibrium.solve(model, candidate)
-        assert invariant.status == "evaluated", invariant.failure
+        assert invariant.status == "evaluated", (model.component_ids, invariant.failure)
         assert invariant.values[0] == pytest.approx(result.values[0], rel=3.0e-9)
 
     no_root = equilibrium.solve(
@@ -574,4 +646,4 @@ def test_solved_pressure_uses_generic_grepe_route() -> None:
     )
     assert support_loss.status == "non_evaluable"
     assert support_loss.failure is not None
-    assert support_loss.failure.code == "active_bound_ambiguity"
+    assert support_loss.failure.code == "active_bound_ambiguity", support_loss.failure

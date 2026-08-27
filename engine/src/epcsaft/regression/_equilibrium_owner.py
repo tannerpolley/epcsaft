@@ -23,12 +23,9 @@ from ..equilibrium import (
 )
 from ..equilibrium._api import _continuation_start
 from ..equilibrium._grepe import (
-    _compile_general_reactive_equilibrium,
     _effective_reaction_system,
-    _finite_phase_spec,
-    _FinitePhaseCompilation,
-    _reactive_finite_source_standard_state,
     _solve_general_reactive_equilibrium,
+    _source_reference_fingerprint,
 )
 from ..parameters import ActiveParameterSet
 from ..units import ParameterError
@@ -696,12 +693,8 @@ def _full_space_batches(
     batches: Sequence[_ReactiveBatch],
     owner: _EquilibriumOwnerEvaluator | None = None,
 ) -> tuple[Any, tuple[Mapping[str, object], ...]] | None:
-    active = ActiveParameterSet(resolved.parameters, resolved.selected_identities)
     compiled_batches: list[tuple[Any, ...]] = []
     for batch in batches:
-        compiled = _compile_general_reactive_equilibrium(
-            batch.model, batch.problem, active_parameters=active
-        )
         phase = batch.problem.phases[0]
         outputs = {output.identity: output for output in batch.problem.outputs}
         selected = tuple(
@@ -709,7 +702,7 @@ def _full_space_batches(
         )
         reaction = _effective_reaction_system(batch.problem)
         if (
-            not isinstance(compiled, _FinitePhaseCompilation)
+            batch.descriptor.formulation != "finite"
             or len(batch.problem.phases) != 1
             or not isinstance(phase.model, ProviderModel)
             or not isinstance(phase.support, AllComponents)
@@ -721,54 +714,13 @@ def _full_space_batches(
             )
         ):
             return None
-        temperature_k = compiled.temperature_k
-        pressure_pa = compiled.pressure_pa
-        spec = _finite_phase_spec(batch.problem, temperature_k, pressure_pa)
         reference = batch.problem.continuation_state.phase(phase.identity)
-        if (continuation := _continuation_start(reaction, reference)) is not None:
-            spec["continuation_start"] = {
-                "amounts": continuation[0],
-                "volume_m3": continuation[1],
-            }
+        continuation = _continuation_start(reaction, reference)
         if continuation is None:
             return None
-        output_payloads = tuple(
-            {
-                "selector": output.selector,
-                "phase_index": 0,
-                "coefficients": output.coefficients or (0.0,) * len(batch.model.component_ids),
-                "solvent_mass_coefficients_kg_per_mol": (
-                    output.solvent_mass_coefficients_kg_per_mol
-                ),
-            }
-            for output in selected
-        )
-        compiled_batches.append(
-            (
-                batch,
-                spec,
-                phase.model.admissible_packing_fraction_interval,
-                reaction.strict_interior_amount_floor_mol,
-                continuation,
-                output_payloads,
-            )
-        )
+        compiled_batches.append((batch, continuation, selected))
 
     coordinate_count = len(resolved.coordinates)
-
-    def source_state(
-        batch: _ReactiveBatch,
-        spec: Mapping[str, object],
-        trial: ActiveParameterSet,
-    ) -> dict[str, object] | None:
-        return _reactive_finite_source_standard_state(
-            batch.model,
-            batch.problem,
-            batch.problem.phases[0],
-            float(cast(Any, spec["temperature_k"])),
-            float(cast(Any, spec["pressure_pa"])),
-            trial,
-        )
 
     setups: list[Mapping[str, object]] = []
     start_blocks: list[tuple[Mapping[str, object], ...]] = []
@@ -782,33 +734,21 @@ def _full_space_batches(
             constraint_lower: list[float] = []
             constraint_upper: list[float] = []
             blocks: list[Mapping[str, object]] = []
-            for batch, spec, packing, trace_floor, continuation, outputs in compiled_batches:
-                native = cast(
-                    Mapping[str, object],
-                    _core._reactive_finite_phases(
-                        batch.model._native_model(trial),
-                        spec,
-                        source_state(batch, spec, trial),
-                        (packing,),
-                        (
-                            {
-                                "amounts_mol": continuation[0],
-                                "molar_volume_m3_per_mol": (
-                                    continuation[1] / math.fsum(continuation[0])
-                                ),
-                            },
-                        ),
-                        trace_floor,
-                        True,
-                        False,
-                        None,
-                        (tuple(range(len(batch.model.component_ids))),),
-                        outputs,
+            for batch, _continuation, _outputs in compiled_batches:
+                native = _core._solve_grepe(
+                    batch.model._native,
+                    batch.model._native,
+                    batch.problem,
+                    trial,
+                    _source_reference_fingerprint(
+                        batch.problem.reaction_system.source_standard_state,
+                        active_parameters_requested=True,
                     ),
                 )
-                local = tuple(cast(Sequence[float], native["local_variables"]))
-                local_lower = tuple(cast(Sequence[float], native["local_lower_bounds"]))
-                local_upper = tuple(cast(Sequence[float], native["local_upper_bounds"]))
+                equilibrium = native.equilibrium
+                local = tuple(equilibrium.local_variables)
+                local_lower = tuple(equilibrium.local_lower_bounds)
+                local_upper = tuple(equilibrium.local_upper_bounds)
                 if not local or len(local_lower) != len(local) or len(local_upper) != len(local):
                     return None
                 blocks.append(
@@ -890,46 +830,31 @@ def _full_space_batches(
         constraint_jacobian: list[float] = []
         continuation_starts: list[tuple[tuple[float, ...], float]] = []
         for compiled, bounds in zip(compiled_batches, start_blocks[start_index], strict=True):
-            batch, spec, packing, trace_floor, continuation, outputs = compiled
+            batch, _continuation, outputs = compiled
             local_width = cast(int, bounds["local_width"])
             local_offset = coordinate_count + cast(int, bounds["local_offset"])
-            native = cast(
-                Mapping[str, object],
-                _core._reactive_finite_phases(
-                    batch.model._native_model(trial),
-                    spec,
-                    source_state(batch, spec, trial),
-                    (packing,),
-                    (
-                        {
-                            "amounts_mol": continuation[0],
-                            "molar_volume_m3_per_mol": (
-                                continuation[1] / math.fsum(continuation[0])
-                            ),
-                        },
-                    ),
-                    trace_floor,
-                    True,
-                    False,
-                    None,
-                    (tuple(range(len(batch.model.component_ids))),),
-                    outputs,
-                    values[local_offset : local_offset + local_width],
-                    cast(Sequence[float], bounds["lower"]),
-                    cast(Sequence[float], bounds["upper"]),
+            native = _core._evaluate_grepe_local(
+                batch.model._native,
+                batch.problem,
+                trial,
+                _source_reference_fingerprint(
+                    batch.problem.reaction_system.source_standard_state,
+                    active_parameters_requested=True,
                 ),
+                values[local_offset : local_offset + local_width],
+                cast(Sequence[float], bounds["lower"]),
+                cast(Sequence[float], bounds["upper"]),
             )
-            amounts = tuple(
-                next(iter(cast(Sequence[Sequence[float]], native["phase_amounts_mol"])))
-            )
-            volume = float(next(iter(cast(Sequence[float], native["phase_volumes_m3"]))))
+            equilibrium = native.equilibrium
+            amounts = tuple(next(iter(equilibrium.phase_amounts_mol)))
+            volume = float(next(iter(equilibrium.phase_volumes_m3)))
             continuation_starts.append((amounts, volume))
-            predictions = tuple(cast(Sequence[float], native["output_values"]))
-            output_local = tuple(cast(Sequence[float], native["output_local_derivatives"]))
+            predictions = tuple(equilibrium.output_values)
+            output_local = tuple(equilibrium.output_local_derivatives)
             for target, output in zip(
                 (target for target in batch.targets if target.included), outputs, strict=True
             ):
-                output_index = outputs.index(output)
+                output_index = batch.problem.outputs.index(output)
                 prediction = float(predictions[output_index])
                 local_jacobian = output_local[
                     output_index * local_width : (output_index + 1) * local_width
@@ -954,11 +879,11 @@ def _full_space_batches(
                     factor * derivative for derivative in local_jacobian
                 )
                 residual_jacobian.extend(row_jacobian)
-            block_constraints = tuple(cast(Sequence[float], native["kkt_root_values"]))
+            block_constraints = tuple(equilibrium.kkt_root_values)
             constraints.extend(block_constraints)
-            state_jacobian = cast(Sequence[float], native["kkt_root_jacobian"])
-            order = tuple(cast(Sequence[str], native["input_order"]))
-            parameter_jacobian = cast(Sequence[float], native["kkt_input_jacobian"])
+            state_jacobian = equilibrium.kkt_root_jacobian
+            order = tuple(equilibrium.input_order)
+            parameter_jacobian = equilibrium.kkt_input_jacobian
             parameter_columns = {
                 identity: order.index(identity) for identity in resolved.selected_identities
             }
