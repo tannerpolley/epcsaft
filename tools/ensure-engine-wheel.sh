@@ -4,6 +4,12 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+prepare_native_build="${EPCSAFT_PREPARE_NATIVE_BUILD:-0}"
+if [[ "$prepare_native_build" != 0 && "$prepare_native_build" != 1 ]]; then
+    echo "EPCSAFT_PREPARE_NATIVE_BUILD must be 0 or 1" >&2
+    exit 2
+fi
+
 python="$repo_root/.venv/bin/python"
 if [[ ! -x "$python" ]]; then
     echo "missing root environment: $python" >&2
@@ -177,7 +183,7 @@ flock "$wheelhouse_lock_fd"
 
 ensure_configured_build() {
     if [[ ! -f "$build_dir/meson-info/meson-info.json" ]]; then
-        meson setup --wrap-mode=nodownload "$build_dir" engine
+        meson setup "$build_dir" engine
     fi
     if [[ ! -f "$configured_build_stamp" ]] \
         || [[ "$(<"$configured_build_stamp")" != "$build_fingerprint" ]]; then
@@ -204,7 +210,9 @@ fi
 if [[ "$wheel_current" == true ]]; then
     wheel="${wheels[0]}"
     if verification_output="$("$python" tools/verify-installed-wheel.py --wheel "$wheel" 2>&1)"; then
-        ensure_configured_build
+        if [[ "$prepare_native_build" == 1 ]]; then
+            ensure_configured_build
+        fi
         uv pip check --python "$python"
         printf '%s\n' "$verification_output"
         echo "Engine wheel is current; native rebuild skipped"
@@ -268,7 +276,7 @@ uv pip check --python "$python"
 "$python" tools/verify-installed-wheel.py --wheel "$wheel"
 if [[ "$wheel_origin" == rebuilt ]]; then
     record_rebuilt_configured_build
-else
+elif [[ "$prepare_native_build" == 1 ]]; then
     ensure_configured_build
 fi
 printf '%s\n' "$build_fingerprint" >"$stamp"
