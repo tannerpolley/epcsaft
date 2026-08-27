@@ -1,11 +1,11 @@
-#include "fit.hpp"
+#include "fit_core.hpp"
+#include "pure_saturation.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/SVD>
 #include <coin/IpIpoptApplication.hpp>
 #include <coin/IpSolveStatistics.hpp>
 #include <coin/IpTNLP.hpp>
-#include <pybind11/stl.h>
 
 #include <algorithm>
 #include <cmath>
@@ -15,10 +15,10 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
-
-namespace py = pybind11;
 
 namespace epcsaft::regression {
 namespace {
@@ -26,271 +26,11 @@ namespace {
 constexpr double kOptimizerBasinAffineDistanceMax = 1.0e-6;
 constexpr double kOptimizerBasinCostDifferenceFactor = 1.0e-8;
 
-enum class ResidualKind {
-  LogRatio,
-  ScaledDifference,
-  LeftCensored,
-  RightCensored,
-};
-
-struct Target final {
-  double observed;
-  ResidualKind residual;
-  double scale;
-  double multiplier;
-};
-
-struct Observation final {
-  double multiplier;
-  std::vector<Target> targets;
-};
-
-struct OwnerFailure final {
-  std::string code;
-  std::string reason;
-  std::size_t count{0};
-};
-
 struct OwnerEvaluation final {
   std::vector<double> values;
   std::vector<double> derivatives;
-  std::string receipt_json;
+  std::optional<epcsaft_engine::equilibrium::GrepeResult> owner_result;
 };
-
-struct Coordinate final {
-  double origin;
-  double scale;
-  double lower_affine;
-  double upper_affine;
-};
-
-struct Start final {
-  std::string identity;
-  std::vector<double> affine;
-};
-
-struct Controls final {
-  std::vector<Start> starts;
-  double affine_bound_margin;
-  int maximum_iterations;
-  double optimizer_tolerance;
-};
-
-struct FullSpaceSetup final {
-  std::vector<double> initial;
-  std::vector<double> lower;
-  std::vector<double> upper;
-  std::vector<double> constraint_lower;
-  std::vector<double> constraint_upper;
-  std::vector<int> jacobian_rows;
-  std::vector<int> jacobian_columns;
-};
-
-struct Diagnostics final {
-  std::vector<double> singular_values;
-  std::vector<double> affine_covariance;
-  int rank{0};
-  int free_subspace_rank{0};
-  double condition_number{std::numeric_limits<double>::infinity()};
-  std::size_t degrees_of_freedom{0};
-  std::size_t information_row_count{0};
-  std::vector<std::size_t> free_coordinate_indices;
-  double residual_variance{std::numeric_limits<double>::quiet_NaN()};
-  std::string covariance_status{"not_evaluated"};
-};
-
-struct BatchOutcome final {
-  std::size_t index{0};
-  std::size_t row_count{0};
-  std::string status{"not_evaluated"};
-  std::string failure_code;
-};
-
-struct StartResult final {
-  std::size_t index{0};
-  std::string start_identity;
-  std::vector<double> initial_affine;
-  std::vector<double> final_affine;
-  std::vector<double> predictions;
-  std::vector<double> residuals;
-  std::vector<double> affine_jacobian;
-  std::vector<OwnerFailure> owner_failures;
-  std::vector<std::string> owner_receipts_json;
-  std::vector<BatchOutcome> batch_outcomes;
-  Diagnostics diagnostics;
-  std::vector<std::size_t> active_bounds;
-  std::string solver_status;
-  std::string failure_reason;
-  std::string trial_failure_code;
-  int iterations{0};
-  std::size_t non_evaluable_count{0};
-  double cost{std::numeric_limits<double>::infinity()};
-  bool usable{false};
-  std::size_t optimizer_basin{std::numeric_limits<std::size_t>::max()};
-};
-
-ResidualKind residual_kind(const std::string &value) {
-  if (value == "log_ratio") {
-    return ResidualKind::LogRatio;
-  }
-  if (value == "scaled_difference") {
-    return ResidualKind::ScaledDifference;
-  }
-  if (value == "left_censored") {
-    return ResidualKind::LeftCensored;
-  }
-  if (value == "right_censored") {
-    return ResidualKind::RightCensored;
-  }
-  throw std::invalid_argument("unknown residual kind: " + value);
-}
-
-template <typename Value>
-Value required(const py::dict &mapping, const char *name) {
-  if (!mapping.contains(name)) {
-    throw std::invalid_argument(std::string("missing field: ") + name);
-  }
-  return py::cast<Value>(mapping[name]);
-}
-
-std::vector<Observation> parse_observations(const py::iterable &values) {
-  std::vector<Observation> observations;
-  for (const py::handle item : values) {
-    const auto mapping = py::cast<py::dict>(item);
-    Observation observation{
-        required<double>(mapping, "multiplier"),
-        {},
-    };
-    if (!(std::isfinite(observation.multiplier) &&
-          observation.multiplier > 0.0)) {
-      throw std::invalid_argument(
-          "observation multiplier must be positive and finite");
-    }
-    for (const py::handle target_item :
-         required<py::iterable>(mapping, "targets")) {
-      const auto target_mapping = py::cast<py::dict>(target_item);
-      Target target{
-          required<double>(target_mapping, "observed"),
-          residual_kind(required<std::string>(target_mapping, "residual")),
-          required<double>(target_mapping, "scale"),
-          target_mapping.contains("multiplier")
-              ? py::cast<double>(target_mapping["multiplier"])
-              : 1.0,
-      };
-      if (!(std::isfinite(target.observed) && std::isfinite(target.scale) &&
-            target.scale > 0.0 && std::isfinite(target.multiplier) &&
-            target.multiplier > 0.0)) {
-        throw std::invalid_argument(
-            "target values, scales, and multipliers must be finite");
-      }
-      if (target.residual == ResidualKind::LogRatio && target.observed <= 0.0) {
-        throw std::invalid_argument(
-            "log-ratio observations must be strictly positive");
-      }
-      observation.targets.push_back(target);
-    }
-    if (observation.targets.empty()) {
-      throw std::invalid_argument("observation targets must be nonempty");
-    }
-    observations.push_back(std::move(observation));
-  }
-  if (observations.empty()) {
-    throw std::invalid_argument("observations must be nonempty");
-  }
-  return observations;
-}
-
-std::vector<Coordinate> parse_coordinates(const py::iterable &values) {
-  std::vector<Coordinate> coordinates;
-  for (const py::handle item : values) {
-    const auto mapping = py::cast<py::dict>(item);
-    Coordinate coordinate{
-        required<double>(mapping, "origin"),
-        required<double>(mapping, "scale"),
-        required<double>(mapping, "lower_affine"),
-        required<double>(mapping, "upper_affine"),
-    };
-    if (!(std::isfinite(coordinate.origin) && std::isfinite(coordinate.scale) &&
-          coordinate.scale > 0.0 && std::isfinite(coordinate.lower_affine) &&
-          std::isfinite(coordinate.upper_affine) &&
-          coordinate.lower_affine < coordinate.upper_affine)) {
-      throw std::invalid_argument("coordinate origin, scale, and affine bounds "
-                                  "must be finite and consistent");
-    }
-    coordinates.push_back(coordinate);
-  }
-  if (coordinates.empty()) {
-    throw std::invalid_argument("coordinates must be nonempty");
-  }
-  return coordinates;
-}
-
-Controls parse_controls(const py::dict &mapping) {
-  const auto raw_starts = required<py::iterable>(mapping, "starts");
-  std::vector<Start> starts;
-  for (const py::handle item : raw_starts) {
-    const auto start = py::cast<py::dict>(item);
-    starts.push_back({required<std::string>(start, "identity"),
-                      required<std::vector<double>>(start, "affine")});
-  }
-  Controls controls{
-      std::move(starts),
-      required<double>(mapping, "affine_bound_margin"),
-      required<int>(mapping, "maximum_iterations"),
-      required<double>(mapping, "optimizer_tolerance"),
-  };
-  if (controls.starts.empty() || controls.maximum_iterations <= 0 ||
-      !(std::isfinite(controls.affine_bound_margin) &&
-        controls.affine_bound_margin >= 0.0 &&
-        std::isfinite(controls.optimizer_tolerance) &&
-        controls.optimizer_tolerance > 0.0)) {
-    throw std::invalid_argument("solver controls must be positive and finite");
-  }
-  return controls;
-}
-
-std::vector<FullSpaceSetup> parse_full_space_setups(
-    const py::iterable &values) {
-  std::vector<FullSpaceSetup> setups;
-  for (const py::handle item : values) {
-    const auto mapping = py::cast<py::dict>(item);
-    FullSpaceSetup setup{
-        required<std::vector<double>>(mapping, "initial"),
-        required<std::vector<double>>(mapping, "lower"),
-        required<std::vector<double>>(mapping, "upper"),
-        required<std::vector<double>>(mapping, "constraint_lower"),
-        required<std::vector<double>>(mapping, "constraint_upper"),
-        required<std::vector<int>>(mapping, "jacobian_rows"),
-        required<std::vector<int>>(mapping, "jacobian_columns"),
-    };
-    if (setup.initial.empty() || setup.lower.size() != setup.initial.size() ||
-        setup.upper.size() != setup.initial.size() ||
-        setup.constraint_lower.empty() ||
-        setup.constraint_upper.size() != setup.constraint_lower.size() ||
-        setup.jacobian_rows.size() != setup.jacobian_columns.size()) {
-      throw std::invalid_argument("full-space setup dimensions are invalid");
-    }
-    for (std::size_t index = 0; index < setup.initial.size(); ++index) {
-      if (!std::isfinite(setup.initial[index]) ||
-          !std::isfinite(setup.lower[index]) ||
-          !std::isfinite(setup.upper[index]) ||
-          setup.lower[index] >= setup.upper[index] ||
-          setup.initial[index] < setup.lower[index] ||
-          setup.initial[index] > setup.upper[index]) {
-        throw std::invalid_argument("full-space local bounds are invalid");
-      }
-    }
-    for (std::size_t index = 0; index < setup.constraint_lower.size(); ++index) {
-      if (!std::isfinite(setup.constraint_lower[index]) ||
-          !std::isfinite(setup.constraint_upper[index]) ||
-          setup.constraint_lower[index] > setup.constraint_upper[index]) {
-        throw std::invalid_argument("full-space constraint bounds are invalid");
-      }
-    }
-    setups.push_back(std::move(setup));
-  }
-  return setups;
-}
 
 class OwnerEvaluationError final : public std::runtime_error {
 public:
@@ -303,17 +43,191 @@ private:
   std::string code_;
 };
 
-class OwnerCost final {
+NativeModel with_active_values(const NativeModel &base,
+                               const std::vector<std::string> &identities,
+                               const std::vector<double> &active) {
+  auto coordinates = base.active_coordinates();
+  for (auto &coordinate : coordinates) {
+    const auto found =
+        std::find(identities.begin(), identities.end(), coordinate.identity);
+    if (found == identities.end()) {
+      throw OwnerEvaluationError("parameter_topology_mismatch",
+                                 "native active coordinate identity changed");
+    }
+    const std::size_t index =
+        static_cast<std::size_t>(found - identities.begin());
+    coordinate.value = active[index];
+  }
+  return base.with_active_coordinates(coordinates);
+}
+
+OwnerEvaluation evaluate_direct(const DirectEosExperiment &experiment,
+                                const std::vector<double> &active) {
+  std::vector<std::string> identities;
+  for (const auto &coordinate : experiment.model.active_coordinates()) {
+    identities.push_back(coordinate.identity);
+  }
+  const NativeModel model =
+      with_active_values(experiment.model, identities, active);
+  std::vector<double> values;
+  std::vector<double> derivatives;
+  const std::size_t parameter_count = active.size();
+  if (experiment.kind == DirectEosKind::FixedState) {
+    if (!(experiment.molar_density_mol_m3 > 0.0) ||
+        experiment.composition.size() != model.component_count()) {
+      throw OwnerEvaluationError("parameter_topology_mismatch",
+                                 "fixed-state native experiment is invalid");
+    }
+    const double volume = 1.0 / experiment.molar_density_mol_m3;
+    const auto block = model.evaluate_phase_derivatives(
+        experiment.temperature_k, experiment.composition, volume,
+        model.active_coordinates(), 2);
+    const std::size_t component_count = experiment.composition.size();
+    const std::size_t width = component_count + 1 + parameter_count;
+    values.push_back(block.helmholtz_over_rt_reference_amount);
+    values.push_back(block.pressure_pa);
+    values.insert(values.end(), block.gradient.begin(),
+                  block.gradient.begin() +
+                      static_cast<std::ptrdiff_t>(component_count));
+    derivatives.resize(values.size() * parameter_count);
+    for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
+      const std::size_t column = component_count + 1 + parameter;
+      derivatives[parameter] = block.gradient[column];
+      derivatives[parameter_count + parameter] =
+          -8.31446261815324 * experiment.temperature_k *
+          block.hessian[component_count * width + column];
+      for (std::size_t component = 0; component < component_count; ++component) {
+        derivatives[(component + 2) * parameter_count + parameter] =
+            block.hessian[component * width + column];
+      }
+    }
+  } else {
+    const auto saturation = solve_local_saturation_active(
+        model, experiment.temperature_k, model.active_coordinates());
+    if (!saturation.solve.accepted) {
+      throw OwnerEvaluationError(
+          "physical_rejection",
+          saturation.solve.rejection_status + ": " +
+              (saturation.solve.failure_reason.empty()
+                   ? saturation.solve.solver_status
+                   : saturation.solve.failure_reason));
+    }
+    const auto &solve = saturation.solve;
+    values = {solve.evaluation.saturation_pressure_pa,
+              solve.evaluation.vapor.amount_mol / solve.evaluation.vapor.volume_m3,
+              solve.evaluation.liquid.amount_mol / solve.evaluation.liquid.volume_m3};
+    derivatives = saturation.derivatives;
+    const auto &molar_masses = model.molar_masses_kg_per_mol();
+    if (molar_masses.size() == 1 && std::isfinite(molar_masses.front())) {
+      values.push_back(values[1] * molar_masses.front());
+      values.push_back(values[2] * molar_masses.front());
+      for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
+        derivatives.push_back(
+            derivatives[parameter_count + parameter] * molar_masses.front());
+      }
+      for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
+        derivatives.push_back(
+            derivatives[2 * parameter_count + parameter] * molar_masses.front());
+      }
+    }
+  }
+  OwnerEvaluation selected;
+  selected.values.reserve(experiment.selected_rows.size());
+  selected.derivatives.reserve(experiment.selected_rows.size() * parameter_count);
+  for (const std::size_t row : experiment.selected_rows) {
+    if (row >= values.size() || (row + 1) * parameter_count > derivatives.size()) {
+      throw OwnerEvaluationError("owner_contract_failure",
+                                 "direct EOS selected row is unavailable");
+    }
+    selected.values.push_back(values[row]);
+    selected.derivatives.insert(
+        selected.derivatives.end(),
+        derivatives.begin() + static_cast<std::ptrdiff_t>(row * parameter_count),
+        derivatives.begin() +
+            static_cast<std::ptrdiff_t>((row + 1) * parameter_count));
+  }
+  return selected;
+}
+
+OwnerEvaluation evaluate_grepe(const GrepeExperiment &experiment,
+                               const std::vector<double> &active,
+                               bool retain_result) {
+  using epcsaft_engine::equilibrium::solve_grepe;
+  std::vector<std::string> identities;
+  for (const auto &coordinate : experiment.model.active_coordinates()) {
+    identities.push_back(coordinate.identity);
+  }
+  const NativeModel model =
+      with_active_values(experiment.model, identities, active);
+  const NativeModel incipient =
+      with_active_values(experiment.incipient_model, identities, active);
+  auto native = solve_grepe(model, incipient, experiment.request);
+  const auto &equilibrium = native.equilibrium;
+  if (!equilibrium.accepted) {
+    std::string code = native.failure_code;
+    if (code.empty()) {
+      code = equilibrium.provider_domain_status == "failed"
+                 ? "provider_domain_rejection"
+                 : equilibrium.physical_status == "failed"
+                       ? "physical_rejection"
+                       : "numerical_convergence_failure";
+    }
+    throw OwnerEvaluationError(
+        code, equilibrium.failure_reason.empty() ? equilibrium.solver_status
+                                                 : equilibrium.failure_reason);
+  }
+  const std::size_t input_width = equilibrium.input_order.size();
+  if (input_width == 0 ||
+      equilibrium.output_input_derivatives.size() !=
+          equilibrium.output_values.size() * input_width) {
+    throw OwnerEvaluationError("owner_contract_failure",
+                               "GREPE returned an invalid ordered Jacobian");
+  }
+  std::vector<std::size_t> active_columns;
+  active_columns.reserve(experiment.model.active_coordinates().size());
+  for (const auto &coordinate : experiment.model.active_coordinates()) {
+    const auto found = std::find(equilibrium.input_order.begin(),
+                                 equilibrium.input_order.end(),
+                                 coordinate.identity);
+    if (found == equilibrium.input_order.end()) {
+      throw OwnerEvaluationError("first_order_failure",
+                                 "GREPE omitted an active derivative column");
+    }
+    active_columns.push_back(static_cast<std::size_t>(
+        found - equilibrium.input_order.begin()));
+  }
+  OwnerEvaluation selected;
+  selected.values.reserve(experiment.selected_rows.size());
+  selected.derivatives.reserve(experiment.selected_rows.size() * active.size());
+  for (const std::size_t row : experiment.selected_rows) {
+    if (row >= equilibrium.output_values.size()) {
+      throw OwnerEvaluationError("owner_contract_failure",
+                                 "GREPE selected output row is unavailable");
+    }
+    selected.values.push_back(equilibrium.output_values[row]);
+    for (const std::size_t column : active_columns) {
+      selected.derivatives.push_back(
+          equilibrium.output_input_derivatives[row * input_width + column]);
+    }
+  }
+  if (selected.derivatives.size() != selected.values.size() * active.size()) {
+    throw OwnerEvaluationError("owner_contract_failure",
+                               "GREPE active Jacobian order changed");
+  }
+  if (retain_result) {
+    selected.owner_result = std::move(native);
+  }
+  return selected;
+}
+
+class NativeCost final {
 public:
-  OwnerCost(PyObject *owner_evaluator, std::size_t start_index,
-            std::size_t observation_index, std::size_t active_parameter_count,
+  NativeCost(const Experiment &experiment, std::size_t active_parameter_count,
             std::vector<std::size_t> identity_coordinates,
             std::vector<double> coordinate_origins,
             std::vector<double> coordinate_scales, Observation observation,
             std::vector<std::string> failure_codes)
-      : owner_evaluator_(owner_evaluator), start_index_(start_index),
-        observation_index_(observation_index),
-        active_parameter_count_(active_parameter_count),
+      : experiment_(experiment), active_parameter_count_(active_parameter_count),
         identity_coordinates_(std::move(identity_coordinates)),
         coordinate_origins_(std::move(coordinate_origins)),
         coordinate_scales_(std::move(coordinate_scales)),
@@ -323,8 +237,9 @@ public:
   std::size_t row_count() const noexcept { return observation_.targets.size(); }
 
   bool evaluate(double const *const *parameters, double *residuals,
-                double **jacobians, double *predictions, bool receipt_requested,
-                std::string *receipt_json) const {
+                double **jacobians, double *predictions, bool retain_result,
+                std::optional<epcsaft_engine::equilibrium::GrepeResult>
+                    *owner_result) const {
     try {
       std::vector<double> active(active_parameter_count_);
       for (std::size_t index = 0; index < active_parameter_count_; ++index) {
@@ -333,10 +248,18 @@ public:
             coordinate_origins_[coordinate] +
             parameters[coordinate][0] * coordinate_scales_[coordinate];
       }
-      const OwnerEvaluation evaluation =
-          evaluate_owner(active, receipt_requested);
-      if (receipt_json != nullptr) {
-        *receipt_json = evaluation.receipt_json;
+      const OwnerEvaluation evaluation = std::visit(
+          [&](const auto &experiment) -> OwnerEvaluation {
+            using Value = std::decay_t<decltype(experiment)>;
+            if constexpr (std::is_same_v<Value, DirectEosExperiment>) {
+              return evaluate_direct(experiment, active);
+            } else {
+              return evaluate_grepe(experiment, active, retain_result);
+            }
+          },
+          experiment_);
+      if (owner_result != nullptr) {
+        *owner_result = evaluation.owner_result;
       }
       for (std::size_t row = 0; row < observation_.targets.size(); ++row) {
         const auto &target = observation_.targets[row];
@@ -447,60 +370,12 @@ public:
   }
 
 private:
-  OwnerEvaluation evaluate_owner(const std::vector<double> &active,
-                                 bool receipt_requested) const {
-    py::gil_scoped_acquire acquire;
-    const auto evaluator =
-        py::reinterpret_borrow<py::function>(py::handle(owner_evaluator_));
-    const py::dict result = py::cast<py::dict>(
-        evaluator(start_index_, observation_index_, active, receipt_requested));
-    const std::string status = required<std::string>(result, "status");
-    if (status == "rejected") {
-      const auto failure = required<py::dict>(result, "failure");
-      const std::string code = required<std::string>(failure, "code");
-      const std::string reason = required<std::string>(failure, "reason");
-      if (std::find(failure_codes_.begin(), failure_codes_.end(), code) ==
-          failure_codes_.end()) {
-        throw OwnerEvaluationError("owner_contract_failure",
-                                   "owner returned unknown failure code '" +
-                                       code + "': " + reason);
-      }
-      throw OwnerEvaluationError(code, reason);
-    }
-    if (status != "accepted") {
-      throw OwnerEvaluationError("owner_contract_failure",
-                                 "unknown owner evaluation status");
-    }
-    OwnerEvaluation evaluation{
-        required<std::vector<double>>(result, "predictions"),
-        required<std::vector<double>>(result, "jacobian"),
-        result.contains("receipt_json")
-            ? py::cast<std::string>(result["receipt_json"])
-            : std::string{},
-    };
-    if (evaluation.values.size() != observation_.targets.size() ||
-        evaluation.derivatives.size() !=
-            observation_.targets.size() * active_parameter_count_) {
-      throw OwnerEvaluationError(
-          "owner_contract_failure",
-          "owner block has the wrong value or Jacobian shape");
-    }
-    if (!std::all_of(evaluation.derivatives.begin(),
-                     evaluation.derivatives.end(),
-                     [](double value) { return std::isfinite(value); })) {
-      throw OwnerEvaluationError(
-          "owner_contract_failure",
-          "owner block contains a nonfinite Jacobian derivative");
-    }
-    if (!receipt_requested && !evaluation.receipt_json.empty()) {
-      throw OwnerEvaluationError(
-          "owner_contract_failure",
-          "owner returned a receipt for an ordinary trial evaluation");
-    }
-    return evaluation;
-  }
-
-  bool reject(const std::string &code, const std::string &reason) const {
+  bool reject(const std::string &raw_code, const std::string &reason) const {
+    const std::string code =
+        std::find(failure_codes_.begin(), failure_codes_.end(), raw_code) ==
+                failure_codes_.end()
+            ? "owner_contract_failure"
+            : raw_code;
     const auto match =
         std::find_if(owner_failures_.begin(), owner_failures_.end(),
                      [&](const OwnerFailure &failure) {
@@ -514,9 +389,7 @@ private:
     return false;
   }
 
-  PyObject *owner_evaluator_;
-  std::size_t start_index_;
-  std::size_t observation_index_;
+  const Experiment &experiment_;
   std::size_t active_parameter_count_;
   std::vector<std::size_t> identity_coordinates_;
   std::vector<double> coordinate_origins_;
@@ -709,7 +582,7 @@ bool ipopt_solution_usable(Ipopt::ApplicationReturnStatus status) {
 
 class ReducedSpaceNlp final : public Ipopt::TNLP {
 public:
-  ReducedSpaceNlp(const std::vector<std::unique_ptr<OwnerCost>> &costs,
+  ReducedSpaceNlp(const std::vector<std::unique_ptr<NativeCost>> &costs,
                   const std::vector<Coordinate> &coordinates,
                   std::vector<double> initial)
       : costs_(costs), coordinates_(coordinates), initial_(std::move(initial)),
@@ -849,7 +722,7 @@ private:
     return cached_evaluable_;
   }
 
-  const std::vector<std::unique_ptr<OwnerCost>> &costs_;
+  const std::vector<std::unique_ptr<NativeCost>> &costs_;
   const std::vector<Coordinate> &coordinates_;
   std::vector<double> initial_;
   std::vector<double> solution_;
@@ -859,36 +732,95 @@ private:
   mutable bool cached_evaluable_{false};
 };
 
+struct FullSpaceBlock final {
+  const GrepeExperiment *experiment;
+  const Observation *observation;
+  std::size_t local_offset;
+  std::size_t local_width;
+  std::size_t constraint_offset;
+  std::vector<double> lower;
+  std::vector<double> upper;
+};
+
 class SparseFullSpaceNlp final : public Ipopt::TNLP {
 public:
-  SparseFullSpaceNlp(PyObject *evaluator, std::size_t start_index,
-                     std::vector<double> initial, std::vector<double> lower,
-                     std::vector<double> upper, std::size_t residual_count,
-                     std::vector<double> constraint_lower,
-                     std::vector<double> constraint_upper,
-                     std::vector<int> jacobian_rows,
-                     std::vector<int> jacobian_columns)
-      : evaluator_(evaluator), start_index_(start_index),
-        initial_(std::move(initial)),
-        lower_(std::move(lower)), upper_(std::move(upper)),
-        residual_count_(residual_count),
-        constraint_lower_(std::move(constraint_lower)),
-        constraint_upper_(std::move(constraint_upper)),
-        jacobian_rows_(std::move(jacobian_rows)),
-        jacobian_columns_(std::move(jacobian_columns)), solution_(initial_) {
-    Py_INCREF(evaluator_);
-  }
-
-  ~SparseFullSpaceNlp() override {
-    py::gil_scoped_acquire acquire;
-    Py_DECREF(evaluator_);
+  SparseFullSpaceNlp(const std::vector<Experiment> &experiments,
+                     const std::vector<Observation> &observations,
+                     const std::vector<std::size_t> &identity_coordinates,
+                     const std::vector<Coordinate> &coordinates,
+                     std::vector<double> affine)
+      : identity_coordinates_(identity_coordinates), coordinates_(coordinates),
+        initial_(std::move(affine)) {
+    lower_.reserve(initial_.size());
+    upper_.reserve(initial_.size());
+    for (const auto &coordinate : coordinates_) {
+      lower_.push_back(coordinate.lower_affine);
+      upper_.push_back(coordinate.upper_affine);
+    }
+    const std::vector<double> active = active_values(initial_.data());
+    std::size_t constraint_offset = 0;
+    for (std::size_t index = 0; index < experiments.size(); ++index) {
+      const auto &experiment = std::get<GrepeExperiment>(experiments[index]);
+      std::vector<std::string> identities;
+      for (const auto &coordinate : experiment.model.active_coordinates()) {
+        identities.push_back(coordinate.identity);
+      }
+      const auto native = epcsaft_engine::equilibrium::solve_grepe(
+          with_active_values(experiment.model, identities, active),
+          with_active_values(experiment.incipient_model, identities, active),
+          experiment.request);
+      const auto &equilibrium = native.equilibrium;
+      if (!equilibrium.accepted || equilibrium.local_variables.empty() ||
+          equilibrium.local_lower_bounds.size() !=
+              equilibrium.local_variables.size() ||
+          equilibrium.local_upper_bounds.size() !=
+              equilibrium.local_variables.size() ||
+          equilibrium.kkt_root_values.size() !=
+              equilibrium.local_variables.size()) {
+        throw OwnerEvaluationError(
+            native.failure_code.empty() ? "physical_rejection"
+                                        : native.failure_code,
+            equilibrium.failure_reason.empty() ? equilibrium.solver_status
+                                               : equilibrium.failure_reason);
+      }
+      const std::size_t local_offset = initial_.size();
+      const std::size_t local_width = equilibrium.local_variables.size();
+      blocks_.push_back({&experiment, &observations[index], local_offset,
+                         local_width, constraint_offset,
+                         equilibrium.local_lower_bounds,
+                         equilibrium.local_upper_bounds});
+      initial_.insert(initial_.end(), equilibrium.local_variables.begin(),
+                      equilibrium.local_variables.end());
+      lower_.insert(lower_.end(), equilibrium.local_lower_bounds.begin(),
+                    equilibrium.local_lower_bounds.end());
+      upper_.insert(upper_.end(), equilibrium.local_upper_bounds.begin(),
+                    equilibrium.local_upper_bounds.end());
+      for (std::size_t row = 0; row < local_width; ++row) {
+        for (std::size_t coordinate = 0; coordinate < coordinates_.size();
+             ++coordinate) {
+          jacobian_rows_.push_back(
+              static_cast<int>(constraint_offset + row));
+          jacobian_columns_.push_back(static_cast<int>(coordinate));
+        }
+        for (std::size_t local = 0; local < local_width; ++local) {
+          jacobian_rows_.push_back(
+              static_cast<int>(constraint_offset + row));
+          jacobian_columns_.push_back(
+              static_cast<int>(local_offset + local));
+        }
+      }
+      constraint_offset += local_width;
+      residual_count_ += observations[index].targets.size();
+    }
+    constraint_count_ = constraint_offset;
+    solution_ = initial_;
   }
 
   bool get_nlp_info(Ipopt::Index &n, Ipopt::Index &m,
                     Ipopt::Index &nnz_jac_g, Ipopt::Index &nnz_h_lag,
                     IndexStyleEnum &index_style) override {
     n = static_cast<Ipopt::Index>(initial_.size());
-    m = static_cast<Ipopt::Index>(constraint_lower_.size());
+    m = static_cast<Ipopt::Index>(constraint_count_);
     nnz_jac_g = static_cast<Ipopt::Index>(jacobian_rows_.size());
     nnz_h_lag = 0;
     index_style = TNLP::C_STYLE;
@@ -903,8 +835,8 @@ public:
     }
     std::copy(lower_.begin(), lower_.end(), x_l);
     std::copy(upper_.begin(), upper_.end(), x_u);
-    std::copy(constraint_lower_.begin(), constraint_lower_.end(), g_l);
-    std::copy(constraint_upper_.begin(), constraint_upper_.end(), g_u);
+    std::fill(g_l, g_l + m, 0.0);
+    std::fill(g_u, g_u + m, 0.0);
     return true;
   }
 
@@ -990,7 +922,17 @@ public:
 private:
   bool dimensions(Ipopt::Index n, Ipopt::Index m) const noexcept {
     return n == static_cast<Ipopt::Index>(initial_.size()) &&
-           m == static_cast<Ipopt::Index>(constraint_lower_.size());
+           m == static_cast<Ipopt::Index>(constraint_count_);
+  }
+
+  std::vector<double> active_values(const double *x) const {
+    std::vector<double> result(identity_coordinates_.size());
+    for (std::size_t identity = 0; identity < result.size(); ++identity) {
+      const std::size_t coordinate = identity_coordinates_[identity];
+      result[identity] = coordinates_[coordinate].origin +
+                         x[coordinate] * coordinates_[coordinate].scale;
+    }
+    return result;
   }
 
   bool evaluate(Ipopt::Index n, const Ipopt::Number *x) const {
@@ -999,59 +941,169 @@ private:
     }
     if (cached_x_.size() == initial_.size() &&
         std::equal(x, x + n, cached_x_.begin())) {
-      return !callback_failed_;
+      return evaluable_;
     }
     cached_x_.assign(x, x + n);
     try {
-      py::gil_scoped_acquire acquire;
-      const py::dict result = py::cast<py::dict>(
-          py::reinterpret_borrow<py::function>(py::handle(evaluator_))(
-              start_index_, cached_x_));
-      const auto residuals = required<std::vector<double>>(result, "residuals");
-      const auto residual_jacobian =
-          required<std::vector<double>>(result, "residual_jacobian");
-      constraints_ = required<std::vector<double>>(result, "constraints");
-      constraint_jacobian_ =
-          required<std::vector<double>>(result, "constraint_jacobian");
-      if (residuals.size() != residual_count_ ||
-          residual_jacobian.size() != residual_count_ * initial_.size() ||
-          constraints_.size() != constraint_lower_.size() ||
-          constraint_jacobian_.size() != jacobian_rows_.size()) {
-        throw std::invalid_argument("full-space callback shape changed");
-      }
       objective_ = 0.0;
       gradient_.assign(initial_.size(), 0.0);
-      for (std::size_t row = 0; row < residual_count_; ++row) {
-        objective_ += 0.5 * residuals[row] * residuals[row];
-        for (std::size_t column = 0; column < initial_.size(); ++column) {
-          gradient_[column] += residuals[row] *
-                               residual_jacobian[row * initial_.size() + column];
+      constraints_.clear();
+      constraint_jacobian_.clear();
+      const std::vector<double> active = active_values(x);
+      for (const auto &block : blocks_) {
+        std::vector<std::string> identities;
+        for (const auto &coordinate : block.experiment->model.active_coordinates()) {
+          identities.push_back(coordinate.identity);
+        }
+        const std::vector<double> local(
+            x + static_cast<std::ptrdiff_t>(block.local_offset),
+            x + static_cast<std::ptrdiff_t>(block.local_offset +
+                                            block.local_width));
+        const auto native = epcsaft_engine::equilibrium::evaluate_grepe_local(
+            with_active_values(block.experiment->model, identities, active),
+            block.experiment->request, local, block.lower, block.upper);
+        const auto &equilibrium = native.equilibrium;
+        if (!equilibrium.accepted ||
+            equilibrium.output_local_derivatives.size() !=
+                equilibrium.output_values.size() * block.local_width ||
+            equilibrium.output_parameter_partials.size() !=
+                equilibrium.output_values.size() *
+                    equilibrium.parameter_order.size() ||
+            equilibrium.kkt_root_values.size() != block.local_width ||
+            equilibrium.kkt_root_jacobian.size() !=
+                block.local_width * block.local_width) {
+          throw std::domain_error("native full-space GREPE evaluation failed");
+        }
+        for (std::size_t target_index = 0;
+             target_index < block.observation->targets.size(); ++target_index) {
+          const std::size_t output_row =
+              block.experiment->selected_rows[target_index];
+          const auto &target = block.observation->targets[target_index];
+          const double predicted = equilibrium.output_values[output_row];
+          const double multiplier =
+              block.observation->multiplier * target.multiplier;
+          double factor = multiplier / target.scale;
+          double residual;
+          switch (target.residual) {
+          case ResidualKind::LogRatio:
+            factor = multiplier / predicted;
+            residual = multiplier * std::log(predicted / target.observed);
+            break;
+          case ResidualKind::LeftCensored:
+            if (predicted <= target.observed) {
+              factor = residual = 0.0;
+            } else {
+              residual = multiplier * (predicted - target.observed) /
+                         target.scale;
+            }
+            break;
+          case ResidualKind::RightCensored:
+            if (predicted >= target.observed) {
+              factor = residual = 0.0;
+            } else {
+              residual = multiplier * (predicted - target.observed) /
+                         target.scale;
+            }
+            break;
+          default:
+            residual = multiplier * (predicted - target.observed) /
+                       target.scale;
+            break;
+          }
+          objective_ += 0.5 * residual * residual;
+          for (std::size_t identity = 0;
+               identity < identity_coordinates_.size(); ++identity) {
+            const auto found = std::find(
+                equilibrium.parameter_order.begin(),
+                equilibrium.parameter_order.end(), identities[identity]);
+            if (found == equilibrium.parameter_order.end()) {
+              throw std::domain_error(
+                  "native full-space output parameter derivative is absent");
+            }
+            const std::size_t parameter_column = static_cast<std::size_t>(
+                found - equilibrium.parameter_order.begin());
+            const std::size_t coordinate = identity_coordinates_[identity];
+            gradient_[coordinate] +=
+                residual * factor *
+                equilibrium.output_parameter_partials[
+                    output_row * equilibrium.parameter_order.size() +
+                    parameter_column] *
+                coordinates_[coordinate].scale;
+          }
+          for (std::size_t local_column = 0;
+               local_column < block.local_width; ++local_column) {
+            gradient_[block.local_offset + local_column] +=
+                residual * factor *
+                equilibrium.output_local_derivatives[
+                    output_row * block.local_width + local_column];
+          }
+        }
+        constraints_.insert(constraints_.end(),
+                            equilibrium.kkt_root_values.begin(),
+                            equilibrium.kkt_root_values.end());
+        const std::size_t input_width = equilibrium.input_order.size();
+        if (equilibrium.kkt_input_jacobian.size() !=
+            block.local_width * input_width) {
+          throw std::domain_error("native full-space input Jacobian changed");
+        }
+        for (std::size_t row = 0; row < block.local_width; ++row) {
+          for (std::size_t coordinate = 0; coordinate < coordinates_.size();
+               ++coordinate) {
+            double derivative = 0.0;
+            for (std::size_t identity = 0;
+                 identity < identity_coordinates_.size(); ++identity) {
+              if (identity_coordinates_[identity] != coordinate) {
+                continue;
+              }
+              const auto found = std::find(
+                  equilibrium.input_order.begin(), equilibrium.input_order.end(),
+                  identities[identity]);
+              if (found == equilibrium.input_order.end()) {
+                throw std::domain_error(
+                    "native full-space parameter derivative is absent");
+              }
+              const std::size_t column = static_cast<std::size_t>(
+                  found - equilibrium.input_order.begin());
+              derivative +=
+                  equilibrium.kkt_input_jacobian[row * input_width + column];
+            }
+            constraint_jacobian_.push_back(
+                derivative * coordinates_[coordinate].scale);
+          }
+          constraint_jacobian_.insert(
+              constraint_jacobian_.end(),
+              equilibrium.kkt_root_jacobian.begin() +
+                  static_cast<std::ptrdiff_t>(row * block.local_width),
+              equilibrium.kkt_root_jacobian.begin() +
+                  static_cast<std::ptrdiff_t>((row + 1) * block.local_width));
         }
       }
       const auto finite = [](const std::vector<double> &values) {
         return std::all_of(values.begin(), values.end(),
                            [](double value) { return std::isfinite(value); });
       };
-      if (!std::isfinite(objective_) || !finite(gradient_) ||
+      if (constraints_.size() != constraint_count_ ||
+          constraint_jacobian_.size() != jacobian_rows_.size() ||
+          !std::isfinite(objective_) || !finite(gradient_) ||
           !finite(constraints_) || !finite(constraint_jacobian_)) {
-        throw std::domain_error("full-space callback returned nonfinite values");
+        throw std::domain_error("native full-space values are invalid");
       }
-      callback_failed_ = false;
+      evaluable_ = true;
       return true;
     } catch (const std::exception &) {
-      callback_failed_ = true;
+      evaluable_ = false;
       return false;
     }
   }
 
-  PyObject *evaluator_;
-  std::size_t start_index_;
+  const std::vector<std::size_t> &identity_coordinates_;
+  const std::vector<Coordinate> &coordinates_;
+  std::vector<FullSpaceBlock> blocks_;
   std::vector<double> initial_;
   std::vector<double> lower_;
   std::vector<double> upper_;
-  std::size_t residual_count_;
-  std::vector<double> constraint_lower_;
-  std::vector<double> constraint_upper_;
+  std::size_t residual_count_{0};
+  std::size_t constraint_count_{0};
   std::vector<int> jacobian_rows_;
   std::vector<int> jacobian_columns_;
   std::vector<double> solution_;
@@ -1060,7 +1112,7 @@ private:
   mutable std::vector<double> constraints_;
   mutable std::vector<double> constraint_jacobian_;
   mutable double objective_{0.0};
-  mutable bool callback_failed_{false};
+  mutable bool evaluable_{false};
 };
 
 template <typename Problem>
@@ -1105,10 +1157,8 @@ Ipopt::ApplicationReturnStatus solve_ipopt(Problem *problem,
   return status;
 }
 
-StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
-                        PyObject *full_space_evaluator,
-                        const FullSpaceSetup *full_space_setup,
-                        std::size_t active_parameter_count,
+StartResult solve_start(std::size_t index, const FitRequest &request,
+                        bool full_space,
                         const std::vector<std::size_t> &identity_coordinates,
                         const std::vector<Coordinate> &coordinates,
                         const std::vector<Observation> &observations,
@@ -1127,47 +1177,25 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
     origins.push_back(coordinate.origin);
     scales.push_back(coordinate.scale);
   }
-  std::vector<std::unique_ptr<OwnerCost>> costs;
+  std::vector<std::unique_ptr<NativeCost>> costs;
   costs.reserve(observations.size());
   for (std::size_t observation_index = 0;
        observation_index < observations.size(); ++observation_index) {
-    costs.push_back(std::make_unique<OwnerCost>(
-        owner_evaluator, index, observation_index, active_parameter_count,
+    costs.push_back(std::make_unique<NativeCost>(
+        request.experiments[observation_index], request.active_parameter_count,
         identity_coordinates, origins, scales, observations[observation_index],
         failure_codes));
   }
   Ipopt::ApplicationReturnStatus solver_status;
-  if (full_space_setup == nullptr) {
+  if (!full_space) {
     auto *problem = new ReducedSpaceNlp(costs, coordinates, result.final_affine);
     solver_status =
         solve_ipopt(problem, controls, result.iterations, result.final_affine);
   } else {
-    std::vector<double> initial = result.final_affine;
-    std::vector<double> lower;
-    std::vector<double> upper;
-    lower.reserve(coordinates.size() + full_space_setup->lower.size());
-    upper.reserve(coordinates.size() + full_space_setup->upper.size());
-    for (const auto &coordinate : coordinates) {
-      lower.push_back(coordinate.lower_affine);
-      upper.push_back(coordinate.upper_affine);
-    }
-    initial.insert(initial.end(), full_space_setup->initial.begin(),
-                   full_space_setup->initial.end());
-    lower.insert(lower.end(), full_space_setup->lower.begin(),
-                 full_space_setup->lower.end());
-    upper.insert(upper.end(), full_space_setup->upper.begin(),
-                 full_space_setup->upper.end());
-    std::size_t residual_count = 0;
-    for (const auto &observation : observations) {
-      residual_count += observation.targets.size();
-    }
     std::vector<double> solution;
     auto *problem = new SparseFullSpaceNlp(
-        full_space_evaluator, index, std::move(initial), std::move(lower),
-        std::move(upper), residual_count,
-        full_space_setup->constraint_lower, full_space_setup->constraint_upper,
-        full_space_setup->jacobian_rows,
-        full_space_setup->jacobian_columns);
+        request.experiments, observations, identity_coordinates, coordinates,
+        result.final_affine);
     solver_status = solve_ipopt(problem, controls, result.iterations, solution, true);
     result.final_affine.assign(solution.begin(),
                                solution.begin() + coordinates.size());
@@ -1213,7 +1241,8 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
   }
   std::size_t offset = 0;
   bool final_evaluable = true;
-  const bool request_receipts = solver_usable;
+  const bool retain_owner_results = solver_usable;
+  result.owner_results.resize(costs.size());
   for (std::size_t batch_index = 0; batch_index < costs.size(); ++batch_index) {
     const auto &cost = costs[batch_index];
     const std::size_t rows = cost->row_count();
@@ -1224,11 +1253,11 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
     for (auto &block : jacobian_blocks) {
       jacobian_pointers.push_back(block.data());
     }
-    std::string receipt_json;
     if (!cost->evaluate(final_blocks.data(), result.residuals.data() + offset,
                         jacobian_pointers.data(),
-                        result.predictions.data() + offset, request_receipts,
-                        &receipt_json)) {
+                        result.predictions.data() + offset,
+                        retain_owner_results,
+                        &result.owner_results[batch_index])) {
       result.batch_outcomes[batch_index].status = "rejected";
       const auto &failures = cost->owner_failures();
       result.batch_outcomes[batch_index].failure_code =
@@ -1237,9 +1266,6 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
       break;
     }
     result.batch_outcomes[batch_index].status = "evaluated";
-    if (!receipt_json.empty()) {
-      result.owner_receipts_json.push_back(std::move(receipt_json));
-    }
     for (std::size_t row = 0; row < rows; ++row) {
       information_rows[offset + row] =
           cost->information_bearing(row, result.predictions[offset + row]);
@@ -1256,7 +1282,7 @@ StartResult solve_start(std::size_t index, PyObject *owner_evaluator,
   }
   result.usable = solver_usable && final_evaluable;
   if (!result.usable) {
-    result.owner_receipts_json.clear();
+    result.owner_results.clear();
   }
   result.non_evaluable_count = 0;
   for (const auto &cost : costs) {
@@ -1345,157 +1371,85 @@ void assign_optimizer_basins(std::vector<StartResult> &results,
   }
 }
 
-py::dict diagnostics_mapping(const Diagnostics &value) {
-  py::dict result;
-  result["singular_values"] = value.singular_values;
-  result["rank"] = value.rank;
-  result["free_subspace_rank"] = value.free_subspace_rank;
-  result["condition_number"] = value.condition_number;
-  result["affine_covariance"] = value.affine_covariance;
-  result["degrees_of_freedom"] = value.degrees_of_freedom;
-  result["information_row_count"] = value.information_row_count;
-  result["free_coordinate_indices"] = value.free_coordinate_indices;
-  result["residual_variance"] = value.residual_variance;
-  result["covariance_status"] = value.covariance_status;
-  return result;
+bool full_space_eligible(const FitRequest &request) {
+  return std::all_of(
+      request.experiments.begin(), request.experiments.end(),
+      [](const Experiment &value) {
+        const auto *experiment = std::get_if<GrepeExperiment>(&value);
+        if (experiment == nullptr || experiment->request.phases.size() != 1 ||
+            experiment->request.temperature.solved ||
+            experiment->request.pressure.solved ||
+            experiment->request.phases[0].ideal_gas ||
+            !experiment->request.phases[0].finite ||
+            experiment->request.phases[0].support_name != "all_components" ||
+            experiment->request.phases[0].start.has_value() ||
+            experiment->request.continuation_phases.empty() ||
+            experiment->request.boundary.has_value()) {
+          return false;
+        }
+        return std::all_of(
+            experiment->selected_rows.begin(), experiment->selected_rows.end(),
+            [&](std::size_t row) {
+              return row < experiment->request.outputs.size() &&
+                     (experiment->request.outputs[row].selector ==
+                          "phase.amount" ||
+                      experiment->request.outputs[row].selector ==
+                          "phase.mole_fraction");
+            });
+      });
 }
 
-py::dict owner_failure_mapping(const OwnerFailure &value) {
-  py::dict result;
-  result["code"] = value.code;
-  result["reason"] = value.reason;
-  result["count"] = value.count;
-  return result;
-}
-
-py::dict batch_outcome_mapping(const BatchOutcome &value) {
-  py::dict result;
-  result["index"] = value.index;
-  result["row_count"] = value.row_count;
-  result["status"] = value.status;
-  result["failure_code"] = value.failure_code;
-  return result;
-}
-
-py::dict result_mapping(const StartResult &value,
-                        const std::vector<Coordinate> &coordinates) {
-  py::dict result;
-  std::vector<double> initial_physical;
-  std::vector<double> final_physical;
-  std::vector<double> physical_jacobian = value.affine_jacobian;
-  for (std::size_t coordinate = 0; coordinate < coordinates.size();
-       ++coordinate) {
-    initial_physical.push_back(coordinates[coordinate].origin +
-                               value.initial_affine[coordinate] *
-                                   coordinates[coordinate].scale);
-    final_physical.push_back(coordinates[coordinate].origin +
-                             value.final_affine[coordinate] *
-                                 coordinates[coordinate].scale);
-    for (std::size_t row = 0; row < value.residuals.size(); ++row) {
-      physical_jacobian[row * coordinates.size() + coordinate] /=
-          coordinates[coordinate].scale;
-    }
-  }
-  result["index"] = value.index;
-  result["start_identity"] = value.start_identity;
-  result["initial_affine"] = value.initial_affine;
-  result["initial_physical"] = initial_physical;
-  result["final_physical"] = final_physical;
-  result["final_affine"] = value.final_affine;
-  result["predictions"] = value.predictions;
-  result["residuals"] = value.residuals;
-  result["physical_jacobian"] = physical_jacobian;
-  result["affine_jacobian"] = value.affine_jacobian;
-  result["diagnostics"] = diagnostics_mapping(value.diagnostics);
-  result["active_bounds"] = value.active_bounds;
-  result["solver_status"] = value.solver_status;
-  result["failure_reason"] = value.failure_reason;
-  result["trial_failure_code"] = value.trial_failure_code;
-  result["iterations"] = value.iterations;
-  result["non_evaluable_count"] = value.non_evaluable_count;
-  py::list owner_failures;
-  for (const auto &failure : value.owner_failures) {
-    owner_failures.append(owner_failure_mapping(failure));
-  }
-  result["owner_failures"] = owner_failures;
-  result["owner_receipts_json"] = value.owner_receipts_json;
-  py::list batch_outcomes;
-  for (const auto &outcome : value.batch_outcomes) {
-    batch_outcomes.append(batch_outcome_mapping(outcome));
-  }
-  result["batch_outcomes"] = batch_outcomes;
-  result["cost"] = value.cost;
-  result["usable"] = value.usable;
-  if (value.usable) {
-    result["optimizer_basin"] = value.optimizer_basin;
-  } else {
-    result["optimizer_basin"] = py::none();
-  }
-  return result;
-}
-
-py::dict fit_resolved(const py::function &owner_evaluator,
-                      std::size_t active_parameter_count,
-                      const std::vector<std::size_t> &identity_coordinates,
-                      const py::iterable &coordinate_values,
-                      const py::iterable &observation_values,
-                      const py::dict &control_values,
-                      const std::vector<std::string> &failure_codes,
-                      const py::object &full_space_evaluator,
-                      const py::iterable &full_space_values) {
-  const auto coordinates = parse_coordinates(coordinate_values);
-  const auto observations = parse_observations(observation_values);
-  const auto controls = parse_controls(control_values);
-  const auto full_space_setups = parse_full_space_setups(full_space_values);
-  if (active_parameter_count == 0 ||
-      active_parameter_count != identity_coordinates.size() ||
-      std::any_of(identity_coordinates.begin(), identity_coordinates.end(),
+void validate_request(const FitRequest &request) {
+  if (request.active_parameter_count == 0 ||
+      request.active_parameter_count != request.identity_coordinates.size() ||
+      request.observations.size() != request.experiments.size() ||
+      std::any_of(request.identity_coordinates.begin(),
+                  request.identity_coordinates.end(),
                   [&](std::size_t coordinate) {
-                    return coordinate >= coordinates.size();
+                    return coordinate >= request.coordinates.size();
                   })) {
     throw std::invalid_argument("identity coordinates must bind every active "
                                 "identity to one coordinate");
   }
-  if (controls.starts.size() == 0) {
+  if (request.coordinates.empty() || request.observations.empty() ||
+      request.controls.starts.empty()) {
     throw std::invalid_argument("at least one explicit start is required");
   }
-  if (failure_codes.empty()) {
+  if (request.failure_codes.empty()) {
     throw std::invalid_argument(
         "the owner failure vocabulary must be nonempty");
   }
-  const bool full_space = !full_space_evaluator.is_none();
-  if (full_space != !full_space_setups.empty() ||
-      (full_space &&
-       (full_space_setups.size() != controls.starts.size() ||
-        !PyCallable_Check(full_space_evaluator.ptr())))) {
-    throw std::invalid_argument(
-        "full-space evaluator and one setup per start must be supplied together");
+  if (request.controls.maximum_iterations <= 0 ||
+      !std::isfinite(request.controls.affine_bound_margin) ||
+      request.controls.affine_bound_margin < 0.0 ||
+      !std::isfinite(request.controls.optimizer_tolerance) ||
+      request.controls.optimizer_tolerance <= 0.0) {
+    throw std::invalid_argument("solver controls must be positive and finite");
   }
-  for (const auto &setup : full_space_setups) {
-    const std::size_t variable_count = coordinates.size() + setup.initial.size();
-    for (std::size_t index = 0; index < setup.jacobian_rows.size(); ++index) {
-      if (setup.jacobian_rows[index] < 0 ||
-          setup.jacobian_rows[index] >=
-              static_cast<int>(setup.constraint_lower.size()) ||
-          setup.jacobian_columns[index] < 0 ||
-          setup.jacobian_columns[index] >= static_cast<int>(variable_count)) {
-        throw std::invalid_argument("full-space sparse index is invalid");
-      }
+  for (const auto &coordinate : request.coordinates) {
+    if (!std::isfinite(coordinate.origin) || !std::isfinite(coordinate.scale) ||
+        coordinate.scale <= 0.0 || !std::isfinite(coordinate.lower_affine) ||
+        !std::isfinite(coordinate.upper_affine) ||
+        coordinate.lower_affine >= coordinate.upper_affine) {
+      throw std::invalid_argument("coordinate values and bounds are invalid");
     }
   }
   std::vector<std::string> start_identities;
-  start_identities.reserve(controls.starts.size());
-  for (const auto &start : controls.starts) {
-    if (start.identity.empty() || start.affine.size() != coordinates.size() ||
+  start_identities.reserve(request.controls.starts.size());
+  for (const auto &start : request.controls.starts) {
+    if (start.identity.empty() ||
+        start.affine.size() != request.coordinates.size() ||
         !std::all_of(start.affine.begin(), start.affine.end(),
                      [](double value) { return std::isfinite(value); })) {
       throw std::invalid_argument("each explicit start needs an identity and "
                                   "one finite affine value per coordinate");
     }
-    for (std::size_t coordinate = 0; coordinate < coordinates.size();
+    for (std::size_t coordinate = 0; coordinate < request.coordinates.size();
          ++coordinate) {
-      if (start.affine[coordinate] < coordinates[coordinate].lower_affine ||
-          start.affine[coordinate] > coordinates[coordinate].upper_affine) {
+      if (start.affine[coordinate] <
+              request.coordinates[coordinate].lower_affine ||
+          start.affine[coordinate] >
+              request.coordinates[coordinate].upper_affine) {
         throw std::invalid_argument(
             "explicit affine start lies outside its bounds");
       }
@@ -1507,52 +1461,134 @@ py::dict fit_resolved(const py::function &owner_evaluator,
       start_identities.end()) {
     throw std::invalid_argument("explicit start identities must be unique");
   }
-  const auto &start_values = controls.starts;
-  std::vector<StartResult> results(start_values.size());
-  {
-    py::gil_scoped_release release;
-    for (std::size_t index = 0; index < start_values.size(); ++index) {
-      try {
-        results[index] = solve_start(
-            index, owner_evaluator.ptr(),
-            full_space ? full_space_evaluator.ptr() : nullptr,
-            full_space ? &full_space_setups[index] : nullptr,
-            active_parameter_count, identity_coordinates, coordinates,
-            observations, controls, start_values[index], failure_codes);
-      } catch (const std::exception &error) {
-        results[index].index = index;
-        results[index].start_identity = start_values[index].identity;
-        results[index].initial_affine = start_values[index].affine;
-        results[index].final_affine = start_values[index].affine;
-        results[index].failure_reason = error.what();
-        results[index].trial_failure_code = "optimizer_failure";
-        for (std::size_t batch = 0; batch < observations.size(); ++batch) {
-          results[index].batch_outcomes.push_back(
-              {batch, observations[batch].targets.size(), "not_evaluated",
-               "optimizer_failure"});
-        }
+  for (std::size_t index = 0; index < request.observations.size(); ++index) {
+    const auto &observation = request.observations[index];
+    if (observation.targets.empty()) {
+      throw std::invalid_argument("observation targets must be nonempty");
+    }
+    std::visit(
+        [&](const auto &experiment) {
+          const auto &active = experiment.model.active_coordinates();
+          if (experiment.selected_rows.size() != observation.targets.size()) {
+            throw std::invalid_argument(
+                "each experiment must select one row per observation target");
+          }
+          if (active.size() != request.active_parameter_count) {
+            throw std::invalid_argument(
+                "experiment active coordinates must match the fitted active width");
+          }
+          using Value = std::decay_t<decltype(experiment)>;
+          if constexpr (std::is_same_v<Value, GrepeExperiment>) {
+            auto base = active.begin();
+            for (const auto &incipient :
+                 experiment.incipient_model.active_coordinates()) {
+              base = std::find_if(
+                  base, active.end(), [&](const auto &coordinate) {
+                    return coordinate.identity == incipient.identity;
+                  });
+              if (base == active.end()) {
+                throw std::invalid_argument(
+                    "GREPE incipient active identities must preserve base order");
+              }
+              ++base;
+            }
+          }
+        },
+        request.experiments[index]);
+    if (!std::isfinite(observation.multiplier) ||
+        observation.multiplier <= 0.0) {
+      throw std::invalid_argument(
+          "observation multipliers must be positive and finite");
+    }
+    for (const auto &target : observation.targets) {
+      if (!std::isfinite(target.observed) || !std::isfinite(target.scale) ||
+          target.scale <= 0.0 || !std::isfinite(target.multiplier) ||
+          target.multiplier <= 0.0 ||
+          (target.residual == ResidualKind::LogRatio &&
+           target.observed <= 0.0)) {
+        throw std::invalid_argument(
+            "target values, scales, and multipliers are invalid");
       }
     }
   }
-  assign_optimizer_basins(results, coordinates);
-  py::list starts_result;
-  for (const auto &result : results) {
-    starts_result.append(result_mapping(result, coordinates));
+}
+
+std::vector<double> start_active_values(const FitRequest &request,
+                                        const Start &start) {
+  std::vector<double> active(request.active_parameter_count);
+  for (std::size_t identity = 0; identity < active.size(); ++identity) {
+    const std::size_t coordinate = request.identity_coordinates[identity];
+    active[identity] = request.coordinates[coordinate].origin +
+                       start.affine[coordinate] *
+                           request.coordinates[coordinate].scale;
   }
-  py::dict output;
-  output["starts"] = starts_result;
-  return output;
+  return active;
 }
 
 } // namespace
-} // namespace epcsaft::regression
 
-void bind_parameter_fit(py::module_ &module) {
-  module.def("_fit_resolved", &epcsaft::regression::fit_resolved,
-             py::arg("owner_evaluator"), py::arg("active_parameter_count"),
-             py::arg("identity_coordinates"), py::arg("coordinates"),
-             py::arg("observations"), py::arg("controls"),
-             py::arg("failure_codes"),
-             py::arg("full_space_evaluator") = py::none(),
-             py::arg("full_space_setups") = py::tuple());
+FitResult fit_native(const FitRequest &request) {
+  validate_request(request);
+  FitResult output;
+  const bool full_space = full_space_eligible(request);
+  output.evaluation_strategy =
+      full_space ? "simultaneous_sparse_full_space" : "reduced_space";
+
+  for (const auto &start : request.controls.starts) {
+    const std::vector<double> active = start_active_values(request, start);
+    for (std::size_t index = 0; index < request.experiments.size(); ++index) {
+      const auto *direct =
+          std::get_if<DirectEosExperiment>(&request.experiments[index]);
+      if (direct == nullptr) {
+        continue;
+      }
+      try {
+        const auto evaluation = evaluate_direct(*direct, active);
+        if (evaluation.values.size() != request.observations[index].targets.size() ||
+            evaluation.derivatives.size() !=
+                evaluation.values.size() * request.active_parameter_count ||
+            !std::all_of(evaluation.values.begin(), evaluation.values.end(),
+                         [](double value) { return std::isfinite(value); }) ||
+            !std::all_of(evaluation.derivatives.begin(),
+                         evaluation.derivatives.end(),
+                         [](double value) { return std::isfinite(value); })) {
+          throw OwnerEvaluationError(
+              "owner_contract_failure",
+              "native direct EOS preflight returned an incomplete block");
+        }
+      } catch (const OwnerEvaluationError &error) {
+        output.preflight_failure = PreflightFailure{
+            error.code(), start.identity, "observation-" + std::to_string(index),
+            error.what()};
+        return output;
+      }
+    }
+  }
+
+  output.starts.resize(request.controls.starts.size());
+  for (std::size_t index = 0; index < request.controls.starts.size(); ++index) {
+    try {
+      output.starts[index] = solve_start(
+          index, request, full_space, request.identity_coordinates,
+          request.coordinates, request.observations, request.controls,
+          request.controls.starts[index], request.failure_codes);
+    } catch (const std::exception &error) {
+      auto &result = output.starts[index];
+      result.index = index;
+      result.start_identity = request.controls.starts[index].identity;
+      result.initial_affine = request.controls.starts[index].affine;
+      result.final_affine = request.controls.starts[index].affine;
+      result.failure_reason = error.what();
+      result.trial_failure_code = "optimizer_failure";
+      for (std::size_t batch = 0; batch < request.observations.size(); ++batch) {
+        result.batch_outcomes.push_back(
+            {batch, request.observations[batch].targets.size(), "not_evaluated",
+             "optimizer_failure"});
+      }
+    }
+  }
+  assign_optimizer_basins(output.starts, request.coordinates);
+  return output;
 }
+
+} // namespace epcsaft::regression

@@ -1,5 +1,6 @@
 #include "chemical_equilibrium.hpp"
 #include "grepe.hpp"
+#include "grepe_pybind.hpp"
 #include "provider.hpp"
 
 #include <algorithm>
@@ -445,12 +446,18 @@ std::optional<GrepeDirectionSystem> grepe_directions(
 GrepeRequest grepe_request(
     const py::handle& problem,
     bool active_parameters_requested,
-    const std::string& source_reference_fingerprint
+    const std::string& source_reference_fingerprint,
+    const GrepeIntensive* temperature = nullptr,
+    const GrepeIntensive* pressure = nullptr
 ) {
     GrepeRequest request;
     request.identity = py::cast<std::string>(problem.attr("identity"));
-    request.temperature = grepe_intensive(problem.attr("temperature"), "kelvin");
-    request.pressure = grepe_intensive(problem.attr("pressure"), "pascal");
+    request.temperature = temperature == nullptr
+        ? grepe_intensive(problem.attr("temperature"), "kelvin")
+        : *temperature;
+    request.pressure = pressure == nullptr
+        ? grepe_intensive(problem.attr("pressure"), "pascal")
+        : *pressure;
     const py::handle reaction = problem.attr("reaction_system");
     request.reaction = grepe_reaction_input(
         reaction,
@@ -644,6 +651,22 @@ GrepeResult evaluate_grepe_local_binding(
 }
 
 }  // namespace
+
+GrepeRequest parse_grepe_request(
+    const py::handle& problem,
+    bool active_parameters_requested,
+    const std::string& source_reference_fingerprint,
+    const GrepeIntensive* temperature,
+    const GrepeIntensive* pressure
+) {
+    return grepe_request(
+        problem,
+        active_parameters_requested,
+        source_reference_fingerprint,
+        temperature,
+        pressure
+    );
+}
 
 void bind_chemical_equilibrium(py::module_& module) {
     py::class_<ReactiveFinitePhaseResult>(module, "_ReactiveFinitePhaseResult")

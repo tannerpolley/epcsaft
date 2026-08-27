@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import replace
 from pathlib import Path
+from typing import Any, cast
+from unittest.mock import patch
 
 import pytest
 
 import epcsaft
-from epcsaft import equilibrium, regression
+from epcsaft import _core, equilibrium, regression
 from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE
+from tests.regression.numerical._monitoring import call_without_python_frames
 
 
 @pytest.mark.slow
@@ -221,7 +225,21 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
     assert default_controls.maximum_iterations == 25
     assert default_controls.optimizer_tolerance == 1.0e-6
 
-    result = regression.fit(mapping, base_path=tmp_path)
+    native_fit = _core._fit_resolved
+    captured: dict[str, object] = {}
+    frames: tuple[Any, ...] = ()
+
+    def monitored_fit(*args: object) -> object:
+        nonlocal frames
+        result, frames = call_without_python_frames(native_fit, *args)
+        captured.update(cast(dict[str, object], result))
+        return result
+
+    with patch.object(_core, "_fit_resolved", side_effect=monitored_fit):
+        result = regression.fit(mapping, base_path=tmp_path)
+
+    assert frames == ()
+    assert captured["evaluation_strategy"] == "reduced_space"
 
     accepted = result.best_usable_start
     assert accepted is not None
@@ -232,5 +250,40 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
         "pressure",
         "cosolvent-uptake",
     )
+    oracle = equilibrium.solve(
+        model,
+        problem,
+        active_parameters=epcsaft.ActiveParameterSet(
+            parameters, (parameter_identity,), values=accepted.final_physical
+        ),
+    )
+    assert oracle.status == "evaluated"
+    assert oracle.rows[0].jacobian is not None
+    assert accepted.physical_jacobian[1] == pytest.approx(
+        oracle.rows[0].jacobian[0] / 0.1, rel=2.0e-6, abs=2.0e-8
+    )
     fit_receipt = result.specification.to_mapping()["fit"]
     assert fit_receipt["fit"]["solver"]["controls"] == mapping["solver"]["controls"]
+
+    rejected_problem = replace(
+        problem,
+        phases=(
+            replace(
+                phase,
+                model=equilibrium.ProviderModel(
+                    (1.0e-8, 1.0e-7), "installed-provider-eos"
+                ),
+            ),
+        ),
+    )
+    oracle_failure = equilibrium.solve(model, rejected_problem)
+    assert oracle_failure.status == "non_evaluable"
+    assert oracle_failure.failure is not None
+    rejected_mapping = json.loads(json.dumps(mapping))
+    rejected_mapping["observations"][1]["request"] = (
+        equilibrium.general_reactive_equilibrium_problem_to_mapping(rejected_problem)
+    )
+    rejected = regression.fit(rejected_mapping, base_path=tmp_path)
+    assert rejected.best_usable_start is None
+    assert rejected.starts[0].trial_failure_code == oracle_failure.failure.code
+    assert rejected.starts[0].owner_failures[0].code == oracle_failure.failure.code

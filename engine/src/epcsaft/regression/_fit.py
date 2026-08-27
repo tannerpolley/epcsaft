@@ -2,29 +2,29 @@ from __future__ import annotations
 
 import hashlib
 import math
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from importlib import metadata
 from os import PathLike
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from .. import _core
 from .._trials import NON_EVALUABLE_TRIAL_CODES, NonEvaluableTrialCode
 from ..eos import (
     OBSERVABLE_TARGETS,
-    EosError,
     Mixture,
     ObservableDescriptor,
     Pure,
-    SaturationError,
     _python_native_artifact_fingerprint,
-    evaluate_observable,
 )
 from ..parameters import ActiveParameterSet, Parameters
 from ._model import EquilibriumFitObservation, ParameterFit, TableRow
 from ._resolve import ResolvedFit, ResolvedObservation
 from ._result import FitResult, FitRowReceipt, FitSpecificationReceipt
+
+if TYPE_CHECKING:
+    from ._equilibrium_owner import _ReactiveBatch
 
 
 class FitPreflightError(ValueError):
@@ -130,151 +130,27 @@ def _owner_requests(
     return tuple(requests), residual_blocks
 
 
-class _OwnerEvaluator:
-    __slots__ = ("_model", "_parameters", "_requests", "_selected_identities")
-
-    def __init__(
-        self,
-        model: Pure | Mixture,
-        resolved: ResolvedFit,
-        requests: Sequence[_OwnerRequest],
-    ) -> None:
-        self._model = model
-        self._parameters = resolved.parameters
-        self._selected_identities = resolved.selected_identities
-        self._requests = tuple(requests)
-
-    @staticmethod
-    def _rejected(code: str, reason: str) -> dict[str, object]:
-        return {
-            "status": "rejected",
-            "failure": {"code": code, "reason": reason},
-        }
-
-    def __call__(
-        self,
-        _start_index: int,
-        index: int,
-        values: Sequence[float],
-        _receipt_requested: bool,
-    ) -> dict[str, object]:
-        request = self._requests[index]
-        try:
-            active_parameters = ActiveParameterSet(
-                self._parameters,
-                self._selected_identities,
-                values=values,
-            )
-            block = evaluate_observable(
-                self._model,
-                active_parameters,
-                request.descriptor,
-                dict(request.state),
-                composition=request.composition,
-            )
-        except EosError as exc:
-            return self._rejected("provider_domain_rejection", f"{exc.code}: {exc}")
-        except SaturationError as exc:
-            return self._rejected(
-                "physical_rejection",
-                f"{exc.diagnostics.rejection_status}: {exc}",
-            )
-        except (TypeError, ValueError) as exc:
-            return self._rejected("parameter_topology_mismatch", str(exc))
-        if block.status.status != "accepted":
-            return self._rejected(
-                "physical_rejection"
-                if block.status.scope in {"shared-solve", "branch"}
-                else "observation_out_of_support",
-                block.status.reason,
-            )
-        if block.descriptor.active_parameter_identities != self._selected_identities:
-            return self._rejected(
-                "owner_contract_failure",
-                "owner block did not preserve the selected parameter order",
-            )
-        rows = {
-            identity: (value, jacobian, status)
-            for identity, value, jacobian, status in zip(
-                block.descriptor.row_identities,
-                block.values,
-                block.jacobian,
-                block.row_statuses,
-                strict=True,
-            )
-        }
-        selected = tuple(rows.get(identity) for identity in request.row_identities)
-        if any(
-            row is None or row[0] is None or row[1] is None or row[2].status != "accepted"
-            for row in selected
-        ):
-            return self._rejected(
-                "owner_contract_failure",
-                "owner block did not return every selected row",
-            )
-        accepted = cast(tuple[tuple[float, tuple[float, ...], object], ...], selected)
-        return {
-            "status": "accepted",
-            "predictions": [row[0] for row in accepted],
-            "jacobian": [value for row in accepted for value in row[1]],
-        }
-
-
-def _preflight(
-    owner: _OwnerEvaluator,
+def _direct_experiments(
+    model: Pure | Mixture,
     resolved: ResolvedFit,
     requests: Sequence[_OwnerRequest],
-) -> dict[tuple[str, int, tuple[str, ...], tuple[float, ...]], dict[str, object]]:
-    exact_start_blocks: dict[
-        tuple[str, int, tuple[str, ...], tuple[float, ...]], dict[str, object]
-    ] = {}
-    coordinate_by_parameter = {
-        identity: index
-        for index, coordinate in enumerate(resolved.coordinates)
-        for identity in coordinate.tied_identities
-    }
-    for start_index, start in enumerate(resolved.fit.solver.multistart.starts):
-        physical = start.values
-        active = tuple(
-            physical[coordinate_by_parameter[identity]] for identity in resolved.selected_identities
-        )
-        for index, request in enumerate(requests):
-            response = owner(start_index, index, active, False)
-            if response.get("status") != "accepted":
-                failure = response.get("failure")
-                failure_mapping = failure if isinstance(failure, Mapping) else {}
-                raw_code = str(failure_mapping.get("code", "owner_contract_failure"))
-                code = (
-                    raw_code if raw_code in NON_EVALUABLE_TRIAL_CODES else "owner_contract_failure"
-                )
-                raise FitPreflightError(
-                    cast(NonEvaluableTrialCode, code),
-                    start.identity,
-                    f"observation-{index}",
-                    str(failure_mapping.get("reason", failure)),
-                )
-            predictions = response.get("predictions")
-            jacobian = response.get("jacobian")
-            if (
-                not isinstance(predictions, Sequence)
-                or isinstance(predictions, (str, bytes))
-                or not isinstance(jacobian, Sequence)
-                or isinstance(jacobian, (str, bytes))
-                or len(predictions) != len(request.row_identities)
-                or len(jacobian) != len(request.row_identities) * len(active)
-                or any(not math.isfinite(float(value)) for value in predictions)
-                or any(not math.isfinite(float(value)) for value in jacobian)
-            ):
-                raise FitPreflightError(
-                    "owner_contract_failure",
-                    start.identity,
-                    f"observation-{index}",
-                    "owner returned an incomplete value/Jacobian block",
-                )
-            exact_start_blocks[(start.identity, index, resolved.selected_identities, active)] = (
-                response
-            )
-    return exact_start_blocks
+) -> tuple[Mapping[str, object], ...]:
+    active = ActiveParameterSet(resolved.parameters, resolved.selected_identities)
+    native_model = model._native_model(active)
+    return tuple(
+        {
+            "kind": "direct_eos",
+            "model": native_model,
+            "descriptor_identity": request.descriptor.identity,
+            "state": dict(request.state),
+            "composition": request.composition,
+            "selected_rows": [
+                request.descriptor.row_identities.index(identity)
+                for identity in request.row_identities
+            ],
+        }
+        for request in requests
+    )
 
 
 def _package_fingerprint() -> str:
@@ -286,14 +162,10 @@ def _package_fingerprint() -> str:
 
 def _fit_owner_batches(
     resolved: ResolvedFit,
-    owner: Callable[[int, int, Sequence[float], bool], Mapping[str, object]],
     residual_blocks: Sequence[Mapping[str, object]],
+    experiments: Sequence[Mapping[str, object]],
+    owner_batches: Sequence[_ReactiveBatch | None],
     specification: FitSpecificationReceipt,
-    full_space: tuple[
-        Callable[[int, Sequence[float]], Mapping[str, object]],
-        Sequence[Mapping[str, object]],
-    ]
-    | None = None,
 ) -> FitResult:
     coordinate_indices = {
         identity: index
@@ -301,7 +173,6 @@ def _fit_owner_batches(
         for identity in coordinate.tied_identities
     }
     native = _core._fit_resolved(
-        owner,
         len(resolved.selected_identities),
         [coordinate_indices[identity] for identity in resolved.selected_identities],
         [
@@ -334,12 +205,50 @@ def _fit_owner_batches(
             "optimizer_tolerance": resolved.fit.solver.controls.optimizer_tolerance,
         },
         tuple(sorted(NON_EVALUABLE_TRIAL_CODES)),
-        None if full_space is None else full_space[0],
-        () if full_space is None else full_space[1],
+        experiments,
     )
+    if (failure := native.get("preflight_failure")) is not None:
+        record = cast(Mapping[str, object], failure)
+        raw_code = str(record["code"])
+        code = raw_code if raw_code in NON_EVALUABLE_TRIAL_CODES else "owner_contract_failure"
+        raise FitPreflightError(
+            cast(NonEvaluableTrialCode, code),
+            str(record["start_identity"]),
+            str(record["batch_identity"]),
+            str(record["diagnostic"]),
+        )
+    if any(batch is not None for batch in owner_batches):
+        from ._equilibrium_owner import _serialize_native_owner_result
+
+        coordinate_by_parameter = {
+            identity: index
+            for index, coordinate in enumerate(resolved.coordinates)
+            for identity in coordinate.tied_identities
+        }
+        for start in cast(list[dict[str, Any]], native["starts"]):
+            owner_results = cast(Sequence[object | None], start.pop("owner_results"))
+            if not bool(start["usable"]):
+                continue
+            physical = cast(Sequence[float], start["final_physical"])
+            active = ActiveParameterSet(
+                resolved.parameters,
+                resolved.selected_identities,
+                values=tuple(
+                    physical[coordinate_by_parameter[identity]]
+                    for identity in resolved.selected_identities
+                ),
+            )
+            start["owner_receipts_json"] = [
+                _serialize_native_owner_result(batch, active, owner_result)
+                for batch, owner_result in zip(owner_batches, owner_results, strict=True)
+                if batch is not None and owner_result is not None
+            ]
+    else:
+        for start in cast(list[dict[str, Any]], native["starts"]):
+            start.pop("owner_results", None)
     return FitResult.from_native(
         specification,
-        cast(Mapping[str, Any], native),
+        native,
         artifact_fingerprint=_python_native_artifact_fingerprint(),
         package_fingerprint=_package_fingerprint(),
     )
@@ -376,56 +285,33 @@ def fit(
         else Mixture(resolved.parameters)
     )
     requests, residual_blocks = _owner_requests(resolved)
-    direct_owner = _OwnerEvaluator(model, resolved, requests)
-    exact_start_blocks = _preflight(direct_owner, resolved, requests)
-
-    def evaluate_owner(
-        start_index: int,
-        index: int,
-        values: Sequence[float],
-        receipt_requested: bool,
-    ) -> dict[str, object]:
-        key = (
-            specification.solver.multistart.starts[start_index].identity,
-            index,
-            resolved.selected_identities,
-            tuple(values),
-        )
-        if not receipt_requested and (block := exact_start_blocks.get(key)) is not None:
-            return block
-        return direct_owner(start_index, index, values, receipt_requested)
+    direct_experiments = _direct_experiments(model, resolved, requests)
 
     direct_receipt = FitSpecificationReceipt.from_resolved_fit(resolved)
     direct_receipt_blocks = _receipt_blocks(direct_receipt)
-    owner_entries: list[
-        tuple[Callable[[int, int, Sequence[float], bool], Mapping[str, object]], int]
-    ] = []
+    ordered_experiments: list[Mapping[str, object]] = []
+    ordered_owner_batches: list[_ReactiveBatch | None] = []
     ordered_residual_blocks: list[Mapping[str, object]] = []
     ordered_receipt_rows: list[FitRowReceipt] = []
     ordered_block_sizes: list[int] = []
-    equilibrium_all_batches: Sequence[Any] = ()
-    equilibrium_owner = None
-    equilibrium_batches: Sequence[Any] = ()
+    equilibrium_all_batches: Sequence[_ReactiveBatch] = ()
+    equilibrium_experiments: Sequence[Mapping[str, object]] = ()
+    equilibrium_batches: Sequence[_ReactiveBatch] = ()
     equilibrium_receipt = None
     equilibrium_residual_blocks: tuple[Mapping[str, object], ...] = ()
-    full_space = None
     if any(
         isinstance(observation, EquilibriumFitObservation)
         for observation in resolved.fit.observations
     ):
-        from ._equilibrium_owner import _equilibrium_owner_batches, _full_space_batches
+        from ._equilibrium_owner import _equilibrium_owner_batches
 
         (
             equilibrium_all_batches,
             equilibrium_batches,
-            equilibrium_owner,
+            equilibrium_experiments,
             equilibrium_residual_blocks,
             equilibrium_receipt,
         ) = _equilibrium_owner_batches(resolved)
-        if len(equilibrium_batches) == len(resolved.fit.observations):
-            full_space = _full_space_batches(
-                resolved, equilibrium_batches, equilibrium_owner
-            )
     equilibrium_receipt_blocks = (
         () if equilibrium_receipt is None else _receipt_blocks(equilibrium_receipt)
     )
@@ -437,13 +323,13 @@ def fit(
     equilibrium_batch_index = 0
     for observation in resolved.fit.observations:
         if isinstance(observation, EquilibriumFitObservation):
-            assert equilibrium_owner is not None
             batch = equilibrium_all_batches[equilibrium_batch_index]
             equilibrium_batch_index += 1
             active_index = equilibrium_index_by_identity.get(batch.identity)
             if active_index is None:
                 continue
-            owner_entries.append((equilibrium_owner, active_index))
+            ordered_experiments.append(equilibrium_experiments[active_index])
+            ordered_owner_batches.append(equilibrium_batches[active_index])
             ordered_residual_blocks.append(equilibrium_residual_blocks[active_index])
             rows = equilibrium_receipt_blocks[active_index]
             ordered_receipt_rows.extend(rows)
@@ -452,21 +338,13 @@ def fit(
         row_count = len(_rows(resolved.observations[direct_observation_index]))
         direct_observation_index += 1
         for _ in range(row_count):
-            owner_entries.append((evaluate_owner, direct_batch_index))
+            ordered_experiments.append(direct_experiments[direct_batch_index])
+            ordered_owner_batches.append(None)
             ordered_residual_blocks.append(residual_blocks[direct_batch_index])
             rows = direct_receipt_blocks[direct_batch_index]
             ordered_receipt_rows.extend(rows)
             ordered_block_sizes.append(len(rows))
             direct_batch_index += 1
-
-    def evaluate_ordered_owner(
-        start_index: int,
-        index: int,
-        values: Sequence[float],
-        receipt_requested: bool,
-    ) -> Mapping[str, object]:
-        owner, local_index = owner_entries[index]
-        return owner(start_index, local_index, values, receipt_requested)
 
     combined_receipt = FitSpecificationReceipt.create(
         resolved.to_mapping(),
@@ -482,10 +360,10 @@ def fit(
 
     result = _fit_owner_batches(
         resolved,
-        evaluate_ordered_owner,
         ordered_residual_blocks,
+        ordered_experiments,
+        ordered_owner_batches,
         combined_receipt,
-        full_space,
     )
     if equilibrium_all_batches:
         from ._equilibrium_owner import _validated_owner_receipts

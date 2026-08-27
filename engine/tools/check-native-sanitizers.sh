@@ -101,4 +101,6 @@ PYTHONNOUSERSITE=1 \
     "$run_root/venv/bin/python" -m pytest -q \
         tests/eos/numerical/test_pure_saturation.py \
         tests/regression/numerical/test_generic_fit.py \
+        tests/regression/numerical/test_grepe_intensive_fit.py \
+        tests/regression/numerical/test_full_space_regression.py \
         tests/equilibrium/test_phase_equilibrium.py::test_declared_single_phase_solves_role_and_hints_do_not_change_root

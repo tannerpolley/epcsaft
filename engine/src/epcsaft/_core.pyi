@@ -1,4 +1,4 @@
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 class NativeDensityDiagnostics:
@@ -329,13 +329,11 @@ def _solve_saturation_active(
     active_parameters: Sequence[NativeActiveCoordinate],
 ) -> dict[str, Any]: ...
 def _fit_resolved(
-    owner_evaluator: Callable[[int, int, Sequence[float], bool], Mapping[str, object]],
     active_parameter_count: int,
     identity_coordinates: Sequence[int],
     coordinates: Sequence[Mapping[str, object]],
     observations: Sequence[Mapping[str, object]],
     controls: Mapping[str, object],
     failure_codes: Sequence[str],
-    full_space_evaluator: Callable[[int, Sequence[float]], Mapping[str, object]] | None = ...,
-    full_space_setups: Sequence[Mapping[str, object]] = ...,
+    experiments: Sequence[Mapping[str, object]],
 ) -> dict[str, Any]: ...

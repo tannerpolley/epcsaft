@@ -3,17 +3,21 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections.abc import Mapping, Sequence
 from dataclasses import replace
+from typing import cast
 from unittest.mock import patch
 
 import pytest
 
 import epcsaft
 from epcsaft import _core, equilibrium, regression
-from epcsaft.regression._equilibrium_owner import _equilibrium_owner_batches, _full_space_batches
+from epcsaft.equilibrium._grepe import _native_general_reactive_equilibrium_inputs
+from epcsaft.regression._equilibrium_owner import _equilibrium_owner_batches
 from epcsaft.regression._model import ParameterFit
 from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE
 from tests.equilibrium.test_chemical_provider import _multineutral_problem
+from tests.regression.numerical._monitoring import call_without_python_frames
 
 
 def _source_standard_problem(
@@ -200,46 +204,165 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
 
     resolved = ParameterFit.from_mapping(mapping).resolve(parameters, base_path=tmp_path)
     _, batches, *_ = _equilibrium_owner_batches(resolved)
-    full_space = _full_space_batches(resolved, batches)
-    assert full_space is not None
-    evaluator, setups = full_space
-    setup = setups[0]
-    point = [0.0, *setup["initial"]]
-    step = 1.0e-4
-    for checked_column in (0, 1):
-        below = evaluator(
-            0,
-            [
-                value - step if index == checked_column else value
-                for index, value in enumerate(point)
-            ],
-        )
-        above = evaluator(
-            0,
-            [
-                value + step if index == checked_column else value
-                for index, value in enumerate(point)
-            ],
-        )
-        difference = [
-            (high - low) / (2.0 * step)
-            for low, high in zip(below["constraints"], above["constraints"], strict=True)
-        ]
-        exact = [0.0] * len(difference)
-        for row, column, value in zip(
-            setup["jacobian_rows"],
-            setup["jacobian_columns"],
-            evaluator(0, point)["constraint_jacobian"],
-            strict=True,
-        ):
-            if column == checked_column:
-                exact[row] = value
-        assert exact == pytest.approx(difference, rel=2.0e-5, abs=2.0e-7)
+    batch = batches[0]
+    active = epcsaft.ActiveParameterSet(
+        parameters, (parameter_identity,), values=(2.8,)
+    )
+    incipient_model, native_problem, fingerprint = _native_general_reactive_equilibrium_inputs(
+        batch.model, batch.problem, active_parameters=active
+    )
+    center = _core._solve_grepe(
+        batch.model._native, incipient_model, native_problem, active, fingerprint
+    ).equilibrium
+    assert center.accepted
+    local = tuple(center.local_variables)
+    lower = tuple(center.local_lower_bounds)
+    upper = tuple(center.local_upper_bounds)
+    assert len(local) == len(center.kkt_root_values)
 
-    with patch.object(_core, "_fit_resolved", wraps=_core._fit_resolved) as native_fit:
+    def evaluate(parameter: float, values: tuple[float, ...]) -> object:
+        trial = epcsaft.ActiveParameterSet(
+            parameters, (parameter_identity,), values=(parameter,)
+        )
+        return _core._evaluate_grepe_local(
+            batch.model._native,
+            native_problem,
+            trial,
+            fingerprint,
+            values,
+            lower,
+            upper,
+        ).equilibrium
+
+    columns: list[tuple[float, ...]] = []
+    parameter_step = 1.0e-5
+    parameter_below = evaluate(2.8 - parameter_step, local)
+    parameter_above = evaluate(2.8 + parameter_step, local)
+    columns.append(
+        tuple(
+            (high - low) / (2.0 * parameter_step)
+            for low, high in zip(
+                parameter_below.kkt_root_values,
+                parameter_above.kkt_root_values,
+                strict=True,
+            )
+        )
+    )
+    input_column = tuple(center.input_order).index(parameter_identity)
+    input_width = len(center.input_order)
+    parameter_column = tuple(center.parameter_order).index(parameter_identity)
+    parameter_width = len(center.parameter_order)
+    exact_columns = [
+        tuple(
+            center.kkt_input_jacobian[row * input_width + input_column]
+            for row in range(len(local))
+        )
+    ]
+    for column, value in enumerate(local):
+        step = 1.0e-5 * max(1.0, abs(value))
+        below_values = tuple(
+            item - step if index == column else item for index, item in enumerate(local)
+        )
+        above_values = tuple(
+            item + step if index == column else item for index, item in enumerate(local)
+        )
+        below = evaluate(2.8, below_values)
+        above = evaluate(2.8, above_values)
+        columns.append(
+            tuple(
+                (high - low) / (2.0 * step)
+                for low, high in zip(
+                    below.kkt_root_values, above.kkt_root_values, strict=True
+                )
+            )
+        )
+        exact_columns.append(
+            tuple(
+                center.kkt_root_jacobian[row * len(local) + column]
+                for row in range(len(local))
+            )
+        )
+    for exact, centered in zip(exact_columns, columns, strict=True):
+        for expected, actual in zip(exact, centered, strict=True):
+            scale = max(2.0e-9, abs(expected), abs(actual))
+            assert abs(expected - actual) / scale <= 5.0e-5
+
+    def objective(evaluated: object) -> float:
+        residual = (evaluated.output_values[0] - observed) / observed
+        return 0.5 * residual * residual
+
+    center_residual = (center.output_values[0] - observed) / observed
+    exact_objective = [
+        center_residual
+        * center.output_parameter_partials[parameter_column]
+        / observed
+    ]
+    centered_objective = [
+        (objective(parameter_above) - objective(parameter_below))
+        / (2.0 * parameter_step)
+    ]
+    for column, value in enumerate(local):
+        step = 1.0e-5 * max(1.0, abs(value))
+        below_values = tuple(
+            item - step if index == column else item for index, item in enumerate(local)
+        )
+        above_values = tuple(
+            item + step if index == column else item for index, item in enumerate(local)
+        )
+        below_local = evaluate(2.8, below_values)
+        above_local = evaluate(2.8, above_values)
+        exact_objective.append(
+            center_residual
+            * center.output_local_derivatives[column]
+            / observed
+        )
+        centered_objective.append(
+            (objective(above_local) - objective(below_local)) / (2.0 * step)
+        )
+    assert len(center.output_parameter_partials) == parameter_width
+    for expected, actual in zip(exact_objective, centered_objective, strict=True):
+        scale = max(2.0e-9, abs(expected), abs(actual))
+        assert abs(expected - actual) / scale <= 5.0e-5
+
+    native_fit = _core._fit_resolved
+    captured: dict[str, object] = {}
+    frames: tuple[object, ...] = ()
+    native_arguments: tuple[object, ...] = ()
+
+    def monitored_fit(*args: object) -> object:
+        nonlocal frames, native_arguments
+        native_arguments = args
+        value, frames = call_without_python_frames(native_fit, *args)
+        captured.update(value)
+        return value
+
+    with patch.object(_core, "_fit_resolved", side_effect=monitored_fit):
         result = regression.fit(mapping, base_path=tmp_path)
-    assert native_fit.call_args.args[7] is not None
+    assert frames == ()
+    assert captured["evaluation_strategy"] == "simultaneous_sparse_full_space"
+    malformed_experiments = [
+        dict(cast(Mapping[str, object], experiment))
+        for experiment in cast(Sequence[object], native_arguments[6])
+    ]
+    malformed_experiments[0]["selected_rows"] = ()
+    with pytest.raises(ValueError, match="one row per observation target"):
+        native_fit(*native_arguments[:6], malformed_experiments)
     accepted = result.best_usable_start
     assert accepted is not None
     assert accepted.final_physical == pytest.approx((truth_parameter,), abs=2.0e-7)
-    assert accepted.predictions == pytest.approx((observed,), abs=2.0e-10)
+    assert accepted.predictions == pytest.approx((observed,), rel=2.0e-6, abs=2.0e-8)
+    assert accepted.owner_failures == ()
+    assert len(accepted.owner_receipts) == 1
+    receipt = json.loads(accepted.owner_receipts[0].canonical_bytes_utf8)
+    assert receipt["certificate_scope"] == truth.certificate_scope
+    assert receipt["branch_signature"] == json.loads(json.dumps(truth.branch_signature))
+    assert {
+        key: value["status"] for key, value in receipt["outcomes"].items()
+    } == {
+        "solver_convergence": "passed",
+        "numerical_convergence": "passed",
+        "physical_certification": "passed",
+        "scientific_fit_acceptance": "not_applicable",
+    }
+    assert all(outcome.status == "evaluated" for outcome in accepted.batch_outcomes)
+    assert result.accounting.dropped_rows == 0

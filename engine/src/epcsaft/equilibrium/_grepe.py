@@ -2446,19 +2446,13 @@ def _map_native_finite_result(
     )
 
 
-def _solve_general_reactive_equilibrium(
+def _native_general_reactive_equilibrium_inputs(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
     *,
     active_parameters: epcsaft.ActiveParameterSet | None = None,
     continuation_start: tuple[tuple[float, ...], float] | None = None,
-) -> GeneralReactiveEquilibriumResult:
-    """Validate, enter the native GREPE owner once, and map its final result."""
-
-    described = _describe_general_reactive_equilibrium(model, problem, active_parameters)
-    if isinstance(described, str):
-        return _unavailable_formulation(problem, described)
-    descriptor, owner_descriptor = described
+) -> tuple[_core.NativeModel, GeneralReactiveEquilibriumProblem, str]:
     incipient = next(
         (
             phase
@@ -2492,17 +2486,34 @@ def _solve_general_reactive_equilibrium(
                 ),
             ),
         )
-    native = _core._solve_grepe(
-        model._native,
+    return (
         incipient_model,
         native_problem,
-        active_parameters,
         _source_reference_fingerprint(
             problem.reaction_system.source_standard_state,
             active_parameters_requested=active_parameters is not None,
         ),
     )
-    if native.formulation == "finite":
+
+
+def _map_native_general_reactive_equilibrium(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    active_parameters: epcsaft.ActiveParameterSet | None,
+    native: object,
+    described: tuple[GeneralReactiveEquilibriumDescriptor, _FinitePhaseOwnerDescriptor]
+    | None = None,
+) -> GeneralReactiveEquilibriumResult:
+    resolved = (
+        _describe_general_reactive_equilibrium(model, problem, active_parameters)
+        if described is None
+        else described
+    )
+    if isinstance(resolved, str):
+        return _unavailable_formulation(problem, resolved)
+    descriptor, owner_descriptor = resolved
+    formulation = str(cast(Any, native).formulation)
+    if formulation == "finite":
         return _with_continuation_state(
             _map_native_finite_result(
                 model,
@@ -2518,7 +2529,7 @@ def _solve_general_reactive_equilibrium(
                 ),
             )
         )
-    if native.formulation == "finite_incipient":
+    if formulation == "finite_incipient":
         return _with_continuation_state(
             _map_native_incipient_result(
                 model,
@@ -2529,7 +2540,7 @@ def _solve_general_reactive_equilibrium(
                 active_parameters,
             )
         )
-    if native.formulation == "intensive_boundary":
+    if formulation == "intensive_boundary":
         return _with_continuation_state(
             _map_native_boundary_result(
                 model,
@@ -2540,7 +2551,7 @@ def _solve_general_reactive_equilibrium(
                 active_parameters,
             )
         )
-    if native.formulation == "temperature_boundary":
+    if formulation == "temperature_boundary":
         return _with_continuation_state(
             _map_native_temperature_result(
                 model,
@@ -2552,6 +2563,38 @@ def _solve_general_reactive_equilibrium(
             )
         )
     raise RuntimeError("native GREPE formulation differs from the validated request")
+
+
+def _solve_general_reactive_equilibrium(
+    model: epcsaft.Mixture,
+    problem: GeneralReactiveEquilibriumProblem,
+    *,
+    active_parameters: epcsaft.ActiveParameterSet | None = None,
+    continuation_start: tuple[tuple[float, ...], float] | None = None,
+) -> GeneralReactiveEquilibriumResult:
+    """Validate, enter the native GREPE owner once, and map its final result."""
+
+    described = _describe_general_reactive_equilibrium(model, problem, active_parameters)
+    if isinstance(described, str):
+        return _unavailable_formulation(problem, described)
+    incipient_model, native_problem, reference_fingerprint = (
+        _native_general_reactive_equilibrium_inputs(
+            model,
+            problem,
+            active_parameters=active_parameters,
+            continuation_start=continuation_start,
+        )
+    )
+    native = _core._solve_grepe(
+        model._native,
+        incipient_model,
+        native_problem,
+        active_parameters,
+        reference_fingerprint,
+    )
+    return _map_native_general_reactive_equilibrium(
+        model, problem, active_parameters, native, described
+    )
 
 
 def _owner_observation_payload(

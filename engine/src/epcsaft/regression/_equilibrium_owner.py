@@ -6,30 +6,23 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
-from .. import _core
-from .._trials import NonEvaluableTrialCode
-from ..eos import EosError, Mixture
+from ..eos import Mixture
 from ..equilibrium import (
-    AllComponents,
     GeneralEquilibriumOwnerObservation,
     GeneralReactiveEquilibriumDescriptor,
     GeneralReactiveEquilibriumProblem,
-    ProviderModel,
     general_reactive_equilibrium_descriptor,
     general_reactive_equilibrium_problem_from_mapping,
     serialize_general_reactive_equilibrium_receipt,
-    solve,
     validate_general_reactive_equilibrium_receipt,
 )
-from ..equilibrium._api import _continuation_start
 from ..equilibrium._grepe import (
-    _effective_reaction_system,
-    _solve_general_reactive_equilibrium,
-    _source_reference_fingerprint,
+    Fixed,
+    Solved,
+    _map_native_general_reactive_equilibrium,
+    _native_general_reactive_equilibrium_inputs,
 )
 from ..parameters import ActiveParameterSet
-from ..units import ParameterError
-from ._fit import FitPreflightError
 from ._model import EquilibriumFitObservation
 from ._resolve import ResolvedFit
 from ._result import (
@@ -45,6 +38,22 @@ type EquilibriumResidual = Literal[
     "left_censored",
     "right_censored",
 ]
+
+
+def _native_intensive(value: Fixed | Solved, unit: str) -> Mapping[str, object]:
+    if isinstance(value, Fixed):
+        return {
+            "solved": False,
+            "value": float(value.value.to(unit).magnitude),
+            "bounds": (),
+            "starts": (),
+        }
+    return {
+        "solved": True,
+        "value": float(value.initial.to(unit).magnitude),
+        "bounds": tuple(float(bound.to(unit).magnitude) for bound in value.bounds),
+        "starts": tuple(float(start.to(unit).magnitude) for start in value.starts),
+    }
 
 
 def _is_sha256(value: str) -> bool:
@@ -424,215 +433,12 @@ def _active_trial(
     )
 
 
-def _evaluate_batch(
-    batch: _ReactiveBatch,
-    active: ActiveParameterSet,
-    continuation_start: tuple[tuple[float, ...], float] | None = None,
-) -> Any:
-    if continuation_start is None:
-        return solve(batch.model, batch.problem, active_parameters=active)
-    return _solve_general_reactive_equilibrium(
-        batch.model,
-        batch.problem,
-        active_parameters=active,
-        continuation_start=continuation_start,
-    )
-
-
-def _preflight(
-    resolved: ResolvedFit,
-    batches: Sequence[_ReactiveBatch],
-) -> dict[tuple[str, str, tuple[str, ...], tuple[float, ...]], Any]:
-    """Fail before optimization unless every exact start has complete owner derivatives."""
-
-    branch_signatures: dict[str, tuple[object, ...]] = {}
-    exact_start_results: dict[tuple[str, str, tuple[str, ...], tuple[float, ...]], Any] = {}
-    for start in resolved.fit.solver.multistart.starts:
-        active = _active_trial(resolved, start.values)
-        for batch in batches:
-            selected_targets = tuple(target for target in batch.targets if target.included)
-            if not selected_targets:
-                continue
-            result = _evaluate_batch(batch, active)
-            if result.status != "evaluated":
-                failure = result.failure
-                if failure is None:
-                    raise FitPreflightError(
-                        "owner_contract_failure",
-                        start.identity,
-                        batch.identity,
-                        "missing typed failure",
-                    )
-                # A scientific rejection at an exact caller start is part of
-                # multistart accounting. The pure owner will reproduce it for
-                # native solve accounting; it must not suppress usable starts.
-                continue
-            if result.branch_signature is None:
-                raise FitPreflightError(
-                    "owner_contract_failure",
-                    start.identity,
-                    batch.identity,
-                    "Equilibrium returned no certified branch",
-                )
-            rows = {row.identity: row for row in result.rows}
-            for target in selected_targets:
-                row = rows[target.prediction_identity]
-                if (
-                    row.value is None
-                    or row.jacobian is None
-                    or len(row.jacobian) != len(active.identities)
-                    or not math.isfinite(row.value)
-                    or any(not math.isfinite(value) for value in row.jacobian)
-                ):
-                    raise FitPreflightError(
-                        "owner_contract_failure",
-                        start.identity,
-                        batch.identity,
-                        "Equilibrium returned an incomplete selected row",
-                    )
-            signature = result.branch_signature
-            prior = branch_signatures.setdefault(batch.identity, signature)
-            if signature != prior:
-                raise FitPreflightError(
-                    "branch_loss",
-                    start.identity,
-                    batch.identity,
-                    "cross-start physical branch signature changed",
-                )
-            exact_start_results[
-                (start.identity, batch.identity, active.identities, active.values)
-            ] = result
-    return exact_start_results
-
-
-class _EquilibriumOwnerEvaluator:
-    __slots__ = (
-        "_active_ids",
-        "_batches",
-        "_exact_start_results",
-        "_full_space_starts",
-        "_parameters",
-        "_resolved",
-        "_starts",
-    )
-
-    def __init__(
-        self,
-        resolved: ResolvedFit,
-        batches: Sequence[_ReactiveBatch],
-    ) -> None:
-        self._parameters = resolved.parameters
-        self._resolved = resolved
-        self._starts = tuple(start.identity for start in resolved.fit.solver.multistart.starts)
-        self._active_ids = resolved.selected_identities
-        self._batches = tuple(batches)
-        self._exact_start_results: (
-            dict[tuple[str, str, tuple[str, ...], tuple[float, ...]], Any] | None
-        ) = None
-        self._full_space_starts: dict[int, tuple[tuple[tuple[float, ...], float], ...]] = {}
-
-    def set_full_space_starts(
-        self,
-        start_index: int,
-        starts: tuple[tuple[tuple[float, ...], float], ...],
-    ) -> None:
-        self._full_space_starts[start_index] = starts
-
-    @staticmethod
-    def _rejected(code: NonEvaluableTrialCode, reason: str) -> dict[str, object]:
-        return {"status": "rejected", "failure": {"code": code, "reason": reason}}
-
-    def __call__(
-        self,
-        _start_index: int,
-        index: int,
-        values: Sequence[float],
-        receipt_requested: bool,
-    ) -> dict[str, object]:
-        if not receipt_requested and self._exact_start_results is None:
-            self._exact_start_results = _preflight(self._resolved, self._batches)
-        batch = self._batches[index]
-        try:
-            active = ActiveParameterSet(self._parameters, self._active_ids, values=values)
-        except (ParameterError, TypeError, ValueError) as error:
-            return self._rejected("parameter_topology_mismatch", str(error))
-        result = None
-        if not receipt_requested:
-            assert self._exact_start_results is not None
-            result = self._exact_start_results.get(
-                (self._starts[_start_index], batch.identity, self._active_ids, active.values)
-            )
-        if result is None:
-            starts = self._full_space_starts.get(_start_index)
-            result = _evaluate_batch(
-                batch,
-                active,
-                None if starts is None else starts[index],
-            )
-        if result.status != "evaluated":
-            failure = result.failure
-            if failure is None:
-                return self._rejected(
-                    "owner_contract_failure",
-                    "Equilibrium returned a non-evaluable trial without a typed failure",
-                )
-            return self._rejected(failure.code, failure.diagnostic)
-        if (
-            result.descriptor is None
-            or result.descriptor.active_parameter_identities != self._active_ids
-            or result.trial is None
-            or result.trial.identities != self._active_ids
-            or result.trial.values != active.values
-            or result.trial.units != tuple(parameter.unit for parameter in active.coordinates)
-            or result.trial.active_parameter_fingerprint != active.fingerprint
-        ):
-            return self._rejected(
-                "owner_contract_failure",
-                "Equilibrium did not preserve the actual active-parameter trial receipt",
-            )
-        if result.branch_signature is None:
-            return self._rejected(
-                "owner_contract_failure",
-                "Equilibrium accepted a trial without a physical branch and certified state",
-            )
-        rows = {row.identity: row for row in result.rows}
-        selected = tuple(
-            rows[target.prediction_identity] for target in batch.targets if target.included
-        )
-        if any(row.value is None or row.jacobian is None for row in selected):
-            return self._rejected(
-                "owner_contract_failure",
-                "Equilibrium did not evaluate every selected measurement row",
-            )
-        response: dict[str, object] = {
-            "status": "accepted",
-            "predictions": [row.value for row in selected],
-            "jacobian": [value for row in selected for value in row.jacobian],
-        }
-        if receipt_requested:
-            response["receipt_json"] = serialize_general_reactive_equilibrium_receipt(
-                result,
-                batch_identity=batch.identity,
-                observations=tuple(
-                    GeneralEquilibriumOwnerObservation(
-                        target.identity,
-                        target.prediction_identity,
-                        target.aggregate_identity,
-                        target.covariance_identity,
-                    )
-                    for target in batch.targets
-                    if target.included
-                ),
-            )
-        return response
-
-
 def _equilibrium_owner_batches(
     resolved: ResolvedFit,
 ) -> tuple[
     tuple[_ReactiveBatch, ...],
     tuple[_ReactiveBatch, ...],
-    _EquilibriumOwnerEvaluator,
+    tuple[Mapping[str, object], ...],
     tuple[Mapping[str, object], ...],
     FitSpecificationReceipt,
 ]:
@@ -679,237 +485,64 @@ def _equilibrium_owner_batches(
         }
         for batch in active_batches
     )
+    active = ActiveParameterSet(resolved.parameters, resolved.selected_identities)
+    experiments = []
+    for batch in active_batches:
+        incipient_model, native_problem, reference_fingerprint = (
+            _native_general_reactive_equilibrium_inputs(
+                batch.model, batch.problem, active_parameters=active
+            )
+        )
+        output_index = {
+            output.identity: index for index, output in enumerate(batch.problem.outputs)
+        }
+        experiments.append(
+            {
+                "kind": "grepe",
+                "model": batch.model._native_model(active),
+                "incipient_model": incipient_model,
+                "problem": native_problem,
+                "temperature": _native_intensive(batch.problem.temperature, "kelvin"),
+                "pressure": _native_intensive(batch.problem.pressure, "pascal"),
+                "source_reference_fingerprint": reference_fingerprint,
+                "selected_rows": [
+                    output_index[target.prediction_identity]
+                    for target in batch.targets
+                    if target.included
+                ],
+            }
+        )
     return (
         batches,
         active_batches,
-        _EquilibriumOwnerEvaluator(resolved, active_batches),
+        tuple(experiments),
         residual_blocks,
         _specification_receipt(resolved, batches),
     )
 
 
-def _full_space_batches(
-    resolved: ResolvedFit,
-    batches: Sequence[_ReactiveBatch],
-    owner: _EquilibriumOwnerEvaluator | None = None,
-) -> tuple[Any, tuple[Mapping[str, object], ...]] | None:
-    compiled_batches: list[tuple[Any, ...]] = []
-    for batch in batches:
-        phase = batch.problem.phases[0]
-        outputs = {output.identity: output for output in batch.problem.outputs}
-        selected = tuple(
-            outputs[target.prediction_identity] for target in batch.targets if target.included
-        )
-        reaction = _effective_reaction_system(batch.problem)
-        if (
-            batch.descriptor.formulation != "finite"
-            or len(batch.problem.phases) != 1
-            or not isinstance(phase.model, ProviderModel)
-            or not isinstance(phase.support, AllComponents)
-            or batch.problem.continuation_state is None
-            or phase.start is not None
-            or any(
-                output.selector not in {"phase.amount", "phase.mole_fraction"}
-                for output in selected
+def _serialize_native_owner_result(
+    batch: _ReactiveBatch,
+    active: ActiveParameterSet,
+    native: object,
+) -> str:
+    result = _map_native_general_reactive_equilibrium(
+        batch.model, batch.problem, active, native
+    )
+    return serialize_general_reactive_equilibrium_receipt(
+        result,
+        batch_identity=batch.identity,
+        observations=tuple(
+            GeneralEquilibriumOwnerObservation(
+                target.identity,
+                target.prediction_identity,
+                target.aggregate_identity,
+                target.covariance_identity,
             )
-        ):
-            return None
-        reference = batch.problem.continuation_state.phase(phase.identity)
-        continuation = _continuation_start(reaction, reference)
-        if continuation is None:
-            return None
-        compiled_batches.append((batch, continuation, selected))
-
-    coordinate_count = len(resolved.coordinates)
-
-    setups: list[Mapping[str, object]] = []
-    start_blocks: list[tuple[Mapping[str, object], ...]] = []
-    expected_widths: tuple[tuple[int, int], ...] | None = None
-    try:
-        for start in resolved.fit.solver.multistart.starts:
-            trial = _active_trial(resolved, start.values)
-            initial: list[float] = []
-            lower: list[float] = []
-            upper: list[float] = []
-            constraint_lower: list[float] = []
-            constraint_upper: list[float] = []
-            blocks: list[Mapping[str, object]] = []
-            for batch, _continuation, _outputs in compiled_batches:
-                native = _core._solve_grepe(
-                    batch.model._native,
-                    batch.model._native,
-                    batch.problem,
-                    trial,
-                    _source_reference_fingerprint(
-                        batch.problem.reaction_system.source_standard_state,
-                        active_parameters_requested=True,
-                    ),
-                )
-                equilibrium = native.equilibrium
-                local = tuple(equilibrium.local_variables)
-                local_lower = tuple(equilibrium.local_lower_bounds)
-                local_upper = tuple(equilibrium.local_upper_bounds)
-                if not local or len(local_lower) != len(local) or len(local_upper) != len(local):
-                    return None
-                blocks.append(
-                    {
-                        "local_offset": len(initial),
-                        "local_width": len(local),
-                        "constraint_offset": len(constraint_lower),
-                        "constraint_width": len(local),
-                        "lower": local_lower,
-                        "upper": local_upper,
-                    }
-                )
-                initial.extend(local)
-                lower.extend(local_lower)
-                upper.extend(local_upper)
-                constraint_lower.extend([0.0] * len(local))
-                constraint_upper.extend([0.0] * len(local))
-            widths = tuple(
-                (cast(int, block["local_width"]), cast(int, block["constraint_width"]))
-                for block in blocks
-            )
-            if expected_widths is not None and widths != expected_widths:
-                return None
-            expected_widths = widths
-            rows: list[int] = []
-            columns: list[int] = []
-            for block in blocks:
-                for row in range(cast(int, block["constraint_width"])):
-                    rows.extend([cast(int, block["constraint_offset"]) + row] * coordinate_count)
-                    columns.extend(range(coordinate_count))
-                    rows.extend(
-                        [cast(int, block["constraint_offset"]) + row]
-                        * cast(int, block["local_width"])
-                    )
-                    columns.extend(
-                        coordinate_count + cast(int, block["local_offset"]) + column
-                        for column in range(cast(int, block["local_width"]))
-                    )
-            setups.append(
-                {
-                    "initial": initial,
-                    "lower": lower,
-                    "upper": upper,
-                    "constraint_lower": constraint_lower,
-                    "constraint_upper": constraint_upper,
-                    "jacobian_rows": rows,
-                    "jacobian_columns": columns,
-                }
-            )
-            start_blocks.append(tuple(blocks))
-    except (EosError, ParameterError, RuntimeError, TypeError, ValueError):
-        return None
-
-    coordinate_by_parameter = {
-        identity: index
-        for index, coordinate in enumerate(resolved.coordinates)
-        for identity in coordinate.tied_identities
-    }
-
-    def evaluate(start_index: int, values: Sequence[float]) -> Mapping[str, object]:
-        physical = tuple(
-            coordinate.origin + float(values[index]) * coordinate.scale
-            for index, coordinate in enumerate(resolved.coordinates)
-        )
-        trial = ActiveParameterSet(
-            resolved.parameters,
-            resolved.selected_identities,
-            values=tuple(
-                physical[coordinate_by_parameter[identity]]
-                for identity in resolved.selected_identities
-            ),
-        )
-        variable_count = coordinate_count + len(
-            cast(Sequence[object], setups[start_index]["initial"])
-        )
-        residuals: list[float] = []
-        residual_jacobian: list[float] = []
-        constraints: list[float] = []
-        constraint_jacobian: list[float] = []
-        continuation_starts: list[tuple[tuple[float, ...], float]] = []
-        for compiled, bounds in zip(compiled_batches, start_blocks[start_index], strict=True):
-            batch, _continuation, outputs = compiled
-            local_width = cast(int, bounds["local_width"])
-            local_offset = coordinate_count + cast(int, bounds["local_offset"])
-            native = _core._evaluate_grepe_local(
-                batch.model._native,
-                batch.problem,
-                trial,
-                _source_reference_fingerprint(
-                    batch.problem.reaction_system.source_standard_state,
-                    active_parameters_requested=True,
-                ),
-                values[local_offset : local_offset + local_width],
-                cast(Sequence[float], bounds["lower"]),
-                cast(Sequence[float], bounds["upper"]),
-            )
-            equilibrium = native.equilibrium
-            amounts = tuple(next(iter(equilibrium.phase_amounts_mol)))
-            volume = float(next(iter(equilibrium.phase_volumes_m3)))
-            continuation_starts.append((amounts, volume))
-            predictions = tuple(equilibrium.output_values)
-            output_local = tuple(equilibrium.output_local_derivatives)
-            for target, output in zip(
-                (target for target in batch.targets if target.included), outputs, strict=True
-            ):
-                output_index = batch.problem.outputs.index(output)
-                prediction = float(predictions[output_index])
-                local_jacobian = output_local[
-                    output_index * local_width : (output_index + 1) * local_width
-                ]
-                multiplier = target.multiplier
-                factor = multiplier / target.scale
-                if target.residual == "log_ratio":
-                    factor = multiplier / prediction
-                    residual = multiplier * math.log(prediction / target.observed)
-                elif (
-                    target.residual == "left_censored"
-                    and prediction <= target.observed
-                    or target.residual == "right_censored"
-                    and prediction >= target.observed
-                ):
-                    factor = residual = 0.0
-                else:
-                    residual = multiplier * (prediction - target.observed) / target.scale
-                residuals.append(residual)
-                row_jacobian = [0.0] * variable_count
-                row_jacobian[local_offset : local_offset + local_width] = (
-                    factor * derivative for derivative in local_jacobian
-                )
-                residual_jacobian.extend(row_jacobian)
-            block_constraints = tuple(equilibrium.kkt_root_values)
-            constraints.extend(block_constraints)
-            state_jacobian = equilibrium.kkt_root_jacobian
-            order = tuple(equilibrium.input_order)
-            parameter_jacobian = equilibrium.kkt_input_jacobian
-            parameter_columns = {
-                identity: order.index(identity) for identity in resolved.selected_identities
-            }
-            for row in range(len(block_constraints)):
-                for coordinate in resolved.coordinates:
-                    constraint_jacobian.append(
-                        coordinate.scale
-                        * math.fsum(
-                            parameter_jacobian[row * len(order) + parameter_columns[identity]]
-                            for identity in coordinate.tied_identities
-                            if identity in parameter_columns
-                        )
-                    )
-                constraint_jacobian.extend(
-                    state_jacobian[row * local_width : (row + 1) * local_width]
-                )
-        if owner is not None:
-            owner.set_full_space_starts(start_index, tuple(continuation_starts))
-        return {
-            "residuals": residuals,
-            "residual_jacobian": residual_jacobian,
-            "constraints": constraints,
-            "constraint_jacobian": constraint_jacobian,
-        }
-
-    return evaluate, tuple(setups)
+            for target in batch.targets
+            if target.included
+        ),
+    )
 
 
 __all__: tuple[str, ...] = ()

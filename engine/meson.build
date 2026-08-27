@@ -143,11 +143,29 @@ equilibrium_core = static_library(
   pic: true,
 )
 
+regression_core = static_library(
+  'epcsaft_engine_regression_core',
+  'src/epcsaft/regression/native/fit_core.cpp',
+  cpp_args: native_warnings,
+  dependencies: [
+    ipopt_dep,
+    eigen_dep,
+  ],
+  include_directories: [
+    equilibrium_inc,
+    eos_inc,
+    include_directories('src/epcsaft/regression/native'),
+  ],
+  install: false,
+  link_with: [eos_core, equilibrium_core],
+  pic: true,
+)
+
 py.extension_module(
   '_core',
   'src/epcsaft/_native/module.cpp',
   'src/epcsaft/_native/saturation_pybind.cpp',
-  'src/epcsaft/regression/native/fit.cpp',
+  'src/epcsaft/regression/native/fit_pybind.cpp',
   'cpp/equilibrium/module.cpp',
   'cpp/equilibrium/chemical_equilibrium_bindings.cpp',
   cpp_args: native_warnings,
@@ -164,7 +182,7 @@ py.extension_module(
   ],
   install: true,
   link_args: release_link_args,
-  link_with: [eos_core, equilibrium_core],
+  link_with: [eos_core, equilibrium_core, regression_core],
   subdir: 'epcsaft',
 )
 

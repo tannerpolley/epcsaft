@@ -75,7 +75,8 @@ owners:
     resolution: src/epcsaft/regression/_resolve.py
     fit: epcsaft.regression.fit
     result: epcsaft.regression.FitResult
-    native_fit: src/epcsaft/regression/native/fit.cpp
+    native_fit: src/epcsaft/regression/native/fit_core.cpp
+    native_binding: src/epcsaft/regression/native/fit_pybind.cpp
     native_sources: src/epcsaft/regression/native
     optimizer: ipopt
     scientific_values: owner_provided_only
@@ -86,8 +87,8 @@ owners:
     equilibrium_observation_families: [general_reactive]
   native_core:
     extension: epcsaft._core
-    static_libraries: [eos_core, equilibrium_core]
-    binding_sources: [src/epcsaft/_native, cpp/equilibrium]
+    static_libraries: [eos_core, equilibrium_core, regression_core]
+    binding_sources: [src/epcsaft/_native, cpp/equilibrium, src/epcsaft/regression/native/fit_pybind.cpp]
     internal_types: direct_cpp
     public_cpp_abi: forbidden
     installed_headers: forbidden

@@ -1,5 +1,5 @@
 #include "eos.hpp"
-#include "fit.hpp"
+#include "fit_pybind.hpp"
 #include "phase_block.hpp"
 
 #include <pybind11/pybind11.h>

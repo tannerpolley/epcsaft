@@ -6,15 +6,18 @@ import math
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from typing import Any, SupportsFloat, cast
+from unittest.mock import patch
 
 import pytest
 
+from epcsaft import _core
 from epcsaft.eos import Mixture, Pure
 from epcsaft.parameters import Parameters
 from epcsaft.regression import FitPreflightError, FitResult, ParameterFit, fit
 from epcsaft.units import unit_registry
 from tests.eos._raw_cases import NEUTRAL_BINARY
 from tests.eos.numerical.test_parameter_derivatives import _neutral_ternary_pairs
+from tests.regression.numerical._monitoring import call_without_python_frames
 
 _PURE_IDENTITY = "component/ethane/dispersion_energy_over_k"
 _PURE_TRUE_VALUE = 191.42
@@ -593,7 +596,22 @@ def test_pure_saturation_owner_transfer_and_non_evaluable_trial_diagnostics(
     """Falsify duplicated saturation evaluation and fabricated failed-trial penalties."""
 
     input_parameters = _pure_parameters(187.0)
-    successful = fit(_pure_fit_mapping(tmp_path, input_parameters, "successful"))
+    native_fit = _core._fit_resolved
+    captured: dict[str, object] = {}
+    frames: tuple[Any, ...] = ()
+    native_arguments: tuple[object, ...] = ()
+
+    def monitored_fit(*args: object) -> object:
+        nonlocal frames, native_arguments
+        native_arguments = args
+        result, frames = call_without_python_frames(native_fit, *args)
+        captured.update(cast(dict[str, object], result))
+        return result
+
+    with patch.object(_core, "_fit_resolved", side_effect=monitored_fit):
+        successful = fit(_pure_fit_mapping(tmp_path, input_parameters, "successful"))
+    assert frames == ()
+    assert captured["evaluation_strategy"] == "reduced_space"
     assert isinstance(successful, FitResult)
     assert successful.best_usable_start is not None
     assert successful.best_usable_start.owner_receipts == ()
@@ -619,9 +637,27 @@ def test_pure_saturation_owner_transfer_and_non_evaluable_trial_diagnostics(
     assert successful.best_usable_start.final_physical[0] == pytest.approx(
         _PURE_TRUE_VALUE, abs=1.0e-7
     )
+    truth_model = Pure(_pure_parameters(_PURE_TRUE_VALUE))
+    expected_predictions = []
+    for temperature in (190.0, 200.0, 210.0):
+        saturation = truth_model.saturation(T=temperature * unit_registry.kelvin)
+        expected_predictions.extend(
+            (saturation.saturation_pressure_pa, saturation.liquid.molar_density_mol_m3)
+        )
+    assert successful.best_usable_start.predictions == pytest.approx(
+        expected_predictions, rel=2.0e-9, abs=2.0e-8
+    )
     fitted = successful.export_candidate_parameters()
     assert _parameter_value(input_parameters, _PURE_IDENTITY) == 187.0
     assert _parameter_value(fitted, _PURE_IDENTITY) == pytest.approx(_PURE_TRUE_VALUE, abs=1.0e-7)
+
+    malformed_experiments = [
+        dict(cast(Mapping[str, object], experiment))
+        for experiment in cast(Sequence[object], native_arguments[6])
+    ]
+    malformed_experiments[0]["selected_rows"] = ()
+    with pytest.raises(ValueError, match="one row per observation target"):
+        native_fit(*native_arguments[:6], malformed_experiments)
 
     with pytest.raises(FitPreflightError) as error:
         fit(_pure_fit_mapping(tmp_path, _pure_parameters(20.0), "failed"))

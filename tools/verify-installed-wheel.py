@@ -11,6 +11,7 @@ from urllib.parse import unquote, urlparse
 from zipfile import ZipFile
 
 PUBLIC_MODULES = ("epcsaft", "epcsaft.equilibrium", "epcsaft.regression")
+NATIVE_ENTRYPOINTS = ("_fit_resolved", "_solve_grepe")
 NATIVE_MEMBER_PREFIX = "epcsaft/_core."
 TRANSIENT_WHEEL_RUNPATH = b"/wheel/platlib/lib"
 
@@ -63,6 +64,9 @@ def verify(wheel: Path) -> None:
         if installed_root not in origin.parents:
             raise SystemExit(f"{name} is outside the installed wheel: {origin}")
         origins.append(f"{name}={origin.relative_to(installed_root)}")
+    core = import_module("epcsaft._core")
+    if any(not callable(getattr(core, name, None)) for name in NATIVE_ENTRYPOINTS):
+        raise SystemExit(f"unified Engine extension lacks {NATIVE_ENTRYPOINTS}")
 
     print(f"epcsaft {distribution.version} installed from {wheel}")
     print("module origins: " + ", ".join(origins))
