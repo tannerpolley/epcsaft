@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import csv
 import hashlib
-import json
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -12,6 +11,7 @@ from typing import cast
 
 import pint
 
+from .._canonical import _canonical_json_bytes
 from ..eos import (
     OBSERVABLE_FAMILIES,
     OBSERVABLE_TARGETS,
@@ -161,14 +161,8 @@ class ResolvedFit:
         }
 
 
-def _canonical(value: object) -> bytes:
-    return json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode(
-        "utf-8"
-    )
-
-
 def _hash(value: object) -> str:
-    return f"sha256:{hashlib.sha256(_canonical(value)).hexdigest()}"
+    return f"sha256:{hashlib.sha256(_canonical_json_bytes(value)).hexdigest()}"
 
 
 def _path_root(base_path: str | PathLike[str] | None) -> Path:

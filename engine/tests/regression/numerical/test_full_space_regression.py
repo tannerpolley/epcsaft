@@ -6,7 +6,7 @@ import json
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import replace
-from typing import cast
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -81,6 +81,12 @@ def _source_standard_problem(
 
 @pytest.mark.slow
 def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_path) -> None:
+    """Run the retained GREPE derivative, N=1, and generic N=8 acceptance case.
+
+    Benchmark from ``engine/`` with::
+
+        /usr/bin/time -f 'wall_time_seconds=%e' env OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 ../.venv/bin/python -m pytest -q -m slow tests/regression/numerical/test_full_space_regression.py
+    """
     parameters = epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE)
     model = epcsaft.Mixture(parameters)
     reaction = _source_standard_problem(model, _multineutral_problem())
@@ -206,9 +212,7 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
     resolved = ParameterFit.from_mapping(mapping).resolve(parameters, base_path=tmp_path)
     _, batches, *_ = _equilibrium_owner_batches(resolved)
     batch = batches[0]
-    active = epcsaft.ActiveParameterSet(
-        parameters, (parameter_identity,), values=(2.8,)
-    )
+    active = epcsaft.ActiveParameterSet(parameters, (parameter_identity,), values=(2.8,))
     _, native_problem, fingerprint = _native_general_reactive_equilibrium_inputs(
         batch.model, batch.problem, active_parameters=active
     )
@@ -220,9 +224,7 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
     upper = tuple(initialized.local_upper_bounds)
 
     def evaluate(parameter: float, values: tuple[float, ...]) -> object:
-        trial = epcsaft.ActiveParameterSet(
-            parameters, (parameter_identity,), values=(parameter,)
-        )
+        trial = epcsaft.ActiveParameterSet(parameters, (parameter_identity,), values=(parameter,))
         return _core._evaluate_grepe_local(
             batch.model._native,
             native_problem,
@@ -236,12 +238,14 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
     center = evaluate(2.8, local)
     assert center.accepted
     assert len(local) == len(center.kkt_root_values)
+    assert reaction.source_standard_state is not None
 
-    columns: list[tuple[float, ...]] = []
+    constraint_columns: list[tuple[float, ...]] = []
+    output_columns: list[tuple[float, ...]] = []
     parameter_step = 1.0e-5
     parameter_below = evaluate(2.8 - parameter_step, local)
     parameter_above = evaluate(2.8 + parameter_step, local)
-    columns.append(
+    constraint_columns.append(
         tuple(
             (high - low) / (2.0 * parameter_step)
             for low, high in zip(
@@ -251,14 +255,29 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
             )
         )
     )
+    output_columns.append(
+        tuple(
+            (high - low) / (2.0 * parameter_step)
+            for low, high in zip(
+                parameter_below.output_values,
+                parameter_above.output_values,
+                strict=True,
+            )
+        )
+    )
     input_column = tuple(center.input_order).index(parameter_identity)
     input_width = len(center.input_order)
     parameter_column = tuple(center.parameter_order).index(parameter_identity)
     parameter_width = len(center.parameter_order)
-    exact_columns = [
+    exact_constraint_columns = [
         tuple(
-            center.kkt_input_jacobian[row * input_width + input_column]
-            for row in range(len(local))
+            center.kkt_input_jacobian[row * input_width + input_column] for row in range(len(local))
+        )
+    ]
+    exact_output_columns = [
+        tuple(
+            center.output_parameter_partials[row * parameter_width + parameter_column]
+            for row in range(len(center.output_values))
         )
     ]
     for column, value in enumerate(local):
@@ -271,61 +290,48 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
         )
         below = evaluate(2.8, below_values)
         above = evaluate(2.8, above_values)
-        columns.append(
+        constraint_columns.append(
             tuple(
                 (high - low) / (2.0 * step)
-                for low, high in zip(
-                    below.kkt_root_values, above.kkt_root_values, strict=True
-                )
+                for low, high in zip(below.kkt_root_values, above.kkt_root_values, strict=True)
             )
         )
-        exact_columns.append(
+        output_columns.append(
             tuple(
-                center.kkt_root_jacobian[row * len(local) + column]
-                for row in range(len(local))
+                (high - low) / (2.0 * step)
+                for low, high in zip(below.output_values, above.output_values, strict=True)
             )
         )
-    for exact, centered in zip(exact_columns, columns, strict=True):
-        for expected, actual in zip(exact, centered, strict=True):
-            scale = max(2.0e-9, abs(expected), abs(actual))
-            assert abs(expected - actual) / scale <= 5.0e-5
+        exact_constraint_columns.append(
+            tuple(center.kkt_root_jacobian[row * len(local) + column] for row in range(len(local)))
+        )
+        exact_output_columns.append(
+            tuple(
+                center.output_local_derivatives[row * len(local) + column]
+                for row in range(len(center.output_values))
+            )
+        )
 
-    def objective(evaluated: object) -> float:
-        residual = (evaluated.output_values[0] - observed) / observed
-        return 0.5 * residual * residual
-
-    center_residual = (center.output_values[0] - observed) / observed
-    exact_objective = [
-        center_residual
-        * center.output_parameter_partials[parameter_column]
-        / observed
-    ]
-    centered_objective = [
-        (objective(parameter_above) - objective(parameter_below))
-        / (2.0 * parameter_step)
-    ]
-    for column, value in enumerate(local):
-        step = 1.0e-5 * max(1.0, abs(value))
-        below_values = tuple(
-            item - step if index == column else item for index, item in enumerate(local)
+    assert all(
+        math.isfinite(value)
+        for block in (
+            center.kkt_root_values,
+            center.kkt_root_jacobian,
+            center.kkt_input_jacobian,
+            center.output_values,
+            center.output_local_derivatives,
+            center.output_parameter_partials,
         )
-        above_values = tuple(
-            item + step if index == column else item for index, item in enumerate(local)
-        )
-        below_local = evaluate(2.8, below_values)
-        above_local = evaluate(2.8, above_values)
-        exact_objective.append(
-            center_residual
-            * center.output_local_derivatives[column]
-            / observed
-        )
-        centered_objective.append(
-            (objective(above_local) - objective(below_local)) / (2.0 * step)
-        )
-    assert len(center.output_parameter_partials) == parameter_width
-    for expected, actual in zip(exact_objective, centered_objective, strict=True):
-        scale = max(2.0e-9, abs(expected), abs(actual))
-        assert abs(expected - actual) / scale <= 5.0e-5
+        for value in block
+    )
+    for exact_columns, centered_columns in (
+        (exact_constraint_columns, constraint_columns),
+        (exact_output_columns, output_columns),
+    ):
+        for exact, centered in zip(exact_columns, centered_columns, strict=True):
+            for expected, actual in zip(exact, centered, strict=True):
+                scale = max(2.0e-9, abs(expected), abs(actual))
+                assert abs(expected - actual) / scale <= 5.0e-5
 
     native_fit = _core._fit_resolved
     captured: dict[str, object] = {}
@@ -356,16 +362,37 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
     assert accepted.predictions == pytest.approx((observed,), rel=2.0e-6, abs=2.0e-8)
     assert accepted.owner_failures == ()
 
+    retained_provenance: dict[str, object] | None = None
+
     def assert_owner_receipts(start: object, count: int) -> None:
-        receipts = cast(Sequence[object], getattr(start, "owner_receipts"))
+        nonlocal retained_provenance
+        receipts = cast(Sequence[object], cast(Any, start).owner_receipts)
         assert len(receipts) == count
         for opaque in receipts:
-            receipt = json.loads(getattr(opaque, "canonical_bytes_utf8"))
+            receipt = json.loads(cast(Any, opaque).canonical_bytes_utf8)
             assert receipt["certificate_scope"] == truth.certificate_scope
             assert receipt["branch_signature"] == json.loads(json.dumps(truth.branch_signature))
-            assert {
-                key: value["status"] for key, value in receipt["outcomes"].items()
-            } == {
+            provenance = {
+                key: receipt[key]
+                for key in (
+                    "descriptor_fingerprint",
+                    "problem_fingerprint",
+                    "reaction_fingerprint",
+                    "topology_fingerprint",
+                    "reference_fingerprint",
+                    "domain_fingerprint",
+                    "formulation",
+                    "certificate_scope",
+                    "globality_claim",
+                    "resolved_policy",
+                    "branch_signature",
+                )
+            }
+            if retained_provenance is None:
+                retained_provenance = provenance
+            else:
+                assert provenance == retained_provenance
+            assert {key: value["status"] for key, value in receipt["outcomes"].items()} == {
                 "solver_convergence": "passed",
                 "numerical_convergence": "passed",
                 "physical_certification": "passed",
@@ -382,6 +409,8 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
     assert_owner_receipts(accepted, 1)
     assert all(outcome.status == "evaluated" for outcome in accepted.batch_outcomes)
     assert result.accounting.dropped_rows == 0
+    assert result.accounting.rejected_row_trials == 0
+    assert result.accounting.failed_row_trials == 0
 
     eight_mapping = copy.deepcopy(mapping)
     eight_mapping["observations"] = []
@@ -392,22 +421,25 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
         observation["targets"][0]["source_identity"] = f"manufactured-full-space-{index}"
         eight_mapping["observations"].append(observation)
     captured_eight: dict[str, object] = {}
+    eight_frames: tuple[object, ...] = ()
 
     def capture_eight(*args: object) -> object:
-        value = native_fit(*args)
+        nonlocal eight_frames
+        value, eight_frames = call_without_python_frames(native_fit, *args)
         captured_eight.update(value)
         return value
 
     with patch.object(_core, "_fit_resolved", side_effect=capture_eight):
         eight_result = regression.fit(eight_mapping, base_path=tmp_path)
+    assert eight_frames == ()
     assert captured_eight["evaluation_strategy"] == "simultaneous_sparse_full_space"
     eight_accepted = eight_result.best_usable_start
     assert eight_accepted is not None
     assert eight_accepted.final_physical == pytest.approx((truth_parameter,), abs=2.0e-7)
-    assert eight_accepted.predictions == pytest.approx(
-        (observed,) * 8, rel=2.0e-6, abs=2.0e-8
-    )
+    assert eight_accepted.predictions == pytest.approx((observed,) * 8, rel=2.0e-6, abs=2.0e-8)
     assert eight_accepted.owner_failures == ()
     assert_owner_receipts(eight_accepted, 8)
     assert all(outcome.status == "evaluated" for outcome in eight_accepted.batch_outcomes)
     assert eight_result.accounting.dropped_rows == 0
+    assert eight_result.accounting.rejected_row_trials == 0
+    assert eight_result.accounting.failed_row_trials == 0

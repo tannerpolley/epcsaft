@@ -159,6 +159,102 @@ struct CompiledGrepeFinite {
     double source_residual = 0.0;
 };
 
+struct GrepeSourceValues final {
+    std::vector<double> ln_k;
+    std::vector<double> pressure_derivatives_per_pa;
+    std::vector<double> parameter_derivatives;
+    double representation_residual_inf_norm = 0.0;
+};
+
+GrepeSourceValues evaluate_source_values(
+    const ProviderContext& provider,
+    const ReactionSystemInput& input,
+    const GrepeRequest& request,
+    const ProviderActiveParameterSet& parameters
+) {
+    const GrepeSourceStandardState& standard = *request.source;
+    for (const EquilibriumConstantRecord& record : input.equilibrium_constant_records) {
+        if (record.reference_id != standard.id
+            || record.conversion_id
+                != "source-standard-state-to-provider-neutral-reference"
+            || record.pressure_pa != standard.reference_pressure_pa) {
+            throw std::invalid_argument(
+                "source equilibrium-constant declaration is incompatible"
+            );
+        }
+    }
+    const SourceReferenceResult source = provider.evaluate_source_reference_transfer(
+        input.temperature_k,
+        input.pressure_pa,
+        standard.reference
+    );
+    const SourceReferenceTransferEvidence evidence = source_evidence(
+        source,
+        standard,
+        parameters
+    );
+    const SourceStandardStateResult transformed = transform_source_standard_state(
+        input.reaction_matrix,
+        input.ln_k,
+        standard.log_activity_scale_factors,
+        input.species_ids,
+        input.charges,
+        input.provider_fingerprint,
+        input.temperature_k,
+        input.pressure_pa,
+        evidence
+    );
+    return {
+        transformed.ln_k_provider_basis,
+        transformed.ln_k_pressure_derivatives_per_pa,
+        transformed.ln_k_parameter_derivatives,
+        transformed.representation_residual_inf_norm,
+    };
+}
+
+void apply_source_values(
+    CompiledReactionSystem& system,
+    const GrepeSourceValues& source,
+    std::size_t reaction_count,
+    std::size_t parameter_count
+) {
+    system.g_ref = reconstruct_compiled_reference(system, source.ln_k);
+    system.g_ref_pressure_derivatives_per_pa.clear();
+    if (!source.pressure_derivatives_per_pa.empty()) {
+        system.g_ref_pressure_derivatives_per_pa = reconstruct_compiled_reference(
+            system, source.pressure_derivatives_per_pa
+        );
+    }
+    system.g_ref_parameter_derivatives.clear();
+    if (parameter_count == 0) {
+        return;
+    }
+    if (source.parameter_derivatives.size() != reaction_count * parameter_count) {
+        throw std::invalid_argument(
+            "source-reference parameter derivatives are unavailable"
+        );
+    }
+    system.g_ref_parameter_derivatives.assign(
+        system.species_count * parameter_count, 0.0
+    );
+    for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
+        std::vector<double> derivative(reaction_count, 0.0);
+        for (std::size_t reaction = 0; reaction < reaction_count; ++reaction) {
+            derivative[reaction] = source.parameter_derivatives[
+                reaction * parameter_count + parameter
+            ];
+        }
+        const std::vector<double> reference = reconstruct_compiled_reference(
+            system, derivative
+        );
+        for (std::size_t species = 0; species < system.species_count; ++species) {
+            system.g_ref_parameter_derivatives[
+                species * parameter_count + parameter
+            ] = reference[species];
+        }
+    }
+}
+
 CompiledGrepeFinite compile_finite(
     const ProviderContext& provider,
     ReactionSystemInput input,
@@ -178,97 +274,21 @@ CompiledGrepeFinite compile_finite(
         }
         result.system = compile_reaction_system(input, !configured_directions);
     } else {
-        const GrepeSourceStandardState& standard = *request.source;
-        for (const EquilibriumConstantRecord& record : input.equilibrium_constant_records) {
-            if (record.reference_id != standard.id
-                || record.conversion_id
-                    != "source-standard-state-to-provider-neutral-reference"
-                || record.pressure_pa != standard.reference_pressure_pa) {
-                throw std::invalid_argument(
-                    "source equilibrium-constant declaration is incompatible"
-                );
-            }
-        }
-        const ProviderContext source_provider(provider.model());
-        const SourceReferenceResult source = source_provider.evaluate_source_reference_transfer(
-            input.temperature_k,
-            input.pressure_pa,
-            standard.reference
+        const GrepeSourceValues source = evaluate_source_values(
+            provider, input, request, parameters
         );
-        const SourceReferenceTransferEvidence evidence = source_evidence(
-            source,
-            standard,
-            parameters
-        );
-        const SourceStandardStateResult transformed = transform_source_standard_state(
-            input.reaction_matrix,
-            input.ln_k,
-            standard.log_activity_scale_factors,
-            input.species_ids,
-            input.charges,
-            input.provider_fingerprint,
-            input.temperature_k,
-            input.pressure_pa,
-            evidence
-        );
-        result.source_residual = transformed.representation_residual_inf_norm;
-        input.ln_k = transformed.ln_k_provider_basis;
+        result.source_residual = source.representation_residual_inf_norm;
+        input.ln_k = source.ln_k;
         for (EquilibriumConstantRecord& record : input.equilibrium_constant_records) {
             record.reference_id = "provider-helmholtz-coordinate-basis";
             record.conversion_id = "already-provider-basis";
             record.pressure_pa = input.pressure_pa;
         }
         result.system = compile_reaction_system(input, !configured_directions);
-        if (!transformed.ln_k_pressure_derivatives_per_pa.empty()) {
-            ReactionSystemInput derivative = input;
-            derivative.ln_k = transformed.ln_k_pressure_derivatives_per_pa;
-            const CompiledReactionSystem compiled = compile_reaction_system(
-                derivative,
-                !configured_directions
-            );
-            if (compiled.retained_species_indices != result.system.retained_species_indices) {
-                throw std::invalid_argument(
-                    "source-reference pressure derivative species face changed"
-                );
-            }
-            result.system.g_ref_pressure_derivatives_per_pa = compiled.g_ref;
-        }
-        const std::size_t parameter_count = parameters.identities.size();
-        if (parameter_count != 0) {
-            if (transformed.ln_k_parameter_derivatives.size()
-                != input.reaction_matrix.rows * parameter_count) {
-                throw std::invalid_argument(
-                    "source-reference parameter derivatives are unavailable"
-                );
-            }
-            result.system.g_ref_parameter_derivatives.assign(
-                result.system.species_count * parameter_count,
-                0.0
-            );
-            for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
-                ReactionSystemInput derivative = input;
-                for (std::size_t reaction = 0; reaction < input.reaction_matrix.rows; ++reaction) {
-                    derivative.ln_k[reaction] = transformed.ln_k_parameter_derivatives[
-                        reaction * parameter_count + parameter
-                    ];
-                }
-                const CompiledReactionSystem compiled = compile_reaction_system(
-                    derivative,
-                    !configured_directions
-                );
-                if (compiled.retained_species_indices
-                    != result.system.retained_species_indices) {
-                    throw std::invalid_argument(
-                        "source-reference derivative species face changed"
-                    );
-                }
-                for (std::size_t species = 0; species < result.system.species_count; ++species) {
-                    result.system.g_ref_parameter_derivatives[
-                        species * parameter_count + parameter
-                    ] = compiled.g_ref[species];
-                }
-            }
-        }
+        apply_source_values(
+            result.system, source, input.reaction_matrix.rows,
+            parameters.identities.size()
+        );
     }
     result.system = expand_species_face(std::move(result.system), input);
     result.system.ideal_gas = ideal_gas;
@@ -731,6 +751,41 @@ std::optional<FiniteGrepeContext> prepare_finite_grepe(
     };
 }
 
+FiniteGrepeContext prepare_retained_finite_grepe(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const GrepeLocalStructure& structure,
+    const GrepeLocalPoint& point
+) {
+    ProviderContext provider(model);
+    ProviderActiveParameterSet parameters = provider.active_parameters();
+    if (parameters.identities != structure.active_parameter_identities) {
+        throw std::invalid_argument(
+            "retained GREPE active parameter identities or order changed"
+        );
+    }
+    GrepeResult result;
+    result.formulation = "finite";
+    result.certificate_scope = structure.phases.size() == 1
+        ? "fixed_TP_single_finite_reacting_phase"
+        : "fixed_TP_configured_finite_phases_local_minimum";
+    result.temperature_k = request.temperature.value;
+    result.pressure_pa = request.pressure.value;
+    result.source_reference_representation_residual_inf_norm =
+        point.source_reference_representation_residual_inf_norm;
+    return {
+        structure.phases,
+        structure.ideal_gas,
+        std::move(provider),
+        effective_reaction(request),
+        {point.system, point.source_reference_representation_residual_inf_norm},
+        std::move(parameters),
+        structure.packing_fraction_intervals,
+        structure.phase_support_indices,
+        std::move(result),
+    };
+}
+
 GrepeResult solve_finite_result(
     const epcsaft::NativeModel& model,
     const GrepeRequest& request
@@ -811,20 +866,13 @@ GrepeResult solve_finite_result(
     return result;
 }
 
-GrepeResult evaluate_finite_result(
-    const epcsaft::NativeModel& model,
+GrepeResult evaluate_finite_context(
+    FiniteGrepeContext context,
     const GrepeRequest& request,
     const std::vector<double>& local_variables,
     const std::vector<double>& local_lower_bounds,
     const std::vector<double>& local_upper_bounds
 ) {
-    std::optional<FiniteGrepeContext> prepared = prepare_finite_grepe(model, request);
-    if (!prepared.has_value()) {
-        return unsupported(
-            "declared reactive phase/state topology has no implemented GREPE formulation"
-        );
-    }
-    FiniteGrepeContext& context = *prepared;
     context.result.equilibrium = evaluate_provider_reactive_finite_phases_local(
         context.compiled.system,
         context.provider,
@@ -842,7 +890,7 @@ GrepeResult evaluate_finite_result(
     return std::move(context.result);
 }
 
-GrepeResult finalize_finite_result(
+GrepeResult evaluate_finite_result(
     const epcsaft::NativeModel& model,
     const GrepeRequest& request,
     const std::vector<double>& local_variables,
@@ -855,7 +903,22 @@ GrepeResult finalize_finite_result(
             "declared reactive phase/state topology has no implemented GREPE formulation"
         );
     }
-    FiniteGrepeContext& context = *prepared;
+    return evaluate_finite_context(
+        std::move(*prepared),
+        request,
+        local_variables,
+        local_lower_bounds,
+        local_upper_bounds
+    );
+}
+
+GrepeResult finalize_finite_context(
+    FiniteGrepeContext context,
+    const GrepeRequest& request,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds
+) {
     context.result.equilibrium = finalize_provider_reactive_finite_phases_local(
         context.compiled.system,
         context.provider,
@@ -882,9 +945,12 @@ GrepeResult finalize_finite_result(
     return std::move(context.result);
 }
 
-GrepeResult initialize_finite_result(
+GrepeResult finalize_finite_result(
     const epcsaft::NativeModel& model,
-    const GrepeRequest& request
+    const GrepeRequest& request,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds
 ) {
     std::optional<FiniteGrepeContext> prepared = prepare_finite_grepe(model, request);
     if (!prepared.has_value()) {
@@ -892,7 +958,19 @@ GrepeResult initialize_finite_result(
             "declared reactive phase/state topology has no implemented GREPE formulation"
         );
     }
-    FiniteGrepeContext& context = *prepared;
+    return finalize_finite_context(
+        std::move(*prepared),
+        request,
+        local_variables,
+        local_lower_bounds,
+        local_upper_bounds
+    );
+}
+
+GrepeResult initialize_finite_context(
+    FiniteGrepeContext context,
+    const GrepeRequest& request
+) {
     if (request.continuation_phases.size() != 1
         || request.continuation_phases[0].identity != context.phases[0].identity) {
         throw std::invalid_argument(
@@ -924,6 +1002,19 @@ GrepeResult initialize_finite_result(
         request.outputs
     );
     return std::move(context.result);
+}
+
+GrepeResult initialize_finite_result(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request
+) {
+    std::optional<FiniteGrepeContext> prepared = prepare_finite_grepe(model, request);
+    if (!prepared.has_value()) {
+        return unsupported(
+            "declared reactive phase/state topology has no implemented GREPE formulation"
+        );
+    }
+    return initialize_finite_context(std::move(*prepared), request);
 }
 
 class GrepeFailure final : public std::runtime_error {
@@ -2837,6 +2928,157 @@ GrepeResult solve_grepe(
         result.equilibrium.failure_reason = diagnostic;
         return result;
     }
+}
+
+GrepeLocalStructure compile_grepe_local_structure(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request
+) {
+    std::optional<FiniteGrepeContext> prepared = prepare_finite_grepe(model, request);
+    if (!prepared.has_value()) {
+        throw std::invalid_argument(
+            "declared reactive phase/state topology has no local GREPE structure"
+        );
+    }
+    return {
+        std::move(prepared->compiled.system),
+        std::move(prepared->phases),
+        prepared->ideal,
+        std::move(prepared->packing),
+        std::move(prepared->supports),
+        std::move(prepared->parameters.identities),
+    };
+}
+
+GrepeLocalPoint evaluate_grepe_local_point(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const GrepeLocalStructure& structure
+) {
+    ProviderContext provider(model);
+    const ProviderActiveParameterSet parameters = provider.active_parameters();
+    if (parameters.identities != structure.active_parameter_identities
+        || provider.fingerprint() != structure.system.provider_fingerprint) {
+        throw std::invalid_argument(
+            "retained GREPE provider or active parameter order changed"
+        );
+    }
+    GrepeLocalPoint point{structure.system, 0.0};
+    if (!request.source.has_value()) {
+        return point;
+    }
+    ReactionSystemInput input = effective_reaction(request);
+    input.temperature_k = request.temperature.value;
+    input.pressure_pa = request.pressure.value;
+    input.provider_fingerprint = provider.fingerprint();
+    const GrepeSourceValues source = evaluate_source_values(
+        provider, input, request, parameters
+    );
+    point.source_reference_representation_residual_inf_norm =
+        source.representation_residual_inf_norm;
+    apply_source_values(
+        point.system, source, input.reaction_matrix.rows,
+        parameters.identities.size()
+    );
+    return point;
+}
+
+GrepeResult initialize_grepe_local(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const GrepeLocalStructure& structure,
+    const GrepeLocalPoint& point
+) {
+    return initialize_finite_context(
+        prepare_retained_finite_grepe(model, request, structure, point), request
+    );
+}
+
+void evaluate_grepe_local_blocks(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const GrepeLocalStructure& structure,
+    const GrepeLocalPoint& point,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds,
+    const GrepeLocalBlocks& blocks
+) {
+    GrepeResult result = evaluate_finite_context(
+        prepare_retained_finite_grepe(model, request, structure, point),
+        request,
+        local_variables,
+        local_lower_bounds,
+        local_upper_bounds
+    );
+    const ReactiveFinitePhaseResult& equilibrium = result.equilibrium;
+    const auto copy = [](const std::vector<double>& source, double* destination,
+                         std::size_t count, const char* name) {
+        if (source.size() != count || (count != 0 && destination == nullptr)) {
+            throw std::invalid_argument(std::string("retained GREPE ") + name
+                                        + " dimensions changed");
+        }
+        std::copy(source.begin(), source.end(), destination);
+    };
+    if (!equilibrium.accepted) {
+        throw std::domain_error(
+            equilibrium.failure_reason.empty() ? "retained GREPE point failed"
+                                               : equilibrium.failure_reason
+        );
+    }
+    copy(equilibrium.kkt_root_values, blocks.constraints,
+         blocks.constraint_count, "constraint");
+    copy(equilibrium.kkt_root_jacobian, blocks.constraint_local_jacobian,
+         blocks.constraint_local_jacobian_count, "local constraint Jacobian");
+    const std::size_t parameter_count = structure.active_parameter_identities.size();
+    const std::size_t input_width = equilibrium.input_order.size();
+    if (input_width < parameter_count
+        || !std::equal(
+            structure.active_parameter_identities.begin(),
+            structure.active_parameter_identities.end(),
+            equilibrium.input_order.begin()
+        )
+        || equilibrium.kkt_input_jacobian.size()
+            != equilibrium.kkt_root_values.size() * input_width
+        || blocks.constraint_parameter_jacobian_count
+            != equilibrium.kkt_root_values.size() * parameter_count
+        || (blocks.constraint_parameter_jacobian_count != 0
+            && blocks.constraint_parameter_jacobian == nullptr)) {
+        throw std::invalid_argument(
+            "retained GREPE parameter constraint Jacobian dimensions changed"
+        );
+    }
+    for (std::size_t row = 0; row < equilibrium.kkt_root_values.size(); ++row) {
+        std::copy_n(
+            equilibrium.kkt_input_jacobian.begin()
+                + static_cast<std::ptrdiff_t>(row * input_width),
+            parameter_count,
+            blocks.constraint_parameter_jacobian + row * parameter_count
+        );
+    }
+    copy(equilibrium.output_values, blocks.outputs, blocks.output_count, "output");
+    copy(equilibrium.output_local_derivatives, blocks.output_local_jacobian,
+         blocks.output_local_jacobian_count, "local output Jacobian");
+    copy(equilibrium.output_parameter_partials, blocks.output_parameter_jacobian,
+         blocks.output_parameter_jacobian_count, "parameter output Jacobian");
+}
+
+GrepeResult finalize_grepe_local(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const GrepeLocalStructure& structure,
+    const GrepeLocalPoint& point,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds
+) {
+    return finalize_finite_context(
+        prepare_retained_finite_grepe(model, request, structure, point),
+        request,
+        local_variables,
+        local_lower_bounds,
+        local_upper_bounds
+    );
 }
 
 GrepeResult evaluate_grepe_local(

@@ -1096,6 +1096,32 @@ CompiledReactionSystem compile_reaction_system(
     return compile_accessible_face(std::move(result), independent_ln_k);
 }
 
+std::vector<double> reconstruct_compiled_reference(
+    const CompiledReactionSystem& system,
+    const std::vector<double>& supplied_ln_k
+) {
+    const std::vector<double> compiled_ln_k = multiply_matrix_vector(
+        system.supplied_reaction_transform, supplied_ln_k
+    );
+    const ReactionReference reference = reconstruct_reference(
+        system.reaction_matrix, compiled_ln_k
+    );
+    double scale = 0.0;
+    for (double value : compiled_ln_k) {
+        scale += std::abs(value);
+    }
+    if (!within_relative_precision(
+            reference.residual,
+            scale,
+            std::max(system.reaction_matrix.rows, system.reaction_matrix.columns)
+        )) {
+        throw std::invalid_argument(
+            "compiled chemical reference reconstruction is inconsistent"
+        );
+    }
+    return reference.values;
+}
+
 SourceStandardStateResult transform_source_standard_state(
     const DenseMatrix& reaction_matrix,
     const std::vector<double>& source_ln_k,

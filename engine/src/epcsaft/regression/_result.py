@@ -9,20 +9,11 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, cast
 
+from .._canonical import _canonical_json, _canonical_json_bytes
 from .._trials import NON_EVALUABLE_TRIAL_CODES, NonEvaluableTrialCode
 from ..parameters import Parameters
 from ..units import unit_registry
 from ._resolve import ResolvedFit
-
-
-def _canonical(value: object) -> bytes:
-    return json.dumps(
-        value,
-        ensure_ascii=False,
-        allow_nan=False,
-        separators=(",", ":"),
-        sort_keys=True,
-    ).encode("utf-8")
 
 
 def _finite_or_none(value: float) -> float | None:
@@ -107,7 +98,7 @@ class FitRowReceipt:
         metadata = json.loads(self.series_metadata_json)
         if not isinstance(metadata, Mapping):
             raise TypeError("fit row series metadata must be a canonical object")
-        if _canonical(metadata).decode("utf-8") != self.series_metadata_json:
+        if _canonical_json(metadata) != self.series_metadata_json:
             raise ValueError("fit row series metadata is not canonical JSON")
 
     def to_mapping(self) -> dict[str, object]:
@@ -181,7 +172,7 @@ class FitSpecificationReceipt:
             "input_row_count": declared_input_rows,
             "dropped_row_count": dropped_row_count,
         }
-        canonical = _canonical(receipt_mapping).decode("utf-8")
+        canonical = _canonical_json(receipt_mapping)
         return cls(
             canonical,
             f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}",
@@ -239,7 +230,7 @@ class FitSpecificationReceipt:
                             source_identity,
                             observation.source_check.actual_sha256,
                             target,
-                            _canonical(metadata).decode("utf-8"),
+                            _canonical_json(metadata),
                             row.value(target),
                             canonical_units[target],
                             bases[target],
@@ -631,7 +622,7 @@ class FitResult:
         object.__setattr__(
             self,
             "digest",
-            f"sha256:{hashlib.sha256(_canonical(self._payload())).hexdigest()}",
+            f"sha256:{hashlib.sha256(_canonical_json_bytes(self._payload())).hexdigest()}",
         )
 
     @classmethod
@@ -676,7 +667,7 @@ class FitResult:
                 )
             ],
         }
-        return f"sha256:{hashlib.sha256(_canonical(payload)).hexdigest()}"
+        return f"sha256:{hashlib.sha256(_canonical_json_bytes(payload)).hexdigest()}"
 
     @property
     def evaluated_rows(self) -> tuple[EvaluatedFitRow, ...]:
@@ -730,7 +721,8 @@ class FitResult:
         if not rows:
             return ""
         return (
-            f"sha256:{hashlib.sha256(_canonical([row.to_mapping() for row in rows])).hexdigest()}"
+            "sha256:"
+            + hashlib.sha256(_canonical_json_bytes([row.to_mapping() for row in rows])).hexdigest()
         )
 
     @property
@@ -841,7 +833,7 @@ class FitResult:
         return {**self._payload(), "digest": self.digest}
 
     def to_json_bytes(self) -> bytes:
-        return _canonical(self.to_mapping())
+        return _canonical_json_bytes(self.to_mapping())
 
     def to_json(self, path: str | PathLike[str]) -> Path:
         target = Path(path)

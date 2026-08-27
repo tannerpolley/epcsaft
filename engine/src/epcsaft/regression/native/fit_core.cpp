@@ -227,15 +227,14 @@ OwnerEvaluation evaluate_grepe(const GrepeExperiment &experiment,
 
 OwnerEvaluation finalize_grepe(
     const GrepeExperiment &experiment, const std::vector<double> &active,
+    const epcsaft_engine::equilibrium::GrepeLocalStructure &structure,
+    const epcsaft_engine::equilibrium::GrepeLocalPoint &point,
     const std::vector<double> &local, const std::vector<double> &lower,
     const std::vector<double> &upper) {
-  std::vector<std::string> identities;
-  for (const auto &coordinate : experiment.model.active_coordinates()) {
-    identities.push_back(coordinate.identity);
-  }
   auto native = epcsaft_engine::equilibrium::finalize_grepe_local(
-      with_active_values(experiment.model, identities, active),
-      experiment.request, local, lower, upper);
+      with_active_values(experiment.model,
+                         structure.active_parameter_identities, active),
+      experiment.request, structure, point, local, lower, upper);
   return select_grepe(experiment, active, std::move(native), true);
 }
 
@@ -289,6 +288,8 @@ public:
   }
 
   bool finalize(double const *const *parameters,
+                const epcsaft_engine::equilibrium::GrepeLocalStructure &structure,
+                const epcsaft_engine::equilibrium::GrepeLocalPoint &point,
                 const std::vector<double> &local,
                 const std::vector<double> &lower,
                 const std::vector<double> &upper, double *residuals,
@@ -308,7 +309,8 @@ public:
                         parameters[coordinate][0] * coordinate_scales_[coordinate];
       }
       const OwnerEvaluation evaluation =
-          finalize_grepe(*experiment, active, local, lower, upper);
+          finalize_grepe(*experiment, active, structure, point, local, lower,
+                         upper);
       if (owner_result != nullptr) {
         *owner_result = evaluation.owner_result;
       }
@@ -735,6 +737,8 @@ public:
 
   const std::vector<double> &solution() const noexcept { return solution_; }
   std::vector<RetainedLocalState> retained_local_states() const { return {}; }
+  std::vector<epcsaft_engine::equilibrium::GrepeLocalPoint>
+  retained_points() const { return {}; }
 
 private:
   bool evaluate(Ipopt::Index n, const Ipopt::Number *x) const {
@@ -797,21 +801,91 @@ private:
 struct FullSpaceBlock final {
   const GrepeExperiment *experiment;
   const Observation *observation;
+  std::size_t structure_index;
   std::size_t local_offset;
   std::size_t local_width;
   std::size_t constraint_offset;
   std::vector<double> lower;
   std::vector<double> upper;
+  std::vector<double> constraints;
+  std::vector<double> constraint_local_jacobian;
+  std::vector<double> constraint_parameter_jacobian;
+  std::vector<double> outputs;
+  std::vector<double> output_local_jacobian;
+  std::vector<double> output_parameter_jacobian;
+};
+
+struct FullSpaceStructure final {
+  std::string fingerprint;
+  std::size_t experiment_index;
+  epcsaft_engine::equilibrium::GrepeLocalStructure value;
+};
+
+class FullSpaceCampaign final {
+public:
+  explicit FullSpaceCampaign(const std::vector<Experiment> &experiments) {
+    experiment_structures_.reserve(experiments.size());
+    for (std::size_t index = 0; index < experiments.size(); ++index) {
+      const auto &experiment = std::get<GrepeExperiment>(experiments[index]);
+      const auto retained = std::find_if(
+          structures_.begin(), structures_.end(), [&](const auto &value) {
+            return value.fingerprint == experiment.structure_fingerprint;
+          });
+      if (retained != structures_.end()) {
+        experiment_structures_.push_back(
+            static_cast<std::size_t>(retained - structures_.begin()));
+        continue;
+      }
+      experiment_structures_.push_back(structures_.size());
+      structures_.push_back({
+          experiment.structure_fingerprint,
+          index,
+          epcsaft_engine::equilibrium::compile_grepe_local_structure(
+              experiment.model, experiment.request),
+      });
+    }
+  }
+
+  std::size_t structure_index(std::size_t experiment) const {
+    return experiment_structures_.at(experiment);
+  }
+
+  const epcsaft_engine::equilibrium::GrepeLocalStructure &
+  structure(std::size_t index) const {
+    return structures_.at(index).value;
+  }
+
+  std::vector<epcsaft_engine::equilibrium::GrepeLocalPoint>
+  evaluate_points(const std::vector<Experiment> &experiments,
+                  const std::vector<double> &active) const {
+    std::vector<epcsaft_engine::equilibrium::GrepeLocalPoint> result;
+    result.reserve(structures_.size());
+    for (const auto &retained : structures_) {
+      const auto &experiment =
+          std::get<GrepeExperiment>(experiments[retained.experiment_index]);
+      result.push_back(epcsaft_engine::equilibrium::evaluate_grepe_local_point(
+          with_active_values(experiment.model,
+                             retained.value.active_parameter_identities, active),
+          experiment.request, retained.value));
+    }
+    return result;
+  }
+
+private:
+  std::vector<FullSpaceStructure> structures_;
+  std::vector<std::size_t> experiment_structures_;
 };
 
 class SparseFullSpaceNlp final : public Ipopt::TNLP {
 public:
   SparseFullSpaceNlp(const std::vector<Experiment> &experiments,
                      const std::vector<Observation> &observations,
+                     const FullSpaceCampaign &campaign,
                      const std::vector<std::size_t> &identity_coordinates,
                      const std::vector<Coordinate> &coordinates,
                      std::vector<double> affine)
-      : identity_coordinates_(identity_coordinates), coordinates_(coordinates),
+      : experiments_(experiments), campaign_(campaign),
+        identity_coordinates_(identity_coordinates), coordinates_(coordinates),
         initial_(std::move(affine)) {
     lower_.reserve(initial_.size());
     upper_.reserve(initial_.size());
@@ -820,16 +894,16 @@ public:
       upper_.push_back(coordinate.upper_affine);
     }
     const std::vector<double> active = active_values(initial_.data());
+    points_ = campaign_.evaluate_points(experiments_, active);
     std::size_t constraint_offset = 0;
     for (std::size_t index = 0; index < experiments.size(); ++index) {
       const auto &experiment = std::get<GrepeExperiment>(experiments[index]);
-      std::vector<std::string> identities;
-      for (const auto &coordinate : experiment.model.active_coordinates()) {
-        identities.push_back(coordinate.identity);
-      }
+      const std::size_t structure_index = campaign_.structure_index(index);
+      const auto &structure = campaign_.structure(structure_index);
       const auto native = epcsaft_engine::equilibrium::initialize_grepe_local(
-          with_active_values(experiment.model, identities, active),
-          experiment.request);
+          with_active_values(experiment.model,
+                             structure.active_parameter_identities, active),
+          experiment.request, structure, points_[structure_index]);
       const auto &equilibrium = native.equilibrium;
       if (equilibrium.local_variables.empty() ||
           equilibrium.local_lower_bounds.size() !=
@@ -844,10 +918,26 @@ public:
       }
       const std::size_t local_offset = initial_.size();
       const std::size_t local_width = equilibrium.local_variables.size();
-      blocks_.push_back({&experiment, &observations[index], local_offset,
-                         local_width, constraint_offset,
-                         equilibrium.local_lower_bounds,
-                         equilibrium.local_upper_bounds});
+      const std::size_t output_count = experiment.request.outputs.size();
+      FullSpaceBlock block{
+          &experiment,
+          &observations[index],
+          structure_index,
+          local_offset,
+          local_width,
+          constraint_offset,
+          equilibrium.local_lower_bounds,
+          equilibrium.local_upper_bounds,
+          std::vector<double>(local_width),
+          std::vector<double>(local_width * local_width),
+          std::vector<double>(
+              local_width * structure.active_parameter_identities.size()),
+          std::vector<double>(output_count),
+          std::vector<double>(output_count * local_width),
+          std::vector<double>(output_count
+                              * structure.active_parameter_identities.size()),
+      };
+      blocks_.push_back(std::move(block));
       initial_.insert(initial_.end(), equilibrium.local_variables.begin(),
                       equilibrium.local_variables.end());
       lower_.insert(lower_.end(), equilibrium.local_lower_bounds.begin(),
@@ -873,6 +963,9 @@ public:
     }
     constraint_count_ = constraint_offset;
     solution_ = initial_;
+    source_theta_ = active;
+    constraints_.reserve(constraint_count_);
+    constraint_jacobian_.reserve(jacobian_rows_.size());
   }
 
   bool get_nlp_info(Ipopt::Index &n, Ipopt::Index &m,
@@ -993,6 +1086,8 @@ public:
     }
     return states;
   }
+  std::vector<epcsaft_engine::equilibrium::GrepeLocalPoint>
+  retained_points() const { return points_; }
 private:
   bool dimensions(Ipopt::Index n, Ipopt::Index m) const noexcept {
     return n == static_cast<Ipopt::Index>(initial_.size()) &&
@@ -1024,36 +1119,41 @@ private:
       constraints_.clear();
       constraint_jacobian_.clear();
       const std::vector<double> active = active_values(x);
-      for (const auto &block : blocks_) {
-        std::vector<std::string> identities;
-        for (const auto &coordinate : block.experiment->model.active_coordinates()) {
-          identities.push_back(coordinate.identity);
-        }
+      if (source_theta_ != active) {
+        points_ = campaign_.evaluate_points(experiments_, active);
+        source_theta_ = active;
+      }
+      for (auto &block : blocks_) {
+        const auto &structure = campaign_.structure(block.structure_index);
         const std::vector<double> local(
             x + static_cast<std::ptrdiff_t>(block.local_offset),
             x + static_cast<std::ptrdiff_t>(block.local_offset +
                                             block.local_width));
-        const auto native = epcsaft_engine::equilibrium::evaluate_grepe_local(
-            with_active_values(block.experiment->model, identities, active),
-            block.experiment->request, local, block.lower, block.upper);
-        const auto &equilibrium = native.equilibrium;
-        if (!equilibrium.accepted ||
-            equilibrium.output_local_derivatives.size() !=
-                equilibrium.output_values.size() * block.local_width ||
-            equilibrium.output_parameter_partials.size() !=
-                equilibrium.output_values.size() *
-                    equilibrium.parameter_order.size() ||
-            equilibrium.kkt_root_values.size() != block.local_width ||
-            equilibrium.kkt_root_jacobian.size() !=
-                block.local_width * block.local_width) {
-          throw std::domain_error("native full-space GREPE evaluation failed");
-        }
+        epcsaft_engine::equilibrium::evaluate_grepe_local_blocks(
+            with_active_values(block.experiment->model,
+                               structure.active_parameter_identities, active),
+            block.experiment->request, structure, points_[block.structure_index],
+            local, block.lower, block.upper,
+            {
+                block.constraints.data(),
+                block.constraints.size(),
+                block.constraint_local_jacobian.data(),
+                block.constraint_local_jacobian.size(),
+                block.constraint_parameter_jacobian.data(),
+                block.constraint_parameter_jacobian.size(),
+                block.outputs.data(),
+                block.outputs.size(),
+                block.output_local_jacobian.data(),
+                block.output_local_jacobian.size(),
+                block.output_parameter_jacobian.data(),
+                block.output_parameter_jacobian.size(),
+            });
         for (std::size_t target_index = 0;
              target_index < block.observation->targets.size(); ++target_index) {
           const std::size_t output_row =
               block.experiment->selected_rows[target_index];
           const auto &target = block.observation->targets[target_index];
-          const double predicted = equilibrium.output_values[output_row];
+          const double predicted = block.outputs[output_row];
           const double multiplier =
               block.observation->multiplier * target.multiplier;
           double factor = multiplier / target.scale;
@@ -1087,39 +1187,27 @@ private:
           objective_ += 0.5 * residual * residual;
           for (std::size_t identity = 0;
                identity < identity_coordinates_.size(); ++identity) {
-            const auto found = std::find(
-                equilibrium.parameter_order.begin(),
-                equilibrium.parameter_order.end(), identities[identity]);
-            if (found == equilibrium.parameter_order.end()) {
-              throw std::domain_error(
-                  "native full-space output parameter derivative is absent");
-            }
-            const std::size_t parameter_column = static_cast<std::size_t>(
-                found - equilibrium.parameter_order.begin());
+            const std::size_t parameter_width =
+                block.output_parameter_jacobian.size() / block.outputs.size();
             const std::size_t coordinate = identity_coordinates_[identity];
             gradient_[coordinate] +=
                 residual * factor *
-                equilibrium.output_parameter_partials[
-                    output_row * equilibrium.parameter_order.size() +
-                    parameter_column] *
+                block.output_parameter_jacobian[
+                    output_row * parameter_width + identity] *
                 coordinates_[coordinate].scale;
           }
           for (std::size_t local_column = 0;
                local_column < block.local_width; ++local_column) {
             gradient_[block.local_offset + local_column] +=
                 residual * factor *
-                equilibrium.output_local_derivatives[
+                block.output_local_jacobian[
                     output_row * block.local_width + local_column];
           }
         }
         constraints_.insert(constraints_.end(),
-                            equilibrium.kkt_root_values.begin(),
-                            equilibrium.kkt_root_values.end());
-        const std::size_t input_width = equilibrium.input_order.size();
-        if (equilibrium.kkt_input_jacobian.size() !=
-            block.local_width * input_width) {
-          throw std::domain_error("native full-space input Jacobian changed");
-        }
+                            block.constraints.begin(), block.constraints.end());
+        const std::size_t input_width =
+            block.constraint_parameter_jacobian.size() / block.local_width;
         for (std::size_t row = 0; row < block.local_width; ++row) {
           for (std::size_t coordinate = 0; coordinate < coordinates_.size();
                ++coordinate) {
@@ -1129,26 +1217,17 @@ private:
               if (identity_coordinates_[identity] != coordinate) {
                 continue;
               }
-              const auto found = std::find(
-                  equilibrium.input_order.begin(), equilibrium.input_order.end(),
-                  identities[identity]);
-              if (found == equilibrium.input_order.end()) {
-                throw std::domain_error(
-                    "native full-space parameter derivative is absent");
-              }
-              const std::size_t column = static_cast<std::size_t>(
-                  found - equilibrium.input_order.begin());
               derivative +=
-                  equilibrium.kkt_input_jacobian[row * input_width + column];
+                  block.constraint_parameter_jacobian[row * input_width + identity];
             }
             constraint_jacobian_.push_back(
                 derivative * coordinates_[coordinate].scale);
           }
           constraint_jacobian_.insert(
               constraint_jacobian_.end(),
-              equilibrium.kkt_root_jacobian.begin() +
+              block.constraint_local_jacobian.begin() +
                   static_cast<std::ptrdiff_t>(row * block.local_width),
-              equilibrium.kkt_root_jacobian.begin() +
+              block.constraint_local_jacobian.begin() +
                   static_cast<std::ptrdiff_t>((row + 1) * block.local_width));
         }
       }
@@ -1170,9 +1249,11 @@ private:
     }
   }
 
+  const std::vector<Experiment> &experiments_;
+  const FullSpaceCampaign &campaign_;
   const std::vector<std::size_t> &identity_coordinates_;
   const std::vector<Coordinate> &coordinates_;
-  std::vector<FullSpaceBlock> blocks_;
+  mutable std::vector<FullSpaceBlock> blocks_;
   std::vector<double> initial_;
   std::vector<double> lower_;
   std::vector<double> upper_;
@@ -1182,6 +1263,8 @@ private:
   std::vector<int> jacobian_columns_;
   std::vector<double> solution_;
   mutable std::vector<double> cached_x_;
+  mutable std::vector<double> source_theta_;
+  mutable std::vector<epcsaft_engine::equilibrium::GrepeLocalPoint> points_;
   mutable std::vector<double> gradient_;
   mutable std::vector<double> constraints_;
   mutable std::vector<double> constraint_jacobian_;
@@ -1196,7 +1279,9 @@ Ipopt::ApplicationReturnStatus solve_ipopt(Problem *problem,
                                            std::vector<double> &solution,
                                            bool full_space = false,
                                            std::vector<RetainedLocalState>
-                                               *retained_states = nullptr) {
+                                               *retained_states = nullptr,
+                                           std::vector<epcsaft_engine::equilibrium::GrepeLocalPoint>
+                                               *retained_points = nullptr) {
   Ipopt::SmartPtr<Ipopt::TNLP> nlp = problem;
   Ipopt::SmartPtr<Ipopt::IpoptApplication> application =
       IpoptApplicationFactory();
@@ -1233,11 +1318,15 @@ Ipopt::ApplicationReturnStatus solve_ipopt(Problem *problem,
   if (retained_states != nullptr) {
     *retained_states = problem->retained_local_states();
   }
+  if (retained_points != nullptr) {
+    *retained_points = problem->retained_points();
+  }
   return status;
 }
 
 StartResult solve_start(std::size_t index, const FitRequest &request,
                         bool full_space,
+                        const FullSpaceCampaign *full_space_campaign,
                         const std::vector<std::size_t> &identity_coordinates,
                         const std::vector<Coordinate> &coordinates,
                         const std::vector<Observation> &observations,
@@ -1267,17 +1356,21 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
   }
   Ipopt::ApplicationReturnStatus solver_status;
   std::vector<RetainedLocalState> retained_states;
+  std::vector<epcsaft_engine::equilibrium::GrepeLocalPoint> retained_points;
   if (!full_space) {
     auto *problem = new ReducedSpaceNlp(costs, coordinates, result.final_affine);
     solver_status =
         solve_ipopt(problem, controls, result.iterations, result.final_affine);
   } else {
+    if (full_space_campaign == nullptr) {
+      throw std::logic_error("full-space GREPE campaign is unavailable");
+    }
     std::vector<double> solution;
     auto *problem = new SparseFullSpaceNlp(
-        request.experiments, observations, identity_coordinates, coordinates,
-        result.final_affine);
+        request.experiments, observations, *full_space_campaign,
+        identity_coordinates, coordinates, result.final_affine);
     solver_status = solve_ipopt(problem, controls, result.iterations, solution,
-                                true, &retained_states);
+                                true, &retained_states, &retained_points);
     result.final_affine.assign(solution.begin(),
                                solution.begin() + coordinates.size());
   }
@@ -1337,7 +1430,11 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
     const bool evaluated = full_space
         ? solver_usable && batch_index < retained_states.size()
             && cost->finalize(
-                final_blocks.data(), retained_states[batch_index].values,
+                final_blocks.data(),
+                full_space_campaign->structure(
+                    full_space_campaign->structure_index(batch_index)),
+                retained_points[full_space_campaign->structure_index(batch_index)],
+                retained_states[batch_index].values,
                 retained_states[batch_index].lower,
                 retained_states[batch_index].upper,
                 result.residuals.data() + offset, jacobian_pointers.data(),
@@ -1571,6 +1668,13 @@ void validate_request(const FitRequest &request) {
           }
           using Value = std::decay_t<decltype(experiment)>;
           if constexpr (std::is_same_v<Value, GrepeExperiment>) {
+            if (experiment.structure_fingerprint.size() != 71 ||
+                experiment.structure_fingerprint.rfind("sha256:", 0) != 0 ||
+                experiment.structure_fingerprint.find_first_not_of(
+                    "0123456789abcdef", 7) != std::string::npos) {
+              throw std::invalid_argument(
+                  "GREPE structure fingerprint must be canonical SHA-256");
+            }
             auto base = active.begin();
             for (const auto &incipient :
                  experiment.incipient_model.active_coordinates()) {
@@ -1625,6 +1729,10 @@ FitResult fit_native(const FitRequest &request) {
   const bool full_space = full_space_eligible(request);
   output.evaluation_strategy =
       full_space ? "simultaneous_sparse_full_space" : "reduced_space";
+  std::optional<FullSpaceCampaign> full_space_campaign;
+  if (full_space) {
+    full_space_campaign.emplace(request.experiments);
+  }
 
   for (const auto &start : request.controls.starts) {
     const std::vector<double> active = start_active_values(request, start);
@@ -1661,7 +1769,9 @@ FitResult fit_native(const FitRequest &request) {
   for (std::size_t index = 0; index < request.controls.starts.size(); ++index) {
     try {
       output.starts[index] = solve_start(
-          index, request, full_space, request.identity_coordinates,
+          index, request, full_space,
+          full_space ? &*full_space_campaign : nullptr,
+          request.identity_coordinates,
           request.coordinates, request.observations, request.controls,
           request.controls.starts[index], request.failure_codes);
     } catch (const std::exception &error) {

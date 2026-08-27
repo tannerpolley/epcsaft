@@ -137,6 +137,7 @@ std::vector<Experiment> parse_experiments(const py::iterable &values) {
       const auto pressure =
           parse_intensive(required<py::dict>(value, "pressure"));
       result.emplace_back(GrepeExperiment{
+          required<std::string>(value, "structure_fingerprint"),
           required<NativeModel>(value, "model"),
           required<NativeModel>(value, "incipient_model"),
           epcsaft_engine::equilibrium::parse_grepe_request(

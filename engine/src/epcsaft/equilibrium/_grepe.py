@@ -11,6 +11,7 @@ from pint import Quantity
 import epcsaft
 
 from .. import _core
+from .._canonical import _canonical_json
 from .._trials import NonEvaluableTrial
 from ._api import (
     ActiveParameterTrialReceipt,
@@ -804,16 +805,6 @@ def _generic_rows(
             ),
         )
         for output, row in zip(outputs, rows, strict=True)
-    )
-
-
-def _canonical_json(value: object) -> str:
-    return json.dumps(
-        value,
-        ensure_ascii=False,
-        allow_nan=False,
-        separators=(",", ":"),
-        sort_keys=True,
     )
 
 

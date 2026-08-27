@@ -111,10 +111,78 @@ struct GrepeResult {
     std::vector<std::string> phase_mechanical_classes;
 };
 
+struct GrepeLocalStructure final {
+    CompiledReactionSystem system;
+    std::vector<GrepePhase> phases;
+    bool ideal_gas = false;
+    std::vector<std::array<double, 2>> packing_fraction_intervals;
+    std::vector<std::vector<std::size_t>> phase_support_indices;
+    std::vector<std::string> active_parameter_identities;
+};
+
+struct GrepeLocalPoint final {
+    CompiledReactionSystem system;
+    double source_reference_representation_residual_inf_norm = 0.0;
+};
+
+struct GrepeLocalBlocks final {
+    double* constraints;
+    std::size_t constraint_count;
+    double* constraint_local_jacobian;
+    std::size_t constraint_local_jacobian_count;
+    double* constraint_parameter_jacobian;
+    std::size_t constraint_parameter_jacobian_count;
+    double* outputs;
+    std::size_t output_count;
+    double* output_local_jacobian;
+    std::size_t output_local_jacobian_count;
+    double* output_parameter_jacobian;
+    std::size_t output_parameter_jacobian_count;
+};
+
 [[nodiscard]] GrepeResult solve_grepe(
     const epcsaft::NativeModel& model,
     const epcsaft::NativeModel& incipient_model,
     const GrepeRequest& request
+);
+
+[[nodiscard]] GrepeLocalStructure compile_grepe_local_structure(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request
+);
+
+[[nodiscard]] GrepeLocalPoint evaluate_grepe_local_point(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const GrepeLocalStructure& structure
+);
+
+[[nodiscard]] GrepeResult initialize_grepe_local(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const GrepeLocalStructure& structure,
+    const GrepeLocalPoint& point
+);
+
+void evaluate_grepe_local_blocks(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const GrepeLocalStructure& structure,
+    const GrepeLocalPoint& point,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds,
+    const GrepeLocalBlocks& blocks
+);
+
+[[nodiscard]] GrepeResult finalize_grepe_local(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const GrepeLocalStructure& structure,
+    const GrepeLocalPoint& point,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds
 );
 
 [[nodiscard]] GrepeResult evaluate_grepe_local(

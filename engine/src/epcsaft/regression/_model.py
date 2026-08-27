@@ -12,6 +12,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal, cast
 
+from .._canonical import _canonical_json, _canonical_json_bytes
 from ..eos import OBSERVABLE_FAMILIES, OBSERVABLE_TARGETS, ObservableFamily
 from ..parameters import Parameters
 
@@ -145,14 +146,8 @@ _SOURCE_KINDS = ("table", "published_observation_correlation")
 _QUADRATURE_ORDERS = (2, 4, 8, 16, 32, 64)
 
 
-def _canonical(value: object) -> bytes:
-    return json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode(
-        "utf-8"
-    )
-
-
 def _digest(value: object) -> str:
-    return f"sha256:{hashlib.sha256(_canonical(value)).hexdigest()}"
+    return f"sha256:{hashlib.sha256(_canonical_json_bytes(value)).hexdigest()}"
 
 
 def _mapping(value: object, path: str) -> Mapping[str, object]:
@@ -784,7 +779,7 @@ def _parse_fit_observation(
         _mapping(mapping["request"], f"{path}.request")
         if not _list(mapping["targets"], f"{path}.targets"):
             raise FitSchemaError("missing-value", f"{path}.targets", "non-empty required")
-        return EquilibriumFitObservation("equilibrium", _canonical(mapping).decode("utf-8"))
+        return EquilibriumFitObservation("equilibrium", _canonical_json(mapping))
     return _parse_observation(value, path)
 
 

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
+from .._canonical import _canonical_json
 from ..eos import Mixture
 from ..equilibrium import (
     GeneralEquilibriumOwnerObservation,
@@ -19,6 +19,7 @@ from ..equilibrium import (
 from ..equilibrium._grepe import (
     Fixed,
     Solved,
+    _fingerprint,
     _map_native_general_reactive_equilibrium,
     _native_general_reactive_equilibrium_inputs,
 )
@@ -386,7 +387,7 @@ def _specification_receipt(
                 target.source_identity,
                 target.source_hash,
                 target.prediction_identity,
-                json.dumps(
+                _canonical_json(
                     {
                         "aggregate_identity": target.aggregate_identity,
                         "batch_identity": batch.identity,
@@ -394,8 +395,6 @@ def _specification_receipt(
                         "measurement_classification": target.measurement_classification,
                         "role": target.role,
                     },
-                    separators=(",", ":"),
-                    sort_keys=True,
                 ),
                 target.observed,
                 target.unit,
@@ -413,23 +412,6 @@ def _specification_receipt(
         ),
         input_row_count=sum(len(batch.targets) for batch in batches),
         dropped_row_count=sum(not target.included for batch in batches for target in batch.targets),
-    )
-
-
-def _active_trial(
-    resolved: ResolvedFit,
-    values: Sequence[float],
-) -> ActiveParameterSet:
-    active_ids = resolved.selected_identities
-    physical_by_parameter = {
-        identity: value
-        for coordinate, value in zip(resolved.coordinates, values, strict=True)
-        for identity in coordinate.tied_identities
-    }
-    return ActiveParameterSet(
-        resolved.parameters,
-        active_ids,
-        values=tuple(physical_by_parameter[identity] for identity in active_ids),
     )
 
 
@@ -499,6 +481,41 @@ def _equilibrium_owner_batches(
         experiments.append(
             {
                 "kind": "grepe",
+                "structure_fingerprint": _fingerprint(
+                    "epcsaft.regression-grepe-structure.v1",
+                    {
+                        "parameter_fingerprint": batch.descriptor.parameter_fingerprint,
+                        "active_parameter_selection_fingerprint": (
+                            batch.descriptor.active_parameter_selection_fingerprint
+                        ),
+                        "active_parameter_identities": (
+                            batch.descriptor.active_parameter_identities
+                        ),
+                        "reaction_fingerprint": batch.descriptor.reaction_fingerprint,
+                        "topology_fingerprint": batch.descriptor.topology_fingerprint,
+                        "reference_fingerprint": batch.descriptor.reference_fingerprint,
+                        "domain_fingerprint": batch.descriptor.domain_fingerprint,
+                        "source_reference_fingerprint": reference_fingerprint,
+                        "temperature": _native_intensive(batch.problem.temperature, "kelvin"),
+                        "pressure": _native_intensive(batch.problem.pressure, "pascal"),
+                        "outputs": tuple(
+                            (
+                                output.identity,
+                                output.selector,
+                                output.unit,
+                                output.basis,
+                                output.phase_identity,
+                                output.coefficients,
+                                output.solvent_mass_coefficients_kg_per_mol,
+                                output.support,
+                                output.censor_limit,
+                                output.aggregate_identity,
+                                output.covariance_identity,
+                            )
+                            for output in batch.problem.outputs
+                        ),
+                    },
+                ),
                 "model": batch.model._native_model(active),
                 "incipient_model": incipient_model,
                 "problem": native_problem,
@@ -526,9 +543,7 @@ def _serialize_native_owner_result(
     active: ActiveParameterSet,
     native: object,
 ) -> str:
-    result = _map_native_general_reactive_equilibrium(
-        batch.model, batch.problem, active, native
-    )
+    result = _map_native_general_reactive_equilibrium(batch.model, batch.problem, active, native)
     return serialize_general_reactive_equilibrium_receipt(
         result,
         batch_identity=batch.identity,

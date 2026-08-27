@@ -62,6 +62,7 @@ struct DirectEosExperiment final {
 };
 
 struct GrepeExperiment final {
+  std::string structure_fingerprint;
   NativeModel model;
   NativeModel incipient_model;
   epcsaft_engine::equilibrium::GrepeRequest request;

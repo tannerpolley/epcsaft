@@ -29,14 +29,22 @@ def _normalize(value: object) -> object:
     return value
 
 
-def _json(value: object) -> str:
+def _canonical_json(value: object) -> str:
     return json.dumps(
-        _normalize(value),
+        value,
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
         allow_nan=False,
     )
+
+
+def _canonical_json_bytes(value: object) -> bytes:
+    return _canonical_json(value).encode("utf-8")
+
+
+def _json(value: object) -> str:
+    return _canonical_json(_normalize(value))
 
 
 def _fingerprint_json(value: str) -> str:

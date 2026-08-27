@@ -267,6 +267,11 @@ struct SourceStandardStateResult {
     bool require_complete_species_basis = true
 );
 
+[[nodiscard]] std::vector<double> reconstruct_compiled_reference(
+    const CompiledReactionSystem& system,
+    const std::vector<double>& supplied_ln_k
+);
+
 [[nodiscard]] PhaseDirectionCompilation compile_phase_direction_system(
     const std::vector<std::string>& phase_ids,
     const std::vector<std::string>& species_ids,
