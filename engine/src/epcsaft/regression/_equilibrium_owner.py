@@ -7,14 +7,14 @@ from dataclasses import dataclass
 from typing import Any, Literal, cast
 
 from .._trials import NonEvaluableTrialCode
-from ..eos import EosError, Mixture, _native_transport
+from .. import _core
+from ..eos import EosError, Mixture
 from ..equilibrium import (
     AllComponents,
     GeneralEquilibriumOwnerObservation,
     GeneralReactiveEquilibriumDescriptor,
     GeneralReactiveEquilibriumProblem,
     ProviderModel,
-    _equilibrium,
     general_reactive_equilibrium_descriptor,
     general_reactive_equilibrium_problem_from_mapping,
     serialize_general_reactive_equilibrium_receipt,
@@ -771,8 +771,8 @@ def _full_space_batches(
             for batch, spec, packing, trace_floor, _ in compiled_batches:
                 native = cast(
                     Mapping[str, object],
-                    _equilibrium._chemical_equilibrium(
-                        _native_transport(batch.model, trial),
+                    _core._chemical_equilibrium(
+                        batch.model._native_model(trial),
                         spec,
                         source_state(batch, spec, trial),
                         packing,
@@ -871,8 +871,8 @@ def _full_space_batches(
             local_offset = coordinate_count + cast(int, bounds["local_offset"])
             native = cast(
                 Mapping[str, object],
-                _equilibrium._evaluate_provider_reaction_local(
-                    _native_transport(batch.model, trial),
+                _core._evaluate_provider_reaction_local(
+                    batch.model._native_model(trial),
                     spec,
                     source_state(batch, spec, trial),
                     packing,

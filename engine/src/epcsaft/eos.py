@@ -113,7 +113,6 @@ OBSERVABLE_FAMILIES: Mapping[str, ObservableFamily] = MappingProxyType(
     }
 )
 _MOLAR_GAS_CONSTANT = 8.31446261815324
-_native_transport_factory = _native_core.native_transport
 
 
 @lru_cache(maxsize=1)
@@ -611,6 +610,33 @@ class _EosModel:
             parameters.component_ids,
             tuple(f"{component}/{site}" for component, site in model.site_ids),
         )
+        native = native.with_provider_metadata(
+            parameters.fingerprint,
+            math.nan if model.temperature_min_k is None else model.temperature_min_k,
+            math.nan if model.temperature_max_k is None else model.temperature_max_k,
+            math.nan if model.ion_mole_fraction_max is None else model.ion_mole_fraction_max,
+            math.nan if model.pressure_min_pa is None else model.pressure_min_pa,
+            math.nan if model.pressure_max_pa is None else model.pressure_max_pa,
+            _native_topology_fingerprint(self),
+            _native_identity_fingerprint(
+                "epcsaft-native-component-order-v1",
+                {
+                    "component_ids": parameters.component_ids,
+                    "charges": tuple(model.charge_number),
+                },
+            ),
+            _native_identity_fingerprint(
+                "epcsaft-native-source-domain-v1",
+                {
+                    "temperature_min_k": model.temperature_min_k,
+                    "temperature_max_k": model.temperature_max_k,
+                    "pressure_min_pa": model.pressure_min_pa,
+                    "pressure_max_pa": model.pressure_max_pa,
+                    "ion_mole_fraction_max": model.ion_mole_fraction_max,
+                },
+            ),
+            _python_native_artifact_fingerprint(),
+        )
         object.__setattr__(self, "_native", native)
 
     @classmethod
@@ -673,6 +699,14 @@ class _EosModel:
                 )
             )
         return tuple(result)
+
+    def _native_model(
+        self,
+        active_parameters: ActiveParameterSet | None = None,
+    ) -> _native_core.NativeModel:
+        if active_parameters is None:
+            return self._native
+        return self._native.with_active_coordinates(self._active_coordinates(active_parameters))
 
     def _descriptor(
         self,
@@ -1709,67 +1743,6 @@ def _native_identity_fingerprint(schema: str, payload: object) -> str:
         sort_keys=True,
     ).encode("utf-8")
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
-
-
-def _native_transport_configuration(
-    model: _EosModel,
-    artifact_fingerprint: str,
-) -> dict[str, object]:
-    if type(model) not in (Pure, Mixture):
-        raise _eos_error("unsupported-native-transport", reason="expected-exact-eos-model")
-    fingerprint = model._parameter_fingerprint
-    resolved = model._model
-    charges = tuple(resolved.charge_number)
-    minimum = math.nan if resolved.temperature_min_k is None else resolved.temperature_min_k
-    maximum = math.nan if resolved.temperature_max_k is None else resolved.temperature_max_k
-    pressure_minimum = math.nan if resolved.pressure_min_pa is None else resolved.pressure_min_pa
-    pressure_maximum = math.nan if resolved.pressure_max_pa is None else resolved.pressure_max_pa
-    maximum_ion_fraction = (
-        math.nan if resolved.ion_mole_fraction_max is None else resolved.ion_mole_fraction_max
-    )
-    return {
-        "parameter_fingerprint": fingerprint,
-        "temperature_min_k": minimum,
-        "temperature_max_k": maximum,
-        "component_ids": model._component_ids,
-        "ion_mole_fraction_max": maximum_ion_fraction,
-        "pressure_min_pa": pressure_minimum,
-        "pressure_max_pa": pressure_maximum,
-        "topology_fingerprint": _native_topology_fingerprint(model),
-        "component_order_fingerprint": _native_identity_fingerprint(
-            "epcsaft-native-component-order-v1",
-            {
-                "component_ids": model._component_ids,
-                "charges": charges,
-            },
-        ),
-        "domain_fingerprint": _native_identity_fingerprint(
-            "epcsaft-native-source-domain-v1",
-            {
-                "temperature_min_k": resolved.temperature_min_k,
-                "temperature_max_k": resolved.temperature_max_k,
-                "pressure_min_pa": resolved.pressure_min_pa,
-                "pressure_max_pa": resolved.pressure_max_pa,
-                "ion_mole_fraction_max": resolved.ion_mole_fraction_max,
-            },
-        ),
-        "artifact_fingerprint": artifact_fingerprint,
-    }
-
-
-def _native_transport(
-    model: _EosModel,
-    active_parameters: ActiveParameterSet | None = None,
-) -> object:
-    """Return the model-bound capsule used only by Engine's native modules."""
-    configuration = _native_transport_configuration(model, _python_native_artifact_fingerprint())
-    configuration["active_parameters"] = (
-        () if active_parameters is None else model._active_coordinates(active_parameters)
-    )
-    try:
-        return _native_transport_factory(model._native, **configuration)
-    except (RuntimeError, ValueError) as exc:
-        raise _eos_error("unsupported-native-transport", reason=str(exc)) from exc
 
 
 def _state_magnitude(value: object, unit: str, field: str) -> float:

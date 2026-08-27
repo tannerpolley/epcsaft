@@ -6,8 +6,8 @@ import math
 import pytest
 
 import epcsaft
+from epcsaft import _core
 from epcsaft import equilibrium
-from epcsaft.equilibrium import _equilibrium
 from epcsaft.equilibrium._api import _chemical_equilibrium_impl
 from tests.eos._raw_cases import NEUTRAL_TERNARY_IMMISCIBLE, STRONGLY_ASSOCIATING_BINARY
 
@@ -275,7 +275,7 @@ def test_manufactured_ideal_reactions_match_independent_analytic_states(
 def test_manufactured_reaction_reports_exact_conditioned_implicit_sensitivities() -> None:
     spec = _base_system()
     _bind_record(spec)
-    native = _equilibrium._chemical_equilibrium(None, spec, None, None, 1.0e-12)
+    native = _core._chemical_equilibrium(None, spec, None, None, 1.0e-12)
 
     sensitivities = native["sensitivities"]
     assert sensitivities["kkt_rank"] == sensitivities["kkt_dimension"] == 3
@@ -314,7 +314,7 @@ def test_manufactured_reaction_reports_exact_conditioned_implicit_sensitivities(
             else:
                 trial["pressure_pa"] = spec["pressure_pa"] + direction * step
             _bind_record(trial)
-            perturbed.append(_equilibrium._chemical_equilibrium(None, trial, None, None, 1.0e-12))
+            perturbed.append(_core._chemical_equilibrium(None, trial, None, None, 1.0e-12))
         finite_difference_amounts = tuple(
             (perturbed[1]["amounts"][species] - perturbed[0]["amounts"][species]) / (2.0 * step)
             for species in range(2)
@@ -343,10 +343,10 @@ def test_manufactured_sensitivity_is_invariant_to_reaction_scaling() -> None:
     scaled["ln_k"] = (reaction_scale * math.log(4.0),)
     _bind_record(scaled)
 
-    base_result = _equilibrium._chemical_equilibrium(None, base, None, None, 1.0e-12)[
+    base_result = _core._chemical_equilibrium(None, base, None, None, 1.0e-12)[
         "sensitivities"
     ]
-    scaled_result = _equilibrium._chemical_equilibrium(None, scaled, None, None, 1.0e-12)[
+    scaled_result = _core._chemical_equilibrium(None, scaled, None, None, 1.0e-12)[
         "sensitivities"
     ]
 
@@ -387,10 +387,10 @@ def test_manufactured_sensitivity_tracks_exact_species_permutation() -> None:
     )
     _bind_record(permuted)
 
-    base_result = _equilibrium._chemical_equilibrium(None, base, None, None, 1.0e-12)[
+    base_result = _core._chemical_equilibrium(None, base, None, None, 1.0e-12)[
         "sensitivities"
     ]
-    permuted_result = _equilibrium._chemical_equilibrium(None, permuted, None, None, 1.0e-12)[
+    permuted_result = _core._chemical_equilibrium(None, permuted, None, None, 1.0e-12)[
         "sensitivities"
     ]
 
@@ -419,7 +419,7 @@ def test_manufactured_reaction_with_ill_conditioned_kkt_has_no_sensitivity() -> 
     spec["pressure_pa"] = 8.31446261815324 * 300.0
     _bind_record(spec)
 
-    native = _equilibrium._chemical_equilibrium(None, spec, None, None, 1.0e-12)
+    native = _core._chemical_equilibrium(None, spec, None, None, 1.0e-12)
 
     sensitivities = native["sensitivities"]
     assert sensitivities["kkt_rank"] == sensitivities["kkt_dimension"] == 4
@@ -635,7 +635,7 @@ def test_manufactured_ultra_trace_charged_share_stays_differentiable() -> None:
             "equilibrium_constant_records": records,
         }
         spec["conserved_totals"] = (2.0, 0.0)
-        return _equilibrium._chemical_equilibrium(None, spec, None, None, floor)
+        return _core._chemical_equilibrium(None, spec, None, None, floor)
 
     explicit_trace = solve((-40.0, 0.0), trace_floor)
     assert explicit_trace["amounts"][0] > trace_floor
@@ -719,7 +719,7 @@ def test_manufactured_solver_rejects_trace_false_success() -> None:
         _manufactured_solve(trace, {"trace_floor": 1.0e-8})
     diagnostics = failed.value.diagnostics
     assert diagnostics.search.selected_basin_ordinal is None
-    native = _equilibrium._chemical_equilibrium(None, trace, None, None, 1.0e-8)
+    native = _core._chemical_equilibrium(None, trace, None, None, 1.0e-8)
     assert min(native["amounts"]) <= 1.0e-8
 
 

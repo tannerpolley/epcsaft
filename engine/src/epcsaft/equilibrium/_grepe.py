@@ -10,10 +10,9 @@ from typing import Any, Literal, cast
 from pint import Quantity
 
 import epcsaft
-from epcsaft.eos import _native_transport
 
 from .._trials import NonEvaluableTrial
-from . import _equilibrium
+from .. import _core
 from ._api import (
     ActiveParameterTrialReceipt,
     AllComponents,
@@ -2650,8 +2649,8 @@ def _evaluate_finite_phase(
         for start_set in candidate_start_sets():
             attempt = cast(
                 dict[str, object],
-                _equilibrium._reactive_finite_phases(
-                    _native_transport(model, active_parameters),
+                _core._reactive_finite_phases(
+                    model._native_model(active_parameters),
                     _finite_phase_spec(problem, compilation.temperature_k, compilation.pressure_pa),
                     source_standard_state,
                     tuple(
@@ -2942,8 +2941,8 @@ def _evaluate_single_finite_phase_with_balance_derivatives(
     active_count = 0 if active_parameters is None else len(active_parameters.identities)
     width = component_count + 1 + active_count
     if active_parameters is None:
-        phase_block = _equilibrium.evaluate_parameterized_phase(
-            _native_transport(model, None),
+        phase_block = _core.evaluate_parameterized_phase(
+            model._native_model(),
             compilation.temperature_k,
             amounts,
             volume,

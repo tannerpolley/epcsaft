@@ -10,8 +10,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "native_transport.hpp"
-
 #include "flash.hpp"
 #include "held2_certificates.hpp"
 #include "phase_equilibrium.hpp"
@@ -25,43 +23,95 @@ void bind_chemical_equilibrium(py::module_& module);
 
 namespace {
 
-const epcsaft_native_transport& checked_transport(const py::capsule& capsule) {
-    const char* name = capsule.name();
-    if (name == nullptr
-        || std::string_view(name) != EPCSAFT_NATIVE_TRANSPORT_CAPSULE_NAME) {
-        throw py::value_error("expected private Engine native transport");
-    }
-    const auto* transport = capsule.get_pointer<epcsaft_native_transport>();
-    if (transport == nullptr || transport->model_context == nullptr) {
-        throw py::value_error("native transport is incomplete");
-    }
-    return *transport;
-}
-
-const epcsaft_native_transport& checked_mixture_transport(
-    const py::capsule& capsule
+py::dict source_reference_transfer(
+    const epcsaft::NativeModel& model,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<std::string>& component_ids,
+    const std::vector<double>& source_solvent_mole_fractions,
+    const std::vector<std::array<std::size_t, 2>>& ion_pair_indices,
+    const std::vector<std::array<int, 2>>& ion_pair_stoichiometry,
+    const std::vector<std::size_t>& pure_component_indices,
+    const std::vector<std::string>& pure_component_phases,
+    const std::string& phase,
+    const std::string& reference_convention,
+    const std::string& reference_state_id,
+    const std::string& activity_convention_id,
+    const std::string& reference_state_fingerprint,
+    double standard_molality_mol_per_kg,
+    double source_reference_pressure_pa,
+    std::uint32_t required_derivatives
 ) {
-    const epcsaft_native_transport& transport = checked_transport(capsule);
-    if (transport.component_count < 2) {
-        throw py::value_error("provider capsule must contain at least two components");
+    const epcsaft_engine::equilibrium::ProviderContext provider(model);
+    const auto result = provider.evaluate_source_reference_transfer(
+        temperature_k,
+        pressure_pa,
+        {
+            component_ids,
+            source_solvent_mole_fractions,
+            ion_pair_indices,
+            ion_pair_stoichiometry,
+            pure_component_indices,
+            pure_component_phases,
+            phase,
+            reference_convention,
+            reference_state_id,
+            activity_convention_id,
+            reference_state_fingerprint,
+            standard_molality_mol_per_kg,
+            source_reference_pressure_pa,
+            required_derivatives,
+        }
+    );
+    py::dict value;
+    value["status"] = result.status;
+    value["error"] = result.error;
+    if (result.status != epcsaft_engine::equilibrium::SOURCE_REFERENCE_OK) {
+        return value;
     }
-    if (transport.evaluate_mixture_phase == nullptr
-        && transport.evaluate_electrolyte_phase == nullptr) {
-        throw py::value_error("provider capsule is missing its phase evaluator");
-    }
-    return transport;
+    value["component_count"] = result.component_count;
+    value["neutral_basis_row_count"] = result.neutral_basis_row_count;
+    value["neutral_basis"] = result.neutral_basis;
+    value["log_fugacity_contractions"] = result.log_fugacity_contractions;
+    value["activity_scale_log_contractions"] =
+        result.activity_scale_log_contractions;
+    value["transfer_log_contractions"] = result.transfer_log_contractions;
+    value["source_composition"] = result.source_composition;
+    value["derivative_availability"] = result.derivative_availability;
+    value["pressure_derivatives_per_pa"] = result.pressure_derivatives_per_pa;
+    value["parameter_derivatives"] = result.parameter_derivatives;
+    value["temperature_k"] = result.temperature_k;
+    value["pressure_pa"] = result.pressure_pa;
+    value["source_reference_pressure_pa"] = result.source_reference_pressure_pa;
+    value["standard_molality_mol_per_kg"] = result.standard_molality_mol_per_kg;
+    value["solvent_molar_mass_kg_per_mol"] =
+        result.solvent_molar_mass_kg_per_mol;
+    value["reference_limit_molality_mol_per_kg"] =
+        result.reference_limit_molality_mol_per_kg;
+    value["reference_convergence_error"] = result.reference_convergence_error;
+    value["source_temperature_min_k"] = result.source_temperature_min_k;
+    value["source_temperature_max_k"] = result.source_temperature_max_k;
+    value["source_pressure_min_pa"] = result.source_pressure_min_pa;
+    value["source_pressure_max_pa"] = result.source_pressure_max_pa;
+    value["parameter_fingerprint"] = result.parameter_fingerprint;
+    value["topology_fingerprint"] = result.topology_fingerprint;
+    value["component_order_fingerprint"] = result.component_order_fingerprint;
+    value["reference_state_fingerprint"] = result.reference_state_fingerprint;
+    value["domain_fingerprint"] = result.domain_fingerprint;
+    value["artifact_fingerprint"] = result.artifact_fingerprint;
+    value["helmholtz_basis_id"] = result.helmholtz_basis_id;
+    return value;
 }
 
 py::dict evaluate_parameterized_phase(
-    const py::capsule& capsule,
+    const epcsaft::NativeModel& model,
     double temperature_k,
     const std::vector<double>& amounts_mol,
     double volume_m3,
     double packing_fraction_min,
     double packing_fraction_max
 ) {
-    const epcsaft_native_transport& transport = checked_transport(capsule);
-    const epcsaft_engine::equilibrium::ProviderContext provider(transport);
+    const epcsaft_engine::equilibrium::ProviderContext provider(model);
     const auto active_parameters = provider.active_parameters();
     const auto evaluation = provider.evaluate_parameterized_phase(
         temperature_k,
@@ -98,36 +148,23 @@ py::dict evaluate_parameterized_phase(
 }
 
 py::dict evaluate_solved_state_sensitivity(
-    const py::capsule& capsule,
+    const epcsaft::NativeModel& model,
     double temperature_k,
     double pressure_pa,
     const std::vector<double>& feed_amounts_mol,
     const std::vector<std::vector<double>>& phase_amounts_mol,
     const std::vector<double>& phase_volumes_m3
 ) {
-    const epcsaft_native_transport& transport = checked_transport(capsule);
+    const epcsaft_engine::equilibrium::ProviderContext provider(model);
     if (phase_amounts_mol.size() != phase_volumes_m3.size()) {
         throw py::value_error("phase amount and volume counts must match");
     }
-    std::vector<std::string> component_ids;
-    component_ids.reserve(transport.component_count);
-    for (
-        std::size_t component = 0;
-        component < transport.component_count;
-        ++component
-    ) {
-        const char* identity = transport.component_ids[component];
-        if (identity == nullptr || identity[0] == '\0') {
-            throw py::value_error("Provider component identity is incomplete");
-        }
-        component_ids.emplace_back(identity);
-    }
+    const std::vector<std::string> component_ids = provider.component_ids();
     std::vector<epcsaft_engine::equilibrium::SolvedPhaseState> phases;
     phases.reserve(phase_amounts_mol.size());
     for (std::size_t phase = 0; phase < phase_amounts_mol.size(); ++phase) {
         phases.push_back({phase_amounts_mol[phase], phase_volumes_m3[phase]});
     }
-    const epcsaft_engine::equilibrium::ProviderContext provider(transport);
     const auto sensitivity =
         epcsaft_engine::equilibrium::evaluate_solved_state_sensitivity(
             provider,
@@ -651,7 +688,7 @@ py::dict held2_discovery_to_dict(
 }
 
 py::dict solve_declared_fixed_tp(
-    const py::capsule& capsule,
+    const epcsaft::NativeModel& model,
     double temperature_k,
     double pressure_pa,
     const std::vector<double>& feed_amounts_mol,
@@ -665,9 +702,7 @@ py::dict solve_declared_fixed_tp(
     const std::vector<double>& initial_guess_densities,
     const std::vector<double>& initial_guess_phase_fractions
 ) {
-    const epcsaft_engine::equilibrium::ProviderContext provider(
-        checked_mixture_transport(capsule)
-    );
+    const epcsaft_engine::equilibrium::ProviderContext provider(model);
     const auto declared_phases = parse_declared_phases(roles, supports);
     const auto phase_hints = parse_phase_hints(
         hint_indices, hint_compositions, hint_densities
@@ -718,15 +753,13 @@ py::dict solve_declared_fixed_tp(
 }
 
 py::dict audit_phase_state(
-    const py::capsule& capsule,
+    const epcsaft::NativeModel& model,
     const std::string& role,
     double temperature_k,
     const std::vector<double>& mole_fractions,
     double molar_volume_m3_per_mol
 ) {
-    const epcsaft_engine::equilibrium::ProviderContext provider(
-        checked_mixture_transport(capsule)
-    );
+    const epcsaft_engine::equilibrium::ProviderContext provider(model);
     const auto parsed_role = parse_phase_role(role);
     epcsaft_engine::equilibrium::PhaseEquilibriumState audited;
     {
@@ -743,8 +776,8 @@ py::dict audit_phase_state(
 }
 
 py::dict solve_fixed_t_coexistence(
-    const py::capsule& reference_capsule,
-    const py::capsule& partner_capsule,
+    const epcsaft::NativeModel& reference_model,
+    const epcsaft::NativeModel& partner_model,
     double temperature_k,
     const std::vector<std::string>& roles,
     const std::vector<std::string>& supports,
@@ -757,10 +790,10 @@ py::dict solve_fixed_t_coexistence(
     const std::vector<double>& hint_densities
 ) {
     const epcsaft_engine::equilibrium::ProviderContext reference_provider(
-        checked_mixture_transport(reference_capsule)
+        reference_model
     );
     const epcsaft_engine::equilibrium::ProviderContext partner_provider(
-        checked_transport(partner_capsule)
+        partner_model
     );
     const auto declared_phases = parse_declared_phases(roles, supports);
     const auto phase_hints = parse_phase_hints(
@@ -823,14 +856,12 @@ py::dict solve_fixed_t_coexistence(
     return result;
 }
 py::dict solve_held_discovery(
-    const py::capsule& capsule,
+    const epcsaft::NativeModel& model,
     double temperature_k,
     double pressure_pa,
     const std::vector<double>& overall_mole_fractions
 ) {
-    const epcsaft_engine::equilibrium::ProviderContext provider(
-        checked_transport(capsule)
-    );
+    const epcsaft_engine::equilibrium::ProviderContext provider(model);
     epcsaft_engine::equilibrium::FlashResult flash;
     {
         py::gil_scoped_release release;
@@ -937,13 +968,33 @@ py::dict held2_audit_step5_kkt(
 
 }  // namespace
 
-PYBIND11_MODULE(_equilibrium, module) {
-    module.doc() = "Native local equilibrium formulation";
+void bind_equilibrium(py::module_& module) {
     epcsaft_engine::equilibrium::bind_chemical_equilibrium(module);
+    module.def(
+        "source_reference_transfer",
+        &source_reference_transfer,
+        py::arg("model"),
+        py::arg("temperature_k"),
+        py::arg("pressure_pa"),
+        py::arg("component_ids"),
+        py::arg("source_solvent_mole_fractions"),
+        py::arg("ion_pair_indices"),
+        py::arg("ion_pair_stoichiometry"),
+        py::arg("pure_component_indices"),
+        py::arg("pure_component_phases"),
+        py::arg("phase"),
+        py::arg("reference_convention"),
+        py::arg("reference_state_id"),
+        py::arg("activity_convention_id"),
+        py::arg("reference_state_fingerprint"),
+        py::arg("standard_molality_mol_per_kg"),
+        py::arg("source_reference_pressure_pa"),
+        py::arg("required_derivatives")
+    );
     module.def(
         "evaluate_parameterized_phase",
         &evaluate_parameterized_phase,
-        py::arg("capsule"),
+        py::arg("model"),
         py::arg("temperature_k"),
         py::arg("amounts_mol"),
         py::arg("volume_m3"),
@@ -953,7 +1004,7 @@ PYBIND11_MODULE(_equilibrium, module) {
     module.def(
         "evaluate_solved_state_sensitivity",
         &evaluate_solved_state_sensitivity,
-        py::arg("capsule"),
+        py::arg("model"),
         py::arg("temperature_k"),
         py::arg("pressure_pa"),
         py::arg("feed_amounts_mol"),
@@ -963,7 +1014,7 @@ PYBIND11_MODULE(_equilibrium, module) {
     module.def(
         "_audit_phase_state",
         &audit_phase_state,
-        py::arg("capsule"),
+        py::arg("model"),
         py::arg("role"),
         py::arg("temperature_k"),
         py::arg("mole_fractions"),
@@ -972,7 +1023,7 @@ PYBIND11_MODULE(_equilibrium, module) {
     module.def(
         "_solve_declared_fixed_tp",
         &solve_declared_fixed_tp,
-        py::arg("capsule"),
+        py::arg("model"),
         py::arg("temperature_k"),
         py::arg("pressure_pa"),
         py::arg("feed_amounts_mol"),
@@ -989,8 +1040,8 @@ PYBIND11_MODULE(_equilibrium, module) {
     module.def(
         "_solve_fixed_t_coexistence",
         &solve_fixed_t_coexistence,
-        py::arg("reference_capsule"),
-        py::arg("partner_capsule"),
+        py::arg("reference_model"),
+        py::arg("partner_model"),
         py::arg("temperature_k"),
         py::arg("roles"),
         py::arg("supports"),
@@ -1005,7 +1056,7 @@ PYBIND11_MODULE(_equilibrium, module) {
     module.def(
         "_solve_held_discovery",
         &solve_held_discovery,
-        py::arg("capsule"),
+        py::arg("model"),
         py::arg("temperature_k"),
         py::arg("pressure_pa"),
         py::arg("overall_mole_fractions")

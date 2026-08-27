@@ -12,9 +12,8 @@ from typing import cast
 import pytest
 
 import epcsaft
+from epcsaft import _core
 from epcsaft import equilibrium
-from epcsaft.eos import _native_transport
-from epcsaft.equilibrium import _equilibrium
 from epcsaft.equilibrium._api import _chemical_equilibrium_impl
 from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE, MULTISOLVENT_MULTIION
 
@@ -43,8 +42,8 @@ def _assert_provider_matches_direct_partials(
     volume = math.fsum(amounts) / 2000.0
     coordinates = model._active_coordinates(active)
     direct = model._native.evaluate_phase_derivatives(298.15, amounts, volume, coordinates, 2)
-    provider = _equilibrium.evaluate_parameterized_phase(
-        _native_transport(model, active),
+    provider = _core.evaluate_parameterized_phase(
+        model._native_model(active),
         298.15,
         amounts,
         volume,
@@ -106,8 +105,8 @@ def test_provider_zero_coordinate_state_hessian_matches_value_owner() -> None:
     model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE))
     amounts = (0.70, 0.20, 0.05, 0.05)
     volume = math.fsum(amounts) / 2000.0
-    provider = _equilibrium.evaluate_parameterized_phase(
-        _native_transport(model), 313.15, amounts, volume, 1.0e-8, 0.74
+    provider = _core.evaluate_parameterized_phase(
+        model._native_model(), 313.15, amounts, volume, 1.0e-8, 0.74
     )
     state = model._state(
         T=313.15 * epcsaft.unit_registry.kelvin,
@@ -649,8 +648,8 @@ def _provider_native(
             )
             for row in balances  # type: ignore[union-attr]
         )
-    return _equilibrium._chemical_equilibrium(
-        _native_transport(model),
+    return _core._chemical_equilibrium(
+        model._native_model(),
         native_spec,
         source_standard_state,
         packing_fraction_bounds,

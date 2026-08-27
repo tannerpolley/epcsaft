@@ -346,7 +346,7 @@ SolvedStateSensitivity evaluate_charged_sensitivity(
     std::vector<double> charges(component_count, 0.0);
     for (std::size_t component = 0; component < component_count; ++component) {
         charges[component] = static_cast<double>(
-            provider.transport().component_charges[component]
+            provider.component_charges()[component]
         );
     }
     Held2Coordinates coordinates;
@@ -772,11 +772,11 @@ static SolvedStateSensitivity evaluate_state_sensitivity(
     const std::size_t component_count = component_ids.size();
     const std::size_t phase_count = phases.size();
     const std::size_t parameter_count = active.identities.size();
-    if (phase_count > 1 && provider.transport().component_charges != nullptr
+    if (phase_count > 1
         && std::any_of(
-            provider.transport().component_charges,
-            provider.transport().component_charges + component_count,
-            [](std::int32_t charge) { return charge != 0; }
+            provider.component_charges().begin(),
+            provider.component_charges().end(),
+            [](int charge) { return charge != 0; }
         )) {
         if (!allow_charged_multiphase) {
             result.failure_reason =

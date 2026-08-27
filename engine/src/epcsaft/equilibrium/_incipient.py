@@ -10,8 +10,7 @@ from typing import Any, cast
 import epcsaft
 
 from .._trials import NonEvaluableTrial, NonEvaluableTrialCode
-from ..eos import _native_transport
-from . import _equilibrium
+from .. import _core
 from ._api import (
     ActiveParameterTrialReceipt,
     ChemicalEquilibriumError,
@@ -373,7 +372,7 @@ def _solve_incipient_linear_system(
 def _evaluate_incipient_vapor_point(
     *,
     model: epcsaft.Pure | epcsaft.Mixture,
-    transport: Callable[[], object],
+    provider_model: Callable[[], _core.NativeModel],
     active_parameters: epcsaft.ActiveParameterSet | None,
     all_active_identities: tuple[str, ...],
     temperature_k: float,
@@ -410,8 +409,8 @@ def _evaluate_incipient_vapor_point(
                 "active_bound_ambiguity",
                 "declared vapor volume left its packing-fraction chart",
             )
-        block = _equilibrium.evaluate_parameterized_phase(
-            transport(),
+        block = _core.evaluate_parameterized_phase(
+            provider_model(),
             temperature_k,
             fractions,
             volume,
@@ -558,16 +557,16 @@ def _solve_declared_incipient_vapor(
 
     component_count = len(liquid_potentials)
     reference = component_count - 1
-    transport_capsule: object | None = None
+    native_model: _core.NativeModel | None = None
 
-    def transport() -> object:
-        nonlocal transport_capsule
-        if transport_capsule is None:
+    def provider_model() -> _core.NativeModel:
+        nonlocal native_model
+        if native_model is None:
             try:
-                transport_capsule = _native_transport(model, active_parameters)
+                native_model = model._native_model(active_parameters)
             except (RuntimeError, TypeError, ValueError) as error:
                 raise _IncipientFailure("provider_domain_rejection", str(error)) from error
-        return transport_capsule
+        return native_model
 
     if continuation_fractions is not None:
         if continuation_volume_m3 is None:
@@ -601,7 +600,7 @@ def _solve_declared_incipient_vapor(
         if coordinates not in cache:
             cache[coordinates] = _evaluate_incipient_vapor_point(
                 model=model,
-                transport=transport,
+                provider_model=provider_model,
                 active_parameters=active_parameters,
                 all_active_identities=all_active_identities,
                 temperature_k=temperature_k,
@@ -863,8 +862,8 @@ def _nonideal_closure(
             "declared vapor Provider does not match the ordered neutral support",
         )
     try:
-        liquid_block = _equilibrium.evaluate_parameterized_phase(
-            _native_transport(phase.model, active_parameters),
+        liquid_block = _core.evaluate_parameterized_phase(
+            phase.model._native_model(active_parameters),
             equilibrium.temperature_k,
             equilibrium.amounts_mol,
             equilibrium.volume_m3,
@@ -1076,8 +1075,8 @@ def _ideal_closure(
     )
     phase = problem.liquid_phase
     try:
-        block = _equilibrium.evaluate_parameterized_phase(
-            _native_transport(phase.model, active_parameters),
+        block = _core.evaluate_parameterized_phase(
+            phase.model._native_model(active_parameters),
             equilibrium.temperature_k,
             equilibrium.amounts_mol,
             equilibrium.volume_m3,

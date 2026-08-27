@@ -10,6 +10,7 @@
 #include "phase_block.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -38,6 +39,18 @@ bool nonnegative_finite(const std::vector<double> &values) {
 bool finite(const std::vector<double> &values) {
   return std::all_of(values.begin(), values.end(),
                      [](double value) { return std::isfinite(value); });
+}
+
+bool sha256_fingerprint_valid(const std::string &fingerprint) {
+  return fingerprint.size() == 71 && fingerprint.rfind("sha256:", 0) == 0 &&
+         std::all_of(fingerprint.begin() + 7, fingerprint.end(),
+                     [](unsigned char character) {
+                       return std::isxdigit(character) != 0;
+                     });
+}
+
+bool valid_optional_domain(double value) {
+  return std::isnan(value) || (std::isfinite(value) && value > 0.0);
 }
 
 struct PressureDensityState final {
@@ -435,6 +448,61 @@ NativeModel NativeModel::with_parameter_identities(
   NativeModel result(parameters_);
   result.component_ids_ = component_ids;
   result.site_ids_ = site_ids;
+  result.provider_metadata_ = provider_metadata_;
+  result.active_coordinates_ = active_coordinates_;
+  return result;
+}
+
+NativeModel NativeModel::with_provider_metadata(
+    std::string parameter_fingerprint, double temperature_min_k,
+    double temperature_max_k, double ion_mole_fraction_max,
+    double pressure_min_pa, double pressure_max_pa,
+    std::string topology_fingerprint, std::string component_order_fingerprint,
+    std::string domain_fingerprint, std::string artifact_fingerprint) const {
+  if (component_ids_.size() != component_count()) {
+    throw std::invalid_argument(
+        "native provider requires resolved component identities");
+  }
+  if (!sha256_fingerprint_valid(parameter_fingerprint)) {
+    throw std::invalid_argument("invalid parameter fingerprint");
+  }
+  for (const auto *fingerprint : {&topology_fingerprint,
+                                  &component_order_fingerprint,
+                                  &domain_fingerprint,
+                                  &artifact_fingerprint}) {
+    if (!fingerprint->empty() && !sha256_fingerprint_valid(*fingerprint)) {
+      throw std::invalid_argument("invalid provider fingerprint");
+    }
+  }
+  if (!valid_optional_domain(temperature_min_k) ||
+      !valid_optional_domain(temperature_max_k) ||
+      (std::isfinite(temperature_min_k) &&
+       std::isfinite(temperature_max_k) &&
+       temperature_min_k > temperature_max_k) ||
+      (!std::isnan(ion_mole_fraction_max) &&
+       (!std::isfinite(ion_mole_fraction_max) ||
+        ion_mole_fraction_max <= 0.0 || ion_mole_fraction_max > 1.0))) {
+    throw std::invalid_argument("invalid provider temperature domain");
+  }
+  if (!valid_optional_domain(pressure_min_pa) ||
+      !valid_optional_domain(pressure_max_pa) ||
+      (std::isfinite(pressure_min_pa) && std::isfinite(pressure_max_pa) &&
+       pressure_min_pa > pressure_max_pa)) {
+    throw std::invalid_argument("invalid provider pressure domain");
+  }
+  NativeModel result(*this);
+  result.provider_metadata_ = NativeProviderMetadata{
+      std::move(parameter_fingerprint),
+      std::move(topology_fingerprint),
+      std::move(component_order_fingerprint),
+      std::move(domain_fingerprint),
+      std::move(artifact_fingerprint),
+      temperature_min_k,
+      temperature_max_k,
+      pressure_min_pa,
+      pressure_max_pa,
+      ion_mole_fraction_max,
+  };
   return result;
 }
 
@@ -443,6 +511,17 @@ NativeModel NativeModel::with_active_coordinates(
     const std::vector<NativeActiveCoordinate> &active_coordinates) const {
   if (active_coordinates.empty()) {
     throw std::invalid_argument("active parameter set must be nonempty");
+  }
+  std::vector<std::string> identities;
+  identities.reserve(active_coordinates.size());
+  for (const auto &coordinate : active_coordinates) {
+    if (coordinate.identity.empty() ||
+        std::find(identities.begin(), identities.end(), coordinate.identity) !=
+            identities.end()) {
+      throw std::invalid_argument(
+          "active parameter identities must be nonempty and unique");
+    }
+    identities.push_back(coordinate.identity);
   }
   NativeParameters updated = parameters_;
   for (const auto &coordinate : active_coordinates) {
@@ -528,7 +607,25 @@ NativeModel NativeModel::with_active_coordinates(
   NativeModel result(std::move(updated));
   result.component_ids_ = component_ids_;
   result.site_ids_ = site_ids_;
+  result.provider_metadata_ = provider_metadata_;
+  result.active_coordinates_ = active_coordinates;
   return result;
+}
+
+const NativeProviderMetadata &NativeModel::provider_metadata() const {
+  if (!provider_metadata_.has_value()) {
+    throw std::logic_error("native provider metadata is unavailable");
+  }
+  return *provider_metadata_;
+}
+
+const std::vector<std::string> &NativeModel::component_ids() const {
+  return component_ids_;
+}
+
+const std::vector<NativeActiveCoordinate> &
+NativeModel::active_coordinates() const {
+  return active_coordinates_;
 }
 
 NativeFixedTopologyParameter NativeModel::resolve_fixed_topology_parameter(

@@ -11,10 +11,7 @@ from urllib.parse import unquote, urlparse
 from zipfile import ZipFile
 
 PUBLIC_MODULES = ("epcsaft", "epcsaft.equilibrium", "epcsaft.regression")
-NATIVE_MEMBERS = (
-    "epcsaft/_core.",
-    "epcsaft/equilibrium/_equilibrium.",
-)
+NATIVE_MEMBER_PREFIX = "epcsaft/_core."
 TRANSIENT_WHEEL_RUNPATH = b"/wheel/platlib/lib"
 
 
@@ -29,18 +26,15 @@ def verify(wheel: Path) -> None:
 
     with ZipFile(wheel) as archive:
         members = archive.namelist()
-        for prefix in NATIVE_MEMBERS:
-            matches = [
-                member
-                for member in members
-                if member.startswith(prefix) and member.endswith(".so")
-            ]
-            if len(matches) != 1:
-                raise SystemExit(
-                    f"expected one Engine native member for {prefix}, found {matches}"
-                )
-            if TRANSIENT_WHEEL_RUNPATH in archive.read(matches[0]):
-                raise SystemExit(f"transient build runpath embedded in {matches[0]}")
+        matches = [
+            member
+            for member in members
+            if member.startswith("epcsaft/") and member.endswith(".so")
+        ]
+        if len(matches) != 1 or not matches[0].startswith(NATIVE_MEMBER_PREFIX):
+            raise SystemExit(f"expected only the epcsaft._core extension, found {matches}")
+        if TRANSIENT_WHEEL_RUNPATH in archive.read(matches[0]):
+            raise SystemExit(f"transient build runpath embedded in {matches[0]}")
 
     epcsaft_distributions = [
         distribution

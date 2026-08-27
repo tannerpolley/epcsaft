@@ -1131,7 +1131,7 @@ SourceStandardStateResult transform_source_standard_state(
     if (provider_fingerprint.empty()
         || provider_fingerprint != reference.parameter_fingerprint
         || reference.helmholtz_basis_id
-            != EPCSAFT_NATIVE_HELMHOLTZ_BASIS_ID
+            != PROVIDER_HELMHOLTZ_BASIS_ID
         || reference.status != "ok"
         || reference.domain_status != "admitted-domain"
         || reference.convergence_status != "converged-limit") {

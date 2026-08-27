@@ -68,7 +68,7 @@ MATH_OWNER_FILES = (
     "src/epcsaft/_native/electrolyte_reference.hpp",
     "src/epcsaft/_native/eos.cpp",
     "src/epcsaft/_native/phase_block.hpp",
-    "src/epcsaft/_native/native_transport.cpp",
+    "cpp/equilibrium/source_reference.cpp",
     "src/epcsaft/eos.py",
     "src/epcsaft/reference.py",
 )

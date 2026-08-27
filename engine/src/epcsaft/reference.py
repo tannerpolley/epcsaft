@@ -14,7 +14,6 @@ import epcsaft._core as _native_core
 from .eos import (
     EosError,
     _eos_error,
-    _native_transport,
     _state_magnitude,
 )
 from .parameters import ActiveParameterSet
@@ -269,7 +268,7 @@ def source_reference_transfer(
             ).hexdigest()
         )
         value = _native_core.source_reference_transfer(
-            _native_transport(model, active_parameters),
+            model._native_model(active_parameters),
             temperature_k,
             pressure_pa,
             component_ids,

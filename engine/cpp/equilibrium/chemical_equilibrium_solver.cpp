@@ -5901,11 +5901,10 @@ ProviderPhaseBlockEvidence evaluate_provider_phase_block(
     const std::vector<double>& amounts,
     double volume_m3
 ) {
-    const epcsaft_native_transport& transport = provider.transport();
     const bool charged = std::any_of(
-        transport.component_charges,
-        transport.component_charges + transport.component_count,
-        [](std::int32_t charge) { return charge != 0; }
+        provider.component_charges().begin(),
+        provider.component_charges().end(),
+        [](int charge) { return charge != 0; }
     );
     const MixturePhaseEvaluation phase = charged
         ? provider.evaluate_electrolyte(temperature_k, amounts, volume_m3)

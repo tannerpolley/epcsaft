@@ -31,8 +31,7 @@ CC=clang-18 CXX=clang++-18 meson setup \
     "$build_root" \
     "$engine_root"
 meson compile -C "$build_root" \
-    "_core$extension_suffix" \
-    "_equilibrium$extension_suffix"
+    "_core$extension_suffix"
 
 run-clang-tidy-18 \
     -clang-tidy-binary clang-tidy-18 \

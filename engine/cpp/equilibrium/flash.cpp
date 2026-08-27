@@ -16,35 +16,25 @@ namespace epcsaft_engine::equilibrium {
 namespace {
 
 constexpr double kGasConstantJPerMolK = 8.31446261815324;
-void require_mixture_transport(const epcsaft_native_transport& transport) {
-    if (transport.evaluate_mixture_phase == nullptr) {
-        throw std::invalid_argument("provider capsule is missing its mixture phase evaluator");
+void require_mixture_provider(const ProviderContext& provider) {
+    if (!provider.supports_mixture_phase()) {
+        throw std::invalid_argument("provider model is missing its mixture phase evaluator");
     }
 }
 
-void require_held2_transport(const epcsaft_native_transport& transport) {
-    if (transport.component_count < 3
-        || transport.component_ids == nullptr
-        || transport.component_charges == nullptr
-        || transport.evaluate_electrolyte_phase == nullptr) {
-        throw std::invalid_argument("provider capsule is missing the electrolyte phase contract");
-    }
-    if (transport.evaluate_molar_volume_bounds == nullptr) {
-        throw std::invalid_argument(
-            "provider capsule is missing the molar-volume domain contract"
-        );
-    }
-    if (transport.evaluate_packing_fraction == nullptr) {
-        throw std::invalid_argument(
-            "provider capsule is missing the packing-fraction contract"
-        );
+void require_held2_provider(const ProviderContext& provider) {
+    if (provider.component_count() < 3
+        || provider.component_ids().size() != provider.component_count()
+        || provider.component_charges().size() != provider.component_count()
+        || !provider.supports_electrolyte_phase()) {
+        throw std::invalid_argument("provider model is missing the electrolyte phase requirements");
     }
 }
 
 void validate_input(const ProviderContext& provider, const FlashInput& input) {
     if (!std::isfinite(input.temperature_k) || input.temperature_k <= 0.0
         || !std::isfinite(input.pressure_pa) || input.pressure_pa <= 0.0
-        || input.overall_mole_fractions.size() != provider.transport().component_count
+        || input.overall_mole_fractions.size() != provider.component_count()
         || !std::all_of(
             input.overall_mole_fractions.begin(),
             input.overall_mole_fractions.end(),
@@ -72,10 +62,10 @@ public:
         : provider_(provider),
           input_(input),
           coordinates_(
-              make_held2_coordinates(charges_from_transport(provider.transport()))
+              make_held2_coordinates(charges_from_provider(provider))
           ),
           total_ion_mole_fraction_max_(
-              provider.transport().total_ion_mole_fraction_max
+              provider.metadata().ion_mole_fraction_max
           ),
           pressure_over_rt_(
               input.pressure_pa / (kGasConstantJPerMolK * input.temperature_k)
@@ -187,22 +177,14 @@ private:
         );
     }
 
-    static std::vector<double> charges_from_transport(
-        const epcsaft_native_transport& transport
+    static std::vector<double> charges_from_provider(
+        const ProviderContext& provider
     ) {
-        if (transport.component_charges == nullptr) {
-            throw std::invalid_argument(
-                "Provider transport is missing electrolyte component charges"
-            );
-        }
+        const auto& provider_charges = provider.component_charges();
         std::vector<double> charges;
-        charges.reserve(transport.component_count);
-        for (std::size_t component = 0;
-             component < transport.component_count;
-             ++component) {
-            charges.push_back(
-                static_cast<double>(transport.component_charges[component])
-            );
+        charges.reserve(provider_charges.size());
+        for (int charge : provider_charges) {
+            charges.push_back(static_cast<double>(charge));
         }
         return charges;
     }
@@ -215,25 +197,14 @@ private:
 };
 
 std::vector<std::string> component_ids(const ProviderContext& provider) {
-    std::vector<std::string> result;
-    result.reserve(provider.transport().component_count);
-    for (std::size_t component = 0;
-         component < provider.transport().component_count;
-         ++component) {
-        const char* identity = provider.transport().component_ids[component];
-        if (identity == nullptr || identity[0] == '\0') {
-            throw std::invalid_argument("Provider component identity is incomplete");
-        }
-        result.emplace_back(identity);
-    }
-    return result;
+    return provider.component_ids();
 }
 
 Held2ThermodynamicAccess make_installed_held2_access(
     const ProviderContext& provider,
     const FlashInput& input
 ) {
-    require_held2_transport(provider.transport());
+    require_held2_provider(provider);
     validate_input(provider, input);
     const auto problem = std::make_shared<InstalledHeld2Problem>(
         provider, input
@@ -241,13 +212,9 @@ Held2ThermodynamicAccess make_installed_held2_access(
     Held2ThermodynamicAccess result;
     result.provider_fingerprint = provider.fingerprint();
     result.component_ids = component_ids(provider);
-    result.charges.reserve(provider.transport().component_count);
-    for (std::size_t component = 0;
-         component < provider.transport().component_count;
-         ++component) {
-        result.charges.push_back(static_cast<double>(
-            provider.transport().component_charges[component]
-        ));
+    result.charges.reserve(provider.component_count());
+    for (int charge : provider.component_charges()) {
+        result.charges.push_back(static_cast<double>(charge));
     }
     result.evaluate = [problem](const auto& composition, double log_volume) {
         return problem->evaluate(composition, log_volume);
@@ -357,15 +324,13 @@ FlashResult solve_tp_flash(
     FlashResult result;
     result.input = input;
     result.parameter_fingerprint = provider.fingerprint();
-    const bool electrolyte = provider.transport().component_charges != nullptr
-        && std::any_of(
-            provider.transport().component_charges,
-            provider.transport().component_charges
-                + provider.transport().component_count,
-            [](int32_t charge) { return charge != 0; }
-        );
+    const bool electrolyte = std::any_of(
+        provider.component_charges().begin(),
+        provider.component_charges().end(),
+        [](int charge) { return charge != 0; }
+    );
     if (electrolyte) {
-        require_held2_transport(provider.transport());
+        require_held2_provider(provider);
         Held2AlgorithmResult solve = run_held2_algorithm(
             make_installed_held2_access(provider, input),
             input,
@@ -375,9 +340,9 @@ FlashResult solve_tp_flash(
         result.solve = std::move(solve);
         return result;
     }
-    require_mixture_transport(provider.transport());
+    require_mixture_provider(provider);
     if (input.overall_mole_fractions.size() != 2
-        || provider.transport().component_count != 2) {
+        || provider.component_count() != 2) {
         throw std::invalid_argument(
             "neutral HELD discovery requires a two-component model"
         );

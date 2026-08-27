@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from epcsaft.equilibrium import _equilibrium
+from epcsaft import _core
 
 
 def _farkas(
@@ -13,7 +13,7 @@ def _farkas(
     column_upper: list[float],
     ray: list[float],
 ) -> dict[str, object]:
-    return _equilibrium._held2_audit_farkas_certificate(
+    return _core._held2_audit_farkas_certificate(
         matrix,
         row_lower,
         row_upper,
@@ -163,7 +163,7 @@ def _kkt(
     step4_binding: bool = True,
     pressure_branch: bool = True,
 ) -> dict[str, object]:
-    return _equilibrium._held2_audit_step5_kkt(
+    return _core._held2_audit_step5_kkt(
         variables,
         lower,
         upper,

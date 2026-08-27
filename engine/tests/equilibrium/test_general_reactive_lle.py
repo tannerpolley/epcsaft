@@ -10,9 +10,7 @@ from pathlib import Path
 import pytest
 
 import epcsaft
-from epcsaft import equilibrium, regression
-from epcsaft.eos import _native_transport
-from epcsaft.equilibrium import _equilibrium as _native_equilibrium
+from epcsaft import _core, equilibrium, regression
 from epcsaft.equilibrium import _grepe
 from tests.eos._raw_cases import (
     ASCANI_2023_HYPOTHETICAL,
@@ -448,8 +446,8 @@ def test_finite_phase_exact_nlp_derivatives_match_centered_oracles() -> None:
 
     parameters, model, problem = _fixture()
     active = epcsaft.ActiveParameterSet(parameters, (_PARAMETER_IDENTITY,))
-    native = _native_equilibrium._reactive_finite_phases(
-        _native_transport(model, active),
+    native = _core._reactive_finite_phases(
+        model._native_model(active),
         _grepe._finite_phase_spec(problem, 300.0, 1.0e5),
         None,
         tuple(

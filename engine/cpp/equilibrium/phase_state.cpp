@@ -18,35 +18,20 @@ constexpr double kMechanicalMargin = 1.0e-6;
 std::vector<std::string> phase_provider_component_ids(
     const ProviderContext& provider
 ) {
-    const auto& transport = provider.transport();
-    if (transport.component_count == 0 || transport.component_ids == nullptr) {
+    const auto& component_ids = provider.component_ids();
+    if (component_ids.empty()) {
         throw std::invalid_argument("phase Provider component identities are incomplete");
     }
-    std::vector<std::string> result;
-    result.reserve(transport.component_count);
-    for (std::size_t component = 0;
-         component < transport.component_count; ++component) {
-        if (transport.component_ids[component] == nullptr
-            || transport.component_ids[component][0] == '\0') {
-            throw std::invalid_argument("phase Provider component identity is incomplete");
-        }
-        result.emplace_back(transport.component_ids[component]);
-    }
-    return result;
+    return component_ids;
 }
 
 std::vector<double> phase_provider_component_charges(
     const ProviderContext& provider
 ) {
-    const auto& transport = provider.transport();
-    std::vector<double> result(transport.component_count, 0.0);
-    if (transport.component_charges != nullptr) {
-        for (std::size_t component = 0;
-             component < transport.component_count; ++component) {
-            result[component] = static_cast<double>(
-                transport.component_charges[component]
-            );
-        }
+    const auto& charges = provider.component_charges();
+    std::vector<double> result(charges.size(), 0.0);
+    for (std::size_t component = 0; component < charges.size(); ++component) {
+        result[component] = static_cast<double>(charges[component]);
     }
     return result;
 }
@@ -66,8 +51,7 @@ MixturePhaseEvaluation evaluate_nonreactive_phase(
     const std::vector<double>& mole_fractions,
     double molar_volume_m3_per_mol
 ) {
-    if (mole_fractions.size() == 1
-        && provider.transport().evaluate_pure_phase != nullptr) {
+    if (mole_fractions.size() == 1 && provider.supports_pure_phase()) {
         const auto pure = provider.evaluate(
             temperature_k, 1.0, molar_volume_m3_per_mol
         );
@@ -78,7 +62,7 @@ MixturePhaseEvaluation evaluate_nonreactive_phase(
             pure.provider.gradient[1],
         };
         result.hessian.assign(
-            pure.provider.hessian, pure.provider.hessian + 4
+            pure.provider.hessian.begin(), pure.provider.hessian.end()
         );
         result.pressure_pa = pure.provider.pressure_pa;
         result.parameter_fingerprint = pure.parameter_fingerprint;

@@ -78,7 +78,6 @@ eos_core = static_library(
   'epcsaft_engine_eos_core',
   cppad_temp_file,
   'src/epcsaft/_native/eos.cpp',
-  'src/epcsaft/_native/native_transport.cpp',
   'src/epcsaft/_native/pure_saturation.cpp',
   cpp_args: native_warnings,
   dependencies: [
@@ -91,26 +90,6 @@ eos_core = static_library(
   pic: true,
 )
 
-py.extension_module(
-  '_core',
-  'src/epcsaft/_native/module.cpp',
-  'src/epcsaft/_native/native_transport_pybind.cpp',
-  'src/epcsaft/_native/saturation_pybind.cpp',
-  'src/epcsaft/regression/native/fit.cpp',
-  cpp_args: native_warnings,
-  dependencies: [
-    pybind11_dep,
-    ipopt_dep,
-    eigen_dep,
-    cppad_headers_dep,
-  ],
-  include_directories: [eos_inc, include_directories('src/epcsaft/regression/native')],
-  install: true,
-  link_args: release_link_args,
-  link_with: eos_core,
-  subdir: 'epcsaft',
-)
-
 equilibrium_sources = files(
   'cpp/equilibrium/chemical_equilibrium.cpp',
   'cpp/equilibrium/chemical_equilibrium_compiler.cpp',
@@ -119,6 +98,7 @@ equilibrium_sources = files(
   'cpp/equilibrium/chemical_equilibrium_solver.cpp',
   'cpp/equilibrium/reactive_finite_phase.cpp',
   'cpp/equilibrium/provider.cpp',
+  'cpp/equilibrium/source_reference.cpp',
   'cpp/equilibrium/solved_state_sensitivity.cpp',
   'cpp/equilibrium/phase_equilibrium.cpp',
   'cpp/equilibrium/phase_state.cpp',
@@ -164,16 +144,28 @@ equilibrium_core = static_library(
 )
 
 py.extension_module(
-  '_equilibrium',
+  '_core',
+  'src/epcsaft/_native/module.cpp',
+  'src/epcsaft/_native/saturation_pybind.cpp',
+  'src/epcsaft/regression/native/fit.cpp',
   'cpp/equilibrium/module.cpp',
   'cpp/equilibrium/chemical_equilibrium_bindings.cpp',
   cpp_args: native_warnings,
-  dependencies: [pybind11_dep, cppad_headers_dep],
-  include_directories: [equilibrium_inc, eos_inc],
+  dependencies: [
+    pybind11_dep,
+    ipopt_dep,
+    eigen_dep,
+    cppad_headers_dep,
+  ],
+  include_directories: [
+    equilibrium_inc,
+    eos_inc,
+    include_directories('src/epcsaft/regression/native'),
+  ],
   install: true,
   link_args: release_link_args,
-  link_with: equilibrium_core,
-  subdir: 'epcsaft/equilibrium',
+  link_with: [eos_core, equilibrium_core],
+  subdir: 'epcsaft',
 )
 
 install_subdir(

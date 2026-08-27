@@ -74,6 +74,19 @@ struct NativeActiveCoordinate final {
     double value;
 };
 
+struct NativeProviderMetadata final {
+    std::string parameter_fingerprint;
+    std::string topology_fingerprint;
+    std::string component_order_fingerprint;
+    std::string domain_fingerprint;
+    std::string artifact_fingerprint;
+    double temperature_min_k;
+    double temperature_max_k;
+    double pressure_min_pa;
+    double pressure_max_pa;
+    double ion_mole_fraction_max;
+};
+
 class NativeModel final {
 public:
     explicit NativeModel(NativeParameters parameters);
@@ -113,9 +126,24 @@ public:
         const std::vector<std::string>& component_ids,
         const std::vector<std::string>& site_ids
     ) const;
+    NativeModel with_provider_metadata(
+        std::string parameter_fingerprint,
+        double temperature_min_k,
+        double temperature_max_k,
+        double ion_mole_fraction_max,
+        double pressure_min_pa,
+        double pressure_max_pa,
+        std::string topology_fingerprint,
+        std::string component_order_fingerprint,
+        std::string domain_fingerprint,
+        std::string artifact_fingerprint
+    ) const;
     NativeModel with_active_coordinates(
         const std::vector<NativeActiveCoordinate>& active_coordinates
     ) const;
+    const NativeProviderMetadata& provider_metadata() const;
+    const std::vector<std::string>& component_ids() const;
+    const std::vector<NativeActiveCoordinate>& active_coordinates() const;
     NativeFixedTopologyPhaseBlock evaluate_fixed_topology_association(
         double temperature,
         double amount,
@@ -223,6 +251,8 @@ private:
     const NativeParameters parameters_;
     std::vector<std::string> component_ids_;
     std::vector<std::string> site_ids_;
+    std::optional<NativeProviderMetadata> provider_metadata_;
+    std::vector<NativeActiveCoordinate> active_coordinates_;
 };
 
 }  // namespace epcsaft

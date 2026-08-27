@@ -1,5 +1,4 @@
 #include "eos.hpp"
-#include "native_transport_pybind.hpp"
 #include "fit.hpp"
 #include "phase_block.hpp"
 
@@ -13,6 +12,7 @@
 namespace py = pybind11;
 
 void bind_pure_saturation(py::module_& module);
+void bind_equilibrium(py::module_& module);
 
 PYBIND11_MODULE(_core, module) {
     py::class_<epcsaft::NativeDensityDiagnostics>(module, "NativeDensityDiagnostics")
@@ -245,6 +245,20 @@ PYBIND11_MODULE(_core, module) {
             py::arg("site_ids")
         )
         .def(
+            "with_provider_metadata",
+            &epcsaft::NativeModel::with_provider_metadata,
+            py::arg("parameter_fingerprint"),
+            py::arg("temperature_min_k"),
+            py::arg("temperature_max_k"),
+            py::arg("ion_mole_fraction_max"),
+            py::arg("pressure_min_pa"),
+            py::arg("pressure_max_pa"),
+            py::arg("topology_fingerprint"),
+            py::arg("component_order_fingerprint"),
+            py::arg("domain_fingerprint"),
+            py::arg("artifact_fingerprint")
+        )
+        .def(
             "with_active_coordinates",
             &epcsaft::NativeModel::with_active_coordinates,
             py::arg("coordinates")
@@ -284,44 +298,7 @@ PYBIND11_MODULE(_core, module) {
             }
         );
 
-    module.def(
-        "native_transport",
-        &epcsaft::make_native_transport,
-        py::arg("model"),
-        py::arg("parameter_fingerprint"),
-        py::arg("temperature_min_k"),
-        py::arg("temperature_max_k"),
-        py::arg("component_ids"),
-        py::arg("ion_mole_fraction_max"),
-        py::arg("pressure_min_pa") = std::numeric_limits<double>::quiet_NaN(),
-        py::arg("pressure_max_pa") = std::numeric_limits<double>::quiet_NaN(),
-        py::arg("topology_fingerprint") = "",
-        py::arg("component_order_fingerprint") = "",
-        py::arg("domain_fingerprint") = "",
-        py::arg("artifact_fingerprint") = "",
-        py::arg("active_parameters") = std::vector<epcsaft::NativeActiveCoordinate>{}
-    );
-    module.def(
-        "source_reference_transfer",
-        &epcsaft::evaluate_source_reference_transfer,
-        py::arg("capsule"),
-        py::arg("temperature_k"),
-        py::arg("pressure_pa"),
-        py::arg("component_ids"),
-        py::arg("source_solvent_mole_fractions"),
-        py::arg("ion_pair_indices"),
-        py::arg("ion_pair_stoichiometry"),
-        py::arg("pure_component_indices"),
-        py::arg("pure_component_phases"),
-        py::arg("phase"),
-        py::arg("reference_convention"),
-        py::arg("reference_state_id"),
-        py::arg("activity_convention_id"),
-        py::arg("reference_state_fingerprint"),
-        py::arg("standard_molality_mol_per_kg"),
-        py::arg("source_reference_pressure_pa"),
-        py::arg("required_derivatives")
-    );
+    bind_equilibrium(module);
     bind_pure_saturation(module);
     bind_parameter_fit(module);
 }

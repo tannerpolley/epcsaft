@@ -7,16 +7,14 @@ import numpy as np
 import pytest
 from scipy.optimize import least_squares
 
-from epcsaft import ActiveParameterSet, Mixture, Parameters
+from epcsaft import ActiveParameterSet, Mixture, Parameters, _core
 from epcsaft import unit_registry as u
-from epcsaft.eos import _native_transport
 from epcsaft.equilibrium import (
     AllComponents,
     DeclaredTopology,
     FixedTPFeed,
     PhaseEquilibriumProblem,
     PhaseSpecification,
-    _equilibrium,
     solve,
 )
 from tests.eos._raw_cases import AQUEOUS_ELECTROLYTE, NEUTRAL_BINARY
@@ -38,12 +36,12 @@ _INITIAL_STATE = (
 
 
 def _provider_block(
-    capsule: object,
+    native_model: object,
     amounts: tuple[float, float],
     volume: float,
 ) -> dict[str, object]:
-    return _equilibrium.evaluate_parameterized_phase(
-        capsule,
+    return _core.evaluate_parameterized_phase(
+        native_model,
         _TEMPERATURE_K,
         amounts,
         volume,
@@ -59,7 +57,7 @@ def _solve_two_phase_state(
     initial: tuple[float, ...] = _INITIAL_STATE,
 ) -> tuple[tuple[tuple[float, float], tuple[float, float]], tuple[float, float]]:
     active = ActiveParameterSet(parameters, identities, values=values)
-    capsule = _native_transport(Mixture(parameters), active)
+    native_model = Mixture(parameters)._native_model(active)
 
     def residual(state: np.ndarray[tuple[int], np.dtype[np.float64]]) -> np.ndarray:
         first_amounts = (float(state[0]), float(state[1]))
@@ -67,8 +65,8 @@ def _solve_two_phase_state(
             _FEED[0] - first_amounts[0],
             _FEED[1] - first_amounts[1],
         )
-        first = _provider_block(capsule, first_amounts, float(state[2]))
-        second = _provider_block(capsule, second_amounts, float(state[3]))
+        first = _provider_block(native_model, first_amounts, float(state[2]))
+        second = _provider_block(native_model, second_amounts, float(state[3]))
         first_gradient = cast(Sequence[float], first["state_gradient"])
         second_gradient = cast(Sequence[float], second["state_gradient"])
         return np.asarray(
@@ -116,8 +114,8 @@ def _sensitivity(
     feed: tuple[float, float] = _FEED,
 ) -> dict[str, object]:
     active = ActiveParameterSet(parameters, identities, values=values)
-    return _equilibrium.evaluate_solved_state_sensitivity(
-        _native_transport(Mixture(parameters), active),
+    return _core.evaluate_solved_state_sensitivity(
+        Mixture(parameters)._native_model(active),
         _TEMPERATURE_K,
         _PRESSURE_PA,
         feed,
@@ -329,12 +327,12 @@ def test_one_phase_association_and_model_sensitivity_match_centered_resolves() -
     parameters = Parameters.from_mapping(AQUEOUS_ELECTROLYTE)
     selected = ActiveParameterSet(parameters, identities)
 
-    def capsule(values: tuple[float, ...]) -> object:
+    def native_model(values: tuple[float, ...]) -> object:
         active = ActiveParameterSet(parameters, identities, values=values)
-        return _native_transport(Mixture(parameters), active)
+        return Mixture(parameters)._native_model(active)
 
     def phase(provider: object, volume: float) -> dict[str, object]:
-        return _equilibrium.evaluate_parameterized_phase(
+        return _core.evaluate_parameterized_phase(
             provider,
             temperature_k,
             feed,
@@ -343,9 +341,9 @@ def test_one_phase_association_and_model_sensitivity_match_centered_resolves() -
             0.74,
         )
 
-    base = capsule(selected.values)
+    base = native_model(selected.values)
     pressure_pa = float(phase(base, volume_m3)["pressure_pa"])
-    sensitivity = _equilibrium.evaluate_solved_state_sensitivity(
+    sensitivity = _core.evaluate_solved_state_sensitivity(
         base,
         temperature_k,
         pressure_pa,
@@ -361,7 +359,7 @@ def test_one_phase_association_and_model_sensitivity_match_centered_resolves() -
         for sign in (-1.0, 1.0):
             values = list(selected.values)
             values[parameter] += sign * step
-            provider = capsule(tuple(values))
+            provider = native_model(tuple(values))
             solved = least_squares(
                 lambda log_volume, provider=provider: np.asarray(
                     (
@@ -382,7 +380,7 @@ def test_one_phase_association_and_model_sensitivity_match_centered_resolves() -
         centered = (volumes[1] - volumes[0]) / (2.0 * step)
         assert exact[3][parameter] == pytest.approx(centered, rel=2.0e-6, abs=1.0e-12)
 
-    charged_multiphase = _equilibrium.evaluate_solved_state_sensitivity(
+    charged_multiphase = _core.evaluate_solved_state_sensitivity(
         base,
         temperature_k,
         pressure_pa,

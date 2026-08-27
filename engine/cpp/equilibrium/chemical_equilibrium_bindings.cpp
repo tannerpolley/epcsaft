@@ -8,14 +8,11 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-#include "native_transport.hpp"
 
 namespace py = pybind11;
 
@@ -27,87 +24,21 @@ struct ChemicalProviderMetadata {
     std::vector<int> charges;
 };
 
-const epcsaft_native_transport& checked_chemical_transport(
-    const py::capsule& capsule
-) {
-    const char* name = capsule.name();
-    if (name == nullptr
-        || std::string_view(name) != EPCSAFT_NATIVE_TRANSPORT_CAPSULE_NAME) {
-        throw py::value_error("expected private Engine native transport");
-    }
-    const auto* transport = capsule.get_pointer<epcsaft_native_transport>();
-    if (transport == nullptr || transport->model_context == nullptr
-        || transport->component_count < 2
-        || transport->component_ids == nullptr
-        || transport->component_charges == nullptr
-        || (transport->evaluate_mixture_phase == nullptr
-            && transport->evaluate_electrolyte_phase == nullptr)
-        || transport->evaluate_molar_volume_bounds == nullptr
-        || transport->evaluate_packing_fraction == nullptr) {
+ChemicalProviderMetadata chemical_provider_metadata(const ProviderContext& provider) {
+    if (provider.component_count() < 2
+        || (!provider.supports_mixture_phase()
+            && !provider.supports_electrolyte_phase())) {
         throw py::value_error(
-            "Provider capsule is missing the chemical-equilibrium phase callbacks"
+            "Provider model does not support chemical-equilibrium phase evaluation"
         );
     }
-    if (!std::isfinite(transport->source_temperature_min_k)
-        || !std::isfinite(transport->source_temperature_max_k)
-        || transport->source_temperature_min_k <= 0.0
-        || transport->source_temperature_max_k
-            < transport->source_temperature_min_k
-        || (!std::isnan(transport->total_ion_mole_fraction_max)
-            && (!std::isfinite(transport->total_ion_mole_fraction_max)
-                || transport->total_ion_mole_fraction_max < 0.0
-                || transport->total_ion_mole_fraction_max > 1.0))) {
-        throw py::value_error("Provider source-domain metadata is invalid");
-    }
-    return *transport;
-}
-
-const epcsaft_native_transport& checked_reactive_finite_transport(
-    const py::capsule& capsule
-) {
-    const char* name = capsule.name();
-    if (name == nullptr
-        || std::string_view(name) != EPCSAFT_NATIVE_TRANSPORT_CAPSULE_NAME) {
-        throw py::value_error("expected private Engine native transport");
-    }
-    const auto* transport = capsule.get_pointer<epcsaft_native_transport>();
-    if (transport == nullptr || transport->model_context == nullptr
-        || transport->component_count < 2
-        || transport->component_ids == nullptr
-        || transport->component_charges == nullptr
-        || transport->evaluate_mixture_phase == nullptr
-        || transport->evaluate_molar_volume_bounds == nullptr
-        || transport->evaluate_packing_fraction == nullptr
-        || transport->evaluate_inverse_packing_geometry == nullptr) {
-        throw py::value_error(
-            "Provider capsule is missing the reactive finite-phase callbacks"
-        );
-    }
-    const bool has_temperature_domain =
-        std::isfinite(transport->source_temperature_min_k)
-        && std::isfinite(transport->source_temperature_max_k);
-    if ((std::isfinite(transport->source_temperature_min_k)
-            != std::isfinite(transport->source_temperature_max_k))
-        || (has_temperature_domain
-            && (transport->source_temperature_min_k <= 0.0
-                || transport->source_temperature_max_k
-                    < transport->source_temperature_min_k))) {
-        throw py::value_error("Provider source-domain metadata is invalid");
-    }
-    return *transport;
-}
-
-ChemicalProviderMetadata chemical_provider_metadata(const epcsaft_native_transport& transport) {
     ChemicalProviderMetadata result;
-    result.component_ids.reserve(transport.component_count);
-    result.charges.reserve(transport.component_count);
-    for (std::size_t component = 0; component < transport.component_count; ++component) {
-        if (transport.component_ids[component] == nullptr
-            || transport.component_ids[component][0] == '\0') {
+    result.component_ids = provider.component_ids();
+    result.charges = provider.component_charges();
+    for (const std::string& component_id : result.component_ids) {
+        if (component_id.empty()) {
             throw py::value_error("Provider component identity is incomplete");
         }
-        result.component_ids.emplace_back(transport.component_ids[component]);
-        result.charges.push_back(static_cast<int>(transport.component_charges[component]));
     }
     return result;
 }
@@ -794,22 +725,23 @@ void validate_provider_identity(
     const ReactionSystemInput& input
 ) {
     if (input.species_ids != metadata.component_ids) {
-        throw py::value_error("Provider capsule component order does not match the reaction system");
+        throw py::value_error("Provider component order does not match the reaction system");
     }
     if (input.charges != metadata.charges) {
-        throw py::value_error("Provider capsule charges do not match the reaction system");
+        throw py::value_error("Provider charges do not match the reaction system");
     }
 }
 
 CompiledReactionSystem compile_provider_input(
-    const epcsaft_native_transport& transport,
+    const ProviderContext& provider,
     const ChemicalProviderMetadata& metadata,
     const ReactionSystemInput& input,
     const std::vector<double>& packing_bounds
 ) {
     validate_provider_identity(metadata, input);
-    if (input.temperature_k < transport.source_temperature_min_k
-        || input.temperature_k > transport.source_temperature_max_k) {
+    const epcsaft::NativeProviderMetadata& domain = provider.metadata();
+    if (input.temperature_k < domain.temperature_min_k
+        || input.temperature_k > domain.temperature_max_k) {
         throw py::value_error("temperature is outside the Provider source domain");
     }
     const CompiledReactionSystem compiled = compile_reaction_system(input);
@@ -821,9 +753,9 @@ CompiledReactionSystem compile_provider_input(
             ionic_feed += input.feed_amounts[species];
         }
     }
-    if (std::isfinite(transport.total_ion_mole_fraction_max)
+    if (std::isfinite(domain.ion_mole_fraction_max)
         && (total_feed <= 0.0
-            || ionic_feed / total_feed > transport.total_ion_mole_fraction_max)) {
+            || ionic_feed / total_feed > domain.ion_mole_fraction_max)) {
         throw py::value_error("feed composition exceeds the Provider source domain");
     }
     if (packing_bounds.size() != 2) {
@@ -893,7 +825,6 @@ std::vector<double> compile_ln_k_parameter_derivatives(
 }
 
 py::dict solve_provider_input(
-    const epcsaft_native_transport& transport,
     const ChemicalProviderMetadata& metadata,
     const ReactionSystemInput& input,
     const ProviderContext& provider,
@@ -906,7 +837,7 @@ py::dict solve_provider_input(
     int max_iterations = 500
 ) {
     const CompiledReactionSystem compiled = compile_provider_input(
-        transport, metadata, input, packing_bounds
+        provider, metadata, input, packing_bounds
     );
     std::vector<double> compiled_ln_k_pressure_derivatives_per_pa;
     if (!ln_k_pressure_derivatives_per_pa.empty()) {
@@ -952,7 +883,7 @@ py::dict solve_provider_input(
         input.pressure_pa,
         packing_bounds[0],
         packing_bounds[1],
-        transport.total_ion_mole_fraction_max,
+        provider.metadata().ion_mole_fraction_max,
         trace_floor,
         compiled_ln_k_pressure_derivatives_per_pa,
         compiled_ln_k_parameter_derivatives,
@@ -964,8 +895,6 @@ py::dict solve_provider_input(
     py::dict result = chemical_result(evaluation);
     result["parameter_fingerprint"] = input.provider_fingerprint;
     result["packing_fraction_bounds"] = packing_bounds;
-    result["provider_transport_capsule_name"] =
-        EPCSAFT_NATIVE_TRANSPORT_CAPSULE_NAME;
     result["provider_evaluation_count"] = provider.evaluation_count();
     return result;
 }
@@ -1097,7 +1026,6 @@ SourceReferenceTransferEvidence source_reference_transfer_evidence(
 
 std::pair<SourceStandardStateResult, SourceReferenceTransferEvidence>
 transform_provider_source_input(
-    const epcsaft_native_transport& transport,
     const ProviderContext& provider,
     const py::dict& source_standard_state,
     bool sensitivities_requested,
@@ -1197,8 +1125,10 @@ transform_provider_source_input(
         );
     }
     if (reference.topology_fingerprint != provider_topology_fingerprint
-        || reference.source_temperature_min_k != transport.source_temperature_min_k
-        || reference.source_temperature_max_k != transport.source_temperature_max_k
+        || reference.source_temperature_min_k
+            != provider.metadata().temperature_min_k
+        || reference.source_temperature_max_k
+            != provider.metadata().temperature_max_k
         || !std::isfinite(reference.source_pressure_min_pa)
         || !std::isfinite(reference.source_pressure_max_pa)
         || reference.source_pressure_min_pa <= 0.0
@@ -1230,7 +1160,7 @@ transform_provider_source_input(
 }
 
 py::dict solve_provider_source(
-    const py::capsule& capsule,
+    const epcsaft::NativeModel& model,
     const py::dict& spec,
     const py::dict& source_standard_state,
     const std::vector<double>& packing_bounds,
@@ -1240,13 +1170,11 @@ py::dict solve_provider_source(
     const ChemicalContinuationStart* continuation_start,
     int max_iterations = 500
 ) {
-    const epcsaft_native_transport& transport = checked_chemical_transport(capsule);
-    const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
+    const ProviderContext provider(model);
+    const ChemicalProviderMetadata metadata = chemical_provider_metadata(provider);
     ReactionSystemInput input = reaction_system_input(spec);
     validate_provider_identity(metadata, input);
-    const ProviderContext provider(transport);
     auto [transformed, reference] = transform_provider_source_input(
-        transport,
         provider,
         source_standard_state,
         sensitivities_requested,
@@ -1254,7 +1182,6 @@ py::dict solve_provider_source(
         input
     );
     py::dict result = solve_provider_input(
-        transport,
         metadata,
         input,
         provider,
@@ -1288,7 +1215,7 @@ py::dict solve_provider_source(
 }
 
 py::dict solve_chemical_equilibrium(
-    const py::object& capsule,
+    const py::object& model_object,
     const py::dict& spec,
     const py::object& source_standard_state,
     const py::object& packing_fraction_bounds,
@@ -1297,7 +1224,7 @@ py::dict solve_chemical_equilibrium(
     bool active_parameters_requested,
     int max_iterations
 ) {
-    if (capsule.is_none()) {
+    if (model_object.is_none()) {
         if (!source_standard_state.is_none() || !packing_fraction_bounds.is_none()) {
             throw py::value_error(
                 "ideal-gas chemical equilibrium cannot consume Provider metadata"
@@ -1317,22 +1244,21 @@ py::dict solve_chemical_equilibrium(
         : ChemicalContinuationStart{};
     const ChemicalContinuationStart* anchored_ptr =
         spec.contains("continuation_start") ? &anchored : nullptr;
-    const py::capsule provider_capsule = py::cast<py::capsule>(capsule);
+    const epcsaft::NativeModel& model = py::cast<const epcsaft::NativeModel&>(
+        model_object
+    );
+    const ProviderContext provider(model);
     if (source_standard_state.is_none()) {
-        const epcsaft_native_transport& transport =
-            checked_chemical_transport(provider_capsule);
-        const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
+        const ChemicalProviderMetadata metadata = chemical_provider_metadata(provider);
         ReactionSystemInput input = reaction_system_input(spec);
-        const ProviderContext provider(transport);
         input.provider_fingerprint = provider.fingerprint();
         const ProviderActiveParameterSet resolved = provider.active_parameters();
         if (active_parameters_requested != !resolved.identities.empty()) {
             throw py::value_error(
-                "Provider capsule active-parameter identity does not match the request"
+                "Provider active-parameter identity does not match the request"
             );
         }
         return solve_provider_input(
-            transport,
             metadata,
             input,
             provider,
@@ -1345,17 +1271,14 @@ py::dict solve_chemical_equilibrium(
             max_iterations
         );
     }
-    const epcsaft_native_transport& transport =
-        checked_chemical_transport(provider_capsule);
-    const ProviderContext provider(transport);
     const ProviderActiveParameterSet resolved = provider.active_parameters();
     if (active_parameters_requested != !resolved.identities.empty()) {
         throw py::value_error(
-            "Provider capsule active-parameter identity does not match the request"
+            "Provider active-parameter identity does not match the request"
         );
     }
     return solve_provider_source(
-        provider_capsule,
+        model,
         spec,
         py::cast<py::dict>(source_standard_state),
         packing_bounds,
@@ -1368,7 +1291,7 @@ py::dict solve_chemical_equilibrium(
 }
 
 py::dict evaluate_provider_local(
-    const py::capsule& capsule,
+    const epcsaft::NativeModel& model,
     const py::dict& spec,
     const py::object& source_standard_state,
     const std::vector<double>& packing_bounds,
@@ -1377,22 +1300,20 @@ py::dict evaluate_provider_local(
     const std::vector<double>& upper,
     bool active_parameters_requested
 ) {
-    const epcsaft_native_transport& transport = checked_chemical_transport(capsule);
-    const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
+    const ProviderContext provider(model);
+    const ChemicalProviderMetadata metadata = chemical_provider_metadata(provider);
     ReactionSystemInput input = reaction_system_input(spec);
-    const ProviderContext provider(transport);
     input.provider_fingerprint = provider.fingerprint();
     const ProviderActiveParameterSet parameters = provider.active_parameters();
     if (active_parameters_requested != !parameters.identities.empty()) {
         throw py::value_error(
-            "Provider capsule active-parameter identity does not match the request"
+            "Provider active-parameter identity does not match the request"
         );
     }
     const std::size_t parameter_count = parameters.identities.size();
     std::vector<double> ln_k_parameter_derivatives;
     if (!source_standard_state.is_none()) {
         auto source = transform_provider_source_input(
-            transport,
             provider,
             py::cast<py::dict>(source_standard_state),
             active_parameters_requested,
@@ -1404,12 +1325,12 @@ py::dict evaluate_provider_local(
         );
     }
     const CompiledReactionSystem compiled = compile_provider_input(
-        transport, metadata, input, packing_bounds
+        provider, metadata, input, packing_bounds
     );
     ChemicalSolveResult evaluation = evaluate_provider_reaction_local(
         compiled, provider, input.temperature_k, input.pressure_pa,
         packing_bounds[0], packing_bounds[1],
-        transport.total_ion_mole_fraction_max,
+        provider.metadata().ion_mole_fraction_max,
         variables, lower, upper,
         compile_ln_k_parameter_derivatives(
             compiled, input, ln_k_parameter_derivatives, parameter_count
@@ -1482,7 +1403,7 @@ py::dict reactive_finite_phase_result(const ReactiveFinitePhaseResult& evaluatio
 }
 
 py::dict solve_reactive_finite_phases(
-    const py::capsule& capsule,
+    const epcsaft::NativeModel& model,
     const py::dict& spec,
     const py::object& source_standard_state,
     const std::vector<std::array<double, 2>>& packing_fraction_intervals,
@@ -1493,20 +1414,24 @@ py::dict solve_reactive_finite_phases(
     const py::object& phase_direction_system,
     std::vector<std::vector<std::size_t>> phase_support_indices
 ) {
-    const epcsaft_native_transport& transport = checked_reactive_finite_transport(capsule);
-    const ChemicalProviderMetadata metadata = chemical_provider_metadata(transport);
+    const ProviderContext provider(model);
+    if (!provider.supports_mixture_phase()) {
+        throw py::value_error(
+            "Provider model does not support reactive finite-phase evaluation"
+        );
+    }
+    const ChemicalProviderMetadata metadata = chemical_provider_metadata(provider);
     ReactionSystemInput input = reaction_system_input(spec);
     validate_provider_identity(metadata, input);
-    if (input.temperature_k < transport.source_temperature_min_k
-        || input.temperature_k > transport.source_temperature_max_k) {
+    if (input.temperature_k < provider.metadata().temperature_min_k
+        || input.temperature_k > provider.metadata().temperature_max_k) {
         throw py::value_error("temperature is outside the Provider source domain");
     }
-    const ProviderContext provider(transport);
     input.provider_fingerprint = provider.fingerprint();
     const ProviderActiveParameterSet parameters = provider.active_parameters();
     if (active_parameters_requested != !parameters.identities.empty()) {
         throw py::value_error(
-            "Provider capsule active-parameter identity does not match the request"
+            "Provider active-parameter identity does not match the request"
         );
     }
     CompiledReactionSystem compiled;
@@ -1807,7 +1732,7 @@ void bind_chemical_equilibrium(py::module_& module) {
     module.def(
         "_chemical_equilibrium",
         &solve_chemical_equilibrium,
-        py::arg("capsule"),
+        py::arg("model"),
         py::arg("spec"),
         py::arg("source_standard_state"),
         py::arg("packing_fraction_bounds"),
@@ -1819,7 +1744,7 @@ void bind_chemical_equilibrium(py::module_& module) {
     module.def(
         "_evaluate_provider_reaction_local",
         &evaluate_provider_local,
-        py::arg("capsule"),
+        py::arg("model"),
         py::arg("spec"),
         py::arg("source_standard_state"),
         py::arg("packing_fraction_bounds"),
@@ -1831,7 +1756,7 @@ void bind_chemical_equilibrium(py::module_& module) {
     module.def(
         "_reactive_finite_phases",
         &solve_reactive_finite_phases,
-        py::arg("capsule"),
+        py::arg("model"),
         py::arg("spec"),
         py::arg("source_standard_state"),
         py::arg("packing_fraction_intervals"),

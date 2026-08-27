@@ -57,10 +57,10 @@ uv pip install --python "$run_root/venv/bin/python" \
 uv pip check --python "$run_root/venv/bin/python"
 mapfile -t installed_extensions < <(
     find "$run_root/venv/lib" -type f \
-        \( -name '_core*.so' -o -name '_equilibrium*.so' \)
+        -name '_core*.so'
 )
-if ((${#installed_extensions[@]} != 2)); then
-    echo "expected two installed sanitizer extensions, found ${#installed_extensions[@]}" >&2
+if ((${#installed_extensions[@]} != 1)); then
+    echo "expected one installed sanitizer extension, found ${#installed_extensions[@]}" >&2
     exit 1
 fi
 for extension in "${installed_extensions[@]}"; do

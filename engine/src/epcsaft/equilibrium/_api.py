@@ -14,9 +14,7 @@ from pint import Quantity
 from pint.errors import DimensionalityError
 
 import epcsaft
-from epcsaft.eos import _native_transport
-
-from . import _equilibrium
+from .. import _core
 
 
 class _ScalarBoundarySolveError(ValueError):
@@ -1021,7 +1019,6 @@ class ChemicalArtifactIdentity:
     provider_distribution: str | None
     provider_version: str | None
     provider_record_sha256: str | None
-    provider_transport_capsule_name: str | None
 
 
 @dataclass(frozen=True)
@@ -1524,7 +1521,7 @@ def _held_discovery(
     """Run the internal bounded HELD or strong-electrolyte HELD2 controller."""
 
     try:
-        capsule = _native_transport(model, active_parameters)
+        native_model = model._native_model(active_parameters)
     except (TypeError, ValueError) as error:
         diagnostics = _failed_held_diagnostics("invalid_input", "input_rejected", str(error))
         raise _HeldDiscoveryError(str(error), diagnostics) from error
@@ -1532,8 +1529,8 @@ def _held_discovery(
     try:
         native = cast(
             Mapping[str, object],
-            _equilibrium._solve_held_discovery(
-                capsule,
+            _core._solve_held_discovery(
+                native_model,
                 temperature_k,
                 pressure_pa,
                 feed,
@@ -1957,7 +1954,7 @@ def _discovery_result(
                 for row in sensitivity.output_parameter_jacobian
             ),
         )
-    capsule = _native_transport(model, active_parameters)
+    native_model = model._native_model(active_parameters)
     roles: list[PhaseRole] = []
     for phase in retained.phases:
         molar_volume = phase.volume_m3 / phase.amount_mol
@@ -1990,8 +1987,8 @@ def _discovery_result(
             _native_equilibrium_phase(
                 cast(
                     Mapping[str, object],
-                    _equilibrium._audit_phase_state(
-                        capsule,
+                    _core._audit_phase_state(
+                        native_model,
                         role,
                         temperature_k,
                         retained_phase.mole_fractions,
@@ -2127,8 +2124,8 @@ def solve(
         )
         native = cast(
             Mapping[str, object],
-            _equilibrium._solve_declared_fixed_tp(
-                _native_transport(model, active_parameters),
+            _core._solve_declared_fixed_tp(
+                model._native_model(active_parameters),
                 temperature_k,
                 pressure_pa,
                 feed,
@@ -2290,11 +2287,10 @@ def _fixed_t_coexistence_core(
     )
     native = cast(
         Mapping[str, object],
-        _equilibrium._solve_fixed_t_coexistence(
-            _native_transport(model, active_parameters),
-            _native_transport(
-                partner_model,
-                _support_active_parameters(partner_model._parameters, active_parameters),
+        _core._solve_fixed_t_coexistence(
+            model._native_model(active_parameters),
+            partner_model._native_model(
+                _support_active_parameters(partner_model._parameters, active_parameters)
             ),
             temperature_k,
             tuple(phase.role for phase in topology.phases),
@@ -3475,11 +3471,7 @@ def _chemical_artifact_identity(
             provider_distribution=None,
             provider_version=None,
             provider_record_sha256=None,
-            provider_transport_capsule_name=None,
         )
-    capsule_name = str(native["provider_transport_capsule_name"])
-    if capsule_name != "epcsaft.native_transport":
-        raise ValueError("native result has an incompatible Provider transport identity")
     return ChemicalArtifactIdentity(
         equilibrium_distribution="epcsaft",
         equilibrium_version=engine_version,
@@ -3487,7 +3479,6 @@ def _chemical_artifact_identity(
         provider_distribution="epcsaft",
         provider_version=engine_version,
         provider_record_sha256=engine_record,
-        provider_transport_capsule_name=capsule_name,
     )
 
 
@@ -3891,7 +3882,7 @@ def _chemical_equilibrium_impl(
             ):
                 raise ValueError("reaction constants do not match the ideal-gas reference")
             spec["provider_fingerprint"] = phase.model_fingerprint
-            capsule = None
+            native_model = None
             packing_bounds = None
             thermodynamic_model = "ideal_gas"
             provider_ids = None
@@ -3910,7 +3901,7 @@ def _chemical_equilibrium_impl(
             ):
                 raise ValueError("packing-fraction bounds must be finite and increasing")
             model_fingerprint = phase.model.parameter_fingerprint
-            capsule = _native_transport(phase.model, active_parameter_set)
+            native_model = phase.model._native_model(active_parameter_set)
             thermodynamic_model = "engine_model"
             provider_ids = tuple(phase.model.component_ids)
             provider_fingerprint = model_fingerprint
@@ -3949,8 +3940,8 @@ def _chemical_equilibrium_impl(
         )
         native = cast(
             Mapping[str, object],
-            _equilibrium._chemical_equilibrium(
-                capsule,
+            _core._chemical_equilibrium(
+                native_model,
                 spec,
                 native_standard_state,
                 packing_bounds,

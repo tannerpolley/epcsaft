@@ -131,7 +131,7 @@ std::vector<DeclaredStart> discovery_starts(
 ) {
     const auto component_charges = phase_provider_component_charges(provider);
     if (!phase_topology_is_charged(component_charges)
-        && provider.transport().component_count != 2) {
+        && provider.component_count() != 2) {
         return {};
     }
     FlashResult discovery;

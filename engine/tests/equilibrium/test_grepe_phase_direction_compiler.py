@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from epcsaft.equilibrium import _equilibrium
+from epcsaft import _core
 
 _PHASES = ("aqueous", "organic")
 _SPECIES = ("A+", "B+", "X-", "BC", "AC", "solvent")
@@ -41,7 +41,7 @@ def _compile(
     directions: tuple[tuple[float, ...], ...] = _directions(),
 ) -> dict[str, object]:
     return dict(
-        _equilibrium._compile_phase_direction_system(
+        _core._compile_phase_direction_system(
             phases,
             _SPECIES,
             _CHARGES,
