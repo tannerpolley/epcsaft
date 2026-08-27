@@ -5,7 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 # Build and install the immutable wheel before any test process starts.
-bash .codex/environments/setup.sh
+EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh
 
 build_dir="$(<build/environment-wheel/meson-build-dir)"
 mapfile -t engine_wheels < <(find build/environment-wheel -maxdepth 1 -type f -name 'epcsaft-*.whl' -print)
