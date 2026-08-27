@@ -303,6 +303,12 @@ def _solve_grepe(
     perform_derivative_audits: bool = ...,
     declared_starts_only: bool = ...,
 ) -> _GrepeResult: ...
+def _initialize_grepe_local(
+    model: NativeModel,
+    problem: object,
+    active_parameters: object | None,
+    source_reference_fingerprint: str,
+) -> _GrepeResult: ...
 def _evaluate_grepe_local(
     model: NativeModel,
     problem: object,

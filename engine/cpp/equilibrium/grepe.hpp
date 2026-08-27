@@ -125,4 +125,17 @@ struct GrepeResult {
     const std::vector<double>& local_upper_bounds
 );
 
+[[nodiscard]] GrepeResult finalize_grepe_local(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds
+);
+
+[[nodiscard]] GrepeResult initialize_grepe_local(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request
+);
+
 }  // namespace epcsaft_engine::equilibrium

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import math
@@ -208,17 +209,15 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
     active = epcsaft.ActiveParameterSet(
         parameters, (parameter_identity,), values=(2.8,)
     )
-    incipient_model, native_problem, fingerprint = _native_general_reactive_equilibrium_inputs(
+    _, native_problem, fingerprint = _native_general_reactive_equilibrium_inputs(
         batch.model, batch.problem, active_parameters=active
     )
-    center = _core._solve_grepe(
-        batch.model._native, incipient_model, native_problem, active, fingerprint
+    initialized = _core._initialize_grepe_local(
+        batch.model._native, native_problem, active, fingerprint
     ).equilibrium
-    assert center.accepted
-    local = tuple(center.local_variables)
-    lower = tuple(center.local_lower_bounds)
-    upper = tuple(center.local_upper_bounds)
-    assert len(local) == len(center.kkt_root_values)
+    local = tuple(initialized.local_variables)
+    lower = tuple(initialized.local_lower_bounds)
+    upper = tuple(initialized.local_upper_bounds)
 
     def evaluate(parameter: float, values: tuple[float, ...]) -> object:
         trial = epcsaft.ActiveParameterSet(
@@ -233,6 +232,10 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
             lower,
             upper,
         ).equilibrium
+
+    center = evaluate(2.8, local)
+    assert center.accepted
+    assert len(local) == len(center.kkt_root_values)
 
     columns: list[tuple[float, ...]] = []
     parameter_step = 1.0e-5
@@ -352,17 +355,59 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
     assert accepted.final_physical == pytest.approx((truth_parameter,), abs=2.0e-7)
     assert accepted.predictions == pytest.approx((observed,), rel=2.0e-6, abs=2.0e-8)
     assert accepted.owner_failures == ()
-    assert len(accepted.owner_receipts) == 1
-    receipt = json.loads(accepted.owner_receipts[0].canonical_bytes_utf8)
-    assert receipt["certificate_scope"] == truth.certificate_scope
-    assert receipt["branch_signature"] == json.loads(json.dumps(truth.branch_signature))
-    assert {
-        key: value["status"] for key, value in receipt["outcomes"].items()
-    } == {
-        "solver_convergence": "passed",
-        "numerical_convergence": "passed",
-        "physical_certification": "passed",
-        "scientific_fit_acceptance": "not_applicable",
-    }
+
+    def assert_owner_receipts(start: object, count: int) -> None:
+        receipts = cast(Sequence[object], getattr(start, "owner_receipts"))
+        assert len(receipts) == count
+        for opaque in receipts:
+            receipt = json.loads(getattr(opaque, "canonical_bytes_utf8"))
+            assert receipt["certificate_scope"] == truth.certificate_scope
+            assert receipt["branch_signature"] == json.loads(json.dumps(truth.branch_signature))
+            assert {
+                key: value["status"] for key, value in receipt["outcomes"].items()
+            } == {
+                "solver_convergence": "passed",
+                "numerical_convergence": "passed",
+                "physical_certification": "passed",
+                "scientific_fit_acceptance": "not_applicable",
+            }
+            evidence = dict(receipt["evidence"])
+            assert evidence["balance_inf_norm"] < 1.0e-9
+            assert evidence["pressure_relative_inf_norm"] < 1.0e-8
+            assert evidence["reaction_affinity_inf_norm"] < 1.0e-6
+            assert evidence["kkt_stationarity_inf_norm"] < 1.0e-7
+            mole_fractions = receipt["phases"][0]["mole_fractions"]
+            assert abs(mole_fractions[2] - mole_fractions[3]) < 1.0e-9
+
+    assert_owner_receipts(accepted, 1)
     assert all(outcome.status == "evaluated" for outcome in accepted.batch_outcomes)
     assert result.accounting.dropped_rows == 0
+
+    eight_mapping = copy.deepcopy(mapping)
+    eight_mapping["observations"] = []
+    for index in range(8):
+        observation = copy.deepcopy(mapping["observations"][0])
+        observation["identity"] = f"manufactured-full-space-{index}"
+        observation["targets"][0]["identity"] = f"manufactured-cation-{index}"
+        observation["targets"][0]["source_identity"] = f"manufactured-full-space-{index}"
+        eight_mapping["observations"].append(observation)
+    captured_eight: dict[str, object] = {}
+
+    def capture_eight(*args: object) -> object:
+        value = native_fit(*args)
+        captured_eight.update(value)
+        return value
+
+    with patch.object(_core, "_fit_resolved", side_effect=capture_eight):
+        eight_result = regression.fit(eight_mapping, base_path=tmp_path)
+    assert captured_eight["evaluation_strategy"] == "simultaneous_sparse_full_space"
+    eight_accepted = eight_result.best_usable_start
+    assert eight_accepted is not None
+    assert eight_accepted.final_physical == pytest.approx((truth_parameter,), abs=2.0e-7)
+    assert eight_accepted.predictions == pytest.approx(
+        (observed,) * 8, rel=2.0e-6, abs=2.0e-8
+    )
+    assert eight_accepted.owner_failures == ()
+    assert_owner_receipts(eight_accepted, 8)
+    assert all(outcome.status == "evaluated" for outcome in eight_accepted.batch_outcomes)
+    assert eight_result.accounting.dropped_rows == 0

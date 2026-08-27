@@ -470,6 +470,48 @@ ReactiveFinitePhaseStart start_from_allocation(
     return start;
 }
 
+std::optional<ReactiveFinitePhaseStart> continuation_start(
+    const GrepeRequest& request,
+    const ReactionSystemInput& reaction,
+    const std::vector<GrepePhase>& phases
+) {
+    if (phases.size() != 1 || request.continuation_phases.size() != 1) {
+        return std::nullopt;
+    }
+    const GrepeContinuationPhase& continuation = request.continuation_phases[0];
+    if (continuation.mole_fractions.size() != reaction.balance_matrix.columns) {
+        return std::nullopt;
+    }
+    std::vector<double> projected(reaction.balance_matrix.rows, 0.0);
+    for (std::size_t row = 0; row < reaction.balance_matrix.rows; ++row) {
+        for (std::size_t component = 0; component < reaction.balance_matrix.columns;
+             ++component) {
+            projected[row] += reaction.balance_matrix(row, component)
+                * continuation.mole_fractions[component];
+        }
+    }
+    double numerator = 0.0;
+    double denominator = 0.0;
+    for (std::size_t row = 0; row < projected.size(); ++row) {
+        numerator += projected[row] * reaction.conserved_totals[row];
+        denominator += projected[row] * projected[row];
+    }
+    const double total = numerator / denominator;
+    if (!std::isfinite(total) || total <= 0.0) {
+        return std::nullopt;
+    }
+    ReactiveFinitePhaseStart start;
+    start.amounts_mol.resize(continuation.mole_fractions.size());
+    std::transform(
+        continuation.mole_fractions.begin(),
+        continuation.mole_fractions.end(),
+        start.amounts_mol.begin(),
+        [total](double fraction) { return total * fraction; }
+    );
+    start.molar_volume_m3_per_mol = continuation.molar_volume_m3_per_mol;
+    return start;
+}
+
 std::vector<std::vector<ReactiveFinitePhaseStart>> start_sets(
     const epcsaft::NativeModel& model,
     const GrepeRequest& request,
@@ -489,33 +531,8 @@ std::vector<std::vector<ReactiveFinitePhaseStart>> start_sets(
     if (request.declared_starts_only) {
         return result;
     }
-    if (phases.size() == 1 && request.continuation_phases.size() == 1) {
-        const GrepeContinuationPhase& continuation = request.continuation_phases[0];
-        std::vector<double> projected(reaction.balance_matrix.rows, 0.0);
-        for (std::size_t row = 0; row < reaction.balance_matrix.rows; ++row) {
-            for (std::size_t component = 0; component < reaction.balance_matrix.columns;
-                 ++component) {
-                projected[row] += reaction.balance_matrix(row, component)
-                    * continuation.mole_fractions[component];
-            }
-        }
-        double numerator = 0.0;
-        double denominator = 0.0;
-        for (std::size_t row = 0; row < projected.size(); ++row) {
-            numerator += projected[row] * reaction.conserved_totals[row];
-            denominator += projected[row] * projected[row];
-        }
-        const double total = numerator / denominator;
-        ReactiveFinitePhaseStart start;
-        start.amounts_mol.resize(continuation.mole_fractions.size());
-        std::transform(
-            continuation.mole_fractions.begin(),
-            continuation.mole_fractions.end(),
-            start.amounts_mol.begin(),
-            [total](double fraction) { return total * fraction; }
-        );
-        start.molar_volume_m3_per_mol = continuation.molar_volume_m3_per_mol;
-        result.push_back({std::move(start)});
+    if (const auto continuation = continuation_start(request, reaction, phases)) {
+        result.push_back({*continuation});
     }
     const std::optional<std::vector<ReactiveFinitePhaseStart>> anchor =
         result.empty()
@@ -636,14 +653,23 @@ GrepeResult unsupported(const std::string& reason) {
     return result;
 }
 
-GrepeResult finite_result(
+struct FiniteGrepeContext final {
+    std::vector<GrepePhase> phases;
+    bool ideal;
+    ProviderContext provider;
+    ReactionSystemInput reaction;
+    CompiledGrepeFinite compiled;
+    ProviderActiveParameterSet parameters;
+    std::vector<std::array<double, 2>> packing;
+    std::vector<std::vector<std::size_t>> supports;
+    GrepeResult result;
+};
+
+std::optional<FiniteGrepeContext> prepare_finite_grepe(
     const epcsaft::NativeModel& model,
-    const GrepeRequest& request,
-    const std::vector<double>* local_variables,
-    const std::vector<double>* local_lower_bounds,
-    const std::vector<double>* local_upper_bounds
+    const GrepeRequest& request
 ) {
-    const std::vector<GrepePhase> phases = [&] {
+    std::vector<GrepePhase> phases = [&] {
         std::vector<GrepePhase> selected;
         for (const GrepePhase& phase : request.phases) {
             if (phase.finite) {
@@ -657,12 +683,12 @@ GrepeResult finite_result(
             phases.begin(), phases.end(), [](const GrepePhase& phase) {
                 return phase.ideal_gas;
             }))) {
-        return unsupported("declared reactive phase/state topology has no implemented GREPE formulation");
+        return std::nullopt;
     }
     ProviderContext provider(model);
     ReactionSystemInput reaction = effective_reaction(request);
     CompiledGrepeFinite compiled = compile_finite(provider, reaction, request, ideal);
-    const ProviderActiveParameterSet parameters = provider.active_parameters();
+    ProviderActiveParameterSet parameters = provider.active_parameters();
     std::vector<std::array<double, 2>> packing;
     std::vector<std::vector<std::size_t>> supports;
     for (const GrepePhase& phase : phases) {
@@ -692,23 +718,38 @@ GrepeResult finite_result(
     result.temperature_k = request.temperature.value;
     result.pressure_pa = request.pressure.value;
     result.source_reference_representation_residual_inf_norm = compiled.source_residual;
-    if (local_variables != nullptr) {
-        result.equilibrium = evaluate_provider_reactive_finite_phases_local(
-            compiled.system,
-            provider,
-            request.temperature.value,
-            request.pressure.value,
-            packing,
-            *local_variables,
-            *local_lower_bounds,
-            *local_upper_bounds,
-            parameters.identities.empty() ? nullptr : &parameters,
-            nullptr,
-            supports,
-            request.outputs
+    return FiniteGrepeContext{
+        std::move(phases),
+        ideal,
+        std::move(provider),
+        std::move(reaction),
+        std::move(compiled),
+        std::move(parameters),
+        std::move(packing),
+        std::move(supports),
+        std::move(result),
+    };
+}
+
+GrepeResult solve_finite_result(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request
+) {
+    std::optional<FiniteGrepeContext> prepared = prepare_finite_grepe(model, request);
+    if (!prepared.has_value()) {
+        return unsupported(
+            "declared reactive phase/state topology has no implemented GREPE formulation"
         );
-        return result;
     }
+    FiniteGrepeContext& context = *prepared;
+    const std::vector<GrepePhase>& phases = context.phases;
+    const bool ideal = context.ideal;
+    const ReactionSystemInput& reaction = context.reaction;
+    const CompiledGrepeFinite& compiled = context.compiled;
+    const ProviderActiveParameterSet& parameters = context.parameters;
+    const std::vector<std::array<double, 2>>& packing = context.packing;
+    const std::vector<std::vector<std::size_t>>& supports = context.supports;
+    GrepeResult& result = context.result;
     std::vector<std::vector<ReactiveFinitePhaseStart>> candidates;
     if (ideal) {
         ReactiveFinitePhaseStart start;
@@ -768,6 +809,121 @@ GrepeResult finite_result(
         phases.size(), ideal ? "analytical_ideal_gas" : "strict_stable_local_minimum"
     );
     return result;
+}
+
+GrepeResult evaluate_finite_result(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds
+) {
+    std::optional<FiniteGrepeContext> prepared = prepare_finite_grepe(model, request);
+    if (!prepared.has_value()) {
+        return unsupported(
+            "declared reactive phase/state topology has no implemented GREPE formulation"
+        );
+    }
+    FiniteGrepeContext& context = *prepared;
+    context.result.equilibrium = evaluate_provider_reactive_finite_phases_local(
+        context.compiled.system,
+        context.provider,
+        request.temperature.value,
+        request.pressure.value,
+        context.packing,
+        local_variables,
+        local_lower_bounds,
+        local_upper_bounds,
+        context.parameters.identities.empty() ? nullptr : &context.parameters,
+        nullptr,
+        context.supports,
+        request.outputs
+    );
+    return std::move(context.result);
+}
+
+GrepeResult finalize_finite_result(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds
+) {
+    std::optional<FiniteGrepeContext> prepared = prepare_finite_grepe(model, request);
+    if (!prepared.has_value()) {
+        return unsupported(
+            "declared reactive phase/state topology has no implemented GREPE formulation"
+        );
+    }
+    FiniteGrepeContext& context = *prepared;
+    context.result.equilibrium = finalize_provider_reactive_finite_phases_local(
+        context.compiled.system,
+        context.provider,
+        request.temperature.value,
+        request.pressure.value,
+        context.packing,
+        local_variables,
+        local_lower_bounds,
+        local_upper_bounds,
+        context.parameters.identities.empty() ? nullptr : &context.parameters,
+        nullptr,
+        context.supports,
+        request.outputs,
+        request.trace_floor,
+        request.perform_derivative_audits
+    );
+    if (context.result.equilibrium.accepted) {
+        context.result.branch_kind = "finite_phases_local_minimum";
+        context.result.phase_mechanical_classes.assign(
+            context.phases.size(),
+            context.ideal ? "analytical_ideal_gas" : "strict_stable_local_minimum"
+        );
+    }
+    return std::move(context.result);
+}
+
+GrepeResult initialize_finite_result(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request
+) {
+    std::optional<FiniteGrepeContext> prepared = prepare_finite_grepe(model, request);
+    if (!prepared.has_value()) {
+        return unsupported(
+            "declared reactive phase/state topology has no implemented GREPE formulation"
+        );
+    }
+    FiniteGrepeContext& context = *prepared;
+    if (request.continuation_phases.size() != 1
+        || request.continuation_phases[0].identity != context.phases[0].identity) {
+        throw std::invalid_argument(
+            "full-space GREPE requires one matching certified continuation anchor"
+        );
+    }
+    const auto start = continuation_start(request, context.reaction, context.phases);
+    if (!start.has_value()) {
+        throw std::invalid_argument(
+            "full-space GREPE requires one matching certified continuation anchor"
+        );
+    }
+    const std::vector<ReactiveFinitePhaseStart> starts{*start};
+    const std::optional<PhaseDirectionCompilation> directions =
+        compile_directions(request, starts);
+    context.result.equilibrium = solve_provider_reactive_finite_phases(
+        context.compiled.system,
+        context.provider,
+        request.temperature.value,
+        request.pressure.value,
+        context.packing,
+        starts,
+        request.trace_floor,
+        context.parameters.identities.empty() ? nullptr : &context.parameters,
+        0,
+        false,
+        directions.has_value() ? &*directions : nullptr,
+        context.supports,
+        request.outputs
+    );
+    return std::move(context.result);
 }
 
 class GrepeFailure final : public std::runtime_error {
@@ -975,7 +1131,7 @@ LiquidEvaluation evaluate_liquid(
         ),
         liquid.continuation_phases.end()
     );
-    result.solved = finite_result(model, liquid, nullptr, nullptr, nullptr);
+    result.solved = solve_finite_result(model, liquid);
     if (!result.solved.equilibrium.accepted) {
         const ReactiveFinitePhaseResult& failed = result.solved.equilibrium;
         const std::string code = failed.provider_domain_status == "failed"
@@ -2208,7 +2364,7 @@ GrepeResult solve_homogeneous_boundary(
             {},
         };
         resolved.outputs.push_back(std::move(boundary_output));
-        GrepeResult owner = finite_result(model, resolved, nullptr, nullptr, nullptr);
+        GrepeResult owner = solve_finite_result(model, resolved);
         if (!owner.equilibrium.accepted) {
             throw GrepeFailure(
                 owner.equilibrium.provider_domain_status == "failed"
@@ -2641,7 +2797,7 @@ GrepeResult solve_grepe(
         if (incipient_count != 0 || request.pressure.solved) {
             return unsupported("declared finite-incipient topology is unavailable");
         }
-        return finite_result(model, request, nullptr, nullptr, nullptr);
+        return solve_finite_result(model, request);
     } catch (const GrepeFailure& failure) {
         return failed_result(
             request,
@@ -2690,13 +2846,28 @@ GrepeResult evaluate_grepe_local(
     const std::vector<double>& local_lower_bounds,
     const std::vector<double>& local_upper_bounds
 ) {
-    return finite_result(
-        model,
-        request,
-        &local_variables,
-        &local_lower_bounds,
-        &local_upper_bounds
+    return evaluate_finite_result(
+        model, request, local_variables, local_lower_bounds, local_upper_bounds
     );
+}
+
+GrepeResult finalize_grepe_local(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds
+) {
+    return finalize_finite_result(
+        model, request, local_variables, local_lower_bounds, local_upper_bounds
+    );
+}
+
+GrepeResult initialize_grepe_local(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request
+) {
+    return initialize_finite_result(model, request);
 }
 
 }  // namespace epcsaft_engine::equilibrium

@@ -625,6 +625,22 @@ GrepeResult solve_grepe_binding(
     return solve_grepe(model, incipient_model, request);
 }
 
+GrepeResult initialize_grepe_local_binding(
+    const epcsaft::NativeModel& base_model,
+    const py::handle& problem,
+    const py::object& active_parameters,
+    const std::string& source_reference_fingerprint
+) {
+    epcsaft::NativeModel model = grepe_active_model(base_model, active_parameters);
+    GrepeRequest request = grepe_request(
+        problem,
+        !active_parameters.is_none(),
+        source_reference_fingerprint
+    );
+    py::gil_scoped_release release;
+    return initialize_grepe_local(model, request);
+}
+
 GrepeResult evaluate_grepe_local_binding(
     const epcsaft::NativeModel& base_model,
     const py::handle& problem,
@@ -830,6 +846,14 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("source_reference_fingerprint") = "",
         py::arg("perform_derivative_audits") = false,
         py::arg("declared_starts_only") = false
+    );
+    module.def(
+        "_initialize_grepe_local",
+        &initialize_grepe_local_binding,
+        py::arg("model"),
+        py::arg("problem"),
+        py::arg("active_parameters"),
+        py::arg("source_reference_fingerprint")
     );
     module.def(
         "_evaluate_grepe_local",

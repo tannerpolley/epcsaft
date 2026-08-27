@@ -149,19 +149,10 @@ OwnerEvaluation evaluate_direct(const DirectEosExperiment &experiment,
   return selected;
 }
 
-OwnerEvaluation evaluate_grepe(const GrepeExperiment &experiment,
-                               const std::vector<double> &active,
-                               bool retain_result) {
-  using epcsaft_engine::equilibrium::solve_grepe;
-  std::vector<std::string> identities;
-  for (const auto &coordinate : experiment.model.active_coordinates()) {
-    identities.push_back(coordinate.identity);
-  }
-  const NativeModel model =
-      with_active_values(experiment.model, identities, active);
-  const NativeModel incipient =
-      with_active_values(experiment.incipient_model, identities, active);
-  auto native = solve_grepe(model, incipient, experiment.request);
+OwnerEvaluation select_grepe(const GrepeExperiment &experiment,
+                             std::vector<double> active,
+                             epcsaft_engine::equilibrium::GrepeResult native,
+                             bool retain_result) {
   const auto &equilibrium = native.equilibrium;
   if (!equilibrium.accepted) {
     std::string code = native.failure_code;
@@ -220,6 +211,34 @@ OwnerEvaluation evaluate_grepe(const GrepeExperiment &experiment,
   return selected;
 }
 
+OwnerEvaluation evaluate_grepe(const GrepeExperiment &experiment,
+                               const std::vector<double> &active,
+                               bool retain_result) {
+  std::vector<std::string> identities;
+  for (const auto &coordinate : experiment.model.active_coordinates()) {
+    identities.push_back(coordinate.identity);
+  }
+  auto native = epcsaft_engine::equilibrium::solve_grepe(
+      with_active_values(experiment.model, identities, active),
+      with_active_values(experiment.incipient_model, identities, active),
+      experiment.request);
+  return select_grepe(experiment, active, std::move(native), retain_result);
+}
+
+OwnerEvaluation finalize_grepe(
+    const GrepeExperiment &experiment, const std::vector<double> &active,
+    const std::vector<double> &local, const std::vector<double> &lower,
+    const std::vector<double> &upper) {
+  std::vector<std::string> identities;
+  for (const auto &coordinate : experiment.model.active_coordinates()) {
+    identities.push_back(coordinate.identity);
+  }
+  auto native = epcsaft_engine::equilibrium::finalize_grepe_local(
+      with_active_values(experiment.model, identities, active),
+      experiment.request, local, lower, upper);
+  return select_grepe(experiment, active, std::move(native), true);
+}
+
 class NativeCost final {
 public:
   NativeCost(const Experiment &experiment, std::size_t active_parameter_count,
@@ -261,74 +280,39 @@ public:
       if (owner_result != nullptr) {
         *owner_result = evaluation.owner_result;
       }
-      for (std::size_t row = 0; row < observation_.targets.size(); ++row) {
-        const auto &target = observation_.targets[row];
-        const double predicted = evaluation.values[row];
-        if (!std::isfinite(predicted) ||
-            (target.residual == ResidualKind::LogRatio && predicted <= 0.0)) {
-          return reject("observation_out_of_support",
-                        "owner returned an inadmissible target value");
-        }
-        if (predictions != nullptr) {
-          predictions[row] = predicted;
-        }
-        const double multiplier = observation_.multiplier * target.multiplier;
-        double factor = multiplier / target.scale;
-        switch (target.residual) {
-        case ResidualKind::LogRatio:
-          factor = multiplier / predicted;
-          residuals[row] = multiplier * std::log(predicted / target.observed);
-          break;
-        case ResidualKind::ScaledDifference:
-          residuals[row] =
-              multiplier * (predicted - target.observed) / target.scale;
-          break;
-        case ResidualKind::LeftCensored:
-          if (predicted <= target.observed) {
-            factor = 0.0;
-            residuals[row] = 0.0;
-          } else {
-            residuals[row] =
-                multiplier * (predicted - target.observed) / target.scale;
-          }
-          break;
-        case ResidualKind::RightCensored:
-          if (predicted >= target.observed) {
-            factor = 0.0;
-            residuals[row] = 0.0;
-          } else {
-            residuals[row] =
-                multiplier * (predicted - target.observed) / target.scale;
-          }
-          break;
-        }
-        if (jacobians == nullptr) {
-          continue;
-        }
-        for (std::size_t coordinate = 0; coordinate < coordinate_scales_.size();
-             ++coordinate) {
-          if (jacobians[coordinate] == nullptr) {
-            continue;
-          }
-          double derivative = 0.0;
-          for (std::size_t identity = 0; identity < active_parameter_count_;
-               ++identity) {
-            if (identity_coordinates_[identity] == coordinate) {
-              derivative +=
-                  evaluation
-                      .derivatives[row * active_parameter_count_ + identity];
-            }
-          }
-          jacobians[coordinate][row] =
-              factor * derivative * coordinate_scales_[coordinate];
-        }
+      return write_evaluation(evaluation, residuals, jacobians, predictions);
+    } catch (const OwnerEvaluationError &error) {
+      return reject(error.code(), error.what());
+    } catch (const std::exception &error) {
+      return reject("owner_contract_failure", error.what());
+    }
+  }
+
+  bool finalize(double const *const *parameters,
+                const std::vector<double> &local,
+                const std::vector<double> &lower,
+                const std::vector<double> &upper, double *residuals,
+                double **jacobians, double *predictions,
+                std::optional<epcsaft_engine::equilibrium::GrepeResult>
+                    *owner_result) const {
+    try {
+      const auto *experiment = std::get_if<GrepeExperiment>(&experiment_);
+      if (experiment == nullptr) {
+        return reject("owner_contract_failure",
+                      "full-space finalization requires GREPE");
       }
-      if (!std::all_of(residuals, residuals + observation_.targets.size(),
-                       [](double value) { return std::isfinite(value); })) {
-        return reject("native_residual_failure",
-                      "residual evaluation was nonfinite");
+      std::vector<double> active(active_parameter_count_);
+      for (std::size_t index = 0; index < active_parameter_count_; ++index) {
+        const std::size_t coordinate = identity_coordinates_[index];
+        active[index] = coordinate_origins_[coordinate] +
+                        parameters[coordinate][0] * coordinate_scales_[coordinate];
       }
-      return true;
+      const OwnerEvaluation evaluation =
+          finalize_grepe(*experiment, active, local, lower, upper);
+      if (owner_result != nullptr) {
+        *owner_result = evaluation.owner_result;
+      }
+      return write_evaluation(evaluation, residuals, jacobians, predictions);
     } catch (const OwnerEvaluationError &error) {
       return reject(error.code(), error.what());
     } catch (const std::exception &error) {
@@ -370,6 +354,77 @@ public:
   }
 
 private:
+  bool write_evaluation(const OwnerEvaluation &evaluation, double *residuals,
+                        double **jacobians, double *predictions) const {
+    for (std::size_t row = 0; row < observation_.targets.size(); ++row) {
+      const auto &target = observation_.targets[row];
+      const double predicted = evaluation.values[row];
+      if (!std::isfinite(predicted) ||
+          (target.residual == ResidualKind::LogRatio && predicted <= 0.0)) {
+        return reject("observation_out_of_support",
+                      "owner returned an inadmissible target value");
+      }
+      if (predictions != nullptr) {
+        predictions[row] = predicted;
+      }
+      const double multiplier = observation_.multiplier * target.multiplier;
+      double factor = multiplier / target.scale;
+      switch (target.residual) {
+      case ResidualKind::LogRatio:
+        factor = multiplier / predicted;
+        residuals[row] = multiplier * std::log(predicted / target.observed);
+        break;
+      case ResidualKind::ScaledDifference:
+        residuals[row] =
+            multiplier * (predicted - target.observed) / target.scale;
+        break;
+      case ResidualKind::LeftCensored:
+        if (predicted <= target.observed) {
+          factor = 0.0;
+          residuals[row] = 0.0;
+        } else {
+          residuals[row] =
+              multiplier * (predicted - target.observed) / target.scale;
+        }
+        break;
+      case ResidualKind::RightCensored:
+        if (predicted >= target.observed) {
+          factor = 0.0;
+          residuals[row] = 0.0;
+        } else {
+          residuals[row] =
+              multiplier * (predicted - target.observed) / target.scale;
+        }
+        break;
+      }
+      if (jacobians == nullptr) {
+        continue;
+      }
+      for (std::size_t coordinate = 0; coordinate < coordinate_scales_.size();
+           ++coordinate) {
+        if (jacobians[coordinate] == nullptr) {
+          continue;
+        }
+        double derivative = 0.0;
+        for (std::size_t identity = 0; identity < active_parameter_count_;
+             ++identity) {
+          if (identity_coordinates_[identity] == coordinate) {
+            derivative += evaluation.derivatives[
+                row * active_parameter_count_ + identity];
+          }
+        }
+        jacobians[coordinate][row] =
+            factor * derivative * coordinate_scales_[coordinate];
+      }
+    }
+    if (!std::all_of(residuals, residuals + observation_.targets.size(),
+                     [](double value) { return std::isfinite(value); })) {
+      return reject("native_residual_failure",
+                    "residual evaluation was nonfinite");
+    }
+    return true;
+  }
+
   bool reject(const std::string &raw_code, const std::string &reason) const {
     const std::string code =
         std::find(failure_codes_.begin(), failure_codes_.end(), raw_code) ==
@@ -580,6 +635,12 @@ bool ipopt_solution_usable(Ipopt::ApplicationReturnStatus status) {
          status == Ipopt::Maximum_Iterations_Exceeded;
 }
 
+struct RetainedLocalState final {
+  std::vector<double> values;
+  std::vector<double> lower;
+  std::vector<double> upper;
+};
+
 class ReducedSpaceNlp final : public Ipopt::TNLP {
 public:
   ReducedSpaceNlp(const std::vector<std::unique_ptr<NativeCost>> &costs,
@@ -673,6 +734,7 @@ public:
   }
 
   const std::vector<double> &solution() const noexcept { return solution_; }
+  std::vector<RetainedLocalState> retained_local_states() const { return {}; }
 
 private:
   bool evaluate(Ipopt::Index n, const Ipopt::Number *x) const {
@@ -765,17 +827,14 @@ public:
       for (const auto &coordinate : experiment.model.active_coordinates()) {
         identities.push_back(coordinate.identity);
       }
-      const auto native = epcsaft_engine::equilibrium::solve_grepe(
+      const auto native = epcsaft_engine::equilibrium::initialize_grepe_local(
           with_active_values(experiment.model, identities, active),
-          with_active_values(experiment.incipient_model, identities, active),
           experiment.request);
       const auto &equilibrium = native.equilibrium;
-      if (!equilibrium.accepted || equilibrium.local_variables.empty() ||
+      if (equilibrium.local_variables.empty() ||
           equilibrium.local_lower_bounds.size() !=
               equilibrium.local_variables.size() ||
           equilibrium.local_upper_bounds.size() !=
-              equilibrium.local_variables.size() ||
-          equilibrium.kkt_root_values.size() !=
               equilibrium.local_variables.size()) {
         throw OwnerEvaluationError(
             native.failure_code.empty() ? "physical_rejection"
@@ -919,6 +978,21 @@ public:
   }
 
   const std::vector<double> &solution() const noexcept { return solution_; }
+  std::vector<RetainedLocalState> retained_local_states() const {
+    std::vector<RetainedLocalState> states;
+    states.reserve(blocks_.size());
+    for (const auto &block : blocks_) {
+      states.push_back({
+          std::vector<double>(
+              solution_.begin() + static_cast<std::ptrdiff_t>(block.local_offset),
+              solution_.begin() + static_cast<std::ptrdiff_t>(
+                                      block.local_offset + block.local_width)),
+          block.lower,
+          block.upper,
+      });
+    }
+    return states;
+  }
 private:
   bool dimensions(Ipopt::Index n, Ipopt::Index m) const noexcept {
     return n == static_cast<Ipopt::Index>(initial_.size()) &&
@@ -1120,7 +1194,9 @@ Ipopt::ApplicationReturnStatus solve_ipopt(Problem *problem,
                                            const Controls &controls,
                                            int &iterations,
                                            std::vector<double> &solution,
-                                           bool full_space = false) {
+                                           bool full_space = false,
+                                           std::vector<RetainedLocalState>
+                                               *retained_states = nullptr) {
   Ipopt::SmartPtr<Ipopt::TNLP> nlp = problem;
   Ipopt::SmartPtr<Ipopt::IpoptApplication> application =
       IpoptApplicationFactory();
@@ -1154,6 +1230,9 @@ Ipopt::ApplicationReturnStatus solve_ipopt(Problem *problem,
     iterations = statistics->IterationCount();
   }
   solution = problem->solution();
+  if (retained_states != nullptr) {
+    *retained_states = problem->retained_local_states();
+  }
   return status;
 }
 
@@ -1187,6 +1266,7 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
         failure_codes));
   }
   Ipopt::ApplicationReturnStatus solver_status;
+  std::vector<RetainedLocalState> retained_states;
   if (!full_space) {
     auto *problem = new ReducedSpaceNlp(costs, coordinates, result.final_affine);
     solver_status =
@@ -1196,7 +1276,8 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
     auto *problem = new SparseFullSpaceNlp(
         request.experiments, observations, identity_coordinates, coordinates,
         result.final_affine);
-    solver_status = solve_ipopt(problem, controls, result.iterations, solution, true);
+    solver_status = solve_ipopt(problem, controls, result.iterations, solution,
+                                true, &retained_states);
     result.final_affine.assign(solution.begin(),
                                solution.begin() + coordinates.size());
   }
@@ -1253,11 +1334,20 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
     for (auto &block : jacobian_blocks) {
       jacobian_pointers.push_back(block.data());
     }
-    if (!cost->evaluate(final_blocks.data(), result.residuals.data() + offset,
-                        jacobian_pointers.data(),
-                        result.predictions.data() + offset,
-                        retain_owner_results,
-                        &result.owner_results[batch_index])) {
+    const bool evaluated = full_space
+        ? solver_usable && batch_index < retained_states.size()
+            && cost->finalize(
+                final_blocks.data(), retained_states[batch_index].values,
+                retained_states[batch_index].lower,
+                retained_states[batch_index].upper,
+                result.residuals.data() + offset, jacobian_pointers.data(),
+                result.predictions.data() + offset,
+                &result.owner_results[batch_index])
+        : cost->evaluate(
+            final_blocks.data(), result.residuals.data() + offset,
+            jacobian_pointers.data(), result.predictions.data() + offset,
+            retain_owner_results, &result.owner_results[batch_index]);
+    if (!evaluated) {
       result.batch_outcomes[batch_index].status = "rejected";
       const auto &failures = cost->owner_failures();
       result.batch_outcomes[batch_index].failure_code =
@@ -1383,7 +1473,9 @@ bool full_space_eligible(const FitRequest &request) {
             !experiment->request.phases[0].finite ||
             experiment->request.phases[0].support_name != "all_components" ||
             experiment->request.phases[0].start.has_value() ||
-            experiment->request.continuation_phases.empty() ||
+            experiment->request.continuation_phases.size() != 1 ||
+            experiment->request.continuation_phases[0].identity !=
+                experiment->request.phases[0].identity ||
             experiment->request.boundary.has_value()) {
           return false;
         }

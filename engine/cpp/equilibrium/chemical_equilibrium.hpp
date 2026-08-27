@@ -342,4 +342,21 @@ struct SourceStandardStateResult {
     const std::vector<ReactiveFinitePhaseOutput>& outputs = {}
 );
 
+[[nodiscard]] ReactiveFinitePhaseResult finalize_provider_reactive_finite_phases_local(
+    const CompiledReactionSystem& system,
+    const ProviderContext& provider,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<std::array<double, 2>>& packing_fraction_intervals,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds,
+    const ProviderActiveParameterSet* active_parameters = nullptr,
+    const PhaseDirectionCompilation* phase_directions = nullptr,
+    const std::vector<std::vector<std::size_t>>& phase_support_indices = {},
+    const std::vector<ReactiveFinitePhaseOutput>& outputs = {},
+    double trace_floor = 0.0,
+    bool perform_derivative_audits = false
+);
+
 }  // namespace epcsaft_engine::equilibrium
