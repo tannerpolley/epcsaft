@@ -64,6 +64,26 @@ struct NativeMolarVolumeBoundsParameterBlock final {
     std::vector<double> parameter_derivatives_m3_per_mol;
 };
 
+struct FixedPressureCompositionProjection final {
+    std::string failure_code;
+    std::vector<std::size_t> coordinate_component_indices;
+    std::vector<std::size_t> dependent_component_indices;
+    std::vector<double> composition_derivatives;
+    std::vector<double> fixed_volume_chemical_potential_derivatives_over_rt;
+    std::vector<double> chemical_potential_derivatives_over_rt;
+    std::vector<double> molar_density_derivatives;
+    std::vector<double> fixed_volume_pressure_derivatives_pa;
+    double pressure_closure_condition_measure = 0.0;
+};
+
+FixedPressureCompositionProjection fixed_pressure_composition_projection(
+    double temperature,
+    const std::vector<double>& mole_fractions,
+    double molar_volume,
+    const std::vector<int>& charge_numbers,
+    const std::vector<double>& hessian
+);
+
 struct NativeActiveCoordinate final {
     std::string identity;
     std::string family;
@@ -181,6 +201,13 @@ public:
         double volume,
         double ion_mole_fraction_max,
         const std::vector<NativeActiveCoordinate>& active_parameters
+    ) const;
+    FixedPressureCompositionProjection
+    evaluate_fixed_pressure_composition_derivatives(
+        double temperature,
+        const std::vector<double>& mole_fractions,
+        double molar_volume,
+        double ion_mole_fraction_max
     ) const;
     NativeMixturePhaseBlock evaluate_temperature_phase_derivatives(
         double temperature,

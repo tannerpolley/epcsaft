@@ -1252,6 +1252,7 @@ struct VaporPoint {
     std::vector<double> mu_log_ratio_at_fixed_volume;
     std::vector<double> mu_log_volume;
     std::vector<double> mu_log_ratio;
+    std::vector<double> composition_log_ratio;
     std::vector<double> pressure_log_ratio;
     std::vector<double> mu_pressure;
     std::vector<double> mu_parameters;
@@ -1313,55 +1314,37 @@ VaporPoint evaluate_vapor(
         );
     }
     const double h_vv = block.phase.hessian[count * state_count + count];
-    double h_scale = 1.0;
-    for (std::size_t index = 0; index < state_count; ++index) {
-        h_scale = std::max(h_scale, std::abs(block.phase.hessian[count * state_count + index]));
-    }
-    if (!std::isfinite(h_vv) || h_vv <= 1.0e-14 * h_scale) {
+    const auto projection = epcsaft::fixed_pressure_composition_projection(
+        request.temperature.value,
+        result.fractions,
+        result.volume_m3,
+        provider.component_charges(),
+        block.phase.hessian
+    );
+    if (!projection.failure_code.empty()) {
         throw GrepeFailure(
-            "second_order_failure", "declared vapor root lacks strict mechanical stability"
+            projection.failure_code,
+            "EOS fixed-pressure composition projection is unavailable"
         );
     }
-    std::vector<double> chart(count * reference, 0.0);
-    for (std::size_t component = 0; component < count; ++component) {
-        for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
-            chart[component * reference + coordinate] = result.fractions[component]
-                * ((component == coordinate ? 1.0 : 0.0) - result.fractions[coordinate]);
-        }
+    if (projection.coordinate_component_indices.size() != reference) {
+        throw GrepeFailure(
+            "unsupported_derivative",
+            "GREPE vapor chart does not admit the EOS constrained composition basis"
+        );
     }
     result.chemical_potentials.assign(block.phase.gradient.begin(), block.phase.gradient.begin() + static_cast<std::ptrdiff_t>(count));
-    result.mu_log_ratio_at_fixed_volume.assign(count * reference, 0.0);
+    result.mu_log_ratio_at_fixed_volume =
+        projection.fixed_volume_chemical_potential_derivatives_over_rt;
     result.mu_log_volume.assign(count, 0.0);
-    result.mu_log_ratio.assign(count * reference, 0.0);
-    result.pressure_log_ratio.assign(reference, 0.0);
+    result.mu_log_ratio = projection.chemical_potential_derivatives_over_rt;
+    result.composition_log_ratio = projection.composition_derivatives;
+    result.pressure_log_ratio = projection.fixed_volume_pressure_derivatives_pa;
     result.mu_pressure.assign(count, 0.0);
     const double rt = kGasConstant * request.temperature.value;
     for (std::size_t component = 0; component < count; ++component) {
         result.mu_log_volume[component] =
             block.phase.hessian[component * state_count + count] * result.volume_m3;
-        for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
-            for (std::size_t species = 0; species < count; ++species) {
-                result.mu_log_ratio_at_fixed_volume[component * reference + coordinate] +=
-                    block.phase.hessian[component * state_count + species]
-                    * chart[species * reference + coordinate];
-            }
-        }
-    }
-    std::vector<double> volume_log_ratio(reference, 0.0);
-    for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
-        double row = 0.0;
-        for (std::size_t component = 0; component < count; ++component) {
-            row += block.phase.hessian[count * state_count + component]
-                * chart[component * reference + coordinate];
-        }
-        result.pressure_log_ratio[coordinate] = -rt * row;
-        volume_log_ratio[coordinate] = -row / h_vv;
-        for (std::size_t component = 0; component < count; ++component) {
-            result.mu_log_ratio[component * reference + coordinate] =
-                result.mu_log_ratio_at_fixed_volume[component * reference + coordinate]
-                + block.phase.hessian[component * state_count + count]
-                    * volume_log_ratio[coordinate];
-        }
     }
     result.pressure_log_volume = -rt * h_vv * result.volume_m3;
     const double volume_pressure = -1.0 / (rt * h_vv);
@@ -1599,20 +1582,12 @@ VaporPoint solve_vapor(
                 );
             }
             if (reference != 0) {
-                std::vector<double> chart(count * reference, 0.0);
-                for (std::size_t component = 0; component < count; ++component) {
-                    for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
-                        chart[component * reference + coordinate] = point->fractions[component]
-                            * ((component == coordinate ? 1.0 : 0.0)
-                               - point->fractions[coordinate]);
-                    }
-                }
                 std::vector<double> hessian(reference * reference, 0.0);
                 for (std::size_t row = 0; row < reference; ++row) {
                     for (std::size_t column = 0; column < reference; ++column) {
                         for (std::size_t component = 0; component < count; ++component) {
                             hessian[row * reference + column] +=
-                                chart[component * reference + row]
+                                point->composition_log_ratio[component * reference + row]
                                 * point->mu_log_ratio[component * reference + column];
                         }
                     }
@@ -1866,14 +1841,6 @@ IncipientClosure incipient_closure(
                 - closure.vapor.mu_log_ratio[reference * reference + column];
         }
     }
-    std::vector<double> chart(count * reference, 0.0);
-    for (std::size_t component = 0; component < count; ++component) {
-        for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
-            chart[component * reference + coordinate] = closure.vapor.fractions[component]
-                * ((component == coordinate ? 1.0 : 0.0)
-                   - closure.vapor.fractions[coordinate]);
-        }
-    }
     const std::size_t pressure_input = input_index(liquid, "pressure_pa");
     for (std::size_t input = 0; input < width; ++input) {
         std::vector<double> potential(count, 0.0);
@@ -1914,7 +1881,8 @@ IncipientClosure incipient_closure(
         for (std::size_t component = 0; component < count; ++component) {
             for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
                 closure.vapor_directional[input * count + component] +=
-                    chart[component * reference + coordinate] * log_ratio[coordinate];
+                    closure.vapor.composition_log_ratio[component * reference + coordinate]
+                    * log_ratio[coordinate];
             }
         }
     }

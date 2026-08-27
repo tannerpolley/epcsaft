@@ -400,6 +400,7 @@ def test_solved_pressure_uses_generic_grepe_route() -> None:
     assert 0.0 < result.values[1] < 1.0
     assert result.values[2] == pytest.approx(result.values[0] * result.values[1], rel=2.0e-13)
     assert len(result.phases) == 2
+    assert result.phases[1].supported_component_ids == ("solvent", "cosolvent")
     assert result.phases[0].chemical_potential_over_rt[:2] == pytest.approx(
         result.phases[1].chemical_potential_over_rt, rel=2.0e-8, abs=2.0e-8
     )
@@ -415,6 +416,34 @@ def test_solved_pressure_uses_generic_grepe_route() -> None:
     )
     assert result.continuation_state is not None
     assert dict(result.evidence)["bubble_log_closure_abs"] < 2.0e-10
+
+    pure = equilibrium.solve(
+        epcsaft.Mixture(parameters),
+        replace(
+            problem,
+            identity="generic-pure-incipient-pressure",
+            pressure=equilibrium.Solved(
+                10000.0 * epcsaft.unit_registry.pascal,
+                (
+                    1000.0 * epcsaft.unit_registry.pascal,
+                    100000.0 * epcsaft.unit_registry.pascal,
+                ),
+                (10000.0 * epcsaft.unit_registry.pascal,),
+            ),
+            phases=(
+                problem.phases[0],
+                replace(
+                    problem.phases[1],
+                    support=equilibrium.DeclaredNeutralComponents(("solvent",)),
+                ),
+            ),
+            outputs=problem.outputs[:1],
+            continuation_identity="generic-pure-incipient-branch",
+        ),
+    )
+    assert pure.status == "evaluated", pure.failure
+    assert pure.phases[1].supported_component_ids == ("solvent",)
+    assert pure.phases[1].mole_fractions == (1.0,)
 
     ideal = equilibrium.solve(
         epcsaft.Mixture(parameters),

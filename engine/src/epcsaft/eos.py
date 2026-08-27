@@ -15,6 +15,7 @@ import pint
 import epcsaft._core as _native_core
 
 from ._resolve import _resolve_model, _ResolvedModel
+from ._trials import NonEvaluableTrial
 from .parameters import ActiveParameterSet, Parameters
 from .records import (
     ConstantCorrelation,
@@ -959,6 +960,13 @@ class _EosModel:
                 stable=diagnostics.stable,
                 branch=diagnostics.branch,
             ),
+            fixed_pressure_composition_derivatives=(
+                _fixed_pressure_composition_derivatives(
+                    self, evaluator, temperature_k, fractions, native.molar_density
+                )
+                if P is not None and phase is not None and len(fractions) > 1
+                else None
+            ),
         )
 
     def _fixed_state_observable_block(
@@ -1832,6 +1840,7 @@ class State:
     _residual_isobaric_heat_capacity: pint.Quantity[float] | None
     molar_density: pint.Quantity[float]
     density_diagnostics: DensityDiagnostics | None
+    fixed_pressure_composition_derivatives: Mapping[str, object] | None = None
     _activity: Activity | None = None
 
     def _rt(self) -> pint.Quantity[float]:
@@ -1967,6 +1976,87 @@ class DensityDiagnostics:
     iterations: int
     stable: bool
     branch: str
+
+
+def _fixed_pressure_composition_derivatives(
+    owner: _EosModel,
+    evaluator: _native_core.NativeModel,
+    temperature_k: float,
+    fractions: tuple[float, ...],
+    molar_density: float,
+) -> Mapping[str, object]:
+    component_ids = owner._component_ids
+    charge_numbers = owner._model.charge_number
+    ion_mole_fraction_max = owner._model.ion_mole_fraction_max
+    charged = any(charge != 0 for charge in charge_numbers)
+    constraints = ("normalization", "electroneutrality") if charged else ("normalization",)
+    artifact = _python_native_artifact_fingerprint()
+
+    def unavailable(
+        code: str,
+        condition: float | None = None,
+        diagnostic: str | None = None,
+    ) -> Mapping[str, object]:
+        return MappingProxyType(
+            {
+                "status": "non_evaluable",
+                "failure": NonEvaluableTrial(cast(Any, code), diagnostic or code),
+                "condition_measure": condition,
+                "artifact_fingerprint": artifact,
+            }
+        )
+
+    if any(fraction <= 0.0 for fraction in fractions):
+        return unavailable("provider_domain_rejection")
+    try:
+        projected = evaluator.evaluate_fixed_pressure_composition_derivatives(
+            temperature_k,
+            fractions,
+            1.0 / molar_density,
+            math.nan if ion_mole_fraction_max is None else ion_mole_fraction_max,
+        )
+    except (RuntimeError, ValueError) as exc:
+        return unavailable("native_residual_failure", diagnostic=str(exc))
+
+    condition = float(projected["condition_measure"])
+    condition_value = condition if math.isfinite(condition) and condition > 0.0 else None
+    failure_code = str(projected["failure_code"])
+    if failure_code:
+        return unavailable(failure_code, condition_value)
+    coordinate_indices = tuple(
+        int(index) for index in cast(Iterable[int], projected["coordinate_indices"])
+    )
+    dependent_indices = tuple(
+        int(index) for index in cast(Iterable[int], projected["dependent_indices"])
+    )
+    coordinate_count = len(coordinate_indices)
+
+    def rows(name: str) -> tuple[tuple[float, ...], ...]:
+        flat = tuple(float(value) for value in cast(Iterable[float], projected[name]))
+        return tuple(
+            flat[component * coordinate_count : (component + 1) * coordinate_count]
+            for component in range(len(fractions))
+        )
+
+    return MappingProxyType(
+        {
+            "status": "available",
+            "failure": None,
+            "constraint_identities": constraints,
+            "coordinate_component_ids": tuple(component_ids[index] for index in coordinate_indices),
+            "dependent_component_ids": tuple(component_ids[index] for index in dependent_indices),
+            "log_composition_basis": tuple(
+                tuple(value / fractions[row] for value in values)
+                for row, values in enumerate(rows("composition_derivatives"))
+            ),
+            "chemical_potential_derivatives_over_rt": rows("chemical_derivatives"),
+            "molar_density_derivatives_mol_per_m3": tuple(
+                float(value) for value in cast(Iterable[float], projected["density_derivatives"])
+            ),
+            "condition_measure": condition_value,
+            "artifact_fingerprint": artifact,
+        }
+    )
 
 
 __all__ = (

@@ -742,7 +742,8 @@ $$
 - Change note: Applied by the generic EOS active-coordinate block, including canonical Born, solvation, and permittivity coordinates.
 - LaTeX: `docs/latex/equations.tex:707`
 - Implementation:
-  - `src/epcsaft/eos.py:1049` (`_fixed_pressure_fugacity_observable_block`)
+  - `src/epcsaft/_native/eos.cpp:1575` (`fixed_pressure_composition_projection`)
+  - `src/epcsaft/eos.py:1057` (`_fixed_pressure_fugacity_observable_block`)
 
 $$
 \left.\frac{dQ}{d\theta}\right|_{P}
@@ -1868,6 +1869,7 @@ $$
 - `src/epcsaft/_native/eos.cpp:1114` (`evaluate_packing_fraction`): transport and buffer mechanics
 - `src/epcsaft/_native/eos.cpp:1122` (`evaluate_packing_fraction_parameters`): transport and buffer mechanics
 - `src/epcsaft/_native/eos.cpp:1138` (`evaluate_inverse_packing_geometry`): transport and buffer mechanics
+- `src/epcsaft/_native/eos.cpp:1745` (`evaluate_fixed_pressure_composition_derivatives`): transport and buffer mechanics
 - `src/epcsaft/_native/helmholtz.hpp:58` (`scalar_log`): scalar utility dispatch
 - `src/epcsaft/_native/helmholtz.hpp:67` (`scalar_exp`): scalar utility dispatch
 - `src/epcsaft/_native/helmholtz.hpp:76` (`scalar_sqrt`): scalar utility dispatch

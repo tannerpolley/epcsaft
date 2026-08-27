@@ -652,9 +652,13 @@ equations:
     tex_file: "docs/latex/equations.tex"
     tex_line: 707
     implementation_refs:
+      - file: "src/epcsaft/_native/eos.cpp"
+        line: 1575
+        comment_line: 1574
+        symbol: "fixed_pressure_composition_projection"
       - file: "src/epcsaft/eos.py"
-        line: 1049
-        comment_line: 1105
+        line: 1057
+        comment_line: 1113
         symbol: "_fixed_pressure_fugacity_observable_block"
   - eqid: "formula_unit_composition"
     section: "Electrolyte reference states and reported activities"
@@ -1824,6 +1828,10 @@ source_exclusions:
   - file: "src/epcsaft/_native/eos.cpp"
     line: 1138
     symbol: "evaluate_inverse_packing_geometry"
+    reason: "transport and buffer mechanics"
+  - file: "src/epcsaft/_native/eos.cpp"
+    line: 1745
+    symbol: "evaluate_fixed_pressure_composition_derivatives"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/helmholtz.hpp"
     line: 58
