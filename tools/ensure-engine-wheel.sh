@@ -169,9 +169,29 @@ cache_root="${XDG_CACHE_HOME:-$HOME/.cache}/epcsaft/wheels"
 cache_key="$build_fingerprint"
 cache_entry="$cache_root/$cache_key"
 build_dir="$repo_root/build/engine-meson/$runtime_id-$toolchain_fingerprint"
+build_dir_stamp="$wheelhouse/meson-build-dir"
+configured_build_stamp="$build_dir/epcsaft-build.sha256"
 mkdir -p "$repo_root/build" "$cache_root"
 exec {wheelhouse_lock_fd}>"$repo_root/build/environment-wheel.lock"
 flock "$wheelhouse_lock_fd"
+
+ensure_configured_build() {
+    if [[ ! -f "$build_dir/meson-info/meson-info.json" ]]; then
+        meson setup --wrap-mode=nodownload "$build_dir" engine
+    fi
+    if [[ ! -f "$configured_build_stamp" ]] \
+        || [[ "$(<"$configured_build_stamp")" != "$build_fingerprint" ]]; then
+        meson compile -C "$build_dir"
+        printf '%s\n' "$build_fingerprint" >"$configured_build_stamp"
+    fi
+    printf '%s\n' "$build_dir" >"$build_dir_stamp"
+}
+
+record_rebuilt_configured_build() {
+    printf '%s\n' "$build_fingerprint" >"$configured_build_stamp"
+    printf '%s\n' "$build_dir" >"$build_dir_stamp"
+}
+
 mapfile -t wheels < <(find "$wheelhouse" -maxdepth 1 -type f -name 'epcsaft-*.whl' -print 2>/dev/null)
 wheel_current=false
 if ((${#wheels[@]} == 1)) \
@@ -184,6 +204,7 @@ fi
 if [[ "$wheel_current" == true ]]; then
     wheel="${wheels[0]}"
     if verification_output="$("$python" tools/verify-installed-wheel.py --wheel "$wheel" 2>&1)"; then
+        ensure_configured_build
         uv pip check --python "$python"
         printf '%s\n' "$verification_output"
         echo "Engine wheel is current; native rebuild skipped"
@@ -245,6 +266,11 @@ wheel="${wheels[0]}"
 uv pip install --python "$python" --no-deps --reinstall-package epcsaft "$wheel"
 uv pip check --python "$python"
 "$python" tools/verify-installed-wheel.py --wheel "$wheel"
+if [[ "$wheel_origin" == rebuilt ]]; then
+    record_rebuilt_configured_build
+else
+    ensure_configured_build
+fi
 printf '%s\n' "$build_fingerprint" >"$stamp"
 sha256sum "$wheel" | cut -d ' ' -f 1 >"$wheel_hash_stamp"
 

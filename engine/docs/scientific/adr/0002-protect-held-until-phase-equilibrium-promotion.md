@@ -3,9 +3,14 @@ status: fulfilled
 date: 2026-08-10
 amends: 0001-one-general-phase-equilibrium-owner.md
 fulfilled_by: governance D-030 and CAP-09 promotion receipt
+migration_source_path: engine/docs/equilibrium/adr/0002-protect-held-until-phase-equilibrium-promotion.md
+migration_source_commit: 9f8728b3bffbd548aebb0356a32e31798b36c385
+migration_source_blob: 077021af554ca17daaaa3c9170b63a8e5a8982b5
 ---
 
 # Protect HELD until the phase-equilibrium promotion gate passes
+
+Kind: numerical-method
 
 ## Context
 

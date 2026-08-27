@@ -6,7 +6,7 @@ Status: public nonreactive owner and configured two-phase GREPE
 Governance D-030 and the
 [CAP-09 promotion receipt](../../../validation/campaigns/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json)
 complete the protected transition defined by
-[ADR 0002](adr/0002-protect-held-until-phase-equilibrium-promotion.md).
+[ADR 0002](../scientific/adr/0002-protect-held-until-phase-equilibrium-promotion.md).
 `ARCHITECTURE.yaml` records the machine-readable boundary and the
 [general plan](plans/2026-08-07-general-phase-equilibrium.md) records the target
 design.

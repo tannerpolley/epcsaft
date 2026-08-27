@@ -2,7 +2,7 @@
 
 Before Data work, read root `CONTEXT.md`, `data/CONTEXT.md`, and
 `data/docs/packet-contract.md`. Engine architecture decisions remain under
-`engine/docs/adr/`; Data owns scientific packets, not runtime design or a
+`engine/docs/scientific/adr/`; Data owns scientific packets, not runtime design or a
 parallel ADR tree.
 
 Keep durable packet identity, provenance, units, domains, hashes, and use basis

@@ -1,4 +1,4 @@
-version: 10
+version: 11
 status: unified-monorepo-active
 governance_doctrine_revision: 24
 
@@ -13,6 +13,13 @@ artifact:
   public_modules: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
 
 owners:
+  scientific_records:
+    map: docs/scientific
+    decisions: docs/scientific/adr
+    formulation: docs/science/full-provider-eos.md
+    equation_registry: docs/equations_registry.yaml
+    generated_equation_views: docs/latex
+    public_api_guide: docs/python-api.md
   parameters:
     input: epcsaft.Parameters
     persistence: src/epcsaft/_document_io.py
@@ -37,7 +44,7 @@ owners:
     public_route: solve
     promotion_status: accepted
     promotion_receipt: ../validation/campaigns/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json
-    transition_decision: docs/equilibrium/adr/0002-protect-held-until-phase-equilibrium-promotion.md
+    transition_decision: docs/scientific/adr/0002-protect-held-until-phase-equilibrium-promotion.md
     promotion_decision: governance_D-030
     phase_specifications: [fixed_tp_feed, fixed_t_coexistence]
     phase_modes: [omitted_topology_discovery, declared_topology_solve]
@@ -60,14 +67,16 @@ owners:
       request: epcsaft.equilibrium.GeneralReactiveEquilibriumProblem
       result: epcsaft.equilibrium.GeneralReactiveEquilibriumResult
       public_route: epcsaft.equilibrium.solve
-      compiler: src/epcsaft/equilibrium/_grepe.py
+      native_solve: cpp/equilibrium/grepe.cpp
+      reaction_compiler: cpp/equilibrium/chemical_equilibrium_compiler.cpp
+      phase_direction_compiler: cpp/equilibrium/phase_direction_compiler.cpp
+      finite_reactive_owner: cpp/equilibrium/reactive_finite_phase.cpp
       admitted_formulations: [finite, finite_incipient, intensive_boundary, temperature_boundary]
-      candidate_topology: exactly_two_finite_liquids
-      candidate_component_support: all_components_neutral_only
-      candidate_numerical_core: cpp/equilibrium/reactive_finite_phase.cpp
-      candidate_formulation: total_gibbs_with_global_conservation
-      candidate_globality_claim: not_established
-      candidate_admission: pending_review_and_hash_bound_receipt
+      topology: request_declared
+      component_support: request_declared
+      formulation: total_gibbs_with_global_conservation
+      globality_claim: configured_local_minimum_only
+      admission: governance_D-037_proven_core
   regression:
     public_module: epcsaft.regression
     parameter_fit: epcsaft.regression.ParameterFit
@@ -88,10 +97,28 @@ owners:
   native_core:
     extension: epcsaft._core
     static_libraries: [eos_core, equilibrium_core, regression_core]
+    meson_targets:
+      eos_core: epcsaft_engine_eos_core
+      equilibrium_core: epcsaft_engine_equilibrium_core
+      regression_core: epcsaft_engine_regression_core
+      extension: _core
+    permitted_internal_links:
+      equilibrium_core: [eos_core]
+      regression_core: [eos_core, equilibrium_core]
+      extension: [eos_core, equilibrium_core, regression_core]
     binding_sources: [src/epcsaft/_native, cpp/equilibrium, src/epcsaft/regression/native/fit_pybind.cpp]
     internal_types: direct_cpp
+    python_inside_static_libraries: forbidden
+    private_transport_abi: forbidden
+    iterative_python_callbacks: forbidden
     public_cpp_abi: forbidden
     installed_headers: forbidden
+    state_lifetimes:
+      public_grepe_compilation: once_per_request
+      regression_grepe_structure: once_per_distinct_concrete_experiment_structure
+      regression_source_values: once_per_exact_optimizer_coordinate
+      full_space_accepted_state: finalized_once_after_convergence
+      thread_and_tape_policy: measured_no_change_issue_86_comment_5442040189
 
 canonical_plans:
   capability_cutover: docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md

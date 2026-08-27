@@ -2,9 +2,14 @@
 status: accepted
 date: 2026-08-07
 amended_by: 0002-protect-held-until-phase-equilibrium-promotion.md
+migration_source_path: engine/docs/equilibrium/adr/0001-one-general-phase-equilibrium-owner.md
+migration_source_commit: 9f8728b3bffbd548aebb0356a32e31798b36c385
+migration_source_blob: c285ce8150732c2c706bbe1503248e335e8a5930
 ---
 
 # Use one general nonreactive phase-equilibrium owner
+
+Kind: computational-architecture
 
 The destination is implemented. [ADR 0002](0002-protect-held-until-phase-equilibrium-promotion.md)
 protected the HELD/HELD2 transition until Governance D-030 accepted the
@@ -48,4 +53,4 @@ electrolyte routes.
 - Named literature cases remain Validation evidence, not runtime identities.
 
 The execution authority is
-[`../plans/2026-08-07-general-phase-equilibrium.md`](../plans/2026-08-07-general-phase-equilibrium.md).
+[`../../equilibrium/plans/2026-08-07-general-phase-equilibrium.md`](../../equilibrium/plans/2026-08-07-general-phase-equilibrium.md).

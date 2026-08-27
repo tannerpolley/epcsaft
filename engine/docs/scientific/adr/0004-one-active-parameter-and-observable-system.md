@@ -1,9 +1,14 @@
 ---
 status: accepted
 date: 2026-08-07
+migration_source_path: engine/docs/adr/0004-one-active-parameter-and-observable-system.md
+migration_source_commit: 9f8728b3bffbd548aebb0356a32e31798b36c385
+migration_source_blob: dc2546945b7c6dbf15ea291ad5260f1a1afce766
 ---
 
 # Use one active-parameter and owner-observable system
+
+Kind: computational-architecture
 
 ## Context
 
@@ -53,4 +58,4 @@ schemas, aliases, and fallbacks are deleted with their replacement.
   Validation.
 
 The execution authority is
-[`../plans/2026-08-07-general-scientific-capability-hard-cutover.md`](../plans/2026-08-07-general-scientific-capability-hard-cutover.md).
+[`../../plans/2026-08-07-general-scientific-capability-hard-cutover.md`](../../plans/2026-08-07-general-scientific-capability-hard-cutover.md).

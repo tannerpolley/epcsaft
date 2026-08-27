@@ -2,7 +2,7 @@
 
 Before Engine shaping or implementation, read root `CONTEXT.md`,
 `engine/CONTEXT.md`, `engine/ARCHITECTURE.yaml`, and the relevant accepted
-decision under `engine/docs/adr/`. CAP work also reads the canonical hard-cutover
+decision under `engine/docs/scientific/adr/`. CAP work also reads the canonical hard-cutover
 plan and `engine/docs/agents/issue-tracker.md`.
 
 Use the vocabulary defined by Engine Context in issues, code, evidence, and

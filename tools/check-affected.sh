@@ -26,14 +26,27 @@ if ((${#changed[@]} == 0)); then
 fi
 
 paths="$(printf '%s\n' "${changed[@]}")"
+architecture_inputs=false
+if grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|cpp/|src/|docs/scientific/)|tools/(check-engine-architecture\.py|verify-installed-wheel\.py))' <<<"$paths"; then
+    architecture_inputs=true
+fi
 if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|CONTEXT.md|README.md|pyproject.toml|uv.lock|\.codex/|tools/)' <<<"$paths"; then
     exec bash tools/check-all.sh
 fi
 if grep -q '^data/' <<<"$paths"; then
     python3 data/tools/validate_packets.py
 fi
-if [[ "$source_only" == 0 ]] && grep -Eq '^(engine/(meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|cpp/|src/|data/|tests/)|validation/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
+if [[ "$source_only" == 0 ]] && grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|cpp/|src/|data/|tests/|docs/scientific/)|validation/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
     bash .codex/environments/setup.sh
+fi
+if [[ "$source_only" == 0 && "$architecture_inputs" == true ]]; then
+    build_dir="$(<build/environment-wheel/meson-build-dir)"
+    mapfile -t engine_wheels < <(find build/environment-wheel -maxdepth 1 -type f -name 'epcsaft-*.whl' -print)
+    if ((${#engine_wheels[@]} != 1)); then
+        echo "expected exactly one Engine wheel, found ${#engine_wheels[@]}" >&2
+        exit 1
+    fi
+    .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir" --wheel "${engine_wheels[0]}"
 fi
 if grep -q '^engine/' <<<"$paths"; then
     engine_all=false
