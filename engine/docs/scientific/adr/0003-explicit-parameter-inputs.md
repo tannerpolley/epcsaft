@@ -1,7 +1,12 @@
 # ADR 0003: Explicit parameter inputs replace the installed catalog
 
+Kind: computational-architecture
+
 - Status: accepted
 - Date: 2026-07-31
+- Migration source: `engine/docs/adr/0003-explicit-parameter-inputs.md` at
+  commit `9f8728b3bffbd548aebb0356a32e31798b36c385`, blob
+  `25177cd7b21d408ce78547d90904e7af88281551`
 
 ## Decision
 

@@ -1,0 +1,36 @@
+\documentclass{article}
+\usepackage{booktabs,url}
+\begin{document}
+\section{Verification, validation, and uncertainty map}
+
+Compact equation, derivative, invariant, limit, solver, equilibrium, and
+certificate falsifiers remain under \path{tests/}. Installed-wheel literature,
+experimental, and cross-module campaigns remain under the repository-level
+\path{validation/} owner. Accepted governance decisions and receipts remain
+under the repository-level \path{governance/} owner. Each retained check owns
+its metric, tolerance, units or scaling, tested domain, and failure meaning;
+this map copies none of those values.
+
+\section{Bounded generated-evidence pilots}
+
+Issue 97 admits a no-add result for pdoc, clang-uml, and Import Linter. The
+offline approved environment was probed with these commands:
+
+\begin{verbatim}
+command -v clang-uml
+command -v pdoc
+.venv/bin/python -c 'import importlib.util,sys;
+sys.exit(0 if importlib.util.find_spec("pdoc") else 1)'
+command -v lint-imports
+.venv/bin/python -c 'import importlib.util,sys;
+sys.exit(0 if importlib.util.find_spec("importlinter") else 1)'
+\end{verbatim}
+
+The exact bounded results were: clang-uml executable unavailable in 0.00 s;
+pdoc executable and module unavailable in 0.02 s; Import Linter executable and
+module unavailable in 0.01 s. No version or executable provenance existed to
+record, no tool was fetched or invoked, no dependency or generated output was
+retained, and each pilot therefore took its accepted no-add route. Doxygen was
+outside the accepted pilot scope.
+
+\end{document}

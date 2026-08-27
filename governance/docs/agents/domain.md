@@ -3,7 +3,7 @@
 This is one monorepo with one root context and directory-specific context.
 Before Governance planning or authority changes, read root `CONTEXT.md`,
 `governance/CONTEXT.md`, and `governance/GOVERNANCE.md`. Engine design decisions
-remain under `engine/docs/adr/`; Governance does not create a parallel ADR tree.
+remain under `engine/docs/scientific/adr/`; Governance does not create a parallel ADR tree.
 
 Use the current Governance doctrine terms:
 

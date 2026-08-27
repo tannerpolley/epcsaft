@@ -2,11 +2,10 @@
 
 Status: scientific equation authority for the accepted full-EOS scope.
 
-The native transport is a private in-wheel bridge from EOS to Equilibrium. It
-defines no public Python API, installed header set, external ABI, Regression
-capability, or separate artifact.
-
-Design: `../designs/2026-07-16-full-EOS-eos-design.md`
+EOS, Equilibrium, and Regression exchange direct C++ types inside the one
+`epcsaft._core` extension. This internal interface defines no public Python
+API, installed header set, external ABI, Regression capability, or separate
+artifact.
 
 This file owns the scientific equations and conventions consumed by the clean
 EOS. The [checked EOS equation mirror](../equations.md) maps those
@@ -632,8 +631,8 @@ mu/(RT) = Phi_n.
 
 The phase block rejects mixture, association, charge, invalid source domain,
 packing failure, and nonfinite states. It does not select liquid or vapor,
-solve density, or certify equilibrium. One model-bound capsule is evaluated
-independently at every candidate phase state.
+solve density, or certify equilibrium. One model-bound native state is
+evaluated independently at every candidate phase state.
 
 For the first pure-methane regression slice, the same defining function accepts
 the active coordinate order
@@ -719,13 +718,13 @@ generation, and alternative concentration conventions remain closed.
 ### 10.1 Installed charge-neutral reference basis
 
 For an admitted phase model with `C` components, one or more neutral molecular
-components, at least one cation, and at least one anion, the native transport exposes
-`C-1` rows spanning the nullspace of the ordered charge vector. Exact component
-identities define the canonical row and anchor order, independently of caller
-component permutation. Every neutral component contributes its unit row. For
-the charged components, the canonical first cation is paired with every anion
-and every remaining cation is paired with the canonical first anion. Each pair
-uses the smallest positive integer
+components, at least one cation, and at least one anion, the direct native EOS
+interface exposes `C-1` rows spanning the nullspace of the ordered charge
+vector. Exact component identities define the canonical row and anchor order,
+independently of caller component permutation. Every neutral component
+contributes its unit row. For the charged components, the canonical first
+cation is paired with every anion and every remaining cation is paired with the
+canonical first anion. Each pair uses the smallest positive integer
 stoichiometry obtained from the greatest common divisor of the two charge
 magnitudes. If `B` is this row-major basis and `c` its returned contractions,
 
@@ -752,11 +751,11 @@ The result binds the ordered components and charges already advertised by the
 model table, parameter and topology fingerprints, exact source-domain `T,P`,
 salt-free reference composition, composition-weighted neutral molar mass, the
 worst formula-unit convergence diagnostic, and the Helmholtz basis
-`A/(RT n_ref)` with `n_ref = 1 mol` and `rho_ref = 1 mol m^-3`. The callback is
+`A/(RT n_ref)` with `n_ref = 1 mol` and `rho_ref = 1 mol m^-3`. The evaluator is
 re-evaluated at every admitted trial pressure; an external source-reference
 pressure is not used as the application pressure. Unknown source applicability
 advertises no evaluable neutral-reference capability, and caller-owned
-provenance is not promoted by transport. This is not a finite-salt reference
+provenance is not promoted by the EOS interface. This is not a finite-salt reference
 path. The value entry advertises no derivatives; the append-only derivative
 entry returns exact pressure and admitted active-parameter derivatives.
 Reaction constants, source standard-state conversions, gauges, constraints,
@@ -764,7 +763,7 @@ and equilibrium remain consumer-owned.
 
 The Held source-complete aqueous-electrolyte bundle is admitted through this
 same generic basis at exactly `298.15 K` and `100000 Pa`; it does not retain a
-case-specific standard-reference callback. The ordinary public pure-water state
+case-specific standard-reference evaluator. The ordinary public pure-water state
 supplies any liquid molar-volume initialization through the same fixed-pressure
 density owner. EOS does not supply `K_w` or transform an external activity
 convention into this mechanical basis.
@@ -845,8 +844,8 @@ ions at `T = 298.15 K` and `p = 1 bar`. It requires explicit water--ion
 introduced. It uses the source's fully dissociated Debye--Huckel formulation
 with concentration-independent water permittivity and has no Born term,
 ion-pairing, or reaction-equilibrium behavior. Evaluation or the
-standard-reference callback outside the recorded source state is not
-source-backed, and the callback fails closed outside that state.
+standard-reference evaluator outside the recorded source state is not
+source-backed, and the evaluator fails closed outside that state.
 
 The fully dissociated Debye--Huckel model family also accepts explicitly
 declared neutral--ion and opposite-charge `k_ij` records when a different
@@ -878,8 +877,8 @@ Zuber mixed-solvent volume mixing, synthetic Rueben parameter completion,
 analytic derivative modes, ideal-gas caloric data, phase equilibrium,
 regression, multi-salt reference paths, alternate single-ion conventions,
 mixture/associating/electrolyte Regression observations, or reactive
-standard-state chemical potentials. The private native transport exposes only
-the EOS operations required by current Equilibrium consumers; it is not a
+standard-state chemical potentials. The direct native EOS interface exposes
+only the EOS operations required by current Equilibrium consumers; it is not a
 Regression extension point and does not admit a fitted model.
 Adding any other exclusion requires a new source-backed capability design
 rather than a flag in this model.

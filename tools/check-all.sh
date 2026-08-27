@@ -7,6 +7,14 @@ cd "$repo_root"
 # Build and install the immutable wheel before any test process starts.
 bash .codex/environments/setup.sh
 
+build_dir="$(<build/environment-wheel/meson-build-dir)"
+mapfile -t engine_wheels < <(find build/environment-wheel -maxdepth 1 -type f -name 'epcsaft-*.whl' -print)
+if ((${#engine_wheels[@]} != 1)); then
+    echo "expected exactly one Engine wheel, found ${#engine_wheels[@]}" >&2
+    exit 1
+fi
+wheel="${engine_wheels[0]}"
+
 run_root="$(mktemp -d)"
 cleanup() {
     rm -rf -- "$run_root"
@@ -33,6 +41,7 @@ run_check mypy bash -c 'cd "$1/engine" && ../.venv/bin/mypy' _ "$repo_root"
 run_check validation-fast bash -c 'cd "$1/validation" && ../.venv/bin/python -m pytest -q -m "not campaign and not slow and not expensive"' _ "$repo_root"
 run_check management python3 governance/tools/management_preflight.py check
 run_check artifacts python3 governance/tools/artifact_store.py check
+run_check architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir" --wheel "$wheel"
 
 failed=0
 for index in "${!pids[@]}"; do
