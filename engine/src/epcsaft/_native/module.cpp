@@ -272,6 +272,32 @@ PYBIND11_MODULE(_core, module) {
             py::arg("coordinates"),
             py::arg("derivative_order")
         )
+        .def(
+            "evaluate_fixed_pressure_composition_derivatives",
+            [](const epcsaft::NativeModel& model, double temperature,
+               const std::vector<double>& mole_fractions, double molar_volume,
+               double ion_mole_fraction_max) {
+                const auto block = model.evaluate_fixed_pressure_composition_derivatives(
+                    temperature, mole_fractions, molar_volume, ion_mole_fraction_max
+                );
+                py::dict result;
+                result["failure_code"] = block.failure_code;
+                result["condition_measure"] = block.pressure_closure_condition_measure;
+                if (block.failure_code.empty()) {
+                    result["coordinate_indices"] = block.coordinate_component_indices;
+                    result["dependent_indices"] = block.dependent_component_indices;
+                    result["composition_derivatives"] = block.composition_derivatives;
+                    result["chemical_derivatives"] =
+                        block.chemical_potential_derivatives_over_rt;
+                    result["density_derivatives"] = block.molar_density_derivatives;
+                }
+                return result;
+            },
+            py::arg("temperature"),
+            py::arg("mole_fractions"),
+            py::arg("molar_volume"),
+            py::arg("ion_mole_fraction_max")
+        )
         .def("molar_volume_bounds", &epcsaft::NativeModel::molar_volume_bounds)
         .def(
             "molar_density_upper_bound",

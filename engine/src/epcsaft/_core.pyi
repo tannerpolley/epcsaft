@@ -103,6 +103,13 @@ class NativeModel:
         coordinates: Sequence[NativeActiveCoordinate],
         derivative_order: int,
     ) -> NativeMixturePhaseBlock: ...
+    def evaluate_fixed_pressure_composition_derivatives(
+        self,
+        temperature: float,
+        mole_fractions: Sequence[float],
+        molar_volume: float,
+        ion_mole_fraction_max: float,
+    ) -> Mapping[str, Any]: ...
     def molar_volume_bounds(
         self,
         temperature_k: float,

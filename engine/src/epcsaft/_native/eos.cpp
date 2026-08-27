@@ -1571,4 +1571,185 @@ NativeResult NativeModel::evaluate_pressure_continuation(
   return finish(continued_roots.front());
 }
 
+// EqID: fixed_pressure_total_derivative
+FixedPressureCompositionProjection fixed_pressure_composition_projection(
+    double temperature, const std::vector<double> &mole_fractions,
+    double molar_volume, const std::vector<int> &charge_numbers,
+    const std::vector<double> &hessian) {
+  FixedPressureCompositionProjection result;
+  const auto reject = [](const char *code, double condition = 0.0) {
+    FixedPressureCompositionProjection failure;
+    failure.failure_code = code;
+    failure.pressure_closure_condition_measure = condition;
+    return failure;
+  };
+  const std::size_t count = mole_fractions.size();
+  const std::size_t width = count + 1;
+  if (count == 0 || charge_numbers.size() != count ||
+      hessian.size() != width * width ||
+      !std::isfinite(temperature) || temperature <= 0.0 ||
+      !std::isfinite(molar_volume) || molar_volume <= 0.0) {
+    return reject("owner_contract_failure");
+  }
+  if (std::any_of(mole_fractions.begin(), mole_fractions.end(),
+                  [](double value) {
+                    return !std::isfinite(value) || value <= 0.0;
+                  })) {
+    return reject("provider_domain_rejection");
+  }
+  double fraction_sum = 0.0;
+  double charge_sum = 0.0;
+  bool charged = false;
+  for (std::size_t component = 0; component < count; ++component) {
+    fraction_sum += mole_fractions[component];
+    charge_sum += mole_fractions[component] * charge_numbers[component];
+    charged = charged || charge_numbers[component] != 0;
+  }
+  if (std::abs(fraction_sum - 1.0) > 1.0e-10 ||
+      (charged && std::abs(charge_sum) > 1.0e-10)) {
+    return reject("provider_domain_rejection");
+  }
+
+  std::vector<double> log_basis;
+  if (charged) {
+    double best_pivot = 0.0;
+    std::size_t first = 0;
+    std::size_t second = 0;
+    for (std::size_t left = 0; left < count; ++left) {
+      for (std::size_t right = left + 1; right < count; ++right) {
+        const double pivot = std::abs(
+            mole_fractions[left] * mole_fractions[right] *
+            static_cast<double>(charge_numbers[right] - charge_numbers[left]));
+        if (pivot > best_pivot) {
+          best_pivot = pivot;
+          first = left;
+          second = right;
+        }
+      }
+    }
+    if (best_pivot <= 1.0e-14) {
+      return reject("ill_conditioned_sensitivity");
+    }
+    result.dependent_component_indices = {first, second};
+    for (std::size_t component = 0; component < count; ++component) {
+      if (component != first && component != second) {
+        result.coordinate_component_indices.push_back(component);
+      }
+    }
+    const std::size_t coordinates = result.coordinate_component_indices.size();
+    log_basis.assign(count * coordinates, 0.0);
+    const double charge_gap =
+        static_cast<double>(charge_numbers[second] - charge_numbers[first]);
+    for (std::size_t coordinate = 0; coordinate < coordinates; ++coordinate) {
+      const std::size_t component = result.coordinate_component_indices[coordinate];
+      log_basis[component * coordinates + coordinate] = 1.0;
+      log_basis[first * coordinates + coordinate] =
+          mole_fractions[component] *
+          static_cast<double>(charge_numbers[component] - charge_numbers[second]) /
+          (mole_fractions[first] * charge_gap);
+      log_basis[second * coordinates + coordinate] =
+          mole_fractions[component] *
+          static_cast<double>(charge_numbers[first] - charge_numbers[component]) /
+          (mole_fractions[second] * charge_gap);
+    }
+  } else {
+    const std::size_t coordinates = count - 1;
+    result.dependent_component_indices = {count - 1};
+    for (std::size_t coordinate = 0; coordinate < coordinates; ++coordinate) {
+      result.coordinate_component_indices.push_back(coordinate);
+    }
+    log_basis.assign(count * coordinates, 0.0);
+    for (std::size_t component = 0; component < count; ++component) {
+      for (std::size_t coordinate = 0; coordinate < coordinates; ++coordinate) {
+        log_basis[component * coordinates + coordinate] =
+            (component == coordinate ? 1.0 : 0.0) - mole_fractions[coordinate];
+      }
+    }
+  }
+
+  const std::size_t coordinates = result.coordinate_component_indices.size();
+  result.composition_derivatives.assign(count * coordinates, 0.0);
+  for (std::size_t component = 0; component < count; ++component) {
+    for (std::size_t coordinate = 0; coordinate < coordinates; ++coordinate) {
+      result.composition_derivatives[component * coordinates + coordinate] =
+          mole_fractions[component] * log_basis[component * coordinates + coordinate];
+    }
+  }
+
+  const double h_vv = hessian[count * width + count];
+  if (!std::isfinite(h_vv) || h_vv <= 0.0) {
+    return reject("singular_sensitivity");
+  }
+  std::vector<double> volume_rows(coordinates, 0.0);
+  const double closure_pivot = std::abs(h_vv * molar_volume * molar_volume);
+  if (!std::isfinite(closure_pivot) || closure_pivot == 0.0) {
+    return reject("singular_sensitivity");
+  }
+  double closure_scale = std::max(1.0, closure_pivot);
+  for (std::size_t coordinate = 0; coordinate < coordinates; ++coordinate) {
+    for (std::size_t component = 0; component < count; ++component) {
+      volume_rows[coordinate] +=
+          hessian[count * width + component] *
+          result.composition_derivatives[component * coordinates + coordinate];
+    }
+    closure_scale = std::max(
+        closure_scale, std::abs(volume_rows[coordinate] * molar_volume));
+  }
+  result.pressure_closure_condition_measure = closure_scale / closure_pivot;
+  if (!std::isfinite(result.pressure_closure_condition_measure) ||
+      result.pressure_closure_condition_measure > 1.0e12) {
+    return reject("ill_conditioned_sensitivity",
+                  result.pressure_closure_condition_measure);
+  }
+
+  result.fixed_volume_chemical_potential_derivatives_over_rt.assign(
+      count * coordinates, 0.0);
+  result.chemical_potential_derivatives_over_rt.assign(count * coordinates, 0.0);
+  result.molar_density_derivatives.assign(coordinates, 0.0);
+  result.fixed_volume_pressure_derivatives_pa.assign(coordinates, 0.0);
+  const double rt = detail::GAS_CONSTANT * temperature;
+  for (std::size_t coordinate = 0; coordinate < coordinates; ++coordinate) {
+    const double volume_row = volume_rows[coordinate];
+    const double volume_derivative = -volume_row / h_vv;
+    result.molar_density_derivatives[coordinate] =
+        -volume_derivative / (molar_volume * molar_volume);
+    result.fixed_volume_pressure_derivatives_pa[coordinate] = -rt * volume_row;
+    for (std::size_t component = 0; component < count; ++component) {
+      double fixed_volume_derivative = 0.0;
+      for (std::size_t species = 0; species < count; ++species) {
+        fixed_volume_derivative +=
+            hessian[component * width + species] *
+            result.composition_derivatives[species * coordinates + coordinate];
+      }
+      result.fixed_volume_chemical_potential_derivatives_over_rt
+          [component * coordinates + coordinate] = fixed_volume_derivative;
+      const double derivative = fixed_volume_derivative +
+          hessian[component * width + count] * volume_derivative;
+      result.chemical_potential_derivatives_over_rt
+          [component * coordinates + coordinate] = derivative;
+    }
+  }
+  const bool finite_output = finite(result.composition_derivatives) &&
+      finite(result.fixed_volume_chemical_potential_derivatives_over_rt) &&
+      finite(result.chemical_potential_derivatives_over_rt) &&
+      finite(result.molar_density_derivatives) &&
+      finite(result.fixed_volume_pressure_derivatives_pa);
+  if (!finite_output) {
+    return reject("second_order_failure");
+  }
+  return result;
+}
+
+// EqExclude: transport and buffer mechanics
+FixedPressureCompositionProjection
+NativeModel::evaluate_fixed_pressure_composition_derivatives(
+    double temperature, const std::vector<double> &mole_fractions,
+    double molar_volume, double ion_mole_fraction_max) const {
+  const auto phase = evaluate_supported_phase_derivatives(
+      temperature, mole_fractions, molar_volume, ion_mole_fraction_max, {});
+  return fixed_pressure_composition_projection(
+      temperature, mole_fractions, molar_volume, parameters_.charge_number,
+      phase.hessian);
+}
+
 } // namespace epcsaft
