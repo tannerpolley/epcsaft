@@ -41,32 +41,12 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
     truth_active = epcsaft.ActiveParameterSet(
         parameters, (parameter_identity,), values=(truth_parameter,)
     )
-    anchor_problem = equilibrium.HomogeneousReactiveObservationProblem(
-        "nonreactive-open-component-anchor",
-        "configured-liquid",
-        "liquid",
-        equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
-        reaction,
-        "nonreactive-open-component-branch",
-        "local_certified_role_selected_state",
-    )
-    anchor = equilibrium.certify_homogeneous_continuation_reference(
-        anchor_problem,
-        313.15 * epcsaft.unit_registry.kelvin,
-        119_199.78746707023 * epcsaft.unit_registry.pascal,
-        maximum_log_composition_distance=1.0,
-        maximum_log_volume_distance=1.0,
-        active_parameters=truth_active,
-    )
     phase = equilibrium.ReactivePhase(
         "configured-liquid",
         "liquid",
         "finite",
         equilibrium.AllComponents(),
         equilibrium.ProviderModel((1.0e-6, 0.74), "installed-provider-eos"),
-        "nonreactive-open-component-branch",
-        "local_certified_role_selected_state",
-        anchor,
     )
     temperature = equilibrium.Fixed(313.15 * epcsaft.unit_registry.kelvin)
     pressure = equilibrium.Fixed(119_199.78746707023 * epcsaft.unit_registry.pascal)
@@ -105,7 +85,7 @@ def test_generic_regression_recovers_parameter_from_imposed_potential_uptake(
         (potential,),
         feed=equilibrium.direct_amounts(component_ids, (0.8, 0.2, 0.1, 0.1)),
     )
-    truth = equilibrium.phase_equilibrium(
+    truth = equilibrium.solve(
         model,
         fixed_truth,
         active_parameters=truth_active,

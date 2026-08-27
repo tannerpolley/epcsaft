@@ -6,6 +6,7 @@ import pytest
 
 import epcsaft
 from epcsaft import equilibrium
+from epcsaft.equilibrium._api import _chemical_equilibrium_impl
 
 from .chemical_equilibrium_cases import base_system as _base_system
 from .chemical_equilibrium_cases import bind_records as _bind_record
@@ -15,7 +16,7 @@ from .chemical_equilibrium_cases import typed_problem as _typed_problem
 def _solve(
     spec: dict[str, object],
 ) -> equilibrium.ChemicalEquilibriumResult:
-    return equilibrium.chemical_equilibrium(
+    return _chemical_equilibrium_impl(
         equilibrium.IdealGasPhase(
             model_fingerprint=spec["provider_fingerprint"],
             reference_id="provider-helmholtz-coordinate-basis",

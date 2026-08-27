@@ -148,7 +148,7 @@ def test_dielectric_solvent_identity_is_scoped_to_charged_phase_support() -> Non
     )
 
     def solve(value: float) -> equilibrium.GeneralReactiveEquilibriumResult:
-        return equilibrium.phase_equilibrium(
+        return equilibrium.solve(
             model,
             problem,
             active_parameters=epcsaft.ActiveParameterSet(
@@ -192,10 +192,10 @@ def test_dielectric_solvent_identity_is_scoped_to_charged_phase_support() -> Non
             problem.phases[1],
         ),
     )
-    multisolvent = equilibrium.phase_equilibrium(ambiguous_model, problem)
+    multisolvent = equilibrium.solve(ambiguous_model, problem)
     assert multisolvent.status == "evaluated", multisolvent.failure
     with pytest.raises(epcsaft.ParameterError, match="dielectric-solvent-required"):
-        equilibrium.phase_equilibrium(model, no_solvent_problem)
+        equilibrium.solve(model, no_solvent_problem)
 
 
 def test_electrolyte_finite_phases_preserve_exact_support_and_declared_directions() -> None:
@@ -303,7 +303,7 @@ def test_electrolyte_finite_phases_preserve_exact_support_and_declared_direction
         equilibrium.general_reactive_equilibrium_problem_to_mapping(problem)
     ) == problem
 
-    result = equilibrium.phase_equilibrium(model, problem, active_parameters=active)
+    result = equilibrium.solve(model, problem, active_parameters=active)
 
     assert result.status == "evaluated", result.failure
     evidence = dict(result.evidence)
@@ -324,7 +324,7 @@ def test_electrolyte_finite_phases_preserve_exact_support_and_declared_direction
     assert result.phases[0].molar_density_mol_m3 > 10_000.0
     assert result.phases[1].molar_density_mol_m3 < 10.0
 
-    rejected = equilibrium.phase_equilibrium(
+    rejected = equilibrium.solve(
         model,
         replace(
             problem,

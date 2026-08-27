@@ -22,7 +22,7 @@ from epcsaft.equilibrium import (
     PhaseHint,
     PhaseRole,
     PhaseSpecification,
-    phase_equilibrium,
+    solve,
 )
 from tests.eos._raw_cases import (
     AQUEOUS_ELECTROLYTE,
@@ -53,12 +53,12 @@ def test_discovery_preserves_amount_scaling_and_parameter_order() -> None:
         ),
     )
     model = Mixture(parameters)
-    normalized = phase_equilibrium(
+    normalized = solve(
         model,
         PhaseEquilibriumProblem(FixedTPFeed(_TEMPERATURE, _PRESSURE, _FEED)),
         active_parameters=active,
     )
-    discovered = phase_equilibrium(
+    discovered = solve(
         model,
         PhaseEquilibriumProblem(
             FixedTPFeed(_TEMPERATURE, _PRESSURE, _AMOUNT_FEED)
@@ -123,7 +123,7 @@ def test_declared_single_phase_solves_role_and_hints_do_not_change_root() -> Non
     """
     parameters = Parameters.from_mapping(NEUTRAL_BINARY)
     model = Mixture(parameters)
-    discovered = phase_equilibrium(
+    discovered = solve(
         model,
         PhaseEquilibriumProblem(
             FixedTPFeed(
@@ -171,7 +171,7 @@ def test_declared_single_phase_solves_role_and_hints_do_not_change_root() -> Non
         ),
     )
     solved = tuple(
-        phase_equilibrium(model, specification)
+        solve(model, specification)
         for specification in specifications
     )
     for result in solved:
@@ -198,7 +198,7 @@ def test_declared_single_phase_solves_role_and_hints_do_not_change_root() -> Non
 
     opposite = "liquid" if role == "vapor" else "vapor"
     with pytest.raises(PhaseEquilibriumError) as rejected:
-        phase_equilibrium(
+        solve(
             model,
             PhaseEquilibriumProblem(
                 FixedTPFeed(
@@ -239,7 +239,7 @@ def test_declared_three_liquid_phases_satisfy_independent_equilibrium_claims() -
             )
         ),
     )
-    result = phase_equilibrium(
+    result = solve(
         model,
         PhaseEquilibriumProblem(specification),
         active_parameters=selected,
@@ -274,7 +274,7 @@ def test_declared_three_liquid_phases_satisfy_independent_equilibrium_claims() -
             abs=2.0e-8,
         )
 
-    seeded = phase_equilibrium(
+    seeded = solve(
         model,
         PhaseEquilibriumProblem(
             specification,
@@ -313,7 +313,7 @@ def test_declared_three_liquid_phases_satisfy_independent_equilibrium_claims() -
             for index, phase in enumerate(result.phases)
         ),
     )
-    perturbed = phase_equilibrium(
+    perturbed = solve(
         model,
         PhaseEquilibriumProblem(
             specification,
@@ -340,8 +340,8 @@ def test_declared_three_liquid_phases_satisfy_independent_equilibrium_claims() -
     for candidate, expected in zip(perturbed_set, expected_set, strict=True):
         assert candidate == pytest.approx(expected, abs=2.0e-12)
 
-    def solve(value: float) -> PhaseEquilibriumResult:
-        return phase_equilibrium(
+    def evaluate_parameter(value: float) -> PhaseEquilibriumResult:
+        return solve(
             Mixture(parameters),
             hinted,
             active_parameters=ActiveParameterSet(
@@ -362,9 +362,9 @@ def test_declared_three_liquid_phases_satisfy_independent_equilibrium_claims() -
         return tuple(values)
 
     step = 1.0e-5
-    center = solve(selected.values[0])
-    lower = outputs(solve(selected.values[0] - step))
-    upper = outputs(solve(selected.values[0] + step))
+    center = evaluate_parameter(selected.values[0])
+    lower = outputs(evaluate_parameter(selected.values[0] - step))
+    upper = outputs(evaluate_parameter(selected.values[0] + step))
     sensitivity = center.sensitivity
     assert sensitivity is not None
     assert sensitivity.status == "available"
@@ -388,12 +388,12 @@ def test_declared_multisolvent_multiion_roles_select_distinct_stable_roots() -> 
     feed = (0.60, 0.33, 0.02, 0.02, 0.01, 0.02)
     model = Mixture(Parameters.from_mapping(MULTISOLVENT_MULTIION))
 
-    def solve(
+    def solve_phase(
         candidate: Mixture,
         candidate_feed: tuple[float, ...],
         role: PhaseRole,
     ) -> EquilibriumPhaseState:
-        result = phase_equilibrium(
+        result = solve(
             candidate,
             PhaseEquilibriumProblem(
                 FixedTPFeed(
@@ -409,8 +409,8 @@ def test_declared_multisolvent_multiion_roles_select_distinct_stable_roots() -> 
         assert result.diagnostics.pressure_residual_inf <= 1.0e-8
         return result.phases[0]
 
-    liquid = solve(model, feed, "liquid")
-    vapor = solve(model, feed, "vapor")
+    liquid = solve_phase(model, feed, "liquid")
+    vapor = solve_phase(model, feed, "vapor")
     assert liquid.mechanical_class == "strict_stable"
     assert vapor.mechanical_class == "strict_stable"
     assert liquid.mole_fractions == pytest.approx(feed, abs=2.0e-12)
@@ -430,7 +430,7 @@ def test_declared_multisolvent_multiion_roles_select_distinct_stable_roots() -> 
             MULTISOLVENT_MULTIION, components=permuted_ids
         )
     )
-    permuted_liquid = solve(
+    permuted_liquid = solve_phase(
         permuted,
         tuple(feed_by_id[component] for component in permuted_ids),
         "liquid",
@@ -446,7 +446,7 @@ def test_declared_multisolvent_multiion_roles_select_distinct_stable_roots() -> 
     )
 
     def solve_split(roles: tuple[PhaseRole, PhaseRole]) -> PhaseEquilibriumResult:
-        return phase_equilibrium(
+        return solve(
             model,
             PhaseEquilibriumProblem(
                 FixedTPFeed(
@@ -498,7 +498,7 @@ def test_declared_one_phase_role_preserves_positive_trace_ions() -> None:
     model = Mixture(Parameters.from_mapping(MULTISOLVENT_MULTIION))
     trace = 5.0e-12
     feed = (0.60, 0.37 - 2.0 * trace, trace, trace, 0.01, 0.02)
-    result = phase_equilibrium(
+    result = solve(
         model,
         PhaseEquilibriumProblem(
             FixedTPFeed(
@@ -530,7 +530,7 @@ def test_coexistence_structurally_excludes_ions_but_keeps_every_neutral() -> Non
     support and defining-equation claim.
     """
     model = Mixture(Parameters.from_mapping(MULTINEUTRAL_REACTIVE))
-    result = phase_equilibrium(
+    result = solve(
         model,
         PhaseEquilibriumProblem(
             FixedTCoexistence(
@@ -572,7 +572,7 @@ def test_coexistence_structurally_excludes_ions_but_keeps_every_neutral() -> Non
 
     reference_by_id = dict(zip(model.component_ids, (0.70, 0.20, 0.05, 0.05), strict=True))
     reversed_ids = tuple(reversed(model.component_ids))
-    reversed_result = phase_equilibrium(
+    reversed_result = solve(
         Mixture(
             Parameters.from_mapping(
                 MULTINEUTRAL_REACTIVE,
@@ -638,8 +638,8 @@ def test_coexistence_model_parameter_sensitivity_uses_both_phase_partials() -> N
         )
     )
 
-    def solve(value: float) -> PhaseEquilibriumResult:
-        return phase_equilibrium(
+    def evaluate_parameter(value: float) -> PhaseEquilibriumResult:
+        return solve(
             model,
             problem,
             active_parameters=ActiveParameterSet(
@@ -650,9 +650,9 @@ def test_coexistence_model_parameter_sensitivity_uses_both_phase_partials() -> N
         )
 
     step = 1.0e-3
-    center = solve(selected.values[0])
-    lower = solve(selected.values[0] - step)
-    upper = solve(selected.values[0] + step)
+    center = evaluate_parameter(selected.values[0])
+    lower = evaluate_parameter(selected.values[0] - step)
+    upper = evaluate_parameter(selected.values[0] + step)
     assert isinstance(center.extent, IncipientBoundary)
     assert isinstance(lower.extent, IncipientBoundary)
     assert isinstance(upper.extent, IncipientBoundary)
@@ -680,7 +680,7 @@ def test_fixed_pressure_coexistence_recovers_temperature_and_exact_total_jacobia
         )
     )
     reference = (0.5, 0.5)
-    fixed_temperature = phase_equilibrium(
+    fixed_temperature = solve(
         model,
         PhaseEquilibriumProblem(
             FixedTCoexistence(300.0 * u.kelvin, topology, 0, reference)
@@ -698,8 +698,8 @@ def test_fixed_pressure_coexistence_recovers_temperature_and_exact_total_jacobia
         )
     )
 
-    def solve(value: float) -> PhaseEquilibriumResult:
-        return phase_equilibrium(
+    def evaluate_parameter(value: float) -> PhaseEquilibriumResult:
+        return solve(
             model,
             problem,
             active_parameters=ActiveParameterSet(
@@ -707,7 +707,7 @@ def test_fixed_pressure_coexistence_recovers_temperature_and_exact_total_jacobia
             ),
         )
 
-    center = solve(selected.values[0])
+    center = evaluate_parameter(selected.values[0])
     assert isinstance(center.extent, IncipientTemperatureBoundary)
     assert center.extent.temperature_k == pytest.approx(300.0, abs=1.0e-10)
     assert center.diagnostics.route == "held_fixed_p_coexistence"
@@ -718,8 +718,8 @@ def test_fixed_pressure_coexistence_recovers_temperature_and_exact_total_jacobia
     assert sensitivity.output_identities[0] == "boundary.temperature_k"
 
     step = 1.0e-5
-    lower = solve(selected.values[0] - step)
-    upper = solve(selected.values[0] + step)
+    lower = evaluate_parameter(selected.values[0] - step)
+    upper = evaluate_parameter(selected.values[0] + step)
     assert isinstance(lower.extent, IncipientTemperatureBoundary)
     assert isinstance(upper.extent, IncipientTemperatureBoundary)
     exact_temperature = sensitivity.output_parameter_jacobian[0][0]
@@ -745,7 +745,7 @@ def test_fixed_pressure_coexistence_rejects_unbracketed_temperature() -> None:
         )
     )
     with pytest.raises(PhaseEquilibriumError) as rejected:
-        phase_equilibrium(
+        solve(
             model,
             PhaseEquilibriumProblem(
                 FixedPCoexistence(
@@ -772,7 +772,7 @@ def test_fixed_pressure_coexistence_supports_dew_temperature_and_alternate_start
             PhaseSpecification("vapor", AllComponents()),
         )
     )
-    bubble = phase_equilibrium(
+    bubble = solve(
         model,
         PhaseEquilibriumProblem(
             FixedTCoexistence(300.0 * u.kelvin, topology, 0, (0.5, 0.5))
@@ -780,8 +780,8 @@ def test_fixed_pressure_coexistence_supports_dew_temperature_and_alternate_start
     )
     vapor_reference = bubble.phases[1].mole_fractions
 
-    def solve(initial_k: float) -> PhaseEquilibriumResult:
-        return phase_equilibrium(
+    def solve_from_initial(initial_k: float) -> PhaseEquilibriumResult:
+        return solve(
             model,
             PhaseEquilibriumProblem(
                 FixedPCoexistence(
@@ -795,8 +795,8 @@ def test_fixed_pressure_coexistence_supports_dew_temperature_and_alternate_start
             ),
         )
 
-    lower_start = solve(296.0)
-    upper_start = solve(299.0)
+    lower_start = solve_from_initial(296.0)
+    upper_start = solve_from_initial(299.0)
     for result in (lower_start, upper_start):
         assert isinstance(result.extent, IncipientTemperatureBoundary)
         assert result.extent.reference_phase_index == 1
@@ -814,7 +814,7 @@ def test_fixed_pressure_coexistence_is_component_order_invariant() -> None:
         )
     )
 
-    def solve(component_ids: tuple[str, ...]) -> PhaseEquilibriumResult:
+    def solve_order(component_ids: tuple[str, ...]) -> PhaseEquilibriumResult:
         model = Mixture(
             Parameters.from_mapping(
                 STRONGLY_ASSOCIATING_BINARY,
@@ -822,14 +822,14 @@ def test_fixed_pressure_coexistence_is_component_order_invariant() -> None:
             )
         )
         reference = tuple(0.5 for _ in component_ids)
-        fixed_temperature = phase_equilibrium(
+        fixed_temperature = solve(
             model,
             PhaseEquilibriumProblem(
                 FixedTCoexistence(300.0 * u.kelvin, topology, 0, reference)
             ),
         )
         assert isinstance(fixed_temperature.extent, IncipientBoundary)
-        return phase_equilibrium(
+        return solve(
             model,
             PhaseEquilibriumProblem(
                 FixedPCoexistence(
@@ -842,8 +842,8 @@ def test_fixed_pressure_coexistence_is_component_order_invariant() -> None:
             ),
         )
 
-    original = solve(("solute", "solvent"))
-    reordered = solve(("solvent", "solute"))
+    original = solve_order(("solute", "solvent"))
+    reordered = solve_order(("solvent", "solute"))
     assert isinstance(original.extent, IncipientTemperatureBoundary)
     assert isinstance(reordered.extent, IncipientTemperatureBoundary)
     assert reordered.extent.temperature_k == pytest.approx(
@@ -895,8 +895,8 @@ def test_charged_three_phase_split_preserves_charge_order_and_sensitivity() -> N
         topology,
     )
 
-    def solve(value: float) -> PhaseEquilibriumResult:
-        return phase_equilibrium(
+    def evaluate_parameter(value: float) -> PhaseEquilibriumResult:
+        return solve(
             Mixture(parameters),
             PhaseEquilibriumProblem(specification),
             active_parameters=ActiveParameterSet(
@@ -906,7 +906,7 @@ def test_charged_three_phase_split_preserves_charge_order_and_sensitivity() -> N
             ),
         )
 
-    center = solve(selected.values[0])
+    center = evaluate_parameter(selected.values[0])
     assert isinstance(center.extent, FeedSplit)
     assert len(center.phases) == 3
     assert center.diagnostics.electroneutrality_inf <= 1.0e-9
@@ -940,8 +940,8 @@ def test_charged_three_phase_split_preserves_charge_order_and_sensitivity() -> N
         return tuple(values)
 
     step = 1.0e-5
-    lower = outputs(solve(selected.values[0] - step))
-    upper = outputs(solve(selected.values[0] + step))
+    lower = outputs(evaluate_parameter(selected.values[0] - step))
+    upper = outputs(evaluate_parameter(selected.values[0] + step))
     sensitivity = center.sensitivity
     assert sensitivity is not None
     assert sensitivity.status == "available"
@@ -959,7 +959,7 @@ def test_charged_three_phase_split_preserves_charge_order_and_sensitivity() -> N
         CHARGED_TERNARY_IMMISCIBLE,
         components=reversed_ids,
     )
-    reversed_result = phase_equilibrium(
+    reversed_result = solve(
         Mixture(reversed_parameters),
         PhaseEquilibriumProblem(
             FixedTPFeed(

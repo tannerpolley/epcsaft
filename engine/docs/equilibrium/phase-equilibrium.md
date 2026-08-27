@@ -2,8 +2,8 @@
 
 Status: public nonreactive owner and configured two-phase GREPE
 
-`epcsaft.equilibrium.phase_equilibrium` is the only public nonreactive
-phase-equilibrium function. Governance D-030 and the
+`epcsaft.equilibrium.solve` is the only public equilibrium evaluator.
+Governance D-030 and the
 [CAP-09 promotion receipt](../../../validation/campaigns/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json)
 complete the protected transition defined by
 [ADR 0002](adr/0002-protect-held-until-phase-equilibrium-promotion.md).
@@ -21,9 +21,8 @@ the retired name is no longer a Python API.
 | Problem | Public owner | Boundary |
 | --- | --- | --- |
 | Pure-fluid saturation | EOS `Pure.saturation` | Pure vapor--liquid boundary |
-| Nonreactive phase equilibrium | Equilibrium `phase_equilibrium` | Fixed-T,P retained discovery or declared 1--3 phases; fixed-T two-phase coexistence |
-| Homogeneous chemical equilibrium | Equilibrium `chemical_equilibrium` | One homogeneous reacting state |
-| General reactive equilibrium | Equilibrium `phase_equilibrium` | Homogeneous, reactive bubble, and configured finite multiphase equilibrium |
+| Nonreactive phase equilibrium | Equilibrium `solve` | Fixed-T,P retained discovery or declared 1--3 phases; fixed-T two-phase coexistence |
+| General reactive equilibrium | Equilibrium `solve` | Homogeneous, finite--incipient, and configured finite multiphase equilibrium |
 | Solid equilibrium | Excluded | Requires another physical model |
 
 ## Fixed-T,P feed
@@ -120,8 +119,8 @@ paper used SAFT-gamma-Mie.
 
 The unrelated scratch Gibbs solver remains removed. The private HELD/HELD2
 sources and their algorithmic certification evidence remain because they are
-the live discovery core, not a second public route. `chemical_equilibrium`
-remains a separate homogeneous reacting-state capability.
+the live discovery core, not a second public route. Homogeneous reaction is a
+GREPE formulation, not a separate public evaluator.
 
 ## General reactive equilibrium
 

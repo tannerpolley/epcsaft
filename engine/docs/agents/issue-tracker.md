@@ -7,7 +7,7 @@ do not replace current issue state.
 ## Completed CAP program
 
 Root issue #10 and CAP-01 through CAP-11 are complete under Governance D-030
-through D-033. `phase_equilibrium` is the sole public nonreactive route;
+through D-033. `solve` is the sole public equilibrium route;
 omitted fixed-T,P topology uses the retained internal HELD/HELD2 discovery
 algorithm. D-034 admits the issue-#30 fixed-T,P homogeneous reactive
 Observation Family, and D-035 admits the issue-#31 fixed-topology reactive

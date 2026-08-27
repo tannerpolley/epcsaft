@@ -17,7 +17,7 @@ from epcsaft.equilibrium import (
     PhaseEquilibriumProblem,
     PhaseSpecification,
     _equilibrium,
-    phase_equilibrium,
+    solve,
 )
 from tests.eos._raw_cases import AQUEOUS_ELECTROLYTE, NEUTRAL_BINARY
 
@@ -283,7 +283,7 @@ def test_exact_two_phase_sensitivity_matches_independent_centered_resolves() -> 
     assert boundary["status"] == "unavailable"
     assert boundary["failure_reason"] == "phase_boundary_not_differentiable"
 
-    public = phase_equilibrium(
+    public = solve(
         Mixture(parameters),
         PhaseEquilibriumProblem(
             FixedTPFeed(

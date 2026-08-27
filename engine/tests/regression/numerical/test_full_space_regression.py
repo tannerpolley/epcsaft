@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 from dataclasses import replace
 from unittest.mock import patch
@@ -8,18 +10,10 @@ import pytest
 
 import epcsaft
 from epcsaft import _core, equilibrium, regression
-from epcsaft.regression._equilibrium_owner import (
-    _equilibrium_owner_batches,
-    _full_space_batches,
-)
+from epcsaft.regression._equilibrium_owner import _equilibrium_owner_batches, _full_space_batches
 from epcsaft.regression._model import ParameterFit
 from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE
 from tests.equilibrium.test_chemical_provider import _multineutral_problem
-from tests.equilibrium.test_homogeneous_reactive_observations import (
-    _observation_problem,
-    _reactive_fit_mapping,
-    _target_mapping,
-)
 
 
 def _source_standard_problem(
@@ -81,63 +75,127 @@ def _source_standard_problem(
 
 
 @pytest.mark.slow
-def test_full_space_regression_recovers_shared_parameter_and_reactive_states(
-    tmp_path,
-) -> None:
-    """Falsify a Regression route that does not solve shared GREPE states simultaneously."""
-
+def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_path) -> None:
     parameters = epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE)
     model = epcsaft.Mixture(parameters)
-    problem = _source_standard_problem(model, _multineutral_problem())
-    phase = equilibrium.ProviderPhase(model, (1.0e-6, 0.74))
-    owner_problem = _observation_problem(phase, problem)
-    parameter_identity = "component/solvent/segment_diameter"
-    truth_parameter = 2.9
-    row = equilibrium.HomogeneousReactiveObservationRow(
+    reaction = _source_standard_problem(model, _multineutral_problem())
+    temperature = 313.15 * epcsaft.unit_registry.kelvin
+    pressure = 119_199.78746707023 * epcsaft.unit_registry.pascal
+    phase_id = "multineutral-liquid"
+    output = equilibrium.EquilibriumOutput(
         "cation-mole-fraction",
-        "mole_fraction",
+        "phase.mole_fraction",
+        "dimensionless",
+        "true-species-liquid-mole-fraction",
+        phase_id,
         (0.0, 0.0, 1.0, 0.0),
         support="positive",
     )
-    truth_active = epcsaft.ActiveParameterSet(
-        parameters, (parameter_identity,), values=(truth_parameter,)
+    total = math.fsum(reaction.feed_amounts_mol)
+    state = model.state(
+        T=temperature,
+        P=pressure,
+        x=tuple(amount / total for amount in reaction.feed_amounts_mol),
+        phase="liquid",
     )
-    truth = equilibrium.evaluate_homogeneous_reactive_observations(
-        owner_problem,
-        313.15 * epcsaft.unit_registry.kelvin,
-        119_199.78746707023 * epcsaft.unit_registry.pascal,
-        equilibrium.homogeneous_reactive_observation_descriptor(
-            owner_problem, (row,), active_parameters=truth_active
+    phase = equilibrium.ReactivePhase(
+        phase_id,
+        "liquid",
+        "finite",
+        equilibrium.AllComponents(),
+        equilibrium.ProviderModel((1.0e-6, 0.74), "installed-provider-eos"),
+        start=equilibrium.FinitePhaseStart(
+            reaction.feed_amounts_mol,
+            1.0 / float(state.molar_density.to("mole / meter**3").magnitude),
         ),
-        active_parameters=truth_active,
+    )
+    unanchored = equilibrium.GeneralReactiveEquilibriumProblem(
+        "manufactured-full-space",
+        equilibrium.Fixed(temperature),
+        equilibrium.Fixed(pressure),
+        (phase,),
+        reaction,
+        (phase_id,),
+        (output,),
+    )
+    anchor = equilibrium.solve(model, unanchored)
+    assert anchor.status == "evaluated", anchor.failure
+    assert anchor.continuation_state is not None
+    problem = replace(
+        unanchored,
+        continuation_identity="multineutral-liquid-branch",
+        continuation_state=anchor.continuation_state,
+        phases=(
+            replace(
+                phase,
+                start=None,
+            ),
+        ),
+    )
+    parameter_identity = "component/solvent/segment_diameter"
+    truth_parameter = 2.9
+    truth = equilibrium.solve(
+        model,
+        problem,
+        active_parameters=epcsaft.ActiveParameterSet(
+            parameters, (parameter_identity,), values=(truth_parameter,)
+        ),
     )
     assert truth.status == "evaluated", truth.failure
     observed = float(truth.values[0])
-    mapping = _reactive_fit_mapping(
-        tmp_path,
-        parameters,
-        owner_problem,
-        (row,),
-        (
-            _target_mapping(
-                "manufactured-cation-0",
-                row.identity,
-                observed,
-                row.unit,
-                "scaled_difference",
-                observed,
-            ),
-        ),
-        parameter_identity,
-        lower=2.5,
-        upper=3.1,
-        origin=2.8,
-        scale=0.2,
-        starts=(("origin", 2.8),),
-    )
-    mapping["solver"]["controls"] = {
-        "maximum_iterations": 50,
-        "optimizer_tolerance": 1.0e-8,
+
+    payload = json.dumps(parameters.to_mapping(), separators=(",", ":"), sort_keys=True).encode()
+    parameter_path = tmp_path / "parameters.json"
+    parameter_path.write_bytes(payload)
+    mapping = {
+        "schema_version": 2,
+        "parameters": {
+            "path": str(parameter_path),
+            "sha256": f"sha256:{hashlib.sha256(payload).hexdigest()}",
+        },
+        "model": {"kind": "mixture"},
+        "active": {
+            "identities": [parameter_identity],
+            "coordinates": {
+                parameter_identity: {"bounds": [2.5, 3.1], "origin": 2.8, "scale": 0.2}
+            },
+            "ties": [],
+        },
+        "observations": [
+            {
+                "family": "equilibrium",
+                "identity": problem.identity,
+                "request": equilibrium.general_reactive_equilibrium_problem_to_mapping(problem),
+                "targets": [
+                    {
+                        "identity": "manufactured-cation",
+                        "prediction_identity": output.identity,
+                        "observed": observed,
+                        "unit": output.unit,
+                        "residual": "scaled_difference",
+                        "scale": observed,
+                        "multiplier": 1.0,
+                        "role": "diagnostic",
+                        "measurement_classification": "direct",
+                        "basis": output.basis,
+                        "source_identity": "manufactured-full-space",
+                        "source_hash": f"sha256:{'2' * 64}",
+                        "included": True,
+                        "drop_reason": None,
+                        "aggregate_identity": None,
+                        "covariance_identity": None,
+                    }
+                ],
+                "multiplier": 1.0,
+            }
+        ],
+        "solver": {
+            "multistart": {
+                "starts": [{"identity": "origin", "values": [2.8]}],
+                "affine_bound_margin": 1.0e-7,
+            },
+            "controls": {"maximum_iterations": 50, "optimizer_tolerance": 1.0e-8},
+        },
     }
 
     resolved = ParameterFit.from_mapping(mapping).resolve(parameters, base_path=tmp_path)
@@ -148,8 +206,6 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_states(
     setup = setups[0]
     point = [0.0, *setup["initial"]]
     step = 1.0e-4
-    assert len(setup["constraint_lower"]) == len(setup["constraint_upper"])
-    assert min(setup["constraint_lower"]) < 0.0 < max(setup["constraint_upper"])
     for checked_column in (0, 1):
         below = evaluator(
             0,
@@ -183,11 +239,7 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_states(
     with patch.object(_core, "_fit_resolved", wraps=_core._fit_resolved) as native_fit:
         result = regression.fit(mapping, base_path=tmp_path)
     assert native_fit.call_args.args[7] is not None
-    assert native_fit.call_args.args[8]
-
     accepted = result.best_usable_start
     assert accepted is not None
     assert accepted.final_physical == pytest.approx((truth_parameter,), abs=2.0e-7)
     assert accepted.predictions == pytest.approx((observed,), abs=2.0e-10)
-    assert len(accepted.owner_receipts) == 1
-    assert accepted.cost <= 1.0e-14

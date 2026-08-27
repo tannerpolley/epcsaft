@@ -43,7 +43,7 @@ def test_grepe_fixed_pressure_boundary_has_exact_bubble_and_dew_jacobians(
             equilibrium.PhaseSpecification("vapor", equilibrium.AllComponents()),
         )
     )
-    bubble = equilibrium.phase_equilibrium(
+    bubble = equilibrium.solve(
         model,
         equilibrium.PhaseEquilibriumProblem(
             equilibrium.FixedTCoexistence(
@@ -99,7 +99,7 @@ def test_grepe_fixed_pressure_boundary_has_exact_bubble_and_dew_jacobians(
     )
 
     def solve(value: float) -> equilibrium.GeneralReactiveEquilibriumResult:
-        return equilibrium.phase_equilibrium(
+        return equilibrium.solve(
             model,
             problem,
             active_parameters=epcsaft.ActiveParameterSet(
@@ -135,7 +135,7 @@ def test_grepe_fixed_pressure_boundary_rejects_provider_domain() -> None:
             equilibrium.PhaseSpecification("vapor", equilibrium.AllComponents()),
         )
     )
-    bubble = equilibrium.phase_equilibrium(
+    bubble = equilibrium.solve(
         model,
         equilibrium.PhaseEquilibriumProblem(
             equilibrium.FixedTCoexistence(
@@ -173,7 +173,7 @@ def test_grepe_fixed_pressure_boundary_rejects_provider_domain() -> None:
         feed=equilibrium.direct_amounts(parameters.component_ids, (0.5, 0.5)),
     )
 
-    result = equilibrium.phase_equilibrium(model, problem)
+    result = equilibrium.solve(model, problem)
     assert result.status == "non_evaluable"
     assert result.failure is not None
     assert result.failure.code == "provider_domain_rejection"

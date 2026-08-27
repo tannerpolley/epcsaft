@@ -32,7 +32,7 @@ def test_regression_recovers_binary_parameter_from_declared_bubble_temperature(
         )
     )
     reference = (0.5, 0.5)
-    truth = equilibrium.phase_equilibrium(
+    truth = equilibrium.solve(
         model,
         equilibrium.PhaseEquilibriumProblem(
             equilibrium.FixedTCoexistence(

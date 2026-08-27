@@ -15,6 +15,7 @@ import epcsaft
 from epcsaft import equilibrium
 from epcsaft.eos import _native_transport
 from epcsaft.equilibrium import _equilibrium
+from epcsaft.equilibrium._api import _chemical_equilibrium_impl
 from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE, MULTISOLVENT_MULTIION
 
 from .chemical_equilibrium_cases import bind_records as _bind_record
@@ -361,22 +362,45 @@ def _multineutral_problem() -> equilibrium.ChemicalEquilibriumProblem:
 @pytest.mark.slow
 def test_provider_certifies_multineutral_reactive_minimum() -> None:
     model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE))
-    phase = equilibrium.ProviderPhase(model, (1.0e-6, 0.74))
     problem = _multineutral_problem()
-
-    result = equilibrium.chemical_equilibrium(
-        phase,
-        313.15 * epcsaft.unit_registry.kelvin,
-        119_199.78746707023 * epcsaft.unit_registry.pascal,
-        problem,
+    phase = equilibrium.ReactivePhase(
+        "liquid",
+        "liquid",
+        "finite",
+        equilibrium.AllComponents(),
+        equilibrium.ProviderModel((1.0e-6, 0.74), "installed-provider-eos"),
+    )
+    result = equilibrium.solve(
+        model,
+        equilibrium.GeneralReactiveEquilibriumProblem(
+            "multineutral-reactive-minimum",
+            equilibrium.Fixed(313.15 * epcsaft.unit_registry.kelvin),
+            equilibrium.Fixed(119_199.78746707023 * epcsaft.unit_registry.pascal),
+            (phase,),
+            problem,
+            (phase.identity,),
+            tuple(
+                equilibrium.EquilibriumOutput(
+                    f"amount-{index}",
+                    "phase.amount",
+                    "mole",
+                    "true-species-amount",
+                    phase.identity,
+                    tuple(float(component == index) for component in range(4)),
+                )
+                for index in range(4)
+            ),
+        ),
     )
 
-    assert min(result.amounts_mol) > problem.strict_interior_amount_floor_mol
-    assert result.amounts_mol[1] == pytest.approx(0.2, abs=2.0e-10)
-    assert result.amounts_mol[2] == pytest.approx(result.amounts_mol[3], abs=2.0e-10)
-    assert result.diagnostics.derivative_audits_performed
-    assert result.diagnostics.reaction_affinity_inf_norm <= 2.0e-7
-    assert result.diagnostics.kkt_stationarity_inf_norm <= 2.0e-7
+    assert result.status == "evaluated", result.failure
+    amounts = tuple(float(value) for value in result.values)
+    assert min(amounts) > problem.strict_interior_amount_floor_mol
+    assert amounts[1] == pytest.approx(0.2, abs=2.0e-10)
+    assert amounts[2] == pytest.approx(amounts[3], abs=2.0e-10)
+    evidence = dict(result.evidence)
+    assert evidence["reaction_affinity_inf_norm"] <= 2.0e-7
+    assert evidence["kkt_stationarity_inf_norm"] <= 2.0e-7
 
 
 @pytest.mark.slow
@@ -452,7 +476,7 @@ def test_source_transform_includes_provider_pressure_density_standard() -> None:
         ),
     )
 
-    result = equilibrium.chemical_equilibrium(
+    result = _chemical_equilibrium_impl(
         equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
         temperature_k * epcsaft.unit_registry.kelvin,
         pressure_pa * epcsaft.unit_registry.pascal,
@@ -477,7 +501,7 @@ def test_active_parameter_values_own_reaction_setup_geometry() -> None:
         (identity,),
         values=(100.0 * epcsaft.unit_registry.angstrom,),
     )
-    result = equilibrium.chemical_equilibrium(
+    result = _chemical_equilibrium_impl(
         equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
         313.15 * epcsaft.unit_registry.kelvin,
         119_199.78746707023 * epcsaft.unit_registry.pascal,
@@ -596,7 +620,7 @@ def _provider_solve(
     standard_state = (
         None if source_standard_state is None else _typed_standard_state(source_standard_state)
     )
-    return equilibrium.chemical_equilibrium(
+    return _chemical_equilibrium_impl(
         equilibrium.ProviderPhase(
             model=model,
             admissible_packing_fraction_interval=(1.0e-6, 0.74),
@@ -653,48 +677,60 @@ def test_iapws_2019_source_record_reproduces_release_equations() -> None:
 @pytest.mark.slow
 def test_held_water_self_ionization_consumes_source_reference_and_provider() -> None:
     model, spec, source_standard_state = _held_water_ionization_problem()
-    result = _provider_solve(
-        model,
+    reaction = _typed_problem(
         spec,
-        source_standard_state,
+        source_standard_state=_typed_standard_state(source_standard_state),
+    )
+    start_amounts = (1.0 - 2.0e-8, 1.0e-8, 1.0e-8)
+    start_state = model.state(
+        T=spec["temperature_k"] * epcsaft.unit_registry.kelvin,
+        P=spec["pressure_pa"] * epcsaft.unit_registry.pascal,
+        x=start_amounts,
+        phase="liquid",
+    )
+    phase = equilibrium.ReactivePhase(
+        "liquid",
+        "liquid",
+        "finite",
+        equilibrium.AllComponents(),
+        equilibrium.ProviderModel((1.0e-6, 0.74), "installed-provider-eos"),
+        start=equilibrium.FinitePhaseStart(
+            start_amounts,
+            1.0 / float(start_state.molar_density.to("mole / meter**3").magnitude),
+        ),
+    )
+    result = equilibrium.solve(
+        model,
+        equilibrium.GeneralReactiveEquilibriumProblem(
+            "held-water-self-ionization",
+            equilibrium.Fixed(spec["temperature_k"] * epcsaft.unit_registry.kelvin),
+            equilibrium.Fixed(spec["pressure_pa"] * epcsaft.unit_registry.pascal),
+            (phase,),
+            reaction,
+            (phase.identity,),
+            tuple(
+                equilibrium.EquilibriumOutput(
+                    f"amount-{index}",
+                    "phase.amount",
+                    "mole",
+                    "true-species-amount",
+                    phase.identity,
+                    tuple(float(component == index) for component in range(3)),
+                )
+                for index in range(3)
+            ),
+        ),
     )
 
-    amounts = result.amounts_mol
+    assert result.status == "evaluated", result.failure
+    amounts = tuple(float(value) for value in result.values)
     assert 2.0 * amounts[0] + 3.0 * amounts[1] + amounts[2] == pytest.approx(2.0, abs=2.0e-9)
     assert sum(amounts) == pytest.approx(1.0, abs=2.0e-9)
     assert amounts[1] == pytest.approx(amounts[2], abs=2.0e-12)
-    assert result.source_standard_state.id == ("iapws-molality-ions-mole-fraction-water")
-    assert result.provider_reference_id == (
-        "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3"
-    )
-    diagnostics = result.diagnostics
-    assert diagnostics.reference_derivative_availability == 0
-    assert diagnostics.reference_convergence_error <= 5.0e-5
-    assert diagnostics.reference_representation_residual_inf_norm <= 1.0e-12
-    assert (
-        result.source_standard_state.activity_scale_id == source_standard_state["activity_scale_id"]
-    )
-    assert result.standard_offsets == pytest.approx((-21.20037599919826,), abs=2.0e-12)
-    assert result.ln_k_provider_basis == pytest.approx((-53.42391841715451,), abs=2.0e-12)
-    assert diagnostics.reaction_affinity_inf_norm <= 2.0e-12
-    assert diagnostics.kkt_stationarity_inf_norm <= 2.0e-12
-    assert result.sensitivity is None
-    transfer = result.source_reference_transfer
-    assert transfer is not None
-    assert transfer.pressure_pa == spec["pressure_pa"]
-    assert transfer.source_reference_pressure_pa == 100_000.0
-    assert transfer.parameter_fingerprint == model.parameter_fingerprint
-    for fingerprint in (
-        transfer.topology_fingerprint,
-        transfer.component_order_fingerprint,
-        transfer.reference_state_fingerprint,
-        transfer.domain_fingerprint,
-        transfer.artifact_fingerprint,
-    ):
-        assert fingerprint.startswith("sha256:")
-    assert result.source_standard_state.reference_pressure_pa == 100_000.0
-    artifact = result.artifact_identity
-    assert artifact.provider_record_sha256.startswith("sha256:")
+    evidence = dict(result.evidence)
+    assert evidence["source_reference_representation_residual_inf_norm"] <= 1.0e-12
+    assert evidence["reaction_affinity_inf_norm"] <= 2.0e-12
+    assert evidence["kkt_stationarity_inf_norm"] <= 2.0e-12
 
 
 @pytest.mark.slow

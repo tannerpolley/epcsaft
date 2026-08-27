@@ -1510,6 +1510,7 @@ py::dict solve_reactive_finite_phases(
         );
     }
     CompiledReactionSystem compiled;
+    double source_representation_residual = 0.0;
     const bool configured_directions = !phase_direction_system.is_none();
     if (source_standard_state.is_none()) {
         compiled = compile_reaction_system(input, !configured_directions);
@@ -1555,6 +1556,7 @@ py::dict solve_reactive_finite_phases(
                 input.pressure_pa,
                 reference
             );
+        source_representation_residual = transformed.representation_residual_inf_norm;
         input.ln_k = transformed.ln_k_provider_basis;
         for (EquilibriumConstantRecord& record : input.equilibrium_constant_records) {
             record.reference_id = "provider-helmholtz-coordinate-basis";
@@ -1679,7 +1681,7 @@ py::dict solve_reactive_finite_phases(
             kPhaseDirectionConservationTolerance
         );
     }
-    return reactive_finite_phase_result(
+    py::dict result = reactive_finite_phase_result(
         solve_provider_reactive_finite_phases(
             compiled,
             provider,
@@ -1695,6 +1697,9 @@ py::dict solve_reactive_finite_phases(
             phase_support_indices
         )
     );
+    result["source_reference_representation_residual_inf_norm"] =
+        source_representation_residual;
+    return result;
 }
 
 std::vector<std::vector<double>> matrix_rows(const DenseMatrix& matrix) {

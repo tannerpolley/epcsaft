@@ -14,6 +14,8 @@ from ._api import (
     ChemicalStandardState,
     DeclaredComponents,
     DeclaredNeutralComponents,
+    EquilibriumContinuationState,
+    EquilibriumPhaseState,
     NeutralComponents,
 )
 from ._feed import AffineFeed, FeedCoordinate, ResolvedFeed
@@ -29,14 +31,12 @@ from ._grepe import (
     ReactivePhaseSupport,
     Solved,
 )
-from ._observations import HomogeneousContinuationReference
 from ._phase_reactions import (
     PhaseReactionRow,
     PhaseReactionStandardState,
     PhaseReactionSystem,
     PhaseSpeciesTerm,
 )
-from ._reactive_vle import ReactiveBubbleContinuationReference
 
 
 def _mapping(value: object, fields: frozenset[str], label: str) -> Mapping[str, object]:
@@ -307,92 +307,67 @@ def _phase_reaction_system(value: object) -> PhaseReactionSystem:
     )
 
 
-def _homogeneous_reference(value: object) -> HomogeneousContinuationReference | None:
+def _continuation_state(value: object) -> EquilibriumContinuationState | None:
     if value is None:
         return None
     item = _mapping(
         value,
         frozenset(
             {
-                "mole_fractions",
-                "molar_volume_m3_per_mol",
-                "maximum_log_composition_distance",
-                "maximum_log_volume_distance",
-                "phase_identity",
-                "phase_role",
-                "anchor_state_identity",
-                "anchor_phase_role_receipt_fingerprint",
-                "anchor_parameter_fingerprint",
-                "anchor_reaction_fingerprint",
-                "anchor_topology_fingerprint",
-                "anchor_basin_states",
+                "phase_identities",
+                "phases",
+                "pressure_pa",
+                "problem_fingerprint",
+                "reaction_fingerprint",
+                "topology_fingerprint",
+                "parameter_fingerprint",
             }
         ),
-        "GREPE homogeneous continuation reference",
+        "GREPE continuation state",
     )
-    basin_states = []
-    for raw in _sequence(item["anchor_basin_states"], "anchor basin states"):
-        record = _mapping(
-            raw,
-            frozenset({"mole_fractions", "molar_volume_m3_per_mol"}),
-            "anchor basin state",
-        )
-        basin_states.append(
-            (
-                _floats(record["mole_fractions"], "anchor basin composition"),
-                _number(record["molar_volume_m3_per_mol"], "anchor basin molar volume"),
+    phases = []
+    phase_fields = frozenset(EquilibriumPhaseState.__dataclass_fields__)
+    for raw in _sequence(item["phases"], "continuation phases"):
+        phase = _mapping(raw, phase_fields, "continuation phase")
+        phases.append(
+            EquilibriumPhaseState(
+                cast(Any, _text(phase["role"], "continuation phase role")),
+                cast(Any, _text(phase["support"], "continuation phase support")),
+                tuple(
+                    _text(raw_id, "continuation component")
+                    for raw_id in _sequence(
+                        phase["supported_component_ids"], "continuation components"
+                    )
+                ),
+                _floats(phase["mole_fractions"], "continuation mole fractions"),
+                _number(phase["molar_volume_m3_per_mol"], "continuation molar volume"),
+                _number(phase["molar_density_mol_m3"], "continuation molar density"),
+                _number(phase["packing_fraction"], "continuation packing fraction"),
+                _number(phase["pressure_pa"], "continuation pressure"),
+                tuple(
+                    _text(raw_id, "continuation potential component")
+                    for raw_id in _sequence(
+                        phase["chemical_potential_component_ids"],
+                        "continuation potential components",
+                    )
+                ),
+                _floats(
+                    phase["chemical_potential_over_rt"], "continuation chemical potentials"
+                ),
+                _text(phase["mechanical_class"], "continuation mechanical class"),
             )
         )
-    return HomogeneousContinuationReference(
-        _floats(item["mole_fractions"], "reference composition"),
-        _number(item["molar_volume_m3_per_mol"], "reference molar volume"),
-        _number(item["maximum_log_composition_distance"], "composition distance"),
-        _number(item["maximum_log_volume_distance"], "volume distance"),
-        _text(item["phase_identity"], "reference phase"),
-        cast(Any, _text(item["phase_role"], "reference phase role")),
-        _text(item["anchor_state_identity"], "anchor state"),
-        _text(item["anchor_phase_role_receipt_fingerprint"], "anchor phase-role receipt"),
-        _text(item["anchor_parameter_fingerprint"], "anchor parameter fingerprint"),
-        _text(item["anchor_reaction_fingerprint"], "anchor reaction fingerprint"),
-        _text(item["anchor_topology_fingerprint"], "anchor topology fingerprint"),
-        tuple(basin_states),
-    )
-
-
-def _bubble_reference(value: object) -> ReactiveBubbleContinuationReference | None:
-    if value is None:
-        return None
-    item = _mapping(
-        value,
-        frozenset(
-            {
-                "pressure_pa",
-                "vapor_mole_fractions",
-                "liquid_molar_volume_m3_per_mol",
-                "vapor_molar_volume_m3_per_mol",
-                "maximum_log_pressure_distance",
-                "maximum_log_composition_distance",
-                "maximum_log_volume_distance",
-                "anchor_state_identity",
-                "anchor_problem_fingerprint",
-                "anchor_topology_fingerprint",
-                "anchor_parameter_fingerprint",
-            }
+    return EquilibriumContinuationState(
+        tuple(
+            _text(raw, "continuation phase identity")
+            for raw in _sequence(item["phase_identities"], "continuation phase identities")
         ),
-        "GREPE coupled continuation reference",
-    )
-    return ReactiveBubbleContinuationReference(
-        _number(item["pressure_pa"], "reference pressure"),
-        _floats(item["vapor_mole_fractions"], "reference vapor composition"),
-        _number(item["liquid_molar_volume_m3_per_mol"], "liquid molar volume"),
-        _number(item["vapor_molar_volume_m3_per_mol"], "vapor molar volume"),
-        _number(item["maximum_log_pressure_distance"], "pressure distance"),
-        _number(item["maximum_log_composition_distance"], "composition distance"),
-        _number(item["maximum_log_volume_distance"], "volume distance"),
-        _text(item["anchor_state_identity"], "anchor state"),
-        _text(item["anchor_problem_fingerprint"], "anchor problem fingerprint"),
-        _text(item["anchor_topology_fingerprint"], "anchor topology fingerprint"),
-        _text(item["anchor_parameter_fingerprint"], "anchor parameter fingerprint"),
+        tuple(phases),
+        _number(item["pressure_pa"], "continuation pressure"),
+        _text(item["problem_fingerprint"], "continuation problem fingerprint"),
+        _text(item["reaction_fingerprint"], "continuation reaction fingerprint"),
+        _text(item["topology_fingerprint"], "continuation topology fingerprint"),
+        _text(item["parameter_fingerprint"], "continuation parameter fingerprint"),
     )
 
 
@@ -439,7 +414,6 @@ def _phase(value: object) -> ReactivePhase:
             "amount_role",
             "support",
             "model",
-            "continuation",
         }
     )
     if not isinstance(value, Mapping) or any(type(key) is not str for key in value):
@@ -485,20 +459,6 @@ def _phase(value: object) -> ReactivePhase:
         model = IdealGasModel(_text(model_item["reference_id"], "model reference"))
     else:
         raise ValueError("GREPE phase model declaration is inconsistent")
-    continuation_value = item["continuation"]
-    if continuation_value is None:
-        continuation_identity = None
-        branch_policy = None
-        continuation_reference = None
-    else:
-        continuation = _mapping(
-            continuation_value,
-            frozenset({"identity", "branch_policy", "reference"}),
-            "GREPE phase continuation",
-        )
-        continuation_identity = _text(continuation["identity"], "continuation identity")
-        branch_policy = cast(Any, _text(continuation["branch_policy"], "branch policy"))
-        continuation_reference = _homogeneous_reference(continuation["reference"])
     start_value = item.get("start")
     if start_value is None:
         start = None
@@ -518,9 +478,6 @@ def _phase(value: object) -> ReactivePhase:
         cast(Any, _text(item["amount_role"], "amount role")),
         support,
         model,
-        continuation_identity,
-        branch_policy,
-        continuation_reference,
         start,
     )
 
@@ -585,15 +542,15 @@ def general_reactive_equilibrium_problem_from_mapping(
     continuation_value = item["continuation"]
     if continuation_value is None:
         continuation_identity = None
-        continuation_reference = None
+        continuation_state = None
     else:
         continuation = _mapping(
             continuation_value,
-            frozenset({"identity", "reference"}),
-            "GREPE coupled continuation",
+            frozenset({"identity", "state"}),
+            "GREPE continuation",
         )
-        continuation_identity = _text(continuation["identity"], "coupled continuation identity")
-        continuation_reference = _bubble_reference(continuation["reference"])
+        continuation_identity = _text(continuation["identity"], "continuation identity")
+        continuation_state = _continuation_state(continuation["state"])
     feed_value = item.get("feed")
     feed: ResolvedFeed | AffineFeed | None = None
     if feed_value is not None:
@@ -716,7 +673,7 @@ def general_reactive_equilibrium_problem_from_mapping(
         ),
         tuple(_output(raw) for raw in _sequence(item["outputs"], "GREPE outputs")),
         continuation_identity,
-        continuation_reference,
+        continuation_state,
         feed,
         phase_reactions,
         intensive_boundaries,
@@ -775,19 +732,6 @@ def general_reactive_equilibrium_problem_to_mapping(
                 "reference_id": phase.model.reference_id,
                 "admissible_packing_fraction_interval": None,
             }
-        continuation = (
-            None
-            if phase.continuation_identity is None
-            else {
-                "identity": phase.continuation_identity,
-                "branch_policy": phase.branch_policy,
-                "reference": (
-                    None
-                    if phase.continuation_reference is None
-                    else phase.continuation_reference.to_mapping()
-                ),
-            }
-        )
         start = (
             None
             if phase.start is None
@@ -802,7 +746,6 @@ def general_reactive_equilibrium_problem_to_mapping(
             "amount_role": phase.amount_role,
             "support": support,
             "model": model,
-            "continuation": continuation,
             "start": start,
         }
 
@@ -885,10 +828,10 @@ def general_reactive_equilibrium_problem_to_mapping(
             if problem.continuation_identity is None
             else {
                 "identity": problem.continuation_identity,
-                "reference": (
+                "state": (
                     None
-                    if problem.continuation_reference is None
-                    else problem.continuation_reference.to_mapping()
+                    if problem.continuation_state is None
+                    else problem.continuation_state.to_mapping()
                 ),
             }
         ),

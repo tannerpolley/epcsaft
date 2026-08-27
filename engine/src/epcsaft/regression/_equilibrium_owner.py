@@ -17,18 +17,19 @@ from ..equilibrium import (
     _equilibrium,
     general_reactive_equilibrium_descriptor,
     general_reactive_equilibrium_problem_from_mapping,
-    phase_equilibrium,
     serialize_general_reactive_equilibrium_receipt,
+    solve,
     validate_general_reactive_equilibrium_receipt,
 )
+from ..equilibrium._api import _continuation_start
 from ..equilibrium._grepe import (
     _compile_general_reactive_equilibrium,
+    _effective_reaction_system,
     _finite_phase_spec,
-    _HomogeneousCompilation,
+    _FinitePhaseCompilation,
     _reactive_finite_source_standard_state,
     _solve_general_reactive_equilibrium,
 )
-from ..equilibrium._observations import _immutable_continuation_start
 from ..parameters import ActiveParameterSet
 from ..units import ParameterError
 from ._fit import FitPreflightError
@@ -432,7 +433,7 @@ def _evaluate_batch(
     continuation_start: tuple[tuple[float, ...], float] | None = None,
 ) -> Any:
     if continuation_start is None:
-        return phase_equilibrium(batch.model, batch.problem, active_parameters=active)
+        return solve(batch.model, batch.problem, active_parameters=active)
     return _solve_general_reactive_equilibrium(
         batch.model,
         batch.problem,
@@ -528,12 +529,10 @@ class _EquilibriumOwnerEvaluator:
         self._starts = tuple(start.identity for start in resolved.fit.solver.multistart.starts)
         self._active_ids = resolved.selected_identities
         self._batches = tuple(batches)
-        self._exact_start_results: dict[
-            tuple[str, str, tuple[str, ...], tuple[float, ...]], Any
-        ] | None = None
-        self._full_space_starts: dict[
-            int, tuple[tuple[tuple[float, ...], float], ...]
-        ] = {}
+        self._exact_start_results: (
+            dict[tuple[str, str, tuple[str, ...], tuple[float, ...]], Any] | None
+        ) = None
+        self._full_space_starts: dict[int, tuple[tuple[tuple[float, ...], float], ...]] = {}
 
     def set_full_space_starts(
         self,
@@ -654,21 +653,19 @@ def _equilibrium_owner_batches(
                 not any(phase.amount_role == "incipient" for phase in batch.problem.phases)
                 and any(
                     phase.amount_role == "finite"
-                    and phase.continuation_reference is None
+                    and batch.problem.continuation_state is None
                     and phase.start is None
                     for phase in batch.problem.phases
                 )
             )
             or (
                 any(phase.amount_role == "incipient" for phase in batch.problem.phases)
-                and batch.problem.continuation_reference is None
+                and batch.problem.continuation_state is None
             )
         )
         for batch in active_batches
     ):
-        raise ValueError(
-            "equilibrium regression requires an immutable continuation reference or start per batch"
-        )
+        raise ValueError("equilibrium regression requires a continuation state or start per batch")
     residual_blocks = tuple(
         {
             "multiplier": 1.0,
@@ -710,29 +707,25 @@ def _full_space_batches(
         selected = tuple(
             outputs[target.prediction_identity] for target in batch.targets if target.included
         )
-        reaction = (
-            compiled.owner_problem.reaction_system
-            if isinstance(compiled, _HomogeneousCompilation)
-            else None
-        )
+        reaction = _effective_reaction_system(batch.problem)
         if (
-            not isinstance(compiled, _HomogeneousCompilation)
+            not isinstance(compiled, _FinitePhaseCompilation)
             or len(batch.problem.phases) != 1
             or not isinstance(phase.model, ProviderModel)
             or not isinstance(phase.support, AllComponents)
-            or phase.continuation_reference is None
+            or batch.problem.continuation_state is None
             or phase.start is not None
-            or reaction is None
             or any(
                 output.selector not in {"phase.amount", "phase.mole_fraction"}
                 for output in selected
             )
         ):
             return None
-        temperature_k = float(compiled.temperature.to("kelvin").magnitude)
-        pressure_pa = float(compiled.pressure.to("pascal").magnitude)
+        temperature_k = compiled.temperature_k
+        pressure_pa = compiled.pressure_pa
         spec = _finite_phase_spec(batch.problem, temperature_k, pressure_pa)
-        if (continuation := _immutable_continuation_start(compiled.owner_problem)) is not None:
+        reference = batch.problem.continuation_state.phase(phase.identity)
+        if (continuation := _continuation_start(reaction, reference)) is not None:
             spec["continuation_start"] = {
                 "amounts": continuation[0],
                 "volume_m3": continuation[1],
@@ -744,7 +737,6 @@ def _full_space_batches(
                 phase.model.admissible_packing_fraction_interval,
                 reaction.strict_interior_amount_floor_mol,
                 selected,
-                phase.continuation_reference,
             )
         )
 
@@ -776,7 +768,7 @@ def _full_space_batches(
             constraint_lower: list[float] = []
             constraint_upper: list[float] = []
             blocks: list[Mapping[str, object]] = []
-            for batch, spec, packing, trace_floor, _, reference in compiled_batches:
+            for batch, spec, packing, trace_floor, _ in compiled_batches:
                 native = cast(
                     Mapping[str, object],
                     _equilibrium._chemical_equilibrium(
@@ -791,7 +783,6 @@ def _full_space_batches(
                     ),
                 )
                 local = tuple(cast(Sequence[float], native["local_variables"]))
-                continuation_width = len(reference.mole_fractions) + 1
                 local_lower = tuple(cast(Sequence[float], native["local_lower_bounds"]))
                 local_upper = tuple(cast(Sequence[float], native["local_upper_bounds"]))
                 if not local or len(local_lower) != len(local) or len(local_upper) != len(local):
@@ -801,7 +792,7 @@ def _full_space_batches(
                         "local_offset": len(initial),
                         "local_width": len(local),
                         "constraint_offset": len(constraint_lower),
-                        "constraint_width": len(local) + continuation_width,
+                        "constraint_width": len(local),
                         "lower": local_lower,
                         "upper": local_upper,
                     }
@@ -811,11 +802,6 @@ def _full_space_batches(
                 upper.extend(local_upper)
                 constraint_lower.extend([0.0] * len(local))
                 constraint_upper.extend([0.0] * len(local))
-                constraint_lower.extend(
-                    [-reference.maximum_log_composition_distance] * len(reference.mole_fractions)
-                    + [-reference.maximum_log_volume_distance]
-                )
-                constraint_upper.extend(-value for value in constraint_lower[-continuation_width:])
             widths = tuple(
                 (cast(int, block["local_width"]), cast(int, block["constraint_width"]))
                 for block in blocks
@@ -857,9 +843,6 @@ def _full_space_batches(
         for index, coordinate in enumerate(resolved.coordinates)
         for identity in coordinate.tied_identities
     }
-    parameter_by_identity = {
-        identity: index for index, identity in enumerate(resolved.selected_identities)
-    }
 
     def evaluate(start_index: int, values: Sequence[float]) -> Mapping[str, object]:
         physical = tuple(
@@ -883,7 +866,7 @@ def _full_space_batches(
         constraint_jacobian: list[float] = []
         continuation_starts: list[tuple[tuple[float, ...], float]] = []
         for compiled, bounds in zip(compiled_batches, start_blocks[start_index], strict=True):
-            batch, spec, packing, _, outputs, reference = compiled
+            batch, spec, packing, _, outputs = compiled
             local_width = cast(int, bounds["local_width"])
             local_offset = coordinate_count + cast(int, bounds["local_offset"])
             native = cast(
@@ -903,9 +886,6 @@ def _full_space_batches(
             total = math.fsum(amounts)
             volume = float(cast(float, native["volume_m3"]))
             continuation_starts.append((amounts, volume))
-            volume_parameter_derivatives = cast(
-                Sequence[float], native["volume_parameter_derivatives"]
-            )
             chart = cast(Sequence[float], native["physical_to_chart_jacobian"])
             for target, output in zip(
                 (target for target in batch.targets if target.included), outputs, strict=True
@@ -957,9 +937,7 @@ def _full_space_batches(
             constraints.extend(block_constraints)
             state_jacobian = cast(Sequence[float], native["kkt_root_jacobian"])
             order = tuple(cast(Sequence[str], native["local_parameter_order"]))
-            parameter_jacobian = cast(
-                Sequence[float], native["local_parameter_jacobian"]
-            )
+            parameter_jacobian = cast(Sequence[float], native["local_parameter_jacobian"])
             parameter_columns = {
                 identity: order.index(f"provider_parameter[{identity}]")
                 for identity in resolved.selected_identities
@@ -976,32 +954,6 @@ def _full_space_batches(
                     )
                 constraint_jacobian.extend(
                     state_jacobian[row * local_width : (row + 1) * local_width]
-                )
-            amount_derivative = tuple(
-                math.fsum(chart[row * local_width + column] for row in range(len(amounts)))
-                for column in range(local_width)
-            )
-            continuation_values = tuple(
-                math.log(amount / total / anchor)
-                for amount, anchor in zip(amounts, reference.mole_fractions, strict=True)
-            ) + (math.log(volume / total / reference.molar_volume_m3_per_mol),)
-            constraints.extend(continuation_values)
-            for physical_row, physical_value in enumerate((*amounts, volume)):
-                if physical_row < len(amounts):
-                    constraint_jacobian.extend([0.0] * coordinate_count)
-                else:
-                    constraint_jacobian.extend(
-                        coordinate.scale
-                        * math.fsum(
-                            volume_parameter_derivatives[parameter_by_identity[identity]] / volume
-                            for identity in coordinate.tied_identities
-                        )
-                        for coordinate in resolved.coordinates
-                    )
-                constraint_jacobian.extend(
-                    chart[physical_row * local_width + column] / physical_value
-                    - amount_derivative[column] / total
-                    for column in range(local_width)
                 )
         if owner is not None:
             owner.set_full_space_starts(start_index, tuple(continuation_starts))

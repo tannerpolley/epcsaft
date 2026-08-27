@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from functools import cache, lru_cache
 from importlib import metadata
 from itertools import pairwise
@@ -66,9 +67,7 @@ def _solve_bracketed_scalar[ScalarState](
     for point in points:
         if point not in evaluations:
             evaluations[point] = checked(point)
-    roots = tuple(
-        point for point in points if abs(evaluations[point][1]) <= tolerance
-    )
+    roots = tuple(point for point in points if abs(evaluations[point][1]) <= tolerance)
     if roots:
         point = min(roots, key=lambda value: abs(value - anchor))
         state, residual, _ = evaluations[point]
@@ -76,8 +75,7 @@ def _solve_bracketed_scalar[ScalarState](
     brackets = tuple(
         (left, right)
         for left, right in pairwise(points)
-        if math.copysign(1.0, evaluations[left][1])
-        != math.copysign(1.0, evaluations[right][1])
+        if math.copysign(1.0, evaluations[left][1]) != math.copysign(1.0, evaluations[right][1])
     )
     if not brackets:
         raise _ScalarBoundarySolveError("not_bracketed", lower, evaluations[lower][0])
@@ -358,6 +356,68 @@ class EquilibriumPhaseState:
     mechanical_class: str
 
 
+@dataclass(frozen=True, slots=True)
+class EquilibriumContinuationState:
+    """Converged generic phase state reusable by a neighboring solve."""
+
+    phase_identities: tuple[str, ...]
+    phases: tuple[EquilibriumPhaseState, ...]
+    pressure_pa: float
+    problem_fingerprint: str
+    reaction_fingerprint: str
+    topology_fingerprint: str
+    parameter_fingerprint: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "phase_identities", tuple(self.phase_identities))
+        object.__setattr__(self, "phases", tuple(self.phases))
+        if (
+            not self.phases
+            or len(self.phase_identities) != len(self.phases)
+            or len(set(self.phase_identities)) != len(self.phase_identities)
+            or any(not identity for identity in self.phase_identities)
+            or not math.isfinite(self.pressure_pa)
+            or self.pressure_pa <= 0.0
+            or any(
+                not value.startswith("sha256:")
+                for value in (
+                    self.problem_fingerprint,
+                    self.reaction_fingerprint,
+                    self.topology_fingerprint,
+                    self.parameter_fingerprint,
+                )
+            )
+        ):
+            raise ValueError("equilibrium continuation state is incomplete")
+
+    def phase(self, identity: str) -> EquilibriumPhaseState:
+        try:
+            return self.phases[self.phase_identities.index(identity)]
+        except ValueError as error:
+            raise ValueError(f"continuation state has no phase {identity!r}") from error
+
+    def to_mapping(self) -> dict[str, object]:
+        return {
+            "phase_identities": self.phase_identities,
+            "phases": tuple(asdict(phase) for phase in self.phases),
+            "pressure_pa": self.pressure_pa,
+            "problem_fingerprint": self.problem_fingerprint,
+            "reaction_fingerprint": self.reaction_fingerprint,
+            "topology_fingerprint": self.topology_fingerprint,
+            "parameter_fingerprint": self.parameter_fingerprint,
+        }
+
+    @property
+    def fingerprint(self) -> str:
+        payload = json.dumps(
+            self.to_mapping(),
+            allow_nan=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode()
+        return "sha256:" + hashlib.sha256(payload).hexdigest()
+
+
 @dataclass(frozen=True)
 class PhaseEquilibriumDiagnostics:
     """Route-native numerical, physical, support, and selection evidence."""
@@ -554,9 +614,7 @@ class ChemicalStandardState:
     ]
     source_reference_activity_convention_id: str
     source_reference_standard_molality_mol_per_kg: float
-    source_reference_pure_components: tuple[
-        epcsaft.SourceReferencePureComponent, ...
-    ] = ()
+    source_reference_pure_components: tuple[epcsaft.SourceReferencePureComponent, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -818,6 +876,101 @@ class ChemicalEquilibriumSensitivityRequest:
     active_parameters: epcsaft.ActiveParameterSet | None = None
 
 
+def _continuation_start(
+    reaction: ChemicalEquilibriumProblem,
+    reference: EquilibriumPhaseState | None,
+) -> tuple[tuple[float, ...], float] | None:
+    if reference is None:
+        return None
+    projected = tuple(
+        math.fsum(
+            coefficient * fraction
+            for coefficient, fraction in zip(row, reference.mole_fractions, strict=True)
+        )
+        for row in reaction.balance_matrix
+    )
+    denominator = math.fsum(value * value for value in projected)
+    if not math.isfinite(denominator) or denominator <= 0.0:
+        raise ValueError("continuation composition does not determine the conserved scale")
+    total = (
+        math.fsum(
+            value * target
+            for value, target in zip(projected, reaction.conserved_totals, strict=True)
+        )
+        / denominator
+    )
+    return (
+        tuple(total * fraction for fraction in reference.mole_fractions),
+        total * reference.molar_volume_m3_per_mol,
+    )
+
+
+def _contract_phase_output(
+    selector: str,
+    coefficients: tuple[float, ...],
+    solvent_coefficients: tuple[float, ...],
+    amounts: tuple[float, ...],
+    volume: float,
+    amount_derivatives: tuple[tuple[float, ...], ...],
+    volume_derivatives: tuple[float, ...],
+) -> tuple[float, tuple[float, ...]]:
+    total = math.fsum(amounts)
+    total_derivatives = tuple(math.fsum(row) for row in amount_derivatives)
+    if selector == "phase.molar_density":
+        return total / volume, tuple(
+            dtotal / volume - total * dvolume / volume**2
+            for dtotal, dvolume in zip(total_derivatives, volume_derivatives, strict=True)
+        )
+    numerator = math.fsum(
+        coefficient * amount for coefficient, amount in zip(coefficients, amounts, strict=True)
+    )
+    numerator_derivatives = tuple(
+        math.fsum(
+            coefficient * derivative
+            for coefficient, derivative in zip(coefficients, row, strict=True)
+        )
+        for row in amount_derivatives
+    )
+    if selector == "phase.amount":
+        return numerator, numerator_derivatives
+    if selector == "phase.mole_fraction":
+        return numerator / total, tuple(
+            (derivative * total - numerator * dtotal) / total**2
+            for derivative, dtotal in zip(numerator_derivatives, total_derivatives, strict=True)
+        )
+    if selector == "phase.molality":
+        denominator = math.fsum(
+            coefficient * amount
+            for coefficient, amount in zip(solvent_coefficients, amounts, strict=True)
+        )
+        if denominator <= 0.0:
+            raise ValueError("phase molality denominator is not positive")
+        denominator_derivatives = tuple(
+            math.fsum(
+                coefficient * derivative
+                for coefficient, derivative in zip(solvent_coefficients, row, strict=True)
+            )
+            for row in amount_derivatives
+        )
+        return numerator / denominator, tuple(
+            (derivative * denominator - numerator * ddenominator) / denominator**2
+            for derivative, ddenominator in zip(
+                numerator_derivatives, denominator_derivatives, strict=True
+            )
+        )
+    raise ValueError(f"unsupported generic phase output {selector!r}")
+
+
+@dataclass(frozen=True, slots=True)
+class ActiveParameterTrialReceipt:
+    parameter_fingerprint: str
+    identities: tuple[str, ...]
+    values: tuple[float, ...]
+    units: tuple[str, ...]
+    active_parameter_fingerprint: str
+    fingerprint: str
+
+
 @dataclass(frozen=True)
 class ChemicalEquilibriumSensitivityParameter:
     """One ordered scalar input and the units of its returned state derivatives."""
@@ -971,7 +1124,7 @@ def _phase_feed(
     except (TypeError, ValueError) as error:
         raise TypeError("feed amounts must be a numeric sequence") from error
     if len(values) != component_count:
-        raise ValueError(f"phase_equilibrium requires exactly {component_count} components")
+        raise ValueError(f"solve requires exactly {component_count} components")
     if not all(math.isfinite(value) and value > 0.0 for value in values):
         raise ValueError("feed amounts must be positive and finite")
     return values
@@ -1489,12 +1642,8 @@ def _native_phase_diagnostics(
         final_correction_iteration_count=int(
             cast(int, payload["final_correction_iteration_count"])
         ),
-        pre_correction_residual_inf=float(
-            cast(float, payload["pre_correction_residual_inf"])
-        ),
-        post_correction_residual_inf=float(
-            cast(float, payload["post_correction_residual_inf"])
-        ),
+        pre_correction_residual_inf=float(cast(float, payload["pre_correction_residual_inf"])),
+        post_correction_residual_inf=float(cast(float, payload["post_correction_residual_inf"])),
         material_balance_inf=float(cast(float, payload["material_balance_inf"])),
         electroneutrality_inf=float(cast(float, payload["electroneutrality_inf"])),
         pressure_residual_inf=float(cast(float, payload["pressure_residual_inf"])),
@@ -1643,15 +1792,15 @@ def _validated_phase_initial_guesses(
         raise ValueError("declared phase initial-guess indices must be unique and in range")
     for guess in guesses:
         if len(guess.mole_fractions) != component_counts[guess.phase_index]:
-            raise ValueError("declared phase initial-guess composition has the wrong component count")
-        if not all(
-            math.isfinite(value) and value > 0.0 for value in guess.mole_fractions
-        ):
+            raise ValueError(
+                "declared phase initial-guess composition has the wrong component count"
+            )
+        if not all(math.isfinite(value) and value > 0.0 for value in guess.mole_fractions):
             raise ValueError("declared phase initial-guess composition must be positive and finite")
-        if not math.isclose(
-            math.fsum(guess.mole_fractions), 1.0, rel_tol=0.0, abs_tol=1.0e-12
-        ):
-            raise ValueError("declared phase initial-guess composition must sum to one within 1e-12")
+        if not math.isclose(math.fsum(guess.mole_fractions), 1.0, rel_tol=0.0, abs_tol=1.0e-12):
+            raise ValueError(
+                "declared phase initial-guess composition must sum to one within 1e-12"
+            )
         if not math.isfinite(guess.molar_density_mol_m3) or guess.molar_density_mol_m3 <= 0.0:
             raise ValueError("declared phase initial-guess density must be positive and finite")
         if not math.isfinite(guess.phase_fraction) or guess.phase_fraction <= 0.0:
@@ -1764,10 +1913,8 @@ def _discovery_result(
     specification: FixedTPFeed,
     active_parameters: epcsaft.ActiveParameterSet | None,
 ) -> PhaseEquilibriumResult:
-    temperature_k = _quantity(
-        specification.temperature, "kelvin", "temperature", "phase_equilibrium"
-    )
-    pressure_pa = _quantity(specification.pressure, "pascal", "pressure", "phase_equilibrium")
+    temperature_k = _quantity(specification.temperature, "kelvin", "temperature", "solve")
+    pressure_pa = _quantity(specification.pressure, "pascal", "pressure", "solve")
     feed = _phase_feed(specification.feed_amounts_mol, len(model.component_ids))
     total = math.fsum(feed)
     normalized = tuple(value / total for value in feed)
@@ -1909,7 +2056,7 @@ def _discovery_result(
 
 
 @overload
-def phase_equilibrium(
+def solve(
     model: epcsaft.Mixture,
     problem: PhaseEquilibriumProblem,
     *,
@@ -1918,7 +2065,7 @@ def phase_equilibrium(
 
 
 @overload
-def phase_equilibrium(
+def solve(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
     *,
@@ -1926,7 +2073,7 @@ def phase_equilibrium(
 ) -> GeneralReactiveEquilibriumResult: ...
 
 
-def phase_equilibrium(
+def solve(
     model: epcsaft.Mixture,
     problem: PhaseEquilibriumProblem | GeneralReactiveEquilibriumProblem,
     *,
@@ -1935,7 +2082,7 @@ def phase_equilibrium(
     """Solve one typed nonreactive or GREPE equilibrium specification."""
 
     if not isinstance(model, epcsaft.Mixture):
-        raise TypeError("phase_equilibrium requires an epcsaft.Mixture")
+        raise TypeError("solve requires an epcsaft.Mixture")
     from ._grepe import GeneralReactiveEquilibriumProblem, _solve_general_reactive_equilibrium
 
     if isinstance(problem, GeneralReactiveEquilibriumProblem):
@@ -1965,10 +2112,8 @@ def phase_equilibrium(
             raise ValueError("fixed-T,P declared topology permits at most one vapor phase")
         if problem.hints and problem.initial_guesses:
             raise ValueError("phase hints and initial_guesses are mutually exclusive")
-        temperature_k = _quantity(
-            specification.temperature, "kelvin", "temperature", "phase_equilibrium"
-        )
-        pressure_pa = _quantity(specification.pressure, "pascal", "pressure", "phase_equilibrium")
+        temperature_k = _quantity(specification.temperature, "kelvin", "temperature", "solve")
+        pressure_pa = _quantity(specification.pressure, "pascal", "pressure", "solve")
         feed = _phase_feed(specification.feed_amounts_mol, len(model.component_ids))
         hints = _validated_phase_hints(
             problem.hints,
@@ -2100,9 +2245,7 @@ def _fixed_t_coexistence_core(
         raise ValueError("fixed-T coexistence requires exactly two phases and one reference index")
     if len(direction_identities) != len(reference_composition_directions):
         raise ValueError("reference-direction identities and rows must be aligned")
-    temperature_k = _quantity(
-        specification.temperature, "kelvin", "temperature", "phase_equilibrium"
-    )
+    temperature_k = _quantity(specification.temperature, "kelvin", "temperature", "solve")
     reference = tuple(float(value) for value in specification.reference_mole_fractions)
     if len(reference) != len(model.component_ids):
         raise ValueError("reference composition has the wrong component count")
@@ -2240,9 +2383,7 @@ def _fixed_p_coexistence_sensitivity(
             failure_reason="fixed_pressure_temperature_closure_singular",
         )
     pressure_parameters = fixed.output_parameter_jacobian[0]
-    temperature_parameters = tuple(
-        -value / pressure_temperature for value in pressure_parameters
-    )
+    temperature_parameters = tuple(-value / pressure_temperature for value in pressure_parameters)
     output_rows: list[tuple[float, ...]] = [temperature_parameters]
     for fixed_row, temperature_row in zip(
         fixed.output_parameter_jacobian[1:],
@@ -2286,27 +2427,20 @@ def _fixed_p_coexistence(
 ) -> PhaseEquilibriumResult:
     if problem.initial_guesses:
         raise ValueError("fixed-pressure coexistence accepts phase hints, not finite-phase starts")
-    pressure_pa = _quantity(
-        specification.pressure, "pascal", "pressure", "phase_equilibrium"
-    )
+    pressure_pa = _quantity(specification.pressure, "pascal", "pressure", "solve")
     if pressure_pa <= 0.0:
         raise ValueError("fixed-pressure coexistence pressure must be positive")
     if len(specification.temperature_bounds) != 2:
         raise ValueError("fixed-pressure coexistence requires two temperature bounds")
-    lower = _quantity(
-        specification.temperature_bounds[0], "kelvin", "temperature", "phase_equilibrium"
-    )
-    upper = _quantity(
-        specification.temperature_bounds[1], "kelvin", "temperature", "phase_equilibrium"
-    )
+    lower = _quantity(specification.temperature_bounds[0], "kelvin", "temperature", "solve")
+    upper = _quantity(specification.temperature_bounds[1], "kelvin", "temperature", "solve")
     if not lower < upper:
         raise ValueError("fixed-pressure coexistence temperature bounds must be ordered")
     intervals = specification.packing_fraction_intervals
     if intervals is not None and (
         len(intervals) != 2
         or any(
-            len(interval) != 2
-            or not 0.0 <= interval[0] < interval[1] < 1.0
+            len(interval) != 2 or not 0.0 <= interval[0] < interval[1] < 1.0
             for interval in intervals
         )
     ):
@@ -2317,7 +2451,9 @@ def _fixed_p_coexistence(
     evaluation_count = 0
     provider_evaluations = 0
 
-    def evaluate(temperature_k: float) -> tuple[
+    def evaluate(
+        temperature_k: float,
+    ) -> tuple[
         PhaseEquilibriumResult,
         _ReferenceDirectionSensitivity,
         float,
@@ -2352,7 +2488,7 @@ def _fixed_p_coexistence(
             specification.temperature_initial,
             "kelvin",
             "temperature initial",
-            "phase_equilibrium",
+            "solve",
         )
     )
     if initial is not None and not lower < initial < upper:
@@ -2376,9 +2512,7 @@ def _fixed_p_coexistence(
             maximum_iterations=64,
         )
     except _ScalarBoundarySolveError as error:
-        solved, _ = cast(
-            tuple[PhaseEquilibriumResult, _ReferenceDirectionSensitivity], error.state
-        )
+        solved, _ = cast(tuple[PhaseEquilibriumResult, _ReferenceDirectionSensitivity], error.state)
         failure_reason = (
             "fixed_pressure_temperature_not_bracketed"
             if error.reason == "not_bracketed"
@@ -2410,9 +2544,7 @@ def _fixed_p_coexistence(
     solved, temperature_direction = selected_state
     if intervals is not None and any(
         not lower_packing < phase.packing_fraction < upper_packing
-        for phase, (lower_packing, upper_packing) in zip(
-            solved.phases, intervals, strict=True
-        )
+        for phase, (lower_packing, upper_packing) in zip(solved.phases, intervals, strict=True)
     ):
         diagnostics = replace(
             solved.diagnostics,
@@ -2466,9 +2598,7 @@ def _fixed_p_coexistence(
             provider_evaluation_count=provider_evaluations,
             pressure_residual_inf=abs(residual) / max(1.0, pressure_pa),
         ),
-        sensitivity=_fixed_p_coexistence_sensitivity(
-            solved.sensitivity, temperature_direction
-        ),
+        sensitivity=_fixed_p_coexistence_sensitivity(solved.sensitivity, temperature_direction),
     )
 
 
@@ -3664,7 +3794,7 @@ def _chemical_equilibrium_impl(
 
     try:
         if not isinstance(problem, ChemicalEquilibriumProblem):
-            raise TypeError("chemical_equilibrium requires a typed problem")
+            raise TypeError("equilibrium solve requires a typed chemical problem")
         if sensitivity_request is not None and not isinstance(
             sensitivity_request, ChemicalEquilibriumSensitivityRequest
         ):
@@ -3677,8 +3807,8 @@ def _chemical_equilibrium_impl(
         ):
             raise TypeError("active_parameters must be a canonical ActiveParameterSet")
         active_parameters = () if active_parameter_set is None else active_parameter_set.coordinates
-        temperature_k = _quantity(temperature, "kelvin", "temperature", "chemical_equilibrium")
-        pressure_pa = _quantity(pressure, "pascal", "pressure", "chemical_equilibrium")
+        temperature_k = _quantity(temperature, "kelvin", "temperature", "equilibrium solve")
+        pressure_pa = _quantity(pressure, "pascal", "pressure", "equilibrium solve")
         standard_state = problem.source_standard_state
         if standard_state is not None:
             if (
@@ -3795,7 +3925,7 @@ def _chemical_equilibrium_impl(
                     active_parameters=active_parameter_set,
                 )
         else:
-            raise TypeError("chemical_equilibrium requires a typed phase model")
+            raise TypeError("equilibrium solve requires a typed phase model")
         if standard_state is not None and source_transfer is None:
             raise RuntimeError("source-reference transfer was not evaluated")
         native_standard_state: dict[str, object] | None = (
@@ -3929,23 +4059,4 @@ def _chemical_equilibrium_impl(
         ),
         artifact_identity=artifact_identity,
         sensitivity=sensitivity,
-    )
-
-
-def chemical_equilibrium(
-    phase: IdealGasPhase | ProviderPhase,
-    temperature: Quantity[Any],
-    pressure: Quantity[Any],
-    problem: ChemicalEquilibriumProblem,
-    *,
-    sensitivity_request: ChemicalEquilibriumSensitivityRequest | None = None,
-) -> ChemicalEquilibriumResult:
-    """Solve and certify one local fixed-T,P homogeneous reacting phase."""
-
-    return _chemical_equilibrium_impl(
-        phase,
-        temperature,
-        pressure,
-        problem,
-        sensitivity_request=sensitivity_request,
     )

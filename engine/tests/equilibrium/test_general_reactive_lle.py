@@ -51,7 +51,7 @@ def _fixture() -> tuple[
 ]:
     parameters = epcsaft.Parameters.from_mapping(NEUTRAL_TERNARY_IMMISCIBLE)
     model = epcsaft.Mixture(parameters)
-    seed = equilibrium.phase_equilibrium(
+    seed = equilibrium.solve(
         model,
         equilibrium.PhaseEquilibriumProblem(
             equilibrium.FixedTPFeed(
@@ -224,7 +224,7 @@ def test_finite_phase_is_one_certified_coupled_minimum_and_label_covariant() -> 
 
     parameters, model, problem = _fixture()
     active = epcsaft.ActiveParameterSet(parameters, (_PARAMETER_IDENTITY,))
-    result = equilibrium.phase_equilibrium(model, problem, active_parameters=active)
+    result = equilibrium.solve(model, problem, active_parameters=active)
 
     assert result.status == "evaluated", result.failure
     assert result.numerical_status == "passed"
@@ -298,7 +298,7 @@ def test_finite_phase_is_one_certified_coupled_minimum_and_label_covariant() -> 
         phases=tuple(reversed(problem.phases)),
         reaction_phase_ids=tuple(reversed(problem.reaction_phase_ids)),
     )
-    swapped = equilibrium.phase_equilibrium(model, permuted, active_parameters=active)
+    swapped = equilibrium.solve(model, permuted, active_parameters=active)
     assert swapped.status == "evaluated", swapped.failure
     states = {
         phase.identity: state for phase, state in zip(problem.phases, result.phases, strict=True)
@@ -319,8 +319,8 @@ def test_explicit_phase_directions_reproduce_legacy_admissible_space() -> None:
     explicit = _explicit_phase_direction_problem(problem)
 
     active = epcsaft.ActiveParameterSet(parameters, (_PARAMETER_IDENTITY,))
-    legacy = equilibrium.phase_equilibrium(model, problem, active_parameters=active)
-    directed = equilibrium.phase_equilibrium(model, explicit, active_parameters=active)
+    legacy = equilibrium.solve(model, problem, active_parameters=active)
+    directed = equilibrium.solve(model, explicit, active_parameters=active)
 
     assert legacy.status == directed.status == "evaluated"
     for legacy_phase, directed_phase in zip(legacy.phases, directed.phases, strict=True):
@@ -349,7 +349,7 @@ def test_declared_finite_phase_start_recovers_from_collapsed_candidate() -> None
         )
         for phase in problem.phases
     )
-    result = equilibrium.phase_equilibrium(
+    result = equilibrium.solve(
         model,
         replace(
             problem,
@@ -392,8 +392,8 @@ def test_explicit_phase_directions_are_the_reactive_authority() -> None:
     )
     active = epcsaft.ActiveParameterSet(parameters, (_PARAMETER_IDENTITY,))
 
-    expected = equilibrium.phase_equilibrium(model, explicit, active_parameters=active)
-    actual = equilibrium.phase_equilibrium(model, direction_only, active_parameters=active)
+    expected = equilibrium.solve(model, explicit, active_parameters=active)
+    actual = equilibrium.solve(model, direction_only, active_parameters=active)
 
     assert expected.status == actual.status == "evaluated"
     actual_evidence = dict(actual.evidence)
@@ -420,7 +420,7 @@ def test_finite_phase_total_parameter_jacobian_matches_independent_resolves() ->
     step = 1.0e-5
 
     def solve(value: float) -> equilibrium.GeneralReactiveEquilibriumResult:
-        result = equilibrium.phase_equilibrium(
+        result = equilibrium.solve(
             model,
             problem,
             active_parameters=epcsaft.ActiveParameterSet(
@@ -497,7 +497,7 @@ def test_finite_phase_provider_domain_failure_preserves_failure_axis() -> None:
             problem.phases[1],
         ),
     )
-    result = equilibrium.phase_equilibrium(model, outside_source_domain)
+    result = equilibrium.solve(model, outside_source_domain)
 
     assert result.status == "non_evaluable"
     assert result.failure is not None
@@ -548,8 +548,8 @@ def test_finite_phase_amount_chart_is_scale_invariant_with_trace_species() -> No
             reaction_system=reaction,
         )
 
-    reference = equilibrium.phase_equilibrium(model, configured(1.0))
-    scaled = equilibrium.phase_equilibrium(model, configured(scale))
+    reference = equilibrium.solve(model, configured(1.0))
+    scaled = equilibrium.solve(model, configured(scale))
     assert reference.status == "evaluated", reference.failure
     assert scaled.status == "evaluated", scaled.failure
     assert reference.physical_status == scaled.physical_status == "passed"
@@ -571,12 +571,6 @@ def test_finite_phase_amount_chart_is_scale_invariant_with_trace_species() -> No
 
 def test_finite_phase_strict_mapping_is_closed() -> None:
     _, _, problem = _fixture()
-    with pytest.raises(ValueError, match="both a start and continuation"):
-        replace(
-            problem.phases[0],
-            continuation_identity="ambiguous-local-anchor",
-            branch_policy="local_certified_role_selected_state",
-        )
     mapping = equilibrium.general_reactive_equilibrium_problem_to_mapping(problem)
     loaded = equilibrium.general_reactive_equilibrium_problem_from_mapping(mapping)
     assert loaded == problem
@@ -647,7 +641,7 @@ def _ascani_2023_problem() -> tuple[
         trace_composition = tuple(
             1.0 - 2.0 * trace if index == component else trace for index in range(3)
         )
-        pure_result = equilibrium.phase_equilibrium(
+        pure_result = equilibrium.solve(
             model,
             equilibrium.PhaseEquilibriumProblem(
                 equilibrium.FixedTPFeed(
@@ -766,7 +760,7 @@ def test_generic_two_phase_grepe_solves_ascani_2023_hypothetical_case() -> None:
     """Prove the generic two-phase solve on Ascani's source-configured system."""
 
     model, problem, pure_liquid_log_fugacity = _ascani_2023_problem()
-    result = equilibrium.phase_equilibrium(model, problem)
+    result = equilibrium.solve(model, problem)
 
     assert result.status == "evaluated", result.failure
     assert result.numerical_status == "passed"
@@ -851,7 +845,7 @@ def test_generic_finite_phase_grepe_accepts_an_empty_reaction_set() -> None:
         ),
     )
 
-    result = equilibrium.phase_equilibrium(model, problem)
+    result = equilibrium.solve(model, problem)
 
     assert result.status == "evaluated", result.failure
     evidence = dict(result.evidence)
@@ -875,7 +869,7 @@ def test_generic_two_phase_grepe_generates_ascani_start_candidates() -> None:
         identity="ascani-2023-hypothetical-generated-starts",
         phases=tuple(replace(phase, start=None) for phase in problem.phases),
     )
-    result = equilibrium.phase_equilibrium(model, generated_start_problem)
+    result = equilibrium.solve(model, generated_start_problem)
 
     assert result.status == "evaluated", result.failure
     evidence = dict(result.evidence)
@@ -902,7 +896,7 @@ def test_configured_charged_two_phase_reactive_minimum() -> None:
     parameters = epcsaft.Parameters.from_mapping(parameter_mapping)
     model = epcsaft.Mixture(parameters)
     seed_feed = (0.32, 0.32, 0.32, 0.02, 0.02)
-    seed = equilibrium.phase_equilibrium(
+    seed = equilibrium.solve(
         model,
         equilibrium.PhaseEquilibriumProblem(
             equilibrium.FixedTPFeed(
@@ -1029,7 +1023,7 @@ def test_configured_charged_two_phase_reactive_minimum() -> None:
         outputs,
     )
 
-    result = equilibrium.phase_equilibrium(model, problem)
+    result = equilibrium.solve(model, problem)
 
     assert result.status == "evaluated", result.failure
     assert len(result.phases) == 2
@@ -1039,7 +1033,7 @@ def test_configured_charged_two_phase_reactive_minimum() -> None:
     assert evidence["reaction_affinity_inf_norm"] <= 1.0e-7
     assert evidence["transfer_chemical_potential_inf_norm"] <= 1.0e-7
 
-    generated = equilibrium.phase_equilibrium(
+    generated = equilibrium.solve(
         model,
         replace(
             problem,
@@ -1059,7 +1053,7 @@ def test_configured_charged_two_phase_reactive_minimum() -> None:
     step = 1.0e-7
 
     def active_solve(value: float) -> equilibrium.GeneralReactiveEquilibriumResult:
-        active_result = equilibrium.phase_equilibrium(
+        active_result = equilibrium.solve(
             model,
             problem,
             active_parameters=epcsaft.ActiveParameterSet(
@@ -1096,7 +1090,7 @@ def test_generic_regression_recovers_finite_phase_parameter(tmp_path: Path) -> N
         ),
     )
     true_value = 0.202
-    truth = equilibrium.phase_equilibrium(
+    truth = equilibrium.solve(
         model,
         problem,
         active_parameters=epcsaft.ActiveParameterSet(

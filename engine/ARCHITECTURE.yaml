@@ -34,7 +34,7 @@ owners:
     python_api: src/epcsaft/equilibrium/_api.py
     native_sources: cpp/equilibrium
     nonreactive_numerical_core: held_held2
-    public_route: phase_equilibrium
+    public_route: solve
     promotion_status: accepted
     promotion_receipt: ../validation/campaigns/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json
     transition_decision: docs/equilibrium/adr/0002-protect-held-until-phase-equilibrium-promotion.md
@@ -59,33 +59,15 @@ owners:
     general_reactive_equilibrium:
       request: epcsaft.equilibrium.GeneralReactiveEquilibriumProblem
       result: epcsaft.equilibrium.GeneralReactiveEquilibriumResult
-      public_route: epcsaft.equilibrium.phase_equilibrium
+      public_route: epcsaft.equilibrium.solve
       compiler: src/epcsaft/equilibrium/_grepe.py
-      admitted_owner_kinds: [homogeneous, reactive_bubble]
-      candidate_owner_kinds: [neutral_reactive_lle]
+      admitted_formulations: [finite, finite_incipient, intensive_boundary, temperature_boundary]
       candidate_topology: exactly_two_finite_liquids
       candidate_component_support: all_components_neutral_only
       candidate_numerical_core: cpp/equilibrium/reactive_finite_phase.cpp
       candidate_formulation: total_gibbs_with_global_conservation
       candidate_globality_claim: not_established
       candidate_admission: pending_review_and_hash_bound_receipt
-    homogeneous_reactive_observations:
-      descriptor: epcsaft.equilibrium.HomogeneousReactiveObservationDescriptor
-      evaluator: epcsaft.equilibrium.evaluate_homogeneous_reactive_observations
-      continuation_anchor: epcsaft.equilibrium.certify_homogeneous_continuation_reference
-      branch_policy: immutable_reference_anchored_certified_local_state
-      globality_claim: not_established
-      admission_decision: governance_D-034
-      admission_receipt: ../governance/receipts/cap-12-homogeneous-reactive-observation-admission.json
-    reactive_bubble_vle_observations:
-      descriptor: epcsaft.equilibrium.ReactiveBubbleObservationDescriptor
-      evaluator: epcsaft.equilibrium.evaluate_reactive_bubble_observations
-      continuation_anchor: epcsaft.equilibrium.certify_reactive_bubble_continuation_reference
-      vapor_models: [provider_nonideal, ideal_gas_comparison]
-      branch_policy: immutable_reference_anchored_certified_local_state
-      globality_claim: not_established
-      admission_decision: governance_D-035
-      admission_receipt: ../governance/receipts/cap-13-reactive-bubble-vle-admission.json
   regression:
     public_module: epcsaft.regression
     parameter_fit: epcsaft.regression.ParameterFit
@@ -97,12 +79,11 @@ owners:
     native_sources: src/epcsaft/regression/native
     optimizer: ipopt
     scientific_values: owner_provided_only
-    current_observation_boundary: [eos_fixed_state, eos_pure_saturation, equilibrium_homogeneous_reactive, equilibrium_reactive_bubble_vle]
-    candidate_observation_boundary: [equilibrium_neutral_reactive_lle]
-    generic_equilibrium_evaluator: epcsaft.equilibrium.phase_equilibrium
+    current_observation_boundary: [eos_fixed_state, eos_pure_saturation, equilibrium_general_reactive]
+    generic_equilibrium_evaluator: epcsaft.equilibrium.solve
     generic_equilibrium_observation: epcsaft.equilibrium.GeneralEquilibriumOwnerObservation
-    equilibrium_observation_admission: homogeneous_reactive_and_reactive_bubble_vle_by_governance_D-034_D-035
-    equilibrium_observation_families: [homogeneous_reactive, reactive_bubble_vle]
+    equilibrium_observation_admission: general_reactive_equilibrium
+    equilibrium_observation_families: [general_reactive]
   native_transport:
     implementation: src/epcsaft/_native
     public_cpp_abi: forbidden

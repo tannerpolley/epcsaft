@@ -33,7 +33,7 @@ still-relevant numerical evidence retain historical identities as provenance.
 
 The canonical cross-module execution plan is
 [`docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md`](docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md).
-The approved GREPE target that evolves the sole public `phase_equilibrium`
+The approved GREPE target that evolves the sole public `solve`
 owner is
 [`docs/equilibrium/plans/2026-08-14-general-reactive-equilibrium-phase-equilibrium.md`](docs/equilibrium/plans/2026-08-14-general-reactive-equilibrium-phase-equilibrium.md).
 Its full owner plans cover

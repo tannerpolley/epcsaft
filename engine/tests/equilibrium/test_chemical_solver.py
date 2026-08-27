@@ -8,6 +8,8 @@ import pytest
 import epcsaft
 from epcsaft import equilibrium
 from epcsaft.equilibrium import _equilibrium
+from epcsaft.equilibrium._api import _chemical_equilibrium_impl
+from tests.eos._raw_cases import NEUTRAL_TERNARY_IMMISCIBLE, STRONGLY_ASSOCIATING_BINARY
 
 from .chemical_equilibrium_cases import base_system as _base_system
 from .chemical_equilibrium_cases import bind_records as _bind_record
@@ -90,7 +92,7 @@ def _manufactured_solve(
     spec: dict[str, object], options: dict[str, object] | None = None
 ) -> equilibrium.ChemicalEquilibriumResult:
     options = options or {}
-    return equilibrium.chemical_equilibrium(
+    return _chemical_equilibrium_impl(
         equilibrium.IdealGasPhase(
             model_fingerprint=spec["provider_fingerprint"],
             reference_id="provider-helmholtz-coordinate-basis",
@@ -227,6 +229,47 @@ def test_manufactured_ideal_reactions_match_independent_analytic_states(
     assert diagnostics.minimum_amount_mol is not None
     assert diagnostics.trace_floor_mol == 1.0e-12
     assert diagnostics.minimum_amount_mol > diagnostics.trace_floor_mol
+
+    generic_spec = copy.deepcopy(spec)
+    generic_spec["species_ids"] = ("solute", "solvent")
+    generic = equilibrium.solve(
+        epcsaft.Mixture(epcsaft.Parameters.from_mapping(STRONGLY_ASSOCIATING_BINARY)),
+        equilibrium.GeneralReactiveEquilibriumProblem(
+            "manufactured-ideal-reaction",
+            equilibrium.Fixed(spec["temperature_k"] * epcsaft.unit_registry.kelvin),
+            equilibrium.Fixed(spec["pressure_pa"] * epcsaft.unit_registry.pascal),
+            (
+                equilibrium.ReactivePhase(
+                    "vapor",
+                    "vapor",
+                    "finite",
+                    equilibrium.AllComponents(),
+                    equilibrium.IdealGasModel("provider-helmholtz-coordinate-basis"),
+                ),
+            ),
+            _typed_problem(generic_spec),
+            ("vapor",),
+            tuple(
+                equilibrium.EquilibriumOutput(
+                    f"amount-{index}",
+                    "phase.amount",
+                    "mole",
+                    "species amount",
+                    "vapor",
+                    tuple(float(component == index) for component in range(2)),
+                )
+                for index in range(2)
+            ),
+        ),
+    )
+    assert generic.status == "evaluated"
+    assert generic.values == pytest.approx(expected_amounts, rel=2.0e-8, abs=2.0e-10)
+    evidence = dict(generic.evidence)
+    assert evidence["balance_inf_norm"] <= 1.0e-9
+    assert evidence["electroneutrality_inf"] <= 1.0e-12
+    assert evidence["pressure_relative_inf_norm"] <= 1.0e-8
+    assert evidence["reaction_affinity_inf_norm"] <= 1.0e-7
+    assert evidence["kkt_stationarity_inf_norm"] <= 1.0e-7
 
 
 def test_manufactured_reaction_reports_exact_conditioned_implicit_sensitivities() -> None:
@@ -387,6 +430,40 @@ def test_manufactured_reaction_with_ill_conditioned_kkt_has_no_sensitivity() -> 
         criteria["kkt_condition_number_inf"]["value"]
         > criteria["kkt_condition_number_inf"]["limit"]
     )
+
+    parameters = epcsaft.Parameters.from_mapping(NEUTRAL_TERNARY_IMMISCIBLE)
+    spec["species_ids"] = parameters.component_ids
+    phase = equilibrium.ReactivePhase(
+        "vapor",
+        "vapor",
+        "finite",
+        equilibrium.AllComponents(),
+        equilibrium.IdealGasModel("provider-helmholtz-coordinate-basis"),
+    )
+    result = equilibrium.solve(
+        epcsaft.Mixture(parameters),
+        equilibrium.GeneralReactiveEquilibriumProblem(
+            "ill-conditioned-ideal-reaction",
+            equilibrium.Fixed(spec["temperature_k"] * epcsaft.unit_registry.kelvin),
+            equilibrium.Fixed(spec["pressure_pa"] * epcsaft.unit_registry.pascal),
+            (phase,),
+            _typed_problem(spec),
+            (phase.identity,),
+            (
+                equilibrium.EquilibriumOutput(
+                    "amount",
+                    "phase.amount",
+                    "mole",
+                    "true-species-amount",
+                    phase.identity,
+                    (1.0, 0.0, 0.0),
+                ),
+            ),
+        ),
+    )
+    assert result.status == "non_evaluable"
+    assert result.failure is not None
+    assert result.failure.code == "singular_sensitivity"
 
 
 @pytest.mark.parametrize("trace_floor", (1.0e-50, 1.0e-55))
