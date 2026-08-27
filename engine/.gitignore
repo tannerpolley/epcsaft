@@ -15,7 +15,6 @@ build/subprojects/*
 !build/subprojects/packagefiles/
 !build/subprojects/packagefiles/**
 dist/
-uv.lock
 *.egg-info/
 .idea/
 .vscode/

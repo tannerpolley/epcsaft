@@ -51,6 +51,7 @@ highs_project = subproject(
   ],
 )
 highs_dep = highs_project.get_variable('highs_dep')
+highs_conf_file = highs_project.get_variable('highs_conf_file')
 
 cmake = import('cmake')
 nlopt_options = cmake.subproject_options()
@@ -146,6 +147,7 @@ equilibrium_inc = include_directories('cpp/equilibrium')
 equilibrium_core = static_library(
   'epcsaft_engine_equilibrium_core',
   equilibrium_sources,
+  highs_conf_file,
   cpp_args: native_warnings,
   dependencies: [
     ipopt_dep,

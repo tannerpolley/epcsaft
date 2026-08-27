@@ -12,13 +12,29 @@ fi
 export PATH="$repo_root/.venv/bin:$PATH"
 read -r -a cc_command <<<"${CC:-cc}"
 read -r -a cxx_command <<<"${CXX:-c++}"
-for required_command in uv meson cmake ninja pkg-config sha256sum readlink flock xargs \
+for required_command in uv meson cmake ninja patchelf pkg-config sha256sum readlink flock xargs \
     "${cc_command[0]}" "${cxx_command[0]}"; do
     if ! command -v "$required_command" >/dev/null 2>&1; then
         echo "missing required command: $required_command" >&2
         exit 1
     fi
 done
+
+check_native_dependency() {
+    local package="$1"
+    local minimum="$2"
+    if ! pkg-config --exists "$package"; then
+        echo "missing native dependency: $package >= $minimum" >&2
+        exit 1
+    fi
+    if ! pkg-config --atleast-version "$minimum" "$package"; then
+        echo "unsupported native dependency: $package $(pkg-config --modversion "$package") (need >= $minimum)" >&2
+        exit 1
+    fi
+}
+
+check_native_dependency ipopt 3.11.9
+check_native_dependency eigen3 3.4
 
 fingerprint_tree() {
     local label="$1"
@@ -39,7 +55,6 @@ source_files=(
     engine/README.md
     engine/meson.build
     engine/pyproject.toml
-    uv.lock
 )
 while IFS= read -r -d '' path; do
     source_files+=("$path")
@@ -67,8 +82,7 @@ import sysconfig
 print("-".join((sys.implementation.cache_tag, sysconfig.get_platform(), platform.machine())))
 PY
 )"
-build_fingerprint="$({
-    printf 'source=%s\n' "$source_sha256"
+toolchain_fingerprint="$({
     "$python" - <<'PY'
 import importlib.metadata
 import platform
@@ -87,13 +101,16 @@ for item in (
 ):
     print(item)
 PY
-    for tool in cmake ninja; do
-        tool_path="$(readlink -f "$(command -v "$tool")")"
-        printf '%s=%s\n' "$tool" "$(sha256sum "$tool_path" | cut -d ' ' -f 1)"
-    done
+    uv --version
     meson --version
     cmake --version | sed -n '1p'
     ninja --version
+    patchelf --version
+    if command -v ccache >/dev/null 2>&1; then
+        ccache_path="$(readlink -f "$(command -v ccache)")"
+        printf 'ccache=%s\n' "$(sha256sum "$ccache_path" | cut -d ' ' -f 1)"
+        ccache --version | sed -n '1p'
+    fi
     for compiler in "${cc_command[0]}" "${cxx_command[0]}"; do
         compiler_path="$(readlink -f "$(command -v "$compiler")")"
         printf '%s=%s\n' "$compiler" "$(sha256sum "$compiler_path" | cut -d ' ' -f 1)"
@@ -113,13 +130,13 @@ PY
     [[ -x "$linker_path" ]] || { echo "cannot fingerprint linker: $linker_path" >&2; exit 1; }
     printf 'linker=%s\n' "$(sha256sum "$linker_path" | cut -d ' ' -f 1)"
     "$linker_path" --version | sed -n '1p'
-    for variable in CC CXX AR LD CPPFLAGS CFLAGS CXXFLAGS LDFLAGS \
+    for variable in CC CXX AR LD CPPFLAGS CFLAGS CXXFLAGS LDFLAGS CCACHE_CONFIGPATH \
+        CCACHE_DIR CCACHE_DISABLE CCACHE_NODIRECT CCACHE_PREFIX CCACHE_SLOPPINESS \
         PKG_CONFIG_PATH PKG_CONFIG_LIBDIR PKG_CONFIG_SYSROOT_DIR \
-        CMAKE_PREFIX_PATH MESON_ARGS NINJAFLAGS SOURCE_DATE_EPOCH; do
+        CMAKE_PREFIX_PATH MESON_ARGS SOURCE_DATE_EPOCH; do
         printf '%s=%s\n' "$variable" "${!variable-}"
     done
     for package in ipopt eigen3; do
-        pkg-config --exists "$package"
         pc_file="$(pkg-config --variable=pcfiledir "$package")/$package.pc"
         [[ -f "$pc_file" ]] || { echo "cannot fingerprint $package metadata: $pc_file" >&2; exit 1; }
         printf '%s-version=%s\n' "$package" "$(pkg-config --modversion "$package")"
@@ -140,6 +157,10 @@ PY
             "$(sha256sum "$library_path" | cut -d ' ' -f 1)"
     done
 } | sha256sum | cut -d ' ' -f 1)"
+build_fingerprint="$(
+    printf 'source=%s\ntoolchain=%s\n' "$source_sha256" "$toolchain_fingerprint" \
+        | sha256sum | cut -d ' ' -f 1
+)"
 
 wheelhouse="$repo_root/build/environment-wheel"
 stamp="$wheelhouse/build.sha256"
@@ -147,9 +168,9 @@ wheel_hash_stamp="$wheelhouse/wheel.sha256"
 cache_root="${XDG_CACHE_HOME:-$HOME/.cache}/epcsaft/wheels"
 cache_key="$build_fingerprint"
 cache_entry="$cache_root/$cache_key"
-build_dir="$repo_root/build/engine-meson/$runtime_id"
-mkdir -p "$cache_root"
-exec {wheelhouse_lock_fd}>"$cache_root/wheelhouse.lock"
+build_dir="$repo_root/build/engine-meson/$runtime_id-$toolchain_fingerprint"
+mkdir -p "$repo_root/build" "$cache_root"
+exec {wheelhouse_lock_fd}>"$repo_root/build/environment-wheel.lock"
 flock "$wheelhouse_lock_fd"
 mapfile -t wheels < <(find "$wheelhouse" -maxdepth 1 -type f -name 'epcsaft-*.whl' -print 2>/dev/null)
 wheel_current=false
@@ -163,6 +184,7 @@ fi
 if [[ "$wheel_current" == true ]]; then
     wheel="${wheels[0]}"
     if verification_output="$("$python" tools/verify-installed-wheel.py --wheel "$wheel" 2>&1)"; then
+        uv pip check --python "$python"
         printf '%s\n' "$verification_output"
         echo "Engine wheel is current; native rebuild skipped"
         exit 0
@@ -192,10 +214,11 @@ if [[ "$wheel_current" != true ]]; then
         cp "${cached_wheels[0]}" "$wheelhouse/"
         wheel_origin="cache"
     else
-        "$python" -m build \
+        uv build \
+            --python "$python" \
             --wheel \
-            --no-isolation \
-            --outdir "$wheelhouse" \
+            --no-build-isolation \
+            --out-dir "$wheelhouse" \
             --config-setting="build-dir=$build_dir" \
             engine
         mapfile -t built_wheels < <(
@@ -219,18 +242,14 @@ if [[ "$wheel_current" != true ]]; then
 fi
 
 wheel="${wheels[0]}"
-uv pip install --python "$python" --reinstall-package epcsaft "$wheel"
+uv pip install --python "$python" --no-deps --reinstall-package epcsaft "$wheel"
+uv pip check --python "$python"
 "$python" tools/verify-installed-wheel.py --wheel "$wheel"
 printf '%s\n' "$build_fingerprint" >"$stamp"
 sha256sum "$wheel" | cut -d ' ' -f 1 >"$wheel_hash_stamp"
 
-if [[ -n "${cache_lock_fd:-}" ]]; then
-    flock -u "$cache_lock_fd"
-fi
-flock -u "$wheelhouse_lock_fd"
-
 case "$wheel_origin" in
     cache) echo "Engine wheel restored from shared cache for build $build_fingerprint" ;;
     rebuilt) echo "Engine wheel rebuilt and cached for build $build_fingerprint" ;;
-    local) echo "Engine wheel reinstalled after local verification failed" ;;
+    local) echo "Engine wheel installed from the current checkout wheel" ;;
 esac

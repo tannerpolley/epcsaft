@@ -27,7 +27,8 @@ rm -rf -- "$run_root"
 mkdir -p "$wheelhouse"
 
 CC=clang-18 CXX=clang++-18 \
-    "$workspace_root/.venv/bin/python" -m build --wheel --outdir "$wheelhouse" \
+    uv build --python "$workspace_root/.venv/bin/python" \
+        --wheel --no-build-isolation --out-dir "$wheelhouse" \
         --config-setting="build-dir=$run_root/build" \
         --config-setting="setup-args=-Dbuildtype=debug" \
         --config-setting="setup-args=-Db_ndebug=false" \
@@ -49,7 +50,11 @@ if ((${#wheels[@]} != 1)); then
 fi
 
 uv venv --python 3.13 "$run_root/venv"
-uv pip install --python "$run_root/venv/bin/python" pytest "${wheels[0]}"
+uv export --locked --all-packages --no-emit-workspace --no-hashes \
+    --output-file "$run_root/constraints.txt" >/dev/null
+uv pip install --python "$run_root/venv/bin/python" \
+    --constraint "$run_root/constraints.txt" pytest "${wheels[0]}"
+uv pip check --python "$run_root/venv/bin/python"
 mapfile -t installed_extensions < <(
     find "$run_root/venv/lib" -type f \
         \( -name '_core*.so' -o -name '_equilibrium*.so' \)

@@ -437,6 +437,46 @@ def validation_data_boundary_errors() -> list[str]:
     return errors
 
 
+def environment_errors() -> list[str]:
+    errors: list[str] = []
+    lockfiles = sorted(
+        path.relative_to(ROOT)
+        for path in ROOT.rglob("uv.lock")
+        if not {".git", ".venv", "build"}.intersection(path.relative_to(ROOT).parts)
+    )
+    if lockfiles != [Path("uv.lock")]:
+        errors.append(f"repository must contain only the root uv.lock, found {lockfiles}")
+
+    setup = ROOT / ".codex" / "environments" / "setup.sh"
+    try:
+        setup_text = setup.read_text(encoding="utf-8")
+    except OSError as error:
+        errors.append(f"cannot read root environment setup: {error}")
+    else:
+        sync_commands = [
+            line.strip() for line in setup_text.splitlines() if line.strip().startswith("uv sync ")
+        ]
+        expected_sync = "uv sync --python 3.13 --all-packages --no-install-workspace --locked"
+        if sync_commands != [expected_sync]:
+            errors.append(f"root environment setup must run exactly: {expected_sync}")
+        if "bash tools/ensure-engine-wheel.sh" not in {
+            line.strip() for line in setup_text.splitlines()
+        }:
+            errors.append("root environment setup must install the checkout Engine wheel")
+
+    try:
+        root_project = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    except (OSError, tomllib.TOMLDecodeError) as error:
+        errors.append(f"invalid root pyproject: {error}")
+    else:
+        uv_config = root_project.get("tool", {}).get("uv", {})
+        if uv_config.get("package") is not False:
+            errors.append("root workspace must remain virtual")
+        if uv_config.get("workspace", {}).get("members") != ["engine"]:
+            errors.append("root uv workspace must contain only engine")
+    return errors
+
+
 def check() -> list[str]:
     errors: list[str] = []
     try:
@@ -524,6 +564,7 @@ def check() -> list[str]:
     errors.extend(data_packet_lock_errors(config.get("repository", "")))
     errors.extend(materialization_errors(config.get("repository", "")))
     errors.extend(validation_data_boundary_errors())
+    errors.extend(environment_errors())
     errors.extend(receipt_errors())
 
     for pointer in LIVE_POINTERS:
