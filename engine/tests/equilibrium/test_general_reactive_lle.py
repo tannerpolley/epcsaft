@@ -35,9 +35,7 @@ def test_finite_phase_failure_ranking_treats_missing_residual_as_nonfinite() -> 
     }
     partial = {**residuals, "reaction_affinity_inf_norm": None}
 
-    selected, _ = min(
-        enumerate((partial, residuals)), key=_grepe._finite_phase_failure_score
-    )
+    selected, _ = min(enumerate((partial, residuals)), key=_grepe._finite_phase_failure_score)
 
     assert selected == 1
 
@@ -347,6 +345,25 @@ def test_declared_finite_phase_start_recovers_from_collapsed_candidate() -> None
         )
         for phase in problem.phases
     )
+    collapsed = _core._reactive_finite_phases(
+        model._native_model(),
+        _grepe._finite_phase_spec(problem, 300.0, 1.0e5),
+        None,
+        tuple(phase.model.admissible_packing_fraction_interval for phase in problem.phases),
+        tuple(
+            {
+                "amounts_mol": start.amounts_mol,
+                "molar_volume_m3_per_mol": start.molar_volume_m3_per_mol,
+            }
+            for start in collapsed_starts
+        ),
+        problem.reaction_system.strict_interior_amount_floor_mol,
+        False,
+        False,
+    )
+    assert not collapsed["accepted"]
+    assert collapsed["reduced_hessian_min_eigenvalue"] < 0.0
+    assert collapsed["reduced_hessian_min_eigenvalue"] <= collapsed["reduced_hessian_threshold"]
     result = equilibrium.solve(
         model,
         replace(
@@ -372,6 +389,107 @@ def test_declared_finite_phase_start_recovers_from_collapsed_candidate() -> None
         strict=True,
     ):
         assert left == pytest.approx(right, abs=3.0e-8)
+
+
+def test_reduced_tangent_hessian_rejects_genuine_negative_curvature() -> None:
+    """Reject an analytic Provider saddle independently of the HELD campaign."""
+
+    _, model, _ = _fixture()
+    feed = (1.0, 1.0, 0.01)
+    mole_fractions = tuple(amount / math.fsum(feed) for amount in feed)
+    state = model.state(
+        T=300.0 * epcsaft.unit_registry.kelvin,
+        P=1.0e5 * epcsaft.unit_registry.pascal,
+        x=mole_fractions,
+        phase="liquid",
+    )
+    molar_volume = 1.0 / float(state.molar_density.to("mole / meter**3").magnitude)
+    native = _core._reactive_finite_phases(
+        model._native_model(),
+        {
+            "species_ids": model.component_ids,
+            "charges": (0, 0, 0),
+            "provider_fingerprint": model.parameter_fingerprint,
+            "molar_masses_kg_per_mol": (0.03, 0.03, 0.03),
+            "balance_matrix": (
+                (1.0, 0.0, 0.0),
+                (0.0, 1.0, 0.0),
+                (0.0, 0.0, 1.0),
+            ),
+            "conserved_totals": feed,
+            "reaction_matrix": (),
+            "feed_amounts": feed,
+            "ln_k": (),
+            "equilibrium_constant_records": (),
+            "temperature_k": 300.0,
+            "pressure_pa": 1.0e5,
+        },
+        None,
+        ((1.0e-6, 0.74), (1.0e-6, 0.74)),
+        tuple(
+            {
+                "amounts_mol": tuple(amount / 2.0 for amount in feed),
+                "molar_volume_m3_per_mol": molar_volume,
+            }
+            for _ in range(2)
+        ),
+        1.0e-12,
+        False,
+        False,
+    )
+
+    assert not native["accepted"]
+    assert native["balance_inf_norm"] <= 1.0e-9
+    assert native["pressure_relative_inf_norm"] <= 1.0e-8
+    assert native["transfer_chemical_potential_inf_norm"] <= 1.0e-6
+    assert native["kkt_stationarity_inf_norm"] <= 1.0e-7
+    assert native["minimum_bound_margin"] > 1.0e-7
+    assert native["reduced_hessian_min_eigenvalue"] < -1.0
+    assert native["reduced_hessian_threshold"] == pytest.approx(
+        1.0e-10 * native["reduced_hessian_scale"], rel=2.0e-15
+    )
+
+
+def test_phase_directions_cannot_create_mass_beyond_the_amount_cap() -> None:
+    """Reject a count-conserving direction that violates the cap's positive mass invariant."""
+
+    _, model, _ = _fixture()
+    feed = (1.0, 1.0, 1.0)
+    with pytest.raises(ValueError, match="global molar-mass conservation"):
+        _core._reactive_finite_phases(
+            model._native_model(),
+            {
+                "species_ids": model.component_ids,
+                "charges": (0, 0, 0),
+                "provider_fingerprint": model.parameter_fingerprint,
+                "molar_masses_kg_per_mol": (0.02, 0.03, 0.04),
+                "balance_matrix": ((1.0, 1.0, 1.0),),
+                "conserved_totals": (3.0,),
+                "reaction_matrix": (),
+                "feed_amounts": feed,
+                "ln_k": (),
+                "equilibrium_constant_records": (),
+                "temperature_k": 300.0,
+                "pressure_pa": 1.0e5,
+            },
+            None,
+            ((1.0e-6, 0.74), (1.0e-6, 0.74)),
+            tuple(
+                {"amounts_mol": (0.5, 0.5, 0.5), "molar_volume_m3_per_mol": 1.0e-4}
+                for _ in range(2)
+            ),
+            1.0e-12,
+            False,
+            False,
+            {
+                "phase_ids": ("left", "right"),
+                "species_ids": model.component_ids,
+                "charges": (0, 0, 0),
+                "balance_matrix": ((1.0, 1.0, 1.0),),
+                "direction_rows": ((-1.0, 1.0, 0.0, 0.0, 0.0, 0.0),),
+                "driving_constants": (0.0,),
+            },
+        )
 
 
 def test_explicit_phase_directions_are_the_reactive_authority() -> None:
@@ -402,9 +520,7 @@ def test_explicit_phase_directions_are_the_reactive_authority() -> None:
             expected_phase.mole_fractions, rel=2.0e-7, abs=2.0e-10
         )
     for expected_row, actual_row in zip(expected.rows, actual.rows, strict=True):
-        assert actual_row.jacobian == pytest.approx(
-            expected_row.jacobian, rel=2.0e-6, abs=2.0e-8
-        )
+        assert actual_row.jacobian == pytest.approx(expected_row.jacobian, rel=2.0e-6, abs=2.0e-8)
 
 
 def test_finite_phase_total_parameter_jacobian_matches_independent_resolves() -> None:
@@ -446,6 +562,15 @@ def test_finite_phase_exact_nlp_derivatives_match_centered_oracles() -> None:
 
     parameters, model, problem = _fixture()
     active = epcsaft.ActiveParameterSet(parameters, (_PARAMETER_IDENTITY,))
+    allocation = _grepe._generated_finite_phase_allocations(problem, problem.phases)[0]
+    starts = _grepe._finite_phase_start_set_from_allocation(
+        model,
+        problem.phases,
+        problem.reaction_system.feed_amounts_mol,
+        allocation,
+        300.0,
+        1.0e5,
+    )
     native = _core._reactive_finite_phases(
         model._native_model(active),
         _grepe._finite_phase_spec(problem, 300.0, 1.0e5),
@@ -457,11 +582,10 @@ def test_finite_phase_exact_nlp_derivatives_match_centered_oracles() -> None:
         ),
         tuple(
             {
-                "amounts_mol": phase.start.amounts_mol,
-                "molar_volume_m3_per_mol": phase.start.molar_volume_m3_per_mol,
+                "amounts_mol": start.amounts_mol,
+                "molar_volume_m3_per_mol": start.molar_volume_m3_per_mol,
             }
-            for phase in problem.phases
-            if isinstance(phase.start, equilibrium.FinitePhaseStart)
+            for start in starts
         ),
         problem.reaction_system.strict_interior_amount_floor_mol,
         True,
@@ -474,6 +598,26 @@ def test_finite_phase_exact_nlp_derivatives_match_centered_oracles() -> None:
     assert native["objective_gradient_audit_max_relative_error"] < 2.0e-6
     assert native["constraint_jacobian_audit_max_relative_error"] < 2.0e-8
     assert native["lagrangian_hessian_audit_max_relative_error"] < 2.0e-5
+    assert native["minimum_bound_margin"] > 1.0e-7
+    assert native["reduced_hessian_threshold"] == pytest.approx(
+        1.0e-10 * native["reduced_hessian_scale"], rel=2.0e-15
+    )
+    total_feed = math.fsum(problem.reaction_system.feed_amounts_mol)
+    conserved_mass = math.fsum(
+        amount * molar_mass
+        for amount, molar_mass in zip(
+            problem.reaction_system.feed_amounts_mol,
+            problem.reaction_system.molar_masses_kg_per_mol,
+            strict=True,
+        )
+    )
+    phase_width = len(model.component_ids) + 1
+    for phase in range(len(problem.phases)):
+        for species, molar_mass in enumerate(problem.reaction_system.molar_masses_kg_per_mol):
+            assert native["local_upper_bounds"][phase * phase_width + species] == pytest.approx(
+                math.log(2.0 * conserved_mass / (molar_mass * total_feed))
+            )
+            assert native["phase_amounts_mol"][phase][species] <= (conserved_mass / molar_mass)
 
 
 def test_finite_phase_provider_domain_failure_preserves_failure_axis() -> None:

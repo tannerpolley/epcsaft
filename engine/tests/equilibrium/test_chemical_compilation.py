@@ -5,25 +5,44 @@ import math
 import pytest
 
 import epcsaft
-from epcsaft import equilibrium
-from epcsaft.equilibrium._api import _chemical_equilibrium_impl
+from epcsaft import _core
+from tests.eos._raw_cases import NEUTRAL_TERNARY_IMMISCIBLE
 
 from .chemical_equilibrium_cases import base_system as _base_system
 from .chemical_equilibrium_cases import bind_records as _bind_record
-from .chemical_equilibrium_cases import typed_problem as _typed_problem
 
 
 def _solve(
     spec: dict[str, object],
-) -> equilibrium.ChemicalEquilibriumResult:
-    return _chemical_equilibrium_impl(
-        equilibrium.IdealGasPhase(
-            model_fingerprint=spec["provider_fingerprint"],
-            reference_id="provider-helmholtz-coordinate-basis",
+) -> dict[str, object]:
+    model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(NEUTRAL_TERNARY_IMMISCIBLE))
+    feed = tuple(float(value) for value in spec["feed_amounts"])
+    if "conserved_totals" not in spec:
+        spec["conserved_totals"] = tuple(
+            math.fsum(coefficient * amount for coefficient, amount in zip(row, feed, strict=True))
+            for row in spec["balance_matrix"]
+        )
+    return _core._reactive_finite_phases(
+        model._native_model(),
+        spec,
+        None,
+        ((1.0e-12, 0.99),),
+        ({"amounts_mol": feed, "molar_volume_m3_per_mol": 1.0},),
+        1.0e-30,
+        False,
+        False,
+        None,
+        (tuple(range(len(feed))),),
+        tuple(
+            {
+                "selector": "phase.amount",
+                "phase_index": 0,
+                "coefficients": tuple(float(index == species) for index in range(len(feed))),
+                "solvent_mass_coefficients_kg_per_mol": (),
+            }
+            for species in range(len(feed))
         ),
-        spec["temperature_k"] * epcsaft.unit_registry.kelvin,
-        spec["pressure_pa"] * epcsaft.unit_registry.pascal,
-        _typed_problem(spec),
+        ideal_gas=True,
     )
 
 
@@ -53,14 +72,15 @@ def test_redundant_reactions_preserve_equilibrium_or_reject_bad_cycles(
 
     if inconsistent:
         with pytest.raises(
-            equilibrium.ChemicalEquilibriumError,
+            ValueError,
         ):
             _solve(spec)
         return
 
     result = _solve(spec)
-    assert result.amounts_mol == pytest.approx((1.0 / 9.0, 2.0 / 9.0, 2.0 / 3.0))
-    assert result.diagnostics.reaction_affinity_inf_norm <= 1.0e-7
+    assert result["accepted"] is True
+    assert result["output_values"] == pytest.approx((1.0 / 9.0, 2.0 / 9.0, 2.0 / 3.0))
+    assert result["reaction_affinity_inf_norm"] <= 1.0e-7
 
 
 def _nearly_dependent_system(
@@ -110,20 +130,20 @@ def test_scaled_nearly_dependent_reactions_are_stable_within_condition_limit() -
         (1.0e8, True),
     ):
         result = _solve(_nearly_dependent_system(scale, 1.5e-6, reverse_order=reverse_order))
-        assert result.amounts_mol == pytest.approx(expected, rel=2.0e-8)
+        assert result["output_values"] == pytest.approx(expected, rel=2.0e-8)
 
-    with pytest.raises(equilibrium.ChemicalEquilibriumError):
+    with pytest.raises(ValueError):
         _solve(_nearly_dependent_system(1.0, 1.0e-14))
 
 
 def test_reaction_system_rejects_charge_inconsistency() -> None:
     spec = _base_system()
     spec.update({"charges": (1, -1), "feed_amounts": (1.0, 0.0)})
-    with pytest.raises(equilibrium.ChemicalEquilibriumError):
+    with pytest.raises(ValueError):
         _solve(spec)
 
     spec["feed_amounts"] = (1.0, 1.0)
-    with pytest.raises(equilibrium.ChemicalEquilibriumError):
+    with pytest.raises(ValueError):
         _solve(spec)
 
 
@@ -148,7 +168,9 @@ def test_accessible_face_preserves_reaction_combinations_and_exact_zeros() -> No
 
     result = _solve(spec)
 
-    assert result.amounts_mol == pytest.approx(
+    assert result["output_values"] == pytest.approx(
         (1.0 / 7.0, 0.0, 6.0 / 7.0, 0.0), rel=3.0e-8, abs=0.0
     )
-    assert result.diagnostics.structural_zero_species_indices == (1, 3)
+    assert result["phase_amounts_mol"][0] == pytest.approx(
+        (1.0 / 7.0, 0.0, 6.0 / 7.0, 0.0), rel=3.0e-8, abs=0.0
+    )

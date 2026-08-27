@@ -135,591 +135,6 @@ ReactionSystemInput reaction_system_input(const py::dict& spec) {
     return input;
 }
 
-ChemicalContinuationStart continuation_start(const py::dict& spec) {
-    const py::dict payload = py::cast<py::dict>(spec["continuation_start"]);
-    ChemicalContinuationStart start;
-    start.amounts = py::cast<std::vector<double>>(payload["amounts"]);
-    start.volume_m3 = py::cast<double>(payload["volume_m3"]);
-    if (start.amounts.empty()
-        || std::any_of(start.amounts.begin(), start.amounts.end(), [](double amount) {
-            return !std::isfinite(amount) || amount <= 0.0;
-        })
-        || !std::isfinite(start.volume_m3)
-        || start.volume_m3 <= 0.0) {
-        throw py::value_error(
-            "immutable continuation start must be strictly positive and finite"
-        );
-    }
-    return start;
-}
-
-py::dict chemical_result(const ChemicalSolveResult& evaluation) {
-    py::dict result;
-    const auto optional_float = [](double value) -> py::object {
-        return std::isfinite(value) ? py::cast(value) : py::none();
-    };
-    const auto optional_index = [](long value) -> py::object {
-        return value >= 0 ? py::cast(value) : py::none();
-    };
-    result["accepted"] = evaluation.accepted;
-    result["solver_status"] = evaluation.solver_status;
-    result["callback_error"] = evaluation.callback_error;
-    result["chemical_certification_level"] =
-        evaluation.chemical_certification_level;
-    result["boundary_status"] = evaluation.boundary_status;
-    result["structural_zero_species_indices"] =
-        evaluation.structural_zero_species_indices;
-    result["numerical_status"] = evaluation.numerical_status;
-    result["physical_status"] = evaluation.physical_status;
-    result["provider_domain_status"] = evaluation.provider_domain_status;
-    result["local_minimum_status"] = evaluation.local_minimum_status;
-    result["resolved_policy"] = evaluation.resolved_policy;
-    result["negative_curvature_recovery_status"] =
-        evaluation.negative_curvature_recovery_status;
-    result["negative_curvature_recovery_attempts"] =
-        evaluation.negative_curvature_recovery_attempts;
-    result["negative_curvature_recovery_selected_sign"] =
-        evaluation.negative_curvature_recovery_selected_sign;
-    result["trace_status"] = evaluation.trace_status;
-    result["globality_certificate"] = "not_guaranteed";
-    result["amounts"] = evaluation.amounts;
-    result["volume_m3"] = evaluation.volume_m3;
-    result["volume_parameter_derivatives"] =
-        evaluation.volume_parameter_derivatives;
-    result["local_variables"] = evaluation.local_variables;
-    result["local_lower_bounds"] = evaluation.local_lower_bounds;
-    result["local_upper_bounds"] = evaluation.local_upper_bounds;
-    result["local_parameter_order"] = evaluation.local_parameter_order;
-    result["local_parameter_jacobian"] = evaluation.local_parameter_jacobian;
-    result["balance_inf_norm"] = evaluation.balance_inf_norm;
-    result["charge_inf_norm"] = evaluation.charge_inf_norm;
-    result["pressure_relative_residual"] = evaluation.pressure_relative_residual;
-    result["reaction_affinity_inf_norm"] = evaluation.reaction_affinity_inf_norm;
-    result["reaction_affinity_residuals"] =
-        evaluation.reaction_affinity_residuals;
-    result["packing_fraction"] = evaluation.packing_fraction;
-    result["packing_fraction_min"] = optional_float(
-        evaluation.packing_fraction_min
-    );
-    result["packing_fraction_max"] = optional_float(
-        evaluation.packing_fraction_max
-    );
-    result["total_ion_fraction"] = optional_float(
-        evaluation.total_ion_fraction
-    );
-    result["total_ion_fraction_max"] = optional_float(
-        evaluation.total_ion_fraction_max
-    );
-    result["minimum_amount_mol"] = optional_float(
-        evaluation.minimum_amount_mol
-    );
-    result["trace_floor_mol"] = optional_float(evaluation.trace_floor_mol);
-    result["kkt_stationarity_inf_norm"] = evaluation.kkt_stationarity_inf_norm;
-    result["physical_stationarity_residuals"] =
-        evaluation.physical_stationarity_residuals;
-    result["physical_equality_multipliers"] =
-        evaluation.physical_equality_multipliers;
-    result["physical_constraint_jacobian"] =
-        evaluation.physical_constraint_jacobian;
-    result["physical_constraint_shape"] = py::make_tuple(
-        evaluation.physical_constraint_rows,
-        evaluation.physical_constraint_columns
-    );
-    result["physical_lagrangian_gradient"] =
-        evaluation.physical_lagrangian_gradient;
-    result["physical_objective_gradient"] =
-        evaluation.physical_objective_gradient;
-    result["physical_to_chart_jacobian"] =
-        evaluation.physical_to_chart_jacobian;
-    result["physical_to_chart_shape"] = py::make_tuple(
-        evaluation.physical_to_chart_rows,
-        evaluation.physical_to_chart_columns
-    );
-    result["chart_physical_pullback_residual_inf_norm"] = optional_float(
-        evaluation.chart_physical_pullback_residual_inf_norm
-    );
-    result["complementarity_inf_norm"] = evaluation.complementarity_inf_norm;
-    result["kkt_dimension"] = evaluation.kkt_dimension;
-    result["kkt_rank"] = evaluation.kkt_rank;
-    result["condition_number_inf"] =
-        optional_float(evaluation.condition_number_inf);
-    result["failure_kind"] = evaluation.failure_kind;
-    result["failure_reason"] = evaluation.failure_reason;
-    result["active_lower_bounds"] = evaluation.active_lower_bounds;
-    result["active_upper_bounds"] = evaluation.active_upper_bounds;
-    result["active_constraint_bounds"] =
-        evaluation.active_constraint_bounds;
-    result["reduced_hessian_status"] = evaluation.reduced_hessian_status;
-    result["reduced_hessian"] = evaluation.reduced_hessian;
-    result["reduced_hessian_nullspace_basis"] =
-        evaluation.reduced_hessian_nullspace_basis;
-    result["reduced_hessian_nullspace_shape"] = py::make_tuple(
-        evaluation.reduced_hessian_nullspace_rows,
-        evaluation.reduced_hessian_nullspace_columns
-    );
-    result["reduced_hessian_eigenvalues"] =
-        evaluation.reduced_hessian_eigenvalues;
-    result["reduced_hessian_spectrum_status"] =
-        evaluation.reduced_hessian_spectrum_status;
-    result["reduced_hessian_raw_inertia"] = py::make_tuple(
-        evaluation.reduced_hessian_raw_positive_eigenvalues,
-        evaluation.reduced_hessian_raw_zero_eigenvalues,
-        evaluation.reduced_hessian_raw_negative_eigenvalues
-    );
-    result["reduced_hessian_inertia"] = py::make_tuple(
-        evaluation.reduced_hessian_positive_eigenvalues,
-        evaluation.reduced_hessian_zero_eigenvalues,
-        evaluation.reduced_hessian_negative_eigenvalues
-    );
-    result["reduced_hessian_scale"] =
-        optional_float(evaluation.reduced_hessian_scale);
-    result["reduced_hessian_eigenvalue_tolerance"] =
-        optional_float(evaluation.reduced_hessian_eigenvalue_tolerance);
-    result["objective_gradient"] = evaluation.objective_gradient;
-    result["constraint_values"] = evaluation.constraint_values;
-    result["constraint_jacobian"] = evaluation.constraint_jacobian;
-    result["lagrangian_gradient"] = evaluation.lagrangian_gradient;
-    result["equality_multipliers"] = evaluation.equality_multipliers;
-    result["chart_stationarity_inf_norm"] =
-        optional_float(evaluation.chart_stationarity_inf_norm);
-    result["lagrangian_hessian"] = evaluation.lagrangian_hessian;
-    result["covariant_lagrangian_hessian"] =
-        evaluation.covariant_lagrangian_hessian;
-    result["derivative_audits_performed"] =
-        evaluation.derivative_audits_performed;
-    result["derivative_check_step"] = optional_float(
-        evaluation.derivative_check_step
-    );
-    result["objective_gradient_check_relative_error"] = optional_float(
-        evaluation.objective_gradient_check_relative_error
-    );
-    result["physical_objective_gradient_check_relative_error"] = optional_float(
-        evaluation.physical_objective_gradient_check_relative_error
-    );
-    result["constraint_jacobian_check_relative_error"] = optional_float(
-        evaluation.constraint_jacobian_check_relative_error
-    );
-    result["lagrangian_hessian_check_relative_error"] = optional_float(
-        evaluation.lagrangian_hessian_check_relative_error
-    );
-    result["reduced_hessian_check_relative_error"] = optional_float(
-        evaluation.reduced_hessian_check_relative_error
-    );
-    result["derivative_check_worst_entry"] =
-        evaluation.derivative_check_worst_entry;
-    result["derivative_check_worst_relative_error"] = optional_float(
-        evaluation.derivative_check_worst_relative_error
-    );
-    result["derivative_check_worst_analytic_value"] = optional_float(
-        evaluation.derivative_check_worst_analytic_value
-    );
-    result["derivative_check_worst_finite_difference_value"] = optional_float(
-        evaluation.derivative_check_worst_finite_difference_value
-    );
-    result["derivative_check_worst_step"] = optional_float(
-        evaluation.derivative_check_worst_step
-    );
-    const std::size_t derivative_dimension =
-        evaluation.objective_gradient.size();
-    result["derivative_coordinate_order"] =
-        evaluation.derivative_coordinate_order.size() == derivative_dimension
-        ? py::cast(evaluation.derivative_coordinate_order)
-        : py::cast(std::vector<std::string>{});
-    result["derivative_objective_basis"] =
-        evaluation.derivative_objective_basis;
-    result["derivative_constraint_basis"] =
-        evaluation.derivative_constraint_basis;
-    result["derivative_constraint_order"] =
-        evaluation.derivative_constraint_order.size()
-            == evaluation.constraint_values.size()
-        ? py::cast(evaluation.derivative_constraint_order)
-        : py::cast(std::vector<std::string>{});
-    result["objective_gradient_shape"] = py::make_tuple(
-        derivative_dimension
-    );
-    result["constraint_jacobian_shape"] = py::make_tuple(
-        evaluation.constraint_values.size(), derivative_dimension
-    );
-    result["lagrangian_hessian_shape"] = py::make_tuple(
-        derivative_dimension, derivative_dimension
-    );
-    result["kkt_root_values"] = evaluation.kkt_root_values;
-    result["kkt_root_jacobian"] = evaluation.kkt_root_jacobian;
-    result["kkt_root_shape"] = py::make_tuple(
-        evaluation.kkt_root_rows,
-        evaluation.kkt_root_columns
-    );
-    result["kkt_root_status"] = evaluation.kkt_root_status;
-    result["kkt_root_jacobian_check_relative_error"] = optional_float(
-        evaluation.kkt_root_jacobian_check_relative_error
-    );
-    const auto criterion = [](
-        const char* name,
-        double value,
-        double limit,
-        const char* comparison,
-        bool passed
-    ) {
-        py::dict record;
-        record["name"] = name;
-        record["status"] = std::isfinite(value) && passed ? "passed" : "failed";
-        record["value"] = value;
-        record["limit"] = limit;
-        record["comparison"] = comparison;
-        return record;
-    };
-    py::list numerical_criteria;
-    numerical_criteria.append(criterion(
-        "solver_termination", evaluation.solver_status == "solve_succeeded" ? 1.0 : 0.0,
-        1.0, ">=", evaluation.solver_status == "solve_succeeded"
-    ));
-    numerical_criteria.append(criterion(
-        "balance_inf_norm", evaluation.balance_inf_norm,
-        kChemicalBalanceTolerance, "<=",
-        evaluation.balance_inf_norm <= kChemicalBalanceTolerance
-    ));
-    numerical_criteria.append(criterion(
-        "complementarity_inf_norm", evaluation.complementarity_inf_norm,
-        kChemicalKktTolerance, "<=",
-        evaluation.complementarity_inf_norm <= kChemicalKktTolerance
-    ));
-    numerical_criteria.append(criterion(
-        "kkt_stationarity_inf_norm", evaluation.kkt_stationarity_inf_norm,
-        kChemicalKktTolerance, "<=",
-        evaluation.kkt_stationarity_inf_norm <= kChemicalKktTolerance
-    ));
-    numerical_criteria.append(criterion(
-        "chart_stationarity_inf_norm", evaluation.chart_stationarity_inf_norm,
-        kChemicalKktTolerance, "<=",
-        evaluation.chart_stationarity_inf_norm <= kChemicalKktTolerance
-    ));
-    numerical_criteria.append(criterion(
-        "chart_physical_pullback_residual_inf_norm",
-        evaluation.chart_physical_pullback_residual_inf_norm,
-        kChemicalChartPullbackTolerance,
-        "<=",
-        evaluation.chart_physical_pullback_residual_inf_norm
-            <= kChemicalChartPullbackTolerance
-    ));
-    numerical_criteria.append(criterion(
-        "derivative_evidence_finite", evaluation.callback_error.empty() ? 1.0 : 0.0,
-        1.0, ">=", evaluation.callback_error.empty()
-    ));
-    if (evaluation.derivative_audits_performed) {
-        numerical_criteria.append(criterion(
-            "objective_gradient_spanning_relative_error",
-            evaluation.objective_gradient_check_relative_error,
-            kChemicalObjectiveDerivativeTolerance,
-            "<=",
-            evaluation.objective_gradient_check_relative_error
-                <= kChemicalObjectiveDerivativeTolerance
-        ));
-        numerical_criteria.append(criterion(
-            "physical_objective_gradient_spanning_relative_error",
-            evaluation.physical_objective_gradient_check_relative_error,
-            kChemicalObjectiveDerivativeTolerance,
-            "<=",
-            evaluation.physical_objective_gradient_check_relative_error
-                <= kChemicalObjectiveDerivativeTolerance
-        ));
-        numerical_criteria.append(criterion(
-            "constraint_jacobian_spanning_relative_error",
-            evaluation.constraint_jacobian_check_relative_error,
-            kChemicalConstraintDerivativeTolerance,
-            "<=",
-            evaluation.constraint_jacobian_check_relative_error
-                <= kChemicalConstraintDerivativeTolerance
-        ));
-        numerical_criteria.append(criterion(
-            "lagrangian_hessian_spanning_relative_error",
-            evaluation.lagrangian_hessian_check_relative_error,
-            kChemicalHessianDerivativeTolerance,
-            "<=",
-            evaluation.lagrangian_hessian_check_relative_error
-                <= kChemicalHessianDerivativeTolerance
-        ));
-        numerical_criteria.append(criterion(
-            "reduced_hessian_spanning_relative_error",
-            evaluation.reduced_hessian_check_relative_error,
-            kChemicalHessianDerivativeTolerance,
-            "<=",
-            evaluation.reduced_hessian_check_relative_error
-                <= kChemicalHessianDerivativeTolerance
-        ));
-        numerical_criteria.append(criterion(
-            "kkt_root_jacobian_spanning_relative_error",
-            evaluation.kkt_root_jacobian_check_relative_error,
-            kChemicalHessianDerivativeTolerance,
-            "<=",
-            evaluation.kkt_root_jacobian_check_relative_error
-                <= kChemicalHessianDerivativeTolerance
-        ));
-    }
-    numerical_criteria.append(criterion(
-        "kkt_rank",
-        static_cast<double>(evaluation.kkt_rank),
-        static_cast<double>(evaluation.kkt_dimension),
-        ">=",
-        evaluation.kkt_rank == evaluation.kkt_dimension
-    ));
-    numerical_criteria.append(criterion(
-        "kkt_condition_number_inf",
-        evaluation.condition_number_inf,
-        kChemicalConditionNumberMax,
-        "<=",
-        evaluation.condition_number_inf <= kChemicalConditionNumberMax
-    ));
-    numerical_criteria.append(criterion(
-        "strict_local_minimum",
-        evaluation.local_minimum_status == "passed" ? 1.0 : 0.0,
-        1.0,
-        ">=",
-        evaluation.local_minimum_status == "passed"
-    ));
-    result["numerical_criteria"] = std::move(numerical_criteria);
-    py::list physical_criteria;
-    physical_criteria.append(criterion(
-        "balance_inf_norm", evaluation.balance_inf_norm,
-        kChemicalBalanceTolerance, "<=",
-        evaluation.balance_inf_norm <= kChemicalBalanceTolerance
-    ));
-    physical_criteria.append(criterion(
-        "charge_inf_norm", evaluation.charge_inf_norm,
-        kChemicalBalanceTolerance, "<=",
-        evaluation.charge_inf_norm <= kChemicalBalanceTolerance
-    ));
-    physical_criteria.append(criterion(
-        "pressure_relative_residual",
-        evaluation.pressure_relative_residual,
-        kChemicalPressureTolerance,
-        "<=",
-        evaluation.pressure_relative_residual <= kChemicalPressureTolerance
-    ));
-    physical_criteria.append(criterion(
-        "reaction_affinity_inf_norm",
-        evaluation.reaction_affinity_inf_norm,
-        kChemicalAffinityTolerance,
-        "<=",
-        evaluation.reaction_affinity_inf_norm <= kChemicalAffinityTolerance
-    ));
-    if (std::isfinite(evaluation.minimum_amount_mol)
-        && std::isfinite(evaluation.trace_floor_mol)) {
-        physical_criteria.append(criterion(
-            "minimum_amount_mol",
-            evaluation.minimum_amount_mol,
-            evaluation.trace_floor_mol,
-            ">",
-            evaluation.minimum_amount_mol > evaluation.trace_floor_mol
-        ));
-    }
-    if (std::isfinite(evaluation.packing_fraction_min)
-        && std::isfinite(evaluation.packing_fraction_max)) {
-        physical_criteria.append(criterion(
-            "packing_fraction_lower_bound",
-            evaluation.packing_fraction,
-            evaluation.packing_fraction_min,
-            ">=",
-            evaluation.packing_fraction >= evaluation.packing_fraction_min
-        ));
-        physical_criteria.append(criterion(
-            "packing_fraction_upper_bound",
-            evaluation.packing_fraction,
-            evaluation.packing_fraction_max,
-            "<=",
-            evaluation.packing_fraction <= evaluation.packing_fraction_max
-        ));
-    }
-    if (std::isfinite(evaluation.total_ion_fraction_max)) {
-        physical_criteria.append(criterion(
-            "total_ion_fraction",
-            evaluation.total_ion_fraction,
-            evaluation.total_ion_fraction_max + 1.0e-12,
-            "<=",
-            evaluation.total_ion_fraction
-                <= evaluation.total_ion_fraction_max + 1.0e-12
-        ));
-    }
-    result["physical_criteria"] = std::move(physical_criteria);
-    py::dict search;
-    search["status"] = evaluation.search.status;
-    search["primary_budget"] = evaluation.search.primary_budget;
-    search["primary_attempt_count"] =
-        evaluation.search.primary_attempt_count;
-    search["generated_start_count"] =
-        evaluation.search.generated_start_count;
-    search["budget_truncated_start_count"] =
-        evaluation.search.budget_truncated_start_count;
-    search["duplicate_start_count"] =
-        evaluation.search.duplicate_start_count;
-    search["infeasible_start_count"] =
-        evaluation.search.infeasible_start_count;
-    search["evaluated_start_count"] =
-        evaluation.search.evaluated_start_count;
-    search["domain_rejected_start_count"] =
-        evaluation.search.domain_rejected_start_count;
-    search["construction_rejected_start_count"] =
-        evaluation.search.construction_rejected_start_count;
-    search["selected_basin_ordinal"] =
-        optional_index(evaluation.search.selected_basin_ordinal);
-    search["selected_objective"] =
-        optional_float(evaluation.search.selected_objective);
-    search["selection_label"] = evaluation.search.selection_label;
-    py::list attempts;
-    for (const ChemicalSearchAttempt& attempt : evaluation.search.attempts) {
-        py::dict record;
-        record["ordinal"] = attempt.ordinal;
-        record["primary_ordinal"] = attempt.primary_ordinal;
-        record["kind"] = attempt.kind;
-        record["parent_ordinal"] = optional_index(attempt.parent_ordinal);
-        record["start_identity"] = attempt.start_identity;
-        record["start_construction_status"] =
-            attempt.start_construction_status;
-        record["retraction_status"] = attempt.retraction_status;
-        record["provider_domain_status"] =
-            attempt.provider_domain_status;
-        record["solver_status"] = attempt.solver_status;
-        record["callback_error"] = attempt.callback_error;
-        record["terminal_status"] = attempt.terminal_status;
-        record["amounts"] = attempt.amounts;
-        record["volume_m3"] = optional_float(attempt.volume_m3);
-        record["objective"] = optional_float(attempt.objective);
-        record["balance_inf_norm"] =
-            optional_float(attempt.balance_inf_norm);
-        record["charge_inf_norm"] =
-            optional_float(attempt.charge_inf_norm);
-        record["pressure_relative_residual"] =
-            optional_float(attempt.pressure_relative_residual);
-        record["reaction_affinity_inf_norm"] =
-            optional_float(attempt.reaction_affinity_inf_norm);
-        record["kkt_stationarity_inf_norm"] =
-            optional_float(attempt.kkt_stationarity_inf_norm);
-        record["complementarity_inf_norm"] =
-            optional_float(attempt.complementarity_inf_norm);
-        record["kkt_dimension"] = attempt.kkt_dimension;
-        record["kkt_rank"] = attempt.kkt_rank;
-        record["condition_number_inf"] =
-            optional_float(attempt.condition_number_inf);
-        record["local_minimum_status"] =
-            attempt.local_minimum_status;
-        record["trace_status"] = attempt.trace_status;
-        record["basin_ordinal"] = optional_index(attempt.basin_ordinal);
-        record["recovery_seed_count"] = attempt.recovery_seed_count;
-        record["recovery_solve_count"] = attempt.recovery_solve_count;
-        attempts.append(std::move(record));
-    }
-    search["attempts"] = std::move(attempts);
-    py::list basins;
-    for (const ChemicalSearchBasin& basin : evaluation.search.basins) {
-        py::dict record;
-        record["ordinal"] = basin.ordinal;
-        record["representative_attempt_ordinal"] =
-            basin.representative_attempt_ordinal;
-        record["amounts"] = basin.amounts;
-        record["volume_m3"] = optional_float(basin.volume_m3);
-        record["objective"] = optional_float(basin.objective);
-        basins.append(std::move(record));
-    }
-    search["basins"] = std::move(basins);
-    py::list prefixes;
-    for (const ChemicalSearchBudgetPrefix& prefix
-         : evaluation.search.budget_prefixes) {
-        py::dict record;
-        record["primary_budget"] = prefix.primary_budget;
-        record["attempted_primary_ordinals"] =
-            prefix.attempted_primary_ordinals;
-        record["basin_ordinals"] = prefix.basin_ordinals;
-        record["selected_basin_ordinal"] =
-            optional_index(prefix.selected_basin_ordinal);
-        record["selection_changed"] = prefix.selection_changed;
-        prefixes.append(std::move(record));
-    }
-    search["budget_prefixes"] = std::move(prefixes);
-    result["search"] = std::move(search);
-    py::dict sensitivities;
-    sensitivities["status"] = evaluation.sensitivities.status;
-    sensitivities["failure_reason"] = evaluation.sensitivities.failure_reason;
-    const std::size_t species_count = evaluation.amounts.size();
-    if (evaluation.sensitivities.amount_derivatives.size()
-            != evaluation.sensitivities.parameter_order.size() * species_count
-        || evaluation.sensitivities.volume_derivatives.size()
-            != evaluation.sensitivities.parameter_order.size()) {
-        throw std::runtime_error(
-            "internal chemical-sensitivity result dimensions are inconsistent"
-        );
-    }
-    py::tuple parameter_order(evaluation.sensitivities.parameter_order.size());
-    for (std::size_t parameter = 0;
-         parameter < evaluation.sensitivities.parameter_order.size();
-         ++parameter) {
-        parameter_order[parameter] =
-            evaluation.sensitivities.parameter_order[parameter];
-    }
-    sensitivities["parameter_order"] = std::move(parameter_order);
-    py::tuple amount_derivatives(evaluation.sensitivities.parameter_order.size());
-    for (std::size_t parameter = 0;
-         parameter < evaluation.sensitivities.parameter_order.size();
-         ++parameter) {
-        py::tuple row(species_count);
-        for (std::size_t species = 0; species < species_count; ++species) {
-            row[species] = evaluation.sensitivities.amount_derivatives[
-                parameter * species_count + species
-            ];
-        }
-        amount_derivatives[parameter] = std::move(row);
-    }
-    sensitivities["amount_derivatives"] = std::move(amount_derivatives);
-    sensitivities["volume_derivatives"] = py::tuple(py::cast(
-        evaluation.sensitivities.volume_derivatives
-    ));
-    sensitivities["kkt_parameter_jacobian"] = py::tuple(py::cast(
-        evaluation.sensitivities.kkt_parameter_jacobian
-    ));
-    sensitivities["kkt_dimension"] = evaluation.sensitivities.kkt_dimension;
-    sensitivities["kkt_rank"] = evaluation.sensitivities.kkt_rank;
-    sensitivities["condition_number_inf"] =
-        evaluation.sensitivities.condition_number_inf;
-    sensitivities["active_lower_bounds"] = py::tuple(py::cast(
-        evaluation.sensitivities.active_lower_bounds
-    ));
-    sensitivities["active_upper_bounds"] = py::tuple(py::cast(
-        evaluation.sensitivities.active_upper_bounds
-    ));
-    sensitivities["active_constraint_bounds"] = py::tuple(py::cast(
-        evaluation.sensitivities.active_constraint_bounds
-    ));
-    sensitivities["active_trace_species"] = py::tuple(py::cast(
-        evaluation.sensitivities.active_trace_species
-    ));
-    sensitivities["chart_topology"] =
-        evaluation.sensitivities.chart_topology;
-    sensitivities["parameter_fingerprint"] =
-        evaluation.sensitivities.parameter_fingerprint;
-    sensitivities["provider_parameter_status"] =
-        evaluation.sensitivities.provider_parameter_status;
-    sensitivities["provider_parameter_failure_reason"] =
-        evaluation.sensitivities.provider_parameter_failure_reason;
-    sensitivities["reference_parameter_status"] =
-        evaluation.sensitivities.reference_parameter_status;
-    sensitivities["reference_parameter_failure_reason"] =
-        evaluation.sensitivities.reference_parameter_failure_reason;
-    result["sensitivities"] = std::move(sensitivities);
-    return result;
-}
-
-py::dict solve_manufactured(const py::dict& spec, double trace_floor) {
-    const ReactionSystemInput input = reaction_system_input(spec);
-    const CompiledReactionSystem compiled = compile_reaction_system(input);
-    return chemical_result(
-        solve_manufactured_ideal_reaction(
-            compiled,
-            input.temperature_k,
-            input.pressure_pa,
-            {},
-            trace_floor
-        )
-    );
-}
-
 void validate_provider_identity(
     const ChemicalProviderMetadata& metadata,
     const ReactionSystemInput& input
@@ -730,173 +145,6 @@ void validate_provider_identity(
     if (input.charges != metadata.charges) {
         throw py::value_error("Provider charges do not match the reaction system");
     }
-}
-
-CompiledReactionSystem compile_provider_input(
-    const ProviderContext& provider,
-    const ChemicalProviderMetadata& metadata,
-    const ReactionSystemInput& input,
-    const std::vector<double>& packing_bounds
-) {
-    validate_provider_identity(metadata, input);
-    const epcsaft::NativeProviderMetadata& domain = provider.metadata();
-    if (input.temperature_k < domain.temperature_min_k
-        || input.temperature_k > domain.temperature_max_k) {
-        throw py::value_error("temperature is outside the Provider source domain");
-    }
-    const CompiledReactionSystem compiled = compile_reaction_system(input);
-    double ionic_feed = 0.0;
-    double total_feed = 0.0;
-    for (std::size_t species = 0; species < input.feed_amounts.size(); ++species) {
-        total_feed += input.feed_amounts[species];
-        if (input.charges[species] != 0) {
-            ionic_feed += input.feed_amounts[species];
-        }
-    }
-    if (std::isfinite(domain.ion_mole_fraction_max)
-        && (total_feed <= 0.0
-            || ionic_feed / total_feed > domain.ion_mole_fraction_max)) {
-        throw py::value_error("feed composition exceeds the Provider source domain");
-    }
-    if (packing_bounds.size() != 2) {
-        throw py::value_error("packing_fraction_bounds must contain two values");
-    }
-    return compiled;
-}
-
-void set_provider_parameter_status(
-    ChemicalSolveResult& evaluation,
-    std::size_t active_parameter_count
-) {
-    if (active_parameter_count == 0) {
-        evaluation.sensitivities.provider_parameter_status = "not_applicable";
-        evaluation.sensitivities.provider_parameter_failure_reason.clear();
-    } else if (evaluation.sensitivities.status == "available") {
-        evaluation.sensitivities.provider_parameter_status = "available";
-        evaluation.sensitivities.provider_parameter_failure_reason.clear();
-    } else {
-        evaluation.sensitivities.provider_parameter_status = "unavailable";
-        evaluation.sensitivities.provider_parameter_failure_reason =
-            evaluation.sensitivities.failure_reason;
-    }
-}
-
-std::vector<double> compile_ln_k_parameter_derivatives(
-    const CompiledReactionSystem& compiled,
-    const ReactionSystemInput& input,
-    const std::vector<double>& supplied,
-    std::size_t parameter_count
-) {
-    if (supplied.empty()) {
-        return std::vector<double>(
-            compiled.reaction_matrix.rows * parameter_count, 0.0
-        );
-    }
-    if (parameter_count == 0
-        || supplied.size() != input.reaction_matrix.rows * parameter_count
-        || compiled.supplied_reaction_transform.rows
-            != compiled.reaction_matrix.rows
-        || compiled.supplied_reaction_transform.columns
-            != input.reaction_matrix.rows) {
-        throw py::value_error(
-            "source parameter derivatives do not match the compiled reaction basis"
-        );
-    }
-    std::vector<double> result(
-        compiled.reaction_matrix.rows * parameter_count, 0.0
-    );
-    for (std::size_t reaction = 0;
-         reaction < compiled.reaction_matrix.rows;
-         ++reaction) {
-        for (std::size_t input_reaction = 0;
-             input_reaction < input.reaction_matrix.rows;
-             ++input_reaction) {
-            for (std::size_t parameter = 0;
-                 parameter < parameter_count;
-                 ++parameter) {
-                result[reaction * parameter_count + parameter] +=
-                    compiled.supplied_reaction_transform(
-                        reaction, input_reaction
-                    ) * supplied[input_reaction * parameter_count + parameter];
-            }
-        }
-    }
-    return result;
-}
-
-py::dict solve_provider_input(
-    const ChemicalProviderMetadata& metadata,
-    const ReactionSystemInput& input,
-    const ProviderContext& provider,
-    const std::vector<double>& packing_bounds,
-    double trace_floor,
-    const std::vector<double>& ln_k_pressure_derivatives_per_pa = {},
-    const std::vector<double>& ln_k_parameter_derivatives = {},
-    const ProviderActiveParameterSet* active_parameters = nullptr,
-    const ChemicalContinuationStart* continuation_start = nullptr,
-    int max_iterations = 500
-) {
-    const CompiledReactionSystem compiled = compile_provider_input(
-        provider, metadata, input, packing_bounds
-    );
-    std::vector<double> compiled_ln_k_pressure_derivatives_per_pa;
-    if (!ln_k_pressure_derivatives_per_pa.empty()) {
-        if (ln_k_pressure_derivatives_per_pa.size()
-                != input.reaction_matrix.rows
-            || compiled.supplied_reaction_transform.rows
-                != compiled.reaction_matrix.rows
-            || compiled.supplied_reaction_transform.columns
-                != input.reaction_matrix.rows) {
-            throw py::value_error(
-                "source pressure derivatives do not match the compiled reaction basis"
-            );
-        }
-        compiled_ln_k_pressure_derivatives_per_pa.assign(
-            compiled.reaction_matrix.rows, 0.0
-        );
-        for (std::size_t reaction = 0;
-             reaction < compiled.reaction_matrix.rows;
-             ++reaction) {
-            for (std::size_t supplied = 0;
-                 supplied < input.reaction_matrix.rows;
-                 ++supplied) {
-                compiled_ln_k_pressure_derivatives_per_pa[reaction] +=
-                    compiled.supplied_reaction_transform(reaction, supplied)
-                    * ln_k_pressure_derivatives_per_pa[supplied];
-            }
-        }
-    }
-    const std::size_t active_parameter_count = active_parameters == nullptr
-        ? 0
-        : active_parameters->identities.size();
-    const std::vector<double> compiled_ln_k_parameter_derivatives =
-        compile_ln_k_parameter_derivatives(
-            compiled,
-            input,
-            ln_k_parameter_derivatives,
-            active_parameter_count
-        );
-    ChemicalSolveResult evaluation = solve_provider_reaction(
-        compiled,
-        provider,
-        input.temperature_k,
-        input.pressure_pa,
-        packing_bounds[0],
-        packing_bounds[1],
-        provider.metadata().ion_mole_fraction_max,
-        trace_floor,
-        compiled_ln_k_pressure_derivatives_per_pa,
-        compiled_ln_k_parameter_derivatives,
-        active_parameters,
-        continuation_start,
-        max_iterations
-    );
-    set_provider_parameter_status(evaluation, active_parameter_count);
-    py::dict result = chemical_result(evaluation);
-    result["parameter_fingerprint"] = input.provider_fingerprint;
-    result["packing_fraction_bounds"] = packing_bounds;
-    result["provider_evaluation_count"] = provider.evaluation_count();
-    return result;
 }
 
 SourceReferenceTransferEvidence source_reference_transfer_evidence(
@@ -1024,322 +272,6 @@ SourceReferenceTransferEvidence source_reference_transfer_evidence(
     return result;
 }
 
-std::pair<SourceStandardStateResult, SourceReferenceTransferEvidence>
-transform_provider_source_input(
-    const ProviderContext& provider,
-    const py::dict& source_standard_state,
-    bool sensitivities_requested,
-    const ProviderActiveParameterSet* active_parameters,
-    ReactionSystemInput& input
-) {
-    const std::string source_standard_state_id = py::cast<std::string>(
-        source_standard_state["id"]
-    );
-    const std::string source_activity_scale_id = py::cast<std::string>(
-        source_standard_state["activity_scale_id"]
-    );
-    const std::vector<double> log_activity_scale_factors =
-        py::cast<std::vector<double>>(
-            source_standard_state["log_activity_scale_factors"]
-        );
-    const double source_reference_pressure_pa = py::cast<double>(
-        source_standard_state["reference_pressure_pa"]
-    );
-    const std::string source_reference_activity_convention_id =
-        py::cast<std::string>(
-            source_standard_state["source_reference_activity_convention_id"]
-        );
-    const double source_reference_standard_molality_mol_per_kg =
-        py::cast<double>(
-            source_standard_state[
-                "source_reference_standard_molality_mol_per_kg"
-            ]
-        );
-    if (source_standard_state_id.empty() || source_activity_scale_id.empty()
-        || source_reference_activity_convention_id.empty()) {
-        throw py::value_error("source standard-state identity is incomplete");
-    }
-    if (!std::isfinite(source_reference_pressure_pa)
-        || source_reference_pressure_pa <= 0.0) {
-        throw py::value_error(
-            "source standard-state reference pressure is invalid"
-        );
-    }
-    if (!std::isfinite(source_reference_standard_molality_mol_per_kg)
-        || source_reference_standard_molality_mol_per_kg <= 0.0) {
-        throw py::value_error("source standard molality is invalid");
-    }
-    for (const EquilibriumConstantRecord& record : input.equilibrium_constant_records) {
-        if (record.conversion_id
-                != "source-standard-state-to-provider-neutral-reference"
-            || record.reaction_orientation != "products_positive"
-            || !record.dimensionless
-            || record.reference_id.empty()
-            || record.temperature_k != input.temperature_k
-            || record.pressure_pa != source_reference_pressure_pa) {
-            throw py::value_error(
-                "source equilibrium-constant provenance is incompatible"
-            );
-        }
-        if (source_standard_state_id != record.reference_id) {
-            throw py::value_error(
-                "source standard-state identity is inconsistent"
-            );
-        }
-    }
-    input.provider_fingerprint = provider.fingerprint();
-    const std::string provider_topology_fingerprint =
-        provider.parameterized_topology_fingerprint();
-    const SourceReferenceTransferEvidence reference =
-        source_reference_transfer_evidence(
-            source_standard_state, "provider_transfer"
-        );
-    const bool pressure_derivative_available = std::find(
-        reference.derivative_availability.begin(),
-        reference.derivative_availability.end(),
-        "pressure"
-    ) != reference.derivative_availability.end();
-    const bool parameter_derivative_available = std::find(
-        reference.derivative_availability.begin(),
-        reference.derivative_availability.end(),
-        "parameters"
-    ) != reference.derivative_availability.end();
-    if (sensitivities_requested != pressure_derivative_available
-        || (active_parameters != nullptr) != parameter_derivative_available
-        || (active_parameters != nullptr
-            && reference.active_parameter_identities
-                != active_parameters->identities)) {
-        throw py::value_error(
-            "installed Provider source-reference derivative receipt is incompatible"
-        );
-    }
-    if (reference.reference_state_id != source_standard_state_id
-        || reference.activity_convention_id
-            != source_reference_activity_convention_id
-        || reference.source_reference_pressure_pa
-            != source_reference_pressure_pa
-        || reference.standard_molality_mol_per_kg
-            != source_reference_standard_molality_mol_per_kg) {
-        throw py::value_error(
-            "installed Provider source-reference declaration is inconsistent"
-        );
-    }
-    if (reference.topology_fingerprint != provider_topology_fingerprint
-        || reference.source_temperature_min_k
-            != provider.metadata().temperature_min_k
-        || reference.source_temperature_max_k
-            != provider.metadata().temperature_max_k
-        || !std::isfinite(reference.source_pressure_min_pa)
-        || !std::isfinite(reference.source_pressure_max_pa)
-        || reference.source_pressure_min_pa <= 0.0
-        || reference.source_pressure_max_pa < reference.source_pressure_min_pa
-        || input.pressure_pa < reference.source_pressure_min_pa
-        || input.pressure_pa > reference.source_pressure_max_pa) {
-        throw py::value_error(
-            "installed Provider source-reference topology or domain is incompatible"
-        );
-    }
-    SourceStandardStateResult transformed = transform_source_standard_state(
-        input.reaction_matrix,
-        input.ln_k,
-        log_activity_scale_factors,
-        input.species_ids,
-        input.charges,
-        input.provider_fingerprint,
-        input.temperature_k,
-        input.pressure_pa,
-        reference
-    );
-    input.ln_k = transformed.ln_k_provider_basis;
-    for (EquilibriumConstantRecord& record : input.equilibrium_constant_records) {
-        record.reference_id = "provider-helmholtz-coordinate-basis";
-        record.conversion_id = "already-provider-basis";
-        record.pressure_pa = input.pressure_pa;
-    }
-    return {std::move(transformed), reference};
-}
-
-py::dict solve_provider_source(
-    const epcsaft::NativeModel& model,
-    const py::dict& spec,
-    const py::dict& source_standard_state,
-    const std::vector<double>& packing_bounds,
-    double trace_floor,
-    bool sensitivities_requested,
-    const ProviderActiveParameterSet* active_parameters,
-    const ChemicalContinuationStart* continuation_start,
-    int max_iterations = 500
-) {
-    const ProviderContext provider(model);
-    const ChemicalProviderMetadata metadata = chemical_provider_metadata(provider);
-    ReactionSystemInput input = reaction_system_input(spec);
-    validate_provider_identity(metadata, input);
-    auto [transformed, reference] = transform_provider_source_input(
-        provider,
-        source_standard_state,
-        sensitivities_requested,
-        active_parameters,
-        input
-    );
-    py::dict result = solve_provider_input(
-        metadata,
-        input,
-        provider,
-        packing_bounds,
-        trace_floor,
-        transformed.ln_k_pressure_derivatives_per_pa,
-        transformed.ln_k_parameter_derivatives,
-        active_parameters,
-        continuation_start,
-        max_iterations
-    );
-    py::dict sensitivities = py::cast<py::dict>(result["sensitivities"]);
-    sensitivities["reference_parameter_status"] =
-        active_parameters == nullptr ? "not_applicable" : "available";
-    sensitivities["reference_parameter_failure_reason"] = "";
-    result["standard_offsets"] = transformed.standard_offsets;
-    result["ln_k_provider_basis"] = transformed.ln_k_provider_basis;
-    result["reference_representation_residual_inf_norm"] =
-        transformed.representation_residual_inf_norm;
-    result["source_standard_state_id"] = source_standard_state["id"];
-    result["source_activity_scale_id"] = source_standard_state["activity_scale_id"];
-    result["provider_reference_id"] = reference.helmholtz_basis_id;
-    result["reference_derivative_availability"] =
-        (sensitivities_requested ? 2 : 0)
-        | (active_parameters == nullptr ? 0 : 8);
-    result["reference_convergence_error"] =
-        reference.reference_convergence_error;
-    result["source_reference_state_fingerprint"] =
-        reference.reference_state_fingerprint;
-    return result;
-}
-
-py::dict solve_chemical_equilibrium(
-    const py::object& model_object,
-    const py::dict& spec,
-    const py::object& source_standard_state,
-    const py::object& packing_fraction_bounds,
-    double trace_floor,
-    bool sensitivities_requested,
-    bool active_parameters_requested,
-    int max_iterations
-) {
-    if (model_object.is_none()) {
-        if (!source_standard_state.is_none() || !packing_fraction_bounds.is_none()) {
-            throw py::value_error(
-                "ideal-gas chemical equilibrium cannot consume Provider metadata"
-            );
-        }
-        return solve_manufactured(spec, trace_floor);
-    }
-    if (packing_fraction_bounds.is_none()) {
-        throw py::value_error(
-            "packing_fraction_bounds are required from the calling formulation"
-        );
-    }
-    const std::vector<double> packing_bounds =
-        py::cast<std::vector<double>>(packing_fraction_bounds);
-    const ChemicalContinuationStart anchored = spec.contains("continuation_start")
-        ? continuation_start(spec)
-        : ChemicalContinuationStart{};
-    const ChemicalContinuationStart* anchored_ptr =
-        spec.contains("continuation_start") ? &anchored : nullptr;
-    const epcsaft::NativeModel& model = py::cast<const epcsaft::NativeModel&>(
-        model_object
-    );
-    const ProviderContext provider(model);
-    if (source_standard_state.is_none()) {
-        const ChemicalProviderMetadata metadata = chemical_provider_metadata(provider);
-        ReactionSystemInput input = reaction_system_input(spec);
-        input.provider_fingerprint = provider.fingerprint();
-        const ProviderActiveParameterSet resolved = provider.active_parameters();
-        if (active_parameters_requested != !resolved.identities.empty()) {
-            throw py::value_error(
-                "Provider active-parameter identity does not match the request"
-            );
-        }
-        return solve_provider_input(
-            metadata,
-            input,
-            provider,
-            packing_bounds,
-            trace_floor,
-            {},
-            {},
-            resolved.identities.empty() ? nullptr : &resolved,
-            anchored_ptr,
-            max_iterations
-        );
-    }
-    const ProviderActiveParameterSet resolved = provider.active_parameters();
-    if (active_parameters_requested != !resolved.identities.empty()) {
-        throw py::value_error(
-            "Provider active-parameter identity does not match the request"
-        );
-    }
-    return solve_provider_source(
-        model,
-        spec,
-        py::cast<py::dict>(source_standard_state),
-        packing_bounds,
-        trace_floor,
-        sensitivities_requested,
-        resolved.identities.empty() ? nullptr : &resolved,
-        anchored_ptr,
-        max_iterations
-    );
-}
-
-py::dict evaluate_provider_local(
-    const epcsaft::NativeModel& model,
-    const py::dict& spec,
-    const py::object& source_standard_state,
-    const std::vector<double>& packing_bounds,
-    const std::vector<double>& variables,
-    const std::vector<double>& lower,
-    const std::vector<double>& upper,
-    bool active_parameters_requested
-) {
-    const ProviderContext provider(model);
-    const ChemicalProviderMetadata metadata = chemical_provider_metadata(provider);
-    ReactionSystemInput input = reaction_system_input(spec);
-    input.provider_fingerprint = provider.fingerprint();
-    const ProviderActiveParameterSet parameters = provider.active_parameters();
-    if (active_parameters_requested != !parameters.identities.empty()) {
-        throw py::value_error(
-            "Provider active-parameter identity does not match the request"
-        );
-    }
-    const std::size_t parameter_count = parameters.identities.size();
-    std::vector<double> ln_k_parameter_derivatives;
-    if (!source_standard_state.is_none()) {
-        auto source = transform_provider_source_input(
-            provider,
-            py::cast<py::dict>(source_standard_state),
-            active_parameters_requested,
-            parameter_count == 0 ? nullptr : &parameters,
-            input
-        );
-        ln_k_parameter_derivatives = std::move(
-            source.first.ln_k_parameter_derivatives
-        );
-    }
-    const CompiledReactionSystem compiled = compile_provider_input(
-        provider, metadata, input, packing_bounds
-    );
-    ChemicalSolveResult evaluation = evaluate_provider_reaction_local(
-        compiled, provider, input.temperature_k, input.pressure_pa,
-        packing_bounds[0], packing_bounds[1],
-        provider.metadata().ion_mole_fraction_max,
-        variables, lower, upper,
-        compile_ln_k_parameter_derivatives(
-            compiled, input, ln_k_parameter_derivatives, parameter_count
-        ),
-        parameter_count == 0 ? nullptr : &parameters
-    );
-    set_provider_parameter_status(evaluation, parameter_count);
-    return chemical_result(evaluation);
-}
 
 py::dict reactive_finite_phase_result(const ReactiveFinitePhaseResult& evaluation) {
     py::dict result;
@@ -1373,8 +305,14 @@ py::dict reactive_finite_phase_result(const ReactiveFinitePhaseResult& evaluatio
     result["kkt_stationarity_inf_norm"] =
         optional_float(evaluation.kkt_stationarity_inf_norm);
     result["phase_distinctness"] = optional_float(evaluation.phase_distinctness);
+    result["minimum_amount_mol"] = optional_float(evaluation.minimum_amount_mol);
+    result["minimum_bound_margin"] = optional_float(evaluation.minimum_bound_margin);
     result["reduced_hessian_min_eigenvalue"] =
         optional_float(evaluation.reduced_hessian_min_eigenvalue);
+    result["reduced_hessian_scale"] =
+        optional_float(evaluation.reduced_hessian_scale);
+    result["reduced_hessian_threshold"] =
+        optional_float(evaluation.reduced_hessian_threshold);
     result["declared_direction_rank"] = evaluation.declared_direction_rank;
     result["admissible_nullity"] = evaluation.admissible_nullity;
     result["optimizer_iterations"] = evaluation.optimizer_iterations;
@@ -1399,7 +337,89 @@ py::dict reactive_finite_phase_result(const ReactiveFinitePhaseResult& evaluatio
     result["chemical_potential_derivatives"] =
         evaluation.chemical_potential_derivatives;
     result["log_fugacity_derivatives"] = evaluation.log_fugacity_derivatives;
+    result["local_variables"] = evaluation.local_variables;
+    result["local_lower_bounds"] = evaluation.local_lower_bounds;
+    result["local_upper_bounds"] = evaluation.local_upper_bounds;
+    result["input_order"] = evaluation.input_order;
+    result["kkt_input_jacobian"] = evaluation.kkt_input_jacobian;
+    result["input_amount_derivatives"] = evaluation.input_amount_derivatives;
+    result["input_volume_derivatives"] = evaluation.input_volume_derivatives;
+    result["input_pressure_derivatives"] = evaluation.input_pressure_derivatives;
+    result["input_chemical_potential_derivatives"] =
+        evaluation.input_chemical_potential_derivatives;
+    result["input_log_fugacity_derivatives"] =
+        evaluation.input_log_fugacity_derivatives;
+    result["kkt_root_values"] = evaluation.kkt_root_values;
+    result["kkt_root_jacobian"] = evaluation.kkt_root_jacobian;
+    result["kkt_dimension"] = evaluation.kkt_dimension;
+    result["kkt_rank"] = evaluation.kkt_rank;
+    result["condition_number_inf"] = optional_float(evaluation.condition_number_inf);
+    result["output_values"] = evaluation.output_values;
+    result["output_input_derivatives"] = evaluation.output_input_derivatives;
+    result["output_local_derivatives"] = evaluation.output_local_derivatives;
+    result["output_parameter_partials"] = evaluation.output_parameter_partials;
     return result;
+}
+
+CompiledReactionSystem expand_reactive_species_face(
+    CompiledReactionSystem compiled,
+    const ReactionSystemInput& input
+) {
+    if (compiled.species_count == input.species_ids.size()) {
+        return compiled;
+    }
+    const std::size_t full_count = input.species_ids.size();
+    const std::size_t reduced_count = compiled.species_count;
+    const auto expand_matrix = [full_count, reduced_count, &compiled](
+                                   const DenseMatrix& reduced
+                               ) {
+        DenseMatrix full{
+            reduced.rows,
+            full_count,
+            std::vector<double>(reduced.rows * full_count, 0.0),
+        };
+        for (std::size_t row = 0; row < reduced.rows; ++row) {
+            for (std::size_t retained = 0; retained < reduced_count; ++retained) {
+                full(row, compiled.retained_species_indices[retained]) =
+                    reduced(row, retained);
+            }
+        }
+        return full;
+    };
+    const auto expand_species = [full_count, reduced_count, &compiled](
+                                    const std::vector<double>& reduced,
+                                    std::size_t width
+                                ) {
+        std::vector<double> full(full_count * width, 0.0);
+        for (std::size_t retained = 0; retained < reduced_count; ++retained) {
+            const std::size_t species = compiled.retained_species_indices[retained];
+            std::copy_n(
+                reduced.begin() + static_cast<std::ptrdiff_t>(retained * width),
+                width,
+                full.begin() + static_cast<std::ptrdiff_t>(species * width)
+            );
+        }
+        return full;
+    };
+    compiled.balance_matrix = expand_matrix(compiled.balance_matrix);
+    compiled.reaction_matrix = expand_matrix(compiled.reaction_matrix);
+    compiled.g_ref = expand_species(compiled.g_ref, 1);
+    if (!compiled.g_ref_pressure_derivatives_per_pa.empty()) {
+        compiled.g_ref_pressure_derivatives_per_pa = expand_species(
+            compiled.g_ref_pressure_derivatives_per_pa, 1
+        );
+    }
+    if (!compiled.g_ref_parameter_derivatives.empty()) {
+        compiled.g_ref_parameter_derivatives = expand_species(
+            compiled.g_ref_parameter_derivatives,
+            compiled.g_ref_parameter_derivatives.size() / reduced_count
+        );
+    }
+    compiled.species_count = full_count;
+    compiled.charges = input.charges;
+    compiled.molar_masses_kg_per_mol = input.molar_masses_kg_per_mol;
+    compiled.feed_amounts = input.feed_amounts;
+    return compiled;
 }
 
 py::dict solve_reactive_finite_phases(
@@ -1412,19 +432,27 @@ py::dict solve_reactive_finite_phases(
     bool active_parameters_requested,
     bool derivative_audits_requested,
     const py::object& phase_direction_system,
-    std::vector<std::vector<std::size_t>> phase_support_indices
+    std::vector<std::vector<std::size_t>> phase_support_indices,
+    const std::vector<py::dict>& output_payloads,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds,
+    bool ideal_gas
 ) {
     const ProviderContext provider(model);
-    if (!provider.supports_mixture_phase()) {
+    if (!ideal_gas && !provider.supports_mixture_phase()) {
         throw py::value_error(
             "Provider model does not support reactive finite-phase evaluation"
         );
     }
     const ChemicalProviderMetadata metadata = chemical_provider_metadata(provider);
     ReactionSystemInput input = reaction_system_input(spec);
-    validate_provider_identity(metadata, input);
-    if (input.temperature_k < provider.metadata().temperature_min_k
-        || input.temperature_k > provider.metadata().temperature_max_k) {
+    if (!ideal_gas) {
+        validate_provider_identity(metadata, input);
+    }
+    if (!ideal_gas
+        && (input.temperature_k < provider.metadata().temperature_min_k
+            || input.temperature_k > provider.metadata().temperature_max_k)) {
         throw py::value_error("temperature is outside the Provider source domain");
     }
     input.provider_fingerprint = provider.fingerprint();
@@ -1490,6 +518,21 @@ py::dict solve_reactive_finite_phases(
         }
         compiled = compile_reaction_system(input, !configured_directions);
         const std::size_t parameter_count = parameters.identities.size();
+        if (!transformed.ln_k_pressure_derivatives_per_pa.empty()) {
+            ReactionSystemInput derivative_input = input;
+            derivative_input.ln_k = transformed.ln_k_pressure_derivatives_per_pa;
+            const CompiledReactionSystem derivative_system = compile_reaction_system(
+                derivative_input, !configured_directions
+            );
+            if (derivative_system.species_count != compiled.species_count
+                || derivative_system.retained_species_indices
+                    != compiled.retained_species_indices) {
+                throw py::value_error(
+                    "source-reference pressure derivative species face changed"
+                );
+            }
+            compiled.g_ref_pressure_derivatives_per_pa = derivative_system.g_ref;
+        }
         if (parameter_count != 0) {
             if (transformed.ln_k_parameter_derivatives.size()
                 != input.reaction_matrix.rows * parameter_count) {
@@ -1533,6 +576,8 @@ py::dict solve_reactive_finite_phases(
             }
         }
     }
+    compiled = expand_reactive_species_face(std::move(compiled), input);
+    compiled.ideal_gas = ideal_gas;
     std::vector<ReactiveFinitePhaseStart> starts;
     starts.reserve(start_payloads.size());
     for (const py::dict& payload : start_payloads) {
@@ -1548,6 +593,22 @@ py::dict solve_reactive_finite_phases(
             return indices;
         }();
         phase_support_indices.assign(starts.size(), full_support);
+    }
+    for (std::vector<std::size_t>& support : phase_support_indices) {
+        support.erase(
+            std::remove_if(
+                support.begin(),
+                support.end(),
+                [&compiled](std::size_t species) {
+                    return std::binary_search(
+                        compiled.removed_species_indices.begin(),
+                        compiled.removed_species_indices.end(),
+                        species
+                    );
+                }
+            ),
+            support.end()
+        );
     }
     std::optional<PhaseDirectionCompilation> phase_directions;
     if (!phase_direction_system.is_none()) {
@@ -1571,8 +632,15 @@ py::dict solve_reactive_finite_phases(
                 declared_total += start.amounts_mol[species];
                 scale += std::abs(start.amounts_mol[species]);
             }
+            const double relative_tolerance = std::min(
+                1.0e-12,
+                256.0 * std::numeric_limits<double>::epsilon()
+                    * static_cast<double>(std::max<std::size_t>(1, starts.size()))
+            );
+            const double tolerance = relative_tolerance
+                * std::max(scale, std::numeric_limits<double>::min());
             if (std::abs(declared_total - input.feed_amounts[species])
-                > 1.0e-10 * std::max(1.0, scale)) {
+                > tolerance) {
                 throw py::value_error(
                     "phase reference amounts must sum to the declared feed"
                 );
@@ -1605,9 +673,45 @@ py::dict solve_reactive_finite_phases(
             kPhaseDirectionRankTolerance,
             kPhaseDirectionConservationTolerance
         );
+        for (std::size_t direction = 0;
+             direction < phase_directions->direction_matrix.rows;
+             ++direction) {
+            double change = 0.0;
+            double scale = 0.0;
+            for (std::size_t phase = 0; phase < starts.size(); ++phase) {
+                for (std::size_t species = 0;
+                     species < input.species_ids.size();
+                     ++species) {
+                    const double contribution = phase_directions->direction_matrix(
+                        direction,
+                        phase * input.species_ids.size() + species
+                    ) * input.molar_masses_kg_per_mol[species];
+                    change += contribution;
+                    scale += std::abs(contribution);
+                }
+            }
+            if (std::abs(change)
+                > kPhaseDirectionConservationTolerance * std::max(1.0, scale)) {
+                throw py::value_error(
+                    "phase direction violates global molar-mass conservation"
+                );
+            }
+        }
     }
-    py::dict result = reactive_finite_phase_result(
-        solve_provider_reactive_finite_phases(
+    std::vector<ReactiveFinitePhaseOutput> outputs;
+    outputs.reserve(output_payloads.size());
+    for (const py::dict& payload : output_payloads) {
+        outputs.push_back({
+            py::cast<std::string>(payload["selector"]),
+            py::cast<std::size_t>(payload["phase_index"]),
+            py::cast<std::vector<double>>(payload["coefficients"]),
+            py::cast<std::vector<double>>(
+                payload["solvent_mass_coefficients_kg_per_mol"]
+            ),
+        });
+    }
+    const ReactiveFinitePhaseResult evaluation = local_variables.empty()
+        ? solve_provider_reactive_finite_phases(
             compiled,
             provider,
             input.temperature_k,
@@ -1619,9 +723,24 @@ py::dict solve_reactive_finite_phases(
             500,
             derivative_audits_requested,
             phase_directions.has_value() ? &*phase_directions : nullptr,
-            phase_support_indices
+            phase_support_indices,
+            outputs
         )
-    );
+        : evaluate_provider_reactive_finite_phases_local(
+            compiled,
+            provider,
+            input.temperature_k,
+            input.pressure_pa,
+            packing_fraction_intervals,
+            local_variables,
+            local_lower_bounds,
+            local_upper_bounds,
+            parameters.identities.empty() ? nullptr : &parameters,
+            phase_directions.has_value() ? &*phase_directions : nullptr,
+            phase_support_indices,
+            outputs
+        );
+    py::dict result = reactive_finite_phase_result(evaluation);
     result["source_reference_representation_residual_inf_norm"] =
         source_representation_residual;
     return result;
@@ -1730,30 +849,6 @@ py::dict compile_phase_direction_system_binding(
 
 void bind_chemical_equilibrium(py::module_& module) {
     module.def(
-        "_chemical_equilibrium",
-        &solve_chemical_equilibrium,
-        py::arg("model"),
-        py::arg("spec"),
-        py::arg("source_standard_state"),
-        py::arg("packing_fraction_bounds"),
-        py::arg("trace_floor"),
-        py::arg("sensitivities_requested") = false,
-        py::arg("active_parameters_requested") = false,
-        py::arg("max_iterations") = 500
-    );
-    module.def(
-        "_evaluate_provider_reaction_local",
-        &evaluate_provider_local,
-        py::arg("model"),
-        py::arg("spec"),
-        py::arg("source_standard_state"),
-        py::arg("packing_fraction_bounds"),
-        py::arg("variables"),
-        py::arg("lower"),
-        py::arg("upper"),
-        py::arg("active_parameters_requested") = false
-    );
-    module.def(
         "_reactive_finite_phases",
         &solve_reactive_finite_phases,
         py::arg("model"),
@@ -1766,7 +861,12 @@ void bind_chemical_equilibrium(py::module_& module) {
         py::arg("derivative_audits_requested") = false,
         py::arg("phase_direction_system") = py::none(),
         py::arg("phase_support_indices") =
-            std::vector<std::vector<std::size_t>>{}
+            std::vector<std::vector<std::size_t>>{},
+        py::arg("outputs") = std::vector<py::dict>{},
+        py::arg("local_variables") = std::vector<double>{},
+        py::arg("local_lower_bounds") = std::vector<double>{},
+        py::arg("local_upper_bounds") = std::vector<double>{},
+        py::arg("ideal_gas") = false
     );
     module.def(
         "_compile_phase_direction_system",

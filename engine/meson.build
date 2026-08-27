@@ -95,7 +95,6 @@ equilibrium_sources = files(
   'cpp/equilibrium/chemical_equilibrium_compiler.cpp',
   'cpp/equilibrium/phase_direction_compiler.cpp',
   'cpp/equilibrium/chemical_equilibrium_support.cpp',
-  'cpp/equilibrium/chemical_equilibrium_solver.cpp',
   'cpp/equilibrium/reactive_finite_phase.cpp',
   'cpp/equilibrium/provider.cpp',
   'cpp/equilibrium/source_reference.cpp',

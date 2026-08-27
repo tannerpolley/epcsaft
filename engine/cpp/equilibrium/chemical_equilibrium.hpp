@@ -92,6 +92,7 @@ struct ReactionSystemInput {
 };
 
 struct CompiledReactionSystem {
+    bool ideal_gas = false;
     std::string provider_fingerprint;
     std::size_t original_species_count = 0;
     std::vector<int> original_charges;
@@ -109,6 +110,7 @@ struct CompiledReactionSystem {
     std::vector<double> balance_totals;
     std::vector<double> feed_amounts;
     std::vector<double> g_ref;
+    std::vector<double> g_ref_pressure_derivatives_per_pa;
     std::vector<double> g_ref_parameter_derivatives;
 };
 
@@ -130,109 +132,16 @@ struct AmountChartEvaluation {
     double charge_residual = 0.0;
 };
 
-struct MaxMinInitializationResult {
-    std::string solver_status;
-    std::vector<double> amounts;
-    std::vector<double> amount_upper_bounds;
-    bool strict_positive_feasible = false;
-};
-
-struct ChemicalSensitivityResult {
-    std::string status = "unavailable";
-    std::string failure_reason = "primal_solution_unavailable";
-    std::vector<std::string> parameter_order;
-    std::vector<double> amount_derivatives;
-    std::vector<double> volume_derivatives;
-    std::vector<double> kkt_parameter_jacobian;
-    std::size_t kkt_dimension = 0;
-    std::size_t kkt_rank = 0;
-    double condition_number_inf = 0.0;
-    std::vector<std::size_t> active_lower_bounds;
-    std::vector<std::size_t> active_upper_bounds;
-    std::vector<std::size_t> active_constraint_bounds;
-    std::vector<std::size_t> active_trace_species;
-    std::string chart_topology;
-    std::string parameter_fingerprint;
-    std::string provider_parameter_status = "not_applicable";
-    std::string provider_parameter_failure_reason;
-    std::string reference_parameter_status = "not_applicable";
-    std::string reference_parameter_failure_reason;
-};
-
-struct ChemicalSearchAttempt {
-    std::size_t ordinal = 0;
-    std::size_t primary_ordinal = 0;
-    std::string kind = "primary";
-    long parent_ordinal = -1;
-    std::string start_identity;
-    std::string start_construction_status = "not_evaluated";
-    std::string retraction_status = "not_needed";
-    std::string provider_domain_status = "not_adjudicated";
-    std::string solver_status;
-    std::string callback_error;
-    std::string terminal_status = "not_evaluated";
-    std::vector<double> amounts;
-    double volume_m3 = std::numeric_limits<double>::quiet_NaN();
-    double objective = std::numeric_limits<double>::quiet_NaN();
-    double balance_inf_norm = std::numeric_limits<double>::quiet_NaN();
-    double charge_inf_norm = std::numeric_limits<double>::quiet_NaN();
-    double pressure_relative_residual = std::numeric_limits<double>::quiet_NaN();
-    double reaction_affinity_inf_norm = std::numeric_limits<double>::quiet_NaN();
-    double kkt_stationarity_inf_norm = std::numeric_limits<double>::quiet_NaN();
-    double complementarity_inf_norm = std::numeric_limits<double>::quiet_NaN();
-    std::size_t kkt_dimension = 0;
-    std::size_t kkt_rank = 0;
-    double condition_number_inf = std::numeric_limits<double>::infinity();
-    std::string local_minimum_status = "not_adjudicated";
-    std::string trace_status = "not_adjudicated";
-    long basin_ordinal = -1;
-    std::size_t recovery_seed_count = 0;
-    std::size_t recovery_solve_count = 0;
-};
-
-struct ChemicalSearchBasin {
-    std::size_t ordinal = 0;
-    std::size_t representative_attempt_ordinal = 0;
-    std::vector<double> amounts;
-    double volume_m3 = std::numeric_limits<double>::quiet_NaN();
-    double objective = std::numeric_limits<double>::quiet_NaN();
-};
-
-struct ChemicalSearchBudgetPrefix {
-    std::size_t primary_budget = 0;
-    std::vector<std::size_t> attempted_primary_ordinals;
-    std::vector<std::size_t> basin_ordinals;
-    long selected_basin_ordinal = -1;
-    bool selection_changed = false;
-};
-
-struct ChemicalSearchEvidence {
-    std::string status = "not_evaluated";
-    std::size_t primary_budget = 25;
-    std::size_t primary_attempt_count = 0;
-    std::size_t generated_start_count = 0;
-    std::size_t budget_truncated_start_count = 0;
-    std::size_t duplicate_start_count = 0;
-    std::size_t infeasible_start_count = 0;
-    std::size_t evaluated_start_count = 0;
-    std::size_t domain_rejected_start_count = 0;
-    std::size_t construction_rejected_start_count = 0;
-    std::vector<ChemicalSearchAttempt> attempts;
-    std::vector<ChemicalSearchBasin> basins;
-    std::vector<ChemicalSearchBudgetPrefix> budget_prefixes;
-    long selected_basin_ordinal = -1;
-    double selected_objective = std::numeric_limits<double>::quiet_NaN();
-    std::string selection_label = "lowest_observed_certified_local_value";
-};
-
-struct ChemicalContinuationStart {
-    std::vector<double> amounts;
-    double volume_m3 = std::numeric_limits<double>::quiet_NaN();
-};
-
 struct ReactiveFinitePhaseStart {
     std::vector<double> amounts_mol;
     double molar_volume_m3_per_mol = std::numeric_limits<double>::quiet_NaN();
+};
+
+struct ReactiveFinitePhaseOutput {
+    std::string selector;
+    std::size_t phase_index = 0;
+    std::vector<double> coefficients;
+    std::vector<double> solvent_mass_coefficients_kg_per_mol;
 };
 
 struct ReactiveFinitePhaseResult {
@@ -251,6 +160,25 @@ struct ReactiveFinitePhaseResult {
     std::vector<double> phase_packing_fractions;
     std::vector<std::vector<double>> phase_chemical_potentials_over_rt;
     std::vector<std::vector<double>> phase_log_fugacities;
+    std::vector<double> local_variables;
+    std::vector<double> local_lower_bounds;
+    std::vector<double> local_upper_bounds;
+    std::vector<std::string> input_order;
+    std::vector<double> kkt_input_jacobian;
+    std::vector<double> input_amount_derivatives;
+    std::vector<double> input_volume_derivatives;
+    std::vector<double> input_pressure_derivatives;
+    std::vector<double> input_chemical_potential_derivatives;
+    std::vector<double> input_log_fugacity_derivatives;
+    std::vector<double> kkt_root_values;
+    std::vector<double> kkt_root_jacobian;
+    std::size_t kkt_dimension = 0;
+    std::size_t kkt_rank = 0;
+    double condition_number_inf = std::numeric_limits<double>::infinity();
+    std::vector<double> output_values;
+    std::vector<double> output_input_derivatives;
+    std::vector<double> output_local_derivatives;
+    std::vector<double> output_parameter_partials;
     double objective_over_rt = std::numeric_limits<double>::quiet_NaN();
     double balance_inf_norm = std::numeric_limits<double>::quiet_NaN();
     double pressure_relative_inf_norm = std::numeric_limits<double>::quiet_NaN();
@@ -259,8 +187,12 @@ struct ReactiveFinitePhaseResult {
         std::numeric_limits<double>::quiet_NaN();
     double kkt_stationarity_inf_norm = std::numeric_limits<double>::quiet_NaN();
     double phase_distinctness = std::numeric_limits<double>::quiet_NaN();
+    double minimum_amount_mol = std::numeric_limits<double>::quiet_NaN();
+    double minimum_bound_margin = std::numeric_limits<double>::quiet_NaN();
     double reduced_hessian_min_eigenvalue =
         std::numeric_limits<double>::quiet_NaN();
+    double reduced_hessian_scale = std::numeric_limits<double>::quiet_NaN();
+    double reduced_hessian_threshold = std::numeric_limits<double>::quiet_NaN();
     std::size_t declared_direction_rank = 0;
     std::size_t admissible_nullity = 0;
     std::size_t optimizer_iterations = 0;
@@ -283,136 +215,6 @@ struct ReactiveFinitePhaseResult {
     std::vector<double> log_fugacity_derivatives;
 };
 
-struct ChemicalSolveResult {
-    bool accepted = false;
-    std::string solver_status;
-    std::string callback_error;
-    std::string chemical_certification_level = "FEASIBLE_ONLY";
-    std::string boundary_status = "not_adjudicated";
-    std::vector<std::size_t> structural_zero_species_indices;
-    std::string numerical_status = "not_adjudicated";
-    std::string physical_status = "not_adjudicated";
-    std::string provider_domain_status = "not_adjudicated";
-    std::string local_minimum_status = "not_adjudicated";
-    std::vector<std::pair<std::string, double>> resolved_policy;
-    std::string negative_curvature_recovery_status = "not_needed";
-    std::size_t negative_curvature_recovery_seed_count = 0;
-    std::size_t negative_curvature_recovery_attempts = 0;
-    int negative_curvature_recovery_selected_sign = 0;
-    std::string trace_status = "not_adjudicated";
-    std::vector<double> amounts;
-    double volume_m3 = 0.0;
-    std::vector<double> volume_parameter_derivatives;
-    std::vector<double> local_variables;
-    std::vector<double> local_lower_bounds;
-    std::vector<double> local_upper_bounds;
-    std::vector<std::string> local_parameter_order;
-    std::vector<double> local_parameter_jacobian;
-    double balance_inf_norm = 0.0;
-    double charge_inf_norm = 0.0;
-    double pressure_relative_residual = 0.0;
-    double reaction_affinity_inf_norm = 0.0;
-    std::vector<double> reaction_affinity_residuals;
-    double packing_fraction = 0.0;
-    double packing_fraction_min = std::numeric_limits<double>::quiet_NaN();
-    double packing_fraction_max = std::numeric_limits<double>::quiet_NaN();
-    double total_ion_fraction = std::numeric_limits<double>::quiet_NaN();
-    double total_ion_fraction_max = std::numeric_limits<double>::quiet_NaN();
-    double minimum_amount_mol = std::numeric_limits<double>::quiet_NaN();
-    double trace_floor_mol = std::numeric_limits<double>::quiet_NaN();
-    double kkt_stationarity_inf_norm = 0.0;
-    std::vector<double> physical_stationarity_residuals;
-    std::vector<double> physical_equality_multipliers;
-    std::vector<double> physical_constraint_jacobian;
-    std::size_t physical_constraint_rows = 0;
-    std::size_t physical_constraint_columns = 0;
-    std::vector<double> physical_lagrangian_gradient;
-    std::vector<double> physical_objective_gradient;
-    std::vector<double> physical_to_chart_jacobian;
-    std::size_t physical_to_chart_rows = 0;
-    std::size_t physical_to_chart_columns = 0;
-    double chart_physical_pullback_residual_inf_norm =
-        std::numeric_limits<double>::quiet_NaN();
-    double complementarity_inf_norm = 0.0;
-    std::size_t kkt_dimension = 0;
-    std::size_t kkt_rank = 0;
-    double condition_number_inf = std::numeric_limits<double>::infinity();
-    std::string failure_kind = "not_adjudicated";
-    std::string failure_reason;
-    std::vector<std::size_t> active_lower_bounds;
-    std::vector<std::size_t> active_upper_bounds;
-    std::vector<std::size_t> active_constraint_bounds;
-    std::string reduced_hessian_status = "not_adjudicated";
-    std::vector<double> reduced_hessian;
-    std::vector<double> reduced_hessian_nullspace_basis;
-    std::size_t reduced_hessian_nullspace_rows = 0;
-    std::size_t reduced_hessian_nullspace_columns = 0;
-    std::vector<double> reduced_hessian_eigenvalues;
-    std::string reduced_hessian_spectrum_status = "not_adjudicated";
-    std::size_t reduced_hessian_raw_positive_eigenvalues = 0;
-    std::size_t reduced_hessian_raw_zero_eigenvalues = 0;
-    std::size_t reduced_hessian_raw_negative_eigenvalues = 0;
-    std::size_t reduced_hessian_positive_eigenvalues = 0;
-    std::size_t reduced_hessian_zero_eigenvalues = 0;
-    std::size_t reduced_hessian_negative_eigenvalues = 0;
-    double reduced_hessian_scale = std::numeric_limits<double>::quiet_NaN();
-    double reduced_hessian_eigenvalue_tolerance =
-        std::numeric_limits<double>::quiet_NaN();
-    std::vector<double> objective_gradient;
-    std::vector<double> constraint_values;
-    std::vector<double> constraint_jacobian;
-    std::vector<double> lagrangian_gradient;
-    std::vector<double> equality_multipliers;
-    double chart_stationarity_inf_norm = std::numeric_limits<double>::quiet_NaN();
-    std::vector<double> lagrangian_hessian;
-    std::vector<double> covariant_lagrangian_hessian;
-    bool derivative_audits_performed = false;
-    double derivative_check_step = std::numeric_limits<double>::quiet_NaN();
-    double objective_gradient_check_relative_error =
-        std::numeric_limits<double>::quiet_NaN();
-    double physical_objective_gradient_check_relative_error =
-        std::numeric_limits<double>::quiet_NaN();
-    double constraint_jacobian_check_relative_error =
-        std::numeric_limits<double>::quiet_NaN();
-    double lagrangian_hessian_check_relative_error =
-        std::numeric_limits<double>::quiet_NaN();
-    double reduced_hessian_check_relative_error =
-        std::numeric_limits<double>::quiet_NaN();
-    std::string derivative_check_worst_entry;
-    double derivative_check_worst_relative_error =
-        std::numeric_limits<double>::quiet_NaN();
-    double derivative_check_worst_analytic_value =
-        std::numeric_limits<double>::quiet_NaN();
-    double derivative_check_worst_finite_difference_value =
-        std::numeric_limits<double>::quiet_NaN();
-    double derivative_check_worst_step =
-        std::numeric_limits<double>::quiet_NaN();
-    std::vector<std::string> derivative_coordinate_order;
-    std::string derivative_objective_basis =
-        "dimensionless_fixed_TP_A_plus_PV_plus_reference_over_RT";
-    std::string derivative_constraint_basis =
-        "ordered_per_row_in_derivative_constraint_order";
-    std::vector<std::string> derivative_constraint_order;
-    std::vector<double> kkt_root_values;
-    std::vector<double> kkt_root_jacobian;
-    std::size_t kkt_root_rows = 0;
-    std::size_t kkt_root_columns = 0;
-    std::string kkt_root_status = "not_evaluated";
-    double kkt_root_jacobian_check_relative_error =
-        std::numeric_limits<double>::quiet_NaN();
-    ChemicalSearchEvidence search;
-    ChemicalSensitivityResult sensitivities;
-};
-
-struct ProviderPhaseBlockEvidence {
-    double value = 0.0;
-    std::vector<double> gradient;
-    std::vector<double> hessian;
-    double pressure_pa = 0.0;
-    double packing_fraction = 0.0;
-    std::vector<double> packing_gradient;
-    std::vector<double> packing_hessian;
-};
 
 class ProviderContext;
 struct ProviderActiveParameterSet;
@@ -489,35 +291,12 @@ struct SourceStandardStateResult {
     const std::vector<double>& amounts
 );
 
-[[nodiscard]] MaxMinInitializationResult max_min_initialization(
-    const DenseMatrix& balance_matrix,
-    const std::vector<double>& feed_amounts,
-    const std::vector<int>& charges,
-    double trace_floor,
-    double total_ion_fraction_max
-);
-
 [[nodiscard]] std::vector<std::size_t> homogeneous_structural_zeros(
     const DenseMatrix& balance_matrix,
     const std::vector<double>& balance_totals,
     const std::vector<int>& charges
 );
 
-[[nodiscard]] ChemicalSolveResult solve_manufactured_ideal_reaction(
-    const CompiledReactionSystem& system,
-    double temperature_k,
-    double pressure_pa,
-    const std::vector<double>& gauge_coefficients,
-    double trace_floor,
-    int max_iterations = 500
-);
-
-[[nodiscard]] ProviderPhaseBlockEvidence evaluate_provider_phase_block(
-    const ProviderContext& provider,
-    double temperature_k,
-    const std::vector<double>& amounts,
-    double volume_m3
-);
 
 [[nodiscard]] SourceStandardStateResult transform_source_standard_state(
     const DenseMatrix& reaction_matrix,
@@ -531,36 +310,6 @@ struct SourceStandardStateResult {
     const SourceReferenceTransferEvidence& reference
 );
 
-[[nodiscard]] ChemicalSolveResult solve_provider_reaction(
-    const CompiledReactionSystem& system,
-    const ProviderContext& provider,
-    double temperature_k,
-    double pressure_pa,
-    double packing_fraction_min,
-    double packing_fraction_max,
-    double total_ion_fraction_max,
-    double trace_floor,
-    const std::vector<double>& ln_k_pressure_derivatives_per_pa = {},
-    const std::vector<double>& ln_k_parameter_derivatives = {},
-    const ProviderActiveParameterSet* active_parameters = nullptr,
-    const ChemicalContinuationStart* continuation_start = nullptr,
-    int max_iterations = 500
-);
-
-[[nodiscard]] ChemicalSolveResult evaluate_provider_reaction_local(
-    const CompiledReactionSystem& system,
-    const ProviderContext& provider,
-    double temperature_k,
-    double pressure_pa,
-    double packing_fraction_min,
-    double packing_fraction_max,
-    double total_ion_fraction_max,
-    const std::vector<double>& variables,
-    const std::vector<double>& lower,
-    const std::vector<double>& upper,
-    const std::vector<double>& ln_k_parameter_derivatives = {},
-    const ProviderActiveParameterSet* active_parameters = nullptr
-);
 
 [[nodiscard]] ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     const CompiledReactionSystem& system,
@@ -574,7 +323,23 @@ struct SourceStandardStateResult {
     int max_iterations = 500,
     bool perform_derivative_audits = false,
     const PhaseDirectionCompilation* phase_directions = nullptr,
-    const std::vector<std::vector<std::size_t>>& phase_support_indices = {}
+    const std::vector<std::vector<std::size_t>>& phase_support_indices = {},
+    const std::vector<ReactiveFinitePhaseOutput>& outputs = {}
+);
+
+[[nodiscard]] ReactiveFinitePhaseResult evaluate_provider_reactive_finite_phases_local(
+    const CompiledReactionSystem& system,
+    const ProviderContext& provider,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<std::array<double, 2>>& packing_fraction_intervals,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds,
+    const ProviderActiveParameterSet* active_parameters = nullptr,
+    const PhaseDirectionCompilation* phase_directions = nullptr,
+    const std::vector<std::vector<std::size_t>>& phase_support_indices = {},
+    const std::vector<ReactiveFinitePhaseOutput>& outputs = {}
 );
 
 }  // namespace epcsaft_engine::equilibrium

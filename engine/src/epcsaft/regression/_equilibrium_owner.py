@@ -6,8 +6,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
-from .._trials import NonEvaluableTrialCode
 from .. import _core
+from .._trials import NonEvaluableTrialCode
 from ..eos import EosError, Mixture
 from ..equilibrium import (
     AllComponents,
@@ -730,13 +730,27 @@ def _full_space_batches(
                 "amounts": continuation[0],
                 "volume_m3": continuation[1],
             }
+        if continuation is None:
+            return None
+        output_payloads = tuple(
+            {
+                "selector": output.selector,
+                "phase_index": 0,
+                "coefficients": output.coefficients or (0.0,) * len(batch.model.component_ids),
+                "solvent_mass_coefficients_kg_per_mol": (
+                    output.solvent_mass_coefficients_kg_per_mol
+                ),
+            }
+            for output in selected
+        )
         compiled_batches.append(
             (
                 batch,
                 spec,
                 phase.model.admissible_packing_fraction_interval,
                 reaction.strict_interior_amount_floor_mol,
-                selected,
+                continuation,
+                output_payloads,
             )
         )
 
@@ -768,18 +782,28 @@ def _full_space_batches(
             constraint_lower: list[float] = []
             constraint_upper: list[float] = []
             blocks: list[Mapping[str, object]] = []
-            for batch, spec, packing, trace_floor, _ in compiled_batches:
+            for batch, spec, packing, trace_floor, continuation, outputs in compiled_batches:
                 native = cast(
                     Mapping[str, object],
-                    _core._chemical_equilibrium(
+                    _core._reactive_finite_phases(
                         batch.model._native_model(trial),
                         spec,
                         source_state(batch, spec, trial),
-                        packing,
+                        (packing,),
+                        (
+                            {
+                                "amounts_mol": continuation[0],
+                                "molar_volume_m3_per_mol": (
+                                    continuation[1] / math.fsum(continuation[0])
+                                ),
+                            },
+                        ),
                         trace_floor,
                         True,
-                        True,
-                        0,
+                        False,
+                        None,
+                        (tuple(range(len(batch.model.component_ids))),),
+                        outputs,
                     ),
                 )
                 local = tuple(cast(Sequence[float], native["local_variables"]))
@@ -866,53 +890,50 @@ def _full_space_batches(
         constraint_jacobian: list[float] = []
         continuation_starts: list[tuple[tuple[float, ...], float]] = []
         for compiled, bounds in zip(compiled_batches, start_blocks[start_index], strict=True):
-            batch, spec, packing, _, outputs = compiled
+            batch, spec, packing, trace_floor, continuation, outputs = compiled
             local_width = cast(int, bounds["local_width"])
             local_offset = coordinate_count + cast(int, bounds["local_offset"])
             native = cast(
                 Mapping[str, object],
-                _core._evaluate_provider_reaction_local(
+                _core._reactive_finite_phases(
                     batch.model._native_model(trial),
                     spec,
                     source_state(batch, spec, trial),
-                    packing,
+                    (packing,),
+                    (
+                        {
+                            "amounts_mol": continuation[0],
+                            "molar_volume_m3_per_mol": (
+                                continuation[1] / math.fsum(continuation[0])
+                            ),
+                        },
+                    ),
+                    trace_floor,
+                    True,
+                    False,
+                    None,
+                    (tuple(range(len(batch.model.component_ids))),),
+                    outputs,
                     values[local_offset : local_offset + local_width],
                     cast(Sequence[float], bounds["lower"]),
                     cast(Sequence[float], bounds["upper"]),
-                    True,
                 ),
             )
-            amounts = tuple(cast(Sequence[float], native["amounts"]))
-            total = math.fsum(amounts)
-            volume = float(cast(float, native["volume_m3"]))
+            amounts = tuple(
+                next(iter(cast(Sequence[Sequence[float]], native["phase_amounts_mol"])))
+            )
+            volume = float(next(iter(cast(Sequence[float], native["phase_volumes_m3"]))))
             continuation_starts.append((amounts, volume))
-            chart = cast(Sequence[float], native["physical_to_chart_jacobian"])
+            predictions = tuple(cast(Sequence[float], native["output_values"]))
+            output_local = tuple(cast(Sequence[float], native["output_local_derivatives"]))
             for target, output in zip(
                 (target for target in batch.targets if target.included), outputs, strict=True
             ):
-                numerator = math.fsum(
-                    coefficient * amount
-                    for coefficient, amount in zip(output.coefficients, amounts, strict=True)
-                )
-                if output.selector == "phase.amount":
-                    prediction = numerator
-                    output_gradient = (*output.coefficients, 0.0)
-                else:
-                    prediction = numerator / total
-                    output_gradient = (
-                        *(
-                            (coefficient * total - numerator) / total**2
-                            for coefficient in output.coefficients
-                        ),
-                        0.0,
-                    )
-                local_jacobian = tuple(
-                    math.fsum(
-                        output_gradient[row] * chart[row * local_width + column]
-                        for row in range(len(output_gradient))
-                    )
-                    for column in range(local_width)
-                )
+                output_index = outputs.index(output)
+                prediction = float(predictions[output_index])
+                local_jacobian = output_local[
+                    output_index * local_width : (output_index + 1) * local_width
+                ]
                 multiplier = target.multiplier
                 factor = multiplier / target.scale
                 if target.residual == "log_ratio":
@@ -936,11 +957,10 @@ def _full_space_batches(
             block_constraints = tuple(cast(Sequence[float], native["kkt_root_values"]))
             constraints.extend(block_constraints)
             state_jacobian = cast(Sequence[float], native["kkt_root_jacobian"])
-            order = tuple(cast(Sequence[str], native["local_parameter_order"]))
-            parameter_jacobian = cast(Sequence[float], native["local_parameter_jacobian"])
+            order = tuple(cast(Sequence[str], native["input_order"]))
+            parameter_jacobian = cast(Sequence[float], native["kkt_input_jacobian"])
             parameter_columns = {
-                identity: order.index(f"provider_parameter[{identity}]")
-                for identity in resolved.selected_identities
+                identity: order.index(identity) for identity in resolved.selected_identities
             }
             for row in range(len(block_constraints)):
                 for coordinate in resolved.coordinates:

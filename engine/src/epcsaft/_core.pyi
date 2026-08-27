@@ -215,26 +215,6 @@ def _held2_audit_step5_kkt(
     step4_binding_valid: bool,
     pressure_branch_valid: bool,
 ) -> dict[str, Any]: ...
-def _chemical_equilibrium(
-    model: NativeModel | None,
-    spec: dict[str, object],
-    source_standard_state: dict[str, object] | None,
-    packing_fraction_bounds: tuple[float, float] | None,
-    trace_floor: float,
-    sensitivities_requested: bool = ...,
-    active_parameters_requested: bool = ...,
-    max_iterations: int = ...,
-) -> dict[str, Any]: ...
-def _evaluate_provider_reaction_local(
-    model: NativeModel,
-    spec: dict[str, object],
-    source_standard_state: dict[str, object] | None,
-    packing_fraction_bounds: tuple[float, float],
-    variables: Sequence[float],
-    lower: Sequence[float],
-    upper: Sequence[float],
-    active_parameters_requested: bool = ...,
-) -> dict[str, Any]: ...
 def _reactive_finite_phases(
     model: NativeModel,
     spec: dict[str, object],
@@ -246,6 +226,11 @@ def _reactive_finite_phases(
     derivative_audits_requested: bool = ...,
     phase_direction_system: dict[str, object] | None = ...,
     phase_support_indices: tuple[tuple[int, ...], ...] = ...,
+    outputs: tuple[dict[str, object], ...] = ...,
+    local_variables: Sequence[float] = ...,
+    local_lower_bounds: Sequence[float] = ...,
+    local_upper_bounds: Sequence[float] = ...,
+    ideal_gas: bool = ...,
 ) -> dict[str, Any]: ...
 def _evaluate_saturation_nlp(
     model: NativeModel,

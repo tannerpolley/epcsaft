@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <Eigen/Dense>
+#include <Highs.h>
 #include <coin/IpIpoptApplication.hpp>
 #include <coin/IpTNLP.hpp>
 
@@ -72,9 +73,102 @@ struct NormalizedBalances {
     std::vector<double> reference_potentials;
 };
 
+std::optional<std::vector<double>> strict_positive_seed(
+    const CompiledReactionSystem& system,
+    const std::vector<std::size_t>& support,
+    double trace_floor,
+    double ion_fraction_max
+) {
+    const std::size_t supported_count = support.size();
+    const std::size_t minimum_column = supported_count;
+    const bool ion_limited = std::isfinite(ion_fraction_max);
+    const std::size_t row_count = system.balance_matrix.rows
+        + supported_count + (ion_limited ? 1 : 0);
+    HighsModel model;
+    model.lp_.num_col_ = static_cast<HighsInt>(supported_count + 1);
+    model.lp_.num_row_ = static_cast<HighsInt>(row_count);
+    model.lp_.sense_ = ObjSense::kMaximize;
+    model.lp_.col_cost_.assign(supported_count + 1, 0.0);
+    model.lp_.col_cost_[minimum_column] = 1.0;
+    model.lp_.col_lower_.assign(supported_count + 1, 0.0);
+    model.lp_.col_upper_.assign(supported_count + 1, kHighsInf);
+    model.lp_.row_lower_ = system.balance_totals;
+    model.lp_.row_upper_ = system.balance_totals;
+    model.lp_.row_lower_.insert(
+        model.lp_.row_lower_.end(), supported_count, 0.0
+    );
+    model.lp_.row_upper_.insert(
+        model.lp_.row_upper_.end(), supported_count, kHighsInf
+    );
+    if (ion_limited) {
+        model.lp_.row_lower_.push_back(-kHighsInf);
+        model.lp_.row_upper_.push_back(0.0);
+    }
+    model.lp_.a_matrix_.format_ = MatrixFormat::kColwise;
+    model.lp_.a_matrix_.start_ = {0};
+    for (std::size_t column = 0; column < supported_count; ++column) {
+        const std::size_t species = support[column];
+        for (std::size_t row = 0; row < system.balance_matrix.rows; ++row) {
+            const double value = system.balance_matrix(row, species);
+            if (value != 0.0) {
+                model.lp_.a_matrix_.index_.push_back(static_cast<HighsInt>(row));
+                model.lp_.a_matrix_.value_.push_back(value);
+            }
+        }
+        model.lp_.a_matrix_.index_.push_back(static_cast<HighsInt>(
+            system.balance_matrix.rows + column
+        ));
+        model.lp_.a_matrix_.value_.push_back(1.0);
+        if (ion_limited) {
+            model.lp_.a_matrix_.index_.push_back(static_cast<HighsInt>(row_count - 1));
+            model.lp_.a_matrix_.value_.push_back(
+                system.charges[species] == 0
+                    ? -ion_fraction_max
+                    : 1.0 - ion_fraction_max
+            );
+        }
+        model.lp_.a_matrix_.start_.push_back(static_cast<HighsInt>(
+            model.lp_.a_matrix_.index_.size()
+        ));
+    }
+    for (std::size_t column = 0; column < supported_count; ++column) {
+        model.lp_.a_matrix_.index_.push_back(static_cast<HighsInt>(
+            system.balance_matrix.rows + column
+        ));
+        model.lp_.a_matrix_.value_.push_back(-1.0);
+    }
+    model.lp_.a_matrix_.start_.push_back(static_cast<HighsInt>(
+        model.lp_.a_matrix_.index_.size()
+    ));
+    Highs highs;
+    if (highs.setOptionValue("output_flag", false) == HighsStatus::kError
+        || highs.setOptionValue("threads", 1) == HighsStatus::kError
+        || highs.setOptionValue("solver", std::string("simplex"))
+            == HighsStatus::kError
+        || highs.passModel(model) == HighsStatus::kError
+        || highs.run() == HighsStatus::kError
+        || highs.getModelStatus() != HighsModelStatus::kOptimal) {
+        return std::nullopt;
+    }
+    const std::vector<double>& solution = highs.getSolution().col_value;
+    if (solution.size() != supported_count + 1
+        || !std::isfinite(solution.back()) || solution.back() <= trace_floor) {
+        return std::nullopt;
+    }
+    std::vector<double> amounts(system.species_count, 0.0);
+    for (std::size_t column = 0; column < supported_count; ++column) {
+        if (!std::isfinite(solution[column]) || solution[column] <= trace_floor) {
+            return std::nullopt;
+        }
+        amounts[support[column]] = solution[column];
+    }
+    return amounts;
+}
+
 DenseMatrix admissible_invariant_matrix(
     const PhaseDirectionCompilation& directions,
     const std::vector<int>& charges,
+    const std::vector<double>& molar_masses_kg_per_mol,
     const std::vector<std::vector<std::size_t>>& supports
 ) {
     const std::size_t phase_count = directions.phase_ids.size();
@@ -120,13 +214,31 @@ DenseMatrix admissible_invariant_matrix(
         }
         active_offset += supports[phase].size();
     }
-    const Eigen::MatrixXd projected = invariants
-        * (Eigen::MatrixXd::Identity(
+    const Eigen::MatrixXd charge_projector = Eigen::MatrixXd::Identity(
             static_cast<Eigen::Index>(active_coordinates.size()),
             static_cast<Eigen::Index>(active_coordinates.size())
-        ) - charge_basis.transpose() * charge_basis);
+        ) - charge_basis.transpose() * charge_basis;
+    const Eigen::MatrixXd projected = invariants * charge_projector;
+    Eigen::RowVectorXd mass(active_coordinates.size());
+    for (std::size_t column = 0; column < active_coordinates.size(); ++column) {
+        mass(static_cast<Eigen::Index>(column)) = molar_masses_kg_per_mol[
+            active_coordinates[column] % species_count
+        ];
+    }
+    const Eigen::RowVectorXd projected_mass = mass * charge_projector;
+    if (projected_mass.squaredNorm() == 0.0) {
+        throw std::invalid_argument(
+            "configured reactive phases have no admissible positive mass invariant"
+        );
+    }
+    const Eigen::MatrixXd mass_complement = Eigen::MatrixXd::Identity(
+        static_cast<Eigen::Index>(active_coordinates.size()),
+        static_cast<Eigen::Index>(active_coordinates.size())
+    ) - projected_mass.transpose() * projected_mass
+        / projected_mass.squaredNorm();
+    const Eigen::MatrixXd remaining = projected * mass_complement;
     const Eigen::JacobiSVD<Eigen::MatrixXd> svd(
-        projected, Eigen::ComputeFullV
+        remaining, Eigen::ComputeFullV
     );
     const double threshold = 256.0 * std::numeric_limits<double>::epsilon()
         * static_cast<double>(active_coordinates.size())
@@ -135,13 +247,17 @@ DenseMatrix admissible_invariant_matrix(
     for (Eigen::Index index = 0; index < svd.singularValues().size(); ++index) {
         rank += static_cast<std::size_t>(svd.singularValues()(index) > threshold);
     }
-    Eigen::MatrixXd basis = svd.matrixV()
-        .leftCols(static_cast<Eigen::Index>(rank))
-        .transpose();
+    Eigen::MatrixXd basis(static_cast<Eigen::Index>(rank + 1), mass.size());
+    basis.row(0) = mass;
+    if (rank != 0) {
+        basis.bottomRows(static_cast<Eigen::Index>(rank)) = svd.matrixV()
+            .leftCols(static_cast<Eigen::Index>(rank))
+            .transpose();
+    }
     DenseMatrix result;
-    result.rows = rank;
+    result.rows = rank + 1;
     result.columns = dimension;
-    result.values.assign(rank * dimension, 0.0);
+    result.values.assign((rank + 1) * dimension, 0.0);
     for (Eigen::Index row = 0; row < basis.rows(); ++row) {
         for (Eigen::Index column = 0; column < basis.cols(); ++column) {
             result(
@@ -161,7 +277,12 @@ NormalizedBalances normalized_balances(
     NormalizedBalances result{
         directions == nullptr
             ? system.balance_matrix
-            : admissible_invariant_matrix(*directions, system.charges, supports),
+            : admissible_invariant_matrix(
+                *directions,
+                system.charges,
+                system.molar_masses_kg_per_mol,
+                supports
+            ),
         directions == nullptr
             ? system.balance_totals
             : std::vector<double>{},
@@ -280,6 +401,7 @@ struct PhaseBlock {
     std::vector<double> physical_gradient;
     std::vector<double> physical_hessian;
     std::vector<double> state_jacobian;
+    std::vector<double> objective_pressure_cross;
     std::vector<double> objective_parameter_cross;
     std::vector<double> volume_parameter_direct;
     std::vector<double> pressure_parameter_direct;
@@ -291,6 +413,7 @@ PhaseBlock evaluate_phase(
     const ProviderActiveParameterSet& active_parameters,
     const PhaseLayout& layout,
     const std::vector<double>& g_ref,
+    const std::vector<double>& g_ref_pressure_derivatives_per_pa,
     const std::vector<double>& g_ref_parameter_derivatives,
     double temperature_k,
     double pressure_pa,
@@ -310,6 +433,12 @@ PhaseBlock evaluate_phase(
         && g_ref_parameter_derivatives.size() != species_count * parameter_count) {
         throw std::invalid_argument(
             "reactive finite-phase reference derivative dimensions changed"
+        );
+    }
+    if (!g_ref_pressure_derivatives_per_pa.empty()
+        && g_ref_pressure_derivatives_per_pa.size() != species_count) {
+        throw std::invalid_argument(
+            "reactive finite-phase reference pressure derivative dimensions changed"
         );
     }
     PhaseBlock result;
@@ -564,6 +693,19 @@ PhaseBlock evaluate_phase(
     result.objective_parameter_cross.assign(
         phase_dimension * parameter_count, 0.0
     );
+    result.objective_pressure_cross.assign(phase_dimension, 0.0);
+    for (std::size_t coordinate = 0; coordinate < phase_dimension; ++coordinate) {
+        result.objective_pressure_cross[coordinate] =
+            result.state_jacobian[species_count * phase_dimension + coordinate]
+            / (kGasConstantJPerMolK * temperature_k);
+        if (!g_ref_pressure_derivatives_per_pa.empty()) {
+            for (std::size_t species = 0; species < species_count; ++species) {
+                result.objective_pressure_cross[coordinate] +=
+                    result.state_jacobian[species * phase_dimension + coordinate]
+                    * g_ref_pressure_derivatives_per_pa[species];
+            }
+        }
+    }
     result.volume_parameter_direct.assign(parameter_count, 0.0);
     for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
         const std::size_t parameter_coordinate = physical_dimension + parameter;
@@ -638,6 +780,172 @@ PhaseBlock evaluate_phase(
     return result;
 }
 
+PhaseBlock evaluate_ideal_phase(
+    const PhaseLayout& layout,
+    const std::vector<double>& g_ref,
+    const std::vector<double>& g_ref_pressure_derivatives_per_pa,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<double>& variables,
+    std::size_t offset
+) {
+    const std::size_t species_count = g_ref.size();
+    const std::size_t support_count = layout.supported_species.size();
+    const std::size_t amount_dimension = layout.amount_dimension();
+    const std::size_t phase_dimension = layout.dimension();
+    const std::size_t physical_dimension = support_count + 1;
+    const std::vector<double> amount_coordinates(
+        variables.begin() + static_cast<std::ptrdiff_t>(offset),
+        variables.begin() + static_cast<std::ptrdiff_t>(offset + amount_dimension)
+    );
+    const AmountChartEvaluation chart = evaluate_amount_chart(
+        layout.chart, amount_coordinates
+    );
+    PhaseBlock result;
+    result.amounts.assign(species_count, 0.0);
+    result.amount_hessians.assign(
+        species_count * amount_dimension * amount_dimension, 0.0
+    );
+    for (std::size_t supported = 0; supported < support_count; ++supported) {
+        const std::size_t species = layout.supported_species[supported];
+        result.amounts[species] = chart.amounts[supported];
+        std::copy_n(
+            chart.amount_hessians.begin()
+                + static_cast<std::ptrdiff_t>(
+                    supported * amount_dimension * amount_dimension
+                ),
+            amount_dimension * amount_dimension,
+            result.amount_hessians.begin()
+                + static_cast<std::ptrdiff_t>(
+                    species * amount_dimension * amount_dimension
+                )
+        );
+    }
+    result.log_packing = variables[offset + amount_dimension];
+    result.volume = std::exp(result.log_packing);
+    if (!std::isfinite(result.volume) || result.volume <= 0.0) {
+        throw std::domain_error("reactive ideal-gas volume chart is invalid");
+    }
+    result.packing = 0.0;
+    const double total = std::accumulate(
+        result.amounts.begin(), result.amounts.end(), 0.0
+    );
+    const double pressure_over_rt = pressure_pa
+        / (kGasConstantJPerMolK * temperature_k);
+    result.pressure = kGasConstantJPerMolK * temperature_k
+        * total / result.volume;
+    result.physical_gradient.assign(physical_dimension, 0.0);
+    result.physical_hessian.assign(
+        physical_dimension * physical_dimension, 0.0
+    );
+    result.chemical_potentials.assign(
+        species_count, std::numeric_limits<double>::quiet_NaN()
+    );
+    result.objective = pressure_over_rt * result.volume;
+    for (std::size_t supported = 0; supported < support_count; ++supported) {
+        const std::size_t species = layout.supported_species[supported];
+        const double amount = result.amounts[species];
+        const double logarithm = std::log(amount / result.volume);
+        result.objective += amount * (logarithm - 1.0 + g_ref[species]);
+        result.physical_gradient[supported] = logarithm + g_ref[species];
+        result.chemical_potentials[species] = logarithm + g_ref[species];
+        result.physical_hessian[
+            supported * physical_dimension + supported
+        ] = 1.0 / amount;
+        result.physical_hessian[
+            supported * physical_dimension + support_count
+        ] = -1.0 / result.volume;
+        result.physical_hessian[
+            support_count * physical_dimension + supported
+        ] = -1.0 / result.volume;
+    }
+    result.physical_gradient.back() = -total / result.volume + pressure_over_rt;
+    result.physical_hessian.back() = total / (result.volume * result.volume);
+
+    result.state_jacobian.assign(
+        (species_count + 1) * phase_dimension, 0.0
+    );
+    for (std::size_t supported = 0; supported < support_count; ++supported) {
+        const std::size_t species = layout.supported_species[supported];
+        std::copy_n(
+            chart.jacobian.begin()
+                + static_cast<std::ptrdiff_t>(supported * amount_dimension),
+            amount_dimension,
+            result.state_jacobian.begin()
+                + static_cast<std::ptrdiff_t>(species * phase_dimension)
+        );
+    }
+    result.state_jacobian[
+        species_count * phase_dimension + amount_dimension
+    ] = result.volume;
+    result.gradient.assign(phase_dimension, 0.0);
+    result.hessian.assign(phase_dimension * phase_dimension, 0.0);
+    for (std::size_t left = 0; left < phase_dimension; ++left) {
+        for (std::size_t physical = 0; physical < physical_dimension; ++physical) {
+            const std::size_t full_physical = physical == support_count
+                ? species_count
+                : layout.supported_species[physical];
+            result.gradient[left] += result.state_jacobian[
+                full_physical * phase_dimension + left
+            ] * result.physical_gradient[physical];
+        }
+        for (std::size_t right = 0; right < phase_dimension; ++right) {
+            for (std::size_t physical_left = 0;
+                 physical_left < physical_dimension;
+                 ++physical_left) {
+                const std::size_t full_left = physical_left == support_count
+                    ? species_count
+                    : layout.supported_species[physical_left];
+                for (std::size_t physical_right = 0;
+                     physical_right < physical_dimension;
+                     ++physical_right) {
+                    const std::size_t full_right = physical_right == support_count
+                        ? species_count
+                        : layout.supported_species[physical_right];
+                    result.hessian[left * phase_dimension + right] +=
+                        result.state_jacobian[
+                            full_left * phase_dimension + left
+                        ] * result.physical_hessian[
+                            physical_left * physical_dimension + physical_right
+                        ] * result.state_jacobian[
+                            full_right * phase_dimension + right
+                        ];
+                }
+            }
+            if (left < amount_dimension && right < amount_dimension) {
+                for (std::size_t supported = 0;
+                     supported < support_count;
+                     ++supported) {
+                    result.hessian[left * phase_dimension + right] +=
+                        result.physical_gradient[supported]
+                        * chart.amount_hessians[
+                            supported * amount_dimension * amount_dimension
+                                + left * amount_dimension + right
+                        ];
+                }
+            }
+            if (left == amount_dimension && right == amount_dimension) {
+                result.hessian[left * phase_dimension + right] +=
+                    result.physical_gradient.back() * result.volume;
+            }
+        }
+    }
+    result.objective_pressure_cross.assign(phase_dimension, 0.0);
+    for (std::size_t coordinate = 0; coordinate < phase_dimension; ++coordinate) {
+        result.objective_pressure_cross[coordinate] = result.state_jacobian[
+            species_count * phase_dimension + coordinate
+        ] / (kGasConstantJPerMolK * temperature_k);
+        if (!g_ref_pressure_derivatives_per_pa.empty()) {
+            for (std::size_t species = 0; species < species_count; ++species) {
+                result.objective_pressure_cross[coordinate] +=
+                    result.state_jacobian[species * phase_dimension + coordinate]
+                    * g_ref_pressure_derivatives_per_pa[species];
+            }
+        }
+    }
+    return result;
+}
+
 struct MultiphaseEvaluation {
     double objective = 0.0;
     std::vector<double> gradient;
@@ -682,10 +990,13 @@ MultiphaseEvaluation evaluate_multiphase(
         const std::size_t offset = layout.offset;
         const std::size_t phase_dimension = layout.dimension();
         std::vector<double> phase_reference = system.g_ref;
+        std::vector<double> phase_reference_pressure_derivatives =
+            system.g_ref_pressure_derivatives_per_pa;
         std::vector<double> phase_reference_derivatives =
             system.g_ref_parameter_derivatives;
         if (balances.phase_stacked) {
             phase_reference.assign(system.species_count, 0.0);
+            phase_reference_pressure_derivatives.clear();
             phase_reference_derivatives.clear();
             for (std::size_t species = 0; species < system.species_count; ++species) {
                 phase_reference[species] = balances.reference_potentials[
@@ -693,18 +1004,29 @@ MultiphaseEvaluation evaluate_multiphase(
                 ];
             }
         }
-        result.phases.push_back(evaluate_phase(
-            provider,
-            active_parameters,
-            layout,
-            phase_reference,
-            phase_reference_derivatives,
-            temperature_k,
-            pressure_pa,
-            packing_intervals[phase],
-            variables,
-            offset
-        ));
+        result.phases.push_back(system.ideal_gas
+            ? evaluate_ideal_phase(
+                layout,
+                phase_reference,
+                phase_reference_pressure_derivatives,
+                temperature_k,
+                pressure_pa,
+                variables,
+                offset
+            )
+            : evaluate_phase(
+                provider,
+                active_parameters,
+                layout,
+                phase_reference,
+                phase_reference_pressure_derivatives,
+                phase_reference_derivatives,
+                temperature_k,
+                pressure_pa,
+                packing_intervals[phase],
+                variables,
+                offset
+            ));
         const PhaseBlock& block = result.phases.back();
         result.objective += block.objective;
         for (std::size_t coordinate = 0; coordinate < phase_dimension; ++coordinate) {
@@ -772,6 +1094,161 @@ MultiphaseEvaluation evaluate_multiphase(
         }
     }
     return result;
+}
+
+void polish_single_phase_reaction_root(
+    const ProviderContext& provider,
+    const ProviderActiveParameterSet& active_parameters,
+    const CompiledReactionSystem& system,
+    const NormalizedBalances& balances,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<std::array<double, 2>>& packing_intervals,
+    const std::vector<PhaseLayout>& layouts,
+    const std::vector<double>& lower,
+    const std::vector<double>& upper,
+    std::vector<double>& variables
+) {
+    if (layouts.size() != 1
+        || balances.phase_stacked
+        || balances.matrix.rows + system.reaction_matrix.rows + 1
+            != variables.size()) {
+        return;
+    }
+    const PhaseLayout& layout = layouts.front();
+    const std::size_t dimension = variables.size();
+    const std::size_t balance_count = balances.matrix.rows;
+    const std::size_t reaction_count = system.reaction_matrix.rows;
+    auto residual_and_jacobian = [&](const std::vector<double>& point) {
+        const MultiphaseEvaluation evaluated = evaluate_multiphase(
+            provider,
+            active_parameters,
+            system,
+            balances,
+            temperature_k,
+            pressure_pa,
+            packing_intervals,
+            point,
+            std::vector<double>(balance_count, 0.0),
+            layouts
+        );
+        const PhaseBlock& phase = evaluated.phases.front();
+        Eigen::VectorXd residual = Eigen::VectorXd::Zero(
+            static_cast<Eigen::Index>(dimension)
+        );
+        Eigen::MatrixXd jacobian = Eigen::MatrixXd::Zero(
+            static_cast<Eigen::Index>(dimension),
+            static_cast<Eigen::Index>(dimension)
+        );
+        for (std::size_t row = 0; row < balance_count; ++row) {
+            residual(static_cast<Eigen::Index>(row)) = evaluated.constraints[row];
+            for (std::size_t column = 0; column < dimension; ++column) {
+                jacobian(
+                    static_cast<Eigen::Index>(row),
+                    static_cast<Eigen::Index>(column)
+                ) = evaluated.jacobian[row * dimension + column];
+            }
+        }
+        const std::size_t support_count = layout.supported_species.size();
+        const std::size_t physical_dimension = support_count + 1;
+        for (std::size_t reaction = 0; reaction < reaction_count; ++reaction) {
+            const std::size_t row = balance_count + reaction;
+            for (std::size_t supported = 0; supported < support_count; ++supported) {
+                const std::size_t species = layout.supported_species[supported];
+                const double coefficient = system.reaction_matrix(reaction, species);
+                residual(static_cast<Eigen::Index>(row)) +=
+                    coefficient * phase.chemical_potentials[species];
+                for (std::size_t column = 0; column < dimension; ++column) {
+                    for (std::size_t physical = 0;
+                         physical < physical_dimension;
+                         ++physical) {
+                        const std::size_t full_physical = physical == support_count
+                            ? system.species_count
+                            : layout.supported_species[physical];
+                        jacobian(
+                            static_cast<Eigen::Index>(row),
+                            static_cast<Eigen::Index>(column)
+                        ) += coefficient
+                            * phase.physical_hessian[
+                                supported * physical_dimension + physical
+                            ]
+                            * phase.state_jacobian[
+                                full_physical * dimension + column
+                            ];
+                    }
+                }
+            }
+        }
+        const std::size_t pressure_row = dimension - 1;
+        residual(static_cast<Eigen::Index>(pressure_row)) =
+            (phase.pressure - pressure_pa) / pressure_pa;
+        for (std::size_t column = 0; column < dimension; ++column) {
+            for (std::size_t physical = 0;
+                 physical < physical_dimension;
+                 ++physical) {
+                const std::size_t full_physical = physical == support_count
+                    ? system.species_count
+                    : layout.supported_species[physical];
+                jacobian(
+                    static_cast<Eigen::Index>(pressure_row),
+                    static_cast<Eigen::Index>(column)
+                ) -= kGasConstantJPerMolK * temperature_k / pressure_pa
+                    * phase.physical_hessian[
+                        support_count * physical_dimension + physical
+                    ]
+                    * phase.state_jacobian[
+                        full_physical * dimension + column
+                    ];
+            }
+        }
+        return std::pair{std::move(residual), std::move(jacobian)};
+    };
+
+    for (int iteration = 0; iteration < 10; ++iteration) {
+        const auto [residual, jacobian] = residual_and_jacobian(variables);
+        const double norm = residual.lpNorm<Eigen::Infinity>();
+        if (!std::isfinite(norm)
+            || norm <= 0.01 * kReactiveFinitePhaseSolverTolerance) {
+            return;
+        }
+        Eigen::FullPivLU<Eigen::MatrixXd> factor(jacobian);
+        if (static_cast<std::size_t>(factor.rank()) != dimension) {
+            return;
+        }
+        const Eigen::VectorXd step = factor.solve(-residual);
+        if (!step.allFinite()) {
+            return;
+        }
+        bool accepted = false;
+        for (int backtrack = 0; backtrack < 12; ++backtrack) {
+            const double scale = std::ldexp(1.0, -backtrack);
+            std::vector<double> candidate = variables;
+            bool interior = true;
+            for (std::size_t column = 0; column < dimension; ++column) {
+                candidate[column] += scale * step(static_cast<Eigen::Index>(column));
+                interior = interior
+                    && candidate[column] > lower[column]
+                    && candidate[column] < upper[column];
+            }
+            if (!interior) {
+                continue;
+            }
+            try {
+                const auto [candidate_residual, unused] =
+                    residual_and_jacobian(candidate);
+                if (candidate_residual.lpNorm<Eigen::Infinity>() < norm) {
+                    variables = std::move(candidate);
+                    accepted = true;
+                    break;
+                }
+            } catch (const std::exception&) {
+                continue;
+            }
+        }
+        if (!accepted) {
+            return;
+        }
+    }
 }
 
 double relative_difference(double analytic, double numerical) {
@@ -1335,7 +1812,7 @@ std::vector<double> equality_multipliers_at(
     return std::vector<double>(recovered.data(), recovered.data() + recovered.size());
 }
 
-double reduced_hessian_minimum(
+std::pair<double, double> reduced_hessian_minimum(
     const MultiphaseEvaluation& evaluation,
     std::size_t variable_count,
     std::size_t constraint_count
@@ -1361,35 +1838,46 @@ double reduced_hessian_minimum(
         rank += static_cast<std::size_t>(svd.singularValues()(index) > threshold);
     }
     if (rank >= variable_count) {
-        return std::numeric_limits<double>::infinity();
+        return {std::numeric_limits<double>::infinity(), 1.0};
     }
     const Eigen::MatrixXd nullspace = svd.matrixV().rightCols(
         static_cast<Eigen::Index>(variable_count - rank)
     );
     const Eigen::MatrixXd reduced = nullspace.transpose()
         * (0.5 * (hessian + hessian.transpose())) * nullspace;
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen(reduced);
+    Eigen::VectorXd diagonal_scale(reduced.rows());
+    for (Eigen::Index index = 0; index < reduced.rows(); ++index) {
+        diagonal_scale(index) = 1.0 / std::sqrt(std::max(
+            std::abs(reduced(index, index)),
+            std::numeric_limits<double>::min()
+        ));
+    }
+    const Eigen::MatrixXd equilibrated = diagonal_scale.asDiagonal()
+        * reduced * diagonal_scale.asDiagonal();
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen(equilibrated);
     if (eigen.info() != Eigen::Success) {
         throw std::runtime_error("reactive finite-phase reduced Hessian eigensolve failed");
     }
-    return eigen.eigenvalues().minCoeff();
+    double scale = 1.0;
+    for (Eigen::Index row = 0; row < equilibrated.rows(); ++row) {
+        scale = std::max(scale, equilibrated.row(row).cwiseAbs().sum());
+    }
+    return {eigen.eigenvalues().minCoeff(), scale};
 }
 
 void populate_sensitivities(
     ReactiveFinitePhaseResult& result,
     const MultiphaseEvaluation& evaluation,
     const ProviderActiveParameterSet& active_parameters,
+    const NormalizedBalances& balances,
+    const std::vector<double>& g_ref_pressure_derivatives_per_pa,
     const std::vector<double>& g_ref_parameter_derivatives,
     const std::vector<double>& multipliers,
     double temperature_k,
     std::size_t species_count,
     const std::vector<PhaseLayout>& layouts
 ) {
-    const std::size_t parameter_count = active_parameters.identities.size();
-    if (parameter_count == 0) {
-        result.sensitivity_status = "not_requested";
-        return;
-    }
+    const std::size_t active_parameter_count = active_parameters.identities.size();
     const std::size_t phase_count = evaluation.phases.size();
     const std::size_t variable_count = evaluation.gradient.size();
     const std::size_t constraint_count = evaluation.constraints.size();
@@ -1419,40 +1907,156 @@ void populate_sensitivities(
             ) = value;
         }
     }
-    Eigen::FullPivLU<Eigen::MatrixXd> factor(kkt);
-    if (static_cast<std::size_t>(factor.rank()) != kkt_dimension) {
+    result.kkt_dimension = kkt_dimension;
+    result.kkt_root_jacobian.assign(kkt_dimension * kkt_dimension, 0.0);
+    for (std::size_t row = 0; row < kkt_dimension; ++row) {
+        for (std::size_t column = 0; column < kkt_dimension; ++column) {
+            result.kkt_root_jacobian[row * kkt_dimension + column] = kkt(
+                static_cast<Eigen::Index>(row),
+                static_cast<Eigen::Index>(column)
+            );
+        }
+    }
+    result.kkt_root_values = lagrangian_gradient(evaluation, multipliers);
+    result.kkt_root_values.insert(
+        result.kkt_root_values.end(),
+        evaluation.constraints.begin(),
+        evaluation.constraints.end()
+    );
+    Eigen::VectorXd row_scale = Eigen::VectorXd::Ones(
+        static_cast<Eigen::Index>(kkt_dimension)
+    );
+    Eigen::VectorXd column_scale = Eigen::VectorXd::Ones(
+        static_cast<Eigen::Index>(kkt_dimension)
+    );
+    for (int pass = 0; pass < 4; ++pass) {
+        for (std::size_t row = 0; row < kkt_dimension; ++row) {
+            double scale = 0.0;
+            for (std::size_t column = 0; column < kkt_dimension; ++column) {
+                scale = std::max(
+                    scale,
+                    std::abs(
+                        kkt(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column))
+                        * row_scale(static_cast<Eigen::Index>(row))
+                        * column_scale(static_cast<Eigen::Index>(column))
+                    )
+                );
+            }
+            if (scale > 0.0 && std::isfinite(scale)) {
+                row_scale(static_cast<Eigen::Index>(row)) /= scale;
+            }
+        }
+        for (std::size_t column = 0; column < kkt_dimension; ++column) {
+            double scale = 0.0;
+            for (std::size_t row = 0; row < kkt_dimension; ++row) {
+                scale = std::max(
+                    scale,
+                    std::abs(
+                        kkt(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column))
+                        * row_scale(static_cast<Eigen::Index>(row))
+                        * column_scale(static_cast<Eigen::Index>(column))
+                    )
+                );
+            }
+            if (scale > 0.0 && std::isfinite(scale)) {
+                column_scale(static_cast<Eigen::Index>(column)) /= scale;
+            }
+        }
+    }
+    const Eigen::MatrixXd scaled_kkt = row_scale.asDiagonal()
+        * kkt * column_scale.asDiagonal();
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(scaled_kkt);
+    const double largest = svd.singularValues().size() == 0
+        ? 0.0
+        : svd.singularValues()(0);
+    const double threshold = 256.0 * std::numeric_limits<double>::epsilon()
+        * static_cast<double>(std::max<std::size_t>(1, kkt_dimension))
+        * std::max(1.0, largest);
+    result.kkt_rank = 0;
+    double smallest = std::numeric_limits<double>::infinity();
+    for (Eigen::Index index = 0; index < svd.singularValues().size(); ++index) {
+        const double value = svd.singularValues()(index);
+        if (value > threshold) {
+            ++result.kkt_rank;
+            smallest = std::min(smallest, value);
+        }
+    }
+    result.condition_number_inf = result.kkt_rank == kkt_dimension && smallest > 0.0
+        ? largest / smallest
+        : std::numeric_limits<double>::infinity();
+    Eigen::FullPivLU<Eigen::MatrixXd> factor(scaled_kkt);
+    if (result.kkt_rank != kkt_dimension) {
         result.sensitivity_status = "unavailable";
         result.sensitivity_failure_reason = "singular_exact_kkt_system";
         return;
     }
-    result.parameter_order = active_parameters.identities;
-    result.amount_derivatives.assign(
-        phase_count * species_count * parameter_count, 0.0
+    if (!std::isfinite(result.condition_number_inf)
+        || result.condition_number_inf > kChemicalConditionNumberMax) {
+        result.sensitivity_status = "unavailable";
+        result.sensitivity_failure_reason = "ill_conditioned_exact_kkt_system";
+        return;
+    }
+    if (!g_ref_pressure_derivatives_per_pa.empty()
+        && g_ref_pressure_derivatives_per_pa.size() != species_count) {
+        result.sensitivity_status = "unavailable";
+        result.sensitivity_failure_reason = "incomplete_reference_pressure_derivatives";
+        return;
+    }
+    const std::size_t input_count = constraint_count + 1 + active_parameter_count;
+    result.input_order.reserve(input_count);
+    for (std::size_t row = 0; row < constraint_count; ++row) {
+        result.input_order.push_back("balance_total[" + std::to_string(row) + "]");
+    }
+    result.input_order.emplace_back("pressure_pa");
+    result.input_order.insert(
+        result.input_order.end(),
+        active_parameters.identities.begin(),
+        active_parameters.identities.end()
     );
-    result.volume_derivatives.assign(phase_count * parameter_count, 0.0);
-    result.pressure_derivatives.assign(phase_count * parameter_count, 0.0);
-    result.chemical_potential_derivatives.assign(
-        phase_count * species_count * parameter_count, 0.0
+    result.kkt_input_jacobian.assign(kkt_dimension * input_count, 0.0);
+    result.input_amount_derivatives.assign(
+        phase_count * species_count * input_count, 0.0
     );
-    result.log_fugacity_derivatives.assign(
-        phase_count * species_count * parameter_count, 0.0
+    result.input_volume_derivatives.assign(phase_count * input_count, 0.0);
+    result.input_pressure_derivatives.assign(phase_count * input_count, 0.0);
+    result.input_chemical_potential_derivatives.assign(
+        phase_count * species_count * input_count, 0.0
     );
-    for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
-        Eigen::VectorXd right = Eigen::VectorXd::Zero(
+    result.input_log_fugacity_derivatives.assign(
+        phase_count * species_count * input_count, 0.0
+    );
+    for (std::size_t input = 0; input < input_count; ++input) {
+        Eigen::VectorXd partial = Eigen::VectorXd::Zero(
             static_cast<Eigen::Index>(kkt_dimension)
         );
-        for (std::size_t phase = 0; phase < phase_count; ++phase) {
-            const PhaseLayout& layout = layouts[phase];
-            const std::size_t offset = layout.offset;
-            const std::size_t phase_dimension = layout.dimension();
-            for (std::size_t coordinate = 0; coordinate < phase_dimension; ++coordinate) {
-                right(static_cast<Eigen::Index>(offset + coordinate)) =
-                    -evaluation.phases[phase].objective_parameter_cross[
-                        coordinate * parameter_count + parameter
-                    ];
+        if (input < constraint_count) {
+            partial(static_cast<Eigen::Index>(variable_count + input)) =
+                -1.0 / balances.scales[input];
+        } else {
+            const bool pressure_input = input == constraint_count;
+            const std::size_t active = pressure_input
+                ? 0
+                : input - constraint_count - 1;
+            for (std::size_t phase = 0; phase < phase_count; ++phase) {
+                const PhaseLayout& layout = layouts[phase];
+                for (std::size_t coordinate = 0;
+                     coordinate < layout.dimension();
+                     ++coordinate) {
+                    partial(static_cast<Eigen::Index>(layout.offset + coordinate)) =
+                        pressure_input
+                        ? evaluation.phases[phase].objective_pressure_cross[coordinate]
+                        : evaluation.phases[phase].objective_parameter_cross[
+                            coordinate * active_parameter_count + active
+                        ];
+                }
             }
         }
-        const Eigen::VectorXd response = factor.solve(right);
+        for (std::size_t row = 0; row < kkt_dimension; ++row) {
+            result.kkt_input_jacobian[row * input_count + input] =
+                partial(static_cast<Eigen::Index>(row));
+        }
+        const Eigen::VectorXd response = column_scale.asDiagonal()
+            * factor.solve(row_scale.asDiagonal() * -partial);
         if (!response.allFinite()) {
             result.sensitivity_status = "unavailable";
             result.sensitivity_failure_reason = "nonfinite_exact_kkt_response";
@@ -1475,18 +2079,36 @@ void populate_sensitivities(
                         * response(static_cast<Eigen::Index>(offset + coordinate));
                 }
             }
-            full_physical_response.back() += block.volume_parameter_direct[parameter];
+            const bool pressure_input = input == constraint_count;
+            const bool active_input = input > constraint_count;
+            const std::size_t active = active_input
+                ? input - constraint_count - 1
+                : 0;
+            if (active_input) {
+                full_physical_response.back() += block.volume_parameter_direct[active];
+            }
             for (std::size_t species = 0; species < species_count; ++species) {
-                result.amount_derivatives[
-                    (phase * species_count + species) * parameter_count + parameter
+                result.input_amount_derivatives[
+                    (phase * species_count + species) * input_count + input
                 ] = full_physical_response[species];
             }
             for (std::size_t supported = 0; supported < support_count; ++supported) {
                 const std::size_t species = layout.supported_species[supported];
-                double chemical_response =
-                    block.chemical_potential_parameter_direct[
-                        species * parameter_count + parameter
+                double reference_direct = 0.0;
+                double chemical_response = 0.0;
+                if (pressure_input && !g_ref_pressure_derivatives_per_pa.empty()) {
+                    reference_direct = g_ref_pressure_derivatives_per_pa[species];
+                    chemical_response = reference_direct;
+                } else if (active_input) {
+                    chemical_response = block.chemical_potential_parameter_direct[
+                        species * active_parameter_count + active
                     ];
+                    reference_direct = g_ref_parameter_derivatives.empty()
+                        ? 0.0
+                        : g_ref_parameter_derivatives[
+                            species * active_parameter_count + active
+                        ];
+                }
                 for (std::size_t physical = 0;
                      physical < physical_dimension;
                      ++physical) {
@@ -1500,21 +2122,18 @@ void populate_sensitivities(
                                 layout.supported_species[physical]
                             ]);
                 }
-                result.chemical_potential_derivatives[
-                    (phase * species_count + species) * parameter_count + parameter
+                result.input_chemical_potential_derivatives[
+                    (phase * species_count + species) * input_count + input
                 ] = chemical_response;
-                result.log_fugacity_derivatives[
-                    (phase * species_count + species) * parameter_count + parameter
-                ] = chemical_response
-                    - (g_ref_parameter_derivatives.empty()
-                        ? 0.0
-                        : g_ref_parameter_derivatives[
-                            species * parameter_count + parameter
-                        ]);
+                result.input_log_fugacity_derivatives[
+                    (phase * species_count + species) * input_count + input
+                ] = chemical_response - reference_direct;
             }
-            result.volume_derivatives[phase * parameter_count + parameter] =
+            result.input_volume_derivatives[phase * input_count + input] =
                 full_physical_response.back();
-            double pressure_response = block.pressure_parameter_direct[parameter];
+            double pressure_response = active_input
+                ? block.pressure_parameter_direct[active]
+                : 0.0;
             for (std::size_t physical = 0;
                  physical < physical_dimension;
                  ++physical) {
@@ -1525,13 +2144,380 @@ void populate_sensitivities(
                         ? full_physical_response.back()
                         : full_physical_response[layout.supported_species[physical]]);
             }
-            result.pressure_derivatives[phase * parameter_count + parameter] =
+            result.input_pressure_derivatives[phase * input_count + input] =
                 pressure_response;
         }
     }
     result.sensitivity_status = "available";
     result.sensitivity_failure_reason.clear();
-    (void)multipliers;
+    result.parameter_order = active_parameters.identities;
+    result.amount_derivatives.assign(
+        phase_count * species_count * active_parameter_count, 0.0
+    );
+    result.volume_derivatives.assign(phase_count * active_parameter_count, 0.0);
+    result.pressure_derivatives.assign(phase_count * active_parameter_count, 0.0);
+    result.chemical_potential_derivatives.assign(
+        phase_count * species_count * active_parameter_count, 0.0
+    );
+    result.log_fugacity_derivatives.assign(
+        phase_count * species_count * active_parameter_count, 0.0
+    );
+    for (std::size_t phase = 0; phase < phase_count; ++phase) {
+        for (std::size_t active = 0; active < active_parameter_count; ++active) {
+            const std::size_t input = constraint_count + 1 + active;
+            result.volume_derivatives[phase * active_parameter_count + active] =
+                result.input_volume_derivatives[phase * input_count + input];
+            result.pressure_derivatives[phase * active_parameter_count + active] =
+                result.input_pressure_derivatives[phase * input_count + input];
+            for (std::size_t species = 0; species < species_count; ++species) {
+                const std::size_t source =
+                    (phase * species_count + species) * input_count + input;
+                const std::size_t target =
+                    (phase * species_count + species) * active_parameter_count + active;
+                result.amount_derivatives[target] = result.input_amount_derivatives[source];
+                result.chemical_potential_derivatives[target] =
+                    result.input_chemical_potential_derivatives[source];
+                result.log_fugacity_derivatives[target] =
+                    result.input_log_fugacity_derivatives[source];
+            }
+        }
+    }
+}
+
+std::pair<double, std::vector<double>> contract_output(
+    const ReactiveFinitePhaseOutput& output,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<double>& amounts,
+    double volume,
+    const std::vector<double>& chemical_potentials,
+    const std::vector<double>& log_fugacities,
+    const std::vector<double>& amount_derivatives,
+    const std::vector<double>& volume_derivatives,
+    const std::vector<double>& pressure_derivatives,
+    const std::vector<double>& chemical_potential_derivatives,
+    const std::vector<double>& log_fugacity_derivatives,
+    std::size_t derivative_count
+) {
+    const std::size_t species_count = amounts.size();
+    if (output.coefficients.size() != species_count
+        || (!output.solvent_mass_coefficients_kg_per_mol.empty()
+            && output.solvent_mass_coefficients_kg_per_mol.size() != species_count)
+        || amount_derivatives.size() != species_count * derivative_count
+        || volume_derivatives.size() != derivative_count
+        || pressure_derivatives.size() != derivative_count
+        || chemical_potential_derivatives.size() != species_count * derivative_count
+        || log_fugacity_derivatives.size() != species_count * derivative_count) {
+        throw std::invalid_argument("reactive finite-phase output dimensions changed");
+    }
+    std::vector<double> derivatives(derivative_count, 0.0);
+    if (output.selector == "system.pressure" || output.selector == "phase.pressure") {
+        derivatives = pressure_derivatives;
+        return {pressure_pa, std::move(derivatives)};
+    }
+    const double total = std::accumulate(amounts.begin(), amounts.end(), 0.0);
+    const double numerator = std::inner_product(
+        output.coefficients.begin(), output.coefficients.end(), amounts.begin(), 0.0
+    );
+    if (output.selector == "phase.amount") {
+        for (std::size_t derivative = 0; derivative < derivative_count; ++derivative) {
+            for (std::size_t species = 0; species < species_count; ++species) {
+                derivatives[derivative] += output.coefficients[species]
+                    * amount_derivatives[species * derivative_count + derivative];
+            }
+        }
+        return {numerator, std::move(derivatives)};
+    }
+    if (output.selector == "phase.mole_fraction") {
+        for (std::size_t derivative = 0; derivative < derivative_count; ++derivative) {
+            double dnumerator = 0.0;
+            double dtotal = 0.0;
+            for (std::size_t species = 0; species < species_count; ++species) {
+                const double value = amount_derivatives[
+                    species * derivative_count + derivative
+                ];
+                dnumerator += output.coefficients[species] * value;
+                dtotal += value;
+            }
+            derivatives[derivative] =
+                (dnumerator * total - numerator * dtotal) / (total * total);
+        }
+        return {numerator / total, std::move(derivatives)};
+    }
+    if (output.selector == "phase.molality") {
+        const double denominator = std::inner_product(
+            output.solvent_mass_coefficients_kg_per_mol.begin(),
+            output.solvent_mass_coefficients_kg_per_mol.end(),
+            amounts.begin(),
+            0.0
+        );
+        if (denominator <= 0.0) {
+            throw std::domain_error("reactive finite-phase molality denominator is not positive");
+        }
+        for (std::size_t derivative = 0; derivative < derivative_count; ++derivative) {
+            double dnumerator = 0.0;
+            double ddenominator = 0.0;
+            for (std::size_t species = 0; species < species_count; ++species) {
+                const double value = amount_derivatives[
+                    species * derivative_count + derivative
+                ];
+                dnumerator += output.coefficients[species] * value;
+                ddenominator += output.solvent_mass_coefficients_kg_per_mol[species]
+                    * value;
+            }
+            derivatives[derivative] =
+                (dnumerator * denominator - numerator * ddenominator)
+                / (denominator * denominator);
+        }
+        return {numerator / denominator, std::move(derivatives)};
+    }
+    if (output.selector == "phase.molar_density") {
+        for (std::size_t derivative = 0; derivative < derivative_count; ++derivative) {
+            double dtotal = 0.0;
+            for (std::size_t species = 0; species < species_count; ++species) {
+                dtotal += amount_derivatives[species * derivative_count + derivative];
+            }
+            derivatives[derivative] = dtotal / volume
+                - total * volume_derivatives[derivative] / (volume * volume);
+        }
+        return {total / volume, std::move(derivatives)};
+    }
+    if (output.selector == "phase.compressibility_factor") {
+        const double value = pressure_pa * volume
+            / (total * kGasConstantJPerMolK * temperature_k);
+        for (std::size_t derivative = 0; derivative < derivative_count; ++derivative) {
+            double dtotal = 0.0;
+            for (std::size_t species = 0; species < species_count; ++species) {
+                dtotal += amount_derivatives[species * derivative_count + derivative];
+            }
+            derivatives[derivative] = value * (
+                pressure_derivatives[derivative] / pressure_pa
+                + volume_derivatives[derivative] / volume
+                - dtotal / total
+            );
+        }
+        return {value, std::move(derivatives)};
+    }
+    const bool fugacity = output.selector == "phase.fugacity";
+    const bool log_fugacity = output.selector == "phase.log_fugacity" || fugacity;
+    if (!log_fugacity && output.selector != "phase.chemical_potential_over_rt") {
+        throw std::invalid_argument("unsupported reactive finite-phase output selector");
+    }
+    const std::vector<double>& values = log_fugacity
+        ? log_fugacities
+        : chemical_potentials;
+    const std::vector<double>& source_derivatives = log_fugacity
+        ? log_fugacity_derivatives
+        : chemical_potential_derivatives;
+    double value = std::inner_product(
+        output.coefficients.begin(),
+        output.coefficients.end(),
+        values.begin(),
+        0.0,
+        std::plus<>(),
+        [](double coefficient, double component) {
+            return coefficient == 0.0 ? 0.0 : coefficient * component;
+        }
+    );
+    for (std::size_t derivative = 0; derivative < derivative_count; ++derivative) {
+        for (std::size_t species = 0; species < species_count; ++species) {
+            if (output.coefficients[species] != 0.0) {
+                derivatives[derivative] += output.coefficients[species]
+                    * source_derivatives[species * derivative_count + derivative];
+            }
+        }
+    }
+    if (fugacity) {
+        value = std::exp(value);
+        for (double& derivative : derivatives) {
+            derivative *= value;
+        }
+    }
+    return {value, std::move(derivatives)};
+}
+
+void populate_outputs(
+    ReactiveFinitePhaseResult& result,
+    const MultiphaseEvaluation& evaluation,
+    const ProviderActiveParameterSet& active_parameters,
+    const std::vector<double>& g_ref_parameter_derivatives,
+    double temperature_k,
+    double pressure_pa,
+    double amount_scale,
+    const std::vector<PhaseLayout>& layouts,
+    const std::vector<ReactiveFinitePhaseOutput>& outputs
+) {
+    const std::size_t phase_count = evaluation.phases.size();
+    const std::size_t species_count = evaluation.phases.front().amounts.size();
+    const std::size_t input_count = result.input_order.size();
+    const std::size_t active_count = active_parameters.identities.size();
+    const std::size_t primal_count = evaluation.gradient.size();
+    const std::size_t local_count = primal_count + evaluation.constraints.size();
+    result.output_values.reserve(outputs.size());
+    result.output_input_derivatives.reserve(outputs.size() * input_count);
+    result.output_local_derivatives.reserve(outputs.size() * local_count);
+    result.output_parameter_partials.reserve(outputs.size() * active_count);
+    for (const ReactiveFinitePhaseOutput& output : outputs) {
+        if (output.phase_index >= phase_count) {
+            throw std::invalid_argument("reactive finite-phase output names an unknown phase");
+        }
+        const std::size_t phase = output.phase_index;
+        const PhaseBlock& block = evaluation.phases[phase];
+        const PhaseLayout& layout = layouts[phase];
+        const std::vector<double>& amounts = result.phase_amounts_mol[phase];
+        const double volume = result.phase_volumes_m3[phase];
+        std::vector<double> input_amounts(species_count * input_count, 0.0);
+        std::vector<double> input_mu(species_count * input_count, 0.0);
+        std::vector<double> input_log_f(species_count * input_count, 0.0);
+        for (std::size_t species = 0; species < species_count; ++species) {
+            for (std::size_t input = 0; input < input_count; ++input) {
+                const std::size_t source =
+                    (phase * species_count + species) * input_count + input;
+                input_amounts[species * input_count + input] =
+                    result.input_amount_derivatives[source];
+                input_mu[species * input_count + input] =
+                    result.input_chemical_potential_derivatives[source];
+                input_log_f[species * input_count + input] =
+                    result.input_log_fugacity_derivatives[source];
+            }
+        }
+        std::vector<double> input_volumes(input_count, 0.0);
+        std::vector<double> input_pressures(input_count, 0.0);
+        for (std::size_t input = 0; input < input_count; ++input) {
+            input_volumes[input] =
+                result.input_volume_derivatives[phase * input_count + input];
+            input_pressures[input] = result.input_order[input] == "pressure_pa"
+                ? 1.0
+                : 0.0;
+        }
+        const auto input = contract_output(
+            output,
+            temperature_k,
+            pressure_pa,
+            amounts,
+            volume,
+            result.phase_chemical_potentials_over_rt[phase],
+            result.phase_log_fugacities[phase],
+            input_amounts,
+            input_volumes,
+            input_pressures,
+            input_mu,
+            input_log_f,
+            input_count
+        );
+        result.output_values.push_back(input.first);
+        result.output_input_derivatives.insert(
+            result.output_input_derivatives.end(), input.second.begin(), input.second.end()
+        );
+
+        std::vector<double> local_amounts(species_count * local_count, 0.0);
+        std::vector<double> local_volumes(local_count, 0.0);
+        std::vector<double> local_pressures(local_count, 0.0);
+        std::vector<double> local_mu(species_count * local_count, 0.0);
+        std::vector<double> local_log_f(species_count * local_count, 0.0);
+        const std::size_t support_count = layout.supported_species.size();
+        const std::size_t physical_dimension = support_count + 1;
+        for (std::size_t coordinate = 0; coordinate < layout.dimension(); ++coordinate) {
+            const std::size_t local = layout.offset + coordinate;
+            std::vector<double> physical_response(species_count + 1, 0.0);
+            for (std::size_t physical = 0; physical < species_count + 1; ++physical) {
+                physical_response[physical] = amount_scale
+                    * block.state_jacobian[physical * layout.dimension() + coordinate];
+            }
+            for (std::size_t species = 0; species < species_count; ++species) {
+                local_amounts[species * local_count + local] = physical_response[species];
+            }
+            local_volumes[local] = physical_response.back();
+            for (std::size_t supported = 0; supported < support_count; ++supported) {
+                const std::size_t species = layout.supported_species[supported];
+                double derivative = 0.0;
+                for (std::size_t physical = 0; physical < physical_dimension; ++physical) {
+                    derivative += block.physical_hessian[
+                        supported * physical_dimension + physical
+                    ] * (physical == support_count
+                        ? physical_response.back() / amount_scale
+                        : physical_response[layout.supported_species[physical]] / amount_scale);
+                }
+                local_mu[species * local_count + local] = derivative;
+                local_log_f[species * local_count + local] = derivative;
+            }
+            double derivative = 0.0;
+            for (std::size_t physical = 0; physical < physical_dimension; ++physical) {
+                derivative -= kGasConstantJPerMolK * temperature_k
+                    * block.physical_hessian[
+                        support_count * physical_dimension + physical
+                    ] * (physical == support_count
+                        ? physical_response.back() / amount_scale
+                        : physical_response[layout.supported_species[physical]] / amount_scale);
+            }
+            local_pressures[local] = derivative;
+        }
+        const auto local = contract_output(
+            output,
+            temperature_k,
+            pressure_pa,
+            amounts,
+            volume,
+            result.phase_chemical_potentials_over_rt[phase],
+            result.phase_log_fugacities[phase],
+            local_amounts,
+            local_volumes,
+            local_pressures,
+            local_mu,
+            local_log_f,
+            local_count
+        );
+        result.output_local_derivatives.insert(
+            result.output_local_derivatives.end(), local.second.begin(), local.second.end()
+        );
+
+        std::vector<double> parameter_amounts(species_count * active_count, 0.0);
+        std::vector<double> parameter_volumes(active_count, 0.0);
+        std::vector<double> parameter_pressures(active_count, 0.0);
+        std::vector<double> parameter_mu(species_count * active_count, 0.0);
+        std::vector<double> parameter_log_f(species_count * active_count, 0.0);
+        for (std::size_t active = 0; active < active_count; ++active) {
+            const double volume_direct = block.volume_parameter_direct[active];
+            parameter_volumes[active] = amount_scale * volume_direct;
+            double pressure_direct = block.pressure_parameter_direct[active];
+            for (std::size_t supported = 0; supported < support_count; ++supported) {
+                const std::size_t species = layout.supported_species[supported];
+                const double mu_direct = block.chemical_potential_parameter_direct[
+                    species * active_count + active
+                ] + block.physical_hessian[
+                    supported * physical_dimension + support_count
+                ] * volume_direct;
+                parameter_mu[species * active_count + active] = mu_direct;
+                parameter_log_f[species * active_count + active] = mu_direct
+                    - (g_ref_parameter_derivatives.empty()
+                        ? 0.0
+                        : g_ref_parameter_derivatives[species * active_count + active]);
+            }
+            pressure_direct -= kGasConstantJPerMolK * temperature_k
+                * block.physical_hessian.back() * volume_direct;
+            parameter_pressures[active] = pressure_direct;
+        }
+        const auto parameter = contract_output(
+            output,
+            temperature_k,
+            pressure_pa,
+            amounts,
+            volume,
+            result.phase_chemical_potentials_over_rt[phase],
+            result.phase_log_fugacities[phase],
+            parameter_amounts,
+            parameter_volumes,
+            parameter_pressures,
+            parameter_mu,
+            parameter_log_f,
+            active_count
+        );
+        result.output_parameter_partials.insert(
+            result.output_parameter_partials.end(),
+            parameter.second.begin(),
+            parameter.second.end()
+        );
+    }
 }
 
 }  // namespace
@@ -1548,7 +2534,8 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     int max_iterations,
     bool perform_derivative_audits,
     const PhaseDirectionCompilation* phase_directions,
-    const std::vector<std::vector<std::size_t>>& phase_support_indices
+    const std::vector<std::vector<std::size_t>>& phase_support_indices,
+    const std::vector<ReactiveFinitePhaseOutput>& outputs
 ) {
     ReactiveFinitePhaseResult result;
     const std::size_t phase_count = starts.size();
@@ -1584,12 +2571,6 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     );
     const std::size_t variable_count =
         layouts.back().offset + layouts.back().dimension();
-    if (system.species_count != system.original_species_count
-        || !system.removed_species_indices.empty()) {
-        throw std::invalid_argument(
-            "reactive finite-phase solve requires a complete strict-interior species face"
-        );
-    }
     if (phase_directions != nullptr
         && (phase_directions->phase_ids.size() != phase_count
             || phase_directions->species_ids.size() != species_count
@@ -1651,10 +2632,19 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     const ProviderActiveParameterSet parameters = active_parameters == nullptr
         ? ProviderActiveParameterSet{}
         : *active_parameters;
+    if (system.ideal_gas && !parameters.identities.empty()) {
+        throw std::invalid_argument(
+            "reactive ideal-gas phases do not expose Provider active parameters"
+        );
+    }
     std::vector<double> initial(variable_count, 0.0);
     std::vector<double> lower(variable_count, 0.0);
     std::vector<double> upper(variable_count, 0.0);
-    // Positive molar masses make this a rigorous per-species amount ceiling.
+    // The compiler inserts the positive molar-mass row for species reactions.
+    // Configured phase directions are admitted only when they conserve the same
+    // mass functional and their reference phases sum to the feed.  Therefore
+    // m_i n_i <= sum_j m_j n_j = feed mass for every nonnegative admitted state;
+    // twice that ceiling is a rigorous guard with the physical boundary inactive.
     const double total_feed_mass_kg = std::inner_product(
         system.feed_amounts.begin(),
         system.feed_amounts.end(),
@@ -1679,30 +2669,48 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         for (std::size_t species : layout.supported_species) {
             supported[species] = true;
         }
-        bool valid_amounts = start.amounts_mol.size() == species_count;
+        std::vector<double> start_amounts = start.amounts_mol;
+        bool valid_amounts = start_amounts.size() == species_count;
         for (std::size_t species = 0;
              valid_amounts && species < species_count;
              ++species) {
-            const double amount = start.amounts_mol[species];
+            const double amount = start_amounts[species];
             valid_amounts = std::isfinite(amount)
                 && (supported[species] ? amount > trace_floor : amount == 0.0);
+        }
+        if (!valid_amounts && phase_count == 1) {
+            const std::optional<std::vector<double>> seed = strict_positive_seed(
+                system,
+                layout.supported_species,
+                trace_floor,
+                provider.metadata().ion_mole_fraction_max
+            );
+            if (seed.has_value()) {
+                start_amounts = *seed;
+                valid_amounts = true;
+            }
         }
         if (!valid_amounts
             || !std::isfinite(start.molar_volume_m3_per_mol)
             || start.molar_volume_m3_per_mol <= 0.0
-            || !std::isfinite(packing[0]) || !std::isfinite(packing[1])
-            || packing[0] <= 0.0 || packing[1] <= packing[0] || packing[1] >= 1.0) {
+            || (!system.ideal_gas
+                && (!std::isfinite(packing[0]) || !std::isfinite(packing[1])
+                    || packing[0] <= 0.0 || packing[1] <= packing[0]
+                    || packing[1] >= 1.0))) {
             throw std::invalid_argument("reactive finite-phase start or domain is invalid");
         }
         const std::size_t offset = layout.offset;
         const double total = std::accumulate(
-            start.amounts_mol.begin(), start.amounts_mol.end(), 0.0
+            start_amounts.begin(), start_amounts.end(), 0.0
         );
         const double volume = total * start.molar_volume_m3_per_mol;
-        const double start_packing = provider.evaluate_packing_fraction(
-            temperature_k, start.amounts_mol, volume
-        ).value;
-        if (start_packing <= packing[0] || start_packing >= packing[1]) {
+        const double start_packing = system.ideal_gas
+            ? 0.0
+            : provider.evaluate_packing_fraction(
+                temperature_k, start_amounts, volume
+            ).value;
+        if (!system.ideal_gas
+            && (start_packing <= packing[0] || start_packing >= packing[1])) {
             throw std::invalid_argument(
                 "reactive finite-phase start lies outside the declared packing interval"
             );
@@ -1710,7 +2718,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         std::vector<double> supported_amounts;
         supported_amounts.reserve(layout.supported_species.size());
         for (std::size_t species : layout.supported_species) {
-            supported_amounts.push_back(start.amounts_mol[species]);
+            supported_amounts.push_back(start_amounts[species]);
         }
         const std::vector<double> amount_coordinates =
             invert_amount_chart(chart, supported_amounts);
@@ -1737,7 +2745,8 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
                     layout.supported_species[supported_index];
                 lower[offset + supported_index] = std::log(0.1 * trace_floor);
                 upper[offset + supported_index] = std::log(std::nextafter(
-                    total_feed_mass_kg / system.molar_masses_kg_per_mol[species],
+                    2.0 * total_feed_mass_kg
+                        / system.molar_masses_kg_per_mol[species],
                     std::numeric_limits<double>::infinity()
                 ));
             }
@@ -1748,7 +2757,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
                     layout.supported_species[supported_index];
                 charge_equivalent_upper +=
                     static_cast<double>(chart.charges[supported_index])
-                    * total_feed_mass_kg
+                    * 2.0 * total_feed_mass_kg
                     / system.molar_masses_kg_per_mol[species];
             }
             if (!std::isfinite(charge_equivalent_upper)
@@ -1770,9 +2779,9 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
                 ];
                 lower[offset + neutral_offset + neutral] =
                     std::log(0.1 * trace_floor);
-                upper[offset + neutral_offset + neutral] =
-                    std::log(std::nextafter(
-                        total_feed_mass_kg
+                    upper[offset + neutral_offset + neutral] =
+                        std::log(std::nextafter(
+                        2.0 * total_feed_mass_kg
                             / system.molar_masses_kg_per_mol[species],
                         std::numeric_limits<double>::infinity()
                     ));
@@ -1787,11 +2796,30 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         shift_extensive_amount_coordinates(
             chart, upper, offset, -amount_log_scale
         );
-        initial[offset + amount_dimension] = std::log(start_packing);
-        lower[offset + amount_dimension] = std::log(packing[0]);
-        upper[offset + amount_dimension] = std::nextafter(
-            std::log(packing[1]), -std::numeric_limits<double>::infinity()
-        );
+        if (system.ideal_gas) {
+            const double minimum_volume = 0.01 * trace_floor
+                * kGasConstantJPerMolK * temperature_k
+                / (pressure_pa * total_feed_amount_mol);
+            const double maximum_amount = total_feed_mass_kg
+                / *std::min_element(
+                    system.molar_masses_kg_per_mol.begin(),
+                    system.molar_masses_kg_per_mol.end()
+                );
+            const double maximum_volume = 100.0 * maximum_amount
+                * kGasConstantJPerMolK * temperature_k
+                / (pressure_pa * total_feed_amount_mol);
+            initial[offset + amount_dimension] = std::log(
+                volume / total_feed_amount_mol
+            );
+            lower[offset + amount_dimension] = std::log(minimum_volume);
+            upper[offset + amount_dimension] = std::log(maximum_volume);
+        } else {
+            initial[offset + amount_dimension] = std::log(start_packing);
+            lower[offset + amount_dimension] = std::log(packing[0]);
+            upper[offset + amount_dimension] = std::nextafter(
+                std::log(packing[1]), -std::numeric_limits<double>::infinity()
+            );
+        }
     }
 
     NormalizedBalances balances = normalized_balances(
@@ -1906,6 +2934,21 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
 
     std::vector<double> solution = raw_problem->solution();
     std::vector<double> multipliers = raw_problem->multipliers();
+    if (phase_directions == nullptr) {
+        polish_single_phase_reaction_root(
+            provider,
+            parameters,
+            system,
+            balances,
+            temperature_k,
+            pressure_pa,
+            packing_fraction_intervals,
+            layouts,
+            lower,
+            upper,
+            solution
+        );
+    }
     // Fixed-pressure phase amounts do not depend on the packing coordinate.
     // Polish each phase's scalar packing coordinate after IPOPT so the direct
     // pressure check is as accurate as the otherwise well-scaled KKT solve.
@@ -2135,14 +3178,17 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
             );
         }
     }
-    result.reduced_hessian_min_eigenvalue = reduced_hessian_minimum(
+    const auto [minimum_reduced_eigenvalue, reduced_hessian_scale] =
+        reduced_hessian_minimum(
         evaluated, variable_count, evaluated.constraints.size()
     );
-    const double hessian_scale = std::max(
-        1.0, inf_norm(evaluated.lagrangian_hessian)
-    );
+    result.reduced_hessian_min_eigenvalue = minimum_reduced_eigenvalue;
     const double strict_minimum_threshold =
-        kReactiveFinitePhaseStrictMinimumFactor * hessian_scale;
+        kReactiveFinitePhaseStrictMinimumFactor * reduced_hessian_scale;
+    result.minimum_amount_mol = minimum_amount;
+    result.minimum_bound_margin = minimum_bound_margin;
+    result.reduced_hessian_scale = reduced_hessian_scale;
+    result.reduced_hessian_threshold = strict_minimum_threshold;
     const bool physical_certificates_passed =
         result.balance_inf_norm <= kChemicalBalanceTolerance
         && result.pressure_relative_inf_norm <= kChemicalPressureTolerance
@@ -2195,6 +3241,8 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         result,
         evaluated,
         parameters,
+        balances,
+        system.g_ref_pressure_derivatives_per_pa,
         system.g_ref_parameter_derivatives,
         multipliers,
         temperature_k,
@@ -2207,10 +3255,166 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     for (double& derivative : result.volume_derivatives) {
         derivative *= total_feed_amount_mol;
     }
-    if (!parameters.identities.empty() && result.sensitivity_status != "available") {
+    for (double& derivative : result.input_amount_derivatives) {
+        derivative *= total_feed_amount_mol;
+    }
+    for (double& derivative : result.input_volume_derivatives) {
+        derivative *= total_feed_amount_mol;
+    }
+    result.local_variables = solution;
+    result.local_variables.insert(
+        result.local_variables.end(), multipliers.begin(), multipliers.end()
+    );
+    result.local_lower_bounds = lower;
+    result.local_lower_bounds.insert(
+        result.local_lower_bounds.end(), constraint_count, -1.0e19
+    );
+    result.local_upper_bounds = upper;
+    result.local_upper_bounds.insert(
+        result.local_upper_bounds.end(), constraint_count, 1.0e19
+    );
+    if (result.sensitivity_status == "available") {
+        populate_outputs(
+            result,
+            evaluated,
+            parameters,
+            system.g_ref_parameter_derivatives,
+            temperature_k,
+            pressure_pa,
+            total_feed_amount_mol,
+            layouts,
+            outputs
+        );
+    }
+    if (result.sensitivity_status != "available") {
         result.accepted = false;
         result.failure_reason = "reactive_finite_phase_sensitivity_failed";
     }
+    result.provider_evaluation_count = static_cast<std::size_t>(provider.evaluation_count());
+    return result;
+}
+
+ReactiveFinitePhaseResult evaluate_provider_reactive_finite_phases_local(
+    const CompiledReactionSystem& system,
+    const ProviderContext& provider,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<std::array<double, 2>>& packing_fraction_intervals,
+    const std::vector<double>& local_variables,
+    const std::vector<double>& local_lower_bounds,
+    const std::vector<double>& local_upper_bounds,
+    const ProviderActiveParameterSet* active_parameters,
+    const PhaseDirectionCompilation* phase_directions,
+    const std::vector<std::vector<std::size_t>>& phase_support_indices,
+    const std::vector<ReactiveFinitePhaseOutput>& outputs
+) {
+    const ProviderActiveParameterSet parameters = active_parameters == nullptr
+        ? ProviderActiveParameterSet{}
+        : *active_parameters;
+    const std::vector<PhaseLayout> layouts = make_phase_layouts(
+        system.charges, phase_support_indices
+    );
+    const std::size_t primal_count =
+        layouts.back().offset + layouts.back().dimension();
+    NormalizedBalances balances = normalized_balances(
+        system, phase_directions, phase_support_indices
+    );
+    const double amount_scale = std::accumulate(
+        system.feed_amounts.begin(), system.feed_amounts.end(), 0.0
+    );
+    for (double& coefficient : balances.matrix.values) {
+        coefficient *= amount_scale;
+    }
+    const std::size_t constraint_count = balances.matrix.rows;
+    if (local_variables.size() != primal_count + constraint_count
+        || local_lower_bounds.size() != local_variables.size()
+        || local_upper_bounds.size() != local_variables.size()) {
+        throw std::invalid_argument("reactive finite-phase local dimensions changed");
+    }
+    const std::vector<double> primal(
+        local_variables.begin(),
+        local_variables.begin() + static_cast<std::ptrdiff_t>(primal_count)
+    );
+    const std::vector<double> multipliers(
+        local_variables.begin() + static_cast<std::ptrdiff_t>(primal_count),
+        local_variables.end()
+    );
+    const MultiphaseEvaluation evaluated = evaluate_multiphase(
+        provider,
+        parameters,
+        system,
+        balances,
+        temperature_k,
+        pressure_pa,
+        packing_fraction_intervals,
+        primal,
+        multipliers,
+        layouts
+    );
+    ReactiveFinitePhaseResult result;
+    result.local_variables = local_variables;
+    result.local_lower_bounds = local_lower_bounds;
+    result.local_upper_bounds = local_upper_bounds;
+    result.objective_over_rt = amount_scale * evaluated.objective;
+    result.balance_inf_norm = inf_norm(evaluated.constraints);
+    for (const PhaseBlock& block : evaluated.phases) {
+        std::vector<double> amounts = block.amounts;
+        for (double& amount : amounts) {
+            amount *= amount_scale;
+        }
+        result.phase_amounts_mol.push_back(std::move(amounts));
+        result.phase_volumes_m3.push_back(amount_scale * block.volume);
+        result.phase_pressures_pa.push_back(block.pressure);
+        result.phase_packing_fractions.push_back(block.packing);
+        result.phase_chemical_potentials_over_rt.push_back(block.chemical_potentials);
+        std::vector<double> log_fugacities = block.chemical_potentials;
+        for (std::size_t species = 0; species < system.species_count; ++species) {
+            log_fugacities[species] += std::log(
+                kGasConstantJPerMolK * temperature_k
+            ) - system.g_ref[species];
+        }
+        result.phase_log_fugacities.push_back(std::move(log_fugacities));
+    }
+    populate_sensitivities(
+        result,
+        evaluated,
+        parameters,
+        balances,
+        system.g_ref_pressure_derivatives_per_pa,
+        system.g_ref_parameter_derivatives,
+        multipliers,
+        temperature_k,
+        system.species_count,
+        layouts
+    );
+    for (double& derivative : result.amount_derivatives) {
+        derivative *= amount_scale;
+    }
+    for (double& derivative : result.volume_derivatives) {
+        derivative *= amount_scale;
+    }
+    for (double& derivative : result.input_amount_derivatives) {
+        derivative *= amount_scale;
+    }
+    for (double& derivative : result.input_volume_derivatives) {
+        derivative *= amount_scale;
+    }
+    populate_outputs(
+        result,
+        evaluated,
+        parameters,
+        system.g_ref_parameter_derivatives,
+        temperature_k,
+        pressure_pa,
+        amount_scale,
+        layouts,
+        outputs
+    );
+    result.accepted = true;
+    result.solver_status = "local_evaluation";
+    result.numerical_status = "passed";
+    result.physical_status = "not_adjudicated";
+    result.provider_domain_status = "passed";
     result.provider_evaluation_count = static_cast<std::size_t>(provider.evaluation_count());
     return result;
 }

@@ -5,20 +5,19 @@ import json
 import math
 from collections.abc import Iterator
 from dataclasses import asdict, dataclass, replace
+from itertools import permutations
 from typing import Any, Literal, cast
 
 from pint import Quantity
 
 import epcsaft
 
-from .._trials import NonEvaluableTrial
 from .. import _core
+from .._trials import NonEvaluableTrial
 from ._api import (
     ActiveParameterTrialReceipt,
     AllComponents,
-    ChemicalEquilibriumError,
     ChemicalEquilibriumProblem,
-    ChemicalEquilibriumSensitivityRequest,
     ChemicalStandardState,
     DeclaredComponents,
     DeclaredNeutralComponents,
@@ -26,17 +25,13 @@ from ._api import (
     EquilibriumContinuationState,
     EquilibriumPhaseState,
     FixedPCoexistence,
-    IdealGasPhase,
     IncipientTemperatureBoundary,
     NeutralComponents,
     PhaseEquilibriumError,
     PhaseEquilibriumProblem,
     PhaseSpecification,
     PhaseSupport,
-    ProviderPhase,
-    _chemical_equilibrium_impl,
     _continuation_start,
-    _contract_phase_output,
     _ScalarBoundarySolveError,
     _solve_bracketed_scalar,
     _source_reference_payload,
@@ -766,17 +761,6 @@ def _standard_state_payload(standard: ChemicalStandardState | None) -> object:
             standard.source_reference_standard_molality_mol_per_kg
         ),
     }
-
-
-def _phase_model(
-    model: epcsaft.Mixture,
-    phase: ReactivePhase,
-) -> ProviderPhase | IdealGasPhase:
-    if isinstance(phase.model, ProviderModel):
-        if phase.model.reference_id != "installed-provider-eos":
-            raise ValueError("GREPE provider model reference is not registered")
-        return ProviderPhase(model, phase.model.admissible_packing_fraction_interval)
-    return IdealGasPhase(model.parameter_fingerprint, phase.model.reference_id)
 
 
 def _bubble_quantity(
@@ -1669,6 +1653,8 @@ def _generated_finite_phase_allocations(
     phase_count = len(phases)
     component_count = len(feed)
     floor = reaction_system.strict_interior_amount_floor_mol
+    if phase_count == 1:
+        return (((1.0,) * component_count,),)
     if any(amount <= phase_count * 0.1 * floor for amount in feed):
         raise ValueError("automatic finite-phase starts require a strict-interior species feed")
 
@@ -2141,12 +2127,14 @@ def _compile_general_reactive_equilibrium(
         and isinstance(incipient[0].support, DeclaredNeutralComponents)
     ):
         liquid, vapor = finite[0], incipient[0]
-        liquid_model = _phase_model(model, liquid)
-        if not isinstance(liquid_model, ProviderPhase):
+        if not isinstance(liquid.model, ProviderModel):
             return "the configured finite reacting liquid requires the Provider EOS"
+        if liquid.model.reference_id != "installed-provider-eos":
+            return "GREPE provider model reference is not registered"
         incipient_problem = _FiniteIncipientKernel(
             liquid.identity,
-            liquid_model,
+            model,
+            liquid.model.admissible_packing_fraction_interval,
             _effective_reaction_system(problem),
             vapor.identity,
             cast(DeclaredNeutralComponents, vapor.support).component_ids,
@@ -2322,14 +2310,13 @@ def _reactive_finite_source_standard_state(
     standard = reaction.source_standard_state
     if standard is None:
         return None
-    provider_model = cast(ProviderModel, phase.model)
     transfer = _source_reference_transfer(
-        ProviderPhase(model, provider_model.admissible_packing_fraction_interval),
+        model,
         standard,
         species_ids=reaction.species_ids,
         temperature_k=temperature_k,
         pressure_pa=pressure_pa,
-        sensitivities_requested=active_parameters is not None,
+        sensitivities_requested=True,
         active_parameters=active_parameters,
     )
     return {
@@ -2492,124 +2479,31 @@ def _finite_phase_rows(
     problem: GeneralReactiveEquilibriumProblem,
     compilation: _FinitePhaseCompilation,
     native: dict[str, object],
+    input_identities: tuple[str, ...] | None = None,
 ) -> tuple[GeneralEquilibriumRowResult, ...]:
-    component_count = len(_effective_reaction_system(problem).species_ids)
-    parameter_count = len(compilation.descriptor.active_parameter_identities)
-    phase_index_by_id = {phase.identity: index for index, phase in enumerate(compilation.phases)}
-    amounts = _native_float_matrix(native["phase_amounts_mol"])
-    volumes = _native_float_vector(native["phase_volumes_m3"])
-    chemical_potentials = _native_float_matrix(native["phase_chemical_potentials_over_rt"])
-    log_fugacities = _native_float_matrix(native["phase_log_fugacities"])
-    amount_derivatives = _native_float_vector(native["amount_derivatives"])
-    volume_derivatives = _native_float_vector(native["volume_derivatives"])
-    chemical_potential_derivatives = _native_float_vector(native["chemical_potential_derivatives"])
-    log_fugacity_derivatives = _native_float_vector(native["log_fugacity_derivatives"])
-    rows = []
-    for output in problem.outputs:
-        if output.selector == "system.pressure":
-            value = compilation.pressure_pa
-            jacobian = (0.0,) * parameter_count
-        else:
-            phase_index = phase_index_by_id[cast(str, output.phase_identity)]
-            phase_amounts = amounts[phase_index]
-            total_amount = math.fsum(phase_amounts)
-            volume = volumes[phase_index]
-            if output.selector in {
-                "phase.amount",
-                "phase.mole_fraction",
-                "phase.molality",
-                "phase.molar_density",
-            }:
-                value, jacobian = _contract_phase_output(
-                    output.selector,
-                    output.coefficients,
-                    output.solvent_mass_coefficients_kg_per_mol,
-                    phase_amounts,
-                    volume,
-                    tuple(
-                        tuple(
-                            amount_derivatives[
-                                ((phase_index * component_count + component) * parameter_count)
-                                + parameter
-                            ]
-                            for component in range(component_count)
-                        )
-                        for parameter in range(parameter_count)
-                    ),
-                    tuple(
-                        volume_derivatives[phase_index * parameter_count + parameter]
-                        for parameter in range(parameter_count)
-                    ),
-                )
-            elif output.selector == "phase.compressibility_factor":
-                value = (
-                    compilation.pressure_pa
-                    * volume
-                    / (total_amount * 8.31446261815324 * compilation.temperature_k)
-                )
-                jacobian = tuple(
-                    value
-                    * (
-                        volume_derivatives[phase_index * parameter_count + parameter] / volume
-                        - math.fsum(
-                            amount_derivatives[
-                                ((phase_index * component_count + component) * parameter_count)
-                                + parameter
-                            ]
-                            for component in range(component_count)
-                        )
-                        / total_amount
-                    )
-                    for parameter in range(parameter_count)
-                )
-            elif output.selector == "phase.pressure":
-                value = compilation.pressure_pa
-                jacobian = (0.0,) * parameter_count
-            else:
-                assert output.selector in {
-                    "phase.chemical_potential_over_rt",
-                    "phase.fugacity",
-                    "phase.log_fugacity",
-                }
-                potentials = (
-                    log_fugacities[phase_index]
-                    if output.selector in {"phase.fugacity", "phase.log_fugacity"}
-                    else chemical_potentials[phase_index]
-                )
-                derivatives = (
-                    log_fugacity_derivatives
-                    if output.selector in {"phase.fugacity", "phase.log_fugacity"}
-                    else chemical_potential_derivatives
-                )
-                value = math.fsum(
-                    coefficient * chemical_potential
-                    for coefficient, chemical_potential in zip(
-                        output.coefficients, potentials, strict=True
-                    )
-                )
-                jacobian = _contract_parameter_derivatives(
-                    output.coefficients,
-                    derivatives,
-                    phase_index=phase_index,
-                    component_count=component_count,
-                    parameter_count=parameter_count,
-                )
-                if output.selector == "phase.fugacity":
-                    value = math.exp(value)
-                    jacobian = tuple(value * derivative for derivative in jacobian)
-        rows.append(
-            GeneralEquilibriumRowResult(
-                output.identity,
-                output.selector,
-                output.unit,
-                output.basis,
-                "evaluated",
-                value,
-                jacobian,
-                "",
-            )
+    values = _native_float_vector(native["output_values"])
+    input_order = tuple(str(value) for value in cast(tuple[object, ...], native["input_order"]))
+    selected = (
+        compilation.descriptor.active_parameter_identities
+        if input_identities is None
+        else input_identities
+    )
+    indices = tuple(input_order.index(identity) for identity in selected)
+    derivatives = _native_float_vector(native["output_input_derivatives"])
+    width = len(input_order)
+    return tuple(
+        GeneralEquilibriumRowResult(
+            output.identity,
+            output.selector,
+            output.unit,
+            output.basis,
+            "evaluated",
+            values[row],
+            tuple(derivatives[row * width + index] for index in indices),
+            "",
         )
-    return tuple(rows)
+        for row, output in enumerate(problem.outputs)
+    )
 
 
 def _evaluate_finite_phase(
@@ -2617,6 +2511,8 @@ def _evaluate_finite_phase(
     problem: GeneralReactiveEquilibriumProblem,
     compilation: _FinitePhaseCompilation,
     active_parameters: epcsaft.ActiveParameterSet | None,
+    *,
+    native_sink: list[dict[str, object]] | None = None,
 ) -> GeneralReactiveEquilibriumResult:
     trial = _finite_phase_trial(compilation.owner_descriptor, active_parameters)
     try:
@@ -2634,19 +2530,60 @@ def _evaluate_finite_phase(
             if compilation.declared_start_set is not None:
                 yield compilation.declared_start_set
             for allocation in compilation.generated_allocations:
-                try:
-                    yield _finite_phase_start_set_from_allocation(
-                        model,
-                        compilation.phases,
-                        _effective_reaction_system(problem).feed_amounts_mol,
-                        allocation,
-                        compilation.temperature_k,
-                        compilation.pressure_pa,
+                feed = _effective_reaction_system(problem).feed_amounts_mol
+                species = _effective_reaction_system(problem).species_ids
+                orders = tuple(
+                    order
+                    for order in permutations(range(len(allocation)))
+                    if all(
+                        fraction == 0.0 or species[component] in supported
+                        for phase, supported in enumerate(compilation.supported_component_ids)
+                        for component, fraction in enumerate(allocation[order[phase]])
                     )
-                except (ArithmeticError, RuntimeError, ValueError):
-                    continue
+                )
+                declared_starts = compilation.declared_start_set
+                if declared_starts is not None:
+                    orders = tuple(
+                        sorted(
+                            orders,
+                            key=lambda order: math.fsum(
+                                (
+                                    allocation[order[phase]][component]
+                                    - start.amounts_mol[component] / feed[component]
+                                )
+                                ** 2
+                                for phase, start in enumerate(declared_starts)
+                                for component in range(len(feed))
+                                if feed[component] > 0.0
+                            ),
+                        )
+                    )
+                else:
+                    canonical = tuple(
+                        sorted(
+                            range(len(compilation.phases)),
+                            key=lambda phase: compilation.phases[phase].identity,
+                        ).index(phase)
+                        for phase in range(len(compilation.phases))
+                    )
+                    orders = (canonical,)
+                for order in orders:
+                    try:
+                        yield _finite_phase_start_set_from_allocation(
+                            model,
+                            compilation.phases,
+                            feed,
+                            tuple(allocation[index] for index in order),
+                            compilation.temperature_k,
+                            compilation.pressure_pa,
+                        )
+                    except (ArithmeticError, RuntimeError, ValueError):
+                        continue
 
         for start_set in candidate_start_sets():
+            phase_index_by_id = {
+                phase.identity: index for index, phase in enumerate(compilation.phases)
+            }
             attempt = cast(
                 dict[str, object],
                 _core._reactive_finite_phases(
@@ -2669,6 +2606,22 @@ def _evaluate_finite_phase(
                     False,
                     _finite_phase_direction_spec(problem),
                     _finite_phase_support_indices(model, compilation),
+                    tuple(
+                        {
+                            "selector": output.selector,
+                            "phase_index": (
+                                0
+                                if output.phase_identity is None
+                                else phase_index_by_id[output.phase_identity]
+                            ),
+                            "coefficients": output.coefficients
+                            or (0.0,) * len(model.component_ids),
+                            "solvent_mass_coefficients_kg_per_mol": (
+                                output.solvent_mass_coefficients_kg_per_mol
+                            ),
+                        }
+                        for output in problem.outputs
+                    ),
                 ),
             )
             native_attempt_list.append(attempt)
@@ -2706,6 +2659,8 @@ def _evaluate_finite_phase(
     else:
         _, selected = min(enumerate(native_attempts), key=_finite_phase_failure_score)
     native = dict(selected)
+    if native_sink is not None:
+        native_sink.append(native)
     native["optimizer_iterations"] = sum(
         int(cast(int, attempt["optimizer_iterations"])) for attempt in native_attempts
     )
@@ -2726,6 +2681,8 @@ def _evaluate_finite_phase(
                 "; balance={balance}, pressure={pressure}, affinity={affinity}, "
                 "transfer={transfer}, stationarity={stationarity}, "
                 "distinctness={distinctness}, reduced_hessian={reduced_hessian}, "
+                "minimum_amount={minimum_amount}, bound_margin={bound_margin}, "
+                "reduced_hessian_threshold={reduced_hessian_threshold}, "
                 "phase_totals={phase_totals}"
             ).format(
                 balance=native["balance_inf_norm"],
@@ -2735,6 +2692,9 @@ def _evaluate_finite_phase(
                 stationarity=native["kkt_stationarity_inf_norm"],
                 distinctness=native["phase_distinctness"],
                 reduced_hessian=native["reduced_hessian_min_eigenvalue"],
+                minimum_amount=native["minimum_amount_mol"],
+                bound_margin=native["minimum_bound_margin"],
+                reduced_hessian_threshold=native["reduced_hessian_threshold"],
                 phase_totals=tuple(
                     math.fsum(row) for row in _native_float_matrix(native["phase_amounts_mol"])
                 ),
@@ -2850,215 +2810,26 @@ def _evaluate_single_finite_phase_with_balance_derivatives(
     compilation: _FinitePhaseCompilation,
     active_parameters: epcsaft.ActiveParameterSet | None,
 ) -> tuple[GeneralReactiveEquilibriumResult, tuple[tuple[float, ...], ...]]:
-    phase = compilation.phases[0]
-    trial = _finite_phase_trial(compilation.owner_descriptor, active_parameters)
-    start = compilation.declared_start_set
-    continuation_start = (
-        None
-        if problem.continuation_state is None or start is None
-        else (
-            start[0].amounts_mol,
-            math.fsum(start[0].amounts_mol) * start[0].molar_volume_m3_per_mol,
-        )
-    )
-    try:
-        solved = _chemical_equilibrium_impl(
-            ProviderPhase(
-                model,
-                cast(ProviderModel, phase.model).admissible_packing_fraction_interval,
-            ),
-            compilation.temperature_k * epcsaft.unit_registry.kelvin,
-            compilation.pressure_pa * epcsaft.unit_registry.pascal,
-            _effective_reaction_system(problem),
-            sensitivity_request=ChemicalEquilibriumSensitivityRequest(active_parameters),
-            continuation_start=continuation_start,
-        )
-    except ChemicalEquilibriumError as error:
-        diagnostics = error.diagnostics
-        code: Literal[
-            "provider_domain_rejection",
-            "singular_sensitivity",
-            "physical_rejection",
-            "numerical_convergence_failure",
-        ]
-        code = (
-            "provider_domain_rejection"
-            if diagnostics.provider_domain_status == "failed"
-            else "singular_sensitivity"
-            if diagnostics.first_failed_numerical_criterion
-            == "kkt_condition_number_inf"
-            else "physical_rejection"
-            if diagnostics.physical_status == "failed"
-            else "numerical_convergence_failure"
-        )
-        return _finite_phase_failed(
-            problem,
-            compilation,
-            trial,
-            code,
-            str(error),
-            solver_status=diagnostics.solver_status,
-            numerical_status=diagnostics.numerical_status,
-            physical_status=diagnostics.physical_status,
-            provider_domain_status=diagnostics.provider_domain_status,
-        ), ()
-    sensitivity = solved.sensitivity
-    if sensitivity is None or sensitivity.status != "available":
-        return _finite_phase_failed(
-            problem,
-            compilation,
-            trial,
-            "singular_sensitivity",
-            "finite-phase GREPE requires exact conditioned sensitivities",
-            solver_status=solved.diagnostics.solver_status,
-            numerical_status="failed",
-            physical_status=solved.diagnostics.physical_status,
-            provider_domain_status=solved.diagnostics.provider_domain_status,
-        ), ()
-    amounts = solved.amounts_mol
-    volume = solved.volume_m3
-    active = {
-        parameter.identity: (dn, dv)
-        for parameter, dn, dv in zip(
-            sensitivity.parameters,
-            sensitivity.amount_derivatives,
-            sensitivity.volume_derivatives,
-            strict=True,
-        )
-        if parameter.identity is not None
-    }
-    balance = tuple(
-        (dn, dv)
-        for parameter, dn, dv in zip(
-            sensitivity.parameters,
-            sensitivity.amount_derivatives,
-            sensitivity.volume_derivatives,
-            strict=True,
-        )
-        if parameter.kind == "compiled_balance_total"
-    )
-    component_count = len(amounts)
-    active_count = 0 if active_parameters is None else len(active_parameters.identities)
-    width = component_count + 1 + active_count
-    if active_parameters is None:
-        phase_block = _core.evaluate_parameterized_phase(
-            model._native_model(),
-            compilation.temperature_k,
-            amounts,
-            volume,
-            *cast(ProviderModel, phase.model).admissible_packing_fraction_interval,
-        )
-        hessian = _native_float_vector(phase_block["state_hessian"])
-        potentials = _native_float_vector(phase_block["state_gradient"])[:component_count]
-    else:
-        derivative_block = model._native.evaluate_phase_derivatives(
-            compilation.temperature_k,
-            amounts,
-            volume,
-            model._active_coordinates(active_parameters),
-            2,
-        )
-        hessian = tuple(float(value) for value in derivative_block.hessian)
-        potentials = tuple(float(value) for value in derivative_block.gradient[:component_count])
-
-    def native_rows(
-        columns: tuple[tuple[tuple[float, ...], float], ...],
-        *,
-        direct: bool,
-    ) -> dict[str, object]:
-        parameter_count = len(columns)
-        potential_derivatives = tuple(
-            math.fsum(
-                hessian[component * width + species] * dn[species]
-                for species in range(component_count)
-            )
-            + hessian[component * width + component_count] * dv
-            + (hessian[component * width + component_count + 1 + parameter] if direct else 0.0)
-            for component in range(component_count)
-            for parameter, (dn, dv) in enumerate(columns)
-        )
-        return {
-            "phase_amounts_mol": (amounts,),
-            "phase_volumes_m3": (volume,),
-            "phase_pressures_pa": (solved.pressure_pa,),
-            "phase_packing_fractions": (cast(float, solved.diagnostics.packing_fraction),),
-            "phase_chemical_potentials_over_rt": (potentials,),
-            "phase_log_fugacities": (
-                tuple(
-                    value + math.log(8.31446261815324 * compilation.temperature_k)
-                    for value in potentials
-                ),
-            ),
-            "amount_derivatives": tuple(
-                dn[component] for component in range(component_count) for dn, _ in columns
-            ),
-            "volume_derivatives": tuple(dv for _, dv in columns),
-            "chemical_potential_derivatives": potential_derivatives,
-            "log_fugacity_derivatives": potential_derivatives,
-            "parameter_order": tuple(range(parameter_count)),
-        }
-
-    active_columns = tuple(
-        active[identity] for identity in compilation.descriptor.active_parameter_identities
-    )
-    active_native = native_rows(active_columns, direct=True)
-    rows = _finite_phase_rows(problem, compilation, active_native)
-    phases = _finite_phase_states(
+    native: list[dict[str, object]] = []
+    result = _evaluate_finite_phase(
         model,
+        problem,
         compilation,
-        active_native,
-        mechanical_class="strict_stable_local_minimum",
+        active_parameters,
+        native_sink=native,
     )
-    balance_compilation = replace(
-        compilation,
-        descriptor=replace(
-            compilation.descriptor,
-            active_parameter_identities=tuple(f"balance[{index}]" for index in range(len(balance))),
-        ),
+    if result.status != "evaluated" or not native:
+        return result, ()
+    balance_inputs = tuple(
+        identity
+        for identity in cast(tuple[str, ...], native[0]["input_order"])
+        if identity.startswith("balance_total[")
     )
     balance_rows = _finite_phase_rows(
         problem,
-        balance_compilation,
-        native_rows(balance, direct=False),
-    )
-    diagnostics = solved.diagnostics
-    branch_signature = (
-        "finite_phases_local_minimum",
-        compilation.descriptor.problem_fingerprint,
-        ((phase.identity, problem.continuation_identity, None),),
-    )
-    result = GeneralReactiveEquilibriumResult(
-        problem,
-        compilation.descriptor,
-        "evaluated",
-        diagnostics.solver_status,
-        diagnostics.numerical_status,
-        diagnostics.physical_status,
-        diagnostics.provider_domain_status,
-        rows,
-        phases,
-        None,
-        compilation.descriptor.certificate_scope,
-        "not_established",
-        trial,
-        branch_signature,
-        tuple(
-            (name, value)
-            for name, value in (
-                ("balance_inf_norm", diagnostics.balance_inf_norm),
-                ("electroneutrality_inf", diagnostics.charge_inf_norm),
-                ("reaction_affinity_inf_norm", diagnostics.reaction_affinity_inf_norm),
-                ("pressure_relative_inf_norm", diagnostics.pressure_relative_residual),
-                ("kkt_stationarity_inf_norm", diagnostics.kkt_stationarity_inf_norm),
-                (
-                    "source_reference_representation_residual_inf_norm",
-                    diagnostics.reference_representation_residual_inf_norm,
-                ),
-                ("provider_evaluation_count", diagnostics.provider_evaluation_count),
-            )
-            if value is not None
-        ),
-        solved.resolved_policy,
+        compilation,
+        native[0],
+        balance_inputs,
     )
     return result, tuple(cast(tuple[float, ...], row.jacobian) for row in balance_rows)
 
@@ -3071,66 +2842,6 @@ def _evaluate_ideal_phase(
 ) -> tuple[GeneralReactiveEquilibriumResult, tuple[tuple[float, ...], ...]]:
     trial = _finite_phase_trial(compilation.owner_descriptor, None)
     phase = compilation.phase
-    if continuation_start is None and phase.start is not None:
-        continuation_start = (
-            phase.start.amounts_mol,
-            math.fsum(phase.start.amounts_mol) * phase.start.molar_volume_m3_per_mol,
-        )
-    try:
-        solved = _chemical_equilibrium_impl(
-            IdealGasPhase(
-                model.parameter_fingerprint, cast(IdealGasModel, phase.model).reference_id
-            ),
-            compilation.temperature_k * epcsaft.unit_registry.kelvin,
-            compilation.pressure_pa * epcsaft.unit_registry.pascal,
-            _effective_reaction_system(problem),
-            sensitivity_request=ChemicalEquilibriumSensitivityRequest(),
-            continuation_start=continuation_start,
-        )
-    except ChemicalEquilibriumError as error:
-        diagnostics = error.diagnostics
-        failure = NonEvaluableTrial(
-            (
-                "singular_sensitivity"
-                if diagnostics.first_failed_numerical_criterion
-                == "kkt_condition_number_inf"
-                else "numerical_convergence_failure"
-            ),
-            str(error),
-        )
-        return GeneralReactiveEquilibriumResult(
-            problem,
-            compilation.descriptor,
-            "non_evaluable",
-            diagnostics.solver_status,
-            diagnostics.numerical_status,
-            diagnostics.physical_status,
-            diagnostics.provider_domain_status,
-            tuple(
-                GeneralEquilibriumRowResult(
-                    output.identity,
-                    output.selector,
-                    output.unit,
-                    output.basis,
-                    "non_evaluable",
-                    None,
-                    None,
-                    str(error),
-                )
-                for output in problem.outputs
-            ),
-            (),
-            failure,
-            compilation.descriptor.certificate_scope,
-            "not_established",
-            trial,
-            None,
-            (),
-            (),
-        ), ()
-    amounts = solved.amounts_mol
-    volume = solved.volume_m3
-    potentials = tuple(math.log(amount / volume) for amount in amounts)
     pseudo = _FinitePhaseCompilation(
         compilation.temperature_k,
         compilation.pressure_pa,
@@ -3141,91 +2852,136 @@ def _evaluate_ideal_phase(
         compilation.owner_descriptor,
         compilation.descriptor,
     )
-
-    def native(
-        columns: tuple[tuple[tuple[float, ...], float], ...],
-    ) -> dict[str, object]:
-        derivatives = tuple(
-            dn[component] / amounts[component] - dv / volume
-            for component in range(len(amounts))
-            for dn, dv in columns
-        )
-        return {
-            "phase_amounts_mol": (amounts,),
-            "phase_volumes_m3": (volume,),
-            "phase_pressures_pa": (solved.pressure_pa,),
-            "phase_packing_fractions": (0.0,),
-            "phase_chemical_potentials_over_rt": (potentials,),
-            "phase_log_fugacities": (
-                tuple(
-                    value + math.log(8.31446261815324 * solved.temperature_k)
-                    for value in potentials
+    if continuation_start is not None:
+        start_amounts, start_volume = continuation_start
+        molar_volume = start_volume / math.fsum(start_amounts)
+    elif phase.start is not None:
+        start_amounts = phase.start.amounts_mol
+        molar_volume = phase.start.molar_volume_m3_per_mol
+    else:
+        start_amounts = _effective_reaction_system(problem).feed_amounts_mol
+        molar_volume = 8.31446261815324 * compilation.temperature_k / compilation.pressure_pa
+    phase_index_by_id = {phase.identity: 0}
+    try:
+        native = cast(
+            dict[str, object],
+            _core._reactive_finite_phases(
+                model._native_model(),
+                _finite_phase_spec(problem, compilation.temperature_k, compilation.pressure_pa),
+                None,
+                ((0.0, 0.0),),
+                (
+                    {
+                        "amounts_mol": start_amounts,
+                        "molar_volume_m3_per_mol": molar_volume,
+                    },
                 ),
+                _effective_reaction_system(problem).strict_interior_amount_floor_mol,
+                False,
+                False,
+                None,
+                (tuple(range(len(model.component_ids))),),
+                tuple(
+                    {
+                        "selector": output.selector,
+                        "phase_index": (
+                            0
+                            if output.phase_identity is None
+                            else phase_index_by_id[output.phase_identity]
+                        ),
+                        "coefficients": output.coefficients or (0.0,) * len(model.component_ids),
+                        "solvent_mass_coefficients_kg_per_mol": (
+                            output.solvent_mass_coefficients_kg_per_mol
+                        ),
+                    }
+                    for output in problem.outputs
+                ),
+                (),
+                (),
+                (),
+                True,
             ),
-            "amount_derivatives": tuple(
-                dn[component] for component in range(len(amounts)) for dn, _ in columns
-            ),
-            "volume_derivatives": tuple(dv for _, dv in columns),
-            "chemical_potential_derivatives": derivatives,
-            "log_fugacity_derivatives": derivatives,
-        }
-
-    rows = _finite_phase_rows(problem, pseudo, native(()))
-    phases = _finite_phase_states(
-        model, pseudo, native(()), mechanical_class="analytical_ideal_gas"
-    )
-    sensitivity = cast(Any, solved.sensitivity)
-    balance = tuple(
-        (dn, dv)
-        for parameter, dn, dv in zip(
-            sensitivity.parameters,
-            sensitivity.amount_derivatives,
-            sensitivity.volume_derivatives,
-            strict=True,
         )
-        if parameter.kind == "compiled_balance_total"
-    )
-    balance_pseudo = replace(
+    except (ArithmeticError, RuntimeError, ValueError) as error:
+        return _finite_phase_failed(
+            problem,
+            pseudo,
+            trial,
+            "numerical_convergence_failure",
+            str(error),
+            solver_status="not_started",
+            numerical_status="failed",
+            physical_status="not_adjudicated",
+            provider_domain_status="passed",
+        ), ()
+    if not bool(native["accepted"]):
+        diagnostic = str(native["failure_reason"] or native["solver_status"])
+        return _finite_phase_failed(
+            problem,
+            pseudo,
+            trial,
+            "physical_rejection"
+            if str(native["physical_status"]) == "failed"
+            else "numerical_convergence_failure",
+            diagnostic,
+            solver_status=str(native["solver_status"]),
+            numerical_status=str(native["numerical_status"]),
+            physical_status=str(native["physical_status"]),
+            provider_domain_status=str(native["provider_domain_status"]),
+        ), ()
+    rows = _finite_phase_rows(problem, pseudo, native)
+    phases = _finite_phase_states(model, pseudo, native, mechanical_class="analytical_ideal_gas")
+    input_order = tuple(str(value) for value in cast(tuple[object, ...], native["input_order"]))
+    balance_rows = _finite_phase_rows(
+        problem,
         pseudo,
-        descriptor=replace(
-            pseudo.descriptor,
-            active_parameter_identities=tuple(f"balance[{index}]" for index in range(len(balance))),
-        ),
+        native,
+        tuple(identity for identity in input_order if identity.startswith("balance_total[")),
     )
-    balance_rows = _finite_phase_rows(problem, balance_pseudo, native(balance))
-    diagnostics = solved.diagnostics
+    branch_signature = (
+        "finite_phases_local_minimum",
+        compilation.descriptor.problem_fingerprint,
+        ((phase.identity, problem.continuation_identity, None),),
+    )
+    owner = _FinitePhaseOwnerResult(
+        compilation.owner_descriptor,
+        rows,
+        phases,
+        trial,
+        compilation.temperature_k,
+        compilation.pressure_pa,
+        float(cast(float, native["objective_over_rt"])),
+        float(cast(float, native["balance_inf_norm"])),
+        float(cast(float, native["pressure_relative_inf_norm"])),
+        float(cast(float, native["reaction_affinity_inf_norm"])),
+        float(cast(float, native["transfer_chemical_potential_inf_norm"])),
+        float(cast(float, native["kkt_stationarity_inf_norm"])),
+        0.0,
+        float(cast(float, native["phase_distinctness"])),
+        float(cast(float, native["reduced_hessian_min_eigenvalue"])),
+        int(cast(int, native["declared_direction_rank"])),
+        int(cast(int, native["admissible_nullity"])),
+        int(cast(int, native["optimizer_iterations"])),
+        int(cast(int, native["provider_evaluation_count"])),
+        branch_signature,
+    )
     return GeneralReactiveEquilibriumResult(
         problem,
         compilation.descriptor,
         "evaluated",
-        diagnostics.solver_status,
-        diagnostics.numerical_status,
-        diagnostics.physical_status,
-        diagnostics.provider_domain_status,
+        str(native["solver_status"]),
+        str(native["numerical_status"]),
+        str(native["physical_status"]),
+        str(native["provider_domain_status"]),
         rows,
         phases,
         None,
         compilation.descriptor.certificate_scope,
         "not_established",
         trial,
-        (
-            "finite_phases_local_minimum",
-            compilation.descriptor.problem_fingerprint,
-            ((phase.identity, problem.continuation_identity, None),),
-        ),
-        tuple(
-            (name, value)
-            for name, value in (
-                ("balance_inf_norm", diagnostics.balance_inf_norm),
-                ("electroneutrality_inf", diagnostics.charge_inf_norm),
-                ("reaction_affinity_inf_norm", diagnostics.reaction_affinity_inf_norm),
-                ("pressure_relative_inf_norm", diagnostics.pressure_relative_residual),
-                ("kkt_stationarity_inf_norm", diagnostics.kkt_stationarity_inf_norm),
-                ("provider_evaluation_count", diagnostics.provider_evaluation_count),
-            )
-            if value is not None
-        ),
-        solved.resolved_policy,
+        branch_signature,
+        _result_evidence(owner),
+        _native_resolved_policy(native),
     ), tuple(cast(tuple[float, ...], row.jacobian) for row in balance_rows)
 
 

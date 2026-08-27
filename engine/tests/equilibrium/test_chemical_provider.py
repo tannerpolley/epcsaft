@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import functools
 import hashlib
 import json
@@ -12,12 +11,10 @@ from typing import cast
 import pytest
 
 import epcsaft
-from epcsaft import _core
-from epcsaft import equilibrium
-from epcsaft.equilibrium._api import _chemical_equilibrium_impl
+from epcsaft import _core, equilibrium
+from epcsaft.equilibrium import _grepe
 from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE, MULTISOLVENT_MULTIION
 
-from .chemical_equilibrium_cases import bind_records as _bind_record
 from .chemical_equilibrium_cases import typed_problem as _typed_problem
 
 
@@ -226,9 +223,7 @@ def test_source_reference_supports_mixed_pure_and_infinite_dilution_neutrals() -
             component_ids=component_ids,
             solvent_mole_fractions=(1.0, 0.0, 0.0),
             ion_pairs=(
-                epcsaft.SourceReferenceIonPair(
-                    ("hydronium-cation", "hydroxide-anion"), (1, 1)
-                ),
+                epcsaft.SourceReferenceIonPair(("hydronium-cation", "hydroxide-anion"), (1, 1)),
             ),
             phase="liquid",
             reference_convention="mole-fraction-mixed-reference",
@@ -236,9 +231,7 @@ def test_source_reference_supports_mixed_pure_and_infinite_dilution_neutrals() -
             standard_molality_mol_per_kg=1.0,
             reference_pressure_pa=100_000.0,
             required_derivatives=(),
-            pure_components=(
-                epcsaft.SourceReferencePureComponent("water", "liquid"),
-            ),
+            pure_components=(epcsaft.SourceReferencePureComponent("water", "liquid"),),
         ),
         T=298.15 * epcsaft.unit_registry.kelvin,
         P=100_000.0 * epcsaft.unit_registry.pascal,
@@ -320,17 +313,6 @@ def _iapws_p_kw(record: dict[str, object], temperature_k: float, density: float)
     )
 
 
-def _figiel_provider_model(
-    components: tuple[str, ...] = ("water", "sodium-cation", "chloride-anion"),
-) -> epcsaft.Mixture:
-    fixture = (
-        Path(__file__).parents[1]
-        / "fixtures/data/figiel-2025-reference-electrolytes/2/parameters/parameters.json"
-    )
-    parameters = epcsaft.Parameters.from_json(fixture, components=components)
-    return epcsaft.Mixture(parameters)
-
-
 def _multineutral_problem() -> equilibrium.ChemicalEquilibriumProblem:
     return equilibrium.ChemicalEquilibriumProblem(
         species_ids=("solvent", "cosolvent", "cation", "anion"),
@@ -400,129 +382,6 @@ def test_provider_certifies_multineutral_reactive_minimum() -> None:
     evidence = dict(result.evidence)
     assert evidence["reaction_affinity_inf_norm"] <= 2.0e-7
     assert evidence["kkt_stationarity_inf_norm"] <= 2.0e-7
-
-
-@pytest.mark.slow
-def test_source_transform_includes_provider_pressure_density_standard() -> None:
-    """Falsify dropping the ideal pressure factor when reaction mole count changes."""
-
-    temperature_k = 313.15
-    pressure_pa = 119_199.78746707023
-    component_ids = ("solvent", "cosolvent", "cation", "anion")
-    model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE))
-    declaration = epcsaft.SourceReferenceDeclaration(
-        reference_state_id="mixed-source-pressure-density-fixture",
-        component_ids=component_ids,
-        solvent_mole_fractions=(0.8, 0.2, 0.0, 0.0),
-        ion_pairs=(epcsaft.SourceReferenceIonPair(("cation", "anion"), (1, 1)),),
-        phase="liquid",
-        reference_convention="mole-fraction-mixed-reference",
-        activity_convention_id="mole-fraction-mixed-reference-v1",
-        standard_molality_mol_per_kg=1.0,
-        reference_pressure_pa=pressure_pa,
-        required_derivatives=(),
-    )
-    transfer = epcsaft.source_reference_transfer(
-        model,
-        declaration,
-        T=temperature_k * epcsaft.unit_registry.kelvin,
-        P=pressure_pa * epcsaft.unit_registry.pascal,
-    )
-    solvent_row = transfer.neutral_basis.index((1.0, 0.0, 0.0, 0.0))
-    ion_pair_row = transfer.neutral_basis.index((0.0, 0.0, 1.0, 1.0))
-    reference_offset = (
-        -transfer.transfer_log_contractions[solvent_row]
-        + transfer.transfer_log_contractions[ion_pair_row]
-    )
-    pressure_density_offset = math.log(
-        pressure_pa / (8.31446261815324 * temperature_k)
-    )
-    expected_offset = reference_offset + pressure_density_offset
-    expected_provider_ln_k = -269.6037501925047
-    source_ln_k = expected_provider_ln_k - expected_offset
-    base = _multineutral_problem()
-    source_problem = equilibrium.ChemicalEquilibriumProblem(
-        species_ids=base.species_ids,
-        charges=base.charges,
-        molar_masses_kg_per_mol=base.molar_masses_kg_per_mol,
-        balance_matrix=base.balance_matrix,
-        conserved_totals=base.conserved_totals,
-        reaction_matrix=base.reaction_matrix,
-        feed_amounts_mol=base.feed_amounts_mol,
-        equilibrium_constants=(
-            equilibrium.ChemicalEquilibriumConstant(
-                ln_value=source_ln_k,
-                source_id="synthetic-multineutral-source",
-                reference_id=declaration.reference_state_id,
-                reaction_orientation="products_positive",
-                conversion_id="source-standard-state-to-provider-neutral-reference",
-                dimensionless=True,
-            ),
-        ),
-        strict_interior_amount_floor_mol=base.strict_interior_amount_floor_mol,
-        source_standard_state=equilibrium.ChemicalStandardState(
-            id=declaration.reference_state_id,
-            activity_scale_id=declaration.activity_convention_id,
-            log_activity_scale_factors=(0.0, 0.0, 0.0, 0.0),
-            reference_pressure_pa=pressure_pa,
-            source_reference_component_ids=component_ids,
-            source_reference_solvent_composition=(0.8, 0.2, 0.0, 0.0),
-            source_reference_ion_pairs=declaration.ion_pairs,
-            source_reference_phase="liquid",
-            source_reference_convention="mole-fraction-mixed-reference",
-            source_reference_activity_convention_id=declaration.activity_convention_id,
-            source_reference_standard_molality_mol_per_kg=1.0,
-        ),
-    )
-
-    result = _chemical_equilibrium_impl(
-        equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
-        temperature_k * epcsaft.unit_registry.kelvin,
-        pressure_pa * epcsaft.unit_registry.pascal,
-        source_problem,
-    )
-
-    assert result.standard_offsets == pytest.approx((expected_offset,), abs=2.0e-12)
-    assert result.ln_k_provider_basis == pytest.approx(
-        (expected_provider_ln_k,), abs=2.0e-12
-    )
-    assert result.diagnostics.reaction_affinity_inf_norm <= 2.0e-7
-
-
-def test_active_parameter_values_own_reaction_setup_geometry() -> None:
-    """Falsify seeding an active solve from the inactive packing geometry."""
-
-    parameters = epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE)
-    model = epcsaft.Mixture(parameters)
-    identity = "component/solvent/segment_diameter"
-    active = epcsaft.ActiveParameterSet(
-        parameters,
-        (identity,),
-        values=(100.0 * epcsaft.unit_registry.angstrom,),
-    )
-    result = _chemical_equilibrium_impl(
-        equilibrium.ProviderPhase(model, (1.0e-6, 0.74)),
-        313.15 * epcsaft.unit_registry.kelvin,
-        119_199.78746707023 * epcsaft.unit_registry.pascal,
-        _multineutral_problem(),
-        sensitivity_request=equilibrium.ChemicalEquilibriumSensitivityRequest(
-            active_parameters=active
-        ),
-    )
-
-    assert result.sensitivity is not None
-    assert result.sensitivity.parameters[-1].identity == identity
-    active_model = model._native.with_active_coordinates(model._active_coordinates(active))
-    molar_bounds = active_model.molar_volume_bounds(
-        313.15,
-        result.mole_fractions,
-        1.0e-6,
-        0.74,
-        math.nan,
-    )
-    total_amount = math.fsum(result.amounts_mol)
-    molar_volume = result.volume_m3 / total_amount
-    assert molar_bounds[0] < molar_volume < molar_bounds[1]
 
 
 def _held_water_ionization_problem() -> tuple[
@@ -610,53 +469,6 @@ def _typed_standard_state(
     )
 
 
-def _provider_solve(
-    model: epcsaft.Mixture,
-    spec: dict[str, object],
-    source_standard_state: dict[str, object] | None = None,
-    sensitivity_request: equilibrium.ChemicalEquilibriumSensitivityRequest | None = None,
-) -> equilibrium.ChemicalEquilibriumResult:
-    standard_state = (
-        None if source_standard_state is None else _typed_standard_state(source_standard_state)
-    )
-    return _chemical_equilibrium_impl(
-        equilibrium.ProviderPhase(
-            model=model,
-            admissible_packing_fraction_interval=(1.0e-6, 0.74),
-        ),
-        spec["temperature_k"] * epcsaft.unit_registry.kelvin,
-        spec["pressure_pa"] * epcsaft.unit_registry.pascal,
-        _typed_problem(spec, source_standard_state=standard_state),
-        sensitivity_request=sensitivity_request,
-    )
-
-
-def _provider_native(
-    model: epcsaft.Mixture,
-    spec: dict[str, object],
-    source_standard_state: dict[str, object] | None = None,
-    packing_fraction_bounds: tuple[float, float] = (1.0e-6, 0.74),
-) -> dict[str, object]:
-    native_spec = copy.deepcopy(spec)
-    if "conserved_totals" not in native_spec:
-        balances = native_spec["balance_matrix"]
-        feed = native_spec["feed_amounts"]
-        native_spec["conserved_totals"] = tuple(
-            math.fsum(
-                row[index] * feed[index]  # type: ignore[index]
-                for index in range(len(feed))  # type: ignore[arg-type]
-            )
-            for row in balances  # type: ignore[union-attr]
-        )
-    return _core._chemical_equilibrium(
-        model._native_model(),
-        native_spec,
-        source_standard_state,
-        packing_fraction_bounds,
-        1.0e-12,
-    )
-
-
 def test_iapws_2019_source_record_reproduces_release_equations() -> None:
     source = _water_ionization_source()
     state = source["state"]
@@ -733,184 +545,151 @@ def test_held_water_self_ionization_consumes_source_reference_and_provider() -> 
 
 
 @pytest.mark.slow
-def test_source_reference_pressure_is_distinct_from_trial_pressure() -> None:
-    model, spec, source_standard_state = _held_water_ionization_problem()
-    source_standard_state["reference_pressure_pa"] = 100_001.0
+def test_source_reference_pressure_column_matches_centered_resolves() -> None:
+    """Keep the source-pressure transform inside the native total derivative."""
 
-    value = _provider_solve(model, spec, source_standard_state)
-
-    assert value.pressure_pa == 100_000.0
-    assert value.source_reference_transfer is not None
-    assert value.source_reference_transfer.pressure_pa == 100_000.0
-    assert value.source_standard_state is not None
-    assert value.source_standard_state.reference_pressure_pa == 100_001.0
-    differentiated = _provider_solve(
+    temperature_k = 313.15
+    pressure_pa = 119_199.78746707023
+    model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE))
+    base = _multineutral_problem()
+    declaration = epcsaft.SourceReferenceDeclaration(
+        reference_state_id="mixed-source-pressure-density-fixture",
+        component_ids=base.species_ids,
+        solvent_mole_fractions=(0.8, 0.2, 0.0, 0.0),
+        ion_pairs=(epcsaft.SourceReferenceIonPair(("cation", "anion"), (1, 1)),),
+        phase="liquid",
+        reference_convention="mole-fraction-mixed-reference",
+        activity_convention_id="mole-fraction-mixed-reference-v1",
+        standard_molality_mol_per_kg=1.0,
+        reference_pressure_pa=pressure_pa,
+        required_derivatives=(),
+    )
+    transfer = epcsaft.source_reference_transfer(
         model,
-        spec,
-        source_standard_state,
-        equilibrium.ChemicalEquilibriumSensitivityRequest(),
+        declaration,
+        T=temperature_k * epcsaft.unit_registry.kelvin,
+        P=pressure_pa * epcsaft.unit_registry.pascal,
     )
-    assert differentiated.sensitivity is not None
-    assert differentiated.sensitivity.status == "available"
-    assert differentiated.diagnostics.reference_derivative_availability == 2
+    solvent_row = transfer.neutral_basis.index((1.0, 0.0, 0.0, 0.0))
+    ion_pair_row = transfer.neutral_basis.index((0.0, 0.0, 1.0, 1.0))
+    offset = (
+        -transfer.transfer_log_contractions[solvent_row]
+        + transfer.transfer_log_contractions[ion_pair_row]
+        + math.log(pressure_pa / (8.31446261815324 * temperature_k))
+    )
+    standard = equilibrium.ChemicalStandardState(
+        id=declaration.reference_state_id,
+        activity_scale_id=declaration.activity_convention_id,
+        log_activity_scale_factors=(0.0, 0.0, 0.0, 0.0),
+        reference_pressure_pa=pressure_pa,
+        source_reference_component_ids=base.species_ids,
+        source_reference_solvent_composition=(0.8, 0.2, 0.0, 0.0),
+        source_reference_ion_pairs=declaration.ion_pairs,
+        source_reference_phase="liquid",
+        source_reference_convention="mole-fraction-mixed-reference",
+        source_reference_activity_convention_id=declaration.activity_convention_id,
+        source_reference_standard_molality_mol_per_kg=1.0,
+    )
+    reaction = equilibrium.ChemicalEquilibriumProblem(
+        base.species_ids,
+        base.charges,
+        base.molar_masses_kg_per_mol,
+        base.balance_matrix,
+        base.conserved_totals,
+        base.reaction_matrix,
+        base.feed_amounts_mol,
+        (
+            equilibrium.ChemicalEquilibriumConstant(
+                base.equilibrium_constants[0].ln_value - offset,
+                "synthetic-multineutral-source",
+                declaration.reference_state_id,
+                "products_positive",
+                "source-standard-state-to-provider-neutral-reference",
+                True,
+            ),
+        ),
+        base.strict_interior_amount_floor_mol,
+        standard,
+    )
+    phase = equilibrium.ReactivePhase(
+        "liquid",
+        "liquid",
+        "finite",
+        equilibrium.AllComponents(),
+        equilibrium.ProviderModel((1.0e-6, 0.74), "installed-provider-eos"),
+    )
+    problem = equilibrium.GeneralReactiveEquilibriumProblem(
+        "multineutral-source-pressure-column",
+        equilibrium.Fixed(temperature_k * epcsaft.unit_registry.kelvin),
+        equilibrium.Fixed(pressure_pa * epcsaft.unit_registry.pascal),
+        (phase,),
+        reaction,
+        (phase.identity,),
+        (
+            equilibrium.EquilibriumOutput(
+                "solvent-amount",
+                "phase.amount",
+                "mole",
+                "true-species-amount",
+                phase.identity,
+                (1.0, 0.0, 0.0, 0.0),
+            ),
+        ),
+    )
+    total = math.fsum(reaction.feed_amounts_mol)
+    start_state = model.state(
+        T=temperature_k * epcsaft.unit_registry.kelvin,
+        P=pressure_pa * epcsaft.unit_registry.pascal,
+        x=tuple(amount / total for amount in reaction.feed_amounts_mol),
+        phase="liquid",
+    )
+    starts = (
+        {
+            "amounts_mol": reaction.feed_amounts_mol,
+            "molar_volume_m3_per_mol": 1.0
+            / float(start_state.molar_density.to("mole / meter**3").magnitude),
+        },
+    )
+    outputs = tuple(
+        {
+            "selector": "phase.amount",
+            "phase_index": 0,
+            "coefficients": tuple(float(component == species) for component in range(4)),
+            "solvent_mass_coefficients_kg_per_mol": (),
+        }
+        for species in range(4)
+    )
 
-
-@pytest.mark.slow
-@pytest.mark.parametrize("variant", ("species_order", "reaction_orientation"))
-def test_held_source_transform_is_coordinate_invariant(variant: str) -> None:
-    model, spec, source_standard_state = _held_water_ionization_problem()
-    if variant == "species_order":
-        permutation = (2, 0, 1)
-        components = tuple(spec["species_ids"][index] for index in permutation)
-        parameters = _held_parameters(components)
-        model = epcsaft.Mixture(parameters)
-        for field in (
-            "species_ids",
-            "charges",
-            "molar_masses_kg_per_mol",
-            "feed_amounts",
-        ):
-            values = spec[field]
-            spec[field] = tuple(values[index] for index in permutation)
-        spec["balance_matrix"] = tuple(
-            tuple(row[index] for index in permutation) for row in spec["balance_matrix"]
+    def solve_native(trial_pressure_pa: float) -> dict[str, object]:
+        source = _grepe._reactive_finite_source_standard_state(
+            model,
+            problem,
+            phase,
+            temperature_k,
+            trial_pressure_pa,
+            None,
         )
-        spec["reaction_matrix"] = tuple(
-            tuple(row[index] for index in permutation) for row in spec["reaction_matrix"]
+        return _core._reactive_finite_phases(
+            model._native_model(),
+            _grepe._finite_phase_spec(problem, temperature_k, trial_pressure_pa),
+            source,
+            ((1.0e-6, 0.74),),
+            starts,
+            reaction.strict_interior_amount_floor_mol,
+            False,
+            False,
+            None,
+            ((0, 1, 2, 3),),
+            outputs,
         )
-        spec["provider_fingerprint"] = model.parameter_fingerprint
-        scales = source_standard_state["log_activity_scale_factors"]
-        source_standard_state["log_activity_scale_factors"] = tuple(
-            scales[index] for index in permutation
-        )
-        reference_ids = source_standard_state["source_reference_component_ids"]
-        source_standard_state["source_reference_component_ids"] = tuple(
-            reference_ids[index] for index in permutation
-        )
-        solvent_composition = source_standard_state["source_reference_solvent_composition"]
-        source_standard_state["source_reference_solvent_composition"] = tuple(
-            solvent_composition[index] for index in permutation
-        )
-        water_index, cation_index, anion_index = (1, 2, 0)
-    else:
-        spec["reaction_matrix"] = tuple(
-            tuple(-value for value in row) for row in spec["reaction_matrix"]
-        )
-        spec["ln_k"] = tuple(-value for value in spec["ln_k"])
-        water_index, cation_index, anion_index = (0, 1, 2)
 
-    result = _provider_solve(
-        model,
-        spec,
-        source_standard_state,
-        equilibrium.ChemicalEquilibriumSensitivityRequest(),
-    )
-
-    assert result.amounts_mol[water_index] == pytest.approx(0.9999999963727326, rel=2.0e-10)
-    assert result.amounts_mol[cation_index] == pytest.approx(
-        result.amounts_mol[anion_index], abs=2.0e-12
-    )
-    assert result.sensitivity is not None
-    assert result.sensitivity.status == "available"
-    pressure_column = next(
-        index
-        for index, parameter in enumerate(result.sensitivity.parameters)
-        if parameter.name == "pressure_pa"
-    )
-    assert all(
-        math.isfinite(value)
-        for value in result.sensitivity.amount_derivatives[pressure_column]
-    )
-    assert math.isfinite(result.sensitivity.volume_derivatives[pressure_column])
-
-
-def test_engine_model_provider_solve_enforces_balance_affinity_and_domain() -> None:
-    model = _figiel_provider_model()
-    temperature_k = 298.15
-    pressure_pa = 1_037_015.835643739
-    spec = {
-        "species_ids": ("water", "sodium-cation", "chloride-anion"),
-        "charges": (0, 1, -1),
-        "molar_masses_kg_per_mol": (2.0, 1.0, 1.0),
-        "provider_fingerprint": model.parameter_fingerprint,
-        "balance_matrix": ((2.0, 1.0, 1.0), (0.0, 1.0, -1.0)),
-        "reaction_matrix": ((-1.0, 1.0, 1.0),),
-        "feed_amounts": (0.8, 0.1, 0.1),
-        "ln_k": (-279.92590115413996,),
-        "temperature_k": temperature_k,
-        "pressure_pa": pressure_pa,
-    }
-    _bind_record(spec)
-
-    result = _provider_solve(model, spec)
-
-    assert 2.0 * result.amounts_mol[0] + result.amounts_mol[1] + result.amounts_mol[
-        2
-    ] == pytest.approx(1.8, abs=2.0e-9)
-    assert result.amounts_mol[1] == pytest.approx(result.amounts_mol[2], abs=2.0e-12)
-    assert result.diagnostics.reaction_affinity_inf_norm <= 2.0e-7
-    assert result.diagnostics.pressure_relative_residual <= 1.0e-8
-    assert result.provider_parameter_fingerprint == model.parameter_fingerprint
-    assert 1.0e-6 < result.diagnostics.packing_fraction < 0.74
-    rejected = _provider_native(
-        model,
-        spec,
-        packing_fraction_bounds=(0.73, 0.74),
-    )
-    assert rejected["accepted"] is False
-
-
-@pytest.mark.slow
-def test_engine_model_pressure_sensitivity_matches_independent_resolves() -> None:
-    model = _figiel_provider_model()
-    temperature_k = 298.15
-    pressure_pa = 1_037_015.835643739
-    spec = {
-        "species_ids": ("water", "sodium-cation", "chloride-anion"),
-        "charges": (0, 1, -1),
-        "molar_masses_kg_per_mol": (2.0, 1.0, 1.0),
-        "provider_fingerprint": model.parameter_fingerprint,
-        "balance_matrix": ((2.0, 1.0, 1.0), (0.0, 1.0, -1.0)),
-        "reaction_matrix": ((-1.0, 1.0, 1.0),),
-        "feed_amounts": (0.8, 0.1, 0.1),
-        "ln_k": (-279.92590115413996,),
-        "temperature_k": temperature_k,
-        "pressure_pa": pressure_pa,
-    }
-    _bind_record(spec)
-    native = _provider_native(model, spec)
-    sensitivities = native["sensitivities"]
-    public = _provider_solve(
-        model,
-        spec,
-        sensitivity_request=equilibrium.ChemicalEquilibriumSensitivityRequest(),
-    )
-    public_sensitivity = public.sensitivity
-    assert public_sensitivity is not None
-    assert sensitivities["parameter_fingerprint"] == model.parameter_fingerprint
-    pressure_index = sensitivities["parameter_order"].index("pressure_pa")
-
-    step_pa = 5.0
-    perturbed: list[dict[str, object]] = []
-    for direction in (-1.0, 1.0):
-        trial = copy.deepcopy(spec)
-        trial["pressure_pa"] = spec["pressure_pa"] + direction * step_pa
-        _bind_record(trial)
-        perturbed.append(_provider_native(model, trial))
-    finite_difference_amounts = tuple(
-        (perturbed[1]["amounts"][species] - perturbed[0]["amounts"][species]) / (2.0 * step_pa)
-        for species in range(3)
-    )
-    finite_difference_volume = (perturbed[1]["volume_m3"] - perturbed[0]["volume_m3"]) / (
-        2.0 * step_pa
-    )
-    assert sensitivities["amount_derivatives"][pressure_index] == pytest.approx(
-        finite_difference_amounts,
-        rel=2.0e-5,
-        abs=2.0e-12,
-    )
-    assert sensitivities["volume_derivatives"][pressure_index] == pytest.approx(
-        finite_difference_volume,
-        rel=2.0e-5,
-        abs=2.0e-13,
-    )
+    center = solve_native(pressure_pa)
+    lower = solve_native(pressure_pa - 5.0)
+    upper = solve_native(pressure_pa + 5.0)
+    assert center["accepted"] and lower["accepted"] and upper["accepted"]
+    pressure_column = center["input_order"].index("pressure_pa")
+    width = len(center["input_order"])
+    for species in range(4):
+        analytic = center["output_input_derivatives"][species * width + pressure_column]
+        numerical = (upper["output_values"][species] - lower["output_values"][species]) / 10.0
+        assert abs(analytic - numerical) <= 5.0e-5 * max(abs(analytic), abs(numerical)) + 2.0e-9
