@@ -1480,6 +1480,7 @@ Ipopt::ApplicationReturnStatus solve_ipopt(Problem *problem,
   Ipopt::SmartPtr<Ipopt::TNLP> nlp = problem;
   Ipopt::SmartPtr<Ipopt::IpoptApplication> application =
       IpoptApplicationFactory();
+  application->RethrowNonIpoptException(true);
   application->Options()->SetStringValue("option_file_name", "");
   application->Options()->SetIntegerValue("print_level", 0);
   application->Options()->SetStringValue("sb", "yes");

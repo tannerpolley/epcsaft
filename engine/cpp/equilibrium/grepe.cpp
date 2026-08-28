@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <numeric>
 #include <stdexcept>
 #include <string_view>
@@ -615,6 +616,23 @@ std::optional<ReactiveFinitePhaseStart> continuation_start(
         start.amounts_mol.begin(),
         [total](double fraction) { return total * fraction; }
     );
+    for (std::size_t row = 0; row < reaction.balance_matrix.rows; ++row) {
+        double balance = 0.0;
+        double scale = std::abs(reaction.conserved_totals[row]);
+        for (std::size_t component = 0; component < reaction.balance_matrix.columns;
+             ++component) {
+            const double contribution = reaction.balance_matrix(row, component)
+                * start.amounts_mol[component];
+            balance += contribution;
+            scale += std::abs(contribution);
+        }
+        if (std::abs(balance - reaction.conserved_totals[row])
+            > 64.0 * std::numeric_limits<double>::epsilon()
+                * std::max(1.0, scale)) {
+            start.amounts_mol = reaction.feed_amounts;
+            break;
+        }
+    }
     start.molar_volume_m3_per_mol = continuation.molar_volume_m3_per_mol;
     return start;
 }
