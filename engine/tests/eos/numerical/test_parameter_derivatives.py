@@ -5,7 +5,7 @@ from copy import deepcopy
 
 import pytest
 
-from epcsaft import ActiveParameterSet, Mixture, Parameters, Pure
+from epcsaft import ActiveParameterSet, Mixture, ParameterError, Parameters, Pure
 from epcsaft import unit_registry as u
 from tests.eos._cases import (
     ASSOCIATING_PURE,
@@ -184,6 +184,78 @@ def test_fixed_state_parameter_matrix_matches_centered_differences(
             derivative = exact.jacobian[row]
             assert derivative is not None
             assert _scaled_error(derivative[column], expected) <= 5.0e-5
+
+
+def test_reciprocal_temperature_pair_slope_matches_centered_full_range_resolves() -> None:
+    """Falsify fit/export divergence, endpoint admission, or the exact slope column."""
+
+    mapping = deepcopy(NEUTRAL_BINARY)
+    mapping["domains"] = [
+        {
+            "domain_id": mapping["domains"][0]["domain_id"],
+            "kind": "fit-range",
+            "temperature_min": {"magnitude": 293.15, "unit": "kelvin"},
+            "temperature_max": {"magnitude": 393.15, "unit": "kelvin"},
+        }
+    ]
+    pair = mapping["pairs"][0]
+    slope_identity = "pair/ethane/methane/k_ij/reciprocal_temperature_slope"
+    pair["coefficients"].append(
+        {
+            "identity": slope_identity,
+            "family": "k_ij_reciprocal_temperature_slope",
+            "value": {"magnitude": 120.0, "unit": "kelvin"},
+            "reference_temperature": {"magnitude": 313.15, "unit": "kelvin"},
+            "provenance": deepcopy(pair["coefficients"][0]["provenance"]),
+        }
+    )
+    parameters = Parameters.from_mapping(mapping)
+    model = Mixture(parameters)
+    identities = (slope_identity, "pair/ethane/methane/k_ij")
+
+    for temperature_k in (293.15, 313.15, 393.15):
+        effective_k = 120.0 * (1.0 / temperature_k - 1.0 / 313.15)
+        static = deepcopy(NEUTRAL_BINARY)
+        _set_parameter(static, "pair/ethane/methane/k_ij", effective_k)
+        assert _fixed_state_values(
+            mapping, temperature_k, 4000.0, (0.4, 0.6)
+        ) == pytest.approx(
+            _fixed_state_values(static, temperature_k, 4000.0, (0.4, 0.6)),
+            rel=2.0e-13,
+            abs=2.0e-11,
+        )
+
+    def block(temperature_k: float, slope_k: float):
+        return model.observable_block(
+            ActiveParameterSet(parameters, identities, values=(slope_k, 0.05)),
+            identity="eos.fixed-state",
+            T=temperature_k * u.kelvin,
+            rho=4000.0 * u.mole / u.meter**3,
+            x=(0.4, 0.6),
+        )
+
+    step = 1.0e-2
+    for temperature_k in (293.15, 393.15):
+        center = block(temperature_k, 120.0)
+        lower = block(temperature_k, 120.0 - step)
+        upper = block(temperature_k, 120.0 + step)
+        numerical = tuple(
+            (high - low) / (2.0 * step)
+            for low, high in zip(lower.values, upper.values, strict=True)
+        )
+        assert abs(center.jacobian[1][0]) > 2.0e-9
+        assert all(
+            _scaled_error(row[0], expected) <= 5.0e-5
+            for row, expected in zip(center.jacobian, numerical, strict=True)
+        )
+
+    reference = block(313.15, 120.0)
+    assert all(abs(row[0]) <= 2.0e-9 for row in reference.jacobian)
+
+    invalid = deepcopy(mapping)
+    invalid["pairs"][0]["coefficients"][1]["value"]["magnitude"] = 10_000.0
+    with pytest.raises(ParameterError, match="invalid-domain"):
+        Mixture(Parameters.from_mapping(invalid))
 
 
 def test_fixed_pressure_fugacity_derivatives_include_density_closure() -> None:

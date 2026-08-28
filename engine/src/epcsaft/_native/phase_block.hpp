@@ -37,6 +37,7 @@ enum class NativeFixedTopologyParameterKind {
   AssociationEnergyOverK,
   AssociationVolume,
   PairDispersion,
+  PairDispersionReciprocalTemperatureSlope,
   PairSize,
   CrossAssociationEnergyCorrection,
   RelativePermittivity,
@@ -58,6 +59,7 @@ struct NativeFixedTopologyParameter final {
   std::size_t component_b{0};
   std::vector<std::array<std::size_t, 2>> association_edges{};
   std::vector<double> association_energy_scales{};
+  double reference_temperature_k{0.0};
 };
 
 struct NativeFixedTopologyPhaseBlock final {
@@ -204,6 +206,8 @@ template <typename Scalar> struct PhaseBlockParameters final {
   std::vector<Scalar> sigma_term_exponent;
   std::vector<Scalar> dispersion_energy_over_k;
   std::vector<Scalar> k_ij;
+  std::vector<Scalar> k_ij_reciprocal_temperature_slope;
+  std::vector<double> k_ij_reference_temperature_k;
   std::vector<Scalar> l_ij;
   std::vector<int> site_component;
   std::vector<int> site_multiplicity;
@@ -231,6 +235,9 @@ phase_block_parameters(const NativeParameters &parameters) {
       phase_block_scalars<Scalar>(parameters.sigma_term_exponent),
       phase_block_scalars<Scalar>(parameters.dispersion_energy_over_k),
       phase_block_scalars<Scalar>(parameters.k_ij),
+      phase_block_scalars<Scalar>(
+          parameters.k_ij_reciprocal_temperature_slope),
+      parameters.k_ij_reference_temperature_k,
       phase_block_scalars<Scalar>(parameters.l_ij),
       parameters.site_component,
       parameters.site_multiplicity,
@@ -503,6 +510,7 @@ void apply_active_packing_parameters(
     case NativeFixedTopologyParameterKind::AssociationEnergyOverK:
     case NativeFixedTopologyParameterKind::AssociationVolume:
     case NativeFixedTopologyParameterKind::PairDispersion:
+    case NativeFixedTopologyParameterKind::PairDispersionReciprocalTemperatureSlope:
     case NativeFixedTopologyParameterKind::PairSize:
     case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection:
     case NativeFixedTopologyParameterKind::RelativePermittivity:
@@ -842,6 +850,8 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
     const bool signed_correlation =
         parameter.kind == NativeFixedTopologyParameterKind::ReactionCorrelation ||
         parameter.kind == NativeFixedTopologyParameterKind::
+                              PairDispersionReciprocalTemperatureSlope ||
+        parameter.kind == NativeFixedTopologyParameterKind::
                               SegmentDiameterCorrelationAmplitude ||
         parameter.kind == NativeFixedTopologyParameterKind::
                               SegmentDiameterCorrelationExponent ||
@@ -963,6 +973,20 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
       values[reverse] = parameter.value;
       break;
     }
+    case NativeFixedTopologyParameterKind::PairDispersionReciprocalTemperatureSlope:
+      if (parameter.component >= parameter.component_b ||
+          parameter.component_b >= components ||
+          !(parameter.reference_temperature_k > 0.0)) {
+        throw std::invalid_argument(
+            "pair temperature-correlation coordinate is outside the model");
+      }
+      identity = parameter.component * components + parameter.component_b;
+      value_parameters.k_ij_reciprocal_temperature_slope[identity] =
+          parameter.value;
+      value_parameters.k_ij_reciprocal_temperature_slope
+          [parameter.component_b * components + parameter.component] =
+              parameter.value;
+      break;
     case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection: {
       // EqID: cross_association_energy_correction
       if (parameter.component >= parameter.component_b ||
@@ -1061,6 +1085,21 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
             "fixed-topology active parameter is duplicated");
       }
       identities.push_back(key);
+    }
+  }
+
+  for (std::size_t index = 0; index < value_parameters.k_ij.size(); ++index) {
+    const double reference =
+        value_parameters.k_ij_reference_temperature_k[index];
+    const double effective =
+        value_parameters.k_ij[index] +
+        (reference > 0.0
+             ? value_parameters.k_ij_reciprocal_temperature_slope[index] *
+                   (1.0 / temperature - 1.0 / reference)
+             : 0.0);
+    if (!std::isfinite(effective) || effective > 1.0) {
+      throw std::invalid_argument(
+          "temperature-dependent pair dispersion is outside its physical domain");
     }
   }
 
@@ -1198,6 +1237,15 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
               : parameters.l_ij;
       values[forward] = active;
       values[reverse] = active;
+      break;
+    }
+    case NativeFixedTopologyParameterKind::PairDispersionReciprocalTemperatureSlope: {
+      const std::size_t forward =
+          parameter.component * components + parameter.component_b;
+      const std::size_t reverse =
+          parameter.component_b * components + parameter.component;
+      parameters.k_ij_reciprocal_temperature_slope[forward] = active;
+      parameters.k_ij_reciprocal_temperature_slope[reverse] = active;
       break;
     }
     case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection:

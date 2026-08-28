@@ -79,7 +79,9 @@ _COMPONENT_COEFFICIENTS = frozenset(
         "correlation_integral_parameter",
     }
 )
-_PAIR_COEFFICIENTS = frozenset({"k_ij", "l_ij"})
+_PAIR_COEFFICIENTS = frozenset(
+    {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
+)
 _CROSS_ASSOCIATION_CORRECTIONS = frozenset({"k_hb_ij"})
 _MODEL_COEFFICIENTS = frozenset(
     {"ionic_region_relative_permittivity", "ion_fraction_suppression_coefficient"}
@@ -650,9 +652,30 @@ def _pairs(
                 )
                 specs.append(spec)
                 continue
-            identity = f"pair/{component_a}/{component_b}/{family}"
+            reference_temperature = None
+            coefficient_for_value = coefficient_raw
+            if family == "k_ij_reciprocal_temperature_slope":
+                if "reference_temperature" not in coefficient_raw:
+                    raise _error(
+                        "invalid-schema",
+                        field=coefficient_field,
+                        missing="reference_temperature",
+                    )
+                reference_temperature, _ = _measurement(
+                    coefficient_raw["reference_temperature"],
+                    family="dielectric_temperature",
+                    field=f"{coefficient_field}.reference_temperature",
+                )
+                coefficient_for_value = dict(coefficient_raw)
+                del coefficient_for_value["reference_temperature"]
+                identity = (
+                    f"pair/{component_a}/{component_b}/"
+                    "k_ij/reciprocal_temperature_slope"
+                )
+            else:
+                identity = f"pair/{component_a}/{component_b}/{family}"
             family, parameter_value, spec, provenance, candidate = _coefficient(
-                coefficient_raw,
+                coefficient_for_value,
                 field=coefficient_field,
                 allowed_families=_PAIR_COEFFICIENTS,
                 expected_identity=identity,
@@ -666,6 +689,7 @@ def _pairs(
                     parameter_value,
                     *provenance,
                     *candidate,
+                    reference_temperature=reference_temperature,
                 )
             )
             specs.append(spec)

@@ -46,6 +46,7 @@ class NativeActiveCoordinate:
     association_edges: Sequence[tuple[int, int]]
     association_energy_scales: Sequence[float]
     value: float
+    reference_temperature_k: float
     def __init__(
         self,
         identity: str,
@@ -55,6 +56,7 @@ class NativeActiveCoordinate:
         association_edges: Sequence[tuple[int, int]],
         association_energy_scales: Sequence[float],
         value: float,
+        reference_temperature_k: float,
     ) -> None: ...
 
 class NativeMixturePhaseBlock:

@@ -557,6 +557,8 @@ def _native_arguments(
         term_exponent,
         list(model.dispersion_energy_over_k),
         list(model.k_ij),
+        list(model.k_ij_reciprocal_temperature_slope),
+        list(model.k_ij_reference_temperature_k),
         list(model.l_ij),
         [component_position[component_id] for component_id, _ in model.site_ids],
         list(model.site_multiplicity),
@@ -706,6 +708,7 @@ class _EosModel:
                     applicability.association_edges,
                     applicability.association_energy_scales,
                     coordinate.value,
+                    applicability.reference_temperature_k,
                 )
             )
         return tuple(result)

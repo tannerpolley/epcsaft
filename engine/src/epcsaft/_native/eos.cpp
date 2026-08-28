@@ -53,6 +53,35 @@ bool valid_optional_domain(double value) {
   return std::isnan(value) || (std::isfinite(value) && value > 0.0);
 }
 
+void validate_pair_temperature_domain(const NativeParameters &parameters,
+                                      double temperature_min_k,
+                                      double temperature_max_k) {
+  for (std::size_t pair = 0; pair < parameters.k_ij.size(); ++pair) {
+    const double slope =
+        parameters.k_ij_reciprocal_temperature_slope[pair];
+    const double reference = parameters.k_ij_reference_temperature_k[pair];
+    if (!std::isfinite(slope) ||
+        (reference == 0.0 ? slope != 0.0
+                          : !(std::isfinite(reference) && reference > 0.0))) {
+      throw std::invalid_argument(
+          "invalid pair temperature-correlation parameters");
+    }
+    if (reference == 0.0 || !std::isfinite(temperature_min_k) ||
+        !std::isfinite(temperature_max_k)) {
+      continue;
+    }
+    for (const double temperature : {temperature_min_k, temperature_max_k}) {
+      const double effective =
+          parameters.k_ij[pair] +
+          slope * (1.0 / temperature - 1.0 / reference);
+      if (!std::isfinite(effective) || effective > 1.0) {
+        throw std::domain_error(
+            "temperature-dependent pair dispersion is outside its physical domain");
+      }
+    }
+  }
+}
+
 struct PressureDensityState final {
   double pressure;
   double pressure_density_derivative;
@@ -133,6 +162,9 @@ NativeModel::NativeModel(NativeParameters parameters)
   if (components == 0 || parameters_.sigma_constant.size() != components ||
       parameters_.dispersion_energy_over_k.size() != components ||
       parameters_.k_ij.size() != components * components ||
+      parameters_.k_ij_reciprocal_temperature_slope.size() !=
+          components * components ||
+      parameters_.k_ij_reference_temperature_k.size() != components * components ||
       parameters_.l_ij.size() != components * components ||
       parameters_.sigma_term_amplitude.size() != terms ||
       parameters_.sigma_term_exponent.size() != terms ||
@@ -161,7 +193,10 @@ NativeModel::NativeModel(NativeParameters parameters)
   if (!positive_finite(parameters_.segment_count) ||
       !positive_finite(parameters_.sigma_constant) ||
       !nonnegative_finite(parameters_.dispersion_energy_over_k) ||
-      !finite(parameters_.k_ij) || !finite(parameters_.l_ij) ||
+      !finite(parameters_.k_ij) ||
+      !finite(parameters_.k_ij_reciprocal_temperature_slope) ||
+      !finite(parameters_.k_ij_reference_temperature_k) ||
+      !finite(parameters_.l_ij) ||
       !finite(parameters_.sigma_term_amplitude) ||
       !finite(parameters_.sigma_term_exponent) ||
       !finite(parameters_.association_energy_over_k) ||
@@ -186,6 +221,9 @@ NativeModel::NativeModel(NativeParameters parameters)
       !std::isfinite(parameters_.born_c_dielectric)) {
     throw std::invalid_argument("invalid native model parameters");
   }
+  validate_pair_temperature_domain(
+      parameters_, std::numeric_limits<double>::quiet_NaN(),
+      std::numeric_limits<double>::quiet_NaN());
   for (int component : parameters_.sigma_term_component) {
     if (component < 0 || static_cast<std::size_t>(component) >= components) {
       throw std::invalid_argument("invalid sigma correlation component");
@@ -459,6 +497,8 @@ NativeModel NativeModel::with_provider_metadata(
        candidate_qualification != "candidate_extrapolation")) {
     throw std::invalid_argument("invalid provider candidate-domain identity");
   }
+  validate_pair_temperature_domain(parameters_, temperature_min_k,
+                                   temperature_max_k);
   NativeModel result(*this);
   result.provider_metadata_ = NativeProviderMetadata{
       std::move(parameter_fingerprint),
@@ -533,6 +573,20 @@ NativeModel NativeModel::with_active_coordinates(
       values[reverse] = parameter.value;
       break;
     }
+    case NativeFixedTopologyParameterKind::PairDispersionReciprocalTemperatureSlope: {
+      const std::size_t components = updated.segment_count.size();
+      const std::size_t forward =
+          parameter.component * components + parameter.component_b;
+      const std::size_t reverse =
+          parameter.component_b * components + parameter.component;
+      updated.k_ij_reciprocal_temperature_slope[forward] = parameter.value;
+      updated.k_ij_reciprocal_temperature_slope[reverse] = parameter.value;
+      updated.k_ij_reference_temperature_k[forward] =
+          parameter.reference_temperature_k;
+      updated.k_ij_reference_temperature_k[reverse] =
+          parameter.reference_temperature_k;
+      break;
+    }
     case NativeFixedTopologyParameterKind::PairDispersion:
     case NativeFixedTopologyParameterKind::PairSize: {
       const std::size_t components = updated.segment_count.size();
@@ -580,6 +634,11 @@ NativeModel NativeModel::with_active_coordinates(
       updated.ionic_region_relative_permittivity = parameter.value;
       break;
     }
+  }
+  if (provider_metadata_.has_value()) {
+    validate_pair_temperature_domain(
+        updated, provider_metadata_->temperature_min_k,
+        provider_metadata_->temperature_max_k);
   }
   NativeModel result(std::move(updated));
   result.component_ids_ = component_ids_;
@@ -847,6 +906,8 @@ NativeFixedTopologyParameter NativeModel::resolve_active_coordinate(
             0, 0, 0, coordinate.value};
   }
   if (coordinate.application == "reciprocal-cross-dispersion" ||
+      coordinate.application ==
+          "reciprocal-temperature-cross-dispersion-slope" ||
       coordinate.application == "reciprocal-cross-size" ||
       coordinate.application == "role-aware-cross-association-energy") {
     if (coordinate.indices.size() != 2 ||
@@ -868,6 +929,18 @@ NativeFixedTopologyParameter NativeModel::resolve_active_coordinate(
       kind = NativeFixedTopologyParameterKind::PairDispersion;
       if (coordinate.family != "k_ij" || coordinate.identity != prefix + "k_ij") {
         throw std::invalid_argument("pair-dispersion descriptor is inconsistent");
+      }
+    } else if (coordinate.application ==
+               "reciprocal-temperature-cross-dispersion-slope") {
+      kind = NativeFixedTopologyParameterKind::
+          PairDispersionReciprocalTemperatureSlope;
+      if (coordinate.family != "k_ij_reciprocal_temperature_slope" ||
+          coordinate.identity !=
+              prefix + "k_ij/reciprocal_temperature_slope" ||
+          !(coordinate.reference_temperature_k > 0.0) ||
+          !std::isfinite(coordinate.reference_temperature_k)) {
+        throw std::invalid_argument(
+            "pair-dispersion temperature-correlation descriptor is inconsistent");
       }
     } else if (coordinate.application == "reciprocal-cross-size") {
       kind = NativeFixedTopologyParameterKind::PairSize;
@@ -895,7 +968,8 @@ NativeFixedTopologyParameter NativeModel::resolve_active_coordinate(
             0,
             endpoint_indices.second,
             coordinate.association_edges,
-            coordinate.association_energy_scales};
+            coordinate.association_energy_scales,
+            coordinate.reference_temperature_k};
   }
 
   const auto resolved =
@@ -938,6 +1012,7 @@ NativeFixedTopologyParameter NativeModel::resolve_active_coordinate(
     expected_application = "auxiliary-model-coefficient";
     break;
   case NativeFixedTopologyParameterKind::PairDispersion:
+  case NativeFixedTopologyParameterKind::PairDispersionReciprocalTemperatureSlope:
   case NativeFixedTopologyParameterKind::PairSize:
   case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection:
     throw std::logic_error("pair descriptor did not use its resolved application");

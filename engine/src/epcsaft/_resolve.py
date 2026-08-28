@@ -57,6 +57,8 @@ class _ResolvedModel:
     segment_diameter: tuple[_TemperatureRecord, ...]
     dispersion_energy_over_k: tuple[float, ...]
     k_ij: tuple[float, ...]
+    k_ij_reciprocal_temperature_slope: tuple[float, ...]
+    k_ij_reference_temperature_k: tuple[float, ...]
     l_ij: tuple[float, ...]
     site_ids: tuple[tuple[str, str], ...]
     site_multiplicity: tuple[int, ...]
@@ -221,6 +223,52 @@ def _pair_matrix(
         j = positions[component_b]
         matrix[i * size + j] = matrix[j * size + i] = float(cast(SupportsFloat, record.value))
     return tuple(matrix)
+
+
+def _pair_temperature_correlation_matrices(
+    component_ids: tuple[str, ...],
+    pairs: dict[tuple[str, str, str], PairParameterRecord],
+    k_ij: tuple[float, ...],
+    temperature_min_k: float | None,
+    temperature_max_k: float | None,
+) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    size = len(component_ids)
+    slopes = [0.0] * (size * size)
+    references = [0.0] * (size * size)
+    positions = {component_id: index for index, component_id in enumerate(component_ids)}
+    for (component_a, component_b, family), record in pairs.items():
+        if family != "k_ij_reciprocal_temperature_slope":
+            continue
+        if temperature_min_k is None or temperature_max_k is None:
+            raise _error(
+                "invalid-domain",
+                family=family,
+                reason="finite-temperature-range-required",
+            )
+        slope = float(cast(pint.Quantity[Any], record.value).to("kelvin").magnitude)
+        reference = float(
+            cast(pint.Quantity[Any], record.reference_temperature)
+            .to("kelvin")
+            .magnitude
+        )
+        left = positions[component_a]
+        right = positions[component_b]
+        forward = left * size + right
+        reverse = right * size + left
+        for temperature_k in (temperature_min_k, temperature_max_k):
+            effective = k_ij[forward] + slope * (
+                1.0 / temperature_k - 1.0 / reference
+            )
+            if not (-float("inf") < effective <= 1.0):
+                raise _error(
+                    "invalid-domain",
+                    family=family,
+                    temperature_k=temperature_k,
+                    value=effective,
+                )
+        slopes[forward] = slopes[reverse] = slope
+        references[forward] = references[reverse] = reference
+    return tuple(slopes), tuple(references)
 
 
 def _association(
@@ -627,6 +675,14 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             )
         topology: Literal["neutral", "associating"] = "associating" if site_ids else "neutral"
         k_ij = _pair_matrix(component_ids, pair_records, "k_ij", required=True)
+        required_k_ij = _required_matrix(k_ij, "k_ij")
+        k_slopes, k_references = _pair_temperature_correlation_matrices(
+            component_ids,
+            pair_records,
+            required_k_ij,
+            temperature_min,
+            temperature_max,
+        )
         l_ij = _pair_matrix(component_ids, pair_records, "l_ij", required=False)
         return _ResolvedModel(
             topology,
@@ -635,7 +691,9 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             segment_count,
             segment_diameter,
             dispersion_energy,
-            _required_matrix(k_ij, "k_ij"),
+            required_k_ij,
+            k_slopes,
+            k_references,
             tuple(0.0 if value is None else float(value) for value in l_ij),
             site_ids,
             site_multiplicity,
@@ -694,6 +752,14 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             for left in range(size)
             for right in range(size)
         )
+    required_k_ij = _required_matrix(k_ij, "k_ij")
+    k_slopes, k_references = _pair_temperature_correlation_matrices(
+        component_ids,
+        pair_records,
+        required_k_ij,
+        temperature_min,
+        temperature_max,
+    )
 
     if electrolyte_formulation == "none":
         raise _error("missing-record", family="electrolyte")
@@ -822,6 +888,8 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             segment_diameter,
             dispersion_energy,
             fully_dissociated_k_ij,
+            k_slopes,
+            k_references,
             tuple(0.0 for _ in range(len(component_ids) ** 2)),
             site_ids,
             site_multiplicity,
@@ -1052,7 +1120,9 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         segment_count,
         segment_diameter,
         dispersion_energy,
-        _required_matrix(k_ij, "k_ij"),
+        required_k_ij,
+        k_slopes,
+        k_references,
         tuple(
             0.0 if value is None else float(value)
             for value in _pair_matrix(component_ids, pair_records, "l_ij", required=False)

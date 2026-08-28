@@ -22,6 +22,7 @@ from .records import (
     CrossAssociationCorrectionRecord,
     ModelFamilySpec,
     ModelParameterRecord,
+    PairParameterRecord,
     ParameterRecord,
     ParameterSpec,
     ReactionCorrelationRecord,
@@ -67,6 +68,7 @@ class ActiveParameterApplicability:
     observation_family: Literal["fixed-state-helmholtz"]
     application: Literal[
         "reciprocal-cross-dispersion",
+        "reciprocal-temperature-cross-dispersion-slope",
         "reciprocal-cross-size",
         "role-aware-cross-association-energy",
         "component-property",
@@ -78,6 +80,7 @@ class ActiveParameterApplicability:
     association_role_pair: tuple[str, str] | None = None
     association_edges: tuple[tuple[int, int], ...] = ()
     association_energy_scales: tuple[float, ...] = ()
+    reference_temperature_k: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -370,6 +373,52 @@ def _active_coordinate(
             "fixed-state-helmholtz",
             "reciprocal-cross-dispersion" if spec.family == "k_ij" else "reciprocal-cross-size",
         )
+    elif (
+        spec.family == "k_ij_reciprocal_temperature_slope"
+        and len(parts) == 5
+        and parts[0] == "pair"
+        and parts[3:] == ["k_ij", "reciprocal_temperature_slope"]
+    ):
+        component_ids = (parts[1], parts[2])
+        if component_ids[0] >= component_ids[1]:
+            raise _error(
+                "invalid-active-coordinate",
+                identity=spec.identity,
+                reason="noncanonical-pair-order",
+            )
+        pair_record = next(
+            (
+                item
+                for item in parameters.records
+                if isinstance(item, PairParameterRecord)
+                and item.identity == spec.identity
+            ),
+            None,
+        )
+        if pair_record is None or pair_record.reference_temperature is None:
+            raise _error(
+                "unsupported-active-coordinate",
+                identity=spec.identity,
+                reason="pair-correlation-application-unresolved",
+            )
+        component_indices = (
+            parameters.component_ids.index(component_ids[0]),
+            parameters.component_ids.index(component_ids[1]),
+        )
+        applicability = ActiveParameterApplicability(
+            "unordered-component-pair",
+            component_ids,
+            component_indices,
+            "fixed-topology-mixture",
+            "fixed-state-helmholtz",
+            "reciprocal-temperature-cross-dispersion-slope",
+            reference_temperature_k=float(
+                cast(pint.Quantity[Any], pair_record.reference_temperature)
+                .to("kelvin")
+                .magnitude
+            ),
+        )
+        domain = ActiveParameterDomain(None, None, False, False)
     elif (
         spec.family == "k_hb_ij"
         and len(parts) == 7

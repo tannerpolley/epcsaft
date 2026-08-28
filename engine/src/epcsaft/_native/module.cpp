@@ -119,6 +119,7 @@ PYBIND11_MODULE(_core, module) {
                 std::vector<std::size_t>,
                 std::vector<std::array<std::size_t, 2>>,
                 std::vector<double>,
+                double,
                 double
             >(),
             py::arg("identity"),
@@ -127,7 +128,8 @@ PYBIND11_MODULE(_core, module) {
             py::arg("indices"),
             py::arg("association_edges"),
             py::arg("association_energy_scales"),
-            py::arg("value")
+            py::arg("value"),
+            py::arg("reference_temperature_k")
         )
         .def_readonly("identity", &epcsaft::NativeActiveCoordinate::identity)
         .def_readonly("family", &epcsaft::NativeActiveCoordinate::family)
@@ -140,7 +142,11 @@ PYBIND11_MODULE(_core, module) {
             "association_energy_scales",
             &epcsaft::NativeActiveCoordinate::association_energy_scales
         )
-        .def_readonly("value", &epcsaft::NativeActiveCoordinate::value);
+        .def_readonly("value", &epcsaft::NativeActiveCoordinate::value)
+        .def_readonly(
+            "reference_temperature_k",
+            &epcsaft::NativeActiveCoordinate::reference_temperature_k
+        );
 
     py::class_<epcsaft::NativeMixturePhaseBlock>(module, "NativeMixturePhaseBlock")
         .def_readonly(
@@ -160,6 +166,8 @@ PYBIND11_MODULE(_core, module) {
             std::vector<double> sigma_term_exponent,
             std::vector<double> dispersion_energy_over_k,
             std::vector<double> k_ij,
+            std::vector<double> k_ij_reciprocal_temperature_slope,
+            std::vector<double> k_ij_reference_temperature_k,
             std::vector<double> l_ij,
             std::vector<int> site_component,
             std::vector<int> site_multiplicity,
@@ -198,6 +206,8 @@ PYBIND11_MODULE(_core, module) {
                 std::move(sigma_term_exponent),
                 std::move(dispersion_energy_over_k),
                 std::move(k_ij),
+                std::move(k_ij_reciprocal_temperature_slope),
+                std::move(k_ij_reference_temperature_k),
                 std::move(l_ij),
                 std::move(site_component),
                 std::move(site_multiplicity),

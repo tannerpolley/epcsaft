@@ -308,7 +308,15 @@ HelmholtzResult<Scalar> residual_helmholtz(
             // EqID: cross_segment_diameter
             const Scalar sigma_ij = Scalar(0.5) * (sigma[i] + sigma[j])
                 * (Scalar(1.0) - parameters.l_ij[i * size + j]);
-            const Scalar k_ij = Scalar(parameters.k_ij[i * size + j]);
+            const std::size_t pair = i * size + j;
+            const double reference_temperature =
+                parameters.k_ij_reference_temperature_k[pair];
+            Scalar k_ij = parameters.k_ij[pair];
+            if (reference_temperature > 0.0) {
+                k_ij += parameters.k_ij_reciprocal_temperature_slope[pair]
+                    * (Scalar(1.0) / temperature
+                        - Scalar(1.0 / reference_temperature));
+            }
             // EqID: cross_dispersion_energy
             // EqID: same_sign_ionic_dispersion
             const Scalar epsilon_i = dispersion_energy_override == nullptr

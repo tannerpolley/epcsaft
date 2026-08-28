@@ -91,6 +91,7 @@ struct NativeActiveCoordinate final {
     std::vector<std::array<std::size_t, 2>> association_edges;
     std::vector<double> association_energy_scales;
     double value;
+    double reference_temperature_k;
 };
 
 struct NativeProviderMetadata final {

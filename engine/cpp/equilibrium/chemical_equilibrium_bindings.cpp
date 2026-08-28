@@ -225,6 +225,7 @@ epcsaft::NativeModel grepe_active_model(
                 applicability.attr("association_energy_scales")
             ),
             py::cast<double>(coordinate.attr("value")),
+            py::cast<double>(applicability.attr("reference_temperature_k")),
         });
     }
     return base.with_active_coordinates(coordinates);

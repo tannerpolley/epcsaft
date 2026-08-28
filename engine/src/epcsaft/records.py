@@ -55,7 +55,9 @@ type SingleParameterFamily = Literal[
     "polarizability_scaling",
     "correlation_integral_parameter",
 ]
-type PairParameterFamily = Literal["k_ij", "l_ij"]
+type PairParameterFamily = Literal[
+    "k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"
+]
 type CrossAssociationCorrectionFamily = Literal["k_hb_ij"]
 type AssociationParameterFamily = Literal["association_energy_over_k", "association_volume"]
 type ModelParameterFamily = Literal[
@@ -97,7 +99,9 @@ _SINGLE_FAMILIES = frozenset(
         "correlation_integral_parameter",
     }
 )
-_PAIR_FAMILIES = frozenset({"k_ij", "l_ij"})
+_PAIR_FAMILIES = frozenset(
+    {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
+)
 _ASSOCIATION_FAMILIES = frozenset({"association_energy_over_k", "association_volume"})
 _MODEL_FAMILIES = frozenset(
     {"ion_fraction_suppression_coefficient", "ionic_region_relative_permittivity"}
@@ -117,6 +121,7 @@ _DIMENSIONAL_UNITS = {
     "dipole_scaling": "debye ** 2",
     "polarizability_scaling": "angstrom ** 3",
     "association_energy_over_k": "kelvin",
+    "k_ij_reciprocal_temperature_slope": "kelvin",
 }
 _DIMENSIONLESS_FAMILIES = frozenset(
     {
@@ -578,6 +583,7 @@ class PairParameterRecord:
     candidate_domain_id: str | None = None
     qualification: ModelQualification | None = None
     source_sha256: str | None = None
+    reference_temperature: object | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -596,9 +602,40 @@ class PairParameterRecord:
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
         _normalize_candidate(self, field="pair_parameter.candidate")
+        if family == "k_ij_reciprocal_temperature_slope":
+            if self.reference_temperature is None:
+                raise _error(
+                    "invalid-correlation", field="reference_temperature", value=None
+                )
+            object.__setattr__(
+                self,
+                "reference_temperature",
+                _quantity(
+                    self.reference_temperature,
+                    "kelvin",
+                    field="reference_temperature",
+                ),
+            )
+            if cast(pint.Quantity[Any], self.reference_temperature).magnitude <= 0.0:
+                raise _error(
+                    "invalid-correlation",
+                    field="reference_temperature",
+                    value=self.reference_temperature,
+                )
+        elif self.reference_temperature is not None:
+            raise _error(
+                "invalid-correlation",
+                field="reference_temperature",
+                value=self.reference_temperature,
+            )
 
     @property
     def identity(self) -> str:
+        if self.family == "k_ij_reciprocal_temperature_slope":
+            return (
+                f"pair/{self.component_id_a}/{self.component_id_b}/"
+                "k_ij/reciprocal_temperature_slope"
+            )
         return f"pair/{self.component_id_a}/{self.component_id_b}/{self.family}"
 
 
