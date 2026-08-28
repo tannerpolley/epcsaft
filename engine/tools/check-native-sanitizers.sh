@@ -103,4 +103,4 @@ PYTHONNOUSERSITE=1 \
         tests/regression/numerical/test_generic_fit.py \
         tests/regression/numerical/test_grepe_intensive_fit.py \
         tests/regression/numerical/test_full_space_regression.py \
-        tests/equilibrium/test_phase_equilibrium.py::test_declared_single_phase_solves_role_and_hints_do_not_change_root
+        tests/equilibrium/numerical/test_declared_phase.py::test_declared_one_phase_certifies_pressure_feed_stability_and_role
