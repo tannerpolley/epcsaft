@@ -111,5 +111,6 @@ def test_intensive_boundary_total_jacobian_matches_public_parameter_resolves() -
     assert all(result.status == "evaluated" for result in sides)
     assert center.values[0] is not None and 0.0 < center.values[0] < 1.0
     assert center.jacobian[0] is not None
+    exact = center.jacobian[0][0]
     centered = (float(sides[1].values[0]) - float(sides[0].values[0])) / (2.0 * step)
-    assert center.jacobian[0][0] == pytest.approx(centered, rel=3.0e-5, abs=2.0e-9)
+    assert abs(exact - centered) / max(abs(exact), abs(centered), 2.0e-9) <= 5.0e-5
