@@ -22,6 +22,7 @@ from .records import (
     ModelParameterRecord,
     ParameterRecord,
     ParameterSpec,
+    ReactionCorrelationRecord,
     SingleParameterRecord,
     SiteRecord,
     SourceRecord,
@@ -56,6 +57,7 @@ class ActiveParameterApplicability:
         "unordered-component-pair",
         "association-edge",
         "model",
+        "reaction",
     ]
     component_ids: tuple[str, ...]
     component_indices: tuple[int, ...]
@@ -69,6 +71,7 @@ class ActiveParameterApplicability:
         "typed-correlation-coefficient",
         "symmetric-association-property",
         "auxiliary-model-coefficient",
+        "reaction-correlation-coefficient",
     ]
     association_role_pair: tuple[str, str] | None = None
     association_edges: tuple[tuple[int, int], ...] = ()
@@ -167,7 +170,7 @@ class ActiveParameterSet:
 
 
 def _record_components(record: ParameterRecord) -> tuple[str, ...]:
-    if isinstance(record, ModelParameterRecord):
+    if isinstance(record, (ModelParameterRecord, ReactionCorrelationRecord)):
         return ()
     if isinstance(
         record,
@@ -277,8 +280,40 @@ def _active_coordinate(
         if spec.domain_id is None
         else next(domain for domain in parameters.domains if domain.domain_id == spec.domain_id)
     )
+    domain: ActiveParameterDomain | None = None
+    applicability: ActiveParameterApplicability | None = None
     parts = spec.identity.split("/")
-    if spec.family == "relative_permittivity":
+    if spec.family == "reaction_correlation":
+        record = next(
+            (
+                record
+                for record in parameters.records
+                if isinstance(record, ReactionCorrelationRecord)
+                and record.identity == spec.identity
+            ),
+            None,
+        )
+        if record is None:
+            raise _error(
+                "unsupported-active-coordinate",
+                identity=spec.identity,
+                reason="reaction-correlation-application-unresolved",
+            )
+        domain = ActiveParameterDomain(
+            float(record.optimizer_lower.to(spec.unit).magnitude),
+            float(record.optimizer_upper.to(spec.unit).magnitude),
+            True,
+            True,
+        )
+        applicability = ActiveParameterApplicability(
+            "reaction",
+            (),
+            (),
+            "fixed-topology-mixture",
+            "fixed-state-helmholtz",
+            "reaction-correlation-coefficient",
+        )
+    elif spec.family == "relative_permittivity":
         component_id = parts[1]
         charge = next(
             record.value
@@ -304,10 +339,10 @@ def _active_coordinate(
                 identity=spec.identity,
                 reason="relative-permittivity-application-unresolved",
             )
-    domain: ActiveParameterDomain | None = None
-    applicability: ActiveParameterApplicability | None = None
     component_ids: tuple[str, ...]
-    if (
+    if spec.family == "reaction_correlation":
+        pass
+    elif (
         spec.family in {"k_ij", "l_ij"}
         and len(parts) == 4
         and parts[0] == "pair"
@@ -450,11 +485,7 @@ def _active_coordinate(
         and (
             parts[2] == "segment_diameter"
             or parts[2] in {"relative_permittivity", "solvation_factor"}
-            and (
-                len(parts) == 5
-                or parts[2] == "relative_permittivity"
-                and len(parts) == 6
-            )
+            and (len(parts) == 5 or parts[2] == "relative_permittivity" and len(parts) == 6)
         )
     ):
         component_ids = (parts[1],)
@@ -599,6 +630,7 @@ class _ParameterDocument:
             *values.associations,
             *values.correlations,
             *values.models,
+            *values.reaction_correlations,
         )
         object.__setattr__(
             instance,

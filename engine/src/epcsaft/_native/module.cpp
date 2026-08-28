@@ -249,7 +249,13 @@ PYBIND11_MODULE(_core, module) {
             py::arg("topology_fingerprint"),
             py::arg("component_order_fingerprint"),
             py::arg("domain_fingerprint"),
-            py::arg("artifact_fingerprint")
+            py::arg("artifact_fingerprint"),
+            py::arg("source_temperature_min_k"),
+            py::arg("source_temperature_max_k"),
+            py::arg("source_pressure_min_pa"),
+            py::arg("source_pressure_max_pa"),
+            py::arg("candidate_qualification"),
+            py::arg("candidate_source_fingerprint")
         )
         .def(
             "with_active_coordinates",

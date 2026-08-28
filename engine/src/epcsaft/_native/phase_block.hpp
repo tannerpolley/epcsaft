@@ -27,6 +27,7 @@ struct NativePurePhaseBlock final {
 };
 
 enum class NativeFixedTopologyParameterKind {
+  ReactionCorrelation,
   SegmentCount,
   SegmentDiameter,
   SegmentDiameterCorrelationConstant,
@@ -481,6 +482,8 @@ void apply_active_packing_parameters(
     const auto &parameter = active_parameters[index];
     const auto &value = active_values[index];
     switch (parameter.kind) {
+    case NativeFixedTopologyParameterKind::ReactionCorrelation:
+      break;
     case NativeFixedTopologyParameterKind::SegmentCount:
       parameters.segment_count[parameter.component] = value;
       break;
@@ -837,6 +840,7 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
   identities.reserve(active_parameters.size());
   for (const auto &parameter : active_parameters) {
     const bool signed_correlation =
+        parameter.kind == NativeFixedTopologyParameterKind::ReactionCorrelation ||
         parameter.kind == NativeFixedTopologyParameterKind::
                               SegmentDiameterCorrelationAmplitude ||
         parameter.kind == NativeFixedTopologyParameterKind::
@@ -859,6 +863,8 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
     }
     std::size_t identity = 0;
     switch (parameter.kind) {
+    case NativeFixedTopologyParameterKind::ReactionCorrelation:
+      break;
     case NativeFixedTopologyParameterKind::SegmentCount:
       if (parameter.component >= components) {
         throw std::invalid_argument(
@@ -1048,12 +1054,14 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
       break;
     }
     const auto key = std::pair{parameter.kind, identity};
-    if (std::find(identities.begin(), identities.end(), key) !=
-        identities.end()) {
-      throw std::invalid_argument(
-          "fixed-topology active parameter is duplicated");
+    if (parameter.kind != NativeFixedTopologyParameterKind::ReactionCorrelation) {
+      if (std::find(identities.begin(), identities.end(), key) !=
+          identities.end()) {
+        throw std::invalid_argument(
+            "fixed-topology active parameter is duplicated");
+      }
+      identities.push_back(key);
     }
-    identities.push_back(key);
   }
 
   const double total_amount =
@@ -1145,6 +1153,8 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
     const auto &parameter = active_parameters[index];
     const ADScalar &active = independent[parameter_coordinate + index];
     switch (parameter.kind) {
+    case NativeFixedTopologyParameterKind::ReactionCorrelation:
+      break;
     case NativeFixedTopologyParameterKind::SegmentCount:
       parameters.segment_count[parameter.component] = active;
       break;

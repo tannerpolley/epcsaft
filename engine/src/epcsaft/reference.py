@@ -121,9 +121,7 @@ class SourceReferencePureComponent:
 
     def __post_init__(self) -> None:
         if not self.component_id or self.phase not in ("liquid", "vapor"):
-            raise ValueError(
-                "pure-component source references require an identity and phase"
-            )
+            raise ValueError("pure-component source references require an identity and phase")
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,9 +133,7 @@ class SourceReferenceDeclaration:
     solvent_mole_fractions: tuple[float, ...]
     ion_pairs: tuple[SourceReferenceIonPair, ...]
     phase: Literal["liquid"]
-    reference_convention: Literal[
-        "molality-infinite-dilution", "mole-fraction-mixed-reference"
-    ]
+    reference_convention: Literal["molality-infinite-dilution", "mole-fraction-mixed-reference"]
     activity_convention_id: str
     standard_molality_mol_per_kg: float
     reference_pressure_pa: float
@@ -181,6 +177,10 @@ class SourceReferenceTransfer:
     reference_convergence_error: float
     source_temperature_interval_k: tuple[float, float]
     source_pressure_interval_pa: tuple[float, float]
+    candidate_temperature_interval_k: tuple[float, float]
+    candidate_pressure_interval_pa: tuple[float, float]
+    candidate_qualification: str
+    candidate_source_fingerprint: str
     parameter_fingerprint: str
     topology_fingerprint: str
     component_order_fingerprint: str
@@ -371,6 +371,16 @@ def source_reference_transfer(
             float(value["source_pressure_min_pa"]),
             float(value["source_pressure_max_pa"]),
         ),
+        candidate_temperature_interval_k=(
+            float(value["candidate_temperature_min_k"]),
+            float(value["candidate_temperature_max_k"]),
+        ),
+        candidate_pressure_interval_pa=(
+            float(value["candidate_pressure_min_pa"]),
+            float(value["candidate_pressure_max_pa"]),
+        ),
+        candidate_qualification=str(value["candidate_qualification"]),
+        candidate_source_fingerprint=str(value["candidate_source_fingerprint"]),
         parameter_fingerprint=str(value["parameter_fingerprint"]),
         topology_fingerprint=str(value["topology_fingerprint"]),
         component_order_fingerprint=str(value["component_order_fingerprint"]),

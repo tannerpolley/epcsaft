@@ -305,6 +305,8 @@ ReactionSystemInput grepe_reaction_input(
     for (const py::handle constant : py::cast<py::tuple>(
              reaction.attr("equilibrium_constants")
          )) {
+        const py::object reaction_id = constant.attr("reaction_id");
+        const py::object correlation_kind = constant.attr("correlation_kind");
         input.ln_k.push_back(py::cast<double>(constant.attr("ln_value")));
         input.equilibrium_constant_records.push_back({
             py::cast<std::string>(constant.attr("source_id")),
@@ -312,6 +314,15 @@ ReactionSystemInput grepe_reaction_input(
             py::cast<std::string>(constant.attr("reaction_orientation")),
             py::cast<std::string>(constant.attr("conversion_id")),
             py::cast<bool>(constant.attr("dimensionless")),
+            reaction_id.is_none() ? "" : py::cast<std::string>(reaction_id),
+            correlation_kind.is_none()
+                ? "" : py::cast<std::string>(correlation_kind),
+            py::cast<std::vector<std::string>>(
+                constant.attr("coefficient_identities")
+            ),
+            py::cast<std::vector<double>>(
+                constant.attr("coefficient_values")
+            ),
             temperature_k,
             record_pressure,
         });

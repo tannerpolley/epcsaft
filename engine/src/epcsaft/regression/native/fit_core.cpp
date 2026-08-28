@@ -234,6 +234,8 @@ OwnerEvaluation finalize_grepe(
   auto native = epcsaft_engine::equilibrium::finalize_grepe_local(
       with_active_values(experiment.model,
                          structure.active_parameter_identities, active),
+      with_active_values(experiment.incipient_model,
+                         structure.active_parameter_identities, active),
       experiment.request, structure, point, local, lower, upper);
   return select_grepe(experiment, active, std::move(native), true);
 }
@@ -841,7 +843,7 @@ public:
           experiment.structure_fingerprint,
           index,
           epcsaft_engine::equilibrium::compile_grepe_local_structure(
-              experiment.model, experiment.request),
+              experiment.model, experiment.incipient_model, experiment.request),
       });
     }
   }
@@ -865,6 +867,8 @@ public:
           std::get<GrepeExperiment>(experiments[retained.experiment_index]);
       result.push_back(epcsaft_engine::equilibrium::evaluate_grepe_local_point(
           with_active_values(experiment.model,
+                             retained.value.active_parameter_identities, active),
+          with_active_values(experiment.incipient_model,
                              retained.value.active_parameter_identities, active),
           experiment.request, retained.value));
     }
@@ -902,6 +906,8 @@ public:
       const auto &structure = campaign_.structure(structure_index);
       const auto native = epcsaft_engine::equilibrium::initialize_grepe_local(
           with_active_values(experiment.model,
+                             structure.active_parameter_identities, active),
+          with_active_values(experiment.incipient_model,
                              structure.active_parameter_identities, active),
           experiment.request, structure, points_[structure_index]);
       const auto &equilibrium = native.equilibrium;
@@ -1132,6 +1138,8 @@ private:
         epcsaft_engine::equilibrium::evaluate_grepe_local_blocks(
             with_active_values(block.experiment->model,
                                structure.active_parameter_identities, active),
+            with_active_values(block.experiment->incipient_model,
+                               structure.active_parameter_identities, active),
             block.experiment->request, structure, points_[block.structure_index],
             local, block.lower, block.upper,
             {
@@ -1243,7 +1251,7 @@ private:
       }
       evaluable_ = true;
       return true;
-    } catch (const std::exception &) {
+    } catch (const std::exception &error) {
       evaluable_ = false;
       return false;
     }
@@ -1563,17 +1571,30 @@ bool full_space_eligible(const FitRequest &request) {
       request.experiments.begin(), request.experiments.end(),
       [](const Experiment &value) {
         const auto *experiment = std::get_if<GrepeExperiment>(&value);
-        if (experiment == nullptr || experiment->request.phases.size() != 1 ||
-            experiment->request.temperature.solved ||
-            experiment->request.pressure.solved ||
-            experiment->request.phases[0].ideal_gas ||
-            !experiment->request.phases[0].finite ||
-            experiment->request.phases[0].support_name != "all_components" ||
-            experiment->request.phases[0].start.has_value() ||
-            experiment->request.continuation_phases.size() != 1 ||
-            experiment->request.continuation_phases[0].identity !=
-                experiment->request.phases[0].identity ||
+        if (experiment == nullptr || experiment->request.temperature.solved ||
             experiment->request.boundary.has_value()) {
+          return false;
+        }
+        const bool finite_only = experiment->request.phases.size() == 1 &&
+            !experiment->request.pressure.solved &&
+            !experiment->request.phases[0].ideal_gas &&
+            experiment->request.phases[0].finite &&
+            experiment->request.phases[0].support_name == "all_components" &&
+            !experiment->request.phases[0].start.has_value() &&
+            experiment->request.continuation_phases.size() == 1 &&
+            experiment->request.continuation_phases[0].identity ==
+                experiment->request.phases[0].identity;
+        const bool finite_incipient = experiment->request.phases.size() == 2 &&
+            experiment->request.pressure.solved &&
+            std::count_if(
+                experiment->request.phases.begin(),
+                experiment->request.phases.end(),
+                [](const auto &phase) { return phase.finite; }) == 1 &&
+            std::all_of(
+                experiment->request.phases.begin(),
+                experiment->request.phases.end(),
+                [](const auto &phase) { return !phase.start.has_value(); });
+        if (!finite_only && !finite_incipient) {
           return false;
         }
         return std::all_of(
@@ -1583,7 +1604,12 @@ bool full_space_eligible(const FitRequest &request) {
                      (experiment->request.outputs[row].selector ==
                           "phase.amount" ||
                       experiment->request.outputs[row].selector ==
-                          "phase.mole_fraction");
+                          "phase.mole_fraction" ||
+                      (finite_incipient && (
+                          experiment->request.outputs[row].selector ==
+                              "system.pressure" ||
+                          experiment->request.outputs[row].selector ==
+                              "phase.partial_pressure")));
             });
       });
 }

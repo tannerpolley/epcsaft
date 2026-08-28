@@ -1,0 +1,43 @@
+schema_version = 2
+packet_id = "mea-co2-h2o-nine-species-estimation"
+packet_version = "1"
+title = "Nine-species CO2-MEA-H2O estimation candidate"
+description = "Complete reusable nine-species ePC-SAFT baseline with fail-closed source and candidate model domains and typed R4/R5 correlations."
+license_or_use_basis = "Project-authorized numeric parameter records and source metadata from the pinned MEA-Thermodynamics authority commit; no publisher full text is included."
+tolerance_rationale = "The packet asserts no fit tolerance. Source values are immutable inputs; Validation owns diagnostic scales, scoring, and candidate status."
+
+[[sources]]
+source_id = "mea-thermodynamics-authority"
+citation = "tannerpolley/MEA-Thermodynamics commit 412f85b4a34d713aa3b00985f6bef044c1f12327."
+use_basis = "Complete nine-species baseline, component and model records."
+
+[[sources]]
+source_id = "reaction-primary-records"
+citation = "Tong et al. (2012)/Aroua et al. (1999) R4 and Bates and Pinching (1951) R5 records."
+use_basis = "Source-centred R4/R5 correlation coefficients and original source-qualified ranges."
+
+[[domains]]
+domain_id = "mea-provider-source-qualified-313-15-k"
+description = "Original installed Provider source-transfer executable receipt at 313.15 K and 100 kPa; not the candidate support claim."
+
+[[domains]]
+domain_id = "mea-candidate-293-15-to-393-15-k"
+description = "Candidate evaluation domain 293.15-393.15 K and 1 Pa-10 MPa, qualified candidate_extrapolation pending campaign evidence."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "2aecaae6145d389739498a0d8aae72f634f826a5a938c4668128136c613bd505"
+source_refs = ["mea-thermodynamics-authority", "reaction-primary-records"]
+domain_refs = ["mea-provider-source-qualified-313-15-k", "mea-candidate-293-15-to-393-15-k"]
+units_basis = "Every coefficient has an explicit canonical unit; reaction coefficients retain dimensionless, K, and K^-1 units."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "a3da903fd60c28230438922a4f24e60c9c3b1f4456c318af431a8cf44f24c3c4"
+source_refs = ["mea-thermodynamics-authority"]
+domain_refs = ["mea-provider-source-qualified-313-15-k", "mea-candidate-293-15-to-393-15-k"]
+units_basis = "Repository identity, pinned commit, source payload hash 679a90deb05242938bd3c52a51f2a81bb429344e9aacfdf09b8b566cc005c791, and retained path are non-numeric provenance."

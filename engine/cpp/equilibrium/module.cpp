@@ -93,6 +93,13 @@ py::dict source_reference_transfer(
     value["source_temperature_max_k"] = result.source_temperature_max_k;
     value["source_pressure_min_pa"] = result.source_pressure_min_pa;
     value["source_pressure_max_pa"] = result.source_pressure_max_pa;
+    value["candidate_temperature_min_k"] = result.candidate_temperature_min_k;
+    value["candidate_temperature_max_k"] = result.candidate_temperature_max_k;
+    value["candidate_pressure_min_pa"] = result.candidate_pressure_min_pa;
+    value["candidate_pressure_max_pa"] = result.candidate_pressure_max_pa;
+    value["candidate_qualification"] = result.candidate_qualification;
+    value["candidate_source_fingerprint"] =
+        result.candidate_source_fingerprint;
     value["parameter_fingerprint"] = result.parameter_fingerprint;
     value["topology_fingerprint"] = result.topology_fingerprint;
     value["component_order_fingerprint"] = result.component_order_fingerprint;

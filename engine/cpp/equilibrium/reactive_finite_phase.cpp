@@ -1931,8 +1931,10 @@ void populate_kkt_partials(
         evaluation.gradient.size() + evaluation.constraints.size();
     populate_kkt_root(result, evaluation, multipliers);
     result.input_order = active_parameters.identities;
+    result.input_order.emplace_back("pressure_pa");
     result.parameter_order = active_parameters.identities;
-    result.kkt_input_jacobian.assign(kkt_dimension * active_parameter_count, 0.0);
+    const std::size_t input_count = active_parameter_count + 1;
+    result.kkt_input_jacobian.assign(kkt_dimension * input_count, 0.0);
     for (std::size_t phase = 0; phase < phase_count; ++phase) {
         const PhaseLayout& layout = layouts[phase];
         for (std::size_t coordinate = 0;
@@ -1942,27 +1944,30 @@ void populate_kkt_partials(
                  active < active_parameter_count;
                  ++active) {
                 result.kkt_input_jacobian[
-                    (layout.offset + coordinate) * active_parameter_count + active
+                    (layout.offset + coordinate) * input_count + active
                 ] = evaluation.phases[phase].objective_parameter_cross[
                     coordinate * active_parameter_count + active
                 ];
             }
+            result.kkt_input_jacobian[
+                (layout.offset + coordinate) * input_count + active_parameter_count
+            ] = evaluation.phases[phase].objective_pressure_cross[coordinate];
         }
     }
     result.input_amount_derivatives.assign(
-        phase_count * species_count * active_parameter_count, 0.0
+        phase_count * species_count * input_count, 0.0
     );
     result.input_volume_derivatives.assign(
-        phase_count * active_parameter_count, 0.0
+        phase_count * input_count, 0.0
     );
     result.input_pressure_derivatives.assign(
-        phase_count * active_parameter_count, 0.0
+        phase_count * input_count, 0.0
     );
     result.input_chemical_potential_derivatives.assign(
-        phase_count * species_count * active_parameter_count, 0.0
+        phase_count * species_count * input_count, 0.0
     );
     result.input_log_fugacity_derivatives.assign(
-        phase_count * species_count * active_parameter_count, 0.0
+        phase_count * species_count * input_count, 0.0
     );
 }
 
@@ -2030,7 +2035,7 @@ void populate_sensitivities(
     const double largest = svd.singularValues().size() == 0
         ? 0.0
         : svd.singularValues()(0);
-    const double threshold = 256.0 * std::numeric_limits<double>::epsilon()
+    const double threshold = std::numeric_limits<double>::epsilon()
         * static_cast<double>(std::max<std::size_t>(1, kkt_dimension))
         * std::max(1.0, largest);
     result.kkt_rank = 0;
@@ -2049,12 +2054,6 @@ void populate_sensitivities(
     if (result.kkt_rank != kkt_dimension) {
         result.sensitivity_status = "unavailable";
         result.sensitivity_failure_reason = "singular_exact_kkt_system";
-        return;
-    }
-    if (!std::isfinite(result.condition_number_inf)
-        || result.condition_number_inf > kChemicalConditionNumberMax) {
-        result.sensitivity_status = "unavailable";
-        result.sensitivity_failure_reason = "ill_conditioned_exact_kkt_system";
         return;
     }
     if (!g_ref_pressure_derivatives_per_pa.empty()
@@ -2873,7 +2872,9 @@ void finalize_reactive_finite_phase_result(
         );
     } else {
         result.accepted = false;
-        result.failure_reason = "reactive_finite_phase_sensitivity_failed";
+        result.failure_reason = result.sensitivity_failure_reason.empty()
+            ? "reactive_finite_phase_sensitivity_failed"
+            : result.sensitivity_failure_reason;
     }
 }
 

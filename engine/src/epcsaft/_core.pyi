@@ -90,6 +90,12 @@ class NativeModel:
         component_order_fingerprint: str,
         domain_fingerprint: str,
         artifact_fingerprint: str,
+        source_temperature_min_k: float,
+        source_temperature_max_k: float,
+        source_pressure_min_pa: float,
+        source_pressure_max_pa: float,
+        candidate_qualification: str,
+        candidate_source_fingerprint: str,
     ) -> NativeModel: ...
     def with_active_coordinates(
         self, coordinates: Sequence[NativeActiveCoordinate]

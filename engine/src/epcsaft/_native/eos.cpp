@@ -407,7 +407,11 @@ NativeModel NativeModel::with_provider_metadata(
     double temperature_max_k, double ion_mole_fraction_max,
     double pressure_min_pa, double pressure_max_pa,
     std::string topology_fingerprint, std::string component_order_fingerprint,
-    std::string domain_fingerprint, std::string artifact_fingerprint) const {
+    std::string domain_fingerprint, std::string artifact_fingerprint,
+    double source_temperature_min_k, double source_temperature_max_k,
+    double source_pressure_min_pa, double source_pressure_max_pa,
+    std::string candidate_qualification,
+    std::string candidate_source_fingerprint) const {
   if (component_ids_.size() != component_count()) {
     throw std::invalid_argument(
         "native provider requires resolved component identities");
@@ -418,7 +422,8 @@ NativeModel NativeModel::with_provider_metadata(
   for (const auto *fingerprint : {&topology_fingerprint,
                                   &component_order_fingerprint,
                                   &domain_fingerprint,
-                                  &artifact_fingerprint}) {
+                                  &artifact_fingerprint,
+                                  &candidate_source_fingerprint}) {
     if (!fingerprint->empty() && !sha256_fingerprint_valid(*fingerprint)) {
       throw std::invalid_argument("invalid provider fingerprint");
     }
@@ -439,6 +444,21 @@ NativeModel NativeModel::with_provider_metadata(
        pressure_min_pa > pressure_max_pa)) {
     throw std::invalid_argument("invalid provider pressure domain");
   }
+  if (!valid_optional_domain(source_temperature_min_k) ||
+      !valid_optional_domain(source_temperature_max_k) ||
+      !valid_optional_domain(source_pressure_min_pa) ||
+      !valid_optional_domain(source_pressure_max_pa) ||
+      (std::isfinite(source_temperature_min_k) &&
+       std::isfinite(source_temperature_max_k) &&
+       source_temperature_min_k > source_temperature_max_k) ||
+      (std::isfinite(source_pressure_min_pa) &&
+       std::isfinite(source_pressure_max_pa) &&
+       source_pressure_min_pa > source_pressure_max_pa) ||
+      (candidate_qualification.empty() != candidate_source_fingerprint.empty()) ||
+      (!candidate_qualification.empty() &&
+       candidate_qualification != "candidate_extrapolation")) {
+    throw std::invalid_argument("invalid provider candidate-domain identity");
+  }
   NativeModel result(*this);
   result.provider_metadata_ = NativeProviderMetadata{
       std::move(parameter_fingerprint),
@@ -446,11 +466,17 @@ NativeModel NativeModel::with_provider_metadata(
       std::move(component_order_fingerprint),
       std::move(domain_fingerprint),
       std::move(artifact_fingerprint),
+      std::move(candidate_qualification),
+      std::move(candidate_source_fingerprint),
       temperature_min_k,
       temperature_max_k,
       pressure_min_pa,
       pressure_max_pa,
       ion_mole_fraction_max,
+      source_temperature_min_k,
+      source_temperature_max_k,
+      source_pressure_min_pa,
+      source_pressure_max_pa,
   };
   return result;
 }
@@ -476,6 +502,8 @@ NativeModel NativeModel::with_active_coordinates(
   for (const auto &coordinate : active_coordinates) {
     const auto parameter = resolve_active_coordinate(coordinate);
     switch (parameter.kind) {
+    case NativeFixedTopologyParameterKind::ReactionCorrelation:
+      break;
     case NativeFixedTopologyParameterKind::SegmentCount:
       updated.segment_count[parameter.component] = parameter.value;
       break;
@@ -806,6 +834,18 @@ NativeFixedTopologyParameter NativeModel::resolve_active_coordinate(
   if (!std::isfinite(coordinate.value)) {
     throw std::invalid_argument("active coordinate value must be finite");
   }
+  if (coordinate.application == "reaction-correlation-coefficient") {
+    if (coordinate.family != "reaction_correlation" ||
+        coordinate.identity.rfind("reaction:R", 0) != 0 ||
+        coordinate.identity.find(":correlation:") == std::string::npos ||
+        !coordinate.indices.empty() || !coordinate.association_edges.empty() ||
+        !coordinate.association_energy_scales.empty()) {
+      throw std::invalid_argument(
+          "reaction-correlation descriptor is inconsistent");
+    }
+    return {NativeFixedTopologyParameterKind::ReactionCorrelation,
+            0, 0, 0, coordinate.value};
+  }
   if (coordinate.application == "reciprocal-cross-dispersion" ||
       coordinate.application == "reciprocal-cross-size" ||
       coordinate.application == "role-aware-cross-association-energy") {
@@ -863,6 +903,8 @@ NativeFixedTopologyParameter NativeModel::resolve_active_coordinate(
   std::string expected_application;
   std::vector<std::size_t> expected_indices;
   switch (resolved.kind) {
+  case NativeFixedTopologyParameterKind::ReactionCorrelation:
+    throw std::logic_error("reaction descriptor did not use its resolved application");
   case NativeFixedTopologyParameterKind::SegmentCount:
   case NativeFixedTopologyParameterKind::SegmentDiameter:
   case NativeFixedTopologyParameterKind::DispersionEnergyOverK:

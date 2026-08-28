@@ -1,0 +1,10 @@
+provenance_kind = "source-record-provenance-v1"
+schema_version = 1
+
+[[records]]
+retained_path = "parameters/parameters.json"
+origin_repository = "tannerpolley/MEA-Thermodynamics"
+origin_commit = "412f85b4a34d713aa3b00985f6bef044c1f12327"
+origin_tree = "412f85b4a34d713aa3b00985f6bef044c1f12327"
+origin_path = "data/reference/epcsaft_bundles/mea-co2-h2o-nine-species-regression-input/1"
+sha256 = "2aecaae6145d389739498a0d8aae72f634f826a5a938c4668128136c613bd505"

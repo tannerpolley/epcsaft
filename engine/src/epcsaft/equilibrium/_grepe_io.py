@@ -130,8 +130,22 @@ def _reaction_system(value: object) -> ChemicalEquilibriumProblem:
     constants = []
     for raw in _sequence(item["equilibrium_constants"], "equilibrium constants"):
         record = _sequence(raw, "equilibrium constant")
-        if len(record) != 6 or not isinstance(record[5], bool):
-            raise ValueError("equilibrium constants require six typed fields")
+        if len(record) not in {6, 7} or not isinstance(record[5], bool):
+            raise ValueError("equilibrium constants require six fields and optional correlation")
+        correlation: dict[str, object] | None = None
+        if len(record) == 7:
+            correlation = _mapping(
+                record[6],
+                frozenset(
+                    {
+                        "reaction_id",
+                        "kind",
+                        "coefficient_identities",
+                        "coefficient_values",
+                    }
+                ),
+                "reaction correlation",
+            )
         constants.append(
             ChemicalEquilibriumConstant(
                 _number(record[0], "equilibrium constant"),
@@ -140,6 +154,26 @@ def _reaction_system(value: object) -> ChemicalEquilibriumProblem:
                 cast(Any, _text(record[3], "reaction orientation")),
                 _text(record[4], "equilibrium conversion"),
                 record[5],
+                None if correlation is None else _text(correlation["reaction_id"], "reaction id"),
+                None
+                if correlation is None
+                else cast(Any, _text(correlation["kind"], "reaction correlation kind")),
+                ()
+                if correlation is None
+                else tuple(
+                    _text(value, "reaction coefficient identity")
+                    for value in _sequence(
+                        correlation["coefficient_identities"], "reaction coefficient identities"
+                    )
+                ),
+                ()
+                if correlation is None
+                else tuple(
+                    _number(value, "reaction coefficient value")
+                    for value in _sequence(
+                        correlation["coefficient_values"], "reaction coefficient values"
+                    )
+                ),
             )
         )
     standard_value = item["source_standard_state"]
@@ -351,9 +385,7 @@ def _continuation_state(value: object) -> EquilibriumContinuationState | None:
                         "continuation potential components",
                     )
                 ),
-                _floats(
-                    phase["chemical_potential_over_rt"], "continuation chemical potentials"
-                ),
+                _floats(phase["chemical_potential_over_rt"], "continuation chemical potentials"),
                 _text(phase["mechanical_class"], "continuation mechanical class"),
             )
         )
@@ -798,6 +830,18 @@ def general_reactive_equilibrium_problem_to_mapping(
                     record.reaction_orientation,
                     record.conversion_id,
                     record.dimensionless,
+                    *(
+                        []
+                        if record.reaction_id is None
+                        else [
+                            {
+                                "reaction_id": record.reaction_id,
+                                "kind": record.correlation_kind,
+                                "coefficient_identities": list(record.coefficient_identities),
+                                "coefficient_values": list(record.coefficient_values),
+                            }
+                        ]
+                    ),
                 ]
                 for record in reaction.equilibrium_constants
             ],

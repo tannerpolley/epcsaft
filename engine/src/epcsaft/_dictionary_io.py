@@ -27,6 +27,7 @@ from .records import (
     ModelParameterRecord,
     PairParameterRecord,
     ParameterSpec,
+    ReactionCorrelationRecord,
     SingleParameterFamily,
     SingleParameterRecord,
     SiteRecord,
@@ -149,9 +150,119 @@ class _DocumentRecords:
         ...,
     ]
     models: tuple[ModelParameterRecord, ...]
+    reaction_correlations: tuple[ReactionCorrelationRecord, ...]
     model_families: tuple[ModelFamilySpec, ...]
     topology: AssociationTopology
     parameter_specs: tuple[ParameterSpec, ...]
+
+
+def _reaction_correlations(
+    value: object,
+) -> tuple[tuple[ReactionCorrelationRecord, ...], tuple[ParameterSpec, ...]]:
+    records: list[ReactionCorrelationRecord] = []
+    specs: list[ParameterSpec] = []
+    for index, item in enumerate(_sequence(value, field="reaction_correlations")):
+        field = f"reaction_correlations[{index}]"
+        raw = _mapping(item, field=field)
+        _strict(
+            raw,
+            field=field,
+            required=frozenset(
+                {
+                    "reaction_id",
+                    "kind",
+                    "source",
+                    "candidate_domain_id",
+                    "qualification",
+                    "source_sha256",
+                    "coefficients",
+                }
+            ),
+        )
+        reaction_id = raw["reaction_id"]
+        kind = raw["kind"]
+        if not isinstance(reaction_id, str) or not isinstance(kind, str):
+            raise _error("invalid-schema", field=field)
+        source_id, locator, domain_id = _provenance(raw["source"], field=f"{field}.source")
+        for coefficient_index, coefficient in enumerate(
+            _sequence(raw["coefficients"], field=f"{field}.coefficients")
+        ):
+            coefficient_field = f"{field}.coefficients[{coefficient_index}]"
+            coefficient_raw = _mapping(coefficient, field=coefficient_field)
+            _strict(
+                coefficient_raw,
+                field=coefficient_field,
+                required=frozenset({"name", "identity", "value", "optimizer_domain"}),
+            )
+            name = coefficient_raw["name"]
+            identity = coefficient_raw["identity"]
+            if not isinstance(name, str) or not isinstance(identity, str):
+                raise _error("invalid-schema", field=coefficient_field)
+            value_raw = _mapping(coefficient_raw["value"], field=f"{coefficient_field}.value")
+            _strict(
+                value_raw,
+                field=f"{coefficient_field}.value",
+                required=frozenset({"magnitude", "unit"}),
+            )
+            unit = value_raw["unit"]
+            if not isinstance(unit, str) or not unit:
+                raise _error("invalid-unit", field=f"{coefficient_field}.value.unit")
+            value_quantity = unit_registry.Quantity(
+                _decimal_number(
+                    value_raw["magnitude"], field=f"{coefficient_field}.value.magnitude"
+                ),
+                unit,
+            )
+            bounds = _mapping(
+                coefficient_raw["optimizer_domain"],
+                field=f"{coefficient_field}.optimizer_domain",
+            )
+            _strict(
+                bounds,
+                field=f"{coefficient_field}.optimizer_domain",
+                required=frozenset({"lower", "upper"}),
+            )
+            record = ReactionCorrelationRecord(
+                identity,
+                reaction_id,
+                cast(Any, kind),
+                name,
+                identity,
+                value_quantity,
+                unit,
+                unit_registry.Quantity(
+                    _decimal_number(
+                        bounds["lower"], field=f"{coefficient_field}.optimizer_domain.lower"
+                    ),
+                    unit,
+                ),
+                unit_registry.Quantity(
+                    _decimal_number(
+                        bounds["upper"], field=f"{coefficient_field}.optimizer_domain.upper"
+                    ),
+                    unit,
+                ),
+                source_id,
+                locator,
+                domain_id,
+                cast(str, raw["candidate_domain_id"]),
+                cast(Any, raw["qualification"]),
+                cast(str, raw["source_sha256"]),
+            )
+            records.append(record)
+            specs.append(
+                ParameterSpec(
+                    identity,
+                    "reaction_correlation",
+                    value_quantity,
+                    unit,
+                    True,
+                    source_id,
+                    locator,
+                    cast(str, raw["candidate_domain_id"]),
+                )
+            )
+    return tuple(records), tuple(specs)
 
 
 def _mapping(value: object, *, field: str) -> dict[str, object]:
@@ -545,7 +656,16 @@ def _model_families(value: object) -> tuple[ModelFamilySpec, ...]:
             raw,
             field=field,
             required=frozenset({"family_id", "kind", "choice", "provenance"}),
-            optional=frozenset({"c_shell", "c_dielectric", "ionic_dispersion"}),
+            optional=frozenset(
+                {
+                    "c_shell",
+                    "c_dielectric",
+                    "ionic_dispersion",
+                    "candidate_domain_id",
+                    "qualification",
+                    "source_sha256",
+                }
+            ),
         )
         kind = raw["kind"]
         if not isinstance(kind, str) or kind not in _MODEL_CHOICES:
@@ -577,9 +697,7 @@ def _model_families(value: object) -> tuple[ModelFamilySpec, ...]:
             c_shell = None
             c_dielectric = None
         if kind == "electrolyte" and choice != "none":
-            ionic_dispersion = raw.get(
-                "ionic_dispersion", "exclude-same-sign-ion-pairs"
-            )
+            ionic_dispersion = raw.get("ionic_dispersion", "exclude-same-sign-ion-pairs")
             if ionic_dispersion not in {
                 "all-ion-pairs",
                 "exclude-same-sign-ion-pairs",
@@ -606,6 +724,9 @@ def _model_families(value: object) -> tuple[ModelFamilySpec, ...]:
                 c_shell,
                 c_dielectric,
                 ionic_dispersion,
+                raw.get("candidate_domain_id"),
+                raw.get("qualification"),
+                raw.get("source_sha256"),
             )
         )
     if seen != set(_MODEL_CHOICES):
@@ -753,16 +874,16 @@ def _correlations(
             continue
         if form == "constant-plus-polynomial-in-temperature":
             if "terms" not in raw or "reference_temperature" not in raw:
-                raise _error("invalid-schema", field=field, missing="terms-or-reference-temperature")
+                raise _error(
+                    "invalid-schema", field=field, missing="terms-or-reference-temperature"
+                )
             reference_temperature, _ = _measurement(
                 raw["reference_temperature"],
                 family="dielectric_temperature",
                 field=f"{field}.reference_temperature",
             )
             polynomial_terms = []
-            for term_index, item_term in enumerate(
-                _sequence(raw["terms"], field=f"{field}.terms")
-            ):
+            for term_index, item_term in enumerate(_sequence(raw["terms"], field=f"{field}.terms")):
                 term_field = f"{field}.terms[{term_index}]"
                 term = _mapping(item_term, field=term_field)
                 _strict(
@@ -1435,6 +1556,7 @@ def _validate_document(
         | ConstantPlusSumOfExponentialsCorrelation
         | ConstantPlusPolynomialInTemperatureCorrelation
         | ModelParameterRecord
+        | ReactionCorrelationRecord
         | SiteRecord,
         ...,
     ],
@@ -1466,6 +1588,9 @@ def _validate_document(
             raise _error("invalid-source", source_id=source_id)
         if domain_id is not None and domain_id not in domain_ids:
             raise _error("invalid-domain", domain_id=domain_id)
+        candidate_domain_id = getattr(owner, "candidate_domain_id", None)
+        if candidate_domain_id is not None and candidate_domain_id not in domain_ids:
+            raise _error("invalid-domain", domain_id=candidate_domain_id)
     for edge in topology.edges:
         for source_id, _, domain_id in edge.source.provenance:
             if source_id not in source_ids:
@@ -1525,7 +1650,12 @@ def _validate_document(
 
 def _records_from_mapping(value: object) -> _DocumentRecords:
     raw = _mapping(value, field="parameters")
-    _strict(raw, field="parameters", required=_TOP_LEVEL)
+    _strict(
+        raw,
+        field="parameters",
+        required=_TOP_LEVEL,
+        optional=frozenset({"reaction_correlations"}),
+    )
     if raw["schema"] != "epcsaft.parameters" or raw["schema_version"] != 1:
         raise _error("invalid-schema", field="schema", value=raw.get("schema_version"))
     document_id = _identifier(raw["document_id"], field="document_id")
@@ -1547,6 +1677,9 @@ def _records_from_mapping(value: object) -> _DocumentRecords:
     model_families = _model_families(raw["model_families"])
     models, model_specs = _model_coefficients(raw["model_coefficients"])
     correlations, correlation_specs = _correlations(raw["correlations"], component_ids)
+    reaction_correlations, reaction_specs = _reaction_correlations(
+        raw.get("reaction_correlations", ())
+    )
     topology, sites, associations, association_specs = _topology(
         raw["topology"], component_ids, cross_association_corrections
     )
@@ -1558,6 +1691,7 @@ def _records_from_mapping(value: object) -> _DocumentRecords:
                 *model_specs,
                 *correlation_specs,
                 *association_specs,
+                *reaction_specs,
             ),
             key=lambda item: item.identity,
         )
@@ -1570,6 +1704,7 @@ def _records_from_mapping(value: object) -> _DocumentRecords:
         *associations,
         *correlations,
         *models,
+        *reaction_correlations,
     )
     _validate_document(
         sources=sources,
@@ -1595,6 +1730,7 @@ def _records_from_mapping(value: object) -> _DocumentRecords:
         associations=associations,
         correlations=correlations,
         models=models,
+        reaction_correlations=reaction_correlations,
         model_families=model_families,
         topology=topology,
         parameter_specs=parameter_specs,

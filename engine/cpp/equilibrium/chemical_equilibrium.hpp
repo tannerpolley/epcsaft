@@ -72,6 +72,10 @@ struct EquilibriumConstantRecord {
     std::string reaction_orientation;
     std::string conversion_id;
     bool dimensionless = false;
+    std::string reaction_id;
+    std::string correlation_kind;
+    std::vector<std::string> coefficient_identities;
+    std::vector<double> coefficient_values;
     double temperature_k = 0.0;
     double pressure_pa = 0.0;
 };
@@ -86,6 +90,7 @@ struct ReactionSystemInput {
     DenseMatrix reaction_matrix;
     std::vector<double> feed_amounts;
     std::vector<double> ln_k;
+    std::vector<double> ln_k_parameter_derivatives;
     std::vector<EquilibriumConstantRecord> equilibrium_constant_records;
     double temperature_k = 0.0;
     double pressure_pa = 0.0;
@@ -245,6 +250,12 @@ struct SourceReferenceTransferEvidence {
     double source_temperature_max_k = 0.0;
     double source_pressure_min_pa = 0.0;
     double source_pressure_max_pa = 0.0;
+    double candidate_temperature_min_k = 0.0;
+    double candidate_temperature_max_k = 0.0;
+    double candidate_pressure_min_pa = 0.0;
+    double candidate_pressure_max_pa = 0.0;
+    std::string candidate_qualification;
+    std::string candidate_source_fingerprint;
     std::string parameter_fingerprint;
     std::string topology_fingerprint;
     std::string component_order_fingerprint;

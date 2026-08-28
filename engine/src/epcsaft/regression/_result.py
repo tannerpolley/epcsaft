@@ -556,6 +556,7 @@ class FitResult:
     starts: tuple[FitStart, ...]
     artifact_fingerprint: str
     package_fingerprint: str
+    evaluation_strategy: str
     accounting: FitAccounting
     digest: str
 
@@ -566,6 +567,7 @@ class FitResult:
         *,
         artifact_fingerprint: str,
         package_fingerprint: str,
+        evaluation_strategy: str,
     ) -> None:
         if not isinstance(specification, FitSpecificationReceipt):
             raise TypeError("specification must be a FitSpecificationReceipt")
@@ -574,6 +576,11 @@ class FitResult:
             raise ValueError("starts must contain every native start")
         if tuple(item.index for item in frozen_starts) != tuple(range(len(frozen_starts))):
             raise ValueError("starts must retain deterministic native order")
+        if evaluation_strategy not in {
+            "reduced_space",
+            "simultaneous_sparse_full_space",
+        }:
+            raise ValueError("native evaluation strategy is outside the public vocabulary")
         if any(
             tuple(outcome.index for outcome in start.batch_outcomes)
             != tuple(range(len(specification.block_sizes)))
@@ -584,6 +591,7 @@ class FitResult:
         object.__setattr__(self, "starts", frozen_starts)
         object.__setattr__(self, "artifact_fingerprint", artifact_fingerprint)
         object.__setattr__(self, "package_fingerprint", package_fingerprint)
+        object.__setattr__(self, "evaluation_strategy", evaluation_strategy)
         evaluated = sum(
             outcome.row_count
             for start in frozen_starts
@@ -642,6 +650,7 @@ class FitResult:
             tuple(FitStart.from_native(item) for item in starts),
             artifact_fingerprint=artifact_fingerprint,
             package_fingerprint=package_fingerprint,
+            evaluation_strategy=str(native["evaluation_strategy"]),
         )
 
     @property
@@ -814,6 +823,7 @@ class FitResult:
             "specification": self.specification.to_mapping(),
             "artifact_fingerprint": self.artifact_fingerprint,
             "package_fingerprint": self.package_fingerprint,
+            "evaluation_strategy": self.evaluation_strategy,
             "accounting": self.accounting.to_mapping(),
             "covariance_coordinate_identities": list(self.covariance_coordinate_identities),
             "physical_covariance": _finite_values(self.physical_covariance),

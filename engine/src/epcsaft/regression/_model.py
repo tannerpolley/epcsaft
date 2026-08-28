@@ -25,7 +25,10 @@ _INTEGER_MAX = 2_147_483_647
 _ERROR_DETAIL_LIMIT = 512
 _DIGEST = re.compile(r"sha256:[0-9a-f]{64}\Z")
 _IDENTIFIER_PATTERN = r"[a-z0-9]+(?:[-_][a-z0-9]+)*"
-_IDENTITY_PATTERN = rf"{_IDENTIFIER_PATTERN}(?:/{_IDENTIFIER_PATTERN})+"
+_IDENTITY_PATTERN = (
+    rf"(?:{_IDENTIFIER_PATTERN}(?:/{_IDENTIFIER_PATTERN})+"
+    r"|reaction:R[0-9]+:correlation:[a-z][a-z0-9_]*)"
+)
 _IDENTITY = re.compile(rf"{_IDENTITY_PATTERN}\Z")
 
 

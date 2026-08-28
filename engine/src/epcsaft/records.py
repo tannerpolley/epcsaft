@@ -16,7 +16,9 @@ from .units import (
 
 _ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 _FAMILY_PATTERN = re.compile(r"[a-z0-9]+(?:[-_][a-z0-9]+)*\Z")
+_REACTION_PARAMETER_PATTERN = re.compile(r"reaction:R[0-9]+:correlation:[a-z][a-z0-9_]*\Z")
 type DomainKind = Literal["fit-range", "reported-conditions", "unknown"]
+type ModelQualification = Literal["candidate_extrapolation"]
 type ModelFamilyKind = Literal["base", "association", "electrolyte", "permittivity"]
 type AssociationSiteRole = Literal["donor", "acceptor", "effective"]
 type AssociationEdgeSourceKind = Literal["explicit", "combining-rule"]
@@ -84,19 +86,13 @@ _SINGLE_FAMILIES = frozenset(
     }
 )
 _PAIR_FAMILIES = frozenset({"k_ij", "l_ij"})
-_ASSOCIATION_FAMILIES = frozenset(
-    {"association_energy_over_k", "association_volume"}
-)
+_ASSOCIATION_FAMILIES = frozenset({"association_energy_over_k", "association_volume"})
 _MODEL_FAMILIES = frozenset(
     {"ion_fraction_suppression_coefficient", "ionic_region_relative_permittivity"}
 )
-_CORRELATION_FAMILIES = frozenset(
-    {"segment_diameter", "relative_permittivity", "solvation_factor"}
-)
+_CORRELATION_FAMILIES = frozenset({"segment_diameter", "relative_permittivity", "solvation_factor"})
 _ASSOCIATION_PRESETS = frozenset({"1a", "2b", "3b", "4c"})
-_ASSOCIATION_COMBINING_RULES = frozenset(
-    {"arithmetic-energy-geometric-volume"}
-)
+_ASSOCIATION_COMBINING_RULES = frozenset({"arithmetic-energy-geometric-volume"})
 _DIMENSIONAL_UNITS = {
     "molar_mass": "kilogram / mole",
     "segment_diameter": "angstrom",
@@ -137,7 +133,10 @@ def _parameter_identity(value: object, *, field: str = "identity") -> str:
     if (
         not isinstance(value, str)
         or not value
-        or any(_FAMILY_PATTERN.fullmatch(part) is None for part in value.split("/"))
+        or (
+            _REACTION_PARAMETER_PATTERN.fullmatch(value) is None
+            and any(_FAMILY_PATTERN.fullmatch(part) is None for part in value.split("/"))
+        )
     ):
         raise _error("invalid-id", field=field, value=value)
     return value
@@ -216,6 +215,9 @@ class ModelFamilySpec:
     c_shell: float | None = None
     c_dielectric: float | None = None
     ionic_dispersion: IonicDispersionFormulation | None = None
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -264,6 +266,35 @@ class ModelFamilySpec:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        candidate = (self.candidate_domain_id, self.qualification, self.source_sha256)
+        if any(value is None for value in candidate):
+            if not all(value is None for value in candidate):
+                raise _error(
+                    "invalid-provenance",
+                    field="model_family.candidate",
+                    value="partial",
+                )
+        else:
+            object.__setattr__(
+                self,
+                "candidate_domain_id",
+                _identifier(self.candidate_domain_id, field="candidate_domain_id"),
+            )
+            if self.qualification != "candidate_extrapolation":
+                raise _error(
+                    "invalid-value",
+                    field="model_family.qualification",
+                    value=self.qualification,
+                )
+            if (
+                not isinstance(self.source_sha256, str)
+                or re.fullmatch(r"sha256:[0-9a-f]{64}", self.source_sha256) is None
+            ):
+                raise _error(
+                    "invalid-value",
+                    field="model_family.source_sha256",
+                    value=self.source_sha256,
+                )
 
 
 @dataclass(frozen=True, slots=True)
@@ -298,6 +329,81 @@ class ParameterSpec:
             object.__setattr__(self, "source_id", source_id)
             object.__setattr__(self, "locator", locator)
             object.__setattr__(self, "domain_id", domain_id)
+
+
+@dataclass(frozen=True, slots=True)
+class ReactionCorrelationRecord:
+    """One optimizer-ready coefficient in a typed reaction correlation."""
+
+    record_id: str
+    reaction_id: str
+    correlation_kind: Literal["ln-k-a-plus-b-over-t", "negative-log10-temperature-polynomial"]
+    coefficient_name: str
+    identity: str
+    value: object
+    unit: str
+    optimizer_lower: object
+    optimizer_upper: object
+    source_id: str
+    locator: str
+    domain_id: str
+    candidate_domain_id: str
+    qualification: ModelQualification
+    source_sha256: str
+    family: str = "reaction_correlation"
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "record_id", _parameter_identity(self.record_id, field="record_id")
+        )
+        if (
+            not isinstance(self.reaction_id, str)
+            or re.fullmatch(r"R[0-9]+", self.reaction_id) is None
+        ):
+            raise _error("invalid-id", field="reaction_id", value=self.reaction_id)
+        if self.correlation_kind not in {
+            "ln-k-a-plus-b-over-t",
+            "negative-log10-temperature-polynomial",
+        }:
+            raise _error(
+                "invalid-value", field="reaction.correlation_kind", value=self.correlation_kind
+            )
+        object.__setattr__(
+            self,
+            "coefficient_name",
+            _family_identity(self.coefficient_name, field="coefficient_name"),
+        )
+        identity = _parameter_identity(self.identity)
+        if identity != f"reaction:{self.reaction_id}:correlation:{self.coefficient_name}":
+            raise _error("invalid-id", field="identity", value=identity)
+        object.__setattr__(self, "identity", identity)
+        unit = _text(self.unit, field="unit")
+        value = _quantity(self.value, unit, field="value")
+        lower = _quantity(self.optimizer_lower, unit, field="optimizer_lower")
+        upper = _quantity(self.optimizer_upper, unit, field="optimizer_upper")
+        if lower.magnitude >= upper.magnitude or not (
+            lower.magnitude <= value.magnitude <= upper.magnitude
+        ):
+            raise _error("invalid-domain", field="reaction.optimizer_domain", value=identity)
+        object.__setattr__(self, "unit", unit)
+        object.__setattr__(self, "value", value)
+        object.__setattr__(self, "optimizer_lower", lower)
+        object.__setattr__(self, "optimizer_upper", upper)
+        source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
+        object.__setattr__(self, "source_id", source_id)
+        object.__setattr__(self, "locator", locator)
+        object.__setattr__(self, "domain_id", domain_id)
+        object.__setattr__(
+            self,
+            "candidate_domain_id",
+            _identifier(self.candidate_domain_id, field="candidate_domain_id"),
+        )
+        if (
+            self.qualification != "candidate_extrapolation"
+            or not isinstance(self.source_sha256, str)
+            or re.fullmatch(r"sha256:[0-9a-f]{64}", self.source_sha256) is None
+        ):
+            raise _error("invalid-provenance", field="reaction.candidate")
 
 
 @dataclass(frozen=True, slots=True)
@@ -947,6 +1053,7 @@ type ParameterRecord = (
     | SiteRecord
     | AssociationParameterRecord
     | CorrelationRecord
+    | ReactionCorrelationRecord
 )
 
 
@@ -976,10 +1083,12 @@ __all__ = (
     "ModelFamilySpec",
     "ModelParameterFamily",
     "ModelParameterRecord",
+    "ModelQualification",
     "PairParameterFamily",
     "PairParameterRecord",
     "ParameterRecord",
     "ParameterSpec",
+    "ReactionCorrelationRecord",
     "RelativePermittivityFormulation",
     "SingleParameterFamily",
     "SingleParameterRecord",

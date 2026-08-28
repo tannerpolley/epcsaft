@@ -79,6 +79,13 @@
       "packet_path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/5",
       "packet_fingerprint": "2ea461e90eadcd53ff4c58b10e6a3f7610a35d7804eee702a092c04832a001d3",
       "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "mea-co2-h2o-nine-species-estimation",
+      "packet_version": "1",
+      "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/1",
+      "packet_fingerprint": "3f3572537a6105123caa0e2849ee3f5e64af37625f40297382c3e45190441729",
+      "materialization": "source-derived-candidate-records"
     }
   ]
 }
