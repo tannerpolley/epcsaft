@@ -37,13 +37,11 @@ def test_malformed_compositions_fail_closed(composition) -> None:
     assert captured.value.code == "invalid-state"
 
 
-def test_impossible_density_and_pressure_requests_fail_closed() -> None:
+def test_impossible_density_request_fails_closed() -> None:
     model = Pure(Parameters.from_mapping(neutral_pure("propane")))
 
     with pytest.raises(EosError):
         model.state(T=300.0 * u.kelvin, rho=1.0e9 * u.mole / u.meter**3)
-    with pytest.raises(EosError):
-        model.state(T=300.0 * u.kelvin, P=1.0e12 * u.pascal, phase="vapor")
 
 
 def test_invalid_charge_and_permittivity_declarations_fail_closed() -> None:

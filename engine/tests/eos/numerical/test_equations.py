@@ -19,6 +19,25 @@ BOLTZMANN = 1.380649e-23
 ELEMENTARY_CHARGE = 1.602176634e-19
 VACUUM_PERMITTIVITY = 8.8541878128e-12
 
+GROSS_A = (
+    (0.9105631445, -0.3084016918, -0.0906148351),
+    (0.6361281449, 0.1860531159, 0.4527842806),
+    (2.6861347891, -2.5030047259, 0.5962700728),
+    (-26.547362491, 21.419793629, -1.7241829131),
+    (97.759208784, -65.255885330, -4.1302112531),
+    (-159.59154087, 83.318680481, 13.776631870),
+    (91.297774084, -33.746922930, -8.6728470368),
+)
+GROSS_B = (
+    (0.7240946941, -0.5755498075, 0.0976883116),
+    (2.2382791861, 0.6995095521, -0.2557574982),
+    (-4.0025849485, 3.8925673390, -9.1558561530),
+    (-21.003576815, -17.215471648, 20.642075974),
+    (26.855641363, 192.67226447, -38.804430052),
+    (206.55133841, -161.82646165, 93.626774077),
+    (-355.60235612, -165.20769346, -29.666905585),
+)
+
 
 def _state(mapping, *, composition, density=1000.0, temperature=298.15):
     parameters = Parameters.from_mapping(mapping)
@@ -32,6 +51,129 @@ def _state(mapping, *, composition, density=1000.0, temperature=298.15):
         rho=density * u.mole / u.meter**3,
         x=composition,
     )
+
+
+def _gross_base_contributions(mapping, temperature, density, composition):
+    components = mapping["components"]
+    component_ids = [component["component_id"] for component in components]
+
+    def coefficient(component, family):
+        return next(
+            item["value"]["magnitude"]
+            for item in component["coefficients"]
+            if item["family"] == family
+        )
+
+    def pair_coefficient(left, right, family):
+        if left == right:
+            return 0.0
+        left, right = sorted((left, right))
+        pair = next(
+            item
+            for item in mapping["pairs"]
+            if item["component_id_a"] == left and item["component_id_b"] == right
+        )
+        return next(
+            (
+                item["value"]["magnitude"]
+                for item in pair["coefficients"]
+                if item["family"] == family
+            ),
+            0.0,
+        )
+
+    segment_count = [coefficient(component, "segment_count") for component in components]
+    sigma = [coefficient(component, "segment_diameter") for component in components]
+    epsilon = [
+        coefficient(component, "dispersion_energy_over_k") for component in components
+    ]
+    diameter = [
+        size * (1.0 - 0.12 * math.exp(-3.0 * energy / temperature))
+        for size, energy in zip(sigma, epsilon, strict=True)
+    ]
+    number_density = density * AVOGADRO * 1.0e-30
+    zeta = tuple(
+        math.pi
+        / 6.0
+        * number_density
+        * math.fsum(
+            fraction * segments * size**order
+            for fraction, segments, size in zip(
+                composition, segment_count, diameter, strict=True
+            )
+        )
+        for order in range(4)
+    )
+    eta = zeta[3]
+    one_minus_eta = 1.0 - eta
+    hard_sphere = (
+        3.0 * zeta[1] * zeta[2] / one_minus_eta
+        + zeta[2] ** 3 / (eta * one_minus_eta**2)
+        + (zeta[2] ** 3 / eta**2 - zeta[0]) * math.log(one_minus_eta)
+    ) / zeta[0]
+    mean_segments = math.fsum(
+        fraction * segments
+        for fraction, segments in zip(composition, segment_count, strict=True)
+    )
+    hard_chain = mean_segments * hard_sphere - math.fsum(
+        fraction
+        * (segments - 1.0)
+        * math.log(
+            1.0 / one_minus_eta
+            + 1.5 * size * zeta[2] / one_minus_eta**2
+            + 0.5 * size**2 * zeta[2] ** 2 / one_minus_eta**3
+        )
+        for fraction, segments, size in zip(
+            composition, segment_count, diameter, strict=True
+        )
+    )
+
+    chain_one = (mean_segments - 1.0) / mean_segments
+    chain_two = (mean_segments - 1.0) * (mean_segments - 2.0) / mean_segments**2
+    integral_one = math.fsum(
+        (base + chain_one * first + chain_two * second) * eta**order
+        for order, (base, first, second) in enumerate(GROSS_A)
+    )
+    integral_two = math.fsum(
+        (base + chain_one * first + chain_two * second) * eta**order
+        for order, (base, first, second) in enumerate(GROSS_B)
+    )
+    correction = 1.0 / (
+        1.0
+        + mean_segments * (8.0 * eta - 2.0 * eta**2) / one_minus_eta**4
+        + (1.0 - mean_segments)
+        * (20.0 * eta - 27.0 * eta**2 + 12.0 * eta**3 - 2.0 * eta**4)
+        / ((one_minus_eta * (2.0 - eta)) ** 2)
+    )
+    first_moment = 0.0
+    second_moment = 0.0
+    for i, left in enumerate(component_ids):
+        for j, right in enumerate(component_ids):
+            cross_sigma = 0.5 * (sigma[i] + sigma[j]) * (
+                1.0 - pair_coefficient(left, right, "l_ij")
+            )
+            cross_epsilon = math.sqrt(epsilon[i] * epsilon[j]) * (
+                1.0 - pair_coefficient(left, right, "k_ij")
+            )
+            weight = (
+                composition[i]
+                * composition[j]
+                * segment_count[i]
+                * segment_count[j]
+                * cross_sigma**3
+            )
+            first_moment += weight * cross_epsilon / temperature
+            second_moment += weight * (cross_epsilon / temperature) ** 2
+    dispersion = (
+        -2.0 * math.pi * number_density * integral_one * first_moment
+        - math.pi
+        * number_density
+        * mean_segments
+        * correction
+        * integral_two
+        * second_moment
+    )
+    return hard_chain, dispersion
 
 
 @pytest.mark.parametrize(
@@ -57,19 +199,24 @@ def test_residual_helmholtz_closes_over_retained_contributions(mapping, composit
 
 
 @pytest.mark.parametrize(
-    ("temperature", "density", "composition", "hard_chain", "dispersion"),
+    ("temperature", "density", "composition"),
     (
-        (200.0, 1000.0, (1.0, 0.0), 0.06290111429923406, -0.16906790398822233),
-        (250.0, 8000.0, (0.4, 0.6), 0.8611345413201740, -1.9282055648091894),
+        (200.0, 1000.0, (1.0, 0.0)),
+        (250.0, 8000.0, (0.4, 0.6)),
     ),
     ids=("pure-limit", "binary"),
 )
-def test_hard_chain_and_dispersion_match_independent_anchors(
-    temperature, density, composition, hard_chain, dispersion
+def test_hard_chain_and_dispersion_match_source_equations(
+    temperature, density, composition
 ) -> None:
-    # Source locator: engine equation registry, hard-chain and dispersion
-    # equations; expected values were independently transcribed on the stated
-    # reduced Helmholtz basis, not generated by an Engine solver.
+    # Gross and Sadowski, Ind. Eng. Chem. Res. 40 (2001) 1244-1260,
+    # Appendix A, Eqs. (A.6), (A.8)-(A.17), with universal coefficients from
+    # Table 1. Basis: a = Ares/(N k_B T) = Ares,m/(R T); rho is converted from
+    # mol/m3 to particles/angstrom3. The calculation reads only the public case
+    # mapping and does not call an Engine contribution routine.
+    hard_chain, dispersion = _gross_base_contributions(
+        NEUTRAL_BINARY, temperature, density, composition
+    )
     state = _state(
         NEUTRAL_BINARY,
         composition=composition,
