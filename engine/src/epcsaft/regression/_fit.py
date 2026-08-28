@@ -121,7 +121,9 @@ def _owner_requests(
                         {
                             "observed": row.value(target),
                             "residual": residuals[target],
-                            "scale": row.value(target),
+                            "scale": 1.0
+                            if residuals[target] == "log_ratio"
+                            else row.value(target),
                         }
                         for target in specification.targets
                     ],

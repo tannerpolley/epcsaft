@@ -375,8 +375,9 @@ private:
       double factor = multiplier / target.scale;
       switch (target.residual) {
       case ResidualKind::LogRatio:
-        factor = multiplier / predicted;
-        residuals[row] = multiplier * std::log(predicted / target.observed);
+        factor = multiplier / (predicted * target.scale);
+        residuals[row] =
+            multiplier * std::log(predicted / target.observed) / target.scale;
         break;
       case ResidualKind::ScaledDifference:
         residuals[row] =
@@ -1168,8 +1169,9 @@ private:
           double residual;
           switch (target.residual) {
           case ResidualKind::LogRatio:
-            factor = multiplier / predicted;
-            residual = multiplier * std::log(predicted / target.observed);
+            factor = multiplier / (predicted * target.scale);
+            residual = multiplier * std::log(predicted / target.observed) /
+                       target.scale;
             break;
           case ResidualKind::LeftCensored:
             if (predicted <= target.observed) {

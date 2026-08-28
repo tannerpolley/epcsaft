@@ -235,7 +235,7 @@ class FitSpecificationReceipt:
                             canonical_units[target],
                             bases[target],
                             residuals[target],
-                            row.value(target),
+                            1.0 if residuals[target] == "log_ratio" else row.value(target),
                             multiplier,
                         )
                     )

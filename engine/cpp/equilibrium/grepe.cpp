@@ -1908,26 +1908,6 @@ IncipientClosure incipient_closure(
                     / (boundary_pressure * boundary_pressure);
             }
         }
-        for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
-            for (std::size_t supported = 0; supported < count; ++supported) {
-                const std::size_t component = vapor.support_indices[supported];
-                const std::size_t output = closure.liquid.log_fugacity_offset + component;
-                const double partial = liquid.output_parameter_partials[
-                    output * parameter_count + parameter
-                ];
-                closure.boundary_direct[parameter] += fugacity[supported] * partial;
-            }
-            for (std::size_t supported = 0; supported < count; ++supported) {
-                const std::size_t component = vapor.support_indices[supported];
-                const std::size_t output = closure.liquid.log_fugacity_offset + component;
-                const double partial = liquid.output_parameter_partials[
-                    output * parameter_count + parameter
-                ];
-                closure.vapor_direct[parameter * count + supported] = fugacity[supported]
-                    * (partial * boundary_pressure - closure.boundary_direct[parameter])
-                    / (boundary_pressure * boundary_pressure);
-            }
-        }
         closure.vapor_pressure_pa = boundary_pressure;
         closure.vapor_volume_m3 = kGasConstant * request.temperature.value / boundary_pressure;
         closure.vapor_packing_fraction = 0.0;
@@ -3283,10 +3263,17 @@ void evaluate_grepe_local_blocks(
         const std::size_t species_count = request.reaction.species_ids.size();
         const std::size_t finite_output_count = liquid.output_values.size() - species_count;
         const double log_rt = std::log(kGasConstant * request.temperature.value);
-        const auto g_ref_pressure = [&](std::size_t species) {
-            const auto& derivatives =
-                liquid_point.system.g_ref_pressure_derivatives_per_pa;
-            return derivatives.empty() ? 0.0 : derivatives[species];
+        if (liquid.output_input_derivatives.size()
+            != liquid.output_values.size() * input_width) {
+            throw std::invalid_argument(
+                "retained liquid output input derivative dimensions changed"
+            );
+        }
+        const auto liquid_log_fugacity_pressure = [&](std::size_t species) {
+            const std::size_t output = finite_output_count + species;
+            return pressure_pa * liquid.output_input_derivatives[
+                output * input_width + pressure_input_column
+            ];
         };
         std::vector<double> liquid_mu(vapor_count);
         for (std::size_t supported = 0; supported < vapor_count; ++supported) {
@@ -3316,6 +3303,11 @@ void evaluate_grepe_local_blocks(
                 const std::size_t output = finite_output_count
                     + structure.vapor_phase.support_indices[supported];
                 const double weight = vapor_fractions[supported];
+                blocks.constraint_local_jacobian[
+                    row * local_variables.size() + pressure_column
+                ] += weight * liquid_log_fugacity_pressure(
+                    structure.vapor_phase.support_indices[supported]
+                );
                 for (std::size_t column = 0; column < liquid_count; ++column) {
                     blocks.constraint_local_jacobian[
                         row * local_variables.size() + column
@@ -3363,9 +3355,8 @@ void evaluate_grepe_local_blocks(
                     structure.vapor_phase.support_indices[reference];
                 blocks.constraint_local_jacobian[
                     row * local_variables.size() + pressure_column
-                ] = -pressure_pa * (
-                    g_ref_pressure(left_species) - g_ref_pressure(right_species)
-                );
+                ] = -liquid_log_fugacity_pressure(left_species)
+                    + liquid_log_fugacity_pressure(right_species);
                 for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
                     blocks.constraint_local_jacobian[
                         row * local_variables.size() + pressure_column + 1 + coordinate
@@ -3428,7 +3419,7 @@ void evaluate_grepe_local_blocks(
             }
             blocks.constraint_local_jacobian[
                 chemical_row * local_variables.size() + pressure_column
-            ] = -pressure_pa * g_ref_pressure(
+            ] = -liquid_log_fugacity_pressure(
                 structure.vapor_phase.support_indices[reference]
             );
             for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
@@ -3475,7 +3466,63 @@ void evaluate_grepe_local_blocks(
                         output * local_variables.size() + pressure_column
                     ] = pressure_pa * fraction;
                 }
-                if (!structure.vapor_phase.ideal_gas) {
+                if (structure.vapor_phase.ideal_gas) {
+                    const auto fraction_derivative = [&](const auto& derivative) {
+                        double mean = 0.0;
+                        for (std::size_t component = 0; component < vapor_count;
+                             ++component) {
+                            mean += vapor_fractions[component] * derivative(component);
+                        }
+                        double value = 0.0;
+                        for (std::size_t component = 0; component < vapor_count;
+                             ++component) {
+                            value += declared.coefficients[component]
+                                * vapor_fractions[component]
+                                * (derivative(component) - mean);
+                        }
+                        return value;
+                    };
+                    for (std::size_t column = 0; column < liquid_count; ++column) {
+                        const double derivative = fraction_derivative(
+                            [&](std::size_t component) {
+                                const std::size_t liquid_output = finite_output_count
+                                    + structure.vapor_phase.support_indices[component];
+                                return liquid.output_local_derivatives[
+                                    liquid_output * liquid_count + column
+                                ];
+                            }
+                        );
+                        blocks.output_local_jacobian[
+                            output * local_variables.size() + column
+                        ] = partial ? pressure_pa * derivative : derivative;
+                    }
+                    const double pressure_derivative = fraction_derivative(
+                        [&](std::size_t component) {
+                            return liquid_log_fugacity_pressure(
+                                structure.vapor_phase.support_indices[component]
+                            );
+                        }
+                    );
+                    blocks.output_local_jacobian[
+                        output * local_variables.size() + pressure_column
+                    ] += partial ? pressure_pa * pressure_derivative
+                                 : pressure_derivative;
+                    for (std::size_t parameter = 0; parameter < parameter_count;
+                         ++parameter) {
+                        const double derivative = fraction_derivative(
+                            [&](std::size_t component) {
+                                const std::size_t liquid_output = finite_output_count
+                                    + structure.vapor_phase.support_indices[component];
+                                return liquid.output_parameter_partials[
+                                    liquid_output * parameter_count + parameter
+                                ];
+                            }
+                        );
+                        blocks.output_parameter_jacobian[
+                            output * parameter_count + parameter
+                        ] = partial ? pressure_pa * derivative : derivative;
+                    }
+                } else {
                     for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
                         double derivative = 0.0;
                         for (std::size_t component = 0; component < vapor_count; ++component) {

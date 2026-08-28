@@ -13,7 +13,11 @@ from epcsaft import equilibrium
 from epcsaft.eos import Mixture, Pure
 from epcsaft.parameters import Parameters
 from tests.eos._cases import MULTINEUTRAL_REACTIVE, NEUTRAL_BINARY, neutral_ternary_pairs
-from tests.equilibrium._cases import multineutral_reaction, provider_boundary_case
+from tests.equilibrium._cases import (
+    multineutral_reaction,
+    provider_boundary_case,
+    solved_pressure_case,
+)
 
 PAIR_IDENTITY = "pair/ethane/methane/k_ij"
 PURE_IDENTITY = "component/ethane/dispersion_energy_over_k"
@@ -416,6 +420,90 @@ def full_space_fit_case(
         starts=(("off-truth", 2.8),),
         target_scale=float(truth.values[0]),
     )
+    return mapping, parameters, model, problem, parameter_identity, truth_value, truth
+
+
+def solved_pressure_fit_case(
+    tmp_path: Path,
+    *,
+    ideal_vapor: bool,
+) -> tuple[
+    dict[str, object],
+    Parameters,
+    Mixture,
+    equilibrium.GeneralReactiveEquilibriumProblem,
+    str,
+    float,
+    equilibrium.GeneralReactiveEquilibriumResult,
+]:
+    parameters, model, unanchored = solved_pressure_case(ideal_vapor=ideal_vapor)
+    parameter_identity = "component/solvent/segment_diameter"
+    truth_value = 2.9
+    truth_active = epcsaft.ActiveParameterSet(
+        parameters, (parameter_identity,), values=(truth_value,)
+    )
+    anchor = equilibrium.solve(model, unanchored, active_parameters=truth_active)
+    assert anchor.status == "evaluated" and anchor.continuation_state is not None
+    problem = replace(unanchored, continuation_state=anchor.continuation_state)
+    truth = equilibrium.solve(model, problem, active_parameters=truth_active)
+    assert truth.status == "evaluated" and all(value is not None for value in truth.values)
+    path, digest = write_parameters(tmp_path, parameters, "solved-pressure-parameters.json")
+    residuals = ("log_ratio", "scaled_difference", "log_ratio")
+    scales = (0.05, 0.01, 0.05)
+    mapping: dict[str, object] = {
+        "schema_version": 2,
+        "parameters": {"path": path, "sha256": digest},
+        "model": {"kind": "mixture"},
+        "active": {
+            "identities": [parameter_identity],
+            "coordinates": {
+                parameter_identity: {
+                    "bounds": [2.7, 3.05],
+                    "origin": 2.8,
+                    "scale": 0.1,
+                }
+            },
+            "ties": [],
+        },
+        "observations": [
+            {
+                "family": "equilibrium",
+                "identity": problem.identity,
+                "request": equilibrium.general_reactive_equilibrium_problem_to_mapping(problem),
+                "targets": [
+                    {
+                        "identity": f"manufactured-{output.identity}",
+                        "prediction_identity": output.identity,
+                        "observed": float(observed),
+                        "unit": output.unit,
+                        "residual": residual,
+                        "scale": scale,
+                        "multiplier": 1.0,
+                        "role": "verification",
+                        "measurement_classification": "manufactured",
+                        "basis": output.basis,
+                        "source_identity": "manufactured-solved-pressure",
+                        "source_hash": f"sha256:{'4' * 64}",
+                        "included": True,
+                        "drop_reason": None,
+                        "aggregate_identity": None,
+                        "covariance_identity": None,
+                    }
+                    for output, observed, residual, scale in zip(
+                        problem.outputs, truth.values, residuals, scales, strict=True
+                    )
+                ],
+                "multiplier": 1.0,
+            }
+        ],
+        "solver": {
+            "multistart": {
+                "starts": [{"identity": "off-truth", "values": [2.8]}],
+                "affine_bound_margin": 1.0e-7,
+            },
+            "controls": {"maximum_iterations": 80, "optimizer_tolerance": 1.0e-8},
+        },
+    }
     return mapping, parameters, model, problem, parameter_identity, truth_value, truth
 
 

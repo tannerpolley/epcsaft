@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ from tests.regression._cases import (
     full_space_fit_case,
     pressure,
     scaled_error,
+    solved_pressure_fit_case,
     with_parameter,
 )
 
@@ -120,3 +122,82 @@ def test_finite_owner_full_space_recovers_truth_with_complete_certificate(
         "evaluated",
         "evaluated",
     )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("ideal_vapor", [True, False], ids=("ideal", "provider"))
+def test_solved_pressure_full_space_derivatives_match_independent_resolves(
+    tmp_path: Path,
+    ideal_vapor: bool,
+) -> None:
+    """Falsify solved-pressure liquid response, vapor outputs, or residual scaling."""
+
+    mapping, parameters, model, problem, identity, truth_value, _ = solved_pressure_fit_case(
+        tmp_path, ideal_vapor=ideal_vapor
+    )
+    result = fit(mapping, base_path=tmp_path)
+    accepted = result.best_usable_start
+    assert accepted is not None
+    assert result.evaluation_strategy == "simultaneous_sparse_full_space"
+    assert accepted.final_physical == pytest.approx((truth_value,), abs=3.0e-6)
+    assert accepted.owner_failures == ()
+    assert result.accounting.failed_row_trials == 0
+    assert result.accounting.rejected_row_trials == 0
+    assert tuple((row.selector, row.residual, row.scale) for row in result.specification.rows) == (
+        ("pressure", "log_ratio", 0.05),
+        ("vapor-solvent-fraction", "scaled_difference", 0.01),
+        ("vapor-solvent-partial-pressure", "log_ratio", 0.05),
+    )
+
+    center_value = accepted.final_physical[0]
+    step = 1.0e-5
+    sides = tuple(
+        equilibrium.solve(
+            model,
+            problem,
+            active_parameters=epcsaft.ActiveParameterSet(
+                parameters, (identity,), values=(center_value + sign * step,)
+            ),
+        )
+        for sign in (-1.0, 1.0)
+    )
+    assert all(side.status == "evaluated" for side in sides)
+    centered = tuple(
+        (float(high) - float(low)) / (2.0 * step)
+        for low, high in zip(sides[0].values, sides[1].values, strict=True)
+    )
+    owner_derivatives = tuple(
+        residual_derivative
+        * row.scale
+        * (prediction if row.residual == "log_ratio" else 1.0)
+        / row.multiplier
+        for residual_derivative, row, prediction in zip(
+            accepted.physical_jacobian,
+            result.specification.rows,
+            accepted.predictions,
+            strict=True,
+        )
+    )
+    for exact, reference in zip(owner_derivatives, centered, strict=True):
+        assert scaled_error(exact, reference) <= 5.0e-5
+
+    if ideal_vapor:
+        center = equilibrium.solve(
+            model,
+            problem,
+            active_parameters=epcsaft.ActiveParameterSet(
+                parameters, (identity,), values=(center_value,)
+            ),
+        )
+        assert center.status == "evaluated"
+        temperature_k = float(problem.temperature.value.to("kelvin").magnitude)
+        liquid = center.phases[0]
+        fugacities = tuple(
+            math.exp(liquid.chemical_potential_over_rt[index])
+            * 8.31446261815324
+            * temperature_k
+            for index in (0, 1)
+        )
+        pressure_pa = math.fsum(fugacities)
+        reference = (pressure_pa, fugacities[0] / pressure_pa, fugacities[0])
+        assert center.values == pytest.approx(reference, rel=2.0e-10, abs=2.0e-8)
