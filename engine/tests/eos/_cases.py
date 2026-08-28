@@ -13,8 +13,6 @@ _PROVENANCE = {
 _UNITS = {
     "molar_mass": "kilogram / mole",
     "charge_number": "elementary-charge",
-    "dipole_moment": "debye",
-    "quadrupole_moment": "debye * angstrom",
     "segment_count": "dimensionless",
     "segment_diameter": "angstrom",
     "dispersion_energy_over_k": "kelvin",
@@ -32,7 +30,7 @@ _UNITS = {
     "ion_fraction_suppression_coefficient": "dimensionless",
     "ion_specific_suppression_coefficient": "dimensionless",
 }
-_FIXED = frozenset({"molar_mass", "charge_number", "dipole_moment", "quadrupole_moment"})
+_FIXED = frozenset({"molar_mass", "charge_number"})
 
 
 def _value(magnitude: float, family: str) -> dict[str, object]:
@@ -90,7 +88,6 @@ def _model_families(
     association: str = "none",
     electrolyte: str = "none",
     permittivity: str = "none",
-    polar: str = "none",
     born_corrections: tuple[float, float] | None = None,
 ) -> list[dict[str, object]]:
     choices = {
@@ -98,14 +95,12 @@ def _model_families(
         "base": "pc-saft",
         "electrolyte": electrolyte,
         "permittivity": permittivity,
-        "polar": polar,
     }
     family_ids = {
         "association": "model/association",
         "base": "model/base",
         "electrolyte": "model/electrolyte",
         "permittivity": "model/relative_permittivity",
-        "polar": "model/polar",
     }
     result = [
         {
@@ -402,7 +397,7 @@ NEUTRAL_TERNARY_IMMISCIBLE = _document(
 )
 
 
-def _ascani_2023_association_topology() -> dict[str, object]:
+def _esterification_association_topology() -> dict[str, object]:
     provenance = {
         "source_id": "ascani-2023",
         "locator": "Table 3 and standard PC-SAFT association combining rules",
@@ -476,7 +471,7 @@ def _replace_fixture_provenance(value: object, provenance: dict[str, str]) -> No
             _replace_fixture_provenance(item, provenance)
 
 
-ASCANI_2023_HYPOTHETICAL = _document(
+ESTERIFICATION_TERNARY = _document(
     "ascani-2023-hypothetical",
     [
         _component(
@@ -507,9 +502,9 @@ ASCANI_2023_HYPOTHETICAL = _document(
         _pair("b", "c", k_ij=-0.025),
     ],
     model_families=_model_families(association="general-site"),
-    topology=_ascani_2023_association_topology(),
+    topology=_esterification_association_topology(),
 )
-_ASCANI_2023_PROVENANCE = {
+_ESTERIFICATION_TERNARY_PROVENANCE = {
     "source_id": "ascani-2023",
     "locator": (
         "Table 3 and Section 3.2; molar masses are a stoichiometrically consistent "
@@ -517,8 +512,8 @@ _ASCANI_2023_PROVENANCE = {
     ),
     "domain_id": "ascani-2023-hypothetical",
 }
-_replace_fixture_provenance(ASCANI_2023_HYPOTHETICAL, _ASCANI_2023_PROVENANCE)
-ASCANI_2023_HYPOTHETICAL["sources"] = [
+_replace_fixture_provenance(ESTERIFICATION_TERNARY, _ESTERIFICATION_TERNARY_PROVENANCE)
+ESTERIFICATION_TERNARY["sources"] = [
     {
         "source_id": "ascani-2023",
         "citation": (
@@ -531,7 +526,7 @@ ASCANI_2023_HYPOTHETICAL["sources"] = [
         ),
     }
 ]
-ASCANI_2023_HYPOTHETICAL["domains"] = [{"domain_id": "ascani-2023-hypothetical", "kind": "unknown"}]
+ESTERIFICATION_TERNARY["domains"] = [{"domain_id": "ascani-2023-hypothetical", "kind": "unknown"}]
 
 CHARGED_TERNARY_IMMISCIBLE = _document(
     "charged-ternary-immiscible-fixture",
@@ -607,43 +602,6 @@ CHARGED_TERNARY_IMMISCIBLE = _document(
         )
     ],
     topology=_association_topology("alpha", 2200.0, 0.03),
-)
-
-POLAR_BINARY = _document(
-    "polar-binary-fixture",
-    [
-        _component(
-            "dipolar",
-            segment_count=1.5,
-            segment_diameter=3.4,
-            dispersion_energy_over_k=220.0,
-            dipole_moment=1.7,
-        ),
-        _component(
-            "quadrupolar",
-            segment_count=2.25,
-            segment_diameter=3.8,
-            dispersion_energy_over_k=280.0,
-            quadrupole_moment=4.1,
-        ),
-    ],
-    pairs=[_pair("dipolar", "quadrupolar", k_ij=0.08, l_ij=0.17)],
-    model_families=_model_families(polar="point-multipole"),
-)
-
-POLAR_PURE = _document(
-    "polar-pure-fixture",
-    [
-        _component(
-            "polar-fluid",
-            segment_count=1.5,
-            segment_diameter=3.4,
-            dispersion_energy_over_k=220.0,
-            dipole_moment=1.7,
-            quadrupole_moment=4.1,
-        )
-    ],
-    model_families=_model_families(polar="point-multipole"),
 )
 
 ASSOCIATING_PURE = _document(
@@ -766,7 +724,7 @@ AQUEOUS_ELECTROLYTE["domains"] = [
     }
 ]
 
-HELD_STRATEGY_2_TERNARY = _document(
+LITHIUM_CHLORIDE_TERNARY = _document(
     "held-strategy-2-ternary-fixture",
     [
         _component(
@@ -1037,6 +995,37 @@ def neutral_binary(component_ids: tuple[str, str]) -> dict[str, object]:
     )
 
 
+def neutral_ternary_pairs() -> dict[str, object]:
+    return _document(
+        "neutral-ternary-pair-fixture",
+        [
+            _component(
+                "alpha",
+                segment_count=1.1,
+                segment_diameter=3.1,
+                dispersion_energy_over_k=180.0,
+            ),
+            _component(
+                "beta",
+                segment_count=1.6,
+                segment_diameter=3.5,
+                dispersion_energy_over_k=230.0,
+            ),
+            _component(
+                "gamma",
+                segment_count=2.0,
+                segment_diameter=3.9,
+                dispersion_energy_over_k=290.0,
+            ),
+        ],
+        pairs=[
+            _pair("alpha", "beta", k_ij=0.03, l_ij=-0.02),
+            _pair("alpha", "gamma", k_ij=0.07, l_ij=0.04),
+            _pair("beta", "gamma", k_ij=-0.05, l_ij=0.01),
+        ],
+    )
+
+
 def component_values(mapping: dict[str, object], family: str) -> tuple[float | None, ...]:
     values = []
     for component in mapping["components"]:
@@ -1110,20 +1099,19 @@ def set_binary_pair_value(mapping: dict[str, object], family: str, magnitude: fl
 
 __all__ = (
     "AQUEOUS_ELECTROLYTE",
-    "ASCANI_2023_HYPOTHETICAL",
     "ASSOCIATING_PURE",
     "DIPOLAR_PERMITTIVITY_ELECTROLYTE",
+    "ESTERIFICATION_TERNARY",
     "MULTINEUTRAL_REACTIVE",
     "MULTISOLVENT_MULTIION",
     "NEUTRAL_ASSOCIATING_MIXTURE",
     "NEUTRAL_BINARY",
     "NEUTRAL_TERNARY_IMMISCIBLE",
-    "POLAR_BINARY",
-    "POLAR_PURE",
     "STRONGLY_ASSOCIATING_BINARY",
     "component_values",
     "neutral_binary",
     "neutral_pure",
+    "neutral_ternary_pairs",
     "pair_matrix",
     "set_binary_pair_value",
     "set_component_values",

@@ -8,7 +8,7 @@ import pytest
 
 from epcsaft import Mixture, NonEvaluableTrial, Parameters, State
 from epcsaft import unit_registry as u
-from tests.eos._raw_cases import (
+from tests.eos._cases import (
     AQUEOUS_ELECTROLYTE,
     NEUTRAL_BINARY,
     STRONGLY_ASSOCIATING_BINARY,

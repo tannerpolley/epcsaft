@@ -5,21 +5,21 @@
   "packet_id": "held-cameretti-sadowski-2008",
   "packet_version": "2",
   "packet_path": "data/packets/held-cameretti-sadowski-2008/2",
-  "packet_fingerprint": "891b6b6705169e35e9b1176040445bbe9a3fc6ccc6d908a1b6339caaf94cd944",
+  "packet_fingerprint": "abb954b1e76183947fc09ba1c86a5204479829f842a1b13f7a21933b24898d81",
   "materialization_mode": "byte-for-byte-test-fixture",
   "destination": "engine/tests/fixtures/data/held-cameretti-sadowski-2008/2",
   "files": [
     {
       "path": "packet.toml",
-      "sha256": "8c6051e1b0cf56e76182ec03d86ba36f412eed6b9516faa0eca1b50e20061ed2"
+      "sha256": "7ec9149da0b37ca180570de1d437d9fe602be2d9860b3de878513e09041b2e75"
     },
     {
       "path": "parameters/parameters.json",
-      "sha256": "9af36562ce26cc8216e5dc128c96e10d83a03e7a1e26cc76d895c9bdee954e84"
+      "sha256": "1db3c9c47d0b4fa4008b246f1de38e4dbb49a8ba851bf70a82c3c21fc3f803af"
     },
     {
       "path": "provenance/source-origin.toml",
-      "sha256": "7e78441c8fa1581bf1d7609122c52fc45c05aee600ae6ccb19cc5eda56bfa534"
+      "sha256": "c5990311acf09aca576691e0c99b7dd4906e1241b0d5da7bd0560de3634ff8b9"
     }
   ],
   "accepted_by": "unified-engine-direct-cutover-g3"

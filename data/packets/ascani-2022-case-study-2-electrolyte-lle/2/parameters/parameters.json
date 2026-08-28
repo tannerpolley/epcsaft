@@ -943,16 +943,6 @@
         "locator": "Supporting Information Eqs. S4-S7, component relative-permittivity mixing formulation",
         "domain_id": "ascani-case-study-2-298-15-k-1-bar"
       }
-    },
-    {
-      "family_id": "model/polar",
-      "kind": "polar",
-      "choice": "none",
-      "provenance": {
-        "source_id": "nist-srd-69-water",
-        "locator": "Water molecular weight",
-        "domain_id": "ascani-case-study-2-298-15-k-1-bar"
-      }
     }
   ],
   "model_coefficients": [

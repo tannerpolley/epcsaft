@@ -12,4 +12,4 @@ source_packet_fingerprint = "caac02d8f8855583f769a01092aa3868a25097a2989f6e36724
 [[files]]
 retained_path = "parameters/parameters.json"
 origin_path = "packets/figiel-yu-held-2025/1/parameters/{association.csv,bundle.toml,components.csv,correlations.toml,model.csv,pair.csv,single.csv,sites.csv}"
-sha256 = "45fe1e888259d7784716a105ef6ad9e292d7a2ff85e6a062093a0540c4edf113"
+sha256 = "1fc848864d868acdb39e3d61fb2d02bffbb0fd1e61e66e98d280500a97a67f46"

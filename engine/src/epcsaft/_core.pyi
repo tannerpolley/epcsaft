@@ -16,7 +16,6 @@ class NativeResult:
     hard_chain: float
     dispersion: float
     association: float
-    ares_polar: float
     debye_huckel: float
     born: float
     bulk_relative_permittivity: float

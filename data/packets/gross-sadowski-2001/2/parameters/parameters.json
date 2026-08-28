@@ -6467,16 +6467,6 @@
         "locator": "Neutral PC-SAFT formulation without electrolyte relative permittivity",
         "domain_id": "gross-formulation-domain"
       }
-    },
-    {
-      "family_id": "model/polar",
-      "kind": "polar",
-      "choice": "none",
-      "provenance": {
-        "source_id": "gross-sadowski-2001",
-        "locator": "Table 2, methane row, M_i and T range columns",
-        "domain_id": "methane-fit-range"
-      }
     }
   ],
   "model_coefficients": [],

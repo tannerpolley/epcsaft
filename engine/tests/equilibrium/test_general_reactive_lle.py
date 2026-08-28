@@ -11,9 +11,9 @@ import pytest
 
 import epcsaft
 from epcsaft import _core, equilibrium, regression
-from tests.eos._raw_cases import (
-    ASCANI_2023_HYPOTHETICAL,
+from tests.eos._cases import (
     CHARGED_TERNARY_IMMISCIBLE,
+    ESTERIFICATION_TERNARY,
     MULTINEUTRAL_REACTIVE,
     NEUTRAL_TERNARY_IMMISCIBLE,
 )
@@ -779,7 +779,7 @@ def _ascani_2023_problem() -> tuple[
 ]:
     """Configure Ascani's hypothetical Figure 3 through generic GREPE inputs."""
 
-    model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(ASCANI_2023_HYPOTHETICAL))
+    model = epcsaft.Mixture(epcsaft.Parameters.from_mapping(ESTERIFICATION_TERNARY))
     temperature = 300.0 * epcsaft.unit_registry.kelvin
     pressure = 1.0e5 * epcsaft.unit_registry.pascal
     pure_liquid_log_fugacity = []

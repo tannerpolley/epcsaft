@@ -12,4 +12,4 @@ source_packet_fingerprint = "6850a420751cc323f2700450aef8b900af95aa388b6acb003b1
 [[files]]
 retained_path = "parameters/parameters.json"
 origin_path = "packets/held-cameretti-sadowski-2008/1/parameters/{association.csv,bundle.toml,components.csv,correlations.toml,model.csv,pair.csv,single.csv,sites.csv}"
-sha256 = "9af36562ce26cc8216e5dc128c96e10d83a03e7a1e26cc76d895c9bdee954e84"
+sha256 = "1db3c9c47d0b4fa4008b246f1de38e4dbb49a8ba851bf70a82c3c21fc3f803af"

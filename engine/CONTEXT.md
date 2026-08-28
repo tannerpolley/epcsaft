@@ -149,13 +149,6 @@ A continuous, fixed-topology Parameter Identity with a valid domain and the
 CppAD derivative required by its selected Observation Family.
 _Avoid_: Stored-field allowlist, discrete fitted field, numerical fallback
 
-**Molecular Moment**:
-An independently measured or quantum-calculated permanent dipole or
-quadrupole moment consumed by a polar EOS contribution. Molecular Moments are
-fixed physical inputs, not ordinary Parameter Fit coordinates. An effective
-fitted moment would require a future, explicitly named model and use case.
-_Avoid_: Default fitted moment, unlabeled effective moment, inferred moment
-
 **Permittivity Submodel**:
 The auxiliary constitutive model that supplies state- and composition-dependent
 relative static permittivity to primitive electrolyte EOS contributions. EOS

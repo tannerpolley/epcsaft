@@ -59,7 +59,7 @@ _TOP_LEVEL = frozenset(
         "topology",
     }
 )
-_FIXED_FAMILIES = frozenset({"molar_mass", "charge_number", "dipole_moment", "quadrupole_moment"})
+_FIXED_FAMILIES = frozenset({"molar_mass", "charge_number"})
 _COMPONENT_COEFFICIENTS = frozenset(
     {
         "segment_count",
@@ -88,7 +88,6 @@ _MODEL_FAMILY_IDS: dict[str, str] = {
     "association": "model/association",
     "electrolyte": "model/electrolyte",
     "permittivity": "model/relative_permittivity",
-    "polar": "model/polar",
 }
 _MODEL_CHOICES = {
     "base": frozenset({"pc-saft"}),
@@ -107,7 +106,6 @@ _MODEL_CHOICES = {
             "solvent-only",
         }
     ),
-    "polar": frozenset({"none", "point-multipole"}),
 }
 _MODEL_IDENTITIES = {
     "ionic_region_relative_permittivity": (

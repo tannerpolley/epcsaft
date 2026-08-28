@@ -9,7 +9,7 @@ import pytest
 
 import epcsaft
 from epcsaft import equilibrium
-from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE, NEUTRAL_BINARY
+from tests.eos._cases import MULTINEUTRAL_REACTIVE, NEUTRAL_BINARY
 
 from .test_chemical_provider import _held_parameters, _multineutral_problem
 

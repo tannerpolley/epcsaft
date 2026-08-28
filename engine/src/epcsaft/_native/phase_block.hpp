@@ -210,9 +210,6 @@ template <typename Scalar> struct PhaseBlockParameters final {
   std::vector<int> charge_number;
   std::vector<double> packing_diameter_angstrom;
   int electrolyte_model;
-  std::vector<double> dipole_moment_debye;
-  std::vector<double> quadrupole_moment_debye_angstrom;
-  int polar_formulation;
 };
 
 template <typename Scalar>
@@ -240,9 +237,6 @@ phase_block_parameters(const NativeParameters &parameters) {
       parameters.charge_number,
       parameters.packing_diameter_angstrom,
       parameters.electrolyte_model,
-      parameters.dipole_moment_debye,
-      parameters.quadrupole_moment_debye_angstrom,
-      parameters.polar_formulation,
   };
 }
 
@@ -274,8 +268,7 @@ Scalar mixture_phase_helmholtz_over_rt_reference_amount(
     ideal += amount * (scalar_log(amount / volume) - Scalar(1.0));
   }
   // EqID: phase_dimensionless_helmholtz
-  return ideal + total * (contributions.hard_chain + contributions.dispersion +
-                          contributions.polar);
+  return ideal + total * (contributions.hard_chain + contributions.dispersion);
 }
 
 // EqExclude: input and domain validation
@@ -708,8 +701,7 @@ Scalar pure_phase_helmholtz_over_rt_reference_amount(
   const auto contributions =
       residual_helmholtz(Scalar(temperature), density, composition, parameters,
                          sigma, diameter, {}, Scalar(0.0), Scalar(0.0));
-  const Scalar residual =
-      contributions.hard_chain + contributions.dispersion + contributions.polar;
+  const Scalar residual = contributions.hard_chain + contributions.dispersion;
   // EqID: phase_dimensionless_helmholtz
   return amount * (scalar_log(density) - Scalar(1.0) + residual);
 }
@@ -1290,8 +1282,8 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
   const ADScalar phase =
       ideal +
       active_total * (contributions.hard_chain + contributions.dispersion +
-                      contributions.association + contributions.polar +
-                      contributions.debye_huckel + contributions.born);
+                      contributions.association + contributions.debye_huckel +
+                      contributions.born);
   const auto delta = association_delta_values(
       active_temperature, active_density, active_composition, parameters,
       sigma, diameter, association_energies, association_volumes);

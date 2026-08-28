@@ -766,16 +766,6 @@
         "locator": "Eq. 4, bulk relative-permittivity formulation",
         "domain_id": "khudaida-293-15-k-0-1-mpa"
       }
-    },
-    {
-      "family_id": "model/polar",
-      "kind": "polar",
-      "choice": "none",
-      "provenance": {
-        "source_id": "khudaida-et-al-2026",
-        "locator": "Table 2, water MW row",
-        "domain_id": "khudaida-293-15-k-0-1-mpa"
-      }
     }
   ],
   "model_coefficients": [

@@ -59,7 +59,6 @@ ALLOWED_EXCLUSIONS = frozenset(
 
 MATH_OWNER_FILES = (
     "src/epcsaft/_native/helmholtz.hpp",
-    "src/epcsaft/_native/polar.hpp",
     "src/epcsaft/_native/association.hpp",
     "src/epcsaft/_native/electrolyte.hpp",
     "src/epcsaft/_native/born.hpp",
@@ -122,6 +121,7 @@ def parse_equations(tex_path: Path, repo_root: Path) -> list[EquationEntry]:
         line = lines[index]
         if line.startswith(r"\section{"):
             section = line.removeprefix(r"\section{").removesuffix("}")
+            subsection = ""
         elif line.startswith(r"\subsection{"):
             subsection = line.removeprefix(r"\subsection{").removesuffix("}")
 

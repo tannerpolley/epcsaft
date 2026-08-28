@@ -10969,16 +10969,6 @@
         "locator": "Eq. (2), concentration-independent water dielectric in a uniform continuum",
         "domain_id": "held-aqueous-electrolyte-298-15-k-1-bar"
       }
-    },
-    {
-      "family_id": "model/polar",
-      "kind": "polar",
-      "choice": "none",
-      "provenance": {
-        "source_id": "nist-srd-69-water",
-        "locator": "Water record, molecular weight",
-        "domain_id": "nist-water-identity"
-      }
     }
   ],
   "model_coefficients": [],

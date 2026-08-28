@@ -586,9 +586,6 @@ def _native_arguments(
         list(model.polarizability_scaling_angstrom3) or [0.0] * components,
         list(model.correlation_integral_parameter) or [0.0] * components,
         relative_permittivity_formulation_codes[model.relative_permittivity_formulation],
-        list(model.dipole_moment_debye) or [0.0] * components,
-        list(model.quadrupole_moment_debye_angstrom) or [0.0] * components,
-        0 if model.polar_formulation is None else 1,
     )
 
 
@@ -818,21 +815,6 @@ class _EosModel:
                 expected=1.0,
                 tolerance=1.0e-12,
             )
-        polar_boundary = self._model.polar_formulation is not None and any(
-            fraction <= 0.0
-            and (
-                self._model.dipole_moment_debye[component] != 0.0
-                or self._model.quadrupole_moment_debye_angstrom[component] != 0.0
-            )
-            for component, fraction in enumerate(fractions)
-        )
-        if polar_boundary:
-            raise _eos_error(
-                "invalid-state",
-                field="x",
-                reason="polar-composition-boundary",
-            )
-
         if (
             self._model.temperature_min_k is not None
             and temperature_k < self._model.temperature_min_k
@@ -888,8 +870,6 @@ class _EosModel:
             try:
                 native = evaluator.evaluate(temperature_k, density_molar, fractions)
             except (RuntimeError, ValueError) as exc:
-                if str(exc) == "polar-domain-error":
-                    raise _eos_error("polar-domain-error") from exc
                 raise _eos_error("evaluation-failed", reason=str(exc)) from exc
         else:
             pressure_pa = _state_magnitude(P, "pascal", "P")
@@ -898,8 +878,6 @@ class _EosModel:
                     temperature_k, pressure_pa, fractions, phase or ""
                 )
             except (RuntimeError, ValueError) as exc:
-                if str(exc) == "polar-domain-error":
-                    raise _eos_error("polar-domain-error") from exc
                 raise _eos_error("evaluation-failed", reason=str(exc)) from exc
         diagnostics = native.density_diagnostics
         return State(
@@ -910,7 +888,6 @@ class _EosModel:
             hard_chain=native.hard_chain,
             dispersion=native.dispersion,
             association=native.association,
-            ares_polar=native.ares_polar,
             debye_huckel=native.debye_huckel,
             born=native.born,
             bulk_relative_permittivity=None
@@ -1696,6 +1673,7 @@ def _native_topology_fingerprint(model: _EosModel) -> str:
         and not resolved.site_ids
         and not resolved.association_pairs
     )
+    payload: dict[str, object]
     if neutral_phase:
         pure = len(resolved.component_ids) == 1
         payload = {
@@ -1710,16 +1688,10 @@ def _native_topology_fingerprint(model: _EosModel) -> str:
             "site_ids": resolved.site_ids,
             "site_multiplicity": resolved.site_multiplicity,
             "association_pair_count": len(resolved.association_pairs),
-            "polar_formulation": resolved.polar_formulation,
-            "dipole_presence": tuple(value > 0.0 for value in resolved.dipole_moment_debye),
-            "quadrupole_presence": tuple(
-                value > 0.0 for value in resolved.quadrupole_moment_debye_angstrom
-            ),
             "helmholtz_terms": (
                 "ideal",
                 "hard-chain",
                 "dispersion",
-                *(("polar",) if resolved.polar_formulation is not None else ()),
             ),
         }
     else:
@@ -1734,11 +1706,6 @@ def _native_topology_fingerprint(model: _EosModel) -> str:
                 (pair.endpoint_a, pair.endpoint_b) for pair in resolved.association_pairs
             ),
             "relative_permittivity_formulation": (resolved.relative_permittivity_formulation),
-            "polar_formulation": resolved.polar_formulation,
-            "dipole_presence": tuple(value > 0.0 for value in resolved.dipole_moment_debye),
-            "quadrupole_presence": tuple(
-                value > 0.0 for value in resolved.quadrupole_moment_debye_angstrom
-            ),
         }
     encoded = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
@@ -1824,7 +1791,6 @@ class State:
     hard_chain: float
     dispersion: float
     association: float
-    ares_polar: float
     debye_huckel: float
     born: float
     bulk_relative_permittivity: float | None

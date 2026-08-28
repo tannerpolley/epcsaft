@@ -6,7 +6,7 @@ import pytest
 
 import epcsaft
 from epcsaft import _core
-from tests.eos._raw_cases import NEUTRAL_TERNARY_IMMISCIBLE
+from tests.eos._cases import NEUTRAL_TERNARY_IMMISCIBLE
 
 from .chemical_equilibrium_cases import base_system as _base_system
 from .chemical_equilibrium_cases import bind_records as _bind_record

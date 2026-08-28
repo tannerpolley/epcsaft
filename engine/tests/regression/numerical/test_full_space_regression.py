@@ -16,7 +16,7 @@ from epcsaft import _core, equilibrium, regression
 from epcsaft.equilibrium._grepe import _native_general_reactive_equilibrium_inputs
 from epcsaft.regression._equilibrium_owner import _equilibrium_owner_batches
 from epcsaft.regression._model import ParameterFit
-from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE
+from tests.eos._cases import MULTINEUTRAL_REACTIVE
 from tests.equilibrium.test_chemical_provider import _multineutral_problem
 from tests.regression.numerical._monitoring import call_without_python_frames
 

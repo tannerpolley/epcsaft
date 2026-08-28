@@ -17,7 +17,7 @@ from .units import (
 _ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 _FAMILY_PATTERN = re.compile(r"[a-z0-9]+(?:[-_][a-z0-9]+)*\Z")
 type DomainKind = Literal["fit-range", "reported-conditions", "unknown"]
-type ModelFamilyKind = Literal["base", "association", "electrolyte", "permittivity", "polar"]
+type ModelFamilyKind = Literal["base", "association", "electrolyte", "permittivity"]
 type AssociationSiteRole = Literal["donor", "acceptor", "effective"]
 type AssociationEdgeSourceKind = Literal["explicit", "combining-rule"]
 type AssociationPreset = Literal["1a", "2b", "3b", "4c"]
@@ -31,7 +31,6 @@ type RelativePermittivityFormulation = Literal[
     "dipolar-density-perturbation",
     "solvent-only",
 ]
-type PolarFormulation = Literal["point-multipole"]
 type IonicDispersionFormulation = Literal[
     "all-ion-pairs",
     "exclude-same-sign-ion-pairs",
@@ -53,8 +52,6 @@ type SingleParameterFamily = Literal[
     "dipole_scaling",
     "polarizability_scaling",
     "correlation_integral_parameter",
-    "dipole_moment",
-    "quadrupole_moment",
 ]
 type PairParameterFamily = Literal["k_ij", "l_ij"]
 type CrossAssociationCorrectionFamily = Literal["k_hb_ij"]
@@ -84,8 +81,6 @@ _SINGLE_FAMILIES = frozenset(
         "dipole_scaling",
         "polarizability_scaling",
         "correlation_integral_parameter",
-        "dipole_moment",
-        "quadrupole_moment",
     }
 )
 _PAIR_FAMILIES = frozenset({"k_ij", "l_ij"})
@@ -112,8 +107,6 @@ _DIMENSIONAL_UNITS = {
     "dielectric_volume": "meter ** 3 / mole",
     "dielectric_temperature": "kelvin",
     "dipole_scaling": "debye ** 2",
-    "dipole_moment": "debye",
-    "quadrupole_moment": "debye * angstrom",
     "polarizability_scaling": "angstrom ** 3",
     "association_energy_over_k": "kelvin",
 }
@@ -228,7 +221,7 @@ class ModelFamilySpec:
         object.__setattr__(
             self, "family_id", _parameter_identity(self.family_id, field="family_id")
         )
-        if self.kind not in {"base", "association", "electrolyte", "permittivity", "polar"}:
+        if self.kind not in {"base", "association", "electrolyte", "permittivity"}:
             raise _error("invalid-value", field="model_family.kind", value=self.kind)
         object.__setattr__(self, "choice", _identifier(self.choice, field="model_family.choice"))
         corrections = (self.c_shell, self.c_dielectric)
@@ -987,7 +980,6 @@ __all__ = (
     "PairParameterRecord",
     "ParameterRecord",
     "ParameterSpec",
-    "PolarFormulation",
     "RelativePermittivityFormulation",
     "SingleParameterFamily",
     "SingleParameterRecord",

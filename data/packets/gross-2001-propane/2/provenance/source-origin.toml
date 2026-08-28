@@ -12,4 +12,4 @@ source_packet_fingerprint = "b039bdf6b9622019c46c1cb7342c6c88b64714b8ac64f2dc3d7
 [[files]]
 retained_path = "parameters/parameters.json"
 origin_path = "src/epcsaft/data/bundles/gross-2001-propane/1/{bundle.toml,components.csv,single.csv,model.csv}"
-sha256 = "18da14782e3f13d10c21e3e1c2333ca166add7f416a39097c7ab045a060aa423"
+sha256 = "5b72b92f1b47162e5fffee8641a83fc5354d15eeec2ac51658cb051c727bd099"
