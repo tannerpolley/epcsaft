@@ -48,7 +48,6 @@ PYBIND11_MODULE(_core, module) {
         .def_readonly("hard_chain", &epcsaft::NativeResult::hard_chain)
         .def_readonly("dispersion", &epcsaft::NativeResult::dispersion)
         .def_readonly("association", &epcsaft::NativeResult::association)
-        .def_readonly("ares_polar", &epcsaft::NativeResult::ares_polar)
         .def_readonly("debye_huckel", &epcsaft::NativeResult::debye_huckel)
         .def_readonly("born", &epcsaft::NativeResult::born)
         .def_readonly(
@@ -189,10 +188,7 @@ PYBIND11_MODULE(_core, module) {
             std::vector<double> dipole_scaling_debye2,
             std::vector<double> polarizability_scaling_angstrom3,
             std::vector<double> correlation_integral_parameter,
-            int relative_permittivity_formulation,
-            std::vector<double> dipole_moment_debye,
-            std::vector<double> quadrupole_moment_debye_angstrom,
-            int polar_formulation
+            int relative_permittivity_formulation
         ) {
             return epcsaft::NativeModel(epcsaft::NativeParameters{
                 std::move(segment_count),
@@ -231,9 +227,6 @@ PYBIND11_MODULE(_core, module) {
                 std::move(polarizability_scaling_angstrom3),
                 std::move(correlation_integral_parameter),
                 relative_permittivity_formulation,
-                std::move(dipole_moment_debye),
-                std::move(quadrupole_moment_debye_angstrom),
-                polar_formulation,
             });
         }))
         .def("evaluate", &epcsaft::NativeModel::evaluate)

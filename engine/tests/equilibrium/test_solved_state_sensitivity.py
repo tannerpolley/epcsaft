@@ -17,7 +17,7 @@ from epcsaft.equilibrium import (
     PhaseSpecification,
     solve,
 )
-from tests.eos._raw_cases import AQUEOUS_ELECTROLYTE, NEUTRAL_BINARY
+from tests.eos._cases import AQUEOUS_ELECTROLYTE, NEUTRAL_BINARY
 
 _TEMPERATURE_K = 243.58
 _PRESSURE_PA = 3.949e6

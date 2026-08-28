@@ -24,7 +24,7 @@ from epcsaft.equilibrium import (
     PhaseSpecification,
     solve,
 )
-from tests.eos._raw_cases import (
+from tests.eos._cases import (
     AQUEOUS_ELECTROLYTE,
     CHARGED_TERNARY_IMMISCIBLE,
     MULTINEUTRAL_REACTIVE,

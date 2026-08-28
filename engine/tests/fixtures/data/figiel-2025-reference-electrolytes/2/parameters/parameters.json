@@ -1324,16 +1324,6 @@
         "locator": "Eq. 11, bulk relative-permittivity formulation",
         "domain_id": "figiel-298-k-1-bar"
       }
-    },
-    {
-      "family_id": "model/polar",
-      "kind": "polar",
-      "choice": "none",
-      "provenance": {
-        "source_id": "nist-srd-69-water",
-        "locator": "Water record, molecular weight",
-        "domain_id": "nist-water-identity"
-      }
     }
   ],
   "model_coefficients": [

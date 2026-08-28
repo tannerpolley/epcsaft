@@ -1749,16 +1749,6 @@
         "locator": "compact pure-parameter packet",
         "domain_id": "figiel-298-k-1-bar"
       }
-    },
-    {
-      "family_id": "model/polar",
-      "kind": "polar",
-      "choice": "none",
-      "provenance": {
-        "source_id": "figiel-yu-held-2025",
-        "locator": "compact pure-parameter packet",
-        "domain_id": "figiel-298-k-1-bar"
-      }
     }
   ],
   "model_coefficients": [

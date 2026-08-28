@@ -12,4 +12,4 @@ source_packet_fingerprint = "4b20a82c7ed8f34ec9a60ab547014b78064c3331ce636c49d32
 [[files]]
 retained_path = "parameters/parameters.json"
 origin_path = "packets/gross-2001-methane-ethane/1/parameters/{bundle.toml,components.csv,model.csv,pair.csv,single.csv}"
-sha256 = "d4df9924fc26fff874e2ba08c9c030b0eece24c8d5e25b5f6bcdd3ff26f0eaf1"
+sha256 = "7dd1899712aacfbc3395d86349768b0d93dd5dfd75b2e0f0700640be618aa9c2"

@@ -11,7 +11,7 @@ import pytest
 
 import epcsaft
 from epcsaft import _core, equilibrium, regression
-from tests.eos._raw_cases import (
+from tests.eos._cases import (
     ASCANI_2023_HYPOTHETICAL,
     CHARGED_TERNARY_IMMISCIBLE,
     MULTINEUTRAL_REACTIVE,

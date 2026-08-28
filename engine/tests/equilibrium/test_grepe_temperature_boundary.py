@@ -4,7 +4,7 @@ import pytest
 
 import epcsaft
 from epcsaft import equilibrium
-from tests.eos._raw_cases import STRONGLY_ASSOCIATING_BINARY
+from tests.eos._cases import STRONGLY_ASSOCIATING_BINARY
 
 
 def _nonreactive_problem(

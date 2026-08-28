@@ -130,16 +130,6 @@
         "locator": "Neutral PC-SAFT formulation without electrolyte relative permittivity",
         "domain_id": "propane-fit-range"
       }
-    },
-    {
-      "family_id": "model/polar",
-      "kind": "polar",
-      "choice": "none",
-      "provenance": {
-        "source_id": "gross-sadowski-2001",
-        "locator": "Accepted propane parameter set contains no permanent multipole specification",
-        "domain_id": "propane-fit-range"
-      }
     }
   ],
   "model_coefficients": [],

@@ -9,7 +9,7 @@ import pytest
 
 import epcsaft
 from epcsaft import equilibrium
-from tests.eos._raw_cases import (
+from tests.eos._cases import (
     HELD_STRATEGY_2_TERNARY,
     _component,
     _constant_correlation,

@@ -15,8 +15,7 @@ from epcsaft.eos import Mixture, Pure
 from epcsaft.parameters import Parameters
 from epcsaft.regression import FitPreflightError, FitResult, ParameterFit, fit
 from epcsaft.units import unit_registry
-from tests.eos._raw_cases import NEUTRAL_BINARY
-from tests.eos.numerical.test_parameter_derivatives import _neutral_ternary_pairs
+from tests.eos._cases import NEUTRAL_BINARY, neutral_ternary_pairs
 from tests.regression.numerical._monitoring import call_without_python_frames
 
 _PURE_IDENTITY = "component/ethane/dispersion_energy_over_k"
@@ -102,7 +101,7 @@ def _mixed_fit_mapping(
 ) -> tuple[
     dict[str, object], Parameters, tuple[tuple[float, float, tuple[float, ...], float], ...]
 ]:
-    true_parameters = Parameters.from_mapping(_neutral_ternary_pairs())
+    true_parameters = Parameters.from_mapping(neutral_ternary_pairs())
     true_model = Mixture(true_parameters)
     state_groups = (
         ((305.0, 300.0), (325.0, 1800.0), (0.15, 0.25, 0.60)),
@@ -344,7 +343,7 @@ def test_tied_owner_coordinate_reports_interior_covariance_and_active_bound(
     """Falsify tied derivatives, free covariance, and bound ambiguity."""
 
     pair_beta_gamma, gamma_energy, pair_alpha_beta = _MIXED_IDENTITIES
-    true_parameters = Parameters.from_mapping(_neutral_ternary_pairs()).with_values(
+    true_parameters = Parameters.from_mapping(neutral_ternary_pairs()).with_values(
         {pair_beta_gamma: 0.05, pair_alpha_beta: 0.05},
         source_id="regression-tied-truth",
         locator="project-authored numerical fixture",

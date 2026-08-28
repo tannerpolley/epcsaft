@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tests.eos._raw_cases import (
+from tests.eos._cases import (
     neutral_pure,
     set_component_values,
 )

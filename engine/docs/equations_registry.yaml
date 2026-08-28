@@ -2,7 +2,7 @@ schema_version: 1
 equations:
   - eqid: "active_binary_interaction_mapping"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:active_binary_interaction_mapping"
     source: "EOS active-coordinate convention for the symmetric binary pair"
     status: "Implementation convention"
@@ -10,15 +10,15 @@ equations:
     change_note: "Resolved diagonal values remain fixed."
     latex: "\\boldsymbol{k}(\\theta)=\n\\begin{bmatrix}\nk_{11}&\\theta\\\\\n\\theta&k_{22}\n\\end{bmatrix}.\n\\label{eq:active_binary_interaction_mapping}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1167
+    tex_line: 991
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 812
-        comment_line: 948
+        line: 804
+        comment_line: 940
         symbol: "fixed_topology_parameterized_mixture_phase_block"
   - eqid: "active_binary_size_interaction_mapping"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:active_binary_size_interaction_mapping"
     source: "EOS active-coordinate convention for the symmetric binary pair"
     status: "Implementation convention"
@@ -26,11 +26,11 @@ equations:
     change_note: "Resolved diagonal values remain fixed and k_ij remains unchanged."
     latex: "\\boldsymbol{l}(\\theta)=\n\\begin{bmatrix}\nl_{11}&\\theta\\\\\n\\theta&l_{22}\n\\end{bmatrix}.\n\\label{eq:active_binary_size_interaction_mapping}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1181
+    tex_line: 1005
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 812
-        comment_line: 949
+        line: 804
+        comment_line: 941
         symbol: "fixed_topology_parameterized_mixture_phase_block"
   - eqid: "angstrom_number_density"
     section: "Symbols, bases, and units"
@@ -45,8 +45,8 @@ equations:
     tex_line: 42
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 217
+        line: 202
+        comment_line: 215
         symbol: "residual_helmholtz"
   - eqid: "association_contact"
     section: "Contribution intermediates"
@@ -77,8 +77,8 @@ equations:
     tex_line: 363
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 339
+        line: 202
+        comment_line: 337
         symbol: "residual_helmholtz"
   - eqid: "association_mass_action"
     section: "Contribution intermediates"
@@ -97,12 +97,12 @@ equations:
         comment_line: 139
         symbol: "association_residuals"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 483
-        comment_line: 429
+        line: 476
+        comment_line: 422
         symbol: "apply_active_packing_parameters"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 812
-        comment_line: 808
+        line: 804
+        comment_line: 800
         symbol: "fixed_topology_parameterized_mixture_phase_block"
   - eqid: "association_strength"
     section: "Contribution intermediates"
@@ -122,7 +122,7 @@ equations:
         symbol: "association_delta_values"
   - eqid: "born_outer_shell_diameter"
     section: "Born solvation relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:born_outer_shell_diameter"
     source: "\\cite{Figiel2025}, shell-thickness definition preceding Eq.~(7), parameterized to include its uncorrected limit"
     status: "Source equation"
@@ -130,7 +130,7 @@ equations:
     change_note: "The fitted Born diameter, solvation factor, and model-definition coefficient remain distinct inputs."
     latex: "f_{\\mathrm{mix}}=\\frac{\\sum_kx_kf_k}{\\sum_kx_k},\\qquad\nD_i=d_i^{Born}\\left(1+c_{\\mathrm{shell}}\\frac{f_{\\mathrm{mix}}-1}{|z_i|}\\right).\n\\label{eq:born_outer_shell_diameter}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 952
+    tex_line: 776
     implementation_refs:
       - file: "src/epcsaft/_native/born.hpp"
         line: 15
@@ -138,7 +138,7 @@ equations:
         symbol: "born_contribution"
   - eqid: "born_radial_charging_work"
     section: "Born solvation relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:born_radial_charging_work"
     source: "Born charging work; \\cite{Figiel2026Correction}, corrected Eq.~(7)"
     status: "Source equation"
@@ -146,7 +146,7 @@ equations:
     change_note: "The admitted fixed coefficients express the uncorrected, shell-only, and shell-plus-dielectric limits through one equation."
     latex: "W_{Born}=\n\\sum_{i\\in\\mathcal{I}}x_i z_i^2\n\\left[\n\\frac{1-\\epsilon_{r,\\mathrm{bulk}}^{-1}}{D_i}\n+c_{\\mathrm{dielectric}}\\left(1-\\epsilon_{r,i}^{-1}\\right)\n\\left(\\frac{1}{d_i^{Born}}-\\frac{1}{D_i}\\right)\n\\right].\n\\label{eq:born_radial_charging_work}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 963
+    tex_line: 787
     implementation_refs:
       - file: "src/epcsaft/_native/born.hpp"
         line: 15
@@ -154,7 +154,7 @@ equations:
         symbol: "born_contribution"
   - eqid: "born_residual_helmholtz"
     section: "Born solvation relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:born_residual_helmholtz"
     source: "Born charging work; \\cite{Figiel2026Correction}, corrected Eq.~(7)"
     status: "Source equation"
@@ -162,7 +162,7 @@ equations:
     change_note: "Shared by fixed and active-coordinate evaluation paths without a formulation selector."
     latex: "a^{Born}=-\\frac{e^2}{4\\pi\\epsilon_0k_BT}\\,W_{Born}.\n\\label{eq:born_residual_helmholtz}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 979
+    tex_line: 803
     implementation_refs:
       - file: "src/epcsaft/_native/born.hpp"
         line: 15
@@ -181,12 +181,12 @@ equations:
     tex_line: 151
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 137
-        comment_line: 136
+        line: 135
+        comment_line: 134
         symbol: "close_packing_fraction"
   - eqid: "component_mixed_bulk_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:component_mixed_bulk_permittivity"
     source: "\\cite{AscaniHeld2021}, Eq.~(13)"
     status: "Source equation"
@@ -194,7 +194,7 @@ equations:
     change_note: "Ion mixture permittivities remain distinct from Figiel radial-region permittivity."
     latex: "\\epsilon_{r,\\mathrm{bulk}}=\n\\epsilon_{r,\\mathrm{sf}}\\sum_{s\\in\\mathcal{S}}x_s\n+\\sum_{i\\in\\mathcal{I}}x_i\\epsilon_{r,i}.\n\\label{eq:component_mixed_bulk_permittivity}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 814
+    tex_line: 638
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 116
@@ -206,7 +206,7 @@ equations:
         symbol: "bulk_relative_permittivity"
   - eqid: "component_permittivity_temperature_polynomial"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:component_permittivity_temperature_polynomial"
     source: "Typed constitutive correlation"
     status: "Implementation convention"
@@ -214,7 +214,7 @@ equations:
     change_note: "Each continuous coefficient is independently selectable while the polynomial powers and reference temperature remain fixed."
     latex: "\\epsilon_{r,s}(T)=c_{0,s}+\\sum_{n=1}^{N_s}c_{n,s}\n(T-T_{\\mathrm{ref},s})^n.\n\\label{eq:component_permittivity_temperature_polynomial}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 789
+    tex_line: 613
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 45
@@ -222,7 +222,7 @@ equations:
         symbol: "component_relative_permittivities"
   - eqid: "compressibility_factor"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:compressibility_factor"
     source: "\\cite{Gross2001}, Eq.~(A.24)"
     status: "Source equation"
@@ -230,15 +230,15 @@ equations:
     change_note: "Uses molar density as the independent density coordinate."
     latex: "Z=1+\\rho_m a_\\rho,\n\\qquad\na_\\rho=\\left(\\frac{\\partial a^r}{\\partial\\rho_m}\\right)_{T,\\boldsymbol{x}}.\n\\label{eq:compressibility_factor}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 569
+    tex_line: 393
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1297
-        comment_line: 1331
+        line: 1246
+        comment_line: 1276
         symbol: "evaluate"
   - eqid: "cross_association_energy_correction"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:cross_association_energy_correction"
     source: "EOS typed cross-association correction applied to the declared arithmetic energy combining rule"
     status: "Implementation convention"
@@ -246,11 +246,11 @@ equations:
     change_note: "One unordered component-and-role coordinate owns every multiplicity-equivalent matching edge."
     latex: "\\frac{\\epsilon_{AB,r}^{ij}}{k_B}\n=\\left(1-k_{\\mathrm{HB},ij,r}\\right)\n\\frac{\\epsilon_{AB,r,0}^{ij}}{k_B},\n\\qquad\n\\frac{\\partial\\left(\\epsilon_{AB,r}^{ij}/k_B\\right)}\n{\\partial k_{\\mathrm{HB},ij,r}}\n=-\\frac{\\epsilon_{AB,r,0}^{ij}}{k_B}.\n\\label{eq:cross_association_energy_correction}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1195
+    tex_line: 1019
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 812
-        comment_line: 969
+        line: 804
+        comment_line: 961
         symbol: "fixed_topology_parameterized_mixture_phase_block"
   - eqid: "cross_dispersion_energy"
     section: "Parameter setup"
@@ -265,8 +265,8 @@ equations:
     tex_line: 95
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 314
+        line: 202
+        comment_line: 312
         symbol: "residual_helmholtz"
   - eqid: "cross_segment_diameter"
     section: "Parameter setup"
@@ -281,12 +281,12 @@ equations:
     tex_line: 85
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 310
+        line: 202
+        comment_line: 308
         symbol: "residual_helmholtz"
   - eqid: "debye_finite_size_chi"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:debye_finite_size_chi"
     source: "\\cite{Bulow2019}, finite-size function in Eq.~(2)"
     status: "Source equation"
@@ -294,7 +294,7 @@ equations:
     change_note: "The reference-state reduced diameter selects the numerical branch."
     latex: "\\chi(y)=\n\\begin{cases}\n1-\\dfrac{3}{4}y+\\dfrac{3}{5}y^2-\\dfrac{1}{2}y^3\n+\\dfrac{3}{7}y^4-\\dfrac{3}{8}y^5+\\dfrac{1}{3}y^6,\n& y_{\\mathrm{ref}}<10^{-3},\\\\[6pt]\n\\dfrac{3\\left[\\ln(1+y)-y+y^2/2\\right]}{y^3},\n& y_{\\mathrm{ref}}\\ge10^{-3},\n\\end{cases}\n\\qquad y=\\kappa d_i.\n\\label{eq:debye_finite_size_chi}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 919
+    tex_line: 743
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 246
@@ -302,7 +302,7 @@ equations:
         symbol: "finite_size_chi"
   - eqid: "debye_huckel_helmholtz"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:debye_huckel_helmholtz"
     source: "\\cite{Bulow2019}, Eq.~(2)"
     status: "Source equation"
@@ -310,7 +310,7 @@ equations:
     change_note: "Uses the model-routed common segment diameter converted to metres."
     latex: "a^{DH}=\n-\\frac{\\kappa e^2}\n{12\\pi\\epsilon_0\\epsilon_{r,\\mathrm{bulk}}k_BT}\n\\sum_{i\\in\\mathcal{I}}x_i z_i^2\\chi(\\kappa d_i).\n\\label{eq:debye_huckel_helmholtz}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 937
+    tex_line: 761
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 264
@@ -318,7 +318,7 @@ equations:
         symbol: "electrolyte_contribution"
   - eqid: "debye_screening_parameter"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:debye_screening_parameter"
     source: "\\cite{Bulow2019}, Debye screening definition associated with Eq.~(2)"
     status: "Source equation"
@@ -326,7 +326,7 @@ equations:
     change_note: "Uses molar density and the current EOS physical constants."
     latex: "\\kappa=\n\\sqrt{\\frac{\\rho_mN_Ae^2S_z}\n{\\epsilon_0\\epsilon_{r,\\mathrm{bulk}}k_BT}}.\n\\label{eq:debye_screening_parameter}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 907
+    tex_line: 731
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 264
@@ -334,7 +334,7 @@ equations:
         symbol: "electrolyte_contribution"
   - eqid: "declared_solvent_source_reference_transfer"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:declared_solvent_source_reference_transfer"
     source: "Exact change of source activity scale on the neutral-reference basis"
     status: "Exact derivation"
@@ -342,7 +342,7 @@ equations:
     change_note: "The source pressure is provenance; every fugacity contraction is evaluated at the requested trial pressure."
     latex: "\\begin{aligned}\n\\Delta_r^{\\mathrm{src}\\rightarrow\\mathrm{Provider}}\n&=c_r+s_r+\\Delta\\nu_r\\ln\\!\\left(\\frac{P}{\\rho^\\circ RT}\\right),\\\\\ns_r&=\\sum_i b_i^{(r)}\\ell_i^{\\mathrm{src}},\\\\\n\\ell_i^{\\mathrm{src}}&=\n\\begin{cases}\n\\ln x_i^S, & z_i=0,\\ x_i^S>0,\\\\\n\\ln(\\overline M_S m^\\circ), & z_i=0,\\ x_i^S=0,\\\\\n\\ln(\\overline M_S m^\\circ), & z_i\\ne0.\n\\end{cases}\n\\end{aligned}\n\\label{eq:declared_solvent_source_reference_transfer}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1279
+    tex_line: 1103
     implementation_refs:
       - file: "cpp/equilibrium/source_reference.cpp"
         line: 193
@@ -350,7 +350,7 @@ equations:
         symbol: "evaluate_source_reference_transfer"
   - eqid: "density_correlated_bulk_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:density_correlated_bulk_permittivity"
     source: "Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (1a), (2a), and (2b)"
     status: "Bounded empirical relation"
@@ -358,7 +358,7 @@ equations:
     change_note: "The solvent partial density makes the dilute-density limit explicit."
     latex: "\\epsilon_{r,\\mathrm{bulk}}=\n1+\\rho_m x_{\\mathrm{solv}}d_{V,\\mathrm{mix}}\n\\left(\\frac{d_{T,\\mathrm{mix}}}{T}-1\\right).\n\\label{eq:density_correlated_bulk_permittivity}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 839
+    tex_line: 663
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 116
@@ -366,7 +366,7 @@ equations:
         symbol: "bulk_relative_permittivity"
   - eqid: "density_correlation_mixed_parameters"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:density_correlation_mixed_parameters"
     source: "Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (2a)--(2b)"
     status: "Bounded empirical relation"
@@ -374,7 +374,7 @@ equations:
     change_note: "Only neutral-solvent components enter these mixtures."
     latex: "x_{\\mathrm{solv}}=\\sum_{s\\in\\mathcal{S}}x_s,\\qquad\nd_{V,\\mathrm{mix}}=\\frac{\\sum_{s\\in\\mathcal{S}}x_sd_{V,s}}{x_{\\mathrm{solv}}},\n\\qquad\nd_{T,\\mathrm{mix}}=\\frac{\\sum_{s\\in\\mathcal{S}}x_sd_{T,s}}{x_{\\mathrm{solv}}}.\n\\label{eq:density_correlation_mixed_parameters}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 826
+    tex_line: 650
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 116
@@ -382,7 +382,7 @@ equations:
         symbol: "bulk_relative_permittivity"
   - eqid: "density_residual"
     section: "Density closure and mechanical domain"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:density_residual"
     source: "Exact pressure-closure equation using Eq.~\\eqref{eq:pressure}"
     status: "Exact derivation"
@@ -390,7 +390,7 @@ equations:
     change_note: "Root-search mechanics are not thermodynamic equations."
     latex: "F(\\rho_m;T,\\boldsymbol{x},P^\\star)\n=P_{\\mathrm{EOS}}(T,\\rho_m,\\boldsymbol{x})-P^\\star=0.\n\\label{eq:density_residual}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 722
+    tex_line: 546
     implementation_refs:
       - file: "src/epcsaft/_native/density.hpp"
         line: 34
@@ -398,7 +398,7 @@ equations:
         symbol: "refine_density_root"
   - eqid: "density_upper_bound"
     section: "Density closure and mechanical domain"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:density_upper_bound"
     source: "Exact inversion of Eqs.~\\eqref{eq:packing_fraction_coefficient} and \\eqref{eq:close_packing_fraction}"
     status: "Exact derivation"
@@ -406,15 +406,15 @@ equations:
     change_note: "Reuses the sole EOS packing geometry owner."
     latex: "\\rho_{\\max}=\\frac{\\eta_{\\mathrm{cp}}}{c_\\eta(T,\\boldsymbol{x})}.\n\\label{eq:density_upper_bound}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 743
+    tex_line: 567
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1409
-        comment_line: 1421
+        line: 1353
+        comment_line: 1362
         symbol: "evaluate_pressure"
   - eqid: "dipolar_correlation_integral"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:dipolar_correlation_integral"
     source: "Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (5)"
     status: "Source equation"
@@ -422,7 +422,7 @@ equations:
     change_note: "The correlation parameter is an explicit record for every component."
     latex: "I=1+\\left(\\sum_i a_{2,i}x_i\\right)\\left[\\exp(-y)-1\\right].\n\\label{eq:dipolar_correlation_integral}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 876
+    tex_line: 700
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 116
@@ -434,7 +434,7 @@ equations:
         symbol: "bulk_relative_permittivity"
   - eqid: "dipolar_perturbation_bulk_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:dipolar_perturbation_bulk_permittivity"
     source: "Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (6)"
     status: "Source equation"
@@ -442,7 +442,7 @@ equations:
     change_note: "The relation tends to one as all component partial densities vanish."
     latex: "\\epsilon_{r,\\mathrm{bulk}}=\n1+3y\\left\\{1+y+\\left[\\frac{17}{16}I-1\\right]y^2\\right\\}.\n\\label{eq:dipolar_perturbation_bulk_permittivity}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 886
+    tex_line: 710
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 116
@@ -461,8 +461,8 @@ equations:
     tex_line: 228
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 278
+        line: 202
+        comment_line: 276
         symbol: "residual_helmholtz"
   - eqid: "dispersion_compressibility_factor"
     section: "Contribution intermediates"
@@ -477,8 +477,8 @@ equations:
     tex_line: 275
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 296
+        line: 202
+        comment_line: 294
         symbol: "residual_helmholtz"
   - eqid: "dispersion_first_moment"
     section: "Contribution intermediates"
@@ -493,8 +493,8 @@ equations:
     tex_line: 290
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 327
+        line: 202
+        comment_line: 325
         symbol: "residual_helmholtz"
   - eqid: "dispersion_helmholtz"
     section: "Contribution intermediates"
@@ -509,8 +509,8 @@ equations:
     tex_line: 312
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 334
+        line: 202
+        comment_line: 332
         symbol: "residual_helmholtz"
   - eqid: "dispersion_integral_one"
     section: "Contribution intermediates"
@@ -525,8 +525,8 @@ equations:
     tex_line: 255
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 289
+        line: 202
+        comment_line: 287
         symbol: "residual_helmholtz"
   - eqid: "dispersion_integral_two"
     section: "Contribution intermediates"
@@ -541,8 +541,8 @@ equations:
     tex_line: 265
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 291
+        line: 202
+        comment_line: 289
         symbol: "residual_helmholtz"
   - eqid: "dispersion_polynomial"
     section: "Contribution intermediates"
@@ -557,8 +557,8 @@ equations:
     tex_line: 245
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 85
-        comment_line: 84
+        line: 83
+        comment_line: 82
         symbol: "polynomial"
   - eqid: "dispersion_second_moment"
     section: "Contribution intermediates"
@@ -573,12 +573,12 @@ equations:
     tex_line: 301
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 329
+        line: 202
+        comment_line: 327
         symbol: "residual_helmholtz"
   - eqid: "effective_dipolar_density"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:effective_dipolar_density"
     source: "Rueben et al. (2024), DOI 10.1021/acs.jced.4c00347, Eq. (4)"
     status: "Source equation"
@@ -586,7 +586,7 @@ equations:
     change_note: "Dipole-squared and polarizability records are explicit for every component."
     latex: "y=\\frac{4\\pi}{9}\\sum_i \\widehat{\\rho}_i\n\\left(\\frac{\\mu_i^2\\,10^{-19}}{k_BT}+3\\alpha_i\\right),\n\\qquad\n\\widehat{\\rho}_i=\\rho_mN_Ax_i10^{-30}.\n\\label{eq:effective_dipolar_density}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 863
+    tex_line: 687
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 116
@@ -598,7 +598,7 @@ equations:
         symbol: "bulk_relative_permittivity"
   - eqid: "electrolyte_phase_coordinate_jacobian"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:electrolyte_phase_coordinate_jacobian"
     source: "Exact Jacobian of Eqs.~\\eqref{eq:phase_mole_fraction}--\\eqref{eq:phase_molar_density}"
     status: "Exact derivation"
@@ -606,15 +606,15 @@ equations:
     change_note: "Retained by the Equilibrium provider workflow pending CAP-07; the generic EOS tape differentiates amount-volume coordinates directly."
     latex: "\\frac{\\partial\\rho_m}{\\partial n_j}=\\frac{1}{V},\n\\quad\n\\frac{\\partial\\rho_m}{\\partial V}=-\\frac{n}{V^2},\n\\quad\n\\frac{\\partial x_i}{\\partial n_j}=\\frac{\\delta_{ij}-x_i}{n},\n\\quad\n\\frac{\\partial x_i}{\\partial V}=0.\n\\label{eq:electrolyte_phase_coordinate_jacobian}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1224
+    tex_line: 1048
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 812
-        comment_line: 809
+        line: 804
+        comment_line: 801
         symbol: "fixed_topology_parameterized_mixture_phase_block"
   - eqid: "electrolyte_phase_hessian_chain_rule"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:electrolyte_phase_hessian_chain_rule"
     source: "Exact second-order multivariable chain rule"
     status: "Exact derivation"
@@ -622,15 +622,15 @@ equations:
     change_note: "Retained by the Equilibrium provider workflow pending CAP-07; the generic EOS tape differentiates amount-volume coordinates directly."
     latex: "\\frac{\\partial^2(na^r)}{\\partial q_\\alpha\\partial q_\\beta}\n=n_\\alpha a^r_{y_p}y_{p,\\beta}\n+n_\\beta a^r_{y_p}y_{p,\\alpha}\n+n\\left(\na^r_{y_py_q}y_{p,\\alpha}y_{q,\\beta}\n+a^r_{y_p}y_{p,\\alpha\\beta}\n\\right),\n\\quad\n\\boldsymbol{y}=(\\rho_m,\\boldsymbol{x}).\n\\label{eq:electrolyte_phase_hessian_chain_rule}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1240
+    tex_line: 1064
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 812
-        comment_line: 810
+        line: 804
+        comment_line: 802
         symbol: "fixed_topology_parameterized_mixture_phase_block"
   - eqid: "fixed_pressure_fugacity_correction"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:fixed_pressure_fugacity_correction"
     source: "EOS Newton correction using Eq.~\\eqref{eq:pressure_density_derivative}"
     status: "Documentation-only"
@@ -638,11 +638,11 @@ equations:
     change_note: "Retained as provenance after the active-coordinate path adopted an exact extensive-coordinate pressure constraint."
     latex: "\\begin{aligned}\n\\Delta\\rho_m&=-\\frac{P-P^\\star}{P_\\rho},\\\\\n\\ln\\phi_i(P^\\star)&\\approx\n\\ln\\phi_i(P)+(\\ln\\phi_i)_\\rho\\,\\Delta\\rho_m.\n\\end{aligned}\n\\label{eq:fixed_pressure_fugacity_correction}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 693
+    tex_line: 517
     implementation_refs:
   - eqid: "fixed_pressure_total_derivative"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:fixed_pressure_total_derivative"
     source: "Exact implicit derivative of the pressure constraint"
     status: "Exact derivation"
@@ -650,19 +650,19 @@ equations:
     change_note: "Applied by the generic EOS active-coordinate block, including canonical Born, solvation, and permittivity coordinates."
     latex: "\\left.\\frac{dQ}{d\\theta}\\right|_{P}\n=Q_\\theta+Q_\\rho\\left.\\frac{d\\rho_m}{d\\theta}\\right|_P,\n\\qquad\n\\left.\\frac{d\\rho_m}{d\\theta}\\right|_P=-\\frac{P_\\theta}{P_\\rho}.\n\\label{eq:fixed_pressure_total_derivative}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 707
+    tex_line: 531
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1575
-        comment_line: 1574
+        line: 1513
+        comment_line: 1512
         symbol: "fixed_pressure_composition_projection"
       - file: "src/epcsaft/eos.py"
-        line: 1057
-        comment_line: 1113
+        line: 1034
+        comment_line: 1090
         symbol: "_fixed_pressure_fugacity_observable_block"
   - eqid: "formula_unit_composition"
     section: "Electrolyte reference states and reported activities"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:formula_unit_composition"
     source: "\\cite{Figiel2025}, formula-unit molality reference-state basis"
     status: "Exact derivation"
@@ -670,15 +670,15 @@ equations:
     change_note: "Uses one kilogram of salt-free solvent as the construction basis."
     latex: "\\begin{aligned}\n\\overline M_s&=\\sum_{s\\in\\mathcal{S}}y_sM_s,\n&n_s^{(0)}&=\\frac{1}{\\overline M_s},\\\\\nn_{\\mathrm{tot}}&=n_s^{(0)}+m(\\nu_++\\nu_-),\n&x_s&=\\frac{y_sn_s^{(0)}}{n_{\\mathrm{tot}}},\n&x_\\pm&=\\frac{\\nu_\\pm m}{n_{\\mathrm{tot}}}.\n\\end{aligned}\n\\label{eq:formula_unit_composition}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 996
+    tex_line: 820
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte_reference.hpp"
         line: 137
         comment_line: 136
         symbol: "formula_composition"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1190
-        comment_line: 1189
+        line: 1139
+        comment_line: 1138
         symbol: "reference_composition"
   - eqid: "hard_chain_helmholtz"
     section: "Contribution intermediates"
@@ -693,8 +693,8 @@ equations:
     tex_line: 215
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 263
+        line: 202
+        comment_line: 261
         symbol: "residual_helmholtz"
   - eqid: "hard_sphere_contact"
     section: "Contribution intermediates"
@@ -709,8 +709,8 @@ equations:
     tex_line: 202
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 267
+        line: 202
+        comment_line: 265
         symbol: "residual_helmholtz"
   - eqid: "hard_sphere_helmholtz"
     section: "Contribution intermediates"
@@ -725,12 +725,12 @@ equations:
     tex_line: 188
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 254
+        line: 202
+        comment_line: 252
         symbol: "residual_helmholtz"
   - eqid: "ideal_gas_density"
     section: "Density closure and mechanical domain"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:ideal_gas_density"
     source: "Ideal-gas limiting relation"
     status: "Exact derivation"
@@ -738,15 +738,15 @@ equations:
     change_note: "This is a numerical scale, not a replacement EOS."
     latex: "\\rho_{\\mathrm{ideal}}=\\frac{P^\\star}{RT}.\n\\label{eq:ideal_gas_density}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 733
+    tex_line: 557
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1409
-        comment_line: 1429
+        line: 1353
+        comment_line: 1370
         symbol: "evaluate_pressure"
   - eqid: "infinite_dilution_solvation_energy"
     section: "Electrolyte reference states and reported activities"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:infinite_dilution_solvation_energy"
     source: "\\cite{Figiel2025}, infinite-dilution fugacity-to-solvation-energy relation"
     status: "Source equation"
@@ -754,7 +754,7 @@ equations:
     change_note: "Uses the terminal reference-sequence log fugacity."
     latex: "\\Delta G_{i,\\mathrm{solv}}^\\infty\n=RT\\ln\\phi_i^\\infty.\n\\label{eq:infinite_dilution_solvation_energy}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1075
+    tex_line: 899
     implementation_refs:
       - file: "src/epcsaft/reference.py"
         line: 404
@@ -762,7 +762,7 @@ equations:
         symbol: "solvation_free_energy"
   - eqid: "ion_fraction_suppressed_bulk_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:ion_fraction_suppressed_bulk_permittivity"
     source: "\\cite{Figiel2025}, Eq.~(11)"
     status: "Bounded empirical relation"
@@ -770,7 +770,7 @@ equations:
     change_note: "The suppression coefficient is an explicit resolved model record."
     latex: "\\epsilon_{r,\\mathrm{bulk}}=\n\\frac{\\epsilon_{r,\\mathrm{sf}}}\n{1+C_\\epsilon x_{\\mathrm{ion}}},\n\\qquad\nx_{\\mathrm{ion}}=\\sum_{i\\in\\mathcal{I}}x_i.\n\\label{eq:ion_fraction_suppressed_bulk_permittivity}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 800
+    tex_line: 624
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 105
@@ -778,7 +778,7 @@ equations:
         symbol: "ion_fraction_suppressed_relative_permittivity"
   - eqid: "ion_specific_suppressed_bulk_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:ion_specific_suppressed_bulk_permittivity"
     source: "Zuber et al. (2014), DOI 10.1016/j.fluid.2014.05.037, Eq. (9)"
     status: "Bounded empirical relation"
@@ -786,7 +786,7 @@ equations:
     change_note: "Each ion-solvent suppression coefficient is an explicit resolved record."
     latex: "\\epsilon_{r,\\mathrm{bulk}}=\n\\frac{\\epsilon_{r,s}(T)}\n{1+\\sum_{i\\in\\mathcal{I}}\\alpha_{i,s}x_i}.\n\\label{eq:ion_specific_suppressed_bulk_permittivity}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 851
+    tex_line: 675
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 116
@@ -805,12 +805,12 @@ equations:
     tex_line: 75
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 114
-        comment_line: 113
+        line: 112
+        comment_line: 111
         symbol: "segment_diameter"
   - eqid: "ionic_strength_charge_sum"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:ionic_strength_charge_sum"
     source: "\\cite{Bulow2019}, charge-weighted composition in the screening definition"
     status: "Source equation"
@@ -818,7 +818,7 @@ equations:
     change_note: "Only charged components contribute."
     latex: "S_z=\\sum_{i\\in\\mathcal{I}}x_i z_i^2.\n\\label{eq:ionic_strength_charge_sum}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 897
+    tex_line: 721
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 264
@@ -826,7 +826,7 @@ equations:
         symbol: "electrolyte_contribution"
   - eqid: "log_fugacity_coefficient"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:log_fugacity_coefficient"
     source: "\\cite{Gross2001}, Eq.~(A.32)"
     status: "Source equation"
@@ -834,15 +834,15 @@ equations:
     change_note: "Available only when the compressibility factor is positive."
     latex: "\\ln\\phi_i=\\frac{\\mu_i^r}{RT}-\\ln Z.\n\\label{eq:log_fugacity_coefficient}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 615
+    tex_line: 439
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1297
-        comment_line: 1349
+        line: 1246
+        comment_line: 1294
         symbol: "evaluate"
   - eqid: "log_fugacity_density_derivative"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:log_fugacity_density_derivative"
     source: "Exact derivative of Eqs.~\\eqref{eq:residual_chemical_potential} and \\eqref{eq:log_fugacity_coefficient}"
     status: "Documentation-only"
@@ -850,11 +850,11 @@ equations:
     change_note: "Retained as derivational provenance after the generic extensive-coordinate Hessian replaced the density-specific implementation."
     latex: "\\begin{aligned}\n\\left(\\ln\\phi_i\\right)_\\rho\n&=\\left(\\frac{\\mu_i^r}{RT}\\right)_\\rho-\\frac{Z_\\rho}{Z},\\\\\n\\left(\\frac{\\mu_i^r}{RT}\\right)_\\rho\n&=2a_\\rho+\\rho_ma_{\\rho\\rho}\n+a_{x_i\\rho}-\\sum_jx_ja_{x_j\\rho}.\n\\end{aligned}\n\\label{eq:log_fugacity_density_derivative}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 677
+    tex_line: 501
     implementation_refs:
   - eqid: "mean_ionic_activity_coefficient"
     section: "Electrolyte reference states and reported activities"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:mean_ionic_activity_coefficient"
     source: "\\cite{Figiel2025}, stoichiometric mean ionic activity definition"
     status: "Source equation"
@@ -862,7 +862,7 @@ equations:
     change_note: "Supports the one-formula-unit cation/anion topology."
     latex: "\\ln\\gamma_\\pm^{(x)}\n=\\frac{\\nu_+\\ln\\gamma_+^{(x)}+\\nu_-\\ln\\gamma_-^{(x)}}\n{\\nu_++\\nu_-}.\n\\label{eq:mean_ionic_activity_coefficient}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1037
+    tex_line: 861
     implementation_refs:
       - file: "src/epcsaft/reference.py"
         line: 419
@@ -881,12 +881,12 @@ equations:
     tex_line: 119
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 219
+        line: 202
+        comment_line: 217
         symbol: "residual_helmholtz"
   - eqid: "mechanical_stability"
     section: "Density closure and mechanical domain"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:mechanical_stability"
     source: "Standard isothermal mechanical-stability criterion"
     status: "Source equation"
@@ -894,7 +894,7 @@ equations:
     change_note: "The implementation adds a documented numerical conditioning floor."
     latex: "\\left(\\frac{\\partial P}{\\partial\\rho_m}\\right)_{T,\\boldsymbol{x}}>0,\n\\qquad\nP_\\rho>10^{-10}\\frac{P^\\star}{\\rho_{\\mathrm{ideal}}}\n\\quad\\text{for certified roots}.\n\\label{eq:mechanical_stability}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 753
+    tex_line: 577
     implementation_refs:
       - file: "src/epcsaft/_native/density.hpp"
         line: 109
@@ -902,7 +902,7 @@ equations:
         symbol: "solve_density"
   - eqid: "molality_activity_conversion"
     section: "Electrolyte reference states and reported activities"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:molality_activity_conversion"
     source: "\\cite{Figiel2025}, mole-fraction to molality activity conversion"
     status: "Source equation"
@@ -910,7 +910,7 @@ equations:
     change_note: "Uses salt-free solvent molar mass in kilograms per mole."
     latex: "\\gamma_\\pm^{(m)}=\n\\frac{\\gamma_\\pm^{(x)}}\n{1+\\overline M_s\\,m(\\nu_++\\nu_-)}.\n\\label{eq:molality_activity_conversion}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1049
+    tex_line: 873
     implementation_refs:
       - file: "src/epcsaft/reference.py"
         line: 419
@@ -918,7 +918,7 @@ equations:
         symbol: "state"
   - eqid: "neutral_reference_stoichiometric_basis"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:neutral_reference_stoichiometric_basis"
     source: "Exact charge-neutral basis from explicit stoichiometric declarations"
     status: "Exact derivation"
@@ -926,7 +926,7 @@ equations:
     change_note: "Neutral-component unit rows and a spanning set of cation-anion formula rows are immutable for a resolved model."
     latex: "\\boldsymbol{b}^{(s)}=\\boldsymbol{e}_s,\n\\qquad\n\\boldsymbol{b}^{(+-)}=\\nu_+\\boldsymbol{e}_+\n+\\nu_-\\boldsymbol{e}_-,\n\\qquad\nc_r=\\sum_i b_i^{(r)}\\ln\\phi_i^{\\mathrm{ref}},\n\\qquad\n\\ln\\phi_i^{\\mathrm{ref}}=\n\\begin{cases}\n\\ln\\phi_i(\\boldsymbol{x}_{\\mathrm{neutral}}), & z_i=0,\\\\\n\\ln\\phi_i^\\infty, & z_i\\ne 0.\n\\end{cases}\n\\label{eq:neutral_reference_stoichiometric_basis}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1258
+    tex_line: 1082
     implementation_refs:
       - file: "cpp/equilibrium/source_reference.cpp"
         line: 89
@@ -945,8 +945,8 @@ equations:
     tex_line: 64
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 114
-        comment_line: 112
+        line: 112
+        comment_line: 110
         symbol: "segment_diameter"
   - eqid: "packing_fraction"
     section: "Density and packing"
@@ -961,8 +961,8 @@ equations:
     tex_line: 140
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 143
-        comment_line: 142
+        line: 141
+        comment_line: 140
         symbol: "packing_fraction_from_geometry"
   - eqid: "packing_fraction_coefficient"
     section: "Density and packing"
@@ -977,8 +977,8 @@ equations:
     tex_line: 161
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 160
-        comment_line: 159
+        line: 158
+        comment_line: 157
         symbol: "packing_fraction_coefficient"
   - eqid: "packing_moments"
     section: "Density and packing"
@@ -993,12 +993,12 @@ equations:
     tex_line: 129
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 225
+        line: 202
+        comment_line: 223
         symbol: "residual_helmholtz"
   - eqid: "packing_volume_bounds"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:packing_volume_bounds"
     source: "Exact inversion of eta=c_eta/V_m"
     status: "Exact derivation"
@@ -1006,19 +1006,19 @@ equations:
     change_note: "The EOS owns c_eta while the caller owns eta_min and eta_max."
     latex: "V_{m,\\min}=\\frac{c_\\eta(T,\\boldsymbol{x})}{\\eta_{\\max}},\n\\qquad\nV_{m,\\max}=\\frac{c_\\eta(T,\\boldsymbol{x})}{\\eta_{\\min}}.\n\\label{eq:packing_volume_bounds}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1155
+    tex_line: 979
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1154
-        comment_line: 1152
+        line: 1103
+        comment_line: 1101
         symbol: "molar_volume_bounds_parameters"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1232
-        comment_line: 1231
+        line: 1181
+        comment_line: 1180
         symbol: "molar_volume_bounds"
   - eqid: "phase_dimensionless_helmholtz"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:phase_dimensionless_helmholtz"
     source: "Exact ideal-mixing plus residual Helmholtz construction"
     status: "Exact derivation"
@@ -1026,19 +1026,19 @@ equations:
     change_note: "Uses n_ref=1 mol and rho_ref=1 mol m^-3 as immutable unit references."
     latex: "\\Phi\\equiv\\frac{A}{RTn_{\\mathrm{ref}}}\n=\\sum_i\\frac{n_i}{n_{\\mathrm{ref}}}\n\\left[\n\\ln\\left(\\frac{n_i/V}{\\rho_{\\mathrm{ref}}}\\right)-1\n\\right]\n+\\frac{n}{n_{\\mathrm{ref}}}a^r(T,\\rho_m,\\boldsymbol{x}).\n\\label{eq:phase_dimensionless_helmholtz}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1129
+    tex_line: 953
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 250
-        comment_line: 276
+        line: 244
+        comment_line: 270
         symbol: "mixture_phase_helmholtz_over_rt_reference_amount"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 699
-        comment_line: 713
+        line: 692
+        comment_line: 705
         symbol: "pure_phase_helmholtz_over_rt_reference_amount"
   - eqid: "phase_molar_density"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:phase_molar_density"
     source: "Exact extensive-to-intensive coordinate transformation"
     status: "Exact derivation"
@@ -1046,19 +1046,19 @@ equations:
     change_note: "Uses SI mole and cubic-metre coordinates."
     latex: "\\rho_m=\\frac{n}{V}.\n\\label{eq:phase_molar_density}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1119
+    tex_line: 943
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 250
-        comment_line: 258
+        line: 244
+        comment_line: 252
         symbol: "mixture_phase_helmholtz_over_rt_reference_amount"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 699
-        comment_line: 702
+        line: 692
+        comment_line: 695
         symbol: "pure_phase_helmholtz_over_rt_reference_amount"
   - eqid: "phase_mole_fraction"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:phase_mole_fraction"
     source: "Exact extensive-to-intensive coordinate transformation"
     status: "Exact derivation"
@@ -1066,11 +1066,11 @@ equations:
     change_note: "Requires every admitted amount to be strictly positive."
     latex: "x_i=\\frac{n_i}{n}.\n\\label{eq:phase_mole_fraction}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1109
+    tex_line: 933
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 250
-        comment_line: 263
+        line: 244
+        comment_line: 257
         symbol: "mixture_phase_helmholtz_over_rt_reference_amount"
   - eqid: "phase_packing_fraction"
     section: "Density and packing"
@@ -1085,24 +1085,24 @@ equations:
     tex_line: 173
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 181
-        comment_line: 180
+        line: 179
+        comment_line: 178
         symbol: "phase_packing_fraction"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 483
-        comment_line: 431
+        line: 476
+        comment_line: 424
         symbol: "apply_active_packing_parameters"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 538
-        comment_line: 536
+        line: 531
+        comment_line: 529
         symbol: "packing_fraction_block_active_parameters"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 621
-        comment_line: 619
+        line: 614
+        comment_line: 612
         symbol: "inverse_packing_geometry_block"
   - eqid: "phase_pressure"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:phase_pressure"
     source: "Exact extensive Helmholtz derivative"
     status: "Exact derivation"
@@ -1110,27 +1110,27 @@ equations:
     change_note: "Returned on the original pascal scale."
     latex: "P=-RTn_{\\mathrm{ref}}\n\\left(\\frac{\\partial\\Phi}{\\partial V}\\right)_{T,\\boldsymbol{n}}.\n\\label{eq:phase_pressure}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1144
+    tex_line: 968
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 372
-        comment_line: 370
+        line: 365
+        comment_line: 363
         symbol: "differentiated_mixture_phase_block"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 483
-        comment_line: 428
+        line: 476
+        comment_line: 421
         symbol: "apply_active_packing_parameters"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 812
-        comment_line: 732
+        line: 804
+        comment_line: 724
         symbol: "fixed_topology_parameterized_mixture_phase_block"
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 812
-        comment_line: 807
+        line: 804
+        comment_line: 799
         symbol: "fixed_topology_parameterized_mixture_phase_block"
   - eqid: "phase_total_amount"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:phase_total_amount"
     source: "Exact extensive-coordinate definition"
     status: "Exact derivation"
@@ -1138,247 +1138,15 @@ equations:
     change_note: "Shared by neutral and electrolyte phase blocks."
     latex: "n=\\sum_i n_i.\n\\label{eq:phase_total_amount}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1099
+    tex_line: 923
     implementation_refs:
       - file: "src/epcsaft/_native/phase_block.hpp"
-        line: 250
-        comment_line: 253
+        line: 244
+        comment_line: 247
         symbol: "mixture_phase_helmholtz_over_rt_reference_amount"
-  - eqid: "polar_chain_coefficient"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_chain_coefficient"
-    source: "\\cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, coefficient mixing equations"
-    status: "Source equation"
-    description: "Chain-length interpolation shared by the polar pair and triplet integrals."
-    change_note: "DD caps m_ij and m_ijk at two; QQ and DQ use uncapped geometric means, and DQ c has no c_2 term."
-    latex: "y_{n}(m)=y_{0n}+\\frac{m-1}{m}y_{1n}\n+\\frac{m-1}{m}\\frac{m-2}{m}y_{2n},\n\\quad y\\in\\{a,b,c\\}.\n\\label{eq:polar_chain_coefficient}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 410
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 160
-        comment_line: 159
-        symbol: "chain_coefficient"
-  - eqid: "polar_cross_energy"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_cross_energy"
-    source: "\\cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, unlike-energy rule"
-    status: "Source equation"
-    description: "Corrected unlike dispersion energy used only inside each second-order polar integral."
-    change_note: "Uses k_ij but never l_ij; pure-energy prefactors remain uncorrected."
-    latex: "\\frac{\\epsilon_{ij}^{polar}}{k_B}\n=(1-k_{ij})\\sqrt{\\frac{\\epsilon_i}{k_B}\\frac{\\epsilon_j}{k_B}},\n\\qquad \\sigma_{ij}^{polar}=\\frac{\\sigma_i+\\sigma_j}{2}.\n\\label{eq:polar_cross_energy}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 376
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 273
-        comment_line: 272
-        symbol: "polar_cross_epsilon"
-  - eqid: "polar_dd_second_order"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_dd_second_order"
-    source: "\\cite{GrossVrabec2006DD}, Eq.~(8)"
-    status: "Source equation"
-    description: "Gross--Vrabec dipole-dipole second-order perturbation term."
-    change_note: "One point dipole per neutral molecule is admitted and the pair chain mean is capped at two."
-    latex: "a_2^{DD}=-\\pi\\widehat\\rho\\sum_{ij}x_ix_j\n\\frac{\\epsilon_i\\epsilon_j}{(k_BT)^2}\n\\frac{\\sigma_i^3\\sigma_j^3}{\\sigma_{ij}^3}\n\\mu_i^{*2}\\mu_j^{*2}J_{2,ij}^{DD}.\n\\label{eq:polar_dd_second_order}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 446
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 301
-        comment_line: 388
-        symbol: "polar_terms"
-  - eqid: "polar_dd_third_order"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_dd_third_order"
-    source: "\\cite{GrossVrabec2006DD}, Eq.~(9)"
-    status: "Source equation"
-    description: "Gross--Vrabec dipole-dipole third-order perturbation term."
-    change_note: "The triplet chain mean is capped at two and no k_ij or l_ij correction enters this term."
-    latex: "a_3^{DD}=-\\frac{4\\pi^2}{3}\\widehat\\rho^2\\sum_{ijk}x_ix_jx_k\n\\frac{\\epsilon_i\\epsilon_j\\epsilon_k}{(k_BT)^3}\n\\frac{\\sigma_i^3\\sigma_j^3\\sigma_k^3}{\\sigma_{ij}\\sigma_{ik}\\sigma_{jk}}\n\\mu_i^{*2}\\mu_j^{*2}\\mu_k^{*2}J_{3,ijk}^{DD}.\n\\label{eq:polar_dd_third_order}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 459
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 301
-        comment_line: 390
-        symbol: "polar_terms"
-  - eqid: "polar_dq_second_order"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_dq_second_order"
-    source: "\\cite{VrabecGross2008DQ}, Eq.~(14)"
-    status: "Source equation"
-    description: "Directional DQ35 second-order dipole-quadrupole perturbation term."
-    change_note: "Preserves sigma_i cubed, sigma_j to the fifth, and sigma_ij to the fifth."
-    latex: "a_2^{DQ}=-\\frac{9\\pi}{4}\\widehat\\rho\\sum_{ij}x_ix_j\n\\frac{\\epsilon_i\\epsilon_j}{(k_BT)^2}\n\\frac{\\sigma_i^3\\sigma_j^5}{\\sigma_{ij}^5}\n\\mu_i^{*2}Q_j^{*2}J_{2,ij}^{DQ}.\n\\label{eq:polar_dq_second_order}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 499
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 301
-        comment_line: 488
-        symbol: "polar_terms"
-  - eqid: "polar_dq_third_order"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_dq_third_order"
-    source: "\\cite{VrabecGross2008DQ}, Eq.~(15) and Table~3"
-    status: "Source equation"
-    description: "Directional DQ35 third-order DDQ and DQQ perturbation term."
-    change_note: "Uses the paper's printed c normalization, negative prefactor, and alpha=1.19374."
-    latex: "a_3^{DQ}=-\\widehat\\rho^2\\sum_{ijk}x_ix_jx_k\n\\frac{\\epsilon_i\\epsilon_j\\epsilon_k}{(k_BT)^3}\n\\frac{\\sigma_i^4\\sigma_j^4\\sigma_k^4}\n{\\sigma_{ij}^2\\sigma_{ik}^2\\sigma_{jk}^2}\n\\left(\\mu_i^{*2}\\mu_j^{*2}Q_k^{*2}\n+\\alpha\\mu_i^{*2}Q_j^{*2}Q_k^{*2}\\right)J_{3,ijk}^{DQ},\n\\quad \\alpha=1.19374.\n\\label{eq:polar_dq_third_order}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 512
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 301
-        comment_line: 490
-        symbol: "polar_terms"
-  - eqid: "polar_helmholtz"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_helmholtz"
-    source: "Aggregate of \\cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}"
-    status: "Implementation convention"
-    description: "One public polar residual Helmholtz contribution from the three private Padé families."
-    change_note: "No family-specific public result field or type is introduced."
-    latex: "a^{polar}=a^{DD}+a^{QQ}+a^{DQ35}.\n\\label{eq:polar_helmholtz}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 540
-    implementation_refs:
-      - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 357
-        symbol: "residual_helmholtz"
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 518
-        comment_line: 517
-        symbol: "polar_helmholtz"
-  - eqid: "polar_pade"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_pade"
-    source: "\\cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, family Padé forms"
-    status: "Source equation"
-    description: "Independent third-order Padé resummation for one active polar family."
-    change_note: "Inactive families return exact zero; active near-pole or nonfinite terms raise the polar-domain error."
-    latex: "a^f=\\frac{a_2^f}{1-a_3^f/a_2^f}\n=\\frac{(a_2^f)^2}{a_2^f-a_3^f},\n\\qquad f\\in\\{DD,QQ,DQ35\\}.\n\\label{eq:polar_pade}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 528
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 498
-        comment_line: 497
-        symbol: "polar_pade"
-  - eqid: "polar_pair_integral"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_pair_integral"
-    source: "\\cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, pair-integral correlations"
-    status: "Bounded empirical relation"
-    description: "Family-specific second-order pair integral using the corrected unlike energy."
-    change_note: "Uses each paper's printed five-row coefficient table without reordering."
-    latex: "J_{2,ij}^{f}=\\sum_{n=0}^{4}\\left[\na_{n,ij}^{f}+b_{n,ij}^{f}\\frac{\\epsilon_{ij}^{polar}}{k_BT}\n\\right]\\eta^n,\n\\qquad f\\in\\{DD,QQ,DQ35\\}.\n\\label{eq:polar_pair_integral}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 422
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 182
-        comment_line: 181
-        symbol: "polar_j2"
-  - eqid: "polar_qq_second_order"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_qq_second_order"
-    source: "\\cite{Gross2005QQ}, Eq.~(9)"
-    status: "Source equation"
-    description: "Gross quadrupole-quadrupole second-order perturbation term."
-    change_note: "Uses the uncapped pair chain mean and the Lorentz polar diameter."
-    latex: "a_2^{QQ}=-\\frac{9\\pi}{16}\\widehat\\rho\\sum_{ij}x_ix_j\n\\frac{\\epsilon_i\\epsilon_j}{(k_BT)^2}\n\\frac{\\sigma_i^5\\sigma_j^5}{\\sigma_{ij}^7}\nQ_i^{*2}Q_j^{*2}J_{2,ij}^{QQ}.\n\\label{eq:polar_qq_second_order}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 472
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 301
-        comment_line: 438
-        symbol: "polar_terms"
-  - eqid: "polar_qq_third_order"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_qq_third_order"
-    source: "\\cite{Gross2005QQ}, Eq.~(10) with J_3,ij=0"
-    status: "Source equation"
-    description: "Gross quadrupole-quadrupole third-order triplet term."
-    change_note: "Preserves the positive prefactor and uncapped triplet chain mean."
-    latex: "a_3^{QQ}=\\frac{9\\pi^2}{16}\\widehat\\rho^2\\sum_{ijk}x_ix_jx_k\n\\frac{\\epsilon_i\\epsilon_j\\epsilon_k}{(k_BT)^3}\n\\frac{\\sigma_i^5\\sigma_j^5\\sigma_k^5}\n{\\sigma_{ij}^3\\sigma_{ik}^3\\sigma_{jk}^3}\nQ_i^{*2}Q_j^{*2}Q_k^{*2}J_{3,ijk}^{QQ}.\n\\label{eq:polar_qq_third_order}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 485
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 301
-        comment_line: 440
-        symbol: "polar_terms"
-  - eqid: "polar_reduced_dipole_moment"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_reduced_dipole_moment"
-    source: "\\cite{GrossVrabec2006DD}, Eq.~(9) and Table~2 unit definition"
-    status: "Source equation"
-    description: "Squared reduced dipole moment derived from a physical moment in Debye."
-    change_note: "The implementation derives the SI conversion through epsilon_0, k_B, c, and the angstrom conversion."
-    latex: "\\mu_i^{*2}=\\frac{\\mu_i^2}\n{4\\pi\\epsilon_0 m_i k_B(\\epsilon_i/k_B)\\sigma_i^3}.\n\\label{eq:polar_reduced_dipole_moment}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 388
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 230
-        comment_line: 229
-        symbol: "reduced_dipole_squared"
-  - eqid: "polar_reduced_quadrupole_moment"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_reduced_quadrupole_moment"
-    source: "\\cite{Gross2005QQ}, Eq.~(10) and Eq.~(A14)"
-    status: "Source equation"
-    description: "Squared reduced quadrupole moment derived from a physical moment in Debye angstrom."
-    change_note: "The implementation derives the SI conversion rather than storing a historical decimal factor."
-    latex: "Q_i^{*2}=\\frac{Q_i^2}\n{4\\pi\\epsilon_0 m_i k_B(\\epsilon_i/k_B)\\sigma_i^5}.\n\\label{eq:polar_reduced_quadrupole_moment}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 399
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 245
-        comment_line: 244
-        symbol: "reduced_quadrupole_squared"
-  - eqid: "polar_triplet_integral"
-    section: "Contribution intermediates"
-    subsection: "Gross--Vrabec point multipoles"
-    label: "eq:polar_triplet_integral"
-    source: "\\cite{Gross2005QQ,GrossVrabec2006DD,VrabecGross2008DQ}, triplet-integral correlations"
-    status: "Bounded empirical relation"
-    description: "Family-specific third-order triplet integral."
-    change_note: "DQ35 uses the printed c normalization and its unprinted final row is zero."
-    latex: "J_{3,ijk}^{f}=\\sum_{n=0}^{4}c_{n,ijk}^{f}\\eta^n,\n\\qquad f\\in\\{DD,QQ,DQ35\\}.\n\\label{eq:polar_triplet_integral}"
-    tex_file: "docs/latex/equations.tex"
-    tex_line: 435
-    implementation_refs:
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 204
-        comment_line: 203
-        symbol: "polar_j3"
-      - file: "src/epcsaft/_native/polar.hpp"
-        line: 220
-        comment_line: 219
-        symbol: "dq_j3"
   - eqid: "practical_osmotic_coefficient"
     section: "Electrolyte reference states and reported activities"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:practical_osmotic_coefficient"
     source: "\\cite{HamerWu1972}, practical molal osmotic-coefficient definition"
     status: "Source equation"
@@ -1386,7 +1154,7 @@ equations:
     change_note: "Defined only for the admitted single-active-solvent aqueous path."
     latex: "\\Phi=\n-\\frac{\\ln a_s}\n{(\\nu_++\\nu_-)mM_s},\n\\qquad\n\\ln a_s=\\ln x_s+\\ln\\phi_s-\\ln\\phi_s^{\\mathrm{pure}}.\n\\label{eq:practical_osmotic_coefficient}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1061
+    tex_line: 885
     implementation_refs:
       - file: "src/epcsaft/reference.py"
         line: 419
@@ -1394,7 +1162,7 @@ equations:
         symbol: "state"
   - eqid: "pressure"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:pressure"
     source: "\\cite{Gross2001}, Eq.~(A.24)"
     status: "Source equation"
@@ -1402,15 +1170,15 @@ equations:
     change_note: "Returns pressure in pascals on the SI molar-density basis."
     latex: "P=\\rho_mRTZ.\n\\label{eq:pressure}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 581
+    tex_line: 405
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1297
-        comment_line: 1385
+        line: 1246
+        comment_line: 1329
         symbol: "evaluate"
   - eqid: "pressure_density_derivative"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:pressure_density_derivative"
     source: "Exact derivative of Eq.~\\eqref{eq:pressure}"
     status: "Exact derivation"
@@ -1418,15 +1186,15 @@ equations:
     change_note: "Transforms CppAD density partials without expanding the EOS derivative."
     latex: "\\left(\\frac{\\partial P}{\\partial\\rho_m}\\right)_{T,\\boldsymbol{x}}\n=RT\\left(Z+\\rho_mZ_\\rho\\right),\n\\qquad\nZ_\\rho=a_\\rho+\\rho_ma_{\\rho\\rho}.\n\\label{eq:pressure_density_derivative}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 591
+    tex_line: 415
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1297
-        comment_line: 1402
+        line: 1246
+        comment_line: 1346
         symbol: "evaluate"
   - eqid: "pure_active_parameter_mapping"
     section: "Native phase coordinates"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:pure_active_parameter_mapping"
     source: "EOS parameterized pure-phase coordinate convention"
     status: "Implementation convention"
@@ -1434,15 +1202,15 @@ equations:
     change_note: "No generic mutable parameter overlay is introduced."
     latex: "\\boldsymbol{\\theta}_{\\mathrm{pure}}\n=\\left(m,\\sigma,\\epsilon/k_B\\right),\n\\qquad\n\\boldsymbol{k}=\\boldsymbol{l}=(0).\n\\label{eq:pure_active_parameter_mapping}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1211
+    tex_line: 1035
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 510
-        comment_line: 509
+        line: 459
+        comment_line: 458
         symbol: "with_active_coordinates"
   - eqid: "reference_molality_sequence"
     section: "Electrolyte reference states and reported activities"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:reference_molality_sequence"
     source: "EOS convergence sequence for the \\cite{Figiel2025} infinite-dilution reference"
     status: "Implementation convention"
@@ -1450,7 +1218,7 @@ equations:
     change_note: "One internal owner constructs composition, adjudicates convergence, and selects the terminal observation."
     latex: "\\mathcal{M}_{\\mathrm{ref}}=\n\\{10^{-6},10^{-8},10^{-10},10^{-12}\\}\n\\ \\si{\\mole\\per\\kilogram},\n\\qquad\n\\ln\\phi_i^\\infty\\equiv\\ln\\phi_i(m=10^{-12}).\n\\label{eq:reference_molality_sequence}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1012
+    tex_line: 836
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte_reference.hpp"
         line: 37
@@ -1469,12 +1237,12 @@ equations:
         comment_line: 184
         symbol: "electrolyte_reference_sequence"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1200
-        comment_line: 1199
+        line: 1149
+        comment_line: 1148
         symbol: "electrolyte_reference_sequence"
   - eqid: "residual_chemical_potential"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:residual_chemical_potential"
     source: "\\cite{Gross2001}, Eq.~(A.33)"
     status: "Source equation"
@@ -1482,15 +1250,15 @@ equations:
     change_note: "Mirrors the current constant-temperature, constant-density mixture convention."
     latex: "\\frac{\\mu_i^r}{RT}\n=a^r+(Z-1)+a_{x_i}-\\sum_jx_ja_{x_j}.\n\\label{eq:residual_chemical_potential}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 604
+    tex_line: 428
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1297
-        comment_line: 1344
+        line: 1246
+        comment_line: 1289
         symbol: "evaluate"
   - eqid: "residual_enthalpy"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:residual_enthalpy"
     source: "\\cite{Gross2001}, Eq.~(A.48)"
     status: "Source equation"
@@ -1498,15 +1266,15 @@ equations:
     change_note: "Includes the residual pressure-volume term Z-1."
     latex: "h^r=RT\\left[-Ta_T+(Z-1)\\right].\n\\label{eq:residual_enthalpy}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 645
+    tex_line: 469
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1297
-        comment_line: 1395
+        line: 1246
+        comment_line: 1339
         symbol: "evaluate"
   - eqid: "residual_entropy"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:residual_entropy"
     source: "\\cite{Gross2001}, Eq.~(A.46)"
     status: "Source equation"
@@ -1514,15 +1282,15 @@ equations:
     change_note: "Does not silently change to a same-pressure ideal-gas reference."
     latex: "s_V^r=-R\\left(a^r+Ta_T\\right).\n\\label{eq:residual_entropy}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 625
+    tex_line: 449
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1297
-        comment_line: 1389
+        line: 1246
+        comment_line: 1333
         symbol: "evaluate"
   - eqid: "residual_heat_capacity_cp"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:residual_heat_capacity_cp"
     source: "\\cite{Gross2001}, Eq.~(A.50)"
     status: "Source equation"
@@ -1530,15 +1298,15 @@ equations:
     change_note: "The final minus one removes the ideal-gas cp-cv contribution."
     latex: "\\frac{c_p^r}{R}\n=\\frac{c_v^r}{R}\n+\\frac{(Z+TZ_T)^2}{Z+\\rho_mZ_\\rho}-1.\n\\label{eq:residual_heat_capacity_cp}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 665
+    tex_line: 489
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1297
-        comment_line: 1364
+        line: 1246
+        comment_line: 1309
         symbol: "evaluate"
   - eqid: "residual_heat_capacity_cv"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:residual_heat_capacity_cv"
     source: "\\cite{Gross2001}, Eq.~(A.49)"
     status: "Source equation"
@@ -1546,31 +1314,31 @@ equations:
     change_note: "Transforms CppAD first and second temperature partials."
     latex: "c_v^r=R\\left(-2Ta_T-T^2a_{TT}\\right).\n\\label{eq:residual_heat_capacity_cv}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 655
+    tex_line: 479
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1297
-        comment_line: 1398
+        line: 1246
+        comment_line: 1342
         symbol: "evaluate"
   - eqid: "residual_helmholtz"
     section: "Residual Helmholtz energy"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:residual_helmholtz"
-    source: "\\cite{Gross2001}, PC-SAFT residual decomposition, extended by admitted polar and electrolyte terms"
+    source: "\\cite{Gross2001}, PC-SAFT residual decomposition extended by admitted electrolyte terms"
     status: "Implementation convention"
     description: "Sum of every active residual Helmholtz contribution."
     change_note: "Mirrors the single EOS Helmholtz owner and its contribution result."
-    latex: "a^r=a^{hc}+a^{disp}+a^{assoc}+a^{polar}+a^{DH}+a^{Born}.\n\\label{eq:residual_helmholtz}"
+    latex: "a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}.\n\\label{eq:residual_helmholtz}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 552
+    tex_line: 376
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 361
+        line: 202
+        comment_line: 346
         symbol: "residual_helmholtz"
   - eqid: "residual_internal_energy"
     section: "Thermodynamic properties"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:residual_internal_energy"
     source: "\\cite{Gross2001}, Eq.~(A.47)"
     status: "Source equation"
@@ -1578,15 +1346,15 @@ equations:
     change_note: "Uses the CppAD temperature partial at fixed density and composition."
     latex: "u^r=-RT^2a_T.\n\\label{eq:residual_internal_energy}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 635
+    tex_line: 459
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1297
-        comment_line: 1392
+        line: 1246
+        comment_line: 1336
         symbol: "evaluate"
   - eqid: "salt_free_solvent_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:salt_free_solvent_permittivity"
     source: "\\cite{Figiel2025}, Eq.~(11) solvent basis; \\cite{AscaniHeld2021}, Eq.~(13)"
     status: "Source equation"
@@ -1594,7 +1362,7 @@ equations:
     change_note: "Uses component molar masses and includes exactly the neutral components with declared permittivity correlations."
     latex: "\\epsilon_{r,\\mathrm{sf}}=\n\\frac{\\sum_{s\\in\\mathcal{S}}x_sM_s\\epsilon_{r,s}}\n{\\sum_{s\\in\\mathcal{S}}x_sM_s}.\n\\label{eq:salt_free_solvent_permittivity}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 777
+    tex_line: 601
     implementation_refs:
       - file: "src/epcsaft/_native/electrolyte.hpp"
         line: 116
@@ -1617,8 +1385,8 @@ equations:
     tex_line: 107
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 204
-        comment_line: 315
+        line: 202
+        comment_line: 313
         symbol: "residual_helmholtz"
   - eqid: "segment_sigma_correlation"
     section: "Parameter setup"
@@ -1633,12 +1401,12 @@ equations:
     tex_line: 54
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 95
-        comment_line: 94
+        line: 93
+        comment_line: 92
         symbol: "segment_sigma"
   - eqid: "single_ion_activity_coefficient"
     section: "Electrolyte reference states and reported activities"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:single_ion_activity_coefficient"
     source: "\\cite{Figiel2025}, electrolyte reference-state fugacity relation"
     status: "Source equation"
@@ -1646,7 +1414,7 @@ equations:
     change_note: "Exposes the exponential of the finite-minus-reference log fugacity."
     latex: "\\gamma_i^{(x)}=\n\\exp\\left(\\ln\\phi_i-\\ln\\phi_i^\\infty\\right).\n\\label{eq:single_ion_activity_coefficient}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1026
+    tex_line: 850
     implementation_refs:
       - file: "src/epcsaft/reference.py"
         line: 419
@@ -1654,7 +1422,7 @@ equations:
         symbol: "state"
   - eqid: "transfer_free_energy"
     section: "Electrolyte reference states and reported activities"
-    subsection: "Gross--Vrabec point multipoles"
+    subsection: ""
     label: "eq:transfer_free_energy"
     source: "\\cite{Figiel2025}, transfer Gibbs-energy relation"
     status: "Source equation"
@@ -1662,7 +1430,7 @@ equations:
     change_note: "Source and target must share temperature, pressure, phase, ions, and stoichiometry."
     latex: "\\Delta G_{i,\\mathrm{tr}}^{A\\rightarrow B}\n=RT\\left(\\ln\\phi_{i,B}^{\\infty}-\\ln\\phi_{i,A}^{\\infty}\\right).\n\\label{eq:transfer_free_energy}"
     tex_file: "docs/latex/equations.tex"
-    tex_line: 1086
+    tex_line: 910
     implementation_refs:
       - file: "src/epcsaft/reference.py"
         line: 506
@@ -1742,107 +1510,103 @@ source_exclusions:
     symbol: "finite"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 99
-    symbol: "polar_composition_admitted"
-    reason: "input and domain validation"
-  - file: "src/epcsaft/_native/eos.cpp"
-    line: 147
+    line: 126
     symbol: "NativeModel"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 964
+    line: 913
     symbol: "supports_pure_transport"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 969
+    line: 918
     symbol: "supports_fixed_topology_associating_mixture"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 976
+    line: 925
     symbol: "supports_mixture_transport"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 981
+    line: 930
     symbol: "supports_electrolyte_transport"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 986
+    line: 935
     symbol: "component_count"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 991
+    line: 940
     symbol: "charge_numbers"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 996
+    line: 945
     symbol: "site_components"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1001
+    line: 950
     symbol: "site_multiplicities"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1006
+    line: 955
     symbol: "association_active_pairs"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1011
+    line: 960
     symbol: "molar_masses_kg_per_mol"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1016
+    line: 965
     symbol: "evaluate_pure_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1023
+    line: 972
     symbol: "evaluate_fixed_topology_association"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1032
+    line: 981
     symbol: "evaluate_mixture_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1044
+    line: 993
     symbol: "evaluate_phase_derivatives"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1067
+    line: 1016
     symbol: "evaluate_electrolyte_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1075
+    line: 1024
     symbol: "evaluate_parameterized_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1084
+    line: 1033
     symbol: "evaluate_supported_phase_derivatives"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1114
+    line: 1063
     symbol: "evaluate_packing_fraction"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1122
+    line: 1071
     symbol: "evaluate_packing_fraction_parameters"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1138
+    line: 1087
     symbol: "evaluate_inverse_packing_geometry"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1745
+    line: 1683
     symbol: "evaluate_fixed_pressure_composition_derivatives"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/helmholtz.hpp"
-    line: 58
+    line: 56
     symbol: "scalar_log"
     reason: "scalar utility dispatch"
   - file: "src/epcsaft/_native/helmholtz.hpp"
-    line: 67
+    line: 65
     symbol: "scalar_exp"
     reason: "scalar utility dispatch"
   - file: "src/epcsaft/_native/helmholtz.hpp"
-    line: 76
+    line: 74
     symbol: "scalar_sqrt"
     reason: "scalar utility dispatch"
   - file: "src/epcsaft/_native/phase_block.hpp"
@@ -1870,105 +1634,73 @@ source_exclusions:
     symbol: "supports_packing_geometry"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 220
+    line: 217
     symbol: "phase_block_scalars"
     reason: "scalar utility dispatch"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 250
+    line: 244
     symbol: "mixture_phase_helmholtz_over_rt_reference_amount"
     reason: "scalar utility dispatch"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 282
+    line: 275
     symbol: "validate_mixture_phase_state"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 298
+    line: 291
     symbol: "validate_electrolyte_phase_state"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 325
+    line: 318
     symbol: "validate_reduced_support_phase_state"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 372
+    line: 365
     symbol: "differentiated_mixture_phase_block"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 483
+    line: 476
     symbol: "apply_active_packing_parameters"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 483
+    line: 476
     symbol: "apply_active_packing_parameters"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 483
+    line: 476
     symbol: "apply_active_packing_parameters"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 483
+    line: 476
     symbol: "apply_active_packing_parameters"
     reason: "scalar utility dispatch"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 538
+    line: 531
     symbol: "packing_fraction_block_active_parameters"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 621
+    line: 614
     symbol: "inverse_packing_geometry_block"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 812
+    line: 804
     symbol: "fixed_topology_parameterized_mixture_phase_block"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 812
+    line: 804
     symbol: "fixed_topology_parameterized_mixture_phase_block"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 812
+    line: 804
     symbol: "fixed_topology_parameterized_mixture_phase_block"
     reason: "CppAD-generated derivative machinery"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 1412
+    line: 1404
     symbol: "fixed_topology_parameterized_pure_phase_block"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/phase_block.hpp"
-    line: 1431
+    line: 1423
     symbol: "electrolyte_phase_block"
     reason: "transport and buffer mechanics"
-  - file: "src/epcsaft/_native/polar.hpp"
-    line: 120
-    symbol: "polar_primal"
-    reason: "scalar utility dispatch"
-  - file: "src/epcsaft/_native/polar.hpp"
-    line: 130
-    symbol: "polar_sqrt"
-    reason: "scalar utility dispatch"
-  - file: "src/epcsaft/_native/polar.hpp"
-    line: 140
-    symbol: "polar_cbrt"
-    reason: "scalar utility dispatch"
-  - file: "src/epcsaft/_native/polar.hpp"
-    line: 150
-    symbol: "polar_power"
-    reason: "scalar utility dispatch"
-  - file: "src/epcsaft/_native/polar.hpp"
-    line: 172
-    symbol: "polar_polynomial"
-    reason: "scalar utility dispatch"
-  - file: "src/epcsaft/_native/polar.hpp"
-    line: 261
-    symbol: "polar_epsilon"
-    reason: "scalar utility dispatch"
-  - file: "src/epcsaft/_native/polar.hpp"
-    line: 290
-    symbol: "polar_present"
-    reason: "input and domain validation"
-  - file: "src/epcsaft/_native/polar.hpp"
-    line: 301
-    symbol: "polar_terms"
-    reason: "scalar utility dispatch"
   - file: "src/epcsaft/reference.py"
     line: 48
     symbol: "_log_fugacity"

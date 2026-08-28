@@ -123,16 +123,6 @@
         "locator": "p. 5, PC-SAFT model statement; Table 3, neutral diethylethanolamine row",
         "domain_id": "crespo-deea-fit-domain-unreported"
       }
-    },
-    {
-      "family_id": "model/polar",
-      "kind": "polar",
-      "choice": "none",
-      "provenance": {
-        "source_id": "crespo-et-al-2021",
-        "locator": "Table 3, diethylethanolamine row, Mw column",
-        "domain_id": "crespo-deea-fit-domain-unreported"
-      }
     }
   ],
   "model_coefficients": [],

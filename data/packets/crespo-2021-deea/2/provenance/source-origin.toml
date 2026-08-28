@@ -12,4 +12,4 @@ source_packet_fingerprint = "64b63aa6938926cbc77b93b75eee69b05c2460825d7cba007e4
 [[files]]
 retained_path = "parameters/parameters.json"
 origin_path = "packets/crespo-2021-deea/1/parameters/{association.csv,bundle.toml,components.csv,model.csv,single.csv,sites.csv}"
-sha256 = "893b7c379ce0b0265744f6675595be2463cbfd67c1d39f9d496bf093242d6033"
+sha256 = "c118dec3d2dc86ba28c8208fb707f4ae8762df59910e7fcb868f525d580db588"

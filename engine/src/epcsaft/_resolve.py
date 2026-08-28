@@ -17,7 +17,6 @@ from .records import (
     IonicDispersionFormulation,
     ModelParameterRecord,
     PairParameterRecord,
-    PolarFormulation,
     RelativePermittivityFormulation,
     SingleParameterRecord,
     SiteRecord,
@@ -85,9 +84,6 @@ class _ResolvedModel:
     dipole_scaling_debye2: tuple[float, ...] = ()
     polarizability_scaling_angstrom3: tuple[float, ...] = ()
     correlation_integral_parameter: tuple[float, ...] = ()
-    polar_formulation: PolarFormulation | None = None
-    dipole_moment_debye: tuple[float, ...] = ()
-    quadrupole_moment_debye_angstrom: tuple[float, ...] = ()
     ionic_dispersion: IonicDispersionFormulation = "exclude-same-sign-ion-pairs"
     packing_diameter_angstrom: tuple[float | None, ...] = ()
     debye_huckel_diameter_angstrom: tuple[float | None, ...] = ()
@@ -368,17 +364,6 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
     models: dict[str, ModelParameterRecord] = {record.family: record for record in model_records}
     family_specs = {record.kind: record for record in parameters.model_families}
     family_choices = {kind: record.choice for kind, record in family_specs.items()}
-    polar_choice = family_choices["polar"]
-    polar_formulation: PolarFormulation | None = (
-        None if polar_choice == "none" else cast(PolarFormulation, polar_choice)
-    )
-    moment_families = {"dipole_moment", "quadrupole_moment"}
-    if polar_formulation is None and any(family in moment_families for _, family in singles):
-        raise _error(
-            "invalid-value",
-            family="polar_formulation",
-            reason="missing-for-multipole",
-        )
     relative_permittivity_formulation = cast(
         RelativePermittivityFormulation,
         family_choices["permittivity"],
@@ -504,38 +489,6 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
     selected_charges = tuple(
         singles.get((component_id, "charge_number")) for component_id in component_ids
     )
-    dipole_moment = tuple(
-        0.0
-        if (record := singles.get((component_id, "dipole_moment"))) is None
-        else _magnitude(record, "debye")
-        for component_id in component_ids
-    )
-    quadrupole_moment = tuple(
-        0.0
-        if (record := singles.get((component_id, "quadrupole_moment"))) is None
-        else _magnitude(record, "debye * angstrom")
-        for component_id in component_ids
-    )
-    for index, component_id in enumerate(component_ids):
-        if dipole_moment[index] < 0.0 or quadrupole_moment[index] < 0.0:
-            raise _error(
-                "invalid-value",
-                component_id=component_id,
-                family="multipole-moment",
-                reason="negative",
-            )
-        charge_record = selected_charges[index]
-        if (
-            charge_record is not None
-            and _integer(charge_record) != 0
-            and (dipole_moment[index] != 0.0 or quadrupole_moment[index] != 0.0)
-        ):
-            raise _error(
-                "invalid-value",
-                component_id=component_id,
-                family="multipole-moment",
-                reason="charged-component",
-            )
     ionic_topology = any(
         record is not None and _integer(record) != 0 for record in selected_charges
     ) or any(
@@ -582,9 +535,6 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             pressure_max,
             None,
             "none",
-            polar_formulation=polar_formulation,
-            dipole_moment_debye=dipole_moment,
-            quadrupole_moment_debye_angstrom=quadrupole_moment,
         )
 
     charge_records = tuple(
@@ -765,9 +715,6 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             pressure_max,
             ion_fraction_max,
             "solvent-only",
-            polar_formulation=polar_formulation,
-            dipole_moment_debye=dipole_moment,
-            quadrupole_moment_debye_angstrom=quadrupole_moment,
             ionic_dispersion=cast(IonicDispersionFormulation, ionic_dispersion),
             packing_diameter_angstrom=tuple(packing_diameter),
             debye_huckel_diameter_angstrom=tuple(debye_huckel_diameter),
@@ -1002,9 +949,6 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         dipole_scaling,
         polarizability_scaling,
         correlation_integral,
-        polar_formulation,
-        dipole_moment,
-        quadrupole_moment,
         cast(IonicDispersionFormulation, ionic_dispersion),
         tuple(packing_diameter),
         tuple(debye_huckel_diameter),

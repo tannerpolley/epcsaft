@@ -26,7 +26,6 @@ struct NativeResult final {
     double hard_chain;
     double dispersion;
     double association;
-    double ares_polar;
     double debye_huckel;
     double born;
     double bulk_relative_permittivity;

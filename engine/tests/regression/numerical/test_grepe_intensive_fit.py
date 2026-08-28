@@ -11,7 +11,7 @@ import pytest
 
 import epcsaft
 from epcsaft import _core, equilibrium, regression
-from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE
+from tests.eos._cases import MULTINEUTRAL_REACTIVE
 from tests.regression.numerical._monitoring import call_without_python_frames
 
 

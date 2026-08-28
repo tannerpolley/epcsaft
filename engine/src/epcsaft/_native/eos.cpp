@@ -95,27 +95,6 @@ std::size_t named_index(const std::vector<std::string> &names,
   return static_cast<std::size_t>(found - names.begin());
 }
 
-// EqExclude: input and domain validation
-bool polar_composition_admitted(const NativeParameters &parameters,
-                                const std::vector<double> &mole_fractions) {
-  if (parameters.polar_formulation == POLAR_FORMULATION_NONE) {
-    return true;
-  }
-  for (std::size_t component = 0; component < mole_fractions.size();
-       ++component) {
-    if (mole_fractions[component] < 0.0) {
-      return false;
-    }
-    const bool carries_moment =
-        parameters.dipole_moment_debye[component] != 0.0 ||
-        parameters.quadrupole_moment_debye_angstrom[component] != 0.0;
-    if (carries_moment && mole_fractions[component] <= 0.0) {
-      return false;
-    }
-  }
-  return true;
-}
-
 std::optional<double> single_solvent_log_fugacity(
     const NativeModel &model, double temperature, double pressure,
     const std::vector<double> &solvent_fractions, const std::string &phase) {
@@ -176,9 +155,7 @@ NativeModel::NativeModel(NativeParameters parameters)
       parameters_.ion_specific_suppression_coefficient.size() != components ||
       parameters_.dipole_scaling_debye2.size() != components ||
       parameters_.polarizability_scaling_angstrom3.size() != components ||
-      parameters_.correlation_integral_parameter.size() != components ||
-      parameters_.dipole_moment_debye.size() != components ||
-      parameters_.quadrupole_moment_debye_angstrom.size() != components) {
+      parameters_.correlation_integral_parameter.size() != components) {
     throw std::invalid_argument("inconsistent native model dimensions");
   }
   if (!positive_finite(parameters_.segment_count) ||
@@ -204,8 +181,6 @@ NativeModel::NativeModel(NativeParameters parameters)
       !finite(parameters_.dipole_scaling_debye2) ||
       !finite(parameters_.polarizability_scaling_angstrom3) ||
       !finite(parameters_.correlation_integral_parameter) ||
-      !finite(parameters_.dipole_moment_debye) ||
-      !finite(parameters_.quadrupole_moment_debye_angstrom) ||
       !std::isfinite(parameters_.ionic_region_relative_permittivity) ||
       !std::isfinite(parameters_.born_c_shell) ||
       !std::isfinite(parameters_.born_c_dielectric)) {
@@ -241,32 +216,6 @@ NativeModel::NativeModel(NativeParameters parameters)
   const bool ionic = std::any_of(parameters_.charge_number.begin(),
                                  parameters_.charge_number.end(),
                                  [](int charge) { return charge != 0; });
-  if (parameters_.polar_formulation != POLAR_FORMULATION_NONE &&
-      parameters_.polar_formulation !=
-          POLAR_FORMULATION_GROSS_VRABEC_POINT_MULTIPOLE) {
-    throw std::invalid_argument("invalid polar formulation");
-  }
-  const bool has_multipole =
-      std::any_of(parameters_.dipole_moment_debye.begin(),
-                  parameters_.dipole_moment_debye.end(),
-                  [](double value) { return value != 0.0; }) ||
-      std::any_of(parameters_.quadrupole_moment_debye_angstrom.begin(),
-                  parameters_.quadrupole_moment_debye_angstrom.end(),
-                  [](double value) { return value != 0.0; });
-  if (parameters_.polar_formulation == POLAR_FORMULATION_NONE &&
-      has_multipole) {
-    throw std::invalid_argument(
-        "physical multipoles require a polar formulation");
-  }
-  for (std::size_t component = 0; component < components; ++component) {
-    if (parameters_.dipole_moment_debye[component] < 0.0 ||
-        parameters_.quadrupole_moment_debye_angstrom[component] < 0.0 ||
-        (parameters_.charge_number[component] != 0 &&
-         (parameters_.dipole_moment_debye[component] != 0.0 ||
-          parameters_.quadrupole_moment_debye_angstrom[component] != 0.0))) {
-      throw std::invalid_argument("invalid physical multipole parameters");
-    }
-  }
   if (ionic) {
     if (parameters_.electrolyte_model != ELECTROLYTE_MODEL_BORN &&
         parameters_.electrolyte_model !=
@@ -1302,9 +1251,6 @@ NativeModel::evaluate(double temperature, double molar_density,
       mole_fractions.size() != components || !finite(mole_fractions)) {
     throw std::invalid_argument("invalid native state");
   }
-  if (!polar_composition_admitted(parameters_, mole_fractions)) {
-    throw std::invalid_argument("polar model mole fractions must be positive");
-  }
   const auto sigma = detail::segment_sigma(temperature, parameters_);
   if (!positive_finite(sigma)) {
     throw std::invalid_argument("invalid segment diameter correlation");
@@ -1324,8 +1270,7 @@ NativeModel::evaluate(double temperature, double molar_density,
       site_fraction, electrolyte.debye_huckel, born);
 
   const double residual = values.hard_chain + values.dispersion +
-                          values.association + values.polar +
-                          values.debye_huckel + values.born;
+                          values.association + values.debye_huckel + values.born;
   const auto derivatives = detail::thermodynamic_derivatives(
       temperature, molar_density, mole_fractions, parameters_, site_fraction);
   // EqID: compressibility_factor
@@ -1376,7 +1321,6 @@ NativeModel::evaluate(double temperature, double molar_density,
       values.hard_chain,
       values.dispersion,
       values.association,
-      values.polar,
       values.debye_huckel,
       values.born,
       electrolyte.bulk_relative_permittivity,
@@ -1414,9 +1358,6 @@ NativeModel::evaluate_pressure(double temperature, double pressure,
       !std::isfinite(pressure) || pressure <= 0.0 ||
       mole_fractions.size() != components || !finite(mole_fractions)) {
     throw std::invalid_argument("invalid native pressure state");
-  }
-  if (!polar_composition_admitted(parameters_, mole_fractions)) {
-    throw std::invalid_argument("polar model mole fractions must be positive");
   }
   // EqID: density_upper_bound
   const double packing_coefficient = detail::packing_fraction_coefficient(
@@ -1458,9 +1399,6 @@ NativeResult NativeModel::evaluate_pressure_continuation(
       !std::isfinite(reference_molar_density) ||
       reference_molar_density <= 0.0) {
     throw std::invalid_argument("invalid continued pressure state");
-  }
-  if (!polar_composition_admitted(parameters_, mole_fractions)) {
-    throw std::invalid_argument("polar model mole fractions must be positive");
   }
   const double packing_coefficient = detail::packing_fraction_coefficient(
       temperature, mole_fractions, parameters_);

@@ -80,12 +80,12 @@ active = ActiveParameterSet(
     ),
 )
 
-pair_parameters = parameters.select(("dipolar", "quadrupolar"))
+pair_parameters = parameters.select(("alpha", "beta"))
 pair_active = ActiveParameterSet(
     pair_parameters,
     (
-        "pair/dipolar/quadrupolar/k_ij",
-        "pair/dipolar/quadrupolar/l_ij",
+        "pair/alpha/beta/k_ij",
+        "pair/alpha/beta/l_ij",
     ),
     values=(0.12, 0.01),
 )

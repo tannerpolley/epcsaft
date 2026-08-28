@@ -13,8 +13,6 @@ _PROVENANCE = {
 _UNITS = {
     "molar_mass": "kilogram / mole",
     "charge_number": "elementary-charge",
-    "dipole_moment": "debye",
-    "quadrupole_moment": "debye * angstrom",
     "segment_count": "dimensionless",
     "segment_diameter": "angstrom",
     "dispersion_energy_over_k": "kelvin",
@@ -32,7 +30,7 @@ _UNITS = {
     "ion_fraction_suppression_coefficient": "dimensionless",
     "ion_specific_suppression_coefficient": "dimensionless",
 }
-_FIXED = frozenset({"molar_mass", "charge_number", "dipole_moment", "quadrupole_moment"})
+_FIXED = frozenset({"molar_mass", "charge_number"})
 
 
 def _value(magnitude: float, family: str) -> dict[str, object]:
@@ -90,7 +88,6 @@ def _model_families(
     association: str = "none",
     electrolyte: str = "none",
     permittivity: str = "none",
-    polar: str = "none",
     born_corrections: tuple[float, float] | None = None,
 ) -> list[dict[str, object]]:
     choices = {
@@ -98,14 +95,12 @@ def _model_families(
         "base": "pc-saft",
         "electrolyte": electrolyte,
         "permittivity": permittivity,
-        "polar": polar,
     }
     family_ids = {
         "association": "model/association",
         "base": "model/base",
         "electrolyte": "model/electrolyte",
         "permittivity": "model/relative_permittivity",
-        "polar": "model/polar",
     }
     result = [
         {
@@ -609,43 +604,6 @@ CHARGED_TERNARY_IMMISCIBLE = _document(
     topology=_association_topology("alpha", 2200.0, 0.03),
 )
 
-POLAR_BINARY = _document(
-    "polar-binary-fixture",
-    [
-        _component(
-            "dipolar",
-            segment_count=1.5,
-            segment_diameter=3.4,
-            dispersion_energy_over_k=220.0,
-            dipole_moment=1.7,
-        ),
-        _component(
-            "quadrupolar",
-            segment_count=2.25,
-            segment_diameter=3.8,
-            dispersion_energy_over_k=280.0,
-            quadrupole_moment=4.1,
-        ),
-    ],
-    pairs=[_pair("dipolar", "quadrupolar", k_ij=0.08, l_ij=0.17)],
-    model_families=_model_families(polar="point-multipole"),
-)
-
-POLAR_PURE = _document(
-    "polar-pure-fixture",
-    [
-        _component(
-            "polar-fluid",
-            segment_count=1.5,
-            segment_diameter=3.4,
-            dispersion_energy_over_k=220.0,
-            dipole_moment=1.7,
-            quadrupole_moment=4.1,
-        )
-    ],
-    model_families=_model_families(polar="point-multipole"),
-)
-
 ASSOCIATING_PURE = _document(
     "associating-pure-fixture",
     [
@@ -1037,6 +995,37 @@ def neutral_binary(component_ids: tuple[str, str]) -> dict[str, object]:
     )
 
 
+def neutral_ternary_pairs() -> dict[str, object]:
+    return _document(
+        "neutral-ternary-pair-fixture",
+        [
+            _component(
+                "alpha",
+                segment_count=1.1,
+                segment_diameter=3.1,
+                dispersion_energy_over_k=180.0,
+            ),
+            _component(
+                "beta",
+                segment_count=1.6,
+                segment_diameter=3.5,
+                dispersion_energy_over_k=230.0,
+            ),
+            _component(
+                "gamma",
+                segment_count=2.0,
+                segment_diameter=3.9,
+                dispersion_energy_over_k=290.0,
+            ),
+        ],
+        pairs=[
+            _pair("alpha", "beta", k_ij=0.03, l_ij=-0.02),
+            _pair("alpha", "gamma", k_ij=0.07, l_ij=0.04),
+            _pair("beta", "gamma", k_ij=-0.05, l_ij=0.01),
+        ],
+    )
+
+
 def component_values(mapping: dict[str, object], family: str) -> tuple[float | None, ...]:
     values = []
     for component in mapping["components"]:
@@ -1118,12 +1107,11 @@ __all__ = (
     "NEUTRAL_ASSOCIATING_MIXTURE",
     "NEUTRAL_BINARY",
     "NEUTRAL_TERNARY_IMMISCIBLE",
-    "POLAR_BINARY",
-    "POLAR_PURE",
     "STRONGLY_ASSOCIATING_BINARY",
     "component_values",
     "neutral_binary",
     "neutral_pure",
+    "neutral_ternary_pairs",
     "pair_matrix",
     "set_binary_pair_value",
     "set_component_values",

@@ -14,7 +14,7 @@ import pytest
 import epcsaft
 from epcsaft import _core, equilibrium
 from epcsaft.equilibrium import _grepe
-from tests.eos._raw_cases import MULTINEUTRAL_REACTIVE, MULTISOLVENT_MULTIION
+from tests.eos._cases import MULTINEUTRAL_REACTIVE, MULTISOLVENT_MULTIION
 
 from .chemical_equilibrium_cases import typed_problem as _typed_problem
 

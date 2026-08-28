@@ -99,7 +99,7 @@ ASAN_OPTIONS="detect_leaks=0:halt_on_error=1" \
 UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" \
 PYTHONNOUSERSITE=1 \
     "$run_root/venv/bin/python" -m pytest -q \
-        tests/eos/numerical/test_pure_saturation.py \
+        tests/eos/numerical/test_saturation.py \
         tests/regression/numerical/test_generic_fit.py \
         tests/regression/numerical/test_grepe_intensive_fit.py \
         tests/regression/numerical/test_full_space_regression.py \
