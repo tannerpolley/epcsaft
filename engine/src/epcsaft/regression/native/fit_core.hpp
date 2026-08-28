@@ -79,6 +79,7 @@ struct FitRequest final {
   Controls controls;
   std::vector<std::string> failure_codes;
   std::vector<Experiment> experiments;
+  std::string evaluation_strategy{"automatic"};
 };
 
 struct OwnerFailure final {

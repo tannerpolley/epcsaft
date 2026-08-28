@@ -250,6 +250,7 @@ def _fit_owner_batches(
         },
         tuple(sorted(NON_EVALUABLE_TRIAL_CODES)),
         experiments,
+        resolved.fit.solver.evaluation_strategy,
     )
     if (failure := native.get("preflight_failure")) is not None:
         record = cast(Mapping[str, object], failure)

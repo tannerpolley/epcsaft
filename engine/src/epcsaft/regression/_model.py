@@ -120,7 +120,7 @@ _FIELDS = MappingProxyType(
         ),
         "transformation": _Fields(("input", "output")),
         "quadrature": _Fields(("initial_order", "max_order", "tolerance")),
-        "solver": _Fields(("multistart",), ("controls",)),
+        "solver": _Fields(("multistart",), ("controls", "evaluation_strategy")),
         "acceptance": _Fields(("maximum_cost",)),
         "solver_controls": _Fields(
             (),
@@ -147,6 +147,11 @@ _TRANSFORMATIONS = frozenset({"identity", "log", "log10"})
 _MODEL_KINDS = ("pure", "mixture")
 _SOURCE_KINDS = ("table", "published_observation_correlation")
 _QUADRATURE_ORDERS = (2, 4, 8, 16, 32, 64)
+_EVALUATION_STRATEGIES = (
+    "automatic",
+    "reduced_space",
+    "simultaneous_sparse_full_space",
+)
 
 
 def _digest(value: object) -> str:
@@ -362,6 +367,9 @@ class SolverControlsSpec:
 class SolverSpec:
     multistart: MultistartSpec
     controls: SolverControlsSpec
+    evaluation_strategy: Literal["automatic", "reduced_space", "simultaneous_sparse_full_space"] = (
+        "automatic"
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -935,7 +943,19 @@ def _parse_solver(value: object, path: str) -> SolverSpec:
         raise FitSchemaError(
             "invalid-value", f"{path}.controls.optimizer_tolerance", "positive required"
         )
-    return SolverSpec(MultistartSpec(tuple(starts), margin), controls)
+    evaluation_strategy = _enum(
+        mapping.get("evaluation_strategy", "automatic"),
+        _EVALUATION_STRATEGIES,
+        f"{path}.evaluation_strategy",
+    )
+    return SolverSpec(
+        MultistartSpec(tuple(starts), margin),
+        controls,
+        cast(
+            Literal["automatic", "reduced_space", "simultaneous_sparse_full_space"],
+            evaluation_strategy,
+        ),
+    )
 
 
 def _parse_acceptance(value: object, path: str) -> FitAcceptanceSpec:
@@ -1012,7 +1032,7 @@ def _observation_mapping(observation: ObservationSpec) -> dict[str, object]:
 
 
 def _solver_mapping(solver: SolverSpec) -> dict[str, object]:
-    return {
+    result: dict[str, object] = {
         "multistart": {
             "starts": [
                 {"identity": start.identity, "values": list(start.values)}
@@ -1025,6 +1045,9 @@ def _solver_mapping(solver: SolverSpec) -> dict[str, object]:
             "optimizer_tolerance": solver.controls.optimizer_tolerance,
         },
     }
+    if solver.evaluation_strategy != "automatic":
+        result["evaluation_strategy"] = solver.evaluation_strategy
+    return result
 
 
 def _object_schema(
@@ -1359,6 +1382,10 @@ def parameter_fit_json_schema() -> dict[str, object]:
                             },
                             _FIELDS["solver_controls"].required,
                         ),
+                        "evaluation_strategy": {
+                            "type": "string",
+                            "enum": list(_EVALUATION_STRATEGIES),
+                        },
                     },
                     _FIELDS["solver"].required,
                 ),

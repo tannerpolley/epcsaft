@@ -1667,6 +1667,12 @@ bool full_space_eligible(const FitRequest &request) {
 }
 
 void validate_request(const FitRequest &request) {
+  if (request.evaluation_strategy != "automatic" &&
+      request.evaluation_strategy != "reduced_space" &&
+      request.evaluation_strategy != "simultaneous_sparse_full_space") {
+    throw std::invalid_argument("unknown regression evaluation strategy: " +
+                                request.evaluation_strategy);
+  }
   if (request.active_parameter_count == 0 ||
       request.active_parameter_count != request.identity_coordinates.size() ||
       request.observations.size() != request.experiments.size() ||
@@ -1804,7 +1810,16 @@ std::vector<double> start_active_values(const FitRequest &request,
 FitResult fit_native(const FitRequest &request) {
   validate_request(request);
   FitResult output;
-  const bool full_space = full_space_eligible(request);
+  const bool eligible = full_space_eligible(request);
+  if (request.evaluation_strategy == "simultaneous_sparse_full_space" &&
+      !eligible) {
+    throw std::invalid_argument(
+        "explicit simultaneous_sparse_full_space evaluation is ineligible for "
+        "this fit request");
+  }
+  const bool full_space =
+      request.evaluation_strategy == "simultaneous_sparse_full_space" ||
+      (request.evaluation_strategy == "automatic" && eligible);
   output.evaluation_strategy =
       full_space ? "simultaneous_sparse_full_space" : "reduced_space";
   std::optional<FullSpaceCampaign> full_space_campaign;

@@ -356,4 +356,5 @@ def _fit_resolved(
     controls: Mapping[str, object],
     failure_codes: Sequence[str],
     experiments: Sequence[Mapping[str, object]],
+    evaluation_strategy: str = ...,
 ) -> dict[str, Any]: ...

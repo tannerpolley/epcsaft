@@ -235,14 +235,16 @@ py::dict fit_resolved(
     const py::iterable &coordinate_values,
     const py::iterable &observation_values, const py::dict &control_values,
     const std::vector<std::string> &failure_codes,
-    const py::iterable &experiment_values) {
+    const py::iterable &experiment_values,
+    const std::string &evaluation_strategy) {
   FitRequest request{active_parameter_count,
                      identity_coordinates,
                      parse_coordinates(coordinate_values),
                      parse_observations(observation_values),
                      parse_controls(control_values),
                      failure_codes,
-                     parse_experiments(experiment_values)};
+                     parse_experiments(experiment_values),
+                     evaluation_strategy};
   FitResult native;
   {
     py::gil_scoped_release release;
@@ -276,5 +278,6 @@ void bind_parameter_fit(py::module_ &module) {
              py::arg("active_parameter_count"),
              py::arg("identity_coordinates"), py::arg("coordinates"),
              py::arg("observations"), py::arg("controls"),
-             py::arg("failure_codes"), py::arg("experiments"));
+             py::arg("failure_codes"), py::arg("experiments"),
+             py::arg("evaluation_strategy") = "automatic");
 }
