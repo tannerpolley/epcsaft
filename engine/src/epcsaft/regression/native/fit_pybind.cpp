@@ -202,6 +202,17 @@ py::dict start_mapping(const StartResult &value,
   result["trial_failure_code"] = value.trial_failure_code;
   result["iterations"] = value.iterations;
   result["non_evaluable_count"] = value.non_evaluable_count;
+  py::list parameter_constraints;
+  for (const auto &constraint : value.parameter_domain_constraints) {
+    parameter_constraints.append(py::dict(
+        "identity"_a = constraint.identity,
+        "temperature_k"_a = constraint.temperature_k,
+        "initial_value"_a = constraint.initial_value,
+        "final_value"_a = constraint.final_value,
+        "upper"_a = constraint.upper,
+        "affine_jacobian"_a = constraint.affine_jacobian));
+  }
+  result["parameter_domain_constraints"] = parameter_constraints;
   py::list failures;
   for (const auto &failure : value.owner_failures) {
     failures.append(py::dict("code"_a = failure.code, "reason"_a = failure.reason,

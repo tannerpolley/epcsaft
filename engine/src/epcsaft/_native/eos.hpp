@@ -94,6 +94,14 @@ struct NativeActiveCoordinate final {
     double reference_temperature_k;
 };
 
+struct NativeActiveParameterConstraint final {
+    std::string identity;
+    double temperature_k;
+    double offset;
+    std::vector<double> coefficients;
+    double upper;
+};
+
 struct NativeProviderMetadata final {
     std::string parameter_fingerprint;
     std::string topology_fingerprint;
@@ -176,6 +184,8 @@ public:
     const NativeProviderMetadata& provider_metadata() const;
     const std::vector<std::string>& component_ids() const;
     const std::vector<NativeActiveCoordinate>& active_coordinates() const;
+    std::vector<NativeActiveParameterConstraint>
+    active_parameter_constraints() const;
     NativeFixedTopologyPhaseBlock evaluate_fixed_topology_association(
         double temperature,
         double amount,

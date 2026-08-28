@@ -163,7 +163,25 @@ def test_temperature_correlated_domain_trial_is_a_structured_rejection(
     assert all(math.isfinite(value) for value in rejected.final_physical)
     assert rejected.owner_failures[0].code == "provider_domain_rejection"
     assert result.accounting.rejected_row_trials >= 1
+    hot_endpoint = next(
+        constraint
+        for constraint in rejected.parameter_domain_constraints
+        if constraint["temperature_k"] == pytest.approx(393.15)
+    )
+    expected_hot_jacobian = (
+        1.0,
+        0.0,
+        0.0,
+        1000.0 * (1.0 / 393.15 - 1.0 / 313.15),
+    )
+    assert hot_endpoint["initial_value"] == pytest.approx(1.0119038973581267)
+    assert hot_endpoint["initial_value"] > hot_endpoint["upper"]
+    assert hot_endpoint["affine_jacobian"] == pytest.approx(expected_hot_jacobian)
     evaluated = next(start for start in result.starts if start.start_identity == "valid-reference")
     assert evaluated.owner_failures == ()
+    assert all(
+        constraint["initial_value"] <= constraint["upper"]
+        for constraint in evaluated.parameter_domain_constraints
+    )
     assert all(math.isfinite(value) for value in evaluated.residuals)
     assert all(math.isfinite(value) for value in evaluated.affine_jacobian)

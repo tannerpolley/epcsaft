@@ -108,6 +108,15 @@ struct BatchOutcome final {
   std::string failure_code;
 };
 
+struct ParameterDomainConstraintDiagnostic final {
+  std::string identity;
+  double temperature_k;
+  double initial_value;
+  double final_value;
+  double upper;
+  std::vector<double> affine_jacobian;
+};
+
 struct StartResult final {
   std::size_t index{0};
   std::string start_identity;
@@ -117,6 +126,8 @@ struct StartResult final {
   std::vector<double> residuals;
   std::vector<double> affine_jacobian;
   std::vector<OwnerFailure> owner_failures;
+  std::vector<ParameterDomainConstraintDiagnostic>
+      parameter_domain_constraints;
   std::vector<BatchOutcome> batch_outcomes;
   std::vector<std::optional<epcsaft_engine::equilibrium::GrepeResult>>
       owner_results;
