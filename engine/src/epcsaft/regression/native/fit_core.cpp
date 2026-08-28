@@ -301,6 +301,8 @@ public:
         *owner_result = error.owner_result();
       }
       return reject(error.code(), error.what());
+    } catch (const std::domain_error &error) {
+      return reject("provider_domain_rejection", error.what());
     }
   }
 
