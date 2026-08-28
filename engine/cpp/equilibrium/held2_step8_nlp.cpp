@@ -3,8 +3,8 @@
 
 #include <Highs.h>
 #include <Eigen/Dense>
-#include <coin/IpIpoptApplication.hpp>
-#include <coin/IpTNLP.hpp>
+#include <IpIpoptApplication.hpp>
+#include <IpTNLP.hpp>
 
 #include <algorithm>
 #include <cmath>

@@ -1380,7 +1380,8 @@ VaporPoint evaluate_vapor(
     const GrepePhase& vapor,
     const std::vector<double>& log_ratios,
     double log_volume,
-    const std::vector<std::string>& parameter_identities
+    const std::vector<std::string>& parameter_identities,
+    bool require_fixed_pressure_projection = true
 ) {
     VaporPoint result;
     result.fractions = softmax_reference(log_ratios);
@@ -1392,6 +1393,11 @@ VaporPoint evaluate_vapor(
         vapor.packing_fraction_interval[1]
     );
     if (!(bounds[0] < result.volume_m3 && result.volume_m3 < bounds[1])) {
+        if (!require_fixed_pressure_projection) {
+            throw std::domain_error(
+                "declared vapor volume left its packing-fraction chart"
+            );
+        }
         throw GrepeFailure(
             "active_bound_ambiguity",
             "declared vapor volume left its packing-fraction chart"
@@ -1426,34 +1432,54 @@ VaporPoint evaluate_vapor(
         );
     }
     const double h_vv = block.phase.hessian[count * state_count + count];
-    const auto projection = epcsaft::fixed_pressure_composition_projection(
-        request.temperature.value,
-        result.fractions,
-        result.volume_m3,
-        provider.component_charges(),
-        block.phase.hessian
-    );
-    if (!projection.failure_code.empty()) {
-        throw GrepeFailure(
-            projection.failure_code,
-            "EOS fixed-pressure composition projection is unavailable"
-        );
-    }
-    if (projection.coordinate_component_indices.size() != reference) {
-        throw GrepeFailure(
-            "unsupported_derivative",
-            "GREPE vapor chart does not admit the EOS constrained composition basis"
-        );
-    }
     result.chemical_potentials.assign(block.phase.gradient.begin(), block.phase.gradient.begin() + static_cast<std::ptrdiff_t>(count));
-    result.mu_log_ratio_at_fixed_volume =
-        projection.fixed_volume_chemical_potential_derivatives_over_rt;
-    result.mu_log_volume.assign(count, 0.0);
-    result.mu_log_ratio = projection.chemical_potential_derivatives_over_rt;
-    result.composition_log_ratio = projection.composition_derivatives;
-    result.pressure_log_ratio = projection.fixed_volume_pressure_derivatives_pa;
-    result.mu_pressure.assign(count, 0.0);
+    result.mu_log_ratio_at_fixed_volume.assign(count * reference, 0.0);
+    result.pressure_log_ratio.assign(reference, 0.0);
     const double rt = kGasConstant * request.temperature.value;
+    for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
+        for (std::size_t species = 0; species < count; ++species) {
+            const double composition_derivative = result.fractions[species]
+                * ((species == coordinate ? 1.0 : 0.0)
+                   - result.fractions[coordinate]);
+            result.pressure_log_ratio[coordinate] -= rt
+                * block.phase.hessian[count * state_count + species]
+                * composition_derivative;
+            for (std::size_t component = 0; component < count; ++component) {
+                result.mu_log_ratio_at_fixed_volume[
+                    component * reference + coordinate
+                ] += block.phase.hessian[component * state_count + species]
+                    * composition_derivative;
+            }
+        }
+    }
+    if (require_fixed_pressure_projection) {
+        const auto projection = epcsaft::fixed_pressure_composition_projection(
+            request.temperature.value,
+            result.fractions,
+            result.volume_m3,
+            provider.component_charges(),
+            block.phase.hessian
+        );
+        if (!projection.failure_code.empty()) {
+            throw GrepeFailure(
+                projection.failure_code,
+                "EOS fixed-pressure composition projection is unavailable"
+            );
+        }
+        if (projection.coordinate_component_indices.size() != reference) {
+            throw GrepeFailure(
+                "unsupported_derivative",
+                "GREPE vapor chart does not admit the EOS constrained composition basis"
+            );
+        }
+        result.mu_log_ratio_at_fixed_volume =
+            projection.fixed_volume_chemical_potential_derivatives_over_rt;
+        result.mu_log_ratio = projection.chemical_potential_derivatives_over_rt;
+        result.composition_log_ratio = projection.composition_derivatives;
+        result.pressure_log_ratio = projection.fixed_volume_pressure_derivatives_pa;
+    }
+    result.mu_log_volume.assign(count, 0.0);
+    result.mu_pressure.assign(count, 0.0);
     for (std::size_t component = 0; component < count; ++component) {
         result.mu_log_volume[component] =
             block.phase.hessian[component * state_count + count] * result.volume_m3;
@@ -3089,20 +3115,57 @@ GrepeResult initialize_grepe_local(
     const GrepeLocalPoint& point
 ) {
     if (structure.finite_incipient) {
-        IncipientSolve solved = solve_incipient_pressure(model, incipient_model, request);
-        const IncipientClosure& closure = solved.closure;
-        std::vector<double> local = closure.liquid.solved.equilibrium.local_variables;
-        std::vector<double> lower = closure.liquid.solved.equilibrium.local_lower_bounds;
-        std::vector<double> upper = closure.liquid.solved.equilibrium.local_upper_bounds;
-        local.push_back(std::log(closure.pressure_pa));
+        GrepeResult result;
+        std::vector<double> local;
+        std::vector<double> lower;
+        std::vector<double> upper;
+        double pressure_pa = 0.0;
+        std::vector<double> vapor_fractions;
+        double vapor_volume_m3 = 0.0;
+        try {
+            IncipientSolve solved = solve_incipient_pressure(
+                model, incipient_model, request
+            );
+            const IncipientClosure& closure = solved.closure;
+            local = closure.liquid.solved.equilibrium.local_variables;
+            lower = closure.liquid.solved.equilibrium.local_lower_bounds;
+            upper = closure.liquid.solved.equilibrium.local_upper_bounds;
+            pressure_pa = closure.pressure_pa;
+            vapor_fractions = closure.vapor_fractions;
+            vapor_volume_m3 = closure.vapor_volume_m3;
+            result = incipient_result(request, std::move(solved));
+        } catch (const GrepeFailure&) {
+            const auto vapor = std::find_if(
+                request.continuation_phases.begin(),
+                request.continuation_phases.end(),
+                [&](const GrepeContinuationPhase& phase) {
+                    return phase.identity == structure.vapor_phase.identity;
+                }
+            );
+            if (request.continuation_pressure_pa <= 0.0
+                || (!structure.vapor_phase.ideal_gas
+                    && vapor == request.continuation_phases.end())) {
+                throw;
+            }
+            pressure_pa = request.continuation_pressure_pa;
+            LiquidEvaluation liquid = evaluate_liquid(model, request, pressure_pa);
+            local = liquid.solved.equilibrium.local_variables;
+            lower = liquid.solved.equilibrium.local_lower_bounds;
+            upper = liquid.solved.equilibrium.local_upper_bounds;
+            result = std::move(liquid.solved);
+            if (!structure.vapor_phase.ideal_gas) {
+                vapor_fractions = vapor->mole_fractions;
+                vapor_volume_m3 = vapor->molar_volume_m3_per_mol;
+            }
+        }
+        local.push_back(std::log(pressure_pa));
         lower.push_back(std::log(request.pressure.bounds[0]));
         upper.push_back(std::log(request.pressure.bounds[1]));
-        if (!closure.ideal) {
-            const std::size_t reference = closure.vapor_fractions.size() - 1;
+        if (!structure.vapor_phase.ideal_gas) {
+            const std::size_t reference = vapor_fractions.size() - 1;
             for (std::size_t component = 0; component < reference; ++component) {
                 local.push_back(std::log(
-                    closure.vapor_fractions[component]
-                    / closure.vapor_fractions[reference]
+                    vapor_fractions[component] / vapor_fractions[reference]
                 ));
                 lower.push_back(-460.0);
                 upper.push_back(460.0);
@@ -3110,19 +3173,22 @@ GrepeResult initialize_grepe_local(
             ProviderContext provider(incipient_model);
             const auto volume_bounds = provider.evaluate_molar_volume_bounds(
                 request.temperature.value,
-                closure.vapor_fractions,
+                vapor_fractions,
                 structure.vapor_phase.packing_fraction_interval[0],
                 structure.vapor_phase.packing_fraction_interval[1]
             );
-            local.push_back(std::log(closure.vapor_volume_m3));
-            lower.push_back(std::nextafter(
+            const double volume_lower = std::nextafter(
                 std::log(volume_bounds[0]), std::numeric_limits<double>::infinity()
-            ));
-            upper.push_back(std::nextafter(
+            );
+            const double volume_upper = std::nextafter(
                 std::log(volume_bounds[1]), -std::numeric_limits<double>::infinity()
+            );
+            local.push_back(std::clamp(
+                std::log(vapor_volume_m3), volume_lower, volume_upper
             ));
+            lower.push_back(volume_lower);
+            upper.push_back(volume_upper);
         }
-        GrepeResult result = incipient_result(request, std::move(solved));
         result.equilibrium.local_variables = std::move(local);
         result.equilibrium.local_lower_bounds = std::move(lower);
         result.equilibrium.local_upper_bounds = std::move(upper);
@@ -3331,7 +3397,7 @@ void evaluate_grepe_local_blocks(
             ProviderContext provider(incipient_model);
             vapor = evaluate_vapor(
                 provider, request, structure.vapor_phase, vapor_log_ratios,
-                local_variables.back(), structure.active_parameter_identities
+                local_variables.back(), structure.active_parameter_identities, false
             );
             vapor_fractions = vapor->fractions;
             for (std::size_t component = 0; component < reference; ++component) {
@@ -3636,6 +3702,54 @@ GrepeResult finalize_grepe_local(
         const std::size_t pressure_column = local_variables.size() - extra;
         GrepeRequest retained = request;
         retained.continuation_pressure_pa = std::exp(local_variables[pressure_column]);
+        GrepeRequest liquid_request = finite_incipient_liquid_request(
+            retained, retained.continuation_pressure_pa
+        );
+        GrepeLocalStructure liquid_structure = structure;
+        liquid_structure.finite_incipient = false;
+        const std::vector<double> liquid_local(
+            local_variables.begin(),
+            local_variables.begin() + static_cast<std::ptrdiff_t>(pressure_column)
+        );
+        const std::vector<double> liquid_lower(
+            local_lower_bounds.begin(),
+            local_lower_bounds.begin() + static_cast<std::ptrdiff_t>(pressure_column)
+        );
+        const std::vector<double> liquid_upper(
+            local_upper_bounds.begin(),
+            local_upper_bounds.begin() + static_cast<std::ptrdiff_t>(pressure_column)
+        );
+        const GrepeResult liquid = finalize_finite_context(
+            prepare_retained_finite_grepe(
+                model, liquid_request, liquid_structure, point
+            ),
+            liquid_request, liquid_local, liquid_lower, liquid_upper
+        );
+        if (!liquid.equilibrium.accepted) {
+            throw GrepeFailure(
+                "physical_rejection",
+                liquid.equilibrium.failure_reason.empty()
+                    ? "retained liquid point failed final certification"
+                    : liquid.equilibrium.failure_reason
+            );
+        }
+        const auto finite = std::find_if(
+            retained.phases.begin(), retained.phases.end(),
+            [](const GrepePhase& phase) { return phase.finite; }
+        );
+        const double liquid_amount = std::accumulate(
+            liquid.equilibrium.phase_amounts_mol[0].begin(),
+            liquid.equilibrium.phase_amounts_mol[0].end(), 0.0
+        );
+        if (finite == retained.phases.end() || !(liquid_amount > 0.0)) {
+            throw std::invalid_argument(
+                "retained finite-incipient liquid state is invalid"
+            );
+        }
+        finite->start = ReactiveFinitePhaseStart{
+            liquid.equilibrium.phase_amounts_mol[0],
+            liquid.equilibrium.phase_volumes_m3[0] / liquid_amount,
+        };
         if (!structure.vapor_phase.ideal_gas) {
             const std::vector<double> log_ratios(
                 local_variables.begin() + static_cast<std::ptrdiff_t>(pressure_column + 1),

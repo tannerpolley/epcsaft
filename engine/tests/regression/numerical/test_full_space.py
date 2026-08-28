@@ -201,3 +201,59 @@ def test_solved_pressure_full_space_derivatives_match_independent_resolves(
         pressure_pa = math.fsum(fugacities)
         reference = (pressure_pa, fugacities[0] / pressure_pa, fugacities[0])
         assert center.values == pytest.approx(reference, rel=2.0e-10, abs=2.0e-8)
+
+
+@pytest.mark.slow
+def test_solved_pressure_full_space_certifies_a_closed_declared_parameter_bound(
+    tmp_path: Path,
+) -> None:
+    """Falsify affine-bound rounding or final certification at a closed bound."""
+
+    identity = "pair/cosolvent/solvent/k_ij"
+    mapping, _, _, _, _, truth_value, _ = solved_pressure_fit_case(
+        tmp_path,
+        ideal_vapor=False,
+        parameter_identity=identity,
+        truth_value=0.01,
+        bounds=(-0.01, 0.01),
+        origin=0.0,
+        scale=0.01,
+    )
+    result = fit(mapping, base_path=tmp_path)
+    accepted = result.best_usable_start
+    assert accepted is not None
+    assert result.evaluation_strategy == "simultaneous_sparse_full_space"
+    assert accepted.final_physical == pytest.approx((truth_value,), abs=2.0e-8)
+    assert accepted.owner_failures == ()
+
+
+@pytest.mark.slow
+def test_solved_pressure_full_space_rejects_only_physical_domain_trials(
+    tmp_path: Path,
+) -> None:
+    """Falsify Ipopt restoration crashes when a trial leaves the EOS domain."""
+
+    identity = "pair/cosolvent/solvent/k_ij"
+    mapping, *_ = solved_pressure_fit_case(
+        tmp_path,
+        ideal_vapor=False,
+        parameter_identity=identity,
+        truth_value=0.01,
+        bounds=(-0.01, 0.01),
+        origin=0.0,
+        scale=0.01,
+    )
+    coordinate = mapping["active"]["coordinates"][identity]
+    coordinate.update({"bounds": [-1.0, 1.0], "scale": 1.0})
+    observation = mapping["observations"][0]
+    observation["targets"] = observation["targets"][:1]
+    observation["targets"][0]["observed"] *= 100.0
+    mapping["solver"]["controls"]["maximum_iterations"] = 20
+
+    result = fit(mapping, base_path=tmp_path)
+    accepted = result.best_usable_start
+    assert result.evaluation_strategy == "simultaneous_sparse_full_space"
+    assert accepted is not None
+    assert accepted.solver_status == "solve_succeeded"
+    assert accepted.owner_failures == ()
+    assert accepted.final_physical[0] == pytest.approx(0.0157182582, abs=2.0e-8)

@@ -14,8 +14,8 @@
 
 #include <Eigen/Dense>
 #include <Highs.h>
-#include <coin/IpIpoptApplication.hpp>
-#include <coin/IpTNLP.hpp>
+#include <IpIpoptApplication.hpp>
+#include <IpTNLP.hpp>
 
 namespace epcsaft_engine::equilibrium {
 namespace {

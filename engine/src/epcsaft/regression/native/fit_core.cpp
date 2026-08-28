@@ -3,9 +3,9 @@
 
 #include <Eigen/Dense>
 #include <Eigen/SVD>
-#include <coin/IpIpoptApplication.hpp>
-#include <coin/IpSolveStatistics.hpp>
-#include <coin/IpTNLP.hpp>
+#include <IpIpoptApplication.hpp>
+#include <IpSolveStatistics.hpp>
+#include <IpTNLP.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -1105,8 +1105,11 @@ private:
     std::vector<double> result(identity_coordinates_.size());
     for (std::size_t identity = 0; identity < result.size(); ++identity) {
       const std::size_t coordinate = identity_coordinates_[identity];
+      const double affine = std::clamp(
+          x[coordinate], coordinates_[coordinate].lower_affine,
+          coordinates_[coordinate].upper_affine);
       result[identity] = coordinates_[coordinate].origin +
-                         x[coordinate] * coordinates_[coordinate].scale;
+                         affine * coordinates_[coordinate].scale;
     }
     return result;
   }
@@ -1246,16 +1249,39 @@ private:
                            [](double value) { return std::isfinite(value); });
       };
       if (constraints_.size() != constraint_count_ ||
-          constraint_jacobian_.size() != jacobian_rows_.size() ||
-          !std::isfinite(objective_) || !finite(gradient_) ||
-          !finite(constraints_) || !finite(constraint_jacobian_)) {
-        throw std::domain_error("native full-space values are invalid");
+          constraint_jacobian_.size() != jacobian_rows_.size()) {
+        throw std::domain_error("native full-space dimensions are invalid");
+      }
+      if (!std::isfinite(objective_)) {
+        throw std::domain_error("native full-space objective is invalid");
+      }
+      if (!finite(gradient_)) {
+        throw std::domain_error("native full-space objective gradient is invalid");
+      }
+      if (!finite(constraints_)) {
+        const auto invalid = std::find_if(
+            constraints_.begin(), constraints_.end(),
+            [](double value) { return !std::isfinite(value); });
+        throw std::domain_error(
+            "native full-space constraint "
+            + std::to_string(invalid - constraints_.begin()) + " is invalid"
+        );
+      }
+      if (!finite(constraint_jacobian_)) {
+        throw std::domain_error("native full-space constraint Jacobian is invalid");
       }
       evaluable_ = true;
       return true;
-    } catch (const std::exception &error) {
-      evaluable_ = false;
-      return false;
+    } catch (const std::domain_error &) {
+      // Only explicitly typed physical-domain trial failures are finite-walled.
+      // Contract and programming exceptions must escape; an accepted fit is
+      // independently re-solved and certified after Ipopt returns.
+      objective_ = 1.0e20;
+      gradient_.assign(initial_.size(), 0.0);
+      constraints_.assign(constraint_count_, 1.0e10);
+      constraint_jacobian_.assign(jacobian_rows_.size(), 0.0);
+      evaluable_ = true;
+      return true;
     }
   }
 
@@ -1595,7 +1621,9 @@ bool full_space_eligible(const FitRequest &request) {
             std::all_of(
                 experiment->request.phases.begin(),
                 experiment->request.phases.end(),
-                [](const auto &phase) { return !phase.start.has_value(); });
+                [](const auto &phase) {
+                  return phase.finite || !phase.start.has_value();
+                });
         if (!finite_only && !finite_incipient) {
           return false;
         }

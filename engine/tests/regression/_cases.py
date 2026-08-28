@@ -427,6 +427,11 @@ def solved_pressure_fit_case(
     tmp_path: Path,
     *,
     ideal_vapor: bool,
+    parameter_identity: str = "component/solvent/segment_diameter",
+    truth_value: float = 2.9,
+    bounds: tuple[float, float] = (2.7, 3.05),
+    origin: float = 2.8,
+    scale: float = 0.1,
 ) -> tuple[
     dict[str, object],
     Parameters,
@@ -437,8 +442,6 @@ def solved_pressure_fit_case(
     equilibrium.GeneralReactiveEquilibriumResult,
 ]:
     parameters, model, unanchored = solved_pressure_case(ideal_vapor=ideal_vapor)
-    parameter_identity = "component/solvent/segment_diameter"
-    truth_value = 2.9
     truth_active = epcsaft.ActiveParameterSet(
         parameters, (parameter_identity,), values=(truth_value,)
     )
@@ -458,9 +461,9 @@ def solved_pressure_fit_case(
             "identities": [parameter_identity],
             "coordinates": {
                 parameter_identity: {
-                    "bounds": [2.7, 3.05],
-                    "origin": 2.8,
-                    "scale": 0.1,
+                    "bounds": list(bounds),
+                    "origin": origin,
+                    "scale": scale,
                 }
             },
             "ties": [],
@@ -498,7 +501,7 @@ def solved_pressure_fit_case(
         ],
         "solver": {
             "multistart": {
-                "starts": [{"identity": "off-truth", "values": [2.8]}],
+                "starts": [{"identity": "off-truth", "values": [origin]}],
                 "affine_bound_margin": 1.0e-7,
             },
             "controls": {"maximum_iterations": 80, "optimizer_tolerance": 1.0e-8},
