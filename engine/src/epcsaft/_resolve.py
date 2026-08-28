@@ -5,7 +5,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Literal, SupportsFloat, cast
+from typing import Any, Literal, SupportsFloat, cast
 
 import pint
 
@@ -340,11 +340,18 @@ def _domain_limits(
         raise _error("invalid-domain", field="temperature", value="empty-intersection")
     if pressure_min is not None and pressure_max is not None and pressure_min > pressure_max:
         raise _error("invalid-domain", field="pressure", value="empty-intersection")
-    candidates = tuple(
-        family for family in parameters.model_families if family.candidate_domain_id is not None
+    candidate_owners = (
+        *parameters.records,
+        *parameters.model_families,
+        *parameters.topology.edges,
     )
-    if candidates and len(candidates) != len(parameters.model_families):
-        raise _error("invalid-domain", field="model_family.candidate", value="partial")
+    candidates = tuple(
+        owner
+        for owner in candidate_owners
+        if getattr(owner, "candidate_domain_id", None) is not None
+    )
+    if candidates and len(candidates) != len(candidate_owners):
+        raise _error("invalid-domain", field="candidate_provenance", value="partial")
     if not candidates:
         return (
             temperature_min,
@@ -359,8 +366,8 @@ def _domain_limits(
             None,
             None,
         )
-    candidate_ids = {family.candidate_domain_id for family in candidates}
-    qualifications = {family.qualification for family in candidates}
+    candidate_ids = {owner.candidate_domain_id for owner in candidates}
+    qualifications = {owner.qualification for owner in candidates}
     if len(candidate_ids) != 1 or qualifications != {"candidate_extrapolation"}:
         raise _error("invalid-domain", field="model_family.candidate", value="inconsistent")
     candidate = domain_by_id[cast(str, next(iter(candidate_ids)))]
@@ -390,7 +397,18 @@ def _domain_limits(
         "sha256:"
         + hashlib.sha256(
             json.dumps(
-                sorted(cast(str, family.source_sha256) for family in candidates),
+                sorted(
+                    (
+                        cast(Any, owner).identity
+                        if hasattr(owner, "identity")
+                        else cast(Any, owner).family_id
+                        if hasattr(owner, "family_id")
+                        else f"{cast(Any, owner).energy_identity}|"
+                        f"{cast(Any, owner).volume_identity}",
+                        cast(str, cast(Any, owner).source_sha256),
+                    )
+                    for owner in candidates
+                ),
                 separators=(",", ":"),
             ).encode("utf-8")
         ).hexdigest()

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, ClassVar, Literal, cast
+from typing import Any, ClassVar, Literal, Protocol, cast
 
 import pint
 
@@ -63,6 +63,18 @@ type ModelParameterFamily = Literal[
     "ionic_region_relative_permittivity",
 ]
 type CorrelationFamily = Literal["segment_diameter", "relative_permittivity", "solvation_factor"]
+
+
+class _CandidateOwner(Protocol):
+    @property
+    def candidate_domain_id(self) -> str | None: ...
+
+    @property
+    def qualification(self) -> ModelQualification | None: ...
+
+    @property
+    def source_sha256(self) -> str | None: ...
+
 
 _DOMAIN_KINDS = frozenset({"fit-range", "reported-conditions", "unknown"})
 _SINGLE_FAMILIES = frozenset(
@@ -188,6 +200,44 @@ def _provenance(
     )
 
 
+def _candidate_provenance(
+    candidate_domain_id: object,
+    qualification: object,
+    source_sha256: object,
+    *,
+    field: str,
+) -> tuple[str | None, ModelQualification | None, str | None]:
+    values = (candidate_domain_id, qualification, source_sha256)
+    if all(value is None for value in values):
+        return None, None, None
+    if any(value is None for value in values):
+        raise _error("invalid-provenance", field=field, value="partial")
+    domain_id = _identifier(candidate_domain_id, field=f"{field}.candidate_domain_id")
+    if qualification != "candidate_extrapolation":
+        raise _error("invalid-value", field=f"{field}.qualification", value=qualification)
+    if (
+        not isinstance(source_sha256, str)
+        or re.fullmatch(r"sha256:[0-9a-f]{64}", source_sha256) is None
+    ):
+        raise _error("invalid-value", field=f"{field}.source_sha256", value=source_sha256)
+    return domain_id, "candidate_extrapolation", source_sha256
+
+
+def _normalize_candidate(owner: _CandidateOwner, *, field: str) -> None:
+    candidate = _candidate_provenance(
+        owner.candidate_domain_id,
+        owner.qualification,
+        owner.source_sha256,
+        field=field,
+    )
+    for name, value in zip(
+        ("candidate_domain_id", "qualification", "source_sha256"),
+        candidate,
+        strict=True,
+    ):
+        object.__setattr__(owner, name, value)
+
+
 @dataclass(frozen=True, slots=True)
 class SourceRecord:
     source_id: str
@@ -266,35 +316,7 @@ class ModelFamilySpec:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
-        candidate = (self.candidate_domain_id, self.qualification, self.source_sha256)
-        if any(value is None for value in candidate):
-            if not all(value is None for value in candidate):
-                raise _error(
-                    "invalid-provenance",
-                    field="model_family.candidate",
-                    value="partial",
-                )
-        else:
-            object.__setattr__(
-                self,
-                "candidate_domain_id",
-                _identifier(self.candidate_domain_id, field="candidate_domain_id"),
-            )
-            if self.qualification != "candidate_extrapolation":
-                raise _error(
-                    "invalid-value",
-                    field="model_family.qualification",
-                    value=self.qualification,
-                )
-            if (
-                not isinstance(self.source_sha256, str)
-                or re.fullmatch(r"sha256:[0-9a-f]{64}", self.source_sha256) is None
-            ):
-                raise _error(
-                    "invalid-value",
-                    field="model_family.source_sha256",
-                    value=self.source_sha256,
-                )
+        _normalize_candidate(self, field="model_family.candidate")
 
 
 @dataclass(frozen=True, slots=True)
@@ -309,6 +331,9 @@ class ParameterSpec:
     source_id: str | None = None
     locator: str | None = None
     domain_id: str | None = None
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "identity", _parameter_identity(self.identity))
@@ -329,6 +354,7 @@ class ParameterSpec:
             object.__setattr__(self, "source_id", source_id)
             object.__setattr__(self, "locator", locator)
             object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="parameter_spec.candidate")
 
 
 @dataclass(frozen=True, slots=True)
@@ -393,17 +419,7 @@ class ReactionCorrelationRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
-        object.__setattr__(
-            self,
-            "candidate_domain_id",
-            _identifier(self.candidate_domain_id, field="candidate_domain_id"),
-        )
-        if (
-            self.qualification != "candidate_extrapolation"
-            or not isinstance(self.source_sha256, str)
-            or re.fullmatch(r"sha256:[0-9a-f]{64}", self.source_sha256) is None
-        ):
-            raise _error("invalid-provenance", field="reaction.candidate")
+        _normalize_candidate(self, field="reaction.candidate")
 
 
 @dataclass(frozen=True, slots=True)
@@ -498,6 +514,9 @@ class SingleParameterRecord:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -511,6 +530,7 @@ class SingleParameterRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="component_parameter.candidate")
 
     @property
     def identity(self) -> str:
@@ -525,6 +545,9 @@ class ModelParameterRecord:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -535,6 +558,7 @@ class ModelParameterRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="model_parameter.candidate")
 
     @property
     def identity(self) -> str:
@@ -551,6 +575,9 @@ class PairParameterRecord:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -568,6 +595,7 @@ class PairParameterRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="pair_parameter.candidate")
 
     @property
     def identity(self) -> str:
@@ -588,6 +616,9 @@ class CrossAssociationCorrectionRecord:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -611,6 +642,7 @@ class CrossAssociationCorrectionRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="cross_association.candidate")
 
     @property
     def identity(self) -> str:
@@ -630,6 +662,9 @@ class SiteRecord:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -648,6 +683,7 @@ class SiteRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="association_site.candidate")
 
     @property
     def identity(self) -> str:
@@ -666,6 +702,9 @@ class AssociationParameterRecord:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -689,6 +728,7 @@ class AssociationParameterRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="association_parameter.candidate")
 
     @property
     def identity(self) -> str:
@@ -768,6 +808,9 @@ class ConstantCorrelation:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
     correlation_id: str | None = None
 
     def __post_init__(self) -> None:
@@ -782,6 +825,7 @@ class ConstantCorrelation:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="correlation.candidate")
         correlation_id = self.correlation_id or (
             f"component/{self.component_id}/{self.family}/constant"
         )
@@ -804,6 +848,9 @@ class ConstantPlusSumOfExponentialsCorrelation:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
     correlation_id: str | None = None
 
     def __post_init__(self) -> None:
@@ -831,6 +878,7 @@ class ConstantPlusSumOfExponentialsCorrelation:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="correlation.candidate")
         correlation_id = self.correlation_id or (
             f"component/{self.component_id}/{self.family}/temperature-exponential"
         )
@@ -854,6 +902,9 @@ class ConstantPlusPolynomialInTemperatureCorrelation:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
     correlation_id: str | None = None
 
     def __post_init__(self) -> None:
@@ -879,6 +930,7 @@ class ConstantPlusPolynomialInTemperatureCorrelation:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="correlation.candidate")
         correlation_id = self.correlation_id or (
             f"component/{self.component_id}/{self.family}/{self.form}"
         )
@@ -974,6 +1026,9 @@ class AssociationEdge:
     energy_over_k: object
     volume: object
     source: AssociationEdgeSource
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.source, AssociationEdgeSource):
@@ -1004,6 +1059,7 @@ class AssociationEdge:
         object.__setattr__(self, "volume_identity", volume_identity)
         object.__setattr__(self, "energy_over_k", energy)
         object.__setattr__(self, "volume", volume)
+        _normalize_candidate(self, field="association_edge.candidate")
 
 
 @dataclass(frozen=True, slots=True)

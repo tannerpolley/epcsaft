@@ -116,6 +116,7 @@ _MODEL_IDENTITIES = {
         "model/relative_permittivity/ion_fraction_suppression_coefficient"
     ),
 }
+_CANDIDATE_FIELDS = frozenset({"candidate_domain_id", "qualification", "source_sha256"})
 _PRESET_SITES: dict[str, tuple[tuple[str, str], ...]] = {
     "1a": (("a", "effective"),),
     "2b": (("a", "donor"), ("b", "acceptor")),
@@ -259,7 +260,10 @@ def _reaction_correlations(
                     True,
                     source_id,
                     locator,
+                    domain_id,
                     cast(str, raw["candidate_domain_id"]),
+                    cast(Any, raw["qualification"]),
+                    cast(str, raw["source_sha256"]),
                 )
             )
     return tuple(records), tuple(specs)
@@ -309,6 +313,14 @@ def _provenance(value: object, *, field: str) -> tuple[str, str, str]:
     return source_id, locator, domain_id
 
 
+def _candidate(value: Mapping[str, object]) -> tuple[str | None, Any, str | None]:
+    return (
+        cast(str | None, value.get("candidate_domain_id")),
+        value.get("qualification"),
+        cast(str | None, value.get("source_sha256")),
+    )
+
+
 def _measurement(
     value: object,
     *,
@@ -354,12 +366,19 @@ def _coefficient(
     field: str,
     allowed_families: frozenset[str],
     expected_identity: str,
-) -> tuple[str, object, ParameterSpec, tuple[str, str, str]]:
+) -> tuple[
+    str,
+    object,
+    ParameterSpec,
+    tuple[str, str, str],
+    tuple[str | None, Any, str | None],
+]:
     raw = _mapping(value, field=field)
     _strict(
         raw,
         field=field,
         required=frozenset({"identity", "family", "value", "provenance"}),
+        optional=_CANDIDATE_FIELDS,
     )
     family = raw["family"]
     if not isinstance(family, str) or family not in allowed_families:
@@ -374,11 +393,13 @@ def _coefficient(
         )
     parameter_value, unit = _measurement(raw["value"], family=family, field=f"{field}.value")
     provenance = _provenance(raw["provenance"], field=f"{field}.provenance")
+    candidate = _candidate(raw)
     return (
         family,
         parameter_value,
-        ParameterSpec(identity, family, parameter_value, unit, True, *provenance),
+        ParameterSpec(identity, family, parameter_value, unit, True, *provenance, *candidate),
         provenance,
+        candidate,
     )
 
 
@@ -506,6 +527,7 @@ def _components(
                 fixed_value,
                 field=fixed_field,
                 required=frozenset({"value", "provenance"}),
+                optional=_CANDIDATE_FIELDS,
             )
             parameter_value, _ = _measurement(
                 fixed_value["value"], family=family, field=f"{fixed_field}.value"
@@ -518,6 +540,7 @@ def _components(
                     cast(SingleParameterFamily, family),
                     parameter_value,
                     *provenance,
+                    *_candidate(fixed_value),
                 )
             )
 
@@ -534,7 +557,7 @@ def _components(
                     value=coefficient_family,
                 )
             identity = f"component/{component_id}/{coefficient_family}"
-            resolved_family, parameter_value, spec, provenance = _coefficient(
+            resolved_family, parameter_value, spec, provenance, candidate = _coefficient(
                 coefficient_raw,
                 field=coefficient_field,
                 allowed_families=_COMPONENT_COEFFICIENTS,
@@ -547,6 +570,7 @@ def _components(
                     cast(SingleParameterFamily, resolved_family),
                     parameter_value,
                     *provenance,
+                    *candidate,
                 )
             )
             specs.append(spec)
@@ -605,7 +629,7 @@ def _pairs(
                         value=observed_identity,
                         reason="noncanonical-cross-association-correction",
                     )
-                resolved_family, parameter_value, spec, provenance = _coefficient(
+                resolved_family, parameter_value, spec, provenance, candidate = _coefficient(
                     coefficient_raw,
                     field=coefficient_field,
                     allowed_families=_CROSS_ASSOCIATION_CORRECTIONS,
@@ -621,12 +645,13 @@ def _pairs(
                         cast(Any, resolved_family),
                         parameter_value,
                         *provenance,
+                        *candidate,
                     )
                 )
                 specs.append(spec)
                 continue
             identity = f"pair/{component_a}/{component_b}/{family}"
-            family, parameter_value, spec, provenance = _coefficient(
+            family, parameter_value, spec, provenance, candidate = _coefficient(
                 coefficient_raw,
                 field=coefficient_field,
                 allowed_families=_PAIR_COEFFICIENTS,
@@ -640,6 +665,7 @@ def _pairs(
                     cast(Any, family),
                     parameter_value,
                     *provenance,
+                    *candidate,
                 )
             )
             specs.append(spec)
@@ -747,7 +773,7 @@ def _model_coefficients(
         if not isinstance(family, str) or family not in _MODEL_COEFFICIENTS:
             raise _error("invalid-value", field=f"{field}.family", value=family)
         identity = _MODEL_IDENTITIES[family]
-        family, parameter_value, spec, provenance = _coefficient(
+        family, parameter_value, spec, provenance, candidate = _coefficient(
             raw,
             field=field,
             allowed_families=_MODEL_COEFFICIENTS,
@@ -755,7 +781,11 @@ def _model_coefficients(
         )
         records.append(
             ModelParameterRecord(
-                _record_id(identity), cast(Any, family), parameter_value, *provenance
+                _record_id(identity),
+                cast(Any, family),
+                parameter_value,
+                *provenance,
+                *candidate,
             )
         )
         specs.append(spec)
@@ -769,6 +799,7 @@ def _correlation_coefficient(
     identity: str,
     family: str,
     provenance: tuple[str, str, str],
+    candidate: tuple[str | None, Any, str | None],
 ) -> tuple[object, ParameterSpec]:
     raw = _mapping(value, field=field)
     _strict(raw, field=field, required=frozenset({"identity", "value"}))
@@ -777,7 +808,7 @@ def _correlation_coefficient(
         raise _error("invalid-value", field=f"{field}.identity", expected=identity, value=observed)
     parameter_value, unit = _measurement(raw["value"], family=family, field=f"{field}.value")
     return parameter_value, ParameterSpec(
-        identity, family, parameter_value, unit, True, *provenance
+        identity, family, parameter_value, unit, True, *provenance, *candidate
     )
 
 
@@ -816,7 +847,7 @@ def _correlations(
                     "provenance",
                 }
             ),
-            optional=frozenset({"terms", "reference_temperature"}),
+            optional=frozenset({"terms", "reference_temperature"}) | _CANDIDATE_FIELDS,
         )
         component_id = _identifier(raw["component_id"], field=f"{field}.component_id")
         if component_id not in component_ids:
@@ -850,12 +881,14 @@ def _correlations(
                 value=independent,
             )
         provenance = _provenance(raw["provenance"], field=f"{field}.provenance")
+        candidate = _candidate(raw)
         constant, constant_spec = _correlation_coefficient(
             raw["constant"],
             field=f"{field}.constant",
             identity=f"{correlation_id}/constant",
             family=family,
             provenance=provenance,
+            candidate=candidate,
         )
         specs.append(constant_spec)
         if form == "constant":
@@ -868,6 +901,7 @@ def _correlations(
                     family,
                     constant,
                     *provenance,
+                    *candidate,
                     correlation_id=correlation_id,
                 )
             )
@@ -899,6 +933,7 @@ def _correlations(
                     identity=identity,
                     family=f"temperature_polynomial_coefficient_{power}",
                     provenance=provenance,
+                    candidate=candidate,
                 )
                 polynomial_terms.append(
                     TemperaturePolynomialTerm(
@@ -917,6 +952,7 @@ def _correlations(
                     reference_temperature,
                     tuple(polynomial_terms),
                     *provenance,
+                    *candidate,
                     correlation_id=correlation_id,
                 )
             )
@@ -939,6 +975,7 @@ def _correlations(
                 identity=f"{prefix}/amplitude",
                 family="segment_diameter",
                 provenance=provenance,
+                candidate=candidate,
             )
             exponent, exponent_spec = _correlation_coefficient(
                 term["exponent_coefficient"],
@@ -946,6 +983,7 @@ def _correlations(
                 identity=f"{prefix}/exponent_coefficient",
                 family="exponential_temperature_coefficient",
                 provenance=provenance,
+                candidate=candidate,
             )
             terms.append(
                 ExponentialTerm(
@@ -964,6 +1002,7 @@ def _correlations(
                 constant,
                 tuple(terms),
                 *provenance,
+                *candidate,
                 correlation_id=correlation_id,
             )
         )
@@ -1006,6 +1045,7 @@ def _edge_value(
     identity: str,
     family: str,
     provenance: tuple[str, str, str],
+    candidate: tuple[str | None, Any, str | None],
 ) -> tuple[object, ParameterSpec]:
     raw = _mapping(value, field=field)
     _strict(raw, field=field, required=frozenset({"identity", "value"}))
@@ -1014,7 +1054,7 @@ def _edge_value(
         raise _error("invalid-value", field=f"{field}.identity", expected=identity, value=observed)
     parameter_value, unit = _measurement(raw["value"], family=family, field=f"{field}.value")
     return parameter_value, ParameterSpec(
-        identity, family, parameter_value, unit, True, *provenance
+        identity, family, parameter_value, unit, True, *provenance, *candidate
     )
 
 
@@ -1035,6 +1075,9 @@ def _edge_records(
             "association_energy_over_k",
             edge.energy_over_k,
             *provenance,
+            edge.candidate_domain_id,
+            edge.qualification,
+            edge.source_sha256,
         ),
         AssociationParameterRecord(
             _record_id(edge.volume_identity),
@@ -1042,6 +1085,9 @@ def _edge_records(
             "association_volume",
             edge.volume,
             *provenance,
+            edge.candidate_domain_id,
+            edge.qualification,
+            edge.source_sha256,
         ),
     )
 
@@ -1057,6 +1103,7 @@ def _explicit_edge(
         raw,
         field=field,
         required=frozenset({"endpoint_a", "endpoint_b", "energy_over_k", "volume", "source"}),
+        optional=_CANDIDATE_FIELDS,
     )
     source_raw = _mapping(raw["source"], field=f"{field}.source")
     _strict(
@@ -1067,6 +1114,7 @@ def _explicit_edge(
     if source_raw["kind"] != "explicit":
         raise _error("invalid-value", field=f"{field}.source.kind", value=source_raw["kind"])
     provenance = _provenance_list(source_raw["provenance"], field=f"{field}.source.provenance")
+    candidate = _candidate(raw)
     prefix = f"association/{endpoint_a[0]}/{endpoint_a[1]}/{endpoint_b[0]}/{endpoint_b[1]}"
     energy_identity = f"{prefix}/energy_over_k"
     volume_identity = f"{prefix}/volume"
@@ -1076,6 +1124,7 @@ def _explicit_edge(
         identity=energy_identity,
         family="association_energy_over_k",
         provenance=provenance[0],
+        candidate=candidate,
     )
     volume, volume_spec = _edge_value(
         raw["volume"],
@@ -1083,6 +1132,7 @@ def _explicit_edge(
         identity=volume_identity,
         family="association_volume",
         provenance=provenance[0],
+        candidate=candidate,
     )
     return (
         AssociationEdge(
@@ -1093,6 +1143,7 @@ def _explicit_edge(
             energy,
             volume,
             AssociationEdgeSource("explicit", None, provenance, (), ()),
+            *candidate,
         ),
         (energy_spec, volume_spec),
     )
@@ -1210,6 +1261,7 @@ def _combining_edge(
         raw,
         field=field,
         required=frozenset({"endpoint_a", "endpoint_b", "source"}),
+        optional=_CANDIDATE_FIELDS,
     )
     source_raw = _mapping(raw["source"], field=f"{field}.source")
     _strict(
@@ -1263,6 +1315,7 @@ def _combining_edge(
         ),
     )
     provenance = _provenance_list(source_raw["provenance"], field=f"{field}.source.provenance")
+    candidate = _candidate(raw)
     source = AssociationEdgeSource(
         "combining-rule",
         rule_id,
@@ -1278,6 +1331,7 @@ def _combining_edge(
         energy,
         volume,
         source,
+        *candidate,
     )
     energy_spec = ParameterSpec(
         energy_identity,
@@ -1286,6 +1340,7 @@ def _combining_edge(
         "kelvin",
         False,
         *provenance[0],
+        *candidate,
     )
     volume_spec = ParameterSpec(
         volume_identity,
@@ -1294,6 +1349,7 @@ def _combining_edge(
         "dimensionless",
         False,
         *provenance[0],
+        *candidate,
     )
     return edge, (energy_spec, volume_spec)
 
@@ -1370,6 +1426,9 @@ def _apply_cross_association_corrections(
                 energy,
                 edge.volume,
                 source,
+                edge.candidate_domain_id,
+                edge.qualification,
+                edge.source_sha256,
             )
             corrected_specs = [
                 replace(spec, value=energy) if spec.identity == edge.energy_identity else spec
@@ -1405,6 +1464,7 @@ def _topology(
             preset_raw,
             field=field,
             required=frozenset({"component_id", "preset", "provenance"}),
+            optional=_CANDIDATE_FIELDS,
         )
         component_id = _identifier(preset_raw["component_id"], field=f"{field}.component_id")
         if component_id not in component_ids:
@@ -1426,6 +1486,7 @@ def _topology(
                     cast(Any, site_role),
                     1,
                     *provenance,
+                    *_candidate(preset_raw),
                 )
             )
 
@@ -1438,6 +1499,7 @@ def _topology(
             required=frozenset(
                 {"component_id", "site_id", "site_role", "multiplicity", "provenance"}
             ),
+            optional=_CANDIDATE_FIELDS,
         )
         component_id = _identifier(site_raw["component_id"], field=f"{field}.component_id")
         if component_id not in component_ids:
@@ -1457,6 +1519,7 @@ def _topology(
                 cast(Any, site_raw["site_role"]),
                 cast(int, site_raw["multiplicity"]),
                 *provenance,
+                *_candidate(site_raw),
             )
         )
 
@@ -1580,7 +1643,12 @@ def _validate_document(
     domain_ids = {item.domain_id for item in domains}
     component_ids = {item.component_id for item in components}
 
-    provenance_owners: list[object] = [*records, *model_families, *parameter_specs]
+    provenance_owners: list[object] = [
+        *records,
+        *model_families,
+        *parameter_specs,
+        *topology.edges,
+    ]
     for owner in provenance_owners:
         source_id = getattr(owner, "source_id", None)
         domain_id = getattr(owner, "domain_id", None)
@@ -1591,6 +1659,13 @@ def _validate_document(
         candidate_domain_id = getattr(owner, "candidate_domain_id", None)
         if candidate_domain_id is not None and candidate_domain_id not in domain_ids:
             raise _error("invalid-domain", domain_id=candidate_domain_id)
+    if any(item.candidate_domain_id is not None for item in model_families):
+        candidate_owners = [*records, *model_families, *parameter_specs, *topology.edges]
+        if any(getattr(owner, "candidate_domain_id", None) is None for owner in candidate_owners):
+            raise _error("missing-record", field="candidate_provenance")
+        candidate_domains = {owner.candidate_domain_id for owner in candidate_owners}
+        if len(candidate_domains) != 1:
+            raise _error("invalid-domain", field="candidate_domain_id", value="inconsistent")
     for edge in topology.edges:
         for source_id, _, domain_id in edge.source.provenance:
             if source_id not in source_ids:
