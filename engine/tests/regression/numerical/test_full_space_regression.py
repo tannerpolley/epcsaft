@@ -17,7 +17,7 @@ from epcsaft.equilibrium._grepe import _native_general_reactive_equilibrium_inpu
 from epcsaft.regression._equilibrium_owner import _equilibrium_owner_batches
 from epcsaft.regression._model import ParameterFit
 from tests.eos._cases import MULTINEUTRAL_REACTIVE
-from tests.equilibrium.test_chemical_provider import _multineutral_problem
+from tests.equilibrium._cases import multineutral_reaction
 from tests.regression.numerical._monitoring import call_without_python_frames
 
 
@@ -89,7 +89,7 @@ def test_full_space_regression_recovers_shared_parameter_and_reactive_state(tmp_
     """
     parameters = epcsaft.Parameters.from_mapping(MULTINEUTRAL_REACTIVE)
     model = epcsaft.Mixture(parameters)
-    reaction = _source_standard_problem(model, _multineutral_problem())
+    reaction = _source_standard_problem(model, multineutral_reaction())
     temperature = 313.15 * epcsaft.unit_registry.kelvin
     pressure = 119_199.78746707023 * epcsaft.unit_registry.pascal
     phase_id = "multineutral-liquid"

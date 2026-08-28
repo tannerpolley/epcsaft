@@ -7,7 +7,13 @@ import pytest
 
 from epcsaft import ActiveParameterSet, Parameters, Pure
 from epcsaft import unit_registry as u
-from tests.equilibrium.parameter_dictionaries import PURE_SATURATION_PARAMETERS
+from tests.eos._cases import neutral_pure, set_component_values
+
+PURE_SATURATION_PARAMETERS = {
+    "methane": neutral_pure("methane"),
+    "propane": neutral_pure("propane"),
+}
+set_component_values(PURE_SATURATION_PARAMETERS["propane"], "molar_mass", (0.044096,))
 
 
 def _set_parameter(mapping: dict[str, object], identity: str, value: float) -> None:
