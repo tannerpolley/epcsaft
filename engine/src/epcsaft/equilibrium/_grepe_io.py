@@ -132,7 +132,7 @@ def _reaction_system(value: object) -> ChemicalEquilibriumProblem:
         record = _sequence(raw, "equilibrium constant")
         if len(record) not in {6, 7} or not isinstance(record[5], bool):
             raise ValueError("equilibrium constants require six fields and optional correlation")
-        correlation: dict[str, object] | None = None
+        correlation: Mapping[str, object] | None = None
         if len(record) == 7:
             correlation = _mapping(
                 record[6],

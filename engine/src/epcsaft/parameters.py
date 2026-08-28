@@ -6,7 +6,9 @@ import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from os import PathLike
-from typing import Literal, SupportsFloat, cast
+from typing import Any, Literal, SupportsFloat, cast
+
+import pint
 
 from ._canonical import _document_fingerprint, _selected_document_fingerprint
 from ._dictionary_io import _records_from_mapping
@@ -300,8 +302,8 @@ def _active_coordinate(
                 reason="reaction-correlation-application-unresolved",
             )
         domain = ActiveParameterDomain(
-            float(record.optimizer_lower.to(spec.unit).magnitude),
-            float(record.optimizer_upper.to(spec.unit).magnitude),
+            float(cast(pint.Quantity[Any], record.optimizer_lower).to(spec.unit).magnitude),
+            float(cast(pint.Quantity[Any], record.optimizer_upper).to(spec.unit).magnitude),
             True,
             True,
         )

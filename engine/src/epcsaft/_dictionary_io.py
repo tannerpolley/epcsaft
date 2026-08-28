@@ -724,9 +724,9 @@ def _model_families(value: object) -> tuple[ModelFamilySpec, ...]:
                 c_shell,
                 c_dielectric,
                 ionic_dispersion,
-                raw.get("candidate_domain_id"),
-                raw.get("qualification"),
-                raw.get("source_sha256"),
+                cast(str | None, raw.get("candidate_domain_id")),
+                cast(Any, raw.get("qualification")),
+                cast(str | None, raw.get("source_sha256")),
             )
         )
     if seen != set(_MODEL_CHOICES):
