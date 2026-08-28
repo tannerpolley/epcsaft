@@ -117,6 +117,18 @@ struct ParameterDomainConstraintDiagnostic final {
   std::vector<double> affine_jacobian;
 };
 
+struct KktDiagnostics final {
+  bool retained{false};
+  std::vector<double> coordinate_lower_bound_multipliers;
+  std::vector<double> coordinate_upper_bound_multipliers;
+  std::vector<double> parameter_constraint_multipliers;
+  double objective{std::numeric_limits<double>::quiet_NaN()};
+  double primal_feasibility_inf_norm{std::numeric_limits<double>::quiet_NaN()};
+  double stationarity_inf_norm{std::numeric_limits<double>::quiet_NaN()};
+  double complementarity_inf_norm{std::numeric_limits<double>::quiet_NaN()};
+  double dual_sign_violation_inf_norm{std::numeric_limits<double>::quiet_NaN()};
+};
+
 struct StartResult final {
   std::size_t index{0};
   std::string start_identity;
@@ -132,6 +144,7 @@ struct StartResult final {
   std::vector<std::optional<epcsaft_engine::equilibrium::GrepeResult>>
       owner_results;
   Diagnostics diagnostics;
+  KktDiagnostics kkt_diagnostics;
   std::vector<std::size_t> active_bounds;
   std::string solver_status;
   std::string failure_reason;

@@ -213,6 +213,26 @@ py::dict start_mapping(const StartResult &value,
         "affine_jacobian"_a = constraint.affine_jacobian));
   }
   result["parameter_domain_constraints"] = parameter_constraints;
+  const auto optional_number = [](double number) -> py::object {
+    return std::isfinite(number) ? py::cast(number) : py::none();
+  };
+  result["kkt_diagnostics"] = py::dict(
+      "retained"_a = value.kkt_diagnostics.retained,
+      "objective"_a = optional_number(value.kkt_diagnostics.objective),
+      "coordinate_lower_bound_multipliers"_a =
+          value.kkt_diagnostics.coordinate_lower_bound_multipliers,
+      "coordinate_upper_bound_multipliers"_a =
+          value.kkt_diagnostics.coordinate_upper_bound_multipliers,
+      "parameter_constraint_multipliers"_a =
+          value.kkt_diagnostics.parameter_constraint_multipliers,
+      "primal_feasibility_inf_norm"_a = optional_number(
+          value.kkt_diagnostics.primal_feasibility_inf_norm),
+      "stationarity_inf_norm"_a =
+          optional_number(value.kkt_diagnostics.stationarity_inf_norm),
+      "complementarity_inf_norm"_a =
+          optional_number(value.kkt_diagnostics.complementarity_inf_norm),
+      "dual_sign_violation_inf_norm"_a = optional_number(
+          value.kkt_diagnostics.dual_sign_violation_inf_norm));
   py::list failures;
   for (const auto &failure : value.owner_failures) {
     failures.append(py::dict("code"_a = failure.code, "reason"_a = failure.reason,

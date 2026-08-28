@@ -4,6 +4,7 @@
 #include <Eigen/Dense>
 #include <Eigen/SVD>
 #include <IpIpoptApplication.hpp>
+#include <IpIpoptCalculatedQuantities.hpp>
 #include <IpSolveStatistics.hpp>
 #include <IpTNLP.hpp>
 
@@ -749,6 +750,46 @@ struct RetainedLocalState final {
   std::vector<double> upper;
 };
 
+KktDiagnostics kkt_diagnostics(std::size_t coordinate_count,
+                               std::size_t parameter_constraint_count,
+                               const double *z_lower, const double *z_upper,
+                               const double *multipliers, double objective,
+                               Ipopt::IpoptCalculatedQuantities *quantities) {
+  KktDiagnostics result;
+  if (z_lower == nullptr || z_upper == nullptr || quantities == nullptr ||
+      (parameter_constraint_count != 0 && multipliers == nullptr)) {
+    return result;
+  }
+  result.retained = true;
+  result.objective = objective;
+  result.coordinate_lower_bound_multipliers.assign(
+      z_lower, z_lower + static_cast<std::ptrdiff_t>(coordinate_count));
+  result.coordinate_upper_bound_multipliers.assign(
+      z_upper, z_upper + static_cast<std::ptrdiff_t>(coordinate_count));
+  if (parameter_constraint_count != 0) {
+    result.parameter_constraint_multipliers.assign(
+        multipliers, multipliers +
+                         static_cast<std::ptrdiff_t>(parameter_constraint_count));
+  }
+  result.primal_feasibility_inf_norm =
+      quantities->unscaled_curr_nlp_constraint_violation(Ipopt::NORM_MAX);
+  result.stationarity_inf_norm =
+      quantities->unscaled_curr_dual_infeasibility(Ipopt::NORM_MAX);
+  result.complementarity_inf_norm =
+      quantities->unscaled_curr_complementarity(0.0, Ipopt::NORM_MAX);
+  result.dual_sign_violation_inf_norm = 0.0;
+  for (std::size_t index = 0; index < coordinate_count; ++index) {
+    result.dual_sign_violation_inf_norm =
+        std::max({result.dual_sign_violation_inf_norm, -z_lower[index],
+                  -z_upper[index]});
+  }
+  for (std::size_t index = 0; index < parameter_constraint_count; ++index) {
+    result.dual_sign_violation_inf_norm =
+        std::max(result.dual_sign_violation_inf_norm, -multipliers[index]);
+  }
+  return result;
+}
+
 class ReducedSpaceNlp final : public Ipopt::TNLP {
 public:
   ReducedSpaceNlp(const std::vector<std::unique_ptr<NativeCost>> &costs,
@@ -863,19 +904,22 @@ public:
   }
 
   void finalize_solution(Ipopt::SolverReturn, Ipopt::Index n,
-                         const Ipopt::Number *x, const Ipopt::Number *,
-                         const Ipopt::Number *, Ipopt::Index m,
-                         const Ipopt::Number *, const Ipopt::Number *,
-                         Ipopt::Number, const Ipopt::IpoptData *,
-                         Ipopt::IpoptCalculatedQuantities *) override {
+                         const Ipopt::Number *x, const Ipopt::Number *z_lower,
+                         const Ipopt::Number *z_upper, Ipopt::Index m,
+                         const Ipopt::Number *, const Ipopt::Number *lambda,
+                         Ipopt::Number objective, const Ipopt::IpoptData *,
+                         Ipopt::IpoptCalculatedQuantities *quantities) override {
     if (n == static_cast<Ipopt::Index>(solution_.size()) &&
         m == static_cast<Ipopt::Index>(constraints_.size()) &&
         x != nullptr) {
       std::copy(x, x + n, solution_.begin());
+      kkt_ = kkt_diagnostics(coordinates_.size(), constraints_.size(), z_lower,
+                             z_upper, lambda, objective, quantities);
     }
   }
 
   const std::vector<double> &solution() const noexcept { return solution_; }
+  const KktDiagnostics &kkt() const noexcept { return kkt_; }
   std::vector<RetainedLocalState> retained_local_states() const { return {}; }
   std::vector<epcsaft_engine::equilibrium::GrepeLocalPoint>
   retained_points() const { return {}; }
@@ -937,6 +981,7 @@ private:
   mutable std::vector<double> cached_gradient_;
   mutable double cached_objective_{0.0};
   mutable bool cached_evaluable_{false};
+  KktDiagnostics kkt_;
 };
 
 struct FullSpaceBlock final {
@@ -1219,17 +1264,20 @@ public:
   }
 
   void finalize_solution(Ipopt::SolverReturn, Ipopt::Index n,
-                         const Ipopt::Number *x, const Ipopt::Number *,
-                         const Ipopt::Number *, Ipopt::Index m,
-                         const Ipopt::Number *, const Ipopt::Number *,
-                         Ipopt::Number, const Ipopt::IpoptData *,
-                         Ipopt::IpoptCalculatedQuantities *) override {
+                         const Ipopt::Number *x, const Ipopt::Number *z_lower,
+                         const Ipopt::Number *z_upper, Ipopt::Index m,
+                         const Ipopt::Number *, const Ipopt::Number *lambda,
+                         Ipopt::Number objective, const Ipopt::IpoptData *,
+                         Ipopt::IpoptCalculatedQuantities *quantities) override {
     if (dimensions(n, m) && x != nullptr && evaluate(n, x)) {
       std::copy(x, x + n, solution_.begin());
+      kkt_ = kkt_diagnostics(coordinates_.size(), parameter_constraints_.size(),
+                             z_lower, z_upper, lambda, objective, quantities);
     }
   }
 
   const std::vector<double> &solution() const noexcept { return solution_; }
+  const KktDiagnostics &kkt() const noexcept { return kkt_; }
   std::vector<RetainedLocalState> retained_local_states() const {
     std::vector<RetainedLocalState> states;
     states.reserve(blocks_.size());
@@ -1465,6 +1513,7 @@ private:
   mutable std::vector<double> constraint_jacobian_;
   mutable double objective_{0.0};
   mutable bool evaluable_{false};
+  KktDiagnostics kkt_;
 };
 
 template <typename Problem>
@@ -1476,7 +1525,8 @@ Ipopt::ApplicationReturnStatus solve_ipopt(Problem *problem,
                                            std::vector<RetainedLocalState>
                                                *retained_states = nullptr,
                                            std::vector<epcsaft_engine::equilibrium::GrepeLocalPoint>
-                                               *retained_points = nullptr) {
+                                               *retained_points = nullptr,
+                                           KktDiagnostics *retained_kkt = nullptr) {
   Ipopt::SmartPtr<Ipopt::TNLP> nlp = problem;
   Ipopt::SmartPtr<Ipopt::IpoptApplication> application =
       IpoptApplicationFactory();
@@ -1511,6 +1561,9 @@ Ipopt::ApplicationReturnStatus solve_ipopt(Problem *problem,
     iterations = statistics->IterationCount();
   }
   solution = problem->solution();
+  if (retained_kkt != nullptr) {
+    *retained_kkt = problem->kkt();
+  }
   if (retained_states != nullptr) {
     *retained_states = problem->retained_local_states();
   }
@@ -1560,7 +1613,8 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
                                         parameter_constraints,
                                         result.final_affine);
     solver_status =
-        solve_ipopt(problem, controls, result.iterations, result.final_affine);
+        solve_ipopt(problem, controls, result.iterations, result.final_affine,
+                    false, nullptr, nullptr, &result.kkt_diagnostics);
   } else {
     if (full_space_campaign == nullptr) {
       throw std::logic_error("full-space GREPE campaign is unavailable");
@@ -1571,7 +1625,8 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
         identity_coordinates, coordinates, parameter_constraints,
         result.final_affine);
     solver_status = solve_ipopt(problem, controls, result.iterations, solution,
-                                true, &retained_states, &retained_points);
+                                true, &retained_states, &retained_points,
+                                &result.kkt_diagnostics);
     result.final_affine.assign(solution.begin(),
                                solution.begin() + coordinates.size());
   }

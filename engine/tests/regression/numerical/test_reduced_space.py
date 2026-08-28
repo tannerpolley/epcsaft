@@ -185,3 +185,15 @@ def test_temperature_correlated_domain_trial_is_a_structured_rejection(
     )
     assert all(math.isfinite(value) for value in evaluated.residuals)
     assert all(math.isfinite(value) for value in evaluated.affine_jacobian)
+    kkt = evaluated.kkt_diagnostics
+    assert kkt["retained"]
+    assert len(kkt["parameter_constraint_multipliers"]) == 2
+    assert kkt["primal_feasibility_inf_norm"] <= 1.0e-12
+    assert all(
+        math.isfinite(kkt[name])
+        for name in (
+            "stationarity_inf_norm",
+            "complementarity_inf_norm",
+            "dual_sign_violation_inf_norm",
+        )
+    )

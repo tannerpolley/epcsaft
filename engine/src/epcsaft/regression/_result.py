@@ -362,6 +362,7 @@ class FitStart:
     iterations: int
     non_evaluable_count: int
     parameter_domain_constraints: tuple[Mapping[str, object], ...]
+    kkt_diagnostics: Mapping[str, object]
     owner_failures: tuple[OwnerFailure, ...]
     owner_receipts: tuple[OwnerReceipt, ...]
     owner_diagnostics: tuple[Mapping[str, object], ...]
@@ -457,6 +458,7 @@ class FitStart:
                 cast(Mapping[str, object], item)
                 for item in value["parameter_domain_constraints"]
             ),
+            kkt_diagnostics=cast(Mapping[str, object], value["kkt_diagnostics"]),
             owner_failures=tuple(
                 OwnerFailure.from_native(item) for item in value["owner_failures"]
             ),
@@ -514,6 +516,7 @@ class FitStart:
             "iterations": self.iterations,
             "non_evaluable_count": self.non_evaluable_count,
             "parameter_domain_constraints": list(self.parameter_domain_constraints),
+            "kkt_diagnostics": dict(self.kkt_diagnostics),
             "owner_failures": [failure.to_mapping() for failure in self.owner_failures],
             "owner_receipts": [receipt.to_mapping() for receipt in self.owner_receipts],
             "owner_diagnostics": list(self.owner_diagnostics),

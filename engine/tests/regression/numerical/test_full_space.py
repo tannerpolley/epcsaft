@@ -31,6 +31,26 @@ def test_maximum_iterations_is_nonusable_and_retains_final_diagnostics(
     assert all(start.solver_status == "maximum_iterations_exceeded" for start in reduced.starts)
     assert all(not start.usable for start in reduced.starts)
     assert reduced.best_usable_start is None
+    for start in reduced.starts:
+        kkt = start.kkt_diagnostics
+        assert kkt["retained"]
+        assert len(kkt["coordinate_lower_bound_multipliers"]) == len(
+            start.final_affine
+        )
+        assert len(kkt["coordinate_upper_bound_multipliers"]) == len(
+            start.final_affine
+        )
+        assert kkt["parameter_constraint_multipliers"] == []
+        assert all(
+            math.isfinite(kkt[name])
+            for name in (
+                "objective",
+                "primal_feasibility_inf_norm",
+                "stationarity_inf_norm",
+                "complementarity_inf_norm",
+                "dual_sign_violation_inf_norm",
+            )
+        )
 
     full_mapping, *_ = full_space_fit_case(tmp_path)
     full_mapping["solver"]["controls"]["maximum_iterations"] = 1
@@ -57,6 +77,25 @@ def test_maximum_iterations_is_nonusable_and_retains_final_diagnostics(
     }
     assert all(value is not None for value in certificate.values())
     assert stalled.owner_failures[0].reason == diagnostic["failure_reason"]
+    kkt = stalled.kkt_diagnostics
+    assert kkt["retained"]
+    assert len(kkt["coordinate_lower_bound_multipliers"]) == len(
+        stalled.final_affine
+    )
+    assert len(kkt["coordinate_upper_bound_multipliers"]) == len(
+        stalled.final_affine
+    )
+    assert kkt["parameter_constraint_multipliers"] == []
+    assert all(
+        math.isfinite(kkt[name])
+        for name in (
+            "objective",
+            "primal_feasibility_inf_norm",
+            "stationarity_inf_norm",
+            "complementarity_inf_norm",
+            "dual_sign_violation_inf_norm",
+        )
+    )
 
 
 def test_finite_owner_full_space_recovers_truth_with_complete_certificate(
