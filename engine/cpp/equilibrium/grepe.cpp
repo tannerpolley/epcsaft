@@ -721,7 +721,7 @@ std::vector<std::vector<ReactiveFinitePhaseStart>> start_sets(
                         request.pressure.value
                     ));
                 }
-            } catch (const std::exception&) {
+            } catch (const std::domain_error&) {
                 starts.clear();
             }
             if (!starts.empty()) {
@@ -1712,7 +1712,7 @@ VaporPoint solve_vapor(
                             break;
                         }
                     } catch (const GrepeFailure&) {
-                    } catch (const std::exception&) {
+                    } catch (const std::domain_error&) {
                     }
                 }
                 if (!improved) {
@@ -1794,7 +1794,7 @@ VaporPoint solve_vapor(
             }
         } catch (const GrepeFailure& error) {
             last_failure = error;
-        } catch (const std::exception& error) {
+        } catch (const std::domain_error& error) {
             last_failure = GrepeFailure("provider_domain_rejection", error.what());
         }
     }
@@ -2092,7 +2092,7 @@ IncipientSolve solve_incipient_pressure(
             } catch (const GrepeFailure& error) {
                 failure = error;
                 break;
-            } catch (const std::exception& error) {
+            } catch (const std::domain_error& error) {
                 failure = GrepeFailure("provider_domain_rejection", error.what());
                 break;
             }
@@ -3691,6 +3691,7 @@ GrepeResult finalize_grepe_local(
     const std::vector<double>& local_upper_bounds
 ) {
     if (structure.finite_incipient) {
+        try {
         if (local_variables.empty()) {
             throw std::invalid_argument("retained incipient GREPE state is empty");
         }
@@ -3774,10 +3775,18 @@ GrepeResult finalize_grepe_local(
                 });
             }
         }
-        return incipient_result(
-            retained,
-            solve_incipient_pressure(model, incipient_model, retained)
-        );
+            return incipient_result(
+                retained,
+                solve_incipient_pressure(model, incipient_model, retained)
+            );
+        } catch (const GrepeFailure& failure) {
+            return failed_result(
+                request,
+                "finite_incipient",
+                "fixed_T_one_finite_liquid_one_incipient_vapor",
+                failure
+            );
+        }
     }
     return finalize_finite_context(
         prepare_retained_finite_grepe(model, request, structure, point),

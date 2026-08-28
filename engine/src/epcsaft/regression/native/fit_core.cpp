@@ -284,8 +284,6 @@ public:
       return write_evaluation(evaluation, residuals, jacobians, predictions);
     } catch (const OwnerEvaluationError &error) {
       return reject(error.code(), error.what());
-    } catch (const std::exception &error) {
-      return reject("owner_contract_failure", error.what());
     }
   }
 
@@ -319,8 +317,6 @@ public:
       return write_evaluation(evaluation, residuals, jacobians, predictions);
     } catch (const OwnerEvaluationError &error) {
       return reject(error.code(), error.what());
-    } catch (const std::exception &error) {
-      return reject("owner_contract_failure", error.what());
     }
   }
 
@@ -1823,27 +1819,12 @@ FitResult fit_native(const FitRequest &request) {
 
   output.starts.resize(request.controls.starts.size());
   for (std::size_t index = 0; index < request.controls.starts.size(); ++index) {
-    try {
-      output.starts[index] = solve_start(
-          index, request, full_space,
-          full_space ? &*full_space_campaign : nullptr,
-          request.identity_coordinates,
-          request.coordinates, request.observations, request.controls,
-          request.controls.starts[index], request.failure_codes);
-    } catch (const std::exception &error) {
-      auto &result = output.starts[index];
-      result.index = index;
-      result.start_identity = request.controls.starts[index].identity;
-      result.initial_affine = request.controls.starts[index].affine;
-      result.final_affine = request.controls.starts[index].affine;
-      result.failure_reason = error.what();
-      result.trial_failure_code = "optimizer_failure";
-      for (std::size_t batch = 0; batch < request.observations.size(); ++batch) {
-        result.batch_outcomes.push_back(
-            {batch, request.observations[batch].targets.size(), "not_evaluated",
-             "optimizer_failure"});
-      }
-    }
+    output.starts[index] = solve_start(
+        index, request, full_space,
+        full_space ? &*full_space_campaign : nullptr,
+        request.identity_coordinates,
+        request.coordinates, request.observations, request.controls,
+        request.controls.starts[index], request.failure_codes);
   }
   assign_optimizer_basins(output.starts, request.coordinates);
   return output;
