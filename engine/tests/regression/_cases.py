@@ -629,7 +629,7 @@ def tied_coordinate_fit_case(
                 "starts": [{"identity": "input", "values": [0.0, 270.0]}],
                 "affine_bound_margin": 1.0e-7,
             },
-            "controls": {"maximum_iterations": 25, "optimizer_tolerance": 1.0e-12},
+            "controls": {"maximum_iterations": 40, "optimizer_tolerance": 1.0e-12},
         },
     }
     return mapping, input_parameters, states, identities

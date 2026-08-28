@@ -10,6 +10,7 @@ import epcsaft
 from epcsaft import equilibrium
 from epcsaft.regression import fit
 from tests.regression._cases import (
+    fixed_state_fit_case,
     fixed_state_observation,
     full_space_fit_case,
     pressure,
@@ -17,6 +18,42 @@ from tests.regression._cases import (
     solved_pressure_fit_case,
     with_parameter,
 )
+
+
+def test_maximum_iterations_is_nonusable_and_retains_final_diagnostics(
+    tmp_path: Path,
+) -> None:
+    """Falsify max-iteration acceptance or loss of an inspectable final state."""
+
+    reduced_mapping, *_ = fixed_state_fit_case(tmp_path)
+    reduced_mapping["solver"]["controls"]["maximum_iterations"] = 1
+    reduced = fit(reduced_mapping, base_path=tmp_path)
+    assert all(start.solver_status == "maximum_iterations_exceeded" for start in reduced.starts)
+    assert all(not start.usable for start in reduced.starts)
+    assert reduced.best_usable_start is None
+
+    full_mapping, *_ = full_space_fit_case(tmp_path)
+    full_mapping["solver"]["controls"]["maximum_iterations"] = 1
+    stalled = fit(full_mapping, base_path=tmp_path).starts[0]
+    assert stalled.solver_status == "maximum_iterations_exceeded"
+    assert not stalled.usable
+    assert all(math.isfinite(value) for value in stalled.final_physical)
+    diagnostic = stalled.owner_diagnostics[0]
+    assert diagnostic["solver_status"]
+    assert diagnostic["local_variables"]
+    assert set(diagnostic["certificate"]) == {
+        "balance_inf_norm",
+        "pressure_relative_inf_norm",
+        "reaction_affinity_inf_norm",
+        "transfer_chemical_potential_inf_norm",
+        "kkt_stationarity_inf_norm",
+        "phase_distinctness",
+        "minimum_amount_mol",
+        "minimum_bound_margin",
+        "reduced_hessian_min_eigenvalue",
+        "reduced_hessian_scale",
+        "reduced_hessian_threshold",
+    }
 
 
 def test_finite_owner_full_space_recovers_truth_with_complete_certificate(

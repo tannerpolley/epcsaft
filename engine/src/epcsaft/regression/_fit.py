@@ -162,6 +162,48 @@ def _package_fingerprint() -> str:
     return f"sha256:{hashlib.sha256(record.encode()).hexdigest()}"
 
 
+def _native_owner_diagnostic(batch: _ReactiveBatch, result: object) -> Mapping[str, object]:
+    native = cast(Any, result).equilibrium
+
+    def finite(value: Any) -> float | None:
+        number = float(value)
+        return number if math.isfinite(number) else None
+
+    return {
+        "batch_identity": batch.identity,
+        "accepted": bool(native.accepted),
+        "solver_status": str(native.solver_status),
+        "numerical_status": str(native.numerical_status),
+        "physical_status": str(native.physical_status),
+        "provider_domain_status": str(native.provider_domain_status),
+        "failure_code": str(cast(Any, result).failure_code),
+        "failure_reason": str(native.failure_reason),
+        "local_variables": [finite(value) for value in native.local_variables],
+        "local_lower_bounds": [finite(value) for value in native.local_lower_bounds],
+        "local_upper_bounds": [finite(value) for value in native.local_upper_bounds],
+        "resolved_policy": [
+            {"name": str(name), "value": finite(value)}
+            for name, value in native.resolved_policy
+        ],
+        "certificate": {
+            name: finite(getattr(native, name))
+            for name in (
+                "balance_inf_norm",
+                "pressure_relative_inf_norm",
+                "reaction_affinity_inf_norm",
+                "transfer_chemical_potential_inf_norm",
+                "kkt_stationarity_inf_norm",
+                "phase_distinctness",
+                "minimum_amount_mol",
+                "minimum_bound_margin",
+                "reduced_hessian_min_eigenvalue",
+                "reduced_hessian_scale",
+                "reduced_hessian_threshold",
+            )
+        },
+    }
+
+
 def _fit_owner_batches(
     resolved: ResolvedFit,
     residual_blocks: Sequence[Mapping[str, object]],
@@ -229,6 +271,11 @@ def _fit_owner_batches(
         }
         for start in cast(list[dict[str, Any]], native["starts"]):
             owner_results = cast(Sequence[object | None], start.pop("owner_results"))
+            start["owner_diagnostics"] = [
+                _native_owner_diagnostic(batch, owner_result)
+                for batch, owner_result in zip(owner_batches, owner_results, strict=True)
+                if batch is not None and owner_result is not None
+            ]
             if not bool(start["usable"]):
                 continue
             physical = cast(Sequence[float], start["final_physical"])
@@ -248,6 +295,7 @@ def _fit_owner_batches(
     else:
         for start in cast(list[dict[str, Any]], native["starts"]):
             start.pop("owner_results", None)
+            start["owner_diagnostics"] = []
     return FitResult.from_native(
         specification,
         native,

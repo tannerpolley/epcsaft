@@ -36,11 +36,21 @@ class OwnerEvaluationError final : public std::runtime_error {
 public:
   OwnerEvaluationError(std::string code, std::string reason)
       : std::runtime_error(std::move(reason)), code_(std::move(code)) {}
+  OwnerEvaluationError(
+      std::string code, std::string reason,
+      epcsaft_engine::equilibrium::GrepeResult owner_result)
+      : std::runtime_error(std::move(reason)), code_(std::move(code)),
+        owner_result_(std::move(owner_result)) {}
 
   const std::string &code() const noexcept { return code_; }
+  const std::optional<epcsaft_engine::equilibrium::GrepeResult> &
+  owner_result() const noexcept {
+    return owner_result_;
+  }
 
 private:
   std::string code_;
+  std::optional<epcsaft_engine::equilibrium::GrepeResult> owner_result_;
 };
 
 NativeModel with_active_values(const NativeModel &base,
@@ -165,7 +175,8 @@ OwnerEvaluation select_grepe(const GrepeExperiment &experiment,
     }
     throw OwnerEvaluationError(
         code, equilibrium.failure_reason.empty() ? equilibrium.solver_status
-                                                 : equilibrium.failure_reason);
+                                                 : equilibrium.failure_reason,
+        std::move(native));
   }
   const std::size_t input_width = equilibrium.input_order.size();
   if (input_width == 0 ||
@@ -237,6 +248,9 @@ OwnerEvaluation finalize_grepe(
       with_active_values(experiment.incipient_model,
                          structure.active_parameter_identities, active),
       experiment.request, structure, point, local, lower, upper);
+  native.equilibrium.local_variables = local;
+  native.equilibrium.local_lower_bounds = lower;
+  native.equilibrium.local_upper_bounds = upper;
   return select_grepe(experiment, active, std::move(native), true);
 }
 
@@ -283,6 +297,9 @@ public:
       }
       return write_evaluation(evaluation, residuals, jacobians, predictions);
     } catch (const OwnerEvaluationError &error) {
+      if (owner_result != nullptr && error.owner_result().has_value()) {
+        *owner_result = error.owner_result();
+      }
       return reject(error.code(), error.what());
     }
   }
@@ -316,6 +333,9 @@ public:
       }
       return write_evaluation(evaluation, residuals, jacobians, predictions);
     } catch (const OwnerEvaluationError &error) {
+      if (owner_result != nullptr && error.owner_result().has_value()) {
+        *owner_result = error.owner_result();
+      }
       return reject(error.code(), error.what());
     }
   }
@@ -632,7 +652,11 @@ bool ipopt_solution_usable(Ipopt::ApplicationReturnStatus status) {
   return status == Ipopt::Solve_Succeeded ||
          status == Ipopt::Solved_To_Acceptable_Level ||
          status == Ipopt::Search_Direction_Becomes_Too_Small ||
-         status == Ipopt::Feasible_Point_Found ||
+         status == Ipopt::Feasible_Point_Found;
+}
+
+bool ipopt_final_iterate_available(Ipopt::ApplicationReturnStatus status) {
+  return ipopt_solution_usable(status) ||
          status == Ipopt::Maximum_Iterations_Exceeded;
 }
 
@@ -1408,6 +1432,8 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
   }
   result.solver_status = ipopt_status_name(solver_status);
   const bool solver_usable = ipopt_solution_usable(solver_status);
+  const bool final_iterate_available =
+      ipopt_final_iterate_available(solver_status);
   for (std::size_t coordinate = 0; coordinate < coordinates.size();
        ++coordinate) {
     double &affine = result.final_affine[coordinate];
@@ -1447,7 +1473,7 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
   }
   std::size_t offset = 0;
   bool final_evaluable = true;
-  const bool retain_owner_results = solver_usable;
+  const bool retain_owner_results = final_iterate_available;
   result.owner_results.resize(costs.size());
   for (std::size_t batch_index = 0; batch_index < costs.size(); ++batch_index) {
     const auto &cost = costs[batch_index];
@@ -1460,7 +1486,7 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
       jacobian_pointers.push_back(block.data());
     }
     const bool evaluated = full_space
-        ? solver_usable && batch_index < retained_states.size()
+        ? final_iterate_available && batch_index < retained_states.size()
             && cost->finalize(
                 final_blocks.data(),
                 full_space_campaign->structure(
@@ -1500,9 +1526,6 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
     offset += rows;
   }
   result.usable = solver_usable && final_evaluable;
-  if (!result.usable) {
-    result.owner_results.clear();
-  }
   result.non_evaluable_count = 0;
   for (const auto &cost : costs) {
     result.non_evaluable_count += cost->rejection_count();
@@ -1520,7 +1543,10 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
       }
     }
   }
-  if (!result.owner_failures.empty()) {
+  if (!solver_usable) {
+    result.failure_reason = result.solver_status;
+    result.trial_failure_code = "optimizer_failure";
+  } else if (!result.owner_failures.empty()) {
     result.failure_reason = result.owner_failures.front().reason;
     result.trial_failure_code = result.owner_failures.front().code;
   }

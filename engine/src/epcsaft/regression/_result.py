@@ -363,6 +363,7 @@ class FitStart:
     non_evaluable_count: int
     owner_failures: tuple[OwnerFailure, ...]
     owner_receipts: tuple[OwnerReceipt, ...]
+    owner_diagnostics: tuple[Mapping[str, object], ...]
     batch_outcomes: tuple[BatchOutcome, ...]
     cost: float
     usable: bool
@@ -455,6 +456,9 @@ class FitStart:
                 OwnerFailure.from_native(item) for item in value["owner_failures"]
             ),
             owner_receipts=owner_receipts,
+            owner_diagnostics=tuple(
+                cast(Mapping[str, object], item) for item in value["owner_diagnostics"]
+            ),
             batch_outcomes=tuple(
                 BatchOutcome.from_native(item) for item in value["batch_outcomes"]
             ),
@@ -506,6 +510,7 @@ class FitStart:
             "non_evaluable_count": self.non_evaluable_count,
             "owner_failures": [failure.to_mapping() for failure in self.owner_failures],
             "owner_receipts": [receipt.to_mapping() for receipt in self.owner_receipts],
+            "owner_diagnostics": list(self.owner_diagnostics),
             "batch_outcomes": [outcome.to_mapping() for outcome in self.batch_outcomes],
             "cost": _finite_or_none(self.cost),
             "usable": self.usable,
