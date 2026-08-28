@@ -1286,7 +1286,7 @@
         "source_id": "mea-retained-phase-two-artifact"
       },
       "qualification": "candidate_extrapolation",
-      "source_sha256": "sha256:679a90deb05242938bd3c52a51f2a81bb429344e9aacfdf09b8b566cc005c791"
+      "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
     },
     {
       "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
@@ -1299,7 +1299,7 @@
         "source_id": "mea-retained-phase-two-artifact"
       },
       "qualification": "candidate_extrapolation",
-      "source_sha256": "sha256:679a90deb05242938bd3c52a51f2a81bb429344e9aacfdf09b8b566cc005c791"
+      "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
     },
     {
       "c_dielectric": 1.0,
@@ -1314,7 +1314,7 @@
         "source_id": "mea-retained-phase-two-artifact"
       },
       "qualification": "candidate_extrapolation",
-      "source_sha256": "sha256:679a90deb05242938bd3c52a51f2a81bb429344e9aacfdf09b8b566cc005c791"
+      "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
     },
     {
       "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
@@ -1327,20 +1327,7 @@
         "source_id": "mea-retained-phase-two-artifact"
       },
       "qualification": "candidate_extrapolation",
-      "source_sha256": "sha256:679a90deb05242938bd3c52a51f2a81bb429344e9aacfdf09b8b566cc005c791"
-    },
-    {
-      "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
-      "choice": "none",
-      "family_id": "model/polar",
-      "kind": "polar",
-      "provenance": {
-        "domain_id": "mea-provider-source-qualified-313-15-k",
-        "locator": "data/reference/MEA/manifests/reactive_vle_model_configurations.json:diagnostic-explicit-model-switches",
-        "source_id": "mea-retained-phase-two-artifact"
-      },
-      "qualification": "candidate_extrapolation",
-      "source_sha256": "sha256:679a90deb05242938bd3c52a51f2a81bb429344e9aacfdf09b8b566cc005c791"
+      "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
     }
   ],
   "pairs": [
