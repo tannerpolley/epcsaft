@@ -10,7 +10,7 @@ import pytest
 import epcsaft
 from epcsaft import equilibrium
 from tests.eos._cases import (
-    HELD_STRATEGY_2_TERNARY,
+    LITHIUM_CHLORIDE_TERNARY,
     _component,
     _constant_correlation,
     _pair,
@@ -18,7 +18,7 @@ from tests.eos._cases import (
 
 
 def _multineutral_electrolyte(*, organic_permittivity: float | None) -> dict[str, object]:
-    mapping = deepcopy(HELD_STRATEGY_2_TERNARY)
+    mapping = deepcopy(LITHIUM_CHLORIDE_TERNARY)
     mapping["components"].append(
         _component(
             "neutral-organic",

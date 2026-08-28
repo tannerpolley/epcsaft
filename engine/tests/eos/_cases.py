@@ -397,7 +397,7 @@ NEUTRAL_TERNARY_IMMISCIBLE = _document(
 )
 
 
-def _ascani_2023_association_topology() -> dict[str, object]:
+def _esterification_association_topology() -> dict[str, object]:
     provenance = {
         "source_id": "ascani-2023",
         "locator": "Table 3 and standard PC-SAFT association combining rules",
@@ -471,7 +471,7 @@ def _replace_fixture_provenance(value: object, provenance: dict[str, str]) -> No
             _replace_fixture_provenance(item, provenance)
 
 
-ASCANI_2023_HYPOTHETICAL = _document(
+ESTERIFICATION_TERNARY = _document(
     "ascani-2023-hypothetical",
     [
         _component(
@@ -502,9 +502,9 @@ ASCANI_2023_HYPOTHETICAL = _document(
         _pair("b", "c", k_ij=-0.025),
     ],
     model_families=_model_families(association="general-site"),
-    topology=_ascani_2023_association_topology(),
+    topology=_esterification_association_topology(),
 )
-_ASCANI_2023_PROVENANCE = {
+_ESTERIFICATION_TERNARY_PROVENANCE = {
     "source_id": "ascani-2023",
     "locator": (
         "Table 3 and Section 3.2; molar masses are a stoichiometrically consistent "
@@ -512,8 +512,8 @@ _ASCANI_2023_PROVENANCE = {
     ),
     "domain_id": "ascani-2023-hypothetical",
 }
-_replace_fixture_provenance(ASCANI_2023_HYPOTHETICAL, _ASCANI_2023_PROVENANCE)
-ASCANI_2023_HYPOTHETICAL["sources"] = [
+_replace_fixture_provenance(ESTERIFICATION_TERNARY, _ESTERIFICATION_TERNARY_PROVENANCE)
+ESTERIFICATION_TERNARY["sources"] = [
     {
         "source_id": "ascani-2023",
         "citation": (
@@ -526,7 +526,7 @@ ASCANI_2023_HYPOTHETICAL["sources"] = [
         ),
     }
 ]
-ASCANI_2023_HYPOTHETICAL["domains"] = [{"domain_id": "ascani-2023-hypothetical", "kind": "unknown"}]
+ESTERIFICATION_TERNARY["domains"] = [{"domain_id": "ascani-2023-hypothetical", "kind": "unknown"}]
 
 CHARGED_TERNARY_IMMISCIBLE = _document(
     "charged-ternary-immiscible-fixture",
@@ -724,7 +724,7 @@ AQUEOUS_ELECTROLYTE["domains"] = [
     }
 ]
 
-HELD_STRATEGY_2_TERNARY = _document(
+LITHIUM_CHLORIDE_TERNARY = _document(
     "held-strategy-2-ternary-fixture",
     [
         _component(
@@ -1099,9 +1099,9 @@ def set_binary_pair_value(mapping: dict[str, object], family: str, magnitude: fl
 
 __all__ = (
     "AQUEOUS_ELECTROLYTE",
-    "ASCANI_2023_HYPOTHETICAL",
     "ASSOCIATING_PURE",
     "DIPOLAR_PERMITTIVITY_ELECTROLYTE",
+    "ESTERIFICATION_TERNARY",
     "MULTINEUTRAL_REACTIVE",
     "MULTISOLVENT_MULTIION",
     "NEUTRAL_ASSOCIATING_MIXTURE",
