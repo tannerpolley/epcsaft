@@ -12,11 +12,8 @@ from epcsaft.regression import FitPreflightError, fit
 from tests.regression._cases import (
     PURE_IDENTITY,
     boundary_fit_case,
-    fixed_state_observation,
-    pressure,
     pure_saturation_fit_case,
     scaled_error,
-    with_parameter,
 )
 
 
@@ -36,7 +33,7 @@ def test_invalid_saturation_start_is_a_typed_non_evaluable_preflight(
 def test_non_evaluable_boundary_start_does_not_contaminate_best_candidate(
     tmp_path: Path,
 ) -> None:
-    """Falsify mixed-owner order, boundary transfer, or contamination after refusal."""
+    """Falsify boundary transfer or contamination after a refused start."""
 
     identity = "component/solvent/segment_diameter"
     mapping, parameters, model, problem, _, truth = boundary_fit_case(
@@ -50,46 +47,15 @@ def test_non_evaluable_boundary_start_does_not_contaminate_best_candidate(
     )
     assert isinstance(problem.temperature, equilibrium.Fixed)
     assert truth.values[0] is not None
-    phase = truth.phases[0]
-    temperature = float(problem.temperature.value.to("kelvin").magnitude)
-    truth_parameters = with_parameter(parameters, identity, 2.9, "mixed-owner-truth")
-    direct_pressure = pressure(
-        truth_parameters,
-        temperature,
-        phase.molar_density_mol_m3,
-        phase.mole_fractions,
-    )
-    direct = fixed_state_observation(
-        (
-            {
-                "temperature_k": temperature,
-                "molar_density_mol_per_m3": phase.molar_density_mol_m3,
-                "pressure": direct_pressure,
-            },
-        ),
-        phase.mole_fractions,
-        identity="mixed-direct-owner",
-    )
-    observations = mapping["observations"]
-    assert isinstance(observations, list)
-    mapping["observations"] = [direct, *observations]
 
     result = fit(mapping, base_path=tmp_path)
     accepted = result.best_usable_start
     assert accepted is not None
     assert accepted.start_identity == "truth"
     assert accepted.final_physical == pytest.approx((2.9,), abs=3.0e-7)
-    assert accepted.predictions == pytest.approx(
-        (direct_pressure, float(truth.values[0])), rel=2.0e-6, abs=2.0e-8
-    )
-    assert tuple(row.selector for row in result.specification.rows) == (
-        "pressure",
-        "cation-fraction",
-    )
-    assert tuple(outcome.status for outcome in accepted.batch_outcomes) == (
-        "evaluated",
-        "evaluated",
-    )
+    assert accepted.predictions == pytest.approx(truth.values, rel=2.0e-6, abs=2.0e-8)
+    assert tuple(row.selector for row in result.specification.rows) == ("cation-fraction",)
+    assert tuple(outcome.status for outcome in accepted.batch_outcomes) == ("evaluated",)
 
     step = 1.0e-5
     centered_values = []
@@ -102,8 +68,8 @@ def test_non_evaluable_boundary_start_does_not_contaminate_best_candidate(
         assert solved.status == "evaluated" and solved.values[0] is not None
         centered_values.append(float(solved.values[0]))
     centered = (centered_values[1] - centered_values[0]) / (2.0 * step)
-    boundary_row = result.specification.rows[1]
-    owner_derivative = accepted.physical_jacobian[1] * boundary_row.scale / boundary_row.multiplier
+    boundary_row = result.specification.rows[0]
+    owner_derivative = accepted.physical_jacobian[0] * boundary_row.scale / boundary_row.multiplier
     assert scaled_error(owner_derivative, centered) <= 5.0e-5
 
     assert len(accepted.owner_receipts) == 1
@@ -126,7 +92,6 @@ def test_non_evaluable_boundary_start_does_not_contaminate_best_candidate(
     refused = next(start for start in result.starts if start.start_identity == "non-evaluable")
     assert not refused.usable
     assert refused.trial_failure_code is not None
-    assert refused.batch_outcomes[0].status == "evaluated"
-    assert refused.batch_outcomes[1].status != "evaluated"
+    assert refused.batch_outcomes[0].status != "evaluated"
     assert not all(math.isfinite(value) for value in refused.predictions)
     assert result.accounting.dropped_rows == 0

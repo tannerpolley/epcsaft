@@ -8,13 +8,19 @@ import pytest
 import epcsaft
 from epcsaft import equilibrium
 from epcsaft.regression import fit
-from tests.regression._cases import full_space_fit_case, scaled_error
+from tests.regression._cases import (
+    fixed_state_observation,
+    full_space_fit_case,
+    pressure,
+    scaled_error,
+    with_parameter,
+)
 
 
 def test_finite_owner_full_space_recovers_truth_with_complete_certificate(
     tmp_path: Path,
 ) -> None:
-    """Falsify finite-owner recovery, total derivatives, rows, or KKT evidence."""
+    """Falsify finite-owner recovery, derivatives, KKT evidence, or mixed-owner order."""
 
     mapping, parameters, model, problem, identity, truth_value, truth = full_space_fit_case(
         tmp_path
@@ -67,3 +73,42 @@ def test_finite_owner_full_space_recovers_truth_with_complete_certificate(
     assert result.evaluated_rows[0].identity == "manufactured-equilibrium-row"
     assert result.evaluated_rows[0].unit == problem.outputs[0].unit
     assert result.evaluated_rows[0].basis == problem.outputs[0].basis
+
+    assert isinstance(problem.temperature, equilibrium.Fixed)
+    phase = truth.phases[0]
+    temperature = float(problem.temperature.value.to("kelvin").magnitude)
+    direct_pressure = pressure(
+        with_parameter(parameters, identity, truth_value, "mixed-owner-truth"),
+        temperature,
+        phase.molar_density_mol_m3,
+        phase.mole_fractions,
+    )
+    direct = fixed_state_observation(
+        (
+            {
+                "temperature_k": temperature,
+                "molar_density_mol_per_m3": phase.molar_density_mol_m3,
+                "pressure": direct_pressure,
+            },
+        ),
+        phase.mole_fractions,
+        identity="mixed-direct-owner",
+    )
+    observations = mapping["observations"]
+    assert isinstance(observations, list)
+    mapping["observations"] = [direct, *observations]
+
+    mixed_result = fit(mapping, base_path=tmp_path)
+    mixed = mixed_result.best_usable_start
+    assert mixed is not None
+    assert mixed.predictions == pytest.approx(
+        (direct_pressure, float(truth.values[0])), rel=2.0e-6, abs=2.0e-8
+    )
+    assert tuple(row.selector for row in mixed_result.specification.rows) == (
+        "pressure",
+        "cation-fraction",
+    )
+    assert tuple(outcome.status for outcome in mixed.batch_outcomes) == (
+        "evaluated",
+        "evaluated",
+    )
