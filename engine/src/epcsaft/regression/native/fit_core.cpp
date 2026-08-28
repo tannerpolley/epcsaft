@@ -173,10 +173,10 @@ OwnerEvaluation select_grepe(const GrepeExperiment &experiment,
                        ? "physical_rejection"
                        : "numerical_convergence_failure";
     }
-    throw OwnerEvaluationError(
-        code, equilibrium.failure_reason.empty() ? equilibrium.solver_status
-                                                 : equilibrium.failure_reason,
-        std::move(native));
+    const std::string reason = equilibrium.failure_reason.empty()
+                                   ? equilibrium.solver_status
+                                   : equilibrium.failure_reason;
+    throw OwnerEvaluationError(code, reason, std::move(native));
   }
   const std::size_t input_width = equilibrium.input_order.size();
   if (input_width == 0 ||

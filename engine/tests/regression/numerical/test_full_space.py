@@ -41,7 +41,8 @@ def test_maximum_iterations_is_nonusable_and_retains_final_diagnostics(
     diagnostic = stalled.owner_diagnostics[0]
     assert diagnostic["solver_status"]
     assert diagnostic["local_variables"]
-    assert set(diagnostic["certificate"]) == {
+    certificate = diagnostic["certificate"]
+    assert set(certificate) == {
         "balance_inf_norm",
         "pressure_relative_inf_norm",
         "reaction_affinity_inf_norm",
@@ -54,6 +55,8 @@ def test_maximum_iterations_is_nonusable_and_retains_final_diagnostics(
         "reduced_hessian_scale",
         "reduced_hessian_threshold",
     }
+    assert all(value is not None for value in certificate.values())
+    assert stalled.owner_failures[0].reason == diagnostic["failure_reason"]
 
 
 def test_finite_owner_full_space_recovers_truth_with_complete_certificate(
