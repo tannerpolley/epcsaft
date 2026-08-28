@@ -10,13 +10,8 @@ from typing import Any, SupportsFloat, cast
 
 import epcsaft
 from epcsaft import equilibrium
-from epcsaft._trials import NON_EVALUABLE_TRIAL_CODES
 from epcsaft.eos import Mixture, Pure
 from epcsaft.parameters import Parameters
-from epcsaft.regression import ParameterFit
-from epcsaft.regression._equilibrium_owner import _equilibrium_owner_batches
-from epcsaft.regression._fit import _direct_experiments, _owner_requests
-from epcsaft.regression._model import EquilibriumFitObservation
 from tests.eos._cases import MULTINEUTRAL_REACTIVE, NEUTRAL_BINARY, neutral_ternary_pairs
 from tests.equilibrium._cases import multineutral_reaction, provider_boundary_case
 
@@ -549,93 +544,5 @@ def tied_coordinate_fit_case(
     return mapping, input_parameters, states, identities
 
 
-def native_fit_arguments(mapping: Mapping[str, object], base_path: Path) -> tuple[object, ...]:
-    specification = ParameterFit.from_mapping(mapping)
-    parameter_path = Path(specification.parameters.path)
-    parameters = Parameters.from_json(
-        parameter_path if parameter_path.is_absolute() else base_path / parameter_path
-    )
-    resolved = specification.resolve(parameters, base_path=base_path)
-    if all(
-        isinstance(observation, EquilibriumFitObservation)
-        for observation in resolved.fit.observations
-    ):
-        _, _, experiments, residual_blocks, _ = _equilibrium_owner_batches(resolved)
-    elif all(
-        not isinstance(observation, EquilibriumFitObservation)
-        for observation in resolved.fit.observations
-    ):
-        model: Pure | Mixture = (
-            Pure(resolved.parameters)
-            if specification.model.kind == "pure"
-            else Mixture(resolved.parameters)
-        )
-        requests, residual_blocks = _owner_requests(resolved)
-        experiments = _direct_experiments(model, resolved, requests)
-    else:
-        raise ValueError("strategy identity cases use one owner kind")
-    coordinate_indices = {
-        identity: index
-        for index, coordinate in enumerate(resolved.coordinates)
-        for identity in coordinate.tied_identities
-    }
-    return (
-        len(resolved.selected_identities),
-        [coordinate_indices[identity] for identity in resolved.selected_identities],
-        [
-            {
-                "origin": coordinate.origin,
-                "scale": coordinate.scale,
-                "lower_affine": coordinate.affine_bounds[0],
-                "upper_affine": coordinate.affine_bounds[1],
-            }
-            for coordinate in resolved.coordinates
-        ],
-        residual_blocks,
-        {
-            "starts": [
-                {
-                    "identity": start.identity,
-                    "affine": [
-                        (value - coordinate.origin) / coordinate.scale
-                        for value, coordinate in zip(
-                            start.values, resolved.coordinates, strict=True
-                        )
-                    ],
-                }
-                for start in resolved.fit.solver.multistart.starts
-            ],
-            "affine_bound_margin": resolved.fit.solver.multistart.affine_bound_margin,
-            "maximum_iterations": resolved.fit.solver.controls.maximum_iterations,
-            "optimizer_tolerance": resolved.fit.solver.controls.optimizer_tolerance,
-        },
-        tuple(sorted(NON_EVALUABLE_TRIAL_CODES)),
-        experiments,
-    )
-
-
 def scaled_error(actual: float, expected: float) -> float:
     return abs(actual - expected) / max(2.0e-9, abs(actual), abs(expected))
-
-
-def complete_residuals(
-    parameters: Parameters,
-    states: Sequence[tuple[float, float, Sequence[float], float]],
-    values: Mapping[str, float],
-) -> tuple[float, ...]:
-    updates = {
-        identity: epcsaft.unit_registry.Quantity(
-            value,
-            next(item.unit for item in parameters.parameter_specs if item.identity == identity),
-        )
-        for identity, value in values.items()
-    }
-    candidate = parameters.with_values(
-        updates,
-        source_id="centered-coordinate-perturbation",
-        locator="independent public EOS perturbation",
-    )
-    return tuple(
-        (pressure(candidate, temperature, density, composition) - observed) / observed
-        for temperature, density, composition, observed in states
-    )

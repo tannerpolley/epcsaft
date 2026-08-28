@@ -11,7 +11,6 @@ from epcsaft.regression import fit
 from tests.regression._cases import full_space_fit_case, scaled_error
 
 
-@pytest.mark.slow
 def test_finite_owner_full_space_recovers_truth_with_complete_certificate(
     tmp_path: Path,
 ) -> None:

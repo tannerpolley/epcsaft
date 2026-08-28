@@ -26,9 +26,15 @@ def test_fixed_state_owner_recovers_coordinate_and_centered_public_jacobian(
 
     truth = 0.04
     coordinate_scale = 0.05
-    # The manufactured observations carry double-precision EOS values; this
-    # 4e-6 scaled-coordinate gate is stricter than their 2e-6 prediction gate.
-    assert abs(accepted.final_physical[0] - truth) / coordinate_scale <= 4.0e-6
+    recovery_limit = 4.0e-6
+    observation_relative_tolerance = 2.0e-6
+    # affine_jacobian maps dimensionless coordinate error into the
+    # dimensionless scaled-difference residual used by these observations.
+    assert (
+        max(abs(value) for value in accepted.affine_jacobian) * recovery_limit
+        < observation_relative_tolerance
+    )
+    assert abs(accepted.final_physical[0] - truth) / coordinate_scale <= recovery_limit
     candidate = with_parameter(
         input_parameters, PAIR_IDENTITY, accepted.final_physical[0], "recovered-fixed-state"
     )

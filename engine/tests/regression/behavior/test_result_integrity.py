@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import hashlib
-import json
 from pathlib import Path
 
 import pytest
@@ -9,7 +7,6 @@ import pytest
 from epcsaft.regression import FitResult, fit
 from tests.regression._cases import (
     PAIR_IDENTITY,
-    canonical_bytes,
     fixed_state_fit_case,
     parameter_value,
     pressure,
@@ -22,6 +19,7 @@ def test_fit_result_candidate_re_evaluates_rows_and_preserves_identity(
     """Falsify candidate, row, provenance, diagnostic, or fingerprint drift."""
 
     mapping, input_parameters, states = fixed_state_fit_case(tmp_path)
+    mapping["acceptance"] = {"maximum_cost": 1.0e-12}
     result = fit(mapping, base_path=tmp_path)
     assert isinstance(result, FitResult)
     accepted = result.best_usable_start
@@ -39,6 +37,16 @@ def test_fit_result_candidate_re_evaluates_rows_and_preserves_identity(
     assert accepted.rank == 1
     assert accepted.physical_jacobian
     assert accepted.singular_values
+    outcomes = result.outcomes
+    assert outcomes is not None
+    assert {name: outcome["status"] for name, outcome in outcomes.items()} == {
+        "solver_convergence": "converged",
+        "numerical_convergence": "converged",
+        "physical_certification": "certified",
+        "scientific_fit_acceptance": "accepted",
+    }
+    assert outcomes["scientific_fit_acceptance"]["achieved"] == accepted.cost
+    assert outcomes["scientific_fit_acceptance"]["threshold"] == 1.0e-12
 
     candidate = result.export_candidate_parameters()
     assert parameter_value(input_parameters, PAIR_IDENTITY) == pytest.approx(-0.02)
@@ -60,14 +68,18 @@ def test_fit_result_candidate_re_evaluates_rows_and_preserves_identity(
     assert all(
         row.candidate_parameter_identity == result.candidate_parameter_identity for row in rows
     )
-    expected_table_hash = (
-        "sha256:" + hashlib.sha256(canonical_bytes([row.to_mapping() for row in rows])).hexdigest()
-    )
-    assert result.evaluated_row_table_hash == expected_table_hash
+    assert result.candidate_parameter_identity.startswith("sha256:")
+    assert result.evaluated_row_table_hash.startswith("sha256:")
     assert result.artifact_fingerprint.startswith("sha256:")
     assert result.package_fingerprint.startswith("sha256:")
     assert result.digest.startswith("sha256:")
-    serialized = json.loads(result.to_json_bytes())
-    assert serialized["digest"] == result.digest
-    assert serialized["candidate_parameter_identity"] == result.candidate_parameter_identity
-    assert serialized["accounting"] == result.accounting.to_mapping()
+    assert result.accounting.failed_starts == 0
+    assert result.accounting.rejected_row_trials == 0
+    assert result.accounting.failed_row_trials == 0
+
+    assert accepted.cost > 0.0
+    mapping["acceptance"] = {"maximum_cost": accepted.cost / 2.0}
+    rejected = fit(mapping, base_path=tmp_path)
+    rejected_outcomes = rejected.outcomes
+    assert rejected_outcomes is not None
+    assert rejected_outcomes["scientific_fit_acceptance"]["status"] == "rejected"

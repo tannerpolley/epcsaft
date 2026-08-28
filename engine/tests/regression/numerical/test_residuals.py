@@ -7,14 +7,14 @@ from typing import Any, cast
 
 import pytest
 
+import epcsaft
+from epcsaft.eos import Mixture
 from epcsaft.regression import fit
 from tests.regression._cases import (
     PAIR_IDENTITY,
-    complete_residuals,
     fixed_state_fit_case,
     parameter_value,
     pressure,
-    scaled_error,
     sha256,
     tied_coordinate_fit_case,
     with_parameter,
@@ -61,39 +61,45 @@ def test_scaled_and_log_rows_apply_declared_whitening_objective_and_gradient(
     assert accepted.predictions == pytest.approx((predicted, predicted), rel=2.0e-12)
     assert accepted.residuals == pytest.approx(expected_residuals, rel=1.0e-12, abs=1.0e-14)
 
-    step = 1.0e-5
-    below = with_parameter(parameters, PAIR_IDENTITY, -step, "residual-below")
-    above = with_parameter(parameters, PAIR_IDENTITY, step, "residual-above")
-    prediction_derivative = (
-        pressure(above, first_state[0], first_state[1], first_state[2])
-        - pressure(below, first_state[0], first_state[1], first_state[2])
-    ) / (2.0 * step)
+    block = Mixture(bounded_parameters).observable_block(
+        epcsaft.ActiveParameterSet(bounded_parameters, (PAIR_IDENTITY,)),
+        identity="eos.fixed-state",
+        T=first_state[0] * epcsaft.unit_registry.kelvin,
+        rho=first_state[1] * epcsaft.unit_registry.mole / epcsaft.unit_registry.meter**3,
+        x=first_state[2],
+    )
+    pressure_row = block.descriptor.row_identities.index("pressure_pa")
+    prediction_derivatives = block.jacobian[pressure_row]
+    assert block.values[pressure_row] == pytest.approx(predicted, rel=2.0e-12)
+    assert prediction_derivatives is not None
+    prediction_derivative = prediction_derivatives[0]
     expected_jacobian = (
         2.0 * prediction_derivative / predicted,
         0.25 * prediction_derivative / observed,
     )
-    assert all(
-        scaled_error(actual, expected) <= 5.0e-5
-        for actual, expected in zip(accepted.physical_jacobian, expected_jacobian, strict=True)
+    assert accepted.physical_jacobian == pytest.approx(expected_jacobian, rel=1.0e-12, abs=1.0e-14)
+    expected_affine_jacobian = tuple(value * 0.05 for value in expected_jacobian)
+    assert accepted.affine_jacobian == pytest.approx(
+        expected_affine_jacobian, rel=1.0e-12, abs=1.0e-14
     )
     expected_cost = 0.5 * math.fsum(value * value for value in expected_residuals)
     assert accepted.cost == pytest.approx(expected_cost, rel=1.0e-12, abs=1.0e-14)
-    gradient = math.fsum(
+    physical_gradient = math.fsum(
         residual * derivative
         for residual, derivative in zip(accepted.residuals, accepted.physical_jacobian, strict=True)
     )
-
-    def objective(value: float) -> float:
-        candidate = with_parameter(parameters, PAIR_IDENTITY, value, "objective-perturbation")
-        value_prediction = pressure(candidate, first_state[0], first_state[1], first_state[2])
-        residuals = (
-            2.0 * math.log(value_prediction / observed),
-            0.25 * (value_prediction - observed) / observed,
-        )
-        return 0.5 * math.fsum(residual * residual for residual in residuals)
-
-    centered_gradient = (objective(step) - objective(-step)) / (2.0 * step)
-    assert scaled_error(gradient, centered_gradient) <= 5.0e-5
+    expected_physical_gradient = math.fsum(
+        residual * derivative
+        for residual, derivative in zip(expected_residuals, expected_jacobian, strict=True)
+    )
+    assert physical_gradient == pytest.approx(expected_physical_gradient, rel=1.0e-12, abs=1.0e-14)
+    affine_gradient = math.fsum(
+        residual * derivative
+        for residual, derivative in zip(accepted.residuals, accepted.affine_jacobian, strict=True)
+    )
+    assert affine_gradient == pytest.approx(
+        expected_physical_gradient * 0.05, rel=1.0e-12, abs=1.0e-14
+    )
 
 
 def test_bounds_scale_ties_and_covariance_follow_physical_coordinates(tmp_path: Path) -> None:
@@ -121,34 +127,44 @@ def test_bounds_scale_ties_and_covariance_follow_physical_coordinates(tmp_path: 
         pair_b: accepted.final_physical[0],
         energy: accepted.final_physical[1],
     }
-    coordinate_identities = ((pair_a, pair_b), (energy,))
-    steps = (1.0e-5, 1.0e-3)
-    physical_columns: list[tuple[float, ...]] = []
-    for tied, step in zip(coordinate_identities, steps, strict=True):
-        below = complete_residuals(
-            parameters,
-            states,
-            {**baseline, **{identity: baseline[identity] - step for identity in tied}},
-        )
-        above = complete_residuals(
-            parameters,
-            states,
-            {**baseline, **{identity: baseline[identity] + step for identity in tied}},
-        )
-        physical_columns.append(
-            tuple((high - low) / (2.0 * step) for low, high in zip(below, above, strict=True))
-        )
-    centered_physical = tuple(
-        physical_columns[column][row] for row in range(len(states)) for column in range(2)
+    candidate = parameters.with_values(
+        {
+            identity: epcsaft.unit_registry.Quantity(
+                value,
+                next(item.unit for item in parameters.parameter_specs if item.identity == identity),
+            )
+            for identity, value in baseline.items()
+        },
+        source_id="analytic-coordinate-point",
+        locator="project-authored exact chain-rule oracle",
     )
-    assert all(
-        scaled_error(actual, expected) <= 5.0e-5
-        for actual, expected in zip(accepted.physical_jacobian, centered_physical, strict=True)
+    model = Mixture(candidate)
+    expected_physical: list[float] = []
+    for temperature, density, composition, observed in states:
+        block = model.observable_block(
+            epcsaft.ActiveParameterSet(candidate, identities),
+            identity="eos.fixed-state",
+            T=temperature * epcsaft.unit_registry.kelvin,
+            rho=density * epcsaft.unit_registry.mole / epcsaft.unit_registry.meter**3,
+            x=composition,
+        )
+        pressure_row = block.descriptor.row_identities.index("pressure_pa")
+        derivatives = block.jacobian[pressure_row]
+        assert derivatives is not None
+        expected_physical.extend(
+            ((derivatives[0] + derivatives[2]) / observed, derivatives[1] / observed)
+        )
+    assert accepted.physical_jacobian == pytest.approx(expected_physical, rel=1.0e-12, abs=1.0e-14)
+    expected_affine = tuple(
+        value * (0.05, 300.0)[column]
+        for row in range(len(states))
+        for column, value in enumerate(expected_physical[row * 2 : row * 2 + 2])
     )
+    assert accepted.affine_jacobian == pytest.approx(expected_affine, rel=1.0e-12, abs=1.0e-14)
 
-    affine_columns = (
-        tuple(value * 0.05 for value in physical_columns[0]),
-        tuple(value * 300.0 for value in physical_columns[1]),
+    affine_columns = tuple(
+        tuple(expected_affine[row * 2 + column] for row in range(len(states)))
+        for column in range(2)
     )
     a = math.fsum(value * value for value in affine_columns[0])
     b = math.fsum(left * right for left, right in zip(*affine_columns, strict=True))
