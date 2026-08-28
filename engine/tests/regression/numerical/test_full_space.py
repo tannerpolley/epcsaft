@@ -29,9 +29,17 @@ def test_finite_owner_full_space_recovers_truth_with_complete_certificate(
     accepted = result.best_usable_start
     assert accepted is not None
 
-    # The 1e-6 scaled-coordinate gate is stricter than the 2e-6 prediction gate.
-    assert abs(accepted.final_physical[0] - truth_value) / 0.2 <= 1.0e-6
-    assert accepted.predictions == pytest.approx(truth.values, rel=2.0e-6, abs=2.0e-8)
+    coordinate_scale = 0.2
+    recovery_limit = 1.0e-6
+    observation_relative_tolerance = 2.0e-6
+    assert (
+        max(abs(value) for value in accepted.affine_jacobian) * recovery_limit
+        < observation_relative_tolerance
+    )
+    assert abs(accepted.final_physical[0] - truth_value) / coordinate_scale <= recovery_limit
+    assert accepted.predictions == pytest.approx(
+        truth.values, rel=observation_relative_tolerance, abs=2.0e-8
+    )
     assert accepted.owner_failures == ()
     assert accepted.batch_outcomes[0].status == "evaluated"
     assert result.accounting.dropped_rows == 0
