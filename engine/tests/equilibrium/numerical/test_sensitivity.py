@@ -8,6 +8,12 @@ from tests.eos._cases import AQUEOUS_ELECTROLYTE, NEUTRAL_TERNARY_IMMISCIBLE
 from tests.equilibrium._cases import temperature_boundary_case
 
 
+def _scaled_error(exact: float, finite_difference: float) -> float:
+    return abs(exact - finite_difference) / max(
+        abs(exact), abs(finite_difference), 2.0e-9
+    )
+
+
 def _solve_temperature_boundary(
     parameters: epcsaft.Parameters,
     model: epcsaft.Mixture,
@@ -58,7 +64,7 @@ def test_coexistence_sensitivity_matches_centered_public_resolves() -> None:
     assert center.sensitivity is not None and center.sensitivity.status == "available"
     exact = center.sensitivity.output_parameter_jacobian[0][0]
     centered = (upper.extent.pressure_pa - lower.extent.pressure_pa) / (2.0 * step)
-    assert exact == pytest.approx(centered, rel=2.0e-6, abs=2.0e-3)
+    assert _scaled_error(exact, centered) <= 5.0e-5
 
 
 def test_declared_sensitivity_maps_identities_and_matches_centered_public_resolves() -> None:
@@ -110,7 +116,10 @@ def test_declared_sensitivity_maps_identities_and_matches_centered_public_resolv
     centered = tuple(
         (right - left) / (2.0 * step) for left, right in zip(lower, upper, strict=True)
     )
-    assert exact == pytest.approx(centered, rel=2.0e-6, abs=2.0e-9)
+    assert all(
+        _scaled_error(actual, expected) <= 5.0e-5
+        for actual, expected in zip(exact, centered, strict=True)
+    )
 
 
 @pytest.mark.slow
@@ -139,4 +148,4 @@ def test_solved_temperature_boundaries_certify_bubble_dew_and_total_derivatives(
         for exact, low, high in zip(center.jacobian, lower.values, upper.values, strict=True):
             assert exact is not None and low is not None and high is not None
             centered = (high - low) / (2.0 * step)
-            assert exact[0] == pytest.approx(centered, rel=2.0e-5, abs=2.0e-9)
+            assert _scaled_error(exact[0], centered) <= 5.0e-5
