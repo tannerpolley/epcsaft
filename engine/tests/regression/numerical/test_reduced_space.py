@@ -84,10 +84,14 @@ def test_fixed_state_owner_recovers_coordinate_and_centered_public_jacobian(
     assert result.accounting.failed_row_trials == 0
 
 
+@pytest.mark.parametrize(
+    "strategy", ("reduced_space", "simultaneous_sparse_full_space")
+)
 def test_temperature_correlated_domain_trial_is_a_structured_rejection(
     tmp_path: Path,
+    strategy: str,
 ) -> None:
-    """Falsify whole-fit failure when one bounded trial violates an EOS endpoint."""
+    """Falsify divergent endpoint constraints or loss of their KKT multipliers."""
 
     fit_mapping, *_ = full_space_fit_case(tmp_path)
     parameter_mapping = deepcopy(MULTINEUTRAL_REACTIVE)
@@ -147,48 +151,66 @@ def test_temperature_correlated_domain_trial_is_a_structured_rejection(
         },
         "ties": [],
     }
-    fit_mapping["solver"]["evaluation_strategy"] = "reduced_space"
+    fit_mapping["solver"]["evaluation_strategy"] = strategy
     fit_mapping["solver"]["multistart"]["starts"] = [
-        {"identity": "diagnosed-domain-trial", "values": list(diagnosed_physical)},
+        *(
+            [
+                {
+                    "identity": "diagnosed-domain-trial",
+                    "values": list(diagnosed_physical),
+                }
+            ]
+            if strategy == "reduced_space"
+            else []
+        ),
         {"identity": "valid-reference", "values": [0.0, 2.8, 2.8, 0.0]},
     ]
     fit_mapping["solver"]["controls"]["maximum_iterations"] = 2
 
     result = fit(fit_mapping, base_path=tmp_path)
-    rejected = next(
-        start for start in result.starts if start.start_identity == "diagnosed-domain-trial"
-    )
-    assert rejected.initial_affine == pytest.approx(diagnosed_affine, abs=2.0e-15)
-    assert not rejected.usable
-    assert all(math.isfinite(value) for value in rejected.final_physical)
-    assert rejected.owner_failures[0].code == "provider_domain_rejection"
-    assert result.accounting.rejected_row_trials >= 1
-    hot_endpoint = next(
-        constraint
-        for constraint in rejected.parameter_domain_constraints
-        if constraint["temperature_k"] == pytest.approx(393.15)
-    )
     expected_hot_jacobian = (
         1.0,
         0.0,
         0.0,
         1000.0 * (1.0 / 393.15 - 1.0 / 313.15),
     )
-    assert hot_endpoint["initial_value"] == pytest.approx(1.0119038973581267)
-    assert hot_endpoint["initial_value"] > hot_endpoint["upper"]
-    assert hot_endpoint["affine_jacobian"] == pytest.approx(expected_hot_jacobian)
+    if strategy == "reduced_space":
+        rejected = next(
+            start
+            for start in result.starts
+            if start.start_identity == "diagnosed-domain-trial"
+        )
+        assert rejected.initial_affine == pytest.approx(diagnosed_affine, abs=2.0e-15)
+        assert not rejected.usable
+        assert all(math.isfinite(value) for value in rejected.final_physical)
+        assert rejected.owner_failures[0].code == "provider_domain_rejection"
+        assert result.accounting.rejected_row_trials >= 1
+        hot_endpoint = next(
+            constraint
+            for constraint in rejected.parameter_domain_constraints
+            if constraint["temperature_k"] == pytest.approx(393.15)
+        )
+        assert hot_endpoint["initial_value"] == pytest.approx(1.0119038973581267)
+        assert hot_endpoint["initial_value"] > hot_endpoint["upper"]
+        assert hot_endpoint["affine_jacobian"] == pytest.approx(expected_hot_jacobian)
     evaluated = next(start for start in result.starts if start.start_identity == "valid-reference")
-    assert evaluated.owner_failures == ()
+    if strategy == "reduced_space":
+        assert evaluated.owner_failures == ()
     assert all(
         constraint["initial_value"] <= constraint["upper"]
         for constraint in evaluated.parameter_domain_constraints
     )
-    assert all(math.isfinite(value) for value in evaluated.residuals)
-    assert all(math.isfinite(value) for value in evaluated.affine_jacobian)
+    assert evaluated.parameter_domain_constraints[1][
+        "affine_jacobian"
+    ] == pytest.approx(expected_hot_jacobian)
+    if strategy == "reduced_space":
+        assert all(math.isfinite(value) for value in evaluated.residuals)
+        assert all(math.isfinite(value) for value in evaluated.affine_jacobian)
     kkt = evaluated.kkt_diagnostics
     assert kkt["retained"]
     assert len(kkt["parameter_constraint_multipliers"]) == 2
-    assert kkt["primal_feasibility_inf_norm"] <= 1.0e-12
+    if strategy == "reduced_space":
+        assert kkt["primal_feasibility_inf_norm"] <= 1.0e-12
     assert all(
         math.isfinite(kkt[name])
         for name in (
