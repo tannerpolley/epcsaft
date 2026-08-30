@@ -165,7 +165,6 @@ validation:
   installed_wheel_readiness: ../tools/verify-installed-wheel.py
   phase_equilibrium_campaign: ../validation/campaigns/2026-khudaida/tests/test_khudaida_phase_equilibrium.py
   phase_equilibrium_promotion: accepted_cap_09_receipt
-  materialized_packet_receipts: tests/fixtures/data/*/materialization-v2.json
   developer_gate: build_first_parallel_installed_wheel_under_10_seconds_warm
   slow_numerical_evidence: explicit_owner_command
   installed_wheel_campaigns: explicit_validation_owner_command
