@@ -1714,7 +1714,9 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
                             std::numeric_limits<double>::quiet_NaN());
   result.residuals.assign(residual_count,
                           std::numeric_limits<double>::quiet_NaN());
-  result.affine_jacobian.assign(residual_count * coordinates.size(), 0.0);
+  result.affine_jacobian.assign(
+      residual_count * coordinates.size(),
+      std::numeric_limits<double>::quiet_NaN());
   std::vector<bool> information_rows(residual_count, true);
   result.batch_outcomes.reserve(costs.size());
   for (std::size_t batch_index = 0; batch_index < costs.size(); ++batch_index) {

@@ -520,3 +520,6 @@ def test_full_space_retains_success_failure_success_batches(tmp_path: Path) -> N
     assert start.owner_failures[0].code == "physical_rejection"
     assert all(math.isfinite(value) for value in (*start.predictions[:3], *start.predictions[4:]))
     assert math.isnan(start.predictions[3])
+    assert math.isnan(start.residuals[3])
+    assert math.isnan(start.affine_jacobian[3])
+    assert math.isnan(start.physical_jacobian[3])
