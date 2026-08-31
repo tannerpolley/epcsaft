@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import math
+from copy import deepcopy
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -13,8 +15,10 @@ from tests.regression._cases import (
     PURE_IDENTITY,
     boundary_fit_case,
     fixed_state_fit_case,
+    full_space_fit_case,
     pure_saturation_fit_case,
     scaled_error,
+    solved_pressure_fit_case,
 )
 
 
@@ -38,6 +42,65 @@ def test_explicit_full_space_rejects_an_ineligible_fit(tmp_path: Path) -> None:
         fit(mapping, base_path=tmp_path)
 
 
+def test_grepe_dispatch_binds_declared_topology_and_mol_feed(tmp_path: Path) -> None:
+    """Falsify implicit feed acceptance or topology drift before native GREPE."""
+
+    mapping, *_ = full_space_fit_case(tmp_path)
+    result = fit(mapping, base_path=tmp_path)
+    accepted = result.best_usable_start
+    assert accepted is not None
+    assert result.evaluation_strategy == "simultaneous_sparse_full_space"
+    metadata = result.specification.rows[0].to_mapping()["series_metadata"]
+    assert metadata["feed_source"] == {
+        "path": "reaction_system.feed_amounts_mol",
+        "unit": "mol",
+    }
+    assert len(metadata["declared_contract_fingerprint"]) == 71
+    assert metadata["declared_contract_fingerprint"].startswith("sha256:")
+    assert len(accepted.owner_receipts) == 1
+    owner_receipt = json.loads(accepted.owner_receipts[0].canonical_bytes_utf8)
+    assert owner_receipt["reaction_fingerprint"].startswith("sha256:")
+    assert owner_receipt["topology_fingerprint"].startswith("sha256:")
+
+    declared, *_ = solved_pressure_fit_case(tmp_path, ideal_vapor=True)
+    for mutation in (
+        "missing_feed",
+        "short_feed",
+        "wrong_balance",
+        "phase_order",
+        "phase_identity",
+        "phase_role",
+        "phase_support",
+        "reaction_phase",
+        "output_mapping",
+        "missing_continuation",
+    ):
+        tampered = deepcopy(declared)
+        request = tampered["observations"][0]["request"]
+        if mutation == "missing_feed":
+            request.pop("feed")
+        elif mutation == "short_feed":
+            request["reaction_system"]["feed_amounts_mol"].pop()
+        elif mutation == "wrong_balance":
+            request["reaction_system"]["conserved_totals"][0] += 1.0
+        elif mutation == "phase_order":
+            request["phases"].reverse()
+        elif mutation == "phase_identity":
+            request["phases"][0]["identity"] += "-tampered"
+        elif mutation == "phase_role":
+            request["phases"][0]["fluid_role"] = "vapor"
+        elif mutation == "phase_support":
+            request["phases"][1]["support"]["component_ids"].reverse()
+        elif mutation == "reaction_phase":
+            request["reaction_phase_ids"] = [request["phases"][1]["identity"]]
+        elif mutation == "output_mapping":
+            tampered["observations"][0]["targets"][0]["prediction_identity"] = "missing-output"
+        else:
+            request["continuation"] = None
+        with pytest.raises((TypeError, ValueError)):
+            fit(tampered, base_path=tmp_path)
+
+
 @pytest.mark.slow
 def test_non_evaluable_boundary_start_does_not_contaminate_best_candidate(
     tmp_path: Path,
@@ -57,6 +120,17 @@ def test_non_evaluable_boundary_start_does_not_contaminate_best_candidate(
     assert isinstance(problem.temperature, equilibrium.Fixed)
     assert truth.values[0] is not None
 
+    with pytest.raises(ValueError, match="requires a continuation state or start"):
+        fit(mapping, base_path=tmp_path)
+    assert truth.continuation_state is not None
+    anchored = replace(
+        problem,
+        continuation_identity="declared-intensive-boundary",
+        continuation_state=truth.continuation_state,
+    )
+    mapping["observations"][0]["request"] = (
+        equilibrium.general_reactive_equilibrium_problem_to_mapping(anchored)
+    )
     result = fit(mapping, base_path=tmp_path)
     accepted = result.best_usable_start
     assert accepted is not None

@@ -136,6 +136,8 @@ class _ReactiveBatch:
     model: Mixture
     problem: GeneralReactiveEquilibriumProblem
     descriptor: GeneralReactiveEquilibriumDescriptor
+    feed_source: Mapping[str, object]
+    declared_contract_fingerprint: str
     targets: tuple[_ReactiveTarget, ...]
 
     def __post_init__(self) -> None:
@@ -219,6 +221,135 @@ def _optional_text(value: object, label: str) -> str | None:
     return None if value is None else _text(value, label)
 
 
+def _regression_contract_feed_source(
+    request: Mapping[str, object],
+    problem: GeneralReactiveEquilibriumProblem,
+) -> Mapping[str, object]:
+    phases = tuple(
+        cast(Mapping[str, object], phase)
+        for phase in _sequence(request.get("phases"), "Regression GREPE phases")
+    )
+    continuation = request.get("continuation")
+    if continuation is not None:
+        continuation_mapping = cast(Mapping[str, object], continuation)
+        state = cast(Mapping[str, object], continuation_mapping.get("state"))
+        retained_ids = tuple(
+            _text(value, "continuation phase identity")
+            for value in _sequence(state.get("phase_identities"), "continuation phase identities")
+        )
+        retained_phases = tuple(
+            cast(Mapping[str, object], value)
+            for value in _sequence(state.get("phases"), "continuation phases")
+        )
+        if retained_ids != tuple(phase.get("identity") for phase in phases) or len(
+            retained_phases
+        ) != len(phases):
+            raise ValueError("Regression GREPE continuation must preserve declared phase order")
+        for phase, retained in zip(phases, retained_phases, strict=True):
+            support = cast(Mapping[str, object], phase.get("support"))
+            supported = (
+                problem.reaction_system.species_ids
+                if support.get("kind") == "all_components"
+                else tuple(
+                    _text(value, "declared support identity")
+                    for value in _sequence(support.get("component_ids"), "declared support")
+                )
+            )
+            if (
+                retained.get("role") != phase.get("fluid_role")
+                or retained.get("support") != support.get("kind")
+                or tuple(
+                    _text(value, "continued support identity")
+                    for value in _sequence(
+                        retained.get("supported_component_ids"),
+                        "continued support",
+                    )
+                )
+                != supported
+            ):
+                raise ValueError(
+                    "Regression GREPE continuation must preserve phase roles and support"
+                )
+    if "feed" not in request:
+        raise ValueError("Regression GREPE requires an explicit feed declaration")
+    if request["feed"] is not None:
+        return {"path": "feed", "unit": "mol"}
+
+    raw_reaction = request.get("reaction_system")
+    if not isinstance(raw_reaction, Mapping):
+        raise TypeError("Regression GREPE reaction_system must be an object")
+    species = tuple(
+        _text(value, "reaction species identity")
+        for value in _sequence(raw_reaction.get("species_ids"), "reaction species")
+    )
+    amounts = tuple(
+        _number(value, "reaction feed amount")
+        for value in _sequence(
+            raw_reaction.get("feed_amounts_mol"),
+            "reaction_system.feed_amounts_mol",
+        )
+    )
+    balances = tuple(
+        tuple(
+            _number(value, "reaction balance coefficient")
+            for value in _sequence(row, "reaction balance row")
+        )
+        for row in _sequence(raw_reaction.get("balance_matrix"), "reaction balance matrix")
+    )
+    conserved = tuple(
+        _number(value, "reaction conserved total")
+        for value in _sequence(raw_reaction.get("conserved_totals"), "reaction conserved totals")
+    )
+    if (
+        len(amounts) != len(species)
+        or any(len(row) != len(species) for row in balances)
+        or len(conserved) != len(balances)
+        or any(amount < 0.0 for amount in amounts)
+        or not any(amount > 0.0 for amount in amounts)
+        or amounts != problem.reaction_system.feed_amounts_mol
+        or any(
+            not math.isclose(
+                math.fsum(
+                    coefficient * amount for coefficient, amount in zip(row, amounts, strict=True)
+                ),
+                total,
+                rel_tol=1.0e-12,
+                abs_tol=1.0e-12,
+            )
+            for row, total in zip(balances, conserved, strict=True)
+        )
+    ):
+        raise ValueError(
+            "reaction_system.feed_amounts_mol must be a complete mol-basis feed "
+            "consistent with species and conserved balances"
+        )
+    return {"path": "reaction_system.feed_amounts_mol", "unit": "mol"}
+
+
+def _declared_contract_fingerprint(
+    request: Mapping[str, object], feed_source: Mapping[str, object]
+) -> str:
+    reaction = cast(Mapping[str, object], request["reaction_system"])
+    continuation = cast(Mapping[str, object] | None, request["continuation"])
+    state = None if continuation is None else cast(Mapping[str, object], continuation["state"])
+    return _fingerprint(
+        "epcsaft.regression-grepe-declared-contract.v1",
+        {
+            "temperature": request["temperature"],
+            "pressure": request["pressure"],
+            "phases": request["phases"],
+            "reaction_phase_ids": request["reaction_phase_ids"],
+            "feed_source": feed_source,
+            "feed_amounts_mol": reaction["feed_amounts_mol"],
+            "outputs": request["outputs"],
+            "continuation_identity": None if continuation is None else continuation["identity"],
+            "continuation_topology_fingerprint": (
+                None if state is None else state["topology_fingerprint"]
+            ),
+        },
+    )
+
+
 _TARGET_FIELDS = frozenset(
     {
         "identity",
@@ -277,13 +408,17 @@ def _reactive_batches(resolved: ResolvedFit) -> tuple[_ReactiveBatch, ...]:
     batches: list[_ReactiveBatch] = []
     for specification in observations:
         item = specification.to_mapping()
-        request = general_reactive_equilibrium_problem_from_mapping(item["request"])
+        request_mapping = cast(Mapping[str, object], item["request"])
+        request = general_reactive_equilibrium_problem_from_mapping(request_mapping)
+        feed_source = _regression_contract_feed_source(request_mapping, request)
         batches.append(
             _ReactiveBatch(
                 _text(item["identity"], "equilibrium batch identity"),
                 model,
                 request,
                 general_reactive_equilibrium_descriptor(model, request, active_parameters=active),
+                feed_source,
+                _declared_contract_fingerprint(request_mapping, feed_source),
                 _targets_from_mapping(item["targets"]),
             )
         )
@@ -394,6 +529,8 @@ def _specification_receipt(
                         "covariance_identity": target.covariance_identity,
                         "measurement_classification": target.measurement_classification,
                         "role": target.role,
+                        "feed_source": batch.feed_source,
+                        "declared_contract_fingerprint": batch.declared_contract_fingerprint,
                     },
                 ),
                 target.observed,
@@ -431,21 +568,12 @@ def _equilibrium_owner_batches(
     if not active_batches:
         raise ValueError("equilibrium regression has no included target rows")
     if any(
-        not batch.problem.intensive_boundaries
-        and batch.descriptor.formulation != "temperature_boundary"
+        batch.problem.continuation_state is None
         and (
-            (
-                not any(phase.amount_role == "incipient" for phase in batch.problem.phases)
-                and any(
-                    phase.amount_role == "finite"
-                    and batch.problem.continuation_state is None
-                    and phase.start is None
-                    for phase in batch.problem.phases
-                )
-            )
-            or (
-                any(phase.amount_role == "incipient" for phase in batch.problem.phases)
-                and batch.problem.continuation_state is None
+            any(phase.amount_role == "incipient" for phase in batch.problem.phases)
+            or any(
+                phase.amount_role == "finite" and phase.start is None
+                for phase in batch.problem.phases
             )
         )
         for batch in active_batches
@@ -496,6 +624,8 @@ def _equilibrium_owner_batches(
                         "reference_fingerprint": batch.descriptor.reference_fingerprint,
                         "domain_fingerprint": batch.descriptor.domain_fingerprint,
                         "source_reference_fingerprint": reference_fingerprint,
+                        "feed_source": batch.feed_source,
+                        "declared_contract_fingerprint": batch.declared_contract_fingerprint,
                         "temperature": _native_intensive(batch.problem.temperature, "kelvin"),
                         "pressure": _native_intensive(batch.problem.pressure, "pascal"),
                         "outputs": tuple(
