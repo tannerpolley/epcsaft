@@ -2063,6 +2063,7 @@ void populate_sensitivities(
         return;
     }
     const std::size_t input_count = constraint_count + 1 + active_parameter_count;
+    result.input_order.clear();
     result.input_order.reserve(input_count);
     for (std::size_t row = 0; row < constraint_count; ++row) {
         result.input_order.push_back("balance_total[" + std::to_string(row) + "]");
@@ -2596,6 +2597,7 @@ void finalize_reactive_finite_phase_result(
     const std::vector<double>& upper,
     double trace_floor,
     int max_iterations,
+    bool require_output_derivatives,
     bool perform_derivative_audits,
     const PhaseDirectionCompilation* phase_directions,
     const std::vector<PhaseLayout>& layouts,
@@ -2776,7 +2778,7 @@ void finalize_reactive_finite_phase_result(
         kReactiveFinitePhaseStrictMinimumFactor * reduced_hessian_scale;
     result.minimum_amount_mol = minimum_amount;
     result.minimum_bound_margin = minimum_bound_margin;
-    const bool certificates_pass =
+    const bool value_pass =
         result.balance_inf_norm <= kChemicalBalanceTolerance
         && result.pressure_relative_inf_norm <= kChemicalPressureTolerance
         && result.reaction_affinity_inf_norm <= kChemicalAffinityTolerance
@@ -2785,14 +2787,35 @@ void finalize_reactive_finite_phase_result(
         && (phase_count == 1
             || result.phase_distinctness > kReactiveFinitePhaseDistinctnessMinimum)
         && minimum_amount > trace_floor
-        && minimum_bound_margin > kReactiveFinitePhaseBoundMarginMinimum
-        && result.reduced_hessian_min_eigenvalue > result.reduced_hessian_threshold;
-    result.physical_status = certificates_pass ? "passed" : "failed";
-    if (!certificates_pass) {
+        && minimum_bound_margin > kReactiveFinitePhaseBoundMarginMinimum;
+    result.equilibrium_value_valid = value_pass;
+    const bool stability_pass = result.reduced_hessian_min_eigenvalue
+        > result.reduced_hessian_threshold;
+    result.local_stability_status = stability_pass ? "passed" : "failed";
+    result.physical_status = value_pass && stability_pass ? "passed" : "failed";
+    result.local_variables = solution;
+    result.local_variables.insert(result.local_variables.end(), multipliers.begin(), multipliers.end());
+    result.local_lower_bounds = lower;
+    result.local_lower_bounds.insert(result.local_lower_bounds.end(), multipliers.size(), -1.0e19);
+    result.local_upper_bounds = upper;
+    result.local_upper_bounds.insert(result.local_upper_bounds.end(), multipliers.size(), 1.0e19);
+    try {
+        populate_kkt_partials(result, evaluated, parameters, multipliers, species_count, layouts);
+        for (double& derivative : result.input_amount_derivatives) derivative *= amount_scale;
+        for (double& derivative : result.input_volume_derivatives) derivative *= amount_scale;
+        populate_outputs(result, evaluated, parameters, system.g_ref_parameter_derivatives,
+            temperature_k, pressure_pa, amount_scale, layouts, outputs);
+        result.local_evaluation_valid = true;
+    } catch (const std::exception& error) {
+        result.numerical_status = "failed";
+        result.failure_reason = error.what();
+        return;
+    }
+    if (!value_pass || !stability_pass) {
         result.failure_reason = "reactive_finite_phase_certificate_failed";
         return;
     }
-    if (perform_derivative_audits) {
+    if (require_output_derivatives && perform_derivative_audits) {
         bool audits_pass = false;
         try {
             audits_pass = audit_multiphase_derivatives(
@@ -2821,7 +2844,10 @@ void finalize_reactive_finite_phase_result(
             return;
         }
     }
-    result.accepted = true;
+    if (!require_output_derivatives) {
+        result.accepted = true;
+        return;
+    }
     populate_sensitivities(
         result,
         evaluated,
@@ -2846,19 +2872,11 @@ void finalize_reactive_finite_phase_result(
     for (double& derivative : result.input_volume_derivatives) {
         derivative *= amount_scale;
     }
-    result.local_variables = solution;
-    result.local_variables.insert(
-        result.local_variables.end(), multipliers.begin(), multipliers.end()
-    );
-    result.local_lower_bounds = lower;
-    result.local_lower_bounds.insert(
-        result.local_lower_bounds.end(), multipliers.size(), -1.0e19
-    );
-    result.local_upper_bounds = upper;
-    result.local_upper_bounds.insert(
-        result.local_upper_bounds.end(), multipliers.size(), 1.0e19
-    );
     if (result.sensitivity_status == "available") {
+        result.output_values.clear();
+        result.output_input_derivatives.clear();
+        result.output_local_derivatives.clear();
+        result.output_parameter_partials.clear();
         populate_outputs(
             result,
             evaluated,
@@ -2871,11 +2889,11 @@ void finalize_reactive_finite_phase_result(
             outputs
         );
     } else {
-        result.accepted = false;
         result.failure_reason = result.sensitivity_failure_reason.empty()
             ? "reactive_finite_phase_sensitivity_failed"
             : result.sensitivity_failure_reason;
     }
+    result.accepted = result.sensitivity_status == "available";
 }
 
 }  // namespace
@@ -2890,6 +2908,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     double trace_floor,
     const ProviderActiveParameterSet* active_parameters,
     int max_iterations,
+    bool require_output_derivatives,
     bool perform_derivative_audits,
     const PhaseDirectionCompilation* phase_directions,
     const std::vector<std::vector<std::size_t>>& phase_support_indices,
@@ -3427,6 +3446,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         upper,
         trace_floor,
         max_iterations,
+        require_output_derivatives,
         perform_derivative_audits,
         phase_directions,
         layouts,
@@ -3602,7 +3622,9 @@ ReactiveFinitePhaseResult evaluate_provider_reactive_finite_phases_local(
         local.layouts,
         outputs
     );
-    result.accepted = true;
+    result.accepted = false;
+    result.local_evaluation_valid = true;
+    result.equilibrium_value_valid = false;
     result.physical_status = "not_adjudicated";
     result.provider_evaluation_count = static_cast<std::size_t>(provider.evaluation_count());
     return result;
@@ -3622,6 +3644,7 @@ ReactiveFinitePhaseResult finalize_provider_reactive_finite_phases_local(
     const std::vector<std::vector<std::size_t>>& phase_support_indices,
     const std::vector<ReactiveFinitePhaseOutput>& outputs,
     double trace_floor,
+    bool require_output_derivatives,
     bool perform_derivative_audits
 ) {
     const LocalFinitePhaseEvaluation local = prepare_local_finite_phase_evaluation(
@@ -3667,6 +3690,7 @@ ReactiveFinitePhaseResult finalize_provider_reactive_finite_phases_local(
         primal_upper,
         trace_floor,
         500,
+        require_output_derivatives,
         perform_derivative_audits,
         phase_directions,
         local.layouts,

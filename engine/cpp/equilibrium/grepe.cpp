@@ -761,7 +761,7 @@ std::vector<std::vector<ReactiveFinitePhaseStart>> start_sets(
     return result;
 }
 
-double failure_score(const ReactiveFinitePhaseResult& result) {
+std::pair<int, double> failure_score(const ReactiveFinitePhaseResult& result) {
     const double values[] = {
         result.balance_inf_norm,
         result.pressure_relative_inf_norm,
@@ -769,11 +769,14 @@ double failure_score(const ReactiveFinitePhaseResult& result) {
         result.transfer_chemical_potential_inf_norm,
         result.kkt_stationarity_inf_norm,
     };
-    double score = 0.0;
-    for (double value : values) {
-        score += std::isfinite(value) ? std::abs(value) : 1.0e100;
+    if (!std::all_of(std::begin(values), std::end(values),
+            [](double value) { return std::isfinite(value); })) {
+        return {1, 0.0};
     }
-    return score;
+    return {0, std::accumulate(
+        std::begin(values), std::end(values), 0.0,
+        [](double total, double value) { return total + std::abs(value); }
+    )};
 }
 
 GrepeResult unsupported(const std::string& reason) {
@@ -902,6 +905,34 @@ FiniteGrepeContext prepare_retained_finite_grepe(
     };
 }
 
+void set_output_availability(
+    GrepeResult& result,
+    std::size_t output_count,
+    bool require_sensitivity_status,
+    bool include_derivatives
+) {
+    const ReactiveFinitePhaseResult& equilibrium = result.equilibrium;
+    result.output_value_available.assign(output_count, 0);
+    result.output_derivative_available.assign(output_count, 0);
+    const std::size_t input_count = equilibrium.input_order.size();
+    for (std::size_t output = 0; output < output_count; ++output) {
+        const bool value_available = output < equilibrium.output_values.size()
+            && std::isfinite(equilibrium.output_values[output]);
+        result.output_value_available[output] = static_cast<std::uint8_t>(value_available);
+        const std::size_t offset = output * input_count;
+        const bool derivatives_available = include_derivatives && value_available
+            && (!require_sensitivity_status || equilibrium.sensitivity_status == "available")
+            && offset + input_count <= equilibrium.output_input_derivatives.size()
+            && std::all_of(
+                equilibrium.output_input_derivatives.begin() + offset,
+                equilibrium.output_input_derivatives.begin() + offset + input_count,
+                [](double value) { return std::isfinite(value); }
+            );
+        result.output_derivative_available[output] =
+            static_cast<std::uint8_t>(derivatives_available);
+    }
+}
+
 GrepeResult solve_finite_result(
     const epcsaft::NativeModel& model,
     const GrepeRequest& request
@@ -941,7 +972,7 @@ GrepeResult solve_finite_result(
     bool selected = false;
     std::size_t total_iterations = 0;
     std::size_t total_evaluations = 0;
-    double selected_score = 0.0;
+    std::pair<int, double> selected_score{};
     for (const auto& starts : candidates) {
         ProviderContext attempt_provider(model);
         const std::optional<PhaseDirectionCompilation> directions =
@@ -956,6 +987,7 @@ GrepeResult solve_finite_result(
             request.trace_floor,
             parameters.identities.empty() ? nullptr : &parameters,
             500,
+            request.require_output_derivatives,
             request.perform_derivative_audits,
             directions.has_value() ? &*directions : nullptr,
             supports,
@@ -963,8 +995,12 @@ GrepeResult solve_finite_result(
         );
         total_iterations += attempt.optimizer_iterations;
         total_evaluations += attempt.provider_evaluation_count;
-        const double score = failure_score(attempt);
-        if (!selected || attempt.accepted || score < selected_score) {
+        const auto score = failure_score(attempt);
+        if (!selected || attempt.accepted
+            || (attempt.equilibrium_value_valid
+                && !result.equilibrium.equilibrium_value_valid)
+            || (attempt.equilibrium_value_valid
+                == result.equilibrium.equilibrium_value_valid && score < selected_score)) {
             selected = true;
             selected_score = score;
             result.equilibrium = std::move(attempt);
@@ -976,9 +1012,39 @@ GrepeResult solve_finite_result(
     result.equilibrium.optimizer_iterations = total_iterations;
     result.equilibrium.provider_evaluation_count = total_evaluations;
     result.branch_kind = "finite_phases_local_minimum";
-    result.phase_mechanical_classes.assign(
-        phases.size(), ideal ? "analytical_ideal_gas" : "strict_stable_local_minimum"
-    );
+    const std::string joint_class = ideal ? "analytical_ideal_gas"
+        : result.equilibrium.accepted ? "strict_stable_local_minimum"
+        : "rejected_configured_candidate";
+    result.phase_mechanical_classes.assign(phases.size(), joint_class);
+    result.retained_phase_request_indices.resize(phases.size());
+    std::iota(result.retained_phase_request_indices.begin(),
+        result.retained_phase_request_indices.end(), 0);
+    set_output_availability(result, request.outputs.size(), true, true);
+    result.evidence.insert(result.evidence.end(), {
+        {"local_evaluation_valid", static_cast<double>(result.equilibrium.local_evaluation_valid)},
+        {"equilibrium_value_valid", static_cast<double>(result.equilibrium.equilibrium_value_valid)},
+        {"balance_inf_norm", result.equilibrium.balance_inf_norm},
+        {"pressure_relative_inf_norm", result.equilibrium.pressure_relative_inf_norm},
+        {"reaction_affinity_inf_norm", result.equilibrium.reaction_affinity_inf_norm},
+        {"transfer_chemical_potential_inf_norm",
+            result.equilibrium.transfer_chemical_potential_inf_norm},
+        {"kkt_stationarity_inf_norm", result.equilibrium.kkt_stationarity_inf_norm},
+    });
+    result.text_evidence.push_back({
+        "local_stability_status", result.equilibrium.local_stability_status
+    });
+    result.text_evidence.push_back({
+        "sensitivity_status", result.equilibrium.sensitivity_status
+    });
+    if (!result.equilibrium.accepted) {
+        result.failure_code = result.equilibrium.provider_domain_status == "failed"
+            ? "provider_domain_rejection"
+            : result.equilibrium.physical_status == "failed"
+            ? "physical_rejection"
+            : result.equilibrium.sensitivity_status == "unavailable"
+            ? "first_order_failure"
+            : "numerical_convergence_failure";
+    }
     return result;
 }
 
@@ -1049,15 +1115,21 @@ GrepeResult finalize_finite_context(
         context.supports,
         request.outputs,
         request.trace_floor,
+        request.require_output_derivatives,
         request.perform_derivative_audits
     );
     if (context.result.equilibrium.accepted) {
         context.result.branch_kind = "finite_phases_local_minimum";
+        const std::string joint_class = context.ideal ? "analytical_ideal_gas"
+            : "strict_stable_local_minimum";
         context.result.phase_mechanical_classes.assign(
-            context.phases.size(),
-            context.ideal ? "analytical_ideal_gas" : "strict_stable_local_minimum"
+            context.phases.size(), joint_class
         );
     }
+    context.result.retained_phase_request_indices.resize(context.phases.size());
+    std::iota(context.result.retained_phase_request_indices.begin(),
+        context.result.retained_phase_request_indices.end(), 0);
+    set_output_availability(context.result, request.outputs.size(), true, true);
     return std::move(context.result);
 }
 
@@ -1112,6 +1184,7 @@ GrepeResult initialize_finite_context(
         request.trace_floor,
         context.parameters.identities.empty() ? nullptr : &context.parameters,
         0,
+        false,
         false,
         directions.has_value() ? &*directions : nullptr,
         context.supports,
@@ -1257,10 +1330,17 @@ struct LiquidEvaluation {
     std::size_t log_fugacity_offset = 0;
 };
 
+GrepeResult incipient_liquid_partial(
+    const GrepeRequest& request,
+    const LiquidEvaluation& liquid,
+    double pressure_pa
+);
+
 GrepeRequest resolved_request(const GrepeRequest& request, double coordinate) {
     GrepeRequest resolved = request;
     resolved.reaction = effective_reaction(request, coordinate);
     resolved.feed.reset();
+    resolved.require_output_derivatives = true;
     return resolved;
 }
 
@@ -1278,6 +1358,7 @@ GrepeRequest finite_incipient_liquid_request(
     }
     const std::size_t finite_index = static_cast<std::size_t>(finite - request.phases.begin());
     GrepeRequest liquid = request;
+    liquid.require_output_derivatives = true;
     liquid.pressure = {false, pressure_pa, {}, {}};
     liquid.phases = {*finite};
     liquid.boundary.reset();
@@ -1358,7 +1439,8 @@ LiquidEvaluation evaluate_liquid(
             : "numerical_convergence_failure";
         throw GrepeFailure(
             code,
-            failed.failure_reason.empty() ? failed.solver_status : failed.failure_reason
+            failed.failure_reason.empty() ? failed.solver_status : failed.failure_reason,
+            incipient_liquid_partial(request, result, pressure_pa)
         );
     }
     if (std::any_of(
@@ -1371,6 +1453,61 @@ LiquidEvaluation evaluate_liquid(
             "the reactive liquid contains a trace-bound species at the coupled state"
         );
     }
+    return result;
+}
+
+GrepeResult incipient_liquid_partial(
+    const GrepeRequest& request,
+    const LiquidEvaluation& liquid,
+    double pressure_pa
+) {
+    GrepeResult result = liquid.solved;
+    result.formulation = "finite_incipient";
+    result.certificate_scope = "fixed_T_one_finite_liquid_one_incipient_vapor";
+    result.temperature_k = request.temperature.value;
+    result.pressure_pa = pressure_pa;
+    result.partial_selection_reason = "none";
+    const auto finite = std::find_if(
+        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
+            return phase.finite;
+        }
+    );
+    if (finite != request.phases.end()) {
+        result.retained_phase_request_indices = {
+            static_cast<std::size_t>(finite - request.phases.begin())
+        };
+    }
+    result.phase_mechanical_classes = {
+        result.equilibrium.local_stability_status == "not_adjudicated"
+            ? "stability_not_adjudicated"
+            : result.equilibrium.local_stability_status
+    };
+    const std::size_t width = result.equilibrium.input_order.size();
+    result.equilibrium.output_values.assign(
+        request.outputs.size(), std::numeric_limits<double>::quiet_NaN()
+    );
+    result.equilibrium.output_input_derivatives.assign(
+        request.outputs.size() * width, std::numeric_limits<double>::quiet_NaN()
+    );
+    for (std::size_t output = 0; output < request.outputs.size(); ++output) {
+        if (request.outputs[output].selector == "system.pressure") {
+            result.equilibrium.output_values[output] = pressure_pa;
+            continue;
+        }
+        const int position = liquid.output_positions[output];
+        if (position < 0 || static_cast<std::size_t>(position)
+            >= liquid.solved.equilibrium.output_values.size()) {
+            continue;
+        }
+        const double value = liquid.solved.equilibrium.output_values[
+            static_cast<std::size_t>(position)
+        ];
+        if (std::isfinite(value)) {
+            result.equilibrium.output_values[output] = value;
+        }
+    }
+    set_output_availability(result, request.outputs.size(), false, false);
+    result.equilibrium.accepted = false;
     return result;
 }
 
@@ -1390,6 +1527,7 @@ struct VaporPoint {
     double pressure_pa = 0.0;
     double packing_fraction = 0.0;
     double pressure_log_volume = 0.0;
+    bool strict_local_minimum = false;
 };
 
 VaporPoint evaluate_vapor(
@@ -1450,6 +1588,13 @@ VaporPoint evaluate_vapor(
         );
     }
     const double h_vv = block.phase.hessian[count * state_count + count];
+    if (!std::isfinite(h_vv) || h_vv == 0.0) {
+        throw GrepeFailure(
+            "first_order_failure",
+            "incipient vapor volume response is unavailable"
+        );
+    }
+    result.strict_local_minimum = h_vv > 0.0;
     result.chemical_potentials.assign(block.phase.gradient.begin(), block.phase.gradient.begin() + static_cast<std::ptrdiff_t>(count));
     result.mu_log_ratio_at_fixed_volume.assign(count * reference, 0.0);
     result.pressure_log_ratio.assign(reference, 0.0);
@@ -1762,15 +1907,17 @@ VaporPoint solve_vapor(
                     scale = std::max(scale, std::abs(value));
                 }
                 std::vector<double> lower(reference * reference, 0.0);
-                for (std::size_t row = 0; row < reference; ++row) {
-                    for (std::size_t column = 0; column <= row; ++column) {
+                for (std::size_t row = 0;
+                     row < reference && point->strict_local_minimum;
+                     ++row) {
+                    for (std::size_t column = 0;
+                         column <= row && point->strict_local_minimum;
+                         ++column) {
                         if (std::abs(hessian[row * reference + column]
                                      - hessian[column * reference + row])
                             > 2.0e-9 * scale) {
-                            throw GrepeFailure(
-                                "first_order_failure",
-                                "incipient tangent-plane Hessian is not symmetric"
-                            );
+                            point->strict_local_minimum = false;
+                            break;
                         }
                         double value = 0.5 * (
                             hessian[row * reference + column]
@@ -1782,10 +1929,8 @@ VaporPoint solve_vapor(
                         }
                         if (row == column) {
                             if (!std::isfinite(value) || value <= 1.0e-12 * scale) {
-                                throw GrepeFailure(
-                                    "second_order_failure",
-                                    "incipient composition is not a strict local tangent-plane minimum"
-                                );
+                                point->strict_local_minimum = false;
+                                break;
                             }
                             lower[row * reference + column] = std::sqrt(value);
                         } else {
@@ -1838,6 +1983,19 @@ VaporPoint solve_vapor(
                 : "no declared strict-stable vapor composition satisfies fugacity equality"
         );
     }
+    const bool stability_available = std::any_of(
+        accepted.begin(), accepted.end(), [](const auto& candidate) {
+            return candidate.first.strict_local_minimum;
+        }
+    );
+    if (stability_available) {
+        accepted.erase(
+            std::remove_if(accepted.begin(), accepted.end(), [](const auto& candidate) {
+                return !candidate.first.strict_local_minimum;
+            }),
+            accepted.end()
+        );
+    }
     if (continued) {
         return std::move(accepted.front().first);
     }
@@ -1850,7 +2008,7 @@ VaporPoint solve_vapor(
             ? left.first.fractions < right.first.fractions
             : left_distance < right_distance;
     });
-    if (accepted.size() > 1) {
+    if (stability_available && accepted.size() > 1) {
         const double first = accepted[0].first.chemical_potentials[reference]
             - liquid_potentials[reference];
         const double second = accepted[1].first.chemical_potentials[reference]
@@ -1965,14 +2123,21 @@ IncipientClosure incipient_closure(
     }
 
     ProviderContext provider(incipient_model);
-    closure.vapor = solve_vapor(
-        provider,
-        request,
-        vapor,
-        pressure_pa,
-        liquid_potentials,
-        liquid.parameter_order
-    );
+    try {
+        closure.vapor = solve_vapor(
+            provider,
+            request,
+            vapor,
+            pressure_pa,
+            liquid_potentials,
+            liquid.parameter_order
+        );
+    } catch (const GrepeFailure& failure) {
+        throw GrepeFailure(
+            failure.code(), failure.what(),
+            incipient_liquid_partial(request, closure.liquid, pressure_pa)
+        );
+    }
     closure.vapor_evaluations = static_cast<std::size_t>(provider.evaluation_count());
     closure.vapor_fractions = closure.vapor.fractions;
     closure.vapor_pressure_pa = closure.vapor.pressure_pa;
@@ -2060,6 +2225,31 @@ struct IncipientSolve {
     std::size_t accepted_count = 0;
 };
 
+std::size_t incipient_failure_priority(const std::string& code) {
+    static constexpr std::array<std::string_view, 13> priority = {
+        "multiple_unresolved_branches", "branch_loss", "active_bound_ambiguity",
+        "parameter_topology_mismatch", "provider_domain_rejection",
+        "ill_conditioned_sensitivity", "singular_sensitivity",
+        "first_order_failure", "second_order_failure", "physical_rejection",
+        "no_incipient_phase", "numerical_convergence_failure", "owner_contract_failure",
+    };
+    const auto found = std::find(priority.begin(), priority.end(), code);
+    return found == priority.end()
+        ? priority.size()
+        : static_cast<std::size_t>(found - priority.begin());
+}
+
+double partial_bubble_closure(const GrepeResult& result) {
+    const auto found = std::find_if(
+        result.evidence.begin(), result.evidence.end(), [](const auto& item) {
+            return item.first == "bubble_log_closure_abs";
+        }
+    );
+    return found == result.evidence.end() || !std::isfinite(found->second)
+        ? std::numeric_limits<double>::infinity()
+        : std::abs(found->second);
+}
+
 IncipientSolve solve_incipient_pressure(
     const epcsaft::NativeModel& model,
     const epcsaft::NativeModel& incipient_model,
@@ -2073,28 +2263,30 @@ IncipientSolve solve_incipient_pressure(
     std::size_t closure_count = 0;
     std::size_t provider_evaluations = 0;
     std::size_t accepted_count = 0;
-    for (double pressure : starts) {
+    for (std::size_t start_index = 0; start_index < starts.size(); ++start_index) {
+        double pressure = starts[start_index];
         std::optional<IncipientClosure> final;
+        std::optional<IncipientClosure> current;
         std::optional<GrepeFailure> failure;
         for (int iteration = 0; iteration < 18; ++iteration) {
             try {
-                IncipientClosure current = incipient_closure(
+                current = incipient_closure(
                     model, incipient_model, request, pressure
                 );
                 ++closure_count;
-                provider_evaluations += current.liquid.solved.equilibrium.provider_evaluation_count
-                    + current.vapor_evaluations;
-                if (std::abs(current.residual) <= 2.0e-10) {
-                    final = std::move(current);
+                provider_evaluations += current->liquid.solved.equilibrium.provider_evaluation_count
+                    + current->vapor_evaluations;
+                if (std::abs(current->residual) <= 2.0e-10) {
+                    final = std::move(*current);
                     break;
                 }
-                const double slope = current.residual_log_pressure_derivative;
+                const double slope = current->residual_log_pressure_derivative;
                 if (std::abs(slope) < 1.0e-10) {
                     throw GrepeFailure(
                         "singular_sensitivity", "bubble closure slope is singular"
                     );
                 }
-                const double step = std::clamp(-current.residual / slope, -1.0, 1.0);
+                const double step = std::clamp(-current->residual / slope, -1.0, 1.0);
                 const double candidate = std::exp(std::clamp(
                     std::log(pressure) + step,
                     std::log(request.pressure.bounds[0]),
@@ -2108,10 +2300,23 @@ IncipientSolve solve_incipient_pressure(
                 }
                 pressure = candidate;
             } catch (const GrepeFailure& error) {
-                failure = error;
+                std::optional<GrepeResult> partial = error.partial_result();
+                if (!partial.has_value() && current.has_value()) {
+                    partial = incipient_liquid_partial(
+                        request, current->liquid, current->pressure_pa
+                    );
+                    partial->evidence.push_back({
+                        "bubble_log_closure_abs", std::abs(current->residual)
+                    });
+                }
+                failure = GrepeFailure(
+                    error.code(), error.what(), std::move(partial), start_index
+                );
                 break;
             } catch (const std::domain_error& error) {
-                failure = GrepeFailure("provider_domain_rejection", error.what());
+                failure = GrepeFailure(
+                    "provider_domain_rejection", error.what(), std::nullopt, start_index
+                );
                 break;
             }
         }
@@ -2141,23 +2346,49 @@ IncipientSolve solve_incipient_pressure(
         }
     }
     if (accepted.empty()) {
-        const std::vector<std::string_view> priority = {
-            "multiple_unresolved_branches", "branch_loss", "active_bound_ambiguity",
-            "parameter_topology_mismatch", "provider_domain_rejection",
-            "ill_conditioned_sensitivity", "singular_sensitivity",
-            "first_order_failure", "second_order_failure", "physical_rejection",
-            "no_incipient_phase",
-            "numerical_convergence_failure",
-        };
-        for (std::string_view code : priority) {
-            const auto found = std::find_if(
-                failures.begin(), failures.end(), [&](const GrepeFailure& failure) {
-                    return failure.code() == code;
-                }
-            );
-            if (found != failures.end()) {
-                throw *found;
+        const auto selected = std::min_element(
+            failures.begin(), failures.end(), [](const GrepeFailure& left, const GrepeFailure& right) {
+                const GrepeResult* left_partial = left.partial_result().has_value()
+                    ? &*left.partial_result() : nullptr;
+                const GrepeResult* right_partial = right.partial_result().has_value()
+                    ? &*right.partial_result() : nullptr;
+                const auto key = [](const GrepeFailure& failure, const GrepeResult* partial) {
+                    const bool value_valid = partial && partial->equilibrium.equilibrium_value_valid;
+                    const bool vapor_state = partial
+                        && partial->retained_phase_request_indices.size() == 2;
+                    const double closure = partial
+                        ? partial_bubble_closure(*partial)
+                        : std::numeric_limits<double>::infinity();
+                    return std::tuple(
+                        !value_valid, !vapor_state, closure,
+                        incipient_failure_priority(failure.code()),
+                        failure.attempt_index().value_or(std::numeric_limits<std::size_t>::max())
+                    );
+                };
+                return key(left, left_partial) < key(right, right_partial);
             }
+        );
+        if (selected != failures.end()) {
+            GrepeResult partial = selected->partial_result().value_or(GrepeResult{});
+            const bool value_valid = partial.equilibrium.equilibrium_value_valid;
+            const bool vapor_state = partial.retained_phase_request_indices.size() == 2;
+            const double closure = partial_bubble_closure(partial);
+            partial.partial_selection_reason = value_valid ? "equilibrium_value_valid"
+                : vapor_state ? "finite_vapor_state"
+                : std::isfinite(closure) ? "minimum_bubble_log_closure"
+                : "failure_priority";
+            partial.evidence.push_back({"attempted_pressure_start_count", static_cast<double>(starts.size())});
+            partial.evidence.push_back({"partial_candidate_count", static_cast<double>(std::count_if(
+                failures.begin(), failures.end(), [](const GrepeFailure& failure) {
+                    return failure.partial_result().has_value();
+                }
+            ))});
+            partial.evidence.push_back({"winning_pressure_start_index", static_cast<double>(
+                selected->attempt_index().value_or(0)
+            )});
+            throw GrepeFailure(
+                selected->code(), selected->what(), std::move(partial), selected->attempt_index()
+            );
         }
         throw GrepeFailure("no_incipient_phase", "no declared pressure start found a branch");
     }
@@ -2169,6 +2400,141 @@ IncipientSolve solve_incipient_pressure(
     return {
         std::move(accepted.front()), closure_count, provider_evaluations, accepted_count
     };
+}
+
+GrepeResult incipient_value_result(
+    const GrepeRequest& request,
+    const IncipientSolve& solved,
+    bool fixed_pressure,
+    double coordinate_value
+) {
+    const IncipientClosure& closure = solved.closure;
+    const ReactiveFinitePhaseResult& liquid = closure.liquid.solved.equilibrium;
+    const auto vapor_position = std::find_if(
+        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
+            return !phase.finite;
+        }
+    );
+    const auto finite_position = std::find_if(
+        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
+            return phase.finite;
+        }
+    );
+    const std::size_t count = vapor_position->support_indices.size();
+    const std::size_t component_count = request.reaction.species_ids.size();
+    const std::size_t parameter_count = liquid.parameter_order.size();
+    GrepeResult result;
+    result.formulation = fixed_pressure ? "intensive_boundary" : "finite_incipient";
+    result.certificate_scope = fixed_pressure
+        ? "fixed_T_one_finite_liquid_one_incipient_vapor_affine_feed_imposed_boundaries"
+        : "fixed_T_one_finite_liquid_one_incipient_vapor";
+    result.temperature_k = request.temperature.value;
+    result.pressure_pa = closure.pressure_pa;
+    result.source_reference_representation_residual_inf_norm =
+        closure.liquid.solved.source_reference_representation_residual_inf_norm;
+    result.branch_kind = fixed_pressure ? "intensive_boundary" : "finite_incipient_local_branch";
+    result.branch_coordinates = fixed_pressure
+        ? std::vector<double>{coordinate_value, closure.pressure_pa}
+        : std::vector<double>{closure.pressure_pa};
+    result.phase_mechanical_classes = {
+        closure.liquid.solved.equilibrium.local_stability_status,
+        closure.ideal ? "analytical_ideal_gas"
+                      : closure.vapor.strict_local_minimum
+                      ? "strict_stable_local_minimum" : "stability_not_adjudicated",
+    };
+    result.equilibrium = liquid;
+    result.equilibrium.sensitivity_status = "unavailable";
+    result.equilibrium.sensitivity_failure_reason =
+        "finite_incipient_sensitivity_unavailable";
+    result.evidence = closure.liquid.solved.evidence;
+    result.text_evidence = closure.liquid.solved.text_evidence;
+    result.text_evidence.push_back({"sensitivity_status", "unavailable"});
+    ReactiveFinitePhaseResult& equilibrium = result.equilibrium;
+    for (std::size_t component = 0; component < component_count; ++component) {
+        equilibrium.phase_chemical_potentials_over_rt[0][component] =
+            equilibrium.phase_log_fugacities[0][component]
+            - std::log(kGasConstant * request.temperature.value);
+    }
+    equilibrium.phase_amounts_mol.resize(2);
+    equilibrium.phase_volumes_m3.resize(2);
+    equilibrium.phase_pressures_pa.resize(2);
+    equilibrium.phase_packing_fractions.resize(2);
+    equilibrium.phase_chemical_potentials_over_rt.resize(2);
+    equilibrium.phase_log_fugacities.resize(2);
+    equilibrium.phase_amounts_mol[1].assign(component_count, 0.0);
+    equilibrium.phase_chemical_potentials_over_rt[1].assign(component_count, 0.0);
+    equilibrium.phase_log_fugacities[1].assign(component_count, 0.0);
+    for (std::size_t supported = 0; supported < count; ++supported) {
+        const std::size_t component = vapor_position->support_indices[supported];
+        equilibrium.phase_amounts_mol[1][component] = closure.vapor_fractions[supported];
+        equilibrium.phase_chemical_potentials_over_rt[1][component] =
+            closure.vapor.chemical_potentials[supported];
+        equilibrium.phase_log_fugacities[1][component] =
+            closure.vapor.chemical_potentials[supported]
+            + std::log(kGasConstant * request.temperature.value);
+    }
+    equilibrium.phase_volumes_m3[1] = closure.vapor_volume_m3;
+    equilibrium.phase_pressures_pa[1] = closure.vapor_pressure_pa;
+    equilibrium.phase_packing_fractions[1] = closure.vapor_packing_fraction;
+    equilibrium.input_order = equilibrium.parameter_order;
+    equilibrium.output_values.assign(
+        request.outputs.size(), std::numeric_limits<double>::quiet_NaN()
+    );
+    equilibrium.output_input_derivatives.assign(
+        request.outputs.size() * parameter_count, std::numeric_limits<double>::quiet_NaN()
+    );
+    for (std::size_t output = 0; output < request.outputs.size(); ++output) {
+        const ReactiveFinitePhaseOutput& declared = request.outputs[output];
+        const bool vapor_output = declared.phase_index
+            == static_cast<std::size_t>(vapor_position - request.phases.begin());
+        if (declared.selector == "system.pressure") {
+            equilibrium.output_values[output] = closure.pressure_pa;
+        } else if (vapor_output && (
+                declared.selector == "phase.mole_fraction"
+                || declared.selector == "phase.partial_pressure")) {
+            double fraction = 0.0;
+            for (std::size_t component = 0; component < count; ++component) {
+                fraction += declared.coefficients[component]
+                    * closure.vapor_fractions[component];
+            }
+            equilibrium.output_values[output] = declared.selector == "phase.partial_pressure"
+                ? closure.pressure_pa * fraction
+                : fraction;
+        } else {
+            const int position = closure.liquid.output_positions[output];
+            if (position < 0) {
+                throw GrepeFailure(
+                    "observation_out_of_support",
+                    "finite-incipient output is unavailable on its declared support"
+                );
+            }
+            const double value = liquid.output_values[static_cast<std::size_t>(position)];
+            if (std::isfinite(value)) {
+                equilibrium.output_values[output] = value;
+            }
+        }
+    }
+    result.retained_phase_request_indices = {
+        static_cast<std::size_t>(finite_position - request.phases.begin()),
+        static_cast<std::size_t>(vapor_position - request.phases.begin()),
+    };
+    set_output_availability(result, request.outputs.size(), false, false);
+    equilibrium.provider_evaluation_count = solved.provider_evaluations;
+    result.evidence.insert(result.evidence.end(), {
+        {"bubble_log_closure_abs", std::abs(closure.residual)},
+        {"bubble_log_pressure_derivative", closure.residual_log_pressure_derivative},
+        {"balance_inf_norm", equilibrium.balance_inf_norm},
+        {"reaction_affinity_inf_norm", equilibrium.reaction_affinity_inf_norm},
+        {"pressure_relative_inf_norm", equilibrium.pressure_relative_inf_norm},
+        {"phase_pressure_residual_inf_pa", std::abs(
+            equilibrium.phase_pressures_pa[0] - equilibrium.phase_pressures_pa[1]
+        )},
+        {"closure_evaluation_count", static_cast<double>(solved.closure_count)},
+        {"provider_evaluation_count", static_cast<double>(solved.provider_evaluations)},
+        {"accepted_candidate_count", static_cast<double>(solved.accepted_count)},
+        {"distinct_branch_count", 1.0},
+    });
+    return result;
 }
 
 GrepeResult incipient_result(
@@ -2185,11 +2551,13 @@ GrepeResult incipient_result(
         }
     );
     const std::size_t count = vapor_position->support_indices.size();
-    const std::size_t component_count = request.reaction.species_ids.size();
     const std::size_t width = liquid.input_order.size();
     const std::size_t parameter_count = liquid.parameter_order.size();
     const std::size_t pressure_input = input_index(liquid, "pressure_pa");
     const bool fixed_pressure = coordinate_direction != nullptr;
+    GrepeResult result = incipient_value_result(
+        request, solved, fixed_pressure, coordinate_value
+    );
     double scalar_slope = closure.boundary_directional[pressure_input] - 1.0;
     double residual_scale = 1.0;
     if (fixed_pressure) {
@@ -2216,7 +2584,8 @@ GrepeResult incipient_result(
             "singular_sensitivity",
             fixed_pressure
                 ? "fixed-pressure affine-feed closure is singular"
-                : "coupled bubble Schur complement is singular"
+                : "coupled bubble Schur complement is singular",
+            std::move(result)
         );
     }
     if (std::abs(scalar_slope) < 1.0e-8 * slope_scale) {
@@ -2224,7 +2593,8 @@ GrepeResult incipient_result(
             "ill_conditioned_sensitivity",
             fixed_pressure
                 ? "fixed-pressure affine-feed closure is ill-conditioned"
-                : "coupled bubble Schur complement is ill-conditioned"
+                : "coupled bubble Schur complement is ill-conditioned",
+            std::move(result)
         );
     }
     std::vector<double> pressure_derivatives(parameter_count, 0.0);
@@ -2256,61 +2626,12 @@ GrepeResult incipient_result(
         }
     }
 
-    GrepeResult result;
-    result.formulation = fixed_pressure ? "intensive_boundary" : "finite_incipient";
-    result.certificate_scope = fixed_pressure
-        ? "fixed_T_one_finite_liquid_one_incipient_vapor_affine_feed_imposed_boundaries"
-        : "fixed_T_one_finite_liquid_one_incipient_vapor";
-    result.temperature_k = request.temperature.value;
-    result.pressure_pa = closure.pressure_pa;
-    result.source_reference_representation_residual_inf_norm =
-        closure.liquid.solved.source_reference_representation_residual_inf_norm;
-    result.branch_kind = fixed_pressure ? "intensive_boundary" : "finite_incipient_local_branch";
-    result.branch_coordinates = fixed_pressure
-        ? std::vector<double>{coordinate_value, closure.pressure_pa}
-        : std::vector<double>{closure.pressure_pa};
-    result.phase_mechanical_classes = {
-        "strict_stable_local_minimum",
-        closure.ideal ? "analytical_ideal_gas" : "strict_stable_vapor",
-    };
-    result.equilibrium = liquid;
     ReactiveFinitePhaseResult& equilibrium = result.equilibrium;
-    for (std::size_t component = 0; component < component_count; ++component) {
-        equilibrium.phase_chemical_potentials_over_rt[0][component] =
-            equilibrium.phase_log_fugacities[0][component]
-            - std::log(kGasConstant * request.temperature.value);
-    }
-    equilibrium.phase_amounts_mol.resize(2);
-    equilibrium.phase_volumes_m3.resize(2);
-    equilibrium.phase_pressures_pa.resize(2);
-    equilibrium.phase_packing_fractions.resize(2);
-    equilibrium.phase_chemical_potentials_over_rt.resize(2);
-    equilibrium.phase_log_fugacities.resize(2);
-    equilibrium.phase_amounts_mol[1].assign(component_count, 0.0);
-    equilibrium.phase_chemical_potentials_over_rt[1].assign(component_count, 0.0);
-    equilibrium.phase_log_fugacities[1].assign(component_count, 0.0);
-    for (std::size_t supported = 0; supported < count; ++supported) {
-        const std::size_t component = vapor_position->support_indices[supported];
-        equilibrium.phase_amounts_mol[1][component] = closure.vapor_fractions[supported];
-        equilibrium.phase_chemical_potentials_over_rt[1][component] =
-            closure.vapor.chemical_potentials[supported];
-        equilibrium.phase_log_fugacities[1][component] =
-            closure.vapor.chemical_potentials[supported]
-            + std::log(kGasConstant * request.temperature.value);
-    }
-    equilibrium.phase_volumes_m3[1] = closure.vapor_volume_m3;
-    equilibrium.phase_pressures_pa[1] = closure.vapor_pressure_pa;
-    equilibrium.phase_packing_fractions[1] = closure.vapor_packing_fraction;
-    equilibrium.output_values.assign(request.outputs.size(), 0.0);
-    equilibrium.output_input_derivatives.assign(
-        request.outputs.size() * parameter_count, 0.0
-    );
     for (std::size_t output = 0; output < request.outputs.size(); ++output) {
         const ReactiveFinitePhaseOutput& declared = request.outputs[output];
         const bool vapor_output = declared.phase_index
             == static_cast<std::size_t>(vapor_position - request.phases.begin());
         if (declared.selector == "system.pressure") {
-            equilibrium.output_values[output] = closure.pressure_pa;
             for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
                 equilibrium.output_input_derivatives[output * parameter_count + parameter] =
                     pressure_derivatives[parameter];
@@ -2323,9 +2644,6 @@ GrepeResult incipient_result(
                 fraction += declared.coefficients[component]
                     * closure.vapor_fractions[component];
             }
-            equilibrium.output_values[output] = declared.selector == "phase.partial_pressure"
-                ? closure.pressure_pa * fraction
-                : fraction;
             for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
                 double derivative = 0.0;
                 for (std::size_t component = 0; component < count; ++component) {
@@ -2347,9 +2665,6 @@ GrepeResult incipient_result(
                     "finite-incipient output is unavailable on its declared support"
                 );
             }
-            equilibrium.output_values[output] = liquid.output_values[
-                static_cast<std::size_t>(position)
-            ];
             for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
                 const std::size_t input = input_index(liquid, liquid.parameter_order[parameter]);
                 double implicit = liquid.output_input_derivatives[
@@ -2375,22 +2690,51 @@ GrepeResult incipient_result(
             }
         }
     }
-    equilibrium.input_order = equilibrium.parameter_order;
-    equilibrium.provider_evaluation_count = solved.provider_evaluations;
-    result.evidence = {
-        {"bubble_log_closure_abs", std::abs(closure.residual)},
-        {"bubble_log_pressure_derivative", closure.residual_log_pressure_derivative},
-        {"balance_inf_norm", equilibrium.balance_inf_norm},
-        {"reaction_affinity_inf_norm", equilibrium.reaction_affinity_inf_norm},
-        {"pressure_relative_inf_norm", equilibrium.pressure_relative_inf_norm},
-        {"phase_pressure_residual_inf_pa", std::abs(
-            equilibrium.phase_pressures_pa[0] - equilibrium.phase_pressures_pa[1]
-        )},
-        {"closure_evaluation_count", static_cast<double>(solved.closure_count)},
-        {"provider_evaluation_count", static_cast<double>(solved.provider_evaluations)},
-        {"accepted_candidate_count", static_cast<double>(solved.accepted_count)},
-        {"distinct_branch_count", 1.0},
-    };
+    equilibrium.sensitivity_status = "available";
+    equilibrium.sensitivity_failure_reason.clear();
+    result.text_evidence.back().second = "available";
+    set_output_availability(result, request.outputs.size(), false, true);
+    const double vapor_fraction_sum = std::accumulate(
+        closure.vapor_fractions.begin(), closure.vapor_fractions.end(), 0.0
+    );
+    const double liquid_amount = std::accumulate(
+        equilibrium.phase_amounts_mol[0].begin(), equilibrium.phase_amounts_mol[0].end(), 0.0
+    );
+    const double liquid_volume = equilibrium.phase_volumes_m3[0] / liquid_amount;
+    const bool aggregate_valid = std::isfinite(vapor_fraction_sum)
+        && std::abs(vapor_fraction_sum - 1.0) <= 1.0e-12
+        && std::all_of(closure.vapor_fractions.begin(), closure.vapor_fractions.end(),
+            [](double value) { return std::isfinite(value) && value > 0.0; })
+        && std::isfinite(liquid_volume) && liquid_volume > 0.0
+        && std::isfinite(closure.vapor_volume_m3) && closure.vapor_volume_m3 > liquid_volume
+        && std::isfinite(closure.vapor_pressure_pa) && closure.vapor_pressure_pa > 0.0
+        && std::abs(closure.vapor_pressure_pa - closure.pressure_pa)
+            / std::max(1.0, closure.pressure_pa) <= 1.0e-8;
+    const bool vapor_stability_available = closure.ideal || closure.vapor.strict_local_minimum;
+    const bool public_outputs_available = std::all_of(
+        result.output_value_available.begin(), result.output_value_available.end(),
+        [](std::uint8_t value) { return value == 1; }
+    ) && (!request.require_output_derivatives || std::all_of(
+        result.output_derivative_available.begin(), result.output_derivative_available.end(),
+        [](std::uint8_t value) { return value == 1; }
+    ));
+    if (!aggregate_valid || !vapor_stability_available || !public_outputs_available) {
+        equilibrium.accepted = false;
+        equilibrium.equilibrium_value_valid = equilibrium.equilibrium_value_valid && aggregate_valid;
+        if (!aggregate_valid || !vapor_stability_available) {
+            equilibrium.physical_status = "failed";
+        }
+        result.partial_selection_reason = "none";
+        throw GrepeFailure(
+            !vapor_stability_available ? "second_order_failure" : "physical_rejection",
+            !vapor_stability_available
+                ? "incipient vapor stability is unavailable"
+                : !public_outputs_available
+                ? "finite-incipient requested public outputs are unavailable"
+                : "finite-incipient aggregate certificate failed",
+            std::move(result)
+        );
+    }
     return result;
 }
 
@@ -2400,20 +2744,29 @@ GrepeResult failed_result(
     const std::string& certificate_scope,
     const GrepeFailure& failure
 ) {
-    GrepeResult result;
+    const bool has_partial = failure.partial_result().has_value();
+    GrepeResult result = failure.partial_result().value_or(GrepeResult{});
     result.formulation = formulation;
     result.certificate_scope = certificate_scope;
     result.failure_code = failure.code();
+    if (failure.attempt_index().has_value()) {
+        result.text_evidence.push_back({
+            "attempt_index", std::to_string(*failure.attempt_index())
+        });
+    }
     result.temperature_k = request.temperature.value;
     result.pressure_pa = request.pressure.value;
-    result.equilibrium.solver_status = "failed";
-    result.equilibrium.numerical_status = "failed";
-    result.equilibrium.physical_status = failure.code() == "physical_rejection"
-        || failure.code() == "second_order_failure"
-        ? "failed" : "not_adjudicated";
-    result.equilibrium.provider_domain_status = failure.code() == "provider_domain_rejection"
-        ? "failed" : "not_adjudicated";
+    result.equilibrium.accepted = false;
     result.equilibrium.failure_reason = failure.what();
+    if (!has_partial) {
+        result.equilibrium.solver_status = "failed";
+        result.equilibrium.numerical_status = "failed";
+        result.equilibrium.physical_status = failure.code() == "physical_rejection"
+            || failure.code() == "second_order_failure"
+            ? "failed" : "not_adjudicated";
+        result.equilibrium.provider_domain_status = failure.code() == "provider_domain_rejection"
+            ? "failed" : "not_adjudicated";
+    }
     return result;
 }
 
@@ -3275,7 +3628,12 @@ void evaluate_grepe_local_blocks(
             liquid_request, liquid_local, liquid_lower, liquid_upper
         );
         const ReactiveFinitePhaseResult& liquid = liquid_result.equilibrium;
-        if (!liquid.accepted || liquid.kkt_root_values.size() != liquid_count) {
+        const auto finite_vector = [](const std::vector<double>& values) {
+            return std::all_of(values.begin(), values.end(), [](double value) {
+                return std::isfinite(value);
+            });
+        };
+        if (!liquid.local_evaluation_valid || liquid.kkt_root_values.size() != liquid_count) {
             throw GrepeFailure(
                 liquid_result.failure_code.empty()
                     ? "physical_rejection" : liquid_result.failure_code,
@@ -3299,6 +3657,26 @@ void evaluate_grepe_local_blocks(
         const std::size_t pressure_input_column = static_cast<std::size_t>(
             pressure_input - liquid.input_order.begin()
         );
+        const std::size_t species_count = request.reaction.species_ids.size();
+        if (liquid.kkt_root_jacobian.size() != liquid_count * liquid_count
+            || liquid.kkt_input_jacobian.size() != liquid_count * input_width
+            || liquid.output_values.size() < species_count
+            || liquid.output_input_derivatives.size()
+                != liquid.output_values.size() * input_width
+            || liquid.output_local_derivatives.size()
+                != liquid.output_values.size() * liquid_count
+            || liquid.output_parameter_partials.size()
+                != liquid.output_values.size() * parameter_count
+            || !finite_vector(liquid.kkt_root_jacobian)
+            || !finite_vector(liquid.kkt_input_jacobian)
+            || !finite_vector(liquid.output_values)
+            || !finite_vector(liquid.output_input_derivatives)
+            || !finite_vector(liquid.output_local_derivatives)
+            || !finite_vector(liquid.output_parameter_partials)) {
+            throw std::invalid_argument(
+                "retained liquid local KKT/output linearizations are incomplete"
+            );
+        }
         std::fill_n(blocks.constraints, blocks.constraint_count, 0.0);
         std::fill_n(
             blocks.constraint_local_jacobian,
@@ -3346,15 +3724,8 @@ void evaluate_grepe_local_blocks(
             }
         }
 
-        const std::size_t species_count = request.reaction.species_ids.size();
         const std::size_t finite_output_count = liquid.output_values.size() - species_count;
         const double log_rt = std::log(kGasConstant * request.temperature.value);
-        if (liquid.output_input_derivatives.size()
-            != liquid.output_values.size() * input_width) {
-            throw std::invalid_argument(
-                "retained liquid output input derivative dimensions changed"
-            );
-        }
         const auto liquid_log_fugacity_pressure = [&](std::size_t species) {
             const std::size_t output = finite_output_count + species;
             return pressure_pa * liquid.output_input_derivatives[
@@ -3651,13 +4022,16 @@ void evaluate_grepe_local_blocks(
     const ReactiveFinitePhaseResult& equilibrium = result.equilibrium;
     const auto copy = [](const std::vector<double>& source, double* destination,
                          std::size_t count, const char* name) {
-        if (source.size() != count || (count != 0 && destination == nullptr)) {
+        if (source.size() != count || (count != 0 && destination == nullptr)
+            || !std::all_of(source.begin(), source.end(), [](double value) {
+                return std::isfinite(value);
+            })) {
             throw std::invalid_argument(std::string("retained GREPE ") + name
                                         + " dimensions changed");
         }
         std::copy(source.begin(), source.end(), destination);
     };
-    if (!equilibrium.accepted) {
+    if (!equilibrium.local_evaluation_valid) {
         throw GrepeFailure(
             result.failure_code.empty() ? "physical_rejection" : result.failure_code,
             equilibrium.failure_reason.empty() ? "retained GREPE point failed"

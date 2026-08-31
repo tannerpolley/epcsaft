@@ -537,6 +537,7 @@ GrepeRequest grepe_request(
             ),
         });
     }
+    request.require_output_derivatives = active_parameters_requested;
     request.directions = grepe_directions(
         problem.attr("phase_reactions"), request.reaction, request.phases
     );
@@ -631,7 +632,8 @@ GrepeResult solve_grepe_binding(
         !active_parameters.is_none(),
         source_reference_fingerprint
     );
-    request.perform_derivative_audits = perform_derivative_audits;
+    request.perform_derivative_audits = perform_derivative_audits
+        && request.require_output_derivatives;
     request.declared_starts_only = declared_starts_only;
     py::gil_scoped_release release;
     return solve_grepe(model, incipient_model, request);
@@ -699,6 +701,8 @@ GrepeRequest parse_grepe_request(
 void bind_chemical_equilibrium(py::module_& module) {
     py::class_<ReactiveFinitePhaseResult>(module, "_ReactiveFinitePhaseResult")
         .def_readonly("accepted", &ReactiveFinitePhaseResult::accepted)
+        .def_readonly("local_evaluation_valid", &ReactiveFinitePhaseResult::local_evaluation_valid)
+        .def_readonly("equilibrium_value_valid", &ReactiveFinitePhaseResult::equilibrium_value_valid)
         .def_readonly("solver_status", &ReactiveFinitePhaseResult::solver_status)
         .def_readonly("callback_error", &ReactiveFinitePhaseResult::callback_error)
         .def_readonly(
@@ -789,6 +793,7 @@ void bind_chemical_equilibrium(py::module_& module) {
         .def_readonly(
             "reduced_hessian_threshold", &ReactiveFinitePhaseResult::reduced_hessian_threshold
         )
+        .def_readonly("local_stability_status", &ReactiveFinitePhaseResult::local_stability_status)
         .def_readonly(
             "declared_direction_rank", &ReactiveFinitePhaseResult::declared_direction_rank
         )
@@ -836,6 +841,11 @@ void bind_chemical_equilibrium(py::module_& module) {
         .def_readonly("certificate_scope", &GrepeResult::certificate_scope)
         .def_readonly("equilibrium", &GrepeResult::equilibrium)
         .def_readonly("failure_code", &GrepeResult::failure_code)
+        .def_readonly("partial_selection_reason", &GrepeResult::partial_selection_reason)
+        .def_readonly("text_evidence", &GrepeResult::text_evidence)
+        .def_readonly("retained_phase_request_indices", &GrepeResult::retained_phase_request_indices)
+        .def_readonly("output_value_available", &GrepeResult::output_value_available)
+        .def_readonly("output_derivative_available", &GrepeResult::output_derivative_available)
         .def_readonly("temperature_k", &GrepeResult::temperature_k)
         .def_readonly("pressure_pa", &GrepeResult::pressure_pa)
         .def_readonly(

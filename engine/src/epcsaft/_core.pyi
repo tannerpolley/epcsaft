@@ -232,6 +232,8 @@ def _held2_audit_step5_kkt(
 
 class _ReactiveFinitePhaseResult:
     accepted: bool
+    local_evaluation_valid: bool
+    equilibrium_value_valid: bool
     solver_status: str
     callback_error: str
     callback_failure_kind: str
@@ -277,6 +279,7 @@ class _ReactiveFinitePhaseResult:
     reduced_hessian_min_eigenvalue: float
     reduced_hessian_scale: float
     reduced_hessian_threshold: float
+    local_stability_status: str
     declared_direction_rank: int
     admissible_nullity: int
     optimizer_iterations: int
@@ -300,6 +303,11 @@ class _GrepeResult:
     certificate_scope: str
     equilibrium: _ReactiveFinitePhaseResult
     failure_code: str
+    partial_selection_reason: str
+    text_evidence: Sequence[tuple[str, str]]
+    retained_phase_request_indices: Sequence[int]
+    output_value_available: Sequence[int]
+    output_derivative_available: Sequence[int]
     temperature_k: float
     pressure_pa: float
     source_reference_representation_residual_inf_norm: float

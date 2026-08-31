@@ -151,6 +151,8 @@ struct ReactiveFinitePhaseOutput {
 
 struct ReactiveFinitePhaseResult {
     bool accepted = false;
+    bool local_evaluation_valid = false;
+    bool equilibrium_value_valid = false;
     std::string solver_status;
     std::string callback_error;
     std::string callback_failure_kind = "none";
@@ -198,6 +200,7 @@ struct ReactiveFinitePhaseResult {
         std::numeric_limits<double>::quiet_NaN();
     double reduced_hessian_scale = std::numeric_limits<double>::quiet_NaN();
     double reduced_hessian_threshold = std::numeric_limits<double>::quiet_NaN();
+    std::string local_stability_status = "not_adjudicated";
     std::size_t declared_direction_rank = 0;
     std::size_t admissible_nullity = 0;
     std::size_t optimizer_iterations = 0;
@@ -219,7 +222,6 @@ struct ReactiveFinitePhaseResult {
     std::vector<double> chemical_potential_derivatives;
     std::vector<double> log_fugacity_derivatives;
 };
-
 
 class ProviderContext;
 struct ProviderActiveParameterSet;
@@ -337,6 +339,7 @@ struct SourceStandardStateResult {
     double trace_floor,
     const ProviderActiveParameterSet* active_parameters = nullptr,
     int max_iterations = 500,
+    bool require_output_derivatives = false,
     bool perform_derivative_audits = false,
     const PhaseDirectionCompilation* phase_directions = nullptr,
     const std::vector<std::vector<std::size_t>>& phase_support_indices = {},
@@ -372,6 +375,7 @@ struct SourceStandardStateResult {
     const std::vector<std::vector<std::size_t>>& phase_support_indices = {},
     const std::vector<ReactiveFinitePhaseOutput>& outputs = {},
     double trace_floor = 0.0,
+    bool require_output_derivatives = false,
     bool perform_derivative_audits = false
 );
 

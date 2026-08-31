@@ -12,7 +12,7 @@ import epcsaft
 
 from .. import _core
 from .._canonical import _canonical_json
-from .._trials import NonEvaluableTrial
+from .._trials import NON_EVALUABLE_TRIAL_CODES, NonEvaluableTrial
 from ._api import (
     ActiveParameterTrialReceipt,
     AllComponents,
@@ -1853,7 +1853,6 @@ def _finite_phase_trial(
 def _finite_phase_failed(
     problem: GeneralReactiveEquilibriumProblem,
     descriptor: GeneralReactiveEquilibriumDescriptor,
-    trial: ActiveParameterTrialReceipt,
     code: Literal[
         "physical_rejection",
         "numerical_convergence_failure",
@@ -1869,6 +1868,9 @@ def _finite_phase_failed(
     physical_status: str,
     provider_domain_status: str,
     phases: tuple[EquilibriumPhaseState, ...] = (),
+    rows: tuple[GeneralEquilibriumRowResult, ...] | None = None,
+    evidence: tuple[tuple[str, float | int | str], ...] = (),
+    resolved_policy: tuple[tuple[str, float], ...] = (),
 ) -> GeneralReactiveEquilibriumResult:
     return GeneralReactiveEquilibriumResult(
         problem=problem,
@@ -1878,7 +1880,13 @@ def _finite_phase_failed(
         numerical_status=numerical_status,
         physical_status=physical_status,
         provider_domain_status=provider_domain_status,
-        rows=tuple(
+        rows=(
+            tuple(
+                replace(row, status="non_evaluable", jacobian=None, reason=diagnostic)
+                for row in rows
+            )
+            if rows is not None
+            else tuple(
             GeneralEquilibriumRowResult(
                 output.identity,
                 output.selector,
@@ -1890,15 +1898,71 @@ def _finite_phase_failed(
                 diagnostic,
             )
             for output in problem.outputs
+            )
         ),
         phases=phases,
         failure=NonEvaluableTrial(code, diagnostic),
         certificate_scope=descriptor.certificate_scope,
         globality_claim="not_established",
-        trial=trial,
+        trial=None,
         branch_signature=None,
-        evidence=(),
-        resolved_policy=(),
+        evidence=evidence,
+        resolved_policy=resolved_policy,
+    )
+
+
+def _native_grepe_failure(
+    problem: GeneralReactiveEquilibriumProblem,
+    descriptor: GeneralReactiveEquilibriumDescriptor,
+    native_result: object,
+    native: Any,
+    phases: tuple[EquilibriumPhaseState, ...],
+) -> GeneralReactiveEquilibriumResult:
+    native_code = str(getattr(native_result, "failure_code", ""))
+    code = native_code if native_code in NON_EVALUABLE_TRIAL_CODES else "owner_contract_failure"
+    raw_message = str(native.failure_reason or native.solver_status)
+    diagnostic = (
+        f"native_code={native_code}; {raw_message}"
+        if native_code and code != native_code
+        else ": ".join(part for part in (raw_message, str(native.callback_error)) if part)
+    )
+    evidence = (
+        tuple((str(name), float(value)) for name, value in getattr(native_result, "evidence", ()))
+        + tuple((str(name), str(value)) for name, value in getattr(native_result, "text_evidence", ()))
+        + ((
+            "partial_selection_reason",
+            str(getattr(native_result, "partial_selection_reason", "none")),
+        ),)
+    )
+    return _finite_phase_failed(
+        problem,
+        descriptor,
+        cast(Any, code),
+        diagnostic,
+        solver_status=native.solver_status,
+        numerical_status=native.numerical_status,
+        physical_status=native.physical_status,
+        provider_domain_status=native.provider_domain_status,
+        phases=phases,
+        rows=_finite_phase_rows(
+            problem,
+            descriptor,
+            native,
+            aggregate_evaluable=False,
+            output_value_available=tuple(getattr(native_result, "output_value_available", ())),
+            output_derivative_available=tuple(
+                getattr(native_result, "output_derivative_available", ())
+            ),
+        ),
+        evidence=evidence,
+        resolved_policy=_native_resolved_policy(native),
+    )
+
+
+def _native_evidence(native_result: object) -> tuple[tuple[str, float | str], ...]:
+    return (
+        tuple((str(name), float(value)) for name, value in getattr(native_result, "evidence", ()))
+        + tuple((str(name), str(value)) for name, value in getattr(native_result, "text_evidence", ()))
     )
 
 
@@ -1924,14 +1988,16 @@ def _finite_phase_states(
     native: object,
     *,
     mechanical_class: str | tuple[str, ...],
+    retained_phase_request_indices: tuple[int, ...] | None = None,
 ) -> tuple[EquilibriumPhaseState, ...]:
     native_amounts = _native_float_matrix(_native_field(native, "phase_amounts_mol"))
     native_volumes = _native_float_vector(_native_field(native, "phase_volumes_m3"))
     native_pressures = _native_float_vector(_native_field(native, "phase_pressures_pa"))
     native_packing = _native_float_vector(_native_field(native, "phase_packing_fractions"))
     native_mu = _native_float_matrix(_native_field(native, "phase_chemical_potentials_over_rt"))
+    phase_count = len(native_amounts)
     if not all(
-        len(values) == len(problem.phases)
+        len(values) == phase_count
         for values in (
             native_amounts,
             native_volumes,
@@ -1941,16 +2007,37 @@ def _finite_phase_states(
         )
     ):
         return ()
+    component_count = len(model.component_ids)
+    if not (
+        all(len(amounts) == component_count and all(math.isfinite(value) for value in amounts)
+            and math.fsum(amounts) > 0.0 for amounts in native_amounts)
+        and all(len(values) == component_count and all(math.isfinite(value) for value in values)
+            for values in native_mu)
+        and all(math.isfinite(value) and value > 0.0 for value in native_volumes)
+        and all(math.isfinite(value) and value > 0.0 for value in native_pressures)
+        and all(math.isfinite(value) for value in native_packing)
+    ):
+        return ()
+    retained = (
+        tuple(int(value) for value in retained_phase_request_indices)
+        if retained_phase_request_indices is not None
+        else tuple(range(phase_count))
+    )
+    if len(retained) != phase_count or len(set(retained)) != len(retained) or any(
+        index < 0 or index >= len(problem.phases) for index in retained
+    ):
+        return ()
+    phases = tuple(problem.phases[index] for index in retained)
     supported_component_ids = tuple(
         _phase_supported_component_ids(
             phase,
             problem.reaction_system.species_ids,
             tuple(problem.reaction_system.charges),
         )
-        for phase in problem.phases
+        for phase in phases
     )
     component_index = {identity: index for index, identity in enumerate(model.component_ids)}
-    return tuple(
+    native_states = tuple(
         EquilibriumPhaseState(
             role=phase.fluid_role,
             support=(
@@ -1995,7 +2082,7 @@ def _finite_phase_states(
             chemical_potentials,
         ) in enumerate(
             zip(
-                problem.phases,
+                phases,
                 supported_component_ids,
                 native_amounts,
                 native_volumes,
@@ -2005,6 +2092,9 @@ def _finite_phase_states(
                 strict=True,
             )
         )
+    )
+    return tuple(
+        state for _, state in sorted(zip(retained, native_states, strict=True), key=lambda item: item[0])
     )
 
 
@@ -2024,51 +2114,35 @@ def _map_native_incipient_result(
         problem,
         native,
         mechanical_class=mechanical_classes,
+        retained_phase_request_indices=tuple(
+            int(value) for value in getattr(native_result, "retained_phase_request_indices", ())
+        ),
     )
     if not native.accepted:
-        diagnostic = str(native.failure_reason or native.solver_status)
-        code = str(cast(Any, native_result).failure_code or "numerical_convergence_failure")
-        numerical, physical, provider = _failure_axes(
-            NonEvaluableTrial(cast(Any, code), diagnostic)
-        )
-        return GeneralReactiveEquilibriumResult(
-            problem,
-            descriptor,
-            "non_evaluable",
-            native.solver_status,
-            numerical,
-            physical,
-            provider,
-            tuple(
-                GeneralEquilibriumRowResult(
-                    output.identity,
-                    output.selector,
-                    output.unit,
-                    output.basis,
-                    "non_evaluable",
-                    None,
-                    None,
-                    diagnostic,
-                )
-                for output in problem.outputs
-            ),
-            phases,
-            NonEvaluableTrial(cast(Any, code), diagnostic),
-            descriptor.certificate_scope,
-            "not_established",
-            trial,
-            None,
-            (),
-            (),
+        return _native_grepe_failure(
+            problem, descriptor, native_result, native, phases
         )
     if tuple(native.parameter_order) != descriptor.active_parameter_identities:
         raise ValueError("finite-incipient GREPE parameter derivative order changed")
-    rows = _finite_phase_rows(problem, descriptor, native)
-    vapor = phases[1]
+    rows = _finite_phase_rows(
+        problem,
+        descriptor,
+        native,
+        output_value_available=tuple(getattr(native_result, "output_value_available", ())),
+        output_derivative_available=tuple(
+            getattr(native_result, "output_derivative_available", ())
+        ),
+    )
+    vapor_index = next(
+        index for index, phase in enumerate(problem.phases) if phase.amount_role == "incipient"
+    )
+    vapor = phases[vapor_index]
     liquid_state_identity = _fingerprint(
         "epcsaft.incipient-liquid-state",
         {
-            "phase_identity": problem.phases[0].identity,
+            "phase_identity": next(
+                phase.identity for phase in problem.phases if phase.amount_role == "finite"
+            ),
             "temperature_k": float(cast(Any, native_result).temperature_k),
             "pressure_pa": float(cast(Any, native_result).pressure_pa),
             "amounts_mol": _native_float_matrix(native.phase_amounts_mol)[0],
@@ -2098,7 +2172,7 @@ def _map_native_incipient_result(
         "not_established",
         trial,
         branch_signature,
-        tuple((str(name), float(value)) for name, value in cast(Any, native_result).evidence),
+        _native_evidence(native_result),
         _native_resolved_policy(native),
     )
 
@@ -2118,47 +2192,21 @@ def _map_native_boundary_result(
         problem,
         native,
         mechanical_class=tuple(cast(Any, native_result).phase_mechanical_classes),
+        retained_phase_request_indices=tuple(
+            int(value) for value in getattr(native_result, "retained_phase_request_indices", ())
+        ),
     )
     if not native.accepted:
-        diagnostic = str(native.failure_reason or native.solver_status)
-        code = str(cast(Any, native_result).failure_code or "numerical_convergence_failure")
-        failure = NonEvaluableTrial(cast(Any, code), diagnostic)
-        numerical, physical, provider = _failure_axes(failure)
-        return GeneralReactiveEquilibriumResult(
-            problem,
-            descriptor,
-            "non_evaluable",
-            native.solver_status,
-            numerical,
-            physical,
-            provider,
-            tuple(
-                GeneralEquilibriumRowResult(
-                    output.identity,
-                    output.selector,
-                    output.unit,
-                    output.basis,
-                    "non_evaluable",
-                    None,
-                    None,
-                    diagnostic,
-                )
-                for output in problem.outputs
-            ),
-            phases,
-            failure,
-            descriptor.certificate_scope,
-            "not_established",
-            trial,
-            None,
-            (),
-            (),
+        return _native_grepe_failure(
+            problem, descriptor, native_result, native, phases
         )
     rows = _finite_phase_rows(problem, descriptor, native)
     coordinates = tuple(float(value) for value in cast(Any, native_result).branch_coordinates)
     nested: tuple[object, ...]
     if any(phase.amount_role == "incipient" for phase in problem.phases):
-        vapor = phases[1]
+        vapor = phases[next(
+            index for index, phase in enumerate(problem.phases) if phase.amount_role == "incipient"
+        )]
         nested = (
             "finite_incipient_local_branch",
             descriptor.problem_fingerprint,
@@ -2172,9 +2220,7 @@ def _map_native_boundary_result(
             descriptor.problem_fingerprint,
             tuple(phase.identity for phase in problem.phases),
         )
-    native_evidence = tuple(
-        (str(name), float(value)) for name, value in cast(Any, native_result).evidence
-    )
+    native_evidence = _native_evidence(native_result)
     evidence = native_evidence or (
         ("objective_over_rt", native.objective_over_rt),
         ("balance_inf_norm", native.balance_inf_norm),
@@ -2290,6 +2336,10 @@ def _finite_phase_rows(
     descriptor: GeneralReactiveEquilibriumDescriptor,
     native: object,
     input_identities: tuple[str, ...] | None = None,
+    *,
+    aggregate_evaluable: bool = True,
+    output_value_available: tuple[bool, ...] = (),
+    output_derivative_available: tuple[bool, ...] = (),
 ) -> tuple[GeneralEquilibriumRowResult, ...]:
     values = _native_float_vector(_native_field(native, "output_values"))
     input_order = tuple(
@@ -2298,21 +2348,69 @@ def _finite_phase_rows(
     selected = (
         descriptor.active_parameter_identities if input_identities is None else input_identities
     )
-    indices = tuple(input_order.index(identity) for identity in selected)
+    indices = tuple(input_order.index(identity) for identity in selected if identity in input_order)
     derivatives = _native_float_vector(_native_field(native, "output_input_derivatives"))
     width = len(input_order)
+    value_mask_valid = not output_value_available or (
+        len(output_value_available) == len(problem.outputs)
+        and all(value in (0, 1, False, True) for value in output_value_available)
+    )
+    derivative_mask_valid = not output_derivative_available or (
+        len(output_derivative_available) == len(problem.outputs)
+        and all(value in (0, 1, False, True) for value in output_derivative_available)
+    )
+    value_mask = tuple(bool(value) for value in output_value_available)
+    derivative_mask = tuple(bool(value) for value in output_derivative_available)
+    values_complete = value_mask_valid and len(values) == len(problem.outputs)
+    derivatives_complete = (
+        derivative_mask_valid and len(derivatives) == len(problem.outputs) * width
+    )
     return tuple(
-        GeneralEquilibriumRowResult(
-            output.identity,
-            output.selector,
-            output.unit,
-            output.basis,
-            "evaluated",
-            values[row],
-            tuple(derivatives[row * width + index] for index in indices),
-            "",
+        _finite_phase_row(
+            output, row, values, derivatives, width, indices, selected,
+            aggregate_evaluable, values_complete, derivatives_complete,
+            value_mask, derivative_mask,
         )
         for row, output in enumerate(problem.outputs)
+    )
+
+
+def _finite_phase_row(
+    output: EquilibriumOutput,
+    row: int,
+    values: tuple[float, ...],
+    derivatives: tuple[float, ...],
+    width: int,
+    indices: tuple[int, ...],
+    selected: tuple[str, ...],
+    aggregate_evaluable: bool,
+    values_complete: bool,
+    derivatives_complete: bool,
+    value_mask: tuple[bool, ...],
+    derivative_mask: tuple[bool, ...],
+) -> GeneralEquilibriumRowResult:
+    value_available = values_complete and math.isfinite(values[row]) and (
+        not value_mask or value_mask[row]
+    )
+    derivative_available = (
+        value_available
+        and derivatives_complete
+        and (not selected or width)
+        and len(indices) == len(selected)
+        and (not derivative_mask or derivative_mask[row])
+        and all(math.isfinite(derivatives[row * width + index]) for index in indices)
+    )
+    return GeneralEquilibriumRowResult(
+        output.identity,
+        output.selector,
+        output.unit,
+        output.basis,
+        "evaluated" if aggregate_evaluable and value_available else "non_evaluable",
+        values[row] if value_available else None,
+        tuple(derivatives[row * width + index] for index in indices)
+        if derivative_available
+        else None,
+        "" if aggregate_evaluable and value_available else "aggregate_certificate_unavailable",
     )
 
 
@@ -2324,49 +2422,30 @@ def _map_native_finite_result(
     native_result: object,
     active_parameters: epcsaft.ActiveParameterSet | None,
     *,
-    mechanical_class: str,
+    mechanical_class: str | tuple[str, ...],
 ) -> GeneralReactiveEquilibriumResult:
     native = cast(Any, native_result).equilibrium
     trial = _finite_phase_trial(owner_descriptor, active_parameters)
     if not native.accepted:
-        diagnostic = ": ".join(
-            part
-            for part in (str(native.failure_reason or native.solver_status), native.callback_error)
-            if part
-        )
-        code = (
-            "provider_domain_rejection"
-            if native.provider_domain_status == "failed"
-            else "owner_contract_failure"
-            if native.callback_failure_kind == "internal_contract"
-            else "first_order_failure"
-            if "sensitivity" in diagnostic
-            else "physical_rejection"
-            if native.physical_status == "failed"
-            else "numerical_convergence_failure"
-        )
-        return _finite_phase_failed(
+        return _native_grepe_failure(
             problem,
             descriptor,
-            trial,
-            cast(Any, code),
-            diagnostic,
-            solver_status=native.solver_status,
-            numerical_status=native.numerical_status,
-            physical_status=native.physical_status,
-            provider_domain_status=native.provider_domain_status,
-            phases=_finite_phase_states(
+            native_result,
+            native,
+            _finite_phase_states(
                 model,
                 problem,
                 native,
                 mechanical_class="rejected_configured_candidate",
+                retained_phase_request_indices=tuple(
+                    int(value) for value in getattr(native_result, "retained_phase_request_indices", ())
+                ),
             ),
         )
     if tuple(native.parameter_order) != descriptor.active_parameter_identities:
         return _finite_phase_failed(
             problem,
             descriptor,
-            trial,
             "first_order_failure",
             "finite-phase GREPE parameter derivative order differs from its descriptor",
             solver_status=native.solver_status,
@@ -2374,12 +2453,23 @@ def _map_native_finite_result(
             physical_status=native.physical_status,
             provider_domain_status=native.provider_domain_status,
         )
-    rows = _finite_phase_rows(problem, descriptor, native)
+    rows = _finite_phase_rows(
+        problem,
+        descriptor,
+        native,
+        output_value_available=tuple(getattr(native_result, "output_value_available", ())),
+        output_derivative_available=tuple(
+            getattr(native_result, "output_derivative_available", ())
+        ),
+    )
     phases = _finite_phase_states(
         model,
         problem,
         native,
         mechanical_class=mechanical_class,
+        retained_phase_request_indices=tuple(
+            int(value) for value in getattr(native_result, "retained_phase_request_indices", ())
+        ),
     )
     branch_signature: tuple[object, ...] = (
         "finite_phases_local_minimum",
@@ -2432,7 +2522,11 @@ def _map_native_finite_result(
         globality_claim="not_established",
         trial=trial,
         branch_signature=branch_signature,
-        evidence=_result_evidence(owner),
+        evidence=_result_evidence(owner) + (
+            ("local_evaluation_valid", int(native.local_evaluation_valid)),
+            ("equilibrium_value_valid", int(native.equilibrium_value_valid)),
+            ("local_stability_status", native.local_stability_status),
+        ),
         resolved_policy=_native_resolved_policy(native),
     )
 
@@ -2513,11 +2607,7 @@ def _map_native_general_reactive_equilibrium(
                 descriptor,
                 native,
                 active_parameters,
-                mechanical_class=(
-                    "analytical_ideal_gas"
-                    if isinstance(problem.phases[0].model, IdealGasModel)
-                    else "strict_stable_local_minimum"
-                ),
+                mechanical_class=tuple(cast(Any, native).phase_mechanical_classes),
             )
         )
     if formulation == "finite_incipient":
