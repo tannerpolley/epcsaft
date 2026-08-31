@@ -2409,14 +2409,14 @@ IncipientSolve solve_incipient_pressure(
     };
 }
 
-GrepeResult incipient_result(
+GrepeResult incipient_value_result(
     const GrepeRequest& request,
-    IncipientSolve solved,
-    const std::vector<double>* coordinate_direction = nullptr,
-    double coordinate_value = 0.0
+    const IncipientSolve& solved,
+    bool fixed_pressure,
+    double coordinate_value
 ) {
-    IncipientClosure& closure = solved.closure;
-    ReactiveFinitePhaseResult& liquid = closure.liquid.solved.equilibrium;
+    const IncipientClosure& closure = solved.closure;
+    const ReactiveFinitePhaseResult& liquid = closure.liquid.solved.equilibrium;
     const auto vapor_position = std::find_if(
         request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
             return !phase.finite;
@@ -2429,78 +2429,7 @@ GrepeResult incipient_result(
     );
     const std::size_t count = vapor_position->support_indices.size();
     const std::size_t component_count = request.reaction.species_ids.size();
-    const std::size_t width = liquid.input_order.size();
     const std::size_t parameter_count = liquid.parameter_order.size();
-    const std::size_t pressure_input = input_index(liquid, "pressure_pa");
-    const bool fixed_pressure = coordinate_direction != nullptr;
-    double scalar_slope = closure.boundary_directional[pressure_input] - 1.0;
-    double residual_scale = 1.0;
-    if (fixed_pressure) {
-        if (coordinate_direction->size() != width) {
-            throw GrepeFailure(
-                "parameter_topology_mismatch", "fixed-pressure balance direction changed"
-            );
-        }
-        residual_scale = closure.ideal ? closure.vapor_pressure_pa : closure.pressure_pa;
-        scalar_slope = 0.0;
-        for (std::size_t input = 0; input < width; ++input) {
-            scalar_slope += closure.boundary_directional[input]
-                * (*coordinate_direction)[input] / residual_scale;
-        }
-    }
-    const double slope_scale = std::max(
-        1.0,
-        fixed_pressure
-            ? std::abs(scalar_slope)
-            : std::abs(closure.boundary_directional[pressure_input])
-    );
-    if (!std::isfinite(scalar_slope) || std::abs(scalar_slope) < 1.0e-12 * slope_scale) {
-        throw GrepeFailure(
-            "singular_sensitivity",
-            fixed_pressure
-                ? "fixed-pressure affine-feed closure is singular"
-                : "coupled bubble Schur complement is singular",
-            incipient_liquid_partial(request, closure.liquid, closure.pressure_pa)
-        );
-    }
-    if (std::abs(scalar_slope) < 1.0e-8 * slope_scale) {
-        throw GrepeFailure(
-            "ill_conditioned_sensitivity",
-            fixed_pressure
-                ? "fixed-pressure affine-feed closure is ill-conditioned"
-                : "coupled bubble Schur complement is ill-conditioned",
-            incipient_liquid_partial(request, closure.liquid, closure.pressure_pa)
-        );
-    }
-    std::vector<double> pressure_derivatives(parameter_count, 0.0);
-    std::vector<double> vapor_derivatives(parameter_count * count, 0.0);
-    for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
-        const std::size_t input = input_index(liquid, liquid.parameter_order[parameter]);
-        const double coordinate_parameter = fixed_pressure
-            ? -(closure.boundary_direct[parameter] + closure.boundary_directional[input])
-                / residual_scale / scalar_slope
-            : 0.0;
-        pressure_derivatives[parameter] = fixed_pressure
-            ? 0.0
-            : -(closure.boundary_direct[parameter] + closure.boundary_directional[input])
-                / scalar_slope;
-        for (std::size_t component = 0; component < count; ++component) {
-            double implicit = closure.vapor_directional[
-                pressure_input * count + component
-            ] * pressure_derivatives[parameter];
-            if (fixed_pressure) {
-                implicit = 0.0;
-                for (std::size_t direction = 0; direction < width; ++direction) {
-                    implicit += closure.vapor_directional[direction * count + component]
-                        * (*coordinate_direction)[direction] * coordinate_parameter;
-                }
-            }
-            vapor_derivatives[parameter * count + component] =
-                closure.vapor_direct[parameter * count + component]
-                + closure.vapor_directional[input * count + component] + implicit;
-        }
-    }
-
     GrepeResult result;
     result.formulation = fixed_pressure ? "intensive_boundary" : "finite_incipient";
     result.certificate_scope = fixed_pressure
@@ -2548,9 +2477,12 @@ GrepeResult incipient_result(
     equilibrium.phase_volumes_m3[1] = closure.vapor_volume_m3;
     equilibrium.phase_pressures_pa[1] = closure.vapor_pressure_pa;
     equilibrium.phase_packing_fractions[1] = closure.vapor_packing_fraction;
-    equilibrium.output_values.assign(request.outputs.size(), 0.0);
+    equilibrium.input_order = equilibrium.parameter_order;
+    equilibrium.output_values.assign(
+        request.outputs.size(), std::numeric_limits<double>::quiet_NaN()
+    );
     equilibrium.output_input_derivatives.assign(
-        request.outputs.size() * parameter_count, 0.0
+        request.outputs.size() * parameter_count, std::numeric_limits<double>::quiet_NaN()
     );
     for (std::size_t output = 0; output < request.outputs.size(); ++output) {
         const ReactiveFinitePhaseOutput& declared = request.outputs[output];
@@ -2558,6 +2490,149 @@ GrepeResult incipient_result(
             == static_cast<std::size_t>(vapor_position - request.phases.begin());
         if (declared.selector == "system.pressure") {
             equilibrium.output_values[output] = closure.pressure_pa;
+        } else if (vapor_output && (
+                declared.selector == "phase.mole_fraction"
+                || declared.selector == "phase.partial_pressure")) {
+            double fraction = 0.0;
+            for (std::size_t component = 0; component < count; ++component) {
+                fraction += declared.coefficients[component]
+                    * closure.vapor_fractions[component];
+            }
+            equilibrium.output_values[output] = declared.selector == "phase.partial_pressure"
+                ? closure.pressure_pa * fraction
+                : fraction;
+        } else {
+            const int position = closure.liquid.output_positions[output];
+            if (position < 0) {
+                throw GrepeFailure(
+                    "observation_out_of_support",
+                    "finite-incipient output is unavailable on its declared support"
+                );
+            }
+            const double value = liquid.output_values[static_cast<std::size_t>(position)];
+            if (std::isfinite(value)) {
+                equilibrium.output_values[output] = value;
+            }
+        }
+    }
+    result.retained_phase_request_indices = {
+        static_cast<std::size_t>(finite_position - request.phases.begin()),
+        static_cast<std::size_t>(vapor_position - request.phases.begin()),
+    };
+    set_output_availability(result, request.outputs.size(), false, false);
+    equilibrium.provider_evaluation_count = solved.provider_evaluations;
+    result.evidence.insert(result.evidence.end(), {
+        {"bubble_log_closure_abs", std::abs(closure.residual)},
+        {"bubble_log_pressure_derivative", closure.residual_log_pressure_derivative},
+        {"balance_inf_norm", equilibrium.balance_inf_norm},
+        {"reaction_affinity_inf_norm", equilibrium.reaction_affinity_inf_norm},
+        {"pressure_relative_inf_norm", equilibrium.pressure_relative_inf_norm},
+        {"phase_pressure_residual_inf_pa", std::abs(
+            equilibrium.phase_pressures_pa[0] - equilibrium.phase_pressures_pa[1]
+        )},
+        {"closure_evaluation_count", static_cast<double>(solved.closure_count)},
+        {"provider_evaluation_count", static_cast<double>(solved.provider_evaluations)},
+        {"accepted_candidate_count", static_cast<double>(solved.accepted_count)},
+        {"distinct_branch_count", 1.0},
+    });
+    return result;
+}
+
+GrepeResult incipient_result(
+    const GrepeRequest& request,
+    IncipientSolve solved,
+    const std::vector<double>* coordinate_direction = nullptr,
+    double coordinate_value = 0.0
+) {
+    IncipientClosure& closure = solved.closure;
+    ReactiveFinitePhaseResult& liquid = closure.liquid.solved.equilibrium;
+    const auto vapor_position = std::find_if(
+        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
+            return !phase.finite;
+        }
+    );
+    const std::size_t count = vapor_position->support_indices.size();
+    const std::size_t width = liquid.input_order.size();
+    const std::size_t parameter_count = liquid.parameter_order.size();
+    const std::size_t pressure_input = input_index(liquid, "pressure_pa");
+    const bool fixed_pressure = coordinate_direction != nullptr;
+    GrepeResult result = incipient_value_result(
+        request, solved, fixed_pressure, coordinate_value
+    );
+    double scalar_slope = closure.boundary_directional[pressure_input] - 1.0;
+    double residual_scale = 1.0;
+    if (fixed_pressure) {
+        if (coordinate_direction->size() != width) {
+            throw GrepeFailure(
+                "parameter_topology_mismatch", "fixed-pressure balance direction changed"
+            );
+        }
+        residual_scale = closure.ideal ? closure.vapor_pressure_pa : closure.pressure_pa;
+        scalar_slope = 0.0;
+        for (std::size_t input = 0; input < width; ++input) {
+            scalar_slope += closure.boundary_directional[input]
+                * (*coordinate_direction)[input] / residual_scale;
+        }
+    }
+    const double slope_scale = std::max(
+        1.0,
+        fixed_pressure
+            ? std::abs(scalar_slope)
+            : std::abs(closure.boundary_directional[pressure_input])
+    );
+    if (!std::isfinite(scalar_slope) || std::abs(scalar_slope) < 1.0e-12 * slope_scale) {
+        throw GrepeFailure(
+            "singular_sensitivity",
+            fixed_pressure
+                ? "fixed-pressure affine-feed closure is singular"
+                : "coupled bubble Schur complement is singular",
+            std::move(result)
+        );
+    }
+    if (std::abs(scalar_slope) < 1.0e-8 * slope_scale) {
+        throw GrepeFailure(
+            "ill_conditioned_sensitivity",
+            fixed_pressure
+                ? "fixed-pressure affine-feed closure is ill-conditioned"
+                : "coupled bubble Schur complement is ill-conditioned",
+            std::move(result)
+        );
+    }
+    std::vector<double> pressure_derivatives(parameter_count, 0.0);
+    std::vector<double> vapor_derivatives(parameter_count * count, 0.0);
+    for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
+        const std::size_t input = input_index(liquid, liquid.parameter_order[parameter]);
+        const double coordinate_parameter = fixed_pressure
+            ? -(closure.boundary_direct[parameter] + closure.boundary_directional[input])
+                / residual_scale / scalar_slope
+            : 0.0;
+        pressure_derivatives[parameter] = fixed_pressure
+            ? 0.0
+            : -(closure.boundary_direct[parameter] + closure.boundary_directional[input])
+                / scalar_slope;
+        for (std::size_t component = 0; component < count; ++component) {
+            double implicit = closure.vapor_directional[
+                pressure_input * count + component
+            ] * pressure_derivatives[parameter];
+            if (fixed_pressure) {
+                implicit = 0.0;
+                for (std::size_t direction = 0; direction < width; ++direction) {
+                    implicit += closure.vapor_directional[direction * count + component]
+                        * (*coordinate_direction)[direction] * coordinate_parameter;
+                }
+            }
+            vapor_derivatives[parameter * count + component] =
+                closure.vapor_direct[parameter * count + component]
+                + closure.vapor_directional[input * count + component] + implicit;
+        }
+    }
+
+    ReactiveFinitePhaseResult& equilibrium = result.equilibrium;
+    for (std::size_t output = 0; output < request.outputs.size(); ++output) {
+        const ReactiveFinitePhaseOutput& declared = request.outputs[output];
+        const bool vapor_output = declared.phase_index
+            == static_cast<std::size_t>(vapor_position - request.phases.begin());
+        if (declared.selector == "system.pressure") {
             for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
                 equilibrium.output_input_derivatives[output * parameter_count + parameter] =
                     pressure_derivatives[parameter];
@@ -2570,9 +2645,6 @@ GrepeResult incipient_result(
                 fraction += declared.coefficients[component]
                     * closure.vapor_fractions[component];
             }
-            equilibrium.output_values[output] = declared.selector == "phase.partial_pressure"
-                ? closure.pressure_pa * fraction
-                : fraction;
             for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
                 double derivative = 0.0;
                 for (std::size_t component = 0; component < count; ++component) {
@@ -2594,9 +2666,6 @@ GrepeResult incipient_result(
                     "finite-incipient output is unavailable on its declared support"
                 );
             }
-            equilibrium.output_values[output] = liquid.output_values[
-                static_cast<std::size_t>(position)
-            ];
             for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
                 const std::size_t input = input_index(liquid, liquid.parameter_order[parameter]);
                 double implicit = liquid.output_input_derivatives[
@@ -2622,27 +2691,7 @@ GrepeResult incipient_result(
             }
         }
     }
-    equilibrium.input_order = equilibrium.parameter_order;
-    result.retained_phase_request_indices = {
-        static_cast<std::size_t>(finite_position - request.phases.begin()),
-        static_cast<std::size_t>(vapor_position - request.phases.begin()),
-    };
     set_output_availability(result, request.outputs.size(), false, true);
-    equilibrium.provider_evaluation_count = solved.provider_evaluations;
-    result.evidence.insert(result.evidence.end(), {
-        {"bubble_log_closure_abs", std::abs(closure.residual)},
-        {"bubble_log_pressure_derivative", closure.residual_log_pressure_derivative},
-        {"balance_inf_norm", equilibrium.balance_inf_norm},
-        {"reaction_affinity_inf_norm", equilibrium.reaction_affinity_inf_norm},
-        {"pressure_relative_inf_norm", equilibrium.pressure_relative_inf_norm},
-        {"phase_pressure_residual_inf_pa", std::abs(
-            equilibrium.phase_pressures_pa[0] - equilibrium.phase_pressures_pa[1]
-        )},
-        {"closure_evaluation_count", static_cast<double>(solved.closure_count)},
-        {"provider_evaluation_count", static_cast<double>(solved.provider_evaluations)},
-        {"accepted_candidate_count", static_cast<double>(solved.accepted_count)},
-        {"distinct_branch_count", 1.0},
-    });
     const double vapor_fraction_sum = std::accumulate(
         closure.vapor_fractions.begin(), closure.vapor_fractions.end(), 0.0
     );
