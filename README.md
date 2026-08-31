@@ -61,8 +61,8 @@ documentation-only changes can stop at readiness checks without building or
 installing the wheel; selected Engine or Validation checks run setup first.
 `check-all.sh` is the full fast installed-wheel gate: it always installs the
 current wheel, then covers the default EOS, equilibrium, regression, static,
-readiness, and fast Validation checks. It excludes slow or expensive numerical
-evidence and campaign replays.
+and readiness checks. It excludes Validation campaigns and slow or expensive
+numerical evidence.
 
 Native C++ changes use the explicit owner commands:
 
@@ -80,7 +80,6 @@ Run a canonical end-to-end workflow with:
 
 ```bash
 bash tools/run-slice.sh khudaida
-bash tools/run-slice.sh figiel
 ```
 
 See `AGENTS.md` for agent routing and `governance/GOVERNANCE.md` for the

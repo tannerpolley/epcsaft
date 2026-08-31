@@ -50,7 +50,6 @@ RETIRED_ACTIVE_PATTERNS = (
 VALIDATION_DATA_PATH_EXCEPTIONS = {
     Path("validation/campaigns/2026-eos-literature-handoff/scripts/eos_literature_handoff.py"),
     Path("validation/campaigns/2026-eos-literature-handoff/source/data-packet-locks.json"),
-    Path("validation/campaigns/2026-khudaida/parameters/data-lock.toml"),
 }
 VALIDATION_DATA_PATH_PATTERN = re.compile(
     r'''data/packets|["']data["']\s*/\s*["']packets["']'''

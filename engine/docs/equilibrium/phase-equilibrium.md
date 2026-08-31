@@ -102,20 +102,19 @@ or globality claim.
 
 The user-approved promotion tolerance is `1e-4` for candidate-versus-incumbent
 historical state lineage only. It does not relax conservation, charge,
-pressure, KKT, modified-potential, stability, or derivative checks. The
-installed-wheel promotion run passed all eight Khudaida Figure 2 feeds, both
-selected-parameter derivative checks, and the other retained campaign evidence
-(`12 passed, 4 deselected in 437.88s`).
+pressure, KKT, modified-potential, or stability checks. The public installed-
+wheel campaign retains two HELD2 claims over all eight Khudaida Figure 2 feeds:
+declared two-liquid continuation and omitted-topology discovery. Both compare
+the packet-v5 state lineage and physical certificates without asserting private
+routes, work counts, predictive cutoffs, or globality.
 
 Engine evidence separately covers discovery amount scaling and parameter
 order, strict-stable role selection, neutral and charged one-/two-/three-phase
 declared solves, component and declared-phase permutation, non-authoritative
 hints, structural neutral-only partner support, and exact implicit
-sensitivities against centered re-solves. The installed Perdomo campaign fixes
-the published Table 3 liquid composition, structurally excludes ions from the
-vapor, certifies the ePC-SAFT boundary, and checks exact sensitivity. Its
-published pressure remains a descriptive cross-EOS comparison because the
-paper used SAFT-gamma-Mie.
+sensitivities against centered re-solves. Perdomo source packets, results, and
+receipts remain historical cross-EOS provenance; they are not a current
+installed-wheel campaign because the paper used SAFT-gamma-Mie.
 
 The unrelated scratch Gibbs solver remains removed. The private HELD/HELD2
 sources and their algorithmic certification evidence remain because they are

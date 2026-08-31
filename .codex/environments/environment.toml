@@ -28,9 +28,3 @@ name = "Khudaida slice"
 icon = "test"
 command = "bash tools/run-slice.sh khudaida"
 platform = "linux"
-
-[[actions]]
-name = "Figiel slice"
-icon = "test"
-command = "bash tools/run-slice.sh figiel"
-platform = "linux"

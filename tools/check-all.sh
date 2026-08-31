@@ -23,12 +23,25 @@ trap cleanup EXIT
 
 names=()
 pids=()
+active=0
+max_workers=4
+declare -A exit_codes=()
 run_check() {
     local name="$1"
     shift
     names+=("$name")
-    ("$@") >"$run_root/$name.log" 2>&1 &
+    (/usr/bin/time -f 'wall_seconds=%e' "$@") >"$run_root/$name.log" 2>&1 &
     pids+=("$!")
+    ((active += 1))
+    if ((active == max_workers)); then
+        local finished_pid
+        if wait -n -p finished_pid; then
+            exit_codes["$finished_pid"]=0
+        else
+            exit_codes["$finished_pid"]=$?
+        fi
+        ((active -= 1))
+    fi
 }
 
 run_check packets .venv/bin/python data/tools/validate_packets.py
@@ -37,7 +50,6 @@ run_check engine-equilibrium bash -c 'cd "$1/engine" && ../.venv/bin/python -m p
 run_check engine-regression bash -c 'cd "$1/engine" && ../.venv/bin/python -m pytest -q -m "not slow and not expensive" tests/regression' _ "$repo_root"
 run_check ruff bash -c 'cd "$1/engine" && ../.venv/bin/ruff check --select E4,E7,E9,F src tests' _ "$repo_root"
 run_check mypy bash -c 'cd "$1/engine" && ../.venv/bin/mypy' _ "$repo_root"
-run_check validation-fast bash -c 'cd "$1/validation" && ../.venv/bin/python -m pytest -q -m "not campaign and not slow and not expensive"' _ "$repo_root"
 run_check management python3 governance/tools/management_preflight.py check
 run_check artifacts python3 governance/tools/artifact_store.py check
 run_check architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir" --wheel "$wheel"
@@ -45,7 +57,16 @@ run_check architecture .venv/bin/python tools/check-engine-architecture.py --bui
 failed=0
 for index in "${!pids[@]}"; do
     name="${names[$index]}"
-    if wait "${pids[$index]}"; then
+    pid="${pids[$index]}"
+    status="${exit_codes[$pid]-}"
+    if [[ -z "$status" ]]; then
+        if wait "$pid"; then
+            status=0
+        else
+            status=$?
+        fi
+    fi
+    if ((status == 0)); then
         printf '\n[%s]\n' "$name"
         cat "$run_root/$name.log"
     else

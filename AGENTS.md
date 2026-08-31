@@ -55,8 +55,8 @@ parallel fast installed-wheel gate, with a warm-wheel target below ten seconds.
 Slow or expensive Engine evidence, Validation campaigns, full native
 clang-tidy, and sanitizers run only by an explicit owner command when their
 specific risk or scientific claim requires them; a changed tool or document
-must not silently invoke them. `tools/run-slice.sh khudaida|figiel` owns the two
-canonical vertical slices.
+must not silently invoke them. `tools/run-slice.sh khudaida` owns the canonical
+phase-equilibrium vertical slice.
 
 Use Numerical Verification-Driven Development from Governance section 7.
 Persistent tests must falsify numerical claims; expensive installed-artifact
