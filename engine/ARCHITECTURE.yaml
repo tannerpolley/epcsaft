@@ -89,11 +89,15 @@ owners:
     native_sources: src/epcsaft/regression/native
     optimizer: ipopt
     scientific_values: owner_provided_only
-    current_observation_boundary: [eos_fixed_state, eos_pure_saturation, equilibrium_general_reactive]
-    generic_equilibrium_evaluator: epcsaft.equilibrium.solve
-    generic_equilibrium_observation: epcsaft.equilibrium.GeneralEquilibriumOwnerObservation
-    equilibrium_observation_admission: general_reactive_equilibrium
-    equilibrium_observation_families: [general_reactive]
+    experiment_kinds: [direct_eos, grepe]
+    current_observation_boundary: [eos_fixed_state, eos_pure_saturation, grepe_declared_topology]
+    grepe_transfer_owner: src/epcsaft/regression/_equilibrium_owner.py
+    grepe_request: epcsaft.equilibrium.GeneralReactiveEquilibriumProblem
+    grepe_native_owner: cpp/equilibrium/grepe.cpp
+    grepe_feed_null_source: reaction_system.feed_amounts_mol
+    grepe_feed_null_unit: mol
+    phase_discovery_access: forbidden
+    equilibrium_observation_families: [grepe]
   native_core:
     extension: epcsaft._core
     static_libraries: [eos_core, equilibrium_core, regression_core]

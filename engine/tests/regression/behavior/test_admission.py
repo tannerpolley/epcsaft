@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ from tests.regression._cases import (
     PURE_IDENTITY,
     boundary_fit_case,
     fixed_state_fit_case,
+    full_space_fit_case,
     pure_saturation_fit_case,
     scaled_error,
 )
@@ -36,6 +38,39 @@ def test_explicit_full_space_rejects_an_ineligible_fit(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="full_space evaluation is ineligible"):
         fit(mapping, base_path=tmp_path)
+
+
+def test_grepe_dispatch_binds_declared_topology_and_mol_feed(tmp_path: Path) -> None:
+    """Falsify implicit feed acceptance or topology drift before native GREPE."""
+
+    mapping, *_ = full_space_fit_case(tmp_path)
+    result = fit(mapping, base_path=tmp_path)
+    accepted = result.best_usable_start
+    assert accepted is not None
+    assert result.evaluation_strategy == "simultaneous_sparse_full_space"
+    metadata = result.specification.rows[0].to_mapping()["series_metadata"]
+    assert metadata["feed_source"] == {
+        "path": "reaction_system.feed_amounts_mol",
+        "unit": "mol",
+    }
+    assert len(accepted.owner_receipts) == 1
+    owner_receipt = json.loads(accepted.owner_receipts[0].canonical_bytes_utf8)
+    assert owner_receipt["reaction_fingerprint"].startswith("sha256:")
+    assert owner_receipt["topology_fingerprint"].startswith("sha256:")
+
+    for mutation in ("missing_feed", "short_feed", "wrong_balance", "changed_phase_role"):
+        tampered = deepcopy(mapping)
+        request = tampered["observations"][0]["request"]
+        if mutation == "missing_feed":
+            request.pop("feed")
+        elif mutation == "short_feed":
+            request["reaction_system"]["feed_amounts_mol"].pop()
+        elif mutation == "wrong_balance":
+            request["reaction_system"]["conserved_totals"][0] += 1.0
+        else:
+            request["phases"][0]["fluid_role"] = "vapor"
+        with pytest.raises((TypeError, ValueError)):
+            fit(tampered, base_path=tmp_path)
 
 
 @pytest.mark.slow

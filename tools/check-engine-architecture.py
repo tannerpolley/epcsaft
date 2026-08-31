@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
+import importlib.util
 import json
 import re
 import shlex
@@ -264,12 +266,119 @@ def validate_sources(sources: Iterable[Path]) -> None:
                 )
 
 
+def _regression_discovery_family(target: str) -> str | None:
+    leaf = target.rsplit(".", 1)[-1]
+    if leaf == "PhaseEquilibriumProblem":
+        return "PhaseEquilibriumProblem"
+    if target in {"epcsaft.equilibrium.solve", "epcsaft.equilibrium._api.solve"}:
+        return "public equilibrium.solve"
+    if leaf == "phase_equilibrium":
+        return "phase_equilibrium"
+    if target.startswith(("epcsaft.equilibrium", "epcsaft._core")):
+        lowered = leaf.lower()
+        if "held" in lowered and any(
+            token in lowered for token in ("controller", "discover", "result", "solve")
+        ):
+            return "HELD/HELD2 controller"
+        if "discover" in lowered or "discovery" in lowered or leaf == "*":
+            return "discovery owner"
+    return None
+
+
+def _import_module(node: ast.ImportFrom) -> str:
+    if not node.level:
+        return node.module or ""
+    return importlib.util.resolve_name(
+        "." * node.level + (node.module or ""),
+        "epcsaft.regression",
+    )
+
+
+def _call_target(node: ast.expr, aliases: dict[str, str]) -> str | None:
+    if isinstance(node, ast.Name):
+        return aliases.get(node.id, node.id)
+    if isinstance(node, ast.Attribute):
+        parent = _call_target(node.value, aliases)
+        return None if parent is None else f"{parent}.{node.attr}"
+    return None
+
+
+def validate_regression_discovery_edges(regression_root: Path) -> None:
+    for source in sorted(regression_root.rglob("*.py")):
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        aliases: dict[str, str] = {}
+        for node in ast.walk(tree):
+            targets: list[tuple[str, str]] = []
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    binding = alias.asname or alias.name.split(".", 1)[0]
+                    aliases[binding] = alias.name if alias.asname else binding
+                    targets.append((binding, alias.name))
+            elif isinstance(node, ast.ImportFrom):
+                module = _import_module(node)
+                for alias in node.names:
+                    target = f"{module}.{alias.name}"
+                    aliases[alias.asname or alias.name] = target
+                    targets.append((alias.asname or alias.name, target))
+            for _binding, target in targets:
+                family = _regression_discovery_family(target)
+                if family is not None:
+                    raise ArchitectureError(
+                        f"Regression source imports forbidden {family}: {source}:{node.lineno}"
+                    )
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            target = _call_target(node.func, aliases)
+            family = None if target is None else _regression_discovery_family(target)
+            if family is not None:
+                raise ArchitectureError(
+                    f"Regression source calls forbidden {family}: {source}:{node.lineno}"
+                )
+
+
 def rejection_code(check: Callable[[], None]) -> int:
     try:
         check()
     except ArchitectureError:
         return 1
     return 0
+
+
+def run_regression_falsification_gate() -> None:
+    fixtures = {
+        "PhaseEquilibriumProblem": (
+            "from epcsaft.equilibrium import PhaseEquilibriumProblem as Problem\n"
+            "Problem(None)\n"
+        ),
+        "public equilibrium.solve": (
+            "from epcsaft import equilibrium as eq\neq.solve(None, None)\n"
+        ),
+        "phase_equilibrium": (
+            "from epcsaft.equilibrium import phase_equilibrium as flash\nflash(None)\n"
+        ),
+        "HELD/HELD2 controller": (
+            "from epcsaft.equilibrium._api import _held_discovery as held\nheld(None)\n"
+        ),
+        "discovery owner": (
+            "from epcsaft.equilibrium._api import _discovery_result as discover\n"
+            "discover(None)\n"
+        ),
+    }
+    with tempfile.TemporaryDirectory(prefix="epcsaft-regression-architecture-") as raw:
+        root = Path(raw)
+        for index, (family, source) in enumerate(fixtures.items()):
+            fixture_root = root / str(index)
+            fixture_root.mkdir()
+            (fixture_root / "fixture.py").write_text(source, encoding="utf-8")
+            require(
+                rejection_code(
+                    lambda root=fixture_root: validate_regression_discovery_edges(root)
+                )
+                == 1,
+                f"temporary {family} falsifier did not fail",
+            )
+    print("Regression GREPE-only falsification gate passed: 5 discovery edges rejected")
 
 
 def run_falsification_gate(verifier: Path) -> None:
@@ -404,9 +513,20 @@ def run_falsification_gate(verifier: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--build-dir", type=Path, required=True)
-    parser.add_argument("--wheel", type=Path, required=True)
+    parser.add_argument("--build-dir", type=Path)
+    parser.add_argument("--wheel", type=Path)
     arguments = parser.parse_args()
+
+    repo_root = Path(__file__).resolve().parent.parent
+    validate_regression_discovery_edges(repo_root / "engine/src/epcsaft/regression")
+    run_regression_falsification_gate()
+    require(
+        (arguments.build_dir is None) == (arguments.wheel is None),
+        "--build-dir and --wheel must be supplied together",
+    )
+    if arguments.build_dir is None:
+        print("Regression production modules import no phase-discovery owner")
+        return
 
     build_dir = arguments.build_dir.resolve()
     wheel = arguments.wheel.resolve()
@@ -416,7 +536,6 @@ def main() -> None:
     )
     require(wheel.is_file(), f"Engine wheel does not exist: {wheel}")
 
-    repo_root = Path(__file__).resolve().parent.parent
     verifier = repo_root / "tools" / "verify-installed-wheel.py"
     meson = str(repo_root / ".venv" / "bin" / "meson")
     if not Path(meson).is_file():
