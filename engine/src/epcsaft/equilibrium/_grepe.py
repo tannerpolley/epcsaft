@@ -1920,26 +1920,17 @@ def _native_grepe_failure(
     native: Any,
     phases: tuple[EquilibriumPhaseState, ...],
 ) -> GeneralReactiveEquilibriumResult:
-    raw_code = str(
-        getattr(native_result, "raw_failure_code", "")
-        or getattr(native_result, "failure_code", "")
-    )
-    code = raw_code if raw_code in NON_EVALUABLE_TRIAL_CODES else "owner_contract_failure"
-    raw_message = str(
-        getattr(native_result, "failure_message", "")
-        or native.failure_reason
-        or native.solver_status
-    )
+    native_code = str(getattr(native_result, "failure_code", ""))
+    code = native_code if native_code in NON_EVALUABLE_TRIAL_CODES else "owner_contract_failure"
+    raw_message = str(native.failure_reason or native.solver_status)
     diagnostic = (
-        f"raw_native_code={raw_code}; {raw_message}"
-        if raw_code and code != raw_code
+        f"native_code={native_code}; {raw_message}"
+        if native_code and code != native_code
         else ": ".join(part for part in (raw_message, str(native.callback_error)) if part)
     )
     evidence = (
         tuple((str(name), float(value)) for name, value in getattr(native_result, "evidence", ()))
         + tuple((str(name), str(value)) for name, value in getattr(native_result, "text_evidence", ()))
-        + (("raw_native_failure_code", raw_code),)
-        + (("raw_native_failure_message", raw_message),)
         + ((
             "partial_selection_reason",
             str(getattr(native_result, "partial_selection_reason", "none")),

@@ -303,8 +303,6 @@ class _GrepeResult:
     certificate_scope: str
     equilibrium: _ReactiveFinitePhaseResult
     failure_code: str
-    raw_failure_code: str
-    failure_message: str
     partial_selection_reason: str
     text_evidence: Sequence[tuple[str, str]]
     retained_phase_request_indices: Sequence[int]

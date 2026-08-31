@@ -841,8 +841,6 @@ void bind_chemical_equilibrium(py::module_& module) {
         .def_readonly("certificate_scope", &GrepeResult::certificate_scope)
         .def_readonly("equilibrium", &GrepeResult::equilibrium)
         .def_readonly("failure_code", &GrepeResult::failure_code)
-        .def_readonly("raw_failure_code", &GrepeResult::raw_failure_code)
-        .def_readonly("failure_message", &GrepeResult::failure_message)
         .def_readonly("partial_selection_reason", &GrepeResult::partial_selection_reason)
         .def_readonly("text_evidence", &GrepeResult::text_evidence)
         .def_readonly("retained_phase_request_indices", &GrepeResult::retained_phase_request_indices)

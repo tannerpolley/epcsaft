@@ -905,6 +905,34 @@ FiniteGrepeContext prepare_retained_finite_grepe(
     };
 }
 
+void set_output_availability(
+    GrepeResult& result,
+    std::size_t output_count,
+    bool require_sensitivity_status,
+    bool include_derivatives
+) {
+    const ReactiveFinitePhaseResult& equilibrium = result.equilibrium;
+    result.output_value_available.assign(output_count, 0);
+    result.output_derivative_available.assign(output_count, 0);
+    const std::size_t input_count = equilibrium.input_order.size();
+    for (std::size_t output = 0; output < output_count; ++output) {
+        const bool value_available = output < equilibrium.output_values.size()
+            && std::isfinite(equilibrium.output_values[output]);
+        result.output_value_available[output] = static_cast<std::uint8_t>(value_available);
+        const std::size_t offset = output * input_count;
+        const bool derivatives_available = include_derivatives && value_available
+            && (!require_sensitivity_status || equilibrium.sensitivity_status == "available")
+            && offset + input_count <= equilibrium.output_input_derivatives.size()
+            && std::all_of(
+                equilibrium.output_input_derivatives.begin() + offset,
+                equilibrium.output_input_derivatives.begin() + offset + input_count,
+                [](double value) { return std::isfinite(value); }
+            );
+        result.output_derivative_available[output] =
+            static_cast<std::uint8_t>(derivatives_available);
+    }
+}
+
 GrepeResult solve_finite_result(
     const epcsaft::NativeModel& model,
     const GrepeRequest& request
@@ -991,25 +1019,7 @@ GrepeResult solve_finite_result(
     result.retained_phase_request_indices.resize(phases.size());
     std::iota(result.retained_phase_request_indices.begin(),
         result.retained_phase_request_indices.end(), 0);
-    result.output_value_available.assign(request.outputs.size(), 0);
-    result.output_derivative_available.assign(request.outputs.size(), 0);
-    const std::size_t input_count = result.equilibrium.input_order.size();
-    for (std::size_t output = 0; output < request.outputs.size(); ++output) {
-        const bool value_available = output < result.equilibrium.output_values.size()
-            && std::isfinite(result.equilibrium.output_values[output]);
-        result.output_value_available[output] = static_cast<std::uint8_t>(value_available);
-        const std::size_t offset = output * input_count;
-        const bool derivatives_available = value_available
-            && result.equilibrium.sensitivity_status == "available"
-            && offset + input_count <= result.equilibrium.output_input_derivatives.size()
-            && std::all_of(
-                result.equilibrium.output_input_derivatives.begin() + offset,
-                result.equilibrium.output_input_derivatives.begin() + offset + input_count,
-                [](double value) { return std::isfinite(value); }
-            );
-        result.output_derivative_available[output] =
-            static_cast<std::uint8_t>(derivatives_available);
-    }
+    set_output_availability(result, request.outputs.size(), true, true);
     result.evidence.insert(result.evidence.end(), {
         {"local_evaluation_valid", static_cast<double>(result.equilibrium.local_evaluation_valid)},
         {"equilibrium_value_valid", static_cast<double>(result.equilibrium.equilibrium_value_valid)},
@@ -1031,9 +1041,6 @@ GrepeResult solve_finite_result(
             : result.equilibrium.sensitivity_status == "failed"
             ? "first_order_failure"
             : "numerical_convergence_failure";
-        result.raw_failure_code = result.failure_code;
-        result.failure_message = result.equilibrium.failure_reason.empty()
-            ? result.equilibrium.solver_status : result.equilibrium.failure_reason;
     }
     return result;
 }
@@ -1119,26 +1126,7 @@ GrepeResult finalize_finite_context(
     context.result.retained_phase_request_indices.resize(context.phases.size());
     std::iota(context.result.retained_phase_request_indices.begin(),
         context.result.retained_phase_request_indices.end(), 0);
-    context.result.output_value_available.assign(request.outputs.size(), 0);
-    context.result.output_derivative_available.assign(request.outputs.size(), 0);
-    const std::size_t input_count = context.result.equilibrium.input_order.size();
-    for (std::size_t output = 0; output < request.outputs.size(); ++output) {
-        const bool value_available = output < context.result.equilibrium.output_values.size()
-            && std::isfinite(context.result.equilibrium.output_values[output]);
-        context.result.output_value_available[output] =
-            static_cast<std::uint8_t>(value_available);
-        const std::size_t offset = output * input_count;
-        const bool derivatives_available = value_available
-            && context.result.equilibrium.sensitivity_status == "available"
-            && offset + input_count <= context.result.equilibrium.output_input_derivatives.size()
-            && std::all_of(
-                context.result.equilibrium.output_input_derivatives.begin() + offset,
-                context.result.equilibrium.output_input_derivatives.begin() + offset + input_count,
-                [](double value) { return std::isfinite(value); }
-            );
-        context.result.output_derivative_available[output] =
-            static_cast<std::uint8_t>(derivatives_available);
-    }
+    set_output_availability(context.result, request.outputs.size(), true, true);
     return std::move(context.result);
 }
 
@@ -1523,12 +1511,9 @@ GrepeResult incipient_liquid_partial(
     result.equilibrium.output_input_derivatives.assign(
         request.outputs.size() * width, std::numeric_limits<double>::quiet_NaN()
     );
-    result.output_value_available.assign(request.outputs.size(), 0);
-    result.output_derivative_available.assign(request.outputs.size(), 0);
     for (std::size_t output = 0; output < request.outputs.size(); ++output) {
         if (request.outputs[output].selector == "system.pressure") {
             result.equilibrium.output_values[output] = pressure_pa;
-            result.output_value_available[output] = 1;
             continue;
         }
         const int position = liquid.output_positions[output];
@@ -1541,9 +1526,9 @@ GrepeResult incipient_liquid_partial(
         ];
         if (std::isfinite(value)) {
             result.equilibrium.output_values[output] = value;
-            result.output_value_available[output] = 1;
         }
     }
+    set_output_availability(result, request.outputs.size(), false, false);
     result.equilibrium.accepted = false;
     return result;
 }
@@ -2474,7 +2459,8 @@ GrepeResult incipient_result(
             "singular_sensitivity",
             fixed_pressure
                 ? "fixed-pressure affine-feed closure is singular"
-                : "coupled bubble Schur complement is singular"
+                : "coupled bubble Schur complement is singular",
+            incipient_liquid_partial(request, closure.liquid, closure.pressure_pa)
         );
     }
     if (std::abs(scalar_slope) < 1.0e-8 * slope_scale) {
@@ -2482,7 +2468,8 @@ GrepeResult incipient_result(
             "ill_conditioned_sensitivity",
             fixed_pressure
                 ? "fixed-pressure affine-feed closure is ill-conditioned"
-                : "coupled bubble Schur complement is ill-conditioned"
+                : "coupled bubble Schur complement is ill-conditioned",
+            incipient_liquid_partial(request, closure.liquid, closure.pressure_pa)
         );
     }
     std::vector<double> pressure_derivatives(parameter_count, 0.0);
@@ -2529,9 +2516,11 @@ GrepeResult incipient_result(
         : std::vector<double>{closure.pressure_pa};
     result.phase_mechanical_classes = {
         closure.liquid.solved.equilibrium.local_stability_status,
-        closure.ideal ? "analytical_ideal_gas" : "strict_stable_local_minimum",
+        closure.ideal ? "analytical_ideal_gas" : "not_adjudicated",
     };
     result.equilibrium = liquid;
+    result.evidence = closure.liquid.solved.evidence;
+    result.text_evidence = closure.liquid.solved.text_evidence;
     ReactiveFinitePhaseResult& equilibrium = result.equilibrium;
     for (std::size_t component = 0; component < component_count; ++component) {
         equilibrium.phase_chemical_potentials_over_rt[0][component] =
@@ -2638,22 +2627,9 @@ GrepeResult incipient_result(
         static_cast<std::size_t>(finite_position - request.phases.begin()),
         static_cast<std::size_t>(vapor_position - request.phases.begin()),
     };
-    result.output_value_available.assign(request.outputs.size(), 0);
-    result.output_derivative_available.assign(request.outputs.size(), 0);
-    for (std::size_t output = 0; output < request.outputs.size(); ++output) {
-        const bool value_finite = std::isfinite(equilibrium.output_values[output]);
-        const bool derivative_finite = value_finite && std::all_of(
-            equilibrium.output_input_derivatives.begin()
-                + static_cast<std::ptrdiff_t>(output * parameter_count),
-            equilibrium.output_input_derivatives.begin()
-                + static_cast<std::ptrdiff_t>((output + 1) * parameter_count),
-            [](double value) { return std::isfinite(value); }
-        );
-        result.output_value_available[output] = static_cast<std::uint8_t>(value_finite);
-        result.output_derivative_available[output] = static_cast<std::uint8_t>(derivative_finite);
-    }
+    set_output_availability(result, request.outputs.size(), false, true);
     equilibrium.provider_evaluation_count = solved.provider_evaluations;
-    result.evidence = {
+    result.evidence.insert(result.evidence.end(), {
         {"bubble_log_closure_abs", std::abs(closure.residual)},
         {"bubble_log_pressure_derivative", closure.residual_log_pressure_derivative},
         {"balance_inf_norm", equilibrium.balance_inf_norm},
@@ -2666,7 +2642,7 @@ GrepeResult incipient_result(
         {"provider_evaluation_count", static_cast<double>(solved.provider_evaluations)},
         {"accepted_candidate_count", static_cast<double>(solved.accepted_count)},
         {"distinct_branch_count", 1.0},
-    };
+    });
     const double vapor_fraction_sum = std::accumulate(
         closure.vapor_fractions.begin(), closure.vapor_fractions.end(), 0.0
     );
@@ -2683,7 +2659,7 @@ GrepeResult incipient_result(
         && std::isfinite(closure.vapor_pressure_pa) && closure.vapor_pressure_pa > 0.0
         && std::abs(closure.vapor_pressure_pa - closure.pressure_pa)
             / std::max(1.0, closure.pressure_pa) <= 1.0e-8;
-    const bool vapor_strict = true;
+    const bool vapor_stability_available = closure.ideal;
     const bool public_outputs_available = std::all_of(
         result.output_value_available.begin(), result.output_value_available.end(),
         [](std::uint8_t value) { return value == 1; }
@@ -2691,14 +2667,14 @@ GrepeResult incipient_result(
         result.output_derivative_available.begin(), result.output_derivative_available.end(),
         [](std::uint8_t value) { return value == 1; }
     ));
-    if (!aggregate_valid || !vapor_strict || !public_outputs_available) {
+    if (!aggregate_valid || !vapor_stability_available || !public_outputs_available) {
         equilibrium.accepted = false;
         equilibrium.equilibrium_value_valid = equilibrium.equilibrium_value_valid && aggregate_valid;
         result.partial_selection_reason = "none";
         throw GrepeFailure(
-            !vapor_strict ? "second_order_failure" : "physical_rejection",
-            !vapor_strict
-                ? "incipient composition is not a strict local tangent-plane minimum"
+            !vapor_stability_available ? "second_order_failure" : "physical_rejection",
+            !vapor_stability_available
+                ? "incipient vapor stability is unavailable"
                 : !public_outputs_available
                 ? "finite-incipient requested public outputs are unavailable"
                 : "finite-incipient aggregate certificate failed",
@@ -2719,17 +2695,15 @@ GrepeResult failed_result(
     result.formulation = formulation;
     result.certificate_scope = certificate_scope;
     result.failure_code = failure.code();
-    result.raw_failure_code = failure.code();
-    result.failure_message = failure.what();
     if (failure.attempt_index().has_value()) {
         result.text_evidence.push_back({
             "attempt_index", std::to_string(*failure.attempt_index())
         });
     }
-    result.text_evidence.push_back({"failure_message", failure.what()});
     result.temperature_k = request.temperature.value;
     result.pressure_pa = request.pressure.value;
     result.equilibrium.accepted = false;
+    result.equilibrium.failure_reason = failure.what();
     if (!has_partial) {
         result.equilibrium.solver_status = "failed";
         result.equilibrium.numerical_status = "failed";
@@ -2738,7 +2712,6 @@ GrepeResult failed_result(
             ? "failed" : "not_adjudicated";
         result.equilibrium.provider_domain_status = failure.code() == "provider_domain_rejection"
             ? "failed" : "not_adjudicated";
-        result.equilibrium.failure_reason = failure.what();
     }
     return result;
 }
@@ -3358,9 +3331,6 @@ GrepeResult solve_grepe(
         result.formulation = "finite";
         result.certificate_scope = "fixed_TP_configured_finite_phases_local_minimum";
         result.failure_code = "provider_domain_rejection";
-        result.raw_failure_code = "provider_domain_rejection";
-        result.failure_message = diagnostic;
-        result.text_evidence.push_back({"failure_message", diagnostic});
         result.temperature_k = request.temperature.value;
         result.pressure_pa = request.pressure.value;
         result.equilibrium.solver_status = "not_started";

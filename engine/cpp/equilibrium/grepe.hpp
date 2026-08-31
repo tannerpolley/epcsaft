@@ -105,8 +105,6 @@ struct GrepeResult {
     std::string certificate_scope;
     ReactiveFinitePhaseResult equilibrium;
     std::string failure_code;
-    std::string raw_failure_code;
-    std::string failure_message;
     std::string partial_selection_reason = "none";
     std::vector<std::pair<std::string, std::string>> text_evidence;
     std::vector<std::size_t> retained_phase_request_indices;
