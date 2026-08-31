@@ -42,14 +42,14 @@
           "family": "segment_count",
           "identity": "component/carbon-dioxide/segment_count",
           "provenance": {
-            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
-            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=CO2:family=segment_count:status=retained-literature-lineage",
-            "source_id": "mea-retained-phase-two-artifact"
+            "source_id": "gross-sadowski-2001",
+            "domain_id": "carbon-dioxide-fit-range",
+            "locator": "gross-sadowski-2001/1/parameters/single.csv:carbon-dioxide-segment-count"
           },
           "qualification": "candidate_extrapolation",
-          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "source_sha256": "sha256:63f193f425bdaac0d90a3cf7b431ece8471c16cbdef46e844603ba39d3215b06",
           "value": {
-            "magnitude": 2.079,
+            "magnitude": 2.0729,
             "unit": "dimensionless"
           }
         },
@@ -1500,6 +1500,10 @@
         "magnitude": 293.15,
         "unit": "kelvin"
       }
+    },
+    {
+      "domain_id": "cai-1996-neutral-refit",
+      "kind": "unknown"
     }
   ],
   "model_coefficients": [
@@ -2112,14 +2116,14 @@
           "family": "k_ij",
           "identity": "pair/monoethanolamine/water/k_ij",
           "provenance": {
-            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
-            "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/mixed/binary_interaction/k_ij.csv:row=MEA:column=H2O:status=explicit-diagnostic",
-            "source_id": "mea-retained-phase-two-artifact"
+            "domain_id": "cai-1996-neutral-refit",
+            "locator": "grouped pressure-level one-SE selection and complete 25-row refit",
+            "source_id": "cai-1996-neutral-refit"
           },
           "qualification": "candidate_extrapolation",
           "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
           "value": {
-            "magnitude": -0.052,
+            "magnitude": -0.07352749874985018,
             "unit": "dimensionless"
           }
         }
@@ -2493,6 +2497,16 @@
       "citation": "Bates and Pinching (1951), equation 7.",
       "source_id": "bates-pinching-1951",
       "use_basis": "R5 monoethanolammonium dissociation source-centred correlation."
+    },
+    {
+      "citation": "Project-authored ePC-SAFT parameter fit result.",
+      "source_id": "cai-1996-neutral-refit",
+      "use_basis": "Accepted fitted coefficient values and exact numerical evidence."
+    },
+    {
+      "source_id": "gross-sadowski-2001",
+      "citation": "Gross and Sadowski (2001), Table 2, carbon dioxide row.",
+      "use_basis": "CO2 m=2.0729; 2.079 is retained only as a retired historical calculation value."
     }
   ],
   "topology": {
@@ -2535,80 +2549,6 @@
           "identity": "association/monoethanolamine/a/monoethanolamine/b/volume",
           "value": {
             "magnitude": 0.03747,
-            "unit": "dimensionless"
-          }
-        }
-      },
-      {
-        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
-        "endpoint_a": {
-          "component_id": "monoethanolamine",
-          "site_id": "a"
-        },
-        "endpoint_b": {
-          "component_id": "water",
-          "site_id": "b"
-        },
-        "energy_over_k": {
-          "identity": "association/monoethanolamine/a/water/b/energy_over_k",
-          "value": {
-            "magnitude": 2506.0,
-            "unit": "kelvin"
-          }
-        },
-        "qualification": "candidate_extrapolation",
-        "source": {
-          "kind": "explicit",
-          "provenance": [
-            {
-              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
-              "locator": "Wolbach-Sandler cross-association combining rule at 313.15 K; inputs=data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:rows=H2O,MEA:status=retained-diagnostic",
-              "source_id": "mea-retained-phase-two-artifact"
-            }
-          ]
-        },
-        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
-        "volume": {
-          "identity": "association/monoethanolamine/a/water/b/volume",
-          "value": {
-            "magnitude": 0.04098981761211223,
-            "unit": "dimensionless"
-          }
-        }
-      },
-      {
-        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
-        "endpoint_a": {
-          "component_id": "monoethanolamine",
-          "site_id": "b"
-        },
-        "endpoint_b": {
-          "component_id": "water",
-          "site_id": "a"
-        },
-        "energy_over_k": {
-          "identity": "association/monoethanolamine/b/water/a/energy_over_k",
-          "value": {
-            "magnitude": 2506.0,
-            "unit": "kelvin"
-          }
-        },
-        "qualification": "candidate_extrapolation",
-        "source": {
-          "kind": "explicit",
-          "provenance": [
-            {
-              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
-              "locator": "Wolbach-Sandler cross-association combining rule at 313.15 K; inputs=data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:rows=H2O,MEA:status=retained-diagnostic",
-              "source_id": "mea-retained-phase-two-artifact"
-            }
-          ]
-        },
-        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
-        "volume": {
-          "identity": "association/monoethanolamine/b/water/a/volume",
-          "value": {
-            "magnitude": 0.04098981761211223,
             "unit": "dimensionless"
           }
         }
@@ -2728,6 +2668,104 @@
             "unit": "dimensionless"
           }
         }
+      },
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "endpoint_a": {
+          "component_id": "monoethanolamine",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "b"
+        },
+        "qualification": "candidate_extrapolation",
+        "source": {
+          "inputs": {
+            "energy_over_k": [
+              "association/monoethanolamine/a/monoethanolamine/b/energy_over_k",
+              "association/water/a/water/b/energy_over_k"
+            ],
+            "volume": [
+              "association/monoethanolamine/a/monoethanolamine/b/volume",
+              "association/water/a/water/b/volume"
+            ]
+          },
+          "kind": "combining-rule",
+          "provenance": [
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=association_energy_over_k:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=association_volume:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=association_energy_over_k:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=association_volume:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            }
+          ],
+          "rule_id": "arithmetic-energy-geometric-volume"
+        },
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
+      },
+      {
+        "candidate_domain_id": "mea-candidate-293-15-to-393-15-k",
+        "endpoint_a": {
+          "component_id": "monoethanolamine",
+          "site_id": "b"
+        },
+        "endpoint_b": {
+          "component_id": "water",
+          "site_id": "a"
+        },
+        "qualification": "candidate_extrapolation",
+        "source": {
+          "inputs": {
+            "energy_over_k": [
+              "association/monoethanolamine/a/monoethanolamine/b/energy_over_k",
+              "association/water/a/water/b/energy_over_k"
+            ],
+            "volume": [
+              "association/monoethanolamine/a/monoethanolamine/b/volume",
+              "association/water/a/water/b/volume"
+            ]
+          },
+          "kind": "combining-rule",
+          "provenance": [
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=association_energy_over_k:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=H2O:family=association_volume:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=association_energy_over_k:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            },
+            {
+              "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+              "locator": "data/reference/epcsaft_datasets/MEA_CO2_H2O_phase2/pure/any_solvent.csv:component=MEA:family=association_volume:status=retained-literature-lineage",
+              "source_id": "mea-retained-phase-two-artifact"
+            }
+          ],
+          "rule_id": "arithmetic-energy-geometric-volume"
+        },
+        "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c"
       }
     ],
     "presets": [],
