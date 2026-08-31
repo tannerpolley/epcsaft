@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <optional>
 #include <stdexcept>
@@ -14,17 +15,6 @@
 #include <vector>
 
 namespace epcsaft_engine::equilibrium {
-
-class GrepeFailure final : public std::runtime_error {
-public:
-    GrepeFailure(std::string code, const std::string& diagnostic)
-        : std::runtime_error(diagnostic), code_(std::move(code)) {}
-
-    [[nodiscard]] const std::string& code() const noexcept { return code_; }
-
-private:
-    std::string code_;
-};
 
 struct GrepeIntensive {
     bool solved = false;
@@ -105,6 +95,7 @@ struct GrepeRequest {
     std::optional<GrepeIntensiveBoundary> boundary;
     std::vector<GrepeContinuationPhase> continuation_phases;
     double continuation_pressure_pa = 0.0;
+    bool require_output_derivatives = false;
     bool perform_derivative_audits = false;
     bool declared_starts_only = false;
 };
@@ -114,6 +105,13 @@ struct GrepeResult {
     std::string certificate_scope;
     ReactiveFinitePhaseResult equilibrium;
     std::string failure_code;
+    std::string raw_failure_code;
+    std::string failure_message;
+    std::string partial_selection_reason = "none";
+    std::vector<std::pair<std::string, std::string>> text_evidence;
+    std::vector<std::size_t> retained_phase_request_indices;
+    std::vector<std::uint8_t> output_value_available;
+    std::vector<std::uint8_t> output_derivative_available;
     double temperature_k = std::numeric_limits<double>::quiet_NaN();
     double pressure_pa = std::numeric_limits<double>::quiet_NaN();
     double source_reference_representation_residual_inf_norm = 0.0;
