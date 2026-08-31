@@ -8,11 +8,23 @@
 #include <cstddef>
 #include <limits>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace epcsaft_engine::equilibrium {
+
+class GrepeFailure final : public std::runtime_error {
+public:
+    GrepeFailure(std::string code, const std::string& diagnostic)
+        : std::runtime_error(diagnostic), code_(std::move(code)) {}
+
+    [[nodiscard]] const std::string& code() const noexcept { return code_; }
+
+private:
+    std::string code_;
+};
 
 struct GrepeIntensive {
     bool solved = false;

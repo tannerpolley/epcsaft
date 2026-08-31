@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -479,3 +480,46 @@ def test_full_space_retains_a_typed_non_evaluable_reaction_trial(tmp_path: Path)
     assert refused.non_evaluable_count >= 1
     assert refused.owner_failures[0].code == refused.trial_failure_code
     assert result.accounting.non_evaluable_trials >= 1
+
+
+def test_full_space_retains_success_failure_success_batches(tmp_path: Path) -> None:
+    """Falsify fabricated failures or truncation after a rejected batch."""
+
+    failed_mapping, *_ = full_space_fit_case(tmp_path)
+    mapping, *_ = solved_pressure_fit_case(
+        tmp_path,
+        ideal_vapor=False,
+        bounds=(2.5, 3.1),
+        origin=2.8,
+        scale=0.2,
+    )
+    successful = mapping["observations"]
+    failed = failed_mapping["observations"]
+    assert isinstance(successful, list)
+    assert isinstance(failed, list)
+    first = deepcopy(successful[0])
+    third = deepcopy(successful[0])
+    first["identity"] = f"{first['identity']}-first"
+    third["identity"] = f"{third['identity']}-third"
+    for target in first["targets"]:
+        target["identity"] = f"{target['identity']}-first"
+    for target in third["targets"]:
+        target["identity"] = f"{target['identity']}-third"
+    mapping["observations"] = [first, failed[0], third]
+    mapping["solver"]["controls"]["maximum_iterations"] = 6
+    mapping["solver"]["multistart"]["starts"] = [
+        {"identity": "ordered-outcomes", "values": [2.9]}
+    ]
+
+    start = fit(mapping, base_path=tmp_path).starts[0]
+    assert [(item.index, item.status, item.failure_code) for item in start.batch_outcomes] == [
+        (0, "evaluated", None),
+        (1, "rejected", "physical_rejection"),
+        (2, "evaluated", None),
+    ]
+    assert start.owner_failures[0].code == "physical_rejection"
+    assert all(math.isfinite(value) for value in (*start.predictions[:3], *start.predictions[4:]))
+    assert math.isnan(start.predictions[3])
+    assert math.isnan(start.residuals[3])
+    assert math.isnan(start.affine_jacobian[3])
+    assert math.isnan(start.physical_jacobian[3])
