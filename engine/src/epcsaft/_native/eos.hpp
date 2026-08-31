@@ -91,6 +91,15 @@ struct NativeActiveCoordinate final {
     std::vector<std::array<std::size_t, 2>> association_edges;
     std::vector<double> association_energy_scales;
     double value;
+    double reference_temperature_k;
+};
+
+struct NativeActiveParameterConstraint final {
+    std::string identity;
+    double temperature_k;
+    double offset;
+    std::vector<double> coefficients;
+    double upper;
 };
 
 struct NativeProviderMetadata final {
@@ -99,11 +108,17 @@ struct NativeProviderMetadata final {
     std::string component_order_fingerprint;
     std::string domain_fingerprint;
     std::string artifact_fingerprint;
+    std::string candidate_qualification;
+    std::string candidate_source_fingerprint;
     double temperature_min_k;
     double temperature_max_k;
     double pressure_min_pa;
     double pressure_max_pa;
     double ion_mole_fraction_max;
+    double source_temperature_min_k;
+    double source_temperature_max_k;
+    double source_pressure_min_pa;
+    double source_pressure_max_pa;
 };
 
 class NativeModel final {
@@ -155,7 +170,13 @@ public:
         std::string topology_fingerprint,
         std::string component_order_fingerprint,
         std::string domain_fingerprint,
-        std::string artifact_fingerprint
+        std::string artifact_fingerprint,
+        double source_temperature_min_k,
+        double source_temperature_max_k,
+        double source_pressure_min_pa,
+        double source_pressure_max_pa,
+        std::string candidate_qualification,
+        std::string candidate_source_fingerprint
     ) const;
     NativeModel with_active_coordinates(
         const std::vector<NativeActiveCoordinate>& active_coordinates
@@ -163,6 +184,8 @@ public:
     const NativeProviderMetadata& provider_metadata() const;
     const std::vector<std::string>& component_ids() const;
     const std::vector<NativeActiveCoordinate>& active_coordinates() const;
+    std::vector<NativeActiveParameterConstraint>
+    active_parameter_constraints() const;
     NativeFixedTopologyPhaseBlock evaluate_fixed_topology_association(
         double temperature,
         double amount,

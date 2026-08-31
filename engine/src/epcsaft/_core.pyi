@@ -46,6 +46,7 @@ class NativeActiveCoordinate:
     association_edges: Sequence[tuple[int, int]]
     association_energy_scales: Sequence[float]
     value: float
+    reference_temperature_k: float
     def __init__(
         self,
         identity: str,
@@ -55,6 +56,7 @@ class NativeActiveCoordinate:
         association_edges: Sequence[tuple[int, int]],
         association_energy_scales: Sequence[float],
         value: float,
+        reference_temperature_k: float,
     ) -> None: ...
 
 class NativeMixturePhaseBlock:
@@ -90,6 +92,12 @@ class NativeModel:
         component_order_fingerprint: str,
         domain_fingerprint: str,
         artifact_fingerprint: str,
+        source_temperature_min_k: float,
+        source_temperature_max_k: float,
+        source_pressure_min_pa: float,
+        source_pressure_max_pa: float,
+        candidate_qualification: str,
+        candidate_source_fingerprint: str,
     ) -> NativeModel: ...
     def with_active_coordinates(
         self, coordinates: Sequence[NativeActiveCoordinate]
@@ -348,4 +356,5 @@ def _fit_resolved(
     controls: Mapping[str, object],
     failure_codes: Sequence[str],
     experiments: Sequence[Mapping[str, object]],
+    evaluation_strategy: str = ...,
 ) -> dict[str, Any]: ...

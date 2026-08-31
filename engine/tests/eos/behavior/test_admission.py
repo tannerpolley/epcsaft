@@ -64,3 +64,36 @@ def test_invalid_charge_and_permittivity_declarations_fail_closed() -> None:
     correlation["constant"]["value"]["magnitude"] = 0.0
     with pytest.raises((ParameterError, EosError, ValueError)):
         Mixture(Parameters.from_mapping(permittivity))
+
+
+def test_candidate_model_requires_every_participating_parameter_record() -> None:
+    mapping = deepcopy(NEUTRAL_BINARY)
+    mapping["domains"].append(
+        {
+            "domain_id": "engine-candidate-domain",
+            "kind": "fit-range",
+            "temperature_min": {"magnitude": 290.0, "unit": "kelvin"},
+            "temperature_max": {"magnitude": 400.0, "unit": "kelvin"},
+        }
+    )
+    candidate = {
+        "candidate_domain_id": "engine-candidate-domain",
+        "qualification": "candidate_extrapolation",
+        "source_sha256": f"sha256:{'a' * 64}",
+    }
+    for family in mapping["model_families"]:
+        family.update(candidate)
+    records = [
+        *(record for component in mapping["components"] for record in component["fixed"].values()),
+        *(record for component in mapping["components"] for record in component["coefficients"]),
+        *(record for pair in mapping["pairs"] for record in pair["coefficients"]),
+    ]
+    for record in records:
+        record.update(candidate)
+    Parameters.from_mapping(mapping)
+
+    for field in candidate:
+        records[-1].pop(field)
+    with pytest.raises(ParameterError) as failure:
+        Parameters.from_mapping(mapping)
+    assert failure.value.code == "missing-record"

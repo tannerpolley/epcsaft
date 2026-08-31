@@ -202,6 +202,37 @@ py::dict start_mapping(const StartResult &value,
   result["trial_failure_code"] = value.trial_failure_code;
   result["iterations"] = value.iterations;
   result["non_evaluable_count"] = value.non_evaluable_count;
+  py::list parameter_constraints;
+  for (const auto &constraint : value.parameter_domain_constraints) {
+    parameter_constraints.append(py::dict(
+        "identity"_a = constraint.identity,
+        "temperature_k"_a = constraint.temperature_k,
+        "initial_value"_a = constraint.initial_value,
+        "final_value"_a = constraint.final_value,
+        "upper"_a = constraint.upper,
+        "affine_jacobian"_a = constraint.affine_jacobian));
+  }
+  result["parameter_domain_constraints"] = parameter_constraints;
+  const auto optional_number = [](double number) -> py::object {
+    return std::isfinite(number) ? py::cast(number) : py::none();
+  };
+  result["kkt_diagnostics"] = py::dict(
+      "retained"_a = value.kkt_diagnostics.retained,
+      "objective"_a = optional_number(value.kkt_diagnostics.objective),
+      "coordinate_lower_bound_multipliers"_a =
+          value.kkt_diagnostics.coordinate_lower_bound_multipliers,
+      "coordinate_upper_bound_multipliers"_a =
+          value.kkt_diagnostics.coordinate_upper_bound_multipliers,
+      "parameter_constraint_multipliers"_a =
+          value.kkt_diagnostics.parameter_constraint_multipliers,
+      "primal_feasibility_inf_norm"_a = optional_number(
+          value.kkt_diagnostics.primal_feasibility_inf_norm),
+      "stationarity_inf_norm"_a =
+          optional_number(value.kkt_diagnostics.stationarity_inf_norm),
+      "complementarity_inf_norm"_a =
+          optional_number(value.kkt_diagnostics.complementarity_inf_norm),
+      "dual_sign_violation_inf_norm"_a = optional_number(
+          value.kkt_diagnostics.dual_sign_violation_inf_norm));
   py::list failures;
   for (const auto &failure : value.owner_failures) {
     failures.append(py::dict("code"_a = failure.code, "reason"_a = failure.reason,
@@ -235,14 +266,16 @@ py::dict fit_resolved(
     const py::iterable &coordinate_values,
     const py::iterable &observation_values, const py::dict &control_values,
     const std::vector<std::string> &failure_codes,
-    const py::iterable &experiment_values) {
+    const py::iterable &experiment_values,
+    const std::string &evaluation_strategy) {
   FitRequest request{active_parameter_count,
                      identity_coordinates,
                      parse_coordinates(coordinate_values),
                      parse_observations(observation_values),
                      parse_controls(control_values),
                      failure_codes,
-                     parse_experiments(experiment_values)};
+                     parse_experiments(experiment_values),
+                     evaluation_strategy};
   FitResult native;
   {
     py::gil_scoped_release release;
@@ -276,5 +309,6 @@ void bind_parameter_fit(py::module_ &module) {
              py::arg("active_parameter_count"),
              py::arg("identity_coordinates"), py::arg("coordinates"),
              py::arg("observations"), py::arg("controls"),
-             py::arg("failure_codes"), py::arg("experiments"));
+             py::arg("failure_codes"), py::arg("experiments"),
+             py::arg("evaluation_strategy") = "automatic");
 }

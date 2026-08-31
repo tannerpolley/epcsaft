@@ -79,6 +79,7 @@ struct FitRequest final {
   Controls controls;
   std::vector<std::string> failure_codes;
   std::vector<Experiment> experiments;
+  std::string evaluation_strategy{"automatic"};
 };
 
 struct OwnerFailure final {
@@ -107,6 +108,27 @@ struct BatchOutcome final {
   std::string failure_code;
 };
 
+struct ParameterDomainConstraintDiagnostic final {
+  std::string identity;
+  double temperature_k;
+  double initial_value;
+  double final_value;
+  double upper;
+  std::vector<double> affine_jacobian;
+};
+
+struct KktDiagnostics final {
+  bool retained{false};
+  std::vector<double> coordinate_lower_bound_multipliers;
+  std::vector<double> coordinate_upper_bound_multipliers;
+  std::vector<double> parameter_constraint_multipliers;
+  double objective{std::numeric_limits<double>::quiet_NaN()};
+  double primal_feasibility_inf_norm{std::numeric_limits<double>::quiet_NaN()};
+  double stationarity_inf_norm{std::numeric_limits<double>::quiet_NaN()};
+  double complementarity_inf_norm{std::numeric_limits<double>::quiet_NaN()};
+  double dual_sign_violation_inf_norm{std::numeric_limits<double>::quiet_NaN()};
+};
+
 struct StartResult final {
   std::size_t index{0};
   std::string start_identity;
@@ -116,10 +138,13 @@ struct StartResult final {
   std::vector<double> residuals;
   std::vector<double> affine_jacobian;
   std::vector<OwnerFailure> owner_failures;
+  std::vector<ParameterDomainConstraintDiagnostic>
+      parameter_domain_constraints;
   std::vector<BatchOutcome> batch_outcomes;
   std::vector<std::optional<epcsaft_engine::equilibrium::GrepeResult>>
       owner_results;
   Diagnostics diagnostics;
+  KktDiagnostics kkt_diagnostics;
   std::vector<std::size_t> active_bounds;
   std::string solver_status;
   std::string failure_reason;

@@ -239,8 +239,10 @@ PackingFractionEvaluation ProviderContext::evaluate_packing_fraction(
 ProviderActiveParameterSet ProviderContext::active_parameters() const {
     ProviderActiveParameterSet result;
     result.identities.reserve(model_.active_coordinates().size());
+    result.values.reserve(model_.active_coordinates().size());
     for (const auto& coordinate : model_.active_coordinates()) {
         result.identities.push_back(coordinate.identity);
+        result.values.push_back(coordinate.value);
     }
     return result;
 }

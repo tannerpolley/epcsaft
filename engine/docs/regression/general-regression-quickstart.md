@@ -52,6 +52,13 @@ Those values are the defaults. Ipopt stops when a convergence tolerance is
 reached or the iteration ceiling is exhausted. These controls do not alter EOS,
 phase-equilibrium, reaction, density, or certification tolerances.
 
+The optional `solver.evaluation_strategy` is `automatic` by default, preserving
+the topology-based selection. Set it to `reduced_space` to re-solve each state
+or to `simultaneous_sparse_full_space` to require the eligible full-space path;
+an ineligible explicit full-space request fails before optimization. A campaign
+that explicitly uses reduced space remains diagnostic when its promotion
+contract requires full space.
+
 Callers may separately declare a fit-level scientific criterion:
 
 ```python

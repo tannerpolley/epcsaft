@@ -8,9 +8,9 @@
 #include <string>
 #include <utility>
 
-#include <coin/IpIpoptApplication.hpp>
-#include <coin/IpSolveStatistics.hpp>
-#include <coin/IpTNLP.hpp>
+#include <IpIpoptApplication.hpp>
+#include <IpSolveStatistics.hpp>
+#include <IpTNLP.hpp>
 
 namespace epcsaft_engine::equilibrium {
 namespace {

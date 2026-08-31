@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <numeric>
 #include <stdexcept>
 #include <string_view>
@@ -111,6 +112,12 @@ SourceReferenceTransferEvidence source_evidence(
     result.source_temperature_max_k = source.source_temperature_max_k;
     result.source_pressure_min_pa = source.source_pressure_min_pa;
     result.source_pressure_max_pa = source.source_pressure_max_pa;
+    result.candidate_temperature_min_k = source.candidate_temperature_min_k;
+    result.candidate_temperature_max_k = source.candidate_temperature_max_k;
+    result.candidate_pressure_min_pa = source.candidate_pressure_min_pa;
+    result.candidate_pressure_max_pa = source.candidate_pressure_max_pa;
+    result.candidate_qualification = source.candidate_qualification;
+    result.candidate_source_fingerprint = source.candidate_source_fingerprint;
     result.parameter_fingerprint = source.parameter_fingerprint;
     result.topology_fingerprint = source.topology_fingerprint;
     result.component_order_fingerprint = source.component_order_fingerprint;
@@ -166,6 +173,64 @@ struct GrepeSourceValues final {
     double representation_residual_inf_norm = 0.0;
 };
 
+void apply_reaction_correlations(
+    ReactionSystemInput& input,
+    const ProviderActiveParameterSet& parameters
+) {
+    const std::size_t reaction_count = input.equilibrium_constant_records.size();
+    const std::size_t parameter_count = parameters.identities.size();
+    input.ln_k_parameter_derivatives.assign(
+        reaction_count * parameter_count, 0.0
+    );
+    for (std::size_t reaction = 0; reaction < reaction_count; ++reaction) {
+        const EquilibriumConstantRecord& record =
+            input.equilibrium_constant_records[reaction];
+        if (record.correlation_kind.empty()) {
+            continue;
+        }
+        const bool r4 = record.correlation_kind == "ln-k-a-plus-b-over-t";
+        const std::size_t coefficient_count = r4 ? 2 : 3;
+        if ((!r4 && record.correlation_kind
+                != "negative-log10-temperature-polynomial")
+            || record.reaction_id.empty()
+            || record.coefficient_identities.size() != coefficient_count
+            || record.coefficient_values.size() != coefficient_count) {
+            throw std::invalid_argument(
+                "reaction correlation declaration is incompatible"
+            );
+        }
+        std::vector<double> coefficients = record.coefficient_values;
+        for (std::size_t coefficient = 0; coefficient < coefficient_count;
+             ++coefficient) {
+            const auto found = std::find(
+                parameters.identities.begin(), parameters.identities.end(),
+                record.coefficient_identities[coefficient]
+            );
+            if (found != parameters.identities.end()) {
+                const std::size_t parameter = static_cast<std::size_t>(
+                    found - parameters.identities.begin()
+                );
+                coefficients[coefficient] = parameters.values[parameter];
+                input.ln_k_parameter_derivatives[
+                    reaction * parameter_count + parameter
+                ] = r4
+                    ? (coefficient == 0 ? 1.0 : 1.0 / input.temperature_k)
+                    : -std::log(10.0) * (
+                        coefficient == 0 ? 1.0 / input.temperature_k
+                        : coefficient == 1 ? 1.0 : input.temperature_k
+                    );
+            }
+        }
+        input.ln_k[reaction] = r4
+            ? coefficients[0] + coefficients[1] / input.temperature_k
+            : -std::log(10.0) * (
+                coefficients[0] / input.temperature_k
+                + coefficients[1]
+                + coefficients[2] * input.temperature_k
+            );
+    }
+}
+
 GrepeSourceValues evaluate_source_values(
     const ProviderContext& provider,
     const ReactionSystemInput& input,
@@ -204,12 +269,26 @@ GrepeSourceValues evaluate_source_values(
         input.pressure_pa,
         evidence
     );
-    return {
+    GrepeSourceValues result{
         transformed.ln_k_provider_basis,
         transformed.ln_k_pressure_derivatives_per_pa,
         transformed.ln_k_parameter_derivatives,
         transformed.representation_residual_inf_norm,
     };
+    if (!input.ln_k_parameter_derivatives.empty()) {
+        if (result.parameter_derivatives.size()
+                != input.ln_k_parameter_derivatives.size()) {
+            throw std::invalid_argument(
+                "reaction and source parameter derivatives are incompatible"
+            );
+        }
+        for (std::size_t index = 0;
+             index < result.parameter_derivatives.size(); ++index) {
+            result.parameter_derivatives[index] +=
+                input.ln_k_parameter_derivatives[index];
+        }
+    }
+    return result;
 }
 
 void apply_source_values(
@@ -265,6 +344,7 @@ CompiledGrepeFinite compile_finite(
     input.pressure_pa = request.pressure.value;
     input.provider_fingerprint = provider.fingerprint();
     const ProviderActiveParameterSet parameters = provider.active_parameters();
+    apply_reaction_correlations(input, parameters);
     const bool configured_directions = request.directions.has_value();
     CompiledGrepeFinite result;
     if (!request.source.has_value()) {
@@ -273,6 +353,14 @@ CompiledGrepeFinite compile_finite(
             record.pressure_pa = input.pressure_pa;
         }
         result.system = compile_reaction_system(input, !configured_directions);
+        if (!parameters.identities.empty()) {
+            apply_source_values(
+                result.system,
+                {input.ln_k, {}, input.ln_k_parameter_derivatives, 0.0},
+                input.reaction_matrix.rows,
+                parameters.identities.size()
+            );
+        }
     } else {
         const GrepeSourceValues source = evaluate_source_values(
             provider, input, request, parameters
@@ -528,6 +616,23 @@ std::optional<ReactiveFinitePhaseStart> continuation_start(
         start.amounts_mol.begin(),
         [total](double fraction) { return total * fraction; }
     );
+    for (std::size_t row = 0; row < reaction.balance_matrix.rows; ++row) {
+        double balance = 0.0;
+        double scale = std::abs(reaction.conserved_totals[row]);
+        for (std::size_t component = 0; component < reaction.balance_matrix.columns;
+             ++component) {
+            const double contribution = reaction.balance_matrix(row, component)
+                * start.amounts_mol[component];
+            balance += contribution;
+            scale += std::abs(contribution);
+        }
+        if (std::abs(balance - reaction.conserved_totals[row])
+            > 64.0 * std::numeric_limits<double>::epsilon()
+                * std::max(1.0, scale)) {
+            start.amounts_mol = reaction.feed_amounts;
+            break;
+        }
+    }
     start.molar_volume_m3_per_mol = continuation.molar_volume_m3_per_mol;
     return start;
 }
@@ -634,7 +739,7 @@ std::vector<std::vector<ReactiveFinitePhaseStart>> start_sets(
                         request.pressure.value
                     ));
                 }
-            } catch (const std::exception&) {
+            } catch (const std::domain_error&) {
                 starts.clear();
             }
             if (!starts.empty()) {
@@ -1159,6 +1264,52 @@ GrepeRequest resolved_request(const GrepeRequest& request, double coordinate) {
     return resolved;
 }
 
+GrepeRequest finite_incipient_liquid_request(
+    const GrepeRequest& request,
+    double pressure_pa
+) {
+    const auto finite = std::find_if(
+        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
+            return phase.finite;
+        }
+    );
+    if (finite == request.phases.end()) {
+        throw GrepeFailure("unsupported_topology", "incipient solve requires one finite phase");
+    }
+    const std::size_t finite_index = static_cast<std::size_t>(finite - request.phases.begin());
+    GrepeRequest liquid = request;
+    liquid.pressure = {false, pressure_pa, {}, {}};
+    liquid.phases = {*finite};
+    liquid.boundary.reset();
+    liquid.directions.reset();
+    liquid.outputs.clear();
+    for (const ReactiveFinitePhaseOutput& output : request.outputs) {
+        if (output.selector != "system.pressure"
+            && output.selector != "phase.partial_pressure"
+            && output.phase_index == finite_index) {
+            ReactiveFinitePhaseOutput copied = output;
+            copied.phase_index = 0;
+            liquid.outputs.push_back(std::move(copied));
+        }
+    }
+    for (std::size_t component = 0;
+         component < request.reaction.species_ids.size(); ++component) {
+        std::vector<double> coefficient(request.reaction.species_ids.size(), 0.0);
+        coefficient[component] = 1.0;
+        liquid.outputs.push_back({"phase.log_fugacity", 0, std::move(coefficient), {}});
+    }
+    liquid.continuation_phases.erase(
+        std::remove_if(
+            liquid.continuation_phases.begin(), liquid.continuation_phases.end(),
+            [&](const GrepeContinuationPhase& phase) {
+                return phase.identity != finite->identity;
+            }
+        ),
+        liquid.continuation_phases.end()
+    );
+    return liquid;
+}
+
 LiquidEvaluation evaluate_liquid(
     const epcsaft::NativeModel& model,
     const GrepeRequest& request,
@@ -1185,43 +1336,20 @@ LiquidEvaluation evaluate_liquid(
     const std::size_t finite_index = static_cast<std::size_t>(
         finite - request.phases.begin()
     );
-    GrepeRequest liquid = request;
-    liquid.pressure = {false, pressure_pa, {}, {}};
-    liquid.phases = {*finite};
-    liquid.boundary.reset();
-    liquid.directions.reset();
-    liquid.outputs.clear();
+    GrepeRequest liquid = finite_incipient_liquid_request(request, pressure_pa);
     LiquidEvaluation result;
     result.output_positions.assign(request.outputs.size(), -1);
+    std::size_t finite_output = 0;
     for (std::size_t index = 0; index < request.outputs.size(); ++index) {
         const ReactiveFinitePhaseOutput& output = request.outputs[index];
         if (output.selector != "system.pressure"
             && output.selector != "phase.partial_pressure"
             && output.phase_index == finite_index) {
-            ReactiveFinitePhaseOutput copied = output;
-            copied.phase_index = 0;
-            result.output_positions[index] = static_cast<int>(liquid.outputs.size());
-            liquid.outputs.push_back(std::move(copied));
+            result.output_positions[index] = static_cast<int>(finite_output++);
         }
     }
-    result.log_fugacity_offset = liquid.outputs.size();
-    for (std::size_t component = 0;
-         component < request.reaction.species_ids.size();
-         ++component) {
-        std::vector<double> coefficient(request.reaction.species_ids.size(), 0.0);
-        coefficient[component] = 1.0;
-        liquid.outputs.push_back({"phase.log_fugacity", 0, std::move(coefficient), {}});
-    }
-    liquid.continuation_phases.erase(
-        std::remove_if(
-            liquid.continuation_phases.begin(),
-            liquid.continuation_phases.end(),
-            [&](const GrepeContinuationPhase& phase) {
-                return phase.identity != finite->identity;
-            }
-        ),
-        liquid.continuation_phases.end()
-    );
+    result.log_fugacity_offset = liquid.outputs.size()
+        - request.reaction.species_ids.size();
     result.solved = solve_finite_result(model, liquid);
     if (!result.solved.equilibrium.accepted) {
         const ReactiveFinitePhaseResult& failed = result.solved.equilibrium;
@@ -1256,6 +1384,8 @@ struct VaporPoint {
     std::vector<double> pressure_log_ratio;
     std::vector<double> mu_pressure;
     std::vector<double> mu_parameters;
+    std::vector<double> mu_parameters_at_fixed_volume;
+    std::vector<double> pressure_parameters;
     double volume_m3 = 0.0;
     double pressure_pa = 0.0;
     double packing_fraction = 0.0;
@@ -1268,7 +1398,8 @@ VaporPoint evaluate_vapor(
     const GrepePhase& vapor,
     const std::vector<double>& log_ratios,
     double log_volume,
-    const std::vector<std::string>& parameter_identities
+    const std::vector<std::string>& parameter_identities,
+    bool require_fixed_pressure_projection = true
 ) {
     VaporPoint result;
     result.fractions = softmax_reference(log_ratios);
@@ -1280,6 +1411,11 @@ VaporPoint evaluate_vapor(
         vapor.packing_fraction_interval[1]
     );
     if (!(bounds[0] < result.volume_m3 && result.volume_m3 < bounds[1])) {
+        if (!require_fixed_pressure_projection) {
+            throw std::domain_error(
+                "declared vapor volume left its packing-fraction chart"
+            );
+        }
         throw GrepeFailure(
             "active_bound_ambiguity",
             "declared vapor volume left its packing-fraction chart"
@@ -1314,34 +1450,54 @@ VaporPoint evaluate_vapor(
         );
     }
     const double h_vv = block.phase.hessian[count * state_count + count];
-    const auto projection = epcsaft::fixed_pressure_composition_projection(
-        request.temperature.value,
-        result.fractions,
-        result.volume_m3,
-        provider.component_charges(),
-        block.phase.hessian
-    );
-    if (!projection.failure_code.empty()) {
-        throw GrepeFailure(
-            projection.failure_code,
-            "EOS fixed-pressure composition projection is unavailable"
-        );
-    }
-    if (projection.coordinate_component_indices.size() != reference) {
-        throw GrepeFailure(
-            "unsupported_derivative",
-            "GREPE vapor chart does not admit the EOS constrained composition basis"
-        );
-    }
     result.chemical_potentials.assign(block.phase.gradient.begin(), block.phase.gradient.begin() + static_cast<std::ptrdiff_t>(count));
-    result.mu_log_ratio_at_fixed_volume =
-        projection.fixed_volume_chemical_potential_derivatives_over_rt;
-    result.mu_log_volume.assign(count, 0.0);
-    result.mu_log_ratio = projection.chemical_potential_derivatives_over_rt;
-    result.composition_log_ratio = projection.composition_derivatives;
-    result.pressure_log_ratio = projection.fixed_volume_pressure_derivatives_pa;
-    result.mu_pressure.assign(count, 0.0);
+    result.mu_log_ratio_at_fixed_volume.assign(count * reference, 0.0);
+    result.pressure_log_ratio.assign(reference, 0.0);
     const double rt = kGasConstant * request.temperature.value;
+    for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
+        for (std::size_t species = 0; species < count; ++species) {
+            const double composition_derivative = result.fractions[species]
+                * ((species == coordinate ? 1.0 : 0.0)
+                   - result.fractions[coordinate]);
+            result.pressure_log_ratio[coordinate] -= rt
+                * block.phase.hessian[count * state_count + species]
+                * composition_derivative;
+            for (std::size_t component = 0; component < count; ++component) {
+                result.mu_log_ratio_at_fixed_volume[
+                    component * reference + coordinate
+                ] += block.phase.hessian[component * state_count + species]
+                    * composition_derivative;
+            }
+        }
+    }
+    if (require_fixed_pressure_projection) {
+        const auto projection = epcsaft::fixed_pressure_composition_projection(
+            request.temperature.value,
+            result.fractions,
+            result.volume_m3,
+            provider.component_charges(),
+            block.phase.hessian
+        );
+        if (!projection.failure_code.empty()) {
+            throw GrepeFailure(
+                projection.failure_code,
+                "EOS fixed-pressure composition projection is unavailable"
+            );
+        }
+        if (projection.coordinate_component_indices.size() != reference) {
+            throw GrepeFailure(
+                "unsupported_derivative",
+                "GREPE vapor chart does not admit the EOS constrained composition basis"
+            );
+        }
+        result.mu_log_ratio_at_fixed_volume =
+            projection.fixed_volume_chemical_potential_derivatives_over_rt;
+        result.mu_log_ratio = projection.chemical_potential_derivatives_over_rt;
+        result.composition_log_ratio = projection.composition_derivatives;
+        result.pressure_log_ratio = projection.fixed_volume_pressure_derivatives_pa;
+    }
+    result.mu_log_volume.assign(count, 0.0);
+    result.mu_pressure.assign(count, 0.0);
     for (std::size_t component = 0; component < count; ++component) {
         result.mu_log_volume[component] =
             block.phase.hessian[component * state_count + count] * result.volume_m3;
@@ -1353,6 +1509,8 @@ VaporPoint evaluate_vapor(
             block.phase.hessian[component * state_count + count] * volume_pressure;
     }
     result.mu_parameters.assign(count * parameter_count, 0.0);
+    result.mu_parameters_at_fixed_volume.assign(count * parameter_count, 0.0);
+    result.pressure_parameters.assign(parameter_count, 0.0);
     for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
         const auto found = std::find(
             parameters.identities.begin(),
@@ -1367,10 +1525,17 @@ VaporPoint evaluate_vapor(
         );
         const double volume_parameter =
             block.pressure_parameter_derivatives_pa[provider_parameter] / (rt * h_vv);
+        result.pressure_parameters[parameter] =
+            block.pressure_parameter_derivatives_pa[provider_parameter];
         for (std::size_t component = 0; component < count; ++component) {
+            result.mu_parameters_at_fixed_volume[
+                component * parameter_count + parameter
+            ] = block.chemical_potential_parameter_derivatives_over_rt[
+                component * provider_parameter_count + provider_parameter
+            ];
             result.mu_parameters[component * parameter_count + parameter] =
-                block.chemical_potential_parameter_derivatives_over_rt[
-                    component * provider_parameter_count + provider_parameter
+                result.mu_parameters_at_fixed_volume[
+                    component * parameter_count + parameter
                 ]
                 + block.phase.hessian[component * state_count + count]
                     * volume_parameter;
@@ -1565,7 +1730,7 @@ VaporPoint solve_vapor(
                             break;
                         }
                     } catch (const GrepeFailure&) {
-                    } catch (const std::exception&) {
+                    } catch (const std::domain_error&) {
                     }
                 }
                 if (!improved) {
@@ -1647,7 +1812,7 @@ VaporPoint solve_vapor(
             }
         } catch (const GrepeFailure& error) {
             last_failure = error;
-        } catch (const std::exception& error) {
+        } catch (const std::domain_error& error) {
             last_failure = GrepeFailure("provider_domain_rejection", error.what());
         }
     }
@@ -1784,26 +1949,6 @@ IncipientClosure incipient_closure(
                 ];
                 closure.vapor_directional[input * count + supported] = fugacity[supported]
                     * (derivative * boundary_pressure - closure.boundary_directional[input])
-                    / (boundary_pressure * boundary_pressure);
-            }
-        }
-        for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
-            for (std::size_t supported = 0; supported < count; ++supported) {
-                const std::size_t component = vapor.support_indices[supported];
-                const std::size_t output = closure.liquid.log_fugacity_offset + component;
-                const double partial = liquid.output_parameter_partials[
-                    output * parameter_count + parameter
-                ];
-                closure.boundary_direct[parameter] += fugacity[supported] * partial;
-            }
-            for (std::size_t supported = 0; supported < count; ++supported) {
-                const std::size_t component = vapor.support_indices[supported];
-                const std::size_t output = closure.liquid.log_fugacity_offset + component;
-                const double partial = liquid.output_parameter_partials[
-                    output * parameter_count + parameter
-                ];
-                closure.vapor_direct[parameter * count + supported] = fugacity[supported]
-                    * (partial * boundary_pressure - closure.boundary_direct[parameter])
                     / (boundary_pressure * boundary_pressure);
             }
         }
@@ -1965,7 +2110,7 @@ IncipientSolve solve_incipient_pressure(
             } catch (const GrepeFailure& error) {
                 failure = error;
                 break;
-            } catch (const std::exception& error) {
+            } catch (const std::domain_error& error) {
                 failure = GrepeFailure("provider_domain_rejection", error.what());
                 break;
             }
@@ -2900,9 +3045,29 @@ GrepeResult solve_grepe(
 
 GrepeLocalStructure compile_grepe_local_structure(
     const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel&,
     const GrepeRequest& request
 ) {
-    std::optional<FiniteGrepeContext> prepared = prepare_finite_grepe(model, request);
+    const auto vapor = std::find_if(
+        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
+            return !phase.finite;
+        }
+    );
+    const bool finite_incipient = request.pressure.solved
+        && vapor != request.phases.end()
+        && std::count_if(
+            request.phases.begin(), request.phases.end(),
+            [](const GrepePhase& phase) { return !phase.finite; }
+        ) == 1;
+    const double pressure = finite_incipient
+        ? (request.continuation_pressure_pa > 0.0
+            ? request.continuation_pressure_pa
+            : request.pressure.starts.front())
+        : request.pressure.value;
+    const GrepeRequest local_request = finite_incipient
+        ? finite_incipient_liquid_request(request, pressure)
+        : request;
+    std::optional<FiniteGrepeContext> prepared = prepare_finite_grepe(model, local_request);
     if (!prepared.has_value()) {
         throw std::invalid_argument(
             "declared reactive phase/state topology has no local GREPE structure"
@@ -2915,11 +3080,16 @@ GrepeLocalStructure compile_grepe_local_structure(
         std::move(prepared->packing),
         std::move(prepared->supports),
         std::move(prepared->parameters.identities),
+        finite_incipient,
+        finite_incipient
+            ? static_cast<std::size_t>(vapor - request.phases.begin()) : 0,
+        finite_incipient ? *vapor : GrepePhase{},
     };
 }
 
 GrepeLocalPoint evaluate_grepe_local_point(
     const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel&,
     const GrepeRequest& request,
     const GrepeLocalStructure& structure
 ) {
@@ -2935,9 +3105,13 @@ GrepeLocalPoint evaluate_grepe_local_point(
     if (!request.source.has_value()) {
         return point;
     }
+    const double pressure = structure.finite_incipient
+        ? (request.continuation_pressure_pa > 0.0
+            ? request.continuation_pressure_pa : request.pressure.starts.front())
+        : request.pressure.value;
     ReactionSystemInput input = effective_reaction(request);
     input.temperature_k = request.temperature.value;
-    input.pressure_pa = request.pressure.value;
+    input.pressure_pa = pressure;
     input.provider_fingerprint = provider.fingerprint();
     const GrepeSourceValues source = evaluate_source_values(
         provider, input, request, parameters
@@ -2953,10 +3127,91 @@ GrepeLocalPoint evaluate_grepe_local_point(
 
 GrepeResult initialize_grepe_local(
     const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel& incipient_model,
     const GrepeRequest& request,
     const GrepeLocalStructure& structure,
     const GrepeLocalPoint& point
 ) {
+    if (structure.finite_incipient) {
+        GrepeResult result;
+        std::vector<double> local;
+        std::vector<double> lower;
+        std::vector<double> upper;
+        double pressure_pa = 0.0;
+        std::vector<double> vapor_fractions;
+        double vapor_volume_m3 = 0.0;
+        try {
+            IncipientSolve solved = solve_incipient_pressure(
+                model, incipient_model, request
+            );
+            const IncipientClosure& closure = solved.closure;
+            local = closure.liquid.solved.equilibrium.local_variables;
+            lower = closure.liquid.solved.equilibrium.local_lower_bounds;
+            upper = closure.liquid.solved.equilibrium.local_upper_bounds;
+            pressure_pa = closure.pressure_pa;
+            vapor_fractions = closure.vapor_fractions;
+            vapor_volume_m3 = closure.vapor_volume_m3;
+            result = incipient_result(request, std::move(solved));
+        } catch (const GrepeFailure&) {
+            const auto vapor = std::find_if(
+                request.continuation_phases.begin(),
+                request.continuation_phases.end(),
+                [&](const GrepeContinuationPhase& phase) {
+                    return phase.identity == structure.vapor_phase.identity;
+                }
+            );
+            if (request.continuation_pressure_pa <= 0.0
+                || (!structure.vapor_phase.ideal_gas
+                    && vapor == request.continuation_phases.end())) {
+                throw;
+            }
+            pressure_pa = request.continuation_pressure_pa;
+            LiquidEvaluation liquid = evaluate_liquid(model, request, pressure_pa);
+            local = liquid.solved.equilibrium.local_variables;
+            lower = liquid.solved.equilibrium.local_lower_bounds;
+            upper = liquid.solved.equilibrium.local_upper_bounds;
+            result = std::move(liquid.solved);
+            if (!structure.vapor_phase.ideal_gas) {
+                vapor_fractions = vapor->mole_fractions;
+                vapor_volume_m3 = vapor->molar_volume_m3_per_mol;
+            }
+        }
+        local.push_back(std::log(pressure_pa));
+        lower.push_back(std::log(request.pressure.bounds[0]));
+        upper.push_back(std::log(request.pressure.bounds[1]));
+        if (!structure.vapor_phase.ideal_gas) {
+            const std::size_t reference = vapor_fractions.size() - 1;
+            for (std::size_t component = 0; component < reference; ++component) {
+                local.push_back(std::log(
+                    vapor_fractions[component] / vapor_fractions[reference]
+                ));
+                lower.push_back(-460.0);
+                upper.push_back(460.0);
+            }
+            ProviderContext provider(incipient_model);
+            const auto volume_bounds = provider.evaluate_molar_volume_bounds(
+                request.temperature.value,
+                vapor_fractions,
+                structure.vapor_phase.packing_fraction_interval[0],
+                structure.vapor_phase.packing_fraction_interval[1]
+            );
+            const double volume_lower = std::nextafter(
+                std::log(volume_bounds[0]), std::numeric_limits<double>::infinity()
+            );
+            const double volume_upper = std::nextafter(
+                std::log(volume_bounds[1]), -std::numeric_limits<double>::infinity()
+            );
+            local.push_back(std::clamp(
+                std::log(vapor_volume_m3), volume_lower, volume_upper
+            ));
+            lower.push_back(volume_lower);
+            upper.push_back(volume_upper);
+        }
+        result.equilibrium.local_variables = std::move(local);
+        result.equilibrium.local_lower_bounds = std::move(lower);
+        result.equilibrium.local_upper_bounds = std::move(upper);
+        return result;
+    }
     return initialize_finite_context(
         prepare_retained_finite_grepe(model, request, structure, point), request
     );
@@ -2964,6 +3219,7 @@ GrepeResult initialize_grepe_local(
 
 void evaluate_grepe_local_blocks(
     const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel& incipient_model,
     const GrepeRequest& request,
     const GrepeLocalStructure& structure,
     const GrepeLocalPoint& point,
@@ -2972,6 +3228,417 @@ void evaluate_grepe_local_blocks(
     const std::vector<double>& local_upper_bounds,
     const GrepeLocalBlocks& blocks
 ) {
+    if (structure.finite_incipient) {
+        const std::size_t parameter_count = structure.active_parameter_identities.size();
+        const std::size_t vapor_count = structure.vapor_phase.support_indices.size();
+        const std::size_t extra = structure.vapor_phase.ideal_gas ? 1 : vapor_count + 1;
+        if (local_variables.size() < extra
+            || local_lower_bounds.size() != local_variables.size()
+            || local_upper_bounds.size() != local_variables.size()
+            || blocks.constraint_count != local_variables.size()
+            || blocks.constraint_local_jacobian_count
+                != local_variables.size() * local_variables.size()
+            || blocks.constraint_parameter_jacobian_count
+                != local_variables.size() * parameter_count
+            || blocks.output_count != request.outputs.size()
+            || blocks.output_local_jacobian_count
+                != request.outputs.size() * local_variables.size()
+            || blocks.output_parameter_jacobian_count
+                != request.outputs.size() * parameter_count) {
+            throw std::invalid_argument("retained incipient GREPE dimensions changed");
+        }
+        const std::size_t liquid_count = local_variables.size() - extra;
+        const std::size_t pressure_column = liquid_count;
+        const double pressure_pa = std::exp(local_variables[pressure_column]);
+        GrepeRequest liquid_request = finite_incipient_liquid_request(request, pressure_pa);
+        GrepeLocalStructure liquid_structure = structure;
+        liquid_structure.finite_incipient = false;
+        const GrepeLocalPoint liquid_point = evaluate_grepe_local_point(
+            model, incipient_model, liquid_request, liquid_structure
+        );
+        const std::vector<double> liquid_local(
+            local_variables.begin(),
+            local_variables.begin() + static_cast<std::ptrdiff_t>(liquid_count)
+        );
+        const std::vector<double> liquid_lower(
+            local_lower_bounds.begin(),
+            local_lower_bounds.begin() + static_cast<std::ptrdiff_t>(liquid_count)
+        );
+        const std::vector<double> liquid_upper(
+            local_upper_bounds.begin(),
+            local_upper_bounds.begin() + static_cast<std::ptrdiff_t>(liquid_count)
+        );
+        const GrepeResult liquid_result = evaluate_finite_context(
+            prepare_retained_finite_grepe(
+                model, liquid_request, liquid_structure, liquid_point
+            ),
+            liquid_request, liquid_local, liquid_lower, liquid_upper
+        );
+        const ReactiveFinitePhaseResult& liquid = liquid_result.equilibrium;
+        if (!liquid.accepted || liquid.kkt_root_values.size() != liquid_count) {
+            throw std::domain_error(
+                liquid.failure_reason.empty() ? "retained liquid point failed"
+                                              : liquid.failure_reason
+            );
+        }
+        const std::size_t input_width = liquid.input_order.size();
+        const auto pressure_input = std::find(
+            liquid.input_order.begin(), liquid.input_order.end(), "pressure_pa"
+        );
+        if (pressure_input == liquid.input_order.end()
+            || liquid.parameter_order != structure.active_parameter_identities) {
+            throw std::invalid_argument(
+                "retained liquid input order changed: inputs="
+                + std::to_string(liquid.input_order.size())
+                + ", parameters=" + std::to_string(liquid.parameter_order.size())
+                + ", active=" + std::to_string(parameter_count)
+            );
+        }
+        const std::size_t pressure_input_column = static_cast<std::size_t>(
+            pressure_input - liquid.input_order.begin()
+        );
+        std::fill_n(blocks.constraints, blocks.constraint_count, 0.0);
+        std::fill_n(
+            blocks.constraint_local_jacobian,
+            blocks.constraint_local_jacobian_count, 0.0
+        );
+        std::fill_n(
+            blocks.constraint_parameter_jacobian,
+            blocks.constraint_parameter_jacobian_count, 0.0
+        );
+        std::fill_n(blocks.outputs, blocks.output_count, 0.0);
+        std::fill_n(
+            blocks.output_local_jacobian, blocks.output_local_jacobian_count, 0.0
+        );
+        std::fill_n(
+            blocks.output_parameter_jacobian,
+            blocks.output_parameter_jacobian_count, 0.0
+        );
+        for (std::size_t row = 0; row < liquid_count; ++row) {
+            blocks.constraints[row] = liquid.kkt_root_values[row];
+            std::copy_n(
+                liquid.kkt_root_jacobian.begin()
+                    + static_cast<std::ptrdiff_t>(row * liquid_count),
+                liquid_count,
+                blocks.constraint_local_jacobian + row * local_variables.size()
+            );
+            blocks.constraint_local_jacobian[
+                row * local_variables.size() + pressure_column
+            ] = liquid.kkt_input_jacobian[
+                row * input_width + pressure_input_column
+            ] * pressure_pa;
+            for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
+                const auto input = std::find(
+                    liquid.input_order.begin(), liquid.input_order.end(),
+                    structure.active_parameter_identities[parameter]
+                );
+                if (input == liquid.input_order.end()) {
+                    throw std::invalid_argument("retained liquid parameter input changed");
+                }
+                blocks.constraint_parameter_jacobian[
+                    row * parameter_count + parameter
+                ] = liquid.kkt_input_jacobian[
+                    row * input_width
+                    + static_cast<std::size_t>(input - liquid.input_order.begin())
+                ];
+            }
+        }
+
+        const std::size_t species_count = request.reaction.species_ids.size();
+        const std::size_t finite_output_count = liquid.output_values.size() - species_count;
+        const double log_rt = std::log(kGasConstant * request.temperature.value);
+        if (liquid.output_input_derivatives.size()
+            != liquid.output_values.size() * input_width) {
+            throw std::invalid_argument(
+                "retained liquid output input derivative dimensions changed"
+            );
+        }
+        const auto liquid_log_fugacity_pressure = [&](std::size_t species) {
+            const std::size_t output = finite_output_count + species;
+            return pressure_pa * liquid.output_input_derivatives[
+                output * input_width + pressure_input_column
+            ];
+        };
+        std::vector<double> liquid_mu(vapor_count);
+        for (std::size_t supported = 0; supported < vapor_count; ++supported) {
+            liquid_mu[supported] = liquid.output_values[
+                finite_output_count + structure.vapor_phase.support_indices[supported]
+            ] - log_rt;
+        }
+        const std::size_t reference = vapor_count - 1;
+        std::vector<double> vapor_fractions;
+        std::optional<VaporPoint> vapor;
+        if (structure.vapor_phase.ideal_gas) {
+            vapor_fractions.resize(vapor_count);
+            double total = 0.0;
+            for (std::size_t supported = 0; supported < vapor_count; ++supported) {
+                vapor_fractions[supported] = std::exp(liquid_mu[supported] + log_rt);
+                total += vapor_fractions[supported];
+            }
+            for (double& fraction : vapor_fractions) {
+                fraction /= total;
+            }
+            const std::size_t row = liquid_count;
+            blocks.constraints[row] = std::log(total / pressure_pa);
+            blocks.constraint_local_jacobian[
+                row * local_variables.size() + pressure_column
+            ] = -1.0;
+            for (std::size_t supported = 0; supported < vapor_count; ++supported) {
+                const std::size_t output = finite_output_count
+                    + structure.vapor_phase.support_indices[supported];
+                const double weight = vapor_fractions[supported];
+                blocks.constraint_local_jacobian[
+                    row * local_variables.size() + pressure_column
+                ] += weight * liquid_log_fugacity_pressure(
+                    structure.vapor_phase.support_indices[supported]
+                );
+                for (std::size_t column = 0; column < liquid_count; ++column) {
+                    blocks.constraint_local_jacobian[
+                        row * local_variables.size() + column
+                    ] += weight * liquid.output_local_derivatives[
+                        output * liquid_count + column
+                    ];
+                }
+                for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
+                    blocks.constraint_parameter_jacobian[
+                        row * parameter_count + parameter
+                    ] += weight * liquid.output_parameter_partials[
+                        output * parameter_count + parameter
+                    ];
+                }
+            }
+        } else {
+            const std::vector<double> vapor_log_ratios(
+                local_variables.begin() + static_cast<std::ptrdiff_t>(pressure_column + 1),
+                local_variables.end() - 1
+            );
+            ProviderContext provider(incipient_model);
+            vapor = evaluate_vapor(
+                provider, request, structure.vapor_phase, vapor_log_ratios,
+                local_variables.back(), structure.active_parameter_identities, false
+            );
+            vapor_fractions = vapor->fractions;
+            for (std::size_t component = 0; component < reference; ++component) {
+                const std::size_t row = liquid_count + component;
+                blocks.constraints[row] = vapor->chemical_potentials[component]
+                    - vapor->chemical_potentials[reference]
+                    - liquid_mu[component] + liquid_mu[reference];
+                for (std::size_t column = 0; column < liquid_count; ++column) {
+                    const std::size_t left = finite_output_count
+                        + structure.vapor_phase.support_indices[component];
+                    const std::size_t right = finite_output_count
+                        + structure.vapor_phase.support_indices[reference];
+                    blocks.constraint_local_jacobian[
+                        row * local_variables.size() + column
+                    ] = -liquid.output_local_derivatives[left * liquid_count + column]
+                        + liquid.output_local_derivatives[right * liquid_count + column];
+                }
+                const std::size_t left_species =
+                    structure.vapor_phase.support_indices[component];
+                const std::size_t right_species =
+                    structure.vapor_phase.support_indices[reference];
+                blocks.constraint_local_jacobian[
+                    row * local_variables.size() + pressure_column
+                ] = -liquid_log_fugacity_pressure(left_species)
+                    + liquid_log_fugacity_pressure(right_species);
+                for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
+                    blocks.constraint_local_jacobian[
+                        row * local_variables.size() + pressure_column + 1 + coordinate
+                    ] = vapor->mu_log_ratio_at_fixed_volume[
+                        component * reference + coordinate
+                    ] - vapor->mu_log_ratio_at_fixed_volume[
+                        reference * reference + coordinate
+                    ];
+                }
+                blocks.constraint_local_jacobian[
+                    row * local_variables.size() + local_variables.size() - 1
+                ] = vapor->mu_log_volume[component] - vapor->mu_log_volume[reference];
+                for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
+                    const std::size_t left = finite_output_count
+                        + structure.vapor_phase.support_indices[component];
+                    const std::size_t right = finite_output_count
+                        + structure.vapor_phase.support_indices[reference];
+                    blocks.constraint_parameter_jacobian[
+                        row * parameter_count + parameter
+                    ] = vapor->mu_parameters_at_fixed_volume[
+                            component * parameter_count + parameter
+                        ] - vapor->mu_parameters_at_fixed_volume[
+                            reference * parameter_count + parameter
+                        ] - liquid.output_parameter_partials[
+                            left * parameter_count + parameter
+                        ] + liquid.output_parameter_partials[
+                            right * parameter_count + parameter
+                        ];
+                }
+            }
+            const std::size_t pressure_row = liquid_count + reference;
+            blocks.constraints[pressure_row] = std::log(vapor->pressure_pa / pressure_pa);
+            blocks.constraint_local_jacobian[
+                pressure_row * local_variables.size() + pressure_column
+            ] = -1.0;
+            for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
+                blocks.constraint_local_jacobian[
+                    pressure_row * local_variables.size() + pressure_column + 1 + coordinate
+                ] = vapor->pressure_log_ratio[coordinate] / vapor->pressure_pa;
+            }
+            blocks.constraint_local_jacobian[
+                pressure_row * local_variables.size() + local_variables.size() - 1
+            ] = vapor->pressure_log_volume / vapor->pressure_pa;
+            for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
+                blocks.constraint_parameter_jacobian[
+                    pressure_row * parameter_count + parameter
+                ] = vapor->pressure_parameters[parameter] / vapor->pressure_pa;
+            }
+            const std::size_t chemical_row = pressure_row + 1;
+            blocks.constraints[chemical_row] =
+                vapor->chemical_potentials[reference] - liquid_mu[reference];
+            const std::size_t liquid_reference = finite_output_count
+                + structure.vapor_phase.support_indices[reference];
+            for (std::size_t column = 0; column < liquid_count; ++column) {
+                blocks.constraint_local_jacobian[
+                    chemical_row * local_variables.size() + column
+                ] = -liquid.output_local_derivatives[
+                    liquid_reference * liquid_count + column
+                ];
+            }
+            blocks.constraint_local_jacobian[
+                chemical_row * local_variables.size() + pressure_column
+            ] = -liquid_log_fugacity_pressure(
+                structure.vapor_phase.support_indices[reference]
+            );
+            for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
+                blocks.constraint_local_jacobian[
+                    chemical_row * local_variables.size() + pressure_column + 1 + coordinate
+                ] = vapor->mu_log_ratio_at_fixed_volume[
+                    reference * reference + coordinate
+                ];
+            }
+            blocks.constraint_local_jacobian[
+                chemical_row * local_variables.size() + local_variables.size() - 1
+            ] = vapor->mu_log_volume[reference];
+            for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
+                blocks.constraint_parameter_jacobian[
+                    chemical_row * parameter_count + parameter
+                ] = vapor->mu_parameters_at_fixed_volume[
+                        reference * parameter_count + parameter
+                    ] - liquid.output_parameter_partials[
+                        liquid_reference * parameter_count + parameter
+                    ];
+            }
+        }
+
+        std::size_t finite_output = 0;
+        for (std::size_t output = 0; output < request.outputs.size(); ++output) {
+            const ReactiveFinitePhaseOutput& declared = request.outputs[output];
+            const bool vapor_output = declared.phase_index == structure.vapor_phase_index;
+            if (declared.selector == "system.pressure") {
+                blocks.outputs[output] = pressure_pa;
+                blocks.output_local_jacobian[
+                    output * local_variables.size() + pressure_column
+                ] = pressure_pa;
+            } else if (vapor_output && (
+                    declared.selector == "phase.mole_fraction"
+                    || declared.selector == "phase.partial_pressure")) {
+                double fraction = 0.0;
+                for (std::size_t component = 0; component < vapor_count; ++component) {
+                    fraction += declared.coefficients[component] * vapor_fractions[component];
+                }
+                const bool partial = declared.selector == "phase.partial_pressure";
+                blocks.outputs[output] = partial ? pressure_pa * fraction : fraction;
+                if (partial) {
+                    blocks.output_local_jacobian[
+                        output * local_variables.size() + pressure_column
+                    ] = pressure_pa * fraction;
+                }
+                if (structure.vapor_phase.ideal_gas) {
+                    const auto fraction_derivative = [&](const auto& derivative) {
+                        double mean = 0.0;
+                        for (std::size_t component = 0; component < vapor_count;
+                             ++component) {
+                            mean += vapor_fractions[component] * derivative(component);
+                        }
+                        double value = 0.0;
+                        for (std::size_t component = 0; component < vapor_count;
+                             ++component) {
+                            value += declared.coefficients[component]
+                                * vapor_fractions[component]
+                                * (derivative(component) - mean);
+                        }
+                        return value;
+                    };
+                    for (std::size_t column = 0; column < liquid_count; ++column) {
+                        const double derivative = fraction_derivative(
+                            [&](std::size_t component) {
+                                const std::size_t liquid_output = finite_output_count
+                                    + structure.vapor_phase.support_indices[component];
+                                return liquid.output_local_derivatives[
+                                    liquid_output * liquid_count + column
+                                ];
+                            }
+                        );
+                        blocks.output_local_jacobian[
+                            output * local_variables.size() + column
+                        ] = partial ? pressure_pa * derivative : derivative;
+                    }
+                    const double pressure_derivative = fraction_derivative(
+                        [&](std::size_t component) {
+                            return liquid_log_fugacity_pressure(
+                                structure.vapor_phase.support_indices[component]
+                            );
+                        }
+                    );
+                    blocks.output_local_jacobian[
+                        output * local_variables.size() + pressure_column
+                    ] += partial ? pressure_pa * pressure_derivative
+                                 : pressure_derivative;
+                    for (std::size_t parameter = 0; parameter < parameter_count;
+                         ++parameter) {
+                        const double derivative = fraction_derivative(
+                            [&](std::size_t component) {
+                                const std::size_t liquid_output = finite_output_count
+                                    + structure.vapor_phase.support_indices[component];
+                                return liquid.output_parameter_partials[
+                                    liquid_output * parameter_count + parameter
+                                ];
+                            }
+                        );
+                        blocks.output_parameter_jacobian[
+                            output * parameter_count + parameter
+                        ] = partial ? pressure_pa * derivative : derivative;
+                    }
+                } else {
+                    for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
+                        double derivative = 0.0;
+                        for (std::size_t component = 0; component < vapor_count; ++component) {
+                            derivative += declared.coefficients[component]
+                                * vapor_fractions[component]
+                                * ((component == coordinate ? 1.0 : 0.0)
+                                   - vapor_fractions[coordinate]);
+                        }
+                        blocks.output_local_jacobian[
+                            output * local_variables.size() + pressure_column + 1 + coordinate
+                        ] = partial ? pressure_pa * derivative : derivative;
+                    }
+                }
+            } else {
+                blocks.outputs[output] = liquid.output_values[finite_output];
+                std::copy_n(
+                    liquid.output_local_derivatives.begin()
+                        + static_cast<std::ptrdiff_t>(finite_output * liquid_count),
+                    liquid_count,
+                    blocks.output_local_jacobian + output * local_variables.size()
+                );
+                std::copy_n(
+                    liquid.output_parameter_partials.begin()
+                        + static_cast<std::ptrdiff_t>(finite_output * parameter_count),
+                    parameter_count,
+                    blocks.output_parameter_jacobian + output * parameter_count
+                );
+                ++finite_output;
+            }
+        }
+        return;
+    }
     GrepeResult result = evaluate_finite_context(
         prepare_retained_finite_grepe(model, request, structure, point),
         request,
@@ -3033,6 +3700,7 @@ void evaluate_grepe_local_blocks(
 
 GrepeResult finalize_grepe_local(
     const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel& incipient_model,
     const GrepeRequest& request,
     const GrepeLocalStructure& structure,
     const GrepeLocalPoint& point,
@@ -3040,6 +3708,104 @@ GrepeResult finalize_grepe_local(
     const std::vector<double>& local_lower_bounds,
     const std::vector<double>& local_upper_bounds
 ) {
+    if (structure.finite_incipient) {
+        try {
+        if (local_variables.empty()) {
+            throw std::invalid_argument("retained incipient GREPE state is empty");
+        }
+        const std::size_t vapor_count = structure.vapor_phase.support_indices.size();
+        const std::size_t extra = structure.vapor_phase.ideal_gas ? 1 : vapor_count + 1;
+        if (local_variables.size() < extra) {
+            throw std::invalid_argument("retained incipient GREPE state width changed");
+        }
+        const std::size_t pressure_column = local_variables.size() - extra;
+        GrepeRequest retained = request;
+        retained.continuation_pressure_pa = std::exp(local_variables[pressure_column]);
+        GrepeRequest liquid_request = finite_incipient_liquid_request(
+            retained, retained.continuation_pressure_pa
+        );
+        GrepeLocalStructure liquid_structure = structure;
+        liquid_structure.finite_incipient = false;
+        const std::vector<double> liquid_local(
+            local_variables.begin(),
+            local_variables.begin() + static_cast<std::ptrdiff_t>(pressure_column)
+        );
+        const std::vector<double> liquid_lower(
+            local_lower_bounds.begin(),
+            local_lower_bounds.begin() + static_cast<std::ptrdiff_t>(pressure_column)
+        );
+        const std::vector<double> liquid_upper(
+            local_upper_bounds.begin(),
+            local_upper_bounds.begin() + static_cast<std::ptrdiff_t>(pressure_column)
+        );
+        const GrepeResult liquid = finalize_finite_context(
+            prepare_retained_finite_grepe(
+                model, liquid_request, liquid_structure, point
+            ),
+            liquid_request, liquid_local, liquid_lower, liquid_upper
+        );
+        if (!liquid.equilibrium.accepted) {
+            throw GrepeFailure(
+                "physical_rejection",
+                liquid.equilibrium.failure_reason.empty()
+                    ? "retained liquid point failed final certification"
+                    : liquid.equilibrium.failure_reason
+            );
+        }
+        const auto finite = std::find_if(
+            retained.phases.begin(), retained.phases.end(),
+            [](const GrepePhase& phase) { return phase.finite; }
+        );
+        const double liquid_amount = std::accumulate(
+            liquid.equilibrium.phase_amounts_mol[0].begin(),
+            liquid.equilibrium.phase_amounts_mol[0].end(), 0.0
+        );
+        if (finite == retained.phases.end() || !(liquid_amount > 0.0)) {
+            throw std::invalid_argument(
+                "retained finite-incipient liquid state is invalid"
+            );
+        }
+        finite->start = ReactiveFinitePhaseStart{
+            liquid.equilibrium.phase_amounts_mol[0],
+            liquid.equilibrium.phase_volumes_m3[0] / liquid_amount,
+        };
+        if (!structure.vapor_phase.ideal_gas) {
+            const std::vector<double> log_ratios(
+                local_variables.begin() + static_cast<std::ptrdiff_t>(pressure_column + 1),
+                local_variables.end() - 1
+            );
+            const std::vector<double> fractions = softmax_reference(log_ratios);
+            const auto vapor = std::find_if(
+                retained.continuation_phases.begin(),
+                retained.continuation_phases.end(),
+                [&](const GrepeContinuationPhase& phase) {
+                    return phase.identity == structure.vapor_phase.identity;
+                }
+            );
+            if (vapor != retained.continuation_phases.end()) {
+                vapor->mole_fractions = fractions;
+                vapor->molar_volume_m3_per_mol = std::exp(local_variables.back());
+            } else {
+                retained.continuation_phases.push_back({
+                    structure.vapor_phase.identity,
+                    fractions,
+                    std::exp(local_variables.back()),
+                });
+            }
+        }
+            return incipient_result(
+                retained,
+                solve_incipient_pressure(model, incipient_model, retained)
+            );
+        } catch (const GrepeFailure& failure) {
+            return failed_result(
+                request,
+                "finite_incipient",
+                "fixed_T_one_finite_liquid_one_incipient_vapor",
+                failure
+            );
+        }
+    }
     return finalize_finite_context(
         prepare_retained_finite_grepe(model, request, structure, point),
         request,

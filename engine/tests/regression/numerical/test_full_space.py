@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 import pytest
@@ -9,12 +10,92 @@ import epcsaft
 from epcsaft import equilibrium
 from epcsaft.regression import fit
 from tests.regression._cases import (
+    fixed_state_fit_case,
     fixed_state_observation,
     full_space_fit_case,
     pressure,
     scaled_error,
+    solved_pressure_fit_case,
     with_parameter,
 )
+
+
+def test_maximum_iterations_is_nonusable_and_retains_final_diagnostics(
+    tmp_path: Path,
+) -> None:
+    """Falsify max-iteration acceptance or loss of an inspectable final state."""
+
+    reduced_mapping, *_ = fixed_state_fit_case(tmp_path)
+    reduced_mapping["solver"]["controls"]["maximum_iterations"] = 1
+    reduced = fit(reduced_mapping, base_path=tmp_path)
+    assert all(start.solver_status == "maximum_iterations_exceeded" for start in reduced.starts)
+    assert all(not start.usable for start in reduced.starts)
+    assert reduced.best_usable_start is None
+    for start in reduced.starts:
+        kkt = start.kkt_diagnostics
+        assert kkt["retained"]
+        assert len(kkt["coordinate_lower_bound_multipliers"]) == len(
+            start.final_affine
+        )
+        assert len(kkt["coordinate_upper_bound_multipliers"]) == len(
+            start.final_affine
+        )
+        assert kkt["parameter_constraint_multipliers"] == []
+        assert all(
+            math.isfinite(kkt[name])
+            for name in (
+                "objective",
+                "primal_feasibility_inf_norm",
+                "stationarity_inf_norm",
+                "complementarity_inf_norm",
+                "dual_sign_violation_inf_norm",
+            )
+        )
+
+    full_mapping, *_ = full_space_fit_case(tmp_path)
+    full_mapping["solver"]["controls"]["maximum_iterations"] = 1
+    stalled = fit(full_mapping, base_path=tmp_path).starts[0]
+    assert stalled.solver_status == "maximum_iterations_exceeded"
+    assert not stalled.usable
+    assert all(math.isfinite(value) for value in stalled.final_physical)
+    diagnostic = stalled.owner_diagnostics[0]
+    assert diagnostic["solver_status"]
+    assert diagnostic["local_variables"]
+    certificate = diagnostic["certificate"]
+    assert set(certificate) == {
+        "balance_inf_norm",
+        "pressure_relative_inf_norm",
+        "reaction_affinity_inf_norm",
+        "transfer_chemical_potential_inf_norm",
+        "kkt_stationarity_inf_norm",
+        "phase_distinctness",
+        "minimum_amount_mol",
+        "minimum_bound_margin",
+        "reduced_hessian_min_eigenvalue",
+        "reduced_hessian_scale",
+        "reduced_hessian_threshold",
+    }
+    assert all(value is not None for value in certificate.values())
+    assert stalled.owner_failures[0].reason == diagnostic["failure_reason"]
+    kkt = stalled.kkt_diagnostics
+    assert kkt["retained"]
+    assert len(kkt["coordinate_lower_bound_multipliers"]) == len(
+        stalled.final_affine
+    )
+    assert len(kkt["coordinate_upper_bound_multipliers"]) == len(
+        stalled.final_affine
+    )
+    assert kkt["parameter_constraint_multipliers"] == []
+    assert all(
+        math.isfinite(kkt[name])
+        for name in (
+            "objective",
+            "primal_feasibility_inf_norm",
+            "stationarity_inf_norm",
+            "complementarity_inf_norm",
+            "dual_sign_violation_inf_norm",
+        )
+    )
 
 
 def test_finite_owner_full_space_recovers_truth_with_complete_certificate(
@@ -120,3 +201,138 @@ def test_finite_owner_full_space_recovers_truth_with_complete_certificate(
         "evaluated",
         "evaluated",
     )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("ideal_vapor", [True, False], ids=("ideal", "provider"))
+def test_solved_pressure_full_space_derivatives_match_independent_resolves(
+    tmp_path: Path,
+    ideal_vapor: bool,
+) -> None:
+    """Falsify solved-pressure liquid response, vapor outputs, or residual scaling."""
+
+    mapping, parameters, model, problem, identity, truth_value, _ = solved_pressure_fit_case(
+        tmp_path, ideal_vapor=ideal_vapor
+    )
+    result = fit(mapping, base_path=tmp_path)
+    accepted = result.best_usable_start
+    assert accepted is not None
+    assert result.evaluation_strategy == "simultaneous_sparse_full_space"
+    assert accepted.final_physical == pytest.approx((truth_value,), abs=3.0e-6)
+    assert accepted.owner_failures == ()
+    assert result.accounting.failed_row_trials == 0
+    assert result.accounting.rejected_row_trials == 0
+    assert tuple((row.selector, row.residual, row.scale) for row in result.specification.rows) == (
+        ("pressure", "log_ratio", 0.05),
+        ("vapor-solvent-fraction", "scaled_difference", 0.01),
+        ("vapor-solvent-partial-pressure", "log_ratio", 0.05),
+    )
+
+    center_value = accepted.final_physical[0]
+    step = 1.0e-5
+    sides = tuple(
+        equilibrium.solve(
+            model,
+            problem,
+            active_parameters=epcsaft.ActiveParameterSet(
+                parameters, (identity,), values=(center_value + sign * step,)
+            ),
+        )
+        for sign in (-1.0, 1.0)
+    )
+    assert all(side.status == "evaluated" for side in sides)
+    centered = tuple(
+        (float(high) - float(low)) / (2.0 * step)
+        for low, high in zip(sides[0].values, sides[1].values, strict=True)
+    )
+    owner_derivatives = tuple(
+        residual_derivative
+        * row.scale
+        * (prediction if row.residual == "log_ratio" else 1.0)
+        / row.multiplier
+        for residual_derivative, row, prediction in zip(
+            accepted.physical_jacobian,
+            result.specification.rows,
+            accepted.predictions,
+            strict=True,
+        )
+    )
+    for exact, reference in zip(owner_derivatives, centered, strict=True):
+        assert scaled_error(exact, reference) <= 5.0e-5
+
+    if ideal_vapor:
+        center = equilibrium.solve(
+            model,
+            problem,
+            active_parameters=epcsaft.ActiveParameterSet(
+                parameters, (identity,), values=(center_value,)
+            ),
+        )
+        assert center.status == "evaluated"
+        temperature_k = float(problem.temperature.value.to("kelvin").magnitude)
+        liquid = center.phases[0]
+        fugacities = tuple(
+            math.exp(liquid.chemical_potential_over_rt[index])
+            * 8.31446261815324
+            * temperature_k
+            for index in (0, 1)
+        )
+        pressure_pa = math.fsum(fugacities)
+        reference = (pressure_pa, fugacities[0] / pressure_pa, fugacities[0])
+        assert center.values == pytest.approx(reference, rel=2.0e-10, abs=2.0e-8)
+
+
+@pytest.mark.slow
+def test_solved_pressure_full_space_certifies_a_closed_declared_parameter_bound(
+    tmp_path: Path,
+) -> None:
+    """Falsify affine-bound rounding or final certification at a closed bound."""
+
+    identity = "pair/cosolvent/solvent/k_ij"
+    mapping, _, _, _, _, truth_value, _ = solved_pressure_fit_case(
+        tmp_path,
+        ideal_vapor=False,
+        parameter_identity=identity,
+        truth_value=0.01,
+        bounds=(-0.01, 0.01),
+        origin=0.0,
+        scale=0.01,
+    )
+    result = fit(mapping, base_path=tmp_path)
+    accepted = result.best_usable_start
+    assert accepted is not None
+    assert result.evaluation_strategy == "simultaneous_sparse_full_space"
+    assert accepted.final_physical == pytest.approx((truth_value,), abs=2.0e-8)
+    assert accepted.owner_failures == ()
+
+
+@pytest.mark.slow
+def test_solved_pressure_full_space_rejects_only_physical_domain_trials(
+    tmp_path: Path,
+) -> None:
+    """Falsify Ipopt restoration crashes when a trial leaves the EOS domain."""
+
+    identity = "pair/cosolvent/solvent/k_ij"
+    mapping, *_ = solved_pressure_fit_case(
+        tmp_path,
+        ideal_vapor=False,
+        parameter_identity=identity,
+        truth_value=0.01,
+        bounds=(-0.01, 0.01),
+        origin=0.0,
+        scale=0.01,
+    )
+    coordinate = mapping["active"]["coordinates"][identity]
+    coordinate.update({"bounds": [-1.0, 1.0], "scale": 1.0})
+    observation = mapping["observations"][0]
+    observation["targets"] = observation["targets"][:1]
+    observation["targets"][0]["observed"] *= 100.0
+    mapping["solver"]["controls"]["maximum_iterations"] = 20
+
+    result = fit(mapping, base_path=tmp_path)
+    accepted = result.best_usable_start
+    assert result.evaluation_strategy == "simultaneous_sparse_full_space"
+    assert accepted is not None
+    assert accepted.solver_status == "solve_succeeded"
+    assert accepted.owner_failures == ()
+    assert accepted.final_physical[0] == pytest.approx(0.0157182582, abs=2.0e-8)

@@ -1163,6 +1163,17 @@ SourceStandardStateResult transform_source_standard_state(
         || reference.convergence_status != "converged-limit") {
         throw std::invalid_argument("Provider source-reference identity is incompatible");
     }
+    if (!reference.candidate_qualification.empty()
+        && (reference.candidate_qualification != "candidate_extrapolation"
+            || reference.candidate_source_fingerprint.empty()
+            || temperature_k < reference.candidate_temperature_min_k
+            || temperature_k > reference.candidate_temperature_max_k
+            || pressure_pa < reference.candidate_pressure_min_pa
+            || pressure_pa > reference.candidate_pressure_max_pa)) {
+        throw std::invalid_argument(
+            "Provider candidate source-reference domain is incompatible"
+        );
+    }
     const bool pressure_derivative_available = std::find(
         reference.derivative_availability.begin(),
         reference.derivative_availability.end(),

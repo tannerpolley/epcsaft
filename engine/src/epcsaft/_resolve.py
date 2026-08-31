@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Literal, SupportsFloat, cast
+from typing import Any, Literal, SupportsFloat, cast
 
 import pint
 
@@ -17,6 +19,7 @@ from .records import (
     IonicDispersionFormulation,
     ModelParameterRecord,
     PairParameterRecord,
+    ReactionCorrelationRecord,
     RelativePermittivityFormulation,
     SingleParameterRecord,
     SiteRecord,
@@ -54,6 +57,8 @@ class _ResolvedModel:
     segment_diameter: tuple[_TemperatureRecord, ...]
     dispersion_energy_over_k: tuple[float, ...]
     k_ij: tuple[float, ...]
+    k_ij_reciprocal_temperature_slope: tuple[float, ...]
+    k_ij_reference_temperature_k: tuple[float, ...]
     l_ij: tuple[float, ...]
     site_ids: tuple[tuple[str, str], ...]
     site_multiplicity: tuple[int, ...]
@@ -89,6 +94,12 @@ class _ResolvedModel:
     debye_huckel_diameter_angstrom: tuple[float | None, ...] = ()
     born_c_shell: float = 0.0
     born_c_dielectric: float = 0.0
+    source_temperature_min_k: float | None = None
+    source_temperature_max_k: float | None = None
+    source_pressure_min_pa: float | None = None
+    source_pressure_max_pa: float | None = None
+    candidate_qualification: str | None = None
+    candidate_source_fingerprint: str | None = None
 
 
 def _missing(
@@ -214,6 +225,52 @@ def _pair_matrix(
     return tuple(matrix)
 
 
+def _pair_temperature_correlation_matrices(
+    component_ids: tuple[str, ...],
+    pairs: dict[tuple[str, str, str], PairParameterRecord],
+    k_ij: tuple[float, ...],
+    temperature_min_k: float | None,
+    temperature_max_k: float | None,
+) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    size = len(component_ids)
+    slopes = [0.0] * (size * size)
+    references = [0.0] * (size * size)
+    positions = {component_id: index for index, component_id in enumerate(component_ids)}
+    for (component_a, component_b, family), record in pairs.items():
+        if family != "k_ij_reciprocal_temperature_slope":
+            continue
+        if temperature_min_k is None or temperature_max_k is None:
+            raise _error(
+                "invalid-domain",
+                family=family,
+                reason="finite-temperature-range-required",
+            )
+        slope = float(cast(pint.Quantity[Any], record.value).to("kelvin").magnitude)
+        reference = float(
+            cast(pint.Quantity[Any], record.reference_temperature)
+            .to("kelvin")
+            .magnitude
+        )
+        left = positions[component_a]
+        right = positions[component_b]
+        forward = left * size + right
+        reverse = right * size + left
+        for temperature_k in (temperature_min_k, temperature_max_k):
+            effective = k_ij[forward] + slope * (
+                1.0 / temperature_k - 1.0 / reference
+            )
+            if not (-float("inf") < effective <= 1.0):
+                raise _error(
+                    "invalid-domain",
+                    family=family,
+                    temperature_k=temperature_k,
+                    value=effective,
+                )
+        slopes[forward] = slopes[reverse] = slope
+        references[forward] = references[reverse] = reference
+    return tuple(slopes), tuple(references)
+
+
 def _association(
     sites: tuple[SiteRecord, ...],
     records: tuple[AssociationParameterRecord, ...],
@@ -272,15 +329,27 @@ def _association(
 
 def _domain_limits(
     parameters: Parameters,
-) -> tuple[float | None, float | None, float | None, float | None, float | None]:
+) -> tuple[
+    float | None,
+    float | None,
+    float | None,
+    float | None,
+    float | None,
+    float | None,
+    float | None,
+    float | None,
+    float | None,
+    str | None,
+    str | None,
+]:
     domain_by_id = {domain.domain_id: domain for domain in parameters.domains}
     active_domains = tuple(
         domain_by_id[domain_id]
         for domain_id in {
-            record.domain_id
-            for record in parameters.records
-            if record.domain_id in domain_by_id and domain_by_id[record.domain_id].kind != "unknown"
+            *(record.domain_id for record in parameters.records),
+            *(record.domain_id for record in parameters.model_families),
         }
+        if domain_id in domain_by_id and domain_by_id[domain_id].kind != "unknown"
     )
     lower_bounds = tuple(
         _domain_magnitude(domain.temperature_min, "kelvin")
@@ -319,12 +388,97 @@ def _domain_limits(
         raise _error("invalid-domain", field="temperature", value="empty-intersection")
     if pressure_min is not None and pressure_max is not None and pressure_min > pressure_max:
         raise _error("invalid-domain", field="pressure", value="empty-intersection")
+    candidate_owners = (
+        *parameters.records,
+        *parameters.model_families,
+        *parameters.topology.edges,
+    )
+    candidates = tuple(
+        owner
+        for owner in candidate_owners
+        if getattr(owner, "candidate_domain_id", None) is not None
+    )
+    if candidates and len(candidates) != len(candidate_owners):
+        raise _error("invalid-domain", field="candidate_provenance", value="partial")
+    if not candidates:
+        return (
+            temperature_min,
+            temperature_max,
+            pressure_min,
+            pressure_max,
+            min(ion_bounds) if ion_bounds else None,
+            temperature_min,
+            temperature_max,
+            pressure_min,
+            pressure_max,
+            None,
+            None,
+        )
+    candidate_ids = {owner.candidate_domain_id for owner in candidates}
+    qualifications = {owner.qualification for owner in candidates}
+    if len(candidate_ids) != 1 or qualifications != {"candidate_extrapolation"}:
+        raise _error("invalid-domain", field="model_family.candidate", value="inconsistent")
+    candidate = domain_by_id[cast(str, next(iter(candidate_ids)))]
+    if candidate.kind == "unknown":
+        raise _error("invalid-domain", field="candidate_domain_id", value=candidate.domain_id)
+    candidate_min = (
+        None
+        if candidate.temperature_min is None
+        else _domain_magnitude(candidate.temperature_min, "kelvin")
+    )
+    candidate_max = (
+        None
+        if candidate.temperature_max is None
+        else _domain_magnitude(candidate.temperature_max, "kelvin")
+    )
+    candidate_pressure_min = (
+        None
+        if candidate.pressure_min is None
+        else _domain_magnitude(candidate.pressure_min, "pascal")
+    )
+    candidate_pressure_max = (
+        None
+        if candidate.pressure_max is None
+        else _domain_magnitude(candidate.pressure_max, "pascal")
+    )
+    source_fingerprint = (
+        "sha256:"
+        + hashlib.sha256(
+            json.dumps(
+                sorted(
+                    (
+                        cast(Any, owner).identity
+                        if hasattr(owner, "identity")
+                        else cast(Any, owner).family_id
+                        if hasattr(owner, "family_id")
+                        else f"{cast(Any, owner).energy_identity}|"
+                        f"{cast(Any, owner).volume_identity}",
+                        cast(str, cast(Any, owner).source_sha256),
+                    )
+                    for owner in candidates
+                ),
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+    )
     return (
+        candidate_min,
+        candidate_max,
+        candidate_pressure_min if candidate_pressure_min is not None else pressure_min,
+        candidate_pressure_max if candidate_pressure_max is not None else pressure_max,
+        (
+            float(cast(SupportsFloat, candidate.ion_mole_fraction_max))
+            if candidate.ion_mole_fraction_max is not None
+            else min(ion_bounds)
+            if ion_bounds
+            else None
+        ),
         temperature_min,
         temperature_max,
         pressure_min,
         pressure_max,
-        min(ion_bounds) if ion_bounds else None,
+        "candidate_extrapolation",
+        source_fingerprint,
     )
 
 
@@ -427,6 +581,7 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         SiteRecord,
         AssociationParameterRecord,
         ModelParameterRecord,
+        ReactionCorrelationRecord,
     )
     unknown = next(
         (record for record in parameters.records if not isinstance(record, recognized)),
@@ -482,9 +637,19 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         for component_id in component_ids
     )
     site_ids, site_multiplicity, association_pairs = _association(sites, association_records)
-    temperature_min, temperature_max, pressure_min, pressure_max, ion_fraction_max = _domain_limits(
-        parameters
-    )
+    (
+        temperature_min,
+        temperature_max,
+        pressure_min,
+        pressure_max,
+        ion_fraction_max,
+        source_temperature_min,
+        source_temperature_max,
+        source_pressure_min,
+        source_pressure_max,
+        candidate_qualification,
+        candidate_source_fingerprint,
+    ) = _domain_limits(parameters)
 
     selected_charges = tuple(
         singles.get((component_id, "charge_number")) for component_id in component_ids
@@ -510,6 +675,14 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             )
         topology: Literal["neutral", "associating"] = "associating" if site_ids else "neutral"
         k_ij = _pair_matrix(component_ids, pair_records, "k_ij", required=True)
+        required_k_ij = _required_matrix(k_ij, "k_ij")
+        k_slopes, k_references = _pair_temperature_correlation_matrices(
+            component_ids,
+            pair_records,
+            required_k_ij,
+            temperature_min,
+            temperature_max,
+        )
         l_ij = _pair_matrix(component_ids, pair_records, "l_ij", required=False)
         return _ResolvedModel(
             topology,
@@ -518,7 +691,9 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             segment_count,
             segment_diameter,
             dispersion_energy,
-            _required_matrix(k_ij, "k_ij"),
+            required_k_ij,
+            k_slopes,
+            k_references,
             tuple(0.0 if value is None else float(value) for value in l_ij),
             site_ids,
             site_multiplicity,
@@ -535,6 +710,12 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             pressure_max,
             None,
             "none",
+            source_temperature_min_k=source_temperature_min,
+            source_temperature_max_k=source_temperature_max,
+            source_pressure_min_pa=source_pressure_min,
+            source_pressure_max_pa=source_pressure_max,
+            candidate_qualification=candidate_qualification,
+            candidate_source_fingerprint=candidate_source_fingerprint,
         )
 
     charge_records = tuple(
@@ -571,6 +752,14 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             for left in range(size)
             for right in range(size)
         )
+    required_k_ij = _required_matrix(k_ij, "k_ij")
+    k_slopes, k_references = _pair_temperature_correlation_matrices(
+        component_ids,
+        pair_records,
+        required_k_ij,
+        temperature_min,
+        temperature_max,
+    )
 
     if electrolyte_formulation == "none":
         raise _error("missing-record", family="electrolyte")
@@ -699,6 +888,8 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             segment_diameter,
             dispersion_energy,
             fully_dissociated_k_ij,
+            k_slopes,
+            k_references,
             tuple(0.0 for _ in range(len(component_ids) ** 2)),
             site_ids,
             site_multiplicity,
@@ -718,6 +909,12 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
             ionic_dispersion=cast(IonicDispersionFormulation, ionic_dispersion),
             packing_diameter_angstrom=tuple(packing_diameter),
             debye_huckel_diameter_angstrom=tuple(debye_huckel_diameter),
+            source_temperature_min_k=source_temperature_min,
+            source_temperature_max_k=source_temperature_max,
+            source_pressure_min_pa=source_pressure_min,
+            source_pressure_max_pa=source_pressure_max,
+            candidate_qualification=candidate_qualification,
+            candidate_source_fingerprint=candidate_source_fingerprint,
         )
     if relative_permittivity_formulation not in {
         "ion-fraction-suppression",
@@ -923,7 +1120,9 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         segment_count,
         segment_diameter,
         dispersion_energy,
-        _required_matrix(k_ij, "k_ij"),
+        required_k_ij,
+        k_slopes,
+        k_references,
         tuple(
             0.0 if value is None else float(value)
             for value in _pair_matrix(component_ids, pair_records, "l_ij", required=False)
@@ -954,6 +1153,12 @@ def _resolve_model(parameters: Parameters) -> _ResolvedModel:
         tuple(debye_huckel_diameter),
         cast(float, electrolyte_spec.c_shell),
         cast(float, electrolyte_spec.c_dielectric),
+        source_temperature_min,
+        source_temperature_max,
+        source_pressure_min,
+        source_pressure_max,
+        candidate_qualification,
+        candidate_source_fingerprint,
     )
 
 

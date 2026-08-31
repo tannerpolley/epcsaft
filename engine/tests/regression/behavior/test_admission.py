@@ -12,6 +12,7 @@ from epcsaft.regression import FitPreflightError, fit
 from tests.regression._cases import (
     PURE_IDENTITY,
     boundary_fit_case,
+    fixed_state_fit_case,
     pure_saturation_fit_case,
     scaled_error,
 )
@@ -27,6 +28,14 @@ def test_invalid_saturation_start_is_a_typed_non_evaluable_preflight(
     with pytest.raises(FitPreflightError) as failure:
         fit(mapping, base_path=tmp_path)
     assert failure.value.code == "physical_rejection"
+
+
+def test_explicit_full_space_rejects_an_ineligible_fit(tmp_path: Path) -> None:
+    mapping, *_ = fixed_state_fit_case(tmp_path)
+    mapping["solver"]["evaluation_strategy"] = "simultaneous_sparse_full_space"
+
+    with pytest.raises(ValueError, match="full_space evaluation is ineligible"):
+        fit(mapping, base_path=tmp_path)
 
 
 @pytest.mark.slow

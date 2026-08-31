@@ -43,6 +43,7 @@ struct PackingFractionEvaluation {
 
 struct ProviderActiveParameterSet {
     std::vector<std::string> identities;
+    std::vector<double> values;
 };
 
 struct ParameterizedPhaseEvaluation {
@@ -127,6 +128,12 @@ struct SourceReferenceResult final {
     double source_temperature_max_k = 0.0;
     double source_pressure_min_pa = 0.0;
     double source_pressure_max_pa = 0.0;
+    double candidate_temperature_min_k = 0.0;
+    double candidate_temperature_max_k = 0.0;
+    double candidate_pressure_min_pa = 0.0;
+    double candidate_pressure_max_pa = 0.0;
+    std::string candidate_qualification;
+    std::string candidate_source_fingerprint;
     std::string parameter_fingerprint;
     std::string topology_fingerprint;
     std::string component_order_fingerprint;

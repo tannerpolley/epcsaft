@@ -593,6 +593,32 @@ class ChemicalEquilibriumConstant:
     reaction_orientation: str
     conversion_id: str
     dimensionless: bool
+    reaction_id: str | None = None
+    correlation_kind: (
+        Literal["ln-k-a-plus-b-over-t", "negative-log10-temperature-polynomial"] | None
+    ) = None
+    coefficient_identities: tuple[str, ...] = ()
+    coefficient_values: tuple[float, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "coefficient_identities", tuple(self.coefficient_identities))
+        object.__setattr__(self, "coefficient_values", tuple(self.coefficient_values))
+        declarations = (self.reaction_id, self.correlation_kind)
+        if any(value is None for value in declarations):
+            if not all(value is None for value in declarations) or self.coefficient_identities:
+                raise ValueError("reaction correlation declaration is partial")
+            return
+        expected = 2 if self.correlation_kind == "ln-k-a-plus-b-over-t" else 3
+        if (
+            self.correlation_kind
+            not in {
+                "ln-k-a-plus-b-over-t",
+                "negative-log10-temperature-polynomial",
+            }
+            or len(self.coefficient_identities) != expected
+            or len(self.coefficient_values) != expected
+        ):
+            raise ValueError("reaction correlation declaration is incompatible")
 
 
 @dataclass(frozen=True)
@@ -2381,6 +2407,12 @@ def _source_reference_payload(
         "source_temperature_max_k": transfer.source_temperature_interval_k[1],
         "source_pressure_min_pa": transfer.source_pressure_interval_pa[0],
         "source_pressure_max_pa": transfer.source_pressure_interval_pa[1],
+        "candidate_temperature_min_k": transfer.candidate_temperature_interval_k[0],
+        "candidate_temperature_max_k": transfer.candidate_temperature_interval_k[1],
+        "candidate_pressure_min_pa": transfer.candidate_pressure_interval_pa[0],
+        "candidate_pressure_max_pa": transfer.candidate_pressure_interval_pa[1],
+        "candidate_qualification": transfer.candidate_qualification,
+        "candidate_source_fingerprint": transfer.candidate_source_fingerprint,
         "parameter_fingerprint": transfer.parameter_fingerprint,
         "topology_fingerprint": transfer.topology_fingerprint,
         "component_order_fingerprint": transfer.component_order_fingerprint,

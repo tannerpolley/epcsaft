@@ -235,7 +235,7 @@ class FitSpecificationReceipt:
                             canonical_units[target],
                             bases[target],
                             residuals[target],
-                            row.value(target),
+                            1.0 if residuals[target] == "log_ratio" else row.value(target),
                             multiplier,
                         )
                     )
@@ -361,8 +361,11 @@ class FitStart:
     trial_failure_code: NonEvaluableTrialCode | None
     iterations: int
     non_evaluable_count: int
+    parameter_domain_constraints: tuple[Mapping[str, object], ...]
+    kkt_diagnostics: Mapping[str, object]
     owner_failures: tuple[OwnerFailure, ...]
     owner_receipts: tuple[OwnerReceipt, ...]
+    owner_diagnostics: tuple[Mapping[str, object], ...]
     batch_outcomes: tuple[BatchOutcome, ...]
     cost: float
     usable: bool
@@ -451,10 +454,18 @@ class FitStart:
             ),
             iterations=int(value["iterations"]),
             non_evaluable_count=int(value["non_evaluable_count"]),
+            parameter_domain_constraints=tuple(
+                cast(Mapping[str, object], item)
+                for item in value["parameter_domain_constraints"]
+            ),
+            kkt_diagnostics=cast(Mapping[str, object], value["kkt_diagnostics"]),
             owner_failures=tuple(
                 OwnerFailure.from_native(item) for item in value["owner_failures"]
             ),
             owner_receipts=owner_receipts,
+            owner_diagnostics=tuple(
+                cast(Mapping[str, object], item) for item in value["owner_diagnostics"]
+            ),
             batch_outcomes=tuple(
                 BatchOutcome.from_native(item) for item in value["batch_outcomes"]
             ),
@@ -504,8 +515,11 @@ class FitStart:
             "trial_failure_code": self.trial_failure_code,
             "iterations": self.iterations,
             "non_evaluable_count": self.non_evaluable_count,
+            "parameter_domain_constraints": list(self.parameter_domain_constraints),
+            "kkt_diagnostics": dict(self.kkt_diagnostics),
             "owner_failures": [failure.to_mapping() for failure in self.owner_failures],
             "owner_receipts": [receipt.to_mapping() for receipt in self.owner_receipts],
+            "owner_diagnostics": list(self.owner_diagnostics),
             "batch_outcomes": [outcome.to_mapping() for outcome in self.batch_outcomes],
             "cost": _finite_or_none(self.cost),
             "usable": self.usable,
@@ -556,6 +570,7 @@ class FitResult:
     starts: tuple[FitStart, ...]
     artifact_fingerprint: str
     package_fingerprint: str
+    evaluation_strategy: str
     accounting: FitAccounting
     digest: str
 
@@ -566,6 +581,7 @@ class FitResult:
         *,
         artifact_fingerprint: str,
         package_fingerprint: str,
+        evaluation_strategy: str,
     ) -> None:
         if not isinstance(specification, FitSpecificationReceipt):
             raise TypeError("specification must be a FitSpecificationReceipt")
@@ -574,6 +590,11 @@ class FitResult:
             raise ValueError("starts must contain every native start")
         if tuple(item.index for item in frozen_starts) != tuple(range(len(frozen_starts))):
             raise ValueError("starts must retain deterministic native order")
+        if evaluation_strategy not in {
+            "reduced_space",
+            "simultaneous_sparse_full_space",
+        }:
+            raise ValueError("native evaluation strategy is outside the public vocabulary")
         if any(
             tuple(outcome.index for outcome in start.batch_outcomes)
             != tuple(range(len(specification.block_sizes)))
@@ -584,6 +605,7 @@ class FitResult:
         object.__setattr__(self, "starts", frozen_starts)
         object.__setattr__(self, "artifact_fingerprint", artifact_fingerprint)
         object.__setattr__(self, "package_fingerprint", package_fingerprint)
+        object.__setattr__(self, "evaluation_strategy", evaluation_strategy)
         evaluated = sum(
             outcome.row_count
             for start in frozen_starts
@@ -642,6 +664,7 @@ class FitResult:
             tuple(FitStart.from_native(item) for item in starts),
             artifact_fingerprint=artifact_fingerprint,
             package_fingerprint=package_fingerprint,
+            evaluation_strategy=str(native["evaluation_strategy"]),
         )
 
     @property
@@ -814,6 +837,7 @@ class FitResult:
             "specification": self.specification.to_mapping(),
             "artifact_fingerprint": self.artifact_fingerprint,
             "package_fingerprint": self.package_fingerprint,
+            "evaluation_strategy": self.evaluation_strategy,
             "accounting": self.accounting.to_mapping(),
             "covariance_coordinate_identities": list(self.covariance_coordinate_identities),
             "physical_covariance": _finite_values(self.physical_covariance),

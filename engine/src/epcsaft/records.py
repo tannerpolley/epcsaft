@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, ClassVar, Literal, cast
+from typing import Any, ClassVar, Literal, Protocol, cast
 
 import pint
 
@@ -16,7 +16,9 @@ from .units import (
 
 _ID_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 _FAMILY_PATTERN = re.compile(r"[a-z0-9]+(?:[-_][a-z0-9]+)*\Z")
+_REACTION_PARAMETER_PATTERN = re.compile(r"reaction:R[0-9]+:correlation:[a-z][a-z0-9_]*\Z")
 type DomainKind = Literal["fit-range", "reported-conditions", "unknown"]
+type ModelQualification = Literal["candidate_extrapolation"]
 type ModelFamilyKind = Literal["base", "association", "electrolyte", "permittivity"]
 type AssociationSiteRole = Literal["donor", "acceptor", "effective"]
 type AssociationEdgeSourceKind = Literal["explicit", "combining-rule"]
@@ -53,7 +55,9 @@ type SingleParameterFamily = Literal[
     "polarizability_scaling",
     "correlation_integral_parameter",
 ]
-type PairParameterFamily = Literal["k_ij", "l_ij"]
+type PairParameterFamily = Literal[
+    "k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"
+]
 type CrossAssociationCorrectionFamily = Literal["k_hb_ij"]
 type AssociationParameterFamily = Literal["association_energy_over_k", "association_volume"]
 type ModelParameterFamily = Literal[
@@ -61,6 +65,18 @@ type ModelParameterFamily = Literal[
     "ionic_region_relative_permittivity",
 ]
 type CorrelationFamily = Literal["segment_diameter", "relative_permittivity", "solvation_factor"]
+
+
+class _CandidateOwner(Protocol):
+    @property
+    def candidate_domain_id(self) -> str | None: ...
+
+    @property
+    def qualification(self) -> ModelQualification | None: ...
+
+    @property
+    def source_sha256(self) -> str | None: ...
+
 
 _DOMAIN_KINDS = frozenset({"fit-range", "reported-conditions", "unknown"})
 _SINGLE_FAMILIES = frozenset(
@@ -83,20 +99,16 @@ _SINGLE_FAMILIES = frozenset(
         "correlation_integral_parameter",
     }
 )
-_PAIR_FAMILIES = frozenset({"k_ij", "l_ij"})
-_ASSOCIATION_FAMILIES = frozenset(
-    {"association_energy_over_k", "association_volume"}
+_PAIR_FAMILIES = frozenset(
+    {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
 )
+_ASSOCIATION_FAMILIES = frozenset({"association_energy_over_k", "association_volume"})
 _MODEL_FAMILIES = frozenset(
     {"ion_fraction_suppression_coefficient", "ionic_region_relative_permittivity"}
 )
-_CORRELATION_FAMILIES = frozenset(
-    {"segment_diameter", "relative_permittivity", "solvation_factor"}
-)
+_CORRELATION_FAMILIES = frozenset({"segment_diameter", "relative_permittivity", "solvation_factor"})
 _ASSOCIATION_PRESETS = frozenset({"1a", "2b", "3b", "4c"})
-_ASSOCIATION_COMBINING_RULES = frozenset(
-    {"arithmetic-energy-geometric-volume"}
-)
+_ASSOCIATION_COMBINING_RULES = frozenset({"arithmetic-energy-geometric-volume"})
 _DIMENSIONAL_UNITS = {
     "molar_mass": "kilogram / mole",
     "segment_diameter": "angstrom",
@@ -109,6 +121,7 @@ _DIMENSIONAL_UNITS = {
     "dipole_scaling": "debye ** 2",
     "polarizability_scaling": "angstrom ** 3",
     "association_energy_over_k": "kelvin",
+    "k_ij_reciprocal_temperature_slope": "kelvin",
 }
 _DIMENSIONLESS_FAMILIES = frozenset(
     {
@@ -137,7 +150,10 @@ def _parameter_identity(value: object, *, field: str = "identity") -> str:
     if (
         not isinstance(value, str)
         or not value
-        or any(_FAMILY_PATTERN.fullmatch(part) is None for part in value.split("/"))
+        or (
+            _REACTION_PARAMETER_PATTERN.fullmatch(value) is None
+            and any(_FAMILY_PATTERN.fullmatch(part) is None for part in value.split("/"))
+        )
     ):
         raise _error("invalid-id", field=field, value=value)
     return value
@@ -189,6 +205,44 @@ def _provenance(
     )
 
 
+def _candidate_provenance(
+    candidate_domain_id: object,
+    qualification: object,
+    source_sha256: object,
+    *,
+    field: str,
+) -> tuple[str | None, ModelQualification | None, str | None]:
+    values = (candidate_domain_id, qualification, source_sha256)
+    if all(value is None for value in values):
+        return None, None, None
+    if any(value is None for value in values):
+        raise _error("invalid-provenance", field=field, value="partial")
+    domain_id = _identifier(candidate_domain_id, field=f"{field}.candidate_domain_id")
+    if qualification != "candidate_extrapolation":
+        raise _error("invalid-value", field=f"{field}.qualification", value=qualification)
+    if (
+        not isinstance(source_sha256, str)
+        or re.fullmatch(r"sha256:[0-9a-f]{64}", source_sha256) is None
+    ):
+        raise _error("invalid-value", field=f"{field}.source_sha256", value=source_sha256)
+    return domain_id, "candidate_extrapolation", source_sha256
+
+
+def _normalize_candidate(owner: _CandidateOwner, *, field: str) -> None:
+    candidate = _candidate_provenance(
+        owner.candidate_domain_id,
+        owner.qualification,
+        owner.source_sha256,
+        field=field,
+    )
+    for name, value in zip(
+        ("candidate_domain_id", "qualification", "source_sha256"),
+        candidate,
+        strict=True,
+    ):
+        object.__setattr__(owner, name, value)
+
+
 @dataclass(frozen=True, slots=True)
 class SourceRecord:
     source_id: str
@@ -216,6 +270,9 @@ class ModelFamilySpec:
     c_shell: float | None = None
     c_dielectric: float | None = None
     ionic_dispersion: IonicDispersionFormulation | None = None
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -264,6 +321,7 @@ class ModelFamilySpec:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="model_family.candidate")
 
 
 @dataclass(frozen=True, slots=True)
@@ -278,6 +336,9 @@ class ParameterSpec:
     source_id: str | None = None
     locator: str | None = None
     domain_id: str | None = None
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "identity", _parameter_identity(self.identity))
@@ -298,6 +359,72 @@ class ParameterSpec:
             object.__setattr__(self, "source_id", source_id)
             object.__setattr__(self, "locator", locator)
             object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="parameter_spec.candidate")
+
+
+@dataclass(frozen=True, slots=True)
+class ReactionCorrelationRecord:
+    """One optimizer-ready coefficient in a typed reaction correlation."""
+
+    record_id: str
+    reaction_id: str
+    correlation_kind: Literal["ln-k-a-plus-b-over-t", "negative-log10-temperature-polynomial"]
+    coefficient_name: str
+    identity: str
+    value: object
+    unit: str
+    optimizer_lower: object
+    optimizer_upper: object
+    source_id: str
+    locator: str
+    domain_id: str
+    candidate_domain_id: str
+    qualification: ModelQualification
+    source_sha256: str
+    family: str = "reaction_correlation"
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "record_id", _parameter_identity(self.record_id, field="record_id")
+        )
+        if (
+            not isinstance(self.reaction_id, str)
+            or re.fullmatch(r"R[0-9]+", self.reaction_id) is None
+        ):
+            raise _error("invalid-id", field="reaction_id", value=self.reaction_id)
+        if self.correlation_kind not in {
+            "ln-k-a-plus-b-over-t",
+            "negative-log10-temperature-polynomial",
+        }:
+            raise _error(
+                "invalid-value", field="reaction.correlation_kind", value=self.correlation_kind
+            )
+        object.__setattr__(
+            self,
+            "coefficient_name",
+            _family_identity(self.coefficient_name, field="coefficient_name"),
+        )
+        identity = _parameter_identity(self.identity)
+        if identity != f"reaction:{self.reaction_id}:correlation:{self.coefficient_name}":
+            raise _error("invalid-id", field="identity", value=identity)
+        object.__setattr__(self, "identity", identity)
+        unit = _text(self.unit, field="unit")
+        value = _quantity(self.value, unit, field="value")
+        lower = _quantity(self.optimizer_lower, unit, field="optimizer_lower")
+        upper = _quantity(self.optimizer_upper, unit, field="optimizer_upper")
+        if lower.magnitude >= upper.magnitude or not (
+            lower.magnitude <= value.magnitude <= upper.magnitude
+        ):
+            raise _error("invalid-domain", field="reaction.optimizer_domain", value=identity)
+        object.__setattr__(self, "unit", unit)
+        object.__setattr__(self, "value", value)
+        object.__setattr__(self, "optimizer_lower", lower)
+        object.__setattr__(self, "optimizer_upper", upper)
+        source_id, locator, domain_id = _provenance(self.source_id, self.locator, self.domain_id)
+        object.__setattr__(self, "source_id", source_id)
+        object.__setattr__(self, "locator", locator)
+        object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="reaction.candidate")
 
 
 @dataclass(frozen=True, slots=True)
@@ -392,6 +519,9 @@ class SingleParameterRecord:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -405,6 +535,7 @@ class SingleParameterRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="component_parameter.candidate")
 
     @property
     def identity(self) -> str:
@@ -419,6 +550,9 @@ class ModelParameterRecord:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -429,6 +563,7 @@ class ModelParameterRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="model_parameter.candidate")
 
     @property
     def identity(self) -> str:
@@ -445,6 +580,10 @@ class PairParameterRecord:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
+    reference_temperature: object | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -462,9 +601,41 @@ class PairParameterRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="pair_parameter.candidate")
+        if family == "k_ij_reciprocal_temperature_slope":
+            if self.reference_temperature is None:
+                raise _error(
+                    "invalid-correlation", field="reference_temperature", value=None
+                )
+            object.__setattr__(
+                self,
+                "reference_temperature",
+                _quantity(
+                    self.reference_temperature,
+                    "kelvin",
+                    field="reference_temperature",
+                ),
+            )
+            if cast(pint.Quantity[Any], self.reference_temperature).magnitude <= 0.0:
+                raise _error(
+                    "invalid-correlation",
+                    field="reference_temperature",
+                    value=self.reference_temperature,
+                )
+        elif self.reference_temperature is not None:
+            raise _error(
+                "invalid-correlation",
+                field="reference_temperature",
+                value=self.reference_temperature,
+            )
 
     @property
     def identity(self) -> str:
+        if self.family == "k_ij_reciprocal_temperature_slope":
+            return (
+                f"pair/{self.component_id_a}/{self.component_id_b}/"
+                "k_ij/reciprocal_temperature_slope"
+            )
         return f"pair/{self.component_id_a}/{self.component_id_b}/{self.family}"
 
 
@@ -482,6 +653,9 @@ class CrossAssociationCorrectionRecord:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -505,6 +679,7 @@ class CrossAssociationCorrectionRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="cross_association.candidate")
 
     @property
     def identity(self) -> str:
@@ -524,6 +699,9 @@ class SiteRecord:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -542,6 +720,7 @@ class SiteRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="association_site.candidate")
 
     @property
     def identity(self) -> str:
@@ -560,6 +739,9 @@ class AssociationParameterRecord:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "record_id", _identifier(self.record_id, field="record_id"))
@@ -583,6 +765,7 @@ class AssociationParameterRecord:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="association_parameter.candidate")
 
     @property
     def identity(self) -> str:
@@ -662,6 +845,9 @@ class ConstantCorrelation:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
     correlation_id: str | None = None
 
     def __post_init__(self) -> None:
@@ -676,6 +862,7 @@ class ConstantCorrelation:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="correlation.candidate")
         correlation_id = self.correlation_id or (
             f"component/{self.component_id}/{self.family}/constant"
         )
@@ -698,6 +885,9 @@ class ConstantPlusSumOfExponentialsCorrelation:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
     correlation_id: str | None = None
 
     def __post_init__(self) -> None:
@@ -725,6 +915,7 @@ class ConstantPlusSumOfExponentialsCorrelation:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="correlation.candidate")
         correlation_id = self.correlation_id or (
             f"component/{self.component_id}/{self.family}/temperature-exponential"
         )
@@ -748,6 +939,9 @@ class ConstantPlusPolynomialInTemperatureCorrelation:
     source_id: str
     locator: str
     domain_id: str
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
     correlation_id: str | None = None
 
     def __post_init__(self) -> None:
@@ -773,6 +967,7 @@ class ConstantPlusPolynomialInTemperatureCorrelation:
         object.__setattr__(self, "source_id", source_id)
         object.__setattr__(self, "locator", locator)
         object.__setattr__(self, "domain_id", domain_id)
+        _normalize_candidate(self, field="correlation.candidate")
         correlation_id = self.correlation_id or (
             f"component/{self.component_id}/{self.family}/{self.form}"
         )
@@ -868,6 +1063,9 @@ class AssociationEdge:
     energy_over_k: object
     volume: object
     source: AssociationEdgeSource
+    candidate_domain_id: str | None = None
+    qualification: ModelQualification | None = None
+    source_sha256: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.source, AssociationEdgeSource):
@@ -898,6 +1096,7 @@ class AssociationEdge:
         object.__setattr__(self, "volume_identity", volume_identity)
         object.__setattr__(self, "energy_over_k", energy)
         object.__setattr__(self, "volume", volume)
+        _normalize_candidate(self, field="association_edge.candidate")
 
 
 @dataclass(frozen=True, slots=True)
@@ -947,6 +1146,7 @@ type ParameterRecord = (
     | SiteRecord
     | AssociationParameterRecord
     | CorrelationRecord
+    | ReactionCorrelationRecord
 )
 
 
@@ -976,10 +1176,12 @@ __all__ = (
     "ModelFamilySpec",
     "ModelParameterFamily",
     "ModelParameterRecord",
+    "ModelQualification",
     "PairParameterFamily",
     "PairParameterRecord",
     "ParameterRecord",
     "ParameterSpec",
+    "ReactionCorrelationRecord",
     "RelativePermittivityFormulation",
     "SingleParameterFamily",
     "SingleParameterRecord",

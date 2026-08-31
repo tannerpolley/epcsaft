@@ -118,6 +118,9 @@ struct GrepeLocalStructure final {
     std::vector<std::array<double, 2>> packing_fraction_intervals;
     std::vector<std::vector<std::size_t>> phase_support_indices;
     std::vector<std::string> active_parameter_identities;
+    bool finite_incipient = false;
+    std::size_t vapor_phase_index = 0;
+    GrepePhase vapor_phase;
 };
 
 struct GrepeLocalPoint final {
@@ -148,17 +151,20 @@ struct GrepeLocalBlocks final {
 
 [[nodiscard]] GrepeLocalStructure compile_grepe_local_structure(
     const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel& incipient_model,
     const GrepeRequest& request
 );
 
 [[nodiscard]] GrepeLocalPoint evaluate_grepe_local_point(
     const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel& incipient_model,
     const GrepeRequest& request,
     const GrepeLocalStructure& structure
 );
 
 [[nodiscard]] GrepeResult initialize_grepe_local(
     const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel& incipient_model,
     const GrepeRequest& request,
     const GrepeLocalStructure& structure,
     const GrepeLocalPoint& point
@@ -166,6 +172,7 @@ struct GrepeLocalBlocks final {
 
 void evaluate_grepe_local_blocks(
     const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel& incipient_model,
     const GrepeRequest& request,
     const GrepeLocalStructure& structure,
     const GrepeLocalPoint& point,
@@ -177,6 +184,7 @@ void evaluate_grepe_local_blocks(
 
 [[nodiscard]] GrepeResult finalize_grepe_local(
     const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel& incipient_model,
     const GrepeRequest& request,
     const GrepeLocalStructure& structure,
     const GrepeLocalPoint& point,

@@ -23,6 +23,8 @@ struct NativeParameters final {
     std::vector<double> sigma_term_exponent;
     std::vector<double> dispersion_energy_over_k;
     std::vector<double> k_ij;
+    std::vector<double> k_ij_reciprocal_temperature_slope;
+    std::vector<double> k_ij_reference_temperature_k;
     std::vector<double> l_ij;
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;

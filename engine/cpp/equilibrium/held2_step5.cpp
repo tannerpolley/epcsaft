@@ -1,8 +1,8 @@
 #include "held2_step5.hpp"
 #include "held2_tolerances.hpp"
 
-#include <coin/IpIpoptApplication.hpp>
-#include <coin/IpTNLP.hpp>
+#include <IpIpoptApplication.hpp>
+#include <IpTNLP.hpp>
 
 #include <algorithm>
 #include <array>

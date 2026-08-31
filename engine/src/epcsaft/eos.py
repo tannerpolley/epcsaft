@@ -557,6 +557,8 @@ def _native_arguments(
         term_exponent,
         list(model.dispersion_energy_over_k),
         list(model.k_ij),
+        list(model.k_ij_reciprocal_temperature_slope),
+        list(model.k_ij_reference_temperature_k),
         list(model.l_ij),
         [component_position[component_id] for component_id, _ in model.site_ids],
         list(model.site_multiplicity),
@@ -626,14 +628,26 @@ class _EosModel:
             _native_identity_fingerprint(
                 "epcsaft-native-source-domain-v1",
                 {
+                    "qualification": model.candidate_qualification,
+                    "candidate_source_fingerprint": model.candidate_source_fingerprint,
                     "temperature_min_k": model.temperature_min_k,
                     "temperature_max_k": model.temperature_max_k,
                     "pressure_min_pa": model.pressure_min_pa,
                     "pressure_max_pa": model.pressure_max_pa,
                     "ion_mole_fraction_max": model.ion_mole_fraction_max,
+                    "source_temperature_min_k": model.source_temperature_min_k,
+                    "source_temperature_max_k": model.source_temperature_max_k,
+                    "source_pressure_min_pa": model.source_pressure_min_pa,
+                    "source_pressure_max_pa": model.source_pressure_max_pa,
                 },
             ),
             _python_native_artifact_fingerprint(),
+            math.nan if model.source_temperature_min_k is None else model.source_temperature_min_k,
+            math.nan if model.source_temperature_max_k is None else model.source_temperature_max_k,
+            math.nan if model.source_pressure_min_pa is None else model.source_pressure_min_pa,
+            math.nan if model.source_pressure_max_pa is None else model.source_pressure_max_pa,
+            model.candidate_qualification or "",
+            model.candidate_source_fingerprint or "",
         )
         object.__setattr__(self, "_native", native)
 
@@ -694,6 +708,7 @@ class _EosModel:
                     applicability.association_edges,
                     applicability.association_energy_scales,
                     coordinate.value,
+                    applicability.reference_temperature_k,
                 )
             )
         return tuple(result)

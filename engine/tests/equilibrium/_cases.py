@@ -201,7 +201,9 @@ def multineutral_reaction() -> equilibrium.ChemicalEquilibriumProblem:
     )
 
 
-def solved_pressure_case() -> tuple[
+def solved_pressure_case(
+    *, ideal_vapor: bool = False
+) -> tuple[
     epcsaft.Parameters,
     epcsaft.Mixture,
     equilibrium.GeneralReactiveEquilibriumProblem,
@@ -222,7 +224,9 @@ def solved_pressure_case() -> tuple[
             "vapor",
             "incipient",
             equilibrium.DeclaredNeutralComponents(("solvent", "cosolvent")),
-            equilibrium.ProviderModel((1.0e-6, 0.70), "installed-provider-eos"),
+            equilibrium.IdealGasModel("provider-helmholtz-coordinate-basis")
+            if ideal_vapor
+            else equilibrium.ProviderModel((1.0e-6, 0.70), "installed-provider-eos"),
         ),
     )
     outputs = (
@@ -252,7 +256,9 @@ def solved_pressure_case() -> tuple[
         parameters,
         model,
         equilibrium.GeneralReactiveEquilibriumProblem(
-            "finite-incipient-pressure",
+            "ideal-finite-incipient-pressure"
+            if ideal_vapor
+            else "finite-incipient-pressure",
             equilibrium.Fixed(313.15 * epcsaft.unit_registry.kelvin),
             equilibrium.Solved(
                 3.2e6 * epcsaft.unit_registry.pascal,
@@ -263,7 +269,9 @@ def solved_pressure_case() -> tuple[
             reaction,
             (phases[0].identity,),
             outputs,
-            continuation_identity="finite-incipient-boundary",
+            continuation_identity="ideal-finite-incipient-boundary"
+            if ideal_vapor
+            else "finite-incipient-boundary",
         ),
     )
 

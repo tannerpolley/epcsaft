@@ -212,6 +212,19 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
             "source-reference model identity is incompatible"
         );
     }
+    const bool candidate = !metadata().candidate_qualification.empty();
+    if (candidate && (
+            metadata().candidate_qualification != "candidate_extrapolation"
+            || !sha256_fingerprint_valid(metadata().candidate_source_fingerprint)
+            || !std::isfinite(metadata().source_temperature_min_k)
+            || !std::isfinite(metadata().source_temperature_max_k)
+            || !std::isfinite(metadata().source_pressure_min_pa)
+            || !std::isfinite(metadata().source_pressure_max_pa))) {
+        return fail(
+            SOURCE_REFERENCE_MISSING_MODEL,
+            "candidate source-reference identity is incomplete"
+        );
+    }
     if (!std::isfinite(temperature_k) || temperature_k <= 0.0
         || !std::isfinite(pressure_pa) || pressure_pa <= 0.0) {
         return fail(
@@ -828,10 +841,17 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
         result.solvent_molar_mass_kg_per_mol = solvent_molar_mass;
         result.reference_limit_molality_mol_per_kg = reference_molality;
         result.reference_convergence_error = convergence_error;
-        result.source_temperature_min_k = metadata().temperature_min_k;
-        result.source_temperature_max_k = metadata().temperature_max_k;
-        result.source_pressure_min_pa = metadata().pressure_min_pa;
-        result.source_pressure_max_pa = metadata().pressure_max_pa;
+        result.source_temperature_min_k = metadata().source_temperature_min_k;
+        result.source_temperature_max_k = metadata().source_temperature_max_k;
+        result.source_pressure_min_pa = metadata().source_pressure_min_pa;
+        result.source_pressure_max_pa = metadata().source_pressure_max_pa;
+        result.candidate_temperature_min_k = metadata().temperature_min_k;
+        result.candidate_temperature_max_k = metadata().temperature_max_k;
+        result.candidate_pressure_min_pa = metadata().pressure_min_pa;
+        result.candidate_pressure_max_pa = metadata().pressure_max_pa;
+        result.candidate_qualification = metadata().candidate_qualification;
+        result.candidate_source_fingerprint =
+            metadata().candidate_source_fingerprint;
         result.parameter_fingerprint = metadata().parameter_fingerprint;
         result.topology_fingerprint = metadata().topology_fingerprint;
         result.component_order_fingerprint =
