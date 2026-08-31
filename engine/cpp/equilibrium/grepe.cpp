@@ -1203,31 +1203,6 @@ GrepeResult initialize_finite_result(
     return initialize_finite_context(std::move(*prepared), request);
 }
 
-class GrepeFailure final : public std::runtime_error {
-public:
-    GrepeFailure(
-        std::string code,
-        const std::string& diagnostic,
-        std::optional<GrepeResult> partial_result = std::nullopt,
-        std::optional<std::size_t> attempt_index = std::nullopt
-    )
-        : std::runtime_error(diagnostic), code_(std::move(code)),
-          partial_result_(std::move(partial_result)), attempt_index_(attempt_index) {}
-
-    [[nodiscard]] const std::string& code() const noexcept { return code_; }
-    [[nodiscard]] const std::optional<GrepeResult>& partial_result() const noexcept {
-        return partial_result_;
-    }
-    [[nodiscard]] const std::optional<std::size_t>& attempt_index() const noexcept {
-        return attempt_index_;
-    }
-
-private:
-    std::string code_;
-    std::optional<GrepeResult> partial_result_;
-    std::optional<std::size_t> attempt_index_;
-};
-
 std::size_t input_index(
     const ReactiveFinitePhaseResult& result,
     const std::string& identity
@@ -1549,6 +1524,7 @@ struct VaporPoint {
     double pressure_pa = 0.0;
     double packing_fraction = 0.0;
     double pressure_log_volume = 0.0;
+    bool strict_local_minimum = false;
 };
 
 VaporPoint evaluate_vapor(
@@ -1960,6 +1936,7 @@ VaporPoint solve_vapor(
                     }
                 }
             }
+            point->strict_local_minimum = true;
             bool duplicate = false;
             for (const auto& existing : accepted) {
                 double distance = 0.0;
@@ -2445,7 +2422,9 @@ GrepeResult incipient_value_result(
         : std::vector<double>{closure.pressure_pa};
     result.phase_mechanical_classes = {
         closure.liquid.solved.equilibrium.local_stability_status,
-        closure.ideal ? "analytical_ideal_gas" : "not_adjudicated",
+        closure.ideal ? "analytical_ideal_gas"
+                      : closure.vapor.strict_local_minimum
+                      ? "strict_stable_local_minimum" : "stability_not_adjudicated",
     };
     result.equilibrium = liquid;
     result.evidence = closure.liquid.solved.evidence;
@@ -2708,7 +2687,7 @@ GrepeResult incipient_result(
         && std::isfinite(closure.vapor_pressure_pa) && closure.vapor_pressure_pa > 0.0
         && std::abs(closure.vapor_pressure_pa - closure.pressure_pa)
             / std::max(1.0, closure.pressure_pa) <= 1.0e-8;
-    const bool vapor_stability_available = closure.ideal;
+    const bool vapor_stability_available = closure.ideal || closure.vapor.strict_local_minimum;
     const bool public_outputs_available = std::all_of(
         result.output_value_available.begin(), result.output_value_available.end(),
         [](std::uint8_t value) { return value == 1; }
@@ -3623,7 +3602,12 @@ void evaluate_grepe_local_blocks(
             liquid_request, liquid_local, liquid_lower, liquid_upper
         );
         const ReactiveFinitePhaseResult& liquid = liquid_result.equilibrium;
-        if (!liquid.accepted || liquid.kkt_root_values.size() != liquid_count) {
+        const auto finite_vector = [](const std::vector<double>& values) {
+            return std::all_of(values.begin(), values.end(), [](double value) {
+                return std::isfinite(value);
+            });
+        };
+        if (!liquid.local_evaluation_valid || liquid.kkt_root_values.size() != liquid_count) {
             throw GrepeFailure(
                 liquid_result.failure_code.empty()
                     ? "physical_rejection" : liquid_result.failure_code,
@@ -4021,7 +4005,7 @@ void evaluate_grepe_local_blocks(
         }
         std::copy(source.begin(), source.end(), destination);
     };
-    if (!equilibrium.accepted) {
+    if (!equilibrium.local_evaluation_valid) {
         throw GrepeFailure(
             result.failure_code.empty() ? "physical_rejection" : result.failure_code,
             equilibrium.failure_reason.empty() ? "retained GREPE point failed"

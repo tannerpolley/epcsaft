@@ -73,19 +73,17 @@ def test_finite_phases_retain_values_and_metrics_across_permutations() -> None:
         )
 
 
-def test_nonideal_finite_incipient_retains_values_when_vapor_stability_is_unavailable() -> None:
+def test_nonideal_finite_incipient_certifies_strict_vapor_stability() -> None:
     parameters, model, problem = solved_pressure_case()
     active = epcsaft.ActiveParameterSet(parameters, (parameters.parameter_specs[0].identity,))
     result = equilibrium.solve(model, problem, active_parameters=active)
 
-    assert result.status == "non_evaluable"
-    assert result.failure is not None
-    assert result.failure.code == "second_order_failure"
+    assert result.status == "evaluated", result.failure
     pressure, vapor_fraction, partial_pressure = result.values
     assert pressure is not None and 2.5e6 < pressure < 4.0e6
     assert vapor_fraction is not None and 0.0 < vapor_fraction < 1.0
     assert partial_pressure == pytest.approx(pressure * vapor_fraction, rel=2.0e-13)
-    assert all(row.status == "non_evaluable" and row.jacobian is None for row in result.rows)
+    assert all(row.status == "evaluated" and row.jacobian is not None for row in result.rows)
     liquid, vapor = result.phases
     assert vapor.supported_component_ids == ("solvent", "cosolvent")
     assert liquid.chemical_potential_over_rt[:2] == pytest.approx(
@@ -93,6 +91,7 @@ def test_nonideal_finite_incipient_retains_values_when_vapor_stability_is_unavai
     )
     assert liquid.pressure_pa == pytest.approx(pressure, rel=1.0e-8)
     assert vapor.pressure_pa == pytest.approx(pressure, rel=1.0e-8)
+    assert vapor.mechanical_class == "strict_stable_local_minimum"
     assert abs(liquid.mole_fractions[2] - liquid.mole_fractions[3]) <= 1.0e-9
     evidence = dict(result.evidence)
     assert evidence["equilibrium_value_valid"] == 1

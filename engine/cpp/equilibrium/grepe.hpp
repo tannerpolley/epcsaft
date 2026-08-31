@@ -119,6 +119,31 @@ struct GrepeResult {
     std::vector<std::string> phase_mechanical_classes;
 };
 
+class GrepeFailure final : public std::runtime_error {
+public:
+    GrepeFailure(
+        std::string code,
+        const std::string& diagnostic,
+        std::optional<GrepeResult> partial_result = std::nullopt,
+        std::optional<std::size_t> attempt_index = std::nullopt
+    )
+        : std::runtime_error(diagnostic), code_(std::move(code)),
+          partial_result_(std::move(partial_result)), attempt_index_(attempt_index) {}
+
+    [[nodiscard]] const std::string& code() const noexcept { return code_; }
+    [[nodiscard]] const std::optional<GrepeResult>& partial_result() const noexcept {
+        return partial_result_;
+    }
+    [[nodiscard]] const std::optional<std::size_t>& attempt_index() const noexcept {
+        return attempt_index_;
+    }
+
+private:
+    std::string code_;
+    std::optional<GrepeResult> partial_result_;
+    std::optional<std::size_t> attempt_index_;
+};
+
 struct GrepeLocalStructure final {
     CompiledReactionSystem system;
     std::vector<GrepePhase> phases;
