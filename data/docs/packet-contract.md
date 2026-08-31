@@ -78,6 +78,11 @@ provenance file then records its own origin repository, commit, tree, path, and
 SHA-256. This distinction prevents a single synthetic origin receipt from
 concealing a cross-repository migration.
 
+Project-derived parameter documents use `derived-record-provenance-v1`. The
+receipt hashes every derived packet file, names the transformations, and hashes
+each retained repository input so mixed-source fits remain reproducible without
+claiming a false single-repository origin.
+
 ## Consumer lock
 
 The live Governance manifest records the monorepo identity, repository-relative

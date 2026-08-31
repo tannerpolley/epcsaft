@@ -18,6 +18,10 @@ LOCKS = ROOT / "governance/manifests/data-packet-locks.json"
 GROSS_PARAMETERS = (
     ROOT / "data" / "packets" / "gross-sadowski-2001" / "1" / "parameters/single.csv"
 )
+CAI_OBSERVATIONS = (
+    CAMPAIGN
+    / "source/library/observations/vapor_liquid_equilibrium/Cai_1996_MEA_H2O_VLE.csv"
+)
 
 
 def sha256(path: Path) -> str:
@@ -197,6 +201,40 @@ def promote_parameters() -> dict[str, Any]:
         "domain_id": "carbon-dioxide-fit-range",
         "locator": "gross-sadowski-2001/1/parameters/single.csv:carbon-dioxide-segment-count",
     }
+    domains = {item["domain_id"]: item for item in parameters["domains"]}
+    if "carbon-dioxide-fit-range" not in domains:
+        parameters["domains"].append(
+            {
+                "domain_id": "carbon-dioxide-fit-range",
+                "kind": "fit-range",
+                "temperature_min": {"magnitude": 216.0, "unit": "kelvin"},
+                "temperature_max": {"magnitude": 304.0, "unit": "kelvin"},
+            }
+        )
+    cai_domain = domains["cai-1996-neutral-refit"]
+    cai_domain.clear()
+    cai_domain.update(
+        {
+            "domain_id": "cai-1996-neutral-refit",
+            "kind": "fit-range",
+            "temperature_min": {"magnitude": 362.81, "unit": "kelvin"},
+            "temperature_max": {"magnitude": 431.85, "unit": "kelvin"},
+            "pressure_min": {"magnitude": 66660.0, "unit": "pascal"},
+            "pressure_max": {"magnitude": 101330.0, "unit": "pascal"},
+        }
+    )
+    mea_water = next(
+        record
+        for pair in parameters["pairs"]
+        for record in pair["coefficients"]
+        if record["identity"] == "pair/monoethanolamine/water/k_ij"
+    )
+    mea_water["source_sha256"] = f"sha256:{sha256(CAI_OBSERVATIONS)}"
+    mea_water["provenance"]["domain_id"] = "mea-diagnostic-293-15-to-393-15-k"
+    mea_water["provenance"]["locator"] = (
+        "grouped pressure-level one-SE selection and complete 25-row refit; "
+        "observation bounds are domain cai-1996-neutral-refit"
+    )
     if not any(
         item["source_id"] == "gross-sadowski-2001" for item in parameters["sources"]
     ):
@@ -207,6 +245,15 @@ def promote_parameters() -> dict[str, Any]:
                 "use_basis": "CO2 m=2.0729; 2.079 is retained only as a retired historical calculation value.",
             }
         )
+    cai_source = next(
+        item
+        for item in parameters["sources"]
+        if item["source_id"] == "cai-1996-neutral-refit"
+    )
+    cai_source["use_basis"] = (
+        "Provisional project fit of MEA-water k_ij to 25 admitted Cai (1996) rows; "
+        "not an accepted reactive parameter set."
+    )
     runtime = PACKET / "parameters/parameters.json"
     write_json(runtime, parameters)
     return parameters
@@ -216,11 +263,34 @@ def update_packet() -> str:
     runtime = PACKET / "parameters/parameters.json"
     provenance = PACKET / "provenance/source-origin.toml"
     provenance.write_text(
-        re.sub(
-            r'sha256 = "[0-9a-f]{64}"',
-            f'sha256 = "{sha256(runtime)}"',
-            provenance.read_text(),
-        ),
+        f'''provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+transformations = ["2B neutral-family selection", "Cai (1996) MEA-water fit", "Gross-Sadowski (2001) CO2 segment-count correction"]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "{sha256(runtime)}"
+
+[[sources]]
+source_id = "neutral-selected-parameters"
+role = "2B-selected base parameter document and MEA-water fit"
+retained_path = "validation/campaigns/2026-mea-parameter-estimation/inputs/neutral-selected-parameters.json"
+sha256 = "{sha256(SELECTED)}"
+
+[[sources]]
+role = "CO2 segment-count source"
+source_id = "gross-sadowski-2001"
+packet_id = "gross-sadowski-2001"
+packet_version = "1"
+packet_member = "parameters/single.csv"
+sha256 = "{sha256(GROSS_PARAMETERS)}"
+
+[[sources]]
+role = "MEA-water fit observations"
+source_id = "cai-1996-neutral-refit"
+retained_path = "validation/campaigns/2026-mea-parameter-estimation/source/library/observations/vapor_liquid_equilibrium/Cai_1996_MEA_H2O_VLE.csv"
+sha256 = "{sha256(CAI_OBSERVATIONS)}"
+''',
         encoding="utf-8",
     )
     manifest = PACKET / "packet.toml"
@@ -229,6 +299,13 @@ def update_packet() -> str:
         r'(path = "parameters/parameters.json"\nrole = "parameters"\nmedia_type = "application/json"\nsha256 = ")[0-9a-f]{64}',
         rf"\g<1>{sha256(runtime)}",
         text,
+    )
+    text = text.replace(
+        'source_refs = ["mea-thermodynamics-authority", "reaction-primary-records"]',
+        'source_refs = ["mea-thermodynamics-authority", "reaction-primary-records", "gross-sadowski-2001", "cai-1996-neutral-refit"]',
+    ).replace(
+        'source_refs = ["mea-thermodynamics-authority"]',
+        'source_refs = ["mea-thermodynamics-authority", "gross-sadowski-2001", "cai-1996-neutral-refit"]',
     )
     text = re.sub(
         r'(path = "provenance/source-origin.toml"\nrole = "provenance"\nmedia_type = "application/toml"\nsha256 = ")[0-9a-f]{64}',
@@ -317,6 +394,9 @@ def main() -> None:
         "reaction_standard_state": reaction["source_standard_state"],
         "domains": {
             "computational_temperature_k": [293.15, 393.15],
+            "co2_source_fit_temperature_k": [216.0, 304.0],
+            "cai_fit_temperature_k": [362.81, 431.85],
+            "cai_fit_pressure_pa": [66660.0, 101330.0],
             "source_qualified": "record-specific; Provider receipt is 313.15 K and R4/R5 above 323 K are extrapolated",
             "validated_pressure": None,
             "validated_speciation": None,

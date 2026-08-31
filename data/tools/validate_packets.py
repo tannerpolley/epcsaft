@@ -7,7 +7,6 @@ import tomllib
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
 ALLOWED_ROOTS = {"parameters", "observations", "sources", "provenance"}
 ALLOWED_ROLES = {
@@ -123,11 +122,7 @@ def _validate_parameter_bundle(
     declared: set[PurePosixPath] = set()
     for index, value in enumerate(files):
         member = _safe_bundle_member(value)
-        retained = (
-            None
-            if member is None
-            else PurePosixPath(relative.parent, member)
-        )
+        retained = None if member is None else PurePosixPath(relative.parent, member)
         if retained is None or retained in declared:
             errors.append(f"{prefix}: parameter bundle file {index} is invalid")
             continue
@@ -152,6 +147,10 @@ def _validate_migration_provenance(
         return _validate_source_record_provenance(
             packet_root, relative, expected_paths, prefix, data
         )
+    if data.get("provenance_kind") == "derived-record-provenance-v1":
+        return _validate_derived_record_provenance(
+            packet_root, expected_paths, prefix, data
+        )
     if data.get("provenance_kind") != "repository-migration-v1":
         return [f"{prefix}: unsupported provenance_kind for {relative}"]
     errors: list[str] = []
@@ -175,7 +174,9 @@ def _validate_migration_provenance(
             continue
         retained = _safe_relative_path(record.get("retained_path"))
         if retained is None or retained in mapped:
-            errors.append(f"{prefix}: provenance file {index} has invalid retained_path")
+            errors.append(
+                f"{prefix}: provenance file {index} has invalid retained_path"
+            )
             continue
         mapped.add(retained)
         if not _nonempty_string(record.get("origin_path")):
@@ -211,9 +212,7 @@ def _validate_source_record_provenance(
             continue
         retained = _safe_relative_path(record.get("retained_path"))
         if retained is None or retained in mapped:
-            errors.append(
-                f"{prefix}: source record {index} has invalid retained_path"
-            )
+            errors.append(f"{prefix}: source record {index} has invalid retained_path")
             continue
         mapped.add(retained)
         for field in ("origin_repository", "origin_path"):
@@ -230,6 +229,96 @@ def _validate_source_record_provenance(
             errors.append(f"{prefix}: source record hash mismatch for {retained}")
     if mapped != expected_paths:
         errors.append(f"{prefix}: source-record provenance file set is incomplete")
+    return errors
+
+
+def _validate_derived_record_provenance(
+    packet_root: Path,
+    expected_paths: set[PurePosixPath],
+    prefix: str,
+    data: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    if data.get("schema_version") != 1:
+        errors.append(f"{prefix}: derived-record provenance requires schema_version 1")
+    transformations = data.get("transformations")
+    if not (
+        isinstance(transformations, list)
+        and transformations
+        and all(_nonempty_string(item) for item in transformations)
+    ):
+        errors.append(f"{prefix}: derived-record provenance requires transformations")
+    records = data.get("records")
+    if not isinstance(records, list) or not records:
+        return errors + [f"{prefix}: derived-record provenance requires records"]
+    mapped: set[PurePosixPath] = set()
+    for index, record in enumerate(records):
+        retained = (
+            _safe_relative_path(record.get("retained_path"))
+            if isinstance(record, dict)
+            else None
+        )
+        if retained is None or retained in mapped:
+            errors.append(f"{prefix}: derived record {index} has invalid retained_path")
+            continue
+        mapped.add(retained)
+        declared_hash = record.get("sha256")
+        target = packet_root / Path(*retained.parts)
+        if not _valid_hex(declared_hash, SHA256_LENGTH):
+            errors.append(f"{prefix}: derived record {retained} has invalid sha256")
+        elif not target.is_file() or sha256(target) != declared_hash:
+            errors.append(f"{prefix}: derived record hash mismatch for {retained}")
+    if mapped != expected_paths:
+        errors.append(f"{prefix}: derived-record provenance file set is incomplete")
+    sources = data.get("sources")
+    if not isinstance(sources, list) or not sources:
+        return errors + [f"{prefix}: derived-record provenance requires sources"]
+    repository_root = ROOT.parent
+    source_ids: set[str] = set()
+    for index, source in enumerate(sources):
+        if not isinstance(source, dict):
+            errors.append(f"{prefix}: derived source {index} must be a table")
+            continue
+        source_id = source.get("source_id")
+        retained = _safe_bundle_member(source.get("retained_path"))
+        packet_id = source.get("packet_id")
+        packet_version = source.get("packet_version")
+        packet_member = _safe_relative_path(source.get("packet_member"))
+        repository_source = retained is not None and retained.parts[0] in {
+            "data",
+            "validation",
+        }
+        packet_source = (
+            _nonempty_string(packet_id)
+            and "/" not in packet_id
+            and _nonempty_string(packet_version)
+            and "/" not in packet_version
+            and packet_member is not None
+        )
+        if (
+            not _nonempty_string(source_id)
+            or source_id in source_ids
+            or repository_source == packet_source
+        ):
+            errors.append(f"{prefix}: derived source {index} is invalid")
+            continue
+        source_ids.add(source_id)
+        if not _nonempty_string(source.get("role")):
+            errors.append(f"{prefix}: derived source {source_id} requires role")
+        declared_hash = source.get("sha256")
+        target = (
+            repository_root / Path(*retained.parts)
+            if repository_source
+            else ROOT
+            / "packets"
+            / str(packet_id)
+            / str(packet_version)
+            / Path(*packet_member.parts)
+        )
+        if not _valid_hex(declared_hash, SHA256_LENGTH):
+            errors.append(f"{prefix}: derived source {source_id} has invalid sha256")
+        elif not target.is_file() or sha256(target) != declared_hash:
+            errors.append(f"{prefix}: derived source hash mismatch for {source_id}")
     return errors
 
 
@@ -262,11 +351,18 @@ def validate_packet(manifest: Path) -> list[str]:
             f"{prefix}: schema_version must be one of "
             f"{sorted(SUPPORTED_PACKET_SCHEMA_VERSIONS)}"
         )
-    elif schema_version == 1 and packet_root.parent.name not in LEGACY_SCHEMA1_PACKET_VERSIONS:
+    elif (
+        schema_version == 1
+        and packet_root.parent.name not in LEGACY_SCHEMA1_PACKET_VERSIONS
+    ):
         errors.append(
             f"{prefix}: schema_version 1 is reserved for accepted historical packets"
         )
-    elif schema_version == 1 and packet_root.name not in LEGACY_SCHEMA1_PACKET_VERSIONS[packet_root.parent.name]:
+    elif (
+        schema_version == 1
+        and packet_root.name
+        not in LEGACY_SCHEMA1_PACKET_VERSIONS[packet_root.parent.name]
+    ):
         errors.append(
             f"{prefix}: schema_version 1 is not accepted for this packet version"
         )
@@ -278,9 +374,7 @@ def validate_packet(manifest: Path) -> list[str]:
         if not _nonempty_string(data.get(field)):
             errors.append(f"{prefix}: {field} is required")
     if schema_version == 2 and not _nonempty_string(data.get("tolerance_rationale")):
-        errors.append(
-            f"{prefix}: tolerance_rationale is required for schema_version 2"
-        )
+        errors.append(f"{prefix}: tolerance_rationale is required for schema_version 2")
 
     sources = data.get("sources")
     domains = data.get("domains")
@@ -360,10 +454,7 @@ def validate_packet(manifest: Path) -> list[str]:
         if (
             not isinstance(declared_hash, str)
             or len(declared_hash) != SHA256_LENGTH
-            or any(
-                character not in "0123456789abcdef"
-                for character in declared_hash
-            )
+            or any(character not in "0123456789abcdef" for character in declared_hash)
         ):
             errors.append(f"{prefix}: {relative} has invalid sha256")
         target = packet_root / Path(*relative.parts)
@@ -410,11 +501,7 @@ def validate_packet(manifest: Path) -> list[str]:
             _validate_parameter_bundle(
                 packet_root,
                 relative,
-                {
-                    path
-                    for path in parameter_payloads
-                    if path.parent == relative.parent
-                },
+                {path for path in parameter_payloads if path.parent == relative.parent},
                 prefix,
             )
         )
@@ -443,17 +530,14 @@ def validate_repository(root: Path = ROOT) -> list[str]:
     ]
     if empty_packet_directories:
         errors.append(
-            "packets: empty packet directory: "
-            f"{sorted(empty_packet_directories)}"
+            f"packets: empty packet directory: {sorted(empty_packet_directories)}"
         )
     version_directories = [
         path for path in packets.glob("*/*") if path.is_dir() or path.is_symlink()
     ]
     for directory in version_directories:
         if not (directory / "packet.toml").is_file():
-            errors.append(
-                f"{directory.relative_to(root)}: missing packet.toml"
-            )
+            errors.append(f"{directory.relative_to(root)}: missing packet.toml")
     for manifest in manifests:
         errors.extend(validate_packet(manifest))
     stray = [

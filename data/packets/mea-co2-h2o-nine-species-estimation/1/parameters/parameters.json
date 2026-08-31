@@ -1503,7 +1503,35 @@
     },
     {
       "domain_id": "cai-1996-neutral-refit",
-      "kind": "unknown"
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 362.81,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 431.85,
+        "unit": "kelvin"
+      },
+      "pressure_min": {
+        "magnitude": 66660.0,
+        "unit": "pascal"
+      },
+      "pressure_max": {
+        "magnitude": 101330.0,
+        "unit": "pascal"
+      }
+    },
+    {
+      "domain_id": "carbon-dioxide-fit-range",
+      "kind": "fit-range",
+      "temperature_min": {
+        "magnitude": 216.0,
+        "unit": "kelvin"
+      },
+      "temperature_max": {
+        "magnitude": 304.0,
+        "unit": "kelvin"
+      }
     }
   ],
   "model_coefficients": [
@@ -2116,12 +2144,12 @@
           "family": "k_ij",
           "identity": "pair/monoethanolamine/water/k_ij",
           "provenance": {
-            "domain_id": "cai-1996-neutral-refit",
-            "locator": "grouped pressure-level one-SE selection and complete 25-row refit",
+            "domain_id": "mea-diagnostic-293-15-to-393-15-k",
+            "locator": "grouped pressure-level one-SE selection and complete 25-row refit; observation bounds are domain cai-1996-neutral-refit",
             "source_id": "cai-1996-neutral-refit"
           },
           "qualification": "candidate_extrapolation",
-          "source_sha256": "sha256:670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c",
+          "source_sha256": "sha256:c7857f045757881662f1836913e25216f808bc9fdcf5c74f3b4d03c76c134a8b",
           "value": {
             "magnitude": -0.07352749874985018,
             "unit": "dimensionless"
@@ -2501,7 +2529,7 @@
     {
       "citation": "Project-authored ePC-SAFT parameter fit result.",
       "source_id": "cai-1996-neutral-refit",
-      "use_basis": "Accepted fitted coefficient values and exact numerical evidence."
+      "use_basis": "Provisional project fit of MEA-water k_ij to 25 admitted Cai (1996) rows; not an accepted reactive parameter set."
     },
     {
       "source_id": "gross-sadowski-2001",

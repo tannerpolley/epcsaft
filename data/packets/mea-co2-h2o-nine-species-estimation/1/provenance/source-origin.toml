@@ -1,10 +1,27 @@
-provenance_kind = "source-record-provenance-v1"
+provenance_kind = "derived-record-provenance-v1"
 schema_version = 1
+transformations = ["2B neutral-family selection", "Cai (1996) MEA-water fit", "Gross-Sadowski (2001) CO2 segment-count correction"]
 
 [[records]]
 retained_path = "parameters/parameters.json"
-origin_repository = "tannerpolley/MEA-Thermodynamics"
-origin_commit = "412f85b4a34d713aa3b00985f6bef044c1f12327"
-origin_tree = "412f85b4a34d713aa3b00985f6bef044c1f12327"
-origin_path = "data/reference/epcsaft_bundles/mea-co2-h2o-nine-species-regression-input/1"
-sha256 = "0d1ebbae87eec56c4955ac243cea56186440b8623e1d4c84e934ddd2595f48ca"
+sha256 = "12e380a27eb615e25bae580f8c1ec852020879917b08fa16a5821ae76311550d"
+
+[[sources]]
+source_id = "neutral-selected-parameters"
+role = "2B-selected base parameter document and MEA-water fit"
+retained_path = "validation/campaigns/2026-mea-parameter-estimation/inputs/neutral-selected-parameters.json"
+sha256 = "e210801233ac1dcc756c5cfdeeb7454c4e7878de912da4c4bc1f40c503fec1b1"
+
+[[sources]]
+role = "CO2 segment-count source"
+source_id = "gross-sadowski-2001"
+packet_id = "gross-sadowski-2001"
+packet_version = "1"
+packet_member = "parameters/single.csv"
+sha256 = "63f193f425bdaac0d90a3cf7b431ece8471c16cbdef46e844603ba39d3215b06"
+
+[[sources]]
+role = "MEA-water fit observations"
+source_id = "cai-1996-neutral-refit"
+retained_path = "validation/campaigns/2026-mea-parameter-estimation/source/library/observations/vapor_liquid_equilibrium/Cai_1996_MEA_H2O_VLE.csv"
+sha256 = "c7857f045757881662f1836913e25216f808bc9fdcf5c74f3b4d03c76c134a8b"
