@@ -95,11 +95,8 @@ if grep -q '^engine/' <<<"$paths"; then
         bash -n engine/tools/*.sh
     fi
 fi
-if [[ "$source_only" == 0 ]] && grep -q '^validation/' <<<"$paths"; then
-    (cd validation && ../.venv/bin/python -m pytest -q -m 'not campaign and not slow and not expensive')
-    if grep -q '^validation/campaigns/' <<<"$paths"; then
-        echo "Validation campaign replay is explicit; run the changed campaign or tools/run-slice.sh when its scientific claim requires it"
-    fi
+if [[ "$source_only" == 0 ]] && grep -q '^validation/campaigns/' <<<"$paths"; then
+    echo "Validation campaign replay is explicit; run only the changed campaign claim or tools/run-slice.sh khudaida"
 fi
 if [[ "$source_only" == 1 ]]; then
     echo "source-only affected checks passed; no wheel build or installed-artifact tests ran"

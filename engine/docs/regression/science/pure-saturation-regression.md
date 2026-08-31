@@ -18,7 +18,8 @@ and SHA-256 identity are required by the strict `ParameterFit` document.
 
 The compact Engine tests falsify coexistence, derivative, deterministic-
 multistart, non-evaluable-trial, rank, conditioning, active-bound, and transfer
-failures. Literature breadth and predictive interpretation belong to the
-installed-wheel campaign in
-`validation/campaigns/2026-pure-saturation-regression/`, which owns the source
-tables, campaign tolerances, held-out rows, and results.
+failures. A future literature or predictive claim belongs in an explicit
+installed-wheel Validation campaign. The retained
+`validation/campaigns/2026-pure-saturation-regression/` request and receipt are
+historical provenance: the final wheel produced no comparable quantitative fit
+output, so no current campaign test or held-out predictive claim is admitted.
