@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import replace
 import math
+from dataclasses import replace
 
 import pytest
 
 import epcsaft
-from epcsaft import _core, equilibrium
-from epcsaft.equilibrium import _grepe
+from epcsaft import equilibrium
 from tests.equilibrium._cases import (
     finite_phase_case,
     ideal_uptake_case,
@@ -15,19 +14,6 @@ from tests.equilibrium._cases import (
     reverse_finite_phases,
     solved_pressure_case,
 )
-
-
-def _native_grepe_result(
-    model: epcsaft.Mixture,
-    problem: equilibrium.GeneralReactiveEquilibriumProblem,
-    active: epcsaft.ActiveParameterSet,
-) -> object:
-    incipient, native_problem, reference = _grepe._native_general_reactive_equilibrium_inputs(
-        model, problem, active_parameters=active, continuation_start=None
-    )
-    return _core._solve_grepe(
-        model._native, incipient, native_problem, active, reference
-    )
 
 
 def test_finite_phases_retain_values_and_metrics_across_permutations() -> None:
@@ -104,6 +90,28 @@ def test_nonideal_finite_incipient_certifies_strict_vapor_stability() -> None:
     assert evidence["bubble_log_closure_abs"] <= 2.0e-10
 
 
+def test_vapor_stability_failure_retains_converged_value_payload() -> None:
+    parameters, model, problem = solved_pressure_case()
+    active = epcsaft.ActiveParameterSet(
+        parameters,
+        ("association/solvent/a/solvent/b/energy_over_k",),
+        values=(10000.0,),
+    )
+
+    result = equilibrium.solve(model, problem, active_parameters=active)
+
+    assert result.status == "non_evaluable"
+    assert result.failure is not None and result.failure.code == "second_order_failure"
+    assert result.physical_status == "failed"
+    assert all(value is not None and math.isfinite(value) for value in result.values)
+    assert all(value is None for value in result.jacobian)
+    assert len(result.phases) == 2
+    assert result.phases[1].mechanical_class == "stability_not_adjudicated"
+    evidence = dict(result.evidence)
+    assert evidence["equilibrium_value_valid"] == 1
+    assert math.isfinite(evidence["bubble_log_closure_abs"])
+
+
 @pytest.mark.parametrize(
     ("magnitude", "failure_code"),
     ((0.0, "singular_sensitivity"), (1.0e-10, "ill_conditioned_sensitivity")),
@@ -114,7 +122,9 @@ def test_sensitivity_failure_retains_complete_incipient_value_payload(
 ) -> None:
     parameters, model, problem = solved_pressure_case(ideal_vapor=True)
     active = epcsaft.ActiveParameterSet(parameters, (parameters.parameter_specs[0].identity,))
-    pressure = _native_grepe_result(model, problem, active).equilibrium.output_values[0]
+    baseline = equilibrium.solve(model, problem, active_parameters=active)
+    assert baseline.status == "evaluated", baseline.failure
+    pressure = float(baseline.values[0])
     feed = equilibrium.AffineFeed(
         problem.reaction_system.species_ids,
         problem.reaction_system.feed_amounts_mol,
@@ -126,54 +136,48 @@ def test_sensitivity_failure_retains_complete_incipient_value_payload(
     )
     candidate = replace(problem, feed=feed, intensive_boundaries=(boundary,))
 
-    native = _native_grepe_result(model, candidate, active)
     result = equilibrium.solve(model, candidate, active_parameters=active)
 
-    assert native.failure_code == failure_code
-    assert tuple(native.output_value_available) == (1, 1, 1)
-    assert tuple(native.output_derivative_available) == (0, 0, 0)
-    assert len(native.retained_phase_request_indices) == 2
-    assert all(math.isfinite(value) for value in native.equilibrium.output_values)
     assert result.failure is not None and result.failure.code == failure_code
     assert len(result.phases) == 2
     assert all(value is not None for value in result.values)
     assert all(value is None for value in result.jacobian)
+    assert dict(result.evidence)["sensitivity_status"] == "unavailable"
 
 
-def test_nonfinite_value_failure_is_typed_without_inventing_an_output() -> None:
+def test_value_failure_is_typed_without_inventing_an_output() -> None:
     parameters, model, problem = solved_pressure_case(ideal_vapor=True)
     active = epcsaft.ActiveParameterSet(parameters, (parameters.parameter_specs[0].identity,))
     candidate = replace(
         problem,
-        outputs=(replace(problem.outputs[1], coefficients=(math.nan, 0.0)),),
+        outputs=(replace(problem.outputs[2], coefficients=(1.0e308, 1.0e308)),),
     )
 
-    native = _native_grepe_result(model, candidate, active)
+    result = equilibrium.solve(model, candidate, active_parameters=active)
 
-    assert native.failure_code == "physical_rejection"
-    assert tuple(native.output_value_available) == (0,)
-    assert tuple(native.output_derivative_available) == (0,)
-    assert not math.isfinite(native.equilibrium.output_values[0])
+    assert result.failure is not None and result.failure.code == "physical_rejection"
+    assert result.values == (None,)
+    assert result.jacobian == (None,)
+    assert len(result.phases) == 2
 
 
-def test_mixed_finite_and_nonfinite_outputs_keep_per_output_masks() -> None:
+def test_mixed_output_availability_is_retained_through_the_public_result() -> None:
     parameters, model, problem = solved_pressure_case(ideal_vapor=True)
     active = epcsaft.ActiveParameterSet(parameters, (parameters.parameter_specs[0].identity,))
     candidate = replace(
         problem,
         outputs=(
-            replace(problem.outputs[1], coefficients=(math.nan, 0.0)),
-            problem.outputs[2],
+            replace(problem.outputs[2], coefficients=(1.0e308, 1.0e308)),
+            problem.outputs[1],
         ),
     )
 
-    native = _native_grepe_result(model, candidate, active)
+    result = equilibrium.solve(model, candidate, active_parameters=active)
 
-    assert native.failure_code == "physical_rejection"
-    assert tuple(native.output_value_available) == (0, 1)
-    assert tuple(native.output_derivative_available) == (0, 1)
-    assert not math.isfinite(native.equilibrium.output_values[0])
-    assert math.isfinite(native.equilibrium.output_values[1])
+    assert result.failure is not None and result.failure.code == "physical_rejection"
+    assert result.values[0] is None
+    assert result.values[1] is not None and 0.0 < result.values[1] < 1.0
+    assert result.jacobian == (None, None)
 
 
 def test_intensive_boundary_recovers_analytic_open_component_uptake() -> None:

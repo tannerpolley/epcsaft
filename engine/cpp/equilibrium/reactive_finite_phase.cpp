@@ -27,7 +27,6 @@ constexpr double kReactiveFinitePhaseAcceptableTolerance = 1.0e-8;
 constexpr double kReactiveFinitePhaseDistinctnessMinimum = 1.0e-6;
 constexpr double kReactiveFinitePhaseBoundMarginMinimum = 1.0e-7;
 constexpr double kReactiveFinitePhaseStrictMinimumFactor = 1.0e-10;
-constexpr double kReactiveFinitePhaseStabilityMarginFactor = 1.0e-6;
 
 std::string ipopt_status_name(Ipopt::ApplicationReturnStatus status) {
     switch (status) {
@@ -2775,10 +2774,8 @@ void finalize_reactive_finite_phase_result(
         );
     result.reduced_hessian_min_eigenvalue = minimum_reduced_eigenvalue;
     result.reduced_hessian_scale = reduced_hessian_scale;
-    result.reduced_hessian_threshold = std::max(
-        kReactiveFinitePhaseStrictMinimumFactor,
-        kReactiveFinitePhaseStabilityMarginFactor
-    ) * reduced_hessian_scale;
+    result.reduced_hessian_threshold =
+        kReactiveFinitePhaseStrictMinimumFactor * reduced_hessian_scale;
     result.minimum_amount_mol = minimum_amount;
     result.minimum_bound_margin = minimum_bound_margin;
     const bool value_pass =

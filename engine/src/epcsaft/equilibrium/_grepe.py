@@ -1853,7 +1853,6 @@ def _finite_phase_trial(
 def _finite_phase_failed(
     problem: GeneralReactiveEquilibriumProblem,
     descriptor: GeneralReactiveEquilibriumDescriptor,
-    trial: ActiveParameterTrialReceipt,
     code: Literal[
         "physical_rejection",
         "numerical_convergence_failure",
@@ -1915,7 +1914,6 @@ def _finite_phase_failed(
 def _native_grepe_failure(
     problem: GeneralReactiveEquilibriumProblem,
     descriptor: GeneralReactiveEquilibriumDescriptor,
-    trial: ActiveParameterTrialReceipt,
     native_result: object,
     native: Any,
     phases: tuple[EquilibriumPhaseState, ...],
@@ -1939,7 +1937,6 @@ def _native_grepe_failure(
     return _finite_phase_failed(
         problem,
         descriptor,
-        trial,
         cast(Any, code),
         diagnostic,
         solver_status=native.solver_status,
@@ -2123,7 +2120,7 @@ def _map_native_incipient_result(
     )
     if not native.accepted:
         return _native_grepe_failure(
-            problem, descriptor, trial, native_result, native, phases
+            problem, descriptor, native_result, native, phases
         )
     if tuple(native.parameter_order) != descriptor.active_parameter_identities:
         raise ValueError("finite-incipient GREPE parameter derivative order changed")
@@ -2201,7 +2198,7 @@ def _map_native_boundary_result(
     )
     if not native.accepted:
         return _native_grepe_failure(
-            problem, descriptor, trial, native_result, native, phases
+            problem, descriptor, native_result, native, phases
         )
     rows = _finite_phase_rows(problem, descriptor, native)
     coordinates = tuple(float(value) for value in cast(Any, native_result).branch_coordinates)
@@ -2433,7 +2430,6 @@ def _map_native_finite_result(
         return _native_grepe_failure(
             problem,
             descriptor,
-            trial,
             native_result,
             native,
             _finite_phase_states(
@@ -2450,7 +2446,6 @@ def _map_native_finite_result(
         return _finite_phase_failed(
             problem,
             descriptor,
-            trial,
             "first_order_failure",
             "finite-phase GREPE parameter derivative order differs from its descriptor",
             solver_status=native.solver_status,

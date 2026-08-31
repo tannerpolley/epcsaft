@@ -1033,12 +1033,15 @@ GrepeResult solve_finite_result(
     result.text_evidence.push_back({
         "local_stability_status", result.equilibrium.local_stability_status
     });
+    result.text_evidence.push_back({
+        "sensitivity_status", result.equilibrium.sensitivity_status
+    });
     if (!result.equilibrium.accepted) {
         result.failure_code = result.equilibrium.provider_domain_status == "failed"
             ? "provider_domain_rejection"
             : result.equilibrium.physical_status == "failed"
             ? "physical_rejection"
-            : result.equilibrium.sensitivity_status == "failed"
+            : result.equilibrium.sensitivity_status == "unavailable"
             ? "first_order_failure"
             : "numerical_convergence_failure";
     }
@@ -1585,12 +1588,13 @@ VaporPoint evaluate_vapor(
         );
     }
     const double h_vv = block.phase.hessian[count * state_count + count];
-    if (!std::isfinite(h_vv) || !(h_vv > 0.0)) {
+    if (!std::isfinite(h_vv) || h_vv == 0.0) {
         throw GrepeFailure(
-            "second_order_failure",
-            "incipient vapor volume curvature is not finite and positive"
+            "first_order_failure",
+            "incipient vapor volume response is unavailable"
         );
     }
+    result.strict_local_minimum = h_vv > 0.0;
     result.chemical_potentials.assign(block.phase.gradient.begin(), block.phase.gradient.begin() + static_cast<std::ptrdiff_t>(count));
     result.mu_log_ratio_at_fixed_volume.assign(count * reference, 0.0);
     result.pressure_log_ratio.assign(reference, 0.0);
@@ -1903,15 +1907,17 @@ VaporPoint solve_vapor(
                     scale = std::max(scale, std::abs(value));
                 }
                 std::vector<double> lower(reference * reference, 0.0);
-                for (std::size_t row = 0; row < reference; ++row) {
-                    for (std::size_t column = 0; column <= row; ++column) {
+                for (std::size_t row = 0;
+                     row < reference && point->strict_local_minimum;
+                     ++row) {
+                    for (std::size_t column = 0;
+                         column <= row && point->strict_local_minimum;
+                         ++column) {
                         if (std::abs(hessian[row * reference + column]
                                      - hessian[column * reference + row])
                             > 2.0e-9 * scale) {
-                            throw GrepeFailure(
-                                "first_order_failure",
-                                "incipient tangent-plane Hessian is not symmetric"
-                            );
+                            point->strict_local_minimum = false;
+                            break;
                         }
                         double value = 0.5 * (
                             hessian[row * reference + column]
@@ -1923,10 +1929,8 @@ VaporPoint solve_vapor(
                         }
                         if (row == column) {
                             if (!std::isfinite(value) || value <= 1.0e-12 * scale) {
-                                throw GrepeFailure(
-                                    "second_order_failure",
-                                    "incipient composition is not a strict local tangent-plane minimum"
-                                );
+                                point->strict_local_minimum = false;
+                                break;
                             }
                             lower[row * reference + column] = std::sqrt(value);
                         } else {
@@ -1936,7 +1940,6 @@ VaporPoint solve_vapor(
                     }
                 }
             }
-            point->strict_local_minimum = true;
             bool duplicate = false;
             for (const auto& existing : accepted) {
                 double distance = 0.0;
@@ -1980,6 +1983,19 @@ VaporPoint solve_vapor(
                 : "no declared strict-stable vapor composition satisfies fugacity equality"
         );
     }
+    const bool stability_available = std::any_of(
+        accepted.begin(), accepted.end(), [](const auto& candidate) {
+            return candidate.first.strict_local_minimum;
+        }
+    );
+    if (stability_available) {
+        accepted.erase(
+            std::remove_if(accepted.begin(), accepted.end(), [](const auto& candidate) {
+                return !candidate.first.strict_local_minimum;
+            }),
+            accepted.end()
+        );
+    }
     if (continued) {
         return std::move(accepted.front().first);
     }
@@ -1992,7 +2008,7 @@ VaporPoint solve_vapor(
             ? left.first.fractions < right.first.fractions
             : left_distance < right_distance;
     });
-    if (accepted.size() > 1) {
+    if (stability_available && accepted.size() > 1) {
         const double first = accepted[0].first.chemical_potentials[reference]
             - liquid_potentials[reference];
         const double second = accepted[1].first.chemical_potentials[reference]
@@ -2427,8 +2443,12 @@ GrepeResult incipient_value_result(
                       ? "strict_stable_local_minimum" : "stability_not_adjudicated",
     };
     result.equilibrium = liquid;
+    result.equilibrium.sensitivity_status = "unavailable";
+    result.equilibrium.sensitivity_failure_reason =
+        "finite_incipient_sensitivity_unavailable";
     result.evidence = closure.liquid.solved.evidence;
     result.text_evidence = closure.liquid.solved.text_evidence;
+    result.text_evidence.push_back({"sensitivity_status", "unavailable"});
     ReactiveFinitePhaseResult& equilibrium = result.equilibrium;
     for (std::size_t component = 0; component < component_count; ++component) {
         equilibrium.phase_chemical_potentials_over_rt[0][component] =
@@ -2670,6 +2690,9 @@ GrepeResult incipient_result(
             }
         }
     }
+    equilibrium.sensitivity_status = "available";
+    equilibrium.sensitivity_failure_reason.clear();
+    result.text_evidence.back().second = "available";
     set_output_availability(result, request.outputs.size(), false, true);
     const double vapor_fraction_sum = std::accumulate(
         closure.vapor_fractions.begin(), closure.vapor_fractions.end(), 0.0
@@ -2698,6 +2721,9 @@ GrepeResult incipient_result(
     if (!aggregate_valid || !vapor_stability_available || !public_outputs_available) {
         equilibrium.accepted = false;
         equilibrium.equilibrium_value_valid = equilibrium.equilibrium_value_valid && aggregate_valid;
+        if (!aggregate_valid || !vapor_stability_available) {
+            equilibrium.physical_status = "failed";
+        }
         result.partial_selection_reason = "none";
         throw GrepeFailure(
             !vapor_stability_available ? "second_order_failure" : "physical_rejection",
