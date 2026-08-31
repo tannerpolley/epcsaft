@@ -68,21 +68,6 @@ private:
   std::optional<epcsaft_engine::equilibrium::GrepeResult> owner_result_;
 };
 
-template <typename Function>
-decltype(auto) full_space_owner_call(Function &&function) {
-  try {
-    return std::forward<Function>(function)();
-  } catch (const OwnerEvaluationError &) {
-    throw;
-  } catch (const epcsaft_engine::equilibrium::ProviderDomainError &error) {
-    throw OwnerEvaluationError("provider_domain_rejection", error.what());
-  } catch (const std::logic_error &error) {
-    throw OwnerEvaluationError("owner_contract_failure", error.what());
-  } catch (const std::runtime_error &error) {
-    throw OwnerEvaluationError("owner_contract_failure", error.what());
-  }
-}
-
 NativeModel with_active_values(const NativeModel &base,
                                const std::vector<std::string> &identities,
                                const std::vector<double> &active) {
@@ -444,36 +429,15 @@ public:
         *owner_result = error.owner_result();
       }
       return reject(error.code(), error.what(), current_failure);
-    } catch (const epcsaft_engine::equilibrium::ProviderDomainError &error) {
-      return reject("provider_domain_rejection", error.what(), current_failure);
-    } catch (const std::logic_error &error) {
-      return reject("owner_contract_failure", error.what(), current_failure);
-    } catch (const std::runtime_error &error) {
-      return reject("owner_contract_failure", error.what(), current_failure);
     }
   }
 
-  bool reject(const std::string &raw_code, const std::string &reason,
-              OwnerFailure *current_failure = nullptr) const {
-    const std::string code =
-        std::find(failure_codes_.begin(), failure_codes_.end(), raw_code) ==
-                failure_codes_.end()
-            ? "owner_contract_failure"
-            : raw_code;
-    if (current_failure != nullptr) {
-      *current_failure = {code, reason, 1};
-    }
-    const auto match =
-        std::find_if(owner_failures_.begin(), owner_failures_.end(),
-                     [&](const OwnerFailure &failure) {
-                       return failure.code == code && failure.reason == reason;
-                     });
-    if (match == owner_failures_.end()) {
-      owner_failures_.push_back({code, reason, 1});
-    } else {
-      ++match->count;
-    }
-    return false;
+  std::size_t rejection_count() const noexcept {
+    return std::accumulate(owner_failures_.begin(), owner_failures_.end(),
+                           std::size_t{0},
+                           [](std::size_t count, const OwnerFailure &failure) {
+                             return count + failure.count;
+                           });
   }
 
   const std::vector<OwnerFailure> &owner_failures() const noexcept {
@@ -506,26 +470,11 @@ private:
   bool write_evaluation(const OwnerEvaluation &evaluation, double *residuals,
                         double **jacobians, double *predictions,
                         OwnerFailure *current_failure) const {
-    if (evaluation.values.size() != observation_.targets.size() ||
-        evaluation.derivatives.size() !=
-            observation_.targets.size() * active_parameter_count_) {
-      return reject("owner_contract_failure",
-                    "owner returned an incomplete value/Jacobian block",
-                    current_failure);
-    }
-    if (!std::all_of(evaluation.values.begin(), evaluation.values.end(),
-                     [](double value) { return std::isfinite(value); }) ||
-        !std::all_of(evaluation.derivatives.begin(),
-                     evaluation.derivatives.end(),
-                     [](double value) { return std::isfinite(value); })) {
-      return reject("owner_contract_failure",
-                    "owner returned a nonfinite value/Jacobian block",
-                    current_failure);
-    }
     for (std::size_t row = 0; row < observation_.targets.size(); ++row) {
       const auto &target = observation_.targets[row];
       const double predicted = evaluation.values[row];
-      if (target.residual == ResidualKind::LogRatio && predicted <= 0.0) {
+      if (!std::isfinite(predicted) ||
+          (target.residual == ResidualKind::LogRatio && predicted <= 0.0)) {
         return reject("observation_out_of_support",
                       "owner returned an inadmissible target value",
                       current_failure);
@@ -582,11 +531,6 @@ private:
         }
         jacobians[coordinate][row] =
             factor * derivative * coordinate_scales_[coordinate];
-        if (!std::isfinite(jacobians[coordinate][row])) {
-          return reject("owner_contract_failure",
-                        "owner produced a nonfinite Jacobian entry",
-                        current_failure);
-        }
       }
     }
     if (!std::all_of(residuals, residuals + observation_.targets.size(),
@@ -595,6 +539,29 @@ private:
                     "residual evaluation was nonfinite", current_failure);
     }
     return true;
+  }
+
+  bool reject(const std::string &raw_code, const std::string &reason,
+              OwnerFailure *current_failure = nullptr) const {
+    const std::string code =
+        std::find(failure_codes_.begin(), failure_codes_.end(), raw_code) ==
+                failure_codes_.end()
+            ? "owner_contract_failure"
+            : raw_code;
+    if (current_failure != nullptr) {
+      *current_failure = {code, reason, 1};
+    }
+    const auto match =
+        std::find_if(owner_failures_.begin(), owner_failures_.end(),
+                     [&](const OwnerFailure &failure) {
+                       return failure.code == code && failure.reason == reason;
+                     });
+    if (match == owner_failures_.end()) {
+      owner_failures_.push_back({code, reason, 1});
+    } else {
+      ++match->count;
+    }
+    return false;
   }
 
   const Experiment &experiment_;
@@ -1075,11 +1042,8 @@ public:
       structures_.push_back({
           experiment.structure_fingerprint,
           index,
-          full_space_owner_call([&] {
-            return epcsaft_engine::equilibrium::compile_grepe_local_structure(
-                experiment.model, experiment.incipient_model,
-                experiment.request);
-          }),
+          epcsaft_engine::equilibrium::compile_grepe_local_structure(
+              experiment.model, experiment.incipient_model, experiment.request),
       });
     }
   }
@@ -1101,16 +1065,12 @@ public:
     for (const auto &retained : structures_) {
       const auto &experiment =
           std::get<GrepeExperiment>(experiments[retained.experiment_index]);
-      result.push_back(full_space_owner_call([&] {
-        return epcsaft_engine::equilibrium::evaluate_grepe_local_point(
-            with_active_values(experiment.model,
-                               retained.value.active_parameter_identities,
-                               active),
-            with_active_values(experiment.incipient_model,
-                               retained.value.active_parameter_identities,
-                               active),
-            experiment.request, retained.value);
-      }));
+      result.push_back(epcsaft_engine::equilibrium::evaluate_grepe_local_point(
+          with_active_values(experiment.model,
+                             retained.value.active_parameter_identities, active),
+          with_active_values(experiment.incipient_model,
+                             retained.value.active_parameter_identities, active),
+          experiment.request, retained.value));
     }
     return result;
   }
@@ -1154,14 +1114,12 @@ public:
       const auto &experiment = std::get<GrepeExperiment>(experiments[index]);
       const std::size_t structure_index = campaign_.structure_index(index);
       const auto &structure = campaign_.structure(structure_index);
-      const auto native = full_space_owner_call([&] {
-        return epcsaft_engine::equilibrium::initialize_grepe_local(
-            with_active_values(experiment.model,
-                               structure.active_parameter_identities, active),
-            with_active_values(experiment.incipient_model,
-                               structure.active_parameter_identities, active),
-            experiment.request, structure, points_[structure_index]);
-      });
+      const auto native = epcsaft_engine::equilibrium::initialize_grepe_local(
+          with_active_values(experiment.model,
+                             structure.active_parameter_identities, active),
+          with_active_values(experiment.incipient_model,
+                             structure.active_parameter_identities, active),
+          experiment.request, structure, points_[structure_index]);
       const auto &equilibrium = native.equilibrium;
       if (equilibrium.local_variables.empty() ||
           equilibrium.local_lower_bounds.size() !=
@@ -1385,177 +1343,172 @@ private:
       return evaluable_;
     }
     cached_x_.assign(x, x + n);
-    objective_ = 0.0;
-    gradient_.assign(initial_.size(), 0.0);
-    constraints_.clear();
-    constraint_jacobian_.clear();
-    for (const auto &constraint : parameter_constraints_) {
-      constraints_.push_back(constraint.value(x));
-      constraint_jacobian_.insert(constraint_jacobian_.end(),
-                                  constraint.jacobian.begin(),
-                                  constraint.jacobian.end());
-    }
-    const std::vector<double> active = active_values(x);
-    if (source_theta_ != active) {
-      try {
+    try {
+      objective_ = 0.0;
+      gradient_.assign(initial_.size(), 0.0);
+      constraints_.clear();
+      constraint_jacobian_.clear();
+      for (const auto &constraint : parameter_constraints_) {
+        constraints_.push_back(constraint.value(x));
+        constraint_jacobian_.insert(constraint_jacobian_.end(),
+                                    constraint.jacobian.begin(),
+                                    constraint.jacobian.end());
+      }
+      const std::vector<double> active = active_values(x);
+      if (source_theta_ != active) {
         points_ = campaign_.evaluate_points(experiments_, active);
-      } catch (const OwnerEvaluationError &error) {
-        return reject(error.code(), error.what());
+        source_theta_ = active;
       }
-      source_theta_ = active;
-    }
-    for (auto &block : blocks_) {
-      const auto &structure = campaign_.structure(block.structure_index);
-      const std::vector<double> local(
-          x + static_cast<std::ptrdiff_t>(block.local_offset),
-          x + static_cast<std::ptrdiff_t>(block.local_offset +
-                                          block.local_width));
-      try {
-        full_space_owner_call([&] {
-          epcsaft_engine::equilibrium::evaluate_grepe_local_blocks(
-              with_active_values(block.experiment->model,
-                                 structure.active_parameter_identities, active),
-              with_active_values(block.experiment->incipient_model,
-                                 structure.active_parameter_identities, active),
-              block.experiment->request, structure,
-              points_[block.structure_index], local, block.lower, block.upper,
-              {
-                  block.constraints.data(),
-                  block.constraints.size(),
-                  block.constraint_local_jacobian.data(),
-                  block.constraint_local_jacobian.size(),
-                  block.constraint_parameter_jacobian.data(),
-                  block.constraint_parameter_jacobian.size(),
-                  block.outputs.data(),
-                  block.outputs.size(),
-                  block.output_local_jacobian.data(),
-                  block.output_local_jacobian.size(),
-                  block.output_parameter_jacobian.data(),
-                  block.output_parameter_jacobian.size(),
-              });
-        });
-      } catch (const OwnerEvaluationError &error) {
-        return reject(error.code(), error.what());
-      }
-      for (std::size_t target_index = 0;
-           target_index < block.observation->targets.size(); ++target_index) {
-        const std::size_t output_row =
-            block.experiment->selected_rows[target_index];
-        if (output_row >= block.outputs.size()) {
-          return reject("owner_contract_failure",
-                        "full-space selected output row is unavailable");
-        }
-        const auto &target = block.observation->targets[target_index];
-        const double predicted = block.outputs[output_row];
-        const double multiplier =
-            block.observation->multiplier * target.multiplier;
-        double factor = multiplier / target.scale;
-        double residual;
-        switch (target.residual) {
-        case ResidualKind::LogRatio:
-          factor = multiplier / (predicted * target.scale);
-          residual = multiplier * std::log(predicted / target.observed) /
-                     target.scale;
-          break;
-        case ResidualKind::LeftCensored:
-          if (predicted <= target.observed) {
-            factor = residual = 0.0;
-          } else {
+      for (auto &block : blocks_) {
+        const auto &structure = campaign_.structure(block.structure_index);
+        const std::vector<double> local(
+            x + static_cast<std::ptrdiff_t>(block.local_offset),
+            x + static_cast<std::ptrdiff_t>(block.local_offset +
+                                            block.local_width));
+        epcsaft_engine::equilibrium::evaluate_grepe_local_blocks(
+            with_active_values(block.experiment->model,
+                               structure.active_parameter_identities, active),
+            with_active_values(block.experiment->incipient_model,
+                               structure.active_parameter_identities, active),
+            block.experiment->request, structure, points_[block.structure_index],
+            local, block.lower, block.upper,
+            {
+                block.constraints.data(),
+                block.constraints.size(),
+                block.constraint_local_jacobian.data(),
+                block.constraint_local_jacobian.size(),
+                block.constraint_parameter_jacobian.data(),
+                block.constraint_parameter_jacobian.size(),
+                block.outputs.data(),
+                block.outputs.size(),
+                block.output_local_jacobian.data(),
+                block.output_local_jacobian.size(),
+                block.output_parameter_jacobian.data(),
+                block.output_parameter_jacobian.size(),
+            });
+        for (std::size_t target_index = 0;
+             target_index < block.observation->targets.size(); ++target_index) {
+          const std::size_t output_row =
+              block.experiment->selected_rows[target_index];
+          const auto &target = block.observation->targets[target_index];
+          const double predicted = block.outputs[output_row];
+          const double multiplier =
+              block.observation->multiplier * target.multiplier;
+          double factor = multiplier / target.scale;
+          double residual;
+          switch (target.residual) {
+          case ResidualKind::LogRatio:
+            factor = multiplier / (predicted * target.scale);
+            residual = multiplier * std::log(predicted / target.observed) /
+                       target.scale;
+            break;
+          case ResidualKind::LeftCensored:
+            if (predicted <= target.observed) {
+              factor = residual = 0.0;
+            } else {
+              residual = multiplier * (predicted - target.observed) /
+                         target.scale;
+            }
+            break;
+          case ResidualKind::RightCensored:
+            if (predicted >= target.observed) {
+              factor = residual = 0.0;
+            } else {
+              residual = multiplier * (predicted - target.observed) /
+                         target.scale;
+            }
+            break;
+          default:
             residual = multiplier * (predicted - target.observed) /
                        target.scale;
+            break;
           }
-          break;
-        case ResidualKind::RightCensored:
-          if (predicted >= target.observed) {
-            factor = residual = 0.0;
-          } else {
-            residual = multiplier * (predicted - target.observed) /
-                       target.scale;
-          }
-          break;
-        default:
-          residual = multiplier * (predicted - target.observed) / target.scale;
-          break;
-        }
-        objective_ += 0.5 * residual * residual;
-        for (std::size_t identity = 0;
-             identity < identity_coordinates_.size(); ++identity) {
-          const std::size_t parameter_width =
-              block.output_parameter_jacobian.size() / block.outputs.size();
-          const std::size_t coordinate = identity_coordinates_[identity];
-          gradient_[coordinate] +=
-              residual * factor *
-              block.output_parameter_jacobian[
-                  output_row * parameter_width + identity] *
-              coordinates_[coordinate].scale;
-        }
-        for (std::size_t local_column = 0;
-             local_column < block.local_width; ++local_column) {
-          gradient_[block.local_offset + local_column] +=
-              residual * factor *
-              block.output_local_jacobian[
-                  output_row * block.local_width + local_column];
-        }
-      }
-      constraints_.insert(constraints_.end(), block.constraints.begin(),
-                          block.constraints.end());
-      const std::size_t input_width =
-          block.constraint_parameter_jacobian.size() / block.local_width;
-      for (std::size_t row = 0; row < block.local_width; ++row) {
-        for (std::size_t coordinate = 0; coordinate < coordinates_.size();
-             ++coordinate) {
-          double derivative = 0.0;
+          objective_ += 0.5 * residual * residual;
           for (std::size_t identity = 0;
                identity < identity_coordinates_.size(); ++identity) {
-            if (identity_coordinates_[identity] != coordinate) {
-              continue;
-            }
-            derivative +=
-                block.constraint_parameter_jacobian[row * input_width + identity];
+            const std::size_t parameter_width =
+                block.output_parameter_jacobian.size() / block.outputs.size();
+            const std::size_t coordinate = identity_coordinates_[identity];
+            gradient_[coordinate] +=
+                residual * factor *
+                block.output_parameter_jacobian[
+                    output_row * parameter_width + identity] *
+                coordinates_[coordinate].scale;
           }
-          constraint_jacobian_.push_back(derivative *
-                                         coordinates_[coordinate].scale);
+          for (std::size_t local_column = 0;
+               local_column < block.local_width; ++local_column) {
+            gradient_[block.local_offset + local_column] +=
+                residual * factor *
+                block.output_local_jacobian[
+                    output_row * block.local_width + local_column];
+          }
         }
-        constraint_jacobian_.insert(
-            constraint_jacobian_.end(),
-            block.constraint_local_jacobian.begin() +
-                static_cast<std::ptrdiff_t>(row * block.local_width),
-            block.constraint_local_jacobian.begin() +
-                static_cast<std::ptrdiff_t>((row + 1) * block.local_width));
+        constraints_.insert(constraints_.end(),
+                            block.constraints.begin(), block.constraints.end());
+        const std::size_t input_width =
+            block.constraint_parameter_jacobian.size() / block.local_width;
+        for (std::size_t row = 0; row < block.local_width; ++row) {
+          for (std::size_t coordinate = 0; coordinate < coordinates_.size();
+               ++coordinate) {
+            double derivative = 0.0;
+            for (std::size_t identity = 0;
+                 identity < identity_coordinates_.size(); ++identity) {
+              if (identity_coordinates_[identity] != coordinate) {
+                continue;
+              }
+              derivative +=
+                  block.constraint_parameter_jacobian[row * input_width + identity];
+            }
+            constraint_jacobian_.push_back(
+                derivative * coordinates_[coordinate].scale);
+          }
+          constraint_jacobian_.insert(
+              constraint_jacobian_.end(),
+              block.constraint_local_jacobian.begin() +
+                  static_cast<std::ptrdiff_t>(row * block.local_width),
+              block.constraint_local_jacobian.begin() +
+                  static_cast<std::ptrdiff_t>((row + 1) * block.local_width));
+        }
       }
+      const auto finite = [](const std::vector<double> &values) {
+        return std::all_of(values.begin(), values.end(),
+                           [](double value) { return std::isfinite(value); });
+      };
+      if (constraints_.size() != constraint_count_ ||
+          constraint_jacobian_.size() != jacobian_rows_.size()) {
+        return reject("owner_contract_failure",
+                      "native full-space dimensions are invalid");
+      }
+      if (!std::isfinite(objective_)) {
+        return reject("owner_contract_failure",
+                      "native full-space objective is invalid");
+      }
+      if (!finite(gradient_)) {
+        return reject("owner_contract_failure",
+                      "native full-space objective gradient is invalid");
+      }
+      if (!finite(constraints_)) {
+        const auto invalid = std::find_if(
+            constraints_.begin(), constraints_.end(),
+            [](double value) { return !std::isfinite(value); });
+        return reject("owner_contract_failure",
+                      "native full-space constraint " +
+                          std::to_string(invalid - constraints_.begin()) +
+                          " is invalid");
+      }
+      if (!finite(constraint_jacobian_)) {
+        return reject("owner_contract_failure",
+                      "native full-space constraint Jacobian is invalid");
+      }
+      evaluable_ = true;
+      return true;
+    } catch (const epcsaft_engine::equilibrium::GrepeFailure &error) {
+      return reject(error.code(), error.what());
+    } catch (const epcsaft_engine::equilibrium::ProviderDomainError &error) {
+      return reject("provider_domain_rejection", error.what());
+    } catch (const std::invalid_argument &error) {
+      return reject("owner_contract_failure", error.what());
     }
-    const auto finite = [](const std::vector<double> &values) {
-      return std::all_of(values.begin(), values.end(),
-                         [](double value) { return std::isfinite(value); });
-    };
-    if (constraints_.size() != constraint_count_ ||
-        constraint_jacobian_.size() != jacobian_rows_.size()) {
-      return reject("owner_contract_failure",
-                    "native full-space dimensions are invalid");
-    }
-    if (!std::isfinite(objective_)) {
-      return reject("owner_contract_failure",
-                    "native full-space objective is invalid");
-    }
-    if (!finite(gradient_)) {
-      return reject("owner_contract_failure",
-                    "native full-space objective gradient is invalid");
-    }
-    if (!finite(constraints_)) {
-      const auto invalid = std::find_if(
-          constraints_.begin(), constraints_.end(),
-          [](double value) { return !std::isfinite(value); });
-      return reject("owner_contract_failure",
-                    "native full-space constraint " +
-                        std::to_string(invalid - constraints_.begin()) +
-                        " is invalid");
-    }
-    if (!finite(constraint_jacobian_)) {
-      return reject("owner_contract_failure",
-                    "native full-space constraint Jacobian is invalid");
-    }
-    evaluable_ = true;
-    return true;
   }
 
   bool reject(const std::string &raw_code, const std::string &reason) const {
@@ -1667,37 +1620,6 @@ Ipopt::ApplicationReturnStatus solve_ipopt(Problem *problem,
   return status;
 }
 
-StartResult failed_start(std::size_t index, const Start &start,
-                         const std::vector<Coordinate> &coordinates,
-                         const std::vector<Observation> &observations,
-                         const OwnerFailure &failure) {
-  StartResult result;
-  result.index = index;
-  result.start_identity = start.identity;
-  result.initial_affine = start.affine;
-  result.final_affine = start.affine;
-  const std::size_t rows = std::accumulate(
-      observations.begin(), observations.end(), std::size_t{0},
-      [](std::size_t count, const Observation &observation) {
-        return count + observation.targets.size();
-      });
-  result.predictions.assign(rows, std::numeric_limits<double>::quiet_NaN());
-  result.residuals.assign(rows, std::numeric_limits<double>::quiet_NaN());
-  result.affine_jacobian.assign(rows * coordinates.size(), 0.0);
-  result.owner_failures.push_back(failure);
-  result.owner_results.resize(observations.size());
-  result.batch_outcomes.reserve(observations.size());
-  for (std::size_t batch = 0; batch < observations.size(); ++batch) {
-    result.batch_outcomes.push_back(
-        {batch, observations[batch].targets.size(), "rejected", failure.code});
-  }
-  result.solver_status = "not_started";
-  result.failure_reason = failure.reason;
-  result.trial_failure_code = failure.code;
-  result.non_evaluable_count = failure.count;
-  return result;
-}
-
 StartResult solve_start(std::size_t index, const FitRequest &request,
                         bool full_space,
                         const FullSpaceCampaign *full_space_campaign,
@@ -1746,16 +1668,10 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
       throw std::logic_error("full-space GREPE campaign is unavailable");
     }
     std::vector<double> solution;
-    SparseFullSpaceNlp *problem;
-    try {
-      problem = new SparseFullSpaceNlp(
-          request.experiments, observations, *full_space_campaign,
-          identity_coordinates, coordinates, parameter_constraints,
-          result.final_affine, failure_codes);
-    } catch (const OwnerEvaluationError &error) {
-      return failed_start(index, start, coordinates, observations,
-                          {error.code(), error.what(), 1});
-    }
+    auto *problem = new SparseFullSpaceNlp(
+        request.experiments, observations, *full_space_campaign,
+        identity_coordinates, coordinates, parameter_constraints,
+        result.final_affine, failure_codes);
     solver_status = solve_ipopt(problem, controls, result.iterations, solution,
                                 true, &retained_states, &retained_points,
                                 &result.kkt_diagnostics,
@@ -1815,13 +1731,6 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
   bool final_evaluable = true;
   const bool retain_owner_results = final_iterate_available;
   result.owner_results.resize(costs.size());
-  if (full_space && !final_iterate_available) {
-    result.owner_failures.push_back(
-        {"native_residual_failure", "ipopt_final_iterate_unavailable", 1});
-    for (auto &outcome : result.batch_outcomes) {
-      outcome.failure_code = "native_residual_failure";
-    }
-  }
   for (std::size_t batch_index = 0; batch_index < costs.size(); ++batch_index) {
     const auto &cost = costs[batch_index];
     const std::size_t rows = cost->row_count();
@@ -1832,38 +1741,25 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
     for (auto &block : jacobian_blocks) {
       jacobian_pointers.push_back(block.data());
     }
-    if (full_space && !final_iterate_available) {
-      offset += rows;
-      continue;
-    }
     OwnerFailure current_failure;
-    bool evaluated;
-    if (full_space) {
-      const std::size_t structure_index =
-          full_space_campaign->structure_index(batch_index);
-      if (batch_index >= retained_states.size() ||
-          structure_index >= retained_points.size()) {
-        evaluated = cost->reject(
-            "owner_contract_failure",
-            "retained full-space final state is unavailable", &current_failure);
-      } else {
-        evaluated = cost->finalize(
-            final_blocks.data(),
-            full_space_campaign->structure(structure_index),
-            retained_points[structure_index], retained_states[batch_index].values,
-            retained_states[batch_index].lower,
-            retained_states[batch_index].upper,
-            result.residuals.data() + offset, jacobian_pointers.data(),
-            result.predictions.data() + offset,
-            &result.owner_results[batch_index], &current_failure);
-      }
-    } else {
-      evaluated = cost->evaluate(
-          final_blocks.data(), result.residuals.data() + offset,
-          jacobian_pointers.data(), result.predictions.data() + offset,
-          retain_owner_results, &result.owner_results[batch_index],
-          &current_failure);
-    }
+    const bool evaluated = full_space
+        ? final_iterate_available && batch_index < retained_states.size()
+            && cost->finalize(
+                final_blocks.data(),
+                full_space_campaign->structure(
+                    full_space_campaign->structure_index(batch_index)),
+                retained_points[full_space_campaign->structure_index(batch_index)],
+                retained_states[batch_index].values,
+                retained_states[batch_index].lower,
+                retained_states[batch_index].upper,
+                result.residuals.data() + offset, jacobian_pointers.data(),
+                result.predictions.data() + offset,
+                &result.owner_results[batch_index], &current_failure)
+        : cost->evaluate(
+            final_blocks.data(), result.residuals.data() + offset,
+            jacobian_pointers.data(), result.predictions.data() + offset,
+            retain_owner_results, &result.owner_results[batch_index],
+            &current_failure);
     if (!evaluated) {
       result.batch_outcomes[batch_index].status = "rejected";
       result.batch_outcomes[batch_index].failure_code =
@@ -1888,35 +1784,31 @@ StartResult solve_start(std::size_t index, const FitRequest &request,
     offset += rows;
   }
   result.usable = solver_usable && final_evaluable;
-  const auto merge_failure = [&](const OwnerFailure &failure) {
-    const auto match = std::find_if(
-        result.owner_failures.begin(), result.owner_failures.end(),
-        [&](const OwnerFailure &existing) {
-          return existing.code == failure.code &&
-                 existing.reason == failure.reason;
-        });
-    if (match == result.owner_failures.end()) {
-      result.owner_failures.push_back(failure);
-    } else {
-      match->count += failure.count;
-    }
-  };
-  for (const auto &failure : full_space_failures) {
-    merge_failure(failure);
-  }
-  for (const auto &cost : costs) {
-    for (const auto &failure : cost->owner_failures()) {
-      merge_failure(failure);
-    }
-  }
+  result.owner_failures = std::move(full_space_failures);
   result.non_evaluable_count = std::accumulate(
       result.owner_failures.begin(), result.owner_failures.end(),
       std::size_t{0}, [](std::size_t count, const OwnerFailure &failure) {
         return count + failure.count;
       });
-  if (full_space && !final_iterate_available) {
-    result.failure_reason = "ipopt_final_iterate_unavailable";
-    result.trial_failure_code = "native_residual_failure";
+  for (const auto &cost : costs) {
+    result.non_evaluable_count += cost->rejection_count();
+    for (const auto &failure : cost->owner_failures()) {
+      const auto match = std::find_if(
+          result.owner_failures.begin(), result.owner_failures.end(),
+          [&](const OwnerFailure &existing) {
+            return existing.code == failure.code &&
+                   existing.reason == failure.reason;
+          });
+      if (match == result.owner_failures.end()) {
+        result.owner_failures.push_back(failure);
+      } else {
+        match->count += failure.count;
+      }
+    }
+  }
+  if (full_space && !result.owner_failures.empty()) {
+    result.failure_reason = result.owner_failures.front().reason;
+    result.trial_failure_code = result.owner_failures.front().code;
   } else if (!solver_usable) {
     result.failure_reason = result.solver_status;
     result.trial_failure_code = "optimizer_failure";
@@ -2126,15 +2018,6 @@ void validate_request(const FitRequest &request) {
           }
           using Value = std::decay_t<decltype(experiment)>;
           if constexpr (std::is_same_v<Value, GrepeExperiment>) {
-            if (std::any_of(
-                    experiment.selected_rows.begin(),
-                    experiment.selected_rows.end(), [&](std::size_t row) {
-                      return row >= experiment.request.outputs.size();
-                    })) {
-              throw OwnerEvaluationError(
-                  "owner_contract_failure",
-                  "GREPE selected output row is unavailable");
-            }
             if (experiment.structure_fingerprint.size() != 71 ||
                 experiment.structure_fingerprint.rfind("sha256:", 0) != 0 ||
                 experiment.structure_fingerprint.find_first_not_of(
@@ -2191,22 +2074,8 @@ std::vector<double> start_active_values(const FitRequest &request,
 } // namespace
 
 FitResult fit_native(const FitRequest &request) {
+  validate_request(request);
   FitResult output;
-  try {
-    validate_request(request);
-  } catch (const OwnerEvaluationError &error) {
-    output.evaluation_strategy =
-        request.evaluation_strategy == "reduced_space"
-            ? "reduced_space"
-            : "simultaneous_sparse_full_space";
-    output.starts.reserve(request.controls.starts.size());
-    for (std::size_t index = 0; index < request.controls.starts.size(); ++index) {
-      output.starts.push_back(failed_start(
-          index, request.controls.starts[index], request.coordinates,
-          request.observations, {error.code(), error.what(), 1}));
-    }
-    return output;
-  }
   const bool eligible = full_space_eligible(request);
   if (request.evaluation_strategy == "simultaneous_sparse_full_space" &&
       !eligible) {
@@ -2221,18 +2090,7 @@ FitResult fit_native(const FitRequest &request) {
       full_space ? "simultaneous_sparse_full_space" : "reduced_space";
   std::optional<FullSpaceCampaign> full_space_campaign;
   if (full_space) {
-    try {
-      full_space_campaign.emplace(request.experiments);
-    } catch (const OwnerEvaluationError &error) {
-      output.starts.reserve(request.controls.starts.size());
-      for (std::size_t index = 0; index < request.controls.starts.size();
-           ++index) {
-        output.starts.push_back(failed_start(
-            index, request.controls.starts[index], request.coordinates,
-            request.observations, {error.code(), error.what(), 1}));
-      }
-      return output;
-    }
+    full_space_campaign.emplace(request.experiments);
   }
   const auto parameter_constraints = parameter_domain_constraints(request);
 

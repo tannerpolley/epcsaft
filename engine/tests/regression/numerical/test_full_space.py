@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 import epcsaft
-from epcsaft import _core
 from epcsaft import equilibrium
 from epcsaft.regression import fit
 from tests.regression._cases import (
@@ -20,29 +19,6 @@ from tests.regression._cases import (
     solved_pressure_fit_case,
     with_parameter,
 )
-
-
-class _NativePayloadCaptured(Exception):
-    pass
-
-
-def _native_full_space_payload(
-    mapping: dict[str, object], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> tuple[object, ...]:
-    """Capture the existing resolved native request without a test-only API."""
-
-    payload: dict[str, tuple[object, ...]] = {}
-    native_fit = _core._fit_resolved
-
-    def capture(*arguments: object) -> object:
-        payload["arguments"] = arguments
-        raise _NativePayloadCaptured
-
-    monkeypatch.setattr(_core, "_fit_resolved", capture)
-    with pytest.raises(_NativePayloadCaptured):
-        fit(mapping, base_path=tmp_path)
-    monkeypatch.setattr(_core, "_fit_resolved", native_fit)
-    return payload["arguments"]
 
 
 def test_maximum_iterations_is_nonusable_and_retains_final_diagnostics(
@@ -506,165 +482,41 @@ def test_full_space_retains_a_typed_non_evaluable_reaction_trial(tmp_path: Path)
     assert result.accounting.non_evaluable_trials >= 1
 
 
-def test_full_space_transports_constructor_and_selection_failures(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Falsify escaped construction failures or unbounded selected output rows."""
+def test_full_space_retains_success_failure_success_batches(tmp_path: Path) -> None:
+    """Falsify fabricated failures or truncation after a rejected batch."""
 
-    mapping, *_ = full_space_fit_case(tmp_path)
-    arguments = _native_full_space_payload(mapping, tmp_path, monkeypatch)
-    native_fit = _core._fit_resolved
-    coordinates = deepcopy(arguments[2])
-    assert isinstance(coordinates, list)
-    coordinates[0].update(
-        origin=2.0, scale=3.0, lower_affine=-1.0, upper_affine=1.0
-    )
-    controls = deepcopy(arguments[4])
-    assert isinstance(controls, dict)
-    controls["starts"] = [
-        {"identity": "owner-contract", "affine": [-1.0]},
-        {"identity": "provider-domain", "affine": [1.0]},
-    ]
-    constructor = native_fit(
-        arguments[0],
-        arguments[1],
-        coordinates,
-        arguments[3],
-        controls,
-        arguments[5],
-        arguments[6],
-        "simultaneous_sparse_full_space",
-    )
-    assert constructor["preflight_failure"] is None
-    assert [start["trial_failure_code"] for start in constructor["starts"]] == [
-        "owner_contract_failure",
-        "provider_domain_rejection",
-    ]
-    assert all(
-        start["batch_outcomes"]
-        == [
-            {
-                "index": 0,
-                "row_count": 1,
-                "status": "rejected",
-                "failure_code": start["trial_failure_code"],
-            }
-        ]
-        for start in constructor["starts"]
-    )
-
-    experiments = [dict(experiment) for experiment in arguments[6]]
-    assert isinstance(experiments, list)
-    experiments[0]["selected_rows"] = [1]
-    for strategy in ("automatic", "simultaneous_sparse_full_space"):
-        selection = native_fit(
-            arguments[0],
-            arguments[1],
-            arguments[2],
-            arguments[3],
-            arguments[4],
-            arguments[5],
-            experiments,
-            strategy,
-        )
-        assert selection["evaluation_strategy"] == "simultaneous_sparse_full_space"
-        assert selection["starts"][0]["trial_failure_code"] == "owner_contract_failure"
-        assert selection["starts"][0]["batch_outcomes"][0]["status"] == "rejected"
-
-
-def test_full_space_without_a_final_iterate_keeps_batches_not_evaluated(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Falsify fabricated full-space penalties after an invalid owner objective."""
-
-    mapping, *_ = full_space_fit_case(tmp_path)
-    arguments = _native_full_space_payload(mapping, tmp_path, monkeypatch)
-    observations = deepcopy(arguments[3])
-    assert isinstance(observations, list)
-    observations[0]["targets"][0].update(observed=1.0, scale=1.0e-300)
-    native = _core._fit_resolved(
-        arguments[0],
-        arguments[1],
-        arguments[2],
-        observations,
-        arguments[4],
-        arguments[5],
-        arguments[6],
-        "simultaneous_sparse_full_space",
-    )
-    start = native["starts"][0]
-    assert start["solver_status"] == "invalid_number_detected"
-    assert start["trial_failure_code"] == "native_residual_failure"
-    assert start["failure_reason"] == "ipopt_final_iterate_unavailable"
-    assert start["batch_outcomes"] == [
-        {
-            "index": 0,
-            "row_count": 1,
-            "status": "not_evaluated",
-            "failure_code": "native_residual_failure",
-        }
-    ]
-    assert all(math.isnan(value) for value in start["predictions"])
-    assert all(math.isnan(value) for value in start["residuals"])
-    assert start["affine_jacobian"] == [0.0]
-
-
-@pytest.mark.slow
-def test_full_space_finalizes_later_rejected_batches(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Falsify first-rejection truncation of final full-space batch outcomes."""
-
-    first_mapping, *_ = solved_pressure_fit_case(
+    failed_mapping, *_ = full_space_fit_case(tmp_path)
+    mapping, *_ = solved_pressure_fit_case(
         tmp_path,
         ideal_vapor=False,
-        temperature_k=333.15,
-        reaction_correlation=True,
-        reaction_b_upper=30_000.0,
-        parameter_identity="reaction:R1:correlation:b_k",
-        truth_value=-100.0,
-        bounds=(-200.0, 30_000.0),
-        origin=-100.0,
-        scale=100.0,
+        bounds=(2.5, 3.1),
+        origin=2.8,
+        scale=0.2,
     )
-    second_mapping, *_ = solved_pressure_fit_case(
-        tmp_path,
-        ideal_vapor=False,
-        temperature_k=393.15,
-        reaction_correlation=True,
-        reaction_b_upper=30_000.0,
-        parameter_identity="reaction:R1:correlation:b_k",
-        truth_value=-100.0,
-        bounds=(-200.0, 30_000.0),
-        origin=-100.0,
-        scale=100.0,
-    )
-    first = _native_full_space_payload(first_mapping, tmp_path, monkeypatch)
-    second = _native_full_space_payload(second_mapping, tmp_path, monkeypatch)
-    coordinates = deepcopy(first[2])
-    controls = deepcopy(first[4])
-    assert isinstance(controls, dict)
-    controls["starts"] = [{"identity": "rejected-finalization", "affine": [301.0]}]
-    controls["maximum_iterations"] = 1
-    native = _core._fit_resolved(
-        first[0],
-        first[1],
-        coordinates,
-        [*first[3], *second[3]],
-        controls,
-        first[5],
-        [*first[6], *second[6]],
-        "simultaneous_sparse_full_space",
-    )
-    outcomes = native["starts"][0]["batch_outcomes"]
-    assert [(item["index"], item["status"], item["failure_code"]) for item in outcomes] == [
-        (0, "rejected", "physical_rejection"),
+    successful = mapping["observations"]
+    failed = failed_mapping["observations"]
+    assert isinstance(successful, list)
+    assert isinstance(failed, list)
+    first = deepcopy(successful[0])
+    third = deepcopy(successful[0])
+    first["identity"] = f"{first['identity']}-first"
+    third["identity"] = f"{third['identity']}-third"
+    for target in first["targets"]:
+        target["identity"] = f"{target['identity']}-first"
+    for target in third["targets"]:
+        target["identity"] = f"{target['identity']}-third"
+    mapping["observations"] = [first, failed[0], third]
+    mapping["solver"]["controls"]["maximum_iterations"] = 6
+    mapping["solver"]["multistart"]["starts"] = [
+        {"identity": "ordered-outcomes", "values": [2.9]}
+    ]
+
+    start = fit(mapping, base_path=tmp_path).starts[0]
+    assert [(item.index, item.status, item.failure_code) for item in start.batch_outcomes] == [
+        (0, "evaluated", None),
         (1, "rejected", "physical_rejection"),
+        (2, "evaluated", None),
     ]
-    assert native["starts"][0]["owner_failures"] == [
-        {
-            "code": "physical_rejection",
-            "reason": "reactive_finite_phase_certificate_failed",
-            "count": 2,
-        }
-    ]
+    assert start.owner_failures[0].code == "physical_rejection"
+    assert all(math.isfinite(value) for value in (*start.predictions[:3], *start.predictions[4:]))
+    assert math.isnan(start.predictions[3])

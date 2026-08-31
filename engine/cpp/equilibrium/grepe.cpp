@@ -77,7 +77,18 @@ SourceReferenceTransferEvidence source_evidence(
     const ProviderActiveParameterSet& parameters
 ) {
     if (source.status != SOURCE_REFERENCE_OK) {
-        throw std::invalid_argument(
+        const char* code = source.status == SOURCE_REFERENCE_DOMAIN_REJECTION
+            ? "provider_domain_rejection"
+            : source.status == SOURCE_REFERENCE_DERIVATIVE_UNAVAILABLE
+            ? "source_reference_derivative_unavailable"
+            : source.status == SOURCE_REFERENCE_LIMIT_FAILURE
+            ? "source_reference_limit_failure"
+            : source.status == SOURCE_REFERENCE_NONFINITE
+                || source.status == SOURCE_REFERENCE_EVALUATION_ERROR
+            ? "numerical_convergence_failure"
+            : "source_reference_failure";
+        throw GrepeFailure(
+            code,
             source.error.empty() ? "source-reference evaluation failed" : source.error
         );
     }
@@ -1121,17 +1132,6 @@ GrepeResult initialize_finite_result(
     }
     return initialize_finite_context(std::move(*prepared), request);
 }
-
-class GrepeFailure final : public std::runtime_error {
-public:
-    GrepeFailure(std::string code, const std::string& diagnostic)
-        : std::runtime_error(diagnostic), code_(std::move(code)) {}
-
-    [[nodiscard]] const std::string& code() const noexcept { return code_; }
-
-private:
-    std::string code_;
-};
 
 std::size_t input_index(
     const ReactiveFinitePhaseResult& result,
@@ -3276,7 +3276,9 @@ void evaluate_grepe_local_blocks(
         );
         const ReactiveFinitePhaseResult& liquid = liquid_result.equilibrium;
         if (!liquid.accepted || liquid.kkt_root_values.size() != liquid_count) {
-            throw std::domain_error(
+            throw GrepeFailure(
+                liquid_result.failure_code.empty()
+                    ? "physical_rejection" : liquid_result.failure_code,
                 liquid.failure_reason.empty() ? "retained liquid point failed"
                                               : liquid.failure_reason
             );
@@ -3656,7 +3658,8 @@ void evaluate_grepe_local_blocks(
         std::copy(source.begin(), source.end(), destination);
     };
     if (!equilibrium.accepted) {
-        throw std::domain_error(
+        throw GrepeFailure(
+            result.failure_code.empty() ? "physical_rejection" : result.failure_code,
             equilibrium.failure_reason.empty() ? "retained GREPE point failed"
                                                : equilibrium.failure_reason
         );
