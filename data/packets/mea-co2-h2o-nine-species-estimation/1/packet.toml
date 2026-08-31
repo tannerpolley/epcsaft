@@ -58,4 +58,4 @@ media_type = "application/toml"
 sha256 = "ccaffdfb46a918274a4df8bcefbe7bd4844b7be751b3e0addfb9902a28d105b5"
 source_refs = ["mea-thermodynamics-authority", "gross-sadowski-2001", "cai-1996-neutral-refit"]
 domain_refs = ["mea-provider-source-qualified-313-15-k", "mea-candidate-293-15-to-393-15-k"]
-units_basis = "Repository identity, pinned commit, source payload hash 670123adfda293c6bb60afe57b457534cabae65849d5731b5509d5723e69f38c, and retained path are non-numeric provenance."
+units_basis = "Derived-output, neutral-selection, Gross-Sadowski, and Cai SHA-256 identities plus transformation names are non-numeric provenance."
