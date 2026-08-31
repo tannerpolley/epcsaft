@@ -283,6 +283,119 @@ def test_solved_pressure_full_space_derivatives_match_independent_resolves(
 
 
 @pytest.mark.slow
+@pytest.mark.parametrize("temperature_k", (313.15, 353.15, 393.15))
+def test_solved_pressure_reaction_coordinate_certifies_full_space_path(
+    tmp_path: Path,
+    temperature_k: float,
+) -> None:
+    """Falsify reaction-coordinate derivatives, branch identity, or full-space evidence."""
+
+    identity = "reaction:R1:correlation:b_k"
+    mapping, parameters, model, problem, identity, _, _ = solved_pressure_fit_case(
+        tmp_path,
+        ideal_vapor=False,
+        temperature_k=temperature_k,
+        reaction_correlation=True,
+        parameter_identity=identity,
+        truth_value=-100.0,
+        bounds=(-200.0, 0.0),
+        origin=-100.0,
+        scale=100.0,
+    )
+    result = fit(mapping, base_path=tmp_path)
+    accepted = result.best_usable_start
+    assert accepted is not None
+    assert result.evaluation_strategy == "simultaneous_sparse_full_space"
+    assert -200.0 <= accepted.final_physical[0] <= 0.0
+    assert accepted.owner_failures == ()
+    assert accepted.trial_failure_code is None
+    assert accepted.batch_outcomes[0].status == "evaluated"
+    assert all(row.evaluation_status == "evaluated" for row in result.evaluated_rows)
+    assert tuple(row.selector for row in result.specification.rows) == (
+        "pressure",
+        "vapor-solvent-fraction",
+        "vapor-solvent-partial-pressure",
+        "liquid-cation-fraction",
+    )
+
+    center = equilibrium.solve(
+        model,
+        problem,
+        active_parameters=epcsaft.ActiveParameterSet(
+            parameters, (identity,), values=accepted.final_physical
+        ),
+    )
+    assert center.status == "evaluated" and center.continuation_state is not None
+    assert problem.continuation_identity == "finite-incipient-boundary"
+    assert problem.continuation_state is not None
+    for fingerprint in (
+        problem.continuation_state.problem_fingerprint,
+        problem.continuation_state.reaction_fingerprint,
+        problem.continuation_state.topology_fingerprint,
+        problem.continuation_state.parameter_fingerprint,
+        center.continuation_state.problem_fingerprint,
+        center.continuation_state.reaction_fingerprint,
+        center.continuation_state.topology_fingerprint,
+        center.continuation_state.parameter_fingerprint,
+    ):
+        assert fingerprint.startswith("sha256:")
+    step = 10.0 if temperature_k == 393.15 else 2.0
+    sides = tuple(
+        equilibrium.solve(
+            model,
+            problem,
+            active_parameters=epcsaft.ActiveParameterSet(
+                parameters,
+                (identity,),
+                values=(accepted.final_physical[0] + sign * step,),
+            ),
+        )
+        for sign in (-1.0, 1.0)
+    )
+    assert all(side.status == "evaluated" for side in sides)
+    centered = tuple(
+        (float(high) - float(low)) / (2.0 * step)
+        for low, high in zip(sides[0].values, sides[1].values, strict=True)
+    )
+    owner_derivatives = tuple(
+        residual_derivative
+        * row.scale
+        * (prediction if row.residual == "log_ratio" else 1.0)
+        / row.multiplier
+        for residual_derivative, row, prediction in zip(
+            accepted.physical_jacobian,
+            result.specification.rows,
+            accepted.predictions,
+            strict=True,
+        )
+    )
+    assert all(
+        scaled_error(actual, reference) <= 5.0e-5
+        for actual, reference in zip(owner_derivatives, centered, strict=True)
+    )
+
+    receipt = json.loads(accepted.owner_receipts[0].canonical_bytes_utf8)
+    branch = receipt["branch_signature"]
+    expected_branch = json.loads(json.dumps(center.branch_signature))
+    assert branch[0] == expected_branch[0]
+    assert branch[1].startswith("sha256:")
+    assert branch[2] == pytest.approx(expected_branch[2], rel=2.0e-10)
+    assert branch[3] == pytest.approx(expected_branch[3], abs=2.0e-12)
+    assert branch[4] == pytest.approx(expected_branch[4], abs=2.0e-12)
+    assert tuple(coordinate.identity for coordinate in result.specification.coordinates) == (
+        identity,
+    )
+    evidence = dict(receipt["evidence"])
+    assert evidence["pressure_relative_inf_norm"] <= 1.0e-8
+    assert evidence["reaction_affinity_inf_norm"] <= 1.0e-6
+    assert accepted.kkt_diagnostics["retained"]
+    assert accepted.kkt_diagnostics["primal_feasibility_inf_norm"] <= 1.0e-7
+    assert accepted.kkt_diagnostics["stationarity_inf_norm"] <= 1.0e-7
+    assert accepted.kkt_diagnostics["complementarity_inf_norm"] <= 1.0e-7
+    assert accepted.kkt_diagnostics["dual_sign_violation_inf_norm"] <= 1.0e-7
+
+
+@pytest.mark.slow
 def test_solved_pressure_full_space_certifies_a_closed_declared_parameter_bound(
     tmp_path: Path,
 ) -> None:
@@ -336,3 +449,33 @@ def test_solved_pressure_full_space_rejects_only_physical_domain_trials(
     assert accepted.solver_status == "solve_succeeded"
     assert accepted.owner_failures == ()
     assert accepted.final_physical[0] == pytest.approx(0.0157182582, abs=2.0e-8)
+
+
+@pytest.mark.slow
+def test_full_space_retains_a_typed_non_evaluable_reaction_trial(tmp_path: Path) -> None:
+    """Falsify loss of a typed failed start from the full-space result."""
+
+    mapping, *_ = solved_pressure_fit_case(
+        tmp_path,
+        ideal_vapor=False,
+        temperature_k=393.15,
+        reaction_correlation=True,
+        reaction_b_upper=30_000.0,
+        parameter_identity="reaction:R1:correlation:b_k",
+        truth_value=-100.0,
+        bounds=(-200.0, 30_000.0),
+        origin=-100.0,
+        scale=100.0,
+    )
+    mapping["solver"]["multistart"]["starts"] = [
+        {"identity": "non-evaluable", "values": [30_000.0]}
+    ]
+
+    result = fit(mapping, base_path=tmp_path)
+    refused = result.starts[0]
+    assert result.evaluation_strategy == "simultaneous_sparse_full_space"
+    assert not refused.usable
+    assert refused.trial_failure_code == "branch_loss"
+    assert refused.non_evaluable_count >= 1
+    assert refused.owner_failures[0].code == refused.trial_failure_code
+    assert result.accounting.non_evaluable_trials >= 1

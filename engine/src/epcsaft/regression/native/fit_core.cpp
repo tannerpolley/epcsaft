@@ -72,6 +72,9 @@ NativeModel with_active_values(const NativeModel &base,
                                const std::vector<std::string> &identities,
                                const std::vector<double> &active) {
   auto coordinates = base.active_coordinates();
+  if (coordinates.empty()) {
+    return base;
+  }
   for (auto &coordinate : coordinates) {
     const auto found =
         std::find(identities.begin(), identities.end(), coordinate.identity);

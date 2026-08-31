@@ -427,6 +427,9 @@ def solved_pressure_fit_case(
     tmp_path: Path,
     *,
     ideal_vapor: bool,
+    temperature_k: float = 313.15,
+    reaction_correlation: bool = False,
+    reaction_b_upper: float = 0.0,
     parameter_identity: str = "component/solvent/segment_diameter",
     truth_value: float = 2.9,
     bounds: tuple[float, float] = (2.7, 3.05),
@@ -442,17 +445,126 @@ def solved_pressure_fit_case(
     equilibrium.GeneralReactiveEquilibriumResult,
 ]:
     parameters, model, unanchored = solved_pressure_case(ideal_vapor=ideal_vapor)
+    unanchored = replace(
+        unanchored,
+        identity=f"{unanchored.identity}-{temperature_k:g}-kelvin",
+        temperature=equilibrium.Fixed(temperature_k * epcsaft.unit_registry.kelvin),
+    )
+    if reaction_correlation:
+        parameter_mapping = deepcopy(MULTINEUTRAL_REACTIVE)
+        parameter_mapping["domains"].append(
+            {
+                "domain_id": "engine-candidate-313-15-to-393-15-k",
+                "kind": "fit-range",
+                "temperature_min": {"magnitude": 313.15, "unit": "kelvin"},
+                "temperature_max": {"magnitude": 393.15, "unit": "kelvin"},
+                "pressure_min": {"magnitude": 1.0, "unit": "pascal"},
+                "pressure_max": {"magnitude": 100_000_000.0, "unit": "pascal"},
+            }
+        )
+        parameter_mapping["reaction_correlations"] = [
+            {
+                "reaction_id": "R1",
+                "kind": "ln-k-a-plus-b-over-t",
+                "source": {
+                    "source_id": "engine-numerical-fixture",
+                    "locator": "manufactured constant-plus-reciprocal-temperature reaction",
+                    "domain_id": "engine-numerical-fixture-domain",
+                },
+                "candidate_domain_id": "engine-candidate-313-15-to-393-15-k",
+                "qualification": "candidate_extrapolation",
+                "source_sha256": f"sha256:{'6' * 64}",
+                "coefficients": [
+                    {
+                        "name": "a",
+                        "identity": "reaction:R1:correlation:a",
+                        "value": {"magnitude": -240.0, "unit": "dimensionless"},
+                        "optimizer_domain": {"lower": -250.0, "upper": -230.0},
+                    },
+                    {
+                        "name": "b_k",
+                        "identity": "reaction:R1:correlation:b_k",
+                        "value": {"magnitude": -100.0, "unit": "kelvin"},
+                        "optimizer_domain": {"lower": -200.0, "upper": reaction_b_upper},
+                    },
+                ],
+            }
+        ]
+        candidate = {
+            "candidate_domain_id": "engine-candidate-313-15-to-393-15-k",
+            "qualification": "candidate_extrapolation",
+            "source_sha256": f"sha256:{'6' * 64}",
+        }
+        for family in parameter_mapping["model_families"]:
+            family.update(candidate)
+        for component in parameter_mapping["components"]:
+            for record in (*component["fixed"].values(), *component["coefficients"]):
+                record.update(candidate)
+        for pair in parameter_mapping["pairs"]:
+            for record in pair["coefficients"]:
+                record.update(candidate)
+        for record in parameter_mapping["model_coefficients"]:
+            record.update(candidate)
+        for correlation in parameter_mapping["correlations"]:
+            correlation.update(candidate)
+        for site in parameter_mapping["topology"]["sites"]:
+            site.update(candidate)
+        for edge in parameter_mapping["topology"]["edges"]:
+            edge.update(candidate)
+        parameters = Parameters.from_mapping(parameter_mapping)
+        model = Mixture(parameters)
+        reaction = unanchored.reaction_system
+        unanchored = replace(
+            unanchored,
+            pressure=equilibrium.Solved(
+                3.2e6 * epcsaft.unit_registry.pascal,
+                (1.0e4 * epcsaft.unit_registry.pascal, 1.0e8 * epcsaft.unit_registry.pascal),
+                tuple(
+                    value * epcsaft.unit_registry.pascal
+                    for value in (1.0e5, 1.0e6, 3.2e6, 1.0e7, 5.0e7)
+                ),
+            ),
+            reaction_system=replace(
+                reaction,
+                equilibrium_constants=(
+                    replace(
+                        reaction.equilibrium_constants[0],
+                        reaction_id="R1",
+                        correlation_kind="ln-k-a-plus-b-over-t",
+                        coefficient_identities=(
+                            "reaction:R1:correlation:a",
+                            "reaction:R1:correlation:b_k",
+                        ),
+                        coefficient_values=(-240.0, -100.0),
+                    ),
+                ),
+            ),
+            outputs=(
+                *unanchored.outputs,
+                equilibrium.EquilibriumOutput(
+                    "liquid-cation-fraction",
+                    "phase.mole_fraction",
+                    "dimensionless",
+                    "true-species-mole-fraction",
+                    unanchored.phases[0].identity,
+                    (0.0, 0.0, 1.0, 0.0),
+                    support="positive",
+                ),
+            ),
+        )
     truth_active = epcsaft.ActiveParameterSet(
         parameters, (parameter_identity,), values=(truth_value,)
     )
     anchor = equilibrium.solve(model, unanchored, active_parameters=truth_active)
-    assert anchor.status == "evaluated" and anchor.continuation_state is not None
+    assert anchor.status == "evaluated" and anchor.continuation_state is not None, anchor.failure
     problem = replace(unanchored, continuation_state=anchor.continuation_state)
     truth = equilibrium.solve(model, problem, active_parameters=truth_active)
     assert truth.status == "evaluated" and all(value is not None for value in truth.values)
     path, digest = write_parameters(tmp_path, parameters, "solved-pressure-parameters.json")
-    residuals = ("log_ratio", "scaled_difference", "log_ratio")
-    scales = (0.05, 0.01, 0.05)
+    residuals = ("log_ratio", "scaled_difference", "log_ratio") + (
+        ("scaled_difference",) if reaction_correlation else ()
+    )
+    scales = (0.05, 0.01, 0.05) + ((0.01,) if reaction_correlation else ())
     mapping: dict[str, object] = {
         "schema_version": 2,
         "parameters": {"path": path, "sha256": digest},
