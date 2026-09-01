@@ -1,7 +1,5 @@
 # ePC-SAFT Monorepo Agent Contract
 
-Repository Profile: scientific-computing
-
 This private repository is the single Git and Codex home for the ePC-SAFT
 project. Read `engine/docs/scientific/README.md`,
 `engine/docs/scientific/CONTEXT.md`, the relevant accepted ADR, and the nearest
